@@ -50,6 +50,12 @@ Coolify'da frontendni deploy qilish uchun:
 VITE_API_BASE_URL=https://api.your-domain.com/api/v1
 ```
 
+Build server uchun amaliy tavsiya:
+
+- Frontend build bosqichi og'ir. Coolify builder/server'da kamida `2 GB RAM` bo'lishi kerak.
+- `1 GB RAM` atrofida `vite build` OOM (`SIGKILL` yoki `heap out of memory`) bilan yiqilishi mumkin.
+- Runtime container uchun xotira talabi build'dan ancha past.
+
 ## Runtime env qanday ishlaydi
 
 `VITE_API_BASE_URL` endi runtime'da container start bo'lganda `app-config.js` orqali yoziladi. Shu sabab Coolify'da env o'zgarsa, frontend image'ni qayta build qilmasdan ham to'g'ri qiymatni o'qiydi.

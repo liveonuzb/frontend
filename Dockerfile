@@ -2,10 +2,10 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-ENV NODE_OPTIONS=--max-old-space-size=2048
+ENV NODE_OPTIONS=--max-old-space-size=1536
 
 COPY package.json package-lock.json ./
-RUN npm ci --legacy-peer-deps
+RUN npm ci --legacy-peer-deps --no-audit --no-fund
 
 COPY . .
 RUN npm run build
