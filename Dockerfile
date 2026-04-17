@@ -2,14 +2,13 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-ARG VITE_API_BASE_URL
-ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV NODE_OPTIONS=--max-old-space-size=2048
 
 COPY package.json package-lock.json ./
 RUN npm ci --legacy-peer-deps
 
 COPY . .
-RUN echo "Building with VITE_API_BASE_URL=$VITE_API_BASE_URL" && npm run build
+RUN npm run build
 
 FROM nginx:1.25-alpine
 
