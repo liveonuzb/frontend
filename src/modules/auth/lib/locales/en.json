@@ -1,0 +1,103 @@
+{
+  "auth": {
+    "signIn": {
+      "title": "Welcome back",
+      "subtitle": "Login to your LiveOn account",
+      "emailTab": "Email",
+      "phoneTab": "Phone",
+      "emailLabel": "Email",
+      "emailPlaceholder": "m@example.com",
+      "passwordLabel": "Password",
+      "forgotPassword": "Forgot your password?",
+      "loginButton": "Login",
+      "loggingIn": "Logging in...",
+      "noAccount": "Don't have an account?",
+      "signUpLink": "Sign up",
+      "continueWith": "Or continue with",
+      "termsText": "By clicking continue, you agree to our",
+      "termsLink": "Terms of Service",
+      "andText": "and",
+      "privacyLink": "Privacy Policy",
+      "termsEnd": "."
+    },
+    "signUp": {
+      "title": "Create an account",
+      "subtitle": "Sign up for free and get started",
+      "emailTab": "Email",
+      "phoneTab": "Phone",
+      "emailLabel": "Email",
+      "emailPlaceholder": "m@example.com",
+      "phoneLabel": "Phone number",
+      "passwordLabel": "Password",
+      "confirmPasswordLabel": "Confirm password",
+      "signUpButton": "Sign up",
+      "signingUp": "Signing up...",
+      "haveAccount": "Already have an account?",
+      "signInLink": "Sign in",
+      "continueWith": "Or continue with",
+      "termsText": "By clicking continue, you agree to our",
+      "termsLink": "Terms of Service",
+      "andText": "and",
+      "privacyLink": "Privacy Policy",
+      "termsEnd": ".",
+      "referralInvited": "You've been invited!",
+      "referralInvitedByName": "You were invited by {{name}}!"
+    },
+    "forgotPassword": {
+      "title": "Forgot your password?",
+      "subtitle": "Enter your email or phone and we'll send you a verification code",
+      "emailTab": "Email",
+      "phoneTab": "Phone",
+      "emailLabel": "Email",
+      "emailPlaceholder": "m@example.com",
+      "phoneLabel": "Phone number",
+      "sendButton": "Send code",
+      "sending": "Sending...",
+      "rememberPassword": "Remember your password?",
+      "backToSignIn": "Back to sign in"
+    },
+    "otpVerify": {
+      "titleVerify": "Verify your account",
+      "titleReset": "Verify reset code",
+      "subtitleWithId": "Enter the 6-digit code sent to {{identity}}",
+      "subtitleDefault": "Enter the 6-digit code sent to your email or phone",
+      "verifyButton": "Verify",
+      "verifying": "Verifying...",
+      "didntReceive": "Didn't receive a code?",
+      "resend": "Resend",
+      "resending": "Sending...",
+      "resendIn": "Resend in {{s}}s",
+      "backToSignIn": "Back to sign in"
+    },
+    "resetPassword": {
+      "title": "Set new password",
+      "subtitle": "Enter a strong password",
+      "newPasswordLabel": "New password",
+      "confirmPasswordLabel": "Confirm new password",
+      "resetButton": "Reset password",
+      "resetting": "Resetting..."
+    },
+    "setPassword": {
+      "title": "Finish account setup",
+      "subtitle": "Create a password to sign in later with your phone number.",
+      "newPasswordLabel": "New password",
+      "confirmPasswordLabel": "Confirm new password",
+      "saveButton": "Save password",
+      "saving": "Saving...",
+      "success": "Password created successfully.",
+      "error": "Failed to save password."
+    },
+    "validation": {
+      "emailRequired": "Email is required",
+      "emailInvalid": "Invalid email format",
+      "passwordRequired": "Password is required",
+      "passwordMin": "Password must be at least 6 characters",
+      "confirmPasswordRequired": "Confirm password is required",
+      "passwordsNoMatch": "Passwords do not match",
+      "phoneRequired": "Phone number is required",
+      "phoneInvalid": "Phone must match +998-##-###-##-##",
+      "otpMin": "Please enter all 6 digits",
+      "otpMax": "OTP must be 6 digits"
+    }
+  }
+}

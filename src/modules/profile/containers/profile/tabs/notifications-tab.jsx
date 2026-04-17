@@ -1,0 +1,479 @@
+import React from "react";
+import { filter, isEqual, map, values } from "lodash";
+import { useTranslation } from "react-i18next";
+import {
+  BellIcon,
+  DropletsIcon,
+  MailIcon,
+  MoonIcon,
+  Settings2Icon,
+  SparklesIcon,
+  UtensilsIcon,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import { Switch } from "@/components/ui/switch";
+import { TimePicker } from "@/components/ui/time-picker";
+import useProfileSettings, {
+  getRequestErrorMessage,
+} from "@/hooks/app/use-profile-settings";
+import {
+  useCoachNotificationPreferences,
+  useQuietHours,
+} from "@/hooks/app/use-notifications";
+import {
+  NotificationFeedPanel,
+  useNotificationCenterModel,
+} from "@/components/notification-center";
+import { useProfileOverlay } from "@/modules/profile/hooks/use-profile-overlay";
+import { useAuthStore } from "@/store";
+
+const getNotificationOptions = (t) => [
+  {
+    key: "emailMarketing",
+    title: t("profile.notifications.emailMarketing"),
+    description: t("profile.notifications.emailMarketingDesc"),
+    icon: SparklesIcon,
+  },
+  {
+    key: "emailWorkout",
+    title: t("profile.notifications.emailWorkout"),
+    description: t("profile.notifications.emailWorkoutDesc"),
+    icon: MailIcon,
+  },
+  {
+    key: "pushMeal",
+    title: t("profile.notifications.pushMeal"),
+    description: t("profile.notifications.pushMealDesc"),
+    icon: UtensilsIcon,
+  },
+  {
+    key: "pushWater",
+    title: t("profile.notifications.pushWater"),
+    description: t("profile.notifications.pushWaterDesc"),
+    icon: DropletsIcon,
+  },
+  {
+    key: "pushProgress",
+    title: t("profile.notifications.pushProgress"),
+    description: t("profile.notifications.pushProgressDesc"),
+    icon: BellIcon,
+  },
+];
+
+const createInitialForm = (settings) => ({
+  emailMarketing: settings.emailMarketing ?? true,
+  emailWorkout: settings.emailWorkout ?? true,
+  pushMeal: settings.pushMeal ?? true,
+  pushWater: settings.pushWater ?? false,
+  pushProgress: settings.pushProgress ?? true,
+});
+
+const COACH_NOTIFICATION_LABELS = {
+  COACH_PAYMENT_DUE: {
+    title: "To'lov muddati",
+    description: "Mijoz to'lovi yaqinlashganda signal.",
+  },
+  COACH_PAYMENT_OVERDUE: {
+    title: "Kechikkan to'lov",
+    description: "To'lov muddati o'tganda yuqori prioritet signal.",
+  },
+  COACH_CHECK_IN_SUBMITTED: {
+    title: "Check-in yuborildi",
+    description: "Mijoz haftalik check-in topshirganda.",
+  },
+  COACH_SESSION_REMINDER: {
+    title: "Sessiya eslatmasi",
+    description: "Rejalashtirilgan sessiya boshlanishidan oldin.",
+  },
+  COACH_COURSE_PURCHASE: {
+    title: "Kurs xaridi",
+    description: "Telegramdan yangi kurs to'lov cheki kelganda.",
+  },
+  COACH_BOT_ERROR: {
+    title: "Bot xatosi",
+    description: "Telegram bot ishlovida xatolik bo'lganda.",
+  },
+  WEEKLY_CHECK_IN: {
+    title: "Weekly check-in",
+    description: "Kutilayotgan yoki kechikkan weekly check-inlar.",
+  },
+  COACH_FEEDBACK: {
+    title: "Feedback",
+    description: "Mijoz feedback oqimi bo'yicha signal.",
+  },
+  COACH_TASK: {
+    title: "Vazifa",
+    description: "Coach vazifalari va progress signallari.",
+  },
+  COACH_PLAN_UPDATE: {
+    title: "Plan update",
+    description: "Meal/workout plan yangilanish holatlari.",
+  },
+  COACH_CONNECTED: {
+    title: "Coach ulanishi",
+    description: "Coach-client aloqasi bo'yicha yangilanishlar.",
+  },
+};
+
+const NotificationsSettingsForm = ({ form, setForm, t }) => (
+  <div className="space-y-3">
+    {getNotificationOptions(t).map((option) => {
+      const Icon = option.icon;
+
+      return (
+        <Card key={option.key}>
+          <CardContent className="flex items-center justify-between gap-4 p-4">
+            <div className="flex min-w-0 items-start gap-4">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                <Icon className="size-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="font-semibold">{option.title}</p>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  {option.description}
+                </p>
+              </div>
+            </div>
+            <Switch
+              checked={form[option.key]}
+              onCheckedChange={(checked) =>
+                setForm((current) => ({ ...current, [option.key]: checked }))
+              }
+            />
+          </CardContent>
+        </Card>
+      );
+    })}
+  </div>
+);
+
+export const NotificationSettingsDrawer = ({
+  open,
+  onOpenChange,
+  isCoach = false,
+}) => {
+  const { t } = useTranslation();
+  const { settings, saveNotificationSettings, isSavingNotifications } =
+    useProfileSettings();
+  const initialForm = React.useMemo(
+    () => createInitialForm(settings),
+    [settings],
+  );
+  const [form, setForm] = React.useState(initialForm);
+  const {
+    preferences: coachPreferences,
+    updatePreferences: updateCoachPreferences,
+    isUpdating: isUpdatingCoachPreferences,
+  } = useCoachNotificationPreferences({
+    enabled: open && isCoach,
+  });
+  const initialCoachPrefsForm = React.useMemo(
+    () =>
+      coachPreferences.map((preference) => ({
+        type: preference.type,
+        inAppEnabled: preference.inAppEnabled ?? true,
+        pushEnabled: preference.pushEnabled ?? true,
+        emailEnabled: preference.emailEnabled ?? false,
+        digestEnabled: preference.digestEnabled ?? false,
+      })),
+    [coachPreferences],
+  );
+  const [coachPrefsForm, setCoachPrefsForm] = React.useState([]);
+  const {
+    quietHours,
+    updateQuietHours,
+    isUpdating: isUpdatingQuietHours,
+  } = useQuietHours({
+    enabled: open,
+  });
+  const [qhEnabled, setQhEnabled] = React.useState(false);
+  const [qhStart, setQhStart] = React.useState("22:00");
+  const [qhEnd, setQhEnd] = React.useState("08:00");
+
+  React.useEffect(() => {
+    setForm(initialForm);
+  }, [initialForm]);
+
+  React.useEffect(() => {
+    setCoachPrefsForm(initialCoachPrefsForm);
+  }, [initialCoachPrefsForm]);
+
+  React.useEffect(() => {
+    setQhEnabled(quietHours.enabled ?? false);
+    setQhStart(quietHours.start ?? "22:00");
+    setQhEnd(quietHours.end ?? "08:00");
+  }, [quietHours.enabled, quietHours.end, quietHours.start]);
+
+  const isDirty = !isEqual(form, initialForm);
+  const isCoachPrefsDirty =
+    isCoach && !isEqual(coachPrefsForm, initialCoachPrefsForm);
+  const isQuietHoursDirty =
+    qhEnabled !== (quietHours.enabled ?? false) ||
+    qhStart !== (quietHours.start ?? "22:00") ||
+    qhEnd !== (quietHours.end ?? "08:00");
+
+  const handleSave = React.useCallback(async () => {
+    try {
+      await Promise.all([
+        isDirty ? saveNotificationSettings(form) : Promise.resolve(),
+        isCoach && isCoachPrefsDirty
+          ? updateCoachPreferences(coachPrefsForm)
+          : Promise.resolve(),
+        isQuietHoursDirty
+          ? updateQuietHours({
+              enabled: qhEnabled,
+              start: qhStart,
+              end: qhEnd,
+            })
+          : Promise.resolve(),
+      ]);
+      toast.success(t("profile.notifications.saveSuccess"));
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(
+        getRequestErrorMessage(error, t("profile.notifications.saveError")),
+      );
+    }
+  }, [
+    coachPrefsForm,
+    form,
+    isCoach,
+    isCoachPrefsDirty,
+    isDirty,
+    isQuietHoursDirty,
+    onOpenChange,
+    qhEnabled,
+    qhEnd,
+    qhStart,
+    saveNotificationSettings,
+    t,
+    updateCoachPreferences,
+    updateQuietHours,
+  ]);
+
+  const updateCoachPreferenceField = React.useCallback((type, field, value) => {
+    setCoachPrefsForm((current) =>
+      current.map((preference) =>
+        preference.type === type
+          ? {
+              ...preference,
+              [field]: value,
+            }
+          : preference,
+      ),
+    );
+  }, []);
+
+  return (
+    <Drawer direction="bottom" open={open} onOpenChange={onOpenChange}>
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle>{t("profile.notifications.settingsTitle")}</DrawerTitle>
+          <DrawerDescription>
+            {t("profile.notifications.settingsSubtitle")}
+          </DrawerDescription>
+        </DrawerHeader>
+        <DrawerBody className="space-y-6">
+          <NotificationsSettingsForm form={form} setForm={setForm} t={t} />
+
+          {isCoach && coachPrefsForm.length > 0 ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <BellIcon className="size-4 text-primary" />
+                <p className="text-sm font-semibold">
+                  Coach notification center
+                </p>
+              </div>
+              {coachPrefsForm.map((preference) => {
+                const labels = COACH_NOTIFICATION_LABELS[preference.type] ?? {
+                  title: preference.type,
+                  description: "Coach notification turi.",
+                };
+
+                return (
+                  <Card key={preference.type}>
+                    <CardContent className="space-y-4 p-4">
+                      <div>
+                        <p className="font-semibold">{labels.title}</p>
+                        <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                          {labels.description}
+                        </p>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2">
+                          <span className="text-sm">Feed’da ko'rsatish</span>
+                          <Switch
+                            checked={preference.inAppEnabled}
+                            onCheckedChange={(checked) =>
+                              updateCoachPreferenceField(
+                                preference.type,
+                                "inAppEnabled",
+                                checked,
+                              )
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2">
+                          <span className="text-sm">Daily digest</span>
+                          <Switch
+                            checked={preference.digestEnabled}
+                            onCheckedChange={(checked) =>
+                              updateCoachPreferenceField(
+                                preference.type,
+                                "digestEnabled",
+                                checked,
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : null}
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <MoonIcon className="size-4 text-primary" />
+              <p className="text-sm font-semibold">Tinch soatlar</p>
+            </div>
+            <Card>
+              <CardContent className="space-y-4 p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-medium">Yoqish</p>
+                    <p className="text-xs text-muted-foreground">
+                      Belgilangan vaqtda bildirishnomalar yuborilmaydi
+                    </p>
+                  </div>
+                  <Switch checked={qhEnabled} onCheckedChange={setQhEnabled} />
+                </div>
+
+                {qhEnabled ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        Boshlanish
+                      </p>
+                      <TimePicker value={qhStart} onChange={setQhStart} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        Tugash
+                      </p>
+                      <TimePicker value={qhEnd} onChange={setQhEnd} />
+                    </div>
+                  </div>
+                ) : null}
+              </CardContent>
+            </Card>
+          </div>
+        </DrawerBody>
+        <DrawerFooter>
+          <Button
+            type="button"
+            disabled={
+              (!isDirty && !isCoachPrefsDirty && !isQuietHoursDirty) ||
+              isSavingNotifications ||
+              isUpdatingCoachPreferences ||
+              isUpdatingQuietHours
+            }
+            onClick={handleSave}
+          >
+            {isSavingNotifications ||
+            isUpdatingCoachPreferences ||
+            isUpdatingQuietHours
+              ? t("profile.general.saving")
+              : t("profile.general.save")}
+          </Button>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
+};
+
+export const NotificationsTab = ({ embedded = false }) => {
+  const { t } = useTranslation();
+  const activeRole = useAuthStore((state) => state.activeRole);
+  const isCoach = activeRole === "COACH";
+  const notificationModel = useNotificationCenterModel();
+  const { closeProfile } = useProfileOverlay();
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
+
+  const feedContent = (
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">
+            {t("profile.notifications.feedSubtitle")}
+          </p>
+          <h2 className="text-lg font-semibold tracking-tight">
+            {t("profile.tabs.notifications")}
+          </h2>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="shrink-0"
+          onClick={() => setSettingsOpen(true)}
+        >
+          <Settings2Icon className="size-4" />
+          Sozlamalar
+        </Button>
+      </div>
+
+      <div className="mt-4 min-h-0 flex-1">
+        <NotificationFeedPanel
+          model={notificationModel}
+          contentClassName={embedded ? "max-h-[48vh]" : "max-h-[56vh]"}
+          onSelectNotification={(notification) => {
+            if (embedded) {
+              closeProfile();
+            }
+            void notificationModel.handleNotificationClick(notification);
+          }}
+        />
+      </div>
+
+      {!embedded ? (
+        <p className="mt-3 text-xs text-muted-foreground">
+          {t("profile.notifications.feedHint")}
+        </p>
+      ) : null}
+    </div>
+  );
+
+  return (
+    <>
+      {embedded ? (
+        <div className="flex h-full min-h-0 flex-col">
+          <div className="flex-1 overflow-y-auto px-5 pb-6 pt-8 sm:px-6">
+            {feedContent}
+          </div>
+        </div>
+      ) : (
+        feedContent
+      )}
+
+      <NotificationSettingsDrawer
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        isCoach={isCoach}
+      />
+    </>
+  );
+};

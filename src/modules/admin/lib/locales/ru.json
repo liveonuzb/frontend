@@ -1,0 +1,164 @@
+{
+  "admin": {
+    "dashboard": {
+      "title": "Панель администратора",
+      "totalUsers": "Пользователи",
+      "totalCoaches": "Тренеры",
+      "pendingCoaches": "Ожидающие тренеры",
+      "totalFoods": "База продуктов",
+      "registrationTrend": "Динамика регистраций",
+      "recentSubscriptions": "Последние подписки",
+      "recentActivity": "Последняя активность",
+      "pendingActions": "Ожидающие действия",
+      "pendingCoachVerifications": "Верификация тренеров",
+      "unresolvedReports": "Нерешённые отчёты",
+      "quickActions": "Быстрые действия",
+      "newUser": "Новый пользователь",
+      "exportReport": "Экспорт отчёта",
+      "systemSettings": "Настройки системы",
+      "popularContent": "Популярный контент",
+      "foodName": "Название блюда",
+      "calories": "калорий",
+      "workoutName": "Название тренировки",
+      "duration": "длительность",
+      "systemStatus": "Статус системы",
+      "apiStatus": "API",
+      "database": "База данных",
+      "storage": "Хранилище",
+      "running": "Работает",
+      "connected": "Подключено",
+      "active": "Активно",
+      "offline": "Не работает",
+      "viewAll": "Показать все",
+      "noData": "Данные не найдены"
+    },
+    "users": {
+      "title": "Пользователи",
+      "searchPlaceholder": "Поиск по имени, email или телефону...",
+      "name": "Имя",
+      "email": "Email",
+      "phone": "Телефон",
+      "role": "Роль",
+      "status": "Статус",
+      "createdAt": "Зарегистрирован",
+      "actions": "Действия",
+      "details": "Подробности",
+      "block": "Заблокировать",
+      "unblock": "Разблокировать",
+      "notes": "Заметки",
+      "addNote": "Добавить заметку",
+      "sessions": "Сессии",
+      "subscription": "Подписка",
+      "assignSubscription": "Назначить подписку"
+    },
+    "coaches": {
+      "title": "Тренеры",
+      "approve": "Одобрить",
+      "reject": "Отклонить",
+      "pending": "Ожидание",
+      "approved": "Одобрен",
+      "clients": "Клиенты"
+    },
+    "foods": {
+      "title": "Продукты",
+      "addFood": "Добавить продукт",
+      "name": "Название",
+      "calories": "Калории",
+      "category": "Категория",
+      "verified": "Подтвержден"
+    },
+    "foodCategories": {
+      "title": "Категории продуктов",
+      "addCategory": "Добавить категорию"
+    },
+    "workouts": {
+      "title": "Упражнения",
+      "addWorkout": "Добавить упражнение"
+    },
+    "workoutPlans": {
+      "title": "Планы тренировок",
+      "addPlan": "Добавить план"
+    },
+    "workoutCategories": {
+      "title": "Категории упражнений"
+    },
+    "workoutMuscles": {
+      "title": "Группы мышц"
+    },
+    "workoutBodyParts": {
+      "title": "Части тела"
+    },
+    "equipments": {
+      "title": "Оборудование",
+      "addEquipment": "Добавить оборудование"
+    },
+    "locations": {
+      "title": "Локации",
+      "addLocation": "Добавить локацию"
+    },
+    "permissions": {
+      "title": "Разрешения",
+      "domain": "Домен",
+      "read": "Чтение",
+      "manage": "Управление"
+    },
+    "revenue": {
+      "title": "Доходы",
+      "totalRevenue": "Общий доход",
+      "thisMonth": "Этот месяц",
+      "growth": "Рост"
+    },
+    "subscriptions": {
+      "title": "Подписки",
+      "plan": "Тариф",
+      "price": "Цена",
+      "duration": "Срок",
+      "subscribers": "Подписчики"
+    },
+    "reports": {
+      "title": "Отчеты"
+    },
+    "activityFeed": {
+      "title": "Лента активности"
+    },
+    "auditLogs": {
+      "title": "Журнал аудита",
+      "action": "Действие",
+      "user": "Пользователь",
+      "timestamp": "Время",
+      "details": "Подробности"
+    },
+    "languages": {
+      "title": "Языки"
+    },
+    "challenges": {
+      "title": "Челленджи"
+    },
+    "settings": {
+      "title": "Настройки"
+    },
+    "sidebar": {
+      "dashboard": "Панель",
+      "users": "Пользователи",
+      "coaches": "Тренеры",
+      "foods": "Продукты",
+      "foodCategories": "Категории продуктов",
+      "workouts": "Упражнения",
+      "workoutPlans": "Планы тренировок",
+      "workoutCategories": "Категории упражнений",
+      "workoutMuscles": "Группы мышц",
+      "workoutBodyParts": "Части тела",
+      "equipments": "Оборудование",
+      "locations": "Локации",
+      "permissions": "Разрешения",
+      "revenue": "Доходы",
+      "subscriptions": "Подписки",
+      "reports": "Отчеты",
+      "activityFeed": "Лента активности",
+      "auditLogs": "Журнал аудита",
+      "languages": "Языки",
+      "challenges": "Челленджи",
+      "settings": "Настройки"
+    }
+  }
+}

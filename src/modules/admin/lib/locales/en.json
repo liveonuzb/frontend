@@ -1,0 +1,164 @@
+{
+  "admin": {
+    "dashboard": {
+      "title": "Admin Panel",
+      "totalUsers": "Users",
+      "totalCoaches": "Coaches",
+      "pendingCoaches": "Pending Coaches",
+      "totalFoods": "Food Database",
+      "registrationTrend": "Registration Trend",
+      "recentSubscriptions": "Recent Subscriptions",
+      "recentActivity": "Recent Activity",
+      "pendingActions": "Pending Actions",
+      "pendingCoachVerifications": "Coach Verifications",
+      "unresolvedReports": "Unresolved Reports",
+      "quickActions": "Quick Actions",
+      "newUser": "New User",
+      "exportReport": "Export Report",
+      "systemSettings": "System Settings",
+      "popularContent": "Popular Content",
+      "foodName": "Food Name",
+      "calories": "calories",
+      "workoutName": "Workout Name",
+      "duration": "duration",
+      "systemStatus": "System Status",
+      "apiStatus": "API",
+      "database": "Database",
+      "storage": "Storage",
+      "running": "Running",
+      "connected": "Connected",
+      "active": "Active",
+      "offline": "Offline",
+      "viewAll": "View All",
+      "noData": "No data found"
+    },
+    "users": {
+      "title": "Users",
+      "searchPlaceholder": "Search by name, email or phone...",
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "role": "Role",
+      "status": "Status",
+      "createdAt": "Registered",
+      "actions": "Actions",
+      "details": "Details",
+      "block": "Block",
+      "unblock": "Unblock",
+      "notes": "Notes",
+      "addNote": "Add note",
+      "sessions": "Sessions",
+      "subscription": "Subscription",
+      "assignSubscription": "Assign subscription"
+    },
+    "coaches": {
+      "title": "Coaches",
+      "approve": "Approve",
+      "reject": "Reject",
+      "pending": "Pending",
+      "approved": "Approved",
+      "clients": "Clients"
+    },
+    "foods": {
+      "title": "Foods",
+      "addFood": "Add food",
+      "name": "Name",
+      "calories": "Calories",
+      "category": "Category",
+      "verified": "Verified"
+    },
+    "foodCategories": {
+      "title": "Food Categories",
+      "addCategory": "Add category"
+    },
+    "workouts": {
+      "title": "Workouts",
+      "addWorkout": "Add workout"
+    },
+    "workoutPlans": {
+      "title": "Workout Plans",
+      "addPlan": "Add plan"
+    },
+    "workoutCategories": {
+      "title": "Workout Categories"
+    },
+    "workoutMuscles": {
+      "title": "Muscle Groups"
+    },
+    "workoutBodyParts": {
+      "title": "Body Parts"
+    },
+    "equipments": {
+      "title": "Equipments",
+      "addEquipment": "Add equipment"
+    },
+    "locations": {
+      "title": "Locations",
+      "addLocation": "Add location"
+    },
+    "permissions": {
+      "title": "Permissions",
+      "domain": "Domain",
+      "read": "Read",
+      "manage": "Manage"
+    },
+    "revenue": {
+      "title": "Revenue",
+      "totalRevenue": "Total Revenue",
+      "thisMonth": "This Month",
+      "growth": "Growth"
+    },
+    "subscriptions": {
+      "title": "Subscriptions",
+      "plan": "Plan",
+      "price": "Price",
+      "duration": "Duration",
+      "subscribers": "Subscribers"
+    },
+    "reports": {
+      "title": "Reports"
+    },
+    "activityFeed": {
+      "title": "Activity Feed"
+    },
+    "auditLogs": {
+      "title": "Audit Logs",
+      "action": "Action",
+      "user": "User",
+      "timestamp": "Timestamp",
+      "details": "Details"
+    },
+    "languages": {
+      "title": "Languages"
+    },
+    "challenges": {
+      "title": "Challenges"
+    },
+    "settings": {
+      "title": "Settings"
+    },
+    "sidebar": {
+      "dashboard": "Dashboard",
+      "users": "Users",
+      "coaches": "Coaches",
+      "foods": "Foods",
+      "foodCategories": "Food Categories",
+      "workouts": "Workouts",
+      "workoutPlans": "Workout Plans",
+      "workoutCategories": "Workout Categories",
+      "workoutMuscles": "Muscle Groups",
+      "workoutBodyParts": "Body Parts",
+      "equipments": "Equipments",
+      "locations": "Locations",
+      "permissions": "Permissions",
+      "revenue": "Revenue",
+      "subscriptions": "Subscriptions",
+      "reports": "Reports",
+      "activityFeed": "Activity Feed",
+      "auditLogs": "Audit Logs",
+      "languages": "Languages",
+      "challenges": "Challenges",
+      "settings": "Settings"
+    }
+  }
+}

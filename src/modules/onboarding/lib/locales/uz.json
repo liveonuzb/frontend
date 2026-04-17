@@ -1,0 +1,121 @@
+{
+  "onboarding": {
+    "next": "Keyingisi >",
+    "finish": "Yakunlash",
+    "saving": "Saqlanmoqda...",
+    "name": {
+      "question": "Ismingiz nima?",
+      "firstName": "Ism",
+      "firstNamePlaceholder": "Ism",
+      "lastName": "Familiya",
+      "lastNamePlaceholder": "Familiya",
+      "firstNameRequired": "Ismni kiritish majburiy",
+      "lastNameRequired": "Familiyani kiritish majburiy"
+    },
+    "gender": {
+      "question": "Jinsingiz qaysi?",
+      "male": "Erkak",
+      "female": "Ayol"
+    },
+    "age": {
+      "question": "Yoshingiz nechida?"
+    },
+    "height": {
+      "question": "Bo'yingiz qancha?",
+      "unit": "sm"
+    },
+    "currentWeight": {
+      "question": "Hozirgi vazningiz qancha?",
+      "unit": "kg"
+    },
+    "goal": {
+      "question": "Maqsadingiz nima?",
+      "lose": "Vazn tashlamoq",
+      "loseDescription": "Yog' yoqish va ozish",
+      "maintain": "Vaznni saqlamoq",
+      "maintainDescription": "Hozirgi vaznda qolish",
+      "gain": "Mushak orttirmoq",
+      "gainDescription": "Kuch va mushak massasini oshirish"
+    },
+    "targetWeight": {
+      "question": "Maqsad vazningiz qancha?",
+      "unit": "kg"
+    },
+    "weeklyPace": {
+      "question": "Haftalik sur'atingiz qanday?"
+    },
+    "activityLevel": {
+      "question": "Qanchalik faolsiz?",
+      "sedentary": "Passiv",
+      "sedentaryDescription": "Mashq kam, ofisda ishlash",
+      "lightlyActive": "Yengil faol",
+      "lightlyActiveDescription": "Haftada 1-3 kun yengil mashq",
+      "moderatelyActive": "O'rtacha faol",
+      "moderatelyActiveDescription": "Haftada 3-5 kun o'rtacha mashq",
+      "veryActive": "Juda faol",
+      "veryActiveDescription": "Haftada 6-7 kun og'ir mashq"
+    },
+    "mealFrequency": {
+      "question": "Kuniga necha marta ovqatlanasiz?"
+    },
+    "waterHabits": {
+      "question": "Suv ichish odatingiz qanday?"
+    },
+    "dietRestrictions": {
+      "question": "Parhez cheklovlaringiz bormi?",
+      "subtitle": "Ovqat tavsiyalari va menyularni shu tanlovga moslaymiz.",
+      "helper": "Sizga mos bo'lgan barcha variantlarni belgilang. Hech biri to'g'ri kelmasa, cheklov yo'q kartasini tanlang.",
+      "quickChoice": "Tez tanlov",
+      "pickAny": "Mos keladiganlarini tanlang",
+      "gridHint": "Bir nechta variantni birga belgilash mumkin.",
+      "multipleAllowed": "Bir nechta tanlov mumkin",
+      "summaryTitle": "Ovqatlanish profilingiz",
+      "summaryHint": "Rejani moslashtirishimiz uchun kamida bitta variantni tanlang.",
+      "summaryNone": "Ajoyib. Tavsiyalarni keng va moslashuvchan qoldiramiz.",
+      "selectedCount": "{{count}} ta tanlandi",
+      "cta": "Sozlashni yakunlash",
+      "saving": "Saqlanmoqda...",
+      "error": "Onboardingni yakunlab bo'lmadi.",
+      "none": "Cheklov yo'q",
+      "noneDescription": "Barcha toifadagi taomlarni ko'rsatish",
+      "vegetarian": "Vegetarian",
+      "vegetarianDescription": "Go'sht va baliqsiz ovqatlanish",
+      "vegan": "Vegan",
+      "veganDescription": "Faqat o'simlikka asoslangan taomlar",
+      "glutenFree": "Glutensiz",
+      "glutenFreeDescription": "Bug'doy, arpa va javdardan saqlanish",
+      "lactoseFree": "Laktozasiz",
+      "lactoseFreeDescription": "Laktozali sut mahsulotlarisiz",
+      "halal": "Halol",
+      "halalDescription": "Faqat halol taomlar",
+      "keto": "Keto",
+      "ketoDescription": "Kam uglevodli, yuqori yog'li tanlovlar",
+      "paleo": "Paleo",
+      "paleoDescription": "Qayta ishlanmagan, tabiiy mahsulotlar"
+    },
+    "completion": {
+      "title": "Ajoyib natija!",
+      "description": "Sizning shaxsiy profilingiz shakllantirildi.",
+      "redirecting": "Bosh sahifaga yo'naltirilmoqda..."
+    },
+    "coachOnboarding": {
+      "experience": "Tajriba",
+      "specialization": "Ixtisoslashuv",
+      "certification": "Sertifikatlar",
+      "bio": "Bio",
+      "pricing": "Narxlar",
+      "languages": "Tillar",
+      "avatar": "Rasm",
+      "marketplace": "Marketplace"
+    },
+    "vendorOnboarding": {
+      "entry": "Boshlash",
+      "profile": "Profil",
+      "location": "Manzil"
+    },
+    "roleUpgrades": {
+      "title": "Rolni tanlang",
+      "description": "Qaysi sohada ish boshlashni xohlaysiz?"
+    }
+  }
+}

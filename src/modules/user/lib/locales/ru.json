@@ -1,0 +1,167 @@
+{
+  "user": {
+    "dashboard": {
+      "title": "Главная",
+      "greeting": "Привет, {{name}}!",
+      "quote": "Мотивация дня",
+      "coachInvitation": "Приглашение от тренера",
+      "accept": "Принять",
+      "decline": "Отклонить"
+    },
+    "nutrition": {
+      "title": "Питание",
+      "meals": {
+        "breakfast": "Завтрак",
+        "lunch": "Обед",
+        "dinner": "Ужин",
+        "snack": "Перекус"
+      },
+      "mealTime": {
+        "breakfast": "06:00 - 10:00",
+        "lunch": "12:00 - 14:00",
+        "dinner": "18:00 - 21:00",
+        "snack": "В любое время"
+      },
+      "calories": "Калории",
+      "protein": "Белок",
+      "fat": "Жиры",
+      "carbs": "Углеводы",
+      "fiber": "Клетчатка",
+      "addFood": "Добавить еду",
+      "mealPlan": "План питания",
+      "shoppingList": "Список покупок",
+      "sourceFilter": "Все источники",
+      "weekDays": {
+        "monday": "Понедельник",
+        "tuesday": "Вторник",
+        "wednesday": "Среда",
+        "thursday": "Четверг",
+        "friday": "Пятница",
+        "saturday": "Суббота",
+        "sunday": "Воскресенье"
+      },
+      "aiGenerate": "Сгенерировать с ИИ",
+      "manualAdd": "Добавить вручную",
+      "cameraAdd": "Камера",
+      "audioAdd": "Голос",
+      "textAdd": "Текст"
+    },
+    "water": {
+      "title": "Контроль воды",
+      "noLogs": "Записей нет",
+      "noLogsDescription": "Нажмите Добавить чтобы начать отслеживание",
+      "mood": "Настроение",
+      "cupSize": "Объем стакана",
+      "goal": "Дневная цель",
+      "consumed": "Выпито",
+      "remaining": "Осталось",
+      "addWater": "Добавить воду",
+      "settings": "Настройки воды"
+    },
+    "workout": {
+      "title": "Тренировка",
+      "weekDays": {
+        "sunday": "Воскресенье",
+        "monday": "Понедельник",
+        "tuesday": "Вторник",
+        "wednesday": "Среда",
+        "thursday": "Четверг",
+        "friday": "Пятница",
+        "saturday": "Суббота"
+      },
+      "plans": "Планы",
+      "sessions": "Тренировки",
+      "quickLog": "Быстрая запись",
+      "startSession": "Начать тренировку",
+      "exercises": "Упражнения",
+      "sets": "Подходы",
+      "reps": "Повторения",
+      "weight": "Вес",
+      "duration": "Длительность",
+      "distance": "Расстояние",
+      "deleteConfirm": "Вы уверены, что хотите удалить эту тренировку?"
+    },
+    "measurements": {
+      "title": "Измерения тела",
+      "subtitle": "Отслеживайте вес и параметры тела",
+      "weightTab": "Контроль веса",
+      "weightDescription": "История веса, ИМТ и прогресс к цели отображаются здесь.",
+      "measurementsTab": "Измерения тела",
+      "measurementsDescription": "Регулярно отслеживайте грудь, талию, руки и другие параметры.",
+      "weight": "Вес",
+      "lastEntry": "последняя запись",
+      "tracked": "отслежено",
+      "totalEntries": "Всего записей",
+      "chest": "Грудь",
+      "waist": "Талия",
+      "hips": "Бедра",
+      "arm": "Рука",
+      "thigh": "Бедро",
+      "neck": "Шея",
+      "addMeasurement": "Добавить замер",
+      "bmi": "ИМТ"
+    },
+    "friends": {
+      "title": "Друзья",
+      "search": "Поиск друзей",
+      "requests": "Заявки",
+      "myFriends": "Мои друзья",
+      "addFriend": "Добавить друга",
+      "sendRequest": "Отправить заявку",
+      "removeFriend": "Удалить из друзей",
+      "pending": "Ожидание",
+      "noFriends": "Друзей пока нет",
+      "noRequests": "Нет заявок"
+    },
+    "challenges": {
+      "title": "Челленджи",
+      "active": "Активные",
+      "upcoming": "Предстоящие",
+      "completed": "Завершенные",
+      "join": "Присоединиться",
+      "leave": "Покинуть",
+      "progress": "Прогресс",
+      "participants": "Участники",
+      "leaderboard": "Рейтинг",
+      "createChallenge": "Создать челлендж",
+      "inviteFriends": "Пригласить друзей"
+    },
+    "payments": {
+      "title": "Платежи",
+      "source": {
+        "coach": "Тренер",
+        "subscription": "Подписка"
+      },
+      "method": {
+        "cash": "Наличные",
+        "payme": "Payme",
+        "click": "Click",
+        "uzcard": "Uzcard",
+        "multicard": "Multicard",
+        "xp": "XP",
+        "free": "Бесплатно"
+      },
+      "amount": "Сумма",
+      "date": "Дата",
+      "noPayments": "Платежи не найдены"
+    },
+    "marketplace": {
+      "title": "Маркетплейс",
+      "coaches": "Тренеры",
+      "searchPlaceholder": "Поиск...",
+      "noResults": "Ничего не найдено"
+    },
+    "sidebar": {
+      "dashboard": "Главная",
+      "nutrition": "Питание",
+      "water": "Вода",
+      "workout": "Тренировка",
+      "measurements": "Измерения",
+      "friends": "Друзья",
+      "leaderboard": "Рейтинг",
+      "challenges": "Челленджи",
+      "payments": "Платежи",
+      "marketplace": "Маркетплейс"
+    }
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "onboarding": {
+    "next": "Далее >",
+    "finish": "Завершить",
+    "saving": "Сохранение...",
+    "name": {
+      "question": "Как вас зовут?",
+      "firstName": "Имя",
+      "firstNamePlaceholder": "Имя",
+      "lastName": "Фамилия",
+      "lastNamePlaceholder": "Фамилия",
+      "firstNameRequired": "Имя обязательно",
+      "lastNameRequired": "Фамилия обязательна"
+    },
+    "gender": {
+      "question": "Ваш пол?",
+      "male": "Мужской",
+      "female": "Женский"
+    },
+    "age": {
+      "question": "Сколько вам лет?"
+    },
+    "height": {
+      "question": "Какой у вас рост?",
+      "unit": "см"
+    },
+    "currentWeight": {
+      "question": "Ваш текущий вес?",
+      "unit": "кг"
+    },
+    "goal": {
+      "question": "Какова ваша цель?",
+      "lose": "Похудеть",
+      "loseDescription": "Сжечь жир и стать стройнее",
+      "maintain": "Поддерживать вес",
+      "maintainDescription": "Остаться на текущем весе",
+      "gain": "Набрать мышцы",
+      "gainDescription": "Увеличить силу и мышечную массу"
+    },
+    "targetWeight": {
+      "question": "Какой ваш целевой вес?",
+      "unit": "кг"
+    },
+    "weeklyPace": {
+      "question": "Какой ваш еженедельный темп?"
+    },
+    "activityLevel": {
+      "question": "Насколько вы активны?",
+      "sedentary": "Малоподвижный",
+      "sedentaryDescription": "Мало упражнений, сидячая работа",
+      "lightlyActive": "Слабо активный",
+      "lightlyActiveDescription": "Легкие упражнения 1-3 дня/неделю",
+      "moderatelyActive": "Умеренно активный",
+      "moderatelyActiveDescription": "Умеренные упражнения 3-5 дней/неделю",
+      "veryActive": "Очень активный",
+      "veryActiveDescription": "Интенсивные упражнения 6-7 дней/неделю"
+    },
+    "mealFrequency": {
+      "question": "Сколько раз в день вы едите?"
+    },
+    "waterHabits": {
+      "question": "Каковы ваши привычки с водой?"
+    },
+    "dietRestrictions": {
+      "question": "Есть ли диетические ограничения?",
+      "subtitle": "Мы подстроим питание и рекомендации под этот выбор.",
+      "helper": "Отметьте все, что вам подходит. Если ограничений нет, выберите карточку без ограничений.",
+      "quickChoice": "Быстрый выбор",
+      "pickAny": "Выберите все подходящее",
+      "gridHint": "Можно отметить сразу несколько вариантов.",
+      "multipleAllowed": "Можно выбрать несколько",
+      "summaryTitle": "Ваш профиль питания",
+      "summaryHint": "Выберите хотя бы один вариант, чтобы мы персонализировали план.",
+      "summaryNone": "Отлично. Мы оставим рекомендации гибкими и широкими.",
+      "selectedCount": "Выбрано: {{count}}",
+      "cta": "Завершить настройку",
+      "saving": "Сохранение...",
+      "error": "Не удалось завершить онбординг.",
+      "none": "Без ограничений",
+      "noneDescription": "Показывать блюда из всех категорий",
+      "vegetarian": "Вегетарианство",
+      "vegetarianDescription": "Без мяса и рыбы",
+      "vegan": "Веганство",
+      "veganDescription": "Только полностью растительная еда",
+      "glutenFree": "Без глютена",
+      "glutenFreeDescription": "Без пшеницы, ячменя и ржи",
+      "lactoseFree": "Без лактозы",
+      "lactoseFreeDescription": "Без молочных продуктов с лактозой",
+      "halal": "Халяль",
+      "halalDescription": "Только блюда, подходящие под халяль",
+      "keto": "Кето",
+      "ketoDescription": "Низкоуглеводный и жирный рацион",
+      "paleo": "Палео",
+      "paleoDescription": "Цельные продукты без переработанных злаков"
+    },
+    "completion": {
+      "title": "Отличный результат!",
+      "description": "Ваш персональный профиль создан.",
+      "redirecting": "Перенаправление на главную..."
+    },
+    "coachOnboarding": {
+      "experience": "Опыт",
+      "specialization": "Специализация",
+      "certification": "Сертификаты",
+      "bio": "О себе",
+      "pricing": "Цены",
+      "languages": "Языки",
+      "avatar": "Фото",
+      "marketplace": "Маркетплейс"
+    },
+    "vendorOnboarding": {
+      "entry": "Начать",
+      "profile": "Профиль",
+      "location": "Местоположение"
+    },
+    "roleUpgrades": {
+      "title": "Выберите роль",
+      "description": "В какой сфере вы хотите начать работать?"
+    }
+  }
+}

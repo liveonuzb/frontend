@@ -1,0 +1,121 @@
+{
+  "onboarding": {
+    "next": "Next >",
+    "finish": "Finish",
+    "saving": "Saving...",
+    "name": {
+      "question": "What's your name?",
+      "firstName": "First name",
+      "firstNamePlaceholder": "John",
+      "lastName": "Last name",
+      "lastNamePlaceholder": "Doe",
+      "firstNameRequired": "First name is required",
+      "lastNameRequired": "Last name is required"
+    },
+    "gender": {
+      "question": "What's your gender?",
+      "male": "Male",
+      "female": "Female"
+    },
+    "age": {
+      "question": "What's your age?"
+    },
+    "height": {
+      "question": "How tall are you?",
+      "unit": "cm"
+    },
+    "currentWeight": {
+      "question": "What's your current weight?",
+      "unit": "kg"
+    },
+    "goal": {
+      "question": "What's your goal?",
+      "lose": "Lose weight",
+      "loseDescription": "Burn fat and get leaner",
+      "maintain": "Maintain weight",
+      "maintainDescription": "Stay at my current weight",
+      "gain": "Gain muscle",
+      "gainDescription": "Build strength and muscle mass"
+    },
+    "targetWeight": {
+      "question": "What's your target weight?",
+      "unit": "kg"
+    },
+    "weeklyPace": {
+      "question": "What's your weekly pace?"
+    },
+    "activityLevel": {
+      "question": "How active are you?",
+      "sedentary": "Sedentary",
+      "sedentaryDescription": "Little to no exercise, desk job",
+      "lightlyActive": "Lightly active",
+      "lightlyActiveDescription": "Light exercise 1-3 days/week",
+      "moderatelyActive": "Moderately active",
+      "moderatelyActiveDescription": "Moderate exercise 3-5 days/week",
+      "veryActive": "Very active",
+      "veryActiveDescription": "Hard exercise 6-7 days/week"
+    },
+    "mealFrequency": {
+      "question": "How many meals do you eat per day?"
+    },
+    "waterHabits": {
+      "question": "What are your water habits?"
+    },
+    "dietRestrictions": {
+      "question": "Any diet restrictions?",
+      "subtitle": "We'll shape meals and suggestions around this.",
+      "helper": "Choose everything that fits you. If nothing applies, select the no restrictions card.",
+      "quickChoice": "Quick choice",
+      "pickAny": "Pick any that apply",
+      "gridHint": "You can combine multiple preferences.",
+      "multipleAllowed": "Multiple choices allowed",
+      "summaryTitle": "Your nutrition profile",
+      "summaryHint": "Choose at least one option so we can personalize your plan.",
+      "summaryNone": "Perfect. We'll keep your recommendations broad and flexible.",
+      "selectedCount": "{{count}} selected",
+      "cta": "Finish setup",
+      "saving": "Saving...",
+      "error": "Failed to complete onboarding.",
+      "none": "No restrictions",
+      "noneDescription": "Show meals from every category",
+      "vegetarian": "Vegetarian",
+      "vegetarianDescription": "No meat or fish",
+      "vegan": "Vegan",
+      "veganDescription": "Fully plant-based meals only",
+      "glutenFree": "Gluten-free",
+      "glutenFreeDescription": "Avoid wheat, barley, and rye",
+      "lactoseFree": "Lactose-free",
+      "lactoseFreeDescription": "Skip dairy with lactose",
+      "halal": "Halal",
+      "halalDescription": "Only halal-friendly dishes",
+      "keto": "Keto",
+      "ketoDescription": "Low-carb, high-fat choices",
+      "paleo": "Paleo",
+      "paleoDescription": "Whole foods with no processed grains"
+    },
+    "completion": {
+      "title": "Great result!",
+      "description": "Your personal profile has been created.",
+      "redirecting": "Redirecting to dashboard..."
+    },
+    "coachOnboarding": {
+      "experience": "Experience",
+      "specialization": "Specialization",
+      "certification": "Certifications",
+      "bio": "Bio",
+      "pricing": "Pricing",
+      "languages": "Languages",
+      "avatar": "Photo",
+      "marketplace": "Marketplace"
+    },
+    "vendorOnboarding": {
+      "entry": "Get Started",
+      "profile": "Profile",
+      "location": "Location"
+    },
+    "roleUpgrades": {
+      "title": "Choose a role",
+      "description": "What area would you like to start working in?"
+    }
+  }
+}

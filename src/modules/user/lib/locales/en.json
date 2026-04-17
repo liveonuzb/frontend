@@ -1,0 +1,167 @@
+{
+  "user": {
+    "dashboard": {
+      "title": "Dashboard",
+      "greeting": "Hello, {{name}}!",
+      "quote": "Daily motivation",
+      "coachInvitation": "Coach invitation",
+      "accept": "Accept",
+      "decline": "Decline"
+    },
+    "nutrition": {
+      "title": "Nutrition",
+      "meals": {
+        "breakfast": "Breakfast",
+        "lunch": "Lunch",
+        "dinner": "Dinner",
+        "snack": "Snack"
+      },
+      "mealTime": {
+        "breakfast": "06:00 - 10:00",
+        "lunch": "12:00 - 14:00",
+        "dinner": "18:00 - 21:00",
+        "snack": "Any time"
+      },
+      "calories": "Calories",
+      "protein": "Protein",
+      "fat": "Fat",
+      "carbs": "Carbs",
+      "fiber": "Fiber",
+      "addFood": "Add food",
+      "mealPlan": "Meal plan",
+      "shoppingList": "Shopping list",
+      "sourceFilter": "All sources",
+      "weekDays": {
+        "monday": "Monday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday",
+        "thursday": "Thursday",
+        "friday": "Friday",
+        "saturday": "Saturday",
+        "sunday": "Sunday"
+      },
+      "aiGenerate": "Generate with AI",
+      "manualAdd": "Add manually",
+      "cameraAdd": "Camera",
+      "audioAdd": "Voice",
+      "textAdd": "Text"
+    },
+    "water": {
+      "title": "Water Tracking",
+      "noLogs": "No logs yet",
+      "noLogsDescription": "Press Add to start logging your water intake",
+      "mood": "Mood",
+      "cupSize": "Cup size",
+      "goal": "Daily goal",
+      "consumed": "Consumed",
+      "remaining": "Remaining",
+      "addWater": "Add water",
+      "settings": "Water settings"
+    },
+    "workout": {
+      "title": "Workout",
+      "weekDays": {
+        "sunday": "Sunday",
+        "monday": "Monday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday",
+        "thursday": "Thursday",
+        "friday": "Friday",
+        "saturday": "Saturday"
+      },
+      "plans": "Plans",
+      "sessions": "Sessions",
+      "quickLog": "Quick log",
+      "startSession": "Start session",
+      "exercises": "Exercises",
+      "sets": "Sets",
+      "reps": "Reps",
+      "weight": "Weight",
+      "duration": "Duration",
+      "distance": "Distance",
+      "deleteConfirm": "Are you sure you want to delete this workout?"
+    },
+    "measurements": {
+      "title": "Body Measurements",
+      "subtitle": "Track your weight and body measurements",
+      "weightTab": "Weight Tracking",
+      "weightDescription": "Weight history, BMI and goal progress are shown here.",
+      "measurementsTab": "Body Measurements",
+      "measurementsDescription": "Regularly track chest, waist, arm and other measurements.",
+      "weight": "Weight",
+      "lastEntry": "last entry",
+      "tracked": "tracked",
+      "totalEntries": "Total entries",
+      "chest": "Chest",
+      "waist": "Waist",
+      "hips": "Hips",
+      "arm": "Arm",
+      "thigh": "Thigh",
+      "neck": "Neck",
+      "addMeasurement": "Add measurement",
+      "bmi": "BMI"
+    },
+    "friends": {
+      "title": "Friends",
+      "search": "Search friends",
+      "requests": "Requests",
+      "myFriends": "My friends",
+      "addFriend": "Add friend",
+      "sendRequest": "Send request",
+      "removeFriend": "Remove friend",
+      "pending": "Pending",
+      "noFriends": "No friends yet",
+      "noRequests": "No requests"
+    },
+    "challenges": {
+      "title": "Challenges",
+      "active": "Active",
+      "upcoming": "Upcoming",
+      "completed": "Completed",
+      "join": "Join",
+      "leave": "Leave",
+      "progress": "Progress",
+      "participants": "Participants",
+      "leaderboard": "Leaderboard",
+      "createChallenge": "Create challenge",
+      "inviteFriends": "Invite friends"
+    },
+    "payments": {
+      "title": "Payments",
+      "source": {
+        "coach": "Coach",
+        "subscription": "Subscription"
+      },
+      "method": {
+        "cash": "Cash",
+        "payme": "Payme",
+        "click": "Click",
+        "uzcard": "Uzcard",
+        "multicard": "Multicard",
+        "xp": "XP",
+        "free": "Free"
+      },
+      "amount": "Amount",
+      "date": "Date",
+      "noPayments": "No payments found"
+    },
+    "marketplace": {
+      "title": "Marketplace",
+      "coaches": "Coaches",
+      "searchPlaceholder": "Search...",
+      "noResults": "Nothing found"
+    },
+    "sidebar": {
+      "dashboard": "Dashboard",
+      "nutrition": "Nutrition",
+      "water": "Water",
+      "workout": "Workout",
+      "measurements": "Measurements",
+      "friends": "Friends",
+      "leaderboard": "Leaderboard",
+      "challenges": "Challenges",
+      "payments": "Payments",
+      "marketplace": "Marketplace"
+    }
+  }
+}

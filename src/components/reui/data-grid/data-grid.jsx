@@ -1,0 +1,128 @@
+import { createContext, useContext } from "react";
+
+import { cn } from "@/lib/utils"
+
+const DataGridContext = createContext(// eslint-disable-next-line @typescript-eslint/no-explicit-any
+undefined)
+
+function useDataGrid() {
+  const context = useContext(DataGridContext)
+  if (!context) {
+    throw new Error("useDataGrid must be used within a DataGridProvider")
+  }
+  return context
+}
+
+function DataGridProvider(
+  {
+    children,
+    table,
+    ...props
+  }
+) {
+  const hasExplicitRecordCount =
+    props.recordCount !== undefined && props.recordCount !== null
+  const normalizedRecordCount = hasExplicitRecordCount
+    ? Number(props.recordCount)
+    : Number.NaN
+  const recordCount = Number.isFinite(normalizedRecordCount)
+    ? normalizedRecordCount
+    : (
+      table.getFilteredRowModel?.().rows?.length ??
+      table.getPrePaginationRowModel?.().rows?.length ??
+      table.getRowModel?.().rows?.length ??
+      0
+    )
+
+  return (
+    <DataGridContext.Provider
+      value={{
+        props,
+        table,
+        recordCount,
+        isLoading: props.isLoading || false,
+      }}>
+      {children}
+    </DataGridContext.Provider>
+  );
+}
+
+function DataGrid(
+  {
+    children,
+    table,
+    ...props
+  }
+) {
+  const defaultProps = {
+    loadingMode: "skeleton",
+    tableLayout: {
+      dense: false,
+      cellBorder: false,
+      rowBorder: true,
+      rowRounded: false,
+      stripped: false,
+      headerSticky: false,
+      headerBackground: true,
+      headerBorder: true,
+      width: "fixed",
+      columnsVisibility: false,
+      columnsResizable: false,
+      columnsPinnable: false,
+      columnsMovable: false,
+      columnsDraggable: false,
+      rowsDraggable: false,
+    },
+    tableClassNames: {
+      base: "",
+      header: "",
+      headerRow: "",
+      headerSticky: "sticky top-0 z-10 bg-background/90 backdrop-blur-xs",
+      body: "",
+      bodyRow: "",
+      footer: "",
+      edgeCell: "",
+    },
+  }
+
+  const mergedProps = {
+    ...defaultProps,
+    ...props,
+    tableLayout: {
+      ...defaultProps.tableLayout,
+      ...(props.tableLayout || {}),
+    },
+    tableClassNames: {
+      ...defaultProps.tableClassNames,
+      ...(props.tableClassNames || {}),
+    },
+  }
+
+  // Ensure table is provided
+  if (!table) {
+    throw new Error('DataGrid requires a "table" prop')
+  }
+
+  return (
+    <DataGridProvider table={table} {...mergedProps}>
+      {children}
+    </DataGridProvider>
+  );
+}
+
+function DataGridContainer({
+  children,
+  className,
+  border = true
+}) {
+  return (
+    <div
+      data-slot="data-grid"
+      className={cn("w-full overflow-hidden", border &&
+        "border-border rounded-2xl border", className)}>
+      {children}
+    </div>
+  );
+}
+
+export { useDataGrid, DataGridProvider, DataGrid, DataGridContainer }

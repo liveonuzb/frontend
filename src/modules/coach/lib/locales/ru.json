@@ -1,0 +1,1499 @@
+{
+  "common": {
+    "status": {
+      "active": "Активен",
+      "paused": "Пауза",
+      "inactive": "Неактивен",
+      "pending": "Ожидается",
+      "declined": "Отклонено"
+    },
+    "weekdays": {
+      "monday": "Понедельник",
+      "tuesday": "Вторник",
+      "wednesday": "Среда",
+      "thursday": "Четверг",
+      "friday": "Пятница",
+      "saturday": "Суббота",
+      "sunday": "Воскресенье"
+    },
+    "navUser": {
+      "user": "Пользователь",
+      "upgradePro": "Перейти на Pro",
+      "profile": "Профиль",
+      "coachCabinet": "Кабинет тренера",
+      "becomeCoach": "Стать тренером",
+      "payment": "Платежи",
+      "notifications": "Уведомления",
+      "logout": "Выйти"
+    },
+    "roles": {
+      "SUPER_ADMIN": {
+        "label": "Супер Админ",
+        "description": "Управление системой"
+      },
+      "ADMIN": {
+        "label": "Админ",
+        "description": "Панель управления"
+      },
+      "COACH": {
+        "label": "Тренер",
+        "description": "Панель тренера"
+      },
+      "USER": {
+        "label": "Пользователь",
+        "description": "Личная панель"
+      }
+    }
+  },
+  "menu": {
+    "dashboard": "Дашборд",
+    "clients": "Клиенты",
+    "mealPlans": "Питание",
+    "workoutPlans": "Тренировки",
+    "sessions": "Сессии",
+    "marketplace": "Маркет",
+    "payments": "Платежи",
+    "settings": "Настройки"
+  },
+  "coach": {
+    "sidebar": {
+      "main": "Главная",
+      "dashboard": "Дашборд",
+      "clients": "Клиенты",
+      "courses": "Курсы",
+      "purchaseQueue": "Очередь оплат",
+      "telegram": "Telegram",
+      "mealPlans": "Питание",
+      "workoutPlans": "Тренировки",
+      "payments": "Платежи",
+      "groups": "Группы",
+      "chat": "Чат"
+    },
+    "commerce": {
+      "loading": "Загрузка данных...",
+      "syncing": "Синхронизация с сервером...",
+      "days": "дней",
+      "courses": {
+        "title": "Курсы тренера",
+        "subtitle": "Создавайте Telegram-курсы и привязывайте существующие Telegram-группы.",
+        "countLabel": "курсов",
+        "createTitle": "Новый курс",
+        "editTitle": "Редактировать курс",
+        "formDescription": "Управляйте ценой, сроком доступа и публикацией здесь.",
+        "drawerDescription": "Создавайте курс по шагам: данные, обложка и настройки цены.",
+        "validation": "Нужно заполнить название, цену и срок доступа.",
+        "created": "Курс создан",
+        "updated": "Курс обновлён",
+        "deleted": "Курс удалён",
+        "error": "Не удалось сохранить курс",
+        "deleteConfirm": "Удалить этот курс?",
+        "groupChatIdPrompt": "Введите Telegram chat ID или public username",
+        "groupChatIdRequired": "Нужен Telegram chat ID",
+        "groupTitlePrompt": "Введите название Telegram-группы",
+        "groupReady": "Telegram-группа привязана",
+        "groupError": "Не удалось привязать Telegram-группу",
+        "groupTitle": "Telegram группа",
+        "groupMissing": "Сначала создайте Telegram-группу, добавьте бота в админы, затем привяжите её по chat ID.",
+        "groupPending": "PENDING",
+        "empty": "Курсов пока нет.",
+        "noDescription": "Описание не указано.",
+        "published": "Published",
+        "draft": "Draft",
+        "purchaseCount": "Покупки",
+        "publishHint": "В боте видны только опубликованные курсы.",
+        "summary": "Превью",
+        "fields": {
+          "title": "Название курса",
+          "description": "Описание",
+          "coverImage": "Обложка",
+          "price": "Цена",
+          "duration": "Срок доступа",
+          "sortOrder": "Порядок",
+          "published": "Показывать в боте"
+        },
+        "placeholders": {
+          "title": "Например: трансформация за 30 дней",
+          "description": "Что даёт курс, для кого он и какой результат ожидается"
+        },
+        "actions": {
+          "create": "Создать курс",
+          "update": "Сохранить",
+          "cancel": "Отмена",
+          "back": "Назад",
+          "next": "Далее",
+          "finish": "Создать",
+          "edit": "Редактировать",
+          "group": "Привязать группу",
+          "delete": "Удалить"
+        },
+        "steps": {
+          "basics": "Данные",
+          "basicsDescription": "Название и краткое описание курса.",
+          "cover": "Обложка",
+          "coverDescription": "Изображение загружается в MinIO.",
+          "pricing": "Цена",
+          "pricingDescription": "Срок доступа и публикация."
+        },
+        "coverUpload": {
+          "title": "Загрузите обложку",
+          "description": "Выберите изображение или перетащите его сюда.",
+          "button": "Выбрать изображение",
+          "uploading": "Загрузка...",
+          "ready": "Обложка готова",
+          "remove": "Удалить",
+          "hint": "PNG, JPG или WEBP. Максимальный размер 8 MB.",
+          "success": "Обложка загружена",
+          "error": "Не удалось загрузить обложку",
+          "imageOnly": "Можно загружать только изображения.",
+          "maxSize": "Размер изображения не должен превышать {{size}}."
+        }
+      },
+      "queue": {
+        "title": "Очередь оплат",
+        "subtitle": "Проверяйте чеки, подтверждайте пользователей и управляйте доступом.",
+        "empty": "Нет оплат курсов, ожидающих проверки.",
+        "error": "Не удалось обновить очередь оплат",
+        "approved": "Покупка подтверждена",
+        "rejected": "Покупка отклонена",
+        "revoked": "Доступ отозван",
+        "extended": "Доступ продлён",
+        "extendValidation": "Введите количество дней для продления",
+        "requestedAt": "Запрошено",
+        "accessWindow": "Доступ до",
+        "receipt": "Отправленный чек",
+        "noReceipt": "Чек ещё не прикреплён.",
+        "telegram": "Telegram",
+        "phone": "Телефон",
+        "accessLogs": "Логи доступа",
+        "unknownUser": "Неизвестный пользователь",
+        "promptApprove": "Комментарий к подтверждению (необязательно)",
+        "promptReject": "Причина отказа (необязательно)",
+        "promptRevoke": "Причина отзыва доступа (необязательно)",
+        "extendPlaceholder": "Дни",
+        "actions": {
+          "approve": "Подтвердить",
+          "reject": "Отклонить",
+          "extend": "Продлить",
+          "revoke": "Удалить доступ"
+        }
+      },
+      "telegram": {
+        "title": "Telegram доступ",
+        "subtitle": "Управляйте ботом тренера, welcome flow и привязкой групп курсов.",
+        "error": "Не удалось сохранить настройки Telegram access",
+        "paymentTitle": "Глобальные реквизиты оплаты",
+        "paymentDescription": "Инструкция оплаты, которую бот показывает пользователю при покупке курса.",
+        "securityHint": "Полные номера карт не сохраняются. Укажите ссылку Payme/Click, банковскую инструкцию или маскированный номер карты.",
+        "cardSaved": "Реквизиты оплаты сохранены",
+        "cardItemSaved": "Карта сохранена",
+        "drawerTitle": "Настройка реквизитов оплаты",
+        "drawerDescription": "Укажите карту и инструкцию, которые пользователь увидит во время checkout.",
+        "botTitle": "Витрина coach bot",
+        "botDescription": "Токен бота, welcome message и меню остаются на существующей странице бота.",
+        "botCopy": "Пользователи покупают курсы внутри Telegram. Эта страница отвечает за настройки бота, welcome flow и доступ к группам.",
+        "groupSetupTitle": "Группы курсов",
+        "groupSetupDescription": "Бот сам не создаёт приватные группы. Тренер создаёт группу, делает бота админом и затем привязывает её к курсу.",
+        "instructionsTitle": "Схема bot-only",
+        "groupSetupHint": "Действие \"Привязать группу\" у курса попросит chat ID и название группы. Создание invite link и удаление участников работают только если бот является админом.",
+        "fields": {
+          "maskedCard": "Маскированная карта",
+          "paymentInstructions": "Инструкция оплаты",
+          "cardHolder": "Владелец карты",
+          "bankName": "Название банка",
+          "displayLabel": "Отображаемая подпись"
+        },
+        "status": {
+          "configured": "Настроено",
+          "empty": "Пока не добавлено",
+          "activeCard": "Активная"
+        },
+        "summary": {
+          "instructions": "Инструкция для checkout",
+          "maskedCard": "Маскированная карта",
+          "activeCard": "Активная карта",
+          "cardHolder": "Владелец карты",
+          "bankName": "Банк",
+          "savedCards": "Сохранённые карты",
+          "notSet": "Не указано"
+        },
+        "cardsListTitle": "Сохранённые карты",
+        "cardsListDescription": "Сохраните несколько карт и выберите, какая из них будет активной при checkout.",
+        "cardsEmpty": "Карты ещё не добавлены. Добавьте первую карту ниже.",
+        "cardEditor": {
+          "addTitle": "Добавить новую карту",
+          "editTitle": "Редактировать карту",
+          "description": "Сохраните карту, затем выберите её активной для checkout."
+        },
+        "validation": {
+          "cardRequired": "Введите хотя бы первые и последние 4 цифры карты."
+        },
+        "placeholders": {
+          "paymentInstructions": "Например: ссылка Payme/Click или короткая инструкция для банковского перевода"
+        },
+        "steps": {
+          "connectBot": "Сначала подключите бота тренера или убедитесь, что он активен.",
+          "createGroup": "Создайте Telegram-группу для курса.",
+          "addBotAsAdmin": "Сделайте бота админом с правами на invite link и бан участников.",
+          "linkCourseGroup": "Откройте страницу курса и привяжите группу по chat ID."
+        },
+        "actions": {
+          "savePaymentDetails": "Сохранить реквизиты",
+          "addPaymentDetails": "Добавить реквизиты",
+          "editPaymentDetails": "Редактировать реквизиты",
+          "addCard": "Добавить карту",
+          "saveCard": "Сохранить карту",
+          "updateCard": "Обновить карту",
+          "setActiveCard": "Сделать активной",
+          "cancelEdit": "Отмена",
+          "closeDrawer": "Закрыть",
+          "openCourses": "Открыть курсы"
+        }
+      }
+    },
+    "dashboard": {
+      "title": "Дашборд",
+      "subtitle": "Отслеживайте показатели вашего бизнеса",
+      "greeting": {
+        "night": "Доброй ночи",
+        "morning": "Доброе утро",
+        "day": "Добрый день",
+        "evening": "Добрый вечер"
+      },
+      "pendingInvitations": "{{count}} ожидающих приглашений",
+      "clientList": "Список клиентов",
+      "alertsTitle": "Важные уведомления",
+      "severity": {
+        "high": "Высокая",
+        "medium": "Средняя",
+        "low": "Низкая"
+      },
+      "metrics": {
+        "totalClients": "Всего клиентов",
+        "activeClients": "Активные клиенты",
+        "totalTemplates": "Всего шаблонов",
+        "activeTemplatesHint": "Шаблоны планов питания и тренировок",
+        "averageProgress": "Средний прогресс",
+        "averageProgressHint": "Средний показатель выполнения планов"
+      },
+      "revenue": {
+        "title": "Доход",
+        "monthly": "Ежемесячный доход",
+        "growth": "По сравнению с прошлым месяцем",
+        "currency": "сум",
+        "zero": "0",
+        "activePayments": "{{count}} активных оплат"
+      },
+      "overdue": {
+        "attention": "Внимание",
+        "title": "Просроченные платежи",
+        "todayDue": "Сегодня ожидается {{count}} оплат"
+      },
+      "progress": {
+        "activeCount": "{{count}} активных клиентов",
+        "title": "Средний прогресс"
+      },
+      "dynamics": {
+        "title": "Динамика платежей",
+        "subtitle": "Статистика доходов за выбранный период",
+        "tabs": {
+          "week": "Неделя",
+          "month": "Месяц",
+          "year": "Год"
+        }
+      },
+      "errors": {
+        "title": "Ошибка",
+        "loading": "Не удалось загрузить данные дашборда",
+        "retry": "Повторить"
+      },
+      "clients": {
+        "title": "Клиенты",
+        "activeCount": "{{count}} активных клиентов",
+        "newThisMonth": "{{count}} новых"
+      },
+      "activity": {
+        "title": "Последняя активность",
+        "empty": "Активности пока нет"
+      },
+      "alerts": {
+        "payment_overdue": {
+          "title": "Платеж просрочен",
+          "message": "Срок оплаты для {{name}} истек."
+        },
+        "checkin_overdue": {
+          "title": "Check-in просрочен",
+          "message": "{{name}} еще не сдал еженедельный отчет."
+        },
+        "inactive_client": {
+          "title": "Активность снизилась",
+          "message": "{{name}} не оставлял логи уже 3 дня."
+        },
+        "plan_update_pending": {
+          "title": "Ожидается обновление плана",
+          "message": "{{name}} еще не применил обновление плана."
+        },
+        "client_request": {
+          "title": "Новый запрос от клиента",
+          "message": "{{name}} отправил запрос на совместную работу."
+        }
+      }
+    },
+    "clients": {
+      "title": "Клиенты",
+      "subtitle": "Управляйте своими клиентами и следите за их результатами",
+      "breadcrumbs": {
+        "coach": "Коуч",
+        "clients": "Клиенты"
+      },
+      "actions": {
+        "addClient": "Добавить клиента",
+        "addToGroup": "Добавить в группу",
+        "view": "Просмотр",
+        "addPayment": "Добавить оплату",
+        "setPaymentDay": "День оплаты",
+        "cancelLastPayment": "Отменить последнюю оплату",
+        "workoutPlan": "План тренировок",
+        "mealPlan": "План питания",
+        "deleteClient": "Удалить из списка",
+        "resendInvite": "Повторить приглашение",
+        "cancelInvite": "Отменить приглашение"
+      },
+      "filters": {
+        "search": {
+          "label": "Поиск",
+          "placeholder": "По имени или email..."
+        },
+        "status": {
+          "label": "Статус",
+          "all": "Все статусы",
+          "active": "Активен",
+          "paused": "Пауза",
+          "inactive": "Неактивен"
+        }
+      },
+      "table": {
+        "columns": {
+          "client": "Клиент",
+          "progress": "Прогресс",
+          "payment": "Оплата",
+          "plan": "План",
+          "lastActivity": "Последняя активность",
+          "status": "Статус"
+        },
+        "invitationPrefix": "Приглашен: ",
+        "unnamedUser": "Безымянный пользователь"
+      },
+      "cells": {
+        "invitationVia": "Приглашен через {{method}}",
+        "declined": "Отклонено",
+        "payment": {
+          "notSet": "Не установлено",
+          "noDay": "Нет дня",
+          "dayFormat": "{{day}}-е число"
+        },
+        "plan": {
+          "assigned": "Прикреплен",
+          "notAssigned": "Нет"
+        }
+      },
+      "messages": {
+        "resendSuccess": "Приглашение отправлено повторно",
+        "cancelSuccess": "Приглашение отменено",
+        "selectValidClients": "Пожалуйста, выберите только подтвержденных клиентов",
+        "groupAddSuccess": "Клиенты добавлены в группу",
+        "planAssignSuccess": "План успешно прикреплен",
+        "markingSuccess": "Оплата успешно зафиксирована",
+        "pricingSuccess": "День оплаты обновлен",
+        "cancelled": "Оплата отменена",
+        "groupCreateSuccess": "Группа успешно создана",
+        "error": "Произошла ошибка"
+      },
+      "inviteSteps": {
+        "method": {
+          "title": "Добавить клиента",
+          "description": "Как вы хотите пригласить клиента?",
+          "phone": {
+            "label": "По номеру телефона",
+            "description": "Приглашение будет отправлено через SMS",
+            "placeholder": "+998 90 123 45 67"
+          },
+          "email": {
+            "label": "Через Email",
+            "description": "Приглашение будет отправлено на электронную почту",
+            "placeholder": "example@mail.com"
+          },
+          "submit": "Далее"
+        },
+        "identifier": {
+          "title": "Контактная информация",
+          "description": "Введите данные {{method}}",
+          "phoneLabel": "Номер телефона",
+          "emailLabel": "Email адрес",
+          "submit": "Далее"
+        },
+        "pricing": {
+          "title": "Цена и оплата",
+          "description": "Установите согласованную ежемесячную цену и день оплаты",
+          "amountLabel": "Сумма ежемесячного платежа",
+          "amountPlaceholder": "Например: 500 000",
+          "currency": "сум",
+          "paymentDayLabel": "Ежемесячный день оплаты",
+          "paymentDayPlaceholder": "Выберите день",
+          "submit": "Далее"
+        },
+        "schedule": {
+          "title": "График тренировок",
+          "description": "Установите еженедельные дни и время тренировок клиента",
+          "dayLabel": "День",
+          "timeLabel": "Время",
+          "remove": "Удалить",
+          "addMore": "Добавить еще дни",
+          "submit": "Далее"
+        },
+        "notes": {
+          "title": "Дополнительные примечания",
+          "description": "Оставьте заметки о клиенте для себя",
+          "label": "Заметка (необязательно)",
+          "placeholder": "О травмах или особых потребностях клиента...",
+          "submit": "Отправить приглашение"
+        },
+        "toasts": {
+          "valueRequired": "Данные обязательны к заполнению",
+          "emailError": "Неверный формат email",
+          "phoneError": "Неверный номер телефона",
+          "scheduleRequired": "Выберите хотя бы один день",
+          "success": "Приглашение успешно отправлено",
+          "error": "Ошибка при отправке приглашения"
+        }
+      },
+      "clientDetail": {
+        "title": "Детали клиента",
+        "description": "Информация об оплате, питании, планах и еженедельных отчетах.",
+        "backToClients": "Назад к списку",
+        "notFound": "Клиент не найден",
+        "fetchError": "Не удалось загрузить данные клиента.",
+        "retry": "Повторить",
+        "noContact": "Нет связи",
+        "noGoal": "Цель не указана",
+        "progress": "Прогресс {{value}}%",
+        "actions": {
+          "price": "Цена",
+          "payment": "Оплата",
+          "paymentDay": "День оплаты",
+          "plans": "Планы",
+          "remove": "Удалить из списка",
+          "updatePrice": "Обновить цену"
+        },
+        "tabs": {
+          "dashboard": "Дашборд",
+          "nutrition": "Питание",
+          "payment": "Платежи",
+          "measurements": "Замеры",
+          "plans": "Планы"
+        },
+        "metrics": {
+          "calories": "Калории",
+          "water": "Вода",
+          "steps": "Шаги",
+          "sleep": "Сон",
+          "sleepValue": "{{value}} ч.",
+          "calorieGoal": "Цель: {{value}} ккал",
+          "waterGoal": "Цель: {{value}} мл",
+          "stepsGoal": "Цель: {{value}}",
+          "selectedDate": "За выбранную дату",
+          "dayLabel": "{{day}}-день"
+        },
+        "paymentStatus": {
+          "label": "Статус оплаты",
+          "notSet": "Не установлено",
+          "noAgreedAmount": "Сумма не согласована",
+          "lastPaid": "Последняя оплата: {{date}}",
+          "noPaymentRecord": "Записей об оплате нет",
+          "amountFormat": "{{amount}} сум"
+        },
+        "status": {
+          "active": "Активен",
+          "paused": "Пауза",
+          "inactive": "Неактивен"
+        },
+        "mood": {
+          "notEntered": "Не введено",
+          "terrible": "Ужасно",
+          "bad": "Плохо",
+          "okay": "Нормально",
+          "good": "Хорошо",
+          "great": "Отлично"
+        },
+        "toasts": {
+          "removeSuccess": "Клиент удален из списка",
+          "removeError": "Не удалось удалить клиента",
+          "priceUpdateSuccess": "Цена клиента обновлена.",
+          "priceAgreement": "Цена клиента оставлена по договоренности.",
+          "priceUpdateError": "Не удалось обновить цену клиента",
+          "invalidPrice": "Пожалуйста, введите корректную цену или оставьте поле пустым."
+        },
+        "units": {
+          "kg": "кг",
+          "cm": "см",
+          "mm": "мм"
+        },
+        "meals": {
+          "breakfast": "Завтрак",
+          "lunch": "Обед",
+          "dinner": "Ужин",
+          "snack": "Перекус",
+          "anyTime": "Любое время"
+        },
+        "messages": {
+          "removeSuccess": "Клиент удален",
+          "removeError": "Не удалось удалить клиента",
+          "paymentSuccess": "Оплата отмечена",
+          "paymentError": "Не удалось отметить оплату",
+          "paymentAmountError": "Введите корректную сумму оплаты.",
+          "dayUpdateSuccess": "День оплаты обновлен.",
+          "dayRemoveSuccess": "День оплаты удален.",
+          "dayUpdateError": "Не удалось сохранить день оплаты",
+          "cancelSuccess": "Оплата отменена.",
+          "cancelError": "Не удалось отменить оплату",
+          "pricingUpdateSuccess": "Цена клиента обновлена.",
+          "pricingNegotiatedSuccess": "Цена установлена как договорная.",
+          "pricingUpdateError": "Не удалось обновить цену",
+          "pricingAmountError": "Введите корректную цену или оставьте пустым.",
+          "mealAssignSuccess": "План питания назначен",
+          "workoutAssignSuccess": "План тренировок назначен",
+          "mealUnassignSuccess": "План питания отменен",
+          "workoutUnassignSuccess": "План тренировок отменен",
+          "unassignError": "Не удалось отменить план",
+          "genericError": "Произошла ошибка",
+          "noDailyLog": "Дневной лог за выбранную дату не найден."
+        },
+        "paymentRecordDrawer": {
+          "title": "Записать оплату",
+          "description": "Добавьте запись о ручной оплате в историю платежей.",
+          "amountLabel": "Сумма оплаты (сум)",
+          "amountPlaceholder": "Пример: 500000",
+          "dateLabel": "Дата оплаты",
+          "datePlaceholder": "Выберите дату",
+          "noteLabel": "Заметка",
+          "notePlaceholder": "Пример: Оплачено через Payme",
+          "submit": "Добавить оплату",
+          "submitting": "Сохранение...",
+          "cancel": "Отмена"
+        },
+        "paymentDayDrawer": {
+          "title": "Установить день оплаты",
+          "description": "Выберите ежемесячный день оплаты между 1-31.",
+          "label": "День оплаты",
+          "placeholder": "Выберите день",
+          "submit": "Сохранить",
+          "submitting": "Сохранение...",
+          "cancel": "Отмена"
+        },
+        "pricingDrawer": {
+          "title": "Установить цену клиента",
+          "description": "Вы можете установить индивидуальную цену для каждого клиента.",
+          "label": "Согласованная сумма (сум)",
+          "placeholder": "Договорная (оставьте пустым)",
+          "submit": "Сохранить цену",
+          "submitting": "Сохранение...",
+          "cancel": "Отмена"
+        },
+        "removeClientAlert": {
+          "title": "Удалить студента из списка?",
+          "description": "Вы и студент будете удалены из списков друг друга. Общие планы коуча останутся как обычные планы, но перестанут синхронизироваться.",
+          "cancel": "Отмена",
+          "confirm": "Удалить из списка",
+          "removing": "Удаление..."
+        },
+        "paymentCancelAlert": {
+          "title": "Отмена оплаты",
+          "description": "Запись об оплате от {{date}} будет отменена.",
+          "descriptionFallback": "Эта запись об оплате будет отменена.",
+          "back": "Назад",
+          "confirm": "Отменить оплату",
+          "cancelling": "Отмена..."
+        },
+        "nutrition": {
+          "assignedPlan": "Назначенный план",
+          "coachAssigned": "Коуч назначил план",
+          "activePlan": "Активный план • {{source}}",
+          "templatesCount": "Назначено шаблонов: {{count}}",
+          "assignedAt": " • {{date}}",
+          "searchPlaceholder": "Поиск по еде или разделу...",
+          "filterAll": "Все",
+          "noFoodFound": "Еда для выбранного фильтра не найдена.",
+          "noFoodEntered": "Еда для этого времени не введена.",
+          "noNutritionLog": "Лог питания за выбранную дату не найден.",
+          "mealTypes": {
+            "breakfast": { "label": "Завтрак", "time": "06:00 - 10:00" },
+            "lunch": { "label": "Обед", "time": "12:00 - 14:00" },
+            "dinner": { "label": "Ужин", "time": "18:00 - 21:00" },
+            "snack": { "label": "Перекус", "time": "Удобное время" }
+          }
+        },
+        "paymentTab": {
+          "agreedPrice": "Согласованная цена",
+          "monthlyTotal": "Ежемесячная базовая сумма",
+          "paymentDay": "День оплаты",
+          "lastPaid": "Последняя оплата {{date}}",
+          "notSet": "Не установлено",
+          "noPaymentYet": "Оплат еще не зафиксировано",
+          "status": "Статус оплаты",
+          "recordsCount": "Записей об оплате: {{count}}",
+          "tableTitle": "График платежей",
+          "addManual": "Добавить вручную",
+          "noRecord": "У этого клиента пока нет записей об оплате.",
+          "amountAgreed": "{{amount}} сум",
+          "amountNegotiable": "По договоренности",
+          "date": "Дата: {{date}}",
+          "note": "Заметка: {{note}}",
+          "cancelReason": "Причина отмены: {{reason}}",
+          "statusCancelled": "Отменено",
+          "statusAccepted": "Принято",
+          "cancelAction": "Отменить"
+        },
+        "measurementsTab": {
+          "weight": "Вес",
+          "measurements": "Замеры",
+          "history": "Прогресс веса",
+          "noMeasurements": "Замеры не введены.",
+          "historyTitle": "История замеров",
+          "dateLabel": "Дата",
+          "weightLabel": "Вес",
+          "waistChest": "Талия / Грудь",
+          "thighArm": "Бедро / Рука",
+          "unitKg": "кг"
+        },
+        "plansTab": {
+          "mealPlan": "План питания",
+          "workoutPlan": "План тренировок",
+          "assign": "Прикрепить",
+          "active": "Активен",
+          "source": "Источник: {{source}}",
+          "sourceAi": "AI Коуч",
+          "sourceManual": "Вручную",
+          "noActiveMeal": "Активный план питания не прикреплен",
+          "noActiveWorkout": "Активный план тренировок не прикреплен",
+          "templateTitle": "Тренировка",
+          "templateMeal": "План питания",
+          "noDescription": "Описание отсутствует.",
+          "title": "Прикрепленные шаблоны",
+          "empty": "Шаблоны пока не прикреплены."
+        },
+        "profile": {
+          "title": "Профиль и цель",
+          "currentWeight": "Текущий вес",
+          "targetWeight": "Целевой вес",
+          "startDate": "Дата начала",
+          "sleep": "Сон",
+          "sleepValue": "{{count}} ч.",
+          "bio": "Био",
+          "noBio": "Био не введено."
+        },
+        "aiSummary": {
+          "title": "Резюме AI",
+          "description": "Анализ последней активности и питания клиента",
+          "update": "Обновить",
+          "achievements": "Достижения",
+          "needsAttention": "Требует внимания",
+          "recommendations": "Рекомендации",
+          "overview": "Общий анализ",
+          "fats": "Жиры",
+          "mocks": {
+            "overview": "{{name}} на прошлой неделе строго соблюдал установленный лимит калорий и выполняет норму воды на 90%. Баланс макронутриентов хороший, особенно потребление белка соответствует плану.",
+            "pos1": "Потребление сахара значительно снизилось за последние 3 дня.",
+            "pos2": "Продолжительность упражнений увеличилась на 15% по сравнению с прошлой неделей.",
+            "pos3": "Режим сна стабилизировался (в среднем 7.5 часов).",
+            "con1": "Ежедневное количество шагов все еще ниже целевых 10,000 (в среднем 7,200).",
+            "con2": "Потребление углеводов по выходным немного превышает план.",
+            "rec1": "Рекомендую увеличить кардио-упражнения на 20 минут в новой неделе.",
+            "rec2": "Будет полезно увеличить долю овощей в ужине."
+          }
+        },
+        "paymentsHistory": {
+          "title": "История платежей",
+          "description": "Список всех платежей, совершенных клиентом",
+          "empty": "История платежей пуста.",
+          "cancelConfirm": "Вы действительно хотите отменить этот платеж?",
+          "table": {
+            "date": "Дата",
+            "amount": "Сумма",
+            "note": "Заметка"
+          }
+        },
+        "drawers": {
+          "groupSelection": {
+            "title": "Добавить в группу",
+            "description": "Добавьте {{count}} выбранных клиентов в группу или создайте новую.",
+            "label": "Выберите группу",
+            "placeholder": "Выберите группу",
+            "newGroup": "+ Создать новую группу",
+            "submit": "Добавить в группу",
+            "cancel": "Отмена"
+          },
+          "createGroup": {
+            "title": "Создать новую группу",
+            "description": "Введите название и описание группы.",
+            "nameLabel": "Название группы",
+            "namePlaceholder": "Пример: Снижение веса - Группа А",
+            "descLabel": "Описание (необязательно)",
+            "descPlaceholder": "Кратко опишите цель группы...",
+            "submit": "Выбрать участников",
+            "cancel": "Отмена"
+          },
+          "memberSelection": {
+            "title": "Выбор участников группы",
+            "description": "Выберите клиентов, которые станут участниками группы.",
+            "searchPlaceholder": "Поиск...",
+            "submit": "Создать с {{count}} участниками",
+            "submitting": "Создание...",
+            "back": "Назад"
+          },
+          "markPayment": {
+            "title": "Зафиксировать оплату",
+            "description": "Подтвердите оплату для {{name}}.",
+            "amountLabel": "Сумма",
+            "amountPlaceholder": "Введите сумму",
+            "dateLabel": "Дата",
+            "noteLabel": "Заметка",
+            "notePlaceholder": "Payme, наличные и т.д.",
+            "submit": "Сохранить",
+            "submitting": "Сохранение...",
+            "cancel": "Отмена"
+          },
+          "paymentDay": {
+            "title": "Установить день оплаты",
+            "description": "Выберите ежемесячный день оплаты для {{name}} (1-31).",
+            "label": "День оплаты",
+            "placeholder": "Выберите день",
+            "submit": "Сохранить",
+            "submitting": "Сохранение...",
+            "cancel": "Отмена"
+          },
+          "cancelPayment": {
+            "title": "Отмена оплаты",
+            "description": "Вы действительно хотите отменить последнюю оплату для {{name}}?",
+            "confirm": "Да, отменить",
+            "cancel": "Нет, оставить",
+            "submitting": "Отмена..."
+          },
+          "assignPlan": {
+            "title": "Прикрепить план",
+            "description": "Выберите подходящий план для клиентов.",
+            "searchPlaceholder": "По названию плана...",
+            "mealTitle": "План питания",
+            "workoutTitle": "План тренировок",
+            "empty": "Планов пока нет. Сначала создайте шаблон.",
+            "submit": "Прикрепить",
+            "cancel": "Отмена"
+          }
+        }
+      }
+    },
+    "payments": {
+      "header": {
+        "title": "Платежи",
+        "description": "История всех платежей и мониторинг транзакций.",
+        "addPayment": "Записать оплату",
+        "export": "Экспорт"
+      },
+      "stats": {
+        "revenue": "Общий доход",
+        "active": "Активные подписки",
+        "pending": "В ожидании",
+        "growth": "прирост",
+        "overduePayments": "{{count}} просроченных оплат",
+        "refundedPayments": "{{count}} возвращено"
+      },
+      "filters": {
+        "search": "Поиск",
+        "searchPlaceholder": "Имя клиента или заметка...",
+        "month": "Месяц",
+        "status": "Статус",
+        "all": "Все"
+      },
+      "table": {
+        "columns": {
+          "client": "Клиент",
+          "amount": "Сумма",
+          "date": "Дата",
+          "note": "Заметка",
+          "method": "Метод",
+          "status": "Статус"
+        },
+        "viewReceipt": "Посмотреть чек",
+        "unknownClient": "Неизвестно",
+        "negotiable": "Договорная",
+        "currency": "сум",
+        "totalTransactions": "{{count}} всего транзакций",
+        "pending": "ожидается"
+      },
+      "status": {
+        "completed": "Успешно",
+        "refunded": "Возвращено",
+        "cancelled": "Отменено"
+      },
+      "methods": {
+        "CASH": "Наличные",
+        "CLICK": "Click",
+        "PAYME": "Payme",
+        "UZUM": "Uzum",
+        "OTHER": "Другое"
+      },
+      "drawers": {
+        "add": {
+          "title": "Записать оплату",
+          "description": "Зафиксируйте оплату, полученную от клиента.",
+          "clientLabel": "Выберите клиента",
+          "amountLabel": "Сумма оплаты",
+          "amountPlaceholder": "Пример: 500000",
+          "methodLabel": "Метод оплаты",
+          "noteLabel": "Заметка (опционально)",
+          "notePlaceholder": "Пример: Оплата за декабрь",
+          "receiptLabel": "Чек (опционально)",
+          "receiptImageLabel": "Чек (изображение)",
+          "uploading": "Загрузка...",
+          "submit": "Сохранить",
+          "noClients": "Активные клиенты не найдены."
+        },
+        "edit": {
+          "title": "Изменить оплату",
+          "description": "Обновите информацию о платеже.",
+          "notePlaceholder": "Введите заметку..."
+        },
+        "cancel": {
+          "title": "Отменить оплату",
+          "description": "Укажите причину отмены этого платежа.",
+          "reasonLabel": "Причина отмены",
+          "reasonPlaceholder": "Пример: Ошибочный ввод",
+          "submit": "Отменить оплату"
+        },
+        "refund": {
+          "title": "Возврат платежа",
+          "description": "Вернуть деньги клиенту.",
+          "reasonLabel": "Причина возврата",
+          "reasonPlaceholder": "Например: Клиент отказался",
+          "submit": "Вернуть"
+        }
+      },
+      "toasts": {
+        "receiptUploaded": "Чек загружен!",
+        "uploadError": "Ошибка загрузки чека!",
+        "exportNoData": "Нет данных для экспорта.",
+        "exportSuccess": "Экспорт выполнен успешно!",
+        "clientRequired": "Пожалуйста, выберите клиента.",
+        "amountRequired": "Пожалуйста, введите сумму оплаты.",
+        "saveSuccess": "Оплата успешно зафиксирована.",
+        "saveError": "Ошибка при фиксации оплаты.",
+        "updateSuccess": "Оплата успешно обновлена.",
+        "cancelSuccess": "Оплата успешно отменена.",
+        "refundSuccess": "Возврат успешно оформлен."
+      }
+    },
+    "sessions": {
+      "header": {
+        "title": "Сессии",
+        "subtitle": "Управление сессиями клиентов",
+        "description": "Здесь отображаются слоты из чата, забронированные консультации и завершенные встречи.",
+        "clientsBtn": "Клиенты",
+        "chatBtn": "Открыть чат"
+      },
+      "summary": {
+        "proposed": "Предложено",
+        "proposedHint": "Клиент еще не выбрал слот",
+        "scheduled": "Забронировано",
+        "scheduledHint": "Предстоящие сессии",
+        "completed": "Завершено",
+        "completedHint": "Оконченные консультации",
+        "cancelled": "Отменено",
+        "cancelledHint": "Отмененные брони"
+      },
+      "tabs": {
+        "flow": "Поток сессий",
+        "flowDesc": "Статусы: ожидания, брони и история.",
+        "upcoming": "Активные брони",
+        "history": "История"
+      },
+      "empty": {
+        "upcomingTitle": "Активных броней нет",
+        "upcomingDesc": "Начните новую сессию через чат с клиентом.",
+        "history": "История пока пуста.",
+        "loading": "Загрузка...",
+        "activeNoBookings": "Активных броней нет"
+      },
+      "dialogs": {
+        "cancel": {
+          "title": "Отменить бронь?",
+          "description": "Это также обновится в виджете бронирования в чате.",
+          "confirm": "Отменить"
+        },
+        "complete": {
+          "title": "Завершить сессию?",
+          "description": "Эта бронь перейдет в статус завершенных и попадет в историю клиента.",
+          "confirm": "Завершить"
+        }
+      },
+      "toasts": {
+        "cancelSuccess": "Бронь отменена",
+        "cancelError": "Не удалось отменить бронь",
+        "completeSuccess": "Сессия завершена",
+        "completeError": "Не удалось завершить сессию"
+      }
+    },
+    "mealPlans": {
+      "header": {
+        "title": "Планы питания",
+        "description": "Создание шаблонов, редактирование и прикрепление к клиентам.",
+        "newTemplate": "Новый шаблон"
+      },
+      "table": {
+        "columns": {
+          "template": "Шаблон",
+          "meals": "Приемы пищи",
+          "days": "День",
+          "calories": "Калории",
+          "assigned": "Прикреплено",
+          "updated": "Обновлено"
+        },
+        "mealCount": "{{count}} приема(ов)",
+        "dayCount": "{{count}} дн.",
+        "calorieUnit": "ккал",
+        "unassigned": "Нет"
+      },
+      "filters": {
+        "search": "Поиск",
+        "searchPlaceholder": "Поиск по названию плана",
+        "source": "Источник",
+        "allSources": "Все источники",
+        "manual": "Вручную",
+        "ai": "AI",
+        "assignment": "Прикрепление",
+        "allTemplates": "Все шаблоны",
+        "assigned": "Прикреплено к клиенту",
+        "unassigned": "Свободный шаблон"
+      },
+      "actions": {
+        "edit": "Редактировать",
+        "assign": "Прикрепить к клиентам",
+        "duplicate": "Дублировать",
+        "delete": "Удалить"
+      },
+      "drawers": {
+        "meta": {
+          "createTitle": "Новый шаблон",
+          "editTitle": "Детали шаблона",
+          "description": {
+            "create": "Сначала введите название и описание, затем откроется конструктор.",
+            "edit": "Обновите название и описание, затем редактируйте содержимое в конструкторе."
+          },
+          "nameLabel": "Название шаблона",
+          "namePlaceholder": "Например: План для похудения",
+          "descLabel": "Описание",
+          "descPlaceholder": "Укажите цель шаблона или краткое описание",
+          "continue": "Сохранить и продолжить",
+          "saveEdit": "Сохранить и редактировать",
+          "saveOnly": "Сохранить только детали"
+        },
+        "assign": {
+          "title": "Прикрепить к клиентам",
+          "description": "Выберите клиента для {{title}}.",
+          "searchPlaceholder": "Поиск клиента...",
+          "noClients": "Нет клиентов для прикрепления.",
+          "submit": "Сохранить",
+          "status": {
+            "active": "Активен",
+            "paused": "Пауза",
+            "inactive": "Неактивен"
+          },
+          "selection": {
+            "selected": "Выбрано",
+            "unselected": "Выбрать"
+          }
+        }
+      },
+      "deleteDialog": {
+        "title": "Удалить шаблон",
+        "description": "{{title}} будет удален. Это действие нельзя отменить.",
+        "cancel": "Отмена",
+        "confirm": "Удалить"
+      },
+      "toasts": {
+        "nameRequired": "Введите название плана",
+        "saveSuccess": "Детали плана обновлены",
+        "saveError": "Ошибка при сохранении деталей",
+        "updateSuccess": "План питания обновлен",
+        "createSuccess": "План питания создан",
+        "assignSuccess": "Клиенты обновлены",
+        "duplicateSuccess": "План дублирован",
+        "deleteSuccess": "План удален"
+      },
+      "empty": "Шаблон не найден.",
+      "noDescription": "Описание не указано",
+      "defaultNewName": "Новый шаблон {{date}}"
+    },
+    "workoutPlans": {
+      "header": {
+        "title": "Планы тренировок",
+        "description": "Управление шаблонами тренировок.",
+        "newTemplate": "Новый шаблон"
+      },
+      "table": {
+        "columns": {
+          "template": "Шаблон",
+          "exercises": "Упражнения",
+          "days": "Дни",
+          "clients": "Клиенты",
+          "updated": "Обновлено"
+        },
+        "exerciseCount": "Упражнений: {{count}}",
+        "dayCount": "Дней: {{count}}",
+        "clientCount": "Клиентов: {{count}}",
+        "unassigned": "Не прикреплено"
+      },
+      "filters": {
+        "search": "Поиск",
+        "searchPlaceholder": "Поиск по названию плана",
+        "assignment": "Прикрепление",
+        "all": "Все",
+        "assigned": "Прикреплено к клиенту",
+        "unassigned": "Свободно"
+      },
+      "actions": {
+        "edit": "Редактировать",
+        "structure": "Структура плана",
+        "assign": "Прикрепить к клиентам",
+        "delete": "Удалить"
+      },
+      "drawers": {
+        "meta": {
+          "createTitle": "Создать план",
+          "editTitle": "Редактировать план",
+          "description": "Введите название и описание плана. Далее откроется недельный конструктор.",
+          "nameLabel": "Название плана",
+          "namePlaceholder": "Например: Full Body A",
+          "descLabel": "Описание (необязательно)",
+          "descPlaceholder": "Дополнительная информация о плане...",
+          "createAction": "Создать",
+          "saveEditAction": "Сохранить и редактировать",
+          "saveOnlyAction": "Только сохранить"
+        },
+        "assign": {
+          "title": "Прикрепить к клиентам",
+          "description": "К каким клиентам вы хотите прикрепить этот план?",
+          "searchPlaceholder": "Поиск клиентов...",
+          "noClients": "Клиент не найден.",
+          "submit": "Сохранить"
+        }
+      },
+      "deleteDialog": {
+        "title": "Подтвердите удаление",
+        "cancel": "Отмена",
+        "confirm": "Удалить"
+      },
+      "toasts": {
+        "nameRequired": "Введите название плана",
+        "createSuccess": "План тренировок создан",
+        "createError": "Ошибка при создании плана",
+        "updateSuccess": "Данные плана обновлены",
+        "updateError": "Ошибка при сохранении данных",
+        "saveSuccess": "План тренировок сохранен",
+        "assignSuccess": "Клиенты обновлены",
+        "minOneDay": "Добавьте хотя бы один день"
+      }
+    },
+    "groups": {
+        "header": {
+          "title": "Группы",
+          "description": "Организуйте и управляйте своими клиентами в группах.",
+          "newGroup": "Новая группа"
+        },
+        "breadcrumbs": {
+          "coach": "Тренер",
+          "groups": "Группы"
+        },
+        "filters": {
+          "searchPlaceholder": "Название группы..."
+        },
+        "table": {
+          "columns": {
+            "name": "Название группы",
+            "members": "Участники"
+          },
+          "noDescription": "Без описания",
+          "memberCount": "{{count}} клиентов",
+          "empty": "Группы не найдены."
+        },
+        "actions": {
+          "workoutPlan": "План тренировок",
+          "mealPlan": "План питания",
+          "leaderboard": "Рейтинг",
+          "editMembers": "Редактировать участников",
+          "edit": "Редактировать",
+          "delete": "Удалить"
+        },
+        "drawers": {
+          "meta": {
+            "editTitle": "Редактировать группу",
+            "createTitle": "Новая группа",
+            "description": "Введите данные группы и выберите клиентов.",
+            "nameLabel": "Название группы",
+            "namePlaceholder": "напр., Мужчины (Снижение веса)",
+            "descLabel": "Описание",
+            "descPlaceholder": "Подробная информация...",
+            "continue": "Продолжить"
+          },
+          "selection": {
+            "title": "Выберите клиентов",
+            "description": "Выберите клиентов для добавления в группу.",
+            "searchPlaceholder": "Поиск клиентов...",
+            "noContact": "Нет контакта",
+            "noClients": "Клиенты не найдены.",
+            "save": "Сохранить",
+            "create": "Создать группу"
+          },
+          "plan": {
+            "mealTitle": "Выберите план питания",
+            "workoutTitle": "Выберите план тренировок",
+            "description": "Этот план будет назначен всем участникам группы."
+          },
+          "leaderboard": {
+            "title": "Рейтинг",
+            "description": "Еженедельные результаты участников группы",
+            "winner": "Победитель",
+            "player": "Игрок",
+            "close": "Закрыть"
+          }
+        },
+        "deleteDialog": {
+          "title": "Удалить группу",
+          "description": "Вы уверены, что хотите удалить группу \"{{name}}\"? Это действие нельзя отменить.",
+          "cancel": "Отмена",
+          "confirm": "Удалить"
+        },
+        "toasts": {
+          "nameRequired": "Введите название группы",
+          "selectAtLeastOne": "Выберите хотя бы одного клиента",
+          "updateSuccess": "Группа успешно обновлена",
+          "createSuccess": "Новая группа создана",
+          "error": "Произошла ошибка",
+          "deleteSuccess": "Группа удалена",
+          "mealPlanAssigned": "План питания назначен группе",
+          "workoutPlanAssigned": "План тренировок назначен группе"
+        }
+      },
+      "marketplace": {
+        "header": {
+          "title": "Настройки Marketplace",
+          "description": "Управляйте видимостью вашего профиля в общем каталоге"
+        },
+        "statusCard": {
+          "title": "Текущий статус",
+          "description": "Статус листинга в Marketplace",
+          "adminNote": "Примечание админа:",
+          "approved": {
+            "label": "Одобрено",
+            "description": "Ваш профиль виден всем пользователям в marketplace.",
+            "active": "Виден в Marketplace"
+          },
+          "pending": {
+            "label": "На рассмотрении",
+            "description": "Ваш запрос находится на рассмотрении администратором.",
+            "cancel": "Отменить запрос"
+          },
+          "rejected": {
+            "label": "Отклонено",
+            "description": "Ваш запрос был отклонен. Пожалуйста, ознакомьтесь с примечанием ниже."
+          },
+          "none": {
+            "label": "Не в Marketplace",
+            "description": "Вы еще не представлены в маркетплейсе. Отправьте запрос на вступление.",
+            "request": "Запрос на листинг в Marketplace"
+          }
+        },
+        "infoCards": {
+          "whatIs": {
+            "title": "Что такое Marketplace?",
+            "description": "Marketplace — это открытый каталог для всех пользователей приложения Liveon, где они могут найти тренеров и подписаться на них."
+          },
+          "process": {
+            "title": "Процесс рассмотрения",
+            "description": "Каждый запрос тренера проверяется нашими администраторами. Этот процесс обычно занимает 24-48 часов. Убедитесь, что ваша информация полна."
+          }
+        },
+        "toasts": {
+          "requestSuccess": "Запрос в Marketplace отправлен",
+          "requestError": "Не удалось отправить запрос",
+          "cancelSuccess": "Запрос в Marketplace отменен",
+          "cancelError": "Не удалось отменить запрос"
+        }
+      },
+      "workoutBuilder": {
+        "header": {
+          "title": "Конструктор тренировок",
+          "cancel": "Отмена",
+          "save": "Сохранить"
+        },
+        "sidebar": {
+          "searchPlaceholder": "Поиск в библиотеке...",
+          "officialExercises": "Официальные упражнения",
+          "countSuffix": "",
+          "empty": "Упражнения не найдены"
+        },
+        "days": {
+          "mon": "Понедельник",
+          "tue": "Вторник",
+          "wed": "Среда",
+          "thu": "Четверг",
+          "fri": "Пятница",
+          "sat": "Суббота",
+          "sun": "Воскресенье",
+          "empty": "Перетащите упражнение сюда"
+        },
+        "item": {
+          "sets": "Подходы",
+          "rest": "Отдых",
+          "moving": "Перемещение упражнения",
+          "defaultName": "Упражнение"
+        },
+        "toasts": {
+          "added": "{{name}} добавлено"
+        }
+      },
+      "workoutBuilderManual": {
+        "title": "Визуальный Конструктор",
+        "description": "Добавляйте, редактируйте и упорядочивайте упражнения.",
+        "aiAssistant": "AI Помощник",
+        "generating": "Генерация...",
+        "empty": {
+          "title": "В этом плане нет упражнений",
+          "description": "Добавьте упражнения вручную или используйте AI помощника.",
+          "addFirst": "Добавить первое упражнение"
+        },
+        "fields": {
+          "name": "Название упражнения",
+          "namePlaceholder": "например, Жим лежа",
+          "muscle": "Группа мышц",
+          "musclePlaceholder": "Грудь",
+          "sets": "Сеты/Повторы",
+          "setsPlaceholder": "3x10",
+          "rest": "Отдых",
+          "restPlaceholder": "60с"
+        },
+        "actions": {
+          "addMore": "Добавить еще упражнения",
+          "cancel": "Отмена",
+          "save": "Сохранить ({{count}})"
+        },
+        "toasts": {
+          "aiSuccess": "Упражнения сгенерированы AI ✨"
+        },
+        "aiMocks": {
+          "squats": "Приседания со штангой",
+          "benchPress": "Жим лежа",
+          "pullUps": "Подтягивания",
+          "bicepCurls": "Подъем на бицепс",
+          "plank": "Планка",
+          "legs": "Ноги",
+          "chest": "Грудь",
+          "back": "Спина",
+          "arms": "Руки",
+          "core": "Пресс"
+        }
+      },
+      "mealBuilder": {
+        "header": {
+          "editTitle": "Редактировать план",
+          "newTitle": "Новый план питания",
+          "description": "Точно отслеживайте пищевую ценность",
+          "aiMenu": "AI Меню",
+          "generating": "Создание..."
+        },
+        "meta": {
+          "planName": "Название плана",
+          "planNamePlaceholder": "Например: 30-дневное похудение",
+          "description": "Описание",
+          "descriptionPlaceholder": "Основные правила...",
+          "duration": "Длительность",
+          "durationPlaceholder": "Например: 4 недели",
+          "tags": "Теги",
+          "tagsPlaceholder": "Кето, Доступно"
+        },
+        "summary": {
+          "totalCalories": "Всего калорий",
+          "protein": "Белки",
+          "carbs": "Углеводы",
+          "fat": "Жиры"
+        },
+        "meals": {
+          "title": "Состав меню",
+          "addMeal": "Добавить еду",
+          "empty": "Список приемов пищи еще не сформирован. Отредактируйте существующий или быстро создайте с помощью ИИ.",
+          "type": "Тип",
+          "mealName": "Название блюда",
+          "mealNamePlaceholder": "Например: 2 вареных яйца + огурец",
+          "proteinLabel": "Белки (г)",
+          "carbsLabel": "Угл (г)",
+          "fatLabel": "Жиры (г)",
+          "auto": "Авто",
+          "types": {
+            "breakfast": "Завтрак",
+            "lunch": "Обед",
+            "dinner": "Ужин",
+            "snack": "Перекус",
+            "lateSnack": "Поздний перекус"
+          }
+        },
+        "info": "Если вы не введете калории, программа автоматически рассчитает их через макросы (Белки x 4 + Углеводы x 4 + Жиры x 9).",
+        "footer": {
+          "cancel": "Отмена",
+          "save": "Сохранить план ({{count}} приемов пищи)"
+        },
+        "toasts": {
+          "enterTitle": "Введите название плана",
+          "aiSuccess": "AI-диетолог успешно составил меню ✨"
+        },
+        "aiDefaults": {
+          "title": "AI Набор массы (Специальный)",
+          "description": "Высококалорийный план, созданный искусственным интеллектом",
+          "duration": "4 недели",
+          "meals": {
+            "oatmeal": "Овсянка + Мед + Грецкие орехи",
+            "chicken": "Вареная куриная грудка + Курица + Рис",
+            "salmon": "Лосось + Лимонный шпинат",
+            "nuts": "Грецкие орехи 30г + Яблоко"
+          }
+        }
+      },
+      "challenges": {
+        "title": "Соревнования",
+        "addChallenge": "Добавить соревнование",
+        "countSuffix": "соревнований",
+        "status": {
+          "upcoming": "Предстоит",
+          "active": "Активно",
+          "completed": "Завершено",
+          "cancelled": "Отменено"
+        },
+        "rewardModes": {
+          "fixedXp": {
+            "label": "Фиксированный XP",
+            "description": "Выдается постоянный XP"
+          },
+          "percentOfPool": {
+            "label": "Процент от пула",
+            "description": "Процент от накопленного пула XP"
+          },
+          "placeXp": {
+            "label": "По местам",
+            "description": "Отдельный XP для 1-2-3 мест"
+          }
+        },
+        "metricTypes": {
+          "steps": {
+            "label": "Шаги",
+            "unit": "шагов"
+          },
+          "workoutMinutes": {
+            "label": "Время тренировки",
+            "unit": "минут"
+          },
+          "burnedCalories": {
+            "label": "Сожженные калории",
+            "unit": "ккал"
+          },
+          "sleepHours": {
+            "label": "Сон",
+            "unit": "часов"
+          }
+        },
+        "aggregations": {
+          "sum": "Сумма",
+          "average": "Среднее"
+        },
+        "table": {
+          "columns": {
+            "challenge": "Соревнование",
+            "status": "Статус",
+            "period": "Период",
+            "stats": "Статистика"
+          },
+          "unnamed": "Без названия",
+          "noDescription": "Описание не указано",
+          "rewardPrefix": "Награда: ",
+          "placeSuffix": "-е место",
+          "placeRewardsLabel": "Награды за места"
+        },
+        "filters": {
+          "search": {
+            "label": "Поиск",
+            "placeholder": "Название или описание"
+          },
+          "status": {
+            "label": "Статус",
+            "all": "Все статусы"
+          }
+        },
+        "empty": "Соревнований, соответствующих фильтрам, не найдено.",
+        "drawer": {
+          "editTitle": "Редактировать соревнование",
+          "newTitle": "Новое соревнование",
+          "description": "Управляйте настройками соревнований для ваших клиентов.",
+          "sections": {
+            "basicInfo": "Основная информация",
+            "timeAndStatus": "Время и статус",
+            "settings": "Настройки соревнований",
+            "participants": "Участники"
+          },
+          "fields": {
+            "coverImage": "Обложка",
+            "selectImage": "Выбрать изображение",
+            "removeImage": "Удалить",
+            "title": "Заголовок",
+            "titlePlaceholder": "Например: 30-дневный фитнес марафон",
+            "descriptionLabel": "Описание",
+            "descriptionPlaceholder": "Краткая информация о соревновании",
+            "status": "Статус",
+            "startTime": "Время начала",
+            "endTime": "Время окончания",
+            "joinFee": "Стоимость участия (XP)",
+            "maxParticipants": "Макс. участников",
+            "infinite": "Безлимитно",
+            "rewardMode": "Режим награды",
+            "metric": "Метрика челленджа",
+            "aggregation": "Метод расчета",
+            "target": "Цель",
+            "totalReward": "Общая награда (XP)",
+            "rewardPercent": "Процент награды (%)",
+            "placeInfoPercent": "Входная плата есть: укажите проценты для мест (например, 50, 30, 20).",
+            "placeInfoFixed": "Входная плата равна 0: укажите XP напрямую для мест.",
+            "placeLabel": "{{place}}-е место",
+            "participantsDescription": "Выберите клиентов, которые будут участвовать в этом соревновании.",
+            "noClients": "У вас пока нет клиентов."
+          }
+        },
+        "toasts": {
+          "titleRequired": "Заголовок обязателен",
+          "updateSuccess": "Соревнование обновлено",
+          "createSuccess": "Соревнование создано и приглашения отправлены",
+          "error": "Произошла ошибка",
+          "deleteSuccess": "Соревнование удалено",
+          "deleteError": "Ошибка при удалении соревнования",
+          "shareSuccess": "Соревнование отправлено в чат"
+        },
+        "deleteDialog": {
+          "title": "Вы хотите удалить соревнование?",
+          "description": "{{title}} будет удалено безвозвратно.",
+          "confirm": "Удалить",
+          "deleting": "Удаление..."
+        },
+        "shareDialog": {
+          "prefix": "Соревнование: "
+        },
+        "actions": {
+          "edit": "Редактировать",
+          "share": "Отправить в чат",
+          "delete": "Удалить"
+        }
+      }
+    }
+  }

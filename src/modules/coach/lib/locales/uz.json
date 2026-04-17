@@ -1,0 +1,1495 @@
+{
+  "common": {
+    "status": {
+      "active": "Faol",
+      "paused": "Pauza",
+      "inactive": "Faolsiz",
+      "pending": "Kutilmoqda",
+      "declined": "Rad etildi"
+    },
+    "weekdays": {
+      "monday": "Dushanba",
+      "tuesday": "Seshanba",
+      "wednesday": "Chorshanba",
+      "thursday": "Payshanba",
+      "friday": "Juma",
+      "saturday": "Shanba",
+      "sunday": "Yakshanba"
+    },
+    "navUser": {
+      "user": "Foydalanuvchi",
+      "upgradePro": "Pro versiyaga o'tish",
+      "profile": "Profil",
+      "coachCabinet": "Murabbiy kabineti",
+      "becomeCoach": "Murabbiy bo'lish",
+      "payment": "To'lovlar",
+      "notifications": "Bildirishnomalar",
+      "logout": "Chiqish"
+    },
+    "roles": {
+      "SUPER_ADMIN": {
+        "label": "Super Admin",
+        "description": "Tizim boshqaruvi"
+      },
+      "ADMIN": {
+        "label": "Admin",
+        "description": "Boshqaruv paneli"
+      },
+      "COACH": {
+        "label": "Murabbiy",
+        "description": "Murabbiy paneli"
+      },
+      "USER": {
+        "label": "Foydalanuvchi",
+        "description": "Shaxsiy panel"
+      }
+    }
+  },
+  "menu": {
+    "dashboard": "Dashboard",
+    "clients": "Mijozlar",
+    "mealPlans": "Taomnomalar",
+    "workoutPlans": "Mashqlar",
+    "sessions": "Mashg'ulotlar",
+    "marketplace": "Market",
+    "payments": "To'lovlar",
+    "settings": "Sozlamalar"
+  },
+  "coach": {
+    "sidebar": {
+      "main": "Asosiy",
+      "dashboard": "Dashboard",
+      "clients": "Mijozlar",
+      "courses": "Kurslar",
+      "purchaseQueue": "To'lov navbati",
+      "telegram": "Telegram",
+      "mealPlans": "Taomnomalar",
+      "workoutPlans": "Mashqlar",
+      "payments": "To'lovlar",
+      "groups": "Guruhlar",
+      "chat": "Chat"
+    },
+    "commerce": {
+      "loading": "Ma'lumotlar yuklanmoqda...",
+      "syncing": "Server bilan sinxronlanmoqda...",
+      "days": "kun",
+      "courses": {
+        "title": "Coach kurslari",
+        "subtitle": "Telegram bot storefront uchun kurslar yarating va mavjud Telegram guruhlarni ulang.",
+        "countLabel": "kurs",
+        "createTitle": "Yangi kurs",
+        "editTitle": "Kursni tahrirlash",
+        "formDescription": "Narx, access muddati va publish holatini shu yerda boshqaring.",
+        "drawerDescription": "Kursni bosqichma-bosqich yarating: ma'lumot, cover image va narx sozlamalari.",
+        "validation": "Kurs nomi, narxi va access muddati to'ldirilishi kerak.",
+        "created": "Kurs yaratildi",
+        "updated": "Kurs yangilandi",
+        "deleted": "Kurs o'chirildi",
+        "error": "Kursni saqlashda xatolik yuz berdi",
+        "deleteConfirm": "Kursni o'chirishni tasdiqlaysizmi?",
+        "groupChatIdPrompt": "Telegram chat ID yoki public username kiriting",
+        "groupChatIdRequired": "Telegram chat ID majburiy",
+        "groupTitlePrompt": "Telegram group nomini kiriting",
+        "groupReady": "Telegram group ulandi",
+        "groupError": "Telegram group ulashda xatolik yuz berdi",
+        "groupTitle": "Telegram group",
+        "groupMissing": "Avval Telegram group yarating, botni admin qiling va keyin chat ID bilan ulang.",
+        "groupPending": "PENDING",
+        "empty": "Hozircha kurslar yo'q.",
+        "noDescription": "Tavsif kiritilmagan.",
+        "published": "Published",
+        "draft": "Draft",
+        "purchaseCount": "Xaridlar",
+        "publishHint": "Botda faqat published kurslar ko'rinadi.",
+        "summary": "Preview",
+        "fields": {
+          "title": "Kurs nomi",
+          "description": "Tavsif",
+          "coverImage": "Cover image",
+          "price": "Narx",
+          "duration": "Access muddati",
+          "sortOrder": "Tartib",
+          "published": "Botda ko'rsatish"
+        },
+        "placeholders": {
+          "title": "Masalan: 30 kunlik transformatsiya",
+          "description": "Kurs nimani beradi, kimlar uchun va qanday natija kutiladi"
+        },
+        "actions": {
+          "create": "Kurs yaratish",
+          "update": "Saqlash",
+          "cancel": "Bekor qilish",
+          "back": "Ortga",
+          "next": "Keyingi",
+          "finish": "Yaratish",
+          "edit": "Tahrirlash",
+          "group": "Group ulash",
+          "delete": "O'chirish"
+        },
+        "steps": {
+          "basics": "Ma'lumot",
+          "basicsDescription": "Kurs nomi va qisqa tavsif.",
+          "cover": "Cover",
+          "coverDescription": "MinIO ga yuklanadigan rasm.",
+          "pricing": "Narx",
+          "pricingDescription": "Access muddati va publish holati."
+        },
+        "coverUpload": {
+          "title": "Cover imageni yuklang",
+          "description": "Rasmni tanlang yoki shu joyga tashlang.",
+          "button": "Rasm tanlash",
+          "uploading": "Yuklanmoqda...",
+          "ready": "Cover image tayyor",
+          "remove": "Olib tashlash",
+          "hint": "PNG, JPG yoki WEBP. Maksimal hajm 8 MB.",
+          "success": "Cover image yuklandi",
+          "error": "Cover imageni yuklab bo'lmadi",
+          "imageOnly": "Faqat rasm fayl yuklash mumkin.",
+          "maxSize": "Rasm hajmi {{size}} dan katta bo'lmasligi kerak."
+        }
+      },
+      "queue": {
+        "title": "To'lov navbati",
+        "subtitle": "Receipt yuborgan userlarni ko'ring, tasdiqlang va access’ni boshqaring.",
+        "empty": "Ko'rib chiqiladigan kurs to'lovlari yo'q.",
+        "error": "Purchase queue bilan ishlashda xatolik yuz berdi",
+        "approved": "To'lov tasdiqlandi",
+        "rejected": "To'lov rad etildi",
+        "revoked": "Access olib tashlandi",
+        "extended": "Access uzaytirildi",
+        "extendValidation": "Uzatish uchun kun sonini kiriting",
+        "requestedAt": "So'rov vaqti",
+        "accessWindow": "Access tugashi",
+        "receipt": "Yuborilgan chek",
+        "noReceipt": "Hali receipt biriktirilmagan.",
+        "telegram": "Telegram",
+        "phone": "Telefon",
+        "accessLogs": "Access loglar",
+        "unknownUser": "Noma'lum user",
+        "promptApprove": "Tasdiqlash izohi (ixtiyoriy)",
+        "promptReject": "Rad etish sababi (ixtiyoriy)",
+        "promptRevoke": "Accessni olib tashlash sababi (ixtiyoriy)",
+        "extendPlaceholder": "Kun",
+        "actions": {
+          "approve": "Tasdiqlash",
+          "reject": "Rad etish",
+          "extend": "Uzatish",
+          "revoke": "Chiqarib yuborish"
+        }
+      },
+      "telegram": {
+        "title": "Telegram access",
+        "subtitle": "Coach bot, welcome flow va course group ulash jarayonini shu yerdan boshqaring.",
+        "error": "Telegram access sozlamalarini saqlab bo'lmadi",
+        "paymentTitle": "Global payment details",
+        "paymentDescription": "Bot course checkout vaqtida userga ko'rsatiladigan payment yo'riqnomasi.",
+        "securityHint": "Full karta raqami saqlanmaydi. Payme/Click havola, bank yo'riqnomasi yoki masked karta ko'rinishini kiriting.",
+        "cardSaved": "Payment rekvizitlari saqlandi",
+        "cardItemSaved": "Karta saqlandi",
+        "drawerTitle": "Payment detaillarni sozlash",
+        "drawerDescription": "Checkout vaqtida ko'rsatiladigan karta va yo'riqnomani shu yerdan kiriting.",
+        "botTitle": "Coach bot storefront",
+        "botDescription": "Bot token, welcome message va menu setup hali mavjud page’da qoladi.",
+        "botCopy": "User kurslarni bot ichida ko'radi. Bu sahifa bot tokeni, welcome flow va Telegram group access uchun ishlatiladi.",
+        "groupSetupTitle": "Course groups",
+        "groupSetupDescription": "Bot private groupni o'zi yaratmaydi. Coach groupni yaratadi, botni admin qiladi va keyin kursga ulaydi.",
+        "instructionsTitle": "Bot-only ulash tartibi",
+        "groupSetupHint": "Course kartasidagi \"Group ulash\" tugmasi sizdan chat ID va group nomini so'raydi. Bot groupda admin bo'lmasa invite link yaratish va userni chiqarish ishlamaydi.",
+        "fields": {
+          "maskedCard": "Masked karta",
+          "paymentInstructions": "To'lov yo'riqnomasi",
+          "cardHolder": "Karta egasi",
+          "bankName": "Bank nomi",
+          "displayLabel": "Ko'rinadigan label"
+        },
+        "status": {
+          "configured": "Sozlangan",
+          "empty": "Hali qo'shilmagan",
+          "activeCard": "Faol"
+        },
+        "summary": {
+          "instructions": "Checkout ko'rsatmasi",
+          "maskedCard": "Masked karta",
+          "activeCard": "Faol karta",
+          "cardHolder": "Karta egasi",
+          "bankName": "Bank",
+          "savedCards": "Saqlangan kartalar",
+          "notSet": "Kiritilmagan"
+        },
+        "cardsListTitle": "Saqlangan kartalar",
+        "cardsListDescription": "Bir nechta karta saqlang va checkout uchun qaysi biri active bo'lishini tanlang.",
+        "cardsEmpty": "Hali karta qo'shilmagan. Birinchi kartani pastdan qo'shing.",
+        "cardEditor": {
+          "addTitle": "Yangi karta qo'shish",
+          "editTitle": "Kartani tahrirlash",
+          "description": "Kartani saqlang, keyin uni checkout uchun active karta qilib tanlang."
+        },
+        "validation": {
+          "cardRequired": "Kamida kartaning boshidagi va oxiridagi 4 ta raqamini kiriting."
+        },
+        "placeholders": {
+          "paymentInstructions": "Masalan: Payme/Click havola yoki bank orqali to'lov qilish bo'yicha qisqa yo'riqnoma"
+        },
+        "steps": {
+          "connectBot": "Avval coach botni ulang yoki tekshirib oling.",
+          "createGroup": "Telegram'da kurs uchun group yarating.",
+          "addBotAsAdmin": "Botni groupga admin qilib, invite link yaratish va userni ban qilish huquqlarini bering.",
+          "linkCourseGroup": "Course sahifasida chat ID bilan groupni kursga ulang."
+        },
+        "actions": {
+          "savePaymentDetails": "Rekvizitlarni saqlash",
+          "addPaymentDetails": "Rekvizit qo'shish",
+          "editPaymentDetails": "Rekvizitlarni tahrirlash",
+          "addCard": "Karta qo'shish",
+          "saveCard": "Kartani saqlash",
+          "updateCard": "Kartani yangilash",
+          "setActiveCard": "Active qilish",
+          "cancelEdit": "Bekor qilish",
+          "closeDrawer": "Yopish",
+          "openCourses": "Kurslarga o'tish"
+        }
+      }
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "subtitle": "Biznesingiz holatini kuzating",
+      "greeting": {
+        "night": "Xayrli tun",
+        "morning": "Xayrli tong",
+        "day": "Xayrli kun",
+        "evening": "Xayrli kech"
+      },
+      "pendingInvitations": "{{count}} ta kutilayotgan takliflar",
+      "clientList": "Mijozlar ro'yxati",
+      "alertsTitle": "Muhim bildirishnomalar",
+      "severity": {
+        "high": "Yuqori",
+        "medium": "O'rta",
+        "low": "Past"
+      },
+      "metrics": {
+        "totalClients": "Jami mijozlar",
+        "activeClients": "Faol mijozlar",
+        "totalTemplates": "Jami shablonlar",
+        "activeTemplatesHint": "Taomnoma va mashq rejalari shablonlari",
+        "averageProgress": "O'rtacha progress",
+        "averageProgressHint": "Rejalarning o'rtacha bajarilish ko'rsatkichi"
+      },
+      "revenue": {
+        "title": "Daromad",
+        "monthly": "Oylik tushum",
+        "growth": "O'tgan oyga nisbatan",
+        "currency": "so'm",
+        "zero": "0",
+        "activePayments": "{{count}} ta faol to'lovlar"
+      },
+      "overdue": {
+        "attention": "E'tibor bering",
+        "title": "Kechikkan to'lovlar",
+        "todayDue": "Bugun {{count}} ta to'lov kutilmoqda"
+      },
+      "progress": {
+        "activeCount": "{{count}} ta faol mijozlar",
+        "title": "O'rtacha progress"
+      },
+      "dynamics": {
+        "title": "To'lovlar dinamikasi",
+        "subtitle": "Tanlangan davr uchun daromad statistikasi",
+        "tabs": {
+          "week": "Hafta",
+          "month": "Oy",
+          "year": "Yil"
+        }
+      },
+      "errors": {
+        "title": "Xatolik",
+        "loading": "Dashboard ma'lumotlarini yuklab bo'lmadi",
+        "retry": "Qayta urinish"
+      },
+      "clients": {
+        "title": "Mijozlar",
+        "activeCount": "{{count}} ta faol mijoz",
+        "newThisMonth": "{{count}} ta yangi"
+      },
+      "activity": {
+        "title": "Oxirgi faollik",
+        "empty": "Hozircha faollik yo'q"
+      },
+      "alerts": {
+        "payment_overdue": {
+          "title": "To'lov kechikkan",
+          "message": "{{name}} uchun to'lov muddati o'tgan."
+        },
+        "checkin_overdue": {
+          "title": "Check-in kechikkan",
+          "message": "{{name}} hali weekly check-in topshirmadi."
+        },
+        "inactive_client": {
+          "title": "Faollik pasaygan",
+          "message": "{{name}} 3 kundan beri log qoldirmagan."
+        },
+        "plan_update_pending": {
+          "title": "Reja yangilanishi kutilmoqda",
+          "message": "{{name}} reja yangilanishini hali qo'llamadi."
+        },
+        "client_request": {
+          "title": "Yangi mijoz so'rovi",
+          "message": "{{name}} siz bilan ishlash uchun so'rov yubordi."
+        }
+      }
+    },
+    "clients": {
+      "title": "Mijozlar",
+      "subtitle": "Mijozlaringizni boshqaring va ularning natijalarini kuzatib boring",
+      "breadcrumbs": {
+        "coach": "Murabbiy",
+        "clients": "Mijozlar"
+      },
+      "actions": {
+        "addClient": "Mijoz qo'shish",
+        "addToGroup": "Guruhga qo'shish",
+        "view": "Ko'rish",
+        "addPayment": "To'lov qo'shish",
+        "setPaymentDay": "To'lov kuni",
+        "cancelLastPayment": "Oxirgi to'lovni bekor qilish",
+        "workoutPlan": "Mashq rejasi",
+        "mealPlan": "Taomnoma rejasi",
+        "deleteClient": "Ro'yxatdan chiqarish",
+        "resendInvite": "Qayta taklif yuborish",
+        "cancelInvite": "Taklifni bekor qilish"
+      },
+      "filters": {
+        "search": {
+          "label": "Qidiruv",
+          "placeholder": "Ism yoki email bo'yicha..."
+        },
+        "status": {
+          "label": "Holati",
+          "all": "Barcha holatlar",
+          "active": "Faol",
+          "paused": "Pauza",
+          "inactive": "Faolsiz"
+        }
+      },
+      "table": {
+        "columns": {
+          "client": "Mijoz",
+          "progress": "Progress",
+          "payment": "To'lov",
+          "plan": "Reja",
+          "lastActivity": "Oxirgi faollik",
+          "status": "Holati"
+        },
+        "invitationPrefix": "Taklif qilingan: ",
+        "unnamedUser": "Nomsiz user"
+      },
+      "cells": {
+        "invitationVia": "{{method}} orqali taklif",
+        "declined": "Rad etilgan",
+        "payment": {
+          "notSet": "Belgilanmagan",
+          "noDay": "Kun yo'q",
+          "dayFormat": "{{day}}-kun"
+        },
+        "plan": {
+          "assigned": "Biriktirilgan",
+          "notAssigned": "Yo'q"
+        }
+      },
+      "messages": {
+        "resendSuccess": "Taklif qayta yuborildi",
+        "cancelSuccess": "Taklif bekor qilindi",
+        "selectValidClients": "Iltimos, faqat tasdiqlangan mijozlarni tanlang",
+        "groupAddSuccess": "Mijozlar guruhga qo'shildi",
+        "planAssignSuccess": "Reja muvaffaqiyatli biriktirildi",
+        "markingSuccess": "To'lov muvaffaqiyatli qayd etildi",
+        "pricingSuccess": "To'lov kuni yangilandi",
+        "cancelled": "To'lov bekor qilindi",
+        "groupCreateSuccess": "Guruh muvaffaqiyatli yaratildi",
+        "error": "Xatolik yuz berdi"
+      },
+      "inviteSteps": {
+        "method": {
+          "title": "Mijoz qo'shish",
+          "description": "Mijozni qanday usulda taklif qilmoqchisiz?",
+          "phone": {
+            "label": "Telefon raqami orqali",
+            "description": "Mijozga SMS orqali taklifnoma yuboriladi",
+            "placeholder": "+998 90 123 45 67"
+          },
+          "email": {
+            "label": "Email orqali",
+            "description": "Mijozga elektron pochta orqali taklifnoma yuboriladi",
+            "placeholder": "example@mail.com"
+          },
+          "submit": "Keyingisi"
+        },
+        "identifier": {
+          "title": "Kontakt ma'lumotlari",
+          "description": "Mijozning {{method}} ma'lumotini kiriting",
+          "phoneLabel": "Telefon raqami",
+          "emailLabel": "Email manzili",
+          "submit": "Keyingisi"
+        },
+        "pricing": {
+          "title": "Narx va to'lov",
+          "description": "Mijoz bilan kelishilgan narx va oylik to'lov kunini belgilang",
+          "amountLabel": "Oylik to'lov summasi",
+          "amountPlaceholder": "Masalan: 500 000",
+          "currency": "so'm",
+          "paymentDayLabel": "Har oylik to'lov kuni",
+          "paymentDayPlaceholder": "Kunni tanlang",
+          "submit": "Keyingisi"
+        },
+        "schedule": {
+          "title": "Mashg'ulot jadvali",
+          "description": "Mijozning haftalik mashg'ulot kunlari va vaqtini belgilang",
+          "dayLabel": "Kun",
+          "timeLabel": "Vaqt",
+          "remove": "O'chirish",
+          "addMore": "Yana kun qo'shish",
+          "submit": "Keyingisi"
+        },
+        "notes": {
+          "title": "Qo'shimcha izohlar",
+          "description": "Mijoz haqida o'zingiz uchun zarur bo'lgan qaydlarni qoldiring",
+          "label": "Izoh (ixtiyoriy)",
+          "placeholder": "Mijozning jarohatlari yoki maxsus ehtiyojlari haqida...",
+          "submit": "Taklif yuborish"
+        },
+        "toasts": {
+          "valueRequired": "Ma'lumotni kiritish shart",
+          "emailError": "Noto'g'ri email format",
+          "phoneError": "Noto'g'ri telefon raqami",
+          "scheduleRequired": "Kamida bitta kunni tanlang",
+          "success": "Taklifnoma muvaffaqiyatli yuborildi",
+          "error": "Taklifnoma yuborishda xatolik yuz berdi"
+        }
+      },
+      "clientDetail": {
+        "title": "Mijoz tafsilotlari",
+        "description": "To'lov, ovqatlanish, rejalar va weekly check-in ma'lumotlari.",
+        "backToClients": "Mijozlarga qaytish",
+        "notFound": "Mijoz topilmadi",
+        "fetchError": "Mijoz tafsilotlarini yuklab bo'lmadi.",
+        "retry": "Qayta urinish",
+        "noContact": "Kontakt yo'q",
+        "noGoal": "Maqsad yo'q",
+        "progress": "Progress {{value}}%",
+        "actions": {
+          "price": "Narx",
+          "payment": "To'lov",
+          "paymentDay": "To'lov kuni",
+          "plans": "Rejalar",
+          "remove": "Ro'yxatdan chiqarish",
+          "updatePrice": "Narxni yangilash"
+        },
+        "tabs": {
+          "dashboard": "Dashboard",
+          "nutrition": "Ovqatlanish",
+          "payment": "To'lovlar",
+          "measurements": "O'lchamlar",
+          "plans": "Rejalar"
+        },
+        "metrics": {
+          "calories": "Kaloriya",
+          "water": "Suv",
+          "steps": "Qadamlar",
+          "sleep": "Uyqu",
+          "sleepValue": "{{value}} soat",
+          "calorieGoal": "Maqsad: {{value}} kcal",
+          "waterGoal": "Maqsad: {{value}} ml",
+          "stepsGoal": "Maqsad: {{value}}",
+          "selectedDate": "Tanlangan kun uchun",
+          "dayLabel": "{{day}}-kun"
+        },
+        "paymentStatus": {
+          "label": "To'lov holati",
+          "notSet": "To'lov belgilanmagan",
+          "noAgreedAmount": "Kelishilgan summa yo'q",
+          "lastPaid": "Oxirgi to'lov: {{date}}",
+          "noPaymentRecord": "Hozircha to'lovlar yo'q",
+          "amountFormat": "{{amount}} so'm",
+          "dayLabel": "{{day}}-kun"
+        },
+        "status": {
+          "active": "Faol",
+          "paused": "Pauza",
+          "inactive": "Faolsiz"
+        },
+        "mood": {
+          "notEntered": "Kiritilmagan",
+          "terrible": "Juda yomon",
+          "bad": "Yomon",
+          "okay": "O'rtacha",
+          "good": "Yaxshi",
+          "great": "Zo'r"
+        },
+        "toasts": {
+          "removeSuccess": "Shogirt ro'yxatdan chiqarildi",
+          "removeError": "Shogirtni chiqarib bo'lmadi",
+          "priceUpdateSuccess": "Mijoz narxi yangilandi.",
+          "priceAgreement": "Mijoz narxi kelishuv asosida qoldirildi.",
+          "priceUpdateError": "Mijoz narxini yangilab bo'lmadi",
+          "invalidPrice": "Narxni to'g'ri kiriting yoki bo'sh qoldiring."
+        },
+        "units": {
+          "kg": "kg",
+          "cm": "sm",
+          "mm": "mm"
+        },
+        "meals": {
+          "breakfast": "Nonushta",
+          "lunch": "Tushlik",
+          "dinner": "Kechki ovqat",
+          "snack": "Snack",
+          "anyTime": "Istalgan vaqt"
+        },
+        "messages": {
+          "removeSuccess": "Shogirt ro'yxatdan chiqarildi",
+          "removeError": "Shogirtni chiqarib bo'lmadi",
+          "paymentSuccess": "To'lov belgilandi",
+          "paymentError": "To'lovni belgilab bo'lmadi",
+          "paymentAmountError": "To'lov summasini to'g'ri kiriting.",
+          "dayUpdateSuccess": "To'lov kuni yangilandi.",
+          "dayRemoveSuccess": "To'lov kuni olib tashlandi.",
+          "dayUpdateError": "To'lov kunini saqlab bo'lmadi",
+          "cancelSuccess": "To'lov bekor qilindi.",
+          "cancelError": "To'lovni bekor qilib bo'lmadi",
+          "pricingUpdateSuccess": "Mijoz narxi yangilandi.",
+          "pricingNegotiatedSuccess": "Mijoz narxi kelishuv asosida qoldirildi.",
+          "pricingUpdateError": "Mijoz narxini yangilab bo'lmadi",
+          "pricingAmountError": "Narxni to'g'ri kiriting yoki bo'sh qoldiring.",
+          "mealAssignSuccess": "Meal plan biriktirildi",
+          "workoutAssignSuccess": "Workout reja biriktirildi",
+          "mealUnassignSuccess": "Ovqatlanish rejasi biriktirishdan olib tashlandi",
+          "workoutUnassignSuccess": "Workout rejasi biriktirishdan olib tashlandi",
+          "unassignError": "Rejani olib tashlab bo'lmadi",
+          "genericError": "Xatolik yuz berdi",
+          "noDailyLog": "Tanlangan sana uchun daily log topilmadi."
+        },
+        "paymentRecordDrawer": {
+          "title": "To'lovni qayd etish",
+          "description": "Qo'lda to'lov qo'shing va tarixga kiriting.",
+          "amountLabel": "To'lov summasi (so'm)",
+          "amountPlaceholder": "Masalan: 500000",
+          "dateLabel": "To'lov sanasi",
+          "datePlaceholder": "Sanani kiriting",
+          "noteLabel": "Izoh",
+          "notePlaceholder": "Masalan, Payme orqali to'landi",
+          "submit": "To'lov qo'shish",
+          "submitting": "Saqlanmoqda...",
+          "cancel": "Bekor qilish"
+        },
+        "paymentDayDrawer": {
+          "title": "To'lov kunini belgilash",
+          "description": "Mijoz uchun oylik to'lov kunini 1-31 oralig'ida tanlang.",
+          "label": "To'lov kuni",
+          "placeholder": "Kunni tanlang",
+          "submit": "Saqlash",
+          "submitting": "Saqlanmoqda...",
+          "cancel": "Bekor qilish"
+        },
+        "pricingDrawer": {
+          "title": "Mijoz narxini belgilash",
+          "description": "Har bir mijoz uchun alohida narx belgilashingiz mumkin.",
+          "label": "Kelishilgan summa (so'm)",
+          "placeholder": "Kelishiladi (bo'sh qoldiring)",
+          "submit": "Narxni saqlash",
+          "submitting": "Saqlanmoqda...",
+          "cancel": "Bekor qilish"
+        },
+        "removeClientAlert": {
+          "title": "Shogirtni ro'yxatdan chiqarasizmi?",
+          "description": "Siz va shogirt bir-biringiz ro'yxatidan chiqasiz. Siz yuborgan coach rejalari userda oddiy reja bo'lib qoladi, lekin endi sync qilinmaydi.",
+          "cancel": "Bekor qilish",
+          "confirm": "Ro'yxatdan chiqarish",
+          "removing": "Chiqarilmoqda..."
+        },
+        "paymentCancelAlert": {
+          "title": "To'lovni bekor qilish",
+          "description": "{{date}} to'lov yozuvi bekor qilinadi.",
+          "descriptionFallback": "Ushbu to'lov yozuvi bekor qilinadi.",
+          "back": "Orqaga",
+          "confirm": "Bekor qilish",
+          "cancelling": "Bekor qilinmoqda..."
+        },
+        "nutrition": {
+          "assignedPlan": "Biriktirilgan reja",
+          "coachAssigned": "Murabbiy reja biriktirgan",
+          "activePlan": "Faol reja • {{source}}",
+          "templatesCount": "{{count}} ta biriktirilgan template",
+          "assignedAt": " • {{date}}",
+          "searchPlaceholder": "Ovqat yoki bo'lim bo'yicha qidiring...",
+          "filterAll": "Barchasi",
+          "noFoodFound": "Tanlangan filter bo'yicha ovqat topilmadi.",
+          "noFoodEntered": "Ushbu vaqt uchun ovqat kiritilmagan.",
+          "noNutritionLog": "Tanlangan sana uchun ovqatlanish logi topilmadi.",
+          "mealTypes": {
+            "breakfast": { "label": "Nonushta", "time": "06:00 - 10:00" },
+            "lunch": { "label": "Tushlik", "time": "12:00 - 14:00" },
+            "dinner": { "label": "Kechki ovqat", "time": "18:00 - 21:00" },
+            "snack": { "label": "Snack", "time": "Istalgan vaqt" }
+          }
+        },
+        "paymentTab": {
+          "agreedPrice": "Kelishilgan narx",
+          "monthlyTotal": "Har oy uchun asosiy summa",
+          "paymentDay": "To'lov kuni",
+          "lastPaid": "Oxirgi to'lov {{date}}",
+          "notSet": "Belgilanmagan",
+          "noPaymentYet": "To'lov hali qayd etilmagan",
+          "status": "To'lov holati",
+          "recordsCount": "{{count}} ta to'lov yozuvi",
+          "tableTitle": "To'lovlar jadvali",
+          "addManual": "Qo'lda to'lov qo'shish",
+          "noRecord": "Hozircha bu mijoz uchun to'lov yozuvi yo'q.",
+          "amountAgreed": "{{amount}} so'm",
+          "amountNegotiable": "Kelishiladi",
+          "date": "Sana: {{date}}",
+          "note": "Izoh: {{note}}",
+          "cancelReason": "Bekor sababi: {{reason}}",
+          "statusCancelled": "Bekor qilingan",
+          "statusAccepted": "Qabul qilingan",
+          "cancelAction": "Bekor qilish"
+        },
+        "measurementsTab": {
+          "weight": "Vazn",
+          "measurements": "O'lchamlar",
+          "history": "Vazn progressi",
+          "noMeasurements": "O'lchamlar kiritilmagan.",
+          "historyTitle": "O'lchamlar tarixi",
+          "dateLabel": "Sana",
+          "weightLabel": "Vazn",
+          "waistChest": "Bel / Ko'krak",
+          "thighArm": "Son / Qo'l",
+          "unitKg": "kg"
+        },
+        "plansTab": {
+          "mealPlan": "Ovqatlanish rejasi",
+          "workoutPlan": "Workout rejasi",
+          "assign": "Biriktirish",
+          "active": "Faol",
+          "source": "Manba: {{source}}",
+          "sourceAi": "AI Coach",
+          "sourceManual": "Manual",
+          "noActiveMeal": "Faol meal plan biriktirilmagan",
+          "noActiveWorkout": "Faol workout reja biriktirilmagan",
+          "templateTitle": "Mashq",
+          "templateMeal": "Taomnoma",
+          "noDescription": "Tavsif berilmagan.",
+          "title": "Biriktirilgan template'lar",
+          "empty": "Hozircha template biriktirilmagan."
+        },
+        "profile": {
+          "title": "Profil va goal",
+          "currentWeight": "Joriy vazn",
+          "targetWeight": "Maqsad vazni",
+          "startDate": "Boshlangan sana",
+          "sleep": "Uyqu",
+          "sleepValue": "{{count}} soat",
+          "bio": "Bio",
+          "noBio": "Bio kiritilmagan."
+        },
+        "aiSummary": {
+          "title": "AI Sun'iy Intelekt Xulosasi",
+          "description": "Mijozning so'nggi faolligi va oziqlanishi bo'yicha tahlil",
+          "update": "Yangilash",
+          "achievements": "Yutuqlar",
+          "needsAttention": "E'tibor talab etadi",
+          "recommendations": "Tavsiyalar",
+          "overview": "Umumiy tahlil",
+          "fats": "Yog'lar",
+          "mocks": {
+            "overview": "{{name}} oxirgi haftada belgilangan kaloriya limitiga qat'iy amal qildi va suv normasini 90% bajarmoqda. Makronutrient balansi yaxshi, ayniqsa protein iste'moli rejadagidek.",
+            "pos1": "Oxirgi 3 kunda shakar iste'moli keskin kamaygan.",
+            "pos2": "Mashqlar davomiyligi o'tgan haftaga nisbatan 15% ga oshgan.",
+            "pos3": "Uyqu rejasi barqarorlashgan (o'rtacha 7.5 soat).",
+            "con1": "Kunlik qadamlar soni hali ham maqsadli 10,000 dan kam (o'rtacha 7,200).",
+            "con2": "Dam olish kunlarida uglevodlar iste'moli rejadagidan biroz oshib ketmoqda.",
+            "rec1": "Yangi hafta uchun kardio mashqlarini 20 daqiqaga ko'paytirishni maslahat beraman.",
+            "rec2": "Kechki ovqatda sabzavotlar ulushini oshirib turish foydali bo'ladi."
+          }
+        },
+        "paymentsHistory": {
+          "title": "To'lovlar tarixi",
+          "description": "Mijoz tomonidan qilingan barcha to'lovlar ro'yxati",
+          "empty": "To'lovlar tarixi mavjud emas.",
+          "cancelConfirm": "Bu to'lovni bekor qilmoqchimisiz?",
+          "table": {
+            "date": "Sana",
+            "amount": "Summa",
+            "note": "Izoh"
+          }
+        },
+        "drawers": {
+          "groupSelection": {
+            "title": "Guruhga qo'shish",
+            "description": "{{count}} ta tanlangan mijozni guruhga qo'shing yoki yangi guruh yarating.",
+            "label": "Guruh tanlang",
+            "placeholder": "Guruhni tanlang",
+            "newGroup": "+ Yangi guruh yaratish",
+            "submit": "Guruhga qo'shish",
+            "cancel": "Bekor qilish"
+          },
+          "createGroup": {
+            "title": "Yangi guruh yarating",
+            "description": "Guruh nomi va tavsifini kiriting.",
+            "nameLabel": "Guruh nomi",
+            "namePlaceholder": "Masalan: Vazn tashlash - Guruh A",
+            "descLabel": "Tavsif (ixtiyoriy)",
+            "descPlaceholder": "Guruhning maqsadini qisqacha yozing...",
+            "submit": "A'zolarni tanlash",
+            "cancel": "Bekor qilish"
+          },
+          "memberSelection": {
+            "title": "Guruh a'zolarini tanlash",
+            "description": "Guruhga a'zo bo'ladigan mijozlarni belgilang.",
+            "searchPlaceholder": "Qidirish...",
+            "submit": "{{count}} ta mijoz bilan yaratish",
+            "submitting": "Yaratilmoqda...",
+            "back": "Orqaga"
+          },
+          "markPayment": {
+            "title": "To'lovni qayd etish",
+            "description": "{{name}} uchun to'lovni tasdiqlang.",
+            "amountLabel": "Summa",
+            "amountPlaceholder": "Summani kiriting",
+            "dateLabel": "Sana",
+            "noteLabel": "Izoh",
+            "notePlaceholder": "Payme orqali, naqd va h.k.",
+            "submit": "Saqlash",
+            "submitting": "Saqlanmoqda...",
+            "cancel": "Bekor qilish"
+          },
+          "paymentDay": {
+            "title": "To'lov kunini belgilash",
+            "description": "{{name}} uchun oylik to'lov kunini tanlang (1-31).",
+            "label": "To'lov kuni",
+            "placeholder": "Kunni tanlang",
+            "submit": "Saqlash",
+            "submitting": "Saqlanmoqda...",
+            "cancel": "Bekor qilish"
+          },
+          "cancelPayment": {
+            "title": "To'lovni bekor qilish",
+            "description": "{{name}} ning oxirgi to'lovini bekor qilmoqchimisiz?",
+            "confirm": "Ha, bekor qilish",
+            "cancel": "Yo'q, qolsin",
+            "submitting": "Bekor qilinmoqda..."
+          },
+          "assignPlan": {
+            "title": "Reja biriktirish",
+            "description": "Mijozlarga mos rejani tanlang.",
+            "searchPlaceholder": "Reja nomi bo'yicha...",
+            "mealTitle": "Meal Plan",
+            "workoutTitle": "Workout Plan",
+            "empty": "Hali rejalar yo'q. Birinchi template yarating.",
+            "submit": "Biriktirish",
+            "cancel": "Bekor qilish"
+          }
+        }
+      }
+    },
+    "payments": {
+      "header": {
+        "title": "To'lovlar",
+        "description": "Barcha to'lovlar tarixi va tranzaksiyalar monitoringi.",
+        "addPayment": "To'lov kiritish",
+        "export": "Eksport"
+      },
+      "actions": {
+        "edit": "Tahrirlash",
+        "refund": "Qaytarish",
+        "cancel": "Bekor qilish"
+      },
+      "stats": {
+        "revenue": "Jami daromad",
+        "active": "Faol obunalar",
+        "pending": "Kutilayotgan",
+        "growth": "o'sish"
+      },
+      "filters": {
+        "search": "Qidiruv",
+        "searchPlaceholder": "Mijoz nomi yoki izoh...",
+        "month": "Oy",
+        "status": "Status",
+        "all": "Barcha"
+      },
+      "table": {
+        "columns": {
+          "client": "Mijoz",
+          "amount": "Summa",
+          "date": "Sana",
+          "note": "Izoh",
+          "method": "Usul",
+          "status": "Status"
+        },
+        "viewReceipt": "Kvitansiyani ko'rish",
+        "unknownClient": "Noma'lum",
+        "negotiable": "Kelishiladi",
+        "currency": "so'm"
+      },
+      "status": {
+        "completed": "Muvaffaqiyatli",
+        "refunded": "Qaytarilgan",
+        "cancelled": "Bekor qilingan"
+      },
+      "methods": {
+        "CASH": "Naqd",
+        "CLICK": "Click",
+        "PAYME": "Payme",
+        "UZUM": "Uzum",
+        "OTHER": "Boshqa"
+      },
+      "drawers": {
+        "add": {
+          "title": "To'lov kiritish",
+          "description": "Mijozdan olingan to'lovni tizimga qayd etish.",
+          "clientLabel": "Mijozni tanlang",
+          "amountLabel": "To'lov summasi",
+          "methodLabel": "To'lov usuli",
+          "noteLabel": "Izoh (ixtiyoriy)",
+          "receiptLabel": "Kvitansiya (ixtiyoriy)",
+          "uploading": "Yuklanmoqda...",
+          "submit": "Saqlash"
+        },
+        "edit": {
+          "title": "To'lovni tahrirlash",
+          "description": "To'lov ma'lumotlarini yangilash."
+        },
+        "cancel": {
+          "title": "To'lovni bekor qilish",
+          "description": "Ushbu to'lovni bekor qilish sababini ko'rsating.",
+          "reasonLabel": "Bekor qilish sababi",
+          "submit": "Bekor qilish"
+        },
+        "refund": {
+          "title": "To'lovni qaytarish",
+          "description": "Mijozga pulni qaytarish.",
+          "reasonLabel": "Qaytarish sababi",
+          "reasonPlaceholder": "Masalan: Mijoz voz kechdi",
+          "submit": "Qaytarish"
+        }
+      },
+      "toasts": {
+        "receiptUploaded": "Kvitansiya yuklandi!",
+        "uploadError": "Kvitansiya yuklashda xatolik!",
+        "exportNoData": "Eksport qilish uchun ma'lumot yo'q.",
+        "exportSuccess": "Muvaffaqiyatli eksport qilindi!",
+        "clientRequired": "Mijozni tanlang.",
+        "amountRequired": "To'lov summasini kiriting.",
+        "saveSuccess": "To'lov muvaffaqiyatli qayd etildi.",
+        "updateSuccess": "To'lov muvaffaqiyatli yangilandi.",
+        "cancelSuccess": "To'lov muvaffaqiyatli bekor qilindi.",
+        "refundSuccess": "To'lov muvaffaqiyatli qaytarildi."
+      }
+    },
+    "sessions": {
+      "header": {
+        "title": "Uchrashuvlar",
+        "subtitle": "Mijozlar bilan sessionlarni boshqaring",
+        "description": "Chatdan yuborilgan slotlar, band qilingan consultationlar va tugallangan uchrashuvlar shu yerda ko'rinadi.",
+        "clientsBtn": "Mijozlar",
+        "chatBtn": "Chatni ochish"
+      },
+      "summary": {
+        "proposed": "Tanlov kutilmoqda",
+        "proposedHint": "Mijoz hali slot tanlamagan",
+        "scheduled": "Band qilingan",
+        "scheduledHint": "O'tkazilishi kerak bo'lgan sessiyalar",
+        "completed": "Tugallangan",
+        "completedHint": "Yakunlangan consultationlar",
+        "cancelled": "Bekor qilingan",
+        "cancelledHint": "O'tmay qolgan bookinglar"
+      },
+      "tabs": {
+        "flow": "Sessiyalar oqimi",
+        "flowDesc": "Pending, scheduled va history holatlari.",
+        "upcoming": "Faol bronlar",
+        "history": "Tarix"
+      },
+      "empty": {
+        "upcomingTitle": "Faol bookinglar yo'q",
+        "upcomingDesc": "Yangi sessionni mijoz bilan chat ichidan boshlang.",
+        "history": "Hozircha history bo'sh.",
+        "loading": "Yuklanmoqda...",
+        "activeNoBookings": "Faol bookinglar yo'q"
+      },
+      "dialogs": {
+        "cancel": {
+          "title": "Bookingni bekor qilasizmi?",
+          "description": "Bu holat chatdagi booking widgetda ham yangilanadi.",
+          "confirm": "Bekor qilish"
+        },
+        "complete": {
+          "title": "Sessiyani tugallaysizmi?",
+          "description": "Bu booking completed holatiga o'tadi va mijoz history bo'limiga tushadi.",
+          "confirm": "Tugatish"
+        }
+      },
+      "toasts": {
+        "cancelSuccess": "Booking bekor qilindi",
+        "cancelError": "Bookingni bekor qilib bo'lmadi",
+        "completeSuccess": "Sessiya tugallandi",
+        "completeError": "Sessiyani tugallab bo'lmadi"
+      }
+    },
+    "mealPlans": {
+      "header": {
+        "title": "Ovqatlanish rejalari",
+        "description": "Template yaratish, tahrirlash va clientlarga biriktirish.",
+        "newTemplate": "Yangi template"
+      },
+      "actions": {
+        "edit": "Tahrirlash",
+        "content": "Plan tarkibi",
+        "assign": "Mijozlarga biriktirish",
+        "duplicate": "Nusxalash",
+        "delete": "O'chirish"
+      },
+      "table": {
+        "columns": {
+          "template": "Template",
+          "meals": "Ovqat",
+          "days": "Kun",
+          "calories": "Kaloriya",
+          "assigned": "Biriktirilgan",
+          "updated": "Yangilandi"
+        },
+        "mealCount": "{{count}} ta",
+        "dayCount": "{{count}} kun",
+        "calorieUnit": "kkal",
+        "unassigned": "Yo'q"
+      },
+      "filters": {
+        "search": "Qidiruv",
+        "searchPlaceholder": "Reja nomi bo'yicha qidiring",
+        "source": "Manba",
+        "allSources": "Barcha manbalar",
+        "manual": "Manual",
+        "ai": "AI",
+        "assignment": "Biriktirish",
+        "allTemplates": "Barcha template'lar",
+        "assigned": "Mijozga biriktirilgan",
+        "unassigned": "Bo'sh template"
+      },
+      "drawers": {
+        "meta": {
+          "createTitle": "Yangi template",
+          "editTitle": "Template ma'lumotlari",
+          "description": {
+            "create": "Avval template nomi va izohini kiriting, keyin builder ochiladi.",
+            "edit": "Nom va izohni yangilang, keyin builderda tarkibni tahrir qiling."
+          },
+          "nameLabel": "Template nomi",
+          "namePlaceholder": "Masalan: Vazn yo'qotish rejasi",
+          "descLabel": "Izoh",
+          "descPlaceholder": "Template maqsadi yoki qisqacha tavsifini yozing",
+          "continue": "Saqlash va davom etish",
+          "saveEdit": "Saqlash va tahrirlash",
+          "saveOnly": "Faqat ma'lumotlarni saqlash"
+        },
+        "assign": {
+          "title": "Mijozlarga biriktirish",
+          "description": "{{title}} uchun client tanlang.",
+          "searchPlaceholder": "Mijoz qidirish...",
+          "noClients": "Biriktirish uchun client yo'q.",
+          "submit": "Saqlash",
+          "status": {
+            "active": "Faol",
+            "paused": "Pauza",
+            "inactive": "Faolsiz"
+          },
+          "selection": {
+            "selected": "Tanlangan",
+            "unselected": "Tanlash"
+          }
+        }
+      },
+      "deleteDialog": {
+        "title": "Template'ni o'chirish",
+        "description": "{{title}} o'chiriladi. Bu amalni ortga qaytarib bo'lmaydi.",
+        "cancel": "Bekor qilish",
+        "confirm": "O'chirish"
+      },
+      "toasts": {
+        "nameRequired": "Reja nomini kiriting",
+        "saveSuccess": "Reja ma'lumotlari yangilandi",
+        "saveError": "Ma'lumotlarni saqlashda xatolik yuz berdi",
+        "updateSuccess": "Meal plan yangilandi",
+        "createSuccess": "Meal plan yaratildi",
+        "assignSuccess": "Mijozlar yangilandi",
+        "duplicateSuccess": "Plan nusxalandi",
+        "deleteSuccess": "Plan o'chirildi"
+      },
+      "empty": "Template topilmadi.",
+      "noDescription": "Tavsif kiritilmagan",
+      "defaultNewName": "Yangi template {{date}}"
+    },
+    "workoutPlans": {
+      "header": {
+        "title": "Workout rejalari",
+        "description": "Mashg'ulot template'larini boshqarish.",
+        "newTemplate": "Yangi template"
+      },
+      "table": {
+        "columns": {
+          "template": "Template",
+          "exercises": "Mashqlar",
+          "days": "Kunlar",
+          "clients": "Mijozlar",
+          "updated": "Yangilandi"
+        },
+        "exerciseCount": "{{count}} ta",
+        "dayCount": "{{count}} kun",
+        "clientCount": "{{count}} ta mijoz",
+        "unassigned": "Biriktirilmagan"
+      },
+      "filters": {
+        "search": "Qidiruv",
+        "searchPlaceholder": "Reja nomi bo'yicha qidiring",
+        "assignment": "Biriktirish",
+        "all": "Barchasi",
+        "assigned": "Mijozga biriktirilgan",
+        "unassigned": "Bo'sh"
+      },
+      "actions": {
+        "edit": "Tahrirlash",
+        "structure": "Plan tarkibi",
+        "assign": "Mijozlarga biriktirish",
+        "delete": "O'chirish"
+      },
+      "drawers": {
+        "meta": {
+          "createTitle": "Reja yaratish",
+          "editTitle": "Rejani tahrirlash",
+          "description": "Reja nomi va qisqacha tavsifini kiriting. Keyin haftalik builder ochiladi.",
+          "nameLabel": "Reja nomi",
+          "namePlaceholder": "Masalan: Full Body A",
+          "descLabel": "Tavsif (ixtiyoriy)",
+          "descPlaceholder": "Ushbu reja haqida batafsil ma'lumot...",
+          "createAction": "Yaratish",
+          "saveEditAction": "Saqlash va tahrirlash",
+          "saveOnlyAction": "Faqat ma'lumotlarni saqlash"
+        },
+        "assign": {
+          "title": "Mijozlarga biriktirish",
+          "description": "Ushbu rejani qaysi mijozlarga biriktirmoqchisiz?",
+          "searchPlaceholder": "Mijoz qidirish...",
+          "noClients": "Mijoz topilmadi.",
+          "submit": "Saqlash"
+        }
+      },
+      "deleteDialog": {
+        "title": "O'chirishni tasdiqlang",
+        "cancel": "Bekor qilish",
+        "confirm": "O'chirish"
+      },
+      "toasts": {
+        "nameRequired": "Reja nomini kiriting",
+        "createSuccess": "Workout reja yaratildi",
+        "createError": "Reja yaratishda xatolik yuz berdi",
+        "updateSuccess": "Reja ma'lumotlari yangilandi",
+        "updateError": "Ma'lumotlarni saqlashda xatolik yuz berdi",
+        "saveSuccess": "Workout reja saqlandi",
+        "assignSuccess": "Mijozlar yangilandi",
+        "minOneDay": "Kamida 1 ta kun qo'shing"
+      }
+    },
+    "groups": {
+        "header": {
+          "title": "Guruhlar",
+          "description": "Mijozlaringizni guruhlarga ajrating va boshqaring.",
+          "newGroup": "Yangi guruh"
+        },
+        "breadcrumbs": {
+          "coach": "Murabbiy",
+          "groups": "Guruhlar"
+        },
+        "filters": {
+          "searchPlaceholder": "Guruh nomi..."
+        },
+        "table": {
+          "columns": {
+            "name": "Guruh nomi",
+            "members": "A'zolar"
+          },
+          "noDescription": "Ta'rifsiz",
+          "memberCount": "{{count}} ta mijoz",
+          "empty": "Guruhlar topilmadi."
+        },
+        "actions": {
+          "workoutPlan": "Mashg'ulot rejasi",
+          "mealPlan": "Ovqatlanish rejasi",
+          "leaderboard": "Leaderboard",
+          "editMembers": "A'zolarni tahrirlash",
+          "edit": "Tahrirlash",
+          "delete": "O'chirish"
+        },
+        "drawers": {
+          "meta": {
+            "editTitle": "Guruhni tahrirlash",
+            "createTitle": "Yangi guruh",
+            "description": "Guruh ma'lumotlarini kiriting va mijozlarni tanlang.",
+            "nameLabel": "Guruh nomi",
+            "namePlaceholder": "Masalan: Erkaklar (Vazn yo'qotish)",
+            "descLabel": "Ta'rif",
+            "descPlaceholder": "Guruh haqida batafsil...",
+            "continue": "Davom etish"
+          },
+          "selection": {
+            "title": "Mijozlarni tanlang",
+            "description": "Guruhga qo'shish uchun mijozlarni tanlang.",
+            "searchPlaceholder": "Mijozni qidirish...",
+            "noContact": "Kontakt yo'q",
+            "noClients": "Mijozlar topilmadi.",
+            "save": "Saqlash",
+            "create": "Guruh yaratish"
+          },
+          "plan": {
+            "mealTitle": "Ovqatlanish rejasini tanlang",
+            "workoutTitle": "Mashg'ulot rejasini tanlang",
+            "description": "Ushbu reja guruhning barcha a'zolariga biriktiriladi."
+          },
+          "leaderboard": {
+            "title": "Leaderboard",
+            "description": "Guruh a'zolarining haftalik natijalari",
+            "winner": "Winner",
+            "player": "Player",
+            "close": "Yopish"
+          }
+        },
+        "deleteDialog": {
+          "title": "Guruhni o'chirish",
+          "description": "Haqiqatan ham \"{{name}}\" guruhini o'chirib tashlamoqchimisiz? Bu amalni ortga qaytarib bo'lmaydi.",
+          "cancel": "Bekor qilish",
+          "confirm": "O'chirish"
+        },
+        "toasts": {
+          "nameRequired": "Guruh nomini kiriting",
+          "selectAtLeastOne": "Kamida bitta mijozni tanlang",
+          "updateSuccess": "Guruh muvaffaqiyatli tahrirlandi",
+          "createSuccess": "Yangi guruh yaratildi",
+          "error": "Xatolik yuz berdi",
+          "deleteSuccess": "Guruh o'chirildi",
+          "mealPlanAssigned": "Ovqatlanish rejasi guruhga biriktirildi",
+          "workoutPlanAssigned": "Mashg'ulot rejasi guruhga biriktirildi"
+        }
+      },
+      "marketplace": {
+        "header": {
+          "title": "Marketplace Sozlamalari",
+          "description": "Profilingizni umumiy katalogda ko'rinishini boshqaring"
+        },
+        "statusCard": {
+          "title": "Hozirgi Holat",
+          "description": "Marketplace listing statusi",
+          "adminNote": "Admin izohi:",
+          "approved": {
+            "label": "Tasdiqlangan",
+            "description": "Sizning profilingiz marketplaceda barcha foydalanuvchilarga ko'rinadi.",
+            "active": "Marketplaceda ko'rinmoqda"
+          },
+          "pending": {
+            "label": "Kutilmoqda",
+            "description": "Sizning so'rovingiz admin tomonidan ko'rib chiqilmoqda.",
+            "cancel": "So'rovni bekor qilish"
+          },
+          "rejected": {
+            "label": "Rad etilgan",
+            "description": "Sizning so'rovingiz rad etildi. Iltimos, izohni ko'ring."
+          },
+          "none": {
+            "label": "Marketplaceda emas",
+            "description": "Siz hali marketplaceda emassiz. Chiqish uchun so'rov yuboring.",
+            "request": "Marketplacega chiqish so'rovi"
+          }
+        },
+        "infoCards": {
+          "whatIs": {
+            "title": "Marketplace nima?",
+            "description": "Marketplace — bu Liveon ilovasining barcha foydalanuvchilari uchun ochiq katalog bo'lib, ular u erda o'zlariga murabbiy topishlari va ularga obuna bo'lishlari mumkin."
+          },
+          "process": {
+            "title": "Tasdiqlash jarayoni",
+            "description": "Har bir murabbiy so'rovi adminlarimiz tomonidan tekshiriladi. Bu jarayon odatda 24-48 soat davom etadi. Ma'lumotlaringiz to'liq ekanligiga ishonch hosil qiling."
+          }
+        },
+        "toasts": {
+          "requestSuccess": "Marketplace so'rovi yuborildi",
+          "requestError": "So'rov yuborib bo'lmadi",
+          "cancelSuccess": "Marketplace so'rovi bekor qilindi",
+          "cancelError": "So'rovni bekor qilib bo'lmadi"
+        }
+      },
+      "workoutBuilder": {
+        "header": {
+          "title": "Workout Builder",
+          "cancel": "Bekor qilish",
+          "save": "Saqlash"
+        },
+        "sidebar": {
+          "searchPlaceholder": "Admin kutubxonasidan qidirish...",
+          "officialExercises": "Rasmiy mashqlar",
+          "countSuffix": "ta",
+          "empty": "Mashqlar topilmadi"
+        },
+        "days": {
+          "mon": "Dushanba",
+          "tue": "Seshanba",
+          "wed": "Chorshanba",
+          "thu": "Payshanba",
+          "fri": "Juma",
+          "sat": "Shanba",
+          "sun": "Yakshanba",
+          "empty": "Mashqni bu yerga sudrab tashlang"
+        },
+        "item": {
+          "sets": "Setlar",
+          "rest": "Dam",
+          "moving": "Mashq ko'chirilmoqda",
+          "defaultName": "Mashq"
+        },
+        "toasts": {
+          "added": "{{name}} qo'shildi"
+        }
+      },
+      "workoutBuilderManual": {
+        "title": "Vizual Konstruktor",
+        "description": "Mashqlarni qo'shing, tahrirlang va tartiblang.",
+        "aiAssistant": "AI Yordamchi",
+        "generating": "Generatsiya...",
+        "empty": {
+          "title": "Bu rejada mashqlar yo'q",
+          "description": "Qo'lda mashq qo'shing yoki AI yordamchisidan foydalaning.",
+          "addFirst": "Birinchi mashqni qo'shish"
+        },
+        "fields": {
+          "name": "Mashq nomi",
+          "namePlaceholder": "masalan, Shtanga cho'qqayish",
+          "muscle": "Mushak guruhi",
+          "musclePlaceholder": "Oyoq",
+          "sets": "Set/Takror",
+          "setsPlaceholder": "3x10",
+          "rest": "Dam",
+          "restPlaceholder": "60s"
+        },
+        "actions": {
+          "addMore": "Yana mashq qo'shish",
+          "cancel": "Bekor qilish",
+          "save": "Saqlash ({{count}} ta)"
+        },
+        "toasts": {
+          "aiSuccess": "AI tomonidan mashqlar generatsiya qilindi ✨"
+        },
+        "aiMocks": {
+          "squats": "Shtanga bilan cho'qqayish",
+          "benchPress": "Jim yotgan holda",
+          "pullUps": "Turnikda tortilish",
+          "bicepCurls": "Gantel ko'tarish",
+          "plank": "Planka",
+          "legs": "Oyoq",
+          "chest": "Ko'krak",
+          "back": "Orqa",
+          "arms": "Qo'l",
+          "core": "Qorin"
+        }
+      },
+      "mealBuilder": {
+        "header": {
+          "editTitle": "Rejani Tahrirlash",
+          "newTitle": "Yangi Ovqatlanish Rejasi",
+          "description": "Ozuqaviy qiymatlarni aniq kuzating",
+          "aiMenu": "AI Menyusi",
+          "generating": "Tuzilmoqda..."
+        },
+        "meta": {
+          "planName": "Reja Nomi",
+          "planNamePlaceholder": "Masalan: 30 kunlik vazn tashlash",
+          "description": "Tavsif",
+          "descriptionPlaceholder": "Asosiy qoidalar...",
+          "duration": "Davomiyligi",
+          "durationPlaceholder": "Masalan: 4 hafta",
+          "tags": "Teglar",
+          "tagsPlaceholder": "Keto, Arzon"
+        },
+        "summary": {
+          "totalCalories": "Jami Kaloriya",
+          "protein": "Oqsil",
+          "carbs": "Uglevod",
+          "fat": "Yog'"
+        },
+        "meals": {
+          "title": "Menyu tarkibi",
+          "addMeal": "Ovqat qo'shish",
+          "empty": "Hali ovqatlanishlar ro'yxati shakllanmagan. Mavjudini tahrirlang yoki AI yordamida tezgina yarating.",
+          "type": "Turi",
+          "mealName": "Taom nomi",
+          "mealNamePlaceholder": "Masalan: 2 ta qaynatilgan tuxum + bodring",
+          "proteinLabel": "Oqsil (g)",
+          "carbsLabel": "Ugl (g)",
+          "fatLabel": "Yog' (g)",
+          "auto": "Avto",
+          "types": {
+            "breakfast": "Nonushta",
+            "lunch": "Tushlik",
+            "dinner": "Kechlik",
+            "snack": "Gazak",
+            "lateSnack": "Kechki gazak"
+          }
+        },
+        "info": "Agar siz kaloriyani kiritmasangiz, dastur avtomatik ravishda makrolar (Oqsilx4 + Uglx4 + Yog'x9) orqali hisoblaydi.",
+        "footer": {
+          "cancel": "Bekor qilish",
+          "save": "Rejani Saqlash ({{count}} ta ovqat)"
+        },
+        "toasts": {
+          "enterTitle": "Reja nomini kiriting",
+          "aiSuccess": "AI dietolog menyuni muvaffaqiyatli shakllantirdi ✨"
+        },
+        "aiDefaults": {
+          "title": "AI Og'irlik yig'ish (Maxsus)",
+          "description": "Sun'iy intellekt tomonidan tuzilgan yuqori kaloriyali reja",
+          "duration": "4 hafta",
+          "meals": {
+            "oatmeal": "Suli bo'tqasi + Asal + Yong'oq",
+            "chicken": "Qaynatilgan tovuq ko'kragi + Tovuq + Guruch",
+            "salmon": "Losos balig'i + Limonli ismaloq",
+            "nuts": "Yunon yong'og'i 30g + Olma"
+          }
+        }
+      },
+      "challenges": {
+        "title": "Musobaqalar",
+        "addChallenge": "Musobaqa qo'shish",
+        "countSuffix": "ta musobaqa",
+        "status": {
+          "upcoming": "Boshlanmagan",
+          "active": "Faol",
+          "completed": "Yakunlangan",
+          "cancelled": "Bekor qilingan"
+        },
+        "rewardModes": {
+          "fixedXp": {
+            "label": "Fixed XP",
+            "description": "Doimiy XP beriladi"
+          },
+          "percentOfPool": {
+            "label": "Pool foizi",
+            "description": "Yig'ilgan XP havzasidan foiz"
+          },
+          "placeXp": {
+            "label": "O'rinlar bo'yicha",
+            "description": "1-2-3 o'rinlar uchun alohida XP"
+          }
+        },
+        "metricTypes": {
+          "steps": {
+            "label": "Qadam",
+            "unit": "qadam"
+          },
+          "workoutMinutes": {
+            "label": "Mashq vaqti",
+            "unit": "daqiqa"
+          },
+          "burnedCalories": {
+            "label": "Yondirilgan kaloriya",
+            "unit": "kcal"
+          },
+          "sleepHours": {
+            "label": "Uyqu",
+            "unit": "soat"
+          }
+        },
+        "aggregations": {
+          "sum": "Yig'indi",
+          "average": "O'rtacha"
+        },
+        "table": {
+          "columns": {
+            "challenge": "Musobaqa",
+            "status": "Holati",
+            "period": "Muddati",
+            "stats": "Statistika"
+          },
+          "unnamed": "Nomsiz",
+          "noDescription": "Ta'rif kiritilmagan",
+          "rewardPrefix": "Mukofot: ",
+          "placeSuffix": "-o'rin",
+          "placeRewardsLabel": "O'rin mukofotlari"
+        },
+        "filters": {
+          "search": {
+            "label": "Qidiruv",
+            "placeholder": "Ism yoki ta'rifi"
+          },
+          "status": {
+            "label": "Holati",
+            "all": "Barcha holatlar"
+          }
+        },
+        "empty": "Filtrlarga mos musobaqa topilmadi.",
+        "drawer": {
+          "editTitle": "Musobaqani tahrirlash",
+          "newTitle": "Yangi musobaqa",
+          "description": "Mijozlaringiz uchun musobaqa sozlamalarini boshqaring.",
+          "sections": {
+            "basicInfo": "Asosiy ma'lumotlar",
+            "timeAndStatus": "Vaqt va holat",
+            "settings": "Musobaqa sozlamalari",
+            "participants": "Ishtirokchilar"
+          },
+          "fields": {
+            "coverImage": "Cover rasmi",
+            "selectImage": "Rasm tanlash",
+            "removeImage": "Olib tashlash",
+            "title": "Sarlavha",
+            "titlePlaceholder": "Masalan: 30 kunlik fitness marafon",
+            "descriptionLabel": "Ta'rif",
+            "descriptionPlaceholder": "Musobaqa haqida qisqacha ma'lumot",
+            "status": "Holati",
+            "startTime": "Boshlanish vaqti",
+            "endTime": "Tugash vaqti",
+            "joinFee": "Kirish narxi (XP)",
+            "maxParticipants": "Maks ishtirokchilar",
+            "infinite": "Cheksiz",
+            "rewardMode": "Mukofot rejimi",
+            "metric": "Challenge metrikasi",
+            "aggregation": "Hisoblash usuli",
+            "target": "Maqsad",
+            "totalReward": "Umumiy mukofot (XP)",
+            "rewardPercent": "Mukofot foizi (%)",
+            "placeInfoPercent": "Kirish narxi mavjud: o'rinlar uchun foiz kiriting (masalan 50, 30, 20).",
+            "placeInfoFixed": "Kirish narxi 0: o'rinlar uchun to'g'ridan-to'g'ri XP kiriting.",
+            "placeLabel": "{{place}}-o'rin",
+            "participantsDescription": "Ushbu musobaqada qatnashadigan mijozlaringizni tanlang.",
+            "noClients": "Hozircha mijozlaringiz yo'q."
+          }
+        },
+        "toasts": {
+          "titleRequired": "Sarlavha kiritilishi shart",
+          "updateSuccess": "Musobaqa yangilandi",
+          "createSuccess": "Musobaqa yaratildi va taklifnomalar yuborildi",
+          "error": "Xatolik yuz berdi",
+          "deleteSuccess": "Musobaqa o'chirildi",
+          "deleteError": "O'chirishda xatolik",
+          "shareSuccess": "Musobaqa chatga yuborildi"
+        },
+        "deleteDialog": {
+          "title": "Musobaqani o'chirmoqchimisiz?",
+          "description": "{{title}} butunlay o'chiriladi.",
+          "confirm": "O'chirish",
+          "deleting": "O'chirilmoqda..."
+        },
+        "shareDialog": {
+          "prefix": "Musobaqa: "
+        },
+        "actions": {
+          "edit": "Tahrirlash",
+          "share": "Chatga yuborish",
+          "delete": "O'chirish"
+        }
+      }
+    }
+  }

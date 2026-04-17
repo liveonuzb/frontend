@@ -1,0 +1,103 @@
+{
+  "auth": {
+    "signIn": {
+      "title": "С возвращением",
+      "subtitle": "Войдите в аккаунт LiveOn",
+      "emailTab": "Email",
+      "phoneTab": "Телефон",
+      "emailLabel": "Email",
+      "emailPlaceholder": "m@example.com",
+      "passwordLabel": "Пароль",
+      "forgotPassword": "Забыли пароль?",
+      "loginButton": "Войти",
+      "loggingIn": "Выполняется вход...",
+      "noAccount": "Нет аккаунта?",
+      "signUpLink": "Зарегистрироваться",
+      "continueWith": "Или продолжить с",
+      "termsText": "Нажимая продолжить, вы соглашаетесь с нашими",
+      "termsLink": "Условиями использования",
+      "andText": "и",
+      "privacyLink": "Политикой конфиденциальности",
+      "termsEnd": "."
+    },
+    "signUp": {
+      "title": "Создать аккаунт",
+      "subtitle": "Зарегистрируйтесь бесплатно и начните",
+      "emailTab": "Email",
+      "phoneTab": "Телефон",
+      "emailLabel": "Email",
+      "emailPlaceholder": "m@example.com",
+      "phoneLabel": "Номер телефона",
+      "passwordLabel": "Пароль",
+      "confirmPasswordLabel": "Подтвердите пароль",
+      "signUpButton": "Зарегистрироваться",
+      "signingUp": "Регистрация...",
+      "haveAccount": "Уже есть аккаунт?",
+      "signInLink": "Войти",
+      "continueWith": "Или продолжить с",
+      "termsText": "Нажимая продолжить, вы соглашаетесь с нашими",
+      "termsLink": "Условиями использования",
+      "andText": "и",
+      "privacyLink": "Политикой конфиденциальности",
+      "termsEnd": ".",
+      "referralInvited": "Вас пригласили!",
+      "referralInvitedByName": "Вас пригласил(а) {{name}}!"
+    },
+    "forgotPassword": {
+      "title": "Забыли пароль?",
+      "subtitle": "Введите email или номер телефона, мы отправим код подтверждения",
+      "emailTab": "Email",
+      "phoneTab": "Телефон",
+      "emailLabel": "Email",
+      "emailPlaceholder": "m@example.com",
+      "phoneLabel": "Номер телефона",
+      "sendButton": "Отправить код",
+      "sending": "Отправка...",
+      "rememberPassword": "Вспомнили пароль?",
+      "backToSignIn": "Вернуться к входу"
+    },
+    "otpVerify": {
+      "titleVerify": "Подтвердите аккаунт",
+      "titleReset": "Подтвердите сброс пароля",
+      "subtitleWithId": "Введите 6-значный код, отправленный на {{identity}}",
+      "subtitleDefault": "Введите 6-значный код, отправленный на ваш email или телефон",
+      "verifyButton": "Подтвердить",
+      "verifying": "Проверка...",
+      "didntReceive": "Не получили код?",
+      "resend": "Отправить снова",
+      "resending": "Отправка...",
+      "resendIn": "Отправить снова ({{s}}с)",
+      "backToSignIn": "Вернуться к входу"
+    },
+    "resetPassword": {
+      "title": "Установить новый пароль",
+      "subtitle": "Введите надёжный пароль",
+      "newPasswordLabel": "Новый пароль",
+      "confirmPasswordLabel": "Подтвердите новый пароль",
+      "resetButton": "Сбросить пароль",
+      "resetting": "Сброс..."
+    },
+    "setPassword": {
+      "title": "Завершите настройку аккаунта",
+      "subtitle": "Создайте пароль, чтобы потом входить по номеру телефона.",
+      "newPasswordLabel": "Новый пароль",
+      "confirmPasswordLabel": "Подтвердите новый пароль",
+      "saveButton": "Сохранить пароль",
+      "saving": "Сохранение...",
+      "success": "Пароль успешно создан.",
+      "error": "Не удалось сохранить пароль."
+    },
+    "validation": {
+      "emailRequired": "Email обязателен",
+      "emailInvalid": "Неверный формат email",
+      "passwordRequired": "Пароль обязателен",
+      "passwordMin": "Пароль должен содержать не менее 6 символов",
+      "confirmPasswordRequired": "Подтверждение пароля обязательно",
+      "passwordsNoMatch": "Пароли не совпадают",
+      "phoneRequired": "Номер телефона обязателен",
+      "phoneInvalid": "Телефон должен соответствовать формату +998-##-###-##-##",
+      "otpMin": "Пожалуйста, введите все 6 цифр",
+      "otpMax": "OTP должен состоять из 6 цифр"
+    }
+  }
+}

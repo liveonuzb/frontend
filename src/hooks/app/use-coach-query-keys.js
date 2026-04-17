@@ -1,0 +1,14 @@
+export const COACH_DASHBOARD_QUERY_KEY = ["coach", "dashboard"];
+export const COACH_CLIENTS_QUERY_KEY = ["coach", "clients"];
+export const COACH_CLIENT_DETAIL_QUERY_KEY = ["coach", "client-detail"];
+export const COACH_CLIENT_SUMMARY_QUERY_KEY = ["coach", "client-summary"];
+export const COACH_CLIENT_REMINDERS_QUERY_KEY = ["coach", "client-reminders"];
+export const COACH_CLIENT_NOTES_QUERY_KEY = ["coach", "client-notes"];
+export const COACH_MEAL_PLANS_QUERY_KEY = ["coach", "meal-plans"];
+export const COACH_WORKOUT_PLANS_QUERY_KEY = ["coach", "workout-plans"];
+export const COACH_PROGRAMS_QUERY_KEY = ["coach", "programs"];
+export const COACH_PAYMENTS_QUERY_KEY = ["coach", "payments"];
+export const COACH_GROUPS_QUERY_KEY = ["coach", "groups"];
+export const COACH_SNIPPETS_QUERY_KEY = ["coach", "snippets"];
+export const COACH_AVAILABILITY_QUERY_KEY = ["coach", "availability"];
+export const COACH_TELEGRAM_QUERY_KEY = ["coach", "telegram"];

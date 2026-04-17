@@ -1,0 +1,232 @@
+{
+  "common": {
+    "actions": {
+      "save": "Сохранить",
+      "saving": "Сохранение...",
+      "cancel": "Отмена",
+      "delete": "Удалить",
+      "deleting": "Удаление...",
+      "edit": "Редактировать",
+      "back": "Назад",
+      "next": "Далее",
+      "close": "Закрыть",
+      "confirm": "Подтвердить",
+      "search": "Поиск",
+      "filter": "Фильтр",
+      "refresh": "Обновить",
+      "add": "Добавить",
+      "create": "Создать",
+      "update": "Обновить",
+      "submit": "Отправить",
+      "loading": "Загрузка...",
+      "viewAll": "Показать все",
+      "copy": "Копировать",
+      "share": "Поделиться",
+      "download": "Скачать",
+      "upload": "Загрузить",
+      "select": "Выбрать",
+      "continue": "Продолжить",
+      "finish": "Завершить",
+      "retry": "Повторить"
+    },
+    "status": {
+      "active": "Активен",
+      "inactive": "Неактивен",
+      "pending": "Ожидание",
+      "approved": "Одобрено",
+      "rejected": "Отклонено",
+      "expired": "Истек",
+      "cancelled": "Отменен",
+      "completed": "Завершен",
+      "draft": "Черновик",
+      "sent": "Отправлено",
+      "failed": "Ошибка",
+      "frozen": "Заморожен"
+    },
+    "time": {
+      "today": "Сегодня",
+      "yesterday": "Вчера",
+      "thisWeek": "На этой неделе",
+      "thisMonth": "В этом месяце",
+      "days": "дней",
+      "hours": "часов",
+      "minutes": "минут"
+    },
+    "weekDays": {
+      "monday": "Понедельник",
+      "tuesday": "Вторник",
+      "wednesday": "Среда",
+      "thursday": "Четверг",
+      "friday": "Пятница",
+      "saturday": "Суббота",
+      "sunday": "Воскресенье"
+    },
+    "table": {
+      "noResults": "Результаты не найдены",
+      "showing": "Показано",
+      "of": "из",
+      "page": "Страница",
+      "perPage": "На странице",
+      "sortBy": "Сортировать по"
+    },
+    "form": {
+      "required": "Обязательно",
+      "optional": "Необязательно",
+      "fieldRequired": "Это поле обязательно",
+      "invalidFormat": "Неверный формат",
+      "minLength": "Минимум {{min}} символов",
+      "maxLength": "Максимум {{max}} символов"
+    },
+    "errors": {
+      "general": "Произошла ошибка",
+      "notFound": "Не найдено",
+      "unauthorized": "Не авторизован",
+      "networkError": "Ошибка сети",
+      "tryAgain": "Пожалуйста, попробуйте снова"
+    },
+    "confirm": {
+      "deleteTitle": "Подтвердите удаление?",
+      "deleteDescription": "Это действие нельзя отменить.",
+      "yes": "Да",
+      "no": "Нет"
+    },
+    "currency": {
+      "sum": "сум",
+      "monthly": "в месяц"
+    },
+    "units": {
+      "kg": "кг",
+      "cm": "см",
+      "kcal": "ккал",
+      "ml": "мл",
+      "steps": "шагов"
+    }
+  },
+  "components": {
+    "workoutPlanBuilder": {
+      "dayName": "День {{count}}",
+      "header": {
+        "closeLabel": "Закрыть конструктор",
+        "title": "Конструктор тренировок",
+        "description": "Управляйте структурой тренировок на неделю.",
+        "addDay": "День"
+      },
+      "footer": {
+        "savePlan": "Сохранить план"
+      },
+      "form": {
+        "createTitle": "Новый план тренировок",
+        "editTitle": "Редактировать план тренировок",
+        "createDescription": "Заполните тренировочные дни и упражнения, чтобы завершить план.",
+        "editDescription": "Обновите тренировочные дни и упражнения.",
+        "saving": "Сохранение...",
+        "createAction": "Создать план",
+        "saveAction": "Сохранить план",
+        "loading": "Загрузка плана тренировок.",
+        "loadingState": "Загрузка плана тренировок...",
+        "loadError": "Не удалось загрузить данные плана тренировок.",
+        "notFound": "Выбранный план тренировок не найден или не загрузился.",
+        "retry": "Повторить",
+        "close": "Закрыть"
+      },
+      "meta": {
+        "createTitle": "Новый план тренировок",
+        "editTitle": "Редактировать план тренировок",
+        "createDescription": "Сначала введите название плана и короткое описание. Затем откроется конструктор.",
+        "editDescription": "Сначала обновите название и описание. Затем откроется конструктор.",
+        "nameLabel": "Название плана",
+        "namePlaceholder": "Например: Full body start",
+        "descriptionLabel": "Описание",
+        "descriptionPlaceholder": "Цель плана или короткая заметка...",
+        "continue": "Продолжить",
+        "cancel": "Отмена"
+      },
+      "desktop": {
+        "searchPlaceholder": "Поиск упражнений...",
+        "allCategories": "Все категории",
+        "noExercises": "Не найдено",
+        "tryDifferentSearch": "Попробуйте другой запрос",
+        "closeLibrary": "Закрыть библиотеку",
+        "openLibrary": "Открыть библиотеку",
+        "addNewDay": "Добавить новый день",
+        "moving": "Перемещение..."
+      },
+      "mobile": {
+        "noDays": "Дней пока нет",
+        "pressAddDay": "Нажмите кнопку \"+ День\" выше",
+        "selectDay": "Выберите день выше",
+        "addExercise": "Добавить упражнение",
+        "chooseFromLibrary": "Выбрать из библиотеки",
+        "addExerciseButton": "Добавить упражнение"
+      },
+      "column": {
+        "dayNamePlaceholder": "Название дня...",
+        "deleteDayLabel": "Удалить день {{name}}",
+        "deleteExerciseLabel": "Удалить упражнение {{name}}",
+        "focusPlaceholder": "Фокус (напр. День ног)...",
+        "dragDrop": "Перетащите упражнения сюда"
+      },
+      "categories": {
+        "general": "Общее",
+        "chest": "Грудь",
+        "back": "Спина",
+        "legs": "Ноги",
+        "core": "Корпус",
+        "shoulders": "Плечи",
+        "arms": "Руки",
+        "biceps": "Бицепс",
+        "triceps": "Трицепс",
+        "glutes": "Ягодицы",
+        "hamstrings": "Задняя поверхность бедра",
+        "quadriceps": "Квадрицепс",
+        "calves": "Икры",
+        "cardio": "Кардио",
+        "fullBody": "Все тело",
+        "upperBody": "Верх тела",
+        "lowerBody": "Низ тела",
+        "lats": "Широчайшие",
+        "upperBack": "Верх спины",
+        "lowerBack": "Низ спины",
+        "abs": "Пресс"
+      },
+      "tracking": {
+        "repsWeight": "Повт + Вес",
+        "repsOnly": "Только повторы",
+        "durationOnly": "Только время",
+        "distanceOnly": "Только дистанция",
+        "durationDistance": "Время + Дистанция",
+        "reps": "Повторы",
+        "weight": "Вес (кг)",
+        "duration": "Время",
+        "distance": "Дистанция (м)",
+        "sets": "Сеты",
+        "rest": "Отдых (с)",
+        "editSets": "Редактировать сеты",
+        "editSetsDesc": "Настройте сеты для {{name}}",
+        "setsInstruction": "Укажите повторы и вес для каждого сета",
+        "exerciseSets": "Сеты упражнения",
+        "setLabel": "Сет",
+        "addSet": "Добавить еще сет",
+        "restTime": "Время отдыха"
+      },
+      "units": {
+        "reps": "повт",
+        "weight": "кг",
+        "seconds": "сек",
+        "minutes": "мин",
+        "hours": "ч",
+        "meters": "м",
+        "km": "км",
+        "set": "сет"
+      },
+      "toasts": {
+        "exerciseAdded": "{{name}} добавлено",
+        "dayRemoved": "День удален",
+        "dayAdded": "Новый день добавлен",
+        "nameRequired": "Введите название плана",
+        "minDays": "Добавьте хотя бы 1 день",
+        "addDayFirst": "Сначала добавьте день"
+      }
+    }
+  }
+}

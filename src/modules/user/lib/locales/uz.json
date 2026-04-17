@@ -1,0 +1,167 @@
+{
+  "user": {
+    "dashboard": {
+      "title": "Bosh sahifa",
+      "greeting": "Salom, {{name}}!",
+      "quote": "Kun motivatsiyasi",
+      "coachInvitation": "Murabbiy taklifi",
+      "accept": "Qabul qilish",
+      "decline": "Rad etish"
+    },
+    "nutrition": {
+      "title": "Ovqatlanish",
+      "meals": {
+        "breakfast": "Nonushta",
+        "lunch": "Tushlik",
+        "dinner": "Kechki ovqat",
+        "snack": "Snack"
+      },
+      "mealTime": {
+        "breakfast": "06:00 - 10:00",
+        "lunch": "12:00 - 14:00",
+        "dinner": "18:00 - 21:00",
+        "snack": "Istalgan vaqt"
+      },
+      "calories": "Kaloriya",
+      "protein": "Oqsil",
+      "fat": "Yog'",
+      "carbs": "Uglevodlar",
+      "fiber": "Tolalar",
+      "addFood": "Ovqat qo'shish",
+      "mealPlan": "Ovqatlanish rejasi",
+      "shoppingList": "Xarid ro'yxati",
+      "sourceFilter": "Barcha manba",
+      "weekDays": {
+        "monday": "Dushanba",
+        "tuesday": "Seshanba",
+        "wednesday": "Chorshanba",
+        "thursday": "Payshanba",
+        "friday": "Juma",
+        "saturday": "Shanba",
+        "sunday": "Yakshanba"
+      },
+      "aiGenerate": "AI bilan yaratish",
+      "manualAdd": "Qo'lda qo'shish",
+      "cameraAdd": "Kamera bilan",
+      "audioAdd": "Ovoz bilan",
+      "textAdd": "Matn bilan"
+    },
+    "water": {
+      "title": "Suv nazorati",
+      "noLogs": "Qaydlar yo'q",
+      "noLogsDescription": "Ichishni boshlash uchun Qo'shishni bosing",
+      "mood": "Kayfiyat",
+      "cupSize": "Stakan hajmi",
+      "goal": "Kunlik maqsad",
+      "consumed": "Ichilgan",
+      "remaining": "Qolgan",
+      "addWater": "Suv qo'shish",
+      "settings": "Suv sozlamalari"
+    },
+    "workout": {
+      "title": "Mashg'ulot",
+      "weekDays": {
+        "sunday": "Yakshanba",
+        "monday": "Dushanba",
+        "tuesday": "Seshanba",
+        "wednesday": "Chorshanba",
+        "thursday": "Payshanba",
+        "friday": "Juma",
+        "saturday": "Shanba"
+      },
+      "plans": "Rejalar",
+      "sessions": "Mashg'ulotlar",
+      "quickLog": "Tezkor yozuv",
+      "startSession": "Mashg'ulotni boshlash",
+      "exercises": "Mashqlar",
+      "sets": "Setlar",
+      "reps": "Takrorlar",
+      "weight": "Og'irlik",
+      "duration": "Davomiyligi",
+      "distance": "Masofa",
+      "deleteConfirm": "Mashg'ulotni o'chirishni tasdiqlaysizmi?"
+    },
+    "measurements": {
+      "title": "Tana o'lchamlari",
+      "subtitle": "Vazn va tana o'lchamlaringizni kuzating",
+      "weightTab": "Vazn nazorati",
+      "weightDescription": "Vazn tarixi, BMI va maqsadga yaqinlashuv shu yerda.",
+      "measurementsTab": "Tana o'lchamlari",
+      "measurementsDescription": "Ko'krak, bel, qo'l va boshqa o'lchamlarni muntazam kuzating.",
+      "weight": "Vazn",
+      "lastEntry": "oxirgi yozuv",
+      "tracked": "kuzatilgan",
+      "totalEntries": "Jami yozuvlar",
+      "chest": "Ko'krak",
+      "waist": "Bel",
+      "hips": "Dumba",
+      "arm": "Qo'l",
+      "thigh": "Son",
+      "neck": "Bo'yin",
+      "addMeasurement": "O'lcham qo'shish",
+      "bmi": "BMI"
+    },
+    "friends": {
+      "title": "Do'stlar",
+      "search": "Do'st qidirish",
+      "requests": "So'rovlar",
+      "myFriends": "Do'stlarim",
+      "addFriend": "Do'st qo'shish",
+      "sendRequest": "So'rov yuborish",
+      "removeFriend": "Do'stlikdan chiqarish",
+      "pending": "Kutilmoqda",
+      "noFriends": "Hali do'stlar yo'q",
+      "noRequests": "So'rovlar yo'q"
+    },
+    "challenges": {
+      "title": "Challengelar",
+      "active": "Faol",
+      "upcoming": "Kelayotgan",
+      "completed": "Yakunlangan",
+      "join": "Qo'shilish",
+      "leave": "Chiqish",
+      "progress": "Progress",
+      "participants": "Ishtirokchilar",
+      "leaderboard": "Reyting",
+      "createChallenge": "Challenge yaratish",
+      "inviteFriends": "Do'stlarni taklif qilish"
+    },
+    "payments": {
+      "title": "To'lovlar",
+      "source": {
+        "coach": "Murabbiy",
+        "subscription": "Obuna"
+      },
+      "method": {
+        "cash": "Naqd",
+        "payme": "Payme",
+        "click": "Click",
+        "uzcard": "Uzcard",
+        "multicard": "Multicard",
+        "xp": "XP",
+        "free": "Bepul"
+      },
+      "amount": "Summa",
+      "date": "Sana",
+      "noPayments": "To'lovlar topilmadi"
+    },
+    "marketplace": {
+      "title": "Marketplace",
+      "coaches": "Murabbiylar",
+      "searchPlaceholder": "Qidirish...",
+      "noResults": "Hech narsa topilmadi"
+    },
+    "sidebar": {
+      "dashboard": "Bosh sahifa",
+      "nutrition": "Ovqatlanish",
+      "water": "Suv",
+      "workout": "Mashg'ulot",
+      "measurements": "O'lchamlar",
+      "friends": "Do'stlar",
+      "leaderboard": "Reyting",
+      "challenges": "Challengelar",
+      "payments": "To'lovlar",
+      "marketplace": "Marketplace"
+    }
+  }
+}

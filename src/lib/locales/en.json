@@ -1,0 +1,232 @@
+{
+  "common": {
+    "actions": {
+      "save": "Save",
+      "saving": "Saving...",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "deleting": "Deleting...",
+      "edit": "Edit",
+      "back": "Back",
+      "next": "Next",
+      "close": "Close",
+      "confirm": "Confirm",
+      "search": "Search",
+      "filter": "Filter",
+      "refresh": "Refresh",
+      "add": "Add",
+      "create": "Create",
+      "update": "Update",
+      "submit": "Submit",
+      "loading": "Loading...",
+      "viewAll": "View All",
+      "copy": "Copy",
+      "share": "Share",
+      "download": "Download",
+      "upload": "Upload",
+      "select": "Select",
+      "continue": "Continue",
+      "finish": "Finish",
+      "retry": "Retry"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "expired": "Expired",
+      "cancelled": "Cancelled",
+      "completed": "Completed",
+      "draft": "Draft",
+      "sent": "Sent",
+      "failed": "Failed",
+      "frozen": "Frozen"
+    },
+    "time": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "thisWeek": "This week",
+      "thisMonth": "This month",
+      "days": "days",
+      "hours": "hours",
+      "minutes": "minutes"
+    },
+    "weekDays": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    },
+    "table": {
+      "noResults": "No results found",
+      "showing": "Showing",
+      "of": "of",
+      "page": "Page",
+      "perPage": "Per page",
+      "sortBy": "Sort by"
+    },
+    "form": {
+      "required": "Required",
+      "optional": "Optional",
+      "fieldRequired": "This field is required",
+      "invalidFormat": "Invalid format",
+      "minLength": "Must be at least {{min}} characters",
+      "maxLength": "Must be at most {{max}} characters"
+    },
+    "errors": {
+      "general": "An error occurred",
+      "notFound": "Not found",
+      "unauthorized": "Unauthorized",
+      "networkError": "Network error",
+      "tryAgain": "Please try again"
+    },
+    "confirm": {
+      "deleteTitle": "Confirm deletion?",
+      "deleteDescription": "This action cannot be undone.",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "currency": {
+      "sum": "sum",
+      "monthly": "monthly"
+    },
+    "units": {
+      "kg": "kg",
+      "cm": "cm",
+      "kcal": "kcal",
+      "ml": "ml",
+      "steps": "steps"
+    }
+  },
+  "components": {
+    "workoutPlanBuilder": {
+      "dayName": "Day {{count}}",
+      "header": {
+        "closeLabel": "Close Builder",
+        "title": "Workout Plan Builder",
+        "description": "Manage weekly workout structure and exercises.",
+        "addDay": "Day"
+      },
+      "footer": {
+        "savePlan": "Save Plan"
+      },
+      "form": {
+        "createTitle": "New workout plan",
+        "editTitle": "Edit workout plan",
+        "createDescription": "Fill in the training days and exercises to finish the plan.",
+        "editDescription": "Update the training days and exercises.",
+        "saving": "Saving...",
+        "createAction": "Create plan",
+        "saveAction": "Save plan",
+        "loading": "Loading workout plan.",
+        "loadingState": "Loading workout plan...",
+        "loadError": "Could not load workout plan data.",
+        "notFound": "The selected workout plan was not found or could not be loaded.",
+        "retry": "Try again",
+        "close": "Close"
+      },
+      "meta": {
+        "createTitle": "New workout plan",
+        "editTitle": "Edit workout plan",
+        "createDescription": "Enter the plan name and a short description first. The builder opens next.",
+        "editDescription": "Update the name and description first. The builder opens next.",
+        "nameLabel": "Plan name",
+        "namePlaceholder": "For example: Full body start",
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "Plan goal or a short note...",
+        "continue": "Continue",
+        "cancel": "Cancel"
+      },
+      "desktop": {
+        "searchPlaceholder": "Search exercises...",
+        "allCategories": "All",
+        "noExercises": "Not found",
+        "tryDifferentSearch": "Try a different search",
+        "closeLibrary": "Close Library",
+        "openLibrary": "Open Library",
+        "addNewDay": "Add new day",
+        "moving": "Moving..."
+      },
+      "mobile": {
+        "noDays": "No days yet",
+        "pressAddDay": "Click the \"+ Day\" button above",
+        "selectDay": "Select a day from above",
+        "addExercise": "Add exercise",
+        "chooseFromLibrary": "Choose from library",
+        "addExerciseButton": "Add exercise"
+      },
+      "column": {
+        "dayNamePlaceholder": "Day name...",
+        "deleteDayLabel": "Delete day {{name}}",
+        "deleteExerciseLabel": "Delete exercise {{name}}",
+        "focusPlaceholder": "Focus (e.g. Leg Day)...",
+        "dragDrop": "Drag and drop exercises here"
+      },
+      "categories": {
+        "general": "General",
+        "chest": "Chest",
+        "back": "Back",
+        "legs": "Legs",
+        "core": "Core",
+        "shoulders": "Shoulders",
+        "arms": "Arms",
+        "biceps": "Biceps",
+        "triceps": "Triceps",
+        "glutes": "Glutes",
+        "hamstrings": "Hamstrings",
+        "quadriceps": "Quadriceps",
+        "calves": "Calves",
+        "cardio": "Cardio",
+        "fullBody": "Full Body",
+        "upperBody": "Upper Body",
+        "lowerBody": "Lower Body",
+        "lats": "Lats",
+        "upperBack": "Upper Back",
+        "lowerBack": "Lower Back",
+        "abs": "Abs"
+      },
+      "tracking": {
+        "repsWeight": "Reps + Weight",
+        "repsOnly": "Reps Only",
+        "durationOnly": "Duration Only",
+        "distanceOnly": "Distance Only",
+        "durationDistance": "Duration + Distance",
+        "reps": "Reps",
+        "weight": "Weight (kg)",
+        "duration": "Duration",
+        "distance": "Distance (m)",
+        "sets": "Sets",
+        "rest": "Rest (s)",
+        "editSets": "Edit Sets",
+        "editSetsDesc": "Adjust sets for {{name}}",
+        "setsInstruction": "Set reps and weight for each set",
+        "exerciseSets": "Exercise Sets",
+        "setLabel": "Set",
+        "addSet": "Add another set",
+        "restTime": "Rest Time"
+      },
+      "units": {
+        "reps": "reps",
+        "weight": "kg",
+        "seconds": "sec",
+        "minutes": "min",
+        "hours": "hr",
+        "meters": "m",
+        "km": "km",
+        "set": "set"
+      },
+      "toasts": {
+        "exerciseAdded": "{{name}} added",
+        "dayRemoved": "Day removed",
+        "dayAdded": "New day added",
+        "nameRequired": "Enter plan name",
+        "minDays": "Add at least 1 day",
+        "addDayFirst": "Add a day first"
+      }
+    }
+  }
+}

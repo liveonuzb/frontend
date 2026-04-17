@@ -1,0 +1,164 @@
+{
+  "admin": {
+    "dashboard": {
+      "title": "Admin paneli",
+      "totalUsers": "Foydalanuvchilar",
+      "totalCoaches": "Coachlar",
+      "pendingCoaches": "Kutilayotgan coachlar",
+      "totalFoods": "Ovqatlar bazasi",
+      "registrationTrend": "Ro'yxatdan o'tish dinamikasi",
+      "recentSubscriptions": "So'nggi obunalar",
+      "recentActivity": "So'nggi faollik",
+      "pendingActions": "Kutilayotgan amallar",
+      "pendingCoachVerifications": "Coach tasdiqlash",
+      "unresolvedReports": "Hal qilinmagan hisobotlar",
+      "quickActions": "Tezkor amallar",
+      "newUser": "Yangi foydalanuvchi",
+      "exportReport": "Hisobot export",
+      "systemSettings": "Tizim sozlamalari",
+      "popularContent": "Mashhur kontentlar",
+      "foodName": "Ovqat nomi",
+      "calories": "kaloriya",
+      "workoutName": "Mashq nomi",
+      "duration": "davomiylik",
+      "systemStatus": "Tizim holati",
+      "apiStatus": "API",
+      "database": "Ma'lumotlar bazasi",
+      "storage": "Saqlash",
+      "running": "Ishlayapti",
+      "connected": "Ulangan",
+      "active": "Faol",
+      "offline": "Ishlamayapti",
+      "viewAll": "Barchasini ko'rish",
+      "noData": "Ma'lumot topilmadi"
+    },
+    "users": {
+      "title": "Foydalanuvchilar",
+      "searchPlaceholder": "Ism, email yoki telefon bo'yicha qidirish...",
+      "name": "Ism",
+      "email": "Email",
+      "phone": "Telefon",
+      "role": "Rol",
+      "status": "Holat",
+      "createdAt": "Ro'yxatdan o'tgan",
+      "actions": "Amallar",
+      "details": "Tafsilotlar",
+      "block": "Bloklash",
+      "unblock": "Blokdan chiqarish",
+      "notes": "Eslatmalar",
+      "addNote": "Eslatma qo'shish",
+      "sessions": "Sessiyalar",
+      "subscription": "Obuna",
+      "assignSubscription": "Obuna berish"
+    },
+    "coaches": {
+      "title": "Coachlar",
+      "approve": "Tasdiqlash",
+      "reject": "Rad etish",
+      "pending": "Kutilmoqda",
+      "approved": "Tasdiqlangan",
+      "clients": "Mijozlar"
+    },
+    "foods": {
+      "title": "Ovqatlar",
+      "addFood": "Ovqat qo'shish",
+      "name": "Nomi",
+      "calories": "Kaloriya",
+      "category": "Kategoriya",
+      "verified": "Tasdiqlangan"
+    },
+    "foodCategories": {
+      "title": "Ovqat kategoriyalari",
+      "addCategory": "Kategoriya qo'shish"
+    },
+    "workouts": {
+      "title": "Mashqlar",
+      "addWorkout": "Mashq qo'shish"
+    },
+    "workoutPlans": {
+      "title": "Mashq rejalari",
+      "addPlan": "Reja qo'shish"
+    },
+    "workoutCategories": {
+      "title": "Mashq kategoriyalari"
+    },
+    "workoutMuscles": {
+      "title": "Mushak guruhlari"
+    },
+    "workoutBodyParts": {
+      "title": "Tana qismlari"
+    },
+    "equipments": {
+      "title": "Uskunalar",
+      "addEquipment": "Uskuna qo'shish"
+    },
+    "locations": {
+      "title": "Manzillar",
+      "addLocation": "Manzil qo'shish"
+    },
+    "permissions": {
+      "title": "Ruxsatnomalar",
+      "domain": "Soha",
+      "read": "O'qish",
+      "manage": "Boshqarish"
+    },
+    "revenue": {
+      "title": "Daromadlar",
+      "totalRevenue": "Umumiy daromad",
+      "thisMonth": "Shu oy",
+      "growth": "O'sish"
+    },
+    "subscriptions": {
+      "title": "Obunalar",
+      "plan": "Tarif",
+      "price": "Narx",
+      "duration": "Muddat",
+      "subscribers": "Obunchilar"
+    },
+    "reports": {
+      "title": "Hisobotlar"
+    },
+    "activityFeed": {
+      "title": "Faollik oqimi"
+    },
+    "auditLogs": {
+      "title": "Audit loglari",
+      "action": "Amal",
+      "user": "Foydalanuvchi",
+      "timestamp": "Vaqt",
+      "details": "Tafsilotlar"
+    },
+    "languages": {
+      "title": "Tillar"
+    },
+    "challenges": {
+      "title": "Challengelar"
+    },
+    "settings": {
+      "title": "Sozlamalar"
+    },
+    "sidebar": {
+      "dashboard": "Dashboard",
+      "users": "Foydalanuvchilar",
+      "coaches": "Coachlar",
+      "foods": "Ovqatlar",
+      "foodCategories": "Ovqat kategoriyalari",
+      "workouts": "Mashqlar",
+      "workoutPlans": "Mashq rejalari",
+      "workoutCategories": "Mashq kategoriyalari",
+      "workoutMuscles": "Mushak guruhlari",
+      "workoutBodyParts": "Tana qismlari",
+      "equipments": "Uskunalar",
+      "locations": "Manzillar",
+      "permissions": "Ruxsatnomalar",
+      "revenue": "Daromadlar",
+      "subscriptions": "Obunalar",
+      "reports": "Hisobotlar",
+      "activityFeed": "Faollik oqimi",
+      "auditLogs": "Audit loglari",
+      "languages": "Tillar",
+      "challenges": "Challengelar",
+      "settings": "Sozlamalar"
+    }
+  }
+}

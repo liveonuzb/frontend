@@ -1,0 +1,232 @@
+{
+  "common": {
+    "actions": {
+      "save": "Saqlash",
+      "saving": "Saqlanmoqda...",
+      "cancel": "Bekor qilish",
+      "delete": "O'chirish",
+      "deleting": "O'chirilmoqda...",
+      "edit": "Tahrirlash",
+      "back": "Orqaga",
+      "next": "Keyingisi",
+      "close": "Yopish",
+      "confirm": "Tasdiqlash",
+      "search": "Qidirish",
+      "filter": "Filtrlash",
+      "refresh": "Yangilash",
+      "add": "Qo'shish",
+      "create": "Yaratish",
+      "update": "Yangilash",
+      "submit": "Yuborish",
+      "loading": "Yuklanmoqda...",
+      "viewAll": "Barchasini ko'rish",
+      "copy": "Nusxalash",
+      "share": "Ulashish",
+      "download": "Yuklab olish",
+      "upload": "Yuklash",
+      "select": "Tanlash",
+      "continue": "Davom etish",
+      "finish": "Yakunlash",
+      "retry": "Qayta urinish"
+    },
+    "status": {
+      "active": "Faol",
+      "inactive": "Nofaol",
+      "pending": "Kutilmoqda",
+      "approved": "Tasdiqlangan",
+      "rejected": "Rad etilgan",
+      "expired": "Muddati o'tgan",
+      "cancelled": "Bekor qilingan",
+      "completed": "Bajarilgan",
+      "draft": "Qoralama",
+      "sent": "Yuborilgan",
+      "failed": "Muvaffaqiyatsiz",
+      "frozen": "Muzlatilgan"
+    },
+    "time": {
+      "today": "Bugun",
+      "yesterday": "Kecha",
+      "thisWeek": "Shu hafta",
+      "thisMonth": "Shu oy",
+      "days": "kun",
+      "hours": "soat",
+      "minutes": "daqiqa"
+    },
+    "weekDays": {
+      "monday": "Dushanba",
+      "tuesday": "Seshanba",
+      "wednesday": "Chorshanba",
+      "thursday": "Payshanba",
+      "friday": "Juma",
+      "saturday": "Shanba",
+      "sunday": "Yakshanba"
+    },
+    "table": {
+      "noResults": "Natija topilmadi",
+      "showing": "Ko'rsatilmoqda",
+      "of": "dan",
+      "page": "Sahifa",
+      "perPage": "Har sahifada",
+      "sortBy": "Saralash"
+    },
+    "form": {
+      "required": "Majburiy",
+      "optional": "Ixtiyoriy",
+      "fieldRequired": "Bu maydon majburiy",
+      "invalidFormat": "Noto'g'ri format",
+      "minLength": "Kamida {{min}} ta belgi bo'lishi kerak",
+      "maxLength": "Ko'pi bilan {{max}} ta belgi bo'lishi kerak"
+    },
+    "errors": {
+      "general": "Xatolik yuz berdi",
+      "notFound": "Topilmadi",
+      "unauthorized": "Ruxsat berilmagan",
+      "networkError": "Tarmoq xatoligi",
+      "tryAgain": "Iltimos, qayta urinib ko'ring"
+    },
+    "confirm": {
+      "deleteTitle": "O'chirishni tasdiqlaysizmi?",
+      "deleteDescription": "Bu amalni ortga qaytarib bo'lmaydi.",
+      "yes": "Ha",
+      "no": "Yo'q"
+    },
+    "currency": {
+      "sum": "so'm",
+      "monthly": "oyiga"
+    },
+    "units": {
+      "kg": "kg",
+      "cm": "sm",
+      "kcal": "kkal",
+      "ml": "ml",
+      "steps": "qadam"
+    }
+  },
+  "components": {
+    "workoutPlanBuilder": {
+      "dayName": "{{count}}-kun",
+      "header": {
+        "closeLabel": "Konstruktorni yopish",
+        "title": "Mashg'ulot rejasi konstruktori",
+        "description": "Haftalik mashg'ulot tuzilmasi va mashqlarni boshqaring.",
+        "addDay": "Kun"
+      },
+      "footer": {
+        "savePlan": "Rejani saqlash"
+      },
+      "form": {
+        "createTitle": "Yangi workout rejasi",
+        "editTitle": "Workout rejani tahrirlash",
+        "createDescription": "Mashq kunlari va mashqlarni to'ldirib rejani yakunlang.",
+        "editDescription": "Mashq kunlari va mashqlarni yangilang.",
+        "saving": "Saqlanmoqda...",
+        "createAction": "Rejani yaratish",
+        "saveAction": "Rejani saqlash",
+        "loading": "Workout reja yuklanmoqda.",
+        "loadingState": "Workout reja yuklanmoqda...",
+        "loadError": "Workout reja ma'lumotini olib bo'lmadi.",
+        "notFound": "Tanlangan workout reja topilmadi yoki yuklanmadi.",
+        "retry": "Qayta urinish",
+        "close": "Yopish"
+      },
+      "meta": {
+        "createTitle": "Yangi workout rejasi",
+        "editTitle": "Workout rejani tahrirlash",
+        "createDescription": "Avval reja nomi va qisqa tavsifini kiriting. Keyin konstruktor ochiladi.",
+        "editDescription": "Nom va tavsifni yangilang. Keyin konstruktor ochiladi.",
+        "nameLabel": "Reja nomi",
+        "namePlaceholder": "Masalan: Full body start",
+        "descriptionLabel": "Tavsif",
+        "descriptionPlaceholder": "Reja maqsadi yoki qisqa izoh...",
+        "continue": "Davom etish",
+        "cancel": "Bekor qilish"
+      },
+      "desktop": {
+        "searchPlaceholder": "Mashq qidirish...",
+        "allCategories": "Barchasi",
+        "noExercises": "Topilmadi",
+        "tryDifferentSearch": "Boshqacha qidiring",
+        "closeLibrary": "Kutubxonani yopish",
+        "openLibrary": "Kutubxonani ochish",
+        "addNewDay": "Yangi kun qo'shish",
+        "moving": "Ko'chirilmoqda..."
+      },
+      "mobile": {
+        "noDays": "Hali kunlar yo'q",
+        "pressAddDay": "Yuqoridagi \"+ Kun\" tugmasini bosing",
+        "selectDay": "Yuqoridagi kunlardan birini tanlang",
+        "addExercise": "Mashq qo'shing",
+        "chooseFromLibrary": "Kutubxonadan tanlang",
+        "addExerciseButton": "Mashq qo'shish"
+      },
+      "column": {
+        "dayNamePlaceholder": "Kun nomi...",
+        "deleteDayLabel": "{{name}} kunini o'chirish",
+        "deleteExerciseLabel": "{{name}} mashqini o'chirish",
+        "focusPlaceholder": "Fokus (masalan: Oyoq kuni)...",
+        "dragDrop": "Mashqni bu yerga sudrab tashlang"
+      },
+      "categories": {
+        "general": "Umumiy",
+        "chest": "Ko'krak",
+        "back": "Orqa",
+        "legs": "Oyoq",
+        "core": "Korpus",
+        "shoulders": "Yelka",
+        "arms": "Qo'l",
+        "biceps": "Biseps",
+        "triceps": "Triseps",
+        "glutes": "Dumba",
+        "hamstrings": "Orqa son",
+        "quadriceps": "Old son",
+        "calves": "Boldir",
+        "cardio": "Kardio",
+        "fullBody": "Butun tana",
+        "upperBody": "Yuqori tana",
+        "lowerBody": "Pastki tana",
+        "lats": "Qanotsimon mushaklar",
+        "upperBack": "Yuqori orqa",
+        "lowerBack": "Pastki orqa",
+        "abs": "Press"
+      },
+      "tracking": {
+        "repsWeight": "Takror + vazn",
+        "repsOnly": "Faqat takror",
+        "durationOnly": "Faqat vaqt",
+        "distanceOnly": "Faqat masofa",
+        "durationDistance": "Vaqt + masofa",
+        "reps": "Takror",
+        "weight": "Vazn (kg)",
+        "duration": "Vaqt",
+        "distance": "Masofa (m)",
+        "sets": "Setlar",
+        "rest": "Dam (s)",
+        "editSets": "Setlarni tahrirlash",
+        "editSetsDesc": "{{name}} mashqi uchun setlarni moslang",
+        "setsInstruction": "Har bir set uchun takrorlar va vaznni belgilang",
+        "exerciseSets": "Mashq setlari",
+        "setLabel": "Set",
+        "addSet": "Yana set qo'shish",
+        "restTime": "Dam olish vaqti"
+      },
+      "units": {
+        "reps": "takror",
+        "weight": "kg",
+        "seconds": "sek",
+        "minutes": "daq",
+        "hours": "soat",
+        "meters": "m",
+        "km": "km",
+        "set": "set"
+      },
+      "toasts": {
+        "exerciseAdded": "{{name}} qo'shildi",
+        "dayRemoved": "Kun o'chirildi",
+        "dayAdded": "Yangi kun qo'shildi",
+        "nameRequired": "Reja nomini kiriting",
+        "minDays": "Kamida 1 ta kun qo'shing",
+        "addDayFirst": "Avval kun qo'shing"
+      }
+    }
+  }
+}

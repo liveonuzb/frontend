@@ -1,0 +1,103 @@
+{
+  "auth": {
+    "signIn": {
+      "title": "Xush kelibsiz",
+      "subtitle": "LiveOn hisobingizga kiring",
+      "emailTab": "Email",
+      "phoneTab": "Telefon",
+      "emailLabel": "Email",
+      "emailPlaceholder": "m@example.com",
+      "passwordLabel": "Parol",
+      "forgotPassword": "Parolni unutdingizmi?",
+      "loginButton": "Kirish",
+      "loggingIn": "Kirilmoqda...",
+      "noAccount": "Hisobingiz yo'qmi?",
+      "signUpLink": "Ro'yxatdan o'ting",
+      "continueWith": "Yoki davom eting",
+      "termsText": "Davom etish orqali siz bizning",
+      "termsLink": "Foydalanish shartlari",
+      "andText": "va",
+      "privacyLink": "Maxfiylik siyosati",
+      "termsEnd": "ga rozilik bildirasiz."
+    },
+    "signUp": {
+      "title": "Hisob yarating",
+      "subtitle": "Bepul ro'yxatdan o'ting va boshlang",
+      "emailTab": "Email",
+      "phoneTab": "Telefon",
+      "emailLabel": "Email",
+      "emailPlaceholder": "m@example.com",
+      "phoneLabel": "Telefon raqam",
+      "passwordLabel": "Parol",
+      "confirmPasswordLabel": "Parolni tasdiqlang",
+      "signUpButton": "Ro'yxatdan o'tish",
+      "signingUp": "Ro'yxatdan o'tilmoqda...",
+      "haveAccount": "Hisobingiz bormi?",
+      "signInLink": "Kirish",
+      "continueWith": "Yoki davom eting",
+      "termsText": "Davom etish orqali siz bizning",
+      "termsLink": "Foydalanish shartlari",
+      "andText": "va",
+      "privacyLink": "Maxfiylik siyosati",
+      "termsEnd": "ga rozilik bildirasiz.",
+      "referralInvited": "Sizni taklif qilishdi!",
+      "referralInvitedByName": "Sizni {{name}} taklif qildi!"
+    },
+    "forgotPassword": {
+      "title": "Parolni unutdingizmi?",
+      "subtitle": "Email yoki telefon raqamingizni kiriting, tasdiqlash kodi yuboramiz",
+      "emailTab": "Email",
+      "phoneTab": "Telefon",
+      "emailLabel": "Email",
+      "emailPlaceholder": "m@example.com",
+      "phoneLabel": "Telefon raqam",
+      "sendButton": "Kod yuborish",
+      "sending": "Yuborilmoqda...",
+      "rememberPassword": "Parolni eslaysizmi?",
+      "backToSignIn": "Kirish sahifasiga qaytish"
+    },
+    "otpVerify": {
+      "titleVerify": "Hisobingizni tasdiqlang",
+      "titleReset": "Kodni tasdiqlang",
+      "subtitleWithId": "{{identity}} ga yuborilgan 6 xonali kodni kiriting",
+      "subtitleDefault": "Email yoki telefonga yuborilgan 6 xonali kodni kiriting",
+      "verifyButton": "Tasdiqlash",
+      "verifying": "Tasdiqlanmoqda...",
+      "didntReceive": "Kod kelmadimi?",
+      "resend": "Qayta yuborish",
+      "resending": "Yuborilmoqda...",
+      "resendIn": "Qayta yuborish ({{s}}s)",
+      "backToSignIn": "Kirish sahifasiga qaytish"
+    },
+    "resetPassword": {
+      "title": "Yangi parol o'rnating",
+      "subtitle": "Xavfsiz parol kiriting",
+      "newPasswordLabel": "Yangi parol",
+      "confirmPasswordLabel": "Yangi parolni tasdiqlang",
+      "resetButton": "Parolni o'zgartirish",
+      "resetting": "O'zgartirilmoqda..."
+    },
+    "setPassword": {
+      "title": "Hisobni yakunlang",
+      "subtitle": "Keyin telefon raqamingiz bilan kirish uchun parol yarating.",
+      "newPasswordLabel": "Yangi parol",
+      "confirmPasswordLabel": "Yangi parolni tasdiqlang",
+      "saveButton": "Parolni saqlash",
+      "saving": "Saqlanmoqda...",
+      "success": "Parol muvaffaqiyatli yaratildi.",
+      "error": "Parolni saqlab bo'lmadi."
+    },
+    "validation": {
+      "emailRequired": "Email majburiy",
+      "emailInvalid": "Email formati noto'g'ri",
+      "passwordRequired": "Parol majburiy",
+      "passwordMin": "Parol kamida 6 ta belgidan iborat bo'lishi kerak",
+      "confirmPasswordRequired": "Parolni tasdiqlash majburiy",
+      "passwordsNoMatch": "Parollar mos kelmadi",
+      "phoneRequired": "Telefon raqam majburiy",
+      "phoneInvalid": "Telefon +998-##-###-##-## formatida bo'lik kerak",
+      "otpMin": "6 ta raqamni kiriting",
+      "otpMax": "OTP 6 ta raqamdan iborat bo'lishi kerak"
+    }
+  }
+}

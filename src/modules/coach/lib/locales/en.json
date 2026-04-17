@@ -1,0 +1,1505 @@
+{
+  "common": {
+    "status": {
+      "active": "Active",
+      "paused": "Paused",
+      "inactive": "Inactive",
+      "pending": "Pending",
+      "declined": "Declined"
+    },
+    "weekdays": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    },
+    "navUser": {
+      "user": "User",
+      "upgradePro": "Upgrade to Pro",
+      "profile": "Profile",
+      "coachCabinet": "Coach Cabinet",
+      "becomeCoach": "Become a Coach",
+      "payment": "Payments",
+      "notifications": "Notifications",
+      "logout": "Log Out"
+    },
+    "roles": {
+      "SUPER_ADMIN": {
+        "label": "Super Admin",
+        "description": "System Management"
+      },
+      "ADMIN": {
+        "label": "Admin",
+        "description": "Admin Dashboard"
+      },
+      "COACH": {
+        "label": "Coach",
+        "description": "Coach Dashboard"
+      },
+      "USER": {
+        "label": "User",
+        "description": "Personal Dashboard"
+      }
+    }
+  },
+  "menu": {
+    "dashboard": "Dashboard",
+    "clients": "Clients",
+    "mealPlans": "Meal Plans",
+    "workoutPlans": "Workouts",
+    "sessions": "Sessions",
+    "marketplace": "Market",
+    "payments": "Payments",
+    "settings": "Settings"
+  },
+  "coach": {
+    "sidebar": {
+      "main": "Main",
+      "dashboard": "Dashboard",
+      "clients": "Clients",
+      "courses": "Courses",
+      "purchaseQueue": "Purchase Queue",
+      "telegram": "Telegram",
+      "mealPlans": "Meal Plans",
+      "workoutPlans": "Workouts",
+      "payments": "Payments",
+      "groups": "Groups",
+      "chat": "Chat"
+    },
+    "commerce": {
+      "loading": "Loading data...",
+      "syncing": "Syncing with server...",
+      "days": "days",
+      "courses": {
+        "title": "Coach courses",
+        "subtitle": "Create Telegram storefront courses and link existing Telegram groups.",
+        "countLabel": "courses",
+        "createTitle": "Create course",
+        "editTitle": "Edit course",
+        "formDescription": "Manage price, access duration, and publish state here.",
+        "drawerDescription": "Create the course step by step: details, cover image, and pricing settings.",
+        "validation": "Title, price, and access duration are required.",
+        "created": "Course created",
+        "updated": "Course updated",
+        "deleted": "Course deleted",
+        "error": "Failed to save course",
+        "deleteConfirm": "Delete this course?",
+        "groupChatIdPrompt": "Enter Telegram chat ID or public username",
+        "groupChatIdRequired": "Telegram chat ID is required",
+        "groupTitlePrompt": "Enter Telegram group title",
+        "groupReady": "Telegram group linked",
+        "groupError": "Failed to link Telegram group",
+        "groupTitle": "Telegram group",
+        "groupMissing": "Create the Telegram group first, add the bot as an admin, then link it with the chat ID.",
+        "groupPending": "PENDING",
+        "empty": "No courses yet.",
+        "noDescription": "No description provided.",
+        "published": "Published",
+        "draft": "Draft",
+        "purchaseCount": "Purchases",
+        "publishHint": "Only published courses are visible in the bot.",
+        "summary": "Preview",
+        "fields": {
+          "title": "Course title",
+          "description": "Description",
+          "coverImage": "Cover image",
+          "price": "Price",
+          "duration": "Access duration",
+          "sortOrder": "Sort order",
+          "published": "Show in bot"
+        },
+        "placeholders": {
+          "title": "Example: 30-day transformation",
+          "description": "What the course includes, who it is for, and expected results"
+        },
+        "actions": {
+          "create": "Create course",
+          "update": "Save",
+          "cancel": "Cancel",
+          "back": "Back",
+          "next": "Next",
+          "finish": "Create",
+          "edit": "Edit",
+          "group": "Link group",
+          "delete": "Delete"
+        },
+        "steps": {
+          "basics": "Details",
+          "basicsDescription": "Course title and short description.",
+          "cover": "Cover",
+          "coverDescription": "Image uploaded to MinIO.",
+          "pricing": "Pricing",
+          "pricingDescription": "Access duration and publish state."
+        },
+        "coverUpload": {
+          "title": "Upload a cover image",
+          "description": "Choose an image or drop it here.",
+          "button": "Choose image",
+          "uploading": "Uploading...",
+          "ready": "Cover image is ready",
+          "remove": "Remove",
+          "hint": "PNG, JPG, or WEBP. Maximum size 8 MB.",
+          "success": "Cover image uploaded",
+          "error": "Failed to upload cover image",
+          "imageOnly": "Only image files can be uploaded.",
+          "maxSize": "Image size must be smaller than {{size}}."
+        }
+      },
+      "queue": {
+        "title": "Purchase queue",
+        "subtitle": "Review receipts, approve users, and manage active access.",
+        "empty": "No course purchases waiting for review.",
+        "error": "Failed to update purchase queue",
+        "approved": "Purchase approved",
+        "rejected": "Purchase rejected",
+        "revoked": "Access revoked",
+        "extended": "Access extended",
+        "extendValidation": "Enter the number of days to extend",
+        "requestedAt": "Requested at",
+        "accessWindow": "Access ends",
+        "receipt": "Submitted receipt",
+        "noReceipt": "No receipt has been attached yet.",
+        "telegram": "Telegram",
+        "phone": "Phone",
+        "accessLogs": "Access logs",
+        "unknownUser": "Unknown user",
+        "promptApprove": "Approval note (optional)",
+        "promptReject": "Rejection reason (optional)",
+        "promptRevoke": "Revoke reason (optional)",
+        "extendPlaceholder": "Days",
+        "actions": {
+          "approve": "Approve",
+          "reject": "Reject",
+          "extend": "Extend",
+          "revoke": "Remove access"
+        }
+      },
+      "telegram": {
+        "title": "Telegram access",
+        "subtitle": "Manage the coach bot, welcome flow, and course group flow here.",
+        "error": "Failed to save Telegram access settings",
+        "paymentTitle": "Global payment details",
+        "paymentDescription": "Payment instructions shown to users during bot checkout.",
+        "securityHint": "Full card numbers are not stored. Use a Payme/Click link, bank instruction, or masked card display.",
+        "cardSaved": "Payment details saved",
+        "cardItemSaved": "Card saved",
+        "drawerTitle": "Set up payment details",
+        "drawerDescription": "Enter the card and payment instructions shown during checkout from here.",
+        "botTitle": "Coach bot storefront",
+        "botDescription": "Bot token, welcome message, and menu setup remain on the existing bot page.",
+        "botCopy": "Users browse and buy courses in Telegram. This page handles bot setup, welcome flow, and Telegram group access settings.",
+        "groupSetupTitle": "Course groups",
+        "groupSetupDescription": "The bot does not create private groups on its own. The coach creates the group, makes the bot an admin, and then links it to the course.",
+        "instructionsTitle": "Bot-only setup flow",
+        "groupSetupHint": "The \"Link group\" action on each course asks for the chat ID and title. Invite-link creation and member removal only work if the bot is an admin in that group.",
+        "fields": {
+          "maskedCard": "Masked card",
+          "paymentInstructions": "Payment instructions",
+          "cardHolder": "Card holder",
+          "bankName": "Bank name",
+          "displayLabel": "Display label"
+        },
+        "status": {
+          "configured": "Configured",
+          "empty": "Not added yet",
+          "activeCard": "Active"
+        },
+        "summary": {
+          "instructions": "Checkout instructions",
+          "maskedCard": "Masked card",
+          "activeCard": "Active card",
+          "cardHolder": "Card holder",
+          "bankName": "Bank",
+          "savedCards": "Saved cards",
+          "notSet": "Not set"
+        },
+        "cardsListTitle": "Saved cards",
+        "cardsListDescription": "Store multiple cards and choose which one is active during checkout.",
+        "cardsEmpty": "No cards added yet. Add the first card below.",
+        "cardEditor": {
+          "addTitle": "Add a new card",
+          "editTitle": "Edit card",
+          "description": "Save the card once, then choose it as the active checkout card."
+        },
+        "validation": {
+          "cardRequired": "Enter at least the first and last 4 digits of the card."
+        },
+        "placeholders": {
+          "paymentInstructions": "Example: Payme/Click link or short bank-transfer instructions"
+        },
+        "steps": {
+          "connectBot": "Connect the coach bot first or verify that it is active.",
+          "createGroup": "Create a Telegram group for the course.",
+          "addBotAsAdmin": "Add the bot as an admin with invite-link and ban-member permissions.",
+          "linkCourseGroup": "Open the course page and link the group using its chat ID."
+        },
+        "actions": {
+          "savePaymentDetails": "Save payment details",
+          "addPaymentDetails": "Add payment details",
+          "editPaymentDetails": "Edit payment details",
+          "addCard": "Add card",
+          "saveCard": "Save card",
+          "updateCard": "Update card",
+          "setActiveCard": "Set active",
+          "cancelEdit": "Cancel",
+          "closeDrawer": "Close",
+          "openCourses": "Open courses"
+        }
+      }
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "subtitle": "Track your business performance",
+      "greeting": {
+        "night": "Good night",
+        "morning": "Good morning",
+        "day": "Good day",
+        "evening": "Good evening"
+      },
+      "pendingInvitations": "{{count}} pending invitations",
+      "clientList": "Client List",
+      "alertsTitle": "Important Updates",
+      "severity": {
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low"
+      },
+      "metrics": {
+        "totalClients": "Total Clients",
+        "activeClients": "Active Clients",
+        "totalTemplates": "Total Templates",
+        "activeTemplatesHint": "Meal and workout plan templates",
+        "averageProgress": "Average Progress",
+        "averageProgressHint": "Average plan completion rate"
+      },
+      "revenue": {
+        "title": "Revenue",
+        "monthly": "Monthly Income",
+        "growth": "Compared to last month",
+        "currency": "UZS",
+        "zero": "0",
+        "activePayments": "{{count}} active payments"
+      },
+      "overdue": {
+        "attention": "Attention",
+        "title": "Overdue Payments",
+        "todayDue": "{{count}} payments due today"
+      },
+      "progress": {
+        "activeCount": "{{count}} active clients",
+        "title": "Average Progress"
+      },
+      "dynamics": {
+        "title": "Payment Dynamics",
+        "subtitle": "Income statistics for the selected period",
+        "tabs": {
+          "week": "Week",
+          "month": "Month",
+          "year": "Year"
+        }
+      },
+      "errors": {
+        "title": "Error",
+        "loading": "Failed to load dashboard data",
+        "retry": "Retry"
+      },
+      "clients": {
+        "title": "Clients",
+        "activeCount": "{{count}} active clients",
+        "newThisMonth": "{{count}} new"
+      },
+      "activity": {
+        "title": "Recent Activity",
+        "empty": "No activity yet"
+      },
+      "alerts": {
+        "payment_overdue": {
+          "title": "Overdue Payment",
+          "message": "Payment for {{name}} is overdue."
+        },
+        "checkin_overdue": {
+          "title": "Check-in Overdue",
+          "message": "{{name}} hasn't submitted their weekly check-in yet."
+        },
+        "inactive_client": {
+          "title": "Activity Decreased",
+          "message": "{{name}} hasn't left any logs for 3 days."
+        },
+        "plan_update_pending": {
+          "title": "Plan Update Pending",
+          "message": "{{name}} hasn't applied the plan update yet."
+        },
+        "client_request": {
+          "title": "New Client Request",
+          "message": "{{name}} sent a request to work with you."
+        }
+      }
+    },
+    "clients": {
+      "title": "Clients",
+      "subtitle": "Manage your clients and track their results",
+      "breadcrumbs": {
+        "coach": "Coach",
+        "clients": "Clients"
+      },
+      "actions": {
+        "addClient": "Add Client",
+        "addToGroup": "Add to Group",
+        "view": "View",
+        "addPayment": "Add Payment",
+        "setPaymentDay": "Payment Day",
+        "cancelLastPayment": "Cancel Last Payment",
+        "workoutPlan": "Workout Plan",
+        "mealPlan": "Meal Plan",
+        "deleteClient": "Unsubscribe",
+        "resendInvite": "Resend Invite",
+        "cancelInvite": "Cancel Invite"
+      },
+      "filters": {
+        "search": {
+          "label": "Search",
+          "placeholder": "By name or email..."
+        },
+        "status": {
+          "label": "Status",
+          "all": "All statuses",
+          "active": "Active",
+          "paused": "Paused",
+          "inactive": "Inactive"
+        }
+      },
+      "table": {
+        "columns": {
+          "client": "Client",
+          "progress": "Progress",
+          "payment": "Payment",
+          "plan": "Plan",
+          "lastActivity": "Last Activity",
+          "status": "Status"
+        },
+        "invitationPrefix": "Invited: ",
+        "unnamedUser": "Unnamed user"
+      },
+      "cells": {
+        "invitationVia": "Invited via {{method}}",
+        "declined": "Declined",
+        "payment": {
+          "notSet": "Not set",
+          "noDay": "No day",
+          "dayFormat": "Day {{day}}"
+        },
+        "plan": {
+          "assigned": "Assigned",
+          "notAssigned": "No"
+        }
+      },
+      "messages": {
+        "resendSuccess": "Invite resent",
+        "cancelSuccess": "Invite cancelled",
+        "selectValidClients": "Please select only confirmed clients",
+        "groupAddSuccess": "Clients added to group",
+        "planAssignSuccess": "Plan assigned successfully",
+        "markingSuccess": "Payment recorded successfully",
+        "pricingSuccess": "Payment day updated",
+        "cancelled": "Payment cancelled",
+        "groupCreateSuccess": "Group created successfully",
+        "error": "An error occurred"
+      },
+      "inviteSteps": {
+        "method": {
+          "title": "Add Client",
+          "description": "How do you want to invite the client?",
+          "phone": {
+            "label": "Via Phone Number",
+            "description": "An invitation will be sent via SMS",
+            "placeholder": "+998 90 123 45 67"
+          },
+          "email": {
+            "label": "Via Email",
+            "description": "An invitation will be sent via email",
+            "placeholder": "example@mail.com"
+          },
+          "submit": "Next"
+        },
+        "identifier": {
+          "title": "Contact Information",
+          "description": "Enter the {{method}} information",
+          "phoneLabel": "Phone Number",
+          "emailLabel": "Email Address",
+          "submit": "Next"
+        },
+        "pricing": {
+          "title": "Price and Payment",
+          "description": "Set the agreed monthly price and payment day",
+          "amountLabel": "Monthly payment amount",
+          "amountPlaceholder": "Example: 500 000",
+          "currency": "so'm",
+          "paymentDayLabel": "Monthly payment day",
+          "paymentDayPlaceholder": "Select day",
+          "submit": "Next"
+        },
+        "schedule": {
+          "title": "Workout Schedule",
+          "description": "Set client's weekly workout days and times",
+          "dayLabel": "Day",
+          "timeLabel": "Time",
+          "remove": "Remove",
+          "addMore": "Add more days",
+          "submit": "Next"
+        },
+        "notes": {
+          "title": "Additional Notes",
+          "description": "Leave notes for yourself about the client",
+          "label": "Note (optional)",
+          "placeholder": "About client's injuries or special needs...",
+          "submit": "Send Invite"
+        },
+        "toasts": {
+          "valueRequired": "Value is required",
+          "emailError": "Invalid email format",
+          "phoneError": "Invalid phone number",
+          "scheduleRequired": "Select at least one day",
+          "success": "Invitation sent successfully",
+          "error": "Error sending invitation"
+        }
+      },
+      "clientDetail": {
+        "title": "Client Details",
+        "description": "Payment, nutrition, plans, and weekly check-in information.",
+        "backToClients": "Back to clients",
+        "notFound": "Client not found",
+        "fetchError": "Could not load client details.",
+        "retry": "Retry",
+        "noContact": "No contact",
+        "noGoal": "No goal",
+        "progress": "Progress {{value}}%",
+        "actions": {
+          "price": "Price",
+          "payment": "Payment",
+          "paymentDay": "Payment Day",
+          "plans": "Plans",
+          "remove": "Remove from list",
+          "updatePrice": "Update price"
+        },
+        "tabs": {
+          "dashboard": "Dashboard",
+          "nutrition": "Nutrition",
+          "payment": "Payments",
+          "measurements": "Measurements",
+          "plans": "Plans"
+        },
+        "metrics": {
+          "calories": "Calories",
+          "water": "Water",
+          "steps": "Steps",
+          "sleep": "Sleep",
+          "sleepValue": "{{value}} hours",
+          "calorieGoal": "Goal: {{value}} kcal",
+          "waterGoal": "Goal: {{value}} ml",
+          "stepsGoal": "Goal: {{value}}",
+          "selectedDate": "For selected date",
+          "dayLabel": "Day {{day}}"
+        },
+        "paymentStatus": {
+          "label": "Payment status",
+          "notSet": "Not set",
+          "noAgreedAmount": "No agreed amount",
+          "lastPaid": "Last paid: {{date}}",
+          "noPaymentRecord": "No payment record",
+          "amountFormat": "{{amount}} so'm"
+        },
+        "status": {
+          "active": "Active",
+          "paused": "Paused",
+          "inactive": "Inactive"
+        },
+        "mood": {
+          "notEntered": "Not entered",
+          "terrible": "Terrible",
+          "bad": "Bad",
+          "okay": "Okay",
+          "good": "Good",
+          "great": "Great"
+        },
+        "toasts": {
+          "removeSuccess": "Client removed from list",
+          "removeError": "Could not remove client",
+          "priceUpdateSuccess": "Client price updated.",
+          "priceAgreement": "Client price left as per agreement.",
+          "priceUpdateError": "Could not update client price",
+          "invalidPrice": "Please enter a valid price or leave it empty."
+        },
+        "units": {
+          "kg": "kg",
+          "cm": "cm",
+          "mm": "mm"
+        },
+        "meals": {
+          "breakfast": "Breakfast",
+          "lunch": "Lunch",
+          "dinner": "Dinner",
+          "snack": "Snack",
+          "anyTime": "Any time"
+        },
+        "messages": {
+          "removeSuccess": "Client removed",
+          "removeError": "Could not remove client",
+          "paymentSuccess": "Payment marked",
+          "paymentError": "Could not mark payment",
+          "paymentAmountError": "Enter valid payment amount.",
+          "dayUpdateSuccess": "Payment day updated.",
+          "dayRemoveSuccess": "Payment day removed.",
+          "dayUpdateError": "Could not save payment day",
+          "cancelSuccess": "Payment cancelled.",
+          "cancelError": "Could not cancel payment",
+          "pricingUpdateSuccess": "Client price updated.",
+          "pricingNegotiatedSuccess": "Client price set to agreement-based.",
+          "pricingUpdateError": "Could not update client price",
+          "pricingAmountError": "Enter valid price or leave empty.",
+          "mealAssignSuccess": "Meal plan assigned",
+          "workoutAssignSuccess": "Workout plan assigned",
+          "mealUnassignSuccess": "Meal plan unassigned",
+          "workoutUnassignSuccess": "Workout plan unassigned",
+          "unassignError": "Could not unassign plan",
+          "genericError": "An error occurred",
+          "noDailyLog": "No daily log found for selected date."
+        },
+        "paymentRecordDrawer": {
+          "title": "Record Payment",
+          "description": "Add a manual payment record to health history.",
+          "amountLabel": "Payment amount (so'm)",
+          "amountPlaceholder": "Example: 500000",
+          "dateLabel": "Payment date",
+          "datePlaceholder": "Select date",
+          "noteLabel": "Note",
+          "notePlaceholder": "Example: Paid via Payme",
+          "submit": "Add Payment",
+          "submitting": "Saving...",
+          "cancel": "Cancel"
+        },
+        "paymentDayDrawer": {
+          "title": "Set Payment Day",
+          "description": "Choose a monthly payment day between 1-31.",
+          "label": "Payment day",
+          "placeholder": "Select day",
+          "submit": "Save",
+          "submitting": "Saving...",
+          "cancel": "Cancel"
+        },
+        "pricingDrawer": {
+          "title": "Set Client Pricing",
+          "description": "You can set a custom price for each client.",
+          "label": "Agreed amount (so'm)",
+          "placeholder": "Negotiable (leave empty)",
+          "submit": "Save Price",
+          "submitting": "Saving...",
+          "cancel": "Cancel"
+        },
+        "removeClientAlert": {
+          "title": "Remove student from list?",
+          "description": "You and the student will be removed from each other's lists. Shared coach plans will remain as regular plans but will no longer sync.",
+          "cancel": "Cancel",
+          "confirm": "Remove from list",
+          "removing": "Removing..."
+        },
+        "paymentCancelAlert": {
+          "title": "Cancel Payment",
+          "description": "Payment record for {{date}} will be cancelled.",
+          "descriptionFallback": "This payment record will be cancelled.",
+          "back": "Back",
+          "confirm": "Cancel Payment",
+          "cancelling": "Cancelling..."
+        },
+        "nutrition": {
+          "assignedPlan": "Assigned plan",
+          "coachAssigned": "Coach assigned a plan",
+          "activePlan": "Active plan • {{source}}",
+          "templatesCount": "{{count}} assigned templates",
+          "assignedAt": " • {{date}}",
+          "searchPlaceholder": "Search by food or section...",
+          "filterAll": "All",
+          "noFoodFound": "No food found for selected filter.",
+          "noFoodEntered": "No food entered for this time.",
+          "noNutritionLog": "No nutrition log found for selected date.",
+          "mealTypes": {
+            "breakfast": { "label": "Breakfast", "time": "06:00 - 10:00" },
+            "lunch": { "label": "Lunch", "time": "12:00 - 14:00" },
+            "dinner": { "label": "Dinner", "time": "18:00 - 21:00" },
+            "snack": { "label": "Snack", "time": "Any time" }
+          }
+        },
+        "paymentTab": {
+          "agreedPrice": "Agreed price",
+          "monthlyTotal": "Monthly base amount",
+          "paymentDay": "Payment day",
+          "lastPaid": "Last payment {{date}}",
+          "notSet": "Not set",
+          "noPaymentYet": "No payment recorded yet",
+          "status": "Payment status",
+          "recordsCount": "{{count}} payment records",
+          "tableTitle": "Payment schedule",
+          "addManual": "Add manual payment",
+          "noRecord": "No payment record for this client yet.",
+          "amountAgreed": "{{amount}} so'm",
+          "amountNegotiable": "To be negotiated",
+          "date": "Date: {{date}}",
+          "note": "Note: {{note}}",
+          "cancelReason": "Cancel reason: {{reason}}",
+          "statusCancelled": "Cancelled",
+          "statusAccepted": "Accepted",
+          "cancelAction": "Cancel"
+        },
+        "measurementsTab": {
+          "weight": "Weight",
+          "measurements": "Measurements",
+          "history": "Weight progress",
+          "noMeasurements": "No measurements entered.",
+          "historyTitle": "Measurements history",
+          "dateLabel": "Date",
+          "weightLabel": "Weight",
+          "waistChest": "Waist / Chest",
+          "thighArm": "Thigh / Arm",
+          "unitKg": "kg"
+        },
+        "plansTab": {
+          "mealPlan": "Meal plan",
+          "workoutPlan": "Workout plan",
+          "assign": "Assign",
+          "active": "Active",
+          "source": "Source: {{source}}",
+          "sourceAi": "AI Coach",
+          "sourceManual": "Manual",
+          "noActiveMeal": "No active meal plan assigned",
+          "noActiveWorkout": "No active workout plan assigned",
+          "templateTitle": "Workout",
+          "templateMeal": "Meal Plan",
+          "noDescription": "No description provided.",
+          "title": "Assigned Templates",
+          "empty": "No templates assigned yet."
+        },
+        "profile": {
+          "title": "Profile and goal",
+          "currentWeight": "Current weight",
+          "targetWeight": "Target weight",
+          "startDate": "Start date",
+          "sleep": "Sleep",
+          "sleepValue": "{{count}} hours",
+          "bio": "Bio",
+          "noBio": "No bio entered."
+        },
+        "aiSummary": {
+          "title": "AI Summary",
+          "description": "Analysis of client's recent activity and nutrition",
+          "update": "Update",
+          "achievements": "Achievements",
+          "needsAttention": "Needs Attention",
+          "recommendations": "Recommendations",
+          "overview": "General Analysis",
+          "fats": "Fats",
+          "mocks": {
+            "overview": "{{name}} strictly followed the set calorie limit last week and is fulfilling the water norm by 90%. Macronutrient balance is good, especially protein intake is according to plan.",
+            "pos1": "Sugar intake has decreased significantly in the last 3 days.",
+            "pos2": "Exercise duration increased by 15% compared to last week.",
+            "pos3": "Sleep schedule stabilized (average 7.5 hours).",
+            "con1": "Daily step count is still below target 10,000 (average 7,200).",
+            "con2": "Carbohydrate intake slightly exceeds the plan on weekends.",
+            "rec1": "I recommend increasing cardio exercises by 20 minutes for the new week.",
+            "rec2": "Increasing the proportion of vegetables in dinner will be beneficial."
+          }
+        },
+        "paymentsHistory": {
+          "title": "Payment History",
+          "description": "List of all payments made by the client",
+          "empty": "Payment history is empty.",
+          "cancelConfirm": "Do you want to cancel this payment?",
+          "table": {
+            "date": "Date",
+            "amount": "Amount",
+            "note": "Note"
+          }
+        },
+        "drawers": {
+          "groupSelection": {
+            "title": "Add to Group",
+            "description": "Add {{count}} selected clients to a group or create a new one.",
+            "label": "Select Group",
+            "placeholder": "Select a group",
+            "newGroup": "+ Create new group",
+            "submit": "Add to Group",
+            "cancel": "Cancel"
+          },
+          "createGroup": {
+            "title": "Create New Group",
+            "description": "Enter group name and description.",
+            "nameLabel": "Group Name",
+            "namePlaceholder": "Example: Weight Loss - Group A",
+            "descLabel": "Description (optional)",
+            "descPlaceholder": "Briefly describe the group's goal...",
+            "submit": "Select Members",
+            "cancel": "Cancel"
+          },
+          "memberSelection": {
+            "title": "Select Group Members",
+            "description": "Select clients who will be members of the group.",
+            "searchPlaceholder": "Search...",
+            "submit": "Create with {{count}} clients",
+            "submitting": "Creating...",
+            "back": "Back"
+          },
+          "markPayment": {
+            "title": "Record Payment",
+            "description": "Confirm payment for {{name}}.",
+            "amountLabel": "Amount",
+            "amountPlaceholder": "Enter amount",
+            "dateLabel": "Date",
+            "noteLabel": "Note",
+            "notePlaceholder": "Via Payme, cash, etc.",
+            "submit": "Save",
+            "submitting": "Saving...",
+            "cancel": "Cancel"
+          },
+          "paymentDay": {
+            "title": "Set Payment Day",
+            "description": "Choose monthly payment day for {{name}} (1-31).",
+            "label": "Payment Day",
+            "placeholder": "Select day",
+            "submit": "Save",
+            "submitting": "Saving...",
+            "cancel": "Cancel"
+          },
+          "cancelPayment": {
+            "title": "Cancel Payment",
+            "description": "Do you want to cancel the last payment for {{name}}?",
+            "confirm": "Yes, cancel",
+            "cancel": "No, keep it",
+            "submitting": "Cancelling..."
+          },
+          "assignPlan": {
+            "title": "Assign Plan",
+            "description": "Select a plan for the clients.",
+            "searchPlaceholder": "By plan name...",
+            "mealTitle": "Meal Plan",
+            "workoutTitle": "Workout Plan",
+            "empty": "No plans yet. Create a template first.",
+            "submit": "Assign",
+            "cancel": "Cancel"
+          }
+        }
+      }
+    },
+    "payments": {
+      "header": {
+        "title": "Payments",
+        "description": "All payment history and transaction monitoring.",
+        "addPayment": "Add payment",
+        "export": "Export"
+      },
+      "actions": {
+        "edit": "Edit",
+        "refund": "Refund",
+        "cancel": "Cancel"
+      },
+      "stats": {
+        "revenue": "Total Revenue",
+        "active": "Active Subscriptions",
+        "pending": "Pending",
+        "growth": "growth",
+        "overduePayments": "{{count}} overdue payments",
+        "refundedPayments": "{{count}} refunded"
+      },
+      "filters": {
+        "search": "Search",
+        "searchPlaceholder": "Client name or note...",
+        "month": "Month",
+        "status": "Status",
+        "all": "All"
+      },
+      "table": {
+        "columns": {
+          "client": "Client",
+          "amount": "Amount",
+          "date": "Date",
+          "note": "Note",
+          "method": "Method",
+          "status": "Status"
+        },
+        "viewReceipt": "View receipt",
+        "unknownClient": "Unknown",
+        "negotiable": "Negotiable",
+        "currency": "so'm",
+        "totalTransactions": "{{count}} total transactions",
+        "pending": "pending"
+      },
+      "status": {
+        "completed": "Successful",
+        "refunded": "Refunded",
+        "cancelled": "Cancelled"
+      },
+      "methods": {
+        "CASH": "Cash",
+        "CLICK": "Click",
+        "PAYME": "Payme",
+        "UZUM": "Uzum",
+        "OTHER": "Other"
+      },
+      "drawers": {
+        "add": {
+          "title": "Record Payment",
+          "description": "Record a payment received from a client.",
+          "clientLabel": "Select Client",
+          "amountLabel": "Payment Amount",
+          "amountPlaceholder": "Example: 500000",
+          "methodLabel": "Payment Method",
+          "noteLabel": "Note (optional)",
+          "notePlaceholder": "Example: Payment for December",
+          "receiptLabel": "Receipt (optional)",
+          "receiptImageLabel": "Receipt (image)",
+          "uploading": "Uploading...",
+          "submit": "Save",
+          "noClients": "No active clients found."
+        },
+        "edit": {
+          "title": "Edit Payment",
+          "description": "Update payment information.",
+          "notePlaceholder": "Enter note..."
+        },
+        "cancel": {
+          "title": "Cancel Payment",
+          "description": "Provide a reason for cancelling this payment.",
+          "reasonLabel": "Cancellation reason",
+          "reasonPlaceholder": "Example: Entered incorrectly",
+          "submit": "Cancel Payment"
+        },
+        "refund": {
+          "title": "Refund Payment",
+          "description": "Refund money to the client.",
+          "reasonLabel": "Refund reason",
+          "reasonPlaceholder": "Example: Client cancelled",
+          "submit": "Refund"
+        }
+      },
+      "toasts": {
+        "receiptUploaded": "Receipt uploaded!",
+        "uploadError": "Error uploading receipt!",
+        "exportNoData": "No data to export.",
+        "exportSuccess": "Exported successfully!",
+        "clientRequired": "Please select a client.",
+        "amountRequired": "Please enter payment amount.",
+        "saveSuccess": "Payment recorded successfully.",
+        "saveError": "Error recording payment.",
+        "updateSuccess": "Payment updated successfully.",
+        "cancelSuccess": "Payment cancelled successfully.",
+        "refundSuccess": "Payment refunded successfully."
+      }
+    },
+    "sessions": {
+      "header": {
+        "title": "Sessions",
+        "subtitle": "Manage client sessions",
+        "description": "Slots sent from chat, booked consultations, and completed sessions appear here.",
+        "clientsBtn": "Clients",
+        "chatBtn": "Open Chat"
+      },
+      "summary": {
+        "proposed": "Proposed",
+        "proposedHint": "Client hasn't picked a slot yet",
+        "scheduled": "Scheduled",
+        "scheduledHint": "Sessions to be held",
+        "completed": "Completed",
+        "completedHint": "Finished consultations",
+        "cancelled": "Cancelled",
+        "cancelledHint": "Cancelled bookings"
+      },
+      "tabs": {
+        "flow": "Session Flow",
+        "flowDesc": "Pending, scheduled and history states.",
+        "upcoming": "Active Bookings",
+        "history": "History"
+      },
+      "empty": {
+        "upcomingTitle": "No active bookings",
+        "upcomingDesc": "Start a new session from within the client chat.",
+        "history": "History is empty for now.",
+        "loading": "Loading...",
+        "activeNoBookings": "No active bookings"
+      },
+      "dialogs": {
+        "cancel": {
+          "title": "Cancel booking?",
+          "description": "This will also be updated in the chat booking widget.",
+          "confirm": "Cancel"
+        },
+        "complete": {
+          "title": "Complete session?",
+          "description": "This booking will move to completed status and appear in client history.",
+          "confirm": "Finish"
+        }
+      },
+      "toasts": {
+        "cancelSuccess": "Booking cancelled",
+        "cancelError": "Could not cancel booking",
+        "completeSuccess": "Session completed",
+        "completeError": "Could not complete session"
+      }
+    },
+    "mealPlans": {
+      "header": {
+        "title": "Meal Plans",
+        "description": "Create templates, edit and assign to clients.",
+        "newTemplate": "New template"
+      },
+      "actions": {
+        "edit": "Edit",
+        "content": "Plan content",
+        "assign": "Assign to clients",
+        "duplicate": "Duplicate",
+        "delete": "Delete"
+      },
+      "table": {
+        "columns": {
+          "template": "Template",
+          "meals": "Meals",
+          "days": "Day",
+          "calories": "Calories",
+          "assigned": "Assigned",
+          "updated": "Updated"
+        },
+        "mealCount": "{{count}} meals",
+        "dayCount": "{{count}} days",
+        "calorieUnit": "kcal",
+        "unassigned": "None"
+      },
+      "filters": {
+        "search": "Search",
+        "searchPlaceholder": "Search by plan name",
+        "source": "Source",
+        "allSources": "All sources",
+        "manual": "Manual",
+        "ai": "AI",
+        "assignment": "Assignment",
+        "allTemplates": "All templates",
+        "assigned": "Assigned to client",
+        "unassigned": "Empty template"
+      },
+      "drawers": {
+        "meta": {
+          "createTitle": "New template",
+          "editTitle": "Template details",
+          "description": {
+            "create": "Enter template name and description first, then builder will open.",
+            "edit": "Update name and description, then edit content in builder."
+          },
+          "nameLabel": "Template name",
+          "namePlaceholder": "Example: Weight loss plan",
+          "descLabel": "Description",
+          "descPlaceholder": "Write template goal or short description",
+          "continue": "Save and continue",
+          "saveEdit": "Save and edit",
+          "saveOnly": "Save details only"
+        },
+        "assign": {
+          "title": "Assign to clients",
+          "description": "Select client for {{title}}.",
+          "searchPlaceholder": "Search client...",
+          "noClients": "No clients to assign.",
+          "submit": "Save",
+          "status": {
+            "active": "Active",
+            "paused": "Paused",
+            "inactive": "Inactive"
+          },
+          "selection": {
+            "selected": "Selected",
+            "unselected": "Select"
+          }
+        }
+      },
+      "deleteDialog": {
+        "title": "Delete template",
+        "description": "{{title}} will be deleted. This action cannot be undone.",
+        "cancel": "Cancel",
+        "confirm": "Delete"
+      },
+      "toasts": {
+        "nameRequired": "Enter plan name",
+        "saveSuccess": "Plan details updated",
+        "saveError": "Error saving details",
+        "updateSuccess": "Meal plan updated",
+        "createSuccess": "Meal plan created",
+        "assignSuccess": "Clients updated",
+        "duplicateSuccess": "Plan duplicated",
+        "deleteSuccess": "Plan deleted"
+      },
+      "empty": "Template not found.",
+      "noDescription": "No description provided",
+      "defaultNewName": "New template {{date}}"
+    },
+    "workoutPlans": {
+      "header": {
+        "title": "Workout Plans",
+        "description": "Manage workout templates.",
+        "newTemplate": "New Template"
+      },
+      "table": {
+        "columns": {
+          "template": "Template",
+          "exercises": "Exercises",
+          "days": "Days",
+          "clients": "Clients",
+          "updated": "Updated"
+        },
+        "exerciseCount": "{{count}} exercises",
+        "dayCount": "{{count}} days",
+        "clientCount": "{{count}} clients",
+        "unassigned": "Unassigned"
+      },
+      "filters": {
+        "search": "Search",
+        "searchPlaceholder": "Search by plan name",
+        "assignment": "Assignment",
+        "all": "All",
+        "assigned": "Assigned to client",
+        "unassigned": "Empty"
+      },
+      "actions": {
+        "edit": "Edit",
+        "structure": "Plan Structure",
+        "assign": "Assign to Clients",
+        "delete": "Delete"
+      },
+      "drawers": {
+        "meta": {
+          "createTitle": "Create Plan",
+          "editTitle": "Edit Plan",
+          "description": "Enter plan name and short description. Weekly builder will open next.",
+          "nameLabel": "Plan Name",
+          "namePlaceholder": "Example: Full Body A",
+          "descLabel": "Description (optional)",
+          "descPlaceholder": "More information about this plan...",
+          "createAction": "Create",
+          "saveEditAction": "Save and Edit",
+          "saveOnlyAction": "Save Only"
+        },
+        "assign": {
+          "title": "Assign to Clients",
+          "description": "Which clients do you want to assign this plan to?",
+          "searchPlaceholder": "Search clients...",
+          "noClients": "Client not found.",
+          "submit": "Save"
+        }
+      },
+      "deleteDialog": {
+        "title": "Confirm Delete",
+        "cancel": "Cancel",
+        "confirm": "Delete"
+      },
+      "toasts": {
+        "nameRequired": "Enter plan name",
+        "createSuccess": "Workout plan created",
+        "createError": "Error creating plan",
+        "updateSuccess": "Plan details updated",
+        "updateError": "Error saving details",
+        "saveSuccess": "Workout plan saved",
+        "assignSuccess": "Clients updated",
+        "minOneDay": "Add at least 1 day"
+      }
+    },
+    "groups": {
+        "header": {
+          "title": "Groups",
+          "description": "Organize and manage your clients in groups.",
+          "newGroup": "New Group"
+        },
+        "breadcrumbs": {
+          "coach": "Coach",
+          "groups": "Groups"
+        },
+        "filters": {
+          "searchPlaceholder": "Group name..."
+        },
+        "table": {
+          "columns": {
+            "name": "Group Name",
+            "members": "Members"
+          },
+          "noDescription": "No description",
+          "memberCount": "{{count}} clients",
+          "empty": "No groups found."
+        },
+        "actions": {
+          "workoutPlan": "Workout Plan",
+          "mealPlan": "Meal Plan",
+          "leaderboard": "Leaderboard",
+          "editMembers": "Edit Members",
+          "edit": "Edit",
+          "delete": "Delete"
+        },
+        "drawers": {
+          "meta": {
+            "editTitle": "Edit Group",
+            "createTitle": "New Group",
+            "description": "Enter group details and select clients.",
+            "nameLabel": "Group Name",
+            "namePlaceholder": "e.g., Men (Weight Loss)",
+            "descLabel": "Description",
+            "descPlaceholder": "Detailed group info...",
+            "continue": "Continue"
+          },
+          "selection": {
+            "title": "Select Clients",
+            "description": "Choose clients to add to the group.",
+            "searchPlaceholder": "Search clients...",
+            "noContact": "No contact",
+            "noClients": "No clients found.",
+            "save": "Save",
+            "create": "Create Group"
+          },
+          "plan": {
+            "mealTitle": "Select Meal Plan",
+            "workoutTitle": "Select Workout Plan",
+            "description": "This plan will be assigned to all group members."
+          },
+          "leaderboard": {
+            "title": "Leaderboard",
+            "description": "Weekly results of group members",
+            "winner": "Winner",
+            "player": "Player",
+            "close": "Close"
+          }
+        },
+        "deleteDialog": {
+          "title": "Delete Group",
+          "description": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+          "cancel": "Cancel",
+          "confirm": "Delete"
+        },
+        "toasts": {
+          "nameRequired": "Enter group name",
+          "selectAtLeastOne": "Select at least one client",
+          "updateSuccess": "Group updated successfully",
+          "createSuccess": "New group created",
+          "error": "An error occurred",
+          "deleteSuccess": "Group deleted",
+          "mealPlanAssigned": "Meal plan assigned to group",
+          "workoutPlanAssigned": "Workout plan assigned to group"
+        }
+      },
+      "marketplace": {
+        "header": {
+          "title": "Marketplace Settings",
+          "description": "Manage your profile visibility in the public directory"
+        },
+        "statusCard": {
+          "title": "Current Status",
+          "description": "Marketplace listing status",
+          "adminNote": "Admin Note:",
+          "approved": {
+            "label": "Approved",
+            "description": "Your profile is visible to all users in the marketplace.",
+            "active": "Visible in Marketplace"
+          },
+          "pending": {
+            "label": "Pending",
+            "description": "Your request is currently being reviewed by an admin.",
+            "cancel": "Cancel Request"
+          },
+          "rejected": {
+            "label": "Rejected",
+            "description": "Your request was rejected. Please check the note below."
+          },
+          "none": {
+            "label": "Not in Marketplace",
+            "description": "You are not listed in the marketplace yet. Send a request to join.",
+            "request": "Request Marketplace Listing"
+          }
+        },
+        "infoCards": {
+          "whatIs": {
+            "title": "What is Marketplace?",
+            "description": "Marketplace is an open directory for all Liveon app users where they can find coaches and subscribe to them."
+          },
+          "process": {
+            "title": "Review Process",
+            "description": "Each coach request is reviewed by our admins. This process usually takes 24-48 hours. Ensure your information is complete."
+          }
+        },
+        "toasts": {
+          "requestSuccess": "Marketplace request sent",
+          "requestError": "Failed to send request",
+          "cancelSuccess": "Marketplace request cancelled",
+          "cancelError": "Failed to cancel request"
+        }
+      },
+      "workoutBuilder": {
+        "header": {
+          "title": "Workout Builder",
+          "cancel": "Cancel",
+          "save": "Save"
+        },
+        "sidebar": {
+          "searchPlaceholder": "Search from admin library...",
+          "officialExercises": "Official Exercises",
+          "countSuffix": "",
+          "empty": "No exercises found"
+        },
+        "days": {
+          "mon": "Monday",
+          "tue": "Tuesday",
+          "wed": "Wednesday",
+          "thu": "Thursday",
+          "fri": "Friday",
+          "sat": "Saturday",
+          "sun": "Sunday",
+          "empty": "Drag an exercise here"
+        },
+        "item": {
+          "sets": "Sets",
+          "rest": "Rest",
+          "moving": "Moving exercise",
+          "defaultName": "Exercise"
+        },
+        "toasts": {
+          "added": "{{name}} added"
+        }
+      },
+      "workoutBuilderManual": {
+        "title": "Visual Constructor",
+        "description": "Add, edit and organize exercises.",
+        "aiAssistant": "AI Assistant",
+        "generating": "Generating...",
+        "empty": {
+          "title": "No exercises in this plan",
+          "description": "Add exercises manually or use AI assistant.",
+          "addFirst": "Add first exercise"
+        },
+        "fields": {
+          "name": "Exercise name",
+          "namePlaceholder": "e.g., Bench Press",
+          "muscle": "Muscle group",
+          "musclePlaceholder": "Chest",
+          "sets": "Sets/Reps",
+          "setsPlaceholder": "3x10",
+          "rest": "Rest",
+          "restPlaceholder": "60s"
+        },
+        "actions": {
+          "addMore": "Add more exercises",
+          "cancel": "Cancel",
+          "save": "Save ({{count}} items)"
+        },
+        "toasts": {
+          "aiSuccess": "Exercises generated by AI ✨"
+        },
+        "aiMocks": {
+          "squats": "Squats",
+          "benchPress": "Bench Press",
+          "pullUps": "Pull-ups",
+          "bicepCurls": "Bicep Curls",
+          "plank": "Plank",
+          "legs": "Legs",
+          "chest": "Chest",
+          "back": "Back",
+          "arms": "Arms",
+          "core": "Core"
+        }
+      },
+      "mealBuilder": {
+        "header": {
+          "editTitle": "Edit Plan",
+          "newTitle": "New Meal Plan",
+          "description": "Track nutritional values precisely",
+          "aiMenu": "AI Menu",
+          "generating": "Generating..."
+        },
+        "meta": {
+          "planName": "Plan Name",
+          "planNamePlaceholder": "e.g., 30-day weight loss",
+          "description": "Description",
+          "descriptionPlaceholder": "Key rules...",
+          "duration": "Duration",
+          "durationPlaceholder": "e.g., 4 weeks",
+          "tags": "Tags",
+          "tagsPlaceholder": "Keto, Affordable"
+        },
+        "summary": {
+          "totalCalories": "Total Calories",
+          "protein": "Protein",
+          "carbs": "Carbs",
+          "fat": "Fat"
+        },
+        "meals": {
+          "title": "Menu Content",
+          "addMeal": "Add Meal",
+          "empty": "No meals listed yet. Edit existing or create one quickly with AI.",
+          "type": "Type",
+          "mealName": "Meal Name",
+          "mealNamePlaceholder": "e.g., 2 boiled eggs + cucumber",
+          "proteinLabel": "Protein (g)",
+          "carbsLabel": "Carbs (g)",
+          "fatLabel": "Fat (g)",
+          "auto": "Auto",
+          "types": {
+            "breakfast": "Breakfast",
+            "lunch": "Lunch",
+            "dinner": "Dinner",
+            "snack": "Snack",
+            "lateSnack": "Late snack"
+          }
+        },
+        "info": "If you don't enter calories, the program will automatically calculate them via macros (Protein x 4 + Carbs x 4 + Fat x 9).",
+        "footer": {
+          "cancel": "Cancel",
+          "save": "Save Plan ({{count}} meals)"
+        },
+        "toasts": {
+          "enterTitle": "Please enter a plan name",
+          "aiSuccess": "AI dietitian formed the menu successfully ✨"
+        },
+        "aiDefaults": {
+          "title": "AI Weight Gain (Special)",
+          "description": "High-calorie plan generated by artificial intelligence",
+          "duration": "4 weeks",
+          "meals": {
+            "oatmeal": "Oatmeal + Honey + Walnuts",
+            "chicken": "Boiled chicken breast + Chicken + Rice",
+            "salmon": "Salmon fish + Lemon spinach",
+            "nuts": "Walnuts 30g + Apple"
+          }
+        }
+      },
+      "challenges": {
+        "title": "Challenges",
+        "addChallenge": "Add Challenge",
+        "countSuffix": "challenges",
+        "status": {
+          "upcoming": "Upcoming",
+          "active": "Active",
+          "completed": "Completed",
+          "cancelled": "Cancelled"
+        },
+        "rewardModes": {
+          "fixedXp": {
+            "label": "Fixed XP",
+            "description": "Constant XP awarded"
+          },
+          "percentOfPool": {
+            "label": "Pool Percentage",
+            "description": "Percentage of the accumulated XP pool"
+          },
+          "placeXp": {
+            "label": "By Places",
+            "description": "Separate XP for 1st-2nd-3rd places"
+          }
+        },
+        "metricTypes": {
+          "steps": {
+            "label": "Steps",
+            "unit": "steps"
+          },
+          "workoutMinutes": {
+            "label": "Workout Time",
+            "unit": "minutes"
+          },
+          "burnedCalories": {
+            "label": "Burned Calories",
+            "unit": "kcal"
+          },
+          "sleepHours": {
+            "label": "Sleep",
+            "unit": "hours"
+          }
+        },
+        "aggregations": {
+          "sum": "Sum",
+          "average": "Average"
+        },
+        "table": {
+          "columns": {
+            "challenge": "Challenge",
+            "status": "Status",
+            "period": "Period",
+            "stats": "Stats"
+          },
+          "unnamed": "Unnamed",
+          "noDescription": "No description provided",
+          "rewardPrefix": "Reward: ",
+          "placeSuffix": "place",
+          "placeRewardsLabel": "Place Rewards"
+        },
+        "filters": {
+          "search": {
+            "label": "Search",
+            "placeholder": "Name or description"
+          },
+          "status": {
+            "label": "Status",
+            "all": "All statuses"
+          }
+        },
+        "empty": "No challenges found matching filters.",
+        "drawer": {
+          "editTitle": "Edit Challenge",
+          "newTitle": "New Challenge",
+          "description": "Manage challenge settings for your clients.",
+          "sections": {
+            "basicInfo": "Basic Information",
+            "timeAndStatus": "Time and Status",
+            "settings": "Challenge Settings",
+            "participants": "Participants"
+          },
+          "fields": {
+            "coverImage": "Cover Image",
+            "selectImage": "Select Image",
+            "removeImage": "Remove",
+            "title": "Title",
+            "titlePlaceholder": "e.g., 30-day fitness marathon",
+            "descriptionLabel": "Description",
+            "descriptionPlaceholder": "Brief information about the challenge",
+            "status": "Status",
+            "startTime": "Start Time",
+            "endTime": "End Time",
+            "joinFee": "Entry Fee (XP)",
+            "maxParticipants": "Max Participants",
+            "infinite": "Unlimited",
+            "rewardMode": "Reward Mode",
+            "metric": "Challenge Metric",
+            "aggregation": "Calculation Method",
+            "target": "Target",
+            "totalReward": "Total Reward (XP)",
+            "rewardPercent": "Reward Percentage (%)",
+            "placeInfoPercent": "Entry fee exists: enter percentages for places (e.g., 50, 30, 20).",
+            "placeInfoFixed": "Entry fee is 0: enter XP directly for places.",
+            "placeLabel": "{{place}} place",
+            "participantsDescription": "Select the clients who will participate in this challenge.",
+            "noClients": "You have no clients yet."
+          }
+        },
+        "toasts": {
+          "titleRequired": "Title is required",
+          "updateSuccess": "Challenge updated",
+          "createSuccess": "Challenge created and invitations sent",
+          "error": "An error occurred",
+          "deleteSuccess": "Challenge deleted",
+          "deleteError": "Error deleting challenge",
+          "shareSuccess": "Challenge sent to chat"
+        },
+        "deleteDialog": {
+          "title": "Do you want to delete the challenge?",
+          "description": "{{title}} will be permanently deleted.",
+          "confirm": "Delete",
+          "deleting": "Deleting..."
+        },
+        "shareDialog": {
+          "prefix": "Challenge: "
+        },
+        "actions": {
+          "edit": "Edit",
+          "share": "Send to Chat",
+          "delete": "Delete"
+        }
+      }
+    }
+  }
