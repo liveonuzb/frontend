@@ -85,6 +85,7 @@ const Index = () => {
   const [paymentNote, setPaymentNote] = React.useState("");
   const [paymentMethod, setPaymentMethod] = React.useState("CASH");
   const [receiptUrl, setReceiptUrl] = React.useState("");
+  const [receiptAccessUrl, setReceiptAccessUrl] = React.useState("");
   const [isUploading, setIsUploading] = React.useState(false);
   const [addPaymentSearch, setAddPaymentSearch] = React.useState("");
 
@@ -94,6 +95,7 @@ const Index = () => {
   const [editNote, setEditNote] = React.useState("");
   const [editMethod, setEditMethod] = React.useState("");
   const [editReceiptUrl, setEditReceiptUrl] = React.useState("");
+  const [editReceiptAccessUrl, setEditReceiptAccessUrl] = React.useState("");
   const [isEditUploading, setIsEditUploading] = React.useState(false);
 
   // State for Cancellation drawer
@@ -169,15 +171,22 @@ const Index = () => {
     formData.append("file", file);
 
     try {
-      const response = await api.post("/storage/upload", formData, {
+      const response = await api.post("/coach/payments/receipts/upload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
+      const payload = response.data?.data ?? response.data;
+      const nextReceiptRef = payload?.receiptRef || payload?.url || "";
+      const nextAccessUrl =
+        payload?.accessUrl || payload?.url || payload?.receiptRef || "";
+
       if (isEdit) {
-        setEditReceiptUrl(response.data.url);
+        setEditReceiptUrl(nextReceiptRef);
+        setEditReceiptAccessUrl(nextAccessUrl);
       } else {
-        setReceiptUrl(response.data.url);
+        setReceiptUrl(nextReceiptRef);
+        setReceiptAccessUrl(nextAccessUrl);
       }
       toast.success("Kvitansiya yuklandi!");
     } catch (error) {
@@ -350,6 +359,7 @@ const Index = () => {
       setPaymentAmount("");
       setPaymentMethod("CASH");
       setReceiptUrl("");
+      setReceiptAccessUrl("");
       setAddPaymentSearch("");
       setIsAddDrawerOpen(false);
     } catch (error) {
@@ -373,6 +383,7 @@ const Index = () => {
       toast.success("To'lov muvaffaqiyatli yangilandi.");
       setEditingPayment(null);
       setEditReceiptUrl("");
+      setEditReceiptAccessUrl("");
     } catch (error) {
       toast.error("To'lovni yangilashda xatolik yuz berdi.");
     }
@@ -573,7 +584,8 @@ const Index = () => {
                   setEditAmount(String(p.amount || ""));
                   setEditNote(p.note || "");
                   setEditMethod(p.method || "CLICK");
-                  setEditReceiptUrl(p.receiptUrl || "");
+                  setEditReceiptUrl(p.receiptRef || p.receiptUrl || "");
+                  setEditReceiptAccessUrl(p.receiptUrl || "");
                 }}
               >
                 <Edit2Icon className="size-4" />
@@ -723,8 +735,11 @@ const Index = () => {
         setPaymentNote={setPaymentNote}
         paymentMethod={paymentMethod}
         setPaymentMethod={setPaymentMethod}
-        receiptUrl={receiptUrl}
-        setReceiptUrl={setReceiptUrl}
+        receiptUrl={receiptAccessUrl}
+        onClearReceipt={() => {
+          setReceiptUrl("");
+          setReceiptAccessUrl("");
+        }}
         isUploading={isUploading}
         addPaymentSearch={addPaymentSearch}
         setAddPaymentSearch={setAddPaymentSearch}
@@ -742,8 +757,11 @@ const Index = () => {
         setEditNote={setEditNote}
         editMethod={editMethod}
         setEditMethod={setEditMethod}
-        editReceiptUrl={editReceiptUrl}
-        setEditReceiptUrl={setEditReceiptUrl}
+        editReceiptUrl={editReceiptAccessUrl}
+        onClearReceipt={() => {
+          setEditReceiptUrl("");
+          setEditReceiptAccessUrl("");
+        }}
         isEditUploading={isEditUploading}
         onUpdatePayment={handleUpdatePayment}
         isUpdatingClientPayment={isUpdatingClientPayment}

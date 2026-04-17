@@ -59,7 +59,7 @@ const PaymentAddDrawer = ({
   paymentMethod,
   setPaymentMethod,
   receiptUrl,
-  setReceiptUrl,
+  onClearReceipt,
   isUploading,
   addPaymentSearch,
   setAddPaymentSearch,
@@ -254,7 +254,7 @@ const PaymentAddDrawer = ({
                     variant="ghost"
                     size="icon"
                     className="size-8"
-                    onClick={() => setReceiptUrl("")}
+                    onClick={onClearReceipt}
                   >
                     <RotateCcwIcon className="size-4 text-muted-foreground" />
                   </Button>

@@ -31,7 +31,7 @@ const PaymentEditDrawer = ({
   editMethod,
   setEditMethod,
   editReceiptUrl,
-  setEditReceiptUrl,
+  onClearReceipt,
   isEditUploading,
   onUpdatePayment,
   isUpdatingClientPayment,
@@ -147,7 +147,7 @@ const PaymentEditDrawer = ({
                     variant="ghost"
                     size="icon"
                     className="size-8"
-                    onClick={() => setEditReceiptUrl("")}
+                    onClick={onClearReceipt}
                   >
                     <RotateCcwIcon className="size-4 text-muted-foreground" />
                   </Button>
