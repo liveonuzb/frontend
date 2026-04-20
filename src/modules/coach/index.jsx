@@ -30,6 +30,9 @@ const SettingsPage = lazy(
 const SnippetsPage = lazy(
   () => import("@/modules/coach/pages/snippets/index.jsx"),
 );
+const ChallengePage = lazy(
+  () => import("@/modules/coach/pages/challenges/index.jsx"),
+);
 const NotFound = lazy(() => import("@/pages/not-found/index.jsx"));
 
 const renderPage = (Component) => (
@@ -104,6 +107,7 @@ const Index = () => {
           path="messages"
           element={<Navigate to="/coach/dashboard" replace />}
         />
+        <Route path="challenges/*" element={renderPage(ChallengePage)} />
         <Route path="snippets/*" element={renderPage(SnippetsPage)} />
         <Route path="profile" element={renderPage(ProfilePage)} />
         <Route path="settings" element={renderPage(SettingsPage)} />
