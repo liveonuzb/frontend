@@ -14,5 +14,5 @@ export { default as useGalleryStore } from "./gallery-store";
 export { default as useChatStore } from "./chat-store";
 export { default as useTourStore } from "./tour-store";
 export { default as useOrderStore } from "./order-store";
-export { default as useDashboardStore } from "./dashboard-store";
+export { default as useDashboardStore } from "@/modules/coach/store/useCoachDashboardStore";
 export { default as useAddMealOverlayStore } from "./add-meal-overlay-store";

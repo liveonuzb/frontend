@@ -27,6 +27,9 @@ const ProfilePage = lazy(
 const SettingsPage = lazy(
   () => import("@/modules/profile/pages/profile/index.jsx"),
 );
+const SnippetsPage = lazy(
+  () => import("@/modules/coach/pages/snippets/index.jsx"),
+);
 const NotFound = lazy(() => import("@/pages/not-found/index.jsx"));
 
 const renderPage = (Component) => (
@@ -70,7 +73,7 @@ const Index = () => {
           element={<LegacyCoachRedirect to="/coach/payments" />}
         />
         <Route
-          path="telegram-groups"
+          path="telegram-groups/*"
           element={renderPage(TelegramGroupsPage)}
         />
         <Route
@@ -101,6 +104,7 @@ const Index = () => {
           path="messages"
           element={<Navigate to="/coach/dashboard" replace />}
         />
+        <Route path="snippets/*" element={renderPage(SnippetsPage)} />
         <Route path="profile" element={renderPage(ProfilePage)} />
         <Route path="settings" element={renderPage(SettingsPage)} />
         <Route path="*" element={renderPage(NotFound)} />

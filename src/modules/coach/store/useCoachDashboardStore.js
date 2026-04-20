@@ -13,7 +13,7 @@ const DEFAULT_WIDGET_CONFIGS = [
   { id: "ai-tip", size: "md" },
 ];
 
-const useDashboardStore = create(
+export const useCoachDashboardStore = create(
   persist(
     (set) => ({
       widgetConfigs: DEFAULT_WIDGET_CONFIGS,
@@ -21,9 +21,10 @@ const useDashboardStore = create(
 
       setWidgetOrder: (newOrderIds) =>
         set((state) => {
-          const newConfigs = map(newOrderIds,
+          const newConfigs = map(
+            newOrderIds,
             (id) =>
-              find(state.widgetConfigs, (c) => c.id === id) || {
+              find(state.widgetConfigs, (config) => config.id === id) || {
                 id,
                 size: "sm",
               },
@@ -33,13 +34,15 @@ const useDashboardStore = create(
 
       updateWidgetSize: (id, size) =>
         set((state) => ({
-          widgetConfigs: map(state.widgetConfigs, (c) =>
-            c.id === id ? { ...c, size } : c,
+          widgetConfigs: map(state.widgetConfigs, (config) =>
+            config.id === id ? { ...config, size } : config,
           ),
         })),
 
-      toggleEditMode: () => set((state) => ({ isEditMode: !state.isEditMode })),
-      setEditMode: (val) => set({ isEditMode: val }),
+      toggleEditMode: () =>
+        set((state) => ({ isEditMode: !state.isEditMode })),
+
+      setEditMode: (value) => set({ isEditMode: value }),
     }),
     {
       name: "liveon-dashboard-storage-v6",
@@ -47,4 +50,4 @@ const useDashboardStore = create(
   ),
 );
 
-export default useDashboardStore;
+export default useCoachDashboardStore;

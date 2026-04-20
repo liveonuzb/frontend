@@ -4,7 +4,7 @@ import ListPage from "./list/index.jsx";
 import CreatePage from "./create/index.jsx";
 import EditPage from "./edit/index.jsx";
 
-const GroupsIndex = () => (
+const SnippetsIndex = () => (
   <Routes>
     <Route index element={<Navigate to="list" replace />} />
     <Route path="list" element={<ListPage />}>
@@ -14,4 +14,4 @@ const GroupsIndex = () => (
   </Routes>
 );
 
-export default GroupsIndex;
+export default SnippetsIndex;
