@@ -1,8 +1,6 @@
 import React from "react";
-import Container from "@/modules/coach/containers/programs";
+import ProgramsContainer from "@/modules/coach/containers/programs/index.jsx";
 
-const Index = () => {
-  return <Container />;
-};
+const ProgramsPage = () => <ProgramsContainer />;
 
-export default Index;
+export default ProgramsPage;

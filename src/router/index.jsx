@@ -19,6 +19,9 @@ const AdminModule = lazy(() => import("@/modules/admin/index.jsx"));
 const UserModule = lazy(() => import("@/modules/user/index.jsx"));
 const CoachModule = lazy(() => import("@/modules/coach/index.jsx"));
 const NotFound = lazy(() => import("@/pages/not-found/index.jsx"));
+const ReferralRedirectPage = lazy(
+  () => import("@/pages/referral-redirect/index.jsx"),
+);
 
 const renderRouteElement = (element) => (
   <Suspense fallback={<PageLoader />}>{element}</Suspense>
@@ -37,6 +40,11 @@ const Index = () => {
 
   return (
     <Routes>
+      <Route
+        path="/r/:code"
+        element={renderRouteElement(<ReferralRedirectPage />)}
+      />
+
       {isAuthenticated ? (
         <Route
           path="/auth/*"

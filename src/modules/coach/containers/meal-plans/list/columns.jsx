@@ -1,14 +1,18 @@
-import { forEach, slice } from "lodash";
 import React from "react";
+import { forEach, get, slice } from "lodash";
 import { FlameIcon } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
-import { DataGridColumnHeader } from "@/components/reui/data-grid";
+import {
+  DataGridColumnHeader,
+  DataGridTableDndRowHandle,
+  DataGridTableRowSelect,
+  DataGridTableRowSelectAll,
+} from "@/components/reui/data-grid";
 import ActionsMenu from "./actions-menu.jsx";
 
-const formatDate = (value, locale = "uz-UZ") =>
+const formatDate = (value) =>
   value
-    ? new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(
+    ? new Intl.DateTimeFormat("uz-UZ", { dateStyle: "medium" }).format(
         new Date(value),
       )
     : "\u2014";
@@ -27,41 +31,64 @@ const calculateTotalCalories = (weeklyKanban) => {
 };
 
 export const useColumns = ({
-  locale,
+  canReorder,
+  currentPage,
+  pageSize,
   onEdit,
-  onAssign,
-  onDuplicate,
-  onDelete,
-  isDeleting,
-}) => {
-  const { t } = useTranslation();
-
-  return React.useMemo(
+  onSoftDelete,
+  onRestore,
+  onHardDelete,
+}) =>
+  React.useMemo(
     () => [
+      {
+        id: "select",
+        header: () => <DataGridTableRowSelectAll />,
+        cell: ({ row }) => <DataGridTableRowSelect row={row} />,
+        enableSorting: false,
+        size: 40,
+      },
+      ...(canReorder
+        ? [
+            {
+              id: "dnd",
+              header: "",
+              cell: () => <DataGridTableDndRowHandle />,
+              size: 32,
+            },
+          ]
+        : []),
+      {
+        accessorKey: "id",
+        header: "#",
+        cell: (info) => (currentPage - 1) * pageSize + info.row.index + 1,
+        size: 60,
+        meta: {
+          cellClassName: "hidden md:table-cell",
+          headerClassName: "hidden md:table-cell",
+        },
+      },
       {
         accessorKey: "title",
         header: ({ column }) => (
-          <DataGridColumnHeader
-            column={column}
-            title={t("coach.mealPlans.table.columns.template")}
-          />
+          <DataGridColumnHeader column={column} title="Reja nomi" />
         ),
         enableSorting: true,
         cell: ({ row }) => {
           const plan = row.original;
           return (
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="font-medium">{plan.title}</p>
+                <p className="font-semibold leading-tight">{plan.title}</p>
                 <Badge variant="outline">
-                  {plan.source === "ai"
-                    ? t("coach.mealPlans.filters.ai")
-                    : t("coach.mealPlans.filters.manual")}
+                  {plan.source === "ai" ? "AI" : "Manual"}
                 </Badge>
               </div>
-              <p className="line-clamp-2 text-sm text-muted-foreground">
-                {plan.description || t("coach.mealPlans.noDescription")}
-              </p>
+              {plan.description ? (
+                <p className="text-xs text-muted-foreground line-clamp-1 max-w-[260px]">
+                  {plan.description}
+                </p>
+              ) : null}
             </div>
           );
         },
@@ -69,72 +96,54 @@ export const useColumns = ({
       {
         accessorKey: "mealsCount",
         header: ({ column }) => (
-          <DataGridColumnHeader
-            column={column}
-            title={t("coach.mealPlans.table.columns.meals")}
-          />
+          <DataGridColumnHeader column={column} title="Ovqat" />
         ),
         enableSorting: true,
-        cell: ({ row }) =>
-          t("coach.mealPlans.table.mealCount", {
-            count: row.original.mealsCount,
-          }),
+        cell: ({ row }) => `${get(row.original, "mealsCount", 0)} ta`,
+        size: 90,
       },
       {
         accessorKey: "daysWithMeals",
         header: ({ column }) => (
-          <DataGridColumnHeader
-            column={column}
-            title={t("coach.mealPlans.table.columns.days")}
-          />
+          <DataGridColumnHeader column={column} title="Kun" />
         ),
         enableSorting: true,
-        cell: ({ row }) =>
-          t("coach.mealPlans.table.dayCount", {
-            count: row.original.daysWithMeals,
-          }),
+        cell: ({ row }) => `${get(row.original, "daysWithMeals", 0)} kun`,
+        size: 90,
       },
       {
         accessorKey: "totalCalories",
         accessorFn: (row) => calculateTotalCalories(row.weeklyKanban),
         header: ({ column }) => (
-          <DataGridColumnHeader
-            column={column}
-            title={t("coach.mealPlans.table.columns.calories")}
-          />
+          <DataGridColumnHeader column={column} title="Kaloriya" />
         ),
         enableSorting: true,
         cell: ({ row }) => {
-          const totalCal =
-            calculateTotalCalories(row.original.weeklyKanban) || 0;
+          const totalCal = calculateTotalCalories(row.original.weeklyKanban) || 0;
           return (
             <Badge
               variant="secondary"
               className="font-bold bg-orange-500/10 text-orange-600 border-orange-500/20"
             >
               <FlameIcon className="mr-1 size-3" />
-              {totalCal} {t("coach.mealPlans.table.calorieUnit")}
+              {totalCal} kkal
             </Badge>
           );
         },
+        size: 120,
       },
       {
         id: "assignedClientsCount",
-        accessorFn: (row) => row.assignedClients.length,
+        accessorFn: (row) => get(row, "assignedClients.length", 0),
         header: ({ column }) => (
-          <DataGridColumnHeader
-            column={column}
-            title={t("coach.mealPlans.table.columns.assigned")}
-          />
+          <DataGridColumnHeader column={column} title="Biriktirilgan" />
         ),
         enableSorting: true,
         cell: ({ row }) => {
-          const assignedClients = row.original.assignedClients;
+          const assignedClients = get(row.original, "assignedClients", []);
           if (!assignedClients.length) {
             return (
-              <span className="text-muted-foreground">
-                {t("coach.mealPlans.table.unassigned")}
-              </span>
+              <span className="text-muted-foreground text-sm">Yo'q</span>
             );
           }
           return (
@@ -148,9 +157,7 @@ export const useColumns = ({
                 </Badge>
               ))}
               {assignedClients.length > 2 ? (
-                <Badge variant="outline">
-                  +{assignedClients.length - 2}
-                </Badge>
+                <Badge variant="outline">+{assignedClients.length - 2}</Badge>
               ) : null}
             </div>
           );
@@ -159,40 +166,32 @@ export const useColumns = ({
       {
         accessorKey: "updatedAt",
         header: ({ column }) => (
-          <DataGridColumnHeader
-            column={column}
-            title={t("coach.mealPlans.table.columns.updated")}
-          />
+          <DataGridColumnHeader column={column} title="Yangilandi" />
         ),
         enableSorting: true,
-        cell: ({ row }) => formatDate(row.original.updatedAt, locale),
+        cell: ({ row }) => formatDate(row.original.updatedAt),
+        size: 130,
       },
       {
         id: "actions",
         header: "",
         size: 50,
         enableSorting: false,
-        meta: { noPinnedBorder: true },
-        cell: ({ row }) => {
-          const plan = row.original;
-          return (
-            <div
-              className="flex items-center justify-end"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <ActionsMenu
-                plan={plan}
-                onEdit={onEdit}
-                onAssign={onAssign}
-                onDuplicate={onDuplicate}
-                onDelete={onDelete}
-                isDeleting={isDeleting}
-              />
-            </div>
-          );
-        },
+        cell: ({ row }) => (
+          <div
+            className="flex items-center justify-end"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <ActionsMenu
+              plan={row.original}
+              onEdit={onEdit}
+              onSoftDelete={onSoftDelete}
+              onRestore={onRestore}
+              onHardDelete={onHardDelete}
+            />
+          </div>
+        ),
       },
     ],
-    [locale, onEdit, onAssign, onDuplicate, onDelete, isDeleting, t],
+    [canReorder, currentPage, pageSize, onEdit, onSoftDelete, onRestore, onHardDelete],
   );
-};

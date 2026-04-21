@@ -1,7 +1,13 @@
 import React from "react";
-import { CopyIcon, CheckIcon, UsersIcon, MousePointerClickIcon, TrendingUpIcon } from "lucide-react";
+import {
+  CheckIcon,
+  CopyIcon,
+  MousePointerClickIcon,
+  TrendingUpIcon,
+  UsersIcon,
+} from "lucide-react";
 import { toast } from "sonner";
-import { useCoachReferralDashboard } from "@/hooks/app/use-coach-referrals";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -9,8 +15,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCoachReferralDashboard } from "@/modules/coach/lib/hooks";
 
 const StatItem = ({ icon: Icon, label, value, color = "primary" }) => {
   const colors = {
@@ -18,13 +24,16 @@ const StatItem = ({ icon: Icon, label, value, color = "primary" }) => {
     emerald: "bg-emerald-500/10 text-emerald-600",
     amber: "bg-amber-500/10 text-amber-600",
   };
+
   return (
-    <div className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-muted/30">
-      <div className={`flex size-8 items-center justify-center rounded-xl ${colors[color]}`}>
+    <div className="flex flex-col items-center gap-1.5 rounded-2xl bg-muted/30 p-3">
+      <div
+        className={`flex size-8 items-center justify-center rounded-xl ${colors[color]}`}
+      >
         <Icon className="size-4" />
       </div>
       <p className="text-xl font-black tabular-nums">{value}</p>
-      <p className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wider text-center">
+      <p className="text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
         {label}
       </p>
     </div>
@@ -36,12 +45,12 @@ export function ReferralCard() {
   const { data, isLoading } = useCoachReferralDashboard();
 
   const referral = data?.data ?? data;
-
   const referralLink = referral?.referralLink ?? "";
   const stats = referral?.stats ?? { clicks: 0, signups: 0, paidConversions: 0 };
 
   const handleCopy = React.useCallback(() => {
     if (!referralLink) return;
+
     navigator.clipboard.writeText(referralLink).then(() => {
       setCopied(true);
       toast.success("Havola nusxalandi!");
@@ -50,17 +59,16 @@ export function ReferralCard() {
   }, [referralLink]);
 
   return (
-    <Card className="overflow-hidden border-none bg-card/50 backdrop-blur-sm shadow-xl">
+    <Card className="overflow-hidden border-none bg-card/50 shadow-xl backdrop-blur-sm">
       <CardHeader className="px-6 py-5">
         <CardTitle className="text-base font-black tracking-tight">
           Referral Dasturi
         </CardTitle>
         <CardDescription className="text-xs font-medium text-muted-foreground/70">
-          Do&apos;stlaringizni taklif qiling va mukofot oling
+          Taklif havolasi va konversiya holati
         </CardDescription>
       </CardHeader>
-      <CardContent className="px-6 pb-6 pt-0 flex flex-col gap-4">
-        {/* Referral Link */}
+      <CardContent className="flex flex-col gap-4 px-6 pb-6 pt-0">
         <div className="flex items-center gap-2 rounded-2xl border border-border/50 bg-muted/30 px-4 py-3">
           {isLoading ? (
             <Skeleton className="h-4 flex-1 rounded" />
@@ -84,7 +92,6 @@ export function ReferralCard() {
           </Button>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-2">
           {isLoading ? (
             <>
@@ -119,3 +126,5 @@ export function ReferralCard() {
     </Card>
   );
 }
+
+export default ReferralCard;

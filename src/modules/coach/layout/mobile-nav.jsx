@@ -6,7 +6,11 @@ import {
   UtensilsIcon,
   WalletCardsIcon,
   DumbbellIcon,
+  BookOpenIcon,
   BotIcon,
+  SendIcon,
+  ReceiptTextIcon,
+  Share2Icon,
 } from "lucide-react";
 
 const navItems = [
@@ -14,8 +18,12 @@ const navItems = [
   { to: "/coach/clients", icon: UsersIcon, label: "Mijozlar" },
   { to: "/coach/meal-plans", icon: UtensilsIcon, label: "Ovqatlanish" },
   { to: "/coach/workout-plans", icon: DumbbellIcon, label: "Workout" },
+  { to: "/coach/courses", icon: BookOpenIcon, label: "Kurslar" },
+  { to: "/coach/course-purchases", icon: ReceiptTextIcon, label: "Xaridlar" },
   { to: "/coach/payments", icon: WalletCardsIcon, label: "To'lovlar" },
-  { to: "/coach/telegram-groups", icon: BotIcon, label: "Telegram" },
+  { to: "/coach/referrals", icon: Share2Icon, label: "Referral" },
+  { to: "/coach/telegram-bot", icon: SendIcon, label: "TG bot" },
+  { to: "/coach/telegram-groups", icon: BotIcon, label: "Guruhlar" },
 ];
 
 export default function CoachMobileNav({ hidden = false }) {
@@ -42,7 +50,9 @@ export default function CoachMobileNav({ hidden = false }) {
             }
           >
             <item.icon className="size-5 mb-1" />
-            <span className="text-[10px] font-medium leading-none">{item.label}</span>
+            <span className="text-[10px] font-medium leading-none">
+              {item.label}
+            </span>
           </NavLink>
         ))}
       </div>

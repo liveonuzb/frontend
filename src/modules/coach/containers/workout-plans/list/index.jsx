@@ -1,369 +1,401 @@
-import {
-  filter,
-  get,
-  includes,
-  size,
-  some,
-  toLower,
-  trim,
-} from "lodash";
 import React from "react";
-import {
-  getCoreRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+import { useNavigate, Outlet } from "react-router";
+import { chain, findIndex, get, isArray, map as lodashMap } from "lodash";
+import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { toast } from "sonner";
-import { useTranslation } from "react-i18next";
-import { RotateCcwIcon } from "lucide-react";
-import CoachErrorState from "../../../components/coach-error-state";
+import { PlusIcon, RotateCcwIcon, Trash2Icon } from "lucide-react";
 import { useBreadcrumbStore } from "@/store";
-import { useCoachWorkoutPlans } from "@/hooks/app/use-coach.js";
-import PageTransition from "@/components/page-transition";
-import WorkoutPlanBuilder from "@/components/workout-plan-builder/index.jsx";
-import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   DataGrid,
   DataGridContainer,
   DataGridTable,
+  DataGridTableDndRows,
 } from "@/components/reui/data-grid";
-import { cn } from "@/lib/utils";
-import WorkoutPlanHeader from "@/modules/coach/containers/workout-plans/components/workout-plan-header.jsx";
-import WorkoutPlanMetaDrawer from "@/modules/coach/containers/workout-plans/components/workout-plan-meta-drawer.jsx";
-import WorkoutPlanAssignDrawer from "@/modules/coach/containers/workout-plans/components/workout-plan-assign-drawer.jsx";
+import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
+import {
+  BulkActionsBar,
+  LifecycleTabs,
+  ListHeader,
+} from "@/modules/coach/components/data-grid-helpers";
+import {
+  useCoachWorkoutPlans,
+  useCoachWorkoutPlansMutations,
+} from "@/modules/coach/lib/hooks/useCoachWorkoutPlans";
 import { useColumns } from "./columns.jsx";
-import { Filter, useWorkoutPlanFilters } from "./filter.jsx";
-import { DeleteAlert } from "./delete-alert.jsx";
+import { Filter } from "./filter.jsx";
+import { useWorkoutPlanFilters } from "./use-filters.js";
+import { SoftDeleteAlert, HardDeleteAlert } from "./delete-alert.jsx";
 
-const WorkoutPlansListIndex = () => {
-  const { t } = useTranslation();
+const WorkoutPlansListPage = () => {
+  const navigate = useNavigate();
   const { setBreadcrumbs } = useBreadcrumbStore();
-  const {
-    workoutPlans,
-    clients,
-    isLoading,
-    isFetching,
-    isError,
-    refetch,
-    createWorkoutPlan,
-    updateWorkoutPlan,
-    assignWorkoutPlan,
-    deleteWorkoutPlan,
-    isAssigning,
-  } = useCoachWorkoutPlans();
 
   const {
     search,
-    assignmentFilter,
+    lifecycle,
+    setLifecycle,
+    sortBy,
+    sortDir,
+    currentPage,
+    pageSize,
+    setPageQuery,
     sorting,
+    canReorder,
     filterFields,
     activeFilters,
     handleFiltersChange,
     handleSortingChange,
   } = useWorkoutPlanFilters();
 
-  const [builderOpen, setBuilderOpen] = React.useState(false);
-  const [builderInitialData, setBuilderInitialData] = React.useState(null);
-  const [editingPlan, setEditingPlan] = React.useState(null);
-  const [nameDrawerOpen, setNameDrawerOpen] = React.useState(false);
-  const [newPlanName, setNewPlanName] = React.useState("");
-  const [newPlanDescription, setNewPlanDescription] = React.useState("");
-  const [planMetaMode, setPlanMetaMode] = React.useState("create");
-  const [assignDrawerOpen, setAssignDrawerOpen] = React.useState(false);
-  const [assigningPlan, setAssigningPlan] = React.useState(null);
-  const [selectedClientIds, setSelectedClientIds] = React.useState([]);
-  const [clientSearch, setClientSearch] = React.useState("");
-  const [deleteCandidate, setDeleteCandidate] = React.useState(null);
+  const deferredSearch = React.useDeferredValue(search);
+
+  const queryParams = React.useMemo(
+    () => ({
+      ...(deferredSearch.trim() ? { q: deferredSearch.trim() } : {}),
+      lifecycle,
+      sortBy,
+      sortDir,
+      page: currentPage,
+      pageSize,
+    }),
+    [deferredSearch, lifecycle, sortBy, sortDir, currentPage, pageSize],
+  );
+
+  const { data: plansData, isLoading, isFetching, refetch } = useCoachWorkoutPlans(queryParams);
+  const plans = get(plansData, "data.data", []);
+  const meta = get(plansData, "data.meta", {
+    total: 0,
+    page: 1,
+    pageSize: 10,
+    totalPages: 1,
+  });
+
+  const mutations = useCoachWorkoutPlansMutations();
+
+  const [rowSelection, setRowSelection] = React.useState({});
+  const [planToSoftDelete, setPlanToSoftDelete] = React.useState(null);
+  const [hardDeleteTarget, setHardDeleteTarget] = React.useState(null);
 
   React.useEffect(() => {
     setBreadcrumbs([
-      { url: "/coach", title: t("coach.sidebar.main") },
-      {
-        url: "/coach/workout-plans",
-        title: t("coach.sidebar.workoutPlans"),
-      },
+      { url: "/coach", title: "Coach" },
+      { url: "/coach/workout-plans", title: "Mashq rejalari" },
     ]);
-  }, [setBreadcrumbs, t]);
+  }, [setBreadcrumbs]);
 
-  const deferredSearch = React.useDeferredValue(search);
-
-  const filteredPlans = React.useMemo(() => {
-    return filter(workoutPlans, (plan) => {
-      const searchLower = toLower(trim(deferredSearch));
-      if (searchLower) {
-        const matchesName = includes(
-          toLower(get(plan, "name", "")),
-          searchLower,
-        );
-        const matchesClient = some(
-          get(plan, "assignedClients", []),
-          (c) => includes(toLower(get(c, "name", "")), searchLower),
-        );
-        if (!matchesName && !matchesClient) return false;
-      }
-
-      if (assignmentFilter !== "all") {
-        const isAssigned = size(get(plan, "assignedClients", [])) > 0;
-        if (assignmentFilter === "assigned" && !isAssigned) return false;
-        if (assignmentFilter === "unassigned" && isAssigned) return false;
-      }
-
-      return true;
-    });
-  }, [assignmentFilter, deferredSearch, workoutPlans]);
-
-  const openNewPlan = React.useCallback(() => {
-    setEditingPlan(null);
-    setBuilderInitialData(null);
-    setPlanMetaMode("create");
-    setNewPlanName("");
-    setNewPlanDescription("");
-    setNameDrawerOpen(true);
-  }, []);
-
-  const handleInitialCreate = React.useCallback(async () => {
-    if (!trim(newPlanName)) {
-      toast.error(t("coach.workoutPlans.toasts.nameRequired"));
-      return;
+  React.useEffect(() => {
+    const totalPages = get(meta, "totalPages", 1);
+    if (currentPage > totalPages) {
+      void setPageQuery(String(totalPages));
     }
-    try {
-      const payload = {
-        name: trim(newPlanName),
-        description: trim(newPlanDescription),
-        schedule: [],
-      };
-      const newPlan = await createWorkoutPlan(payload);
-      setEditingPlan(newPlan);
-      setBuilderInitialData(newPlan);
-      setNameDrawerOpen(false);
-      setBuilderOpen(true);
-      toast.success(t("coach.workoutPlans.toasts.createSuccess"));
-    } catch (error) {
-      toast.error(t("coach.workoutPlans.toasts.createError"));
-    }
-  }, [newPlanName, newPlanDescription, createWorkoutPlan, t]);
+  }, [currentPage, meta, setPageQuery]);
 
-  const handleSaveMetadata = React.useCallback(async () => {
-    if (!trim(newPlanName)) {
-      toast.error(t("coach.workoutPlans.toasts.nameRequired"));
-      return;
-    }
-    if (!get(editingPlan, "id")) return;
-    try {
-      const payload = {
-        name: trim(newPlanName),
-        description: trim(newPlanDescription),
-        schedule: get(editingPlan, "schedule", []),
-      };
-      await updateWorkoutPlan(get(editingPlan, "id"), payload);
-      setNameDrawerOpen(false);
-      setEditingPlan(null);
-      setNewPlanName("");
-      setNewPlanDescription("");
-      toast.success(t("coach.workoutPlans.toasts.updateSuccess"));
-    } catch (error) {
-      toast.error(t("coach.workoutPlans.toasts.updateError"));
-    }
-  }, [newPlanName, newPlanDescription, editingPlan, updateWorkoutPlan, t]);
+  React.useEffect(() => {
+    setRowSelection({});
+  }, [search, lifecycle, sortBy, sortDir, currentPage]);
 
-  const continueMetaFlow = React.useCallback(() => {
-    if (!trim(newPlanName)) {
-      toast.error(t("coach.workoutPlans.toasts.nameRequired"));
-      return;
-    }
-    setBuilderInitialData({
-      ...get(editingPlan, {}, {}),
-      name: trim(newPlanName),
-      description: trim(newPlanDescription),
-      schedule: get(editingPlan, "schedule", []),
-    });
-    setNameDrawerOpen(false);
-    setBuilderOpen(true);
-  }, [editingPlan, newPlanName, newPlanDescription, t]);
-
-  const openEdit = React.useCallback((plan) => {
-    setEditingPlan(plan);
-    setPlanMetaMode("edit");
-    setNewPlanName(get(plan, "name", ""));
-    setNewPlanDescription(get(plan, "description", ""));
-    setNameDrawerOpen(true);
-  }, []);
-
-  const handleBuilderSave = React.useCallback(
-    async (plan) => {
-      const payload = {
-        name: get(plan, "name"),
-        description: get(plan, "description"),
-        schedule: get(plan, "schedule"),
-      };
-      if (get(editingPlan, "id")) {
-        await updateWorkoutPlan(get(editingPlan, "id"), payload);
-        toast.success(t("coach.workoutPlans.toasts.saveSuccess"));
-      }
-      setBuilderOpen(false);
-      setEditingPlan(null);
-      setBuilderInitialData(null);
-      setNewPlanName("");
-      setNewPlanDescription("");
-    },
-    [editingPlan, updateWorkoutPlan, t],
+  const paginatedPlanIds = React.useMemo(
+    () => lodashMap(plans, (p) => String(p.id)),
+    [plans],
   );
 
-  const openAssign = React.useCallback((plan) => {
-    setAssigningPlan(plan);
-    setSelectedClientIds(
-      (get(plan, "assignedClients", []) || []).map((item) =>
-        get(item, "id"),
-      ),
-    );
-    setAssignDrawerOpen(true);
-  }, []);
+  const selectedPlanIds = React.useMemo(
+    () =>
+      chain(rowSelection)
+        .entries()
+        .filter(([, selected]) => Boolean(selected))
+        .map(([id]) => Number(id))
+        .filter((id) => Number.isInteger(id))
+        .value(),
+    [rowSelection],
+  );
 
-  const toggleClient = React.useCallback((clientId) => {
-    setSelectedClientIds((current) =>
-      includes(current, clientId)
-        ? filter(current, (item) => item !== clientId)
-        : [...current, clientId],
-    );
-  }, []);
+  const selectedPlanCount = selectedPlanIds.length;
 
-  const handleSaveAssign = React.useCallback(async () => {
-    if (!assigningPlan) return;
-    await assignWorkoutPlan(get(assigningPlan, "id"), selectedClientIds);
-    toast.success(t("coach.workoutPlans.toasts.assignSuccess"));
-    setAssignDrawerOpen(false);
-  }, [assignWorkoutPlan, assigningPlan, selectedClientIds, t]);
+  const openEditDrawer = React.useCallback(
+    (plan) => navigate(`edit/${plan.id}`),
+    [navigate],
+  );
 
-  const handleDeleteConfirm = React.useCallback(() => {
-    if (!get(deleteCandidate, "id")) return;
-    deleteWorkoutPlan(get(deleteCandidate, "id"));
-    setDeleteCandidate(null);
-  }, [deleteCandidate, deleteWorkoutPlan]);
+  const handleSoftDelete = async () => {
+    if (!planToSoftDelete) return;
+    try {
+      await mutations.removeResource(planToSoftDelete.id);
+      toast.success("Mashq rejasi trashga yuborildi");
+      setPlanToSoftDelete(null);
+    } catch (error) {
+      const message = error?.response?.data?.message;
+      toast.error(
+        isArray(message) ? message.join(", ") : message || "O'chirib bo'lmadi",
+      );
+    }
+  };
+
+  const handleRestore = async (plan) => {
+    try {
+      await mutations.restoreResource(plan.id);
+      toast.success("Mashq rejasi tiklandi");
+    } catch (error) {
+      const message = error?.response?.data?.message;
+      toast.error(
+        isArray(message) ? message.join(", ") : message || "Tiklab bo'lmadi",
+      );
+    }
+  };
+
+  const handleHardDelete = async () => {
+    if (!hardDeleteTarget?.ids?.length) return;
+    try {
+      await mutations.bulkHardDeleteResources({ ids: hardDeleteTarget.ids });
+      toast.success(
+        hardDeleteTarget.ids.length === 1
+          ? "Mashq rejasi butunlay o'chirildi"
+          : `${hardDeleteTarget.ids.length} ta mashq rejasi butunlay o'chirildi`,
+      );
+      setHardDeleteTarget(null);
+      setRowSelection({});
+    } catch (error) {
+      const message = error?.response?.data?.message;
+      toast.error(
+        isArray(message) ? message.join(", ") : message || "O'chirib bo'lmadi",
+      );
+    }
+  };
+
+  const handleBulkTrash = async () => {
+    if (!selectedPlanIds.length) return;
+    try {
+      await mutations.bulkTrashResources({ ids: selectedPlanIds });
+      toast.success(`${selectedPlanIds.length} ta mashq rejasi trashga yuborildi`);
+      setRowSelection({});
+    } catch (error) {
+      const message = error?.response?.data?.message;
+      toast.error(
+        isArray(message) ? message.join(", ") : message || "Trashga yuborib bo'lmadi",
+      );
+    }
+  };
+
+  const handleBulkRestore = async () => {
+    if (!selectedPlanIds.length) return;
+    try {
+      await mutations.bulkRestoreResources({ ids: selectedPlanIds });
+      toast.success(`${selectedPlanIds.length} ta mashq rejasi tiklandi`);
+      setRowSelection({});
+    } catch (error) {
+      const message = error?.response?.data?.message;
+      toast.error(
+        isArray(message) ? message.join(", ") : message || "Tiklab bo'lmadi",
+      );
+    }
+  };
+
+  const handleBulkHardDelete = () => {
+    if (!selectedPlanIds.length) return;
+    setHardDeleteTarget({ ids: selectedPlanIds });
+  };
+
+  const handleDragEnd = async (event) => {
+    if (!canReorder) return;
+    const { active, over } = event;
+    if (!active || !over || active.id === over.id) return;
+
+    const currentIds = lodashMap(plans, (p) => p.id.toString());
+    const oldIndex = currentIds.indexOf(active.id);
+    const newIndex = currentIds.indexOf(over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+
+    const ordered = [...plans];
+    const [movedItem] = ordered.splice(oldIndex, 1);
+    ordered.splice(newIndex, 0, movedItem);
+
+    const movedIndex = findIndex(ordered, (p) => p.id === movedItem.id);
+    const prevId = movedIndex > 0 ? String(ordered[movedIndex - 1].id) : undefined;
+    const nextId =
+      movedIndex < ordered.length - 1
+        ? String(ordered[movedIndex + 1].id)
+        : undefined;
+
+    try {
+      await mutations.reorderResources({ movedId: String(movedItem.id), prevId, nextId });
+    } catch (error) {
+      const message = error?.response?.data?.message;
+      toast.error(
+        isArray(message) ? message.join(", ") : message || "Tartibni saqlab bo'lmadi",
+      );
+    }
+  };
 
   const columns = useColumns({
-    onEdit: openEdit,
-    onAssign: openAssign,
-    onDelete: setDeleteCandidate,
+    canReorder,
+    currentPage,
+    pageSize,
+    onEdit: openEditDrawer,
+    onSoftDelete: setPlanToSoftDelete,
+    onRestore: handleRestore,
+    onHardDelete: setHardDeleteTarget,
   });
 
   const table = useReactTable({
-    data: filteredPlans,
+    data: plans,
     columns,
-    initialState: {
-      columnPinning: { right: ["actions"] },
-    },
+    manualSorting: true,
+    manualPagination: true,
+    pageCount: get(meta, "totalPages", 1),
+    enableRowSelection: true,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    getRowId: (row) => row.id.toString(),
+    onRowSelectionChange: setRowSelection,
     onSortingChange: handleSortingChange,
-    state: { sorting },
+    onPaginationChange: (updater) => {
+      const prev = { pageIndex: currentPage - 1, pageSize };
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      React.startTransition(() => {
+        void setPageQuery(String(next.pageIndex + 1));
+      });
+    },
+    state: {
+      rowSelection,
+      sorting,
+      pagination: { pageIndex: currentPage - 1, pageSize },
+    },
   });
 
-  if (isError) {
-    return (
-      <PageTransition>
-        <CoachErrorState onRetry={refetch} />
-      </PageTransition>
-    );
-  }
+  const isTrashed = lifecycle === "trash";
 
   return (
-    <>
-      <PageTransition>
-        <div className="flex flex-col gap-6">
-          <WorkoutPlanHeader onNewPlan={openNewPlan} />
+    <div className="flex flex-col gap-6 w-full">
+      <ListHeader
+        title="Mashq rejalari"
+        description="Trener mashq rejalarini boshqaring"
+        actions={[
+          {
+            key: "create",
+            label: "Yangi reja",
+            icon: PlusIcon,
+            onClick: () => navigate("create"),
+          },
+        ]}
+      >
+        <LifecycleTabs
+          value={lifecycle}
+          onValueChange={(value) => {
+            void setLifecycle(value);
+            void setPageQuery("1");
+            setRowSelection({});
+          }}
+        />
+      </ListHeader>
 
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <Filter
-              filterFields={filterFields}
-              activeFilters={activeFilters}
-              handleFiltersChange={handleFiltersChange}
-            />
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => refetch()}
-              className="hidden sm:flex"
-              disabled={isFetching}
-            >
-              <RotateCcwIcon
-                className={cn("size-4", isFetching && "animate-spin")}
-              />
-            </Button>
-          </div>
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <Filter
+          filterFields={filterFields}
+          activeFilters={activeFilters}
+          handleFiltersChange={handleFiltersChange}
+        />
+        <button
+          type="button"
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="hidden xl:flex items-center justify-center size-9 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-50 transition-colors"
+          aria-label="Yangilash"
+        >
+          <RotateCcwIcon
+            className={`size-4 ${isFetching ? "animate-spin" : ""}`}
+          />
+        </button>
+      </div>
 
+      {selectedPlanCount > 0 ? (
+        <BulkActionsBar
+          selectedCount={selectedPlanCount}
+          title="Tanlangan rejalar"
+          onClear={() => setRowSelection({})}
+          actions={
+            isTrashed
+              ? [
+                  {
+                    key: "restore",
+                    label: "Tiklash",
+                    icon: RotateCcwIcon,
+                    onClick: () => void handleBulkRestore(),
+                    disabled: mutations.isMutating,
+                  },
+                  {
+                    key: "hard-delete",
+                    label: "Butunlay o'chirish",
+                    icon: Trash2Icon,
+                    variant: "destructive",
+                    onClick: handleBulkHardDelete,
+                    disabled: mutations.isMutating,
+                  },
+                ]
+              : [
+                  {
+                    key: "trash",
+                    label: "Trashga yuborish",
+                    icon: Trash2Icon,
+                    onClick: () => void handleBulkTrash(),
+                    disabled: mutations.isMutating,
+                  },
+                ]
+          }
+        />
+      ) : null}
+
+      <DataGrid
+        table={table}
+        isLoading={isLoading}
+        recordCount={get(meta, "total", 0)}
+      >
+        <div className="w-full flex flex-col gap-2.5">
           <DataGridContainer>
             <ScrollArea className="w-full">
-              <DataGrid
-                table={table}
-                isLoading={isLoading}
-                recordCount={size(filteredPlans)}
-                onRowClick={openEdit}
-                tableLayout={{ columnsPinnable: true }}
-              >
+              {canReorder ? (
+                <DataGridTableDndRows
+                  table={table}
+                  dataIds={paginatedPlanIds}
+                  handleDragEnd={handleDragEnd}
+                />
+              ) : (
                 <DataGridTable />
-              </DataGrid>
+              )}
               <ScrollBar orientation="horizontal" />
             </ScrollArea>
           </DataGridContainer>
+          {!canReorder && !isLoading ? (
+            <div className="px-2 text-xs text-muted-foreground">
+              Tartiblash faqat filterlarsiz va standart saralashda ishlaydi.
+            </div>
+          ) : null}
+          <DataGridPagination
+            info="{from} - {to} / {count} ta reja"
+            rowsPerPageLabel="Sahifada:"
+            sizes={[10, 25, 50]}
+          />
         </div>
-      </PageTransition>
+      </DataGrid>
 
-      <WorkoutPlanMetaDrawer
-        open={nameDrawerOpen}
-        onOpenChange={setNameDrawerOpen}
-        mode={planMetaMode}
-        name={newPlanName}
-        setName={setNewPlanName}
-        description={newPlanDescription}
-        setDescription={setNewPlanDescription}
-        onPrimaryAction={
-          planMetaMode === "create" ? handleInitialCreate : continueMetaFlow
-        }
-        onSecondaryAction={
-          planMetaMode === "edit" ? handleSaveMetadata : undefined
-        }
+      <Outlet />
+
+      <SoftDeleteAlert
+        plan={planToSoftDelete}
+        open={Boolean(planToSoftDelete)}
+        onOpenChange={(open) => !open && setPlanToSoftDelete(null)}
+        onConfirm={() => void handleSoftDelete()}
+        isDeleting={mutations.removeMutation.isPending}
       />
 
-      <WorkoutPlanAssignDrawer
-        open={assignDrawerOpen}
-        onOpenChange={setAssignDrawerOpen}
-        clients={clients}
-        selectedClientIds={selectedClientIds}
-        onToggleClient={toggleClient}
-        onSave={handleSaveAssign}
-        isAssigning={isAssigning}
-        search={clientSearch}
-        onSearchChange={setClientSearch}
+      <HardDeleteAlert
+        target={hardDeleteTarget}
+        open={Boolean(hardDeleteTarget)}
+        onOpenChange={(open) => !open && setHardDeleteTarget(null)}
+        onConfirm={() => void handleHardDelete()}
+        isDeleting={mutations.bulkHardDeleteMutation.isPending}
       />
-
-      <WorkoutPlanBuilder
-        open={builderOpen}
-        onOpenChange={(open) => {
-          setBuilderOpen(open);
-          if (!open) {
-            setEditingPlan(null);
-            setBuilderInitialData(null);
-          }
-        }}
-        initialData={builderInitialData}
-        onSave={handleBuilderSave}
-        onClose={() => {
-          setBuilderOpen(false);
-          setEditingPlan(null);
-          setBuilderInitialData(null);
-        }}
-        fullscreen
-        lockWeekDays
-      />
-
-      <DeleteAlert
-        open={!!deleteCandidate}
-        onOpenChange={() => setDeleteCandidate(null)}
-        onConfirm={handleDeleteConfirm}
-      />
-    </>
+    </div>
   );
 };
 
-export default WorkoutPlansListIndex;
+export default WorkoutPlansListPage;

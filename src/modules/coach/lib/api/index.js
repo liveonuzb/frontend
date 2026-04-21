@@ -1,4 +1,5 @@
 export * from "./coach-ai-api";
+export * from "./coach-audit-api";
 export * from "./coach-challenges-api";
 export * from "./coach-clients-api";
 export * from "./coach-dashboard-api";
@@ -10,6 +11,7 @@ export * from "./coach-payments-api";
 export * from "./coach-programs-api";
 export * from "./coach-referrals-api";
 export * from "./coach-reports-api";
+export * from "./coach-sessions-api";
 export * from "./coach-snippets-api";
 export * from "./coach-telegram-api";
 export * from "./coach-workout-plans-api";

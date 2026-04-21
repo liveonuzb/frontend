@@ -6,8 +6,12 @@ import {
   UtensilsIcon,
   UserIcon,
   DumbbellIcon,
+  BookOpenIcon,
   WalletCardsIcon,
   BotIcon,
+  SendIcon,
+  ReceiptTextIcon,
+  Share2Icon,
 } from "lucide-react";
 import CoachMobileNav from "./mobile-nav.jsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -53,7 +57,15 @@ const mainNav = [
     label: "Workout rejalari",
     icon: DumbbellIcon,
   },
+  { to: "/coach/courses", label: "Kurslar", icon: BookOpenIcon },
+  {
+    to: "/coach/course-purchases",
+    label: "Kurs xaridlari",
+    icon: ReceiptTextIcon,
+  },
   { to: "/coach/payments", label: "To'lovlar", icon: WalletCardsIcon },
+  { to: "/coach/referrals", label: "Referral", icon: Share2Icon },
+  { to: "/coach/telegram-bot", label: "Telegram bot", icon: SendIcon },
   {
     to: "/coach/telegram-groups",
     label: "Telegram guruhlar",

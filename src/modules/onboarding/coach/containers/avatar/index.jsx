@@ -10,30 +10,9 @@ import { ImageUploadField } from "@/modules/onboarding/components/image-upload-f
 import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-context";
 import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-question";
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
+import { buildCoachOnboardingPayload } from "@/modules/onboarding/lib/coach-onboarding-dto";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-
-const buildCoachPayload = (state) => ({
-  category: state.coachCategory,
-  categories: state.coachCategories,
-  targetAudience: state.targetAudience,
-  availability: state.availability,
-  experience: state.experience,
-  specializations: state.specializations,
-  certificationType: state.certificationType,
-  certificationNumber: state.certificationNumber,
-  certificateFiles: state.certificateFiles,
-  languages: state.coachLanguages,
-  city: state.coachCity,
-  workMode: state.coachWorkMode,
-  workplace: state.coachWorkplace,
-  monthlyPrice: state.coachMonthlyPrice != null && state.coachMonthlyPrice !== "" ? Number(state.coachMonthlyPrice) : undefined,
-  minMonthlyPrice: state.coachMinMonthlyPrice != null && state.coachMinMonthlyPrice !== "" ? Number(state.coachMinMonthlyPrice) : undefined,
-  maxMonthlyPrice: state.coachMaxMonthlyPrice != null && state.coachMaxMonthlyPrice !== "" ? Number(state.coachMaxMonthlyPrice) : undefined,
-  bio: state.coachBio,
-  avatar: state.coachAvatar || undefined,
-  wantsMarketplaceListing: state.wantsMarketplaceListing,
-});
 
 const Index = () => {
   const navigate = useNavigate();
@@ -93,7 +72,7 @@ const Index = () => {
   const handleComplete = async () => {
     setIsSubmitting(true);
     try {
-      const payload = buildCoachPayload(useOnboardingStore.getState());
+      const payload = buildCoachOnboardingPayload(useOnboardingStore.getState());
       await api.put("/coach/onboarding/coach", payload);
       const submitResponse = await api.post("/coach/onboarding/coach/submit");
       setIsProcessing(true);

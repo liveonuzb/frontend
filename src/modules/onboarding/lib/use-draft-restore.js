@@ -2,6 +2,7 @@ import { isArray, keys } from "lodash";
 import { useEffect, useRef } from "react";
 import { useGetQuery } from "@/hooks/api";
 import { useOnboardingStore } from "@/store";
+import { mapCoachOnboardingDraftToStoreFields } from "./coach-onboarding-dto";
 
 /**
  * Checks whether the user-level onboarding fields in the local store
@@ -32,6 +33,11 @@ function isUserStoreEmpty(state) {
 function isCoachStoreEmpty(state) {
   return (
     !state.experience &&
+    !state.coachCategory &&
+    (!isArray(state.coachCategories) ||
+      state.coachCategories.length === 0) &&
+    (!isArray(state.targetAudience) ||
+      state.targetAudience.length === 0) &&
     (!isArray(state.specializations) ||
       state.specializations.length === 0) &&
     !state.certificationType &&
@@ -44,6 +50,8 @@ function isCoachStoreEmpty(state) {
     !state.coachWorkMode &&
     !state.coachWorkplace &&
     !state.coachMonthlyPrice &&
+    !state.coachMinMonthlyPrice &&
+    !state.coachMaxMonthlyPrice &&
     !state.coachBio &&
     !state.coachAvatar
   );
@@ -116,39 +124,7 @@ function mergeUserDraft(serverData, setFields) {
 function mergeCoachDraft(serverData, setFields) {
   if (!serverData) return;
 
-  const fields = {};
-
-  if (serverData.experience) fields.experience = serverData.experience;
-  if (isArray(serverData.specializations)) {
-    fields.specializations = serverData.specializations;
-  }
-  if (serverData.certificationType) {
-    fields.certificationType = serverData.certificationType;
-  }
-  if (serverData.certificationNumber) {
-    fields.certificationNumber = serverData.certificationNumber;
-  }
-  if (isArray(serverData.certificateFiles)) {
-    fields.certificateFiles = serverData.certificateFiles;
-  }
-  if (isArray(serverData.coachLanguages)) {
-    fields.coachLanguages = serverData.coachLanguages;
-  }
-  if (serverData.coachCity) fields.coachCity = serverData.coachCity;
-  if (serverData.coachWorkMode) {
-    fields.coachWorkMode = serverData.coachWorkMode;
-  }
-  if (serverData.coachWorkplace) {
-    fields.coachWorkplace = serverData.coachWorkplace;
-  }
-  if (serverData.coachMonthlyPrice) {
-    fields.coachMonthlyPrice = String(serverData.coachMonthlyPrice);
-  }
-  if (serverData.coachBio) fields.coachBio = serverData.coachBio;
-  if (serverData.coachAvatar) fields.coachAvatar = serverData.coachAvatar;
-  if (serverData.wantsMarketplaceListing != null) {
-    fields.wantsMarketplaceListing = serverData.wantsMarketplaceListing;
-  }
+  const fields = mapCoachOnboardingDraftToStoreFields(serverData);
 
   if (keys(fields).length > 0) {
     setFields(fields);
@@ -217,23 +193,18 @@ export function useDraftRestore(type, { enabled = true } = {}) {
 
     const state = useOnboardingStore.getState();
     const draftData = serverDraft.data;
-    let shouldRestore = false;
-
     if (type === "user") {
-      shouldRestore = isUserStoreEmpty(state);
-      if (shouldRestore) {
+      if (isUserStoreEmpty(state)) {
         mergeUserDraft(draftData, setFields);
       }
     } else if (type === "coach") {
-      shouldRestore = isCoachStoreEmpty(state);
-      if (shouldRestore) {
+      if (isCoachStoreEmpty(state)) {
         mergeCoachDraft(draftData, setFields);
       }
     } else {
       // Vendor types: gym, shop, food
       const vendorDraft = state.vendorDrafts?.[type];
-      shouldRestore = isVendorDraftEmpty(vendorDraft);
-      if (shouldRestore) {
+      if (isVendorDraftEmpty(vendorDraft)) {
         mergeVendorDraft(draftData, type, setVendorDraft);
       }
     }
@@ -241,5 +212,5 @@ export function useDraftRestore(type, { enabled = true } = {}) {
     restoredRef.current = true;
   }, [serverDraft, isLoading, type, setFields, setVendorDraft]);
 
-  return { serverDraft, isLoading, restored: restoredRef.current };
+  return { serverDraft, isLoading };
 }

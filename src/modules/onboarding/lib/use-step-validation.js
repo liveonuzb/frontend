@@ -1,4 +1,5 @@
 import { usePostQuery } from "@/hooks/api";
+import { normalizeOnboardingStepForApi } from "./coach-onboarding-dto";
 
 /**
  * Hook for validating onboarding step on server.
@@ -12,10 +13,13 @@ export function useStepValidation(type) {
     try {
       const result = await validate({
         url: `/onboarding/${type}/validate-step`,
-        attributes: { step, data },
+        attributes: {
+          step: normalizeOnboardingStepForApi(type, step),
+          data,
+        },
       });
       return result?.data ?? { valid: true };
-    } catch (e) {
+    } catch {
       return { valid: true }; // Fail open -- don't block user
     }
   };

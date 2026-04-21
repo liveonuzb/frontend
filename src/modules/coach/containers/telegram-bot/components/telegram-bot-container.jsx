@@ -5,6 +5,7 @@ import {
   ActivityIcon,
   BotIcon,
   CheckCircle2Icon,
+  CopyIcon,
   ExternalLinkIcon,
   Loader2Icon,
   LinkIcon,
@@ -30,11 +31,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldLabel } from "@/components/ui/field";
 import {
-  useGetQuery,
-  usePostQuery,
-  usePatchQuery,
-  useDeleteQuery,
-} from "@/hooks/api";
+  useCoachTelegramBot,
+  useCoachTelegramConnect,
+  useCoachTelegramDisconnect,
+  useCoachTelegramMessages,
+  useCoachTelegramSendMessage,
+  useCoachTelegramSettings,
+  useCoachTelegramToggle,
+  useCoachTelegramUsers,
+} from "@/modules/coach/lib/hooks/useCoachTelegram";
 import PageLoader from "@/components/page-loader/index.jsx";
 import {
   AlertDialog,
@@ -88,10 +93,7 @@ export default function TelegramBotContainer({ config, onStatusChange }) {
   const queryKey = [ownerType, "telegram", "bot"];
   const embedded = Boolean(get(config, "embedded"));
 
-  const { data: botData, isLoading } = useGetQuery({
-    url: apiBase,
-    queryProps: { queryKey },
-  });
+  const { data: botData, isLoading } = useCoachTelegramBot(apiBase, queryKey);
 
   const bot = get(botData, "data", null);
   const isConnected = bot && bot.botUsername;
@@ -118,7 +120,7 @@ export default function TelegramBotContainer({ config, onStatusChange }) {
 function ConnectBotForm({ apiBase, queryKey, embedded = false }) {
   const [token, setToken] = useState("");
 
-  const connectMutation = usePostQuery({ listKey: queryKey });
+  const connectMutation = useCoachTelegramConnect(queryKey);
 
   const handleConnect = () => {
     if (!trim(token)) return toast.error("Token kiriting");
@@ -283,6 +285,32 @@ function BotManagementPanel({ bot, apiBase, queryKey }) {
   const [sendDrawerOpen, setSendDrawerOpen] = useState(false);
   const [sendDrawerUser, setSendDrawerUser] = useState(null);
   const stats = get(bot, "stats", {});
+  const promo = get(bot, "promo", {});
+  const promoLink = get(promo, "liveonAppBotLink", "");
+  const promoMention = get(promo, "liveonAppBotMention", "@liveonappbot");
+  const promoSignups = get(promo, "liveonAppBotSignups", 0);
+
+  const handleCopyPromoLink = React.useCallback(async () => {
+    if (!promoLink) {
+      toast.error("Promo link hali tayyor emas");
+      return;
+    }
+
+    const clipboard =
+      typeof window === "undefined" ? null : window.navigator?.clipboard;
+
+    if (!clipboard?.writeText) {
+      toast.error("Clipboard mavjud emas");
+      return;
+    }
+
+    try {
+      await clipboard.writeText(promoLink);
+      toast.success("Promo link nusxalandi");
+    } catch {
+      toast.error("Promo linkni nusxalab bo'lmadi");
+    }
+  }, [promoLink]);
 
   return (
     <div className="space-y-5">
@@ -349,6 +377,74 @@ function BotManagementPanel({ bot, apiBase, queryKey }) {
               tone={bot.lastError ? "danger" : "neutral"}
             />
           </div>
+
+          <Card className="border-primary/15 bg-[linear-gradient(135deg,rgba(59,130,246,0.08),rgba(14,165,233,0.02))] shadow-none">
+            <CardContent className="flex flex-col gap-4 pt-5">
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
+                    <LinkIcon className="size-3.5" />
+                    {promoMention} promo
+                  </div>
+                  <h3 className="mt-3 text-lg font-semibold tracking-tight">
+                    LiveOnAppBot referral oqimi
+                  </h3>
+                  <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+                    Coach bot va ulangan kurs guruhlaridagi reklama shu havola
+                    orqali ishlaydi. Signup faqat {promoMention} ichida
+                    yakunlanganda coach referralga yoziladi va yangi userga XP
+                    beriladi.
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-right">
+                  <p className="text-xl font-semibold text-emerald-700">
+                    {promoSignups}
+                  </p>
+                  <p className="text-xs font-medium uppercase tracking-[0.16em] text-emerald-700/80">
+                    Signup via {promoMention}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-border/60 bg-background/85 px-4 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Promo deep-link
+                </p>
+                <p className="mt-2 break-all font-mono text-sm leading-6 text-foreground">
+                  {promoLink || "Promo link hali topilmadi"}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="outline"
+                  className="rounded-2xl"
+                  onClick={() => void handleCopyPromoLink()}
+                  disabled={!promoLink}
+                >
+                  <CopyIcon className="mr-2 h-4 w-4" />
+                  Linkni nusxalash
+                </Button>
+                {promoLink ? (
+                  <Button asChild className="rounded-2xl">
+                    <a
+                      href={promoLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLinkIcon className="mr-2 h-4 w-4" />
+                      {promoMention} ni ochish
+                    </a>
+                  </Button>
+                ) : (
+                  <Button className="rounded-2xl" disabled>
+                    <ExternalLinkIcon className="mr-2 h-4 w-4" />
+                    {promoMention} ni ochish
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </motion.div>
 
@@ -445,17 +541,17 @@ function SendMessageDrawer({ open, onOpenChange, initialUser, apiBase }) {
     setText("");
   }, [initialUser, open]);
 
-  const { data: usersData } = useGetQuery({
-    url: `${apiBase}/users`,
-    params: { page: 1, limit: 200 },
-    queryProps: {
+  const { data: usersData } = useCoachTelegramUsers(
+    apiBase,
+    { page: 1, limit: 200 },
+    {
       queryKey: [`${apiBase}-users-drawer`],
       enabled: open && mode === "individual" && !initialUser,
     },
-  });
+  );
   const usersList = get(usersData, "data.data", []);
 
-  const sendMutation = usePostQuery({ listKey: [] });
+  const sendMutation = useCoachTelegramSendMessage();
 
   const handleSend = () => {
     if (!trim(text)) return toast.error("Xabar matni kiriting");
@@ -695,9 +791,7 @@ function StatCard({ label, value, icon: Icon, colorClass, bgClass }) {
 }
 
 function ToggleButton({ bot, apiBase, queryKey }) {
-  const toggleMutation = usePostQuery({
-    listKey: queryKey,
-  });
+  const toggleMutation = useCoachTelegramToggle(queryKey);
   const isActive = bot.status === "ACTIVE";
   return (
     <Button
@@ -716,7 +810,7 @@ function ToggleButton({ bot, apiBase, queryKey }) {
 }
 
 function DisconnectButton({ apiBase, queryKey }) {
-  const disconnectMutation = useDeleteQuery({ listKey: queryKey });
+  const disconnectMutation = useCoachTelegramDisconnect(queryKey);
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
@@ -770,7 +864,7 @@ function SettingsTab({ bot, apiBase, queryKey }) {
     en: get(bot, "welcomeMessage.en") || "",
   });
 
-  const updateMutation = usePatchQuery({ listKey: queryKey });
+  const updateMutation = useCoachTelegramSettings(queryKey);
 
   const handleSave = () => {
     updateMutation.mutate({
@@ -849,11 +943,11 @@ function getInitials(firstName, lastName) {
 }
 
 function UsersTab({ apiBase, onSendMessage }) {
-  const { data, isLoading } = useGetQuery({
-    url: `${apiBase}/users`,
-    params: { page: 1, limit: 200 },
-    queryProps: { queryKey: [`${apiBase}-users`] },
-  });
+  const { data, isLoading } = useCoachTelegramUsers(
+    apiBase,
+    { page: 1, limit: 200 },
+    { queryKey: [`${apiBase}-users`] },
+  );
 
   const allUsers = get(data, "data.data", []);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -940,6 +1034,7 @@ function UsersTab({ apiBase, onSendMessage }) {
     [onSendMessage],
   );
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: allUsers,
     columns,
@@ -993,11 +1088,11 @@ function UsersTab({ apiBase, onSendMessage }) {
 // ---------------------------------------------------------------------------
 
 function MessagesTab({ apiBase }) {
-  const { data, isLoading } = useGetQuery({
-    url: `${apiBase}/messages`,
-    params: { page: 1, limit: 100 },
-    queryProps: { queryKey: [`${apiBase}-messages`] },
-  });
+  const { data, isLoading } = useCoachTelegramMessages(
+    apiBase,
+    { page: 1, limit: 100 },
+    { queryKey: [`${apiBase}-messages`] },
+  );
 
   const messages = get(data, "data.data", []);
   const [userFilter, setUserFilter] = useState("all");

@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router";
+import { get, trim } from "lodash";
 import {
   ArrowLeftIcon,
   CalendarPlusIcon,
@@ -135,26 +136,6 @@ export default function CoachClientDetailContainer() {
     ]);
   }, [get(detail, "client.name"), id, setBreadcrumbs]);
 
-  if (isError) {
-    return (
-      <Card className="py-6">
-        <CardContent className="flex flex-col items-start gap-4">
-          <Button variant="ghost" onClick={() => navigate("/coach/clients")}>
-            <ArrowLeftIcon className="mr-2 size-4" />
-            Mijozlarga qaytish
-          </Button>
-          <div>
-            <h1 className="text-2xl font-semibold">Mijoz topilmadi</h1>
-            <p className="text-sm text-muted-foreground">
-              Mijoz tafsilotlarini yuklab bo'lmadi.
-            </p>
-          </div>
-          <Button onClick={() => refetch()}>Qayta urinish</Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
   const client = get(detail, "client");
   const measurements = get(detail, "measurements") ?? [];
   const dailyLogs = get(detail, "dailyLogs") ?? [];
@@ -238,7 +219,7 @@ export default function CoachClientDetailContainer() {
   );
 
   const paymentTable = useReactTable({
-    data: detail.payments ?? [],
+    data: get(detail, "payments", []),
     columns: paymentColumns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -267,6 +248,26 @@ export default function CoachClientDetailContainer() {
       );
     }
   };
+
+  if (isError) {
+    return (
+      <Card className="py-6">
+        <CardContent className="flex flex-col items-start gap-4">
+          <Button variant="ghost" onClick={() => navigate("/coach/clients")}>
+            <ArrowLeftIcon className="mr-2 size-4" />
+            Mijozlarga qaytish
+          </Button>
+          <div>
+            <h1 className="text-2xl font-semibold">Mijoz topilmadi</h1>
+            <p className="text-sm text-muted-foreground">
+              Mijoz tafsilotlarini yuklab bo'lmadi.
+            </p>
+          </div>
+          <Button onClick={() => refetch()}>Qayta urinish</Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">

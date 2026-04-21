@@ -1,12 +1,9 @@
 import React from "react";
 import {
-  CopyIcon,
-  HistoryIcon,
   MoreVerticalIcon,
   PencilIcon,
-  TrashIcon,
-  UserPlusIcon,
-  UtensilsCrossedIcon,
+  RotateCcwIcon,
+  Trash2Icon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,12 +17,12 @@ import {
 const MealPlanActionsMenu = ({
   plan,
   onEdit,
-  onAssign,
-  onVersions,
-  onDuplicate,
-  onDelete,
-  isDeleting,
+  onSoftDelete,
+  onRestore,
+  onHardDelete,
 }) => {
+  const isTrashed = Boolean(plan.deletedAt);
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -33,36 +30,38 @@ const MealPlanActionsMenu = ({
           <MoreVerticalIcon className="size-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem onClick={() => onEdit(plan)}>
-          <PencilIcon className="size-4" />
-          Tahrirlash
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onEdit(plan)}>
-          <UtensilsCrossedIcon className="size-4" />
-          Plan tarkibi
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onAssign(plan)}>
-          <UserPlusIcon className="size-4" />
-          Mijozlarga biriktirish
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onVersions(plan)}>
-          <HistoryIcon className="size-4" />
-          Versionlar
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onDuplicate(plan.id)}>
-          <CopyIcon className="size-4" />
-          Nusxalash
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="text-destructive focus:text-destructive"
-          disabled={isDeleting}
-          onClick={() => onDelete(plan)}
-        >
-          <TrashIcon className="size-4" />
-          O'chirish
-        </DropdownMenuItem>
+      <DropdownMenuContent align="end" className="w-52">
+        {isTrashed ? (
+          <>
+            <DropdownMenuItem onClick={() => onRestore(plan)}>
+              <RotateCcwIcon className="size-4" />
+              Tiklash
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={() => onHardDelete({ ids: [plan.id], label: plan.title })}
+            >
+              <Trash2Icon className="size-4" />
+              Butunlay o&apos;chirish
+            </DropdownMenuItem>
+          </>
+        ) : (
+          <>
+            <DropdownMenuItem onClick={() => onEdit(plan)}>
+              <PencilIcon className="size-4" />
+              Tahrirlash
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={() => onSoftDelete(plan)}
+            >
+              <Trash2Icon className="size-4" />
+              Trashga yuborish
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

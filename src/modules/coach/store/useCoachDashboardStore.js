@@ -13,11 +13,22 @@ const DEFAULT_WIDGET_CONFIGS = [
   { id: "ai-tip", size: "md" },
 ];
 
+const getDefaultTimezone = () => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Tashkent";
+  } catch {
+    return "Asia/Tashkent";
+  }
+};
+
 export const useCoachDashboardStore = create(
   persist(
     (set) => ({
       widgetConfigs: DEFAULT_WIDGET_CONFIGS,
       isEditMode: false,
+      timeRange: "30d",
+      timezone: getDefaultTimezone(),
+      chartPeriod: "month",
 
       setWidgetOrder: (newOrderIds) =>
         set((state) => {
@@ -43,6 +54,12 @@ export const useCoachDashboardStore = create(
         set((state) => ({ isEditMode: !state.isEditMode })),
 
       setEditMode: (value) => set({ isEditMode: value }),
+
+      setTimeRange: (timeRange) => set({ timeRange }),
+
+      setTimezone: (timezone) => set({ timezone }),
+
+      setChartPeriod: (chartPeriod) => set({ chartPeriod }),
     }),
     {
       name: "liveon-dashboard-storage-v6",

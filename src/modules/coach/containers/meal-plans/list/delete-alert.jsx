@@ -1,5 +1,4 @@
-import React from "react";
-import { useTranslation } from "react-i18next";
+import { get } from "lodash";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,35 +10,44 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-export const DeleteAlert = ({ plan, open, onOpenChange, onConfirm, isDeleting }) => {
-  const { t } = useTranslation();
+export const SoftDeleteAlert = ({ plan, open, onOpenChange, onConfirm, isDeleting }) => (
+  <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>Ovqatlanish rejasini trashga yuborish</AlertDialogTitle>
+        <AlertDialogDescription>
+          {plan
+            ? `"${plan.title}" trashga yuboriladi va keyin tiklash mumkin bo'ladi.`
+            : ""}
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
+        <AlertDialogAction onClick={onConfirm} disabled={isDeleting}>
+          Trashga yuborish
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+);
 
-  return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="rounded-[28px] border-border/60 bg-card/95 backdrop-blur-xl">
-        <AlertDialogHeader>
-          <AlertDialogTitle>
-            {t("coach.mealPlans.deleteDialog.title")}
-          </AlertDialogTitle>
-          <AlertDialogDescription>
-            {t("coach.mealPlans.deleteDialog.description", {
-              title: get(plan, "title"),
-            })}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel className="rounded-2xl" disabled={isDeleting}>
-            {t("coach.mealPlans.deleteDialog.cancel")}
-          </AlertDialogCancel>
-          <AlertDialogAction
-            onClick={onConfirm}
-            disabled={isDeleting}
-            className="rounded-2xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          >
-            {t("coach.mealPlans.deleteDialog.confirm")}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-};
+export const HardDeleteAlert = ({ target, open, onOpenChange, onConfirm, isDeleting }) => (
+  <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>Butunlay o&apos;chirish</AlertDialogTitle>
+        <AlertDialogDescription>
+          {get(target, "ids.length") === 1
+            ? `"${get(target, "label", "Ovqatlanish rejasi")}" butunlay o'chiriladi va qayta tiklab bo'lmaydi.`
+            : `${get(target, "ids.length", 0)} ta ovqatlanish rejasi butunlay o'chiriladi va qayta tiklab bo'lmaydi.`}
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
+        <AlertDialogAction onClick={onConfirm} disabled={isDeleting}>
+          Butunlay o&apos;chirish
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+);

@@ -1,47 +1,81 @@
-import {
-  get,
-  join,
-  map,
-  split,
-  take,
-  toUpper,
-} from "lodash";
 import React from "react";
-import { useTranslation } from "react-i18next";
+import { get, join, map, split, take, toUpper } from "lodash";
 import { PaperclipIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DataGridColumnHeader,
+  DataGridTableRowSelect,
+  DataGridTableRowSelectAll,
+} from "@/components/reui/data-grid";
 import ActionsMenu from "./actions-menu.jsx";
 
-const formatMoney = (value, t, locale = "uz-UZ") => {
+const getInitials = (value = "") =>
+  toUpper(join(take(map(split(String(value), " "), (part) => get(part, "[0]", "")), 2), ""));
+
+const formatMoney = (value) => {
   const normalized = Number(value);
-  if (!Number.isFinite(normalized) || normalized <= 0) {
-    return t("coach.payments.table.negotiable");
-  }
-  return `${new Intl.NumberFormat(locale).format(normalized)} ${t("coach.payments.table.currency")}`;
+  if (!Number.isFinite(normalized) || normalized <= 0) return "Kelishiladi";
+  return `${new Intl.NumberFormat("uz-UZ").format(normalized)} so'm`;
 };
 
-const formatDate = (value, locale = "uz-UZ") => {
+const formatDate = (value) => {
   if (!value) return "\u2014";
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return "\u2014";
-  return new Intl.DateTimeFormat(locale, {
+  return new Intl.DateTimeFormat("uz-UZ", {
     day: "2-digit",
     month: "short",
     year: "numeric",
   }).format(parsed);
 };
 
-const getInitials = (value = "") =>
-  toUpper(join(take(map(split(String(value), " "), (part) => get(part, "[0]", "")), 2), ""));
+const STATUS_MAP = {
+  cancelled: {
+    label: "Bekor qilingan",
+    className: "rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight text-destructive",
+  },
+  refunded: {
+    label: "Qaytarilgan",
+    className: "rounded-full bg-orange-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight text-orange-600",
+  },
+  completed: {
+    label: "Muvaffaqiyatli",
+    className: "rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight text-green-600",
+  },
+};
 
-export const useColumns = ({ locale, onEdit, onRefund, onCancel }) => {
-  const { t } = useTranslation();
-
-  return React.useMemo(
+export const useColumns = ({
+  currentPage,
+  pageSize,
+  onEdit,
+  onCancel,
+  onRefund,
+  onSoftDelete,
+  onRestore,
+  onHardDelete,
+}) =>
+  React.useMemo(
     () => [
       {
+        id: "select",
+        header: () => <DataGridTableRowSelectAll />,
+        cell: ({ row }) => <DataGridTableRowSelect row={row} />,
+        enableSorting: false,
+        size: 40,
+      },
+      {
+        accessorKey: "id",
+        header: "#",
+        cell: (info) => (currentPage - 1) * pageSize + info.row.index + 1,
+        size: 60,
+        meta: {
+          cellClassName: "hidden md:table-cell",
+          headerClassName: "hidden md:table-cell",
+        },
+      },
+      {
         accessorKey: "client",
-        header: t("coach.payments.table.columns.client"),
+        header: "Mijoz",
         cell: ({ getValue }) => {
           const client = getValue();
           return (
@@ -54,8 +88,7 @@ export const useColumns = ({ locale, onEdit, onRefund, onCancel }) => {
               </Avatar>
               <div className="min-w-0">
                 <p className="truncate text-sm font-bold">
-                  {get(client, "name") ||
-                    t("coach.payments.table.unknownClient")}
+                  {get(client, "name") || "Noma'lum"}
                 </p>
                 <p className="truncate text-[10px] text-muted-foreground">
                   {get(client, "phone") || get(client, "email")}
@@ -67,17 +100,48 @@ export const useColumns = ({ locale, onEdit, onRefund, onCancel }) => {
       },
       {
         accessorKey: "amount",
-        header: t("coach.payments.table.columns.amount"),
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Summa" />
+        ),
+        enableSorting: true,
         cell: ({ getValue }) => (
           <span className="font-semibold text-primary">
-            {formatMoney(getValue(), t, locale)}
+            {formatMoney(getValue())}
           </span>
         ),
       },
       {
+        accessorKey: "method",
+        header: "Usul",
+        cell: ({ getValue }) => (
+          <span className="rounded-full bg-muted px-2 py-1 text-[10px] font-bold uppercase tracking-tight text-muted-foreground">
+            {getValue() || "Boshqa"}
+          </span>
+        ),
+        meta: {
+          headerClassName: "hidden md:table-cell",
+          cellClassName: "hidden md:table-cell",
+        },
+      },
+      {
+        accessorKey: "status",
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Status" />
+        ),
+        enableSorting: true,
+        cell: ({ row }) => {
+          const status = row.original.status;
+          const cfg = STATUS_MAP[status] ?? STATUS_MAP.completed;
+          return <span className={cfg.className}>{cfg.label}</span>;
+        },
+      },
+      {
         accessorKey: "paidAt",
-        header: t("coach.payments.table.columns.date"),
-        cell: ({ getValue }) => formatDate(getValue(), locale),
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Sana" />
+        ),
+        enableSorting: true,
+        cell: ({ getValue }) => formatDate(getValue()),
         meta: {
           headerClassName: "hidden md:table-cell",
           cellClassName: "hidden md:table-cell",
@@ -85,7 +149,7 @@ export const useColumns = ({ locale, onEdit, onRefund, onCancel }) => {
       },
       {
         accessorKey: "note",
-        header: t("coach.payments.table.columns.note"),
+        header: "Izoh",
         cell: ({ row }) => (
           <div className="flex max-w-[200px] items-center gap-2">
             <span className="truncate text-xs text-muted-foreground">
@@ -97,7 +161,7 @@ export const useColumns = ({ locale, onEdit, onRefund, onCancel }) => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="shrink-0 rounded p-1 transition-colors hover:bg-primary/10"
-                title={t("coach.payments.table.viewReceipt")}
+                title="Kvitansiyani ko'rish"
                 onClick={(e) => e.stopPropagation()}
               >
                 <PaperclipIcon className="size-3 text-primary" />
@@ -111,47 +175,6 @@ export const useColumns = ({ locale, onEdit, onRefund, onCancel }) => {
         },
       },
       {
-        accessorKey: "method",
-        header: t("coach.payments.table.columns.method"),
-        cell: ({ getValue }) => (
-          <span className="rounded-full bg-muted px-2 py-1 text-[10px] font-bold uppercase tracking-tight text-muted-foreground">
-            {getValue()
-              ? t(`coach.payments.methods.${getValue()}`)
-              : t("coach.payments.methods.OTHER")}
-          </span>
-        ),
-        meta: {
-          headerClassName: "hidden md:table-cell",
-          cellClassName: "hidden md:table-cell",
-        },
-      },
-      {
-        accessorKey: "status",
-        header: t("coach.payments.table.columns.status"),
-        cell: ({ row }) => {
-          const status = row.original.status;
-          if (status === "cancelled") {
-            return (
-              <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight text-destructive">
-                {t("coach.payments.status.cancelled")}
-              </span>
-            );
-          }
-          if (status === "refunded") {
-            return (
-              <span className="rounded-full bg-orange-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight text-orange-600">
-                {t("coach.payments.status.refunded")}
-              </span>
-            );
-          }
-          return (
-            <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight text-green-600">
-              {t("coach.payments.status.completed")}
-            </span>
-          );
-        },
-      },
-      {
         id: "actions",
         header: "",
         size: 50,
@@ -160,14 +183,16 @@ export const useColumns = ({ locale, onEdit, onRefund, onCancel }) => {
             <ActionsMenu
               payment={row.original}
               onEdit={onEdit}
-              onRefund={onRefund}
               onCancel={onCancel}
+              onRefund={onRefund}
+              onSoftDelete={onSoftDelete}
+              onRestore={onRestore}
+              onHardDelete={onHardDelete}
             />
           </div>
         ),
         meta: { noPinnedBorder: true },
       },
     ],
-    [locale, onEdit, onRefund, onCancel, t],
+    [currentPage, pageSize, onEdit, onCancel, onRefund, onSoftDelete, onRestore, onHardDelete],
   );
-};

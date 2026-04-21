@@ -2,6 +2,10 @@ import { useEffect, useRef } from "react";
 import { debounce } from "lodash";
 import useApi from "@/hooks/api/use-api.js";
 import { useOnboardingStore } from "@/store";
+import {
+  buildCoachOnboardingPayload,
+  normalizeOnboardingStepForApi,
+} from "./coach-onboarding-dto";
 
 /**
  * Extracts draft data from the onboarding store based on onboarding type.
@@ -26,27 +30,7 @@ function extractDraftData(state, type) {
   }
 
   if (type === "coach") {
-    return {
-      coachCategory: state.coachCategory,
-      coachCategories: state.coachCategories,
-      targetAudience: state.targetAudience,
-      availability: state.availability,
-      experience: state.experience,
-      specializations: state.specializations,
-      certificationType: state.certificationType,
-      certificationNumber: state.certificationNumber,
-      certificateFiles: state.certificateFiles,
-      coachLanguages: state.coachLanguages,
-      coachCity: state.coachCity,
-      coachWorkMode: state.coachWorkMode,
-      coachWorkplace: state.coachWorkplace,
-      coachMonthlyPrice: state.coachMonthlyPrice,
-      coachMinMonthlyPrice: state.coachMinMonthlyPrice,
-      coachMaxMonthlyPrice: state.coachMaxMonthlyPrice,
-      coachBio: state.coachBio,
-      coachAvatar: state.coachAvatar,
-      wantsMarketplaceListing: state.wantsMarketplaceListing,
-    };
+    return buildCoachOnboardingPayload(state);
   }
 
   // Vendor types: gym, shop, food
@@ -142,11 +126,15 @@ export function useOnboardingAutoSave(
 
       const state = useOnboardingStore.getState();
       const data = extractDraftData(state, typeRef.current);
+      const currentStep = normalizeOnboardingStepForApi(
+        typeRef.current,
+        stepRef.current,
+      );
 
       try {
         await request.put(`/onboarding/${typeRef.current}/draft`, {
           data,
-          currentStep: stepRef.current,
+          currentStep,
         });
       } catch {
         // Silent fail -- auto-save should not block UX
@@ -178,11 +166,15 @@ export function useOnboardingAutoSave(
 
     const state = useOnboardingStore.getState();
     const data = extractDraftData(state, typeRef.current);
+    const currentStep = normalizeOnboardingStepForApi(
+      typeRef.current,
+      stepRef.current,
+    );
 
     request
       .put(`/onboarding/${typeRef.current}/draft`, {
         data,
-        currentStep: stepRef.current,
+        currentStep,
       })
       .catch(() => {
         // Silent fail

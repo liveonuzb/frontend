@@ -7,7 +7,6 @@ import {
   isEmpty,
   map,
   size,
-  slice,
   toLower,
   toNumber,
   toString,
@@ -226,7 +225,7 @@ const Index = () => {
     (c) => {
       setPaymentClient(c);
       setPaymentAmount(toString(get(c, "agreedAmount", "")));
-      setPaymentPaidAt(new slice(Date().toISOString(), 0, 10));
+      setPaymentPaidAt(new Date().toISOString().slice(0, 10));
     },
     [setPaymentClient, setPaymentAmount, setPaymentPaidAt],
   );

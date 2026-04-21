@@ -114,6 +114,7 @@ const CoachConnectionDetailsDrawer = ({
   const [isDisconnectOpen, setIsDisconnectOpen] = React.useState(false);
   const { disconnectCoach, isDisconnecting } = useCoachInvitations();
   const coach = get(coachConnection, "coach", coachConnection);
+  const [isOpeningChat, setIsOpeningChat] = React.useState(false);
 
   if (!coach?.id) {
     return null;
@@ -141,14 +142,13 @@ const CoachConnectionDetailsDrawer = ({
     }
   };
 
-  const [isOpeningChat, setIsOpeningChat] = React.useState(false);
   const handleOpenChat = async () => {
     setIsOpeningChat(true);
     try {
       const response = await api.post("/chat/rooms", { userId: coach.id });
       onOpenChange(false);
       navigate(`/user/chat/${response?.data?.roomId ?? ""}`);
-    } catch (error) {
+    } catch {
       toast.error("Chatni ochib bo'lmadi");
     } finally {
       setIsOpeningChat(false);

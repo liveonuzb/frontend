@@ -1,5 +1,4 @@
-import React from "react";
-import { useTranslation } from "react-i18next";
+import { get } from "lodash";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,41 +10,48 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-export const DeleteAlert = ({
-  payment,
-  open,
-  onOpenChange,
-  onConfirm,
-  isPending,
-}) => {
-  const { t } = useTranslation();
+export const SoftDeleteAlert = ({ payment, open, onOpenChange, onConfirm, isDeleting }) => (
+  <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>To'lovni trashga yuborish</AlertDialogTitle>
+        <AlertDialogDescription>
+          {payment
+            ? `Bu to'lov trashga yuboriladi va keyin tiklash mumkin bo'ladi.`
+            : ""}
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel disabled={isDeleting}>Bekor qilish</AlertDialogCancel>
+        <AlertDialogAction onClick={onConfirm} disabled={isDeleting}>
+          Trashga yuborish
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+);
 
-  return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="rounded-[28px] border-border/60 bg-card/95 backdrop-blur-xl">
-        <AlertDialogHeader>
-          <AlertDialogTitle>
-            {t("coach.payments.drawers.cancel.title")}
-          </AlertDialogTitle>
-          <AlertDialogDescription>
-            {t("coach.payments.drawers.cancel.description")}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel className="rounded-2xl" disabled={isPending}>
-            {t("coach.mealPlans.deleteDialog.cancel")}
-          </AlertDialogCancel>
-          <AlertDialogAction
-            onClick={onConfirm}
-            disabled={isPending}
-            className="rounded-2xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          >
-            {t("coach.payments.drawers.cancel.submit", {
-              defaultValue: "Bekor qilish",
-            })}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-};
+export const HardDeleteAlert = ({ target, open, onOpenChange, onConfirm, isDeleting }) => (
+  <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>Butunlay o&apos;chirish</AlertDialogTitle>
+        <AlertDialogDescription>
+          {get(target, "ids.length") === 1
+            ? `Bu to'lov butunlay o'chiriladi va qayta tiklab bo'lmaydi.`
+            : `${get(target, "ids.length", 0)} ta to'lov butunlay o'chiriladi va qayta tiklab bo'lmaydi.`}
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel disabled={isDeleting}>Bekor qilish</AlertDialogCancel>
+        <AlertDialogAction
+          onClick={onConfirm}
+          disabled={isDeleting}
+          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+        >
+          Butunlay o&apos;chirish
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+);
