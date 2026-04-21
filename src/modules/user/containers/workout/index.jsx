@@ -1,10 +1,10 @@
 import React from "react";
 import { Route, Routes } from "react-router";
-import ListPage from "./list/index.jsx";
-import CreateWorkoutPlanPage from "./plans/create/index.jsx";
-import EditWorkoutPlanPage from "./plans/edit/index.jsx";
-import CreateWorkoutLogPage from "./logs/create/index.jsx";
-import EditWorkoutLogPage from "./logs/edit/index.jsx";
+import ListPage from "./list";
+import CreateWorkoutPlanPage from "./plans/create";
+import EditWorkoutPlanPage from "./plans/edit";
+import CreateWorkoutLogPage from "./logs/create";
+import EditWorkoutLogPage from "./logs/edit";
 
 const WorkoutIndex = () => {
   return (
