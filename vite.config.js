@@ -5,10 +5,7 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  define: {
-    __BUNDLED_DEV__: "true",
-    __SERVER_FORWARD_CONSOLE__: "false",
-  },
+  define: {},
   server: {
     port: 3030,
     allowedHosts: true,
