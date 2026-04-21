@@ -32,7 +32,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { useGetQuery, usePostQuery } from "@/hooks/api";
+import { useGetQuery, usePostFileQuery, usePostQuery } from "@/hooks/api";
 import useApi from "@/hooks/api/use-api";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { NutritionDrawerContent } from "./nutrition-drawer-layout.jsx";
@@ -152,27 +152,34 @@ const ImageUploadSquare = ({ imageUrl, isUploading, onPick, onRemove }) => {
 // ---------------------------------------------------------------------------
 // CustomFoodForm
 // ---------------------------------------------------------------------------
-const CustomFoodForm = ({ initial = EMPTY_FORM, onSave, onCancel, isSaving }) => {
+const CustomFoodForm = ({
+  initial = EMPTY_FORM,
+  onSave,
+  onCancel,
+  isSaving,
+}) => {
   const [form, setForm] = useState({ ...EMPTY_FORM, ...initial });
   const [error, setError] = useState("");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const uploadMutation = usePostQuery();
+  const uploadMutation = usePostFileQuery({});
 
-  const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
+  const setField = (key, value) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
 
   const handleImageFile = async (file) => {
     setIsUploadingImage(true);
     try {
-      const imageDataUrl = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+      const formData = new FormData();
+      formData.append("file", file);
 
       const response = await uploadMutation.mutateAsync({
         url: "/foods/upload-meal-capture",
-        attributes: { imageDataUrl },
+        attributes: formData,
+        config: {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
       });
       const payload = getPayload(response);
       const imageUrl = get(payload, "imageUrl", null);
@@ -465,13 +472,19 @@ const CustomFoodsDrawer = ({
     setEditingItem(null);
   };
 
-  const portionMacros = portionItem ? scaleToGrams(portionItem, portionGrams) : null;
+  const portionMacros = portionItem
+    ? scaleToGrams(portionItem, portionGrams)
+    : null;
   const sliderMax = portionItem
     ? Math.max((portionItem.servingSize || 100) * 5, 500)
     : 1000;
   const sliderStep =
-    portionItem?.servingUnit === "g" || portionItem?.servingUnit === "ml" ? 10 : 1;
-  const gaugeMax = portionItem ? scaleToGrams(portionItem, sliderMax).cal : 2650;
+    portionItem?.servingUnit === "g" || portionItem?.servingUnit === "ml"
+      ? 10
+      : 1;
+  const gaugeMax = portionItem
+    ? scaleToGrams(portionItem, sliderMax).cal
+    : 2650;
 
   return (
     <>
@@ -546,7 +559,9 @@ const CustomFoodsDrawer = ({
                       />
                     ) : null}
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-sm">{item.name}</p>
+                      <p className="truncate font-medium text-sm">
+                        {item.name}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {item.calories} kcal · {item.protein}g oqsil ·{" "}
                         {item.servingSize}
@@ -652,23 +667,41 @@ const CustomFoodsDrawer = ({
               {/* Macro summary */}
               <div className="rounded-2xl border bg-muted/30 p-4 grid grid-cols-4 gap-2 text-center">
                 <div className="flex flex-col gap-1">
-                  <span className="text-xs text-muted-foreground font-medium">Kaloriya</span>
-                  <span className="text-base font-black text-foreground">{portionMacros?.cal}</span>
-                  <span className="text-[10px] text-muted-foreground">kcal</span>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    Kaloriya
+                  </span>
+                  <span className="text-base font-black text-foreground">
+                    {portionMacros?.cal}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    kcal
+                  </span>
                 </div>
                 <div className="flex flex-col gap-1 border-l border-border/40">
-                  <span className="text-xs text-muted-foreground font-medium">Oqsil</span>
-                  <span className="text-base font-black text-red-500">{portionMacros?.protein}</span>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    Oqsil
+                  </span>
+                  <span className="text-base font-black text-red-500">
+                    {portionMacros?.protein}
+                  </span>
                   <span className="text-[10px] text-muted-foreground">g</span>
                 </div>
                 <div className="flex flex-col gap-1 border-l border-border/40">
-                  <span className="text-xs text-muted-foreground font-medium">Uglevod</span>
-                  <span className="text-base font-black text-amber-500">{portionMacros?.carbs}</span>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    Uglevod
+                  </span>
+                  <span className="text-base font-black text-amber-500">
+                    {portionMacros?.carbs}
+                  </span>
                   <span className="text-[10px] text-muted-foreground">g</span>
                 </div>
                 <div className="flex flex-col gap-1 border-l border-border/40">
-                  <span className="text-xs text-muted-foreground font-medium">Yog&apos;</span>
-                  <span className="text-base font-black text-blue-500">{portionMacros?.fat}</span>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    Yog&apos;
+                  </span>
+                  <span className="text-base font-black text-blue-500">
+                    {portionMacros?.fat}
+                  </span>
                   <span className="text-[10px] text-muted-foreground">g</span>
                 </div>
               </div>
@@ -676,7 +709,9 @@ const CustomFoodsDrawer = ({
               {/* Amount slider */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center px-1">
-                  <span className="text-sm font-medium text-muted-foreground">Miqdori:</span>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Miqdori:
+                  </span>
                   <span className="text-2xl font-black text-primary">
                     {portionGrams}
                     <span className="text-sm font-semibold text-muted-foreground ml-1">
@@ -693,8 +728,14 @@ const CustomFoodsDrawer = ({
                   className="py-4"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground px-1">
-                  <span>{sliderStep}{portionItem.servingUnit || "g"}</span>
-                  <span>{sliderMax}{portionItem.servingUnit || "g"}</span>
+                  <span>
+                    {sliderStep}
+                    {portionItem.servingUnit || "g"}
+                  </span>
+                  <span>
+                    {sliderMax}
+                    {portionItem.servingUnit || "g"}
+                  </span>
                 </div>
               </div>
             </DrawerBody>
@@ -704,7 +745,10 @@ const CustomFoodsDrawer = ({
             <Button variant="outline" onClick={() => setPortionItem(null)}>
               Bekor qilish
             </Button>
-            <Button disabled={loggingId === portionItem?.id} onClick={handleLog}>
+            <Button
+              disabled={loggingId === portionItem?.id}
+              onClick={handleLog}
+            >
               {loggingId === portionItem?.id ? "Qo'shilmoqda…" : "Qo'shish"}
             </Button>
           </DrawerFooter>

@@ -1,8 +1,7 @@
 import React from "react";
 import { get } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
-import { usePatchQuery } from "@/hooks/api";
-import { usePostQuery } from "@/hooks/api";
+import { usePatchQuery, usePostFileQuery, usePostQuery } from "@/hooks/api";
 import { useAuthStore } from "@/store";
 
 export const ME_QUERY_KEY = ["me"];
@@ -56,6 +55,38 @@ export const getRequestErrorMessage = (error, fallbackMessage) => {
   return typeof message === "string" ? message : fallbackMessage;
 };
 
+const IMAGE_DATA_URL_PATTERN = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/;
+const IMAGE_EXTENSION_BY_MIME = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
+const isImageDataUrl = (value) =>
+  typeof value === "string" && IMAGE_DATA_URL_PATTERN.test(value);
+
+const dataUrlToFile = (dataUrl) => {
+  const match = dataUrl.match(IMAGE_DATA_URL_PATTERN);
+
+  if (!match) {
+    throw new Error("Avatar must be an image data URL.");
+  }
+
+  const [, mimeType, base64] = match;
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  const extension = IMAGE_EXTENSION_BY_MIME[mimeType] ?? "jpg";
+  return new File([bytes], `avatar-${Date.now()}.${extension}`, {
+    type: mimeType,
+  });
+};
+
 export const useProfileSettings = () => {
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
@@ -68,6 +99,7 @@ export const useProfileSettings = () => {
   const securityMutation = usePatchQuery();
   const requestContactChangeMutation = usePostQuery();
   const verifyContactChangeMutation = usePostQuery();
+  const avatarUploadMutation = usePostFileQuery({});
 
   const syncUser = React.useCallback(
     (nextUser) => {
@@ -113,16 +145,45 @@ export const useProfileSettings = () => {
     [user],
   );
 
+  const uploadAvatar = React.useCallback(
+    async (file) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "avatars");
+
+      const response = await avatarUploadMutation.mutateAsync({
+        url: "/user/media/images",
+        attributes: formData,
+      });
+
+      return get(response, "data.data") ?? get(response, "data");
+    },
+    [avatarUploadMutation],
+  );
+
   const saveProfile = React.useCallback(
     async (payload) => {
+      const nextPayload = { ...payload };
+
+      if (isImageDataUrl(nextPayload.avatar)) {
+        const uploaded = await uploadAvatar(dataUrlToFile(nextPayload.avatar));
+        const avatarUrl = uploaded?.url;
+
+        if (!avatarUrl) {
+          throw new Error("Avatar upload response is missing URL");
+        }
+
+        nextPayload.avatar = avatarUrl;
+      }
+
       const response = await profileMutation.mutateAsync({
         url: "/users/me",
-        attributes: payload,
+        attributes: nextPayload,
       });
 
       return syncUser(get(response, "data"));
     },
-    [profileMutation, syncUser],
+    [profileMutation, syncUser, uploadAvatar],
   );
 
   const saveGeneralSettings = React.useCallback(
@@ -237,6 +298,7 @@ export const useProfileSettings = () => {
     user,
     settings,
     saveProfile,
+    uploadAvatar,
     saveGeneralSettings,
     saveNotificationSettings,
     savePrivacySettings,
@@ -246,6 +308,7 @@ export const useProfileSettings = () => {
     requestPhoneChange,
     verifyPhoneChange,
     isSavingProfile: profileMutation.isPending,
+    isUploadingAvatar: avatarUploadMutation.isPending,
     isSavingGeneral: generalMutation.isPending,
     isSavingNotifications: notificationsMutation.isPending,
     isSavingPrivacy: privacyMutation.isPending,

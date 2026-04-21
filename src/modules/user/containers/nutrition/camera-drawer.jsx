@@ -220,7 +220,9 @@ const AnalyzeView = () => (
       <Loader2Icon className="size-6 animate-spin" />
     </div>
     <div className="space-y-1">
-      <h3 className="text-base font-semibold">Rasm AI orqali tahlil qilinmoqda</h3>
+      <h3 className="text-base font-semibold">
+        Rasm AI orqali tahlil qilinmoqda
+      </h3>
       <p className="text-sm text-muted-foreground">
         Bir nechta ovqat topilsa, hammasini alohida ko&apos;rsatamiz.
       </p>
@@ -269,14 +271,16 @@ const ResultView = ({
           goals={goals}
           emptyTitle="Ovqat aniqlanmadi"
           emptyDescription={
-            scanError || "Rasmni qayta olib ko'ring yoki boshqa burchakdan oling."
+            scanError ||
+            "Rasmni qayta olib ko'ring yoki boshqa burchakdan oling."
           }
           filledDescription="AI draftini tekshirib, keyin tasdiqlang."
         />
 
         {reviewItemsCount > 0 ? (
           <div className="rounded-3xl border border-amber-500/20 bg-amber-500/5 px-4 py-4 text-sm text-amber-700 dark:text-amber-300">
-            Ba&apos;zi ingredientlar taxminiy. Tasdiqlashdan oldin draftni bir ko&apos;zdan kechiring.
+            Ba&apos;zi ingredientlar taxminiy. Tasdiqlashdan oldin draftni bir
+            ko&apos;zdan kechiring.
           </div>
         ) : null}
       </div>
@@ -320,16 +324,12 @@ const ResultView = ({
   );
 };
 
-export default function CameraDrawer({
-  dateKey,
-  mealType,
-  open,
-  onClose,
-}) {
+export default function CameraDrawer({ dateKey, mealType, open, onClose }) {
   const [view, setView] = useState("camera");
   const [activeTab, setActiveTab] = useState("barcode");
   const [scannedItems, setScannedItems] = useState([]);
   const [capturedImage, setCapturedImage] = useState(null);
+  const [capturedImageUrl, setCapturedImageUrl] = useState(null);
   const [scanError, setScanError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -339,8 +339,7 @@ export default function CameraDrawer({
     uploadMealCapture,
     isAnalyzingDraftImage,
     isUploadingCapture,
-  } =
-    useFoodScan();
+  } = useFoodScan();
   const { goals } = useHealthGoals();
 
   useEffect(() => {
@@ -349,6 +348,7 @@ export default function CameraDrawer({
     setView("camera");
     setScannedItems([]);
     setCapturedImage(null);
+    setCapturedImageUrl(null);
     setScanError(null);
     setIsSaving(false);
   }, [open]);
@@ -360,8 +360,11 @@ export default function CameraDrawer({
     setView("analyzing");
 
     try {
+      const uploadedImageUrl = await uploadMealCapture(dataUrl);
+      setCapturedImageUrl(uploadedImageUrl);
+
       const response = await analyzeMealImageDraft({
-        imageDataUrl: dataUrl,
+        imageUrl: uploadedImageUrl,
         mode: activeTab,
       });
       const items = Array.isArray(response?.items) ? response.items : [];
@@ -382,6 +385,7 @@ export default function CameraDrawer({
 
   const handleRetake = useCallback(() => {
     setCapturedImage(null);
+    setCapturedImageUrl(null);
     setScannedItems([]);
     setScanError(null);
     setView("camera");
@@ -389,9 +393,7 @@ export default function CameraDrawer({
 
   const handlePortionChange = useCallback((draftId, grams) => {
     setScannedItems((current) =>
-      current.map((item) =>
-        item.id === draftId ? { ...item, grams } : item,
-      ),
+      current.map((item) => (item.id === draftId ? { ...item, grams } : item)),
     );
   }, []);
 
@@ -424,10 +426,6 @@ export default function CameraDrawer({
     setIsSaving(true);
 
     try {
-      const capturedImageUrl = capturedImage
-        ? await uploadMealCapture(capturedImage)
-        : null;
-
       for (const item of scannedItems) {
         await addMealAction(dateKey, mealType, {
           ...buildMealPayloadFromDraft(item, {
@@ -481,7 +479,9 @@ export default function CameraDrawer({
                 </DrawerDescription>
               </div>
             ) : (
-              <DrawerTitle className="text-base font-semibold">Kamera</DrawerTitle>
+              <DrawerTitle className="text-base font-semibold">
+                Kamera
+              </DrawerTitle>
             )}
 
             <Button
@@ -528,7 +528,10 @@ export default function CameraDrawer({
                 exit={{ opacity: 0, scale: 0.97 }}
                 transition={{ duration: 0.2 }}
               >
-                <ScanCameraView activeTab={activeTab} onCapture={handleCapture} />
+                <ScanCameraView
+                  activeTab={activeTab}
+                  onCapture={handleCapture}
+                />
               </motion.div>
             ) : null}
 
@@ -562,7 +565,9 @@ export default function CameraDrawer({
                   onRemove={handleRemoveItem}
                   onConfirm={handleConfirmItem}
                   onSave={handleSave}
-                  isSaving={isSaving || isAnalyzingDraftImage || isUploadingCapture}
+                  isSaving={
+                    isSaving || isAnalyzingDraftImage || isUploadingCapture
+                  }
                 />
               </motion.div>
             ) : null}

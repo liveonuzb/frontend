@@ -44,6 +44,13 @@ import {
 } from "@/modules/auth/lib/auth-utils";
 
 const MAX_AVATAR_FILE_SIZE = 3 * 1024 * 1024;
+const ACCEPTED_AVATAR_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+]);
+const AVATAR_FILE_ACCEPT = Array.from(ACCEPTED_AVATAR_MIME_TYPES).join(",");
 
 const calcCompletionPct = (form) => {
   let pct = 0;
@@ -108,36 +115,6 @@ const normalizeForm = (form) => ({
   avatar: form.avatar || "",
 });
 
-const imageFileToDataUrl = (file, t) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(new Error(t("profile.user.avatarProcessError")));
-    reader.readAsDataURL(file);
-  });
-
-const resizeImage = async (file, t) => {
-  const source = await imageFileToDataUrl(file, t);
-  const image = new Image();
-
-  await new Promise((resolve, reject) => {
-    image.onload = resolve;
-    image.onerror = reject;
-    image.src = source;
-  });
-
-  const maxEdge = 320;
-  const ratio = Math.min(1, maxEdge / Math.max(image.width, image.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(image.width * ratio);
-  canvas.height = Math.round(image.height * ratio);
-
-  const context = canvas.getContext("2d");
-  context.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-  return canvas.toDataURL("image/jpeg", 0.82);
-};
-
 const getContactTypes = (t) => ({
   email: {
     label: t("profile.coach.email"),
@@ -177,17 +154,20 @@ export const UserProfileTab = ({ embedded = false }) => {
   const {
     user,
     saveProfile,
+    uploadAvatar,
     requestEmailChange,
     verifyEmailChange,
     requestPhoneChange,
     verifyPhoneChange,
     isSavingProfile,
+    isUploadingAvatar,
     isRequestingContactChange,
     isVerifyingContactChange,
   } = useProfileSettings();
   const fileInputRef = React.useRef(null);
   const initialForm = React.useMemo(() => createInitialForm(user), [user]);
   const [form, setForm] = React.useState(initialForm);
+  const [avatarChanged, setAvatarChanged] = React.useState(false);
   const [avatarError, setAvatarError] = React.useState("");
   const [contactDrawerOpen, setContactDrawerOpen] = React.useState(false);
   const [otpDrawerOpen, setOtpDrawerOpen] = React.useState(false);
@@ -213,6 +193,7 @@ export const UserProfileTab = ({ embedded = false }) => {
 
   React.useEffect(() => {
     setForm(initialForm);
+    setAvatarChanged(false);
     setAvatarError("");
   }, [initialForm]);
 
@@ -227,7 +208,8 @@ export const UserProfileTab = ({ embedded = false }) => {
     [form.username],
   );
   const displayName =
-    `${form.firstName || ""} ${form.lastName || ""}`.trim() || t("common.user", "Foydalanuvchi");
+    `${form.firstName || ""} ${form.lastName || ""}`.trim() ||
+    t("common.user", "Foydalanuvchi");
   const initials = `${form.firstName?.[0] || "F"}${form.lastName?.[0] || ""}`
     .trim()
     .toUpperCase();
@@ -236,35 +218,45 @@ export const UserProfileTab = ({ embedded = false }) => {
     setForm((current) => ({ ...current, [key]: value }));
   }, []);
 
-  const handleAvatarSelect = React.useCallback(async (event) => {
-    const file = event.target.files?.[0];
+  const handleAvatarSelect = React.useCallback(
+    async (event) => {
+      const file = event.target.files?.[0];
 
-    if (!file) {
-      return;
-    }
+      if (!file) {
+        return;
+      }
 
-    if (!file.type.startsWith("image/")) {
-      setAvatarError(t("profile.user.avatarError"));
-      event.target.value = "";
-      return;
-    }
+      if (!ACCEPTED_AVATAR_MIME_TYPES.has(file.type)) {
+        setAvatarError(t("profile.user.avatarError"));
+        event.target.value = "";
+        return;
+      }
 
-    if (file.size > MAX_AVATAR_FILE_SIZE) {
-      setAvatarError(t("profile.user.avatarSizeError"));
-      event.target.value = "";
-      return;
-    }
+      if (file.size > MAX_AVATAR_FILE_SIZE) {
+        setAvatarError(t("profile.user.avatarSizeError"));
+        event.target.value = "";
+        return;
+      }
 
-    try {
-      const avatar = await resizeImage(file, t);
-      setAvatarError("");
-      setForm((current) => ({ ...current, avatar }));
-    } catch {
-      setAvatarError(t("profile.user.avatarProcessError"));
-    } finally {
-      event.target.value = "";
-    }
-  }, []);
+      try {
+        const uploaded = await uploadAvatar(file);
+        const avatar = uploaded?.url;
+
+        if (!avatar) {
+          throw new Error("Avatar upload response is missing URL");
+        }
+
+        setAvatarError("");
+        setAvatarChanged(true);
+        setForm((current) => ({ ...current, avatar }));
+      } catch {
+        setAvatarError(t("profile.user.avatarProcessError"));
+      } finally {
+        event.target.value = "";
+      }
+    },
+    [t, uploadAvatar],
+  );
 
   const handleSave = React.useCallback(async () => {
     try {
@@ -275,13 +267,13 @@ export const UserProfileTab = ({ embedded = false }) => {
         email: embedded ? undefined : normalizedForm.email || undefined,
         phone: embedded ? undefined : normalizedForm.phone || undefined,
         bio: normalizedForm.bio,
-        avatar: normalizedForm.avatar || undefined,
+        avatar: avatarChanged ? normalizedForm.avatar : undefined,
       });
       toast.success(t("profile.user.saveSuccess"));
     } catch (error) {
       toast.error(getRequestErrorMessage(error, t("profile.user.saveError")));
     }
-  }, [embedded, normalizedForm, saveProfile]);
+  }, [avatarChanged, embedded, normalizedForm, saveProfile, t]);
 
   const openContactDrawer = React.useCallback(
     (type) => {
@@ -323,9 +315,12 @@ export const UserProfileTab = ({ embedded = false }) => {
       setContactDrawerOpen(false);
       setOtpDrawerOpen(true);
       startResendCountdown();
-      toast.success(responseData?.message || t("profile.user.contactChange.otpTitle"), {
-        description: getOtpToastDescription(responseData),
-      });
+      toast.success(
+        responseData?.message || t("profile.user.contactChange.otpTitle"),
+        {
+          description: getOtpToastDescription(responseData),
+        },
+      );
     } catch (error) {
       setContactError(
         getAuthErrorMessage(error, t("profile.user.contactChange.sendError")),
@@ -349,9 +344,13 @@ export const UserProfileTab = ({ embedded = false }) => {
       setOtpDrawerOpen(false);
       setPendingContact(null);
       setOtpCode("");
-      toast.success(responseData?.message || t("profile.user.contactChange.verifySuccess"));
+      toast.success(
+        responseData?.message || t("profile.user.contactChange.verifySuccess"),
+      );
     } catch (error) {
-      setOtpError(getAuthErrorMessage(error, t("profile.user.contactChange.verifyError")));
+      setOtpError(
+        getAuthErrorMessage(error, t("profile.user.contactChange.verifyError")),
+      );
     }
   }, [otpCode, pendingContact?.type, verifyEmailChange, verifyPhoneChange]);
 
@@ -370,7 +369,9 @@ export const UserProfileTab = ({ embedded = false }) => {
         description: getOtpToastDescription(responseData),
       });
     } catch (error) {
-      toast.error(getAuthErrorMessage(error, t("profile.user.contactChange.resendError")));
+      toast.error(
+        getAuthErrorMessage(error, t("profile.user.contactChange.resendError")),
+      );
     }
   }, [pendingContact, requestEmailChange, requestPhoneChange]);
 
@@ -395,6 +396,7 @@ export const UserProfileTab = ({ embedded = false }) => {
                   size="icon"
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingAvatar}
                   className="absolute bottom-0 right-0 rounded-full"
                 >
                   <CameraIcon className="size-4" />
@@ -402,7 +404,7 @@ export const UserProfileTab = ({ embedded = false }) => {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept={AVATAR_FILE_ACCEPT}
                   className="hidden"
                   onChange={handleAvatarSelect}
                 />
@@ -448,7 +450,9 @@ export const UserProfileTab = ({ embedded = false }) => {
                     <FieldDescription>
                       {t("profile.user.bioHint")}
                     </FieldDescription>
-                    <span>{t("profile.user.bioCount", { current: form.bio.length })}</span>
+                    <span>
+                      {t("profile.user.bioCount", { current: form.bio.length })}
+                    </span>
                   </div>
                 </Field>
               </CardContent>
@@ -478,7 +482,9 @@ export const UserProfileTab = ({ embedded = false }) => {
 
             <Card className="py-6">
               <CardContent className="space-y-4 p-6">
-                <p className="text-lg font-medium">{t("profile.user.contacts")}</p>
+                <p className="text-lg font-medium">
+                  {t("profile.user.contacts")}
+                </p>
                 <ContactRow
                   icon={PhoneIcon}
                   label={t("profile.coach.phone")}
@@ -502,10 +508,17 @@ export const UserProfileTab = ({ embedded = false }) => {
           <DrawerFooter>
             <Button
               type="button"
-              disabled={!isDirty || isSavingProfile || Boolean(usernameError)}
+              disabled={
+                !isDirty ||
+                isSavingProfile ||
+                isUploadingAvatar ||
+                Boolean(usernameError)
+              }
               onClick={handleSave}
             >
-              {isSavingProfile ? t("profile.general.saving") : t("profile.general.save")}
+              {isSavingProfile
+                ? t("profile.general.saving")
+                : t("profile.general.save")}
             </Button>
           </DrawerFooter>
         </div>
@@ -547,7 +560,9 @@ export const UserProfileTab = ({ embedded = false }) => {
                 disabled={!contactValue || isRequestingContactChange}
                 onClick={handleRequestContactChange}
               >
-                {isRequestingContactChange ? t("profile.user.contactChange.sending") : t("profile.user.contactChange.continue")}
+                {isRequestingContactChange
+                  ? t("profile.user.contactChange.sending")
+                  : t("profile.user.contactChange.continue")}
               </Button>
             </DrawerFooter>
           </DrawerContent>
@@ -566,9 +581,13 @@ export const UserProfileTab = ({ embedded = false }) => {
         >
           <DrawerContent side="bottom">
             <DrawerHeader className="px-5 pt-5 text-center items-center">
-              <DrawerTitle>{t("profile.user.contactChange.otpTitle")}</DrawerTitle>
+              <DrawerTitle>
+                {t("profile.user.contactChange.otpTitle")}
+              </DrawerTitle>
               <DrawerDescription>
-                {t("profile.user.contactChange.otpSent", { contact: pendingContact?.value || "" })}
+                {t("profile.user.contactChange.otpSent", {
+                  contact: pendingContact?.value || "",
+                })}
               </DrawerDescription>
             </DrawerHeader>
             <div className="space-y-4 px-5 pb-2">
@@ -608,7 +627,9 @@ export const UserProfileTab = ({ embedded = false }) => {
                 disabled={otpCode.length !== 6 || isVerifyingContactChange}
                 onClick={handleVerifyContactChange}
               >
-                {isVerifyingContactChange ? t("profile.user.contactChange.verifying") : t("profile.user.contactChange.otpTitle")}
+                {isVerifyingContactChange
+                  ? t("profile.user.contactChange.verifying")
+                  : t("profile.user.contactChange.otpTitle")}
               </Button>
               <Button
                 type="button"
@@ -627,7 +648,9 @@ export const UserProfileTab = ({ embedded = false }) => {
   return (
     <Card className="mx-auto max-w-3xl border-border/60 py-6 shadow-none">
       <CardHeader className="items-center pb-2 text-center">
-        <CardTitle className="text-xl font-semibold">{t("profile.tabs.profile")}</CardTitle>
+        <CardTitle className="text-xl font-semibold">
+          {t("profile.tabs.profile")}
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6 p-6 sm:p-8">
         <ProfileCompletionBar form={form} />
@@ -644,13 +667,14 @@ export const UserProfileTab = ({ embedded = false }) => {
               size="icon-sm"
               className="absolute bottom-0 right-0 rounded-full"
               onClick={() => fileInputRef.current?.click()}
+              disabled={isUploadingAvatar}
             >
               <CameraIcon className="size-4" />
             </Button>
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept={AVATAR_FILE_ACCEPT}
               className="hidden"
               onChange={handleAvatarSelect}
             />
@@ -660,7 +684,10 @@ export const UserProfileTab = ({ embedded = false }) => {
             <Button
               type="button"
               variant="ghost"
-              onClick={() => handleChange("avatar", "")}
+              onClick={() => {
+                setAvatarChanged(true);
+                handleChange("avatar", "");
+              }}
             >
               {t("profile.user.avatarRemove")}
             </Button>
@@ -699,9 +726,7 @@ export const UserProfileTab = ({ embedded = false }) => {
               className="h-12 rounded-full px-5 shadow-none"
               onChange={(event) => handleChange("username", event.target.value)}
             />
-            {usernameError ? (
-              <FieldError>{usernameError}</FieldError>
-            ) : null}
+            {usernameError ? <FieldError>{usernameError}</FieldError> : null}
           </Field>
           <Field className="md:col-span-2">
             <FieldLabel>{t("profile.coach.email")}</FieldLabel>
@@ -734,10 +759,10 @@ export const UserProfileTab = ({ embedded = false }) => {
               onChange={(event) => handleChange("bio", event.target.value)}
             />
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <FieldDescription>
-                {t("profile.user.bioHint")}
-              </FieldDescription>
-              <span>{t("profile.user.bioCount", { current: form.bio.length })}</span>
+              <FieldDescription>{t("profile.user.bioHint")}</FieldDescription>
+              <span>
+                {t("profile.user.bioCount", { current: form.bio.length })}
+              </span>
             </div>
           </Field>
         </div>
@@ -747,10 +772,17 @@ export const UserProfileTab = ({ embedded = false }) => {
         <div className="flex flex-col gap-3 pt-2">
           <Button
             type="button"
-            disabled={!isDirty || isSavingProfile || Boolean(usernameError)}
+            disabled={
+              !isDirty ||
+              isSavingProfile ||
+              isUploadingAvatar ||
+              Boolean(usernameError)
+            }
             onClick={handleSave}
           >
-            {isSavingProfile ? t("profile.general.saving") : t("profile.general.save")}
+            {isSavingProfile
+              ? t("profile.general.saving")
+              : t("profile.general.save")}
           </Button>
         </div>
       </CardContent>

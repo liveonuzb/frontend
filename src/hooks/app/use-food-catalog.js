@@ -1,7 +1,12 @@
 import React from "react";
 import { get, round } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
-import { useDeleteQuery, useGetQuery, usePostQuery } from "@/hooks/api";
+import {
+  useDeleteQuery,
+  useGetQuery,
+  usePostFileQuery,
+  usePostQuery,
+} from "@/hooks/api";
 import useLanguageStore from "@/store/language-store";
 
 export const FOODS_CATALOG_QUERY_KEY = ["foods", "catalog"];
@@ -17,6 +22,40 @@ const GRAM_BASED_UNITS = new Set(["g", "ml"]);
 // don't get new references on every render and don't cause infinite loops.
 const EMPTY_FOODS = [];
 const EMPTY_FOOD_MAP = new Map();
+
+const MIME_EXTENSION_MAP = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
+const imagePayload = ({ imageDataUrl, imageUrl }) =>
+  imageUrl ? { imageUrl } : { imageDataUrl };
+
+const imageInputToFile = async (input, fallbackName = "meal-capture") => {
+  if (typeof File !== "undefined" && input instanceof File) {
+    return input;
+  }
+
+  if (typeof Blob !== "undefined" && input instanceof Blob) {
+    const extension = MIME_EXTENSION_MAP[input.type] ?? "jpg";
+    return new File([input], `${fallbackName}.${extension}`, {
+      type: input.type || "image/jpeg",
+    });
+  }
+
+  if (typeof input === "string" && input.startsWith("data:image/")) {
+    const response = await fetch(input);
+    const blob = await response.blob();
+    const extension = MIME_EXTENSION_MAP[blob.type] ?? "jpg";
+    return new File([blob], `${fallbackName}.${extension}`, {
+      type: blob.type || "image/jpeg",
+    });
+  }
+
+  throw new Error("Invalid image input");
+};
 
 const toNumber = (value, fallback = 0) => {
   const normalized = Number(value);
@@ -160,7 +199,11 @@ const useFoodCatalog = () => {
     () =>
       get(data, "data.data.categories", []).map((category) => ({
         ...category,
-        label: resolveLabel(category.translations, category.name, currentLanguage),
+        label: resolveLabel(
+          category.translations,
+          category.name,
+          currentLanguage,
+        ),
       })),
     [data, currentLanguage],
   );
@@ -299,7 +342,7 @@ export const useFoodScan = () => {
   const textMutation = usePostQuery();
   const draftImageMutation = usePostQuery();
   const draftTextMutation = usePostQuery();
-  const uploadMutation = usePostQuery();
+  const uploadMutation = usePostFileQuery({});
   const audioMutation = usePostQuery();
 
   const normalizeScanItems = React.useCallback(
@@ -330,11 +373,11 @@ export const useFoodScan = () => {
   );
 
   const scanMealImage = React.useCallback(
-    async ({ imageDataUrl, mode = "ai" }) => {
+    async ({ imageDataUrl, imageUrl, mode = "ai" }) => {
       const response = await postMutation.mutateAsync({
         url: "/foods/scan-meal",
         attributes: {
-          imageDataUrl,
+          ...imagePayload({ imageDataUrl, imageUrl }),
           mode,
         },
       });
@@ -391,11 +434,11 @@ export const useFoodScan = () => {
 
   return {
     scanMealImage,
-    analyzeMealImageDraft: async ({ imageDataUrl, mode = "ai" }) => {
+    analyzeMealImageDraft: async ({ imageDataUrl, imageUrl, mode = "ai" }) => {
       const response = await draftImageMutation.mutateAsync({
         url: "/foods/analyze-meal-image",
         attributes: {
-          imageDataUrl,
+          ...imagePayload({ imageDataUrl, imageUrl }),
           mode,
         },
       });
@@ -433,10 +476,19 @@ export const useFoodScan = () => {
         items: normalizeDraftItems(get(payload, "items", [])),
       };
     },
-    uploadMealCapture: async (imageDataUrl) => {
+    uploadMealCapture: async (imageInput) => {
+      const file = await imageInputToFile(imageInput);
+      const formData = new FormData();
+      formData.append("file", file);
+
       const response = await uploadMutation.mutateAsync({
         url: "/foods/upload-meal-capture",
-        attributes: { imageDataUrl },
+        attributes: formData,
+        config: {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
       });
       const payload = getResponsePayload(response);
 

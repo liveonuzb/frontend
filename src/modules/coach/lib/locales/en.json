@@ -130,7 +130,7 @@
           "basics": "Details",
           "basicsDescription": "Course title and short description.",
           "cover": "Cover",
-          "coverDescription": "Image uploaded to MinIO.",
+          "coverDescription": "Image uploaded to Backblaze B2.",
           "pricing": "Pricing",
           "pricingDescription": "Access duration and publish state."
         },

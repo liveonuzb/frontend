@@ -130,7 +130,7 @@
           "basics": "Данные",
           "basicsDescription": "Название и краткое описание курса.",
           "cover": "Обложка",
-          "coverDescription": "Изображение загружается в MinIO.",
+          "coverDescription": "Изображение загружается в Backblaze B2.",
           "pricing": "Цена",
           "pricingDescription": "Срок доступа и публикация."
         },

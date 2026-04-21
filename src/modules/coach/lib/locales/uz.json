@@ -130,7 +130,7 @@
           "basics": "Ma'lumot",
           "basicsDescription": "Kurs nomi va qisqa tavsif.",
           "cover": "Cover",
-          "coverDescription": "MinIO ga yuklanadigan rasm.",
+          "coverDescription": "Backblaze B2 ga yuklanadigan rasm.",
           "pricing": "Narx",
           "pricingDescription": "Access muddati va publish holati."
         },
