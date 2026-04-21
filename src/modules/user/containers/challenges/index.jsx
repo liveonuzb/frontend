@@ -886,7 +886,7 @@ export default function ChallengesContainer() {
                   value={inviteSearch}
                   onChange={(event) => setInviteSearch(event.target.value)}
                   className="pl-9 rounded-xl"
-                  placeholder="Ism, username, email yoki telefon"
+                  placeholder="Ism, username yoki telefon"
                 />
               </div>
             </div>
@@ -940,9 +940,7 @@ export default function ChallengesContainer() {
                           <p className="line-clamp-1 text-xs text-muted-foreground">
                             {candidate.username
                               ? `@${candidate.username}`
-                              : candidate.email ||
-                                candidate.phone ||
-                                "Foydalanuvchi"}
+                              : candidate.phone || "Foydalanuvchi"}
                           </p>
                         </div>
                       </button>

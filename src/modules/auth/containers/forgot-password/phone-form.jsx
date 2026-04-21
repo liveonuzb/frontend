@@ -36,7 +36,6 @@ const PhoneForm = () => {
         setPendingVerification({
           channel: "phone",
           purpose: "PASSWORD_RESET",
-          email: get(responseData, "email"),
           phone: get(responseData, "phone"),
           otpCode: get(responseData, "otpCode"),
           expiresAt: get(responseData, "expiresAt"),

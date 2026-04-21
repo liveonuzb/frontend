@@ -1,6 +1,5 @@
 import React from "react";
 import { Link, useSearchParams } from "react-router";
-import { useQueryState, parseAsStringEnum } from "nuqs";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,13 +8,11 @@ import {
   FieldGroup,
   FieldSeparator,
 } from "@/components/ui/field";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useTranslation } from "react-i18next";
 import { handleSocialLogin } from "@/modules/auth/lib/auth-utils";
 import { useGetQuery } from "@/hooks/api";
 import { get } from "lodash";
 
-import EmailForm from "./email-form";
 import PhoneForm from "./phone-form";
 
 const Index = ({ className, ...props }) => {
@@ -33,11 +30,6 @@ const Index = ({ className, ...props }) => {
   });
 
   const referrerName = get(referralValidation, "data.referrerName");
-
-  const [tab, setTab] = useQueryState(
-    "tab",
-    parseAsStringEnum(["email", "phone"]).withDefault("email"),
-  );
 
   return (
     <div
@@ -63,24 +55,7 @@ const Index = ({ className, ...props }) => {
             </div>
           )}
 
-          <Tabs value={tab} onValueChange={setTab}>
-            <TabsList className={"w-full"}>
-              <TabsTrigger value="email">
-                {t("auth.signUp.emailTab")}
-              </TabsTrigger>
-              <TabsTrigger value="phone">
-                {t("auth.signUp.phoneTab")}
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="email">
-              <EmailForm referralCode={referralCode} />
-            </TabsContent>
-
-            <TabsContent value="phone">
-              <PhoneForm referralCode={referralCode} />
-            </TabsContent>
-          </Tabs>
+          <PhoneForm referralCode={referralCode} />
 
           <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
             {t("auth.signUp.continueWith")}

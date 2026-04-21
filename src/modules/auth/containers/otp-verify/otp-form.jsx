@@ -93,7 +93,6 @@ const OtpForm = () => {
         setPasswordReset({
           resetToken: get(responseData, "resetToken"),
           expiresAt: get(responseData, "expiresAt"),
-          email: get(verification, "email"),
           phone: get(verification, "phone"),
         });
         toast.success(
@@ -116,7 +115,6 @@ const OtpForm = () => {
         const responseData = get(response, "data");
         setPendingVerification({
           ...pendingVerification,
-          email: get(responseData, "email", get(pendingVerification, "email")),
           phone: get(responseData, "phone", get(pendingVerification, "phone")),
           otpCode: get(responseData, "otpCode"),
           expiresAt: get(responseData, "expiresAt"),
@@ -148,18 +146,20 @@ const OtpForm = () => {
       return;
     }
 
+    const phone = get(pendingVerification, "phone");
+    if (!phone) {
+      toast.error("Phone verification session not found.");
+      navigate("/auth/sign-in", { replace: true });
+      return;
+    }
+
     try {
       await verifyOtp({
         url: "/auth/verify-otp",
         attributes: {
           code: get(values, "otp"),
           purpose: get(pendingVerification, "purpose"),
-          ...(get(pendingVerification, "email")
-            ? { email: get(pendingVerification, "email") }
-            : {}),
-          ...(get(pendingVerification, "phone")
-            ? { phone: get(pendingVerification, "phone") }
-            : {}),
+          phone,
         },
       });
     } catch (error) {
@@ -175,16 +175,18 @@ const OtpForm = () => {
       return;
     }
 
+    const phone = get(pendingVerification, "phone");
+    if (!phone) {
+      toast.error("Phone verification session not found.");
+      navigate("/auth/sign-in", { replace: true });
+      return;
+    }
+
     resendOtp({
       url: "/auth/resend-otp",
       attributes: {
         purpose: get(pendingVerification, "purpose"),
-        ...(get(pendingVerification, "email")
-          ? { email: get(pendingVerification, "email") }
-          : {}),
-        ...(get(pendingVerification, "phone")
-          ? { phone: get(pendingVerification, "phone") }
-          : {}),
+        phone,
       },
     });
   };

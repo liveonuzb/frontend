@@ -344,9 +344,9 @@
         },
         "recipient": {
           "title": "Who is it for?",
-          "description": "Search for a friend or continue with email, phone, or username.",
+          "description": "Search for a friend or continue with phone or username.",
           "inputLabel": "Recipient",
-          "placeholder": "Phone, email, or username",
+          "placeholder": "Phone or username",
           "helper": "You can still continue with an identifier even if we do not find a matching user.",
           "searching": "Searching...",
           "noResults": "No matching users found.",

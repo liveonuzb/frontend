@@ -234,36 +234,6 @@ export const useProfileSettings = () => {
     [securityMutation],
   );
 
-  const requestEmailChange = React.useCallback(
-    async (email) => {
-      const response = await requestContactChangeMutation.mutateAsync({
-        url: "/users/me/contact-change/email/request",
-        attributes: { email },
-      });
-
-      return get(response, "data");
-    },
-    [requestContactChangeMutation],
-  );
-
-  const verifyEmailChange = React.useCallback(
-    async (code) => {
-      const response = await verifyContactChangeMutation.mutateAsync({
-        url: "/users/me/contact-change/email/verify",
-        attributes: { code },
-      });
-      const responseData = get(response, "data");
-      const nextUser = get(responseData, "user");
-
-      if (nextUser) {
-        syncUser(nextUser);
-      }
-
-      return responseData;
-    },
-    [syncUser, verifyContactChangeMutation],
-  );
-
   const requestPhoneChange = React.useCallback(
     async (phone) => {
       const response = await requestContactChangeMutation.mutateAsync({
@@ -303,8 +273,6 @@ export const useProfileSettings = () => {
     saveNotificationSettings,
     savePrivacySettings,
     changePassword,
-    requestEmailChange,
-    verifyEmailChange,
     requestPhoneChange,
     verifyPhoneChange,
     isSavingProfile: profileMutation.isPending,

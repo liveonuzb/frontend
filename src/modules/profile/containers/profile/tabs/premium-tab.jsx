@@ -262,7 +262,7 @@ const FamilyPlanSection = () => {
         {group.members.length < group.maxMembers ? (
           <div className="flex gap-2">
             <Input
-              placeholder="Username, email yoki telefon"
+              placeholder="Username yoki telefon"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddMember()}

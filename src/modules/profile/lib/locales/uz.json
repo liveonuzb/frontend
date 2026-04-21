@@ -344,9 +344,9 @@
         },
         "recipient": {
           "title": "Kimga yuborasiz?",
-          "description": "Do'stingizni qidiring yoki email, telefon, username orqali davom eting.",
+          "description": "Do'stingizni qidiring yoki telefon, username orqali davom eting.",
           "inputLabel": "Qabul qiluvchi",
-          "placeholder": "Telefon, email yoki username",
+          "placeholder": "Telefon yoki username",
           "helper": "Topilmasa ham identifier bo'yicha premium sovg'a qilishingiz mumkin.",
           "searching": "Qidirilmoqda...",
           "noResults": "Mos foydalanuvchi topilmadi.",

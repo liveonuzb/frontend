@@ -1,21 +1,13 @@
 import React from "react";
 import { Link } from "react-router";
-import { useQueryState, parseAsStringEnum } from "nuqs";
 import { cn } from "@/lib/utils";
 import { FieldDescription, FieldGroup } from "@/components/ui/field";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useTranslation } from "react-i18next";
-import { get } from "lodash";
 
-import EmailForm from "./email-form";
 import PhoneForm from "./phone-form";
 
 const Index = ({ className, ...props }) => {
   const { t } = useTranslation();
-  const [tab, setTab] = useQueryState(
-    "tab",
-    parseAsStringEnum(["email", "phone"]).withDefault("email"),
-  );
 
   return (
     <div
@@ -36,24 +28,7 @@ const Index = ({ className, ...props }) => {
             </p>
           </div>
 
-          <Tabs value={tab} onValueChange={setTab}>
-            <TabsList className={"w-full"}>
-              <TabsTrigger value="email">
-                {t("auth.forgotPassword.emailTab")}
-              </TabsTrigger>
-              <TabsTrigger value="phone">
-                {t("auth.forgotPassword.phoneTab")}
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="email">
-              <EmailForm />
-            </TabsContent>
-
-            <TabsContent value="phone">
-              <PhoneForm />
-            </TabsContent>
-          </Tabs>
+          <PhoneForm />
 
           <FieldDescription className="text-center">
             {t("auth.forgotPassword.rememberPassword")}{" "}

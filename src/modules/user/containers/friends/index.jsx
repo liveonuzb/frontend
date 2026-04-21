@@ -5,7 +5,6 @@ import {
   CheckIcon,
   Clock3Icon,
   Loader2Icon,
-  MailIcon,
   MessageCircleIcon,
   MessageSquareIcon,
   PhoneIcon,
@@ -192,13 +191,6 @@ const INVITE_METHOD_OPTIONS = [
     icon: PhoneIcon,
     placeholder: "+998 90 123 45 67",
   },
-  {
-    value: "email",
-    label: "Email orqali",
-    description: "Do'stingizning email manzili orqali taklif yuboriladi.",
-    icon: MailIcon,
-    placeholder: "example@mail.com",
-  },
 ];
 
 const INITIAL_INVITE_FORM = {
@@ -338,7 +330,6 @@ export default function FriendsContainer() {
           (c) =>
             c.username?.toLowerCase() ===
               identifier.toLowerCase().replace("@", "") ||
-            c.email?.toLowerCase() === identifier.toLowerCase() ||
             c.phone?.replace(/\D/g, "").includes(identifier.replace(/\D/g, "")),
         ) || candidateItems[0];
 

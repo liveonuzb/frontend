@@ -5,7 +5,7 @@ import {
   split,
   toUpper,
 } from "lodash";
-import { Call, Sms } from "iconsax-reactjs";
+import { Call } from "iconsax-reactjs";
 
 export const CLIENT_SORT_FIELDS = [
   "name",
@@ -25,13 +25,6 @@ export const getInviteMethodOptions = (t) => [
     description: t("coach.clients.inviteSteps.method.phone.description"),
     icon: Call,
     placeholder: t("coach.clients.inviteSteps.method.phone.placeholder"),
-  },
-  {
-    value: "email",
-    label: t("coach.clients.inviteSteps.method.email.label"),
-    description: t("coach.clients.inviteSteps.method.email.description"),
-    icon: Sms,
-    placeholder: t("coach.clients.inviteSteps.method.email.placeholder"),
   },
 ];
 

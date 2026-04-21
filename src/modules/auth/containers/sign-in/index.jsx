@@ -1,6 +1,5 @@
 import React from "react";
 import { Link, useNavigate } from "react-router";
-import { useQueryState, parseAsStringEnum } from "nuqs";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +8,6 @@ import {
   FieldGroup,
   FieldSeparator,
 } from "@/components/ui/field";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuthStore } from "@/store";
 import { useTranslation } from "react-i18next";
 import { handleSocialLogin, getAuthErrorMessage, getPostAuthRoute } from "@/modules/auth/lib/auth-utils";
@@ -19,7 +17,6 @@ import { usePostQuery } from "@/hooks/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import EmailForm from "./email-form";
 import PhoneForm from "./phone-form";
 
 const Index = ({ className, ...props }) => {
@@ -62,11 +59,6 @@ const Index = ({ className, ...props }) => {
   const clearPendingVerification = useAuthStore((state) =>
     get(state, "clearPendingVerification"),
   );
-  const [tab, setTab] = useQueryState(
-    "tab",
-    parseAsStringEnum(["email", "phone"]).withDefault("email"),
-  );
-
   React.useEffect(() => {
     if (clearPasswordReset) clearPasswordReset();
     if (clearPendingVerification) clearPendingVerification();
@@ -86,24 +78,7 @@ const Index = ({ className, ...props }) => {
             </p>
           </div>
 
-          <Tabs value={tab} onValueChange={setTab}>
-            <TabsList className={"w-full"}>
-              <TabsTrigger value="email">
-                {t("auth.signIn.emailTab")}
-              </TabsTrigger>
-              <TabsTrigger value="phone">
-                {t("auth.signIn.phoneTab")}
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="email">
-              <EmailForm />
-            </TabsContent>
-
-            <TabsContent value="phone">
-              <PhoneForm />
-            </TabsContent>
-          </Tabs>
+          <PhoneForm />
 
           <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
             {t("auth.signIn.continueWith")}

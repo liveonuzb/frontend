@@ -5,7 +5,6 @@ import {
   AtSignIcon,
   CameraIcon,
   ChevronRightIcon,
-  MailIcon,
   PhoneIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -58,9 +57,8 @@ const calcCompletionPct = (form) => {
   if (form.firstName?.trim()) pct += 10;
   if (form.lastName?.trim()) pct += 10;
   if (form.bio?.trim()) pct += 15;
-  if (form.username?.trim()) pct += 15;
-  if (form.email?.trim()) pct += 15;
-  if (form.phone?.trim()) pct += 15;
+  if (form.username?.trim()) pct += 20;
+  if (form.phone?.trim()) pct += 25;
   return pct;
 };
 
@@ -99,7 +97,6 @@ const createInitialForm = (user) => ({
   firstName: user?.firstName ?? "",
   lastName: user?.lastName ?? "",
   username: user?.username ?? "",
-  email: user?.email ?? "",
   phone: user?.phone ?? "",
   bio: user?.bio ?? "",
   avatar: user?.avatar ?? "",
@@ -109,20 +106,12 @@ const normalizeForm = (form) => ({
   firstName: form.firstName.trim(),
   lastName: form.lastName.trim(),
   username: form.username.trim().replace(/^@+/, ""),
-  email: form.email.trim(),
   phone: form.phone.trim(),
   bio: form.bio.trim(),
   avatar: form.avatar || "",
 });
 
 const getContactTypes = (t) => ({
-  email: {
-    label: t("profile.coach.email"),
-    changeTitle: t("profile.user.contactChange.emailTitle"),
-    placeholder: t("profile.user.contactChange.emailPlaceholder"),
-    description: t("profile.user.contactChange.emailDesc"),
-    icon: MailIcon,
-  },
   phone: {
     label: t("profile.coach.phone"),
     changeTitle: t("profile.user.contactChange.phoneTitle"),
@@ -155,8 +144,6 @@ export const UserProfileTab = ({ embedded = false }) => {
     user,
     saveProfile,
     uploadAvatar,
-    requestEmailChange,
-    verifyEmailChange,
     requestPhoneChange,
     verifyPhoneChange,
     isSavingProfile,
@@ -171,7 +158,7 @@ export const UserProfileTab = ({ embedded = false }) => {
   const [avatarError, setAvatarError] = React.useState("");
   const [contactDrawerOpen, setContactDrawerOpen] = React.useState(false);
   const [otpDrawerOpen, setOtpDrawerOpen] = React.useState(false);
-  const [contactType, setContactType] = React.useState("email");
+  const [contactType, setContactType] = React.useState("phone");
   const [contactValue, setContactValue] = React.useState("");
   const [otpCode, setOtpCode] = React.useState("");
   const [contactError, setContactError] = React.useState("");
@@ -264,7 +251,6 @@ export const UserProfileTab = ({ embedded = false }) => {
         firstName: normalizedForm.firstName || undefined,
         lastName: normalizedForm.lastName || undefined,
         username: normalizedForm.username || undefined,
-        email: embedded ? undefined : normalizedForm.email || undefined,
         phone: embedded ? undefined : normalizedForm.phone || undefined,
         bio: normalizedForm.bio,
         avatar: avatarChanged ? normalizedForm.avatar : undefined,
@@ -282,12 +268,10 @@ export const UserProfileTab = ({ embedded = false }) => {
       setOtpError("");
       setOtpCode("");
       setPendingContact(null);
-      setContactValue(
-        type === "email" ? normalizedForm.email : normalizedForm.phone,
-      );
+      setContactValue(normalizedForm.phone);
       setContactDrawerOpen(true);
     },
-    [normalizedForm.email, normalizedForm.phone],
+    [normalizedForm.phone],
   );
 
   const closeContactDrawers = React.useCallback(() => {
@@ -303,10 +287,7 @@ export const UserProfileTab = ({ embedded = false }) => {
     try {
       setContactError("");
 
-      const responseData =
-        contactType === "email"
-          ? await requestEmailChange(contactValue)
-          : await requestPhoneChange(contactValue);
+      const responseData = await requestPhoneChange(contactValue);
 
       setPendingContact({
         type: contactType,
@@ -326,7 +307,7 @@ export const UserProfileTab = ({ embedded = false }) => {
         getAuthErrorMessage(error, t("profile.user.contactChange.sendError")),
       );
     }
-  }, [contactType, contactValue, requestEmailChange, requestPhoneChange]);
+  }, [contactType, contactValue, requestPhoneChange]);
 
   const handleVerifyContactChange = React.useCallback(async () => {
     if (otpCode.trim().length !== 6) {
@@ -336,10 +317,7 @@ export const UserProfileTab = ({ embedded = false }) => {
 
     try {
       setOtpError("");
-      const responseData =
-        pendingContact?.type === "email"
-          ? await verifyEmailChange(otpCode)
-          : await verifyPhoneChange(otpCode);
+      const responseData = await verifyPhoneChange(otpCode);
 
       setOtpDrawerOpen(false);
       setPendingContact(null);
@@ -352,7 +330,7 @@ export const UserProfileTab = ({ embedded = false }) => {
         getAuthErrorMessage(error, t("profile.user.contactChange.verifyError")),
       );
     }
-  }, [otpCode, pendingContact?.type, verifyEmailChange, verifyPhoneChange]);
+  }, [otpCode, verifyPhoneChange]);
 
   const handleResendOtp = React.useCallback(async () => {
     if (!pendingContact?.value || !pendingContact?.type) {
@@ -360,10 +338,7 @@ export const UserProfileTab = ({ embedded = false }) => {
     }
 
     try {
-      const responseData =
-        pendingContact.type === "email"
-          ? await requestEmailChange(pendingContact.value)
-          : await requestPhoneChange(pendingContact.value);
+      const responseData = await requestPhoneChange(pendingContact.value);
       startResendCountdown();
       toast.success(responseData?.message || "OTP code sent again.", {
         description: getOtpToastDescription(responseData),
@@ -373,7 +348,7 @@ export const UserProfileTab = ({ embedded = false }) => {
         getAuthErrorMessage(error, t("profile.user.contactChange.resendError")),
       );
     }
-  }, [pendingContact, requestEmailChange, requestPhoneChange]);
+  }, [pendingContact, requestPhoneChange]);
 
   if (embedded) {
     const contactMeta = getContactTypes(t)[contactType];
@@ -492,13 +467,6 @@ export const UserProfileTab = ({ embedded = false }) => {
                   onClick={() => openContactDrawer("phone")}
                   t={t}
                 />
-                <ContactRow
-                  icon={MailIcon}
-                  label={t("profile.coach.email")}
-                  value={user?.email || t("profile.coach.notProvided")}
-                  onClick={() => openContactDrawer("email")}
-                  t={t}
-                />
               </CardContent>
             </Card>
 
@@ -539,19 +507,11 @@ export const UserProfileTab = ({ embedded = false }) => {
               <DrawerDescription>{contactMeta.description}</DrawerDescription>
             </DrawerHeader>
             <div className="px-5 pb-2">
-              {contactType === "phone" ? (
-                <PhoneInput
-                  value={contactValue}
-                  defaultCountry="UZ"
-                  onChange={(value) => setContactValue(value || "")}
-                />
-              ) : (
-                <Input
-                  value={contactValue}
-                  placeholder={contactMeta.placeholder}
-                  onChange={(event) => setContactValue(event.target.value)}
-                />
-              )}
+              <PhoneInput
+                value={contactValue}
+                defaultCountry="UZ"
+                onChange={(value) => setContactValue(value || "")}
+              />
               <FieldError className="mt-3">{contactError}</FieldError>
             </div>
             <DrawerFooter>
@@ -727,17 +687,6 @@ export const UserProfileTab = ({ embedded = false }) => {
               onChange={(event) => handleChange("username", event.target.value)}
             />
             {usernameError ? <FieldError>{usernameError}</FieldError> : null}
-          </Field>
-          <Field className="md:col-span-2">
-            <FieldLabel>{t("profile.coach.email")}</FieldLabel>
-            <Input
-              type="email"
-              value={form.email}
-              autoComplete="email"
-              placeholder="johndoe@gmail.com"
-              className="h-12 rounded-full px-5 shadow-none"
-              onChange={(event) => handleChange("email", event.target.value)}
-            />
           </Field>
           <Field className="md:col-span-2">
             <FieldLabel>{t("profile.coach.phone")}</FieldLabel>

@@ -68,7 +68,6 @@ import ClientDetailDrawerContent from "@/modules/coach/components/client-detail-
 import { useBreadcrumbStore } from "@/store";
 import { cn } from "@/lib/utils";
 import {
-  MailIcon,
   MessageCircleIcon,
   PhoneIcon,
   RotateCcwIcon,
@@ -133,13 +132,6 @@ const INVITE_METHOD_OPTIONS = [
     description: "Mijozning telefon raqami bilan taklif yuboriladi.",
     icon: PhoneIcon,
     placeholder: "+998 90 123 45 67",
-  },
-  {
-    value: "email",
-    label: "Email orqali",
-    description: "Mijozning email manzili orqali taklif yuboriladi.",
-    icon: MailIcon,
-    placeholder: "client@example.com",
   },
   {
     value: "telegram",
@@ -473,7 +465,7 @@ const Index = () => {
         key: "q",
         type: "text",
         defaultOperator: "contains",
-        placeholder: "Ism, email, telefon yoki maqsad",
+        placeholder: "Ism, telefon yoki maqsad",
       },
       {
         label: "Status",
@@ -585,16 +577,15 @@ const Index = () => {
 
   const handleResendInvite = React.useCallback(
     async (row) => {
-      const contactMethod = get(row, "contactMethod")
-        ? get(row, "contactMethod")
-        : get(row, "email")
-          ? "email"
+      const storedContactMethod = get(row, "contactMethod");
+      const contactMethod =
+        storedContactMethod && storedContactMethod !== "email"
+          ? storedContactMethod
           : get(row, "phone")
             ? "phone"
             : null;
       const identifier =
-        get(row, "identifierValue") ||
-        get(row, "email") ||
+        (storedContactMethod !== "email" ? get(row, "identifierValue") : "") ||
         get(row, "phone") ||
         "";
 
@@ -1412,13 +1403,9 @@ const Index = () => {
     const query = toLower(trim(get({ v: memberSearch }, "v", "")));
     return filter(clients, (c) => {
       const name = toLower(get(c, "name", ""));
-      const email = toLower(get(c, "email", ""));
       const phone = get(c, "phone", "");
       return (
-        isEmpty(query) ||
-        includes(name, query) ||
-        includes(email, query) ||
-        includes(phone, query)
+        isEmpty(query) || includes(name, query) || includes(phone, query)
       );
     });
   }, [clients, memberSearch]);
@@ -1574,7 +1561,6 @@ const Index = () => {
                         </Badge>
                       </div>
                       <div className="space-y-1 text-sm text-muted-foreground">
-                        <p>{get(activeInvitation, "email") || "Email yo'q"}</p>
                         <p>
                           {get(activeInvitation, "phone") || "Telefon yo'q"}
                         </p>

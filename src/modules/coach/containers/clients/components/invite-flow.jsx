@@ -5,7 +5,6 @@ import {
   get,
   map,
   size,
-  slice,
   toUpper,
   trim,
 } from "lodash";
@@ -31,7 +30,6 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
@@ -100,7 +98,7 @@ const NumericField = ({ value, onChange, placeholder, suffix }) => {
 const getInviteSchema = (t) =>
   z
     .object({
-      contactMethod: z.enum(["phone", "email"]),
+      contactMethod: z.enum(["phone"]),
       identifier: z
         .string()
         .min(1, t("coach.clients.inviteSteps.toasts.valueRequired")),
@@ -118,15 +116,6 @@ const getInviteSchema = (t) =>
       notes: z.string().optional(),
     })
     .superRefine((data, ctx) => {
-      if (data.contactMethod === "email") {
-        if (!z.string().email().safeParse(data.identifier).success) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: t("coach.clients.inviteSteps.toasts.emailError"),
-            path: ["identifier"],
-          });
-        }
-      }
       if (data.contactMethod === "phone") {
         if (!isValidPhoneNumber(data.identifier || "")) {
           ctx.addIssue({
@@ -385,27 +374,15 @@ export function InviteDrawers({
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor="coach-invite-identifier">
-                    {draft.contactMethod === "email"
-                      ? t("coach.clients.inviteSteps.identifier.emailLabel")
-                      : t("coach.clients.inviteSteps.identifier.phoneLabel")}
+                    {t("coach.clients.inviteSteps.identifier.phoneLabel")}
                   </FieldLabel>
-                  {draft.contactMethod === "phone" ? (
-                    <PhoneInput
-                      {...field}
-                      id="coach-invite-identifier"
-                      defaultCountry="UZ"
-                      placeholder={selectedMethod.placeholder}
-                      aria-invalid={fieldState.invalid}
-                    />
-                  ) : (
-                    <Input
-                      {...field}
-                      id="coach-invite-identifier"
-                      placeholder={selectedMethod.placeholder}
-                      aria-invalid={fieldState.invalid}
-                      autoComplete="off"
-                    />
-                  )}
+                  <PhoneInput
+                    {...field}
+                    id="coach-invite-identifier"
+                    defaultCountry="UZ"
+                    placeholder={selectedMethod.placeholder}
+                    aria-invalid={fieldState.invalid}
+                  />
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
                   )}

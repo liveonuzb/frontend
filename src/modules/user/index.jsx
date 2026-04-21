@@ -47,6 +47,9 @@ const FavoritesPage = lazy(
 const NotificationsPage = lazy(
   () => import("@/modules/user/pages/notifications/index.jsx"),
 );
+const ReferralsPage = lazy(
+  () => import("@/modules/user/pages/referrals/index.jsx"),
+);
 const ChatModule = lazy(() => import("@/modules/chat/index.jsx"));
 
 const NotFound = lazy(() => import("@/pages/not-found/index.jsx"));
@@ -186,6 +189,16 @@ const Index = () => {
             <Suspense fallback={<PageLoader />}>
               <ErrorBoundary>
                 <NotificationsPage />
+              </ErrorBoundary>
+            </Suspense>
+          }
+        />
+        <Route
+          path="referrals"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <ErrorBoundary>
+                <ReferralsPage />
               </ErrorBoundary>
             </Suspense>
           }

@@ -45,7 +45,7 @@
     },
     "forgotPassword": {
       "title": "Parolni unutdingizmi?",
-      "subtitle": "Email yoki telefon raqamingizni kiriting, tasdiqlash kodi yuboramiz",
+      "subtitle": "Telefon raqamingizni kiriting, tasdiqlash kodi yuboramiz",
       "emailTab": "Email",
       "phoneTab": "Telefon",
       "emailLabel": "Email",
@@ -60,7 +60,7 @@
       "titleVerify": "Hisobingizni tasdiqlang",
       "titleReset": "Kodni tasdiqlang",
       "subtitleWithId": "{{identity}} ga yuborilgan 6 xonali kodni kiriting",
-      "subtitleDefault": "Email yoki telefonga yuborilgan 6 xonali kodni kiriting",
+      "subtitleDefault": "Telefonga yuborilgan 6 xonali kodni kiriting",
       "verifyButton": "Tasdiqlash",
       "verifying": "Tasdiqlanmoqda...",
       "didntReceive": "Kod kelmadimi?",

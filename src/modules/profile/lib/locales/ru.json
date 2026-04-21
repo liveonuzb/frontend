@@ -344,9 +344,9 @@
         },
         "recipient": {
           "title": "Кому отправить?",
-          "description": "Найдите друга или продолжите по email, телефону или username.",
+          "description": "Найдите друга или продолжите по телефону или username.",
           "inputLabel": "Получатель",
-          "placeholder": "Телефон, email или username",
+          "placeholder": "Телефон или username",
           "helper": "Даже если пользователь не найден, можно продолжить по идентификатору.",
           "searching": "Поиск...",
           "noResults": "Подходящие пользователи не найдены.",

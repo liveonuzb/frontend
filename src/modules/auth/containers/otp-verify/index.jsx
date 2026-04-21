@@ -21,8 +21,7 @@ const Index = ({ className, ...props }) => {
     return <Navigate to="/auth/sign-in" replace />;
   }
 
-  const identity =
-    get(pendingVerification, "email") || get(pendingVerification, "phone");
+  const identity = get(pendingVerification, "phone");
   const isPasswordReset =
     get(pendingVerification, "purpose") === "PASSWORD_RESET";
 

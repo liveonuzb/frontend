@@ -32,13 +32,6 @@ const INVITE_METHOD_OPTIONS = [
     placeholder: "+998 90 123 45 67",
   },
   {
-    value: "email",
-    label: "Email orqali",
-    description: "Mijozning email manzili orqali taklif yuboriladi.",
-    icon: null,
-    placeholder: "client@example.com",
-  },
-  {
     value: "telegram",
     label: "Telegram orqali",
     description: "Telegram username orqali foydalanuvchi topiladi.",

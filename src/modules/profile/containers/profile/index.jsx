@@ -824,6 +824,11 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
           items={group}
           onTabChange={(tabId) => {
             if (tabId === "general" || tabId === "premium") return;
+            if (tabId === "referral") {
+              closeProfile?.();
+              navigate("/user/referrals");
+              return;
+            }
             onTabChange(tabId);
           }}
           user={{ ...user, _isCoach: isCoach }}
@@ -918,6 +923,7 @@ const getCompletionTone = (completion) => {
 
 const SettingsSidebar = ({ activeTab, completion, onTabChange, user }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const coachConnection = getCoachConnectionSummary(user);
   const [isCoachDetailsOpen, setIsCoachDetailsOpen] = React.useState(false);
   const roles = useAuthStore((state) => state.roles);
@@ -925,6 +931,17 @@ const SettingsSidebar = ({ activeTab, completion, onTabChange, user }) => {
   const enrichedUser = React.useMemo(
     () => ({ ...user, _isCoach: isCoach }),
     [user, isCoach],
+  );
+
+  const handleTabChange = React.useCallback(
+    (tabId) => {
+      if (tabId === "referral") {
+        navigate("/user/referrals");
+        return;
+      }
+      onTabChange(tabId);
+    },
+    [navigate, onTabChange],
   );
 
   return (
@@ -939,7 +956,7 @@ const SettingsSidebar = ({ activeTab, completion, onTabChange, user }) => {
           key={index}
           items={group}
           activeTab={activeTab}
-          onTabChange={onTabChange}
+          onTabChange={handleTabChange}
           user={enrichedUser}
           t={t}
         />

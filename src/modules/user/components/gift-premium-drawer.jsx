@@ -68,17 +68,16 @@ const resolveRecipientName = (user) =>
   [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
   user?.name ||
   user?.username ||
-  user?.email ||
   user?.phone ||
   "Foydalanuvchi";
 
 const resolveRecipientSubtitle = (user) =>
   user?.username
     ? `@${String(user.username).replace(/^@/, "")}`
-    : user?.email || user?.phone || "";
+    : user?.phone || "";
 
 const resolveRecipientIdentifier = (user) =>
-  user?.email || user?.phone || user?.username || "";
+  user?.phone || user?.username || "";
 
 const resolveRecipientInputValue = (user) =>
   resolveRecipientSubtitle(user) || resolveRecipientIdentifier(user) || resolveRecipientName(user);

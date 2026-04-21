@@ -54,7 +54,6 @@ const PhoneForm = ({ referralCode }) => {
         setPendingVerification({
           channel: "phone",
           purpose: "VERIFY_ACCOUNT",
-          email: get(responseData, "email"),
           phone: get(responseData, "phone"),
           otpCode: get(responseData, "otpCode"),
           expiresAt: get(responseData, "expiresAt"),

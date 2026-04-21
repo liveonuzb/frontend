@@ -45,7 +45,7 @@
     },
     "forgotPassword": {
       "title": "Forgot your password?",
-      "subtitle": "Enter your email or phone and we'll send you a verification code",
+      "subtitle": "Enter your phone number and we'll send you a verification code",
       "emailTab": "Email",
       "phoneTab": "Phone",
       "emailLabel": "Email",
@@ -60,7 +60,7 @@
       "titleVerify": "Verify your account",
       "titleReset": "Verify reset code",
       "subtitleWithId": "Enter the 6-digit code sent to {{identity}}",
-      "subtitleDefault": "Enter the 6-digit code sent to your email or phone",
+      "subtitleDefault": "Enter the 6-digit code sent to your phone",
       "verifyButton": "Verify",
       "verifying": "Verifying...",
       "didntReceive": "Didn't receive a code?",
