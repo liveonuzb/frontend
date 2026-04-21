@@ -3,11 +3,6 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react-swc";
 import { defineConfig } from "vite";
 
-const isCoolifyBuild = Boolean(
-  process.env.COOLIFY_FQDN || process.env.COOLIFY_RESOURCE_UUID,
-);
-
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   define: {
@@ -23,11 +18,5 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-  },
-  build: {
-    target: "esnext",
-    minify: isCoolifyBuild ? false : "esbuild",
-    cssMinify: !isCoolifyBuild,
-    reportCompressedSize: false,
   },
 });
