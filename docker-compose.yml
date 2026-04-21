@@ -7,7 +7,7 @@ services:
     security_opt:
       - no-new-privileges:true
     ports:
-      - '5050:80'
+      - '7070:80'
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://localhost:80/health" ]
       interval: 30s
