@@ -17,9 +17,7 @@ const WaterPage = lazy(() => import("@/modules/user/pages/water/index.jsx"));
 const MeasurementsPage = lazy(
   () => import("@/modules/user/pages/measurements/index.jsx"),
 );
-const WorkoutPage = lazy(
-  () => import("@/modules/user/pages/workout/index.jsx"),
-);
+const WorkoutPage = lazy(() => import("@/modules/user/pages/workout"));
 
 const FriendsPage = lazy(
   () => import("@/modules/user/pages/friends/index.jsx"),
