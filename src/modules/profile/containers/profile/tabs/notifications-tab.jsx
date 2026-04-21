@@ -4,8 +4,10 @@ import { useTranslation } from "react-i18next";
 import {
   BellIcon,
   DropletsIcon,
+  Link2Icon,
   MailIcon,
   MoonIcon,
+  RefreshCwIcon,
   Settings2Icon,
   SparklesIcon,
   UtensilsIcon,
@@ -35,8 +37,22 @@ import {
   NotificationFeedPanel,
   useNotificationCenterModel,
 } from "@/components/notification-center";
+import useMe from "@/hooks/app/use-me";
+import useUserTelegram from "@/hooks/app/use-user-telegram";
 import { useProfileOverlay } from "@/modules/profile/hooks/use-profile-overlay";
 import { useAuthStore } from "@/store";
+
+const openTelegramLink = (url) => {
+  if (!url) return;
+
+  const tg = window.Telegram?.WebApp;
+  if (typeof tg?.openTelegramLink === "function") {
+    tg.openTelegramLink(url);
+    return;
+  }
+
+  window.open(url, "_blank", "noopener,noreferrer");
+};
 
 const getNotificationOptions = (t) => [
   {
@@ -157,6 +173,91 @@ const NotificationsSettingsForm = ({ form, setForm, t }) => (
     })}
   </div>
 );
+
+const TelegramConnectCard = ({ t }) => {
+  const { user, refetch, isFetching } = useMe();
+  const { createConnectLink, isCreatingConnectLink } = useUserTelegram();
+  const telegramConnected = Boolean(user?.telegramConnected);
+
+  const handleConnect = React.useCallback(async () => {
+    try {
+      const payload = await createConnectLink();
+      openTelegramLink(payload?.deepLink || payload?.botUrl);
+    } catch (error) {
+      toast.error(
+        getRequestErrorMessage(
+          error,
+          t("profile.notifications.telegramError", {
+            defaultValue: "Telegram ulash havolasini yaratib bo'lmadi.",
+          }),
+        ),
+      );
+    }
+  }, [createConnectLink, t]);
+
+  const handleRefresh = React.useCallback(() => {
+    void refetch();
+  }, [refetch]);
+
+  return (
+    <Card className="border-border/60 bg-card/90 shadow-sm">
+      <CardContent className="space-y-4 p-4">
+        <div className="flex items-start gap-4">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <Link2Icon className="size-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold">
+              {t("profile.notifications.telegramTitle", {
+                defaultValue: "Telegram bot",
+              })}
+            </p>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              {telegramConnected
+                ? t("profile.notifications.telegramConnectedDesc", {
+                    defaultValue:
+                      "LiveOn reminder bot ulangan. Suv, ovqat va progress eslatmalari shu yerga ham yuboriladi.",
+                  })
+                : t("profile.notifications.telegramDisconnectedDesc", {
+                    defaultValue:
+                      "Reminderlarni Telegramga yuborish uchun @liveonappbot ni profilingizga ulang.",
+                  })}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleConnect}
+            disabled={isCreatingConnectLink}
+          >
+            {telegramConnected
+              ? t("profile.notifications.telegramOpen", {
+                  defaultValue: "Botni ochish",
+                })
+              : t("profile.notifications.telegramConnect", {
+                  defaultValue: "Telegramni ulash",
+                })}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isFetching}
+          >
+            <RefreshCwIcon className="size-4" />
+            {t("profile.notifications.telegramRefresh", {
+              defaultValue: "Statusni yangilash",
+            })}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 export const NotificationSettingsDrawer = ({
   open,
@@ -285,6 +386,7 @@ export const NotificationSettingsDrawer = ({
           </DrawerDescription>
         </DrawerHeader>
         <DrawerBody className="space-y-6">
+          <TelegramConnectCard t={t} />
           <NotificationsSettingsForm form={form} setForm={setForm} t={t} />
 
           {isCoach && coachPrefsForm.length > 0 ? (
@@ -437,6 +539,9 @@ export const NotificationsTab = ({ embedded = false }) => {
       </div>
 
       <div className="mt-4 min-h-0 flex-1">
+        <div className="mb-4">
+          <TelegramConnectCard t={t} />
+        </div>
         <NotificationFeedPanel
           model={notificationModel}
           contentClassName={embedded ? "max-h-[48vh]" : "max-h-[56vh]"}

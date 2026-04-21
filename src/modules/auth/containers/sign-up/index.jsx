@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { handleSocialLogin } from "@/modules/auth/lib/auth-utils";
 import { useGetQuery } from "@/hooks/api";
 import { get } from "lodash";
+import { getApiResponseData } from "@/lib/api-response";
 
 import PhoneForm from "./phone-form";
 
@@ -29,7 +30,9 @@ const Index = ({ className, ...props }) => {
     },
   });
 
-  const referrerName = get(referralValidation, "data.referrerName");
+  const referralValidationPayload = getApiResponseData(referralValidation, {});
+  const referralValid = get(referralValidationPayload, "valid", false);
+  const referrerName = get(referralValidationPayload, "referrerName");
 
   return (
     <div
@@ -45,7 +48,7 @@ const Index = ({ className, ...props }) => {
             </p>
           </div>
 
-          {referralCode && (
+          {referralCode && referralValid && (
             <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-center text-sm">
               <span className="text-primary font-medium">
                 {referrerName

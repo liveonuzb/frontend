@@ -178,6 +178,7 @@ export const useHealthGoals = (options = {}) => {
     serverGoals,
     recommendedGoals,
     recommendedGoalIntent,
+    hasOnboardingGoal: Boolean(onboarding?.goal),
     goalSource,
     hasServerGoals: Boolean(serverGoals),
     isFallbackGoals: goalSource === "fallback",

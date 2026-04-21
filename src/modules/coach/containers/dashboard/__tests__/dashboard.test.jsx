@@ -146,7 +146,7 @@ describe("CoachDashboardContainer", () => {
     vi.mocked(useCoachReferralDashboard).mockReturnValue({
       data: {
         data: {
-          referralLink: "https://liveon.uz/r/coach",
+          referralLink: "https://liveon.uz/join?ref=coach",
           stats: { clicks: 5, signups: 2, paidConversions: 1 },
         },
       },

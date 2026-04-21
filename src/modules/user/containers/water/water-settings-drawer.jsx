@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { SettingsIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
 import useHealthGoals from "@/hooks/app/use-health-goals";
+import useMe from "@/hooks/app/use-me";
 import { cn } from "@/lib/utils";
 import { some } from "lodash";
 
@@ -29,6 +30,7 @@ const CUP_SIZES = [
 ];
 
 export default function WaterSettingsDrawer() {
+  const { user } = useMe();
   const {
     goals: {
       waterNotification,
@@ -43,6 +45,7 @@ export default function WaterSettingsDrawer() {
   } = useHealthGoals();
 
   const isPredefinedCup = some(CUP_SIZES, { value: cupSize });
+  const telegramConnected = Boolean(user?.telegramConnected);
 
   return (
     <Drawer direction="bottom">
@@ -90,6 +93,15 @@ export default function WaterSettingsDrawer() {
               {/* Inner Settings (collapsible) */}
               {waterNotification && (
                 <div className="flex flex-col bg-background/40">
+                  {!telegramConnected ? (
+                    <>
+                      <div className="h-[1px] bg-border/50 ml-4" />
+                      <div className="px-4 py-3 text-sm text-muted-foreground">
+                        Telegram ulanmagan. Bot eslatmalari Notifications bo'limidan
+                        @liveonappbot ni ulaganingizdan keyin ishlaydi.
+                      </div>
+                    </>
+                  ) : null}
                   <div className="h-[1px] bg-border/50 ml-4" />
                   <TimeDrawer
                     label="Boshlanish vaqti"

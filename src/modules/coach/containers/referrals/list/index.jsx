@@ -17,6 +17,7 @@ import {
   useCoachReferrals,
   useCoachReferralsMutations,
 } from "@/modules/coach/lib/hooks/useCoachReferrals";
+import { getApiResponseData } from "@/lib/api-response";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
 import { useReferralFilters } from "./use-filters.js";
@@ -82,7 +83,10 @@ const ReferralsListPage = () => {
     get(responsePayload, "items", []),
   );
   const meta = get(responsePayload, "meta", DEFAULT_META);
-  const dashboard = get(dashboardData, "data", dashboardData ?? {});
+  const dashboard = getApiResponseData(
+    dashboardData,
+    get(dashboardData, "data", dashboardData ?? {}),
+  );
   const dashboardReferralLink = get(dashboard, "referralLink", "");
   const liveonAppBotLink = get(dashboard, "liveonAppBotLink", "");
   const liveonAppBotMention = get(
@@ -125,10 +129,10 @@ const ReferralsListPage = () => {
       if (!code) return "";
 
       if (typeof window === "undefined") {
-        return `/r/${encodeURIComponent(code)}`;
+        return `/join?ref=${encodeURIComponent(code)}`;
       }
 
-      return `${window.location.origin}/r/${encodeURIComponent(code)}`;
+      return `${window.location.origin}/join?ref=${encodeURIComponent(code)}`;
     },
     [dashboard, dashboardReferralLink],
   );
@@ -180,8 +184,9 @@ const ReferralsListPage = () => {
     async (referral) => {
       try {
         const response = await mutations.resendReferral(referral.id);
+        const responsePayload = getApiResponseData(response, {});
         const nextLink =
-          get(response, "data.referralLink") || buildReferralLink(referral);
+          get(responsePayload, "referralLink") || buildReferralLink(referral);
 
         await copyText(nextLink);
         toast.success("Referral havolasi qayta yuborishga tayyor");

@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useGetQuery, usePatchQuery, usePostQuery } from "@/hooks/api";
+import { getApiResponseData } from "@/lib/api-response";
 import { useAuthStore } from "@/store";
 
 // ---------------------------------------------------------------------------
@@ -453,21 +454,22 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
         url: "/referral/me",
         queryProps: { queryKey: ["referral", "me"] },
     });
-    const profile = get(profileData, "data");
+    const profile = getApiResponseData(profileData, {});
 
     const { data: referralsData, isLoading: referralsLoading } = useGetQuery({
         url: "/referral/me/referrals",
         params: { limit: 10, offset: 0 },
         queryProps: { queryKey: ["referral", "me", "referrals"] },
     });
-    const referrals = get(referralsData, "data.referrals", []);
+    const referralsPayload = getApiResponseData(referralsData, {});
+    const referrals = get(referralsPayload, "referrals", []);
 
     const { data: xpData, isLoading: xpLoading } = useGetQuery({
         url: "/referral/me/xp-history",
         params: { limit: XP_PAGE_SIZE, offset: xpOffset },
         queryProps: { queryKey: ["referral", "me", "xp-history", xpOffset] },
     });
-    const xpPayload = get(xpData, "data");
+    const xpPayload = getApiResponseData(xpData, {});
     const xpTotal = get(xpPayload, "total", 0);
 
     const [allXpTransactions, setAllXpTransactions] = useState([]);
@@ -488,13 +490,13 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
         url: "/referral/leaderboard",
         queryProps: { queryKey: ["referral", "leaderboard"] },
     });
-    const leaderboard = get(leaderboardData, "data", []);
+    const leaderboard = getApiResponseData(leaderboardData, []);
 
     const { data: withdrawalsData, isLoading: withdrawalsLoading } = useGetQuery({
         url: "/referral/me/withdrawals",
         queryProps: { queryKey: ["referral", "withdrawals"] },
     });
-    const withdrawals = get(withdrawalsData, "data", []);
+    const withdrawals = getApiResponseData(withdrawalsData, []);
 
     const updateCodeMutation = usePatchQuery({ queryKey: ["referral", "me"] });
 
@@ -502,7 +504,11 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
     // Derived
     // -----------------------------------------------------------------------
     const referralCode = get(profile, "referralCode", "");
-    const referralLink = `https://liveon.uz/join?ref=${referralCode}`;
+    const referralLink =
+        get(profile, "referralLink", "") ||
+        (referralCode
+            ? `https://liveon.uz/join?ref=${encodeURIComponent(referralCode)}`
+            : "");
     const xpBalance = get(profile, "xpBalance", 0);
     const totalXpEarned = get(profile, "totalXpEarned", 0);
     const totalReferrals = get(profile, "totalReferrals", 0);
@@ -639,6 +645,19 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
                                     <ShareIcon className="size-3.5" /> {t("profile.referral.share", "Ulashish")}
                                 </Button>
                             </div>
+
+                            {referralLink && (
+                                <div className="mt-3">
+                                    <label className="mb-2 block text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                                        {t("profile.referral.yourLink", "Referral link")}
+                                    </label>
+                                    <div className="rounded-xl border bg-muted/30 px-4 py-3">
+                                        <p className="select-all break-all text-xs font-medium text-muted-foreground">
+                                            {referralLink}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </>
                     )}
                 </CardContent>

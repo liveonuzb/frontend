@@ -22,6 +22,7 @@ const NotFound = lazy(() => import("@/pages/not-found/index.jsx"));
 const ReferralRedirectPage = lazy(
   () => import("@/pages/referral-redirect/index.jsx"),
 );
+const JoinReferralPage = lazy(() => import("@/pages/referral-join/index.jsx"));
 
 const renderRouteElement = (element) => (
   <Suspense fallback={<PageLoader />}>{element}</Suspense>
@@ -44,6 +45,11 @@ const Index = () => {
         path="/r/:code"
         element={renderRouteElement(<ReferralRedirectPage />)}
       />
+      <Route
+        path="/ref/:code"
+        element={renderRouteElement(<ReferralRedirectPage />)}
+      />
+      <Route path="/join" element={renderRouteElement(<JoinReferralPage />)} />
 
       {isAuthenticated ? (
         <Route

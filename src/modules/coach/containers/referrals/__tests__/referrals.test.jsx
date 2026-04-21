@@ -115,7 +115,7 @@ describe("ReferralsListPage", () => {
       data: {
         data: {
           referralCode: "coach-code",
-          referralLink: "https://app.liveon.test/r/coach-code",
+          referralLink: "https://app.liveon.test/join?ref=coach-code",
         },
       },
       isLoading: false,
@@ -136,7 +136,7 @@ describe("ReferralsListPage", () => {
 
     expect(screen.getByText("Takliflar")).toBeInTheDocument();
     expect(
-      screen.getByText("https://app.liveon.test/r/coach-code"),
+      screen.getByText("https://app.liveon.test/join?ref=coach-code"),
     ).toBeInTheDocument();
     expect(screen.getByTestId("referrals-filter")).toHaveTextContent("3");
     expect(screen.getByTestId("referrals-data-grid")).toHaveAttribute(

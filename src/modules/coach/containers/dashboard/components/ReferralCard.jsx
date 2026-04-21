@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getApiResponseData } from "@/lib/api-response";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCoachReferralDashboard } from "@/modules/coach/lib/hooks";
 
@@ -44,7 +45,7 @@ export function ReferralCard() {
   const [copied, setCopied] = React.useState(false);
   const { data, isLoading } = useCoachReferralDashboard();
 
-  const referral = data?.data ?? data;
+  const referral = getApiResponseData(data, data ?? {});
   const referralLink = referral?.referralLink ?? "";
   const stats = referral?.stats ?? { clicks: 0, signups: 0, paidConversions: 0 };
 
