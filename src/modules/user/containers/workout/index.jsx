@@ -6,7 +6,7 @@ import EditWorkoutPlanPage from "./plans/edit";
 import CreateWorkoutLogPage from "./logs/create";
 import EditWorkoutLogPage from "./logs/edit";
 
-const WorkoutIndex = () => {
+const Index = () => {
   return (
     <Routes>
       <Route element={<ListPage />}>
@@ -20,4 +20,4 @@ const WorkoutIndex = () => {
   );
 };
 
-export default WorkoutIndex;
+export default Index;

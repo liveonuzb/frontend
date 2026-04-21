@@ -13,6 +13,7 @@ const NutritionPage = lazy(
   () => import("@/modules/user/pages/nutrition/index.jsx"),
 );
 const WaterPage = lazy(() => import("@/modules/user/pages/water/index.jsx"));
+
 const MeasurementsPage = lazy(
   () => import("@/modules/user/pages/measurements/index.jsx"),
 );
