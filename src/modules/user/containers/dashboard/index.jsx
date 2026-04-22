@@ -37,6 +37,10 @@ import ChallengeInvitationsSection from "./challenge-invitations-section.jsx";
 import CoachActivitySection from "./coach-activity-section.jsx";
 import useWorkoutPlan from "@/hooks/app/use-workout-plan";
 import { deriveWorkoutPlanMetrics } from "../workout/utils";
+import {
+  getFriendItems,
+  getFriendRequests,
+} from "@/modules/user/lib/friends-response";
 
 const calcMealCalories = (meals) => {
   return reduce(
@@ -150,14 +154,16 @@ const Index = () => {
     url: "/users/me/friends",
     queryProps: { queryKey: ["friends"] },
   });
-  const friends = get(friendsData, "data.items", []);
+  const friends = getFriendItems(friendsData);
 
   const { data: friendRequestsData } = useGetQuery({
     url: "/users/me/friends/requests",
     queryProps: { queryKey: ["friend-requests"] },
   });
-  const incomingRequests = get(friendRequestsData, "data.incoming", []);
-  const outgoingRequests = get(friendRequestsData, "data.outgoing", []);
+  const {
+    incoming: incomingRequests,
+    outgoing: outgoingRequests,
+  } = getFriendRequests(friendRequestsData);
   const { pendingCheckIns, submitWeeklyCheckIn, isSubmittingWeeklyCheckIn } =
     useWeeklyCheckIns();
   const { latestFeedback } = useCoachFeedback();

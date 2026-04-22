@@ -54,6 +54,10 @@ import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Textarea } from "@/components/ui/textarea";
 import { invalidateGamificationQueries } from "@/modules/user/lib/gamification-query-keys";
+import {
+  getFriendItems,
+  getFriendRequests,
+} from "@/modules/user/lib/friends-response";
 import PersonRow from "./components/person-row.jsx";
 import SectionCard from "./components/section-card.jsx";
 
@@ -236,7 +240,7 @@ export default function FriendsContainer() {
       queryKey: [...FRIENDS_QUERY_KEY, deferredFriendSearch],
     },
   });
-  const friends = get(friendsData, "data.items", []);
+  const friends = getFriendItems(friendsData);
 
   const { data: requestsData, isLoading: isRequestsLoading } = useGetQuery({
     url: "/users/me/friends/requests",
@@ -244,8 +248,10 @@ export default function FriendsContainer() {
       queryKey: FRIEND_REQUESTS_QUERY_KEY,
     },
   });
-  const incomingRequests = get(requestsData, "data.incoming", []);
-  const outgoingRequests = get(requestsData, "data.outgoing", []);
+  const {
+    incoming: incomingRequests,
+    outgoing: outgoingRequests,
+  } = getFriendRequests(requestsData);
 
   const { data: suggestionsData, isLoading: isSuggestionsLoading } = useGetQuery({
     url: "/users/me/friends/suggestions",
@@ -253,7 +259,7 @@ export default function FriendsContainer() {
       queryKey: ["me", "friend-suggestions"],
     },
   });
-  const suggestions = get(suggestionsData, "data.items", []);
+  const suggestions = getFriendItems(suggestionsData);
 
   // --- Mutations ---
   const invalidateAll = React.useCallback(() => {
@@ -322,7 +328,7 @@ export default function FriendsContainer() {
       const response = await api.get("/users/me/friends/candidates", {
         params: { q: identifier },
       });
-      const candidateItems = get(response, "data.items", []);
+      const candidateItems = getFriendItems(response);
       if (!candidateItems || candidateItems.length === 0) {
         toast.error("Foydalanuvchi topilmadi.");
         return;

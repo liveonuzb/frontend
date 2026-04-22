@@ -32,6 +32,7 @@ import { api } from "@/hooks/api/use-api";
 import usePremium from "@/hooks/app/use-premium";
 import { getRequestErrorMessage } from "@/hooks/app/use-profile-settings";
 import { cn } from "@/lib/utils";
+import { getFriendItems } from "@/modules/user/lib/friends-response";
 
 const PAYMENT_METHODS = (t) => [
   {
@@ -81,9 +82,6 @@ const resolveRecipientIdentifier = (user) =>
 
 const resolveRecipientInputValue = (user) =>
   resolveRecipientSubtitle(user) || resolveRecipientIdentifier(user) || resolveRecipientName(user);
-
-const unwrapCandidateItems = (response) =>
-  get(response, "data.data.items", get(response, "data.items", []));
 
 const PaymentMethodOption = ({
   method,
@@ -339,7 +337,7 @@ export default function GiftPremiumDrawer({
         const response = await api.get("/users/me/friends/candidates", {
           params: { q: query },
         });
-        setSearchResults(unwrapCandidateItems(response));
+        setSearchResults(getFriendItems(response));
       } catch {
         setSearchResults([]);
       } finally {

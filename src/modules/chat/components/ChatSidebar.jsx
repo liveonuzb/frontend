@@ -29,6 +29,7 @@ import { useNavigate } from "react-router";
 import { useChatStore } from "@/store";
 import { toast } from "sonner";
 import { api } from "@/hooks/api/use-api";
+import { getFriendItems } from "@/modules/user/lib/friends-response";
 
 // DnD Kit imports
 import {
@@ -96,7 +97,7 @@ const ChatSidebar = ({
         setIsFriendsLoading(true);
         try {
             const response = await api.get("/users/me/friends");
-            setFriends(response?.data?.items || []);
+            setFriends(getFriendItems(response));
         } catch (error) {
             setFriends([]);
         } finally {
