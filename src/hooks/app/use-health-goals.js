@@ -2,12 +2,13 @@ import React from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetQuery, usePutQuery } from "@/hooks/api";
 import { getApiResponseData } from "@/lib/api-response";
-import useMe from "@/hooks/app/use-me";
+import useMe, { ME_QUERY_KEY } from "@/hooks/app/use-me";
 import { calculateGoals, normalizeGoal } from "@/lib/goal-calculator";
 
 export const HEALTH_GOALS_QUERY_KEY = ["health-goals"];
 
 export const DEFAULT_HEALTH_GOALS = {
+  goal: "maintain",
   calories: 2200,
   protein: 150,
   carbs: 250,
@@ -38,11 +39,51 @@ const GOAL_PRESET_KEYS = [
   "steps",
   "sleepHours",
   "workoutMinutes",
+  "goal",
 ];
+
+export const normalizeStoredGoal = (goal) => {
+  const rawGoal = String(goal ?? "").trim();
+
+  if (!rawGoal) {
+    return null;
+  }
+
+  return normalizeGoal(rawGoal);
+};
+
+export const inferGoalIntentFromGoals = (goals = {}) => {
+  const calories = Number(goals?.calories);
+
+  if (!Number.isFinite(calories) || calories <= 0) {
+    return null;
+  }
+
+  if (calories <= 1950) {
+    return "lose";
+  }
+
+  if (calories >= 2400) {
+    return "gain";
+  }
+
+  return "maintain";
+};
+
+export const resolveHealthGoalIntent = ({
+  healthGoalGoal,
+  onboardingGoal,
+  goals,
+} = {}) =>
+  normalizeStoredGoal(healthGoalGoal) ??
+  normalizeStoredGoal(onboardingGoal) ??
+  inferGoalIntentFromGoals(goals) ??
+  DEFAULT_HEALTH_GOALS.goal;
 
 export const normalizeHealthGoals = (goals = {}) => ({
   ...DEFAULT_HEALTH_GOALS,
   ...goals,
+  goal: normalizeStoredGoal(goals.goal) ?? DEFAULT_HEALTH_GOALS.goal,
   waterNotification:
     goals.waterNotificationEnabled ??
     goals.waterNotification ??
@@ -60,6 +101,7 @@ export const toHealthGoalsPayload = (goals = {}) => {
   const normalized = normalizeHealthGoals(goals);
 
   return {
+    goal: normalized.goal,
     calories: normalized.calories,
     protein: normalized.protein,
     carbs: normalized.carbs,
@@ -87,6 +129,43 @@ const setHealthGoalsCache = (queryClient, goals) => {
   });
 };
 
+const setMeGoalCache = (queryClient, goal) => {
+  queryClient.setQueryData(ME_QUERY_KEY, (previousValue) => {
+    const previousUser = getApiResponseData(previousValue, null);
+
+    if (!previousUser) {
+      return previousValue;
+    }
+
+    const nextUser = {
+      ...previousUser,
+      onboarding: {
+        ...(previousUser.onboarding ?? {}),
+        goal,
+      },
+    };
+
+    if (previousValue?.data && "data" in previousValue.data) {
+      return {
+        ...previousValue,
+        data: {
+          ...previousValue.data,
+          data: nextUser,
+        },
+      };
+    }
+
+    if (previousValue && "data" in previousValue) {
+      return {
+        ...previousValue,
+        data: nextUser,
+      };
+    }
+
+    return previousValue;
+  });
+};
+
 export const useHealthGoals = (options = {}) => {
   const enabled = options.enabled ?? true;
   const queryClient = useQueryClient();
@@ -100,14 +179,32 @@ export const useHealthGoals = (options = {}) => {
   });
   const { mutateAsync, isPending } = usePutQuery();
   const isHydratingGoals = query.isLoading && data === undefined;
+  const payload = React.useMemo(() => getApiResponseData(data, null), [data]);
+  const resolvedGoalIntent = React.useMemo(
+    () =>
+      resolveHealthGoalIntent({
+        healthGoalGoal: payload?.goal,
+        onboardingGoal: onboarding?.goal,
+        goals: payload ?? {},
+      }),
+    [onboarding?.goal, payload],
+  );
   const serverGoals = React.useMemo(() => {
-    const payload = getApiResponseData(data, null);
-    return payload ? normalizeHealthGoals(payload) : null;
-  }, [data]);
+    return payload
+      ? normalizeHealthGoals({
+          ...payload,
+          goal: resolvedGoalIntent,
+        })
+      : null;
+  }, [payload, resolvedGoalIntent]);
 
   const goals = React.useMemo(
-    () => serverGoals ?? normalizeHealthGoals(),
-    [serverGoals],
+    () =>
+      serverGoals ??
+      normalizeHealthGoals({
+        goal: resolvedGoalIntent,
+      }),
+    [resolvedGoalIntent, serverGoals],
   );
   const goalSource = React.useMemo(() => {
     if (!serverGoals) {
@@ -128,26 +225,28 @@ export const useHealthGoals = (options = {}) => {
         age: onboarding.age,
         heightValue: onboarding.height?.value,
         currentWeightValue: onboarding.currentWeight?.value,
-        goal: onboarding.goal,
+        goal: goals.goal,
         activityLevel: onboarding.activityLevel,
         weeklyPace: onboarding.weeklyPace,
       }),
     });
   }, [goals, onboarding]);
   const recommendedGoalIntent = React.useMemo(
-    () => normalizeGoal(onboarding?.goal),
-    [onboarding?.goal],
+    () => goals.goal,
+    [goals.goal],
   );
 
   const saveGoals = React.useCallback(
     async (patch) => {
       const previousGoals = goals;
+      const previousMe = queryClient.getQueryData(ME_QUERY_KEY);
       const nextGoals = normalizeHealthGoals({
         ...previousGoals,
         ...patch,
       });
 
       setHealthGoalsCache(queryClient, nextGoals);
+      setMeGoalCache(queryClient, nextGoals.goal);
 
       try {
         const response = await mutateAsync({
@@ -158,9 +257,11 @@ export const useHealthGoals = (options = {}) => {
           getApiResponseData(response, {}),
         );
         setHealthGoalsCache(queryClient, serverGoals);
+        setMeGoalCache(queryClient, serverGoals.goal);
         return serverGoals;
       } catch (error) {
         setHealthGoalsCache(queryClient, previousGoals);
+        queryClient.setQueryData(ME_QUERY_KEY, previousMe);
         throw error;
       }
     },

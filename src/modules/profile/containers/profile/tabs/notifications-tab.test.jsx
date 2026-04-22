@@ -11,6 +11,10 @@ import useMe from "@/hooks/app/use-me";
 import useUserTelegram from "@/hooks/app/use-user-telegram";
 
 vi.mock("react-i18next", () => ({
+  initReactI18next: {
+    type: "3rdParty",
+    init: () => {},
+  },
   useTranslation: () => ({
     t: (key, options = {}) => options.defaultValue || key,
   }),

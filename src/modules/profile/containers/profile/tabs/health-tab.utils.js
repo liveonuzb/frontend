@@ -8,6 +8,7 @@ import {
   TrendingDownIcon,
   TrendingUpIcon,
 } from "lucide-react";
+import { calculateGoals } from "@/lib/goal-calculator";
 
 export const AUTO_SAVE_DELAY_MS = 700;
 
@@ -242,23 +243,37 @@ export const BODY_CHANGE_PRIORITY = {
 };
 
 export const createInitialForm = (goals) => ({
+  goal: goals.goal,
   weightUnit: goals.weightUnit,
   heightUnit: goals.heightUnit,
   waterUnit: goals.waterUnit,
   waterNotification: goals.waterNotification ?? true,
   calories: String(goals.calories),
+  protein: String(goals.protein),
+  carbs: String(goals.carbs),
+  fat: String(goals.fat),
+  fiber: String(goals.fiber),
   waterMl: String(goals.waterMl),
   steps: String(goals.steps),
+  sleepHours: String(goals.sleepHours),
+  workoutMinutes: String(goals.workoutMinutes),
 });
 
 export const toGoalsPayload = (form) => ({
+  goal: form.goal,
   weightUnit: form.weightUnit,
   heightUnit: form.heightUnit,
   waterUnit: form.waterUnit,
   waterNotification: Boolean(form.waterNotification),
   calories: Number(form.calories) || 0,
+  protein: Number(form.protein) || 0,
+  carbs: Number(form.carbs) || 0,
+  fat: Number(form.fat) || 0,
+  fiber: Number(form.fiber) || 0,
   waterMl: Number(form.waterMl) || 0,
   steps: Number(form.steps) || 0,
+  sleepHours: Number(form.sleepHours) || 0,
+  workoutMinutes: Number(form.workoutMinutes) || 0,
 });
 
 export const clampMetricValue = (value, min, max) =>
@@ -321,11 +336,17 @@ export const getSavedNumbers = (form) => ({
 });
 
 export const inferPresetFromGoals = (goals) => {
-  if (goals.calories <= 1950) {
+  const calories = Number(goals?.calories);
+
+  if (!Number.isFinite(calories) || calories <= 0) {
+    return "maintain";
+  }
+
+  if (calories <= 1950) {
     return "lose";
   }
 
-  if (goals.calories >= 2400) {
+  if (calories >= 2400) {
     return "gain";
   }
 
@@ -352,24 +373,19 @@ export const inferIntensityFromGoals = (goals, presetId) => {
 };
 
 export const resolveGoalPreset = ({
-  hasOnboardingGoal,
+  storedGoal,
   onboardingGoalIntent,
   goals,
-  hasServerGoals,
-  isDefaultGoalPreset,
 }) => {
-  if (
-    hasOnboardingGoal &&
-    ["lose", "maintain", "gain"].includes(onboardingGoalIntent)
-  ) {
+  if (["lose", "maintain", "gain"].includes(storedGoal)) {
+    return storedGoal;
+  }
+
+  if (["lose", "maintain", "gain"].includes(onboardingGoalIntent)) {
     return onboardingGoalIntent;
   }
 
-  if (hasServerGoals && !isDefaultGoalPreset) {
-    return inferPresetFromGoals(getSavedNumbers(goals));
-  }
-
-  return "lose";
+  return inferPresetFromGoals(getSavedNumbers(goals));
 };
 
 export const buildPresetTargets = (baseGoals, presetId, intensityId) => {
@@ -451,6 +467,54 @@ export const buildPresetTargets = (baseGoals, presetId, intensityId) => {
       METRIC_META.steps.min,
       METRIC_META.steps.max,
     ),
+  };
+};
+
+export const INTENSITY_WEEKLY_PACE = {
+  slow: 0.25,
+  medium: 0.5,
+  fast: 0.75,
+};
+
+const hasRecommendationProfile = (profile = {}) =>
+  profile.age !== null &&
+  profile.age !== undefined &&
+  profile.heightValue !== null &&
+  profile.heightValue !== undefined &&
+  profile.currentWeightValue !== null &&
+  profile.currentWeightValue !== undefined &&
+  Boolean(profile.activityLevel);
+
+export const buildRecommendedGoals = ({
+  baseGoals,
+  recommendationProfile,
+  presetId,
+  intensityId,
+}) => {
+  const goalId = ["lose", "maintain", "gain"].includes(presetId)
+    ? presetId
+    : "maintain";
+
+  if (!hasRecommendationProfile(recommendationProfile)) {
+    return {
+      ...baseGoals,
+      ...buildPresetTargets(getSavedNumbers(baseGoals), goalId, intensityId),
+      goal: goalId,
+    };
+  }
+
+  return {
+    ...baseGoals,
+    ...calculateGoals({
+      gender: recommendationProfile.gender,
+      age: recommendationProfile.age,
+      heightValue: recommendationProfile.heightValue,
+      currentWeightValue: recommendationProfile.currentWeightValue,
+      goal: goalId,
+      activityLevel: recommendationProfile.activityLevel,
+      weeklyPace: INTENSITY_WEEKLY_PACE[intensityId] ?? 0.5,
+    }),
+    goal: goalId,
   };
 };
 

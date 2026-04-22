@@ -56,6 +56,9 @@ const SettingsPage = lazy(
 const ChallengesPage = lazy(
   () => import("@/modules/admin/pages/challenges/index.jsx"),
 );
+const AchievementsPage = lazy(
+  () => import("@/modules/admin/pages/achievements/index.jsx"),
+);
 const CoachSpecializationsPage = lazy(
   () => import("@/modules/admin/pages/coach-specializations/index.jsx"),
 );
@@ -246,6 +249,16 @@ const Index = () => {
             <Suspense fallback={<PageLoader />}>
               <ErrorBoundary>
                 <LanguagesPage />
+              </ErrorBoundary>
+            </Suspense>
+          }
+        />
+        <Route
+          path="achievements/*"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <ErrorBoundary>
+                <AchievementsPage />
               </ErrorBoundary>
             </Suspense>
           }

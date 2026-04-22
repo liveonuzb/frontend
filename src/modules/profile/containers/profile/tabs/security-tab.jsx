@@ -9,7 +9,6 @@ import {
   RefreshCwIcon,
   ShieldIcon,
   DownloadIcon,
-  UserXIcon,
   CheckCircle2Icon,
   XCircleIcon,
   KeyRoundIcon,
@@ -45,22 +44,11 @@ import {
 } from "@/components/ui/input-otp";
 import { Input } from "@/components/ui/input";
 import { PasswordStrength } from "@/components/password-strength";
-import { useGetQuery, useDeleteQuery, usePostQuery } from "@/hooks/api";
+import { useGetQuery, usePostQuery } from "@/hooks/api";
 import useProfileSettings, {
   getRequestErrorMessage,
 } from "@/hooks/app/use-profile-settings";
 import { useAuthStore } from "@/store";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import useApi from "@/hooks/api/use-api";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -780,10 +768,10 @@ const SecurityActivitySection = ({ t }) => {
 
 // ─── AccountSection ───────────────────────────────────────────────────────────
 
-const AccountSection = ({ isExporting, handleExport, isDeleting, handleDeleteAccount, t }) => (
-  <Card className="mt-6 border-destructive/20 py-6 shadow-none">
+const AccountSection = ({ isExporting, handleExport, t }) => (
+  <Card className="mt-6 py-6 shadow-none">
     <CardHeader className="pb-2">
-      <CardTitle className="text-lg font-semibold text-destructive">
+      <CardTitle className="text-lg font-semibold">
         {t("profile.security.account.title")}
       </CardTitle>
     </CardHeader>
@@ -807,55 +795,6 @@ const AccountSection = ({ isExporting, handleExport, isDeleting, handleDeleteAcc
           </div>
         </div>
       </div>
-
-      <div className="rounded-2xl border border-destructive/30 p-4">
-        <div className="flex items-start gap-4">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-            <UserXIcon className="size-4" />
-          </div>
-          <div className="space-y-2">
-            <p className="font-semibold text-destructive">
-              {t("profile.security.account.delete")}
-            </p>
-            <p className="text-sm leading-6 text-muted-foreground">
-              {t("profile.security.account.deleteDesc")}
-            </p>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button type="button" variant="destructive" disabled={isDeleting}>
-                  <UserXIcon className="size-4" />
-                  {isDeleting
-                    ? t("profile.security.account.deleteLoading")
-                    : t("profile.security.account.deleteButton")}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>
-                    {t("profile.security.account.deleteConfirmTitle")}
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    {t("profile.security.account.deleteConfirmDesc")}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>{t("profile.general.cancel")}</AlertDialogCancel>
-                  <AlertDialogAction
-                    variant="destructive"
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleDeleteAccount();
-                    }}
-                  >
-                    {t("profile.security.account.deleteConfirmAction")}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        </div>
-      </div>
     </CardContent>
   </Card>
 );
@@ -873,7 +812,6 @@ export const SecurityTab = ({ embedded = false }) => {
   const [passwordForm, setPasswordForm] = useState(createInitialPasswordForm);
   const [passwordError, setPasswordError] = useState("");
   const { request } = useApi();
-  const { mutateAsync: deleteAccount, isPending: isDeleting } = useDeleteQuery();
   const [isExporting, setIsExporting] = useState(false);
 
   const handlePasswordSave = React.useCallback(async () => {
@@ -941,18 +879,6 @@ export const SecurityTab = ({ embedded = false }) => {
     }
   }, [request, t]);
 
-  const handleDeleteAccount = React.useCallback(async () => {
-    try {
-      await deleteAccount({ url: "/users/me" });
-      toast.success(t("profile.security.account.deleteSuccess"));
-      logout();
-      queryClient.clear();
-      navigate("/auth/sign-up", { replace: true });
-    } catch (error) {
-      toast.error(getRequestErrorMessage(error, t("profile.security.account.deleteError")));
-    }
-  }, [deleteAccount, logout, navigate, queryClient, t]);
-
   const content = (
     <div className="space-y-6">
       <div className={embedded ? undefined : "mx-auto max-w-3xl"}>
@@ -979,8 +905,6 @@ export const SecurityTab = ({ embedded = false }) => {
           <AccountSection
             isExporting={isExporting}
             handleExport={handleExport}
-            isDeleting={isDeleting}
-            handleDeleteAccount={handleDeleteAccount}
             t={t}
           />
         </div>

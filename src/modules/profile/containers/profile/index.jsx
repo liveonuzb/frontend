@@ -49,6 +49,7 @@ import {
   normalizeProfileContentTab,
   normalizeProfileOverlayTab,
 } from "@/modules/profile/lib/profile-tab-registry";
+import { getStandaloneProfileTabPath } from "@/modules/profile/lib/profile-tab-navigation";
 import useAppLanguages from "@/hooks/app/use-app-languages";
 import { useLanguageStore } from "@/store";
 import PremiumReminderDrawer from "@/modules/user/layout/premium-reminder-drawer";
@@ -57,6 +58,7 @@ import useProfileSettings, {
   getRequestErrorMessage,
 } from "@/hooks/app/use-profile-settings";
 import { applyTheme } from "@/lib/user-preferences";
+import AccountDangerZone from "./account-danger-zone";
 import { NotificationSettingsDrawer } from "./tabs/notifications-tab";
 import { getProfileTabs } from "./profile-tabs";
 
@@ -824,6 +826,11 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
           items={group}
           onTabChange={(tabId) => {
             if (tabId === "general" || tabId === "premium") return;
+            if (tabId === "health") {
+              closeProfile?.();
+              navigate(getStandaloneProfileTabPath("health") ?? "/user/health");
+              return;
+            }
             if (tabId === "referral") {
               closeProfile?.();
               navigate("/user/referrals");
@@ -893,6 +900,8 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
           }}
         />
       ))}
+
+      <AccountDangerZone />
     </div>
   );
 };

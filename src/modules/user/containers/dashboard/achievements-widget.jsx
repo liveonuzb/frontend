@@ -1,10 +1,11 @@
 import React from "react";
 import { filter, map, size } from "lodash";
 import { AwardIcon, LockIcon } from "lucide-react";
-import { Link } from "react-router";
+import { useNavigate } from "react-router";
 import { useGetQuery } from "@/hooks/api";
 
 const AchievementsWidget = () => {
+  const navigate = useNavigate();
   const { data } = useGetQuery({
     url: "/gamification/achievements",
     queryProps: { queryKey: ["gamification", "achievements", "all"] },
@@ -15,9 +16,21 @@ const AchievementsWidget = () => {
   const locked = filter(evaluated, { unlocked: false });
   const progress = size(unlocked);
   const total = size(evaluated);
+  const navigateToAchievements = () => navigate("/user/achievements");
 
   return (
-    <div className="group relative h-full overflow-hidden rounded-[28px] border border-amber-500/15 bg-gradient-to-br from-amber-500/[0.08] via-card to-card px-5 py-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-amber-500/30 hover:shadow-xl hover:shadow-amber-500/5">
+    <div
+      role="link"
+      tabIndex={0}
+      onClick={navigateToAchievements}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          navigateToAchievements();
+        }
+      }}
+      className="group relative h-full cursor-pointer overflow-hidden rounded-[28px] border border-amber-500/15 bg-gradient-to-br from-amber-500/[0.08] via-card to-card px-5 py-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-amber-500/30 hover:shadow-xl hover:shadow-amber-500/5 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+    >
       <div className="absolute inset-x-8 top-0 h-24 rounded-full bg-amber-500/8 blur-3xl transition-opacity group-hover:opacity-90" />
       <div className="relative flex h-full flex-col">
         <div className="flex items-center justify-between gap-3">
@@ -30,13 +43,21 @@ const AchievementsWidget = () => {
               Achievements
             </h3>
           </div>
-          <Link
-            to="/user/achievements"
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              navigateToAchievements();
+            }}
             className="text-sm font-semibold text-amber-600 hover:underline"
           >
-            {progress}/{total}
-          </Link>
+            Ko&apos;rish
+          </button>
         </div>
+
+        <p className="mt-2 text-sm text-muted-foreground">
+          {progress}/{total} ta achievement ochilgan
+        </p>
 
         <div className="mt-3 flex flex-wrap gap-2">
           {map(unlocked, (item) => (

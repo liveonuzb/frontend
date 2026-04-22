@@ -1,6 +1,6 @@
 import { map, take } from "lodash";
 import React from "react";
-import { Outlet, NavLink, useLocation } from "react-router";
+import { Navigate, Outlet, NavLink, useLocation } from "react-router";
 import {
   LayoutDashboardIcon,
   UtensilsIcon,
@@ -46,6 +46,7 @@ import {
   PROFILE_OVERVIEW_TAB,
   useProfileOverlay,
 } from "@/modules/profile/hooks/use-profile-overlay";
+import { getStandaloneProfileTabPath } from "@/modules/profile/lib/profile-tab-navigation";
 
 const otherNav = [];
 
@@ -110,6 +111,21 @@ const Index = () => {
   )
     .join("")
     .toUpperCase();
+  const standaloneProfilePath = React.useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const profileState = params.get("profile");
+    const profileTab = params.get("profileTab");
+
+    if (profileState !== "open") {
+      return null;
+    }
+
+    return getStandaloneProfileTabPath(profileTab, location.search);
+  }, [location.search]);
+
+  if (standaloneProfilePath) {
+    return <Navigate to={standaloneProfilePath} replace />;
+  }
 
   const trackingNav = React.useMemo(
     () => [

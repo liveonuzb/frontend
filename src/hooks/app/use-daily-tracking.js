@@ -9,6 +9,7 @@ import {
   usePutQuery,
 } from "@/hooks/api";
 import { FOODS_QUICK_ADD_QUERY_KEY } from "@/hooks/app/use-food-catalog";
+import { invalidateGamificationQueries } from "@/modules/user/lib/gamification-query-keys";
 
 const WORKOUT_OVERVIEW_QUERY_KEY = ["user", "workout", "overview"];
 const WORKOUT_PLAN_QUERY_KEY = ["user", "workout", "plans"];
@@ -217,15 +218,22 @@ export const useDailyTrackingActions = () => {
     [queryClient],
   );
 
+  const syncGamificationState = React.useCallback(
+    async () => invalidateGamificationQueries(queryClient),
+    [queryClient],
+  );
+
   const addWaterCup = React.useCallback(
     async (date = getTodayKey(), amountMl = 250) => {
       const response = await postMutation.mutateAsync({
         url: `/daily-tracking/${normalizeDateKey(date)}/water`,
         attributes: { amountMl },
       });
-      return syncResponse(response);
+      const dayData = syncResponse(response);
+      await syncGamificationState();
+      return dayData;
     },
-    [postMutation, syncResponse],
+    [postMutation, syncGamificationState, syncResponse],
   );
 
   const removeWaterLogEntry = React.useCallback(
@@ -306,10 +314,13 @@ export const useDailyTrackingActions = () => {
         attributes: buildMealPayload(mealType, food),
       });
       const dayData = syncResponse(response);
-      await queryClient.invalidateQueries({ queryKey: FOODS_QUICK_ADD_QUERY_KEY });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: FOODS_QUICK_ADD_QUERY_KEY }),
+        syncGamificationState(),
+      ]);
       return dayData;
     },
-    [postMutation, queryClient, syncResponse],
+    [postMutation, queryClient, syncGamificationState, syncResponse],
   );
 
   const removeMeal = React.useCallback(

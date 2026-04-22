@@ -28,16 +28,23 @@ import {
 import { cn } from "@/lib/utils";
 
 const CATEGORY_LABELS = {
-  nutrition: "Ovqatlanish",
-  workout: "Mashg'ulot",
-  water: "Suv",
-  streak: "Streak",
-  social: "Ijtimoiy",
-  measurement: "O'lchamlar",
-  general: "Umumiy",
+  NUTRITION: "Ovqatlanish",
+  WORKOUT: "Mashg'ulot",
+  WATER: "Suv",
+  SOCIAL: "Ijtimoiy",
+  STREAK: "Streak",
+  CHALLENGE: "Challenge",
+  GENERAL: "Umumiy",
 };
 
-const getCategoryLabel = (cat) => CATEGORY_LABELS[cat] ?? cat;
+const getCategoryLabel = (category) => {
+  const normalized = String(category ?? "").trim().toUpperCase();
+  return (
+    CATEGORY_LABELS[normalized] ??
+    normalized.replaceAll("_", " ").trim() ??
+    category
+  );
+};
 
 const AchievementCard = ({ item, onClick }) => {
   const progressPct = item.threshold > 0
@@ -116,9 +123,20 @@ const AchievementCard = ({ item, onClick }) => {
 
 const XP_TYPE_LABELS = {
   ACHIEVEMENT: "Yutuq uchun",
+  MEAL_LOG: "Ovqat yozuvi",
+  WATER_LOG: "Suv yozuvi",
+  WORKOUT_SESSION: "Mashg'ulot yozuvi",
+  FRIEND_ACCEPTED: "Do'stlik qabul qilindi",
+  CHALLENGE_JOINED: "Challengega qo'shilish",
+  REFERRAL_REGISTRATION: "Referral bonus",
+  REFERRAL_SUBSCRIPTION: "Referral komissiyasi",
+  COACH_ENTRY_BONUS: "Coach referral bonusi",
+  COACH_CLIENT_NEW: "Yangi mijoz bonusi",
+  COACH_CLIENT_EXISTING: "Mavjud mijoz bonusi",
+  WITHDRAWAL: "Yechib olish",
+  OTHER: "XP o'zgarishi",
   DAILY_LOGIN: "Kunlik kirish",
   WORKOUT_COMPLETE: "Mashg'ulot",
-  MEAL_LOG: "Ovqat yozuv",
   WATER_GOAL: "Suv maqsadi",
   FRIEND_ADD: "Do'st qo'shish",
   CHALLENGE_COMPLETE: "Challenge",

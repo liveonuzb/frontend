@@ -1,32 +1,74 @@
 import { describe, expect, it } from "vitest";
 import {
   buildActionItems,
-  resolveGoalPreset,
+  buildRecommendedGoals,
 } from "./health-tab.utils.js";
 
 describe("health-tab utils", () => {
-  it("prefers onboarding goal when it exists", () => {
-    expect(
-      resolveGoalPreset({
-        hasOnboardingGoal: true,
-        onboardingGoalIntent: "gain",
-        goals: { calories: 1800, waterMl: 2600, steps: 9000 },
-        hasServerGoals: true,
-        isDefaultGoalPreset: false,
-      }),
-    ).toBe("gain");
+  it("recalculates recommendation calories and carbs when selected goal changes", () => {
+    const baseGoals = {
+      goal: "maintain",
+      calories: 2200,
+      protein: 150,
+      carbs: 250,
+      fat: 70,
+      fiber: 30,
+      waterMl: 2500,
+      steps: 10000,
+      sleepHours: 8,
+      workoutMinutes: 60,
+    };
+    const recommendationProfile = {
+      gender: "male",
+      age: 30,
+      heightValue: 180,
+      currentWeightValue: 90,
+      activityLevel: "moderately-active",
+    };
+
+    const maintain = buildRecommendedGoals({
+      baseGoals,
+      recommendationProfile,
+      presetId: "maintain",
+      intensityId: "medium",
+    });
+    const gain = buildRecommendedGoals({
+      baseGoals,
+      recommendationProfile,
+      presetId: "gain",
+      intensityId: "medium",
+    });
+
+    expect(gain.goal).toBe("gain");
+    expect(gain.calories).toBeGreaterThan(maintain.calories);
+    expect(gain.carbs).toBeGreaterThan(maintain.carbs);
+    expect(gain.waterMl).toBeGreaterThanOrEqual(maintain.waterMl);
   });
 
-  it("falls back to lose when onboarding and saved goals are ambiguous", () => {
-    expect(
-      resolveGoalPreset({
-        hasOnboardingGoal: false,
-        onboardingGoalIntent: "maintain",
-        goals: { calories: 2200, waterMl: 2500, steps: 10000 },
-        hasServerGoals: false,
-        isDefaultGoalPreset: true,
-      }),
-    ).toBe("lose");
+  it("falls back to preset offsets when onboarding profile is missing", () => {
+    const maintain = buildRecommendedGoals({
+      baseGoals: {
+        goal: "maintain",
+        calories: 2200,
+        protein: 150,
+        carbs: 250,
+        fat: 70,
+        fiber: 30,
+        waterMl: 2500,
+        steps: 10000,
+        sleepHours: 8,
+        workoutMinutes: 60,
+      },
+      recommendationProfile: {},
+      presetId: "lose",
+      intensityId: "medium",
+    });
+
+    expect(maintain.goal).toBe("lose");
+    expect(maintain.calories).toBeLessThan(2200);
+    expect(maintain.steps).toBeGreaterThan(10000);
+    expect(maintain.protein).toBe(150);
+    expect(maintain.fiber).toBe(30);
   });
 
   it("prioritizes protein first for gain action stack", () => {

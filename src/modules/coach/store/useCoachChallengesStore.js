@@ -2,6 +2,8 @@ import { create } from "zustand";
 import { api } from "@/hooks/api/use-api";
 import { toast } from "sonner";
 import { map, filter, find, join } from "lodash";
+import { queryClient } from "@/providers/query";
+import { invalidateGamificationQueries } from "@/modules/user/lib/gamification-query-keys";
 
 const ensureArray = (value) => (Array.isArray(value) ? value : []);
 
@@ -207,6 +209,7 @@ export const useCoachChallengesStore = create((set, get) => ({
       void Promise.all([
         get().fetchChallenges({}, { silent: true }),
         get().fetchMyInvitations("PENDING", { silent: true }),
+        invalidateGamificationQueries(queryClient),
       ]);
       if (onSuccess) onSuccess();
     } catch (error) {
@@ -344,6 +347,9 @@ export const useCoachChallengesStore = create((set, get) => ({
       await Promise.all([
         get().fetchMyInvitations("PENDING", { silent: true }),
         get().fetchChallenges({}, { silent: true }),
+        ...(status === "ACCEPTED"
+          ? [invalidateGamificationQueries(queryClient)]
+          : []),
       ]);
       if (onSuccess) onSuccess();
     } catch (error) {

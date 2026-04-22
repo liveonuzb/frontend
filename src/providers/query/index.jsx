@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { useLanguageStore } from "@/store";
 
-const queryClient = new QueryClient({
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000,

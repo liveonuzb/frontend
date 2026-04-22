@@ -53,6 +53,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Textarea } from "@/components/ui/textarea";
+import { invalidateGamificationQueries } from "@/modules/user/lib/gamification-query-keys";
 import PersonRow from "./components/person-row.jsx";
 import SectionCard from "./components/section-card.jsx";
 
@@ -256,8 +257,10 @@ export default function FriendsContainer() {
 
   // --- Mutations ---
   const invalidateAll = React.useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: FRIENDS_QUERY_KEY });
-    queryClient.invalidateQueries({ queryKey: FRIEND_REQUESTS_QUERY_KEY });
+    return Promise.all([
+      queryClient.invalidateQueries({ queryKey: FRIENDS_QUERY_KEY }),
+      queryClient.invalidateQueries({ queryKey: FRIEND_REQUESTS_QUERY_KEY }),
+    ]);
   }, [queryClient]);
 
   const { mutateAsync: sendFriendRequestMutation } = usePostQuery({
@@ -343,6 +346,7 @@ export default function FriendsContainer() {
 
       if (result?.data?.autoAccepted) {
         toast.success("Do'stlik so'rovi avtomatik qabul qilindi.");
+        await invalidateGamificationQueries(queryClient);
       } else if (result?.data?.alreadyFriends) {
         toast.message("Bu foydalanuvchi allaqachon do'stingiz.");
       } else if (result?.data?.alreadyPending) {
@@ -350,14 +354,14 @@ export default function FriendsContainer() {
       } else {
         toast.success("Do'stlik so'rovi yuborildi.");
       }
-      invalidateAll();
+      await invalidateAll();
       resetInviteFlow();
     } catch (error) {
       toast.error(resolveApiErrorMessage(error, "So'rov yuborib bo'lmadi"));
     } finally {
       setIsInviting(false);
     }
-  }, [inviteForm, resetInviteFlow, sendFriendRequestMutation, invalidateAll]);
+  }, [inviteForm, invalidateAll, queryClient, resetInviteFlow, sendFriendRequestMutation]);
 
   const handleRemoveFriend = React.useCallback(
     async (friendId) => {
@@ -374,7 +378,7 @@ export default function FriendsContainer() {
         } else {
           toast.message("Do'stlik holati allaqachon o'zgargan.");
         }
-        invalidateAll();
+        await invalidateAll();
       } catch (error) {
         toast.error(resolveApiErrorMessage(error, "Do'stni o'chirib bo'lmadi"));
       } finally {
@@ -423,12 +427,15 @@ export default function FriendsContainer() {
           url: `/users/me/friends/requests/${requestId}/respond`,
           attributes: { action },
         });
+        if (action === "ACCEPT") {
+          await invalidateGamificationQueries(queryClient);
+        }
         toast.success(
           action === "ACCEPT"
             ? "Do'stlik so'rovi qabul qilindi."
             : "Do'stlik so'rovi rad etildi.",
         );
-        invalidateAll();
+        await invalidateAll();
       } catch (error) {
         toast.error(resolveApiErrorMessage(error, "So'rovga javob berilmadi"));
       } finally {
@@ -439,7 +446,7 @@ export default function FriendsContainer() {
         });
       }
     },
-    [respondToFriendRequestMutation, respondingById, invalidateAll],
+    [invalidateAll, queryClient, respondToFriendRequestMutation, respondingById],
   );
 
   const selectedMethod = React.useMemo(

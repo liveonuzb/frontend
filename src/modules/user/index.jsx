@@ -5,6 +5,7 @@ import PageLoader from "@/components/page-loader/index.jsx";
 import ErrorBoundary from "@/components/error-boundary/index.jsx";
 import { DEFAULT_PROFILE_TAB } from "@/modules/profile/hooks/use-profile-overlay";
 import { normalizeProfileOverlayTab } from "@/modules/profile/lib/profile-tab-registry";
+import { getStandaloneProfileTabPath } from "@/modules/profile/lib/profile-tab-navigation";
 
 const DashboardPage = lazy(
   () => import("@/modules/user/pages/dashboard/index.jsx"),
@@ -13,6 +14,7 @@ const NutritionPage = lazy(
   () => import("@/modules/user/pages/nutrition/index.jsx"),
 );
 const WaterPage = lazy(() => import("@/modules/user/pages/water/index.jsx"));
+const HealthPage = lazy(() => import("@/modules/user/pages/health/index.jsx"));
 
 const MeasurementsPage = lazy(
   () => import("@/modules/user/pages/measurements/index.jsx"),
@@ -57,6 +59,15 @@ const NotFound = lazy(() => import("@/pages/not-found/index.jsx"));
 export const ProfileRedirect = () => {
   const [searchParams] = useSearchParams();
   const requestedTab = searchParams.get("tab") ?? DEFAULT_PROFILE_TAB;
+  const standalonePath = getStandaloneProfileTabPath(
+    requestedTab,
+    searchParams.toString(),
+  );
+
+  if (standalonePath) {
+    return <Navigate to={standalonePath} replace />;
+  }
+
   const profileParams = new URLSearchParams(searchParams);
   profileParams.delete("tab");
   profileParams.set("profile", "open");
@@ -98,6 +109,16 @@ const Index = () => {
             <Suspense fallback={<PageLoader />}>
               <ErrorBoundary>
                 <WaterPage />
+              </ErrorBoundary>
+            </Suspense>
+          }
+        />
+        <Route
+          path="health"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <ErrorBoundary>
+                <HealthPage />
               </ErrorBoundary>
             </Suspense>
           }

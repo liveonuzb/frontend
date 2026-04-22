@@ -10,6 +10,7 @@ import {
 import { WORKOUT_OVERVIEW_QUERY_KEY } from "@/hooks/app/use-workout-overview";
 import { WORKOUT_PLANS_QUERY_KEY } from "@/hooks/app/use-workout-plans";
 import { getDailyTrackingQueryKey } from "@/hooks/app/use-daily-tracking";
+import { invalidateGamificationQueries } from "@/modules/user/lib/gamification-query-keys";
 
 export const WORKOUT_LOGS_QUERY_KEY = ["user", "workout", "logs"];
 
@@ -170,10 +171,13 @@ export const useCreateWorkoutLog = () => {
     mutationProps: {
       onSuccess: async (response) => {
         const created = normalizeWorkoutLog(resolveResponseData(response));
-        await invalidateWorkoutLogQueries(queryClient, {
-          date: created.date,
-          logGroupId: created.id,
-        });
+        await Promise.all([
+          invalidateWorkoutLogQueries(queryClient, {
+            date: created.date,
+            logGroupId: created.id,
+          }),
+          invalidateGamificationQueries(queryClient),
+        ]);
       },
     },
   });

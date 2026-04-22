@@ -31,8 +31,8 @@ import {
   PRESET_OPTIONS,
   STATUS_DOT_CLASS,
   buildActionItems,
-  buildPresetTargets,
   buildProgressMetrics,
+  buildRecommendedGoals,
   buildWeightTrendBars,
   clampMetricValue,
   createInitialForm,
@@ -45,7 +45,6 @@ import {
   getSavedNumbers,
   getWeightTrendSummary,
   inferIntensityFromGoals,
-  resolveGoalPreset,
   toGoalsPayload,
   vibrateSoft,
 } from "./health-tab.utils.js";
@@ -323,6 +322,20 @@ const ProgressCard = ({ item }) => {
     </div>
   );
 };
+
+const applyRecommendedGoalsToForm = (current, presetId, nextGoals) => ({
+  ...current,
+  goal: presetId,
+  calories: String(nextGoals.calories),
+  protein: String(nextGoals.protein),
+  carbs: String(nextGoals.carbs),
+  fat: String(nextGoals.fat),
+  fiber: String(nextGoals.fiber),
+  waterMl: String(nextGoals.waterMl),
+  steps: String(nextGoals.steps),
+  sleepHours: String(nextGoals.sleepHours),
+  workoutMinutes: String(nextGoals.workoutMinutes),
+});
 
 const WeightTrendCard = ({ weightSummary, bars, goalTheme, t }) => {
   if (!weightSummary) {
@@ -649,7 +662,16 @@ const HealthTabContent = ({
   const selectedPresetMeta =
     PRESET_OPTIONS.find((preset) => preset.id === selectedPreset) ??
     PRESET_OPTIONS[0];
-  const recommendedMatchesCurrent = isEqual(currentNumbers, recommendedNumbers);
+  const recommendedMatchesCurrent =
+    form.goal === selectedPreset &&
+    isEqual(currentNumbers, recommendedNumbers) &&
+    Number(form.protein || 0) === Number(recommendedGoals.protein || 0) &&
+    Number(form.carbs || 0) === Number(recommendedGoals.carbs || 0) &&
+    Number(form.fat || 0) === Number(recommendedGoals.fat || 0) &&
+    Number(form.fiber || 0) === Number(recommendedGoals.fiber || 0) &&
+    Number(form.sleepHours || 0) === Number(recommendedGoals.sleepHours || 0) &&
+    Number(form.workoutMinutes || 0) ===
+      Number(recommendedGoals.workoutMinutes || 0);
   const statusDotClass = STATUS_DOT_CLASS[saveStatus];
   const healthSummary = healthReport?.summary ?? {};
   const waterSummary = waterAnalytics?.summary ?? {};
@@ -1146,14 +1168,9 @@ const HealthTabContent = ({
 
 export const HealthTab = ({ embedded = false }) => {
   const { t } = useTranslation();
-  const { user } = useMe();
+  const { user, onboarding } = useMe();
   const {
     goals,
-    recommendedGoals,
-    recommendedGoalIntent,
-    hasOnboardingGoal,
-    hasServerGoals,
-    isDefaultGoalPreset,
     saveGoals,
     isHydratingGoals,
   } = useHealthGoals();
@@ -1164,27 +1181,7 @@ export const HealthTab = ({ embedded = false }) => {
     () => getSavedNumbers(initialForm),
     [initialForm],
   );
-  const recommendedNumbers = React.useMemo(
-    () => getSavedNumbers(recommendedGoals),
-    [recommendedGoals],
-  );
-  const resolvedGoalPreset = React.useMemo(
-    () =>
-      resolveGoalPreset({
-        hasOnboardingGoal,
-        onboardingGoalIntent: recommendedGoalIntent,
-        goals,
-        hasServerGoals,
-        isDefaultGoalPreset,
-      }),
-    [
-      goals,
-      hasOnboardingGoal,
-      hasServerGoals,
-      isDefaultGoalPreset,
-      recommendedGoalIntent,
-    ],
-  );
+  const resolvedGoalPreset = goals.goal ?? "maintain";
   const inferredIntensity = React.useMemo(
     () => inferIntensityFromGoals(initialNumbers, resolvedGoalPreset),
     [initialNumbers, resolvedGoalPreset],
@@ -1200,6 +1197,30 @@ export const HealthTab = ({ embedded = false }) => {
   const lastSubmittedFormRef = React.useRef(null);
   const hasHydratedRef = React.useRef(false);
   const latestSaveIdRef = React.useRef(0);
+  const recommendationProfile = React.useMemo(
+    () => ({
+      gender: onboarding?.gender,
+      age: onboarding?.age,
+      heightValue: onboarding?.height?.value,
+      currentWeightValue: onboarding?.currentWeight?.value,
+      activityLevel: onboarding?.activityLevel,
+    }),
+    [onboarding],
+  );
+  const recommendedGoals = React.useMemo(
+    () =>
+      buildRecommendedGoals({
+        baseGoals: goals,
+        recommendationProfile,
+        presetId: selectedPreset,
+        intensityId: selectedIntensity,
+      }),
+    [goals, recommendationProfile, selectedIntensity, selectedPreset],
+  );
+  const recommendedNumbers = React.useMemo(
+    () => getSavedNumbers(recommendedGoals),
+    [recommendedGoals],
+  );
 
   const { data: healthReportData, isLoading: isHealthReportLoading } =
     useGetQuery({
@@ -1298,19 +1319,21 @@ export const HealthTab = ({ embedded = false }) => {
 
   const applyPreset = React.useCallback(
     (presetId, intensityId) => {
-      const nextTargets = buildPresetTargets(initialNumbers, presetId, intensityId);
+      const nextTargets = buildRecommendedGoals({
+        baseGoals: goals,
+        recommendationProfile,
+        presetId,
+        intensityId,
+      });
 
       vibrateSoft();
       setSelectedPreset(presetId);
       setSelectedIntensity(intensityId);
-      setForm((current) => ({
-        ...current,
-        calories: String(nextTargets.calories),
-        waterMl: String(nextTargets.waterMl),
-        steps: String(nextTargets.steps),
-      }));
+      setForm((current) =>
+        applyRecommendedGoalsToForm(current, presetId, nextTargets),
+      );
     },
-    [initialNumbers],
+    [goals, recommendationProfile],
   );
 
   const handlePresetChange = React.useCallback(
@@ -1341,21 +1364,11 @@ export const HealthTab = ({ embedded = false }) => {
   }, []);
 
   const handleApplyRecommended = React.useCallback(() => {
-    const nextIntensity = inferIntensityFromGoals(
-      recommendedNumbers,
-      resolvedGoalPreset,
-    );
-
     vibrateSoft();
-    setSelectedPreset(resolvedGoalPreset);
-    setSelectedIntensity(nextIntensity);
-    setForm((current) => ({
-      ...current,
-      calories: String(recommendedNumbers.calories),
-      waterMl: String(recommendedNumbers.waterMl),
-      steps: String(recommendedNumbers.steps),
-    }));
-  }, [recommendedNumbers, resolvedGoalPreset]);
+    setForm((current) =>
+      applyRecommendedGoalsToForm(current, selectedPreset, recommendedGoals),
+    );
+  }, [recommendedGoals, selectedPreset]);
 
   const persistGoals = React.useCallback(
     async (nextForm, saveId) => {

@@ -1,11 +1,17 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { useGetQuery } from "@/hooks/api";
 import useHealthGoals from "@/hooks/app/use-health-goals";
+import useMe from "@/hooks/app/use-me";
+import { calculateGoals } from "@/lib/goal-calculator";
 import { HealthTab } from "./health-tab.jsx";
 
 vi.mock("react-i18next", () => ({
+  initReactI18next: {
+    type: "3rdParty",
+    init: () => {},
+  },
   useTranslation: () => ({
     t: (key, options = {}) => options.defaultValue || key,
   }),
@@ -19,7 +25,12 @@ vi.mock("@/hooks/app/use-health-goals", () => ({
   default: vi.fn(),
 }));
 
+vi.mock("@/hooks/app/use-me", () => ({
+  default: vi.fn(),
+}));
+
 const baseGoals = {
+  goal: "maintain",
   calories: 2200,
   waterMl: 2500,
   steps: 10000,
@@ -33,6 +44,14 @@ const baseGoals = {
   weightUnit: "kg",
   heightUnit: "cm",
   waterNotification: true,
+};
+const baseOnboarding = {
+  gender: "male",
+  age: 30,
+  height: { value: 180, unit: "cm" },
+  currentWeight: { value: 90, unit: "kg" },
+  activityLevel: "moderately-active",
+  goal: "maintain",
 };
 
 const configureQueryMocks = ({
@@ -126,43 +145,36 @@ describe("HealthTab", () => {
     vi.useRealTimers();
   });
 
-  it("renders gain hero when onboarding goal is gain", () => {
+  it("renders gain hero when stored health goal is gain", () => {
+    vi.mocked(useMe).mockReturnValue({
+      user: { telegramConnected: false },
+      onboarding: baseOnboarding,
+    });
     vi.mocked(useHealthGoals).mockReturnValue({
-      goals: baseGoals,
-      recommendedGoals: {
+      goals: {
         ...baseGoals,
-        calories: 2800,
-        protein: 170,
-        waterMl: 3200,
-        steps: 8000,
+        goal: "gain",
       },
-      recommendedGoalIntent: "gain",
-      hasOnboardingGoal: true,
-      hasServerGoals: true,
-      isDefaultGoalPreset: false,
       saveGoals: vi.fn(),
       isHydratingGoals: false,
     });
     configureQueryMocks();
 
-    render(<HealthTab />);
+    const { rerender } = render(<HealthTab />);
 
     expect(screen.getByText("Massa uchun bugungi panel")).toBeInTheDocument();
   });
 
-  it("falls back to lose and shows progress empty state when analytics are empty", () => {
+  it("falls back to maintain and shows progress empty state when analytics are empty", () => {
+    vi.mocked(useMe).mockReturnValue({
+      user: { telegramConnected: false },
+      onboarding: null,
+    });
     vi.mocked(useHealthGoals).mockReturnValue({
-      goals: baseGoals,
-      recommendedGoals: {
+      goals: {
         ...baseGoals,
-        calories: 1800,
-        waterMl: 3000,
-        steps: 12000,
+        goal: "maintain",
       },
-      recommendedGoalIntent: "maintain",
-      hasOnboardingGoal: false,
-      hasServerGoals: false,
-      isDefaultGoalPreset: true,
       saveGoals: vi.fn(),
       isHydratingGoals: false,
     });
@@ -194,41 +206,82 @@ describe("HealthTab", () => {
       },
     });
 
-    render(<HealthTab />);
+    const { rerender } = render(<HealthTab />);
 
-    expect(screen.getByText("Ozish uchun bugungi panel")).toBeInTheDocument();
+    expect(
+      screen.getByText("Ritmingizni ushlab turish paneli"),
+    ).toBeInTheDocument();
     expect(
       screen.getByText("Hali yetarli tracking yo'q"),
     ).toBeInTheDocument();
   });
 
-  it("applies the recommended plan and disables the CTA afterwards", async () => {
+  it("updates recommendation and autosaves the selected goal", async () => {
+    vi.useFakeTimers();
+    const saveGoals = vi.fn().mockResolvedValue({});
+    vi.mocked(useMe).mockReturnValue({
+      user: { telegramConnected: false },
+      onboarding: baseOnboarding,
+    });
     vi.mocked(useHealthGoals).mockReturnValue({
       goals: baseGoals,
-      recommendedGoals: {
-        ...baseGoals,
-        calories: 1800,
-        waterMl: 3000,
-        steps: 12000,
-        protein: 165,
-      },
-      recommendedGoalIntent: "lose",
-      hasOnboardingGoal: true,
-      hasServerGoals: true,
-      isDefaultGoalPreset: false,
-      saveGoals: vi.fn(),
+      saveGoals,
       isHydratingGoals: false,
     });
     configureQueryMocks();
 
-    render(<HealthTab />);
+    const { rerender } = render(<HealthTab />);
 
-    const applyButton = screen.getByRole("button", {
-      name: "Tavsiya planini qo'llash",
+    const maintainGoals = calculateGoals({
+      gender: "male",
+      age: 30,
+      heightValue: 180,
+      currentWeightValue: 90,
+      goal: "maintain",
+      activityLevel: "moderately-active",
+      weeklyPace: 0.5,
+    });
+    const gainGoals = calculateGoals({
+      gender: "male",
+      age: 30,
+      heightValue: 180,
+      currentWeightValue: 90,
+      goal: "gain",
+      activityLevel: "moderately-active",
+      weeklyPace: 0.5,
+    });
+    const maintainLabel = `${maintainGoals.calories.toLocaleString("en-US")} kcal`;
+    const gainLabel = `${gainGoals.calories.toLocaleString("en-US")} kcal`;
+
+    expect(screen.getAllByText(maintainLabel).length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole("button", { name: /massa/i }));
+
+    expect(screen.getAllByText(gainLabel).length).toBeGreaterThan(0);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(800);
     });
 
-    expect(applyButton).toBeEnabled();
-    fireEvent.click(applyButton);
-    expect(applyButton).toBeDisabled();
+    expect(saveGoals).toHaveBeenCalledWith(
+      expect.objectContaining({
+        goal: "gain",
+        calories: gainGoals.calories,
+      }),
+    );
+
+    vi.mocked(useHealthGoals).mockReturnValue({
+      goals: {
+        ...baseGoals,
+        ...gainGoals,
+        goal: "gain",
+      },
+      saveGoals,
+      isHydratingGoals: false,
+    });
+
+    rerender(<HealthTab />);
+
+    expect(screen.getByText("Massa uchun bugungi panel")).toBeInTheDocument();
   });
 });

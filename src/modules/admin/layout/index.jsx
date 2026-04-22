@@ -17,6 +17,7 @@ import {
   CrownIcon,
   GemIcon,
   TrophyIcon,
+  AwardIcon,
   WrenchIcon,
   MedalIcon,
 } from "lucide-react";
@@ -63,6 +64,7 @@ const contentNav = [
     icon: MedalIcon,
   },
   { to: "/admin/foods", label: "Ovqatlar bazasi", icon: UtensilsIcon },
+  { to: "/admin/achievements", label: "Achievements", icon: AwardIcon },
   { to: "/admin/locations", label: "Locations", icon: MapPinnedIcon },
   {
     to: "/admin/food-categories",
