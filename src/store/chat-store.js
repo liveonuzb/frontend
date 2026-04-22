@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { io } from "socket.io-client";
 import { api } from "@/hooks/api/use-api.js";
 import { config } from "@/config.js";
+import { getApiResponseData } from "@/lib/api-response.js";
 import useAuthStore from "./auth-store";
 import { map, filter, find, findIndex, some, includes, reduce, join, toPairs } from "lodash";
 
@@ -329,7 +330,6 @@ const useChatStore = create(
             },
 
             sendMessage: async (roomId, text, mediaUrl = null, type = "text", metadata = null, replyToId = null) => {
-                const { socket } = get();
                 const myId = useAuthStore.getState().user?.id;
                 
                 // Create optimistic message
@@ -356,43 +356,45 @@ const useChatStore = create(
                     },
                 }));
 
-                const payload = { roomId, text, type, metadata, mediaUrl, replyToId };
-                if (socket) {
-                    socket.emit("sendMessage", payload);
-                } else {
-                    try {
-                        // Filter out properties that the backend validation rejects
-                        const { roomId: _, replyToId: __, ...httpPayload } = payload;
-                        const response = await api.post(`/chat/rooms/${roomId}/messages`, httpPayload);
-                        const message = response?.data;
-                        if (message?.id) {
-                            set((state) => ({
-                                messages: {
-                                    ...state.messages,
-                                    [roomId]: upsertRoomMessage(
-                                        state.messages[roomId] || [],
-                                        message,
-                                        myId,
-                                    ),
-                                },
-                                contacts: syncRoomLastMessage(
-                                    state.contacts,
-                                    roomId,
-                                    message,
-                                    false,
-                                ),
-                            }));
-                        }
-                    } catch (error) {
-                        toast.error("Xabar yuborishda xatolik");
-                        // Remove optimistic message on error
+                try {
+                    // Persist through HTTP so messages are not silently dropped when
+                    // the realtime socket is flaky behind a production proxy.
+                    const response = await api.post(`/chat/rooms/${roomId}/messages`, {
+                        text,
+                        type,
+                        metadata,
+                        mediaUrl,
+                        replyToId,
+                    });
+                    const message = getApiResponseData(response, null);
+
+                    if (message?.id) {
                         set((state) => ({
                             messages: {
                                 ...state.messages,
-                                [roomId]: filter(state.messages[roomId] || [], m => m.id !== optimisticMsg.id),
+                                [roomId]: upsertRoomMessage(
+                                    state.messages[roomId] || [],
+                                    message,
+                                    myId,
+                                ),
                             },
+                            contacts: syncRoomLastMessage(
+                                state.contacts,
+                                roomId,
+                                message,
+                                false,
+                            ),
                         }));
                     }
+                } catch (error) {
+                    toast.error("Xabar yuborishda xatolik");
+                    // Remove optimistic message on error
+                    set((state) => ({
+                        messages: {
+                            ...state.messages,
+                            [roomId]: filter(state.messages[roomId] || [], m => m.id !== optimisticMsg.id),
+                        },
+                    }));
                 }
             },
 

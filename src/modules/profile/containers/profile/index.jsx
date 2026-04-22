@@ -316,11 +316,13 @@ const InlineNotificationsItem = ({ tab, value, isCoach }) => {
         value={value}
         onClick={() => setOpen(true)}
       />
-      <NotificationSettingsDrawer
-        open={open}
-        onOpenChange={setOpen}
-        isCoach={isCoach}
-      />
+      {open ? (
+        <NotificationSettingsDrawer
+          open={open}
+          onOpenChange={setOpen}
+          isCoach={isCoach}
+        />
+      ) : null}
     </>
   );
 };
@@ -376,52 +378,54 @@ const InlineLangItem = ({
         }
         onClick={() => setOpen(true)}
       />
-      <Drawer open={open} onOpenChange={setOpen} direction="bottom">
-        <DrawerContent>
-          <DrawerHeader className="text-left">
-            <DrawerTitle>{t("profile.language.drawerTitle")}</DrawerTitle>
-            <DrawerDescription>
-              {t("profile.language.drawerDescription")}
-            </DrawerDescription>
-          </DrawerHeader>
-          <DrawerBody className="space-y-2">
-            {map(languages, (language) => {
-              const languageCode = get(language, "code");
-              const isSelected = languageCode === currentLang;
-              return (
-                <button
-                  key={get(language, "id") || languageCode}
-                  type="button"
-                  className="block w-full text-left"
-                  onClick={() => void handleLanguageSelect(languageCode)}
-                >
-                  <div
-                    className={cn(
-                      "flex items-center justify-between gap-3 rounded-2xl border p-4",
-                      isSelected && "border-primary bg-primary/5",
-                    )}
+      {open ? (
+        <Drawer open={open} onOpenChange={setOpen} direction="bottom">
+          <DrawerContent>
+            <DrawerHeader className="text-left">
+              <DrawerTitle>{t("profile.language.drawerTitle")}</DrawerTitle>
+              <DrawerDescription>
+                {t("profile.language.drawerDescription")}
+              </DrawerDescription>
+            </DrawerHeader>
+            <DrawerBody className="space-y-2">
+              {map(languages, (language) => {
+                const languageCode = get(language, "code");
+                const isSelected = languageCode === currentLang;
+                return (
+                  <button
+                    key={get(language, "id") || languageCode}
+                    type="button"
+                    className="block w-full text-left"
+                    onClick={() => void handleLanguageSelect(languageCode)}
                   >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span className="text-base leading-none">
-                        {get(language, "flag", "🌐")}
-                      </span>
-                      <div className="min-w-0">
-                        <p className="font-medium">{get(language, "name")}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {toUpper(languageCode)}
-                        </p>
+                    <div
+                      className={cn(
+                        "flex items-center justify-between gap-3 rounded-2xl border p-4",
+                        isSelected && "border-primary bg-primary/5",
+                      )}
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="text-base leading-none">
+                          {get(language, "flag", "🌐")}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="font-medium">{get(language, "name")}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {toUpper(languageCode)}
+                          </p>
+                        </div>
                       </div>
+                      {isSelected ? (
+                        <CheckIcon className="size-4 text-primary" />
+                      ) : null}
                     </div>
-                    {isSelected ? (
-                      <CheckIcon className="size-4 text-primary" />
-                    ) : null}
-                  </div>
-                </button>
-              );
-            })}
-          </DrawerBody>
-        </DrawerContent>
-      </Drawer>
+                  </button>
+                );
+              })}
+            </DrawerBody>
+          </DrawerContent>
+        </Drawer>
+      ) : null}
     </>
   );
 };
@@ -686,11 +690,13 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
         }
       />
 
-      <CoachConnectionDetailsDrawer
-        open={isCoachDetailsOpen}
-        onOpenChange={setIsCoachDetailsOpen}
-        coachConnection={coachConnection}
-      />
+      {isCoachDetailsOpen ? (
+        <CoachConnectionDetailsDrawer
+          open={isCoachDetailsOpen}
+          onOpenChange={setIsCoachDetailsOpen}
+          coachConnection={coachConnection}
+        />
+      ) : null}
 
       {map(SETTINGS_GROUPS, (group, index) => (
         <SettingsGroupCard
