@@ -1,11 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("socket.io-client", () => ({
-  io: vi.fn(() => ({
+const { ioMock } = vi.hoisted(() => ({
+  ioMock: vi.fn(() => ({
     on: vi.fn(),
     emit: vi.fn(),
     disconnect: vi.fn(),
   })),
+}));
+
+vi.mock("socket.io-client", () => ({
+  io: ioMock,
 }));
 
 vi.mock("@/hooks/api/use-api.js", () => ({
@@ -106,5 +110,17 @@ describe("getChatSocketConnectionConfig", () => {
 
     expect(useChatStore.getState().messages["room-1"]).toEqual([]);
     expect(toast.error).toHaveBeenCalledWith("Xabar yuborishda xatolik");
+  });
+
+  it("starts socket transport with polling before websocket for proxy compatibility", () => {
+    useChatStore.getState().initSocket();
+
+    expect(ioMock).toHaveBeenCalledWith(
+      "http://localhost:3000",
+      expect.objectContaining({
+        path: "/api/v1/socket.io",
+        transports: ["polling", "websocket"],
+      }),
+    );
   });
 });

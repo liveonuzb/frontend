@@ -116,7 +116,10 @@ const useChatStore = create(
                 const socket = io(socketUrl, {
                     auth: { token },
                     path: socketPath,
-                    transports: ["websocket", "polling"],
+                    // Start with HTTP long-polling so the chat still connects
+                    // behind proxies/CDNs that do not fully support immediate
+                    // websocket upgrades, then upgrade when possible.
+                    transports: ["polling", "websocket"],
                 });
 
                 socket.on("connect", () => {
