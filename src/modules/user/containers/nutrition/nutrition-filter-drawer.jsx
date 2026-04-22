@@ -14,6 +14,7 @@ const FILTERS = [
   { key: "text", label: get(SOURCE_META, "text.label"), description: "Matn orqali kiritilganlar" },
   { key: "audio", label: get(SOURCE_META, "audio.label"), description: "Ovozli xabar orqali" },
   { key: "camera", label: get(SOURCE_META, "camera.label"), description: "Rasmga olinganlar" },
+  { key: "saved-meal", label: get(SOURCE_META, "saved-meal.label"), description: "Oldin saqlangan taomlar" },
   { key: "meal-plan", label: get(SOURCE_META, "meal-plan.label"), description: "Rejadagi ovqatlar" },
 ];
 

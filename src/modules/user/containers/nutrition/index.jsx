@@ -50,7 +50,7 @@ import {
   NutritionDrawerContent,
 } from "./nutrition-drawer-layout.jsx";
 import NutritionFilterDrawer from "./nutrition-filter-drawer.jsx";
-import CustomFoodsDrawer from "./custom-foods-drawer.jsx";
+import SavedMealsDrawer from "./saved-meals-drawer.jsx";
 import PlansDrawer from "./plans-drawer.jsx";
 import { SOURCE_META } from "./source-meta.js";
 import NutritionAnalyticsSection from "./nutrition-analytics-section.jsx";
@@ -70,6 +70,7 @@ const NUTRITION_SOURCE_FILTERS = [
   { key: "text", label: SOURCE_META.text.label },
   { key: "audio", label: SOURCE_META.audio.label },
   { key: "camera", label: SOURCE_META.camera.label },
+  { key: "saved-meal", label: SOURCE_META["saved-meal"].label },
   { key: "meal-plan", label: SOURCE_META["meal-plan"].label },
 ];
 
@@ -338,7 +339,7 @@ const Index = () => {
     React.useState(true);
   const [planMetaName, setPlanMetaName] = React.useState("");
   const [planMetaDescription, setPlanMetaDescription] = React.useState("");
-  const [isCustomFoodsOpen, setIsCustomFoodsOpen] = React.useState(false);
+  const [isSavedMealsOpen, setIsSavedMealsOpen] = React.useState(false);
 
   React.useEffect(() => {
     const state = location.state;
@@ -854,6 +855,7 @@ const Index = () => {
           carbs: macros.carbs ?? food.carbs,
           fat: macros.fat ?? food.fat,
           image: payload.image ?? food.image ?? null,
+          ingredients: payload.ingredients ?? food.ingredients ?? [],
         });
       } catch {
         toast.error("Ovqatni log qilib bo'lmadi");
@@ -1208,6 +1210,11 @@ const Index = () => {
                     });
                   }
                 }}
+                onUpdateMeal={(t, foodId, patch) => {
+                  void patchMeal(dateKey, t, foodId, patch).catch(() => {
+                    toast.error("Ovqatni yangilab bo'lmadi");
+                  });
+                }}
                 onTogglePlanned={handleTogglePlanned}
               />
             ))
@@ -1273,13 +1280,13 @@ const Index = () => {
         onOpenChange={setIsActionDrawerOpen}
         dateKey={dateKey}
         mealType={selectedMealTypeForAdd}
-        onOpenCustomFoods={() => setIsCustomFoodsOpen(true)}
+        onOpenSavedMeals={() => setIsSavedMealsOpen(true)}
         onCloseAll={() => setIsActionDrawerOpen(false)}
       />
 
-      <CustomFoodsDrawer
-        open={isCustomFoodsOpen}
-        onOpenChange={setIsCustomFoodsOpen}
+      <SavedMealsDrawer
+        open={isSavedMealsOpen}
+        onOpenChange={setIsSavedMealsOpen}
         dateKey={dateKey}
         mealType={selectedMealTypeForAdd}
         onAddMeal={addMealAction}

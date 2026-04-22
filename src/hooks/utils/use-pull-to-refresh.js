@@ -3,7 +3,7 @@ import React from "react";
 const THRESHOLD = 80;
 const MAX_PULL = 120;
 
-const usePullToRefresh = (onRefresh) => {
+const usePullToRefresh = (onRefresh, enabled = true) => {
     const [pulling, setPulling] = React.useState(false);
     const [pullDistance, setPullDistance] = React.useState(0);
     const [refreshing, setRefreshing] = React.useState(false);
@@ -16,16 +16,16 @@ const usePullToRefresh = (onRefresh) => {
 
     const handleTouchStart = React.useCallback(
         (e) => {
-            if (!canPull()) return;
+            if (!enabled || !canPull()) return;
             startY.current = e.touches[0].clientY;
             setPulling(true);
         },
-        [canPull]
+        [canPull, enabled]
     );
 
     const handleTouchMove = React.useCallback(
         (e) => {
-            if (!pulling || refreshing) return;
+            if (!enabled || !pulling || refreshing) return;
             currentY.current = e.touches[0].clientY;
             const diff = currentY.current - startY.current;
             if (diff > 0 && canPull()) {
@@ -33,10 +33,16 @@ const usePullToRefresh = (onRefresh) => {
                 setPullDistance(distance);
             }
         },
-        [pulling, refreshing, canPull]
+        [pulling, refreshing, canPull, enabled]
     );
 
     const handleTouchEnd = React.useCallback(() => {
+        if (!enabled) {
+            setPullDistance(0);
+            setPulling(false);
+            return;
+        }
+
         if (pullDistance >= THRESHOLD && !refreshing) {
             setRefreshing(true);
             setPullDistance(THRESHOLD);
@@ -49,9 +55,16 @@ const usePullToRefresh = (onRefresh) => {
             setPullDistance(0);
             setPulling(false);
         }
-    }, [pullDistance, refreshing, onRefresh]);
+    }, [pullDistance, refreshing, onRefresh, enabled]);
 
     React.useEffect(() => {
+        if (!enabled) {
+            setPullDistance(0);
+            setPulling(false);
+            setRefreshing(false);
+            return undefined;
+        }
+
         document.addEventListener("touchstart", handleTouchStart, { passive: true });
         document.addEventListener("touchmove", handleTouchMove, { passive: true });
         document.addEventListener("touchend", handleTouchEnd);
@@ -61,7 +74,7 @@ const usePullToRefresh = (onRefresh) => {
             document.removeEventListener("touchmove", handleTouchMove);
             document.removeEventListener("touchend", handleTouchEnd);
         };
-    }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
+    }, [handleTouchStart, handleTouchMove, handleTouchEnd, enabled]);
 
     const progress = Math.min((pullDistance / THRESHOLD) * 100, 100);
 

@@ -67,6 +67,7 @@ const ReportsPage = lazy(
 const AiPage = lazy(
   () => import("@/modules/coach/pages/ai/index.jsx"),
 );
+const ChatModule = lazy(() => import("@/modules/chat/index.jsx"));
 
 const renderPage = (Component) => (
   <Suspense fallback={<PageLoader />}>
@@ -130,6 +131,7 @@ const Index = () => {
         <Route path="sessions/*" element={renderPage(SessionsPage)} />
         <Route path="reports/*" element={renderPage(ReportsPage)} />
         <Route path="ai/*" element={renderPage(AiPage)} />
+        <Route path="chat/*" element={renderPage(ChatModule)} />
         <Route path="referrals/*" element={renderPage(ReferralsPage)} />
         <Route path="audit-logs/*" element={renderPage(AuditPage)} />
         <Route path="profile" element={renderPage(ProfilePage)} />

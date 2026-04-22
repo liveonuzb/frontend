@@ -1,5 +1,5 @@
 import React from "react";
-import { Outlet, NavLink, useNavigate } from "react-router";
+import { Outlet, NavLink, useLocation, useNavigate } from "react-router";
 import {
   LayoutDashboardIcon,
   UsersIcon,
@@ -12,6 +12,7 @@ import {
   SendIcon,
   ReceiptTextIcon,
   Share2Icon,
+  MessageSquareIcon,
 } from "lucide-react";
 import CoachMobileNav from "./mobile-nav.jsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -43,6 +44,7 @@ import {
 import LayoutHeader from "@/components/layout-header.jsx";
 import { useMobileChromeHidden } from "@/hooks/app/use-mobile-chrome-hidden";
 import { get, map } from "lodash";
+import { cn } from "@/lib/utils";
 
 const mainNav = [
   { to: "/coach/dashboard", label: "Dashboard", icon: LayoutDashboardIcon },
@@ -64,6 +66,7 @@ const mainNav = [
     icon: ReceiptTextIcon,
   },
   { to: "/coach/payments", label: "To'lovlar", icon: WalletCardsIcon },
+  { to: "/coach/chat", label: "Chat", icon: MessageSquareIcon },
   { to: "/coach/referrals", label: "Referral", icon: Share2Icon },
   { to: "/coach/telegram-bot", label: "Telegram bot", icon: SendIcon },
   {
@@ -94,10 +97,12 @@ const NavGroup = ({ label, items }) => (
 );
 
 const Index = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const { setActiveRole, user } = useAuthStore();
   const { openProfile } = useProfileOverlay();
   const mobileChromeHidden = useMobileChromeHidden();
+  const isMobileChatView = location.pathname.startsWith("/coach/chat");
 
   return (
     <SidebarProvider>
@@ -113,54 +118,108 @@ const Index = () => {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset className="min-w-0 overflow-hidden md:overflow-visible">
-        <LayoutHeader
-          mobileChromeHidden={mobileChromeHidden}
-          user={user}
-          onOpenProfile={() => openProfile(PROFILE_OVERVIEW_TAB)}
-          desktopRightContent={
-            <>
-              <NotificationCenter />
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                onClick={() => {
-                  setActiveRole("USER");
-                  navigate("/user");
-                }}
-              >
-                <UserIcon className="size-4" />
-                <span className="hidden md:inline">User</span>
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                className="rounded-full"
-                onClick={() => openProfile(PROFILE_OVERVIEW_TAB)}
-              >
-                <Avatar className="size-8 border">
-                  <AvatarImage
-                    src={get(user, "avatar")}
-                    alt={get(user, "username") || "Coach"}
-                  />
-                  <AvatarFallback className="text-[10px] font-semibold">
-                    {(get(user, "firstName[0]") || "") +
-                      (get(user, "lastName[0]") || "") ||
-                      get(user, "username[0]")?.toUpperCase() ||
-                      "C"}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </>
-          }
-        />
-        <div className="relative mt-16 min-w-0 flex-1 overflow-x-auto p-3 pb-24 md:mt-0 md:overflow-visible md:p-6 md:pb-6">
+        {isMobileChatView ? (
+          <div className="hidden md:block">
+            <LayoutHeader
+              mobileChromeHidden={mobileChromeHidden}
+              user={user}
+              onOpenProfile={() => openProfile(PROFILE_OVERVIEW_TAB)}
+              desktopRightContent={
+                <>
+                  <NotificationCenter />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => {
+                      setActiveRole("USER");
+                      navigate("/user");
+                    }}
+                  >
+                    <UserIcon className="size-4" />
+                    <span className="hidden md:inline">User</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="rounded-full"
+                    onClick={() => openProfile(PROFILE_OVERVIEW_TAB)}
+                  >
+                    <Avatar className="size-8 border">
+                      <AvatarImage
+                        src={get(user, "avatar")}
+                        alt={get(user, "username") || "Coach"}
+                      />
+                      <AvatarFallback className="text-[10px] font-semibold">
+                        {(get(user, "firstName[0]") || "") +
+                          (get(user, "lastName[0]") || "") ||
+                          get(user, "username[0]")?.toUpperCase() ||
+                          "C"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </>
+              }
+            />
+          </div>
+        ) : (
+          <LayoutHeader
+            mobileChromeHidden={mobileChromeHidden}
+            user={user}
+            onOpenProfile={() => openProfile(PROFILE_OVERVIEW_TAB)}
+            desktopRightContent={
+              <>
+                <NotificationCenter />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => {
+                    setActiveRole("USER");
+                    navigate("/user");
+                  }}
+                >
+                  <UserIcon className="size-4" />
+                  <span className="hidden md:inline">User</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="rounded-full"
+                  onClick={() => openProfile(PROFILE_OVERVIEW_TAB)}
+                >
+                  <Avatar className="size-8 border">
+                    <AvatarImage
+                      src={get(user, "avatar")}
+                      alt={get(user, "username") || "Coach"}
+                    />
+                    <AvatarFallback className="text-[10px] font-semibold">
+                      {(get(user, "firstName[0]") || "") +
+                        (get(user, "lastName[0]") || "") ||
+                        get(user, "username[0]")?.toUpperCase() ||
+                        "C"}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </>
+            }
+          />
+        )}
+        <div
+          className={cn(
+            "relative min-w-0 flex-1 overflow-x-auto md:mt-0 md:overflow-visible md:p-6 md:pb-6",
+            isMobileChatView ? "mt-0 p-0 pb-0" : "mt-16 p-3 pb-24",
+          )}
+        >
           <Outlet />
         </div>
-        <div className="md:hidden">
-          <CoachMobileNav hidden={mobileChromeHidden} />
-        </div>
+        {!isMobileChatView ? (
+          <div className="md:hidden">
+            <CoachMobileNav hidden={mobileChromeHidden} />
+          </div>
+        ) : null}
       </SidebarInset>
       <ProfileDrawer />
       <PremiumReminderDrawer />

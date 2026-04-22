@@ -38,6 +38,7 @@ const MealSection = ({
   onTogglePlanned,
   onLogPlanned,
   onImageUpload,
+  onUpdateMeal,
   readOnly = false,
   showAddButton = true,
 }) => {
@@ -186,6 +187,7 @@ const MealSection = ({
                         onTogglePlanned={onTogglePlanned}
                         onLogPlanned={onLogPlanned}
                         onSaveImage={handleSaveImage}
+                        onUpdateLoggedMeal={onUpdateMeal}
                         readOnly={readOnly}
                       />
                     ))}

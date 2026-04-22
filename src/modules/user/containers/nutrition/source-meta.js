@@ -17,6 +17,10 @@ export const SOURCE_META = {
     label: "Kamera",
     tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
   },
+  "saved-meal": {
+    label: "Saqlangan",
+    tone: "bg-orange-500/10 text-orange-700 dark:text-orange-300",
+  },
   "meal-plan": {
     label: "Rejadan",
     tone: "bg-primary/10 text-primary",

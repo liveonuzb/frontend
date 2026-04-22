@@ -131,10 +131,10 @@ const ChatInput = ({
     };
 
     return (
-        <>
+        <div className="sticky bottom-0 z-20 shrink-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/90">
             {/* Dialogs scaled for mobile */}
             {(showBookingDialog || showLibraryDialog) && (
-                <div className="absolute bottom-20 left-4 right-4 bg-background border rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-bottom-2 max-h-[60vh] overflow-y-auto">
+                <div className="absolute inset-x-4 bottom-full mb-3 bg-background border rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-bottom-2 max-h-[60vh] overflow-y-auto">
                     <div className="flex items-center justify-between mb-3 border-b pb-2">
                         <h3 className="font-bold text-xs uppercase tracking-wider">
                             {showBookingDialog ? "Uchrashuv" : "Kutubxona"}
@@ -212,7 +212,7 @@ const ChatInput = ({
 
             {/* AI Suggestions Bar */}
             {!input.trim() && !replyingTo && !editingMsg && (
-                <div className="px-3 py-1.5 flex gap-1.5 overflow-x-auto no-scrollbar bg-background/50 border-t items-center">
+                <div className="px-3 py-1.5 flex gap-1.5 overflow-x-auto no-scrollbar bg-background/50 items-center">
                     {aiSuggestions.map((text, i) => (
                         <button key={`ai-${i}`} onClick={() => onSend(text)} className="whitespace-nowrap px-3 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-[10px] md:text-xs hover:bg-primary/20 transition-all flex items-center gap-1.5 shadow-sm">
                             <SparklesIcon className="size-3" />{text}
@@ -224,7 +224,7 @@ const ChatInput = ({
                 </div>
             )}
 
-            <div className="p-2 md:p-4 border-t bg-background shadow-lg shrink-0">
+            <div className="p-2 md:p-4 shadow-lg shadow-black/5">
                 <div className="flex items-center gap-1.5 max-w-6xl mx-auto">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -286,7 +286,7 @@ const ChatInput = ({
                     )}
                 </div>
             </div>
-        </>
+        </div>
     );
 };
 

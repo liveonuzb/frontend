@@ -4,14 +4,12 @@ import {
   GlobeIcon,
   HeartPulseIcon,
   KeyIcon,
-  PaletteIcon,
   ShieldIcon,
   SparklesIcon,
   UserIcon,
 } from "lucide-react";
 import { UserProfileTab } from "./tabs/user-profile-tab";
 import { GeneralTab } from "./tabs/general-tab";
-import { AppearanceTab } from "./tabs/appearance-tab";
 import { HealthTab } from "./tabs/health-tab";
 import { NotificationsTab } from "./tabs/notifications-tab";
 import { PrivacyTab } from "./tabs/privacy-tab";
@@ -34,13 +32,6 @@ const PROFILE_TAB_DEFINITIONS = [
     descriptionKey: "profile.language.description",
     icon: GlobeIcon,
     component: GeneralTab,
-  },
-  {
-    id: "appearance",
-    labelKey: "profile.tabs.appearance",
-    descriptionKey: "profile.appearance.description",
-    icon: PaletteIcon,
-    component: AppearanceTab,
   },
   {
     id: "health",

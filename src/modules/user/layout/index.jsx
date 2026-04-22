@@ -32,7 +32,7 @@ import NavUser from "@/components/nav-user";
 import NotificationCenter from "@/components/notification-center";
 import KeyboardShortcutsProvider from "@/components/keyboard-shortcuts";
 import GamificationBadges from "@/components/gamification-badges";
-import { useAuthStore } from "@/store";
+import { useAddMealOverlayStore, useAuthStore } from "@/store";
 import MobileNav from "./mobile-nav.jsx";
 import PullToRefresh from "@/components/pull-to-refresh";
 import LayoutHeader from "@/components/layout-header.jsx";
@@ -42,6 +42,7 @@ import PremiumReminderDrawer from "./premium-reminder-drawer.jsx";
 import AddMealOverlay from "./add-meal-overlay.jsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   PROFILE_OVERVIEW_TAB,
   useProfileOverlay,
@@ -96,6 +97,10 @@ const Index = () => {
     preferredSidebarState !== "collapsed",
   );
   const mobileChromeHidden = useMobileChromeHidden();
+  const isMobileChatView = location.pathname.startsWith("/user/chat");
+  const isAddMealOverlayOpen = useAddMealOverlayStore(
+    (state) => state.isActionDrawerOpen,
+  );
 
   React.useEffect(() => {
     setSidebarOpen(preferredSidebarState !== "collapsed");
@@ -199,38 +204,77 @@ const Index = () => {
           </SidebarFooter>
         </Sidebar>
         <SidebarInset className="min-w-0 overflow-hidden md:overflow-visible">
-          <LayoutHeader
-            mobileChromeHidden={mobileChromeHidden}
-            user={user}
-            onOpenProfile={() => openProfile(PROFILE_OVERVIEW_TAB)}
-            desktopRightContent={
-              <>
-                <NotificationCenter />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  className="rounded-full"
-                  onClick={() => openProfile(PROFILE_OVERVIEW_TAB)}
-                >
-                  <Avatar className="size-8 border">
-                    <AvatarImage src={user?.avatar} alt={displayName} />
-                    <AvatarFallback className="text-[10px] font-semibold">
-                      {initials}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </>
-            }
-          />
-          <div className="relative mt-16 min-w-0 flex-1 overflow-x-auto p-3 pb-12 md:mt-0 md:overflow-visible md:p-6 md:pb-3">
-            <PullToRefresh onRefresh={() => window.location.reload()}>
+          {isMobileChatView ? (
+            <div className="hidden md:block">
+              <LayoutHeader
+                mobileChromeHidden={mobileChromeHidden}
+                user={user}
+                onOpenProfile={() => openProfile(PROFILE_OVERVIEW_TAB)}
+                desktopRightContent={
+                  <>
+                    <NotificationCenter />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="rounded-full"
+                      onClick={() => openProfile(PROFILE_OVERVIEW_TAB)}
+                    >
+                      <Avatar className="size-8 border">
+                        <AvatarImage src={user?.avatar} alt={displayName} />
+                        <AvatarFallback className="text-[10px] font-semibold">
+                          {initials}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </>
+                }
+              />
+            </div>
+          ) : (
+            <LayoutHeader
+              mobileChromeHidden={mobileChromeHidden}
+              user={user}
+              onOpenProfile={() => openProfile(PROFILE_OVERVIEW_TAB)}
+              desktopRightContent={
+                <>
+                  <NotificationCenter />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="rounded-full"
+                    onClick={() => openProfile(PROFILE_OVERVIEW_TAB)}
+                  >
+                    <Avatar className="size-8 border">
+                      <AvatarImage src={user?.avatar} alt={displayName} />
+                      <AvatarFallback className="text-[10px] font-semibold">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </>
+              }
+            />
+          )}
+          <div
+            className={cn(
+              "relative min-w-0 flex-1 overflow-x-auto md:mt-0 md:overflow-visible md:p-6 md:pb-3",
+              isMobileChatView ? "mt-0 p-0 pb-0" : "mt-16 p-3 pb-12",
+            )}
+          >
+            <PullToRefresh
+              enabled={!isAddMealOverlayOpen}
+              onRefresh={() => window.location.reload()}
+            >
               <Outlet />
             </PullToRefresh>
           </div>
-          <div className="md:hidden">
-            <MobileNav hidden={mobileChromeHidden} />
-          </div>
+          {!isMobileChatView ? (
+            <div className="md:hidden">
+              <MobileNav hidden={mobileChromeHidden} />
+            </div>
+          ) : null}
         </SidebarInset>
         <ProfileDrawer />
         <AddMealOverlay />

@@ -4,7 +4,6 @@ export const DEFAULT_PROFILE_TAB = "profile";
 const PROFILE_TAB_REGISTRY = [
   { id: "profile" },
   { id: "general" },
-  { id: "appearance" },
   { id: "health" },
   { id: "notifications" },
   { id: "privacy" },

@@ -8,13 +8,12 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer.jsx";
 import { Button } from "@/components/ui/button.jsx";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.jsx";
 import {
   FlipHorizontalIcon,
+  ImageIcon,
+  KeyboardIcon,
   Loader2Icon,
   RefreshCwIcon,
-  ScanLineIcon,
-  XIcon,
   ZapIcon,
   ZapOffIcon,
 } from "lucide-react";
@@ -25,16 +24,24 @@ import { useDailyTrackingActions } from "@/hooks/app/use-daily-tracking";
 import useHealthGoals from "@/hooks/app/use-health-goals";
 import { toast } from "sonner";
 import { NutritionDrawerContent } from "./nutrition-drawer-layout.jsx";
+import { useSavedMealsActions } from "@/hooks/app/use-saved-meals";
 import {
   buildMealPayloadFromDraft,
-  getDraftReviewCount,
+  getDraftImageUrl,
   MealDraftCard,
   MealDraftSummaryCard,
 } from "./meal-draft-review.jsx";
+import {
+  addMealIngredient,
+  removeMealIngredient,
+  updateMealIngredient,
+} from "./meal-ingredients.js";
+import SaveToMyMealsButton from "./save-to-my-meals-button.jsx";
 
-const ScanCameraView = ({ activeTab, onCapture }) => {
+const ScanCameraView = ({ isActive, onCapture, onOpenText }) => {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const [ready, setReady] = useState(false);
   const [flashOn, setFlashOn] = useState(false);
@@ -43,31 +50,48 @@ const ScanCameraView = ({ activeTab, onCapture }) => {
   const [hasMultipleCams, setHasMultipleCams] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
 
-  const startCamera = useCallback(async (facingMode) => {
+  const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
     setReady(false);
     setFlashOn(false);
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: facingMode } },
-      });
-
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.onloadedmetadata = () => setReady(true);
-      }
-
-      const track = stream.getVideoTracks()[0];
-      const caps = track.getCapabilities?.();
-      setHasFlash(!!caps?.torch);
-    } catch {
-      toast.error("Kameraga ruxsat berilmagan yoki kamera topilmadi.");
-    }
+    setHasFlash(false);
   }, []);
 
+  const startCamera = useCallback(
+    async (facingMode) => {
+      stopCamera();
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: facingMode } },
+        });
+
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.onloadedmetadata = () => setReady(true);
+        }
+
+        const track = stream.getVideoTracks()[0];
+        const caps = track.getCapabilities?.();
+        setHasFlash(!!caps?.torch);
+      } catch {
+        toast.error("Kameraga ruxsat berilmagan yoki kamera topilmadi.");
+      }
+    },
+    [stopCamera],
+  );
+
   useEffect(() => {
+    if (!isActive) {
+      stopCamera();
+      return undefined;
+    }
+
     navigator.mediaDevices
       .enumerateDevices?.()
       .then((devices) => {
@@ -79,10 +103,8 @@ const ScanCameraView = ({ activeTab, onCapture }) => {
 
     startCamera("environment");
 
-    return () => {
-      streamRef.current?.getTracks().forEach((track) => track.stop());
-    };
-  }, [startCamera]);
+    return stopCamera;
+  }, [isActive, startCamera, stopCamera]);
 
   const switchCamera = () => {
     const next = facing === "environment" ? "user" : "environment";
@@ -101,7 +123,7 @@ const ScanCameraView = ({ activeTab, onCapture }) => {
     } catch {}
   };
 
-  const handleCapture = () => {
+  const handleCapture = useCallback(() => {
     if (!videoRef.current || !ready || isScanning) return;
 
     setIsScanning(true);
@@ -113,13 +135,45 @@ const ScanCameraView = ({ activeTab, onCapture }) => {
       canvas.width = videoRef.current.videoWidth;
       canvas.height = videoRef.current.videoHeight;
       canvas.getContext("2d").drawImage(videoRef.current, 0, 0);
-      streamRef.current?.getTracks().forEach((track) => track.stop());
+      stopCamera();
       setIsScanning(false);
       onCapture(canvas.toDataURL("image/jpeg", 0.85));
     }, 1500);
-  };
+  }, [isScanning, onCapture, ready, stopCamera]);
 
-  const isBarcode = activeTab === "barcode";
+  const handleGalleryChange = useCallback(
+    (event) => {
+      const file = event.target.files?.[0];
+      event.target.value = "";
+
+      if (!file) return;
+
+      if (!file.type?.startsWith("image/")) {
+        toast.error("Iltimos, rasm faylini tanlang.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = typeof reader.result === "string" ? reader.result : "";
+        if (!dataUrl) {
+          toast.error("Rasmni o'qib bo'lmadi.");
+          return;
+        }
+
+        stopCamera();
+        onCapture(dataUrl);
+      };
+      reader.onerror = () => toast.error("Rasmni o'qib bo'lmadi.");
+      reader.readAsDataURL(file);
+    },
+    [onCapture, stopCamera],
+  );
+
+  const handleOpenText = useCallback(() => {
+    stopCamera();
+    onOpenText?.();
+  }, [onOpenText, stopCamera]);
 
   return (
     <div
@@ -138,12 +192,7 @@ const ScanCameraView = ({ activeTab, onCapture }) => {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-transparent via-transparent to-black opacity-40 pointer-events-none" />
 
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div
-          className={cn(
-            "relative transition-all duration-500",
-            isBarcode ? "h-32 w-72" : "h-64 w-64",
-          )}
-        >
+        <div className="relative h-64 w-64 transition-all duration-500">
           <div className="absolute top-0 left-0 h-8 w-8 rounded-tl-lg border-t-[3px] border-l-[3px] border-primary" />
           <div className="absolute top-0 right-0 h-8 w-8 rounded-tr-lg border-t-[3px] border-r-[3px] border-primary" />
           <div className="absolute bottom-0 left-0 h-8 w-8 rounded-bl-lg border-b-[3px] border-l-[3px] border-primary" />
@@ -162,6 +211,7 @@ const ScanCameraView = ({ activeTab, onCapture }) => {
 
       {hasFlash ? (
         <button
+          type="button"
           onClick={toggleFlash}
           className={cn(
             "absolute top-3 right-3 z-10 flex size-9 items-center justify-center rounded-full backdrop-blur-sm transition-all",
@@ -176,39 +226,69 @@ const ScanCameraView = ({ activeTab, onCapture }) => {
         </button>
       ) : null}
 
+      {hasMultipleCams ? (
+        <button
+          type="button"
+          onClick={switchCamera}
+          className="absolute top-3 left-3 z-10 flex size-9 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-transform active:scale-90"
+          aria-label="Kamerani almashtirish"
+        >
+          <FlipHorizontalIcon className="size-5" />
+        </button>
+      ) : null}
+
       <div className="absolute right-0 bottom-28 left-0 z-10 text-center">
         <p className="inline-block rounded-xl border border-white/10 bg-black/60 px-4 py-2 text-xs font-bold text-white/90 shadow-xl backdrop-blur-xl">
-          {isBarcode
-            ? "Shtrix-kodni ramka ichiga joylashtiring"
-            : "Ovqatni ramka ichiga joylashtiring"}
+          Ovqatni ramka ichiga joylashtiring
         </p>
       </div>
 
-      <div className="absolute right-0 bottom-4 left-0 flex items-center justify-center gap-10">
-        {hasMultipleCams ? (
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
+
+      <div className="absolute right-0 bottom-4 left-0 z-10 grid grid-cols-[1fr_auto_1fr] items-end gap-5 px-7">
+        <div className="flex justify-center">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleGalleryChange}
+          />
           <button
-            onClick={switchCamera}
-            className="flex size-11 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-transform active:scale-90"
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isScanning}
+            className="flex min-w-16 flex-col items-center gap-1.5 text-white transition-transform active:scale-95 disabled:opacity-50"
           >
-            <FlipHorizontalIcon className="size-5" />
+            <span className="flex size-10 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm">
+              <ImageIcon className="size-5" />
+            </span>
+            <span className="text-xs font-bold tracking-wide">Gallery</span>
           </button>
-        ) : (
-          <div className="size-11" />
-        )}
+        </div>
 
         <button
+          type="button"
           onClick={handleCapture}
           disabled={!ready || isScanning}
           className="flex size-16 items-center justify-center rounded-full border-[4px] border-white/60 bg-white/20 backdrop-blur-sm transition-transform active:scale-95 disabled:opacity-40"
         >
-          {isBarcode ? (
-            <ScanLineIcon className="size-7 text-white" />
-          ) : (
-            <div className="size-11 rounded-full bg-white" />
-          )}
+          <div className="size-11 rounded-full bg-white" />
         </button>
 
-        <div className="size-11" />
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={handleOpenText}
+            disabled={isScanning}
+            className="flex min-w-16 flex-col items-center gap-1.5 text-white transition-transform active:scale-95 disabled:opacity-50"
+          >
+            <span className="flex size-10 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm">
+              <KeyboardIcon className="size-5" />
+            </span>
+            <span className="text-xs font-bold tracking-wide">Type</span>
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -236,14 +316,12 @@ const ResultView = ({
   scanError,
   goals,
   onRetake,
-  onPortionChange,
+  onIngredientUpdate,
+  onIngredientRemove,
+  onIngredientAdd,
   onRemove,
   onConfirm,
-  onSave,
-  isSaving,
 }) => {
-  const reviewItemsCount = getDraftReviewCount(items);
-
   return (
     <div className="flex flex-col gap-4">
       {imageUrl ? (
@@ -257,6 +335,7 @@ const ResultView = ({
             className="h-full max-h-[320px] w-full object-cover"
           />
           <button
+            type="button"
             onClick={onRetake}
             className="absolute top-3 right-3 flex size-9 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm"
           >
@@ -274,15 +353,7 @@ const ResultView = ({
             scanError ||
             "Rasmni qayta olib ko'ring yoki boshqa burchakdan oling."
           }
-          filledDescription="AI draftini tekshirib, keyin tasdiqlang."
         />
-
-        {reviewItemsCount > 0 ? (
-          <div className="rounded-3xl border border-amber-500/20 bg-amber-500/5 px-4 py-4 text-sm text-amber-700 dark:text-amber-300">
-            Ba&apos;zi ingredientlar taxminiy. Tasdiqlashdan oldin draftni bir
-            ko&apos;zdan kechiring.
-          </div>
-        ) : null}
       </div>
 
       {items.length > 0 ? (
@@ -291,7 +362,15 @@ const ResultView = ({
             <MealDraftCard
               key={item.id}
               item={item}
-              onPortionChange={(value) => onPortionChange(item.id, value)}
+              onIngredientUpdate={(ingredientId, ingredient) =>
+                onIngredientUpdate(item.id, ingredientId, ingredient)
+              }
+              onIngredientRemove={(ingredientId) =>
+                onIngredientRemove(item.id, ingredientId)
+              }
+              onIngredientAdd={(ingredient) =>
+                onIngredientAdd(item.id, ingredient)
+              }
               onRemove={() => onRemove(item.id)}
               onConfirm={() => onConfirm(item.id)}
             />
@@ -302,38 +381,27 @@ const ResultView = ({
           Bu rasm uchun AI draft tayyorlab bo&apos;lmadi.
         </div>
       )}
-
-      <DrawerFooter className="px-0 pb-0">
-        <div className="grid w-full gap-3">
-          <Button variant="outline" onClick={onRetake}>
-            Qayta olish
-          </Button>
-          <Button onClick={onSave} disabled={items.length === 0 || isSaving}>
-            {isSaving ? (
-              <>
-                <Loader2Icon className="mr-2 size-4 animate-spin" />
-                Saqlanmoqda
-              </>
-            ) : (
-              "Tasdiqlash va qo'shish"
-            )}
-          </Button>
-        </div>
-      </DrawerFooter>
     </div>
   );
 };
 
-export default function CameraDrawer({ dateKey, mealType, open, onClose }) {
+export default function CameraDrawer({
+  dateKey,
+  mealType,
+  open,
+  onClose,
+  onOpenText,
+}) {
   const [view, setView] = useState("camera");
-  const [activeTab, setActiveTab] = useState("barcode");
   const [scannedItems, setScannedItems] = useState([]);
   const [capturedImage, setCapturedImage] = useState(null);
   const [capturedImageUrl, setCapturedImageUrl] = useState(null);
   const [scanError, setScanError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveToMyMeals, setSaveToMyMeals] = useState(false);
 
   const { addMeal: addMealAction } = useDailyTrackingActions();
+  const { createSavedMeal } = useSavedMealsActions();
   const {
     analyzeMealImageDraft,
     uploadMealCapture,
@@ -351,6 +419,13 @@ export default function CameraDrawer({ dateKey, mealType, open, onClose }) {
     setCapturedImageUrl(null);
     setScanError(null);
     setIsSaving(false);
+    setSaveToMyMeals(false);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) {
+      setView("camera");
+    }
   }, [open]);
 
   const handleCapture = async (dataUrl) => {
@@ -365,7 +440,6 @@ export default function CameraDrawer({ dateKey, mealType, open, onClose }) {
 
       const response = await analyzeMealImageDraft({
         imageUrl: uploadedImageUrl,
-        mode: activeTab,
       });
       const items = Array.isArray(response?.items) ? response.items : [];
 
@@ -391,9 +465,49 @@ export default function CameraDrawer({ dateKey, mealType, open, onClose }) {
     setView("camera");
   }, []);
 
-  const handlePortionChange = useCallback((draftId, grams) => {
+  const handleIngredientUpdate = useCallback(
+    (draftId, ingredientId, ingredient) => {
+      setScannedItems((current) =>
+        current.map((item) =>
+          item.id === draftId
+            ? {
+                ...item,
+                ingredients: updateMealIngredient(
+                  item.ingredients,
+                  ingredientId,
+                  ingredient,
+                ),
+              }
+            : item,
+        ),
+      );
+    },
+    [],
+  );
+
+  const handleIngredientRemove = useCallback((draftId, ingredientId) => {
     setScannedItems((current) =>
-      current.map((item) => (item.id === draftId ? { ...item, grams } : item)),
+      current.map((item) =>
+        item.id === draftId
+          ? {
+              ...item,
+              ingredients: removeMealIngredient(item.ingredients, ingredientId),
+            }
+          : item,
+      ),
+    );
+  }, []);
+
+  const handleIngredientAdd = useCallback((draftId, ingredient) => {
+    setScannedItems((current) =>
+      current.map((item) =>
+        item.id === draftId
+          ? {
+              ...item,
+              ingredients: addMealIngredient(item.ingredients, ingredient),
+            }
+          : item,
+      ),
     );
   }, []);
 
@@ -427,10 +541,22 @@ export default function CameraDrawer({ dateKey, mealType, open, onClose }) {
 
     try {
       for (const item of scannedItems) {
+        let savedMealId = null;
+        if (saveToMyMeals) {
+          const savedMeal = await createSavedMeal({
+            name: item.title || "Ovqat",
+            source: "camera",
+            imageUrl: capturedImageUrl || getDraftImageUrl(item),
+            ingredients: item.ingredients,
+          });
+          savedMealId = savedMeal.id;
+        }
+
         await addMealAction(dateKey, mealType, {
           ...buildMealPayloadFromDraft(item, {
-            source: activeTab === "barcode" ? "camera-barcode" : "camera",
+            source: "camera",
             image: capturedImageUrl,
+            savedMealId,
           }),
           addedFromPlan: false,
         });
@@ -456,21 +582,27 @@ export default function CameraDrawer({ dateKey, mealType, open, onClose }) {
       direction="bottom"
     >
       <NutritionDrawerContent size="sm">
-        <DrawerHeader className="shrink-0 border-b border-border/40 px-5 pt-5 pb-3">
-          <div className="flex items-center justify-between gap-3">
+        <DrawerHeader className="shrink-0 border-b border-border/40 px-5 pt-5 pb-3 text-center">
+          <div className="flex w-full flex-col items-center gap-1">
             {view === "result" ? (
-              <div className="min-w-0">
-                <DrawerTitle className="truncate text-base font-semibold">
-                  AI topgan ovqatlar
-                </DrawerTitle>
-                <p className="text-xs text-muted-foreground">
-                  {scannedItems.length > 0
-                    ? `${scannedItems.length} ta natija · Porsiyalarni tekshiring`
-                    : "Natijani tekshiring yoki qayta rasm oling"}
-                </p>
+              <div className="flex w-full items-start justify-between gap-3 text-left">
+                <div className="min-w-0">
+                  <DrawerTitle className="truncate text-base font-semibold">
+                    AI topgan ovqatlar
+                  </DrawerTitle>
+                  <DrawerDescription className="text-xs text-muted-foreground">
+                    {scannedItems.length > 0
+                      ? `${scannedItems.length} ta natija · Ingredientlarni tekshiring`
+                      : "Natijani tekshiring yoki qayta rasm oling"}
+                  </DrawerDescription>
+                </div>
+                <SaveToMyMealsButton
+                  checked={saveToMyMeals}
+                  onCheckedChange={setSaveToMyMeals}
+                />
               </div>
             ) : view === "analyzing" ? (
-              <div className="min-w-0">
+              <div className="min-w-0 text-center">
                 <DrawerTitle className="text-base font-semibold">
                   AI analiz qilmoqda
                 </DrawerTitle>
@@ -479,43 +611,16 @@ export default function CameraDrawer({ dateKey, mealType, open, onClose }) {
                 </DrawerDescription>
               </div>
             ) : (
-              <DrawerTitle className="text-base font-semibold">
-                Kamera
-              </DrawerTitle>
-            )}
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="shrink-0 rounded-full bg-muted/50 hover:bg-muted"
-              onClick={onClose}
-            >
-              <XIcon className="size-4" />
-            </Button>
-          </div>
-
-          {view === "camera" ? (
-            <Tabs
-              value={activeTab}
-              onValueChange={setActiveTab}
-              className="mt-3 w-full"
-            >
-              <TabsList className="grid h-10 w-full grid-cols-2 rounded-xl bg-muted/80 p-1">
-                <TabsTrigger
-                  value="barcode"
-                  className="rounded-lg text-xs font-semibold data-[state=active]:bg-background"
-                >
-                  Shtrix-kod
-                </TabsTrigger>
-                <TabsTrigger
-                  value="ai"
-                  className="rounded-lg text-xs font-semibold data-[state=active]:bg-background"
-                >
+              <>
+                <DrawerTitle className="text-base font-semibold">
                   Ovqatni aniqlash
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          ) : null}
+                </DrawerTitle>
+                <DrawerDescription>
+                  Ovqatni kadr ichiga joylashtiring va AI uchun rasm oling.
+                </DrawerDescription>
+              </>
+            )}
+          </div>
         </DrawerHeader>
 
         <DrawerBody className="px-5 pt-4 pb-8">
@@ -529,8 +634,9 @@ export default function CameraDrawer({ dateKey, mealType, open, onClose }) {
                 transition={{ duration: 0.2 }}
               >
                 <ScanCameraView
-                  activeTab={activeTab}
+                  isActive={open && view === "camera"}
                   onCapture={handleCapture}
+                  onOpenText={onOpenText}
                 />
               </motion.div>
             ) : null}
@@ -561,18 +667,45 @@ export default function CameraDrawer({ dateKey, mealType, open, onClose }) {
                   scanError={scanError}
                   goals={goals}
                   onRetake={handleRetake}
-                  onPortionChange={handlePortionChange}
+                  onIngredientUpdate={handleIngredientUpdate}
+                  onIngredientRemove={handleIngredientRemove}
+                  onIngredientAdd={handleIngredientAdd}
                   onRemove={handleRemoveItem}
                   onConfirm={handleConfirmItem}
-                  onSave={handleSave}
-                  isSaving={
-                    isSaving || isAnalyzingDraftImage || isUploadingCapture
-                  }
                 />
               </motion.div>
             ) : null}
           </AnimatePresence>
         </DrawerBody>
+
+        {view === "result" ? (
+          <DrawerFooter>
+            <div className="grid w-full gap-3">
+              <Button type="button" variant="outline" onClick={handleRetake}>
+                Qayta olish
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSave}
+                disabled={
+                  scannedItems.length === 0 ||
+                  isSaving ||
+                  isAnalyzingDraftImage ||
+                  isUploadingCapture
+                }
+              >
+                {isSaving || isAnalyzingDraftImage || isUploadingCapture ? (
+                  <>
+                    <Loader2Icon className="mr-2 size-4 animate-spin" />
+                    Saqlanmoqda
+                  </>
+                ) : (
+                  "Tasdiqlash va qo'shish"
+                )}
+              </Button>
+            </div>
+          </DrawerFooter>
+        ) : null}
       </NutritionDrawerContent>
     </Drawer>
   );

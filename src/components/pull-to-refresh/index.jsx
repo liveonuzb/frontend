@@ -3,13 +3,16 @@ import { RefreshCwIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import usePullToRefresh from "@/hooks/utils/use-pull-to-refresh";
 
-const PullToRefresh = ({ children, onRefresh }) => {
-  const { pullDistance, refreshing, progress } = usePullToRefresh(onRefresh);
+const PullToRefresh = ({ children, onRefresh, enabled = true }) => {
+  const { pullDistance, refreshing, progress } = usePullToRefresh(
+    enabled ? onRefresh : null,
+    enabled,
+  );
 
   // Only show on mobile (touch devices)
   const isTouchDevice = "ontouchstart" in window;
 
-  if (!isTouchDevice) return children;
+  if (!isTouchDevice || !enabled) return children;
 
   return (
     <div className="relative">

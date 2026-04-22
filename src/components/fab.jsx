@@ -1,5 +1,6 @@
 import { some, reduce, values, isArray } from "lodash";
 import React from "react";
+import { createPortal } from "react-dom";
 import {
   CameraIcon,
   GlassWaterIcon,
@@ -26,8 +27,88 @@ const FAB_VISIBLE_PATHS = [
   "/user/nutrition",
   "/user/workout",
   "/user/challenges",
-  "/user/chat",
+  "/user/measurement",
 ];
+
+const FabMenuPanel = ({
+  latestWeight,
+  waterAmount,
+  remainingCalories,
+  onNavigateMeasurements,
+  onAddWater,
+  onFoodAction,
+}) => (
+  <div className="absolute bottom-full right-0 z-[71] mb-3 w-[320px] max-w-[calc(100vw-1.5rem)] animate-in rounded-[2rem] border bg-background p-5 text-foreground shadow-2xl fade-in slide-in-from-bottom-2 duration-200">
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold">Weight</p>
+          <p className="text-2xl font-bold">
+            {latestWeight > 0 ? `${latestWeight} kg` : "—"}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onNavigateMeasurements}
+          className="flex size-16 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted/80"
+        >
+          <ScaleIcon className="size-7" />
+        </button>
+      </div>
+
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold">Water</p>
+          <p className="text-2xl font-bold">{waterAmount} ml</p>
+        </div>
+        <button
+          type="button"
+          onClick={onAddWater}
+          className="flex size-16 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted/80"
+        >
+          <GlassWaterIcon className="size-7" />
+        </button>
+      </div>
+
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold">Food</p>
+          <p className="text-2xl font-bold">{remainingCalories} kcal left</p>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => onFoodAction("text")}
+            className="flex size-14 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted/80"
+          >
+            <KeyboardIcon className="size-6" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onFoodAction("manual")}
+            className="flex size-14 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted/80"
+          >
+            <SearchIcon className="size-6" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onFoodAction("camera")}
+            className="flex size-14 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted/80"
+          >
+            <CameraIcon className="size-6" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onFoodAction("audio")}
+            className="flex size-14 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted/80"
+          >
+            <MicIcon className="size-6" />
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 const FloatingActionButton = () => {
   const [isOpen, setIsOpen] = React.useState(false);
@@ -76,13 +157,28 @@ const FloatingActionButton = () => {
     (goals?.calories || 0) - consumedCalories,
   );
 
-  const closeFab = () => setIsOpen(false);
+  const closeFab = React.useCallback(() => setIsOpen(false), []);
 
   React.useEffect(() => {
     if (!isVisible && isOpen) {
       setIsOpen(false);
     }
   }, [isOpen, isVisible]);
+
+  React.useEffect(() => {
+    if (!isOpen) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        closeFab();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [closeFab, isOpen]);
 
   if (!isVisible) {
     return null;
@@ -111,105 +207,55 @@ const FloatingActionButton = () => {
     closeFab();
   };
 
-  return (
-    <>
-      <div
-        className={cn(
-          "fixed inset-0 z-40 bg-background/70 backdrop-blur-sm transition-opacity md:hidden",
-          isOpen
-            ? "opacity-100 pointer-events-auto"
-            : "opacity-0 pointer-events-none",
-        )}
-        onClick={closeFab}
-      />
+  const toggleButton = (
+    <button
+      type="button"
+      aria-label={isOpen ? "Close quick actions" : "Open quick actions"}
+      className={cn(
+        "flex size-16 items-center justify-center rounded-full bg-foreground text-background shadow-2xl transition-transform duration-300 active:scale-95",
+        isOpen ? "rotate-45" : "rotate-0",
+      )}
+      onClick={() => setIsOpen((value) => !value)}
+    >
+      <PlusIcon className="size-7" />
+    </button>
+  );
 
-      <div className="relative">
-        {isOpen && (
-          <div className="absolute bottom-full right-0 mb-3 w-[320px] max-w-[calc(100vw-1.5rem)] rounded-[2rem] border bg-background p-5 text-foreground shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
-            <div className="space-y-5">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold">Weight</p>
-                  <p className="text-2xl font-bold">
-                    {latestWeight > 0 ? `${latestWeight} kg` : "—"}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleNavigateMeasurements}
-                  className="flex size-16 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted/80"
-                >
-                  <ScaleIcon className="size-7" />
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold">Water</p>
-                  <p className="text-2xl font-bold">{waterAmount} ml</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleAddWater}
-                  className="flex size-16 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted/80"
-                >
-                  <GlassWaterIcon className="size-7" />
-                </button>
-              </div>
-
-              <div className="flex items-end justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold">Food</p>
-                  <p className="text-2xl font-bold">
-                    {remainingCalories} kcal left
-                  </p>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => handleFoodAction("text")}
-                    className="flex size-14 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted/80"
-                  >
-                    <KeyboardIcon className="size-6" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleFoodAction("manual")}
-                    className="flex size-14 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted/80"
-                  >
-                    <SearchIcon className="size-6" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleFoodAction("camera")}
-                    className="flex size-14 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted/80"
-                  >
-                    <CameraIcon className="size-6" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleFoodAction("audio")}
-                    className="flex size-14 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted/80"
-                  >
-                    <MicIcon className="size-6" />
-                  </button>
-                </div>
+  const portalContent =
+    isOpen && typeof document !== "undefined"
+      ? createPortal(
+          <>
+            <div
+              data-testid="fab-overlay"
+              className="fixed inset-0 z-[70] bg-background/70 backdrop-blur-sm md:hidden"
+              onClick={closeFab}
+            />
+            <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[71] flex justify-end px-8 pb-8 pb-safe-or-4 md:hidden">
+              <div className="relative pointer-events-auto">
+                <FabMenuPanel
+                  latestWeight={latestWeight}
+                  waterAmount={waterAmount}
+                  remainingCalories={remainingCalories}
+                  onNavigateMeasurements={handleNavigateMeasurements}
+                  onAddWater={handleAddWater}
+                  onFoodAction={handleFoodAction}
+                />
+                {toggleButton}
               </div>
             </div>
-          </div>
-        )}
+          </>,
+          document.body,
+        )
+      : null;
 
-        <button
-          type="button"
-          className={cn(
-            "flex size-14 items-center justify-center rounded-full bg-foreground text-background shadow-2xl transition-transform duration-300 active:scale-95",
-            isOpen ? "rotate-45" : "rotate-0",
-          )}
-          onClick={() => setIsOpen((value) => !value)}
-        >
-          <PlusIcon className="size-7" />
-        </button>
-      </div>
+  return (
+    <>
+      {isOpen ? (
+        <div className="size-16 shrink-0" aria-hidden="true" />
+      ) : (
+        toggleButton
+      )}
+      {portalContent}
     </>
   );
 };

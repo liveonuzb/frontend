@@ -5,23 +5,22 @@ import { describe, expect, it } from "vitest";
 import CoachMobileNav from "./mobile-nav.jsx";
 
 describe("CoachMobileNav", () => {
-  it("shows only the minimal CRM sections", () => {
+  it("shows only the minimal coach sections", () => {
     render(
       <MemoryRouter initialEntries={["/coach/dashboard"]}>
         <CoachMobileNav />
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
-    expect(screen.getByText("Mijozlar")).toBeInTheDocument();
-    expect(screen.getByText("Ovqatlanish")).toBeInTheDocument();
-    expect(screen.getByText("Workout")).toBeInTheDocument();
-    expect(screen.getByText("To'lovlar")).toBeInTheDocument();
-    expect(screen.getByText("Telegram")).toBeInTheDocument();
+    expect(screen.getByTitle("Dashboard")).toBeInTheDocument();
+    expect(screen.getByTitle("Mijozlar")).toBeInTheDocument();
+    expect(screen.getByTitle("Ovqatlanish")).toBeInTheDocument();
+    expect(screen.getByTitle("Workout")).toBeInTheDocument();
+    expect(screen.getByTitle("Chat")).toBeInTheDocument();
 
-    expect(screen.queryByText("Kurslar")).not.toBeInTheDocument();
-    expect(screen.queryByText("Paketlar")).not.toBeInTheDocument();
-    expect(screen.queryByText("Do'kon")).not.toBeInTheDocument();
-    expect(screen.queryByText("Chat")).not.toBeInTheDocument();
+    expect(screen.queryByTitle("Kurslar")).not.toBeInTheDocument();
+    expect(screen.queryByTitle("To'lovlar")).not.toBeInTheDocument();
+    expect(screen.queryByTitle("TG bot")).not.toBeInTheDocument();
+    expect(screen.queryByTitle("Guruhlar")).not.toBeInTheDocument();
   });
 });

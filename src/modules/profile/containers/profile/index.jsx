@@ -16,8 +16,6 @@ import {
   CheckIcon,
   ChevronRightIcon,
   CrownIcon,
-  MonitorIcon,
-  MoonStarIcon,
   PencilIcon,
   ZapIcon,
   CheckCircle2Icon,
@@ -57,7 +55,6 @@ import { ROLE_CONFIG } from "@/components/role-switcher";
 import useProfileSettings, {
   getRequestErrorMessage,
 } from "@/hooks/app/use-profile-settings";
-import { applyTheme } from "@/lib/user-preferences";
 import AccountDangerZone from "./account-danger-zone";
 import { NotificationSettingsDrawer } from "./tabs/notifications-tab";
 import { getProfileTabs } from "./profile-tabs";
@@ -68,23 +65,8 @@ const FALLBACK_LANGUAGES = [
   { code: "en", name: "English", flag: "🇺🇸" },
 ];
 
-const THEME_OVERVIEW_OPTIONS = [
-  {
-    value: "light",
-    label: "Yorug'",
-    description: "Kunduzgi ishlash uchun toza ko'rinish.",
-    icon: MonitorIcon,
-  },
-  {
-    value: "dark",
-    label: "Qorong'u",
-    description: "Kechki payt va past yorug'lik uchun qulay.",
-    icon: MoonStarIcon,
-  },
-];
-
 const SETTINGS_GROUPS = [
-  ["general", "appearance", "health", "notifications"],
+  ["general", "health", "notifications"],
   ["privacy", "security"],
   ["premium", "referral"],
 ];
@@ -118,14 +100,6 @@ const getLanguageLabel = (languageCode) => {
   return "O'zbek";
 };
 
-const getThemeLabel = (theme, t) => {
-  if (theme === "dark") {
-    return t("profile.appearance.theme.dark");
-  }
-
-  return t("profile.appearance.theme.light");
-};
-
 const getPremiumLabel = (user, t) => {
   if (user?.premium?.status === "active") {
     return t("profile.premium.status.active");
@@ -153,17 +127,20 @@ const getCoachConnectionSummary = (user) => {
   };
 };
 
-const getNotificationSettingsCount = (settings = {}) =>
-  filter(
+const getNotificationSettingsCount = (settings) => {
+  const source = settings ?? {};
+
+  return filter(
     values({
-      emailMarketing: settings.emailMarketing ?? true,
-      emailWorkout: settings.emailWorkout ?? true,
-      pushMeal: settings.pushMeal ?? true,
-      pushWater: settings.pushWater ?? false,
-      pushProgress: settings.pushProgress ?? true,
+      emailMarketing: source.emailMarketing ?? true,
+      emailWorkout: source.emailWorkout ?? true,
+      pushMeal: source.pushMeal ?? true,
+      pushWater: source.pushWater ?? false,
+      pushProgress: source.pushProgress ?? true,
     }),
     Boolean,
   ).length;
+};
 
 const formatConnectedDate = (value, t) => {
   if (!value) {
@@ -359,8 +336,6 @@ const getOverviewValue = (tabId, user, completion, t) => {
   switch (tabId) {
     case "general":
       return getLanguageLabel(user?.settings?.language);
-    case "appearance":
-      return getThemeLabel(get(user, "settings.theme"), t);
     case "premium":
       return user?.premium?.status === "active"
         ? t("profile.premium.status.active")
@@ -458,102 +433,6 @@ const InlineLangItem = ({
   );
 };
 
-const InlineThemeItem = ({ tab, currentTheme }) => {
-  const { t } = useTranslation();
-  const [open, setOpen] = React.useState(false);
-  const { saveGeneralSettings, isSavingGeneral } = useProfileSettings();
-
-  const handleThemeSelect = React.useCallback(
-    async (nextTheme) => {
-      try {
-        applyTheme(nextTheme);
-        await saveGeneralSettings({ theme: nextTheme });
-        toast.success(t("profile.appearance.saveSuccess")); // or specific
-        setOpen(false);
-      } catch (error) {
-        applyTheme(currentTheme);
-        toast.error(
-          getRequestErrorMessage(error, t("profile.appearance.saveError")),
-        );
-      }
-    },
-    [currentTheme, saveGeneralSettings, t],
-  );
-
-  return (
-    <>
-      <SettingsItem
-        icon={tab.icon}
-        label={tab.label}
-        value={getThemeLabel(currentTheme, t)}
-        onClick={() => setOpen(true)}
-      />
-      <Drawer open={open} onOpenChange={setOpen} direction="bottom">
-        <DrawerContent>
-          <DrawerHeader className="text-left">
-            <DrawerTitle>{t("profile.appearance.drawerTitle")}</DrawerTitle>
-            <DrawerDescription>
-              {t("profile.appearance.drawerDescription")}
-            </DrawerDescription>
-          </DrawerHeader>
-          <DrawerBody className="space-y-2">
-            {map(THEME_OVERVIEW_OPTIONS, (option) => {
-              const Icon = option.icon;
-              const optionValue = get(option, "value");
-              const isSelected = optionValue === currentTheme;
-
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  disabled={isSavingGeneral}
-                  className="block w-full text-left disabled:opacity-60"
-                  onClick={() => void handleThemeSelect(optionValue)}
-                >
-                  <div
-                    className={cn(
-                      "flex items-center justify-between gap-3 rounded-2xl border p-4",
-                      isSelected && "border-primary bg-primary/5",
-                    )}
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div
-                        className={cn(
-                          "flex size-10 shrink-0 items-center justify-center rounded-2xl",
-                          isSelected
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-foreground",
-                        )}
-                      >
-                        <Icon className="size-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium">
-                          {optionValue === "light"
-                            ? t("profile.appearance.theme.light")
-                            : t("profile.appearance.theme.dark")}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {optionValue === "light"
-                            ? t("profile.appearance.theme.lightDesc")
-                            : t("profile.appearance.theme.darkDesc")}
-                        </p>
-                      </div>
-                    </div>
-                    {isSelected ? (
-                      <CheckIcon className="size-4 text-primary" />
-                    ) : null}
-                  </div>
-                </button>
-              );
-            })}
-          </DrawerBody>
-        </DrawerContent>
-      </Drawer>
-    </>
-  );
-};
-
 const SettingsGroupCard = ({
   items,
   activeTab,
@@ -605,7 +484,7 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
   );
 
   const { languages } = useAppLanguages();
-  const settings = useAuthStore((state) => state.user?.settings);
+  const settings = useAuthStore((state) => state.user?.settings ?? {});
   const roles = useAuthStore((state) => state.roles);
   const activeRole = useAuthStore((state) => state.activeRole);
   const setActiveRole = useAuthStore((state) => state.setActiveRole);
@@ -859,17 +738,6 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
                   currentLang={currentLang}
                   resolvedLang={resolvedLang}
                   setCurrentLanguage={setCurrentLanguage}
-                />
-              );
-            }
-            if (tabId === "appearance") {
-              const tabs = getProfileTabs(t);
-              const tab = find(tabs, (t) => t.id === "appearance");
-              return (
-                <InlineThemeItem
-                  key="theme-picker"
-                  tab={tab}
-                  currentTheme={get(settings, "theme", "light")}
                 />
               );
             }

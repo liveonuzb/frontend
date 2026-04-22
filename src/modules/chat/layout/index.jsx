@@ -1,13 +1,12 @@
 import { map, filter, find } from "lodash";
 import React from "react";
-import { Outlet, useLocation, useNavigate, useParams } from "react-router";
+import { Outlet, useNavigate, useParams } from "react-router";
 import PageTransition from "@/components/page-transition";
 import { useAuthStore, useBreadcrumbStore, useChatStore } from "@/store";
 import ChatSidebar from "@/modules/chat/components/ChatSidebar";
 import { getChatBasePath, getChatPath } from "@/lib/app-paths.js";
 
 const ChatLayout = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const { chatId: activeChat } = useParams();
   const { setBreadcrumbs } = useBreadcrumbStore();
@@ -23,15 +22,6 @@ const ChatLayout = () => {
   } = useChatStore();
 
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [preferredTab, setPreferredTab] = React.useState(
-    location.state?.openTab || "all",
-  );
-
-  React.useEffect(() => {
-    if (location.state?.openTab) {
-      setPreferredTab(location.state.openTab);
-    }
-  }, [location.state]);
 
   React.useEffect(() => {
     setBreadcrumbs([
@@ -95,7 +85,6 @@ const ChatLayout = () => {
         <ChatSidebar
           showMobileChat={Boolean(activeChat)}
           isCoach={isCoach}
-          initialTab={preferredTab}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           contacts={allChats}

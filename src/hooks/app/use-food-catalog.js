@@ -342,6 +342,7 @@ export const useFoodScan = () => {
   const textMutation = usePostQuery();
   const draftImageMutation = usePostQuery();
   const draftTextMutation = usePostQuery();
+  const ingredientMutation = usePostQuery();
   const uploadMutation = usePostFileQuery({});
   const audioMutation = usePostQuery();
 
@@ -373,12 +374,12 @@ export const useFoodScan = () => {
   );
 
   const scanMealImage = React.useCallback(
-    async ({ imageDataUrl, imageUrl, mode = "ai" }) => {
+    async ({ imageDataUrl, imageUrl }) => {
       const response = await postMutation.mutateAsync({
         url: "/foods/scan-meal",
         attributes: {
           ...imagePayload({ imageDataUrl, imageUrl }),
-          mode,
+          mode: "ai",
         },
       });
       const payload = getResponsePayload(response);
@@ -386,6 +387,38 @@ export const useFoodScan = () => {
       return normalizeScanItems(get(payload, "items", []));
     },
     [normalizeScanItems, postMutation],
+  );
+
+  const normalizeDraftIngredient = React.useCallback(
+    (ingredient = {}, fallbackId = "ingredient-1") => {
+      const grams = toNumber(
+        get(ingredient, "grams"),
+        toNumber(get(ingredient, "estimatedGrams"), 100),
+      );
+      const baseGrams = toNumber(
+        get(ingredient, "baseGrams"),
+        toNumber(get(ingredient, "estimatedGrams"), grams),
+      );
+
+      return {
+        id: get(ingredient, "id", fallbackId),
+        name: String(get(ingredient, "name", "Ingredient")).trim(),
+        grams,
+        baseGrams: baseGrams || grams,
+        estimatedGrams: toNumber(get(ingredient, "estimatedGrams"), grams),
+        estimatedQuantity:
+          get(ingredient, "estimatedQuantity") == null
+            ? null
+            : toNumber(get(ingredient, "estimatedQuantity"), null),
+        estimatedUnit: get(ingredient, "estimatedUnit", null),
+        nutritionSource: get(ingredient, "nutritionSource", null),
+        matchStatus: get(ingredient, "matchStatus", "unmatched"),
+        reviewNeeded: Boolean(get(ingredient, "reviewNeeded")),
+        matchedFood: get(ingredient, "matchedFood", null),
+        nutrition: get(ingredient, "nutrition", null),
+      };
+    },
+    [],
   );
 
   const normalizeDraftItems = React.useCallback(
@@ -409,37 +442,25 @@ export const useFoodScan = () => {
           ingredients: (Array.isArray(get(item, "ingredients"))
             ? get(item, "ingredients")
             : []
-          ).map((ingredient, ingredientIndex) => ({
-            id: get(
+          ).map((ingredient, ingredientIndex) =>
+            normalizeDraftIngredient(
               ingredient,
-              "id",
               `${get(item, "id", `draft-${index + 1}`)}-ingredient-${ingredientIndex + 1}`,
             ),
-            name: String(get(ingredient, "name", "Ingredient")).trim(),
-            estimatedGrams: toNumber(get(ingredient, "estimatedGrams"), 0),
-            estimatedQuantity:
-              get(ingredient, "estimatedQuantity") == null
-                ? null
-                : toNumber(get(ingredient, "estimatedQuantity"), null),
-            estimatedUnit: get(ingredient, "estimatedUnit", null),
-            matchStatus: get(ingredient, "matchStatus", "unmatched"),
-            reviewNeeded: Boolean(get(ingredient, "reviewNeeded")),
-            matchedFood: get(ingredient, "matchedFood", null),
-            nutrition: get(ingredient, "nutrition", null),
-          })),
+          ),
         }))
         .filter((item) => item.title),
-    [],
+    [normalizeDraftIngredient],
   );
 
   return {
     scanMealImage,
-    analyzeMealImageDraft: async ({ imageDataUrl, imageUrl, mode = "ai" }) => {
+    analyzeMealImageDraft: async ({ imageDataUrl, imageUrl }) => {
       const response = await draftImageMutation.mutateAsync({
         url: "/foods/analyze-meal-image",
         attributes: {
           ...imagePayload({ imageDataUrl, imageUrl }),
-          mode,
+          mode: "ai",
         },
       });
       const payload = getResponsePayload(response);
@@ -475,6 +496,21 @@ export const useFoodScan = () => {
         source: get(payload, "source", mode),
         items: normalizeDraftItems(get(payload, "items", [])),
       };
+    },
+    analyzeIngredient: async ({ name, grams }) => {
+      const response = await ingredientMutation.mutateAsync({
+        url: "/foods/analyze-ingredient",
+        attributes: {
+          name,
+          grams,
+        },
+      });
+      const payload = getResponsePayload(response);
+
+      return normalizeDraftIngredient(
+        get(payload, "ingredient", payload),
+        "ingredient-1",
+      );
     },
     uploadMealCapture: async (imageInput) => {
       const file = await imageInputToFile(imageInput);
@@ -513,6 +549,7 @@ export const useFoodScan = () => {
     isScanningText: textMutation.isPending,
     isAnalyzingDraftImage: draftImageMutation.isPending,
     isAnalyzingDraftText: draftTextMutation.isPending,
+    isAnalyzingIngredient: ingredientMutation.isPending,
     isUploadingCapture: uploadMutation.isPending,
     isTranscribingAudio: audioMutation.isPending,
   };

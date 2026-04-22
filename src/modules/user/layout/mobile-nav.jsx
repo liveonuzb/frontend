@@ -1,7 +1,7 @@
 import { get, map } from "lodash";
 import { NavLink, useLocation } from "react-router";
 import { cn } from "@/lib/utils";
-import { Home2,Messages2 } from "iconsax-reactjs";
+import { Home2, Messages2 } from "iconsax-reactjs";
 import { Salad, Dumbbell, TrophyIcon } from "lucide-react";
 
 import FloatingActionButton from "@/components/fab";
@@ -20,7 +20,7 @@ const MobileNav = ({ hidden = false }) => {
   return (
     <div
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-40 flex items-end justify-between px-3 pb-4 pb-safe-or-4 transition-transform duration-200",
+        "fixed bottom-0 left-0 right-0 z-40 flex items-end justify-between px-8 pb-8 pb-safe-or-4 transition-transform duration-200",
         hidden ? "translate-y-[calc(100%+1rem)]" : "translate-y-0",
       )}
     >
@@ -31,14 +31,14 @@ const MobileNav = ({ hidden = false }) => {
             to={get(item, "to", "")}
             className={() =>
               cn(
-                "flex items-center justify-center rounded-full transition-all duration-200 p-3.5",
+                "flex items-center justify-center rounded-full transition-all duration-200 p-[15px]",
                 pathname.startsWith(get(item, "to", ""))
                   ? "text-primary bg-primary/10"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
               )
             }
           >
-            <item.icon className="size-5" />
+            <item.icon className="size-[24px]" />
           </NavLink>
         ))}
       </div>

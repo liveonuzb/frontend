@@ -1,6 +1,5 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 import {
     SearchIcon,
     PhoneIcon,
@@ -10,9 +9,6 @@ import {
     ChevronUpIcon,
     ChevronDownIcon,
     XIcon,
-    HomeIcon,
-    PaletteIcon,
-    ImageIcon,
     BellOffIcon,
     UserRoundIcon,
     BanIcon,
@@ -63,33 +59,14 @@ const ChatHeader = ({
     onStartLive, // New prop
 }) => {
     const navigate = useNavigate();
-    const { setWallpaper, setCustomWallpaper, getLiveActivity, activeLive } = useChatStore();
+    const { getLiveActivity, activeLive } = useChatStore();
     const { openProfile } = useProfileOverlay();
-    const wallpaperInputRef = React.useRef(null);
     const liveActivity = getLiveActivity(activeChat);
     const isLive = activeLive && activeLive.chatId === activeChat;
 
-    const handleWallpaperUpload = (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            setCustomWallpaper(ev.target.result);
-            toast.success("Fon rasmi o'zgartirildi! ✨");
-        };
-        reader.readAsDataURL(file);
-    };
-
     return (
-        <>
-            <input 
-                type="file" 
-                ref={wallpaperInputRef} 
-                className="hidden" 
-                accept="image/*" 
-                onChange={handleWallpaperUpload} 
-            />
-            <div className="flex items-center justify-between px-3 md:px-6 py-2 md:py-3 border-b bg-background/60 backdrop-blur-xl z-10 shrink-0 sticky top-0">
+        <div className="sticky top-0 z-20 shrink-0 bg-background/95 backdrop-blur-xl">
+            <div className="flex items-center justify-between px-3 md:px-6 py-2 md:py-3 border-b">
                 <div className="flex items-center gap-2 md:gap-4 min-w-0">
                     <Button
                         variant="ghost"
@@ -149,25 +126,6 @@ const ChatHeader = ({
                         </Button>
                     )}
 
-                    {/* Wallpaper Menu */}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="size-8 md:size-10 rounded-full"><PaletteIcon className="size-4 md:size-5 opacity-70" /></Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-40 rounded-xl">
-                            <DropdownMenuLabel className="text-[10px] uppercase">Fon rasmi</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => setWallpaper("default")} className="text-xs">Standart</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setWallpaper("geometric")} className="text-xs">Geometrik</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setWallpaper("fitness")} className="text-xs">Sportiv</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setWallpaper("abstract")} className="text-xs">Abstrakt</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => wallpaperInputRef.current.click()} className="text-xs font-bold text-primary">
-                                <ImageIcon className="size-3 mr-2" /> Rasm yuklash
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-
                     <Button
                         variant="ghost"
                         size="icon"
@@ -224,7 +182,7 @@ const ChatHeader = ({
 
             {/* Compact Search Bar */}
             {chatSearchOpen && (
-                <div className="px-4 py-2 border-b bg-muted/20 animate-in slide-in-from-top-2 duration-200">
+                <div className="px-4 py-2 border-b bg-background animate-in slide-in-from-top-2 duration-200">
                     <div className="flex items-center gap-2 bg-background rounded-lg px-3 py-1.5 border shadow-sm">
                         <SearchIcon className="size-3.5 text-muted-foreground" />
                         <input
@@ -242,7 +200,7 @@ const ChatHeader = ({
                     </div>
                 </div>
             )}
-        </>
+        </div>
     );
 };
 

@@ -6,6 +6,7 @@ import { CheckIcon, XIcon, InfoIcon } from "lucide-react";
 import FoodLogDrawer from "./food-log-drawer.jsx";
 import PortionEditorDrawer from "./portion-editor-drawer.jsx";
 import CameraLogDrawer from "./camera-log-drawer.jsx";
+import MealIngredientsEditorDrawer from "./meal-ingredients-editor-drawer.jsx";
 import { Card, CardContent } from "@/components/ui/card.jsx";
 import { getNutritionSourceMeta } from "./source-meta.js";
 
@@ -25,11 +26,13 @@ const MealCard = memo(
     onTogglePlanned,
     onLogPlanned,
     onSaveImage,
+    onUpdateLoggedMeal,
     readOnly = false,
   }) => {
     const [logOpen, setLogOpen] = useState(false);
     const [portionOpen, setPortionOpen] = useState(false);
     const [cameraOpen, setCameraOpen] = useState(false);
+    const [ingredientsOpen, setIngredientsOpen] = useState(false);
 
     const isConsumed = get(food, "isConsumed", false);
     const qty = get(food, "qty", 1);
@@ -40,6 +43,9 @@ const MealCard = memo(
     const totalCal = round(multiply(cal, qty));
     const emoji = get(food, "emoji", "🍽️");
     const image = get(food, "image", null);
+    const ingredients = get(food, "ingredients", []);
+    const hasIngredientBreakdown =
+      Array.isArray(ingredients) && ingredients.length > 0;
     const sourceMeta = getNutritionSourceMeta(
       get(food, "source", null),
       get(food, "isFromPlanLinked", false) ? "meal-plan" : "manual",
@@ -57,7 +63,11 @@ const MealCard = memo(
       if (isConsumed) {
         onRemove(mealType, food);
       } else {
-        setPortionOpen(true);
+        if (hasIngredientBreakdown) {
+          setIngredientsOpen(true);
+        } else {
+          setPortionOpen(true);
+        }
       }
     };
 
@@ -79,6 +89,34 @@ const MealCard = memo(
       }
 
       onSaveImage(mealType, food, null, portionGrams, macros);
+    };
+
+    const handleIngredientSave = (nextIngredients, totals) => {
+      if (readOnly) return;
+
+      if (!isConsumed) {
+        onLogPlanned?.(mealType, food, {
+          macros: {
+            cal: totals.calories,
+            protein: totals.protein,
+            carbs: totals.carbs,
+            fat: totals.fat,
+          },
+          ingredients: nextIngredients,
+        });
+        setIngredientsOpen(false);
+        return;
+      }
+
+      onUpdateLoggedMeal?.(mealType, food.id, {
+        ingredients: nextIngredients,
+        cal: totals.calories,
+        protein: totals.protein,
+        carbs: totals.carbs,
+        fat: totals.fat,
+        fiber: totals.fiber,
+      });
+      setIngredientsOpen(false);
     };
 
     const handleCameraSave = (dataUrl, portionGrams, macros) => {
@@ -302,18 +340,33 @@ const MealCard = memo(
             readOnly
               ? undefined
               : isConsumed
-                ? () => setPortionOpen(true)
+                ? () =>
+                    hasIngredientBreakdown
+                      ? setIngredientsOpen(true)
+                      : setPortionOpen(true)
                 : undefined
           }
           readOnly={readOnly}
         />
 
-        <PortionEditorDrawer
-          food={food}
-          open={portionOpen}
-          onClose={() => setPortionOpen(false)}
-          onConfirm={handlePortionConfirm}
-        />
+        {hasIngredientBreakdown ? (
+          <MealIngredientsEditorDrawer
+            open={ingredientsOpen}
+            onOpenChange={(nextOpen) => !nextOpen && setIngredientsOpen(false)}
+            title={food?.name || "Taom"}
+            description="Log qilingan taom ingredientlarini tahrirlang."
+            imageUrl={food?.image || null}
+            initialIngredients={ingredients}
+            onSave={handleIngredientSave}
+          />
+        ) : (
+          <PortionEditorDrawer
+            food={food}
+            open={portionOpen}
+            onClose={() => setPortionOpen(false)}
+            onConfirm={handlePortionConfirm}
+          />
+        )}
 
         <CameraLogDrawer
           food={food}

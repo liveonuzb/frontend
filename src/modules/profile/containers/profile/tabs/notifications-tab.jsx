@@ -106,13 +106,17 @@ const getTelegramLanguageLabel = (languageCode, t) => {
   });
 };
 
-const createInitialForm = (settings) => ({
-  emailMarketing: settings.emailMarketing ?? true,
-  emailWorkout: settings.emailWorkout ?? true,
-  pushMeal: settings.pushMeal ?? true,
-  pushWater: settings.pushWater ?? false,
-  pushProgress: settings.pushProgress ?? true,
-});
+const createInitialForm = (settings) => {
+  const source = settings ?? {};
+
+  return {
+    emailMarketing: source.emailMarketing ?? true,
+    emailWorkout: source.emailWorkout ?? true,
+    pushMeal: source.pushMeal ?? true,
+    pushWater: source.pushWater ?? false,
+    pushProgress: source.pushProgress ?? true,
+  };
+};
 
 const COACH_NOTIFICATION_LABELS = {
   COACH_PAYMENT_DUE: {

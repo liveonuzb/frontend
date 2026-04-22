@@ -1,22 +1,17 @@
 import React, { useState, useMemo } from "react";
-import { filter, map, find, take, includes } from "lodash";
+import { filter, map, take, includes } from "lodash";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
     SearchIcon,
     BookmarkIcon,
     HomeIcon,
-    MessageSquareIcon,
-    Users2Icon,
-    BellDotIcon,
     PinIcon,
     MoreVerticalIcon,
     GripVerticalIcon,
     PencilLineIcon,
     CheckIcon,
     UserPlusIcon,
-    Loader2Icon,
-    MessageCircleIcon,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -27,9 +22,6 @@ import {
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router";
 import { useChatStore } from "@/store";
-import { toast } from "sonner";
-import { api } from "@/hooks/api/use-api";
-import { getFriendItems } from "@/modules/user/lib/friends-response";
 
 // DnD Kit imports
 import {
@@ -54,7 +46,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const ChatSidebar = ({
     showMobileChat,
     isCoach,
-    initialTab = "all",
     searchQuery,
     setSearchQuery,
     contacts,
@@ -75,15 +66,7 @@ const ChatSidebar = ({
         reorderChats,
         isLoading
     } = useChatStore();
-    
-    const [activeTab, setActiveRoleTab] = useState("all");
-    const [typeFilter, setTypeFilter] = useState("");
     const [isEditMode, setIsEditMode] = useState(false);
-
-    const [friends, setFriends] = useState([]);
-    const [isFriendsLoading, setIsFriendsLoading] = useState(false);
-    const [creatingRoomUserId, setCreatingRoomUserId] = useState(null);
-    const [connections, setConnections] = useState([]);
 
     // DnD Sensors
     const sensors = useSensors(
@@ -93,124 +76,13 @@ const ChatSidebar = ({
         })
     );
 
-    const fetchFriendsList = React.useCallback(async () => {
-        setIsFriendsLoading(true);
-        try {
-            const response = await api.get("/users/me/friends");
-            setFriends(getFriendItems(response));
-        } catch (error) {
-            setFriends([]);
-        } finally {
-            setIsFriendsLoading(false);
-        }
-    }, []);
-
-    const fetchConnections = React.useCallback(async () => {
-        try {
-            if (isCoach) {
-                const response = await api.get("/coach/clients");
-                setConnections(response?.data?.items || []);
-                return;
-            }
-            const response = await api.get("/user/coaches/status");
-            if (response?.data?.connected && response?.data?.coach) {
-                setConnections([response.data.coach]);
-                return;
-            }
-            setConnections([]);
-        } catch (error) {
-            setConnections([]);
-        }
-    }, [isCoach]);
-
-    const normalizedInitialTab = useMemo(() => {
-        const allowedTabs = ["all", "unread", "connections", "friends"];
-        return includes(allowedTabs, initialTab) ? initialTab : "all";
-    }, [initialTab]);
-
-    React.useEffect(() => {
-        setActiveRoleTab(normalizedInitialTab);
-    }, [normalizedInitialTab]);
-
-    React.useEffect(() => {
-        fetchFriendsList();
-    }, [fetchFriendsList]);
-
-    React.useEffect(() => {
-        fetchConnections();
-    }, [fetchConnections]);
-
-    const startNewChat = React.useCallback(async (targetUserId) => {
-        if (!targetUserId || creatingRoomUserId === targetUserId) {
-            return;
-        }
-
-        const existingRoom = find(
-            contacts,
-            (room) => !room.isGroup && room.otherParticipant?.id === targetUserId,
-        );
-
-        if (existingRoom?.id) {
-            handleChatSelect(existingRoom.id);
-            return;
-        }
-
-        setCreatingRoomUserId(targetUserId);
-        try {
-            const response = await api.post("/chat/rooms", { userId: targetUserId });
-            const { fetchRooms } = useChatStore.getState();
-            await fetchRooms();
-            handleChatSelect(response.data.roomId);
-            toast.success("Chat boshlandi");
-        } catch (error) {
-            const message = error?.response?.data?.message;
-            toast.error(Array.isArray(message) ? message.join(", ") : message || "Chatni boshlab bo'lmadi");
-        } finally {
-            setCreatingRoomUserId(null);
-        }
-    }, [contacts, creatingRoomUserId, handleChatSelect]);
-
     const messageSearchResults = useMemo(() => {
         return searchQuery.length > 1 ? searchGlobalMessages(searchQuery) : [];
     }, [searchQuery, searchGlobalMessages]);
 
-    const friendIdSet = useMemo(
-        () => new Set(map(friends, (friend) => friend.id).filter(Boolean)),
-        [friends],
-    );
-
-    const connectionIdSet = useMemo(
-        () => new Set(map(connections, (connection) => connection.id).filter(Boolean)),
-        [connections],
-    );
-
-    const existingDirectRoomByFriendId = useMemo(() => {
-        const map = new Map();
-        contacts.forEach((room) => {
-            if (!room?.isGroup && room?.otherParticipant?.id) {
-                map.set(room.otherParticipant.id, room);
-            }
-        });
-        return map;
-    }, [contacts]);
-
     // Sorting and Filtering logic
     const tabFilteredChats = useMemo(() => {
-        let list = filter(filteredChats, (chat) => !chat.isGroup);
-
-        // 1. Filter by tab
-        if (activeTab === "unread") {
-            list = filter(list, c => getUnreadCount(c.chatId) > 0);
-        } else if (activeTab === "connections") {
-            list = filter(list, (chat) => connectionIdSet.has(chat.otherParticipant?.id));
-        } else if (activeTab === "friends") {
-            list = filter(list, (chat) => friendIdSet.has(chat.otherParticipant?.id));
-        }
-
-        // 1b. Filter by room type
-        if (typeFilter) {
-            list = filter(list, (chat) => chat.type === typeFilter);
-        }
+        const list = filter(filteredChats, (chat) => !chat.isGroup);
 
         // 2. Apply Custom Order if exists
         if (chatOrder) {
@@ -234,30 +106,7 @@ const ChatSidebar = ({
         });
 
         return list;
-    }, [filteredChats, activeTab, typeFilter, getUnreadCount, pinnedChats, chatOrder, friendIdSet, connectionIdSet]);
-
-    const normalizedSearch = searchQuery.trim().toLowerCase();
-    const friendsWithoutChat = useMemo(() => {
-        const base = filter(friends, (friend) => !existingDirectRoomByFriendId.has(friend.id));
-        if (!normalizedSearch) {
-            return base;
-        }
-
-        return filter(base, (friend) => {
-            const searchable = map(
-                [friend.name, friend.username, friend.email, friend.phone],
-                (value) => String(value ?? "").toLowerCase(),
-            ).join(" ");
-            return searchable.includes(normalizedSearch);
-        });
-    }, [friends, existingDirectRoomByFriendId, normalizedSearch]);
-
-    const defaultTabs = [
-        { id: "all", label: "Barchasi", icon: MessageSquareIcon },
-        { id: "unread", label: "O'qilmagan", icon: BellDotIcon },
-        { id: "connections", label: isCoach ? "Mijozlar" : "Murabbiy", icon: Users2Icon },
-        { id: "friends", label: "Do'stlar", icon: Users2Icon },
-    ];
+    }, [filteredChats, pinnedChats, chatOrder]);
 
     const handleDragEnd = (event) => {
         const { active, over } = event;
@@ -271,11 +120,11 @@ const ChatSidebar = ({
 
     return (
         <div className={cn(
-            "w-full md:w-80 border-r flex flex-col bg-muted/30 shrink-0 h-full", 
+            "w-full md:w-80 border-0 md:border-r flex flex-col bg-muted/30 shrink-0 h-full", 
             showMobileChat ? "hidden md:flex" : "flex"
         )}>
             {/* Header & Search */}
-            <div className="p-3 md:p-4 border-b bg-background/50 backdrop-blur-sm space-y-3 md:space-y-4">
+            <div className="sticky top-0 z-20 p-3 md:p-4 border-b bg-background/95 backdrop-blur-sm space-y-3 md:space-y-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 md:gap-3">
                         <Button 
@@ -305,46 +154,6 @@ const ChatSidebar = ({
                         placeholder="Qidirish..." 
                     />
                 </div>
-
-                {!searchQuery && (
-                    <>
-                        <div className="flex gap-1 overflow-x-auto no-scrollbar pb-1">
-                            {/* Default Tabs */}
-                            {defaultTabs.map(tab => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveRoleTab(tab.id)}
-                                    className={cn(
-                                        "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] md:text-xs font-medium whitespace-nowrap transition-all",
-                                        activeTab === tab.id ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-muted text-muted-foreground"
-                                    )}
-                                >
-                                    <tab.icon className="size-3" />
-                                    {tab.label}
-                                </button>
-                            ))}
-                        </div>
-                        <div className="flex gap-1 overflow-x-auto no-scrollbar pb-0.5">
-                            {[
-                                { value: "", label: "Barchasi" },
-                                { value: "COACH_CLIENT", label: "💪 Coach" },
-                            ].map(opt => (
-                                <button
-                                    key={opt.value}
-                                    onClick={() => setTypeFilter(opt.value)}
-                                    className={cn(
-                                        "px-2 py-1 rounded-full text-[9px] md:text-[10px] font-medium whitespace-nowrap transition-all border",
-                                        typeFilter === opt.value
-                                            ? "bg-primary/10 text-primary border-primary/30"
-                                            : "border-transparent hover:bg-muted text-muted-foreground"
-                                    )}
-                                >
-                                    {opt.label}
-                                </button>
-                            ))}
-                        </div>
-                    </>
-                )}
             </div>
 
             <div className="flex-1 overflow-y-auto custom-scrollbar">
@@ -352,96 +161,6 @@ const ChatSidebar = ({
                     <div className="flex flex-col items-center justify-center py-20 opacity-50">
                         <div className="size-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
                         <p className="text-xs font-medium">Yuklanmoqda...</p>
-                    </div>
-                ) : activeTab === "friends" ? (
-                    <div className="py-2">
-                        {isFriendsLoading ? (
-                            <div className="flex items-center justify-center gap-2 px-4 py-8 text-xs text-muted-foreground">
-                                <Loader2Icon className="size-4 animate-spin" />
-                                Do&apos;stlar yuklanmoqda...
-                            </div>
-                        ) : null}
-
-                        {tabFilteredChats.length > 0 ? (
-                            <>
-                                <div className="px-4 py-2 text-[9px] font-bold text-muted-foreground uppercase tracking-wider">
-                                    Do&apos;st chatlari
-                                </div>
-                                {tabFilteredChats.map((chat) => (
-                                    <ContactItem
-                                        key={chat.chatId}
-                                        chat={chat}
-                                        activeChat={activeChat}
-                                        handleChatSelect={handleChatSelect}
-                                        getUnreadCount={getUnreadCount}
-                                        getLastMessageTime={getLastMessageTime}
-                                        getLastMessagePreview={getLastMessagePreview}
-                                        isPinned={includes(pinnedChats, chat.chatId)}
-                                        onPin={() => togglePinChat(chat.chatId)}
-                                        isEditMode={isEditMode}
-                                    />
-                                ))}
-                            </>
-                        ) : null}
-
-                        {friendsWithoutChat.length > 0 ? (
-                            <>
-                                <div className="px-4 py-2 mt-2 text-[9px] font-bold text-muted-foreground uppercase tracking-wider border-t">
-                                    Chat boshlash
-                                </div>
-                                {friendsWithoutChat.map((friend) => (
-                                    <div
-                                        key={friend.id}
-                                        className="flex items-center gap-3 p-3 md:p-4 border-b hover:bg-muted/40 transition-colors"
-                                    >
-                                        <Avatar className="size-10 md:size-12 border-2 border-background shadow-sm">
-                                            <AvatarImage src={friend.avatarUrl} />
-                                            <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                                                {take(filter(String(friend.name || "D").split(" "), Boolean), 2)
-                                                    .map((part) => part[0]?.toUpperCase() || "")
-                                                    .join("")}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div className="min-w-0 flex-1">
-                                            <p className="truncate text-sm font-semibold">
-                                                {friend.name || "Do'st"}
-                                            </p>
-                                            <p className="truncate text-xs text-muted-foreground">
-                                                {friend.username
-                                                    ? `@${friend.username}`
-                                                    : friend.email || friend.phone || "Do'st"}
-                                            </p>
-                                        </div>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="rounded-xl"
-                                            disabled={creatingRoomUserId === friend.id}
-                                            onClick={() => startNewChat(friend.id)}
-                                        >
-                                            {creatingRoomUserId === friend.id ? (
-                                                <Loader2Icon className="mr-1 size-4 animate-spin" />
-                                            ) : (
-                                                <MessageCircleIcon className="mr-1 size-4" />
-                                            )}
-                                            Yozish
-                                        </Button>
-                                    </div>
-                                ))}
-                            </>
-                        ) : null}
-
-                        {!isFriendsLoading &&
-                        tabFilteredChats.length === 0 &&
-                        friendsWithoutChat.length === 0 ? (
-                            <div className="p-8 text-center text-muted-foreground space-y-2">
-                                <Users2Icon className="size-8 mx-auto opacity-20" />
-                                <p className="text-sm">Do&apos;stlar topilmadi</p>
-                                <p className="text-xs opacity-70">
-                                    Avval /user/friends sahifasida do&apos;st qo&apos;shing.
-                                </p>
-                            </div>
-                        ) : null}
                     </div>
                 ) : searchQuery ? (
                     <div className="py-2">
@@ -499,7 +218,7 @@ const ChatSidebar = ({
                             items={map(tabFilteredChats, c => c.chatId)}
                             strategy={verticalListSortingStrategy}
                         >
-                            {bookmarks.length > 0 && activeTab === "all" && (
+                            {bookmarks.length > 0 && (
                                 <div className="p-3 md:p-4 border-b bg-primary/5">
                                     <div className="flex items-center gap-2 mb-2 text-primary">
                                         <BookmarkIcon className="size-3" />

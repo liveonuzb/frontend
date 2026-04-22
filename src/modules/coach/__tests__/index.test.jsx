@@ -28,6 +28,16 @@ vi.mock("@/modules/coach/pages/payments/index.jsx", () => ({
   default: () => <div data-testid="payments-page">payments</div>,
 }));
 
+vi.mock("@/modules/coach/pages/courses/index.jsx", () => ({
+  default: () => <div data-testid="courses-page">courses</div>,
+}));
+
+vi.mock("@/modules/coach/pages/course-purchases/index.jsx", () => ({
+  default: () => (
+    <div data-testid="course-purchases-page">course purchases</div>
+  ),
+}));
+
 vi.mock("@/modules/coach/pages/earnings/index.jsx", () => ({
   default: () => <div data-testid="earnings-page">earnings</div>,
 }));
@@ -68,6 +78,10 @@ vi.mock("@/modules/coach/pages/reports/index.jsx", () => ({
 
 vi.mock("@/modules/coach/pages/ai/index.jsx", () => ({
   default: () => <div data-testid="ai-page">ai</div>,
+}));
+
+vi.mock("@/modules/chat/index.jsx", () => ({
+  default: () => <div data-testid="chat-page">chat</div>,
 }));
 
 vi.mock("@/modules/coach/pages/referrals/index.jsx", () => ({
@@ -129,7 +143,22 @@ describe("CoachIndex", () => {
     ).toBeInTheDocument();
   });
 
+  it("keeps the legacy purchase queue redirect", async () => {
+    renderCoachIndex("/coach/purchase-queue?status=pending");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("location")).toHaveTextContent(
+        "/coach/course-purchases?status=pending",
+      );
+    });
+    expect(
+      await screen.findByTestId("course-purchases-page"),
+    ).toBeInTheDocument();
+  });
+
   it.each([
+    ["/coach/courses", "courses-page"],
+    ["/coach/course-purchases", "course-purchases-page"],
     ["/coach/telegram-bot", "telegram-bot-page"],
     ["/coach/programs", "programs-page"],
     ["/coach/challenges", "challenges-page"],
@@ -138,6 +167,8 @@ describe("CoachIndex", () => {
     ["/coach/sessions", "sessions-page"],
     ["/coach/reports", "reports-page"],
     ["/coach/ai", "ai-page"],
+    ["/coach/chat", "chat-page"],
+    ["/coach/chat/thread-1", "chat-page"],
     ["/coach/referrals", "referrals-page"],
     ["/coach/audit-logs", "audit-page"],
   ])("routes %s to the mounted workspace", async (path, testId) => {
@@ -148,10 +179,7 @@ describe("CoachIndex", () => {
 
   it.each([
     "/coach/marketplace?tab=legacy",
-    "/coach/courses",
     "/coach/packages",
-    "/coach/purchase-queue",
-    "/coach/chat/thread-1",
     "/coach/messages",
   ])("does not keep removed legacy route %s", async (path) => {
     renderCoachIndex(path);

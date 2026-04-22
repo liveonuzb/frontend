@@ -203,4 +203,44 @@ describe("NotificationSettingsDrawer", () => {
       screen.getByRole("button", { name: "Telegramni uzish" }),
     ).toBeInTheDocument();
   });
+
+  it("falls back to default toggles when profile settings are null", () => {
+    vi.mocked(useProfileSettings).mockReturnValue({
+      settings: null,
+      saveNotificationSettings: vi.fn(),
+      isSavingNotifications: false,
+    });
+    vi.mocked(useCoachNotificationPreferences).mockReturnValue({
+      preferences: [],
+      updatePreferences: vi.fn(),
+      isUpdating: false,
+    });
+    vi.mocked(useQuietHours).mockReturnValue({
+      quietHours: {
+        enabled: false,
+        start: "22:00",
+        end: "08:00",
+      },
+      updateQuietHours: vi.fn(),
+      isUpdating: false,
+    });
+    vi.mocked(useMe).mockReturnValue({
+      user: {
+        telegramConnected: false,
+      },
+      refetch: vi.fn(),
+      isFetching: false,
+    });
+    vi.mocked(useUserTelegram).mockReturnValue({
+      createConnectLink: vi.fn(),
+      disconnectTelegram: vi.fn(),
+      isCreatingConnectLink: false,
+      isDisconnectingTelegram: false,
+    });
+
+    render(<NotificationSettingsDrawer open onOpenChange={vi.fn()} />);
+
+    expect(screen.getByText("profile.notifications.emailMarketing")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Telegramni ulash" })).toBeInTheDocument();
+  });
 });

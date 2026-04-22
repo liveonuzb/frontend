@@ -1,53 +1,51 @@
 import React from "react";
 import { round } from "lodash";
-import { XIcon } from "lucide-react";
-import { Slider } from "@/components/ui/slider.jsx";
+import {
+  CheckIcon,
+  PencilIcon,
+  PlusIcon,
+  Trash2Icon,
+  XIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button.jsx";
 import GaugeProgress from "@/components/meal-plan-builder/gauge-progress.jsx";
-
-const toNumber = (value, fallback = 0) => {
-  const normalized = Number(value);
-  return Number.isFinite(normalized) ? normalized : fallback;
-};
-
-const toRoundedNumber = (value) => round(toNumber(value), 1);
+import IngredientEditDrawer from "./ingredient-edit-drawer.jsx";
+import {
+  buildMealIngredientsPayload,
+  formatIngredientHint,
+  getMealIngredientTotals,
+  getMealIngredientsGrams,
+  normalizeMealIngredients,
+  normalizeMealNutrition,
+  toNumber,
+} from "./meal-ingredients.js";
 
 export const formatConfidence = (confidence = 0) =>
   `${Math.max(0, Math.min(100, Math.round(toNumber(confidence) * 100)))}%`;
 
-export const getDraftPortion = (item = {}) =>
-  Math.max(
+export const getDraftPortion = (item = {}) => {
+  const ingredients = normalizeMealIngredients(item?.ingredients);
+  if (ingredients.length) {
+    return Math.max(0, Math.round(getMealIngredientsGrams(ingredients)));
+  }
+
+  return Math.max(
     20,
-    Math.round(toNumber(item.grams ?? item.portionGrams ?? item.defaultAmount, 100)),
+    Math.round(
+      toNumber(item.grams ?? item.portionGrams ?? item.defaultAmount, 100),
+    ),
   );
-
-export const getDraftBasePortion = (item = {}) =>
-  Math.max(20, Math.round(toNumber(item.portionGrams ?? item.defaultAmount, 100)));
-
-export const getDraftSliderMax = (item = {}) =>
-  Math.max(300, Math.ceil((getDraftBasePortion(item) * 3) / 10) * 10);
-
-export const getDraftNutritionPreview = (item = {}) => {
-  const basePortion = getDraftBasePortion(item);
-  const currentPortion = getDraftPortion(item);
-  const scale = basePortion > 0 ? currentPortion / basePortion : 1;
-
-  return {
-    calories: Math.round(toNumber(item?.nutrition?.calories) * scale),
-    protein: toRoundedNumber(toNumber(item?.nutrition?.protein) * scale),
-    carbs: toRoundedNumber(toNumber(item?.nutrition?.carbs) * scale),
-    fat: toRoundedNumber(toNumber(item?.nutrition?.fat) * scale),
-    fiber: toRoundedNumber(toNumber(item?.nutrition?.fiber) * scale),
-  };
 };
+
+export const getDraftNutritionPreview = (item = {}) =>
+  getMealIngredientTotals(item?.ingredients, item?.nutrition);
 
 export const isDraftReviewNeeded = (item = {}) =>
   Boolean(item?.reviewNeeded) ||
-  (Array.isArray(item?.ingredients) &&
-    item.ingredients.some(
-      (ingredient) =>
-        ingredient?.reviewNeeded || ingredient?.matchStatus === "unmatched",
-    ));
+  normalizeMealIngredients(item?.ingredients).some(
+    (ingredient) =>
+      ingredient.reviewNeeded || ingredient.matchStatus === "unmatched",
+  );
 
 export const getDraftReviewCount = (items = []) =>
   items.filter(isDraftReviewNeeded).length;
@@ -57,10 +55,10 @@ export const getDraftTotals = (items = []) =>
     (acc, item) => {
       const preview = getDraftNutritionPreview(item);
       acc.calories += preview.calories;
-      acc.protein += preview.protein;
-      acc.carbs += preview.carbs;
-      acc.fat += preview.fat;
-      acc.fiber += preview.fiber;
+      acc.protein = round(acc.protein + preview.protein, 1);
+      acc.carbs = round(acc.carbs + preview.carbs, 1);
+      acc.fat = round(acc.fat + preview.fat, 1);
+      acc.fiber = round(acc.fiber + preview.fiber, 1);
       return acc;
     },
     { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
@@ -68,24 +66,21 @@ export const getDraftTotals = (items = []) =>
 
 export const getDraftMaxCalories = (items = []) =>
   items.reduce((acc, item) => {
-    const maxScale =
-      getDraftBasePortion(item) > 0
-        ? getDraftSliderMax(item) / getDraftBasePortion(item)
-        : 1;
-    return (
-      acc + Math.round(toNumber(item?.nutrition?.calories, 0) * Math.max(1, maxScale))
-    );
+    const totals = getDraftNutritionPreview(item);
+    return acc + totals.calories;
   }, 0);
 
 export const buildMealPayloadFromDraft = (
   item,
-  { source = "ai", image = null, addedAt = undefined } = {},
+  { source = "ai", image = null, addedAt = undefined, savedMealId = null } = {},
 ) => {
   const preview = getDraftNutritionPreview(item);
+  const ingredients = buildMealIngredientsPayload(item?.ingredients);
 
   return {
     name: item?.title || "Ovqat",
     source,
+    savedMealId,
     qty: 1,
     grams: getDraftPortion(item),
     cal: preview.calories,
@@ -94,6 +89,7 @@ export const buildMealPayloadFromDraft = (
     fat: preview.fat,
     fiber: preview.fiber,
     image,
+    ...(ingredients.length ? { ingredients } : {}),
     addedAt,
   };
 };
@@ -118,104 +114,205 @@ export const MealDraftSummaryCard = ({
   goals,
   emptyTitle = "Ovqat topilmadi",
   emptyDescription = "Qayta urinib ko'ring.",
-  filledDescription = "Draftni tekshirib, keyin tasdiqlang.",
 }) => {
   const totals = React.useMemo(() => getDraftTotals(items), [items]);
   const maxPreviewCalories = React.useMemo(
     () => getDraftMaxCalories(items),
     [items],
   );
-  const reviewCount = React.useMemo(() => getDraftReviewCount(items), [items]);
+  const calorieGoal = toNumber(goals?.calories, 0) || maxPreviewCalories || 1;
 
   return (
-    <div className="rounded-3xl border bg-card p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3 className="text-base font-semibold">
-            {items.length > 0 ? `${items.length} ta draft tayyor` : emptyTitle}
-          </h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {items.length > 0 ? filledDescription : emptyDescription}
-          </p>
-        </div>
-        {reviewCount > 0 ? (
-          <div className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
-            {reviewCount} ta tekshirish kerak
-          </div>
-        ) : items.length > 0 ? (
-          <div className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-            Draft tayyor
-          </div>
-        ) : null}
-      </div>
-
+    <div className="rounded-3xl border bg-card p-3.5">
       {items.length > 0 ? (
-        <div className="mt-5">
-          <div className="flex flex-col items-center">
+        <div className="grid grid-cols-[minmax(0,0.95fr)_minmax(0,1.25fr)] items-center gap-3">
+          <div className="min-w-0 [&>div]:max-w-none [&>div]:pt-0">
             <GaugeProgress
               value={totals.calories}
               min={0}
-              max={Math.max(
-                maxPreviewCalories,
-                totals.calories,
-                toNumber(goals?.calories, 0),
-              )}
-              id="meal-ai-preview"
-              label="QO'SHILMOQDA"
+              max={Math.max(calorieGoal, totals.calories, 1)}
+              id="meal-draft-summary"
+              label="JAMI"
             />
+          </div>
 
-            <div className="grid w-full grid-cols-3 gap-8 py-6">
-              <div className="flex flex-col items-center gap-1.5">
-                <span className="flex items-center gap-1.5 text-sm font-bold text-muted-foreground">
-                  🍗 Oqsil
-                </span>
-                <span className="text-base font-black">
-                  <span className="text-red-500">{totals.protein}</span>
-                  <span className="text-xs font-semibold text-muted-foreground opacity-50">
-                    /{toNumber(goals?.protein, 0)}g
-                  </span>
-                </span>
+          <div className="min-w-0 space-y-2">
+            <div className="flex items-baseline justify-between gap-2">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Macro
               </div>
-              <div className="flex flex-col items-center gap-1.5 border-l border-r border-border/50 px-4">
-                <span className="flex items-center gap-1.5 text-sm font-bold text-muted-foreground">
-                  🍴 Uglevod
-                </span>
-                <span className="text-base font-black">
-                  <span className="text-orange-500">{totals.carbs}</span>
-                  <span className="text-xs font-semibold text-muted-foreground opacity-50">
-                    /{toNumber(goals?.carbs, 0)}g
-                  </span>
-                </span>
+              <div className="text-xs text-muted-foreground">
+                {calorieGoal} kcal
               </div>
-              <div className="flex flex-col items-center gap-1.5">
-                <span className="flex items-center gap-1.5 text-sm font-bold text-muted-foreground">
-                  🥑 Yog&apos;
-                </span>
-                <span className="text-base font-black">
-                  <span className="text-green-500">{totals.fat}</span>
-                  <span className="text-xs font-semibold text-muted-foreground opacity-50">
-                    /{toNumber(goals?.fat, 0)}g
-                  </span>
-                </span>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              <div className="rounded-2xl bg-muted/40 px-2.5 py-2">
+                <div className="text-[10px] text-muted-foreground">Oqsil</div>
+                <div className="mt-0.5 text-sm font-black">
+                  {totals.protein} g
+                </div>
+              </div>
+              <div className="rounded-2xl bg-muted/40 px-2.5 py-2">
+                <div className="text-[10px] text-muted-foreground">Uglevod</div>
+                <div className="mt-0.5 text-sm font-black">
+                  {totals.carbs} g
+                </div>
+              </div>
+              <div className="rounded-2xl bg-muted/40 px-2.5 py-2">
+                <div className="text-[10px] text-muted-foreground">Yog'</div>
+                <div className="mt-0.5 text-sm font-black">{totals.fat} g</div>
               </div>
             </div>
           </div>
         </div>
-      ) : null}
+      ) : (
+        <div className="px-1 py-2">
+          <h3 className="text-sm font-semibold">{emptyTitle}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {emptyDescription}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const getIngredientBadge = (ingredient = {}) => {
+  if (ingredient.reviewNeeded || ingredient.matchStatus === "unmatched") {
+    return {
+      label: "Tekshirish",
+      className: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    };
+  }
+
+  if (ingredient.matchStatus === "matched") {
+    return {
+      label: "Catalog",
+      className: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    };
+  }
+
+  if (
+    ingredient.matchStatus === "ai-estimated" ||
+    ingredient.nutritionSource === "ai"
+  ) {
+    return {
+      label: "AI",
+      className: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
+    };
+  }
+
+  if (
+    ingredient.matchStatus === "manual" ||
+    ingredient.nutritionSource === "manual"
+  ) {
+    return {
+      label: "Manual",
+      className: "bg-muted text-muted-foreground",
+    };
+  }
+
+  return null;
+};
+
+const IngredientCompactRow = ({ ingredient, onEdit, onDelete }) => {
+  const hint = React.useMemo(
+    () => formatIngredientHint(ingredient),
+    [ingredient],
+  );
+  const badge = getIngredientBadge(ingredient);
+
+  return (
+    <div className="rounded-2xl border border-border/50 bg-background/55 px-3 py-2.5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <p className="min-w-0 truncate text-sm font-semibold">
+              {ingredient.name}
+            </p>
+            {badge ? (
+              <span
+                className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${badge.className}`}
+              >
+                {badge.label}
+              </span>
+            ) : null}
+          </div>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span className="font-semibold tabular-nums text-foreground">
+              {Math.round(toNumber(ingredient.grams, 0))} g
+            </span>
+            {hint ? <span>{hint}</span> : null}
+            {ingredient?.matchedFood?.name ? (
+              <span className="truncate">· {ingredient.matchedFood.name}</span>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-8 rounded-full px-2.5 text-xs"
+            onClick={onEdit}
+          >
+            <PencilIcon className="size-3.5" />
+            Edit
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            className="rounded-full text-destructive hover:text-destructive"
+            onClick={onDelete}
+            aria-label={`${ingredient.name} ingredientini o'chirish`}
+          >
+            <Trash2Icon className="size-3.5" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
 
 export const MealDraftCard = ({
   item,
-  onPortionChange,
+  onIngredientUpdate,
+  onIngredientRemove,
+  onIngredientAdd,
   onRemove,
+  onConfirm,
 }) => {
-  const preview = React.useMemo(() => getDraftNutritionPreview(item), [item]);
-  const portion = getDraftPortion(item);
-  const sliderMax = getDraftSliderMax(item);
+  const [ingredientEditor, setIngredientEditor] = React.useState(null);
   const imageUrl = React.useMemo(() => getDraftImageUrl(item), [item]);
-  const ingredientCount = Array.isArray(item?.ingredients) ? item.ingredients.length : 0;
+  const ingredientCount = Array.isArray(item?.ingredients)
+    ? item.ingredients.length
+    : 0;
+  const normalizedIngredients = React.useMemo(
+    () => normalizeMealIngredients(item?.ingredients),
+    [item?.ingredients],
+  );
+  const closeIngredientEditor = React.useCallback(() => {
+    setIngredientEditor(null);
+  }, []);
+  const handleSaveIngredient = React.useCallback(
+    (ingredient) => {
+      if (ingredientEditor?.mode === "add") {
+        onIngredientAdd?.(ingredient);
+        return;
+      }
+
+      onIngredientUpdate?.(ingredient.id, ingredient);
+    },
+    [ingredientEditor?.mode, onIngredientAdd, onIngredientUpdate],
+  );
+  const handleDeleteIngredient = React.useCallback(
+    (ingredientId) => {
+      onIngredientRemove?.(ingredientId);
+    },
+    [onIngredientRemove],
+  );
 
   return (
     <div className="rounded-[1.35rem] border bg-card p-3.5">
@@ -249,65 +346,85 @@ export const MealDraftCard = ({
             </div>
           </div>
 
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            className="mt-0.5 rounded-full"
-            onClick={onRemove}
-          >
-            <XIcon className="size-3.5" />
-          </Button>
+          <div className="flex items-center gap-1">
+            {onConfirm ? (
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                className="mt-0.5 rounded-full text-emerald-600"
+                onClick={onConfirm}
+              >
+                <CheckIcon className="size-3.5" />
+              </Button>
+            ) : null}
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              className="mt-0.5 rounded-full"
+              onClick={onRemove}
+            >
+              <XIcon className="size-3.5" />
+            </Button>
+          </div>
         </div>
       </div>
 
       <div className="mt-3 space-y-2.5">
-        <div className="w-full rounded-2xl border border-border/50 bg-background/50 px-3 py-2.5">
-          <div className="flex items-center justify-between gap-3 text-sm">
-            <span className="text-[13px] text-muted-foreground">Porsiya</span>
-            <span className="text-[15px] font-semibold tabular-nums">{portion} g</span>
+        <div className="rounded-2xl border border-border/50 bg-muted/10 p-2.5">
+          <div className="mb-2 flex items-center justify-between gap-2 px-1">
+            <div>
+              <p className="text-sm font-semibold">Ingredientlar</p>
+              <p className="text-[11px] text-muted-foreground">
+                Porsiya va macro qiymatlar alohida drawerda tahrirlanadi.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 shrink-0 rounded-full px-3 text-xs"
+              onClick={() =>
+                setIngredientEditor({ mode: "add", ingredient: null })
+              }
+            >
+              <PlusIcon className="size-3.5" />
+              Qo'shish
+            </Button>
           </div>
-          <Slider
-            value={[portion]}
-            min={20}
-            max={sliderMax}
-            step={10}
-            onValueChange={([value]) => onPortionChange?.(value)}
-            className="mt-2"
-          />
-        </div>
 
-        <div className="grid w-full grid-cols-4 gap-2">
-          <div className="min-w-0 rounded-xl border border-border/50 bg-background/50 px-2.5 py-2">
-            <div className="text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
-              Kaloriya
+          {normalizedIngredients.length > 0 ? (
+            <div className="space-y-2">
+              {normalizedIngredients.map((ingredient) => (
+                <IngredientCompactRow
+                  key={ingredient.id}
+                  ingredient={ingredient}
+                  onEdit={() =>
+                    setIngredientEditor({ mode: "edit", ingredient })
+                  }
+                  onDelete={() => handleDeleteIngredient(ingredient.id)}
+                />
+              ))}
             </div>
-            <div className="mt-1 text-[13px] font-bold leading-4">
-              {preview.calories}
-              <span className="block text-[10px] font-medium text-muted-foreground">
-                kcal
-              </span>
+          ) : (
+            <div className="rounded-2xl border border-dashed bg-background/60 px-4 py-4 text-sm text-muted-foreground">
+              Ingredientlar topilmadi. Kerak bo'lsa ingredientni qo'lda qo'shing
+              yoki AI bilan macro qiymatlarni toping.
             </div>
-          </div>
-          <div className="min-w-0 rounded-xl border border-border/50 bg-background/50 px-2.5 py-2">
-            <div className="text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
-              Oqsil
-            </div>
-            <div className="mt-1 text-[13px] font-bold leading-4">{preview.protein} g</div>
-          </div>
-          <div className="min-w-0 rounded-xl border border-border/50 bg-background/50 px-2.5 py-2">
-            <div className="text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
-              Uglevod
-            </div>
-            <div className="mt-1 text-[13px] font-bold leading-4">{preview.carbs} g</div>
-          </div>
-          <div className="min-w-0 rounded-xl border border-border/50 bg-background/50 px-2.5 py-2">
-            <div className="text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
-              Yog&apos;
-            </div>
-            <div className="mt-1 text-[13px] font-bold leading-4">{preview.fat} g</div>
-          </div>
+          )}
         </div>
       </div>
+
+      <IngredientEditDrawer
+        open={Boolean(ingredientEditor)}
+        mode={ingredientEditor?.mode || "edit"}
+        ingredient={ingredientEditor?.ingredient}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            closeIngredientEditor();
+          }
+        }}
+        onSave={handleSaveIngredient}
+      />
     </div>
   );
 };

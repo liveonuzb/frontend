@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   Drawer,
   DrawerDescription,
@@ -59,7 +65,7 @@ const ActionDrawer = ({
   dateKey,
   mealType,
   initialNested,
-  onOpenCustomFoods,
+  onOpenSavedMeals,
   onCloseAll,
 }) => {
   const [activeNested, setActiveNested] = useState(null);
@@ -71,6 +77,7 @@ const ActionDrawer = ({
   const [audioLoggedAtHint, setAudioLoggedAtHint] = useState(null);
   const [audioTargetDateKey, setAudioTargetDateKey] = useState(null);
   const [inputSource, setInputSource] = useState("manual");
+  const isRootDrawerOpen = open && !activeNested;
 
   const {
     items: audioTranscriptHistory,
@@ -79,7 +86,7 @@ const ActionDrawer = ({
     clearHistory,
   } = useFoodAudioTranscriptHistory();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (open && initialNested) {
       setActiveNested(initialNested);
     }
@@ -161,7 +168,11 @@ const ActionDrawer = ({
 
   return (
     <div>
-      <Drawer direction="bottom" open={open} onOpenChange={onOpenChange}>
+      <Drawer
+        direction="bottom"
+        open={isRootDrawerOpen}
+        onOpenChange={onOpenChange}
+      >
         <NutritionDrawerContent size="sm">
           <DrawerHeader>
             <DrawerTitle>Ovqat qo'shish</DrawerTitle>
@@ -172,6 +183,7 @@ const ActionDrawer = ({
           </DrawerHeader>
           <NutritionDrawerBody className="flex flex-col gap-3">
             <Button
+              type="button"
               variant="outline"
               className="w-full h-16 rounded-2xl justify-start items-center px-4 hover:bg-primary/5 hover:border-primary/30 transition-all font-bold text-[15px] text-foreground border-border/50 group"
               onClick={() => setActiveNested("camera")}
@@ -183,6 +195,7 @@ const ActionDrawer = ({
             </Button>
 
             <Button
+              type="button"
               variant="outline"
               className="w-full h-16 rounded-2xl justify-start items-center px-4 hover:bg-primary/5 hover:border-primary/30 transition-all font-bold text-[15px] text-foreground border-border/50 group"
               onClick={() => {
@@ -199,6 +212,7 @@ const ActionDrawer = ({
             </Button>
 
             <Button
+              type="button"
               variant="outline"
               className="w-full h-16 rounded-2xl justify-start items-center px-4 hover:bg-primary/5 hover:border-primary/30 transition-all font-bold text-[15px] text-foreground border-border/50 group"
               onClick={() => setActiveNested("catalog")}
@@ -210,6 +224,7 @@ const ActionDrawer = ({
             </Button>
 
             <Button
+              type="button"
               variant="outline"
               className="w-full h-16 rounded-2xl justify-start items-center px-4 hover:bg-primary/5 hover:border-primary/30 transition-all font-bold text-[15px] text-foreground border-border/50 group"
               onClick={() => {
@@ -224,9 +239,10 @@ const ActionDrawer = ({
             </Button>
 
             <Button
+              type="button"
               variant="outline"
               className="w-full h-16 rounded-2xl justify-start items-center px-4 hover:bg-primary/5 hover:border-primary/30 transition-all font-bold text-[15px] text-foreground border-border/50 group"
-              onClick={() => onOpenCustomFoods?.()}
+              onClick={() => onOpenSavedMeals?.()}
             >
               <div className="size-10 rounded-full bg-orange-500/10 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
                 <ChefHatIcon className="size-5 text-orange-500" />
@@ -243,6 +259,12 @@ const ActionDrawer = ({
         onOpenChange={(value) => !value && setActiveNested(null)}
         dateKey={dateKey}
         mealType={mealType}
+        onOpenText={() => {
+          resetTranscriptState();
+          setTextAddVariant("text");
+          setInputSource("text");
+          setActiveNested("text");
+        }}
         onClose={() => {
           setActiveNested(null);
           onCloseAll?.();

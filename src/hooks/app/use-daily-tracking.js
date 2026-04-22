@@ -10,6 +10,12 @@ import {
 } from "@/hooks/api";
 import { FOODS_QUICK_ADD_QUERY_KEY } from "@/hooks/app/use-food-catalog";
 import { invalidateGamificationQueries } from "@/modules/user/lib/gamification-query-keys";
+import {
+  buildMealIngredientsPayload,
+  getMealIngredientTotals,
+  getMealIngredientsGrams,
+  normalizeMealIngredients,
+} from "@/modules/user/containers/nutrition/meal-ingredients.js";
 
 const WORKOUT_OVERVIEW_QUERY_KEY = ["user", "workout", "overview"];
 const WORKOUT_PLAN_QUERY_KEY = ["user", "workout", "plans"];
@@ -44,6 +50,7 @@ export const normalizeDateKey = (date) => {
 
 const normalizeMealItem = (item = {}) => ({
   id: item.id,
+  savedMealId: item.savedMealId ?? null,
   source: item.source ?? null,
   name: item.name ?? "",
   barcode: item.barcode ?? null,
@@ -54,7 +61,12 @@ const normalizeMealItem = (item = {}) => ({
   fiber: item.fiber ?? 0,
   qty: item.qty ?? item.quantity ?? 1,
   image: item.image ?? item.imageUrl ?? null,
-  grams: item.grams ?? null,
+  grams:
+    item.grams ??
+    (Array.isArray(item.ingredients)
+      ? getMealIngredientsGrams(item.ingredients)
+      : null),
+  ingredients: normalizeMealIngredients(item.ingredients),
   addedAt: item.addedAt ?? null,
 });
 
@@ -136,20 +148,29 @@ const setTrackingCache = (queryClient, dayData) => {
 const getCachedDayData = (queryClient, date) =>
   normalizeDayData(getTrackingPayload(queryClient.getQueryData(getDailyTrackingQueryKey(date))));
 
-const buildMealPayload = (mealType, food = {}) => ({
-  mealType,
-  source: food.source ?? null,
-  name: food.name,
-  barcode: food.barcode ?? null,
-  calories: food.cal ?? 0,
-  protein: food.protein ?? 0,
-  carbs: food.carbs ?? 0,
-  fat: food.fat ?? 0,
-  fiber: food.fiber ?? 0,
-  quantity: food.qty ?? 1,
-  imageUrl: food.image ?? null,
-  addedAt: food.addedAt ?? undefined,
-});
+const buildMealPayload = (mealType, food = {}) => {
+  const ingredientPayload = buildMealIngredientsPayload(food.ingredients);
+  const ingredientTotals = ingredientPayload.length
+    ? getMealIngredientTotals(ingredientPayload)
+    : null;
+
+  return {
+    mealType,
+    source: food.source ?? null,
+    savedMealId: food.savedMealId ?? null,
+    name: food.name,
+    barcode: food.barcode ?? null,
+    calories: ingredientTotals?.calories ?? food.cal ?? 0,
+    protein: ingredientTotals?.protein ?? food.protein ?? 0,
+    carbs: ingredientTotals?.carbs ?? food.carbs ?? 0,
+    fat: ingredientTotals?.fat ?? food.fat ?? 0,
+    fiber: ingredientTotals?.fiber ?? food.fiber ?? 0,
+    quantity: food.qty ?? 1,
+    imageUrl: food.image ?? null,
+    ...(ingredientPayload.length ? { ingredients: ingredientPayload } : {}),
+    addedAt: food.addedAt ?? undefined,
+  };
+};
 
 const buildMealPatchPayload = (mealType, patch = {}) => {
   const payload = {};
@@ -158,6 +179,7 @@ const buildMealPatchPayload = (mealType, patch = {}) => {
   if (patch.name !== undefined) payload.name = patch.name;
   if (patch.barcode !== undefined) payload.barcode = patch.barcode;
   if (patch.source !== undefined) payload.source = patch.source;
+  if (patch.savedMealId !== undefined) payload.savedMealId = patch.savedMealId;
   if (patch.cal !== undefined) payload.calories = patch.cal;
   if (patch.protein !== undefined) payload.protein = patch.protein;
   if (patch.carbs !== undefined) payload.carbs = patch.carbs;
@@ -165,6 +187,17 @@ const buildMealPatchPayload = (mealType, patch = {}) => {
   if (patch.fiber !== undefined) payload.fiber = patch.fiber;
   if (patch.qty !== undefined) payload.quantity = patch.qty;
   if (patch.image !== undefined) payload.imageUrl = patch.image;
+  if (patch.ingredients !== undefined) {
+    payload.ingredients = buildMealIngredientsPayload(patch.ingredients);
+    if (payload.ingredients.length) {
+      const totals = getMealIngredientTotals(payload.ingredients);
+      payload.calories = totals.calories;
+      payload.protein = totals.protein;
+      payload.carbs = totals.carbs;
+      payload.fat = totals.fat;
+      payload.fiber = totals.fiber;
+    }
+  }
   if (patch.addedAt !== undefined) payload.addedAt = patch.addedAt;
 
   return payload;

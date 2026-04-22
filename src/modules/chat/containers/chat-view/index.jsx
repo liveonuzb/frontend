@@ -41,13 +41,6 @@ const SIMULATED_REPLIES = [
 const TYPING_DELAY = 1500;
 const URL_REGEX = /(https?:\/\/[^\s<]+)/g;
 
-const WALLPAPERS = {
-    default: "bg-muted/5",
-    geometric: "bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-no-repeat bg-cover bg-center opacity-20",
-    fitness: "bg-[url('https://www.transparenttextures.com/patterns/binding-light.png')] bg-no-repeat bg-cover bg-center opacity-15",
-    abstract: "bg-gradient-to-br from-primary/5 via-background to-secondary/5"
-};
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -120,8 +113,6 @@ const ChatView = () => {
         sendBooking,
         sendInvoice,
         getAISuggestions,
-        activeWallpaper,
-        customWallpaper,
         activeLive,
         startLive,
         endLive,
@@ -512,10 +503,9 @@ const ChatView = () => {
             toast.success("Xabar yuborildi");
             setForwardDialogOpen(false);
             setForwardingMsg(null);
-            setActiveChat(targetChatId);
-            setShowMobileChat(true);
+            navigate(getChatPath(activeRole, targetChatId));
         },
-        [activeChat, forwardingMsg, forwardMessage]
+        [activeChat, activeRole, forwardingMsg, forwardMessage, navigate]
     );
 
     const handleChatSearchNext = React.useCallback(() => {
@@ -625,28 +615,12 @@ const ChatView = () => {
         <>
             <div
                 className={cn(
-                    "flex-1 flex flex-col bg-background relative transition-all duration-300 w-full h-full overflow-hidden",
-                    showMobileChat ? "flex fixed inset-0 z-40 md:relative" : "hidden md:flex",
+                    "flex-1 flex flex-col bg-background relative transition-all duration-300 w-full h-full overflow-hidden md:border-l",
+                    showMobileChat ? "fixed inset-0 z-50 flex md:relative md:inset-auto md:z-auto" : "hidden md:flex",
                 )}
             >
-                <div
-                    className={cn(
-                        "absolute inset-0 pointer-events-none z-0 bg-cover bg-center bg-no-repeat transition-all duration-500",
-                        activeWallpaper !== "custom" &&
-                            (WALLPAPERS[activeWallpaper] || WALLPAPERS.default),
-                    )}
-                    style={
-                        activeWallpaper === "custom"
-                            ? { backgroundImage: `url(${customWallpaper})` }
-                            : {}
-                    }
-                />
-                {activeWallpaper === "custom" && (
-                    <div className="absolute inset-0 bg-black/10 pointer-events-none z-0" />
-                )}
-
                 {activeEntity ? (
-                    <div className="flex flex-col h-full w-full relative z-10">
+                    <div className="flex flex-col h-full w-full relative">
                         <ChatHeader
                             activeEntity={activeEntity}
                             typingUsers={typingUsers}

@@ -130,16 +130,6 @@ const FoodLogDrawer = ({
         <DrawerBody>
           {isConsumed && (
             <div className="pb-2">
-              {food.image && (
-                <div className="h-48 rounded-2xl overflow-hidden bg-muted/30 mb-4">
-                  <img
-                    src={food.image}
-                    alt={food.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-
               <div className="flex flex-col items-center">
                 <GaugeProgress
                   value={totalCal}
@@ -185,6 +175,16 @@ const FoodLogDrawer = ({
                   </div>
                 </div>
               </div>
+
+              {image && (
+                <div className="mb-4 h-48 overflow-hidden rounded-2xl bg-muted/30">
+                  <img
+                    src={image}
+                    alt={food.name}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              )}
 
               {food.vitamins && (
                 <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 space-y-3 mb-4">

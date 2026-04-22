@@ -12,13 +12,20 @@ import { Loader2Icon, SparklesIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useDailyTrackingActions } from "@/hooks/app/use-daily-tracking";
 import { useFoodScan } from "@/hooks/app/use-food-catalog";
+import { useSavedMealsActions } from "@/hooks/app/use-saved-meals";
 import useHealthGoals from "@/hooks/app/use-health-goals";
 import {
   buildMealPayloadFromDraft,
-  getDraftReviewCount,
+  getDraftImageUrl,
   MealDraftCard,
   MealDraftSummaryCard,
 } from "./meal-draft-review.jsx";
+import {
+  addMealIngredient,
+  removeMealIngredient,
+  updateMealIngredient,
+} from "./meal-ingredients.js";
+import SaveToMyMealsButton from "./save-to-my-meals-button.jsx";
 
 const formatLoggedAtHint = (value) => {
   if (!value) {
@@ -61,6 +68,7 @@ export default function AiMealDraftDrawer({
   const [analysisError, setAnalysisError] = React.useState(null);
   const [isAnalyzing, setIsAnalyzing] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [saveToMyMeals, setSaveToMyMeals] = React.useState(false);
   const autoAnalyzeRef = React.useRef(false);
   const sourceText = React.useMemo(
     () => String(initialText || "").trim(),
@@ -68,12 +76,9 @@ export default function AiMealDraftDrawer({
   );
 
   const { addMeal: addMealAction } = useDailyTrackingActions();
+  const { createSavedMeal } = useSavedMealsActions();
   const { analyzeMealTextDraft } = useFoodScan();
   const { goals } = useHealthGoals();
-  const reviewItemsCount = React.useMemo(
-    () => getDraftReviewCount(analysisItems),
-    [analysisItems],
-  );
   const loggedAtHintLabel = React.useMemo(
     () => formatLoggedAtHint(loggedAtHint),
     [loggedAtHint],
@@ -88,8 +93,16 @@ export default function AiMealDraftDrawer({
     setAnalysisError(null);
     setIsAnalyzing(false);
     setIsSaving(false);
+    setSaveToMyMeals(false);
     autoAnalyzeRef.current = false;
-  }, [initialText, mealType, dateKey, inputSource, loggedAtHint, targetDateKey]);
+  }, [
+    initialText,
+    mealType,
+    dateKey,
+    inputSource,
+    loggedAtHint,
+    targetDateKey,
+  ]);
 
   const handleAnalyze = React.useCallback(
     async (overrideText) => {
@@ -138,16 +151,56 @@ export default function AiMealDraftDrawer({
     void handleAnalyze(initialText);
   }, [handleAnalyze, initialText]);
 
-  const handlePortionChange = React.useCallback((draftId, grams) => {
+  const handleIngredientUpdate = React.useCallback(
+    (draftId, ingredientId, ingredient) => {
+      setAnalysisItems((current) =>
+        current.map((item) =>
+          item.id === draftId
+            ? {
+                ...item,
+                ingredients: updateMealIngredient(
+                  item.ingredients,
+                  ingredientId,
+                  ingredient,
+                ),
+              }
+            : item,
+        ),
+      );
+    },
+    [],
+  );
+
+  const handleIngredientRemove = React.useCallback((draftId, ingredientId) => {
     setAnalysisItems((current) =>
       current.map((item) =>
-        item.id === draftId ? { ...item, grams } : item,
+        item.id === draftId
+          ? {
+              ...item,
+              ingredients: removeMealIngredient(item.ingredients, ingredientId),
+            }
+          : item,
+      ),
+    );
+  }, []);
+
+  const handleIngredientAdd = React.useCallback((draftId, ingredient) => {
+    setAnalysisItems((current) =>
+      current.map((item) =>
+        item.id === draftId
+          ? {
+              ...item,
+              ingredients: addMealIngredient(item.ingredients, ingredient),
+            }
+          : item,
       ),
     );
   }, []);
 
   const handleRemoveItem = React.useCallback((draftId) => {
-    setAnalysisItems((current) => current.filter((item) => item.id !== draftId));
+    setAnalysisItems((current) =>
+      current.filter((item) => item.id !== draftId),
+    );
   }, []);
 
   const handleConfirmItem = React.useCallback((draftId) => {
@@ -180,10 +233,22 @@ export default function AiMealDraftDrawer({
 
     try {
       for (const item of analysisItems) {
+        let savedMealId = null;
+        if (saveToMyMeals) {
+          const savedMeal = await createSavedMeal({
+            name: item.title || "Ovqat",
+            source: inputSource,
+            imageUrl: getDraftImageUrl(item),
+            ingredients: item.ingredients,
+          });
+          savedMealId = savedMeal.id;
+        }
+
         await addMealAction(targetDateKey || dateKey, mealType, {
           ...buildMealPayloadFromDraft(item, {
             source: inputSource,
             addedAt: inputSource === "audio" ? loggedAtHint : undefined,
+            savedMealId,
           }),
           addedFromPlan: false,
         });
@@ -209,21 +274,29 @@ export default function AiMealDraftDrawer({
     loggedAtHint,
     mealType,
     onClose,
+    createSavedMeal,
+    saveToMyMeals,
     targetDateKey,
   ]);
 
   return (
     <>
       <DrawerHeader className="space-y-4">
-        <div>
-          <DrawerTitle>
-            {inputSource === "audio"
-              ? "Audio orqali topilgan ovqatlar"
-              : "AI orqali topilgan ovqatlar"}
-          </DrawerTitle>
-          <DrawerDescription>
-            Bu drawer faqat AI draft review uchun. Katalog bilan aralashmaydi.
-          </DrawerDescription>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <DrawerTitle>
+              {inputSource === "audio"
+                ? "Audio orqali topilgan ovqatlar"
+                : "AI orqali topilgan ovqatlar"}
+            </DrawerTitle>
+            <DrawerDescription>
+              Bu drawer faqat AI draft review uchun. Katalog bilan aralashmaydi.
+            </DrawerDescription>
+          </div>
+          <SaveToMyMealsButton
+            checked={saveToMyMeals}
+            onCheckedChange={setSaveToMyMeals}
+          />
         </div>
 
         {inputSource === "audio" && loggedAtHintLabel ? (
@@ -239,7 +312,6 @@ export default function AiMealDraftDrawer({
             <span className="font-semibold capitalize">{targetDateLabel}</span>
           </div>
         ) : null}
-
       </DrawerHeader>
 
       <DrawerBody className="p-0">
@@ -250,7 +322,9 @@ export default function AiMealDraftDrawer({
                 <Loader2Icon className="size-6 animate-spin" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-base font-semibold">Matn AI orqali tahlil qilinmoqda</h3>
+                <h3 className="text-base font-semibold">
+                  Matn AI orqali tahlil qilinmoqda
+                </h3>
                 <p className="text-sm text-muted-foreground">
                   Ingredientlar va porsiyalar tayyorlanmoqda.
                 </p>
@@ -265,23 +339,27 @@ export default function AiMealDraftDrawer({
                 emptyDescription={
                   analysisError || "AI bu matndan draft tayyorlay olmadi."
                 }
-                filledDescription="AI draftini tekshirib, keyin tasdiqlang."
               />
 
               {analysisItems.length > 0 ? (
                 <div className="space-y-3">
-                  {reviewItemsCount > 0 ? (
-                    <div className="rounded-3xl border border-amber-500/20 bg-amber-500/5 px-4 py-4 text-sm text-amber-700 dark:text-amber-300">
-                      Ingredientlar taxminiy bo&apos;lishi mumkin. Kerak bo&apos;lsa
-                      draftni tasdiqlang yoki qayta aniqlang.
-                    </div>
-                  ) : null}
-
                   {analysisItems.map((item) => (
                     <MealDraftCard
                       key={item.id}
                       item={item}
-                      onPortionChange={(value) => handlePortionChange(item.id, value)}
+                      onIngredientUpdate={(ingredientId, ingredient) =>
+                        handleIngredientUpdate(
+                          item.id,
+                          ingredientId,
+                          ingredient,
+                        )
+                      }
+                      onIngredientRemove={(ingredientId) =>
+                        handleIngredientRemove(item.id, ingredientId)
+                      }
+                      onIngredientAdd={(ingredient) =>
+                        handleIngredientAdd(item.id, ingredient)
+                      }
                       onRemove={() => handleRemoveItem(item.id)}
                       onConfirm={() => handleConfirmItem(item.id)}
                     />
