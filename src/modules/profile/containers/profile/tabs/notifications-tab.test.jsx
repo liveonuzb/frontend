@@ -121,7 +121,9 @@ describe("NotificationSettingsDrawer", () => {
     });
     vi.mocked(useUserTelegram).mockReturnValue({
       createConnectLink,
+      disconnectTelegram: vi.fn(),
       isCreatingConnectLink: false,
+      isDisconnectingTelegram: false,
     });
 
     render(<NotificationSettingsDrawer open onOpenChange={vi.fn()} />);
@@ -180,7 +182,9 @@ describe("NotificationSettingsDrawer", () => {
     });
     vi.mocked(useUserTelegram).mockReturnValue({
       createConnectLink: vi.fn(),
+      disconnectTelegram: vi.fn(),
       isCreatingConnectLink: false,
+      isDisconnectingTelegram: false,
     });
 
     render(<NotificationSettingsDrawer open onOpenChange={vi.fn()} />);
@@ -194,6 +198,9 @@ describe("NotificationSettingsDrawer", () => {
     expect(screen.getByText("Chat status: To'xtatilgan")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Botni ochish" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Telegramni uzish" }),
     ).toBeInTheDocument();
   });
 });

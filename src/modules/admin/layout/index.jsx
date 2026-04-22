@@ -20,6 +20,7 @@ import {
   AwardIcon,
   WrenchIcon,
   MedalIcon,
+  BotIcon,
 } from "lucide-react";
 import {
   Sidebar,
@@ -104,6 +105,7 @@ const premiumNav = [
 const systemNav = [
   { to: "/admin/reports", label: "Hisobotlar", icon: FileSpreadsheetIcon },
   { to: "/admin/audit-logs", label: "Audit log", icon: FileClockIcon },
+  { to: "/admin/platform-bot", label: "Platform Bot", icon: BotIcon },
   { to: "/admin/languages", label: "Tillar", icon: GlobeIcon },
   { to: "/admin/settings", label: "Sozlamalar", icon: SettingsIcon },
 ];

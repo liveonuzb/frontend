@@ -59,6 +59,9 @@ const ChallengesPage = lazy(
 const AchievementsPage = lazy(
   () => import("@/modules/admin/pages/achievements/index.jsx"),
 );
+const PlatformBotPage = lazy(
+  () => import("@/modules/admin/pages/platform-bot/index.jsx"),
+);
 const CoachSpecializationsPage = lazy(
   () => import("@/modules/admin/pages/coach-specializations/index.jsx"),
 );
@@ -269,6 +272,16 @@ const Index = () => {
             <Suspense fallback={<PageLoader />}>
               <ErrorBoundary>
                 <SettingsPage />
+              </ErrorBoundary>
+            </Suspense>
+          }
+        />
+        <Route
+          path="platform-bot"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <ErrorBoundary>
+                <PlatformBotPage />
               </ErrorBoundary>
             </Suspense>
           }

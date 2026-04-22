@@ -10,6 +10,7 @@ import {
   RefreshCwIcon,
   Settings2Icon,
   SparklesIcon,
+  UnplugIcon,
   UtensilsIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -194,7 +195,12 @@ const NotificationsSettingsForm = ({ form, setForm, t }) => (
 
 const TelegramConnectCard = ({ t }) => {
   const { user, refetch, isFetching } = useMe();
-  const { createConnectLink, isCreatingConnectLink } = useUserTelegram();
+  const {
+    createConnectLink,
+    disconnectTelegram,
+    isCreatingConnectLink,
+    isDisconnectingTelegram,
+  } = useUserTelegram();
   const telegramConnected = Boolean(user?.telegramConnected);
   const telegramLanguageLabel = getTelegramLanguageLabel(
     user?.telegramLanguage,
@@ -221,6 +227,27 @@ const TelegramConnectCard = ({ t }) => {
   const handleRefresh = React.useCallback(() => {
     void refetch();
   }, [refetch]);
+
+  const handleDisconnect = React.useCallback(async () => {
+    try {
+      await disconnectTelegram();
+      toast.success(
+        t("profile.notifications.telegramDisconnectSuccess", {
+          defaultValue: "Telegram uzildi.",
+        }),
+      );
+      void refetch();
+    } catch (error) {
+      toast.error(
+        getRequestErrorMessage(
+          error,
+          t("profile.notifications.telegramDisconnectError", {
+            defaultValue: "Telegramni uzib bo'lmadi.",
+          }),
+        ),
+      );
+    }
+  }, [disconnectTelegram, refetch, t]);
 
   return (
     <Card className="border-border/60 bg-card/90 shadow-sm">
@@ -294,11 +321,25 @@ const TelegramConnectCard = ({ t }) => {
             onClick={handleRefresh}
             disabled={isFetching}
           >
-            <RefreshCwIcon className="size-4" />
+            <RefreshCwIcon data-icon="inline-start" />
             {t("profile.notifications.telegramRefresh", {
               defaultValue: "Statusni yangilash",
             })}
           </Button>
+          {telegramConnected ? (
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              onClick={handleDisconnect}
+              disabled={isDisconnectingTelegram}
+            >
+              <UnplugIcon data-icon="inline-start" />
+              {t("profile.notifications.telegramDisconnect", {
+                defaultValue: "Telegramni uzish",
+              })}
+            </Button>
+          ) : null}
         </div>
       </CardContent>
     </Card>
