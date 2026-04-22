@@ -7,6 +7,7 @@ import {
   usePatchQuery,
   usePostQuery,
 } from "@/hooks/api";
+import { getApiResponseData } from "@/lib/api-response";
 import {
   COACH_CLIENTS_QUERY_KEY,
   COACH_CLIENT_DETAIL_QUERY_KEY,
@@ -16,6 +17,23 @@ import {
   COACH_DASHBOARD_QUERY_KEY,
   COACH_PAYMENTS_QUERY_KEY,
 } from "./use-coach-query-keys";
+
+const DEFAULT_COACH_CLIENT_DETAIL = {
+  client: null,
+  overview: null,
+  measurements: [],
+  dailyLogs: [],
+  assignedTemplates: [],
+  weeklyCheckIns: [],
+  feedback: [],
+  tasks: [],
+  payments: [],
+};
+
+export const resolveCoachClientDetailPayload = (response) => ({
+  ...DEFAULT_COACH_CLIENT_DETAIL,
+  ...(getApiResponseData(response, DEFAULT_COACH_CLIENT_DETAIL) ?? {}),
+});
 
 export const useCoachClients = (params = {}) => {
   const queryClient = useQueryClient();
@@ -598,6 +616,7 @@ export const useCoachClientDetail = (clientId, enabled = true) => {
 
         queryClient.setQueryData(detailKey, (old) => {
           if (!old) return old;
+          const currentPayload = resolveCoachClientDetailPayload(old);
           const optimistic = {
             id: `optimistic-${Date.now()}`,
             type: get(attributes, "type", "GENERAL"),
@@ -606,11 +625,15 @@ export const useCoachClientDetail = (clientId, enabled = true) => {
             createdAt: new Date().toISOString(),
             _optimistic: true,
           };
+
           return {
             ...old,
             data: {
               ...get(old, "data", {}),
-              feedback: [optimistic, ...get(old, "data.feedback", [])],
+              data: {
+                ...currentPayload,
+                feedback: [optimistic, ...get(currentPayload, "feedback", [])],
+              },
             },
           };
         });
@@ -760,17 +783,7 @@ export const useCoachClientDetail = (clientId, enabled = true) => {
 
   return {
     ...query,
-    detail: get(data, "data", {
-      client: null,
-      overview: null,
-      measurements: [],
-      dailyLogs: [],
-      assignedTemplates: [],
-      weeklyCheckIns: [],
-      feedback: [],
-      tasks: [],
-      payments: [],
-    }),
+    detail: resolveCoachClientDetailPayload(data),
     createWeeklyCheckIn,
     markPayment,
     updateClientPricing,

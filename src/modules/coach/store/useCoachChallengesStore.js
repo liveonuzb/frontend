@@ -243,7 +243,7 @@ export const useCoachChallengesStore = create((set, get) => ({
     }
 
     try {
-      const response = await api.get("/challenges/invitations/my", {
+      const response = await api.get("/challenges/invitations/me", {
         params: status ? { status } : undefined,
       });
       set({ challengeInvitations: extractCollection(response?.data) });
@@ -258,11 +258,19 @@ export const useCoachChallengesStore = create((set, get) => ({
     }
   },
 
-  fetchInviteCandidates: async (query = "") => {
+  fetchInviteCandidates: async (challengeId, query = "") => {
+    if (!challengeId) {
+      set({ inviteCandidates: [] });
+      return;
+    }
+
     try {
-      const response = await api.get("/challenges/invite-candidates", {
-        params: query ? { q: query } : undefined,
-      });
+      const response = await api.get(
+        `/challenges/${challengeId}/invite-candidates`,
+        {
+          params: query ? { q: query } : undefined,
+        },
+      );
       const payload = response?.data?.data ?? response?.data;
       set({ inviteCandidates: extractCollection(payload) });
     } catch (error) {
@@ -275,8 +283,8 @@ export const useCoachChallengesStore = create((set, get) => ({
     set({ inviteCandidates: [] });
   },
 
-  searchInviteCandidates: async (_challengeId, query = "") =>
-    get().fetchInviteCandidates(query),
+  searchInviteCandidates: async (challengeId, query = "") =>
+    get().fetchInviteCandidates(challengeId, query),
 
   inviteUsersToChallenge: async ({ challengeId, userIds = [] }, onSuccess) => {
     set((state) => ({

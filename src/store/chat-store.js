@@ -70,6 +70,16 @@ const syncRoomLastMessage = (contacts, roomId, message, incrementUnread = false)
             : contact,
     );
 
+export const getChatSocketConnectionConfig = (baseURL) => {
+    const normalizedBaseURL = String(baseURL || "").replace(/\/+$/, "");
+    const apiPrefix = normalizedBaseURL.match(/(\/api\/v\d+)$/)?.[1] || "/api/v1";
+
+    return {
+        socketUrl: normalizedBaseURL.replace(/\/api\/v\d+$/, ""),
+        socketPath: `${apiPrefix}/socket.io`,
+    };
+};
+
 const useChatStore = create(
     persist(
         (set, get) => ({
@@ -100,11 +110,11 @@ const useChatStore = create(
                 const { token } = useAuthStore.getState();
                 if (!token || get().socket) return;
 
-                // Ensure we use the base URL without /api/v1 suffix for socket.io
-                const socketUrl = config.baseURL.replace(/\/api\/v\d+\/?$/, "");
+                const { socketUrl, socketPath } = getChatSocketConnectionConfig(config.baseURL);
 
                 const socket = io(socketUrl, {
                     auth: { token },
+                    path: socketPath,
                     transports: ["websocket", "polling"],
                 });
 
