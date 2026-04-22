@@ -115,6 +115,8 @@ const RewardReminderDrawer = () => {
     false,
   );
   const closingNotificationIdRef = React.useRef(null);
+  const blockingDrawerValueRef = React.useRef(false);
+  const blockingDrawerFrameRef = React.useRef(null);
 
   const currentNotification = React.useMemo(
     () =>
@@ -124,16 +126,47 @@ const RewardReminderDrawer = () => {
 
   React.useEffect(() => {
     const update = () => {
-      setHasBlockingBottomDrawer(getHasBlockingBottomDrawer());
+      const nextValue = getHasBlockingBottomDrawer();
+
+      if (blockingDrawerValueRef.current === nextValue) {
+        return;
+      }
+
+      blockingDrawerValueRef.current = nextValue;
+      setHasBlockingBottomDrawer(nextValue);
     };
 
-    update();
+    const scheduleUpdate = () => {
+      if (typeof window === "undefined") {
+        update();
+        return;
+      }
+
+      if (blockingDrawerFrameRef.current !== null) {
+        return;
+      }
+
+      blockingDrawerFrameRef.current = window.requestAnimationFrame(() => {
+        blockingDrawerFrameRef.current = null;
+        update();
+      });
+    };
+
+    scheduleUpdate();
 
     if (typeof MutationObserver === "undefined" || !document?.body) {
-      return undefined;
+      return () => {
+        if (
+          typeof window !== "undefined" &&
+          blockingDrawerFrameRef.current !== null
+        ) {
+          window.cancelAnimationFrame(blockingDrawerFrameRef.current);
+          blockingDrawerFrameRef.current = null;
+        }
+      };
     }
 
-    const observer = new MutationObserver(update);
+    const observer = new MutationObserver(scheduleUpdate);
     observer.observe(document.body, {
       childList: true,
       subtree: true,
@@ -141,7 +174,16 @@ const RewardReminderDrawer = () => {
       attributeFilter: ["data-vaul-drawer-direction"],
     });
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (
+        typeof window !== "undefined" &&
+        blockingDrawerFrameRef.current !== null
+      ) {
+        window.cancelAnimationFrame(blockingDrawerFrameRef.current);
+        blockingDrawerFrameRef.current = null;
+      }
+    };
   }, []);
 
   React.useEffect(() => {
