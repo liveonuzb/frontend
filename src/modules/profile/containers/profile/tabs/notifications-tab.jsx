@@ -87,6 +87,24 @@ const getNotificationOptions = (t) => [
   },
 ];
 
+const getTelegramLanguageLabel = (languageCode, t) => {
+  if (languageCode === "ru") {
+    return t("profile.general.languageRu", {
+      defaultValue: "Русский",
+    });
+  }
+
+  if (languageCode === "en") {
+    return t("profile.general.languageEn", {
+      defaultValue: "English",
+    });
+  }
+
+  return t("profile.general.languageUz", {
+    defaultValue: "O'zbek",
+  });
+};
+
 const createInitialForm = (settings) => ({
   emailMarketing: settings.emailMarketing ?? true,
   emailWorkout: settings.emailWorkout ?? true,
@@ -178,6 +196,11 @@ const TelegramConnectCard = ({ t }) => {
   const { user, refetch, isFetching } = useMe();
   const { createConnectLink, isCreatingConnectLink } = useUserTelegram();
   const telegramConnected = Boolean(user?.telegramConnected);
+  const telegramLanguageLabel = getTelegramLanguageLabel(
+    user?.telegramLanguage,
+    t,
+  );
+  const telegramMuted = Boolean(user?.telegramMuted);
 
   const handleConnect = React.useCallback(async () => {
     try {
@@ -216,13 +239,36 @@ const TelegramConnectCard = ({ t }) => {
               {telegramConnected
                 ? t("profile.notifications.telegramConnectedDesc", {
                     defaultValue:
-                      "LiveOn reminder bot ulangan. Suv, ovqat va progress eslatmalari shu yerga ham yuboriladi.",
+                      "LiveOn reminder bot ulangan. /start orqali tilni o'zgartirish, statusni ko'rish va reminderlarni boshqarish mumkin.",
                   })
                 : t("profile.notifications.telegramDisconnectedDesc", {
                     defaultValue:
-                      "Reminderlarni Telegramga yuborish uchun @liveonappbot ni profilingizga ulang.",
+                      "Reminderlarni Telegramga yuborish uchun @liveonappbot ni ulang, botda /start bosib tilni tanlang.",
                   })}
             </p>
+            {telegramConnected ? (
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                <span>
+                  {t("profile.notifications.telegramLanguage", {
+                    defaultValue: "Til",
+                  })}
+                  : {telegramLanguageLabel}
+                </span>
+                <span>
+                  {t("profile.notifications.telegramChatStatus", {
+                    defaultValue: "Chat status",
+                  })}
+                  :{" "}
+                  {telegramMuted
+                    ? t("profile.notifications.telegramPaused", {
+                        defaultValue: "To'xtatilgan",
+                      })
+                    : t("profile.notifications.telegramActive", {
+                        defaultValue: "Faol",
+                      })}
+                </span>
+              </div>
+            ) : null}
           </div>
         </div>
 

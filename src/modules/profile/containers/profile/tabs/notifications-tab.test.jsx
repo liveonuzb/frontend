@@ -26,7 +26,9 @@ vi.mock("@/components/ui/drawer", () => ({
   DrawerHeader: ({ children }) => <div>{children}</div>,
   DrawerTitle: ({ children }) => <div>{children}</div>,
   DrawerDescription: ({ children }) => <div>{children}</div>,
-  DrawerBody: ({ children, className }) => <div className={className}>{children}</div>,
+  DrawerBody: ({ children, className }) => (
+    <div className={className}>{children}</div>
+  ),
   DrawerFooter: ({ children }) => <div>{children}</div>,
 }));
 
@@ -127,7 +129,7 @@ describe("NotificationSettingsDrawer", () => {
     expect(screen.getByText("Telegram bot")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Reminderlarni Telegramga yuborish uchun @liveonappbot ni profilingizga ulang.",
+        "Reminderlarni Telegramga yuborish uchun @liveonappbot ni ulang, botda /start bosib tilni tanlang.",
       ),
     ).toBeInTheDocument();
 
@@ -170,6 +172,8 @@ describe("NotificationSettingsDrawer", () => {
     vi.mocked(useMe).mockReturnValue({
       user: {
         telegramConnected: true,
+        telegramLanguage: "ru",
+        telegramMuted: true,
       },
       refetch: vi.fn(),
       isFetching: false,
@@ -183,9 +187,11 @@ describe("NotificationSettingsDrawer", () => {
 
     expect(
       screen.getByText(
-        "LiveOn reminder bot ulangan. Suv, ovqat va progress eslatmalari shu yerga ham yuboriladi.",
+        "LiveOn reminder bot ulangan. /start orqali tilni o'zgartirish, statusni ko'rish va reminderlarni boshqarish mumkin.",
       ),
     ).toBeInTheDocument();
+    expect(screen.getByText("Til: Русский")).toBeInTheDocument();
+    expect(screen.getByText("Chat status: To'xtatilgan")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Botni ochish" }),
     ).toBeInTheDocument();
