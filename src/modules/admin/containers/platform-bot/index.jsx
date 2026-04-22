@@ -48,6 +48,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { getApiResponseData } from "@/lib/api-response";
 
 const ADMIN_PLATFORM_BOT_QUERY_KEY = ["admin", "platform-bot"];
 const ADMIN_PLATFORM_BOT_USERS_QUERY_KEY = ["admin", "platform-bot", "users"];
@@ -157,10 +158,18 @@ const PlatformBotPage = () => {
     listKey: ADMIN_PLATFORM_BOT_USERS_QUERY_KEY,
   });
 
-  const webhookInfo = get(statusQuery.data, "data.webhookInfo", null);
-  const stats = get(statusQuery.data, "data.stats", {});
-  const users = get(usersQuery.data, "data.items", []);
-  const totalUsers = get(usersQuery.data, "data.total", 0);
+  const statusPayload = React.useMemo(
+    () => getApiResponseData(statusQuery.data, {}),
+    [statusQuery.data],
+  );
+  const usersPayload = React.useMemo(
+    () => getApiResponseData(usersQuery.data, {}),
+    [usersQuery.data],
+  );
+  const webhookInfo = get(statusPayload, "webhookInfo", null);
+  const stats = get(statusPayload, "stats", {});
+  const users = get(usersPayload, "items", []);
+  const totalUsers = get(usersPayload, "total", 0);
   const hasPreviousPage = offset > 0;
   const hasNextPage = offset + PAGE_SIZE < totalUsers;
 
@@ -186,7 +195,7 @@ const PlatformBotPage = () => {
         url: "/admin/platform-bot/broadcast",
         attributes: { text: broadcastText.trim() },
       });
-      const result = get(response, "data", {});
+      const result = getApiResponseData(response, {});
       toast.success(
         `Broadcast yakunlandi: ${result.sent ?? 0} yuborildi, ${
           result.failed ?? 0
@@ -419,7 +428,9 @@ const PlatformBotPage = () => {
                           </div>
                         </TableCell>
                         <TableCell>{chat.phone || "-"}</TableCell>
-                        <TableCell>{formatDateTime(chat.lastActiveAt)}</TableCell>
+                        <TableCell>
+                          {formatDateTime(chat.lastActiveAt)}
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : (
@@ -470,4 +481,3 @@ const PlatformBotPage = () => {
 };
 
 export default PlatformBotPage;
-
