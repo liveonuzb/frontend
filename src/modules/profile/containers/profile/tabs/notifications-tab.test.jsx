@@ -129,7 +129,7 @@ describe("NotificationSettingsDrawer", () => {
     expect(screen.getByText("Telegram bot")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Reminderlarni Telegramga yuborish uchun @liveonappbot ni ulang, botda /start bosib tilni tanlang.",
+        "Reminderlarni Telegramga yuborish uchun @liveonappbot ni ulang. Agar START ko'rinmasa Menu yoki /start dan foydalaning.",
       ),
     ).toBeInTheDocument();
 
@@ -187,7 +187,7 @@ describe("NotificationSettingsDrawer", () => {
 
     expect(
       screen.getByText(
-        "LiveOn reminder bot ulangan. /start orqali tilni o'zgartirish, statusni ko'rish va reminderlarni boshqarish mumkin.",
+        "LiveOn reminder bot ulangan. Agar START ko'rinmasa Menu yoki /start orqali til, status va reminderlarni boshqaring.",
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("Til: Русский")).toBeInTheDocument();

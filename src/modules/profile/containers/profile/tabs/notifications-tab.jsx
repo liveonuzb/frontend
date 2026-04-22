@@ -239,11 +239,11 @@ const TelegramConnectCard = ({ t }) => {
               {telegramConnected
                 ? t("profile.notifications.telegramConnectedDesc", {
                     defaultValue:
-                      "LiveOn reminder bot ulangan. /start orqali tilni o'zgartirish, statusni ko'rish va reminderlarni boshqarish mumkin.",
+                      "LiveOn reminder bot ulangan. Agar START ko'rinmasa Menu yoki /start orqali til, status va reminderlarni boshqaring.",
                   })
                 : t("profile.notifications.telegramDisconnectedDesc", {
                     defaultValue:
-                      "Reminderlarni Telegramga yuborish uchun @liveonappbot ni ulang, botda /start bosib tilni tanlang.",
+                      "Reminderlarni Telegramga yuborish uchun @liveonappbot ni ulang. Agar START ko'rinmasa Menu yoki /start dan foydalaning.",
                   })}
             </p>
             {telegramConnected ? (
