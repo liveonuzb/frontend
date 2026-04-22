@@ -474,7 +474,8 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
 
     const [allXpTransactions, setAllXpTransactions] = useState([]);
     React.useEffect(() => {
-        const transactions = get(xpPayload, "transactions", []);
+        const payload = getApiResponseData(xpData, {});
+        const transactions = get(payload, "transactions", []);
         if (!isEmpty(transactions)) {
             setAllXpTransactions((prev) => {
                 if (xpOffset === 0) return transactions;
@@ -483,7 +484,7 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
                 return [...prev, ...newItems];
             });
         }
-    }, [xpPayload, xpOffset]);
+    }, [xpData, xpOffset]);
     const hasMoreXp = size(allXpTransactions) < xpTotal;
 
     const { data: leaderboardData, isLoading: leaderboardLoading } = useGetQuery({
