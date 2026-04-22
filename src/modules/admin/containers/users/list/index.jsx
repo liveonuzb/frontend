@@ -32,10 +32,11 @@ import { DeleteAlert } from "./delete-alert.jsx";
 import GiftPremiumDrawer from "../components/gift-premium-drawer.jsx";
 
 const DEFAULT_PAGE_SIZE = 10;
+const EMPTY_ROLES = [];
 
 const Index = () => {
   const navigate = useNavigate();
-  const currentUserRoles = useAuthStore((state) => state.roles ?? []);
+  const currentUserRoles = useAuthStore((state) => state.roles ?? EMPTY_ROLES);
   const isSuperAdmin = includes(currentUserRoles, "SUPER_ADMIN");
 
   const {

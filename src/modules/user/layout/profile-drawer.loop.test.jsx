@@ -89,4 +89,21 @@ describe("ProfileDrawer", () => {
       expect(screen.getAllByText("Fazliddin Liveon").length).toBeGreaterThan(0);
     });
   });
+
+  it("renders the overview when user settings are missing", async () => {
+    useAuthStore.setState({
+      user: {
+        id: "user-1",
+        firstName: "Fazliddin",
+        lastName: "Liveon",
+        username: "fazliddin",
+      },
+    });
+
+    renderProfileDrawer();
+
+    await waitFor(() => {
+      expect(screen.getAllByText("Fazliddin Liveon").length).toBeGreaterThan(0);
+    });
+  });
 });

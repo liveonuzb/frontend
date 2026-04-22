@@ -69,6 +69,7 @@ const SETTINGS_GROUPS = [
   ["privacy", "security"],
   ["premium", "referral"],
 ];
+const EMPTY_PROFILE_SETTINGS = {};
 
 const getProfileIdentity = (user) => {
   const firstName = get(user, "firstName", "");
@@ -481,7 +482,9 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
   );
 
   const { languages } = useAppLanguages();
-  const settings = useAuthStore((state) => state.user?.settings ?? {});
+  const settings = useAuthStore(
+    (state) => state.user?.settings ?? EMPTY_PROFILE_SETTINGS,
+  );
   const roles = useAuthStore((state) => state.roles);
   const activeRole = useAuthStore((state) => state.activeRole);
   const setActiveRole = useAuthStore((state) => state.setActiveRole);
