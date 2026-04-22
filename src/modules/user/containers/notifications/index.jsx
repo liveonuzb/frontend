@@ -8,6 +8,7 @@ import {
   CheckIcon,
   CrownIcon,
   FilterIcon,
+  GiftIcon,
   Loader2Icon,
   MessageSquareIcon,
   TargetIcon,
@@ -49,6 +50,8 @@ const NOTIFICATION_ICONS = {
   coach_payment_due: { icon: BanknoteIcon, color: "text-amber-500" },
   premium_expiring: { icon: CrownIcon, color: "text-amber-500" },
   premium_upsell: { icon: CrownIcon, color: "text-primary" },
+  achievement_earned: { icon: TrophyIcon, color: "text-amber-500" },
+  referral_reward: { icon: GiftIcon, color: "text-emerald-500" },
 };
 
 const getNotificationIcon = (type) =>
@@ -77,7 +80,7 @@ const formatRelativeTime = (dateStr) => {
 
 const NotificationItem = ({ notification, onMarkRead }) => {
   const { icon: Icon, color } = getNotificationIcon(notification.type);
-  const isRead = Boolean(notification.readAt);
+  const isRead = Boolean(notification.read ?? notification.readAt);
 
   return (
     <div

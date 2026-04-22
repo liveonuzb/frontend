@@ -39,6 +39,7 @@ import LayoutHeader from "@/components/layout-header.jsx";
 import { useMobileChromeHidden } from "@/hooks/app/use-mobile-chrome-hidden";
 import ProfileDrawer from "./profile-drawer.jsx";
 import PremiumReminderDrawer from "./premium-reminder-drawer.jsx";
+import RewardReminderDrawer from "./reward-reminder-drawer.jsx";
 import AddMealOverlay from "./add-meal-overlay.jsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -279,6 +280,7 @@ const Index = () => {
         <ProfileDrawer />
         <AddMealOverlay />
         <PremiumReminderDrawer />
+        <RewardReminderDrawer />
       </SidebarProvider>
     </KeyboardShortcutsProvider>
   );

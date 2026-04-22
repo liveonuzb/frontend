@@ -26,6 +26,7 @@ import {
   DrawerDescription,
 } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
+import { getApiResponseData } from "@/lib/api-response";
 
 const CATEGORY_LABELS = {
   NUTRITION: "Ovqatlanish",
@@ -152,8 +153,9 @@ const XpHistorySection = () => {
     params: { limit, offset: page * limit },
     queryProps: { queryKey: ["gamification", "xp-history", page] },
   });
-  const items = data?.data?.items ?? [];
-  const total = data?.data?.total ?? 0;
+  const payload = getApiResponseData(data, {});
+  const items = payload?.items ?? [];
+  const total = payload?.total ?? 0;
   const hasMore = (page + 1) * limit < total;
 
   if (!isLoading && items.length === 0 && page === 0) return null;
@@ -264,9 +266,12 @@ const AchievementsPage = () => {
     },
   });
 
-  const categories = categoriesData?.data ?? [];
-  const achievements = Array.isArray(achievementsData?.data)
-    ? achievementsData.data
+  const categories = Array.isArray(getApiResponseData(categoriesData, []))
+    ? getApiResponseData(categoriesData, [])
+    : [];
+  const achievementsPayload = getApiResponseData(achievementsData, []);
+  const achievements = Array.isArray(achievementsPayload)
+    ? achievementsPayload
     : [];
 
   const unlockedCount = filter(achievements, { unlocked: true }).length;

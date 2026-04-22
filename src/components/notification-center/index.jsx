@@ -9,6 +9,7 @@ import {
   CrownIcon,
   DumbbellIcon,
   FlameIcon,
+  GiftIcon,
   GlassWaterIcon,
   MessageSquareIcon,
   TargetIcon,
@@ -139,6 +140,10 @@ const resolveNotificationPresentation = (notification) => {
       return { icon: CrownIcon, color: "text-amber-500" };
     case "premium_upsell":
       return { icon: CrownIcon, color: "text-primary" };
+    case "achievement_earned":
+      return { icon: TrophyIcon, color: "text-amber-500" };
+    case "referral_reward":
+      return { icon: GiftIcon, color: "text-emerald-500" };
     case "client_request":
       return { icon: UserPlusIcon, color: "text-blue-500" };
     case "sent_invitations_summary":

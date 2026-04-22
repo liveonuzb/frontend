@@ -3,6 +3,7 @@ import { filter, map, size } from "lodash";
 import { AwardIcon, LockIcon } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useGetQuery } from "@/hooks/api";
+import { getApiResponseData } from "@/lib/api-response";
 
 const AchievementsWidget = () => {
   const navigate = useNavigate();
@@ -11,7 +12,8 @@ const AchievementsWidget = () => {
     queryProps: { queryKey: ["gamification", "achievements", "all"] },
   });
 
-  const evaluated = Array.isArray(data?.data) ? data.data : [];
+  const payload = getApiResponseData(data, []);
+  const evaluated = Array.isArray(payload) ? payload : [];
   const unlocked = filter(evaluated, { unlocked: true });
   const locked = filter(evaluated, { unlocked: false });
   const progress = size(unlocked);
