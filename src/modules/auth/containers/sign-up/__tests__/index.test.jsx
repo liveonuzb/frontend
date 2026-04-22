@@ -50,6 +50,15 @@ describe("SignUpContainer referral banner", () => {
 
     expect(screen.getByText("invited:Coach One")).toBeInTheDocument();
     expect(screen.getByText("phone-form:coach-code")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Sign up with Apple" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Sign up with Google" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Sign up with Meta" }),
+    ).not.toBeInTheDocument();
   });
 
   it("does not show the inviter banner for invalid referral codes", () => {
