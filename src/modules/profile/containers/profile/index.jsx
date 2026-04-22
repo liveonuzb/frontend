@@ -50,7 +50,6 @@ import {
 import { getStandaloneProfileTabPath } from "@/modules/profile/lib/profile-tab-navigation";
 import useAppLanguages from "@/hooks/app/use-app-languages";
 import { useLanguageStore } from "@/store";
-import PremiumReminderDrawer from "@/modules/user/layout/premium-reminder-drawer";
 import { ROLE_CONFIG } from "@/components/role-switcher";
 import useProfileSettings, {
   getRequestErrorMessage,
@@ -297,20 +296,14 @@ const getTabConfig = (tabId, user, t) => {
   return tab;
 };
 
-const InlinePremiumItem = ({ tab, value }) => {
-  const [open, setOpen] = React.useState(false);
-  return (
-    <>
-      <SettingsItem
-        icon={tab.icon}
-        label={tab.label}
-        value={value}
-        onClick={() => setOpen(true)}
-      />
-      <PremiumReminderDrawer forceOpen={open} />
-    </>
-  );
-};
+const InlinePremiumItem = ({ tab, value, onClick }) => (
+  <SettingsItem
+    icon={tab.icon}
+    label={tab.label}
+    value={value}
+    onClick={onClick}
+  />
+);
 
 const InlineNotificationsItem = ({ tab, value, isCoach }) => {
   const [open, setOpen] = React.useState(false);
@@ -749,6 +742,7 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
                   key="premium-item"
                   tab={tab}
                   value={getPremiumLabel(user, t)}
+                  onClick={() => onTabChange("premium")}
                 />
               );
             }

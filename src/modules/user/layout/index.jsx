@@ -128,10 +128,6 @@ const Index = () => {
     return getStandaloneProfileTabPath(profileTab, location.search);
   }, [location.search]);
 
-  if (standaloneProfilePath) {
-    return <Navigate to={standaloneProfilePath} replace />;
-  }
-
   const trackingNav = React.useMemo(
     () => [
       {
@@ -178,6 +174,10 @@ const Index = () => {
     ],
     [],
   );
+
+  if (standaloneProfilePath) {
+    return <Navigate to={standaloneProfilePath} replace />;
+  }
 
   return (
     <KeyboardShortcutsProvider>

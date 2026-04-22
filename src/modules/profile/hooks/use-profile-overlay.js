@@ -49,13 +49,16 @@ export const useProfileOverlay = () => {
 
   const updateSearchParams = React.useCallback(
     (updater, options) => {
-      setSearchParams((current) => {
-        const nextParams = new URLSearchParams(current);
-        updater(nextParams);
-        return nextParams;
-      }, options);
+      const nextParams = new URLSearchParams(searchParams);
+      updater(nextParams);
+
+      if (nextParams.toString() === searchParams.toString()) {
+        return;
+      }
+
+      setSearchParams(nextParams, options);
     },
-    [setSearchParams],
+    [searchParams, setSearchParams],
   );
 
   React.useEffect(() => {
