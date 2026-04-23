@@ -52,11 +52,12 @@ const buildSavedMealPayload = (meal = {}) => ({
   ingredients: buildMealIngredientsPayload(meal?.ingredients),
 });
 
-export const useSavedMeals = () => {
+export const useSavedMeals = (options = {}) => {
   const { data, ...query } = useGetQuery({
     url: "/users/me/saved-meals",
     queryProps: {
       queryKey: SAVED_MEALS_QUERY_KEY,
+      enabled: options.enabled ?? true,
     },
   });
 

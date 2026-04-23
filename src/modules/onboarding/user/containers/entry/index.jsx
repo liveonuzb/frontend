@@ -35,7 +35,7 @@ const Index = () => {
   }
 
   return (
-    <div className="flex min-h-[50vh] items-center justify-center">
+    <div className="flex min-h-[50vh] items-center justify-center  px-5">
       <Spinner className="size-10 text-orange-400" />
     </div>
   );

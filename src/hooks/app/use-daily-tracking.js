@@ -9,6 +9,7 @@ import {
   usePutQuery,
 } from "@/hooks/api";
 import { FOODS_QUICK_ADD_QUERY_KEY } from "@/hooks/app/use-food-catalog";
+import { SAVED_MEALS_QUERY_KEY } from "@/hooks/app/use-saved-meals";
 import { invalidateGamificationQueries } from "@/modules/user/lib/gamification-query-keys";
 import {
   buildMealIngredientsPayload,
@@ -347,10 +348,16 @@ export const useDailyTrackingActions = () => {
         attributes: buildMealPayload(mealType, food),
       });
       const dayData = syncResponse(response);
-      await Promise.all([
+      const invalidations = [
         queryClient.invalidateQueries({ queryKey: FOODS_QUICK_ADD_QUERY_KEY }),
         syncGamificationState(),
-      ]);
+      ];
+      if (food?.savedMealId) {
+        invalidations.push(
+          queryClient.invalidateQueries({ queryKey: SAVED_MEALS_QUERY_KEY }),
+        );
+      }
+      await Promise.all(invalidations);
       return dayData;
     },
     [postMutation, queryClient, syncGamificationState, syncResponse],

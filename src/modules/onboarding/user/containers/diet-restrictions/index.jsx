@@ -1,9 +1,9 @@
 import { filter, includes, isArray, join, map } from "lodash";
 import React from "react";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useOnboardingStore, useAuthStore } from "@/store";
@@ -18,7 +18,6 @@ import {
   MilkOffIcon,
   SaladIcon,
   ShieldCheckIcon,
-  SparklesIcon,
   WheatOffIcon,
 } from "lucide-react";
 import { usePutQuery } from "@/hooks/api";
@@ -30,6 +29,8 @@ import { toast } from "sonner";
 import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-context";
 import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-question";
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
+import PageAura from "../../components/page-aura.jsx";
+import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
 
 const restrictions = [
   {
@@ -82,12 +83,36 @@ const restrictions = [
   },
 ];
 
+const goalIllustrations = {
+  lose: "/onboarding/lose.png",
+  maintain: "/onboarding/maintain.png",
+  gain: "/onboarding/gain.png",
+};
+
+const getRestrictionTone = (selectedValue, goal) => {
+  if (selectedValue === "vegetarian" || selectedValue === "vegan") {
+    return ONBOARDING_ACCENTS.green;
+  }
+  if (selectedValue === "gluten-free" || selectedValue === "lactose-free") {
+    return ONBOARDING_ACCENTS.sky;
+  }
+  if (selectedValue === "halal") {
+    return ONBOARDING_ACCENTS.amber;
+  }
+  if (selectedValue === "keto" || selectedValue === "paleo") {
+    return ONBOARDING_ACCENTS.rose;
+  }
+  if (goal === "lose") return ONBOARDING_ACCENTS.rose;
+  if (goal === "gain") return ONBOARDING_ACCENTS.blue;
+  return ONBOARDING_ACCENTS.green;
+};
+
 const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const onboardingState = useOnboardingStore();
-  const { dietRestrictions, reset, setField } = onboardingState;
+  const { dietRestrictions, reset, setField, goal } = onboardingState;
   const { initializeUser, setOnboardingCompleted, user } = useAuthStore();
   const [isProcessing, setIsProcessing] = React.useState(false);
 
@@ -161,6 +186,8 @@ const Index = () => {
   const hasNoneSelected =
     selectedRestrictions.length === 1 &&
     selectedRestrictions[0]?.value === "none";
+  const activeTone = getRestrictionTone(selectedRestrictions[0]?.value, goal);
+  const heroImage = goalIllustrations[goal] ?? "/onboarding/curious.png";
 
   const handleComplete = async () => {
     const payload = {
@@ -191,7 +218,12 @@ const Index = () => {
   useOnboardingFooter(
     <Button
       type="button"
-      className="w-full"
+      className={cn(
+        "h-12 w-full border-transparent transition-all",
+        hasSelection
+          ? `bg-gradient-to-r ${activeTone.buttonTone}`
+          : "bg-primary text-primary-foreground",
+      )}
       size="lg"
       onClick={handleComplete}
       disabled={!hasSelection || isPending || isProcessing}
@@ -209,13 +241,14 @@ const Index = () => {
 
   if (isProcessing) {
     return (
-      <div className="flex h-full flex-1 flex-col items-center justify-center gap-8">
-        <div className="relative flex items-center justify-center">
+      <div className="relative flex h-full flex-1 flex-col items-center justify-center gap-8 overflow-hidden  px-5">
+        <PageAura tone={activeTone} />
+        <div className="relative z-10 flex items-center justify-center">
           <div className="flex size-24 items-center justify-center rounded-full bg-primary/10 animate-pulse">
             <CheckCircle2Icon className="size-12 text-primary" />
           </div>
         </div>
-        <div className="space-y-2 text-center">
+        <div className="relative z-10 space-y-2 text-center">
           <h2 className="text-2xl font-bold">
             {t("onboarding.completion.title")}
           </h2>
@@ -223,7 +256,7 @@ const Index = () => {
             {t("onboarding.completion.description")}
           </p>
         </div>
-        <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="relative z-10 mt-4 flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2Icon className="size-4 animate-spin" />
           {t("onboarding.completion.redirecting")}
         </div>
@@ -232,32 +265,87 @@ const Index = () => {
   }
 
   return (
-    <div className="flex h-full flex-1 flex-col">
-      <div className="flex w-full flex-col gap-5">
+    <div className="relative flex h-full flex-1 flex-col overflow-hidden pt-3 md:pt-8  px-5">
+      <PageAura tone={activeTone} />
+
+      <div className="relative z-10 flex w-full flex-1 flex-col gap-5 md:mx-auto md:max-w-4xl">
         <OnboardingQuestion
           question={t("onboarding.dietRestrictions.question")}
         />
 
-        <div className="space-y-3">
-          <div className="flex flex-col gap-3">
-            {map(restrictions, (item) => (
+        <div className="relative mb-1 flex min-h-[180px] items-end justify-center overflow-hidden md:min-h-[260px]">
+          <motion.div
+            key={heroImage}
+            className="flex h-full w-full items-end justify-center"
+            initial={{ opacity: 0, y: 22, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.28, ease: "easeOut" }}
+          >
+            <img
+              src={heroImage}
+              alt="Diet preferences illustration"
+              className="max-h-[220px] w-full max-w-[240px] object-contain md:max-h-[300px] md:max-w-[320px]"
+            />
+          </motion.div>
+
+          <motion.div
+            key={`diet-meta-${selectedRestrictions.map((item) => item.value).join("-") || "empty"}`}
+            className={cn(
+              "absolute bottom-0 max-w-[280px] rounded-[24px] border bg-background/85 px-4 py-3 text-center backdrop-blur md:max-w-[360px] md:rounded-[28px]",
+              activeTone.border,
+            )}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.24 }}
+          >
+            <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground md:text-xs">
+              Nutrition filters
+            </p>
+            <p className="text-base font-bold md:text-lg">
+              {hasNoneSelected
+                ? "No restrictions"
+                : hasSelection
+                  ? `${selectedRestrictions.length} preference${selectedRestrictions.length > 1 ? "s" : ""} selected`
+                  : "Choose what to avoid"}
+            </p>
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+              {map(selectedRestrictions.slice(0, 3), (item) => (
+                <span
+                  key={item.value}
+                  className={cn(
+                    "rounded-full px-2.5 py-1 text-[11px] font-semibold md:text-xs",
+                    activeTone.badgeTone,
+                  )}
+                >
+                  {t(`onboarding.dietRestrictions.${item.labelKey}`)}
+                </span>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 pb-1 md:grid-cols-2">
+          {map(restrictions, (item) => {
+            const isActive = isSelected(item.value);
+
+            return (
               <button
                 key={item.value}
                 type="button"
                 onClick={() => handleToggle(item.value)}
-                aria-pressed={isSelected(item.value)}
+                aria-pressed={isActive}
                 className={cn(
-                  "relative flex items-center gap-4 rounded-2xl border p-3 text-left transition-all",
-                  isSelected(item.value)
-                    ? "border-primary bg-primary/8 shadow-[0_16px_36px_rgba(18,133,107,0.12)]"
-                    : "border-border/70 bg-background hover:border-primary/35 hover:bg-primary/[0.03]",
+                  "relative flex items-center gap-4 rounded-[24px] border p-4 text-left transition-all md:rounded-3xl",
+                  isActive
+                    ? `bg-gradient-to-br ${activeTone.cardTone} ${activeTone.border}`
+                    : "border-border/70 bg-background/90 hover:border-primary/30",
                 )}
               >
                 <div
                   className={cn(
-                    "flex size-10 shrink-0 items-center justify-center rounded-2xl transition-colors",
-                    isSelected(item.value)
-                      ? "bg-primary text-primary-foreground"
+                    "flex size-11 shrink-0 items-center justify-center rounded-2xl transition-colors",
+                    isActive
+                      ? activeTone.badgeTone
                       : "bg-muted text-foreground",
                   )}
                 >
@@ -268,7 +356,7 @@ const Index = () => {
                   <p className="text-sm font-semibold leading-5 text-foreground">
                     {t(`onboarding.dietRestrictions.${item.labelKey}`)}
                   </p>
-                  <p className="text-sm leading-5 text-muted-foreground">
+                  <p className="mt-1 text-sm leading-5 text-muted-foreground">
                     {t(`onboarding.dietRestrictions.${item.descriptionKey}`)}
                   </p>
                 </div>
@@ -276,16 +364,21 @@ const Index = () => {
                 <div
                   className={cn(
                     "flex size-7 shrink-0 items-center justify-center rounded-full border transition-colors",
-                    isSelected(item.value)
-                      ? "border-primary bg-primary text-primary-foreground"
+                    isActive
+                      ? `${activeTone.border} bg-background/70`
                       : "border-border bg-background text-muted-foreground",
                   )}
                 >
-                  <CheckIcon className="size-4" />
+                  <CheckIcon
+                    className={cn(
+                      "size-4 transition-all",
+                      isActive ? activeTone.textTone : "text-transparent",
+                    )}
+                  />
                 </div>
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </div>
     </div>

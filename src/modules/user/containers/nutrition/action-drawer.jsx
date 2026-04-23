@@ -25,6 +25,7 @@ import {
 } from "./nutrition-drawer-layout.jsx";
 import CameraDrawer from "./camera-drawer.jsx";
 import AudioAddDrawer from "./audio-add-drawer.jsx";
+import AudioTranscriptDrawer from "./audio-transcript-drawer.jsx";
 import TextAddDrawer from "./text-add-drawer.jsx";
 import ManualAddDrawer from "./manual-add-drawer.jsx";
 import AiMealDraftDrawer from "./ai-meal-draft-drawer.jsx";
@@ -77,9 +78,17 @@ const ActionDrawer = ({
   const [audioLoggedAtHint, setAudioLoggedAtHint] = useState(null);
   const [audioTargetDateKey, setAudioTargetDateKey] = useState(null);
   const [inputSource, setInputSource] = useState("manual");
+  const [cameraTextOpen, setCameraTextOpen] = useState(false);
+  const [cameraAiDraftOpen, setCameraAiDraftOpen] = useState(false);
   const isRootDrawerOpen = open && !activeNested;
+  const isCameraTextFlow = activeNested === "camera" && cameraTextOpen;
+  const isCameraAiDraftFlow = activeNested === "camera" && cameraAiDraftOpen;
   const shouldLoadAudioTranscriptHistory =
-    open && (activeNested === "audio" || textAddVariant === "audio");
+    open &&
+    (activeNested === "audio" ||
+      activeNested === "text" ||
+      textAddVariant === "audio" ||
+      cameraTextOpen);
 
   const {
     items: audioTranscriptHistory,
@@ -96,6 +105,8 @@ const ActionDrawer = ({
     }
     if (!open) {
       setActiveNested(null);
+      setCameraTextOpen(false);
+      setCameraAiDraftOpen(false);
     }
   }, [open, initialNested]);
 
@@ -159,6 +170,19 @@ const ActionDrawer = ({
     setTranscriptConfidenceScores([]);
   }, []);
 
+  const handleUseTextTranscriptHistory = useCallback((historyItem) => {
+    const transcript = String(historyItem?.transcript || "").trim();
+    if (!transcript) return;
+    setTranscriptText(transcript);
+    setTranscriptSegments([]);
+    setTextAddVariant("text");
+    setInputSource("text");
+    setSelectedMealType(historyItem?.mealType || mealType || "breakfast");
+    setAudioLoggedAtHint(null);
+    setAudioTargetDateKey(null);
+    setTranscriptConfidenceScores([]);
+  }, [mealType]);
+
   const handleRemoveHistoryItem = useCallback(
     async (historyId) => {
       await removeHistoryItem(historyId);
@@ -169,6 +193,12 @@ const ActionDrawer = ({
   const handleClearHistory = useCallback(async () => {
     await clearHistory();
   }, [clearHistory]);
+
+  const closeStackedCameraText = useCallback(() => {
+    setCameraTextOpen(false);
+    setCameraAiDraftOpen(false);
+    resetTranscriptState();
+  }, [resetTranscriptState]);
 
   return (
     <div>
@@ -263,13 +293,16 @@ const ActionDrawer = ({
         onOpenChange={(value) => !value && setActiveNested(null)}
         dateKey={dateKey}
         mealType={mealType}
+        isStackedChildOpen={cameraTextOpen || cameraAiDraftOpen}
         onOpenText={() => {
           resetTranscriptState();
           setTextAddVariant("text");
           setInputSource("text");
-          setActiveNested("text");
+          setCameraAiDraftOpen(false);
+          setCameraTextOpen(true);
         }}
         onClose={() => {
+          closeStackedCameraText();
           setActiveNested(null);
           onCloseAll?.();
         }}
@@ -334,75 +367,85 @@ const ActionDrawer = ({
         </NutritionDrawerContent>
       </Drawer>
 
-      {/* TextAddDrawer */}
+      {/* Transcript drawers */}
       <Drawer
-        open={activeNested === "text"}
-        onOpenChange={(value) => !value && setActiveNested(null)}
+        open={activeNested === "text" || isCameraTextFlow}
+        onOpenChange={(value) => {
+          if (value) return;
+          if (isCameraTextFlow) {
+            closeStackedCameraText();
+            return;
+          }
+          setActiveNested(null);
+        }}
         direction="bottom"
       >
         <NutritionDrawerContent size="sm">
-          <TextAddDrawer
-            value={transcriptText}
-            onChange={setTranscriptText}
-            variant={textAddVariant}
-            suggestedMealType={
-              textAddVariant === "audio" ? selectedMealType : null
-            }
-            suggestedLoggedAt={
-              textAddVariant === "audio" ? audioLoggedAtHint : null
-            }
-            transcriptConfidence={
-              textAddVariant === "audio" ? transcriptConfidence : null
-            }
-            suggestedDateLabel={
-              textAddVariant === "audio" && audioTargetDateKey
-                ? formatDateKeyLabel(audioTargetDateKey)
-                : null
-            }
-            transcriptSegments={transcriptSegments}
-            transcriptHistory={
-              textAddVariant === "audio" ? audioTranscriptHistory : []
-            }
-            onMealTypeChange={
-              textAddVariant === "audio" ? setSelectedMealType : undefined
-            }
-            onRemoveSegment={
-              textAddVariant === "audio"
-                ? handleRemoveAudioTranscriptSegment
-                : undefined
-            }
-            onAppendAudio={
-              textAddVariant === "audio"
-                ? () => {
-                    setActiveNested(null);
-                    setTimeout(() => setActiveNested("audio"), 450);
-                  }
-                : undefined
-            }
-            onUseHistory={
-              textAddVariant === "audio"
-                ? handleUseAudioTranscriptHistory
-                : undefined
-            }
-            onRemoveHistoryItem={
-              textAddVariant === "audio" ? handleRemoveHistoryItem : undefined
-            }
-            onClearHistory={
-              textAddVariant === "audio" ? handleClearHistory : undefined
-            }
-            onClose={() => {
-              setActiveNested(null);
-              resetTranscriptState();
-            }}
-            onContinue={() => {
-              setInputSource(textAddVariant === "audio" ? "audio" : "text");
-              setTranscriptSegments([]);
-              setTranscriptConfidenceScores([]);
-              setTextAddVariant("text");
-              setActiveNested(null);
-              setTimeout(() => setActiveNested("ai-draft"), 0);
-            }}
-          />
+          {textAddVariant === "audio" ? (
+            <AudioTranscriptDrawer
+              value={transcriptText}
+              onChange={setTranscriptText}
+              suggestedMealType={selectedMealType}
+              suggestedLoggedAt={audioLoggedAtHint}
+              transcriptConfidence={transcriptConfidence}
+              suggestedDateLabel={
+                audioTargetDateKey
+                  ? formatDateKeyLabel(audioTargetDateKey)
+                  : null
+              }
+              transcriptSegments={transcriptSegments}
+              transcriptHistory={audioTranscriptHistory}
+              onMealTypeChange={setSelectedMealType}
+              onRemoveSegment={handleRemoveAudioTranscriptSegment}
+              onAppendAudio={() => {
+                setActiveNested(null);
+                setTimeout(() => setActiveNested("audio"), 450);
+              }}
+              onUseHistory={handleUseAudioTranscriptHistory}
+              onRemoveHistoryItem={handleRemoveHistoryItem}
+              onClearHistory={handleClearHistory}
+              onClose={() => {
+                setActiveNested(null);
+                resetTranscriptState();
+              }}
+              onContinue={() => {
+                setInputSource("audio");
+                setTranscriptSegments([]);
+                setTranscriptConfidenceScores([]);
+                setTextAddVariant("text");
+                setActiveNested(null);
+                setTimeout(() => setActiveNested("ai-draft"), 0);
+              }}
+            />
+          ) : (
+            <TextAddDrawer
+              value={transcriptText}
+              onChange={setTranscriptText}
+              transcriptHistory={audioTranscriptHistory}
+              onUseHistory={handleUseTextTranscriptHistory}
+              onContinue={() => {
+                const safeTranscript = String(transcriptText || "").trim();
+                if (safeTranscript) {
+                  void pushAudioTranscriptHistory(
+                    safeTranscript,
+                    selectedMealType || mealType || "breakfast",
+                    null,
+                  );
+                }
+                setInputSource("text");
+                setTranscriptSegments([]);
+                setTranscriptConfidenceScores([]);
+                setTextAddVariant("text");
+                if (isCameraTextFlow) {
+                  setCameraTextOpen(false);
+                  setTimeout(() => setCameraAiDraftOpen(true), 0);
+                  return;
+                }
+                setActiveNested(null);
+                setTimeout(() => setActiveNested("ai-draft"), 0);
+              }}
+            />
+          )}
         </NutritionDrawerContent>
       </Drawer>
 
@@ -427,8 +470,16 @@ const ActionDrawer = ({
 
       {/* AiMealDraftDrawer */}
       <Drawer
-        open={activeNested === "ai-draft"}
-        onOpenChange={(value) => !value && setActiveNested(null)}
+        open={activeNested === "ai-draft" || isCameraAiDraftFlow}
+        onOpenChange={(value) => {
+          if (value) return;
+          if (isCameraAiDraftFlow) {
+            setCameraAiDraftOpen(false);
+            resetTranscriptState();
+            return;
+          }
+          setActiveNested(null);
+        }}
         direction="bottom"
       >
         <NutritionDrawerContent size="lg">
@@ -440,6 +491,12 @@ const ActionDrawer = ({
             loggedAtHint={inputSource === "audio" ? audioLoggedAtHint : null}
             targetDateKey={inputSource === "audio" ? audioTargetDateKey : null}
             onClose={() => {
+              if (isCameraAiDraftFlow) {
+                closeStackedCameraText();
+                setActiveNested(null);
+                onCloseAll?.();
+                return;
+              }
               setActiveNested(null);
               resetTranscriptState();
               onCloseAll?.();

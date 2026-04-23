@@ -2,10 +2,20 @@ import React, { useRef, useEffect } from "react";
 import { findIndex } from "lodash";
 import { cn } from "@/lib/utils";
 
-export const ScrollPicker = ({ items, value, onChange, itemHeight = 60 }) => {
+export const ScrollPicker = ({
+  items,
+  value,
+  onChange,
+  itemHeight = 60,
+  itemWidth = 72,
+  orientation = "vertical",
+  selectedClassName,
+  unselectedClassName,
+}) => {
   const containerRef = useRef(null);
   const isScrollingRef = useRef(false);
   const scrollTimeoutRef = useRef(null);
+  const isHorizontal = orientation === "horizontal";
 
   const handleScroll = () => {
     if (!containerRef.current) return;
@@ -13,9 +23,11 @@ export const ScrollPicker = ({ items, value, onChange, itemHeight = 60 }) => {
     clearTimeout(scrollTimeoutRef.current);
     isScrollingRef.current = true;
 
-    // Calculate the centered item
-    const scrollTop = containerRef.current.scrollTop;
-    const index = Math.round(scrollTop / itemHeight);
+    const scrollOffset = isHorizontal
+      ? containerRef.current.scrollLeft
+      : containerRef.current.scrollTop;
+    const itemSize = isHorizontal ? itemWidth : itemHeight;
+    const index = Math.round(scrollOffset / itemSize);
 
     if (items[index] && items[index].value !== value) {
       onChange(items[index].value);
@@ -30,28 +42,42 @@ export const ScrollPicker = ({ items, value, onChange, itemHeight = 60 }) => {
     if (!containerRef.current || isScrollingRef.current) return;
     const index = findIndex(items, (item) => item.value === value);
     if (index >= 0) {
-      containerRef.current.scrollTop = index * itemHeight;
+      const nextOffset = index * (isHorizontal ? itemWidth : itemHeight);
+      if (isHorizontal) {
+        containerRef.current.scrollLeft = nextOffset;
+      } else {
+        containerRef.current.scrollTop = nextOffset;
+      }
     }
-  }, [value, items, itemHeight]);
+  }, [value, items, itemHeight, itemWidth, isHorizontal]);
 
   return (
     <div
       className="relative w-full overflow-hidden"
       style={{
-        height: itemHeight * 5,
-        maskImage:
-          "linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)",
-        WebkitMaskImage:
-          "linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)",
+        height: isHorizontal ? itemHeight : itemHeight * 5,
+        maskImage: isHorizontal
+          ? "linear-gradient(to right, transparent, black 12%, black 88%, transparent)"
+          : "linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)",
+        WebkitMaskImage: isHorizontal
+          ? "linear-gradient(to right, transparent, black 12%, black 88%, transparent)"
+          : "linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)",
       }}
     >
       <div
         ref={containerRef}
-        className="h-full w-full overflow-y-auto snap-y snap-mandatory"
+        className={cn(
+          "h-full w-full snap-mandatory",
+          isHorizontal
+            ? "flex overflow-x-auto overflow-y-hidden snap-x items-center"
+            : "overflow-y-auto snap-y",
+        )}
         onScroll={handleScroll}
         style={{
-          paddingTop: itemHeight * 2,
-          paddingBottom: itemHeight * 2,
+          paddingTop: isHorizontal ? 0 : itemHeight * 2,
+          paddingBottom: isHorizontal ? 0 : itemHeight * 2,
+          paddingLeft: isHorizontal ? itemWidth * 2 : 0,
+          paddingRight: isHorizontal ? itemWidth * 2 : 0,
           scrollbarWidth: "none", // Firefox
           msOverflowStyle: "none", // IE and Edge
         }}
@@ -74,17 +100,29 @@ export const ScrollPicker = ({ items, value, onChange, itemHeight = 60 }) => {
               className={cn(
                 "flex items-center justify-center snap-center cursor-pointer transition-all duration-200",
                 isSelected
-                  ? "text-[40px] font-black text-foreground"
-                  : "text-3xl font-bold text-muted-foreground/30",
+                  ? selectedClassName || "text-3xl font-black text-foreground"
+                  : unselectedClassName ||
+                      "text-2xl font-bold text-muted-foreground/30",
               )}
-              style={{ height: itemHeight }}
+              style={
+                isHorizontal
+                  ? { width: itemWidth, height: itemHeight, flexShrink: 0 }
+                  : { height: itemHeight }
+              }
               onClick={() => {
                 if (!isScrollingRef.current && containerRef.current) {
                   const index = findIndex(items, (i) => i.value === item.value);
-                  containerRef.current.scrollTo({
-                    top: index * itemHeight,
-                    behavior: "smooth",
-                  });
+                  containerRef.current.scrollTo(
+                    isHorizontal
+                      ? {
+                          left: index * itemWidth,
+                          behavior: "smooth",
+                        }
+                      : {
+                          top: index * itemHeight,
+                          behavior: "smooth",
+                        },
+                  );
                   onChange(item.value);
                 }
               }}

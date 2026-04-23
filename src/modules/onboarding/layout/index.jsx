@@ -46,6 +46,20 @@ const OnboardingLayoutInner = () => {
   );
   const currentPath =
     isCoachScope && routePath ? `coach/${routePath}` : routePath;
+  const isWideUserStep = [
+    "name",
+    "gender",
+    "age",
+    "height",
+    "current-weight",
+    "goal",
+    "target-weight",
+    "weekly-pace",
+    "activity-level",
+    "meal-frequency",
+    "water-habits",
+    "diet-restrictions",
+  ].includes(currentPath);
   const isCoachStep = isCoachOnboardingStep(currentPath);
   const currentStepIndex = isCoachStep
     ? getCoachOnboardingStepIndex(currentPath)
@@ -158,8 +172,7 @@ const OnboardingLayoutInner = () => {
     });
   }, [data, setFields]);
 
-  const isRolesPath = location.pathname.toLowerCase().includes("roles");
-  const maxWidthClass = isRolesPath ? "max-w-6xl" : "max-w-lg";
+  const maxWidthClass = isWideUserStep ? "max-w-5xl" : "max-w-lg";
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
@@ -196,24 +209,15 @@ const OnboardingLayoutInner = () => {
 
       {/* ── SCROLLABLE CONTENT ── */}
       <main className="flex-1 overflow-y-auto flex flex-col">
-        <div
-          className={cn(
-            "w-full mx-auto px-4 py-8 flex-1 flex flex-col",
-            maxWidthClass,
-          )}
-        >
+        <div className={cn("w-full mx-auto flex-1 flex flex-col", maxWidthClass)}>
           <Outlet />
         </div>
       </main>
-
-      {/* ── STICKY FOOTER ── */}
-      {!isRolesPath && (
-        <footer className="shrink-0 border-t border-border/40 bg-background px-4 py-4 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
-          <div className={cn("mx-auto", maxWidthClass)}>
-            <FooterSlot />
-          </div>
-        </footer>
-      )}
+      <footer className="shrink-0 border-t border-border/40 bg-background px-4 py-4 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+        <div className={cn("mx-auto", maxWidthClass)}>
+          <FooterSlot />
+        </div>
+      </footer>
     </div>
   );
 };

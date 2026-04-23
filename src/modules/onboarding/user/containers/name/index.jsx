@@ -1,17 +1,20 @@
 import React from "react";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
-import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { Field, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { useOnboardingStore } from "@/store";
 import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-context";
 import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-question";
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
-
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronRight } from "lucide-react";
+import PageAura from "../../components/page-aura.jsx";
+import { ONBOARDING_TONES } from "../../lib/tones.js";
 
 const schema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -21,10 +24,11 @@ const schema = z.object({
 const Index = () => {
   const navigate = useNavigate();
   const { firstName, lastName, setFields } = useOnboardingStore();
+  const tone = ONBOARDING_TONES.neutral;
 
   useOnboardingAutoSave("user", "name");
 
-  const { control, handleSubmit, formState } = useForm({
+  const { control, handleSubmit } = useForm({
     resolver: zodResolver(schema),
     defaultValues: { firstName, lastName },
     mode: "onSubmit",
@@ -38,68 +42,106 @@ const Index = () => {
   useOnboardingFooter(
     <Button
       type="button"
-      className="w-full"
-      size="lg"
+      className={cn(
+        "h-12 w-full border-transparent bg-gradient-to-r",
+        tone.buttonTone,
+      )}
       onClick={handleSubmit(onSubmit)}
     >
-      Next <ChevronRight/>
+      Next <ChevronRight />
     </Button>,
   );
 
   return (
-    <div className="flex-1 flex flex-col justify-center h-full pb-20">
-      <OnboardingQuestion question="What's your name?" />
+    <div className="relative flex h-full flex-1 flex-col justify-center overflow-hidden pt-3 md:pt-8  px-5">
+      <PageAura tone={tone} />
 
-      <form
-        className="flex flex-col gap-5 w-full"
-        onSubmit={handleSubmit(onSubmit)}
-      >
-        <Field>
-          <FieldLabel htmlFor="onboarding-first-name">First name</FieldLabel>
-          <Controller
-            name="firstName"
-            control={control}
-            render={({ field, fieldState }) => (
-              <>
-                <Input
-                  id="onboarding-first-name"
-                  type="text"
-                  placeholder="John"
-                  autoComplete="given-name"
-                  aria-invalid={!!fieldState.error}
-                  {...field}
-                />
-                <FieldError
-                  errors={fieldState.error ? [fieldState.error] : []}
-                />
-              </>
-            )}
-          />
-        </Field>
+      <div className="relative z-10 flex w-full flex-1 flex-col justify-center md:mx-auto md:max-w-4xl">
+        <OnboardingQuestion question="What should we call you?" />
 
-        <Field>
-          <FieldLabel htmlFor="onboarding-last-name">Last name</FieldLabel>
-          <Controller
-            name="lastName"
-            control={control}
-            render={({ field, fieldState }) => (
-              <>
-                <Input
-                  id="onboarding-last-name"
-                  type="text"
-                  placeholder="Doe"
-                  autoComplete="family-name"
-                  aria-invalid={!!fieldState.error}
-                  {...field}
-                />
-                <FieldError
-                  errors={fieldState.error ? [fieldState.error] : []}
-                />
-              </>
+        <div className="grid items-center gap-6 md:grid-cols-[0.95fr_1.05fr] md:gap-10">
+          <motion.div
+            className="flex items-end justify-center"
+            initial={{ opacity: 0, y: 22, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.28, ease: "easeOut" }}
+          >
+            <img
+              src="/onboarding/curious.png"
+              alt="Onboarding illustration"
+              className="max-h-[240px] w-full max-w-[240px] object-contain md:max-h-[340px] md:max-w-[340px]"
+            />
+          </motion.div>
+
+          <form
+            className={cn(
+              "rounded-[32px] border bg-background/85 p-5 backdrop-blur md:p-7",
+              tone.border,
             )}
-          />
-        </Field>
-      </form>
+            onSubmit={handleSubmit(onSubmit)}
+          >
+            <div className="mb-5">
+              <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground md:text-xs">
+                Profile
+              </p>
+              <p className="mt-1 text-lg font-bold md:text-2xl">
+                Your account basics
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                This name will personalize your plan, reminders and coach views.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-5">
+              <Field>
+                <Controller
+                  name="firstName"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <>
+                      <Input
+                        id="onboarding-first-name"
+                        type="text"
+                        placeholder="First name"
+                        autoComplete="given-name"
+                        className="h-14 rounded-2xl border-border/70 bg-background/80 px-4 text-lg font-semibold"
+                        aria-invalid={!!fieldState.error}
+                        {...field}
+                      />
+                      <FieldError
+                        errors={fieldState.error ? [fieldState.error] : []}
+                      />
+                    </>
+                  )}
+                />
+              </Field>
+
+              <Field>
+                <Controller
+                  name="lastName"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <>
+                      <Input
+                        id="onboarding-last-name"
+                        type="text"
+                        placeholder="Last name"
+                        autoComplete="family-name"
+                        className="h-14 rounded-2xl border-border/70 bg-background/80 px-4 text-lg font-semibold"
+                        aria-invalid={!!fieldState.error}
+                        {...field}
+                      />
+                      <FieldError
+                        errors={fieldState.error ? [fieldState.error] : []}
+                      />
+                    </>
+                  )}
+                />
+              </Field>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   );
 };

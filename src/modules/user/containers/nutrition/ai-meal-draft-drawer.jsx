@@ -312,6 +312,22 @@ export default function AiMealDraftDrawer({
             <span className="font-semibold capitalize">{targetDateLabel}</span>
           </div>
         ) : null}
+
+        {sourceText ? (
+          <div className="rounded-2xl border bg-muted/15 px-3 py-3 text-left">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                {inputSource === "audio" ? "Audio matni" : "Matn manbasi"}
+              </span>
+              <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">
+                AI natijasi
+              </span>
+            </div>
+            <p className="mt-2 line-clamp-3 whitespace-pre-wrap text-sm font-medium">
+              {sourceText}
+            </p>
+          </div>
+        ) : null}
       </DrawerHeader>
 
       <DrawerBody className="p-0">

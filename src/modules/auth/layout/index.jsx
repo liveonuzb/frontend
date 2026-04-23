@@ -46,7 +46,7 @@ const Index = () => {
   return (
     <div className="h-svh min-h-svh overflow-hidden">
       <div className="grid h-full min-h-0 md:grid-cols-[minmax(390px,26vw)_1fr]">
-        <section className="relative z-10 flex min-h-0 flex-col px-6 py-6 sm:px-10 lg:px-12">
+        <section className="relative z-10 flex min-h-0 flex-col px-6 py-6">
           <header className="flex shrink-0 items-center justify-between">
             <Link
               to="/"
@@ -55,7 +55,7 @@ const Index = () => {
             >
               <img
                 src="/logo.png"
-                className="h-10 w-auto object-contain"
+                className="size-16 object-contain"
                 alt={t("auth.layout.logoAlt")}
               />
             </Link>
