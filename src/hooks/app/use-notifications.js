@@ -25,7 +25,7 @@ const EMPTY_ITEMS = [];
 export const useUserNotificationsFeed = (options = {}) => {
   const enabled = options.enabled ?? true;
   const category = options.category;
-  const filter = options.filter;
+  const filter = options.filter ?? "unread";
   const [cursor, setCursor] = React.useState(null);
 
   const params = React.useMemo(() => {
@@ -46,21 +46,6 @@ export const useUserNotificationsFeed = (options = {}) => {
       refetchOnWindowFocus: true,
     },
   });
-
-  // Sync notifications on first load
-  const syncMutation = usePostQuery({
-    queryKey: USER_NOTIFICATIONS_QUERY_KEY,
-  });
-
-  React.useEffect(() => {
-    if (enabled && !cursor) {
-      syncMutation.mutate({
-        url: "/users/me/notifications/sync",
-        attributes: {},
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled]);
 
   const markReadMutation = usePostQuery({
     queryKey: USER_NOTIFICATIONS_QUERY_KEY,

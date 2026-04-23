@@ -78,13 +78,17 @@ const ActionDrawer = ({
   const [audioTargetDateKey, setAudioTargetDateKey] = useState(null);
   const [inputSource, setInputSource] = useState("manual");
   const isRootDrawerOpen = open && !activeNested;
+  const shouldLoadAudioTranscriptHistory =
+    open && (activeNested === "audio" || textAddVariant === "audio");
 
   const {
     items: audioTranscriptHistory,
     saveHistoryItem,
     removeHistoryItem,
     clearHistory,
-  } = useFoodAudioTranscriptHistory();
+  } = useFoodAudioTranscriptHistory({
+    enabled: shouldLoadAudioTranscriptHistory,
+  });
 
   useLayoutEffect(() => {
     if (open && initialNested) {

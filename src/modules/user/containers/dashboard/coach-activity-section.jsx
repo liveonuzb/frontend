@@ -6,8 +6,10 @@ import useGetQuery from "@/hooks/api/use-get-query";
 import usePatchQuery from "@/hooks/api/use-patch-query";
 import usePostQuery from "@/hooks/api/use-post-query";
 import { Button } from "@/components/ui/button";
+import { getApiResponseData } from "@/lib/api-response";
 import WeeklyCheckInDrawer from "./weekly-check-in-drawer.jsx";
 import {
+  DASHBOARD_ME_QUERY_KEY,
   DASHBOARD_COACH_FEEDBACK_QUERY_KEY,
   DASHBOARD_COACH_TASKS_QUERY_KEY,
   DASHBOARD_WEEKLY_CHECK_INS_QUERY_KEY,
@@ -16,22 +18,33 @@ import {
 export default function CoachActivitySection() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { data: userData } = useGetQuery({
+    url: "/users/me",
+    queryProps: {
+      queryKey: DASHBOARD_ME_QUERY_KEY,
+    },
+  });
+  const user = React.useMemo(() => getApiResponseData(userData, null), [userData]);
+  const hasCoachConnection = Boolean(get(user, "coachConnection.assignmentId"));
   const { data: checkInsData } = useGetQuery({
     url: "/users/me/check-ins",
     queryProps: {
       queryKey: DASHBOARD_WEEKLY_CHECK_INS_QUERY_KEY,
+      enabled: hasCoachConnection,
     },
   });
   const { data: feedbackData } = useGetQuery({
     url: "/users/me/coach-feedback",
     queryProps: {
       queryKey: DASHBOARD_COACH_FEEDBACK_QUERY_KEY,
+      enabled: hasCoachConnection,
     },
   });
   const { data: tasksData } = useGetQuery({
     url: "/users/me/coach-tasks",
     queryProps: {
       queryKey: DASHBOARD_COACH_TASKS_QUERY_KEY,
+      enabled: hasCoachConnection,
     },
   });
   const submitMutation = usePostQuery({
@@ -141,7 +154,7 @@ export default function CoachActivitySection() {
   const hasContent =
     pendingCheckIns.length > 0 || latestFeedback || openTasks.length > 0;
 
-  if (!hasContent) return null;
+  if (!hasCoachConnection || !hasContent) return null;
 
   return (
     <>

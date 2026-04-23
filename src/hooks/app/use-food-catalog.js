@@ -555,12 +555,14 @@ export const useFoodScan = () => {
   };
 };
 
-export const useFoodAudioTranscriptHistory = () => {
+export const useFoodAudioTranscriptHistory = (options = {}) => {
+  const enabled = options.enabled ?? true;
   const queryClient = useQueryClient();
   const { data, ...query } = useGetQuery({
     url: "/foods/audio-transcript-history",
     queryProps: {
       queryKey: FOODS_AUDIO_TRANSCRIPT_HISTORY_QUERY_KEY,
+      enabled,
     },
   });
   const postMutation = usePostQuery();

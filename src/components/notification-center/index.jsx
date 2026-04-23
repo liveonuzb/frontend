@@ -47,6 +47,14 @@ import {
 import { PROFILE_SETTINGS_DEFAULTS } from "@/hooks/app/use-profile-settings";
 import { useProfileOverlay } from "@/modules/profile/hooks/use-profile-overlay";
 
+const LazyNotificationSettingsDrawer = React.lazy(() =>
+  import("@/modules/profile/containers/profile/tabs/notifications-tab.jsx").then(
+    (module) => ({
+      default: module.NotificationSettingsDrawer,
+    }),
+  ),
+);
+
 const formatTimeLabel = (value) => {
   if (!value) {
     return "Hozir";
@@ -653,10 +661,6 @@ export const useNotificationCenterModel = () => {
     }
   }, [activeFeed, markAllRead]);
 
-  const openNotificationSettings = React.useCallback(() => {
-    openProfile("notifications");
-  }, [openProfile]);
-
   return {
     activeFilter,
     filteredNotifications,
@@ -665,7 +669,6 @@ export const useNotificationCenterModel = () => {
     hasMore,
     loadMore,
     isUpdatingNotificationState: activeFeed.isUpdatingNotificationState,
-    openNotificationSettings,
     setActiveFilter,
     unreadCount,
   };
@@ -676,6 +679,7 @@ export const NotificationFeedPanel = ({
   className,
   contentClassName,
   showSettingsAction = false,
+  onOpenSettings,
   onSelectNotification,
 }) => {
   const {
@@ -686,7 +690,6 @@ export const NotificationFeedPanel = ({
     hasMore,
     loadMore,
     isUpdatingNotificationState,
-    openNotificationSettings,
     setActiveFilter,
     unreadCount,
   } = model;
@@ -807,13 +810,13 @@ export const NotificationFeedPanel = ({
         ) : null}
       </div>
 
-      {showSettingsAction ? (
+      {showSettingsAction && onOpenSettings ? (
         <div className="pt-3">
           <Button
             type="button"
             variant="outline"
             className="w-full"
-            onClick={openNotificationSettings}
+            onClick={onOpenSettings}
           >
             Bildirishnoma sozlamalari
           </Button>
@@ -825,57 +828,74 @@ export const NotificationFeedPanel = ({
 
 const NotificationCenter = ({ className, ...props }) => {
   const [open, setOpen] = React.useState(false);
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const activeRole = useAuthStore((state) => state.activeRole);
+  const canOpenSettings = activeRole === "USER" || activeRole === "COACH";
   const model = useNotificationCenterModel();
 
   return (
-    <Drawer direction="bottom" open={open} onOpenChange={setOpen}>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        className={cn("relative", className)}
-        onClick={() => setOpen(true)}
-        {...props}
-      >
-        <BellIcon className="size-4" />
-        {model.unreadCount > 0 ? (
-          <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground animate-pulse">
-            {model.unreadCount}
-          </span>
-        ) : null}
-      </Button>
+    <>
+      <Drawer direction="bottom" open={open} onOpenChange={setOpen}>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className={cn("relative", className)}
+          onClick={() => setOpen(true)}
+          {...props}
+        >
+          <BellIcon className="size-4" />
+          {model.unreadCount > 0 ? (
+            <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground animate-pulse">
+              {model.unreadCount}
+            </span>
+          ) : null}
+        </Button>
 
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>Bildirishnomalar</DrawerTitle>
-          <DrawerDescription>
-            So&apos;nggi signal va eslatmalar shu yerda ko&apos;rinadi.
-          </DrawerDescription>
-        </DrawerHeader>
-        <DrawerBody>
-          <NotificationFeedPanel
-            model={model}
-            contentClassName="max-h-[50vh]"
-            showSettingsAction={false}
-            onSelectNotification={(notification) => {
-              setOpen(false);
-              void model.handleNotificationClick(notification);
-            }}
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Bildirishnomalar</DrawerTitle>
+            <DrawerDescription>
+              So&apos;nggi signal va eslatmalar shu yerda ko&apos;rinadi.
+            </DrawerDescription>
+          </DrawerHeader>
+          <DrawerBody>
+            <NotificationFeedPanel
+              model={model}
+              contentClassName="max-h-[50vh]"
+              showSettingsAction={false}
+              onSelectNotification={(notification) => {
+                setOpen(false);
+                void model.handleNotificationClick(notification);
+              }}
+            />
+          </DrawerBody>
+          {canOpenSettings ? (
+            <DrawerFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setOpen(false);
+                  setSettingsOpen(true);
+                }}
+              >
+                Bildirishnoma sozlamalari
+              </Button>
+            </DrawerFooter>
+          ) : null}
+        </DrawerContent>
+      </Drawer>
+
+      {canOpenSettings && settingsOpen ? (
+        <React.Suspense fallback={null}>
+          <LazyNotificationSettingsDrawer
+            open={settingsOpen}
+            onOpenChange={setSettingsOpen}
+            isCoach={activeRole === "COACH"}
           />
-        </DrawerBody>
-        <DrawerFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              setOpen(false);
-              model.openNotificationSettings();
-            }}
-          >
-            Bildirishnoma sozlamalari
-          </Button>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+        </React.Suspense>
+      ) : null}
+    </>
   );
 };
 

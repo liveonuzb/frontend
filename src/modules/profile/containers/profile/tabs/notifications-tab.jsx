@@ -1,5 +1,5 @@
 import React from "react";
-import { filter, isEqual, map, values } from "lodash";
+import { isEqual } from "lodash";
 import { useTranslation } from "react-i18next";
 import {
   BellIcon,
@@ -34,13 +34,8 @@ import {
   useCoachNotificationPreferences,
   useQuietHours,
 } from "@/hooks/app/use-notifications";
-import {
-  NotificationFeedPanel,
-  useNotificationCenterModel,
-} from "@/components/notification-center";
 import useMe from "@/hooks/app/use-me";
 import useUserTelegram from "@/hooks/app/use-user-telegram";
-import { useProfileOverlay } from "@/modules/profile/hooks/use-profile-overlay";
 import { useAuthStore } from "@/store";
 
 const openTelegramLink = (url) => {
@@ -602,68 +597,43 @@ export const NotificationsTab = ({ embedded = false }) => {
   const { t } = useTranslation();
   const activeRole = useAuthStore((state) => state.activeRole);
   const isCoach = activeRole === "COACH";
-  const notificationModel = useNotificationCenterModel();
-  const { closeProfile } = useProfileOverlay();
   const [settingsOpen, setSettingsOpen] = React.useState(false);
-
-  const feedContent = (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">
-            {t("profile.notifications.feedSubtitle")}
-          </p>
-          <h2 className="text-lg font-semibold tracking-tight">
-            {t("profile.tabs.notifications")}
-          </h2>
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="shrink-0"
-          onClick={() => setSettingsOpen(true)}
-        >
-          <Settings2Icon className="size-4" />
-          Sozlamalar
-        </Button>
-      </div>
-
-      <div className="mt-4 min-h-0 flex-1">
-        <div className="mb-4">
-          <TelegramConnectCard t={t} />
-        </div>
-        <NotificationFeedPanel
-          model={notificationModel}
-          contentClassName={embedded ? "max-h-[48vh]" : "max-h-[56vh]"}
-          onSelectNotification={(notification) => {
-            if (embedded) {
-              closeProfile();
-            }
-            void notificationModel.handleNotificationClick(notification);
-          }}
-        />
-      </div>
-
-      {!embedded ? (
-        <p className="mt-3 text-xs text-muted-foreground">
-          {t("profile.notifications.feedHint")}
-        </p>
-      ) : null}
-    </div>
-  );
 
   return (
     <>
-      {embedded ? (
-        <div className="flex h-full min-h-0 flex-col">
-          <div className="flex-1 overflow-y-auto px-5 pb-6 pt-8 sm:px-6">
-            {feedContent}
+      <div
+        className={
+          embedded
+            ? "flex h-full min-h-0 flex-col px-5 pb-6 pt-8 sm:px-6"
+            : "flex flex-col"
+        }
+      >
+        <div className="rounded-2xl border border-border/60 bg-card p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-muted-foreground">
+                {t("profile.notifications.feedSubtitle")}
+              </p>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight">
+                {t("profile.tabs.notifications")}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {t("profile.notifications.settingsSubtitle")}
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              onClick={() => setSettingsOpen(true)}
+            >
+              <Settings2Icon className="size-4" />
+              Sozlamalar
+            </Button>
           </div>
         </div>
-      ) : (
-        feedContent
-      )}
+      </div>
 
       <NotificationSettingsDrawer
         open={settingsOpen}
