@@ -1,5 +1,30 @@
 {
   "auth": {
+    "layout": {
+      "logoAlt": "LiveOn logotipi",
+      "title": "Sog'lom hayot sari",
+      "subtitle": "O'z maqsadlaringizga erishish uchun eng yaxshi platforma",
+      "benefitCalories": "Kaloriya va ovqatlanishni kuzating",
+      "benefitWater": "Suv iste'molini nazorat qiling",
+      "benefitWorkouts": "Sport mashg'ulotlarini rejalashtiring",
+      "benefitAiCoach": "AI murabbiy maslahatlaridan foydalaning",
+      "copyright": "© 2026 LiveOn. Barcha huquqlar himoyalangan.",
+      "panelPill": "Ovqatlanish · Mashg'ulot · Murabbiylik",
+      "live": "LIVE",
+      "heroStrong": "Yeng, harakatlaning,",
+      "heroEmphasis": "birga",
+      "heroDescription": "Har bir ovqat kaloriyasini kuzating, sizga mos mashqlar bilan shug'ullaning va kerak paytda haqiqiy murabbiy bilan yozishingiz.",
+      "caloriesLabel": "BUGUNGI KALORIYA",
+      "caloriesValue": "1,840 / 2,200",
+      "caloriesMeta": "rejada",
+      "workoutLabel": "KEYINGI MASHG'ULOT",
+      "workoutValue": "Yuqori tana · 42m",
+      "workoutMeta": "19:00",
+      "coachLabel": "MURABBIY DILNOZA",
+      "coachValue": "«Bugun yaxshi harakat»",
+      "coachMeta": "2 daq oldin",
+      "panelCopyright": "© 2026 LiveOn."
+    },
     "signIn": {
       "title": "Xush kelibsiz",
       "subtitle": "LiveOn hisobingizga kiring",
@@ -18,7 +43,9 @@
       "termsLink": "Foydalanish shartlari",
       "andText": "va",
       "privacyLink": "Maxfiylik siyosati",
-      "termsEnd": "ga rozilik bildirasiz."
+      "termsEnd": "ga rozilik bildirasiz.",
+      "success": "Muvaffaqiyatli kirildi.",
+      "error": "Kirish amalga oshmadi."
     },
     "signUp": {
       "title": "Hisob yarating",
@@ -41,7 +68,9 @@
       "privacyLink": "Maxfiylik siyosati",
       "termsEnd": "ga rozilik bildirasiz.",
       "referralInvited": "Sizni taklif qilishdi!",
-      "referralInvitedByName": "Sizni {{name}} taklif qildi!"
+      "referralInvitedByName": "Sizni {{name}} taklif qildi!",
+      "verificationSent": "Tasdiqlash kodi yuborildi.",
+      "error": "Ro'yxatdan o'tib bo'lmadi."
     },
     "forgotPassword": {
       "title": "Parolni unutdingizmi?",
@@ -54,7 +83,9 @@
       "sendButton": "Kod yuborish",
       "sending": "Yuborilmoqda...",
       "rememberPassword": "Parolni eslaysizmi?",
-      "backToSignIn": "Kirish sahifasiga qaytish"
+      "backToSignIn": "Kirish sahifasiga qaytish",
+      "resetCodeSent": "Parolni tiklash kodi yuborildi.",
+      "error": "Parolni tiklash kodini yuborib bo'lmadi."
     },
     "otpVerify": {
       "titleVerify": "Hisobingizni tasdiqlang",
@@ -67,7 +98,15 @@
       "resend": "Qayta yuborish",
       "resending": "Yuborilmoqda...",
       "resendIn": "Qayta yuborish ({{s}}s)",
-      "backToSignIn": "Kirish sahifasiga qaytish"
+      "backToSignIn": "Kirish sahifasiga qaytish",
+      "sessionMissing": "Tasdiqlash sessiyasi topilmadi.",
+      "phoneSessionMissing": "Telefon tasdiqlash sessiyasi topilmadi.",
+      "accountVerified": "Hisob muvaffaqiyatli tasdiqlandi.",
+      "resetTokenMissing": "Reset token topilmadi. Yangi kod so'rang.",
+      "resetTokenReady": "Tasdiqlash muvaffaqiyatli. Yangi parol o'rnating.",
+      "error": "OTP tasdiqlash amalga oshmadi.",
+      "resendSuccess": "Yangi OTP kodi yaratildi.",
+      "resendError": "OTP kodini qayta yuborib bo'lmadi."
     },
     "resetPassword": {
       "title": "Yangi parol o'rnating",
@@ -75,7 +114,11 @@
       "newPasswordLabel": "Yangi parol",
       "confirmPasswordLabel": "Yangi parolni tasdiqlang",
       "resetButton": "Parolni o'zgartirish",
-      "resetting": "O'zgartirilmoqda..."
+      "resetting": "O'zgartirilmoqda...",
+      "sessionMissing": "Parolni tiklash sessiyasi topilmadi.",
+      "sessionExpired": "Parolni tiklash sessiyasi muddati tugagan. Yangi kod so'rang.",
+      "success": "Parol muvaffaqiyatli tiklandi.",
+      "error": "Parolni tiklab bo'lmadi."
     },
     "setPassword": {
       "title": "Hisobni yakunlang",
@@ -87,6 +130,7 @@
       "success": "Parol muvaffaqiyatli yaratildi.",
       "error": "Parolni saqlab bo'lmadi."
     },
+    "devOtpCode": "Dev OTP kodi: {{code}}",
     "validation": {
       "emailRequired": "Email majburiy",
       "emailInvalid": "Email formati noto'g'ri",

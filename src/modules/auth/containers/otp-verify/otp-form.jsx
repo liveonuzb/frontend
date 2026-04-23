@@ -38,14 +38,9 @@ const OtpForm = () => {
 
   const [countdown, setCountdown] = useState(RESEND_COOLDOWN);
 
-  // Start countdown on mount and reset when resendOtp succeeds
   const startCountdown = useCallback(() => {
     setCountdown(RESEND_COOLDOWN);
   }, []);
-
-  useEffect(() => {
-    startCountdown();
-  }, [startCountdown]);
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -68,70 +63,8 @@ const OtpForm = () => {
       .max(6, t("auth.validation.otpMax")),
   });
 
-  const { mutateAsync: verifyOtp, isPending } = usePostQuery({
-    mutationProps: {
-      onSuccess: (response) => {
-        const responseData = get(response, "data");
-        const verification = pendingVerification;
-
-        if (get(verification, "purpose") === "VERIFY_ACCOUNT") {
-          completeAuthentication(responseData);
-          queryClient.setQueryData(["me"], { data: get(responseData, "user") });
-          toast.success("Account verified successfully.");
-          navigate(getPostAuthRoute(get(responseData, "user")), {
-            replace: true,
-          });
-          return;
-        }
-
-        if (!get(responseData, "resetToken")) {
-          toast.error("Reset token not found. Please request a new code.");
-          navigate("/auth/forgot-password", { replace: true });
-          return;
-        }
-
-        setPasswordReset({
-          resetToken: get(responseData, "resetToken"),
-          expiresAt: get(responseData, "expiresAt"),
-          phone: get(verification, "phone"),
-        });
-        toast.success(
-          get(responseData, "message") ||
-            "Verification successful. Set a new password.",
-        );
-        navigate("/auth/reset-password", { replace: true });
-      },
-      onError: (error) => {
-        const message = getAuthErrorMessage(error, "OTP verification failed.");
-        toast.error(message);
-        setError("otp", { type: "server", message });
-      },
-    },
-  });
-
-  const { mutateAsync: resendOtp, isPending: isResendingOtp } = usePostQuery({
-    mutationProps: {
-      onSuccess: (response) => {
-        const responseData = get(response, "data");
-        setPendingVerification({
-          ...pendingVerification,
-          phone: get(responseData, "phone", get(pendingVerification, "phone")),
-          otpCode: get(responseData, "otpCode"),
-          expiresAt: get(responseData, "expiresAt"),
-        });
-        toast.success(
-          get(responseData, "message") || "A new OTP code was generated.",
-          {
-            description: getOtpToastDescription(responseData),
-          },
-        );
-        startCountdown();
-      },
-      onError: (error) => {
-        toast.error(getAuthErrorMessage(error, "Failed to resend OTP."));
-      },
-    },
-  });
+  const { mutateAsync: verifyOtp, isPending } = usePostQuery();
+  const { mutateAsync: resendOtp, isPending: isResendingOtp } = usePostQuery();
 
   const { control, handleSubmit, formState, setError } = useForm({
     resolver: zodResolver(schema),
@@ -141,67 +74,140 @@ const OtpForm = () => {
 
   const onSubmit = async (values) => {
     if (!pendingVerification) {
-      toast.error("Verification session not found.");
+      toast.error(t("auth.otpVerify.sessionMissing"));
       navigate("/auth/sign-in", { replace: true });
       return;
     }
 
     const phone = get(pendingVerification, "phone");
     if (!phone) {
-      toast.error("Phone verification session not found.");
+      toast.error(t("auth.otpVerify.phoneSessionMissing"));
       navigate("/auth/sign-in", { replace: true });
       return;
     }
 
-    try {
-      await verifyOtp({
+    await verifyOtp(
+      {
         url: "/auth/verify-otp",
         attributes: {
           code: get(values, "otp"),
           purpose: get(pendingVerification, "purpose"),
           phone,
         },
-      });
-    } catch (error) {
-      // Error is handled in verifyOtp.onError
-      console.error("OTP Verification Error:", error);
-    }
+      },
+      {
+        onSuccess: (response) => {
+          const responseData = get(response, "data");
+          const verification = pendingVerification;
+
+          if (get(verification, "purpose") === "VERIFY_ACCOUNT") {
+            completeAuthentication(responseData);
+            queryClient.setQueryData(["me"], {
+              data: get(responseData, "user"),
+            });
+            toast.success(
+              get(responseData, "message") ||
+                t("auth.otpVerify.accountVerified"),
+            );
+            navigate(getPostAuthRoute(get(responseData, "user")), {
+              replace: true,
+            });
+            return;
+          }
+
+          if (!get(responseData, "resetToken")) {
+            toast.error(t("auth.otpVerify.resetTokenMissing"));
+            navigate("/auth/forgot-password", { replace: true });
+            return;
+          }
+
+          setPasswordReset({
+            resetToken: get(responseData, "resetToken"),
+            expiresAt: get(responseData, "expiresAt"),
+            phone: get(verification, "phone"),
+          });
+          toast.success(
+            get(responseData, "message") || t("auth.otpVerify.resetTokenReady"),
+          );
+          navigate("/auth/reset-password", { replace: true });
+        },
+        onError: (error) => {
+          const message = getAuthErrorMessage(error, t("auth.otpVerify.error"));
+          toast.error(message);
+          setError("otp", { type: "server", message });
+        },
+      },
+    );
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     if (!pendingVerification) {
-      toast.error("Verification session not found.");
+      toast.error(t("auth.otpVerify.sessionMissing"));
       navigate("/auth/sign-in", { replace: true });
       return;
     }
 
     const phone = get(pendingVerification, "phone");
     if (!phone) {
-      toast.error("Phone verification session not found.");
+      toast.error(t("auth.otpVerify.phoneSessionMissing"));
       navigate("/auth/sign-in", { replace: true });
       return;
     }
 
-    resendOtp({
-      url: "/auth/resend-otp",
-      attributes: {
-        purpose: get(pendingVerification, "purpose"),
-        phone,
+    await resendOtp(
+      {
+        url: "/auth/resend-otp",
+        attributes: {
+          purpose: get(pendingVerification, "purpose"),
+          phone,
+        },
       },
-    });
+      {
+        onSuccess: (response) => {
+          const responseData = get(response, "data");
+          setPendingVerification({
+            ...pendingVerification,
+            phone: get(
+              responseData,
+              "phone",
+              get(pendingVerification, "phone"),
+            ),
+            otpCode: get(responseData, "otpCode"),
+            expiresAt: get(responseData, "expiresAt"),
+          });
+          toast.success(
+            get(responseData, "message") || t("auth.otpVerify.resendSuccess"),
+            {
+              description: getOtpToastDescription(responseData, t),
+            },
+          );
+          startCountdown();
+        },
+        onError: (error) => {
+          toast.error(
+            getAuthErrorMessage(error, t("auth.otpVerify.resendError")),
+          );
+        },
+      },
+    );
   };
 
   const isResendDisabled = countdown > 0 || isResendingOtp;
   const isSubmitting = get(formState, "isSubmitting");
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    startCountdown();
+  }, [startCountdown]);
+
   return (
-    <form className="flex flex-col gap-7" onSubmit={handleSubmit(onSubmit)}>
-      <Field className="items-center justify-center flex">
+    <form className={"flex flex-col gap-8"} onSubmit={handleSubmit(onSubmit)}>
+      <Field>
         <Controller
           name="otp"
           control={control}
           render={({ field, fieldState }) => (
-            <>
+            <div className={"relative"}>
               <InputOTP
                 id="verification-code"
                 maxLength={6}
@@ -209,35 +215,36 @@ const OtpForm = () => {
                 onChange={get(field, "onChange")}
                 onComplete={handleSubmit(onSubmit)}
               >
-                <div className="flex flex-wrap justify-center gap-2 mx-auto">
+                <div className="flex flex-wrap justify-start gap-2.5">
                   <InputOTPGroup>
-                    <InputOTPSlot index={0} className={"size-12"} />
+                    <InputOTPSlot index={0} className={"size-11 md:size-12"} />
                   </InputOTPGroup>
                   <InputOTPGroup>
-                    <InputOTPSlot index={1} className={"size-12"} />
+                    <InputOTPSlot index={1} className={"size-11 md:size-12"} />
                   </InputOTPGroup>
                   <InputOTPGroup>
-                    <InputOTPSlot index={2} className={"size-12"} />
+                    <InputOTPSlot index={2} className={"size-11 md:size-12"} />
                   </InputOTPGroup>
                   <InputOTPGroup>
-                    <InputOTPSlot index={3} className={"size-12"} />
+                    <InputOTPSlot index={3} className={"size-11 md:size-12"} />
                   </InputOTPGroup>
                   <InputOTPGroup>
-                    <InputOTPSlot index={4} className={"size-12"} />
+                    <InputOTPSlot index={4} className={"size-11 md:size-12"} />
                   </InputOTPGroup>
                   <InputOTPGroup>
-                    <InputOTPSlot index={5} className={"size-12"} />
+                    <InputOTPSlot index={5} className={"size-11 md:size-12"} />
                   </InputOTPGroup>
                 </div>
               </InputOTP>
               <div className={"flex justify-center"}>
                 <FieldError
+                  className={"absolute -bottom-6"}
                   errors={
                     get(fieldState, "error") ? [get(fieldState, "error")] : []
                   }
                 />
               </div>
-            </>
+            </div>
           )}
         />
       </Field>
@@ -246,7 +253,7 @@ const OtpForm = () => {
         <Button
           type="submit"
           disabled={isSubmitting || isPending}
-          className="w-full"
+          className={"h-11 mt-5 md:mt-8"}
         >
           {isSubmitting || isPending
             ? t("auth.otpVerify.verifying")

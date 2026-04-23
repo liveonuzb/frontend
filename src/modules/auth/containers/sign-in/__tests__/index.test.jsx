@@ -20,7 +20,8 @@ const authState = vi.hoisted(() => ({
 }));
 
 vi.mock("@/store", () => ({
-  useAuthStore: (selector) => selector(authState),
+  useAuthStore: (selector) =>
+    typeof selector === "function" ? selector(authState) : authState,
 }));
 
 describe("SignInContainer", () => {

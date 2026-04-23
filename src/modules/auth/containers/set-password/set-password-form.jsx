@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
@@ -12,7 +12,10 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { PasswordInput } from "@/components/ui/password-input";
 import { PasswordStrength } from "@/components/password-strength";
 import { usePatchQuery } from "@/hooks/api";
-import { getAuthErrorMessage, getPostAuthRoute } from "@/modules/auth/lib/auth-utils";
+import {
+  getAuthErrorMessage,
+  getPostAuthRoute,
+} from "@/modules/auth/lib/auth-utils";
 import { useAuthStore } from "@/store";
 
 const SetPasswordForm = () => {
@@ -39,35 +42,7 @@ const SetPasswordForm = () => {
       },
     );
 
-  React.useEffect(() => {
-    if (!isAuthenticated) {
-      navigate("/auth/sign-in", { replace: true });
-      return;
-    }
-
-    if (!user?.passwordSetupRequired) {
-      navigate(getPostAuthRoute(user), { replace: true });
-    }
-  }, [isAuthenticated, navigate, user]);
-
-  const { mutateAsync: setupPassword, isPending } = usePatchQuery({
-    mutationProps: {
-      onSuccess: (response) => {
-        const updatedUser = get(response, "data.user");
-        initializeUser(updatedUser);
-        queryClient.setQueryData(["me"], { data: updatedUser });
-        toast.success(
-          get(response, "data.message") || t("auth.setPassword.success"),
-        );
-        navigate(getPostAuthRoute(updatedUser), { replace: true });
-      },
-      onError: (error) => {
-        toast.error(
-          getAuthErrorMessage(error, t("auth.setPassword.error")),
-        );
-      },
-    },
-  });
+  const { mutateAsync, isPending } = usePatchQuery();
 
   const { control, handleSubmit, formState } = useForm({
     resolver: zodResolver(schema),
@@ -76,18 +51,45 @@ const SetPasswordForm = () => {
   });
 
   const onSubmit = async (values) => {
-    await setupPassword({
-      url: "/users/me/security/password/setup",
-      attributes: {
-        password: get(values, "password"),
+    await mutateAsync(
+      {
+        url: "/users/me/security/password/setup",
+        attributes: {
+          password: get(values, "password"),
+        },
       },
-    });
+      {
+        onSuccess: (response) => {
+          const updatedUser = get(response, "data.user");
+          initializeUser(updatedUser);
+          queryClient.setQueryData(["me"], { data: updatedUser });
+          toast.success(
+            get(response, "data.message") || t("auth.setPassword.success"),
+          );
+          navigate(getPostAuthRoute(updatedUser), { replace: true });
+        },
+        onError: (error) => {
+          toast.error(getAuthErrorMessage(error, t("auth.setPassword.error")));
+        },
+      },
+    );
   };
 
   const isSubmitting = get(formState, "isSubmitting");
 
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/auth/sign-in", { replace: true });
+      return;
+    }
+
+    if (!get(user, "passwordSetupRequired")) {
+      navigate(getPostAuthRoute(user), { replace: true });
+    }
+  }, [isAuthenticated, navigate, user]);
+
   return (
-    <form className="flex flex-col gap-7" onSubmit={handleSubmit(onSubmit)}>
+    <form className={"flex flex-col gap-8"} onSubmit={handleSubmit(onSubmit)}>
       <Field>
         <FieldLabel htmlFor="setup-password">
           {t("auth.setPassword.newPasswordLabel")}
@@ -99,6 +101,7 @@ const SetPasswordForm = () => {
             <>
               <PasswordInput
                 id="setup-password"
+                className={"h-10 md:h-11 px-5 !text-base"}
                 autoComplete="new-password"
                 aria-invalid={!!get(fieldState, "error")}
                 {...field}
@@ -122,19 +125,21 @@ const SetPasswordForm = () => {
           name="confirmPassword"
           control={control}
           render={({ field, fieldState }) => (
-            <>
+            <div className={"relative"}>
               <PasswordInput
                 id="setup-confirm-password"
+                className={"h-10 md:h-11 px-5 !text-base"}
                 autoComplete="new-password"
                 aria-invalid={!!get(fieldState, "error")}
                 {...field}
               />
               <FieldError
+                className={"absolute -bottom-6"}
                 errors={
                   get(fieldState, "error") ? [get(fieldState, "error")] : []
                 }
               />
-            </>
+            </div>
           )}
         />
       </Field>
@@ -143,7 +148,7 @@ const SetPasswordForm = () => {
         <Button
           type="submit"
           disabled={isSubmitting || isPending}
-          className="w-full"
+          className={"h-11 mt-5 md:mt-8"}
         >
           {isSubmitting || isPending
             ? t("auth.setPassword.saving")

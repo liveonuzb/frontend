@@ -11,9 +11,7 @@ import ResetPasswordPage from "@/modules/auth/pages/reset-password/index.jsx";
 import SetPasswordPage from "@/modules/auth/pages/set-password/index.jsx";
 
 const Index = () => {
-  const passwordSetupRequired = useAuthStore(
-    (state) => Boolean(state.user?.passwordSetupRequired),
-  );
+  const { passwordSetupRequired } = useAuthStore();
 
   return (
     <Routes>
@@ -22,7 +20,10 @@ const Index = () => {
           <>
             <Route index element={<Navigate to="set-password" replace />} />
             <Route path={"set-password"} element={<SetPasswordPage />} />
-            <Route path={"*"} element={<Navigate to="set-password" replace />} />
+            <Route
+              path={"*"}
+              element={<Navigate to="set-password" replace />}
+            />
           </>
         ) : (
           <>

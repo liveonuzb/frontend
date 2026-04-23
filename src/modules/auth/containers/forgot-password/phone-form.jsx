@@ -19,6 +19,8 @@ import { get } from "lodash";
 
 const PhoneForm = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { clearPasswordReset, setPendingVerification } = useAuthStore();
 
   const schema = z.object({
     phone: z
@@ -27,32 +29,7 @@ const PhoneForm = () => {
       .regex(/^\+998[0-9]{9}$/, t("auth.validation.phoneInvalid")),
   });
 
-  const navigate = useNavigate();
-  const { clearPasswordReset, setPendingVerification } = useAuthStore();
-  const { mutateAsync: requestPasswordReset, isPending } = usePostQuery({
-    mutationProps: {
-      onSuccess: (response) => {
-        const responseData = get(response, "data");
-        setPendingVerification({
-          channel: "phone",
-          purpose: "PASSWORD_RESET",
-          phone: get(responseData, "phone"),
-          otpCode: get(responseData, "otpCode"),
-          expiresAt: get(responseData, "expiresAt"),
-        });
-        clearPasswordReset();
-        toast.success(get(responseData, "message") || "Reset code sent.", {
-          description: getOtpToastDescription(responseData),
-        });
-        navigate("/auth/otp-verify", { replace: true });
-      },
-      onError: (error) => {
-        toast.error(
-          getAuthErrorMessage(error, "Failed to send password reset code."),
-        );
-      },
-    },
-  });
+  const { mutateAsync, isPending } = usePostQuery();
   const { control, handleSubmit, formState } = useForm({
     resolver: zodResolver(schema),
     defaultValues: { phone: "+998" },
@@ -60,16 +37,44 @@ const PhoneForm = () => {
   });
 
   const onSubmit = async (values) => {
-    await requestPasswordReset({
-      url: "/auth/forgot-password",
-      attributes: values,
-    });
+    await mutateAsync(
+      {
+        url: "/auth/forgot-password",
+        attributes: values,
+      },
+      {
+        onSuccess: (response) => {
+          const responseData = get(response, "data");
+          setPendingVerification({
+            channel: "phone",
+            purpose: "PASSWORD_RESET",
+            phone: get(responseData, "phone"),
+            otpCode: get(responseData, "otpCode"),
+            expiresAt: get(responseData, "expiresAt"),
+          });
+          clearPasswordReset();
+          toast.success(
+            get(responseData, "message") ||
+              t("auth.forgotPassword.resetCodeSent"),
+            {
+              description: getOtpToastDescription(responseData, t),
+            },
+          );
+          navigate("/auth/otp-verify", { replace: true });
+        },
+        onError: (error) => {
+          toast.error(
+            getAuthErrorMessage(error, t("auth.forgotPassword.error")),
+          );
+        },
+      },
+    );
   };
 
   const isSubmitting = get(formState, "isSubmitting");
 
   return (
-    <form className="flex flex-col gap-7" onSubmit={handleSubmit(onSubmit)}>
+    <form className={"flex flex-col gap-6"} onSubmit={handleSubmit(onSubmit)}>
       <Field>
         <FieldLabel htmlFor="forgot-phone">
           {t("auth.forgotPassword.phoneLabel")}
@@ -78,9 +83,10 @@ const PhoneForm = () => {
           name="phone"
           control={control}
           render={({ field, fieldState }) => (
-            <>
+            <div className={"relative"}>
               <PhoneInput
                 id="forgot-phone"
+                variant={"xl"}
                 defaultCountry={"UZ"}
                 type="tel"
                 autoComplete="tel"
@@ -88,11 +94,12 @@ const PhoneForm = () => {
                 {...field}
               />
               <FieldError
+                className={"absolute -bottom-6"}
                 errors={
                   get(fieldState, "error") ? [get(fieldState, "error")] : []
                 }
               />
-            </>
+            </div>
           )}
         />
       </Field>
@@ -101,7 +108,7 @@ const PhoneForm = () => {
         <Button
           type="submit"
           disabled={isSubmitting || isPending}
-          className="w-full"
+          className={"h-11 mt-5 md:mt-8"}
         >
           {isSubmitting || isPending
             ? t("auth.forgotPassword.sending")

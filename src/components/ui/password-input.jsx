@@ -12,7 +12,7 @@ const PasswordInput = React.forwardRef(({ className, id, ...props }, ref) => {
         ref={ref}
         id={id}
         type={show ? "text" : "password"}
-        className={cn("pr-10", className)}
+        className={cn("pr-12", className)}
         {...props}
       />
       <button
@@ -20,9 +20,9 @@ const PasswordInput = React.forwardRef(({ className, id, ...props }, ref) => {
         tabIndex={-1}
         onClick={() => setShow((prev) => !prev)}
         aria-label={show ? "Hide password" : "Show password"}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
+        className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus:outline-none cursor-pointer"
       >
-        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        {show ? <EyeOff className="size-6" /> : <Eye className="size-6" />}
       </button>
     </div>
   );

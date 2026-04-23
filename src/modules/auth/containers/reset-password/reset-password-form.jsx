@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { PasswordInput } from "@/components/ui/password-input";
 import { PasswordStrength } from "@/components/password-strength";
-
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,6 +29,9 @@ const isResetSessionExpired = (expiresAtValue) => {
 
 const ResetPasswordForm = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { clearPasswordReset, clearPendingVerification, passwordReset } =
+    useAuthStore();
 
   const schema = z
     .object({
@@ -49,39 +51,7 @@ const ResetPasswordForm = () => {
       },
     );
 
-  const navigate = useNavigate();
-  const { clearPasswordReset, clearPendingVerification, passwordReset } =
-    useAuthStore();
-
-  React.useEffect(() => {
-    if (!isResetSessionExpired(get(passwordReset, "expiresAt"))) {
-      return;
-    }
-
-    clearPasswordReset();
-    clearPendingVerification();
-    toast.error("Reset session expired. Please request a new code.");
-    navigate("/auth/forgot-password", { replace: true });
-  }, [
-    clearPasswordReset,
-    clearPendingVerification,
-    navigate,
-    get(passwordReset, "expiresAt"),
-  ]);
-
-  const { mutateAsync: resetPassword, isPending } = usePostQuery({
-    mutationProps: {
-      onSuccess: (response) => {
-        toast.success(
-          get(response, "data.message") || "Password reset successfully.",
-        );
-        navigate("/auth/sign-in", { replace: true });
-      },
-      onError: (error) => {
-        toast.error(getAuthErrorMessage(error, "Failed to reset password."));
-      },
-    },
-  });
+  const { mutateAsync, isPending } = usePostQuery();
   const { control, handleSubmit, formState } = useForm({
     resolver: zodResolver(schema),
     defaultValues: { password: "", confirmPassword: "" },
@@ -90,30 +60,61 @@ const ResetPasswordForm = () => {
 
   const onSubmit = async (values) => {
     if (!get(passwordReset, "resetToken")) {
-      toast.error("Reset session not found.");
+      toast.error(t("auth.resetPassword.sessionMissing"));
       navigate("/auth/forgot-password", { replace: true });
       return;
     }
 
     if (isResetSessionExpired(get(passwordReset, "expiresAt"))) {
-      toast.error("Reset session expired. Please request a new code.");
+      toast.error(t("auth.resetPassword.sessionExpired"));
       navigate("/auth/forgot-password", { replace: true });
       return;
     }
 
-    await resetPassword({
-      url: "/auth/reset-password",
-      attributes: {
-        resetToken: get(passwordReset, "resetToken"),
-        password: get(values, "password"),
+    await mutateAsync(
+      {
+        url: "/auth/reset-password",
+        attributes: {
+          resetToken: get(passwordReset, "resetToken"),
+          password: get(values, "password"),
+        },
       },
-    });
+      {
+        onSuccess: (response) => {
+          toast.success(
+            get(response, "data.message") || t("auth.resetPassword.success"),
+          );
+          navigate("/auth/sign-in", { replace: true });
+        },
+        onError: (error) => {
+          toast.error(
+            getAuthErrorMessage(error, t("auth.resetPassword.error")),
+          );
+        },
+      },
+    );
   };
 
   const isSubmitting = get(formState, "isSubmitting");
 
+  React.useEffect(() => {
+    if (!isResetSessionExpired(get(passwordReset, "expiresAt"))) {
+      return;
+    }
+    clearPasswordReset();
+    clearPendingVerification();
+    toast.error(t("auth.resetPassword.sessionExpired"));
+    navigate("/auth/forgot-password", { replace: true });
+  }, [
+    clearPasswordReset,
+    clearPendingVerification,
+    navigate,
+    passwordReset,
+    t,
+  ]);
+
   return (
-    <form className="flex flex-col gap-7" onSubmit={handleSubmit(onSubmit)}>
+    <form className={"flex flex-col gap-8"} onSubmit={handleSubmit(onSubmit)}>
       <Field>
         <FieldLabel htmlFor="reset-password">
           {t("auth.resetPassword.newPasswordLabel")}
@@ -122,20 +123,22 @@ const ResetPasswordForm = () => {
           name="password"
           control={control}
           render={({ field, fieldState }) => (
-            <>
+            <div className={"relative"}>
               <PasswordInput
                 id="reset-password"
                 autoComplete="new-password"
+                className={"h-10 md:h-11 px-5 !text-base"}
                 aria-invalid={!!get(fieldState, "error")}
                 {...field}
               />
               <PasswordStrength password={field.value} />
               <FieldError
+                className={"absolute"}
                 errors={
                   get(fieldState, "error") ? [get(fieldState, "error")] : []
                 }
               />
-            </>
+            </div>
           )}
         />
       </Field>
@@ -148,19 +151,21 @@ const ResetPasswordForm = () => {
           name="confirmPassword"
           control={control}
           render={({ field, fieldState }) => (
-            <>
+            <div className={"relative"}>
               <PasswordInput
                 id="reset-confirm-password"
                 autoComplete="new-password"
+                className={"h-10 md:h-11 px-5 !text-base"}
                 aria-invalid={!!get(fieldState, "error")}
                 {...field}
               />
               <FieldError
+                className={"absolute -bottom-6"}
                 errors={
                   get(fieldState, "error") ? [get(fieldState, "error")] : []
                 }
               />
-            </>
+            </div>
           )}
         />
       </Field>
@@ -169,7 +174,7 @@ const ResetPasswordForm = () => {
         <Button
           type="submit"
           disabled={isSubmitting || isPending}
-          className="w-full"
+          className={"h-11 mt-5 md:mt-8"}
         >
           {isSubmitting || isPending
             ? t("auth.resetPassword.resetting")

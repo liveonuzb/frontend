@@ -1,5 +1,30 @@
 {
   "auth": {
+    "layout": {
+      "logoAlt": "Логотип LiveOn",
+      "title": "К здоровой жизни",
+      "subtitle": "Лучшая платформа для достижения ваших целей",
+      "benefitCalories": "Отслеживайте калории и питание",
+      "benefitWater": "Контролируйте потребление воды",
+      "benefitWorkouts": "Планируйте тренировки",
+      "benefitAiCoach": "Используйте рекомендации AI-тренера",
+      "copyright": "© 2026 LiveOn. Все права защищены.",
+      "panelPill": "Питание · Тренировки · Коучинг",
+      "live": "LIVE",
+      "heroStrong": "Ешьте, двигайтесь,",
+      "heroEmphasis": "вместе",
+      "heroDescription": "Отслеживайте калории каждого приема пищи, тренируйтесь по персональным планам и общайтесь с реальным тренером, когда это важно.",
+      "caloriesLabel": "КАЛОРИИ СЕГОДНЯ",
+      "caloriesValue": "1,840 / 2,200",
+      "caloriesMeta": "по плану",
+      "workoutLabel": "СЛЕДУЮЩАЯ ТРЕНИРОВКА",
+      "workoutValue": "Верх тела · 42м",
+      "workoutMeta": "19:00",
+      "coachLabel": "ТРЕНЕР ДИЛЬНОЗА",
+      "coachValue": "«Хороший рывок сегодня»",
+      "coachMeta": "2 мин назад",
+      "panelCopyright": "© 2026 LiveOn."
+    },
     "signIn": {
       "title": "С возвращением",
       "subtitle": "Войдите в аккаунт LiveOn",
@@ -18,7 +43,9 @@
       "termsLink": "Условиями использования",
       "andText": "и",
       "privacyLink": "Политикой конфиденциальности",
-      "termsEnd": "."
+      "termsEnd": ".",
+      "success": "Вход выполнен успешно.",
+      "error": "Не удалось войти."
     },
     "signUp": {
       "title": "Создать аккаунт",
@@ -41,7 +68,9 @@
       "privacyLink": "Политикой конфиденциальности",
       "termsEnd": ".",
       "referralInvited": "Вас пригласили!",
-      "referralInvitedByName": "Вас пригласил(а) {{name}}!"
+      "referralInvitedByName": "Вас пригласил(а) {{name}}!",
+      "verificationSent": "Код подтверждения отправлен.",
+      "error": "Не удалось зарегистрироваться."
     },
     "forgotPassword": {
       "title": "Забыли пароль?",
@@ -54,7 +83,9 @@
       "sendButton": "Отправить код",
       "sending": "Отправка...",
       "rememberPassword": "Вспомнили пароль?",
-      "backToSignIn": "Вернуться к входу"
+      "backToSignIn": "Вернуться к входу",
+      "resetCodeSent": "Код сброса отправлен.",
+      "error": "Не удалось отправить код сброса пароля."
     },
     "otpVerify": {
       "titleVerify": "Подтвердите аккаунт",
@@ -67,7 +98,15 @@
       "resend": "Отправить снова",
       "resending": "Отправка...",
       "resendIn": "Отправить снова ({{s}}с)",
-      "backToSignIn": "Вернуться к входу"
+      "backToSignIn": "Вернуться к входу",
+      "sessionMissing": "Сессия подтверждения не найдена.",
+      "phoneSessionMissing": "Сессия подтверждения телефона не найдена.",
+      "accountVerified": "Аккаунт успешно подтвержден.",
+      "resetTokenMissing": "Reset token не найден. Запросите новый код.",
+      "resetTokenReady": "Проверка успешна. Установите новый пароль.",
+      "error": "Не удалось подтвердить OTP.",
+      "resendSuccess": "Новый OTP-код создан.",
+      "resendError": "Не удалось отправить OTP повторно."
     },
     "resetPassword": {
       "title": "Установить новый пароль",
@@ -75,7 +114,11 @@
       "newPasswordLabel": "Новый пароль",
       "confirmPasswordLabel": "Подтвердите новый пароль",
       "resetButton": "Сбросить пароль",
-      "resetting": "Сброс..."
+      "resetting": "Сброс...",
+      "sessionMissing": "Сессия сброса пароля не найдена.",
+      "sessionExpired": "Сессия сброса пароля истекла. Запросите новый код.",
+      "success": "Пароль успешно сброшен.",
+      "error": "Не удалось сбросить пароль."
     },
     "setPassword": {
       "title": "Завершите настройку аккаунта",
@@ -87,6 +130,7 @@
       "success": "Пароль успешно создан.",
       "error": "Не удалось сохранить пароль."
     },
+    "devOtpCode": "Dev OTP-код: {{code}}",
     "validation": {
       "emailRequired": "Email обязателен",
       "emailInvalid": "Неверный формат email",

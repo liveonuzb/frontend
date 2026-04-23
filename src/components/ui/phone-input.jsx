@@ -75,6 +75,7 @@ function InputComponent({ className, ...props }) {
         "rounded-s-none focus:z-1",
         variant === "sm" && "h-8",
         variant === "lg" && "h-10",
+        variant === "xl" && "h-10 md:h-11 !text-base",
         className,
       )}
       maxLength={17}
@@ -115,7 +116,7 @@ function CountrySelect({
             variant="outline"
             size={variant}
             className={cn(
-              "rounded-s-4xl rounded-e-none flex gap-1 border-e-0 px-2.5 py-0 leading-none hover:bg-transparent focus:z-10 data-pressed:bg-transparent",
+              "rounded-s-4xl  rounded-e-none flex gap-1 border-e-0 px-4 py-0 leading-none hover:bg-transparent focus:z-10 data-pressed:bg-transparent",
               disabled && "opacity-50",
             )}
             disabled={disabled}

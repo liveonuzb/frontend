@@ -1,5 +1,30 @@
 {
   "auth": {
+    "layout": {
+      "logoAlt": "LiveOn logo",
+      "title": "Toward a healthy life",
+      "subtitle": "The best platform to reach your goals",
+      "benefitCalories": "Track calories and nutrition",
+      "benefitWater": "Monitor your water intake",
+      "benefitWorkouts": "Plan your workouts",
+      "benefitAiCoach": "Use AI coach recommendations",
+      "copyright": "© 2026 LiveOn. All rights reserved.",
+      "panelPill": "Nutrition · Training · Coaching",
+      "live": "LIVE",
+      "heroStrong": "Eat, move,",
+      "heroEmphasis": "together",
+      "heroDescription": "Track every meal's calories, train with workouts built for you, and chat with a real coach when it counts.",
+      "caloriesLabel": "TODAY'S CALORIES",
+      "caloriesValue": "1,840 / 2,200",
+      "caloriesMeta": "on track",
+      "workoutLabel": "NEXT WORKOUT",
+      "workoutValue": "Upper body · 42m",
+      "workoutMeta": "7:00 PM",
+      "coachLabel": "COACH DILNOZA",
+      "coachValue": "«Nice push today»",
+      "coachMeta": "2m ago",
+      "panelCopyright": "© 2026 LiveOn."
+    },
     "signIn": {
       "title": "Welcome back",
       "subtitle": "Login to your LiveOn account",
@@ -18,7 +43,9 @@
       "termsLink": "Terms of Service",
       "andText": "and",
       "privacyLink": "Privacy Policy",
-      "termsEnd": "."
+      "termsEnd": ".",
+      "success": "Logged in successfully.",
+      "error": "Login failed."
     },
     "signUp": {
       "title": "Create an account",
@@ -41,7 +68,9 @@
       "privacyLink": "Privacy Policy",
       "termsEnd": ".",
       "referralInvited": "You've been invited!",
-      "referralInvitedByName": "You were invited by {{name}}!"
+      "referralInvitedByName": "You were invited by {{name}}!",
+      "verificationSent": "Verification code sent.",
+      "error": "Sign up failed."
     },
     "forgotPassword": {
       "title": "Forgot your password?",
@@ -54,7 +83,9 @@
       "sendButton": "Send code",
       "sending": "Sending...",
       "rememberPassword": "Remember your password?",
-      "backToSignIn": "Back to sign in"
+      "backToSignIn": "Back to sign in",
+      "resetCodeSent": "Reset code sent.",
+      "error": "Failed to send password reset code."
     },
     "otpVerify": {
       "titleVerify": "Verify your account",
@@ -67,7 +98,15 @@
       "resend": "Resend",
       "resending": "Sending...",
       "resendIn": "Resend in {{s}}s",
-      "backToSignIn": "Back to sign in"
+      "backToSignIn": "Back to sign in",
+      "sessionMissing": "Verification session not found.",
+      "phoneSessionMissing": "Phone verification session not found.",
+      "accountVerified": "Account verified successfully.",
+      "resetTokenMissing": "Reset token not found. Please request a new code.",
+      "resetTokenReady": "Verification successful. Set a new password.",
+      "error": "OTP verification failed.",
+      "resendSuccess": "A new OTP code was generated.",
+      "resendError": "Failed to resend OTP."
     },
     "resetPassword": {
       "title": "Set new password",
@@ -75,7 +114,11 @@
       "newPasswordLabel": "New password",
       "confirmPasswordLabel": "Confirm new password",
       "resetButton": "Reset password",
-      "resetting": "Resetting..."
+      "resetting": "Resetting...",
+      "sessionMissing": "Reset session not found.",
+      "sessionExpired": "Reset session expired. Please request a new code.",
+      "success": "Password reset successfully.",
+      "error": "Failed to reset password."
     },
     "setPassword": {
       "title": "Finish account setup",
@@ -87,6 +130,7 @@
       "success": "Password created successfully.",
       "error": "Failed to save password."
     },
+    "devOtpCode": "Dev OTP code: {{code}}",
     "validation": {
       "emailRequired": "Email is required",
       "emailInvalid": "Invalid email format",

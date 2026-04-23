@@ -1,11 +1,9 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { PasswordStrength } from "@/components/password-strength";
 import { PhoneInput } from "@/components/ui/phone-input.jsx";
-
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,6 +20,8 @@ import { get, isEqual } from "lodash";
 
 const PhoneForm = ({ referralCode }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { clearPasswordReset, setPendingVerification } = useAuthStore();
 
   const schema = z
     .object({
@@ -45,33 +45,7 @@ const PhoneForm = ({ referralCode }) => {
       },
     );
 
-  const navigate = useNavigate();
-  const { clearPasswordReset, setPendingVerification } = useAuthStore();
-  const { mutateAsync: registerUser, isPending } = usePostQuery({
-    mutationProps: {
-      onSuccess: (response) => {
-        const responseData = get(response, "data");
-        setPendingVerification({
-          channel: "phone",
-          purpose: "VERIFY_ACCOUNT",
-          phone: get(responseData, "phone"),
-          otpCode: get(responseData, "otpCode"),
-          expiresAt: get(responseData, "expiresAt"),
-        });
-        clearPasswordReset();
-        toast.success(
-          get(responseData, "message") || "Verification code sent.",
-          {
-            description: getOtpToastDescription(responseData),
-          },
-        );
-        navigate("/auth/otp-verify", { replace: true });
-      },
-      onError: (error) => {
-        toast.error(getAuthErrorMessage(error, "Sign up failed."));
-      },
-    },
-  });
+  const { mutateAsync, isPending } = usePostQuery();
   const { control, handleSubmit, formState } = useForm({
     resolver: zodResolver(schema),
     defaultValues: { phone: "+998", password: "", confirmPassword: "" },
@@ -86,16 +60,41 @@ const PhoneForm = ({ referralCode }) => {
     if (referralCode) {
       attributes.referralCode = referralCode;
     }
-    await registerUser({
-      url: "/auth/register/phone",
-      attributes,
-    });
+    await mutateAsync(
+      {
+        url: "/auth/register/phone",
+        attributes,
+      },
+      {
+        onSuccess: (response) => {
+          const responseData = get(response, "data");
+          setPendingVerification({
+            channel: "phone",
+            purpose: "VERIFY_ACCOUNT",
+            phone: get(responseData, "phone"),
+            otpCode: get(responseData, "otpCode"),
+            expiresAt: get(responseData, "expiresAt"),
+          });
+          clearPasswordReset();
+          toast.success(
+            get(responseData, "message") || t("auth.signUp.verificationSent"),
+            {
+              description: getOtpToastDescription(responseData, t),
+            },
+          );
+          navigate("/auth/otp-verify", { replace: true });
+        },
+        onError: (error) => {
+          toast.error(getAuthErrorMessage(error, t("auth.signUp.error")));
+        },
+      },
+    );
   };
 
   const isSubmitting = get(formState, "isSubmitting");
 
   return (
-    <form className="flex flex-col gap-7" onSubmit={handleSubmit(onSubmit)}>
+    <form className={"flex flex-col gap-8"} onSubmit={handleSubmit(onSubmit)}>
       <Field>
         <FieldLabel htmlFor="signup-phone">
           {t("auth.signUp.phoneLabel")}
@@ -104,9 +103,10 @@ const PhoneForm = ({ referralCode }) => {
           name="phone"
           control={control}
           render={({ field, fieldState }) => (
-            <>
+            <div className={"relative"}>
               <PhoneInput
                 id="signup-phone"
+                variant={"xl"}
                 defaultCountry={"UZ"}
                 type="tel"
                 autoComplete="tel"
@@ -114,11 +114,12 @@ const PhoneForm = ({ referralCode }) => {
                 {...field}
               />
               <FieldError
+                className={"absolute -bottom-6"}
                 errors={
                   get(fieldState, "error") ? [get(fieldState, "error")] : []
                 }
               />
-            </>
+            </div>
           )}
         />
       </Field>
@@ -131,20 +132,22 @@ const PhoneForm = ({ referralCode }) => {
           name="password"
           control={control}
           render={({ field, fieldState }) => (
-            <>
+            <div className={"relative"}>
               <PasswordInput
                 id="signup-phone-password"
+                className={"h-10 md:h-11 px-5 !text-base"}
                 autoComplete="new-password"
                 aria-invalid={!!get(fieldState, "error")}
                 {...field}
               />
               <PasswordStrength password={field.value} />
               <FieldError
+                className={"absolute -bottom-6"}
                 errors={
                   get(fieldState, "error") ? [get(fieldState, "error")] : []
                 }
               />
-            </>
+            </div>
           )}
         />
       </Field>
@@ -157,19 +160,21 @@ const PhoneForm = ({ referralCode }) => {
           name="confirmPassword"
           control={control}
           render={({ field, fieldState }) => (
-            <>
+            <div className={"relative"}>
               <PasswordInput
                 id="signup-phone-confirm-password"
+                className={"h-10 md:h-11 px-5 !text-base"}
                 autoComplete="new-password"
                 aria-invalid={!!get(fieldState, "error")}
                 {...field}
               />
               <FieldError
+                className={"absolute -bottom-6"}
                 errors={
                   get(fieldState, "error") ? [get(fieldState, "error")] : []
                 }
               />
-            </>
+            </div>
           )}
         />
       </Field>
@@ -178,7 +183,7 @@ const PhoneForm = ({ referralCode }) => {
         <Button
           type="submit"
           disabled={isSubmitting || isPending}
-          className="w-full"
+          className={"h-11 mt-5 md:mt-8"}
         >
           {isSubmitting || isPending
             ? t("auth.signUp.signingUp")

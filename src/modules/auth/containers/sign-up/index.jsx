@@ -1,18 +1,19 @@
 import React from "react";
 import { Link, useSearchParams } from "react-router";
-import { cn } from "@/lib/utils";
-import {
-  FieldDescription,
-  FieldGroup,
-} from "@/components/ui/field";
+import { FieldDescription } from "@/components/ui/field";
 import { useTranslation } from "react-i18next";
 import { useGetQuery } from "@/hooks/api";
 import { get } from "lodash";
 import { getApiResponseData } from "@/lib/api-response";
+import {
+  AuthHeader,
+  AuthPanel,
+  AuthTextFooter,
+} from "@/modules/auth/components/auth-panel";
 
 import PhoneForm from "./phone-form";
 
-const Index = ({ className, ...props }) => {
+const Index = ({ className }) => {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const referralCode = searchParams.get("ref") || "";
@@ -31,44 +32,37 @@ const Index = ({ className, ...props }) => {
   const referrerName = get(referralValidationPayload, "referrerName");
 
   return (
-    <div
-      className={cn("flex justify-center flex-col gap-6 max-w-md", className)}
-      {...props}
+    <AuthPanel
+      className={""}
+      footer={
+        <AuthTextFooter className={"text-center"}>
+          {t("auth.signUp.termsText")}{" "}
+          <a href="#">{t("auth.signUp.termsLink")}</a>{" "}
+          {t("auth.signUp.andText")}{" "}
+          <a href="#">{t("auth.signUp.privacyLink")}</a>
+          {t("auth.signUp.termsEnd")}
+        </AuthTextFooter>
+      }
     >
-      <div className="p-6 md:p-8">
-        <FieldGroup>
-          <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-2xl font-bold">{t("auth.signUp.title")}</h1>
-            <p className="text-muted-foreground text-balance">
-              {t("auth.signUp.subtitle")}
-            </p>
-          </div>
+      <AuthHeader title={t("auth.signUp.title")} />
+      {referralCode && referralValid && (
+        <div className="rounded-[1.15rem] border border-primary/20 bg-primary/[0.06] px-4 py-3.5 text-center text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
+          <span className="font-semibold text-primary">
+            {referrerName
+              ? t("auth.signUp.referralInvitedByName", {
+                  name: referrerName,
+                })
+              : t("auth.signUp.referralInvited")}
+          </span>
+        </div>
+      )}
+      <PhoneForm referralCode={referralCode} />
 
-          {referralCode && referralValid && (
-            <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-center text-sm">
-              <span className="text-primary font-medium">
-                {referrerName
-                  ? t("auth.signUp.referralInvitedByName", { name: referrerName })
-                  : t("auth.signUp.referralInvited")}
-              </span>
-            </div>
-          )}
-
-          <PhoneForm referralCode={referralCode} />
-
-          <FieldDescription className="text-center">
-            {t("auth.signUp.haveAccount")}{" "}
-            <Link to="/auth/sign-in">{t("auth.signUp.signInLink")}</Link>
-          </FieldDescription>
-        </FieldGroup>
-      </div>
-      <FieldDescription className="px-6 text-center">
-        {t("auth.signUp.termsText")}{" "}
-        <a href="#">{t("auth.signUp.termsLink")}</a> {t("auth.signUp.andText")}{" "}
-        <a href="#">{t("auth.signUp.privacyLink")}</a>
-        {t("auth.signUp.termsEnd")}
+      <FieldDescription className="text-center text-[0.95rem]">
+        {t("auth.signUp.haveAccount")}{" "}
+        <Link to="/auth/sign-in">{t("auth.signUp.signInLink")}</Link>
       </FieldDescription>
-    </div>
+    </AuthPanel>
   );
 };
 

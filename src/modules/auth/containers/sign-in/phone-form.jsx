@@ -23,6 +23,7 @@ const PhoneForm = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { completeAuthentication } = useAuthStore();
 
   const schema = z.object({
     phone: z
@@ -35,23 +36,7 @@ const PhoneForm = () => {
       .min(6, t("auth.validation.passwordMin")),
   });
 
-  const { completeAuthentication } = useAuthStore();
-  const { mutateAsync: login, isPending } = usePostQuery({
-    mutationProps: {
-      onSuccess: (response) => {
-        const responseData = get(response, "data");
-        completeAuthentication(responseData);
-        queryClient.setQueryData(["me"], { data: get(responseData, "user") });
-        toast.success("Logged in successfully.");
-        navigate(getPostAuthRoute(get(responseData, "user")), {
-          replace: true,
-        });
-      },
-      onError: (error) => {
-        toast.error(getAuthErrorMessage(error, "Login failed."));
-      },
-    },
-  });
+  const { mutateAsync, isPending } = usePostQuery();
 
   const { control, handleSubmit, formState } = useForm({
     resolver: zodResolver(schema),
@@ -60,24 +45,43 @@ const PhoneForm = () => {
   });
 
   const onSubmit = async (values) => {
-    await login({
-      url: "/auth/login/phone",
-      attributes: values,
-    });
+    await mutateAsync(
+      {
+        url: "/auth/login/phone",
+        attributes: values,
+      },
+      {
+        onSuccess: (response) => {
+          const responseData = get(response, "data");
+          completeAuthentication(responseData);
+          queryClient.setQueryData(["me"], { data: get(responseData, "user") });
+          toast.success(
+            get(responseData, "message") || t("auth.signIn.success"),
+          );
+          navigate(getPostAuthRoute(get(responseData, "user")), {
+            replace: true,
+          });
+        },
+        onError: (error) => {
+          toast.error(getAuthErrorMessage(error, t("auth.signIn.error")));
+        },
+      },
+    );
   };
 
   const isSubmitting = get(formState, "isSubmitting");
 
   return (
-    <form className="flex flex-col gap-7" onSubmit={handleSubmit(onSubmit)}>
+    <form className={"flex flex-col gap-8"} onSubmit={handleSubmit(onSubmit)}>
       <Field>
         <FieldLabel htmlFor="phone">{t("auth.signIn.phoneTab")}</FieldLabel>
         <Controller
           name="phone"
           control={control}
           render={({ field, fieldState }) => (
-            <>
+            <div className={"relative"}>
               <PhoneInput
+                variant={"xl"}
                 id="phone"
                 defaultCountry={"UZ"}
                 type="tel"
@@ -86,11 +90,12 @@ const PhoneForm = () => {
                 {...field}
               />
               <FieldError
+                className={"absolute -bottom-6"}
                 errors={
                   get(fieldState, "error") ? [get(fieldState, "error")] : []
                 }
               />
-            </>
+            </div>
           )}
         />
       </Field>
@@ -111,19 +116,21 @@ const PhoneForm = () => {
           name="password"
           control={control}
           render={({ field, fieldState }) => (
-            <>
+            <div className="relative">
               <PasswordInput
                 id="phone-password"
                 autoComplete="current-password"
+                className={"h-10 md:h-11 px-5 !text-base"}
                 aria-invalid={!!get(fieldState, "error")}
                 {...field}
               />
               <FieldError
+                className={"absolute -bottom-6"}
                 errors={
                   get(fieldState, "error") ? [get(fieldState, "error")] : []
                 }
               />
-            </>
+            </div>
           )}
         />
       </Field>
@@ -132,7 +139,7 @@ const PhoneForm = () => {
         <Button
           type="submit"
           disabled={isSubmitting || isPending}
-          className="w-full"
+          className={"h-11 mt-5 md:mt-8"}
         >
           {isSubmitting || isPending
             ? t("auth.signIn.loggingIn")
