@@ -1,34 +1,18 @@
 import React from "react";
-import { get } from "lodash";
 import { useNavigate } from "react-router";
 import { ChevronRightIcon } from "lucide-react";
-import useGetQuery from "@/hooks/api/use-get-query";
-import { getApiResponseData } from "@/lib/api-response";
-import { normalizeUserOnboarding } from "@/lib/user-onboarding";
 import { cn } from "@/lib/utils";
-import {
-  DASHBOARD_MEASUREMENTS_QUERY_KEY,
-  DASHBOARD_ME_QUERY_KEY,
-  getUserFromResponse,
-} from "./query-helpers.js";
 
 const firstFinite = (...values) => {
   for (const value of values) {
-    const number = Number(value);
-    if (Number.isFinite(number)) {
-      return number;
+    const numeric = Number(value);
+    if (Number.isFinite(numeric)) {
+      return numeric;
     }
   }
 
   return 0;
 };
-
-const normalizeMeasurementHistory = (entries = []) =>
-  [...(Array.isArray(entries) ? entries : [])].sort((left, right) => {
-    const leftTime = new Date(left?.date ?? 0).getTime();
-    const rightTime = new Date(right?.date ?? 0).getTime();
-    return rightTime - leftTime;
-  });
 
 const BMI_SCALE_MIN = 10;
 const BMI_SCALE_RANGE = 30;
@@ -41,42 +25,46 @@ const clampPct = (bmi) =>
 
 const getBmiMeta = (bmi) => {
   if (bmi === null) return null;
-  if (bmi < 18.5)
+  if (bmi < 18.5) {
     return {
       label: "Kam vazn",
       color: "#60a5fa",
       tw: {
         bg: "bg-blue-500/8",
-        badge: "bg-blue-500/12 text-blue-400 border-blue-400/20",
+        badge: "border-blue-400/20 bg-blue-500/12 text-blue-400",
         glow: "from-blue-500/20",
       },
     };
-  if (bmi < 25)
+  }
+  if (bmi < 25) {
     return {
       label: "Normal",
       color: "#4ade80",
       tw: {
         bg: "bg-green-500/8",
-        badge: "bg-green-500/12 text-green-400 border-green-400/20",
+        badge: "border-green-400/20 bg-green-500/12 text-green-400",
         glow: "from-green-500/20",
       },
     };
-  if (bmi < 30)
+  }
+  if (bmi < 30) {
     return {
       label: "Ortiqcha",
       color: "#fbbf24",
       tw: {
         bg: "bg-amber-500/8",
-        badge: "bg-amber-500/12 text-amber-400 border-amber-400/20",
+        badge: "border-amber-400/20 bg-amber-500/12 text-amber-400",
         glow: "from-amber-500/20",
       },
     };
+  }
+
   return {
     label: "Semizlik",
     color: "#f87171",
     tw: {
       bg: "bg-red-500/8",
-      badge: "bg-red-500/12 text-red-400 border-red-400/20",
+      badge: "border-red-400/20 bg-red-500/12 text-red-400",
       glow: "from-red-500/20",
     },
   };
@@ -97,52 +85,18 @@ const SCALE_LABELS = [
   { label: "40", pct: 100 },
 ];
 
-export default function BmiWidget({
+export default function CoachBmiWidget({
   currentWeightValue,
   heightCmValue,
   onOpen,
   interactive = true,
 }) {
   const navigate = useNavigate();
-  const shouldFetchUser =
-    currentWeightValue === undefined || heightCmValue === undefined;
-  const shouldFetchMeasurements = currentWeightValue === undefined;
-  const { data: userData } = useGetQuery({
-    url: "/users/me",
-    queryProps: {
-      queryKey: DASHBOARD_ME_QUERY_KEY,
-      enabled: shouldFetchUser,
-    },
-  });
-  const { data: measurementsData } = useGetQuery({
-    url: "/measurements",
-    queryProps: {
-      queryKey: DASHBOARD_MEASUREMENTS_QUERY_KEY,
-      enabled: shouldFetchMeasurements,
-    },
-  });
-  const user = React.useMemo(() => getUserFromResponse(userData), [userData]);
-  const onboarding = React.useMemo(
-    () => normalizeUserOnboarding(get(user, "onboarding")),
-    [user],
-  );
-  const measurementHistory = React.useMemo(
-    () => normalizeMeasurementHistory(getApiResponseData(measurementsData, [])),
-    [measurementsData],
-  );
-  const latest = measurementHistory[0] ?? {};
-  const currentW = firstFinite(
-    currentWeightValue,
-    get(latest, "weight"),
-    parseFloat(get(onboarding, "currentWeight.value")),
-  );
-  const heightCm = firstFinite(
-    heightCmValue,
-    parseFloat(get(onboarding, "height.value")),
-  );
+  const currentWeight = firstFinite(currentWeightValue);
+  const heightCm = firstFinite(heightCmValue);
   const heightM = heightCm / 100;
   const bmi =
-    heightM > 0 && currentW > 0 ? currentW / (heightM * heightM) : null;
+    heightM > 0 && currentWeight > 0 ? currentWeight / (heightM * heightM) : null;
   const meta = getBmiMeta(bmi);
   const pct = bmi !== null ? clampPct(bmi) : 0;
   const handleClick = interactive
@@ -215,7 +169,7 @@ export default function BmiWidget({
               </div>
             </div>
 
-            <div className="flex shrink-0 flex-col gap-1.5 text-right">
+            <div className="shrink-0 text-right">
               <div className="rounded-xl bg-muted/50 px-3 py-1.5 text-right">
                 <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Bo'y
@@ -227,12 +181,12 @@ export default function BmiWidget({
                   </span>
                 </p>
               </div>
-              <div className="rounded-xl bg-muted/50 px-3 py-1.5 text-right">
+              <div className="mt-1.5 rounded-xl bg-muted/50 px-3 py-1.5 text-right">
                 <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Vazn
                 </p>
                 <p className="text-sm font-black leading-tight">
-                  {currentW.toFixed(1)}
+                  {currentWeight.toFixed(1)}
                   <span className="ml-0.5 text-[10px] font-semibold text-muted-foreground">
                     kg
                   </span>
@@ -265,11 +219,7 @@ export default function BmiWidget({
                 <div
                   key={index}
                   className="h-full transition-opacity duration-500"
-                  style={{
-                    width: `${zone.pct}%`,
-                    background: zone.color,
-                    opacity: 1,
-                  }}
+                  style={{ width: `${zone.pct}%`, background: zone.color, opacity: 1 }}
                 />
               ))}
             </div>
@@ -299,9 +249,6 @@ export default function BmiWidget({
               <br />
               bo'y va vazn kiriting
             </p>
-          </div>
-          <div className="rounded-full border border-dashed border-border/50 px-3 py-1 text-[10px] font-semibold text-muted-foreground/60">
-            Bosing va kiriting →
           </div>
         </div>
       )}

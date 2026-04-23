@@ -1,12 +1,17 @@
 import React from "react";
-import { useNavigate } from "react-router";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronRightIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { get } from "lodash";
-import useMeasurements from "@/hooks/app/use-measurements";
-import { useAuthStore } from "@/store";
+import { useNavigate } from "react-router";
+import { ChevronRightIcon } from "lucide-react";
+import useGetQuery from "@/hooks/api/use-get-query";
+import { getApiResponseData } from "@/lib/api-response";
 import { normalizeUserOnboarding } from "@/lib/user-onboarding";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import {
+  DASHBOARD_MEASUREMENTS_QUERY_KEY,
+  DASHBOARD_ME_QUERY_KEY,
+  getUserFromResponse,
+} from "./query-helpers.js";
 
 const firstFinite = (...values) => {
   for (const value of values) {
@@ -19,6 +24,13 @@ const firstFinite = (...values) => {
   return 0;
 };
 
+const normalizeMeasurementHistory = (entries = []) =>
+  [...(Array.isArray(entries) ? entries : [])].sort((left, right) => {
+    const leftTime = new Date(left?.date ?? 0).getTime();
+    const rightTime = new Date(right?.date ?? 0).getTime();
+    return rightTime - leftTime;
+  });
+
 export default function WeightWidget({
   currentWeightValue,
   targetWeightValue,
@@ -28,15 +40,48 @@ export default function WeightWidget({
   interactive = true,
 }) {
   const navigate = useNavigate();
-  const { getLatest, getChange, history: measHistory } = useMeasurements();
-  const { user } = useAuthStore();
-  const onboarding = normalizeUserOnboarding(get(user, "onboarding"));
+  const shouldFetchUser =
+    currentWeightValue === undefined ||
+    targetWeightValue === undefined ||
+    startWeightValue === undefined;
+  const shouldFetchMeasurements =
+    history === undefined ||
+    currentWeightValue === undefined ||
+    startWeightValue === undefined;
+  const { data: userData } = useGetQuery({
+    url: "/users/me",
+    queryProps: {
+      queryKey: DASHBOARD_ME_QUERY_KEY,
+      enabled: shouldFetchUser,
+    },
+  });
+  const { data: measurementsData } = useGetQuery({
+    url: "/measurements",
+    queryProps: {
+      queryKey: DASHBOARD_MEASUREMENTS_QUERY_KEY,
+      enabled: shouldFetchMeasurements,
+    },
+  });
+  const user = React.useMemo(() => getUserFromResponse(userData), [userData]);
+  const onboarding = React.useMemo(
+    () => normalizeUserOnboarding(get(user, "onboarding")),
+    [user],
+  );
+  const measurementHistory = React.useMemo(
+    () =>
+      normalizeMeasurementHistory(
+        history ?? getApiResponseData(measurementsData, []),
+      ),
+    [history, measurementsData],
+  );
+  const latest = measurementHistory[0] ?? {};
   const onboardingWeight = get(onboarding, "currentWeight");
   const onboardingTarget = get(onboarding, "targetWeight");
-
-  const latest = getLatest();
-  const historyData = history ?? measHistory;
-  const weightChange = history ? 0 : getChange("weight");
+  const weightChange =
+    history !== undefined || measurementHistory.length < 2
+      ? 0
+      : Number(get(measurementHistory, "[0].weight", 0)) -
+        Number(get(measurementHistory, "[1].weight", 0));
   const currentW = firstFinite(
     currentWeightValue,
     get(latest, "weight"),
@@ -45,19 +90,17 @@ export default function WeightWidget({
   const targetW =
     firstFinite(targetWeightValue, parseFloat(get(onboardingTarget, "value"))) ||
     70;
-
-  const lastHistoryWeight = get(historyData, [historyData.length - 1, "weight"]);
+  const lastHistoryWeight = get(
+    measurementHistory,
+    [measurementHistory.length - 1, "weight"],
+  );
   const startW =
     firstFinite(
       startWeightValue,
-      historyData.length >= 2 ? lastHistoryWeight : undefined,
+      measurementHistory.length >= 2 ? lastHistoryWeight : undefined,
       parseFloat(get(onboardingWeight, "value")) + 5,
-    ) ||
-    (historyData.length >= 2
-      ? lastHistoryWeight
-      : parseFloat(get(onboardingWeight, "value")) + 5) ||
-    currentW + 5;
-
+      currentW + 5,
+    ) || currentW + 5;
   const progressRange = Math.abs(startW - targetW);
   const progressDone =
     progressRange > 0
@@ -68,13 +111,13 @@ export default function WeightWidget({
 
   return (
     <Card
-      className="py-6 h-full"
+      className="h-full py-6"
       onClick={interactive ? onOpen ?? (() => navigate("/user/measurements")) : undefined}
     >
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <span className="size-7 rounded-lg bg-orange-500/15 flex items-center justify-center text-base">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-orange-500/15 text-base">
               ⚖️
             </span>
             Vazn
@@ -83,20 +126,18 @@ export default function WeightWidget({
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col gap-3">
+      <CardContent className="flex flex-1 flex-col gap-3">
         <div className="flex items-baseline gap-3">
           <span className="text-3xl font-black leading-none">
             {currentW > 0 ? currentW.toFixed(1) : "—"}
           </span>
-          {currentW > 0 && (
-            <span className="text-sm text-muted-foreground font-semibold">
-              kg
-            </span>
-          )}
-          {currentW > 0 && weightChange !== 0 && (
+          {currentW > 0 ? (
+            <span className="text-sm font-semibold text-muted-foreground">kg</span>
+          ) : null}
+          {currentW > 0 && weightChange !== 0 ? (
             <span
               className={cn(
-                "flex items-center gap-1 text-sm font-bold px-2 py-0.5 rounded-full",
+                "flex items-center gap-1 rounded-full px-2 py-0.5 text-sm font-bold",
                 isImproving
                   ? "bg-green-500/15 text-green-500"
                   : "bg-red-500/15 text-red-500",
@@ -104,26 +145,28 @@ export default function WeightWidget({
             >
               {isImproving ? "⬇" : "⬆"} {Math.abs(weightChange).toFixed(1)} kg
             </span>
-          )}
+          ) : null}
         </div>
 
-        {currentW > 0 && (
+        {currentW > 0 ? (
           <div className="space-y-1">
-            <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
+            <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-orange-400 to-orange-500 transition-all duration-700"
                 style={{ width: `${Math.round(progressDone * 100)}%` }}
               />
             </div>
-            <div className="flex justify-between text-[10px] text-muted-foreground font-medium">
+            <div className="flex justify-between text-[10px] font-medium text-muted-foreground">
               <span>Boshlang'ich: {startW.toFixed(1)} kg</span>
               <span>Maqsad: {targetW.toFixed(1)} kg</span>
             </div>
           </div>
-        )}
+        ) : null}
+
         <button
-          onClick={(e) => {
-            e.stopPropagation();
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
             if (!interactive) return;
             if (onOpen) {
               onOpen();
@@ -131,13 +174,13 @@ export default function WeightWidget({
             }
             navigate("/user/measurements");
           }}
-          className="flex items-center gap-2 w-full bg-muted/60 hover:bg-muted rounded-xl px-3 py-2.5 text-sm font-semibold mt-auto transition-colors"
+          className="mt-auto flex w-full items-center gap-2 rounded-xl bg-muted/60 px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-muted"
         >
-          <span className="size-7 rounded-lg bg-orange-500/20 flex items-center justify-center text-base">
+          <span className="flex size-7 items-center justify-center rounded-lg bg-orange-500/20 text-base">
             📊
           </span>
           <span className="truncate">Ko'krak / Bel / Son</span>
-          <ChevronRightIcon className="size-4 ml-auto text-muted-foreground shrink-0" />
+          <ChevronRightIcon className="ml-auto size-4 shrink-0 text-muted-foreground" />
         </button>
       </CardContent>
     </Card>

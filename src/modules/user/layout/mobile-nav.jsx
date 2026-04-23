@@ -13,14 +13,13 @@ const MobileNav = ({ hidden = false }) => {
     { to: "/user/dashboard", icon: Home2, label: "Dashboard" },
     { to: "/user/nutrition", icon: Salad, label: "Ovqatlanish" },
     { to: "/user/workout", icon: Dumbbell, label: "Mashg'ulotlar" },
-    { to: "/user/challenges", icon: TrophyIcon, label: "Musobaqalar" },
     { to: "/user/chat", icon: Messages2, label: "Chat" },
   ];
 
   return (
     <div
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-40 flex items-end justify-between px-8 pb-8 pb-safe-or-4 transition-transform duration-200",
+        "fixed bottom-0 left-0 right-0 z-40 flex items-end justify-between px-5 pb-6 pb-safe-or-4 transition-transform duration-200",
         hidden ? "translate-y-[calc(100%+1rem)]" : "translate-y-0",
       )}
     >

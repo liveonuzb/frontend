@@ -1,9 +1,13 @@
 import React from "react";
 import { clamp, round, times } from "lodash";
 import { motion } from "framer-motion";
-import { FlameIcon } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader } from "@/components/ui/card.jsx";
+import { ChevronsUpDown, FlameIcon } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card.jsx";
 import { Separator } from "@/components/ui/separator.jsx";
 import { cn } from "@/lib/utils";
 
@@ -19,18 +23,48 @@ export default function CalorieGaugeWidget({
   className,
   isGoalLoading = false,
   goalMeta = null,
+  showCalorieModeToggle = false,
+  defaultCalorieMode = "remaining",
+  calorieMode,
+  onCalorieModeChange,
 }) {
   const isOver = consumed > goal;
   const excess = consumed - goal;
   const remaining = clamp(goal - consumed, 0, Infinity);
   const pct = clamp(consumed / goal, 0, 1);
+  const [internalCalorieMode, setInternalCalorieMode] = React.useState(
+    defaultCalorieMode === "eaten" ? "eaten" : "remaining",
+  );
+  const resolvedCalorieMode =
+    calorieMode === "eaten" || calorieMode === "remaining"
+      ? calorieMode
+      : internalCalorieMode;
+  const isEatenMode = resolvedCalorieMode === "eaten";
+  const centerIsOver = !isEatenMode && isOver;
+  const centerLabel = isEatenMode ? "Yeyilgan" : isOver ? "Oshdi" : "Qolgan";
+  const centerValue = isEatenMode ? consumed : isOver ? excess : remaining;
+  const centerValueLabel =
+    !isEatenMode && isOver
+      ? `+${round(centerValue).toLocaleString()}`
+      : round(centerValue).toLocaleString();
+
+  const toggleCalorieMode = (event) => {
+    event.stopPropagation();
+    const nextMode = isEatenMode ? "remaining" : "eaten";
+
+    if (calorieMode !== "eaten" && calorieMode !== "remaining") {
+      setInternalCalorieMode(nextMode);
+    }
+
+    onCalorieModeChange?.(nextMode);
+  };
 
   const vw = 280;
   const vh = 155;
   const cx = vw / 2;
   const cy = 135;
   const radius = 105;
-  const strokeW = 13;
+  const strokeW = 12;
 
   // Arc from 180° to 0° (left to right, upper half)
   const startAngle = 180;
@@ -112,15 +146,19 @@ export default function CalorieGaugeWidget({
             Bugungi Kaloriya <span className="text-lg">🔥</span>
           </h3>
         </div>
-        <div className="text-right">
-          <span
-            className={cn(
-              "text-sm font-semibold text-muted-foreground",
-              isGoalLoading && "animate-pulse",
-            )}
-          >
-            {goal.toLocaleString()} kcal
-          </span>
+        <div className="flex flex-col items-end gap-1 text-right">
+          {showCalorieModeToggle ? (
+            <button
+              type="button"
+              onClick={toggleCalorieMode}
+              className="inline-flex h-8 items-center gap-1 rounded-full border border-border/60 bg-background/70 px-3 text-xs font-bold text-foreground shadow-sm transition-colors hover:bg-muted"
+              aria-label="Kaloriya ko'rsatkichini almashtirish"
+            >
+              <span>{isEatenMode ? "Yeyilgan" : "Qolgan"}</span>
+              <ChevronsUpDown className="size-3.5 text-muted-foreground" />
+            </button>
+          ) : null}
+
           {isGoalLoading ? (
             <p className="mt-1 text-[11px] text-muted-foreground">
               Maqsad profilingizga moslanmoqda
@@ -255,42 +293,40 @@ export default function CalorieGaugeWidget({
               y={cy - 58}
               width={20}
               height={20}
-              className={isOver ? "text-red-500" : "text-foreground/60"}
+              className={centerIsOver ? "text-red-500" : "text-foreground/60"}
             />
             <text
               x={cx}
               y={cy - 26}
               textAnchor="middle"
               style={{
-                fill: isOver
+                fill: centerIsOver
                   ? "#ef4444"
                   : "var(--color-muted-foreground, #888)",
                 fontSize: 11,
                 fontWeight: 500,
               }}
             >
-              {isOver ? "Oshdi" : "Qolgan"}
+              {centerLabel}
             </text>
             <text
               x={cx}
               y={cy + 8}
               textAnchor="middle"
               style={{
-                fill: isOver ? "#ef4444" : "currentColor",
+                fill: centerIsOver ? "#ef4444" : "currentColor",
                 fontSize: 34,
                 fontWeight: 900,
               }}
             >
-              {isOver
-                ? `+${excess.toLocaleString()}`
-                : remaining.toLocaleString()}
+              {centerValueLabel}
             </text>
             <text
               x={cx}
               y={cy + 26}
               textAnchor="middle"
               style={{
-                fill: isOver
+                fill: centerIsOver
                   ? "#f87171"
                   : "var(--color-muted-foreground, #888)",
                 fontSize: 11,

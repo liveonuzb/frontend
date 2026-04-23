@@ -1,9 +1,18 @@
-import { join, map, take } from "lodash";
+import { get, join, map, take } from "lodash";
 import React from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
+import { toast } from "sonner";
+import useGetQuery from "@/hooks/api/use-get-query";
+import usePatchQuery from "@/hooks/api/use-patch-query";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { TrophyIcon } from "lucide-react";
+import { invalidateGamificationQueries } from "@/modules/user/lib/gamification-query-keys";
+import {
+  DASHBOARD_CHALLENGE_INVITATIONS_QUERY_KEY,
+  DASHBOARD_CHALLENGES_QUERY_KEY,
+} from "./query-helpers.js";
 
 const challengeMetricLabels = {
   STEPS: "Qadam",
@@ -19,12 +28,68 @@ const formatShortDate = (value) => {
   return date.toLocaleDateString("uz-UZ", { day: "2-digit", month: "short" });
 };
 
-export default function ChallengeInvitationsSection({
-  invitations,
-  respondingById,
-  onRespond,
-}) {
+export default function ChallengeInvitationsSection() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [respondingById, setRespondingById] = React.useState({});
+  const { data } = useGetQuery({
+    url: "/challenges/invitations/me",
+    params: { status: "PENDING" },
+    queryProps: {
+      queryKey: [...DASHBOARD_CHALLENGE_INVITATIONS_QUERY_KEY, "PENDING"],
+    },
+  });
+  const invitationsPayload = get(data, "data.data", get(data, "data", []));
+  const invitations = Array.isArray(invitationsPayload)
+    ? invitationsPayload
+    : get(invitationsPayload, "items", []);
+  const respondMutation = usePatchQuery({
+    mutationProps: {
+      onSuccess: async (_response, variables) => {
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: DASHBOARD_CHALLENGE_INVITATIONS_QUERY_KEY,
+          }),
+          queryClient.invalidateQueries({
+            queryKey: DASHBOARD_CHALLENGES_QUERY_KEY,
+          }),
+          ...(String(variables?.attributes?.status || "").startsWith("ACCEPT")
+            ? [invalidateGamificationQueries(queryClient)]
+            : []),
+        ]);
+      },
+    },
+  });
+
+  const handleRespond = async (invitationId, action) => {
+    if (!invitationId || respondingById[invitationId]) {
+      return;
+    }
+
+    setRespondingById((current) => ({
+      ...current,
+      [invitationId]: true,
+    }));
+    try {
+      await respondMutation.mutateAsync({
+        url: `/challenges/invitations/${invitationId}/respond`,
+        attributes: { status: action },
+      });
+      toast.success(
+        String(action).startsWith("ACCEPT")
+          ? "Taklif qabul qilindi"
+          : "Taklif rad etildi",
+      );
+    } catch {
+      toast.error("Challenge taklifiga javob berib bo'lmadi");
+    } finally {
+      setRespondingById((current) => {
+        const next = { ...current };
+        delete next[invitationId];
+        return next;
+      });
+    }
+  };
 
   if (!invitations.length) return null;
 
@@ -133,13 +198,13 @@ export default function ChallengeInvitationsSection({
                   ) : null}
                   <Button
                     variant="outline"
-                    onClick={() => onRespond(invitation.id, "DECLINE")}
+                    onClick={() => handleRespond(invitation.id, "DECLINE")}
                     disabled={isBusy}
                   >
                     {isBusy ? "Kutilmoqda..." : "Rad etish"}
                   </Button>
                   <Button
-                    onClick={() => onRespond(invitation.id, "ACCEPT")}
+                    onClick={() => handleRespond(invitation.id, "ACCEPT")}
                     disabled={isBusy}
                   >
                     {isBusy ? "Kutilmoqda..." : "Qabul qilish"}

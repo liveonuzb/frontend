@@ -4,14 +4,12 @@ import { Navigate, Outlet, NavLink, useLocation } from "react-router";
 import {
   LayoutDashboardIcon,
   UtensilsIcon,
-  GlassWaterIcon,
   RulerIcon,
   MessageSquareIcon,
   DumbbellIcon,
   TrophyIcon,
   UserPlusIcon,
   WalletCardsIcon,
-  CompassIcon,
 } from "lucide-react";
 import {
   Sidebar,

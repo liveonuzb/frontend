@@ -1,21 +1,8 @@
 import React from "react";
-import { entries, get, map, reduce } from "lodash";
 import { useNavigate } from "react-router";
-import useGetQuery from "@/hooks/api/use-get-query";
-import { useAddMealOverlayStore } from "@/store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  ArrowRightIcon,
-  FlameIcon,
-  PlusIcon,
-  UtensilsIcon,
-} from "lucide-react";
-import {
-  DASHBOARD_HEALTH_GOALS_QUERY_KEY,
-  getDashboardDayQueryKey,
-  getDayDataFromResponse,
-  getGoalsStateFromResponses,
-} from "./query-helpers.js";
+import { ArrowRightIcon, FlameIcon, PlusIcon, UtensilsIcon } from "lucide-react";
+import { entries, get, map, reduce } from "lodash";
 
 const mealTypeConfig = {
   breakfast: { label: "Nonushta", icon: "🍳" },
@@ -31,37 +18,15 @@ const mealPctGoal = {
   snack: 0.1,
 };
 
-export default function MealsWidget({
-  dateKey,
+export default function CoachMealsWidget({
+  isEditMode,
+  dayData,
+  goals,
   onOpen,
   onAddMeal,
   showQuickAdd = true,
 }) {
   const navigate = useNavigate();
-  const openActionDrawer = useAddMealOverlayStore(
-    (state) => state.openActionDrawer,
-  );
-  const { data: trackingData } = useGetQuery({
-    url: `/daily-tracking/${dateKey}`,
-    queryProps: {
-      queryKey: getDashboardDayQueryKey(dateKey),
-      enabled: Boolean(dateKey),
-    },
-  });
-  const { data: goalsData } = useGetQuery({
-    url: "/health-goals",
-    queryProps: {
-      queryKey: DASHBOARD_HEALTH_GOALS_QUERY_KEY,
-    },
-  });
-  const dayData = React.useMemo(
-    () => getDayDataFromResponse(trackingData, dateKey),
-    [dateKey, trackingData],
-  );
-  const { goals } = React.useMemo(
-    () => getGoalsStateFromResponses({ goalsResponse: goalsData, user: null }),
-    [goalsData],
-  );
 
   return (
     <Card className="h-full py-6">
@@ -74,7 +39,7 @@ export default function MealsWidget({
           <button
             type="button"
             className="flex size-8 items-center justify-center rounded-md bg-muted transition-colors hover:bg-muted/80"
-            onClick={() => (onOpen ? onOpen() : navigate("/user/nutrition"))}
+            onClick={() => !isEditMode && (onOpen ? onOpen() : navigate("/user/nutrition"))}
           >
             <ArrowRightIcon className="size-3.5" />
           </button>
@@ -102,7 +67,7 @@ export default function MealsWidget({
             <div
               key={type}
               className="group/meal flex cursor-pointer items-center gap-3 py-1"
-              onClick={() => (onOpen ? onOpen() : navigate("/user/nutrition"))}
+              onClick={() => !isEditMode && (onOpen ? onOpen() : navigate("/user/nutrition"))}
             >
               <div className="relative shrink-0" style={{ width: ringSize, height: ringSize }}>
                 <svg width={ringSize} height={ringSize} className="rotate-[-90deg]">
@@ -120,7 +85,7 @@ export default function MealsWidget({
                     cy={ringSize / 2}
                     r={ringRadius}
                     fill="none"
-                    stroke="url(#dashboardMealRingGrad)"
+                    stroke="url(#coachMealRingGrad)"
                     strokeWidth={ringStroke}
                     strokeLinecap="round"
                     strokeDasharray={circumference}
@@ -128,13 +93,7 @@ export default function MealsWidget({
                     className="transition-all duration-700"
                   />
                   <defs>
-                    <linearGradient
-                      id="dashboardMealRingGrad"
-                      x1="0%"
-                      y1="0%"
-                      x2="100%"
-                      y2="0%"
-                    >
+                    <linearGradient id="coachMealRingGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                       <stop offset="0%" stopColor="#a3e635" />
                       <stop offset="100%" stopColor="#65a30d" />
                     </linearGradient>
@@ -159,11 +118,8 @@ export default function MealsWidget({
                   className="group-hover/meal:bg-primary/10 flex size-11 shrink-0 items-center justify-center rounded-full bg-muted/50 transition-colors hover:bg-muted"
                   onClick={(event) => {
                     event.stopPropagation();
-                    if (onAddMeal) {
-                      onAddMeal(type);
-                      return;
-                    }
-                    openActionDrawer({ mealType: type, dateKey });
+                    if (isEditMode) return;
+                    onAddMeal?.(type);
                   }}
                 >
                   <PlusIcon className="size-4 text-muted-foreground transition-colors group-hover/meal:text-primary" />

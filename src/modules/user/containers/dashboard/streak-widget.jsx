@@ -1,15 +1,38 @@
 import React from "react";
-import { get, size } from "lodash";
-import { FlameIcon, TrendingUpIcon } from "lucide-react";
+import { get } from "lodash";
+import { FlameIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import useGetQuery from "@/hooks/api/use-get-query";
+import {
+  DASHBOARD_ME_QUERY_KEY,
+  getUserFromResponse,
+} from "./query-helpers.js";
 
 const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100];
 
-const StreakWidget = ({ streak = 0, longestStreak = 0, trackedDays = 0 }) => {
+const StreakWidget = ({ streak, longestStreak, trackedDays }) => {
+  const shouldFetch =
+    streak === undefined ||
+    longestStreak === undefined ||
+    trackedDays === undefined;
+  const { data } = useGetQuery({
+    url: "/users/me",
+    queryProps: {
+      queryKey: DASHBOARD_ME_QUERY_KEY,
+      enabled: shouldFetch,
+    },
+  });
+  const user = React.useMemo(() => getUserFromResponse(data), [data]);
+  const resolvedStreak = streak ?? get(user, "currentStreak", 0);
+  const resolvedLongestStreak =
+    longestStreak ?? get(user, "longestStreak", resolvedStreak);
+  const resolvedTrackedDays = trackedDays ?? get(user, "trackedDays", 0);
   const nextMilestone =
-    STREAK_MILESTONES.find((m) => m > streak) || streak + 10;
+    STREAK_MILESTONES.find((m) => m > resolvedStreak) || resolvedStreak + 10;
   const progressToNext =
-    nextMilestone > 0 ? Math.min(100, Math.round((streak / nextMilestone) * 100)) : 0;
+    nextMilestone > 0
+      ? Math.min(100, Math.round((resolvedStreak / nextMilestone) * 100))
+      : 0;
 
   return (
     <div className="group relative h-full overflow-hidden rounded-[28px] border border-orange-500/15 bg-gradient-to-br from-orange-500/[0.08] via-card to-card px-5 py-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5">
@@ -28,12 +51,12 @@ const StreakWidget = ({ streak = 0, longestStreak = 0, trackedDays = 0 }) => {
           <div
             className={cn(
               "flex size-14 flex-col items-center justify-center rounded-2xl font-black",
-              streak > 0
+              resolvedStreak > 0
                 ? "bg-orange-500/10 text-orange-600"
                 : "bg-muted text-muted-foreground",
             )}
           >
-            <span className="text-2xl leading-none">{streak}</span>
+            <span className="text-2xl leading-none">{resolvedStreak}</span>
             <span className="text-[9px] font-semibold uppercase tracking-wider">kun</span>
           </div>
         </div>
@@ -57,7 +80,7 @@ const StreakWidget = ({ streak = 0, longestStreak = 0, trackedDays = 0 }) => {
               Eng uzun
             </p>
             <p className="mt-0.5 text-lg font-bold">
-              {longestStreak}{" "}
+              {resolvedLongestStreak}{" "}
               <span className="text-xs font-medium text-muted-foreground">kun</span>
             </p>
           </div>
@@ -66,7 +89,7 @@ const StreakWidget = ({ streak = 0, longestStreak = 0, trackedDays = 0 }) => {
               Jami
             </p>
             <p className="mt-0.5 text-lg font-bold">
-              {trackedDays}{" "}
+              {resolvedTrackedDays}{" "}
               <span className="text-xs font-medium text-muted-foreground">kun</span>
             </p>
           </div>

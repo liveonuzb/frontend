@@ -1,39 +1,10 @@
 import React from "react";
-import { get } from "lodash";
 import { Link } from "react-router";
 import { ArrowRightIcon, DumbbellIcon } from "lucide-react";
-import useGetQuery from "@/hooks/api/use-get-query";
-import { getApiResponseData } from "@/lib/api-response";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { deriveWorkoutPlanMetrics } from "../workout/utils";
-import { DASHBOARD_WORKOUT_PLANS_QUERY_KEY } from "./query-helpers.js";
 
-export default function WorkoutWidget({ activePlan: activePlanOverride }) {
-  const shouldFetch = activePlanOverride === undefined;
-  const { data } = useGetQuery({
-    url: "/user/workout/plans",
-    queryProps: {
-      queryKey: DASHBOARD_WORKOUT_PLANS_QUERY_KEY,
-      enabled: shouldFetch,
-    },
-  });
-  const payload = React.useMemo(() => getApiResponseData(data, {}), [data]);
-  const plans = React.useMemo(
-    () => (Array.isArray(payload.items) ? payload.items : []),
-    [payload.items],
-  );
-  const activePlan = React.useMemo(() => {
-    if (activePlanOverride !== undefined) {
-      return activePlanOverride;
-    }
-
-    const activePlanId = get(payload, "activePlanId", null);
-    return deriveWorkoutPlanMetrics(
-      plans.find((plan) => plan.id === activePlanId) || null,
-    );
-  }, [activePlanOverride, payload, plans]);
-
+export default function CoachWorkoutWidget({ activePlan }) {
   return (
     <Card className="relative h-full overflow-hidden">
       <div className="absolute -right-4 -top-4 size-20 rounded-full bg-primary/20 blur-[24px] transition-colors group-hover:bg-primary/30" />
@@ -68,9 +39,7 @@ export default function WorkoutWidget({ activePlan: activePlanOverride }) {
           </div>
         ) : (
           <div className="text-center">
-            <p className="mb-2 text-xs font-medium text-muted-foreground">
-              Reja yo'q
-            </p>
+            <p className="mb-2 text-xs font-medium text-muted-foreground">Reja yo'q</p>
             <Link
               to="/user/workout"
               className="inline-flex rounded-full bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary transition-colors hover:bg-primary/20"

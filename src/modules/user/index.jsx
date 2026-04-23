@@ -10,6 +10,9 @@ import { getStandaloneProfileTabPath } from "@/modules/profile/lib/profile-tab-n
 const DashboardPage = lazy(
   () => import("@/modules/user/pages/dashboard/index.jsx"),
 );
+const DashboardDayPage = lazy(
+  () => import("@/modules/user/pages/dashboard-day/index.jsx"),
+);
 const NutritionPage = lazy(
   () => import("@/modules/user/pages/nutrition/index.jsx"),
 );
@@ -89,6 +92,16 @@ const Index = () => {
             <Suspense fallback={<PageLoader />}>
               <ErrorBoundary>
                 <DashboardPage />
+              </ErrorBoundary>
+            </Suspense>
+          }
+        />
+        <Route
+          path="dashboard/day"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <ErrorBoundary>
+                <DashboardDayPage />
               </ErrorBoundary>
             </Suspense>
           }

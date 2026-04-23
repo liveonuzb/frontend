@@ -91,13 +91,9 @@ import {
 import DatePicker from "@/components/reui/date-picker";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import CalorieGaugeWidget from "@/modules/user/containers/dashboard/calorie-gauge-widget.jsx";
-import MealsWidget from "@/modules/user/containers/dashboard/meals-widget.jsx";
-import WaterWidget from "@/modules/user/containers/dashboard/water-widget.jsx";
-import MoodWidget from "@/modules/user/containers/dashboard/mood-widget.jsx";
-import WeightWidget from "@/modules/user/containers/dashboard/weight-widget.jsx";
-import BmiWidget from "@/modules/user/containers/dashboard/bmi-widget.jsx";
-import WorkoutWidget from "@/modules/user/containers/dashboard/workout-widget.jsx";
+import CoachCalorieGaugeWidget from "@/modules/coach/components/dashboard-widgets/coach-calorie-gauge-widget.jsx";
+import CoachWeightWidget from "@/modules/coach/components/dashboard-widgets/coach-weight-widget.jsx";
+import CoachBmiWidget from "@/modules/coach/components/dashboard-widgets/coach-bmi-widget.jsx";
 import MealSection from "@/modules/user/containers/nutrition/meal-section.jsx";
 import { InteractiveBodyModel } from "@/modules/user/containers/measurements/interactive-body-model.jsx";
 import { measurementTypes } from "@/modules/user/containers/measurements/measurements-tab.jsx";
@@ -768,7 +764,7 @@ export default function ClientDetailDrawerContent({ clientId, onClose }) {
 
                     <div className="grid grid-cols-1 items-start gap-8 xl:grid-cols-[380px_1fr]">
                       <div className="space-y-6 xl:sticky xl:top-0">
-                        <CalorieGaugeWidget
+                        <CoachCalorieGaugeWidget
                           totalCalories={get(selectedLog, "calories", 0)}
                           goals={goals || {}}
                           macros={{
@@ -930,7 +926,7 @@ export default function ClientDetailDrawerContent({ clientId, onClose }) {
 
                   <TabsContent value="weight" className="space-y-6">
                     <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-                      <WeightWidget
+                      <CoachWeightWidget
                         currentWeightValue={
                           get(selectedMeasurement, "weight", get(client, "currentWeight", 0))
                         }
@@ -938,7 +934,7 @@ export default function ClientDetailDrawerContent({ clientId, onClose }) {
                         history={measurements}
                         interactive={false}
                       />
-                      <BmiWidget
+                      <CoachBmiWidget
                         currentWeightValue={
                           get(selectedMeasurement, "weight", get(client, "currentWeight", 0))
                         }

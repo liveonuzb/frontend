@@ -21,7 +21,14 @@ const isSameDay = (a, b) =>
   a.getMonth() === b.getMonth() &&
   a.getDate() === b.getDate();
 
-const DateNav = ({ date, onChange, maxDate, format = "long", className }) => {
+const DateNav = ({
+  date,
+  onChange,
+  maxDate,
+  format = "long",
+  className,
+  onLabelClick,
+}) => {
   const max = maxDate ?? new Date();
   const isAtMax = isSameDay(date, max);
   const isToday = isSameDay(date, new Date());
@@ -47,12 +54,21 @@ const DateNav = ({ date, onChange, maxDate, format = "long", className }) => {
       </Button>
       <button
         type="button"
-        onClick={() => !isToday && onChange(new Date())}
+        onClick={() => {
+          if (onLabelClick) {
+            onLabelClick(date);
+            return;
+          }
+
+          if (!isToday) {
+            onChange(new Date());
+          }
+        }}
         className={cn(
           "min-w-[160px] text-center text-sm font-medium capitalize",
-          isToday
-            ? "text-primary"
-            : "text-muted-foreground hover:text-foreground cursor-pointer",
+          onLabelClick || !isToday
+            ? "cursor-pointer text-muted-foreground hover:text-foreground"
+            : "text-primary",
         )}
       >
         {isToday ? "Bugun" : formatter(date)}

@@ -5,13 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import CalorieGaugeWidget from "@/modules/user/containers/dashboard/calorie-gauge-widget.jsx";
-import MealsWidget from "@/modules/user/containers/dashboard/meals-widget.jsx";
-import WaterWidget from "@/modules/user/containers/dashboard/water-widget.jsx";
-import MoodWidget from "@/modules/user/containers/dashboard/mood-widget.jsx";
-import WeightWidget from "@/modules/user/containers/dashboard/weight-widget.jsx";
-import BmiWidget from "@/modules/user/containers/dashboard/bmi-widget.jsx";
-import WorkoutWidget from "@/modules/user/containers/dashboard/workout-widget.jsx";
+import CoachCalorieGaugeWidget from "@/modules/coach/components/dashboard-widgets/coach-calorie-gauge-widget.jsx";
+import CoachMealsWidget from "@/modules/coach/components/dashboard-widgets/coach-meals-widget.jsx";
+import CoachWaterWidget from "@/modules/coach/components/dashboard-widgets/coach-water-widget.jsx";
+import CoachMoodWidget from "@/modules/coach/components/dashboard-widgets/coach-mood-widget.jsx";
+import CoachWeightWidget from "@/modules/coach/components/dashboard-widgets/coach-weight-widget.jsx";
+import CoachBmiWidget from "@/modules/coach/components/dashboard-widgets/coach-bmi-widget.jsx";
+import CoachWorkoutWidget from "@/modules/coach/components/dashboard-widgets/coach-workout-widget.jsx";
 import {
   BanknoteIcon,
   CalendarPlusIcon,
@@ -201,7 +201,7 @@ const ClientOverviewTab = ({
         <>
           <div className="grid gap-6 xl:grid-cols-[1fr_1.7fr_1fr]">
             <div className="xl:min-h-[320px]">
-              <CalorieGaugeWidget
+              <CoachCalorieGaugeWidget
                 totalCalories={get(selectedLog, "calories", 0)}
                 goals={get({ v: goals }, "v", {})}
                 macros={{
@@ -222,7 +222,7 @@ const ClientOverviewTab = ({
             </div>
 
             <div className="xl:min-h-[320px]">
-              <MealsWidget
+              <CoachMealsWidget
                 dayData={selectedDayData}
                 goals={goals || {}}
                 onOpen={onOpenPlans}
@@ -231,7 +231,7 @@ const ClientOverviewTab = ({
             </div>
 
             <div className="grid gap-6">
-              <WaterWidget
+              <CoachWaterWidget
                 waterConsumedMl={get(selectedLog, "waterMl", 0)}
                 waterGoalMl={get(goals, "waterMl", 2500)}
                 cupSize={get(goals, "cupSize", 250)}
@@ -239,7 +239,7 @@ const ClientOverviewTab = ({
                 interactive={false}
                 hideAdd
               />
-              <MoodWidget
+              <CoachMoodWidget
                 selectedMood={get(selectedLog, "mood")}
                 onSelectMood={() => {}}
                 readOnly
@@ -248,14 +248,14 @@ const ClientOverviewTab = ({
           </div>
 
           <div className="grid gap-6 xl:grid-cols-[1fr_1fr_1.25fr]">
-            <BmiWidget
+            <CoachBmiWidget
               currentWeightValue={
                 get(selectedMeasurement, "weight", get(client, "currentWeight", 0))
               }
               heightCmValue={get(client, "heightCm", 0)}
               interactive={false}
             />
-            <WeightWidget
+            <CoachWeightWidget
               currentWeightValue={
                 get(selectedMeasurement, "weight", get(client, "currentWeight", 0))
               }
@@ -264,7 +264,7 @@ const ClientOverviewTab = ({
               interactive={false}
             />
             <div className="h-full">
-              <WorkoutWidget />
+              <CoachWorkoutWidget />
             </div>
           </div>
         </>

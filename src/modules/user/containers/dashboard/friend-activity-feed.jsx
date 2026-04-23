@@ -1,5 +1,6 @@
 import React from "react";
-import { filter, get, map, size, take } from "lodash";
+import { filter, map, size } from "lodash";
+import { useNavigate } from "react-router";
 import {
   ActivityIcon,
   TrophyIcon,
@@ -7,9 +8,19 @@ import {
   UsersIcon,
   ZapIcon,
 } from "lucide-react";
+import useGetQuery from "@/hooks/api/use-get-query";
+import { getApiResponseData } from "@/lib/api-response";
+import { getFriendItems } from "@/modules/user/lib/friends-response";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import {
+  buildFriendActivities,
+  DASHBOARD_CHALLENGES_QUERY_KEY,
+  DASHBOARD_FRIENDS_QUERY_KEY,
+  DASHBOARD_ME_QUERY_KEY,
+  getUserFromResponse,
+} from "./query-helpers.js";
 
 const resolveInitials = (value) =>
   String(value ?? "")
@@ -17,15 +28,8 @@ const resolveInitials = (value) =>
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
-    .map((p) => (p[0] ?? "").toUpperCase())
+    .map((part) => (part[0] ?? "").toUpperCase())
     .join("") || "U";
-
-const METRIC_LABELS = {
-  STEPS: "qadam",
-  WORKOUT_MINUTES: "daqiqa",
-  BURNED_CALORIES: "kcal",
-  SLEEP_HOURS: "soat",
-};
 
 const RANK_COLORS = [
   "text-amber-500",
@@ -33,83 +37,82 @@ const RANK_COLORS = [
   "text-orange-600",
 ];
 
+const getChallengeItems = (response) => {
+  const payload = getApiResponseData(response, []);
+  return Array.isArray(payload) ? payload : payload?.items ?? [];
+};
+
 const FriendActivityFeed = ({
-  friends = [],
-  challenges = [],
+  friends: friendsOverride,
+  challenges: challengesOverride,
   currentUserId,
   onAddFriend,
   onOpenChallenges,
 }) => {
-  const friendIds = React.useMemo(
-    () => new Set(friends.map((f) => f.id)),
-    [friends],
+  const navigate = useNavigate();
+  const shouldFetchFriends = friendsOverride === undefined;
+  const shouldFetchChallenges = challengesOverride === undefined;
+  const shouldFetchUser = currentUserId === undefined;
+  const { data: userData } = useGetQuery({
+    url: "/users/me",
+    queryProps: {
+      queryKey: DASHBOARD_ME_QUERY_KEY,
+      enabled: shouldFetchUser,
+    },
+  });
+  const { data: friendsData } = useGetQuery({
+    url: "/users/me/friends",
+    queryProps: {
+      queryKey: DASHBOARD_FRIENDS_QUERY_KEY,
+      enabled: shouldFetchFriends,
+    },
+  });
+  const { data: challengesData } = useGetQuery({
+    url: "/challenges",
+    queryProps: {
+      queryKey: DASHBOARD_CHALLENGES_QUERY_KEY,
+      enabled: shouldFetchChallenges,
+    },
+  });
+  const user = React.useMemo(() => getUserFromResponse(userData), [userData]);
+  const friends = React.useMemo(
+    () => friendsOverride ?? getFriendItems(friendsData),
+    [friendsData, friendsOverride],
   );
-
-  const friendNameById = React.useMemo(
+  const challenges = React.useMemo(
+    () => challengesOverride ?? getChallengeItems(challengesData),
+    [challengesData, challengesOverride],
+  );
+  const resolvedCurrentUserId = currentUserId ?? user?.id;
+  const activitiesFromChallenges = React.useMemo(
     () =>
-      new Map(friends.map((f) => [f.id, f.name || "Do'st"])),
-    [friends],
+      buildFriendActivities({
+        friends,
+        challenges,
+        currentUserId: resolvedCurrentUserId,
+      }),
+    [challenges, friends, resolvedCurrentUserId],
   );
-
-  const friendAvatarById = React.useMemo(
-    () => new Map(friends.map((f) => [f.id, f.avatarUrl || null])),
-    [friends],
-  );
-
-  const activitiesFromChallenges = React.useMemo(() => {
-    const activities = [];
-
-    for (const challenge of challenges) {
-      const participants = Array.isArray(challenge?.participants)
-        ? challenge.participants
-        : [];
-      if (size(participants) === 0) continue;
-
-      const sorted = [...participants].sort(
-        (a, b) => Number(b.metricValue ?? 0) - Number(a.metricValue ?? 0),
-      );
-
-      const metricType =
-        get(challenge, "metricDetails.type") ||
-        get(challenge, "metricType") ||
-        "STEPS";
-      const metricUnit = METRIC_LABELS[metricType] || "birlik";
-
-      for (let i = 0; i < sorted.length; i++) {
-        const participant = sorted[i];
-        const uid = get(participant, "userId");
-        if (!uid || uid === currentUserId) continue;
-        if (!friendIds.has(uid)) continue;
-
-        const metricValue = Number(get(participant, "metricValue", 0));
-        const progress = Math.min(100, Math.round(Number(get(participant, "progress", 0))));
-
-        activities.push({
-          key: `${challenge.id}-${uid}`,
-          uid,
-          name: friendNameById.get(uid) || "Do'st",
-          avatarUrl: friendAvatarById.get(uid),
-          challengeTitle: get(challenge, "title", "Challenge"),
-          challengeId: challenge.id,
-          rank: i + 1,
-          metricValue,
-          metricUnit,
-          progress,
-          status: get(challenge, "status", "ACTIVE"),
-        });
-      }
-    }
-
-    return take(
-      activities.sort((a, b) => b.metricValue - a.metricValue),
-      6,
-    );
-  }, [challenges, currentUserId, friendIds, friendNameById, friendAvatarById]);
-
   const friendsWithNoChallenge = React.useMemo(() => {
-    const activeInChallenges = new Set(activitiesFromChallenges.map((a) => a.uid));
-    return filter(friends, (f) => !activeInChallenges.has(f.id)).slice(0, 3);
-  }, [friends, activitiesFromChallenges]);
+    const activeInChallenges = new Set(
+      activitiesFromChallenges.map((activity) => activity.uid),
+    );
+    return filter(friends, (friend) => !activeInChallenges.has(friend.id)).slice(0, 3);
+  }, [activitiesFromChallenges, friends]);
+  const handleAddFriend = React.useCallback(() => {
+    if (onAddFriend) {
+      onAddFriend();
+      return;
+    }
+    navigate("/user/friends");
+  }, [navigate, onAddFriend]);
+  const handleOpenChallenges = React.useCallback(() => {
+    if (onOpenChallenges) {
+      onOpenChallenges();
+      return;
+    }
+    navigate("/user/challenges");
+  }, [navigate, onOpenChallenges]);
 
   return (
     <div className="group relative h-full overflow-hidden rounded-[28px] border border-violet-500/15 bg-gradient-to-br from-violet-500/[0.08] via-card to-card px-5 py-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-violet-500/30 hover:shadow-xl hover:shadow-violet-500/5">
@@ -126,17 +129,15 @@ const FriendActivityFeed = ({
               Do&apos;stlar faoliyati
             </h3>
           </div>
-          {onAddFriend ? (
-            <Button
-              size="sm"
-              variant="outline"
-              className="shrink-0 border-violet-500/20 bg-violet-500/5 text-violet-700 hover:bg-violet-500/10"
-              onClick={onAddFriend}
-            >
-              <UserPlusIcon className="mr-1.5 size-3.5" />
-              Qo&apos;shish
-            </Button>
-          ) : null}
+          <Button
+            size="sm"
+            variant="outline"
+            className="shrink-0 border-violet-500/20 bg-violet-500/5 text-violet-700 hover:bg-violet-500/10"
+            onClick={handleAddFriend}
+          >
+            <UserPlusIcon className="mr-1.5 size-3.5" />
+            Qo&apos;shish
+          </Button>
         </div>
 
         <div className="mt-4 flex-1 space-y-2">
@@ -151,12 +152,10 @@ const FriendActivityFeed = ({
                   Do&apos;stlarni taklif qilib, birga motivatsiya toping
                 </p>
               </div>
-              {onAddFriend ? (
-                <Button size="sm" onClick={onAddFriend} className="mt-1">
-                  <UserPlusIcon className="mr-1.5 size-3.5" />
-                  Do&apos;st qo&apos;shish
-                </Button>
-              ) : null}
+              <Button size="sm" onClick={handleAddFriend} className="mt-1">
+                <UserPlusIcon className="mr-1.5 size-3.5" />
+                Do&apos;st qo&apos;shish
+              </Button>
             </div>
           ) : size(activitiesFromChallenges) === 0 ? (
             <div className="space-y-2">
@@ -177,17 +176,15 @@ const FriendActivityFeed = ({
                   </div>
                 </div>
               ))}
-              {onOpenChallenges ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-2 w-full rounded-xl"
-                  onClick={onOpenChallenges}
-                >
-                  <TrophyIcon className="mr-1.5 size-3.5" />
-                  Challengega qo&apos;shilish
-                </Button>
-              ) : null}
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2 w-full rounded-xl"
+                onClick={handleOpenChallenges}
+              >
+                <TrophyIcon className="mr-1.5 size-3.5" />
+                Challengega qo&apos;shilish
+              </Button>
             </div>
           ) : (
             <div className="space-y-2">
@@ -231,23 +228,21 @@ const FriendActivityFeed = ({
 
               {size(friendsWithNoChallenge) > 0 ? (
                 <div className="flex items-center gap-1.5 pt-1">
-                  {map(friendsWithNoChallenge, (f) => (
-                    <Avatar key={f.id} className="size-7 border border-border/40">
-                      <AvatarImage src={f.avatarUrl || undefined} />
+                  {map(friendsWithNoChallenge, (friend) => (
+                    <Avatar key={friend.id} className="size-7 border border-border/40">
+                      <AvatarImage src={friend.avatarUrl || undefined} />
                       <AvatarFallback className="text-[9px] font-bold text-muted-foreground">
-                        {resolveInitials(f.name)}
+                        {resolveInitials(friend.name)}
                       </AvatarFallback>
                     </Avatar>
                   ))}
-                  {size(friendsWithNoChallenge) > 0 ? (
-                    <p className="ml-1 text-[10px] text-muted-foreground">
-                      va yana{" "}
-                      {friendsWithNoChallenge.length === 1
-                        ? friendsWithNoChallenge[0].name
-                        : `${friendsWithNoChallenge.length} do'st`}{" "}
-                      faol emas
-                    </p>
-                  ) : null}
+                  <p className="ml-1 text-[10px] text-muted-foreground">
+                    va yana{" "}
+                    {friendsWithNoChallenge.length === 1
+                      ? friendsWithNoChallenge[0].name
+                      : `${friendsWithNoChallenge.length} do'st`}{" "}
+                    faol emas
+                  </p>
                 </div>
               ) : null}
             </div>

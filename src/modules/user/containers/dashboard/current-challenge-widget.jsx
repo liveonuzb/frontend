@@ -1,12 +1,79 @@
 import React from "react";
+import { get } from "lodash";
+import { useNavigate } from "react-router";
 import { ArrowRightIcon, TrophyIcon } from "lucide-react";
+import useGetQuery from "@/hooks/api/use-get-query";
+import { getApiResponseData } from "@/lib/api-response";
+import { getFriendItems } from "@/modules/user/lib/friends-response";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import {
+  buildCommunityChallenge,
+  DASHBOARD_CHALLENGES_QUERY_KEY,
+  DASHBOARD_FRIENDS_QUERY_KEY,
+  DASHBOARD_ME_QUERY_KEY,
+  getUserFromResponse,
+} from "./query-helpers.js";
+
+const getChallengeItems = (response) => {
+  const payload = getApiResponseData(response, []);
+  return Array.isArray(payload) ? payload : get(payload, "items", []);
+};
 
 export default function CurrentChallengeWidget({
-  currentChallenge,
+  currentChallenge: currentChallengeOverride,
   onOpenChallenge,
 }) {
+  const navigate = useNavigate();
+  const shouldFetch = currentChallengeOverride === undefined;
+  const { data: userData } = useGetQuery({
+    url: "/users/me",
+    queryProps: {
+      queryKey: DASHBOARD_ME_QUERY_KEY,
+      enabled: shouldFetch,
+    },
+  });
+  const { data: friendsData } = useGetQuery({
+    url: "/users/me/friends",
+    queryProps: {
+      queryKey: DASHBOARD_FRIENDS_QUERY_KEY,
+      enabled: shouldFetch,
+    },
+  });
+  const { data: challengesData } = useGetQuery({
+    url: "/challenges",
+    queryProps: {
+      queryKey: DASHBOARD_CHALLENGES_QUERY_KEY,
+      enabled: shouldFetch,
+    },
+  });
+  const user = React.useMemo(() => getUserFromResponse(userData), [userData]);
+  const friends = React.useMemo(() => getFriendItems(friendsData), [friendsData]);
+  const challenges = React.useMemo(
+    () => getChallengeItems(challengesData),
+    [challengesData],
+  );
+  const currentChallenge = React.useMemo(
+    () =>
+      currentChallengeOverride ??
+      buildCommunityChallenge({
+        challenges,
+        friends,
+        userId: user?.id,
+      }),
+    [challenges, currentChallengeOverride, friends, user?.id],
+  );
+  const handleOpenChallenge = React.useCallback(
+    (challengeId) => {
+      if (onOpenChallenge) {
+        onOpenChallenge(challengeId);
+        return;
+      }
+      navigate(challengeId ? `/user/challenges/${challengeId}` : "/user/challenges");
+    },
+    [navigate, onOpenChallenge],
+  );
+
   return (
     <div className="group relative h-full overflow-hidden rounded-[28px] border border-amber-500/20 bg-gradient-to-br from-amber-500/[0.10] via-card to-card px-5 py-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-amber-500/35 hover:shadow-xl hover:shadow-amber-500/5">
       <div className="absolute inset-x-8 top-0 h-24 rounded-full bg-amber-500/10 blur-3xl transition-opacity group-hover:opacity-90" />
@@ -24,7 +91,7 @@ export default function CurrentChallengeWidget({
         {currentChallenge ? (
           <button
             type="button"
-            onClick={() => onOpenChallenge?.(currentChallenge.id)}
+            onClick={() => handleOpenChallenge(currentChallenge.id)}
             className="mt-4 flex w-full flex-1 flex-col gap-4 rounded-[22px] border border-amber-500/15 bg-background/85 p-4 text-left transition-colors hover:border-amber-500/30 hover:bg-background"
           >
             <div className="flex items-start justify-between gap-3">
@@ -71,7 +138,7 @@ export default function CurrentChallengeWidget({
               type="button"
               variant="outline"
               className="mt-auto"
-              onClick={() => onOpenChallenge?.()}
+              onClick={() => handleOpenChallenge()}
             >
               Challenge&apos;larni ko&apos;rish
             </Button>
