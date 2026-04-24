@@ -103,13 +103,13 @@
       "generatingTitle": "Your health report is being prepared",
       "generatingDescription": "We are combining your onboarding, profile, and tracking data so AI can prepare a localized personal wellness report.",
       "generatingFooter": "Preparing report...",
+      "heroTitle": "Your AI Wellness Report",
+      "heroSubtitle": "Built for your goals, body and habits",
       "readyBadge": "AI report ready",
-      "pdfReady": "PDF ready",
-      "downloadPdf": "Download PDF",
       "regenerate": "Regenerate",
+      "startMyPlan": "Start My Plan",
       "generateSuccess": "A new report version has been created.",
       "generateError": "Could not generate the report.",
-      "pdfError": "Could not download the PDF.",
       "goDashboard": "Go to dashboard",
       "retry": "Try again",
       "errorTitle": "Could not prepare the health report",
@@ -129,12 +129,76 @@
       "noVersions": "No saved versions yet.",
       "current": "Current",
       "disclaimer": "Important note",
+      "confidence": "Confidence",
+      "kcalPerDay": "kcal/day",
+      "daysTracked": "tracked days",
+      "energyActive": "Active",
+      "energyBaseline": "Baseline",
+      "target": "Target",
+      "whyThisMatters": "Why this matters",
+      "needTracking": "Need more tracking data",
+      "trackingAvailable": "Real tracking data is available",
+      "next7Days": "Your Next 7 Days Plan",
+      "dayLabel": "Day {{day}}",
+      "sleepSummary": "Sleep anchors recovery, appetite, and training consistency.",
       "stepLabel": "Step {{index}}",
+      "progressTracker": {
+        "overview": "Overview",
+        "targets": "Targets",
+        "nutrition": "Nutrition",
+        "workout": "Workout",
+        "actionPlan": "Action Plan"
+      },
+      "scoreCards": {
+        "bmi": "BMI Score",
+        "metabolism": "Metabolism",
+        "energy": "Energy Level",
+        "weightOutlook": "Weight Outlook"
+      },
+      "targets": {
+        "calories": "Calories",
+        "protein": "Protein",
+        "water": "Water",
+        "sleep": "Sleep"
+      },
+      "sections": {
+        "nutrition": "Nutrition",
+        "water": "Water",
+        "workout": "Workout",
+        "sleep": "Sleep",
+        "progress": "Progress"
+      },
       "stages": {
         "collecting": "Collecting your data",
         "analyzing": "AI is analyzing",
         "planning": "Building your plan",
-        "pdf": "Preparing the PDF"
+        "finalizing": "Finalizing report"
+      },
+      "loadingSlides": {
+        "collecting": {
+          "step": "STEP 1",
+          "title": "Collecting your data",
+          "description": "Profile, onboarding, and tracking signals are being gathered for your health report.",
+          "items": ["Apple Watch data", "Heart rate", "Sleep", "Nutrition", "Dashboard monitor"]
+        },
+        "analyzing": {
+          "step": "STEP 2",
+          "title": "AI is analyzing",
+          "description": "AI is checking your health signals, goal, and progress rhythm together.",
+          "items": ["Brain hologram", "Floating charts", "DNA spiral", "Graphs", "AI scanning screen"]
+        },
+        "planning": {
+          "step": "STEP 3",
+          "title": "Building your plan",
+          "description": "Workout, food, sleep, and weekly rhythm are being shaped into one practical plan.",
+          "items": ["Workout plan", "Food plan", "Sleep schedule", "Calendar", "Dumbbell + salad"]
+        },
+        "finalizing": {
+          "step": "STEP 4",
+          "title": "Finalizing report",
+          "description": "The final report view is being assembled with your key scores and action plan.",
+          "items": ["Report output", "Approved stamp", "Final report folder", "Next action"]
+        }
       },
       "languages": {
         "uz": "Uzbek",

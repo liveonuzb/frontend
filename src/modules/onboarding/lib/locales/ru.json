@@ -103,13 +103,13 @@
       "generatingTitle": "Ваш health-отчёт готовится",
       "generatingDescription": "Мы собираем данные онбординга, профиля и трекинга, чтобы AI подготовил персональный локализованный wellness-отчёт.",
       "generatingFooter": "Отчёт готовится...",
+      "heroTitle": "Your AI Wellness Report",
+      "heroSubtitle": "Built for your goals, body and habits",
       "readyBadge": "AI-отчёт готов",
-      "pdfReady": "PDF готов",
-      "downloadPdf": "Скачать PDF",
       "regenerate": "Пересоздать",
+      "startMyPlan": "Начать план",
       "generateSuccess": "Создана новая версия отчёта.",
       "generateError": "Не удалось создать отчёт.",
-      "pdfError": "Не удалось скачать PDF.",
       "goDashboard": "Перейти в dashboard",
       "retry": "Повторить",
       "errorTitle": "Не удалось подготовить health-отчёт",
@@ -129,12 +129,76 @@
       "noVersions": "Сохранённых версий пока нет.",
       "current": "Текущая",
       "disclaimer": "Важное примечание",
+      "confidence": "Точность",
+      "kcalPerDay": "ккал/день",
+      "daysTracked": "дней трекинга",
+      "energyActive": "Активно",
+      "energyBaseline": "База",
+      "target": "Цель",
+      "whyThisMatters": "Почему это важно",
+      "needTracking": "Нужно больше данных трекинга",
+      "trackingAvailable": "Есть реальные данные трекинга",
+      "next7Days": "План на ближайшие 7 дней",
+      "dayLabel": "День {{day}}",
+      "sleepSummary": "Сон поддерживает восстановление, аппетит и стабильность тренировок.",
       "stepLabel": "Шаг {{index}}",
+      "progressTracker": {
+        "overview": "Overview",
+        "targets": "Targets",
+        "nutrition": "Nutrition",
+        "workout": "Workout",
+        "actionPlan": "Action Plan"
+      },
+      "scoreCards": {
+        "bmi": "BMI Score",
+        "metabolism": "Metabolism",
+        "energy": "Energy Level",
+        "weightOutlook": "Weight Outlook"
+      },
+      "targets": {
+        "calories": "Calories",
+        "protein": "Protein",
+        "water": "Water",
+        "sleep": "Sleep"
+      },
+      "sections": {
+        "nutrition": "Nutrition",
+        "water": "Water",
+        "workout": "Workout",
+        "sleep": "Sleep",
+        "progress": "Progress"
+      },
       "stages": {
         "collecting": "Собираем данные",
         "analyzing": "AI анализирует",
         "planning": "Собираем ваш план",
-        "pdf": "Готовим PDF"
+        "finalizing": "Финализируем отчёт"
+      },
+      "loadingSlides": {
+        "collecting": {
+          "step": "ШАГ 1",
+          "title": "Собираем ваши данные",
+          "description": "Профиль, онбординг и tracking-сигналы собираются в основу health-отчёта.",
+          "items": ["Apple Watch data", "Пульс", "Сон", "Nutrition", "Dashboard monitor"]
+        },
+        "analyzing": {
+          "step": "ШАГ 2",
+          "title": "AI анализирует",
+          "description": "AI сопоставляет сигналы здоровья, цель и ритм прогресса.",
+          "items": ["Brain hologram", "Floating charts", "DNA spiral", "Графики", "AI scanning screen"]
+        },
+        "planning": {
+          "step": "ШАГ 3",
+          "title": "Собираем ваш план",
+          "description": "Workout, питание, сон и недельный ритм превращаются в практичный план.",
+          "items": ["Workout plan", "Food plan", "Sleep schedule", "Calendar", "Dumbbell + salad"]
+        },
+        "finalizing": {
+          "step": "ШАГ 4",
+          "title": "Финализируем отчёт",
+          "description": "Финальный report view собирается с ключевыми score и action plan.",
+          "items": ["Report output", "Approved stamp", "Final report folder", "Next action"]
+        }
       },
       "languages": {
         "uz": "Узбекский",

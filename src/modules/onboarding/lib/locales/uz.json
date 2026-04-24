@@ -103,13 +103,13 @@
       "generatingTitle": "Siz uchun health report tayyorlanmoqda",
       "generatingDescription": "Onboarding, profil va mavjud tracking ma'lumotlari yig'ilib, AI sizga mos shaxsiy hisobotni tayyorlamoqda.",
       "generatingFooter": "Report tayyorlanmoqda...",
+      "heroTitle": "Your AI Wellness Report",
+      "heroSubtitle": "Built for your goals, body and habits",
       "readyBadge": "AI report tayyor",
-      "pdfReady": "PDF tayyor",
-      "downloadPdf": "PDF yuklab olish",
       "regenerate": "Qayta yaratish",
+      "startMyPlan": "Rejani boshlash",
       "generateSuccess": "Yangi report versiyasi yaratildi.",
       "generateError": "Reportni yaratib bo'lmadi.",
-      "pdfError": "PDFni yuklab bo'lmadi.",
       "goDashboard": "Dashboardga o'tish",
       "retry": "Qayta urinish",
       "errorTitle": "Health reportni tayyorlab bo'lmadi",
@@ -129,12 +129,76 @@
       "noVersions": "Hali versiyalar topilmadi.",
       "current": "Joriy",
       "disclaimer": "Muhim eslatma",
+      "confidence": "Ishonch",
+      "kcalPerDay": "kcal/kun",
+      "daysTracked": "tracking kuni",
+      "energyActive": "Faol",
+      "energyBaseline": "Boshlang'ich",
+      "target": "Maqsad",
+      "whyThisMatters": "Nega bu muhim",
+      "needTracking": "Ko'proq tracking data kerak",
+      "trackingAvailable": "Real tracking data mavjud",
+      "next7Days": "Keyingi 7 kunlik reja",
+      "dayLabel": "{{day}}-kun",
+      "sleepSummary": "Uyqu tiklanish, ishtaha va mashg'ulot ritmini ushlab turadi.",
       "stepLabel": "Bosqich {{index}}",
+      "progressTracker": {
+        "overview": "Overview",
+        "targets": "Targetlar",
+        "nutrition": "Nutrition",
+        "workout": "Workout",
+        "actionPlan": "Action Plan"
+      },
+      "scoreCards": {
+        "bmi": "BMI Score",
+        "metabolism": "Metabolism",
+        "energy": "Energy Level",
+        "weightOutlook": "Weight Outlook"
+      },
+      "targets": {
+        "calories": "Calories",
+        "protein": "Protein",
+        "water": "Water",
+        "sleep": "Sleep"
+      },
+      "sections": {
+        "nutrition": "Nutrition",
+        "water": "Water",
+        "workout": "Workout",
+        "sleep": "Sleep",
+        "progress": "Progress"
+      },
       "stages": {
         "collecting": "Ma'lumotlar yig'ilmoqda",
         "analyzing": "AI tahlil qilmoqda",
         "planning": "Shaxsiy reja tuzilmoqda",
-        "pdf": "PDF tayyorlanmoqda"
+        "finalizing": "Report yakunlanmoqda"
+      },
+      "loadingSlides": {
+        "collecting": {
+          "step": "1-BOSQICH",
+          "title": "Ma'lumotlaringiz yig'ilmoqda",
+          "description": "Profil, onboarding va tracking signallari health report uchun bir joyga jamlanmoqda.",
+          "items": ["Apple Watch data", "Yurak urishi", "Uyqu", "Nutrition", "Dashboard monitor"]
+        },
+        "analyzing": {
+          "step": "2-BOSQICH",
+          "title": "AI tahlil qilmoqda",
+          "description": "AI sog'liq signallari, maqsad va progress ritmingizni birga tekshirmoqda.",
+          "items": ["Brain hologram", "Floating charts", "DNA spiral", "Graphlar", "AI scanning screen"]
+        },
+        "planning": {
+          "step": "3-BOSQICH",
+          "title": "Shaxsiy rejangiz tuzilmoqda",
+          "description": "Workout, ovqatlanish, uyqu va haftalik ritm bitta amaliy planga joylanmoqda.",
+          "items": ["Workout plan", "Food plan", "Sleep schedule", "Calendar", "Dumbbell + salad"]
+        },
+        "finalizing": {
+          "step": "4-BOSQICH",
+          "title": "Report yakunlanmoqda",
+          "description": "Yakuniy report view asosiy scorelar va action plan bilan yig'ilmoqda.",
+          "items": ["Report chiqmoqda", "Approved stamp", "Final report folder", "Keyingi action"]
+        }
       },
       "languages": {
         "uz": "O'zbek",
