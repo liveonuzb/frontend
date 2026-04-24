@@ -60,7 +60,7 @@ const Index = () => {
                 aria-label={t("auth.layout.logoAlt")}
               >
                 <img
-                  src="/logo.png"
+                  src="/logo-main.png"
                   className="size-16 object-contain"
                   alt={t("auth.layout.logoAlt")}
                 />
