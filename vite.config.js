@@ -57,15 +57,21 @@ export default defineConfig({
 
     rollupOptions: {
       output: {
-        manualChunks: {
-          qr: ["html5-qrcode", "qrcode"],
-          media: ["recordrtc", "react-media-recorder"],
-          react: ["react", "react-dom", "react-router"],
-          query: ["@tanstack/react-query"],
-          phone: ["react-phone-number-input", "libphonenumber-js"],
-          charts: ["recharts"],
-          pdf: ["jspdf", "html2canvas"],
-          motion: ["framer-motion"],
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (id.includes("react-phone-number-input")) return "phone";
+            if (id.includes("libphonenumber-js")) return "phone";
+            if (id.includes("jspdf") || id.includes("html2canvas"))
+              return "pdf";
+            if (id.includes("recharts")) return "charts";
+            if (id.includes("framer-motion")) return "motion";
+            if (id.includes("html5-qrcode") || id.includes("qrcode"))
+              return "qr";
+            if (id.includes("recordrtc") || id.includes("react-media-recorder"))
+              return "media";
+            if (id.includes("@tanstack/react-query")) return "query";
+            if (id.includes("react")) return "react";
+          }
         },
       },
     },
