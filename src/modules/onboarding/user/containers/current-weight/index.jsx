@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { useOnboardingStore } from "@/store";
 import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-context";
 import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-question";
-import { WeightPicker } from "@/modules/onboarding/components/weight-picker";
+import { WeightTicker } from "@/modules/onboarding/components/weight-ticker";
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import { ChevronRight } from "lucide-react";
 import BmiIdentifier from "../../components/bmi-identifier.jsx";
@@ -53,7 +53,7 @@ const Index = () => {
   );
 
   return (
-    <div className="relative flex h-full flex-1 flex-col items-center justify-center overflow-hidden  px-5">
+    <div className="relative flex h-full max-h-full w-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8">
       {bmiMeta ? (
         <div className="pointer-events-none absolute inset-0">
           <motion.div
@@ -89,7 +89,7 @@ const Index = () => {
         </div>
       ) : null}
 
-      <div className="relative z-10 flex h-full w-full flex-1 flex-col items-center justify-center">
+      <div className="relative z-10 flex h-full w-full flex-1 flex-col">
         <OnboardingQuestion
           question={
             firstName
@@ -98,11 +98,18 @@ const Index = () => {
           }
         />
 
-        <div className="flex w-full items-end justify-center gap-4 md:gap-8">
+        <BmiIdentifier
+          meta={bmiMeta}
+          heightValue={height?.value}
+          title="Current BMI"
+        />
+
+        {/* Illustration fills the middle; vertical ticker pinned to the right */}
+        <div className="relative mt-2 flex flex-1 items-end justify-center overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div
               key={illustration.src}
-              className="flex min-h-[260px] flex-1 items-end justify-end md:min-h-[420px]"
+              className="flex h-full items-end justify-center"
               initial={{ opacity: 0, y: 22, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -12, scale: 0.98 }}
@@ -111,27 +118,24 @@ const Index = () => {
               <img
                 src={illustration.src}
                 alt={illustration.alt}
-                className="object-contain transition-all duration-300 md:max-w-[320px]"
+                className="max-h-full object-contain transition-all duration-300 md:max-w-[320px]"
                 style={{ height: `${illustrationHeight * 0.9}px` }}
               />
             </motion.div>
           </AnimatePresence>
 
-          <div className="flex shrink-0 items-center">
-            <WeightPicker
+          <div className="absolute right-0 top-1/2 z-20 -translate-y-1/2">
+            <WeightTicker
               value={currentVal}
               onChange={(val) =>
                 setField("currentWeight", { value: val, unit: "kg" })
               }
+              accentColor={bmiMeta ? "var(--color-primary)" : undefined}
+              orientation="vertical"
+              verticalHeight={240}
             />
           </div>
         </div>
-
-        <BmiIdentifier
-          meta={bmiMeta}
-          heightValue={height?.value}
-          title="Current BMI"
-        />
       </div>
     </div>
   );

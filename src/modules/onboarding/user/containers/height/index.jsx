@@ -1,4 +1,3 @@
-import { times } from "lodash";
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";
@@ -7,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { useOnboardingStore } from "@/store";
 import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-context";
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
-import { ScrollPicker } from "@/components/ui/scroll-picker";
+import { WeightTicker } from "@/modules/onboarding/components/weight-ticker";
 import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-question";
 import { ChevronRight } from "lucide-react";
 import PageAura from "../../components/page-aura.jsx";
@@ -16,11 +15,6 @@ import {
   getOnboardingIllustrationHeight,
 } from "../../lib/illustration.js";
 import { getHeightTone } from "../../lib/tones.js";
-
-const heightItems = times(250 - 100 + 1, (i) => ({
-  value: String(i + 100),
-  label: String(i + 100),
-}));
 
 const getHeightProfile = (heightValue) => {
   const heightNumber = Number(heightValue);
@@ -80,10 +74,10 @@ const Index = () => {
   );
 
   return (
-    <div className="relative flex h-full flex-1 flex-col justify-center overflow-hidden pt-3 md:pt-8  px-5">
+    <div className="relative flex h-full max-h-full w-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8">
       <PageAura tone={tone} />
 
-      <div className="relative z-10 flex w-full flex-1 flex-col justify-center md:mx-auto">
+      <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto">
         <OnboardingQuestion
           question={
             firstName ? `${firstName} how tall are you?` : "How tall are you?"
@@ -92,7 +86,7 @@ const Index = () => {
 
         <motion.div
           className={cn(
-            "mx-auto max-w-[190px] rounded-[24px] border bg-background/85 px-4 py-3 text-center backdrop-blur md:max-w-[240px]",
+            "mx-auto max-w-[200px] rounded-[24px] border bg-background/85 px-4 py-2 text-center backdrop-blur md:max-w-[240px]",
             tone.border,
           )}
           initial={{ opacity: 0, y: 12 }}
@@ -102,16 +96,16 @@ const Index = () => {
           <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground md:text-xs">
             Height
           </p>
-          <p className="mt-1 text-base font-bold md:text-lg">{profile.title}</p>
-          <p className="mt-1 text-xs text-muted-foreground md:text-sm">
-            {currentHeight} cm
+          <p className="mt-0.5 text-sm font-bold md:text-base">
+            {profile.title}
           </p>
         </motion.div>
-        <div className="flex w-full items-end justify-center gap-4 md:gap-8">
+
+        <div className="relative mt-3 flex flex-1 items-end justify-center overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div
               key={`${illustration.src}-${currentHeight}`}
-              className="flex min-h-[350px] flex-1 items-end justify-center md:min-h-[360px]"
+              className="flex h-full items-end justify-center"
               initial={{ opacity: 0, y: 20, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -12, scale: 0.98 }}
@@ -120,33 +114,26 @@ const Index = () => {
               <img
                 src={illustration.src}
                 alt={illustration.alt}
-                className="object-contain transition-all duration-300 md:max-w-[320px]"
+                className="max-h-full object-contain transition-all duration-300 md:max-w-[320px]"
                 style={{ height: `${illustrationHeight * 0.9}px` }}
               />
             </motion.div>
           </AnimatePresence>
 
-          <div className="flex shrink-0 flex-col items-center gap-3">
-            <div
-              className={cn(
-                "flex items-center gap-2 rounded-[30px] border bg-background/80 px-2 py-2 backdrop-blur",
-                tone.border,
-              )}
-            >
-              <div className="w-14">
-                <ScrollPicker
-                  items={heightItems}
-                  value={currentHeight}
-                  onChange={(val) =>
-                    setField("height", { value: val, unit: "cm" })
-                  }
-                  itemHeight={56}
-                />
-              </div>
-              <span className="pr-2 text-xl font-bold text-muted-foreground">
-                cm
-              </span>
-            </div>
+          {/* Vertical ticker anchored to the right edge */}
+          <div className="absolute right-0 top-1/2 z-20 -translate-y-1/2">
+            <WeightTicker
+              value={currentHeight}
+              onChange={(val) => setField("height", { value: val, unit: "cm" })}
+              min={100}
+              max={250}
+              step={1}
+              majorStep={10}
+              labelStep={10}
+              unit="cm"
+              orientation="vertical"
+              verticalHeight={240}
+            />
           </div>
         </div>
       </div>
