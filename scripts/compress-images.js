@@ -44,7 +44,7 @@
 //
 //   content = content.replace(
 //     /\/onboarding\/([^"'\s]+)\.(png|jpg|jpeg)/gi,
-//     "/optimized/onboarding/$1.webp",
+//     "/onboarding/$1.webp",
 //   );
 //
 //   fs.writeFileSync(file, content);

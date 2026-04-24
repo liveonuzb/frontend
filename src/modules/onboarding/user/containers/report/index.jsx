@@ -76,7 +76,7 @@ const getLanguageLabel = (language, t) => {
 const REPORT_LOADING_SCENES = [
   {
     key: "collecting",
-    imageSrc: "/optimized/onboarding/report-1.webp",
+    imageSrc: "/onboarding/report-1.webp",
     imageClassName: "object-[50%_35%]",
     glowClassName: "from-cyan-400/24 via-emerald-300/12 to-transparent",
     orbitClassName: "border-cyan-300/35",
@@ -103,7 +103,7 @@ const REPORT_LOADING_SCENES = [
   },
   {
     key: "analyzing",
-    imageSrc: "/optimized/onboarding/report-2.webp",
+    imageSrc: "/onboarding/report-2.webp",
     imageClassName: "object-[50%_38%]",
     glowClassName: "from-indigo-400/22 via-sky-300/12 to-transparent",
     orbitClassName: "border-indigo-300/35",
@@ -130,7 +130,7 @@ const REPORT_LOADING_SCENES = [
   },
   {
     key: "planning",
-    imageSrc: "/optimized/onboarding/report-3.webp",
+    imageSrc: "/onboarding/report-3.webp",
     imageClassName: "object-[50%_42%]",
     glowClassName: "from-amber-300/24 via-lime-300/12 to-transparent",
     orbitClassName: "border-amber-300/40",
@@ -157,7 +157,7 @@ const REPORT_LOADING_SCENES = [
   },
   {
     key: "finalizing",
-    imageSrc: "/optimized/onboarding/report-4.webp",
+    imageSrc: "/onboarding/report-4.webp",
     imageClassName: "object-[50%_44%]",
     glowClassName: "from-yellow-300/28 via-orange-300/16 to-transparent",
     orbitClassName: "border-yellow-300/45",
@@ -295,7 +295,7 @@ const ReportLoadingState = ({ slides, activeStage, onSelectStage, t }) => {
                           slide.imageClassName,
                         )}
                         onError={(event) => {
-                          event.currentTarget.src = "/optimized/onboarding/report-1.webp";
+                          event.currentTarget.src = "/onboarding/report-1.webp";
                         }}
                         animate={{ y: [0, -10, 0], scale: [1, 1.015, 1] }}
                         transition={{
@@ -484,12 +484,7 @@ const ReportErrorState = ({ title, description, onRetry, onDashboard, t }) => {
   );
 };
 
-const ReportContent = ({
-  report,
-  onStartPlan,
-  t,
-  locale,
-}) => {
+const ReportContent = ({ report, onStartPlan, t, locale }) => {
   const snapshot = get(report, "inputSnapshot", {});
   const targets = get(snapshot, "targets", {});
   const analytics = get(snapshot, "analytics", {});
@@ -513,9 +508,13 @@ const ReportContent = ({
   const generatedAt = formatDateTime(get(report, "createdAt"), locale);
 
   const trackerItems = [
-    t("onboarding.report.progressTracker.overview", { defaultValue: "Overview" }),
+    t("onboarding.report.progressTracker.overview", {
+      defaultValue: "Overview",
+    }),
     t("onboarding.report.progressTracker.targets", { defaultValue: "Targets" }),
-    t("onboarding.report.progressTracker.nutrition", { defaultValue: "Nutrition" }),
+    t("onboarding.report.progressTracker.nutrition", {
+      defaultValue: "Nutrition",
+    }),
     t("onboarding.report.progressTracker.workout", { defaultValue: "Workout" }),
     t("onboarding.report.progressTracker.actionPlan", {
       defaultValue: "Action Plan",
@@ -524,7 +523,9 @@ const ReportContent = ({
 
   const scoreCards = [
     {
-      label: t("onboarding.report.scoreCards.bmi", { defaultValue: "BMI Score" }),
+      label: t("onboarding.report.scoreCards.bmi", {
+        defaultValue: "BMI Score",
+      }),
       value: bmiValue,
       detail: bmiLabel,
       Icon: GaugeIcon,
@@ -568,13 +569,17 @@ const ReportContent = ({
 
   const targetCards = [
     {
-      label: t("onboarding.report.targets.calories", { defaultValue: "Calories" }),
+      label: t("onboarding.report.targets.calories", {
+        defaultValue: "Calories",
+      }),
       value: calories ? calories.toLocaleString() : "—",
       unit: "kcal",
       Icon: FlameIcon,
     },
     {
-      label: t("onboarding.report.targets.protein", { defaultValue: "Protein" }),
+      label: t("onboarding.report.targets.protein", {
+        defaultValue: "Protein",
+      }),
       value: protein || "—",
       unit: "g",
       Icon: SaladIcon,
@@ -599,14 +604,14 @@ const ReportContent = ({
       title: t("onboarding.report.sections.nutrition", {
         defaultValue: "Nutrition",
       }),
-      image: "/optimized/onboarding/report-1.webp",
+      image: "/onboarding/report-1.webp",
       Icon: SaladIcon,
       section: get(report, "report.nutritionGuidance"),
     },
     {
       key: "water",
       title: t("onboarding.report.sections.water", { defaultValue: "Water" }),
-      image: "/optimized/onboarding/report-2.webp",
+      image: "/onboarding/report-2.webp",
       Icon: DropletsIcon,
       section: get(report, "report.hydrationGuidance"),
     },
@@ -615,18 +620,19 @@ const ReportContent = ({
       title: t("onboarding.report.sections.workout", {
         defaultValue: "Workout",
       }),
-      image: "/optimized/onboarding/report-3.webp",
+      image: "/onboarding/report-3.webp",
       Icon: DumbbellIcon,
       section: get(report, "report.movementGuidance"),
     },
     {
       key: "sleep",
       title: t("onboarding.report.sections.sleep", { defaultValue: "Sleep" }),
-      image: "/optimized/onboarding/report-4.webp",
+      image: "/onboarding/report-4.webp",
       Icon: MoonIcon,
       section: {
         summary: t("onboarding.report.sleepSummary", {
-          defaultValue: "Sleep anchors recovery, appetite, and training consistency.",
+          defaultValue:
+            "Sleep anchors recovery, appetite, and training consistency.",
         }),
         bullets: get(report, "report.cautionPoints.bullets", []),
       },
@@ -636,7 +642,7 @@ const ReportContent = ({
       title: t("onboarding.report.sections.progress", {
         defaultValue: "Progress",
       }),
-      image: "/optimized/onboarding/report-1.webp",
+      image: "/onboarding/report-1.webp",
       Icon: TrendingUpIcon,
       section: get(report, "report.goalInterpretation"),
     },
@@ -696,12 +702,18 @@ const ReportContent = ({
                 <SparklesIcon className="size-3" />
                 {t("onboarding.report.readyBadge")}
               </Badge>
-              <Badge variant="outline" className="border-[#E68A00]/20 bg-[#F8FAF7]">
+              <Badge
+                variant="outline"
+                className="border-[#E68A00]/20 bg-[#F8FAF7]"
+              >
                 {t("onboarding.report.oneTimeBadge", {
                   defaultValue: "One-time onboarding result",
                 })}
               </Badge>
-              <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+              <Badge
+                variant="outline"
+                className="border-green-200 bg-green-50 text-green-700"
+              >
                 {getLanguageLabel(get(report, "language"), t)}
               </Badge>
             </div>
@@ -782,11 +794,13 @@ const ReportContent = ({
                 <span className="text-2xl font-black text-[#111827] sm:text-4xl">
                   {confidenceScore}
                 </span>
-                <span className="pb-0.5 text-xs font-bold text-[#64748B] sm:pb-1 sm:text-sm">%</span>
+                <span className="pb-0.5 text-xs font-bold text-[#64748B] sm:pb-1 sm:text-sm">
+                  %
+                </span>
               </div>
             </motion.div>
             <motion.img
-              src="/optimized/onboarding/report-1.webp"
+              src="/onboarding/report-1.webp"
               alt=""
               className="absolute bottom-0 left-1/2 h-[250px] w-[200px] -translate-x-1/2 object-contain drop-shadow-[0_30px_60px_rgba(15,23,42,0.18)] sm:h-[370px] sm:w-[280px] lg:h-[470px] lg:w-[350px]"
               animate={{ y: [0, -10, 0], scale: [1, 1.015, 1] }}
@@ -813,14 +827,19 @@ const ReportContent = ({
         <div className="grid gap-3 md:gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
             {targetCards.map(({ label, value, unit, Icon }) => (
-              <div key={label} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-5">
+              <div
+                key={label}
+                className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-5"
+              >
                 <div className="flex items-center justify-between">
                   <Icon className="size-4 text-[#E68A00] sm:size-5" />
                   <span className="text-[10px] font-semibold text-green-600 sm:text-xs">
                     {t("onboarding.report.target", { defaultValue: "Target" })}
                   </span>
                 </div>
-                <p className="mt-3 text-xs font-semibold text-[#64748B] sm:mt-5 sm:text-sm">{label}</p>
+                <p className="mt-3 text-xs font-semibold text-[#64748B] sm:mt-5 sm:text-sm">
+                  {label}
+                </p>
                 <p className="mt-1 text-xl font-bold text-[#111827] sm:text-3xl">
                   {value}
                   <span className="ml-1 text-xs font-semibold text-[#94A3B8] sm:text-base">
@@ -878,52 +897,56 @@ const ReportContent = ({
             </h2>
             <p className="mt-1 text-sm font-semibold leading-5 text-[#64748B]">
               {t("onboarding.report.focusAreasDescription", {
-                defaultValue: "Short guidance by habit area. Scan, then start tracking.",
+                defaultValue:
+                  "Short guidance by habit area. Scan, then start tracking.",
               })}
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 md:gap-4 xl:grid-cols-5">
             {sectionCards.map(({ key, title, image, Icon, section }, index) => (
-            <motion.div
-              key={key}
-              className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 sm:rounded-[28px]"
-              initial={{ opacity: 0, y: 14 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-80px" }}
-              transition={{ delay: index * 0.04, duration: 0.28 }}
-            >
-              <div className="relative h-28 bg-[#FFF7ED] sm:h-36">
-                <img loading="lazy"
-                  src={image}
-                  alt=""
-                  className="absolute bottom-0 left-1/2 h-32 w-28 -translate-x-1/2 object-contain sm:h-44 sm:w-36"
-                  onError={(event) => {
-                    event.currentTarget.src = "/optimized/onboarding/report-1.webp";
-                  }}
-                />
-                <div className="absolute left-3 top-3 flex size-8 items-center justify-center rounded-xl bg-white text-[#E68A00] shadow-sm sm:left-4 sm:top-4 sm:size-10">
-                  <Icon className="size-4 sm:size-5" />
+              <motion.div
+                key={key}
+                className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 sm:rounded-[28px]"
+                initial={{ opacity: 0, y: 14 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-80px" }}
+                transition={{ delay: index * 0.04, duration: 0.28 }}
+              >
+                <div className="relative h-28 bg-[#FFF7ED] sm:h-36">
+                  <img
+                    loading="lazy"
+                    src={image}
+                    alt=""
+                    className="absolute bottom-0 left-1/2 h-32 w-28 -translate-x-1/2 object-contain sm:h-44 sm:w-36"
+                    onError={(event) => {
+                      event.currentTarget.src = "/onboarding/report-1.webp";
+                    }}
+                  />
+                  <div className="absolute left-3 top-3 flex size-8 items-center justify-center rounded-xl bg-white text-[#E68A00] shadow-sm sm:left-4 sm:top-4 sm:size-10">
+                    <Icon className="size-4 sm:size-5" />
+                  </div>
                 </div>
-              </div>
-              <div className="p-3 sm:p-4">
-                <h3 className="text-base font-bold text-[#111827] sm:text-lg">{title}</h3>
-                <p className="mt-1 line-clamp-2 text-xs font-medium leading-5 text-[#64748B] sm:mt-2 sm:text-sm sm:leading-6">
-                  {get(section, "summary")}
-                </p>
-                <div className="mt-3 space-y-1.5 sm:mt-4 sm:space-y-2">
-                  {get(section, "bullets", [])
-                    .slice(0, 2)
-                    .map((bullet) => (
-                      <div key={bullet} className="flex items-start gap-2">
-                        <CheckCircle2Icon className="mt-1 size-3.5 shrink-0 text-green-600" />
-                        <p className="line-clamp-2 text-[11px] font-medium leading-4 text-[#64748B] sm:text-xs sm:leading-5">
-                          {bullet}
-                        </p>
-                      </div>
-                    ))}
+                <div className="p-3 sm:p-4">
+                  <h3 className="text-base font-bold text-[#111827] sm:text-lg">
+                    {title}
+                  </h3>
+                  <p className="mt-1 line-clamp-2 text-xs font-medium leading-5 text-[#64748B] sm:mt-2 sm:text-sm sm:leading-6">
+                    {get(section, "summary")}
+                  </p>
+                  <div className="mt-3 space-y-1.5 sm:mt-4 sm:space-y-2">
+                    {get(section, "bullets", [])
+                      .slice(0, 2)
+                      .map((bullet) => (
+                        <div key={bullet} className="flex items-start gap-2">
+                          <CheckCircle2Icon className="mt-1 size-3.5 shrink-0 text-green-600" />
+                          <p className="line-clamp-2 text-[11px] font-medium leading-4 text-[#64748B] sm:text-xs sm:leading-5">
+                            {bullet}
+                          </p>
+                        </div>
+                      ))}
+                  </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
             ))}
           </div>
         </section>
@@ -938,7 +961,8 @@ const ReportContent = ({
               </h2>
               <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-white/65">
                 {t("onboarding.report.sevenTipsDescription", {
-                  defaultValue: "Short practical tips from your AI report. Start with the easiest one today.",
+                  defaultValue:
+                    "Short practical tips from your AI report. Start with the easiest one today.",
                 })}
               </p>
             </div>
@@ -1178,10 +1202,7 @@ const Index = () => {
       latestQuery.isLoading ||
       latestQuery.isFetching ||
       autoRequested);
-  const showSkeleton =
-    !report &&
-    !showGeneratingState &&
-    latestQuery.isLoading;
+  const showSkeleton = !report && !showGeneratingState && latestQuery.isLoading;
 
   React.useEffect(() => {
     if (!onboardingCompleted) {

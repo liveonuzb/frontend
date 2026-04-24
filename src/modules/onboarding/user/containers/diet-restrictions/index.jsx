@@ -84,9 +84,9 @@ const restrictions = [
 ];
 
 const goalIllustrations = {
-  lose: "/optimized/onboarding/lose.webp",
-  maintain: "/optimized/onboarding/maintain.webp",
-  gain: "/optimized/onboarding/gain.webp",
+  lose: "/onboarding/lose.webp",
+  maintain: "/onboarding/maintain.webp",
+  gain: "/onboarding/gain.webp",
 };
 
 const getRestrictionTone = (selectedValue, goal) => {
@@ -181,7 +181,7 @@ const Index = () => {
     selectedRestrictions.length === 1 &&
     selectedRestrictions[0]?.value === "none";
   const activeTone = getRestrictionTone(selectedRestrictions[0]?.value, goal);
-  const heroImage = goalIllustrations[goal] ?? "/optimized/onboarding/curious.webp";
+  const heroImage = goalIllustrations[goal] ?? "/onboarding/curious.webp";
 
   const handleComplete = async () => {
     const payload = {
@@ -250,7 +250,8 @@ const Index = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.28, ease: "easeOut" }}
           >
-            <img loading="lazy"
+            <img
+              loading="lazy"
               src={heroImage}
               alt="Diet preferences illustration"
               className="max-h-[220px] w-full max-w-[240px] object-contain md:max-h-[300px] md:max-w-[320px]"

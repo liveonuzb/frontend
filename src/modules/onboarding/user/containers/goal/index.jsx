@@ -16,7 +16,7 @@ const goals = [
     label: "Lose",
     title: "Lean down",
     description: "Burn fat and get leaner with a steady calorie deficit.",
-    image: "/optimized/onboarding/lose.webp",
+    image: "/onboarding/lose.webp",
     accent: "from-rose-500/18 via-orange-400/10 to-transparent",
     border: "border-rose-500/20",
     pageTint: "from-rose-500/12 via-orange-400/8 to-transparent",
@@ -29,7 +29,7 @@ const goals = [
     label: "Maintain",
     title: "Hold your rhythm",
     description: "Keep your current shape while building consistent habits.",
-    image: "/optimized/onboarding/maintain.webp",
+    image: "/onboarding/maintain.webp",
     accent: "from-emerald-500/18 via-teal-400/10 to-transparent",
     border: "border-emerald-500/20",
     pageTint: "from-emerald-500/12 via-teal-400/8 to-transparent",
@@ -42,7 +42,7 @@ const goals = [
     label: "Gain",
     title: "Build up",
     description: "Add quality mass and strength with a stronger intake.",
-    image: "/optimized/onboarding/gain.webp",
+    image: "/onboarding/gain.webp",
     accent: "from-sky-500/18 via-indigo-400/10 to-transparent",
     border: "border-sky-500/20",
     pageTint: "from-sky-500/12 via-indigo-400/8 to-transparent",
@@ -136,7 +136,8 @@ const Index = () => {
               exit={{ opacity: 0, y: -18, scale: 0.96 }}
               transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
             >
-              <img loading="lazy"
+              <img
+                loading="lazy"
                 src={selectedGoal.image}
                 className="max-h-[250px] w-full max-w-[260px] object-contain drop-shadow-[0_18px_32px_rgba(0,0,0,0.12)] sm:max-h-[280px] sm:max-w-[300px] md:max-h-[340px] md:max-w-[360px] md:drop-shadow-[0_24px_44px_rgba(0,0,0,0.14)]"
                 alt={`${selectedGoal.label} illustration`}

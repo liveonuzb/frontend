@@ -17,13 +17,13 @@ const genders = [
     value: "male",
     label: "Moto moto",
     description: "Masculine plan visuals and body guidance.",
-    image: "/optimized/onboarding/male-2.webp",
+    image: "/onboarding/male-2.webp",
   },
   {
     value: "female",
     label: "Gloria",
     description: "Feminine plan visuals and body guidance.",
-    image: "/optimized/onboarding/female-2.webp",
+    image: "/onboarding/female-2.webp",
   },
 ];
 
@@ -37,7 +37,7 @@ const Index = () => {
   const tone = selectedGender
     ? getGenderTone(selectedGender.value)
     : ONBOARDING_TONES.neutral;
-  const heroImage = selectedGender?.image ?? "/optimized/onboarding/curious.webp";
+  const heroImage = selectedGender?.image ?? "/onboarding/curious.webp";
 
   const handleSelect = (value) => {
     setField("gender", value);
@@ -81,7 +81,8 @@ const Index = () => {
               exit={{ opacity: 0, y: -12, scale: 0.98 }}
               transition={{ duration: 0.28, ease: "easeOut" }}
             >
-              <img loading="lazy"
+              <img
+                loading="lazy"
                 src={heroImage}
                 alt={selectedGender?.label || "Onboarding illustration"}
                 className="max-h-[240px] object-contain md:max-h-[340px]"
@@ -128,7 +129,8 @@ const Index = () => {
                 )}
                 whileTap={{ scale: 0.98 }}
               >
-                <img loading="lazy"
+                <img
+                  loading="lazy"
                   src={item.image}
                   alt={item.label}
                   className="h-24 object-contain md:h-44"

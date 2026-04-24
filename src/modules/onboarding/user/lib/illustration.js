@@ -127,7 +127,8 @@ export const getOnboardingBmiMeta = (weightValue, heightValue) => {
       key: "above-range",
       bmi,
       label: "Above range",
-      description: "This is a little above the balanced BMI zone for your height.",
+      description:
+        "This is a little above the balanced BMI zone for your height.",
       pageTint: "from-amber-500/12 via-orange-400/8 to-transparent",
       border: "border-amber-500/20",
       badgeTone: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
@@ -156,7 +157,7 @@ export const getOnboardingBmiMeta = (weightValue, heightValue) => {
 const buildIllustrationPath = (gender, ageValue, tier = DEFAULT_TIER) => {
   if (!gender) {
     return {
-      src: "/optimized/onboarding/curious.webp",
+      src: "/onboarding/curious.webp",
       alt: "Onboarding illustration",
     };
   }
@@ -166,7 +167,7 @@ const buildIllustrationPath = (gender, ageValue, tier = DEFAULT_TIER) => {
   const variantPrefix = ageVariant ? `${gender}-${ageVariant}` : gender;
 
   return {
-    src: `/optimized/onboarding/${variantPrefix}-${normalizedTier}.webp`,
+    src: `/onboarding/${variantPrefix}-${normalizedTier}.webp`,
     alt: `${variantPrefix} illustration`,
   };
 };
@@ -177,7 +178,11 @@ export const getOnboardingPersonIllustration = (gender, ageValue) =>
 export const getOnboardingTierIllustration = (gender, ageValue, tier) =>
   buildIllustrationPath(gender, ageValue, tier);
 
-export const getOnboardingHeightIllustration = (gender, ageValue, heightValue) =>
+export const getOnboardingHeightIllustration = (
+  gender,
+  ageValue,
+  heightValue,
+) =>
   buildIllustrationPath(
     gender,
     ageValue,
