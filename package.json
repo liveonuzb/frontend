@@ -74,7 +74,7 @@
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
-    "@vitejs/plugin-react-swc": "^4.3.0",
+    "@vitejs/plugin-react": "^6.0.1",
     "@yandex/ymaps3-types": "^1.0.19345674",
     "eslint": "^10.2.1",
     "eslint-plugin-react": "^7.37.5",
