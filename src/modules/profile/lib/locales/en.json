@@ -53,6 +53,12 @@
     "levelTitle": "Level",
     "completion": "Profile Completion",
     "completionDesc": "Completing your profile ensures messages, privacy and referral sections work accurately.",
+    "healthReport": {
+      "title": "AI health report",
+      "description": "Open or regenerate the personal wellness report built from your onboarding and health data.",
+      "badge": "AI + PDF",
+      "action": "Open report"
+    },
     "coach": {
       "myCoach": "My Coach",
       "connectedAt": "Connected on: {{date}}",

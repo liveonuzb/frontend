@@ -6,7 +6,13 @@
       "quote": "Мотивация дня",
       "coachInvitation": "Приглашение от тренера",
       "accept": "Принять",
-      "decline": "Отклонить"
+      "decline": "Отклонить",
+      "healthReport": {
+        "title": "AI health report",
+        "description": "Откройте персональный wellness-отчёт на основе онбординга, скачайте PDF или создайте новую версию.",
+        "badge": "AI + PDF",
+        "action": "Открыть отчёт"
+      }
     },
     "nutrition": {
       "title": "Питание",

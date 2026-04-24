@@ -15,6 +15,7 @@ import ActivityLevelPage from "@/modules/onboarding/user/pages/activity-level/in
 import MealFrequencyPage from "@/modules/onboarding/user/pages/meal-frequency/index.jsx";
 import WaterHabitsPage from "@/modules/onboarding/user/pages/water-habits/index.jsx";
 import DietRestrictionsPage from "@/modules/onboarding/user/pages/diet-restrictions/index.jsx";
+import ReportPage from "@/modules/onboarding/user/pages/report/index.jsx";
 
 const UserOnboardingModule = () => {
   return (
@@ -33,6 +34,8 @@ const UserOnboardingModule = () => {
         <Route path="meal-frequency" element={<MealFrequencyPage />} />
         <Route path="water-habits" element={<WaterHabitsPage />} />
         <Route path="diet-restrictions" element={<DietRestrictionsPage />} />
+        <Route path="report" element={<ReportPage />} />
+        <Route path="report/:reportId" element={<ReportPage />} />
       </Route>
     </Routes>
   );

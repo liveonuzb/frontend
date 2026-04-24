@@ -6,7 +6,13 @@
       "quote": "Daily motivation",
       "coachInvitation": "Coach invitation",
       "accept": "Accept",
-      "decline": "Decline"
+      "decline": "Decline",
+      "healthReport": {
+        "title": "AI health report",
+        "description": "Open the personal wellness report built from your onboarding data, download the PDF, or generate a fresh version.",
+        "badge": "AI + PDF",
+        "action": "Open report"
+      }
     },
     "nutrition": {
       "title": "Nutrition",

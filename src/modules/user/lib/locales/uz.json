@@ -6,7 +6,13 @@
       "quote": "Kun motivatsiyasi",
       "coachInvitation": "Murabbiy taklifi",
       "accept": "Qabul qilish",
-      "decline": "Rad etish"
+      "decline": "Rad etish",
+      "healthReport": {
+        "title": "AI health report",
+        "description": "Onboarding ma'lumotlaringiz asosida yaratilgan shaxsiy wellness hisobotini oching, PDF yuklab oling yoki yangi versiya yarating.",
+        "badge": "AI + PDF",
+        "action": "Reportni ochish"
+      }
     },
     "nutrition": {
       "title": "Ovqatlanish",

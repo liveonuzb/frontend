@@ -46,6 +46,8 @@ const OnboardingLayoutInner = () => {
   );
   const currentPath =
     isCoachScope && routePath ? `coach/${routePath}` : routePath;
+  const isReportRoute =
+    currentPath === "report" || currentPath.startsWith("report/");
   const isWideUserStep = [
     "name",
     "gender",
@@ -172,7 +174,11 @@ const OnboardingLayoutInner = () => {
     });
   }, [data, setFields]);
 
-  const maxWidthClass = isWideUserStep ? "max-w-5xl" : "max-w-lg";
+  const maxWidthClass = isReportRoute
+    ? "max-w-6xl"
+    : isWideUserStep
+      ? "max-w-5xl"
+      : "max-w-lg";
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">

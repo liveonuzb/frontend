@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils";
 import { useOnboardingStore, useAuthStore } from "@/store";
 import {
   BeefIcon,
-  CheckCircle2Icon,
   CheckIcon,
   CircleSlashIcon,
   FlameIcon,
@@ -26,6 +25,7 @@ import {
   toUserOnboardingPayload,
 } from "@/lib/user-onboarding";
 import { toast } from "sonner";
+import { getUserOnboardingReportPath } from "@/lib/app-paths";
 import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-context";
 import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-question";
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
@@ -114,15 +114,12 @@ const Index = () => {
   const onboardingState = useOnboardingStore();
   const { dietRestrictions, reset, setField, goal } = onboardingState;
   const { initializeUser, setOnboardingCompleted, user } = useAuthStore();
-  const [isProcessing, setIsProcessing] = React.useState(false);
 
   useOnboardingAutoSave("user", "diet-restrictions");
 
   const { mutateAsync: completeOnboarding, isPending } = usePutQuery({
     mutationProps: {
       onSuccess: async (_data, variables) => {
-        setIsProcessing(true);
-
         const nextOnboarding = normalizeUserOnboarding(variables?.attributes);
         const nextUser = user
           ? {
@@ -141,10 +138,7 @@ const Index = () => {
 
         await queryClient.invalidateQueries({ queryKey: ["me"] });
         reset();
-
-        setTimeout(() => {
-          navigate("/user", { replace: true });
-        }, 2200);
+        navigate(getUserOnboardingReportPath(), { replace: true });
       },
       onError: (error) => {
         const message = error?.response?.data?.message;
@@ -226,9 +220,9 @@ const Index = () => {
       )}
       size="lg"
       onClick={handleComplete}
-      disabled={!hasSelection || isPending || isProcessing}
+      disabled={!hasSelection || isPending}
     >
-      {isPending || isProcessing ? (
+      {isPending ? (
         <>
           <Loader2Icon className="mr-2 size-4 animate-spin" />
           {t("onboarding.dietRestrictions.saving")}
@@ -238,31 +232,6 @@ const Index = () => {
       )}
     </Button>,
   );
-
-  if (isProcessing) {
-    return (
-      <div className="relative flex h-full flex-1 flex-col items-center justify-center gap-8 overflow-hidden  px-5">
-        <PageAura tone={activeTone} />
-        <div className="relative z-10 flex items-center justify-center">
-          <div className="flex size-24 items-center justify-center rounded-full bg-primary/10 animate-pulse">
-            <CheckCircle2Icon className="size-12 text-primary" />
-          </div>
-        </div>
-        <div className="relative z-10 space-y-2 text-center">
-          <h2 className="text-2xl font-bold">
-            {t("onboarding.completion.title")}
-          </h2>
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            {t("onboarding.completion.description")}
-          </p>
-        </div>
-        <div className="relative z-10 mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2Icon className="size-4 animate-spin" />
-          {t("onboarding.completion.redirecting")}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="relative flex h-full flex-1 flex-col overflow-hidden pt-3 md:pt-8  px-5">

@@ -53,6 +53,12 @@
     "levelTitle": "Daraja",
     "completion": "Profil to'liqligi",
     "completionDesc": "Asosiy profil to'liq bo'lsa xabarlar, maxfiylik va referral bo'limlari aniqroq ishlaydi.",
+    "healthReport": {
+      "title": "AI health report",
+      "description": "Onboarding va sog'liq ma'lumotlaringizdan yig'ilgan shaxsiy wellness hisobotini ko'ring yoki qayta yarating.",
+      "badge": "AI + PDF",
+      "action": "Reportni ochish"
+    },
     "coach": {
       "myCoach": "Mening murabbiyim",
       "connectedAt": "Bog'langan sana: {{date}}",

@@ -36,6 +36,7 @@ import { Progress } from "@/components/ui/progress";
 import CoachConnectionDetailsDrawer from "@/components/coach-connection-details-drawer";
 import { useBreadcrumbStore, useAuthStore } from "@/store";
 import { Button } from "@/components/ui/button";
+import OnboardingHealthReportCard from "@/components/onboarding-health-report-card";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -48,6 +49,7 @@ import {
   normalizeProfileOverlayTab,
 } from "@/modules/profile/lib/profile-tab-registry";
 import { getStandaloneProfileTabPath } from "@/modules/profile/lib/profile-tab-navigation";
+import { getUserOnboardingReportPath } from "@/lib/app-paths";
 import useAppLanguages from "@/hooks/app/use-app-languages";
 import { useLanguageStore } from "@/store";
 import { ROLE_CONFIG } from "@/components/role-switcher";
@@ -530,6 +532,10 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
     },
     [closeProfile, navigate, setActiveRole],
   );
+  const openHealthReport = React.useCallback(() => {
+    closeProfile?.();
+    navigate(getUserOnboardingReportPath());
+  }, [closeProfile, navigate]);
 
   return (
     <div className="space-y-3">
@@ -772,6 +778,15 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
         />
       ))}
 
+      <OnboardingHealthReportCard
+        compact
+        title={t("profile.healthReport.title")}
+        description={t("profile.healthReport.description")}
+        badge={t("profile.healthReport.badge")}
+        actionLabel={t("profile.healthReport.action")}
+        onAction={openHealthReport}
+      />
+
       <AccountDangerZone />
     </div>
   );
@@ -823,6 +838,9 @@ const SettingsSidebar = ({ activeTab, completion, onTabChange, user }) => {
     },
     [navigate, onTabChange],
   );
+  const openHealthReport = React.useCallback(() => {
+    navigate(getUserOnboardingReportPath());
+  }, [navigate]);
 
   return (
     <aside className="space-y-5 xl:sticky xl:top-6 xl:self-start">
@@ -868,6 +886,14 @@ const SettingsSidebar = ({ activeTab, completion, onTabChange, user }) => {
         onOpenDetails={
           coachConnection ? () => setIsCoachDetailsOpen(true) : undefined
         }
+      />
+      <OnboardingHealthReportCard
+        compact
+        title={t("profile.healthReport.title")}
+        description={t("profile.healthReport.description")}
+        badge={t("profile.healthReport.badge")}
+        actionLabel={t("profile.healthReport.action")}
+        onAction={openHealthReport}
       />
       <CoachConnectionDetailsDrawer
         open={isCoachDetailsOpen}
