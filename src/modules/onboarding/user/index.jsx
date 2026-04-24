@@ -35,7 +35,6 @@ const UserOnboardingModule = () => {
         <Route path="water-habits" element={<WaterHabitsPage />} />
         <Route path="diet-restrictions" element={<DietRestrictionsPage />} />
         <Route path="report" element={<ReportPage />} />
-        <Route path="report/:reportId" element={<ReportPage />} />
       </Route>
     </Routes>
   );

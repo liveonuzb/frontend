@@ -1,7 +1,7 @@
 import React from "react";
 import { get, map } from "lodash";
 import { AnimatePresence, motion } from "framer-motion";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
@@ -39,17 +39,10 @@ import { toast } from "sonner";
 import { useGetQuery, usePostQuery } from "@/hooks/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import PageTransition from "@/components/page-transition";
 import { cn } from "@/lib/utils";
-import { getUserOnboardingReportPath } from "@/lib/app-paths";
 import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-context";
 import PageAura from "../../components/page-aura.jsx";
 import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
@@ -60,15 +53,7 @@ const LATEST_REPORT_QUERY_KEY = (language) => [
   "latest",
   language || "uz",
 ];
-const REPORT_HISTORY_QUERY_KEY = ["onboarding-report", "history"];
-const REPORT_DETAIL_QUERY_KEY = (reportId) => [
-  "onboarding-report",
-  "detail",
-  reportId,
-];
-
 const unwrapPayload = (response) => response?.data?.data ?? null;
-const unwrapMeta = (response) => response?.data?.meta ?? null;
 
 const getReportTone = (goal) => {
   if (goal === "lose") return ONBOARDING_ACCENTS.rose;
@@ -501,13 +486,7 @@ const ReportErrorState = ({ title, description, onRetry, onDashboard, t }) => {
 
 const ReportContent = ({
   report,
-  historyItems,
-  totalVersions,
-  isGenerating,
-  onRegenerate,
   onStartPlan,
-  onSelectVersion,
-  currentReportId,
   t,
   locale,
 }) => {
@@ -531,6 +510,7 @@ const ReportContent = ({
     t("onboarding.report.heroSubtitle", {
       defaultValue: "Built for your goals, body and habits",
     });
+  const generatedAt = formatDateTime(get(report, "createdAt"), locale);
 
   const trackerItems = [
     t("onboarding.report.progressTracker.overview", { defaultValue: "Overview" }),
@@ -579,6 +559,12 @@ const ReportContent = ({
       Icon: TrendingUpIcon,
     },
   ];
+
+  const statHighlights = scoreCards.map(({ label, value, detail }) => ({
+    label,
+    value,
+    detail,
+  }));
 
   const targetCards = [
     {
@@ -670,149 +656,174 @@ const ReportContent = ({
   const actionItems = get(report, "report.actionPlan.items", []).slice(0, 7);
 
   return (
-    <div className="relative flex flex-1 overflow-y-auto bg-[#F8FAF7] px-4 py-5 md:px-8 md:py-8">
-      <div className="relative z-10 mx-auto w-full max-w-6xl space-y-5">
-        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[#E68A00]/15 bg-white/80 px-3 py-3 shadow-sm backdrop-blur">
-          {trackerItems.map((item) => (
-            <div
-              key={item}
-              className="flex items-center gap-2 rounded-xl bg-[#E68A00]/10 px-3 py-2 text-sm font-semibold text-[#1E293B]"
-            >
-              <CheckCircle2Icon className="size-4 text-green-600" />
-              {item}
-            </div>
-          ))}
-        </div>
+    <div className="relative flex min-h-0 flex-1 overflow-y-auto bg-[#F8FAF7] px-3 py-3 pb-24 sm:px-4 sm:py-5 sm:pb-28 md:px-8 md:py-8 md:pb-8">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -left-24 top-10 size-72 rounded-full bg-[#E68A00]/10 blur-3xl" />
+        <div className="absolute right-0 top-1/4 size-80 rounded-full bg-emerald-200/30 blur-3xl" />
+      </div>
 
-        <section className="grid overflow-hidden rounded-[28px] border border-[#E68A00]/15 bg-white shadow-[0_28px_90px_rgba(15,23,42,0.08)] lg:grid-cols-[minmax(0,1.15fr)_390px]">
-          <div className="space-y-5 p-6 md:p-8">
+      <div className="relative z-10 mx-auto w-full max-w-6xl space-y-4 md:space-y-6">
+        <motion.div
+          className="hidden items-center gap-2 overflow-x-auto pb-1 sm:flex"
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+        >
+          {trackerItems.map((item, index) => (
+            <React.Fragment key={item}>
+              <div className="flex shrink-0 items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-bold text-[#111827] shadow-sm ring-1 ring-[#E68A00]/12">
+                <span className="flex size-6 items-center justify-center rounded-full bg-[#E68A00] text-[11px] text-white">
+                  {index + 1}
+                </span>
+                {item}
+              </div>
+              {index < trackerItems.length - 1 ? (
+                <div className="h-px w-8 shrink-0 bg-[#E68A00]/25" />
+              ) : null}
+            </React.Fragment>
+          ))}
+        </motion.div>
+
+        <motion.section
+          className="grid overflow-hidden rounded-[26px] bg-white shadow-[0_30px_100px_rgba(15,23,42,0.10)] ring-1 ring-[#E68A00]/12 md:rounded-[34px] lg:grid-cols-[minmax(0,1.08fr)_410px]"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: "easeOut" }}
+        >
+          <div className="space-y-4 p-4 sm:space-y-5 sm:p-6 md:space-y-7 md:p-9">
             <div className="flex flex-wrap items-center gap-2">
               <Badge className="bg-[#E68A00] text-white hover:bg-[#E68A00]">
                 <SparklesIcon className="size-3" />
                 {t("onboarding.report.readyBadge")}
               </Badge>
               <Badge variant="outline" className="border-[#E68A00]/20 bg-[#F8FAF7]">
-                v{get(report, "version")} · {getLanguageLabel(get(report, "language"), t)}
+                {t("onboarding.report.oneTimeBadge", {
+                  defaultValue: "One-time onboarding result",
+                })}
+              </Badge>
+              <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+                {getLanguageLabel(get(report, "language"), t)}
               </Badge>
             </div>
 
-            <div className="space-y-3">
-              <h1 className="max-w-3xl text-4xl font-bold leading-tight text-[#111827] md:text-6xl">
+            <div className="space-y-4">
+              <h1 className="max-w-3xl text-[28px] font-black leading-[0.98] tracking-[-0.035em] text-[#111827] sm:text-5xl md:text-7xl">
                 {t("onboarding.report.heroTitle", {
                   defaultValue: "Your AI Wellness Report",
                 })}
               </h1>
-              <p className="max-w-2xl text-base font-medium leading-7 text-[#64748B] md:text-lg">
+              <p className="max-w-2xl text-base font-bold leading-6 text-[#334155] sm:text-lg md:text-xl md:leading-7">
                 {t("onboarding.report.heroSubtitle", {
                   defaultValue: "Built for your goals, body and habits",
                 })}
               </p>
-              <p className="max-w-3xl text-sm font-medium leading-6 text-[#64748B]">
+              <p className="line-clamp-2 max-w-3xl text-sm font-medium leading-6 text-[#64748B] sm:line-clamp-3">
                 {heroSummary}
               </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {scoreCards.map(({ label, value, detail, Icon }) => (
-                <div
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-4">
+              {statHighlights.map(({ label, value, detail }, index) => (
+                <motion.div
                   key={label}
-                  className="rounded-2xl border border-slate-200 bg-[#F8FAF7] p-4"
+                  className="rounded-[18px] bg-[#F8FAF7] p-3 ring-1 ring-slate-200 sm:rounded-[24px] sm:p-4"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.12 + index * 0.06, duration: 0.28 }}
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <Icon className="size-5 text-[#E68A00]" />
-                    <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
-                      OK
-                    </Badge>
-                  </div>
-                  <p className="mt-4 text-sm font-semibold text-[#64748B]">{label}</p>
-                  <p className="mt-1 line-clamp-1 text-2xl font-bold text-[#111827]">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#94A3B8] sm:text-xs sm:tracking-[0.2em]">
+                    {label}
+                  </p>
+                  <p className="mt-2 line-clamp-1 text-xl font-black text-[#111827] sm:mt-3 sm:text-3xl">
                     {value}
                   </p>
-                  <p className="mt-1 line-clamp-2 text-xs font-medium leading-5 text-[#64748B]">
+                  <p className="mt-1 line-clamp-1 text-xs font-semibold text-[#64748B] sm:text-sm">
                     {detail}
                   </p>
-                </div>
+                </motion.div>
               ))}
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="hidden flex-col gap-3 sm:flex sm:flex-row sm:items-center">
               <Button
                 type="button"
                 size="lg"
-                className="gap-2 bg-[#E68A00] text-white hover:bg-[#cf7b00]"
+                className="h-12 gap-2 rounded-full bg-[#E68A00] px-6 text-sm font-bold text-white hover:bg-[#cf7b00] sm:h-14 sm:px-8 sm:text-base"
                 onClick={onStartPlan}
               >
-                <TargetIcon className="size-4" />
+                <TargetIcon className="size-5" />
                 {t("onboarding.report.startMyPlan", {
                   defaultValue: "Start My Plan",
                 })}
               </Button>
-              <Button
-                type="button"
-                size="lg"
-                variant="outline"
-                className="gap-2 border-[#E68A00]/25 bg-white text-[#111827] hover:bg-[#FFF7ED]"
-                onClick={onRegenerate}
-                disabled={isGenerating}
-              >
-                {isGenerating ? (
-                  <Loader2Icon className="size-4 animate-spin" />
-                ) : (
-                  <ZapIcon className="size-4 text-[#E68A00]" />
-                )}
-                {t("onboarding.report.regenerate")}
-              </Button>
+              <p className="text-xs font-semibold leading-5 text-[#64748B] sm:text-sm">
+                {t("onboarding.report.generatedOnce", {
+                  date: generatedAt,
+                  defaultValue: `Generated once after onboarding · ${generatedAt}`,
+                })}
+              </p>
             </div>
           </div>
 
-          <div className="relative min-h-[420px] overflow-hidden bg-[#FFF7ED]">
-            <div className="absolute inset-x-10 top-10 h-48 rounded-full bg-[#E68A00]/20 blur-3xl" />
+          <div className="relative min-h-[220px] overflow-hidden bg-[#FFF7ED] sm:min-h-[340px] lg:min-h-[460px]">
+            <div className="absolute inset-x-8 top-8 h-44 rounded-full bg-[#E68A00]/20 blur-3xl sm:top-12 sm:h-60" />
+            <motion.div
+              className="absolute left-4 top-4 z-20 rounded-2xl bg-white/90 px-3 py-2 shadow-xl backdrop-blur sm:left-8 sm:top-8 sm:rounded-[28px] sm:px-5 sm:py-4"
+              initial={{ opacity: 0, scale: 0.92, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ delay: 0.22, duration: 0.35, ease: "easeOut" }}
+            >
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#94A3B8] sm:text-xs sm:tracking-[0.2em]">
+                {t("onboarding.report.confidence", {
+                  defaultValue: "Confidence",
+                })}
+              </p>
+              <div className="mt-2 flex items-end gap-1">
+                <span className="text-2xl font-black text-[#111827] sm:text-4xl">
+                  {confidenceScore}
+                </span>
+                <span className="pb-0.5 text-xs font-bold text-[#64748B] sm:pb-1 sm:text-sm">%</span>
+              </div>
+            </motion.div>
             <motion.img
               src="/onboarding/report-1.png"
               alt=""
-              className="absolute bottom-0 left-1/2 h-[430px] w-[320px] -translate-x-1/2 object-contain drop-shadow-[0_30px_60px_rgba(15,23,42,0.18)]"
-              animate={{ y: [0, -8, 0] }}
+              className="absolute bottom-0 left-1/2 h-[250px] w-[200px] -translate-x-1/2 object-contain drop-shadow-[0_30px_60px_rgba(15,23,42,0.18)] sm:h-[370px] sm:w-[280px] lg:h-[470px] lg:w-[350px]"
+              animate={{ y: [0, -10, 0], scale: [1, 1.015, 1] }}
               transition={{
-                duration: 4,
+                duration: 4.2,
                 repeat: Number.POSITIVE_INFINITY,
                 ease: "easeInOut",
               }}
             />
-            <div className="absolute right-6 top-6 flex size-32 items-center justify-center rounded-full bg-white shadow-lg">
+            <div className="absolute right-3 top-3 flex size-16 items-center justify-center rounded-full bg-white shadow-lg sm:right-6 sm:top-6 sm:size-32">
               <div
                 className="absolute inset-2 rounded-full"
                 style={{
                   background: `conic-gradient(#E68A00 ${confidenceScore * 3.6}deg, #EEF2F7 0deg)`,
                 }}
               />
-              <div className="relative flex size-24 flex-col items-center justify-center rounded-full bg-white">
-                <span className="text-3xl font-bold text-[#111827]">
-                  {confidenceScore}
-                </span>
-                <span className="text-xs font-semibold text-[#64748B]">
-                  {t("onboarding.report.confidence", {
-                    defaultValue: "Confidence",
-                  })}
-                </span>
+              <div className="relative flex size-11 flex-col items-center justify-center rounded-full bg-white sm:size-24">
+                <HeartPulseIcon className="size-4 text-[#E68A00] sm:size-8" />
               </div>
             </div>
           </div>
-        </section>
+        </motion.section>
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-          <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-3 md:gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
             {targetCards.map(({ label, value, unit, Icon }) => (
-              <div key={label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div key={label} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-5">
                 <div className="flex items-center justify-between">
-                  <Icon className="size-5 text-[#E68A00]" />
-                  <span className="text-xs font-semibold text-green-600">
+                  <Icon className="size-4 text-[#E68A00] sm:size-5" />
+                  <span className="text-[10px] font-semibold text-green-600 sm:text-xs">
                     {t("onboarding.report.target", { defaultValue: "Target" })}
                   </span>
                 </div>
-                <p className="mt-5 text-sm font-semibold text-[#64748B]">{label}</p>
-                <p className="mt-1 text-3xl font-bold text-[#111827]">
+                <p className="mt-3 text-xs font-semibold text-[#64748B] sm:mt-5 sm:text-sm">{label}</p>
+                <p className="mt-1 text-xl font-bold text-[#111827] sm:text-3xl">
                   {value}
-                  <span className="ml-1 text-base font-semibold text-[#94A3B8]">
+                  <span className="ml-1 text-xs font-semibold text-[#94A3B8] sm:text-base">
                     {unit}
                   </span>
                 </p>
@@ -820,97 +831,120 @@ const ReportContent = ({
             ))}
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:row-span-2">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:row-span-2">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-2xl font-bold text-[#111827]">
+                <h2 className="text-xl font-bold text-[#111827] sm:text-2xl">
                   {t("onboarding.report.whyThisMatters", {
                     defaultValue: "Why this matters",
                   })}
                 </h2>
-                <p className="mt-1 text-sm font-medium text-[#64748B]">
+                <p className="mt-1 text-xs font-medium text-[#64748B] sm:text-sm">
                   {formatDateTime(get(report, "createdAt"), locale)}
                 </p>
               </div>
-              <HeartPulseIcon className="size-7 text-[#E68A00]" />
+              <HeartPulseIcon className="size-6 text-[#E68A00] sm:size-7" />
             </div>
-            <div className="mt-5 space-y-3">
+            <div className="mt-4 space-y-2.5 sm:mt-5 sm:space-y-3">
               {whyItems.map((item) => (
                 <div
                   key={item}
-                  className="flex items-start gap-3 rounded-xl bg-[#F8FAF7] px-3 py-3"
+                  className="flex items-start gap-2.5 rounded-xl bg-[#F8FAF7] px-3 py-2.5 sm:gap-3 sm:py-3"
                 >
                   <CheckCircle2Icon className="mt-0.5 size-4 shrink-0 text-green-600" />
-                  <p className="text-sm font-medium leading-6 text-[#475569]">
+                  <p className="text-sm font-medium leading-5 text-[#475569] sm:leading-6">
                     {item}
                   </p>
                 </div>
               ))}
             </div>
-            <div className="mt-5 rounded-xl bg-[#FFF7ED] p-4">
+            <div className="mt-4 rounded-xl bg-[#FFF7ED] p-3 sm:mt-5 sm:p-4">
               <p className="text-sm font-bold text-[#111827]">
                 {get(report, "report.motivationalClosing.title")}
               </p>
-              <p className="mt-2 line-clamp-4 text-sm font-medium leading-6 text-[#64748B]">
+              <p className="mt-2 line-clamp-3 text-sm font-medium leading-5 text-[#64748B] sm:line-clamp-4 sm:leading-6">
                 {get(report, "report.motivationalClosing.message")}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          {sectionCards.map(({ key, title, image, Icon, section }) => (
-            <div key={key} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="relative h-36 bg-[#FFF7ED]">
+        <section className="space-y-3 md:space-y-4">
+          <div>
+            <h2 className="text-2xl font-black text-[#111827] sm:text-3xl">
+              {t("onboarding.report.focusAreas", {
+                defaultValue: "Focus areas",
+              })}
+            </h2>
+            <p className="mt-1 text-sm font-semibold leading-5 text-[#64748B]">
+              {t("onboarding.report.focusAreasDescription", {
+                defaultValue: "Short guidance by habit area. Scan, then start tracking.",
+              })}
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 md:gap-4 xl:grid-cols-5">
+            {sectionCards.map(({ key, title, image, Icon, section }, index) => (
+            <motion.div
+              key={key}
+              className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 sm:rounded-[28px]"
+              initial={{ opacity: 0, y: 14 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ delay: index * 0.04, duration: 0.28 }}
+            >
+              <div className="relative h-28 bg-[#FFF7ED] sm:h-36">
                 <img
                   src={image}
                   alt=""
-                  className="absolute bottom-0 left-1/2 h-44 w-36 -translate-x-1/2 object-contain"
+                  className="absolute bottom-0 left-1/2 h-32 w-28 -translate-x-1/2 object-contain sm:h-44 sm:w-36"
                   onError={(event) => {
                     event.currentTarget.src = "/onboarding/report-1.png";
                   }}
                 />
-                <div className="absolute left-4 top-4 flex size-10 items-center justify-center rounded-xl bg-white text-[#E68A00] shadow-sm">
-                  <Icon className="size-5" />
+                <div className="absolute left-3 top-3 flex size-8 items-center justify-center rounded-xl bg-white text-[#E68A00] shadow-sm sm:left-4 sm:top-4 sm:size-10">
+                  <Icon className="size-4 sm:size-5" />
                 </div>
               </div>
-              <div className="p-4">
-                <h3 className="text-lg font-bold text-[#111827]">{title}</h3>
-                <p className="mt-2 line-clamp-2 text-sm font-medium leading-6 text-[#64748B]">
+              <div className="p-3 sm:p-4">
+                <h3 className="text-base font-bold text-[#111827] sm:text-lg">{title}</h3>
+                <p className="mt-1 line-clamp-2 text-xs font-medium leading-5 text-[#64748B] sm:mt-2 sm:text-sm sm:leading-6">
                   {get(section, "summary")}
                 </p>
-                <div className="mt-4 space-y-2">
+                <div className="mt-3 space-y-1.5 sm:mt-4 sm:space-y-2">
                   {get(section, "bullets", [])
-                    .slice(0, 3)
+                    .slice(0, 2)
                     .map((bullet) => (
                       <div key={bullet} className="flex items-start gap-2">
                         <CheckCircle2Icon className="mt-1 size-3.5 shrink-0 text-green-600" />
-                        <p className="line-clamp-2 text-xs font-medium leading-5 text-[#64748B]">
+                        <p className="line-clamp-2 text-[11px] font-medium leading-4 text-[#64748B] sm:text-xs sm:leading-5">
                           {bullet}
                         </p>
                       </div>
                     ))}
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            </motion.div>
+            ))}
+          </div>
+        </section>
 
-        <section className="rounded-[28px] border border-[#E68A00]/15 bg-white p-6 shadow-sm md:p-8">
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <section className="rounded-[28px] bg-[#111827] p-4 text-white shadow-[0_28px_80px_rgba(15,23,42,0.18)] sm:p-6 md:rounded-[34px] md:p-8">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <h2 className="text-3xl font-bold text-[#111827]">
-                {t("onboarding.report.next7Days", {
-                  defaultValue: "Your Next 7 Days Plan",
+              <h2 className="text-2xl font-black leading-tight sm:text-3xl">
+                {t("onboarding.report.sevenTips", {
+                  defaultValue: "7 wellness tips",
                 })}
               </h2>
-              <p className="mt-2 text-sm font-medium text-[#64748B]">
-                {t("onboarding.report.actionPlanDescription")}
+              <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-white/65">
+                {t("onboarding.report.sevenTipsDescription", {
+                  defaultValue: "Short practical tips from your AI report. Start with the easiest one today.",
+                })}
               </p>
             </div>
             <Button
               type="button"
-              className="gap-2 bg-[#E68A00] text-white hover:bg-[#cf7b00]"
+              className="hidden h-12 w-full gap-2 rounded-full bg-[#E68A00] px-6 font-bold text-white hover:bg-[#cf7b00] sm:flex sm:w-auto"
               onClick={onStartPlan}
             >
               <TargetIcon className="size-4" />
@@ -919,97 +953,35 @@ const ReportContent = ({
               })}
             </Button>
           </div>
-          <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-4 grid gap-2 sm:mt-5 sm:gap-3 md:grid-cols-2 xl:grid-cols-3">
             {actionItems.map((item, index) => (
-              <div key={`${index}-${item}`} className="rounded-2xl border border-slate-200 bg-[#F8FAF7] p-4">
-                <p className="text-sm font-bold text-[#E68A00]">
-                  {t("onboarding.report.dayLabel", {
-                    day: index + 1,
-                    defaultValue: `Day ${index + 1}`,
-                  })}
-                </p>
-                <p className="mt-2 text-sm font-semibold leading-6 text-[#111827]">
-                  {item}
-                </p>
+              <div
+                key={`${index}-${item}`}
+                className="flex gap-2.5 rounded-2xl bg-white/8 p-2.5 ring-1 ring-white/10 sm:gap-3 sm:rounded-3xl sm:p-4"
+              >
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#E68A00] text-xs font-black text-white sm:size-9 sm:text-sm">
+                  {index + 1}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#FBBF24] sm:text-xs sm:tracking-[0.16em]">
+                    {t("onboarding.report.tipLabel", {
+                      defaultValue: "Tip",
+                    })}
+                  </p>
+                  <p className="mt-0.5 line-clamp-2 text-xs font-semibold leading-4 text-white/90 sm:mt-1 sm:text-sm sm:leading-6">
+                    {item}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
-          <div className="mt-6 rounded-2xl bg-[#F8FAF7] p-4">
-            <p className="text-xs font-semibold text-[#64748B]">
+          <div className="mt-4 rounded-2xl bg-white/8 p-3 ring-1 ring-white/10 sm:mt-5 sm:rounded-3xl sm:p-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/50 sm:text-xs sm:tracking-[0.18em]">
               {t("onboarding.report.disclaimer")}
             </p>
-            <p className="mt-2 text-sm font-medium leading-6 text-[#64748B]">
+            <p className="mt-2 text-xs font-semibold leading-5 text-white/70 sm:text-sm sm:leading-6">
               {get(report, "report.disclaimer")}
             </p>
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className="text-xl font-bold text-[#111827]">
-                {t("onboarding.report.versions")}
-              </h2>
-              <p className="mt-1 text-sm font-medium text-[#64748B]">
-                {t("onboarding.report.versionsDescription", {
-                  count: totalVersions,
-                })}
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              className="gap-2 border-[#E68A00]/25 bg-white"
-              onClick={onRegenerate}
-              disabled={isGenerating}
-            >
-              {isGenerating ? (
-                <Loader2Icon className="size-4 animate-spin" />
-              ) : (
-                <ZapIcon className="size-4 text-[#E68A00]" />
-              )}
-              {t("onboarding.report.regenerate")}
-            </Button>
-          </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            {historyItems.length > 0 ? (
-              historyItems.slice(0, 6).map((item) => {
-                const isActive = currentReportId === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={cn(
-                      "rounded-2xl border p-4 text-left transition-colors",
-                      isActive
-                        ? "border-[#E68A00]/35 bg-[#FFF7ED]"
-                        : "border-slate-200 bg-[#F8FAF7] hover:border-[#E68A00]/25",
-                    )}
-                    onClick={() => onSelectVersion(item.id)}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-bold text-[#111827]">
-                        {t("onboarding.report.versionNumber", {
-                          version: item.version,
-                        })}
-                      </p>
-                      {isActive ? (
-                        <Badge className="bg-[#E68A00] text-white hover:bg-[#E68A00]">
-                          {t("onboarding.report.current")}
-                        </Badge>
-                      ) : null}
-                    </div>
-                    <p className="mt-2 line-clamp-2 text-sm font-medium text-[#64748B]">
-                      {item.title}
-                    </p>
-                  </button>
-                );
-              })
-            ) : (
-              <div className="rounded-2xl border border-slate-200 bg-[#F8FAF7] px-4 py-4 text-sm font-medium text-[#64748B]">
-                {t("onboarding.report.noVersions")}
-              </div>
-            )}
           </div>
         </section>
       </div>
@@ -1055,7 +1027,6 @@ const Index = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { reportId } = useParams();
   const user = useAuthStore((state) => state.user);
   const onboardingCompleted = useAuthStore(
     (state) => state.onboardingCompleted,
@@ -1070,26 +1041,6 @@ const Index = () => {
     url: "/user/onboarding/report/latest",
     queryProps: {
       queryKey: LATEST_REPORT_QUERY_KEY(currentLanguage),
-      enabled: onboardingCompleted && !reportId,
-      staleTime: 60000,
-    },
-  });
-
-  const detailQuery = useGetQuery({
-    url: reportId
-      ? `/user/onboarding/report/${reportId}`
-      : "/user/onboarding/report/latest",
-    queryProps: {
-      queryKey: REPORT_DETAIL_QUERY_KEY(reportId || "latest"),
-      enabled: onboardingCompleted && Boolean(reportId),
-      staleTime: 60000,
-    },
-  });
-
-  const historyQuery = useGetQuery({
-    url: "/user/onboarding/report/history",
-    queryProps: {
-      queryKey: REPORT_HISTORY_QUERY_KEY,
       enabled: onboardingCompleted,
       staleTime: 60000,
     },
@@ -1105,19 +1056,7 @@ const Index = () => {
     () => unwrapPayload(latestQuery.data),
     [latestQuery.data],
   );
-  const detailReport = React.useMemo(
-    () => unwrapPayload(detailQuery.data),
-    [detailQuery.data],
-  );
-  const report = reportId ? detailReport : latestReport;
-  const historyItems = React.useMemo(
-    () => unwrapPayload(historyQuery.data) ?? [],
-    [historyQuery.data],
-  );
-  const historyMeta = React.useMemo(
-    () => unwrapMeta(historyQuery.data),
-    [historyQuery.data],
-  );
+  const report = latestReport;
 
   const loadingSlides = React.useMemo(
     () =>
@@ -1140,13 +1079,12 @@ const Index = () => {
 
   React.useEffect(() => {
     setAutoRequested(false);
-  }, [reportId, currentLanguage]);
+  }, [currentLanguage]);
 
   React.useEffect(() => {
     const shouldAnimate =
       isGenerating ||
       (!report &&
-        !reportId &&
         (latestQuery.isLoading || latestQuery.isFetching || autoRequested));
 
     if (!shouldAnimate) {
@@ -1165,29 +1103,19 @@ const Index = () => {
     latestQuery.isFetching,
     latestQuery.isLoading,
     report,
-    reportId,
     loadingSlides.length,
   ]);
 
   const handleGenerate = React.useCallback(
-    async ({ replace = false, silent = false } = {}) => {
+    async ({ silent = false } = {}) => {
       try {
         const response = await generateReport({
           url: "/user/onboarding/report/generate",
         });
         const payload = unwrapPayload(response);
-        await Promise.all([
-          queryClient.invalidateQueries({
-            queryKey: LATEST_REPORT_QUERY_KEY(currentLanguage),
-          }),
-          queryClient.invalidateQueries({
-            queryKey: REPORT_HISTORY_QUERY_KEY,
-          }),
-        ]);
-
-        if (payload?.id) {
-          navigate(getUserOnboardingReportPath(payload.id), { replace });
-        }
+        await queryClient.invalidateQueries({
+          queryKey: LATEST_REPORT_QUERY_KEY(currentLanguage),
+        });
 
         if (!silent) {
           toast.success(t("onboarding.report.generateSuccess"));
@@ -1205,13 +1133,12 @@ const Index = () => {
         throw error;
       }
     },
-    [currentLanguage, generateReport, navigate, queryClient, t],
+    [currentLanguage, generateReport, queryClient, t],
   );
 
   React.useEffect(() => {
     if (
       !onboardingCompleted ||
-      reportId ||
       latestQuery.isLoading ||
       latestQuery.isFetching
     ) {
@@ -1223,7 +1150,7 @@ const Index = () => {
     }
 
     setAutoRequested(true);
-    void handleGenerate({ replace: true, silent: true });
+    void handleGenerate({ silent: true });
   }, [
     autoRequested,
     handleGenerate,
@@ -1233,41 +1160,28 @@ const Index = () => {
     latestQuery.isLoading,
     onboardingCompleted,
     report,
-    reportId,
   ]);
 
   const handleRetry = React.useCallback(() => {
-    if (reportId) {
-      void detailQuery.refetch();
-      return;
-    }
-
     setAutoRequested(false);
     void latestQuery.refetch();
-  }, [detailQuery, latestQuery, reportId]);
+  }, [latestQuery]);
 
   const handleOpenDashboard = React.useCallback(() => {
     navigate("/user", { replace: true });
   }, [navigate]);
 
-  const handleSelectVersion = React.useCallback(
-    (nextReportId) => {
-      navigate(getUserOnboardingReportPath(nextReportId));
-    },
-    [navigate],
-  );
-
-  const activeError = reportId ? detailQuery.error : latestQuery.error;
+  const activeError = latestQuery.error;
   const showGeneratingState =
     !report &&
     (isGenerating ||
-      (!reportId &&
-        (latestQuery.isLoading || latestQuery.isFetching || autoRequested)));
+      latestQuery.isLoading ||
+      latestQuery.isFetching ||
+      autoRequested);
   const showSkeleton =
     !report &&
     !showGeneratingState &&
-    ((reportId && detailQuery.isLoading) ||
-      (!reportId && latestQuery.isLoading));
+    latestQuery.isLoading;
 
   React.useEffect(() => {
     if (!onboardingCompleted) {
@@ -1337,15 +1251,9 @@ const Index = () => {
           >
             <ReportContent
               report={report}
-              historyItems={historyItems}
-              isGenerating={isGenerating}
-              onRegenerate={() => void handleGenerate()}
               onStartPlan={handleOpenDashboard}
-              onSelectVersion={handleSelectVersion}
-              currentReportId={report.id}
               t={t}
               locale={t("common.locale", { defaultValue: "uz-UZ" })}
-              totalVersions={historyMeta?.total ?? historyItems.length}
             />
           </motion.div>
         ) : (

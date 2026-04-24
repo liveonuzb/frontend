@@ -55,8 +55,8 @@
     "completionDesc": "Asosiy profil to'liq bo'lsa xabarlar, maxfiylik va referral bo'limlari aniqroq ishlaydi.",
     "healthReport": {
       "title": "AI health report",
-      "description": "Onboarding va sog'liq ma'lumotlaringizdan yig'ilgan shaxsiy wellness hisobotini ko'ring yoki qayta yarating.",
-      "badge": "AI + PDF",
+      "description": "Onboarding va sog'liq ma'lumotlaringizdan bir marta yig'ilgan wellness hisobotini ko'ring.",
+      "badge": "AI report",
       "action": "Reportni ochish"
     },
     "coach": {

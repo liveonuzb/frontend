@@ -11,12 +11,8 @@ export const getUserOnboardingPath = (step = "") => {
     : USER_ONBOARDING_BASE_PATH;
 };
 
-export const getUserOnboardingReportPath = (reportId = "") => {
-  const normalizedReportId = trimSlashes(reportId);
-  return normalizedReportId
-    ? `${USER_ONBOARDING_BASE_PATH}/report/${encodeURIComponent(normalizedReportId)}`
-    : `${USER_ONBOARDING_BASE_PATH}/report`;
-};
+export const getUserOnboardingReportPath = () =>
+  `${USER_ONBOARDING_BASE_PATH}/report`;
 
 export const getCoachOnboardingPath = (step = "") => {
   const normalizedStep = trimSlashes(step).replace(/^coach\/?/, "");

@@ -181,7 +181,7 @@ const OnboardingLayoutInner = () => {
       : "max-w-lg";
 
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
+    <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-background">
       {/* ── STICKY HEADER ── */}
       {showProgress && (
         <header className="shrink-0 px-4 pt-4 pb-3 bg-background border-b border-border/40">

@@ -9,8 +9,8 @@
       "decline": "Decline",
       "healthReport": {
         "title": "AI health report",
-        "description": "Open the personal wellness report built from your onboarding data, download the PDF, or generate a fresh version.",
-        "badge": "AI + PDF",
+        "description": "Open the one-time wellness report built from your onboarding data.",
+        "badge": "AI report",
         "action": "Open report"
       }
     },

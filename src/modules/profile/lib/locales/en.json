@@ -55,8 +55,8 @@
     "completionDesc": "Completing your profile ensures messages, privacy and referral sections work accurately.",
     "healthReport": {
       "title": "AI health report",
-      "description": "Open or regenerate the personal wellness report built from your onboarding and health data.",
-      "badge": "AI + PDF",
+      "description": "Open the one-time wellness report built from your onboarding and health data.",
+      "badge": "AI report",
       "action": "Open report"
     },
     "coach": {

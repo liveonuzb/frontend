@@ -9,8 +9,8 @@
       "decline": "Rad etish",
       "healthReport": {
         "title": "AI health report",
-        "description": "Onboarding ma'lumotlaringiz asosida yaratilgan shaxsiy wellness hisobotini oching, PDF yuklab oling yoki yangi versiya yarating.",
-        "badge": "AI + PDF",
+        "description": "Onboarding ma'lumotlaringiz asosida bir marta yaratilgan wellness hisobotini oching.",
+        "badge": "AI report",
         "action": "Reportni ochish"
       }
     },

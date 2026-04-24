@@ -9,8 +9,8 @@
       "decline": "Отклонить",
       "healthReport": {
         "title": "AI health report",
-        "description": "Откройте персональный wellness-отчёт на основе онбординга, скачайте PDF или создайте новую версию.",
-        "badge": "AI + PDF",
+        "description": "Откройте одноразовый wellness-отчёт на основе данных онбординга.",
+        "badge": "AI report",
         "action": "Открыть отчёт"
       }
     },
