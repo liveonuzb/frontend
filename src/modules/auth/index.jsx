@@ -11,7 +11,8 @@ import ResetPasswordPage from "@/modules/auth/pages/reset-password/index.jsx";
 import SetPasswordPage from "@/modules/auth/pages/set-password/index.jsx";
 
 const Index = () => {
-  const { passwordSetupRequired } = useAuthStore();
+  const { user } = useAuthStore();
+  const passwordSetupRequired = Boolean(user?.passwordSetupRequired);
 
   return (
     <Routes>

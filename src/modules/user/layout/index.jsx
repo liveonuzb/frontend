@@ -10,6 +10,7 @@ import {
   TrophyIcon,
   UserPlusIcon,
   WalletCardsIcon,
+  FileChartColumnIcon,
 } from "lucide-react";
 import {
   Sidebar,
@@ -143,6 +144,11 @@ const Index = () => {
         to: "/user/measurements",
         label: "O'lchamlar",
         icon: RulerIcon,
+      },
+      {
+        to: "/user/report",
+        label: "Report",
+        icon: FileChartColumnIcon,
       },
       {
         to: "/user/workout",

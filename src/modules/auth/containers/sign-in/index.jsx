@@ -5,6 +5,7 @@ import { useAuthStore } from "@/store";
 import { useTranslation } from "react-i18next";
 import {
   AuthHeader,
+  AuthKeyboardHidden,
   AuthPanel,
   AuthTextFooter,
 } from "@/modules/auth/components/auth-panel";
@@ -36,10 +37,12 @@ const Index = ({ className, ...props }) => {
     >
       <AuthHeader title={t("auth.signIn.title")} />
       <PhoneForm />
-      <FieldDescription className="text-center text-[0.95rem]">
-        {t("auth.signIn.noAccount")}{" "}
-        <Link to="/auth/sign-up">{t("auth.signIn.signUpLink")}</Link>
-      </FieldDescription>
+      <AuthKeyboardHidden>
+        <FieldDescription className="text-center text-[0.95rem]">
+          {t("auth.signIn.noAccount")}{" "}
+          <Link to="/auth/sign-up">{t("auth.signIn.signUpLink")}</Link>
+        </FieldDescription>
+      </AuthKeyboardHidden>
     </AuthPanel>
   );
 };

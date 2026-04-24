@@ -1,5 +1,11 @@
 "use client";
-import { createContext, useContext, useMemo, useState } from "react";
+import {
+  createContext,
+  forwardRef,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import { filter } from "lodash";
 import * as BasePhoneInput from "react-phone-number-input";
 import flags from "react-phone-number-input/flags";
@@ -26,21 +32,25 @@ const PhoneInputContext = createContext({
   scrollAreaClassName: undefined,
 });
 
-function PhoneInput({
-  className,
-  variant,
-  popupClassName,
-  scrollAreaClassName,
-  onChange,
-  value,
-  ...props
-}) {
+const PhoneInput = forwardRef(function PhoneInput(
+  {
+    className,
+    variant,
+    popupClassName,
+    scrollAreaClassName,
+    onChange,
+    value,
+    ...props
+  },
+  ref,
+) {
   const phoneInputSize = variant || "default";
   return (
     <PhoneInputContext.Provider
       value={{ variant: phoneInputSize, popupClassName, scrollAreaClassName }}
     >
       <BasePhoneInput.default
+        ref={ref}
         defaultCountry="UZ"
         international={true}
         className={cn(
@@ -64,13 +74,17 @@ function PhoneInput({
       />
     </PhoneInputContext.Provider>
   );
-}
+});
 
-function InputComponent({ className, ...props }) {
+const InputComponent = forwardRef(function InputComponent(
+  { className, ...props },
+  ref,
+) {
   const { variant } = useContext(PhoneInputContext);
 
   return (
     <Input
+      ref={ref}
       className={cn(
         "rounded-s-none focus:z-1",
         variant === "sm" && "h-8",
@@ -82,7 +96,7 @@ function InputComponent({ className, ...props }) {
       {...props}
     />
   );
-}
+});
 
 function CountrySelect({
   disabled,

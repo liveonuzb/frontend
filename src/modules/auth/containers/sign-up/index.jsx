@@ -7,6 +7,7 @@ import { get } from "lodash";
 import { getApiResponseData } from "@/lib/api-response";
 import {
   AuthHeader,
+  AuthKeyboardHidden,
   AuthPanel,
   AuthTextFooter,
 } from "@/modules/auth/components/auth-panel";
@@ -58,10 +59,12 @@ const Index = ({ className }) => {
       )}
       <PhoneForm referralCode={referralCode} />
 
-      <FieldDescription className="text-center text-[0.95rem]">
-        {t("auth.signUp.haveAccount")}{" "}
-        <Link to="/auth/sign-in">{t("auth.signUp.signInLink")}</Link>
-      </FieldDescription>
+      <AuthKeyboardHidden>
+        <FieldDescription className="text-center text-[0.95rem]">
+          {t("auth.signUp.haveAccount")}{" "}
+          <Link to="/auth/sign-in">{t("auth.signUp.signInLink")}</Link>
+        </FieldDescription>
+      </AuthKeyboardHidden>
     </AuthPanel>
   );
 };

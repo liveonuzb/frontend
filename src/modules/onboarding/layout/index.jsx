@@ -28,8 +28,6 @@ const getPrevCoachStep = (step) => {
   const steps = COACH_ONBOARDING_STEPS;
   const idx = steps.indexOf(step);
   if (idx > 0) return steps[idx - 1];
-  // First coach step: return null — the prevPath fallback (currentStepIndex === 0)
-  // will navigate to /onboarding, bypassing the CoachEntryPage redirect loop.
   return null;
 };
 
@@ -46,22 +44,7 @@ const OnboardingLayoutInner = () => {
   );
   const currentPath =
     isCoachScope && routePath ? `coach/${routePath}` : routePath;
-  const isReportRoute =
-    currentPath === "report" || currentPath.startsWith("report/");
-  const isWideUserStep = [
-    "name",
-    "gender",
-    "age",
-    "height",
-    "current-weight",
-    "goal",
-    "target-weight",
-    "weekly-pace",
-    "activity-level",
-    "meal-frequency",
-    "water-habits",
-    "diet-restrictions",
-  ].includes(currentPath);
+
   const isCoachStep = isCoachOnboardingStep(currentPath);
   const currentStepIndex = isCoachStep
     ? getCoachOnboardingStepIndex(currentPath)
@@ -174,11 +157,7 @@ const OnboardingLayoutInner = () => {
     });
   }, [data, setFields]);
 
-  const maxWidthClass = isReportRoute
-    ? "max-w-6xl"
-    : isWideUserStep
-      ? "max-w-5xl"
-      : "max-w-lg";
+  const maxWidthClass = "max-w-lg";
 
   return (
     <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-background">
@@ -215,7 +194,9 @@ const OnboardingLayoutInner = () => {
 
       {/* ── SCROLLABLE CONTENT ── */}
       <main className="flex-1 overflow-y-auto flex flex-col">
-        <div className={cn("w-full mx-auto flex-1 flex flex-col", maxWidthClass)}>
+        <div
+          className={cn("w-full mx-auto flex-1 flex flex-col", maxWidthClass)}
+        >
           <Outlet />
         </div>
       </main>

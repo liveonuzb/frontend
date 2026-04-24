@@ -83,18 +83,35 @@ const Index = () => {
     <div className="relative flex h-full flex-1 flex-col justify-center overflow-hidden pt-3 md:pt-8  px-5">
       <PageAura tone={tone} />
 
-      <div className="relative z-10 flex w-full flex-1 flex-col justify-center md:mx-auto md:max-w-4xl">
+      <div className="relative z-10 flex w-full flex-1 flex-col justify-center md:mx-auto">
         <OnboardingQuestion
           question={
             firstName ? `${firstName} how tall are you?` : "How tall are you?"
           }
         />
 
+        <motion.div
+          className={cn(
+            "mx-auto max-w-[190px] rounded-[24px] border bg-background/85 px-4 py-3 text-center backdrop-blur md:max-w-[240px]",
+            tone.border,
+          )}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.24 }}
+        >
+          <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground md:text-xs">
+            Height
+          </p>
+          <p className="mt-1 text-base font-bold md:text-lg">{profile.title}</p>
+          <p className="mt-1 text-xs text-muted-foreground md:text-sm">
+            {currentHeight} cm
+          </p>
+        </motion.div>
         <div className="flex w-full items-end justify-center gap-4 md:gap-8">
           <AnimatePresence mode="wait">
             <motion.div
               key={`${illustration.src}-${currentHeight}`}
-              className="flex min-h-[260px] flex-1 items-end justify-end md:min-h-[420px]"
+              className="flex min-h-[350px] flex-1 items-end justify-center md:min-h-[360px]"
               initial={{ opacity: 0, y: 20, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -12, scale: 0.98 }}
@@ -110,34 +127,13 @@ const Index = () => {
           </AnimatePresence>
 
           <div className="flex shrink-0 flex-col items-center gap-3">
-            <motion.div
-              key={`height-profile-${currentHeight}`}
-              className={cn(
-                "max-w-[190px] rounded-[24px] border bg-background/85 px-4 py-3 text-center backdrop-blur md:max-w-[240px]",
-                tone.border,
-              )}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.24 }}
-            >
-              <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground md:text-xs">
-                Height
-              </p>
-              <p className="mt-1 text-base font-bold md:text-lg">
-                {profile.title}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground md:text-sm">
-                {currentHeight} cm
-              </p>
-            </motion.div>
-
             <div
               className={cn(
                 "flex items-center gap-2 rounded-[30px] border bg-background/80 px-2 py-2 backdrop-blur",
                 tone.border,
               )}
             >
-              <div className="w-20">
+              <div className="w-14">
                 <ScrollPicker
                   items={heightItems}
                   value={currentHeight}
@@ -151,10 +147,6 @@ const Index = () => {
                 cm
               </span>
             </div>
-
-            <p className="max-w-[190px] text-center text-xs text-muted-foreground md:max-w-[240px] md:text-sm">
-              {profile.note}
-            </p>
           </div>
         </div>
       </div>

@@ -16,6 +16,7 @@ import {
   getAuthErrorMessage,
   getPostAuthRoute,
 } from "@/modules/auth/lib/auth-utils";
+import { useAuthMobileAutoFocus } from "@/modules/auth/lib/mobile-keyboard";
 import { useAuthStore } from "@/store";
 
 const SetPasswordForm = () => {
@@ -23,6 +24,7 @@ const SetPasswordForm = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user, initializeUser, isAuthenticated } = useAuthStore();
+  const passwordAutoFocus = useAuthMobileAutoFocus();
 
   const schema = z
     .object({
@@ -103,8 +105,14 @@ const SetPasswordForm = () => {
                 id="setup-password"
                 className={"h-10 md:h-11 px-5 !text-base"}
                 autoComplete="new-password"
+                enterKeyHint="done"
                 aria-invalid={!!get(fieldState, "error")}
                 {...field}
+                ref={(node) => {
+                  field.ref(node);
+                  passwordAutoFocus.ref(node);
+                }}
+                autoFocus={passwordAutoFocus.autoFocus}
               />
               <PasswordStrength password={field.value} />
               <FieldError
@@ -130,6 +138,7 @@ const SetPasswordForm = () => {
                 id="setup-confirm-password"
                 className={"h-10 md:h-11 px-5 !text-base"}
                 autoComplete="new-password"
+                enterKeyHint="done"
                 aria-invalid={!!get(fieldState, "error")}
                 {...field}
               />

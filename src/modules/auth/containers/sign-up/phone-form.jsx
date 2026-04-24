@@ -15,6 +15,7 @@ import {
   getAuthErrorMessage,
   getOtpToastDescription,
 } from "@/modules/auth/lib/auth-utils.js";
+import { useAuthMobileAutoFocus } from "@/modules/auth/lib/mobile-keyboard";
 import { useTranslation } from "react-i18next";
 import { get, isEqual } from "lodash";
 
@@ -22,6 +23,7 @@ const PhoneForm = ({ referralCode }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { clearPasswordReset, setPendingVerification } = useAuthStore();
+  const phoneAutoFocus = useAuthMobileAutoFocus();
 
   const schema = z
     .object({
@@ -92,9 +94,28 @@ const PhoneForm = ({ referralCode }) => {
   };
 
   const isSubmitting = get(formState, "isSubmitting");
+  const submitForm = handleSubmit(onSubmit);
+
+  const handleFormKeyDown = (event) => {
+    if (
+      event.key !== "Enter" ||
+      event.shiftKey ||
+      event.nativeEvent?.isComposing ||
+      event.target instanceof HTMLTextAreaElement
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    submitForm();
+  };
 
   return (
-    <form className={"flex flex-col gap-8"} onSubmit={handleSubmit(onSubmit)}>
+    <form
+      className={"flex flex-col gap-8"}
+      onSubmit={submitForm}
+      onKeyDown={handleFormKeyDown}
+    >
       <Field>
         <FieldLabel htmlFor="signup-phone">
           {t("auth.signUp.phoneLabel")}
@@ -110,8 +131,14 @@ const PhoneForm = ({ referralCode }) => {
                 defaultCountry={"UZ"}
                 type="tel"
                 autoComplete="tel"
+                enterKeyHint="done"
                 aria-invalid={!!get(fieldState, "error")}
                 {...field}
+                ref={(node) => {
+                  field.ref(node);
+                  phoneAutoFocus.ref(node);
+                }}
+                autoFocus={phoneAutoFocus.autoFocus}
               />
               <FieldError
                 className={"absolute -bottom-6"}
@@ -137,6 +164,7 @@ const PhoneForm = ({ referralCode }) => {
                 id="signup-phone-password"
                 className={"h-10 md:h-11 px-5 !text-base"}
                 autoComplete="new-password"
+                enterKeyHint="done"
                 aria-invalid={!!get(fieldState, "error")}
                 {...field}
               />
@@ -165,6 +193,7 @@ const PhoneForm = ({ referralCode }) => {
                 id="signup-phone-confirm-password"
                 className={"h-10 md:h-11 px-5 !text-base"}
                 autoComplete="new-password"
+                enterKeyHint="done"
                 aria-invalid={!!get(fieldState, "error")}
                 {...field}
               />

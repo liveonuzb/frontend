@@ -59,7 +59,7 @@ const Index = () => {
       <div className="relative z-10 flex w-full flex-1 flex-col justify-center md:mx-auto md:max-w-4xl">
         <OnboardingQuestion question="What should we call you?" />
 
-        <div className="grid items-center gap-6 md:grid-cols-[0.95fr_1.05fr] md:gap-10">
+        <div className="grid items-center md:grid-cols-[0.95fr_1.05fr] md:gap-10">
           <motion.div
             className="flex items-end justify-center"
             initial={{ opacity: 0, y: 22, scale: 0.96 }}
@@ -67,31 +67,16 @@ const Index = () => {
             transition={{ duration: 0.28, ease: "easeOut" }}
           >
             <img
-              src="/onboarding/curious.png"
+              src="/curious.png"
               alt="Onboarding illustration"
               className="max-h-[240px] w-full max-w-[240px] object-contain md:max-h-[340px] md:max-w-[340px]"
             />
           </motion.div>
 
           <form
-            className={cn(
-              "rounded-[32px] border bg-background/85 p-5 backdrop-blur md:p-7",
-              tone.border,
-            )}
+            className={cn("", tone.border)}
             onSubmit={handleSubmit(onSubmit)}
           >
-            <div className="mb-5">
-              <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground md:text-xs">
-                Profile
-              </p>
-              <p className="mt-1 text-lg font-bold md:text-2xl">
-                Your account basics
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                This name will personalize your plan, reminders and coach views.
-              </p>
-            </div>
-
             <div className="flex flex-col gap-5">
               <Field>
                 <Controller

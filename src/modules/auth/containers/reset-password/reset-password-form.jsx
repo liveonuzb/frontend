@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { usePostQuery } from "@/hooks/api";
 import { useAuthStore } from "@/store";
 import { getAuthErrorMessage } from "@/modules/auth/lib/auth-utils.js";
+import { useAuthMobileAutoFocus } from "@/modules/auth/lib/mobile-keyboard";
 import { useTranslation } from "react-i18next";
 import { get, isEqual } from "lodash";
 
@@ -32,6 +33,7 @@ const ResetPasswordForm = () => {
   const navigate = useNavigate();
   const { clearPasswordReset, clearPendingVerification, passwordReset } =
     useAuthStore();
+  const passwordAutoFocus = useAuthMobileAutoFocus();
 
   const schema = z
     .object({
@@ -127,9 +129,15 @@ const ResetPasswordForm = () => {
               <PasswordInput
                 id="reset-password"
                 autoComplete="new-password"
+                enterKeyHint="done"
                 className={"h-10 md:h-11 px-5 !text-base"}
                 aria-invalid={!!get(fieldState, "error")}
                 {...field}
+                ref={(node) => {
+                  field.ref(node);
+                  passwordAutoFocus.ref(node);
+                }}
+                autoFocus={passwordAutoFocus.autoFocus}
               />
               <PasswordStrength password={field.value} />
               <FieldError
@@ -155,6 +163,7 @@ const ResetPasswordForm = () => {
               <PasswordInput
                 id="reset-confirm-password"
                 autoComplete="new-password"
+                enterKeyHint="done"
                 className={"h-10 md:h-11 px-5 !text-base"}
                 aria-invalid={!!get(fieldState, "error")}
                 {...field}

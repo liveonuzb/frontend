@@ -14,6 +14,7 @@ import {
   getAuthErrorMessage,
   getOtpToastDescription,
 } from "@/modules/auth/lib/auth-utils.js";
+import { useAuthMobileAutoFocus } from "@/modules/auth/lib/mobile-keyboard";
 import { useTranslation } from "react-i18next";
 import { get } from "lodash";
 
@@ -21,6 +22,7 @@ const PhoneForm = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { clearPasswordReset, setPendingVerification } = useAuthStore();
+  const phoneAutoFocus = useAuthMobileAutoFocus();
 
   const schema = z.object({
     phone: z
@@ -90,8 +92,14 @@ const PhoneForm = () => {
                 defaultCountry={"UZ"}
                 type="tel"
                 autoComplete="tel"
+                enterKeyHint="done"
                 aria-invalid={!!get(fieldState, "error")}
                 {...field}
+                ref={(node) => {
+                  field.ref(node);
+                  phoneAutoFocus.ref(node);
+                }}
+                autoFocus={phoneAutoFocus.autoFocus}
               />
               <FieldError
                 className={"absolute -bottom-6"}

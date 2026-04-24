@@ -131,7 +131,7 @@ const Index = () => {
                 <img
                   src={item.image}
                   alt={item.label}
-                  className="h-32 object-contain md:h-44"
+                  className="h-24 object-contain md:h-44"
                 />
                 <div className="text-center">
                   <span className="text-base font-bold">{item.label}</span>

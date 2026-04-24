@@ -16,6 +16,7 @@ import {
   getAuthErrorMessage,
   getPostAuthRoute,
 } from "@/modules/auth/lib/auth-utils.js";
+import { useAuthMobileAutoFocus } from "@/modules/auth/lib/mobile-keyboard";
 import { useTranslation } from "react-i18next";
 import { get } from "lodash";
 
@@ -24,6 +25,7 @@ const PhoneForm = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { completeAuthentication } = useAuthStore();
+  const phoneAutoFocus = useAuthMobileAutoFocus();
 
   const schema = z.object({
     phone: z
@@ -70,9 +72,28 @@ const PhoneForm = () => {
   };
 
   const isSubmitting = get(formState, "isSubmitting");
+  const submitForm = handleSubmit(onSubmit);
+
+  const handleFormKeyDown = (event) => {
+    if (
+      event.key !== "Enter" ||
+      event.shiftKey ||
+      event.nativeEvent?.isComposing ||
+      event.target instanceof HTMLTextAreaElement
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    submitForm();
+  };
 
   return (
-    <form className={"flex flex-col gap-8"} onSubmit={handleSubmit(onSubmit)}>
+    <form
+      className={"flex flex-col gap-8"}
+      onSubmit={submitForm}
+      onKeyDown={handleFormKeyDown}
+    >
       <Field>
         <FieldLabel htmlFor="phone">{t("auth.signIn.phoneTab")}</FieldLabel>
         <Controller
@@ -86,8 +107,14 @@ const PhoneForm = () => {
                 defaultCountry={"UZ"}
                 type="tel"
                 autoComplete="tel"
+                enterKeyHint="done"
                 aria-invalid={!!get(fieldState, "error")}
                 {...field}
+                ref={(node) => {
+                  field.ref(node);
+                  phoneAutoFocus.ref(node);
+                }}
+                autoFocus={phoneAutoFocus.autoFocus}
               />
               <FieldError
                 className={"absolute -bottom-6"}
@@ -120,6 +147,7 @@ const PhoneForm = () => {
               <PasswordInput
                 id="phone-password"
                 autoComplete="current-password"
+                enterKeyHint="done"
                 className={"h-10 md:h-11 px-5 !text-base"}
                 aria-invalid={!!get(fieldState, "error")}
                 {...field}

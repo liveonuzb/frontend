@@ -9,9 +9,14 @@ import {
 } from "lucide-react";
 import LanguageSwitcher from "@/components/language-switcher";
 import ThemeToggle from "@/components/theme-toggle";
+import {
+  AuthMobileKeyboardProvider,
+  useMobileKeyboardOpen,
+} from "@/modules/auth/lib/mobile-keyboard";
 
 const Index = () => {
   const { t } = useTranslation();
+  const keyboardOpen = useMobileKeyboardOpen();
   const panelCopy = {
     panel: {
       badge: t("auth.layout.panelPill"),
@@ -44,58 +49,47 @@ const Index = () => {
   };
 
   return (
-    <div className="h-svh min-h-svh overflow-hidden">
-      <div className="grid h-full min-h-0 md:grid-cols-[minmax(390px,26vw)_1fr]">
-        <section className="relative z-10 flex min-h-0 flex-col px-6 py-6">
-          <header className="flex shrink-0 items-center justify-between">
-            <Link
-              to="/"
-              className="inline-flex items-center transition-opacity hover:opacity-80"
-              aria-label={t("auth.layout.logoAlt")}
-            >
-              <img
-                src="/logo.png"
-                className="size-16 object-contain"
-                alt={t("auth.layout.logoAlt")}
-              />
-            </Link>
-          </header>
+    <AuthMobileKeyboardProvider value={keyboardOpen}>
+      <div className="h-svh min-h-svh overflow-hidden p-5 md:p-0">
+        <div className="grid h-full min-h-0 md:grid-cols-[minmax(390px,26vw)_1fr]">
+          <section className="relative z-10 flex min-h-0 flex-col">
+            <header className="flex shrink-0 items-center justify-between">
+              <Link
+                to="/"
+                className="inline-flex items-center transition-opacity hover:opacity-80"
+                aria-label={t("auth.layout.logoAlt")}
+              >
+                <img
+                  src="/logo.png"
+                  className="size-16 object-contain"
+                  alt={t("auth.layout.logoAlt")}
+                />
+              </Link>
+              <div className="flex items-center gap-3">
+                <span className="grid size-9 place-items-center rounded-full transition-colors">
+                  <ThemeToggle />
+                </span>
+                <LanguageSwitcher compact />
+              </div>
+            </header>
 
-          <main className="flex min-h-0 flex-1 items-center">
-            <Outlet />
-          </main>
-
-          <footer className="flex shrink-0 items-center justify-center gap-5 pb-1">
-            <span className="grid size-9 place-items-center rounded-full transition-colors ">
-              <ThemeToggle />
-            </span>
-            <LanguageSwitcher compact />
-          </footer>
-        </section>
-
-        <div className="hidden h-svh min-h-0 items-stretch overflow-hidden p-3 pl-0 md:flex lg:p-5 lg:pl-0">
-          <MarketingPanel copy={panelCopy} vibe="warm" />
+            <main className="flex min-h-0 flex-1 items-start justify-center pt-8 md:items-center md:pt-0">
+              <Outlet />
+            </main>
+          </section>
+          <div className="hidden h-svh min-h-0 items-stretch overflow-hidden md:flex">
+            <MarketingPanel copy={panelCopy} vibe="warm" />
+          </div>
         </div>
       </div>
-    </div>
+    </AuthMobileKeyboardProvider>
   );
 };
 
 function MarketingPanel({ copy, vibe }) {
-  const feats = copy.panel.feat;
-  const [idx, setIdx] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setIdx((value) => (value + 1) % feats.length);
-    }, 3200);
-
-    return () => clearInterval(timer);
-  }, [feats.length]);
-
   return (
     <aside
-      className="relative isolate flex h-full min-h-0 w-full flex-col overflow-hidden rounded-[1.75rem] bg-[linear-gradient(145deg,#fb8a4c_0%,#df5238_52%,#9f2c29_100%)] px-7 py-7 text-white shadow-[0_30px_80px_-36px_rgba(86,26,19,0.72)] lg:rounded-[2.15rem] lg:px-9 lg:py-8 xl:px-10"
+      className="relative isolate flex h-full min-h-0 w-full flex-col overflow-hidden bg-[linear-gradient(145deg,#fb8a4c_0%,#df5238_52%,#9f2c29_100%)] text-white shadow-[0_30px_80px_-36px_rgba(86,26,19,0.72)] p-10"
       key={vibe}
     >
       <div className="pointer-events-none absolute inset-0 overflow-hidden mix-blend-overlay">
@@ -115,7 +109,7 @@ function MarketingPanel({ copy, vibe }) {
         </div>
       </header>
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col justify-center py-5">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col p-5">
         <div className="max-w-[620px]">
           <h2 className="whitespace-pre-line text-[clamp(3.35rem,5.7vw,6rem)] font-semibold leading-[0.9] tracking-[-0.068em] text-white">
             {copy.panel.heroStrong}
@@ -130,53 +124,8 @@ function MarketingPanel({ copy, vibe }) {
             {copy.panel.sub}
           </p>
         </div>
-
-        <div className="mt-10 grid max-w-[560px] gap-3">
-          {feats.map(({ Icon, t, v, d }, i) => (
-            <div
-              key={t}
-              className="grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-[1.35rem] border border-white/20 bg-white/11 px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-md transition-[opacity,transform,background-color] duration-300 ease-out hover:bg-white/15"
-              style={{
-                backgroundColor:
-                  i === idx
-                    ? "rgba(255, 255, 255, 0.16)"
-                    : "rgba(255, 255, 255, 0.1)",
-                borderColor:
-                  i === idx
-                    ? "rgba(255, 255, 255, 0.32)"
-                    : "rgba(255, 255, 255, 0.18)",
-                boxShadow:
-                  i === idx
-                    ? "inset 0 1px 0 rgba(255,255,255,0.18), 0 16px 34px -24px rgba(46,0,0,0.48)"
-                    : "inset 0 1px 0 rgba(255,255,255,0.1)",
-                opacity: i === idx ? 1 : 0.72,
-                transform: i === idx ? "translateX(8px)" : "none",
-              }}
-            >
-              <span className="grid size-12 place-items-center rounded-[1rem] border border-white/24 bg-white/12 text-white/90">
-                <Icon className="size-5" strokeWidth={1.8} />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-xs font-medium uppercase tracking-[0.16em] text-white/58">
-                  {t}
-                </span>
-                <span className="mt-1 block truncate text-[clamp(1.2rem,1.9vw,1.72rem)] font-medium leading-none tracking-[-0.032em] text-white">
-                  {v}
-                </span>
-              </span>
-              <span className="rounded-full bg-white/13 px-3.5 py-1.5 font-mono text-xs font-medium tracking-[0.09em] text-white/78">
-                {d}
-              </span>
-            </div>
-          ))}
-        </div>
+        <img src={"/background.png"} alt="" className={"absolute bottom-0"} />
       </div>
-
-      <footer className="relative z-10 flex items-end justify-between gap-6 text-white/88">
-        <span className="text-sm font-medium tracking-wide xl:text-base">
-          {copy.panel.foot}
-        </span>
-      </footer>
     </aside>
   );
 }

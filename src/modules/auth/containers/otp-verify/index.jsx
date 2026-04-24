@@ -38,6 +38,7 @@ const Index = ({ className, ...props }) => {
             : t("auth.otpVerify.subtitleDefault")
         }
       />
+
       <OtpForm />
       <FieldDescription className="text-center text-[0.95rem]">
         <Link to="/auth/sign-in">{t("auth.otpVerify.backToSignIn")}</Link>

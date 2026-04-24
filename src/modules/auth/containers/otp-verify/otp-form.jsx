@@ -20,6 +20,7 @@ import {
   getOtpToastDescription,
   getPostAuthRoute,
 } from "@/modules/auth/lib/auth-utils.js";
+import { useAuthMobileAutoFocus } from "@/modules/auth/lib/mobile-keyboard";
 import { useTranslation } from "react-i18next";
 import { get } from "lodash";
 
@@ -35,6 +36,7 @@ const OtpForm = () => {
     setPasswordReset,
     setPendingVerification,
   } = useAuthStore();
+  const otpAutoFocus = useAuthMobileAutoFocus();
 
   const [countdown, setCountdown] = useState(RESEND_COOLDOWN);
 
@@ -214,6 +216,11 @@ const OtpForm = () => {
                 value={get(field, "value")}
                 onChange={get(field, "onChange")}
                 onComplete={handleSubmit(onSubmit)}
+                ref={(node) => {
+                  field.ref(node);
+                  otpAutoFocus.ref(node);
+                }}
+                autoFocus={otpAutoFocus.autoFocus}
               >
                 <div className="flex flex-wrap justify-start gap-2.5">
                   <InputOTPGroup>
