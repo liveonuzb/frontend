@@ -1,6 +1,7 @@
 # Multi-stage Dockerfile for Web (React + Vite)
 # Stage 1: Build
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
+
 
 LABEL maintainer="Liveon Team"
 LABEL description="Liveon Web Dashboard - Production Build"
@@ -12,7 +13,6 @@ COPY package.json package-lock.json ./
 
 # Install dependencies
 RUN #npm ci --silent
-RUN apk add --no-cache autoconf automake libtool nasm build-base python3
 RUN npm i --legacy-peer-deps
 
 # Copy source code
