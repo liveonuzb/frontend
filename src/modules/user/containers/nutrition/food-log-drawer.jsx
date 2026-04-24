@@ -178,7 +178,7 @@ const FoodLogDrawer = ({
 
               {image && (
                 <div className="mb-4 h-48 overflow-hidden rounded-2xl bg-muted/30">
-                  <img
+                  <img loading="lazy"
                     src={image}
                     alt={food.name}
                     className="h-full w-full object-cover"

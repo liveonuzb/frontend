@@ -59,8 +59,8 @@ const Index = () => {
                 className="inline-flex items-center transition-opacity hover:opacity-80"
                 aria-label={t("auth.layout.logoAlt")}
               >
-                <img
-                  src="/logo-main.png"
+                <img loading="lazy"
+                  src="/logo-main.webp"
                   className="size-16 object-contain"
                   alt={t("auth.layout.logoAlt")}
                 />
@@ -123,7 +123,7 @@ function MarketingPanel({ copy, vibe }) {
             {copy.panel.sub}
           </p>
         </div>
-        <img src={"/background.png"} alt="" className={"absolute bottom-0"} />
+        <img loading="lazy" src={"/background.webp"} alt="" className={"absolute bottom-0"} />
       </div>
     </aside>
   );

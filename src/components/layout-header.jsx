@@ -37,7 +37,7 @@ const LayoutHeader = ({
         <div className="flex w-full items-center justify-between gap-2">
           <SidebarTrigger className="-ml-1" />
           <Link to={"/"} className={"absolute left-1/2 -translate-x-1/2"}>
-            <img
+            <img loading="lazy"
               src="/logo-mini.png"
               alt="Logo"
               className="pointer-events-none size-8 "

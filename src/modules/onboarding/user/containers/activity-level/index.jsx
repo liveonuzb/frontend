@@ -18,7 +18,7 @@ const levels = [
     label: "Sedentary",
     title: "Low output",
     description: "Mostly sitting, very little training.",
-    image: "/onboarding/slow.png",
+    image: "/optimized/onboarding/slow.webp",
     tone: ONBOARDING_ACCENTS.amber,
   },
   {
@@ -26,7 +26,7 @@ const levels = [
     label: "Lightly active",
     title: "Easy routine",
     description: "Light movement one to three days a week.",
-    image: "/onboarding/recommend.png",
+    image: "/optimized/onboarding/recommend.webp",
     tone: ONBOARDING_ACCENTS.sky,
   },
   {
@@ -34,7 +34,7 @@ const levels = [
     label: "Moderately active",
     title: "Balanced routine",
     description: "Steady training three to five days a week.",
-    image: "/onboarding/focussed.png",
+    image: "/optimized/onboarding/focussed.webp",
     tone: ONBOARDING_ACCENTS.green,
     recommended: true,
   },
@@ -43,7 +43,7 @@ const levels = [
     label: "Very active",
     title: "High output",
     description: "Hard sessions on most days of the week.",
-    image: "/onboarding/aggressive.png",
+    image: "/optimized/onboarding/aggressive.webp",
     tone: ONBOARDING_ACCENTS.rose,
   },
 ];
@@ -101,7 +101,7 @@ const Index = () => {
               exit={{ opacity: 0, y: -12, scale: 0.98 }}
               transition={{ duration: 0.28, ease: "easeOut" }}
             >
-              <img
+              <img loading="lazy"
                 src={selectedLevel.image}
                 alt={selectedLevel.label}
                 className="max-h-[220px] w-full max-w-[250px] object-contain md:max-h-[290px] md:max-w-[320px]"
@@ -148,7 +148,7 @@ const Index = () => {
                 )}
                 whileTap={{ scale: 0.98 }}
               >
-                <img
+                <img loading="lazy"
                   src={level.image}
                   alt={level.label}
                   className="size-10 rounded-2xl object-cover md:size-16"

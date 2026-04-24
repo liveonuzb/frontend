@@ -324,7 +324,7 @@ const ExerciseCard = ({
                   <div className="space-y-6 pt-4">
                     {get(details, "imageUrl") ? (
                       <div className="aspect-video w-full bg-muted rounded-2xl overflow-hidden border shadow-inner">
-                        <img
+                        <img loading="lazy"
                           src={get(details, "imageUrl")}
                           alt={get(exercise, "name")}
                           className="w-full h-full object-cover"
@@ -370,7 +370,7 @@ const ExerciseCard = ({
                                     key={idx}
                                     className="size-10 rounded-lg border bg-background overflow-hidden shadow-sm"
                                   >
-                                    <img
+                                    <img loading="lazy"
                                       src={get(img, "url")}
                                       alt="equipment"
                                       className="size-full object-cover"
@@ -423,7 +423,7 @@ const ExerciseCard = ({
                                 key={idx}
                                 className="relative size-20 shrink-0 overflow-hidden rounded-2xl border bg-muted/20"
                               >
-                                <img
+                                <img loading="lazy"
                                   src={get(img, "url")}
                                   alt="equipment"
                                   className="size-full object-cover"

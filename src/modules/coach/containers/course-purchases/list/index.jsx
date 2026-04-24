@@ -615,7 +615,7 @@ const CoursePurchasesListPage = () => {
                     <p className="text-sm font-medium">Receiptlar</p>
                     {latestReceipt ? (
                       <div className="mt-3 space-y-3">
-                        <img
+                        <img loading="lazy"
                           src={latestReceipt.imageUrl}
                           alt="Receipt preview"
                           className="h-44 w-full rounded-[1.25rem] object-cover"

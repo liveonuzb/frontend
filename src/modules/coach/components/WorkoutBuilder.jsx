@@ -307,7 +307,7 @@ const LibraryItem = ({ ex }) => {
         >
             <div className="flex items-center gap-3 min-w-0">
                 <div className="size-10 rounded-lg bg-muted flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors overflow-hidden">
-                    {ex.imageUrl ? <img src={ex.imageUrl} className="size-full object-cover" /> : <DumbbellIcon className="size-5 text-primary/40" />}
+                    {ex.imageUrl ? <img loading="lazy" src={ex.imageUrl} className="size-full object-cover" /> : <DumbbellIcon className="size-5 text-primary/40" />}
                 </div>
                 <div className="min-w-0">
                     <p className="text-sm font-bold truncate">{ex.name}</p>

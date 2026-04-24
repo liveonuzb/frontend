@@ -82,7 +82,7 @@ export const useColumns = ({
           return (
             <div className="size-10 shrink-0 overflow-hidden rounded-lg border bg-muted/30 flex items-center justify-center">
               {url ? (
-                <img
+                <img loading="lazy"
                   src={url}
                   alt={info.row.original.title || ""}
                   className="size-full object-cover"

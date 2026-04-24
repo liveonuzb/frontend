@@ -129,7 +129,7 @@ const SavedMealsDrawer = ({
                       <div className="flex items-center gap-3">
                         <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-muted/30">
                           {item.imageUrl ? (
-                            <img
+                            <img loading="lazy"
                               src={item.imageUrl}
                               alt={item.name}
                               className="size-full object-cover"

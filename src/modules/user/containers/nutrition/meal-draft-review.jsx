@@ -319,7 +319,7 @@ export const MealDraftCard = ({
       <div className="flex items-start gap-3">
         <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-muted/30">
           {imageUrl ? (
-            <img
+            <img loading="lazy"
               src={imageUrl}
               alt={item?.title || "Ovqat"}
               className="size-full object-cover"

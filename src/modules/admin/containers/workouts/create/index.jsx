@@ -144,7 +144,7 @@ const ImageUploadPreview = ({
 
       {displayUrl ? (
         <>
-          <img
+          <img loading="lazy"
             src={displayUrl}
             alt="Preview"
             className="size-full object-cover"

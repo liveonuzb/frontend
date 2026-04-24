@@ -42,7 +42,7 @@ export const ImageUploadField = ({
           )}
         >
           {value ? (
-            <img
+            <img loading="lazy"
               src={value}
               alt={alt}
               className={cn("size-full object-cover", imageClassName)}

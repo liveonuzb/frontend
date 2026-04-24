@@ -156,7 +156,7 @@ export const getOnboardingBmiMeta = (weightValue, heightValue) => {
 const buildIllustrationPath = (gender, ageValue, tier = DEFAULT_TIER) => {
   if (!gender) {
     return {
-      src: "/onboarding/curious.png",
+      src: "/optimized/onboarding/curious.webp",
       alt: "Onboarding illustration",
     };
   }
@@ -166,7 +166,7 @@ const buildIllustrationPath = (gender, ageValue, tier = DEFAULT_TIER) => {
   const variantPrefix = ageVariant ? `${gender}-${ageVariant}` : gender;
 
   return {
-    src: `/onboarding/${variantPrefix}-${normalizedTier}.png`,
+    src: `/optimized/onboarding/${variantPrefix}-${normalizedTier}.webp`,
     alt: `${variantPrefix} illustration`,
   };
 };

@@ -149,13 +149,13 @@ export const InteractiveBodyModel = ({
           <div className="absolute inset-0 bg-primary/5 blur-[80px] rounded-full" />
 
           {gender === "female" ? (
-            <img
+            <img loading="lazy"
               src="/woman.png"
               alt="Female Model"
               className="h-[95%] w-auto drop-shadow-xl opacity-90 transition-all duration-1000 object-contain"
             />
           ) : (
-            <img
+            <img loading="lazy"
               src="/man.png"
               alt="Male Model"
               className="h-[95%] w-auto drop-shadow-xl opacity-90 transition-all duration-1000 object-contain"

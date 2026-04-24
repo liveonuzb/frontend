@@ -76,7 +76,7 @@ const getLanguageLabel = (language, t) => {
 const REPORT_LOADING_SCENES = [
   {
     key: "collecting",
-    imageSrc: "/onboarding/report-1.png",
+    imageSrc: "/optimized/onboarding/report-1.webp",
     imageClassName: "object-[50%_35%]",
     glowClassName: "from-cyan-400/24 via-emerald-300/12 to-transparent",
     orbitClassName: "border-cyan-300/35",
@@ -103,7 +103,7 @@ const REPORT_LOADING_SCENES = [
   },
   {
     key: "analyzing",
-    imageSrc: "/onboarding/report-2.png",
+    imageSrc: "/optimized/onboarding/report-2.webp",
     imageClassName: "object-[50%_38%]",
     glowClassName: "from-indigo-400/22 via-sky-300/12 to-transparent",
     orbitClassName: "border-indigo-300/35",
@@ -130,7 +130,7 @@ const REPORT_LOADING_SCENES = [
   },
   {
     key: "planning",
-    imageSrc: "/onboarding/report-3.png",
+    imageSrc: "/optimized/onboarding/report-3.webp",
     imageClassName: "object-[50%_42%]",
     glowClassName: "from-amber-300/24 via-lime-300/12 to-transparent",
     orbitClassName: "border-amber-300/40",
@@ -157,7 +157,7 @@ const REPORT_LOADING_SCENES = [
   },
   {
     key: "finalizing",
-    imageSrc: "/onboarding/report-4.png",
+    imageSrc: "/optimized/onboarding/report-4.webp",
     imageClassName: "object-[50%_44%]",
     glowClassName: "from-yellow-300/28 via-orange-300/16 to-transparent",
     orbitClassName: "border-yellow-300/45",
@@ -295,7 +295,7 @@ const ReportLoadingState = ({ slides, activeStage, onSelectStage, t }) => {
                           slide.imageClassName,
                         )}
                         onError={(event) => {
-                          event.currentTarget.src = "/onboarding/report-1.png";
+                          event.currentTarget.src = "/optimized/onboarding/report-1.webp";
                         }}
                         animate={{ y: [0, -10, 0], scale: [1, 1.015, 1] }}
                         transition={{
@@ -599,14 +599,14 @@ const ReportContent = ({
       title: t("onboarding.report.sections.nutrition", {
         defaultValue: "Nutrition",
       }),
-      image: "/onboarding/report-1.png",
+      image: "/optimized/onboarding/report-1.webp",
       Icon: SaladIcon,
       section: get(report, "report.nutritionGuidance"),
     },
     {
       key: "water",
       title: t("onboarding.report.sections.water", { defaultValue: "Water" }),
-      image: "/onboarding/report-2.png",
+      image: "/optimized/onboarding/report-2.webp",
       Icon: DropletsIcon,
       section: get(report, "report.hydrationGuidance"),
     },
@@ -615,14 +615,14 @@ const ReportContent = ({
       title: t("onboarding.report.sections.workout", {
         defaultValue: "Workout",
       }),
-      image: "/onboarding/report-3.png",
+      image: "/optimized/onboarding/report-3.webp",
       Icon: DumbbellIcon,
       section: get(report, "report.movementGuidance"),
     },
     {
       key: "sleep",
       title: t("onboarding.report.sections.sleep", { defaultValue: "Sleep" }),
-      image: "/onboarding/report-4.png",
+      image: "/optimized/onboarding/report-4.webp",
       Icon: MoonIcon,
       section: {
         summary: t("onboarding.report.sleepSummary", {
@@ -636,7 +636,7 @@ const ReportContent = ({
       title: t("onboarding.report.sections.progress", {
         defaultValue: "Progress",
       }),
-      image: "/onboarding/report-1.png",
+      image: "/optimized/onboarding/report-1.webp",
       Icon: TrendingUpIcon,
       section: get(report, "report.goalInterpretation"),
     },
@@ -786,7 +786,7 @@ const ReportContent = ({
               </div>
             </motion.div>
             <motion.img
-              src="/onboarding/report-1.png"
+              src="/optimized/onboarding/report-1.webp"
               alt=""
               className="absolute bottom-0 left-1/2 h-[250px] w-[200px] -translate-x-1/2 object-contain drop-shadow-[0_30px_60px_rgba(15,23,42,0.18)] sm:h-[370px] sm:w-[280px] lg:h-[470px] lg:w-[350px]"
               animate={{ y: [0, -10, 0], scale: [1, 1.015, 1] }}
@@ -893,12 +893,12 @@ const ReportContent = ({
               transition={{ delay: index * 0.04, duration: 0.28 }}
             >
               <div className="relative h-28 bg-[#FFF7ED] sm:h-36">
-                <img
+                <img loading="lazy"
                   src={image}
                   alt=""
                   className="absolute bottom-0 left-1/2 h-32 w-28 -translate-x-1/2 object-contain sm:h-44 sm:w-36"
                   onError={(event) => {
-                    event.currentTarget.src = "/onboarding/report-1.png";
+                    event.currentTarget.src = "/optimized/onboarding/report-1.webp";
                   }}
                 />
                 <div className="absolute left-3 top-3 flex size-8 items-center justify-center rounded-xl bg-white text-[#E68A00] shadow-sm sm:left-4 sm:top-4 sm:size-10">

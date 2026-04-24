@@ -134,7 +134,7 @@ const ChatInfoSidebar = ({
                     <div className="flex-1 overflow-y-auto p-6 space-y-6">
                         <div className="aspect-square rounded-3xl bg-muted overflow-hidden border shadow-inner flex items-center justify-center relative">
                             {selectedMeal.image ? (
-                                <img src={selectedMeal.image} alt={selectedMeal.name} className="w-full h-full object-cover" />
+                                <img loading="lazy" src={selectedMeal.image} alt={selectedMeal.name} className="w-full h-full object-cover" />
                             ) : (
                                 <UtensilsIcon className="size-20 opacity-10" />
                             )}
@@ -355,7 +355,7 @@ const ChatInfoSidebar = ({
                                 <div className="grid grid-cols-3 gap-1 p-1">
                                     {media.map((m, i) => (
                                         <div key={i} className="aspect-square rounded-md overflow-hidden bg-muted cursor-pointer hover:opacity-80 transition-opacity border">
-                                            <img src={m.mediaUrl} alt="media" className="w-full h-full object-cover" />
+                                            <img loading="lazy" src={m.mediaUrl} alt="media" className="w-full h-full object-cover" />
                                         </div>
                                     ))}
                                 </div>

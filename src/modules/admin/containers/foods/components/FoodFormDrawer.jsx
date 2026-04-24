@@ -197,7 +197,7 @@ const FoodFormDrawer = ({
                 <div className="flex items-center gap-4">
                   <div className="size-20 rounded-2xl border bg-muted overflow-hidden flex items-center justify-center shrink-0">
                     {imagePreview ? (
-                      <img
+                      <img loading="lazy"
                         src={imagePreview}
                         alt="preview"
                         className="size-full object-cover"

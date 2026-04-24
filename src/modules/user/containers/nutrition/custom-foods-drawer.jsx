@@ -91,7 +91,7 @@ const ImageUploadSquare = ({ imageUrl, isUploading, onPick, onRemove }) => {
       >
         {imageUrl ? (
           <>
-            <img
+            <img loading="lazy"
               src={imageUrl}
               alt="Taom rasmi"
               className="absolute inset-0 size-full object-cover"
@@ -552,7 +552,7 @@ const CustomFoodsDrawer = ({
                     className="flex items-center gap-3 rounded-2xl border bg-card px-4 py-3"
                   >
                     {item.imageUrl ? (
-                      <img
+                      <img loading="lazy"
                         src={item.imageUrl}
                         alt={item.name}
                         className="size-10 rounded-xl object-cover shrink-0"
@@ -648,7 +648,7 @@ const CustomFoodsDrawer = ({
             <DrawerBody className="space-y-6">
               {portionItem.imageUrl ? (
                 <div className="h-36 w-full rounded-2xl overflow-hidden bg-muted/30 -mt-2">
-                  <img
+                  <img loading="lazy"
                     src={portionItem.imageUrl}
                     alt={portionItem.name}
                     className="w-full h-full object-cover"

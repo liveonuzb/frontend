@@ -210,7 +210,7 @@ const ChallengeCard = ({
       {/* Card Image Wrapper */}
       <div className="relative aspect-[16/10] overflow-hidden">
         {challenge?.image?.url ? (
-          <img
+          <img loading="lazy"
             src={challenge.image.url}
             alt={challenge.title}
             className="size-full object-cover transition-transform duration-700 group-hover:scale-110"

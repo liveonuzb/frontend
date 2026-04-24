@@ -103,7 +103,7 @@ const Index = () => {
               exit={{ opacity: 0, y: -12, scale: 0.98 }}
               transition={{ duration: 0.28, ease: "easeOut" }}
             >
-              <img
+              <img loading="lazy"
                 src={illustration.src}
                 className="max-h-full w-full max-w-[320px] object-contain"
                 alt={illustration.alt}

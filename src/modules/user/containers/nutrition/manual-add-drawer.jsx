@@ -369,7 +369,7 @@ export default function ManualAddDrawer({
                     >
                       <div className="size-12 rounded-2xl bg-muted/50 flex items-center justify-center shrink-0 overflow-hidden">
                         {food.image ? (
-                          <img src={food.image} alt={food.name} className="size-full object-cover" />
+                          <img loading="lazy" src={food.image} alt={food.name} className="size-full object-cover" />
                         ) : (
                           <span className="text-2xl">{food.emoji}</span>
                         )}

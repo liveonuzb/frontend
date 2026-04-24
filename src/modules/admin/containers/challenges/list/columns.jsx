@@ -197,7 +197,7 @@ export const useColumns = ({
             <div className="flex min-w-0 items-start gap-3">
               <div className="size-12 shrink-0 overflow-hidden rounded-xl border bg-muted/30">
                 {imageUrl ? (
-                  <img
+                  <img loading="lazy"
                     src={imageUrl}
                     alt={localizedTitle || "Challenge"}
                     className="h-full w-full object-cover"

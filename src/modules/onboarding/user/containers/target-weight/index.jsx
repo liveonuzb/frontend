@@ -145,7 +145,7 @@ const Index = () => {
               exit={{ opacity: 0, y: -12, scale: 0.98 }}
               transition={{ duration: 0.28, ease: "easeOut" }}
             >
-              <img
+              <img loading="lazy"
                 src={illustration.src}
                 alt={illustration.alt}
                 className="max-h-full object-contain transition-all duration-300 md:max-w-[320px]"

@@ -92,7 +92,7 @@ export default function MediaUploadDialog({ open, file, onSend, onCancel }) {
             {loading ? (
               <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             ) : isImage && preview ? (
-              <img
+              <img loading="lazy"
                 src={preview}
                 alt="Preview"
                 className="max-w-full max-h-[50vh] object-contain rounded-lg shadow-lg"

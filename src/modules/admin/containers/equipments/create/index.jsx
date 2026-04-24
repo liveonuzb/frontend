@@ -67,7 +67,7 @@ const ImageUploadPreview = ({ file, onChange, onRemove, label = "Rasm" }) => {
       />
       {preview ? (
         <>
-          <img src={preview} alt="Preview" className="size-full object-cover" />
+          <img loading="lazy" src={preview} alt="Preview" className="size-full object-cover" />
           <div className="absolute inset-x-0 bottom-0 top-1/2 z-20 flex items-center justify-center bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity group-hover:opacity-100">
             <span className="mt-4 text-[10px] font-medium text-white shadow-sm">
               O'zgartirish

@@ -1,7 +1,7 @@
 const FoodImageCell = ({ food }) => {
   if (food.imageUrl) {
     return (
-      <img
+      <img loading="lazy"
         src={food.imageUrl}
         alt={food.name}
         className="size-10 rounded-xl object-cover border"

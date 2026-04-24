@@ -131,7 +131,7 @@ const CategoryFoodsGrid = ({ categoryId, currentLanguage }) => {
           return (
             <div className="flex items-center gap-3">
               {get(food, "imageUrl") ? (
-                <img
+                <img loading="lazy"
                   src={get(food, "imageUrl")}
                   alt={get(food, "name")}
                   className="size-10 rounded-xl border object-cover"

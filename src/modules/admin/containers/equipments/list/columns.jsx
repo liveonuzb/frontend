@@ -79,7 +79,7 @@ export const useColumns = ({
 
           return equipment.imageUrl ? (
             <div className="size-12 overflow-hidden rounded-xl border bg-muted">
-              <img
+              <img loading="lazy"
                 src={equipment.imageUrl}
                 alt={equipment.name}
                 className="size-full object-cover"

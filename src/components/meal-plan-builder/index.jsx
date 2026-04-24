@@ -925,7 +925,7 @@ const Index = ({
                             <Card className="py-2 px-4 flex items-center gap-3 w-80 shadow-2xl rotate-2 border-primary/40 bg-card">
                               <div className="size-11 rounded-xl bg-muted/50 flex items-center justify-center text-2xl shrink-0 overflow-hidden border border-border/40">
                                 {food.image ? (
-                                  <img
+                                  <img loading="lazy"
                                     src={food.image}
                                     alt={food.name}
                                     width={44}

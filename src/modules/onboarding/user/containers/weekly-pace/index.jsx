@@ -11,9 +11,9 @@ import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import { ChevronRight } from "lucide-react";
 
 const getAggressiveImage = (goal) => {
-  if (goal === "lose") return "/onboarding/lose.png";
-  if (goal === "gain") return "/onboarding/gain.png";
-  return "/onboarding/maintain.png";
+  if (goal === "lose") return "/optimized/onboarding/lose.webp";
+  if (goal === "gain") return "/optimized/onboarding/gain.webp";
+  return "/optimized/onboarding/maintain.webp";
 };
 
 const getPaceOptions = (goal) => [
@@ -22,7 +22,7 @@ const getPaceOptions = (goal) => [
     label: "0.25",
     title: "Easy rhythm",
     description: "Small weekly changes with a lighter routine.",
-    image: "/onboarding/slow.png",
+    image: "/optimized/onboarding/slow.webp",
     accent: "from-sky-500/20 via-cyan-400/10 to-transparent",
     border: "border-sky-500/20",
     pageTint: "from-sky-500/12 via-cyan-400/8 to-transparent",
@@ -35,7 +35,7 @@ const getPaceOptions = (goal) => [
     label: "0.5",
     title: "Balanced pace",
     description: "Best balance between momentum and sustainability.",
-    image: "/onboarding/recommend.png",
+    image: "/optimized/onboarding/recommend.webp",
     accent: "from-emerald-500/20 via-lime-400/10 to-transparent",
     border: "border-emerald-500/20",
     pageTint: "from-emerald-500/12 via-lime-400/8 to-transparent",
@@ -48,7 +48,7 @@ const getPaceOptions = (goal) => [
     label: "0.75",
     title: "Focused push",
     description: "Noticeable weekly progress with more structure.",
-    image: "/onboarding/focussed.png",
+    image: "/optimized/onboarding/focussed.webp",
     accent: "from-amber-500/20 via-orange-400/10 to-transparent",
     border: "border-amber-500/20",
     pageTint: "from-amber-500/12 via-orange-400/8 to-transparent",
@@ -61,7 +61,7 @@ const getPaceOptions = (goal) => [
     label: "1.0",
     title: "Fast track",
     description: "Most aggressive pace. Better for short bursts.",
-    image: "/onboarding/aggressive.png",
+    image: "/optimized/onboarding/aggressive.webp",
     accent: "from-rose-500/20 via-fuchsia-400/10 to-transparent",
     border: "border-rose-500/20",
     pageTint: "from-rose-500/12 via-fuchsia-400/8 to-transparent",
@@ -157,7 +157,7 @@ const Index = () => {
               exit={{ opacity: 0, y: -18, scale: 0.96 }}
               transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
             >
-              <img
+              <img loading="lazy"
                 src={selectedPace.image}
                 className="max-h-[220px] w-full max-w-[250px] object-contain drop-shadow-[0_18px_32px_rgba(0,0,0,0.12)] sm:max-h-[250px] sm:max-w-[280px] md:max-h-[300px] md:max-w-sm md:drop-shadow-[0_24px_44px_rgba(0,0,0,0.14)]"
                 alt={`${selectedPace.label} pace illustration`}

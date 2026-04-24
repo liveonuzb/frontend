@@ -256,7 +256,7 @@ const ChallengeFormDrawer = ({
                     <FormMessage />
                     {field.value ? (
                       <div className="mt-2 size-20 overflow-hidden rounded-xl border bg-muted/30">
-                        <img
+                        <img loading="lazy"
                           src={field.value}
                           alt="preview"
                           className="size-full object-cover"

@@ -90,7 +90,7 @@ const RecentMealsPill = ({ meals = [], isLoading = false, onOpen }) => {
                 className="flex size-8 overflow-hidden rounded-full border-2 border-background bg-muted"
               >
                 {meal.imageUrl ? (
-                  <img
+                  <img loading="lazy"
                     src={meal.imageUrl}
                     alt={meal.name}
                     className="size-full object-cover"
@@ -410,7 +410,7 @@ const AnalyzeView = ({ imageUrl, onClose }) => {
 
       <div className="relative mt-6 size-72 overflow-hidden rounded-full bg-muted md:size-80">
         {imageUrl ? (
-          <img
+          <img loading="lazy"
             src={imageUrl}
             alt="Scan qilinayotgan rasm"
             className="size-full object-cover"
@@ -514,7 +514,7 @@ const ResultView = ({
           className="relative w-full overflow-hidden rounded-2xl bg-muted"
           style={{ aspectRatio: "4/3" }}
         >
-          <img
+          <img loading="lazy"
             src={imageUrl}
             alt="Ovqat rasmi"
             className="h-full max-h-[320px] w-full object-cover"

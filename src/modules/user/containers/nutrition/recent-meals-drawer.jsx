@@ -81,7 +81,7 @@ export default function RecentMealsDrawer({
                       )}
                     >
                       {meal.imageUrl ? (
-                        <img
+                        <img loading="lazy"
                           src={meal.imageUrl}
                           alt={meal.name}
                           className="size-full object-cover"

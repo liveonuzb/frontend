@@ -233,7 +233,7 @@ const PreviewView = ({ food, imageUrl, onRetake, onSave, isConsumed }) => {
           className="relative w-full overflow-hidden rounded-2xl bg-muted"
           style={{ aspectRatio: "3/4" }}
         >
-          <img
+          <img loading="lazy"
             src={imageUrl}
             alt="Ovqat rasmi"
             className="w-full h-full object-cover"
@@ -267,7 +267,7 @@ const PreviewView = ({ food, imageUrl, onRetake, onSave, isConsumed }) => {
         className="relative  overflow-hidden rounded-2xl bg-muted mb-2 size-72 mx-auto"
         style={{ aspectRatio: "3/4" }}
       >
-        <img
+        <img loading="lazy"
           src={imageUrl}
           alt="Ovqat rasmi"
           className="w-full h-full object-cover"
@@ -416,7 +416,7 @@ const CameraLogDrawer = ({ food, open, onClose, onSave }) => {
           <div className="flex items-center gap-3">
             <div className="size-12 rounded-2xl bg-muted/60 overflow-hidden flex items-center justify-center shrink-0 border border-border/30">
               {image ? (
-                <img
+                <img loading="lazy"
                   src={image}
                   alt={food.name}
                   className="w-full h-full object-cover"

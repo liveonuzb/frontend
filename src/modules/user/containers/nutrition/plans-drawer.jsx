@@ -119,7 +119,7 @@ export default function PlansDrawer({
                           {plan.source === "coach" && plan.coach?.name ? (
                             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                               {plan.coach.avatar ? (
-                                <img
+                                <img loading="lazy"
                                   src={plan.coach.avatar}
                                   alt={plan.coach.name}
                                   className="size-5 rounded-full object-cover"

@@ -2,7 +2,7 @@ const WorkoutImageCell = ({ workout }) => {
   if (workout?.imageUrl) {
     return (
       <div className="size-10 overflow-hidden rounded-xl border">
-        <img
+        <img loading="lazy"
           src={workout.imageUrl}
           alt={workout.name}
           className="size-full object-cover"

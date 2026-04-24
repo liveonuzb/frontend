@@ -317,7 +317,7 @@ export default function ChallengeDetailContainer() {
               {/* Thumbnail */}
               <div className="relative w-full sm:w-36 h-36 sm:h-auto shrink-0 overflow-hidden border-b border-white/5 sm:border-b-0 sm:border-r sm:rounded-l-[2.5rem]">
                 {challengeDetail?.image?.url ? (
-                  <img
+                  <img loading="lazy"
                     src={challengeDetail.image.url}
                     alt={challengeDetail.title}
                     className="size-full object-cover transition-transform duration-500 group-hover:scale-105"

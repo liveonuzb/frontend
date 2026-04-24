@@ -377,7 +377,7 @@ const MessageList = ({
                                                                                                     : msg.type === "image" ? (
                                                                                                         <div className="space-y-2">
                                                                                                             <div className="rounded-lg overflow-hidden border bg-muted/20">
-                                                                                                                <img 
+                                                                                                                <img loading="lazy" 
                                                                                                                     src={msg.mediaUrl} 
                                                                                                                     alt="Chat media" 
                                                                                                                     className="max-w-full max-h-60 md:max-h-80 object-contain cursor-pointer hover:opacity-90 transition-opacity"

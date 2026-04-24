@@ -47,7 +47,7 @@ export function TransformationSlider({
       onTouchMove={(e) => handleMove(e.touches[0].clientX)}
     >
       {/* Before Image (Background) */}
-      <img
+      <img loading="lazy"
         src={beforeImage}
         alt="Transformation Before"
         className="w-full aspect-[4/5] md:aspect-square object-cover select-none pointer-events-none"
@@ -69,7 +69,7 @@ export function TransformationSlider({
         className="absolute inset-0 overflow-hidden select-none pointer-events-none"
         style={{ clipPath: `inset(0 0 0 ${position}%)` }}
       >
-        <img
+        <img loading="lazy"
           src={afterImage}
           alt="Transformation After"
           className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none"

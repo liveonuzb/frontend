@@ -170,7 +170,7 @@ const MealCard = memo(
                 )}
               >
                 {image ? (
-                  <img
+                  <img loading="lazy"
                     src={image}
                     alt={food.name}
                     className="w-full h-full object-cover"

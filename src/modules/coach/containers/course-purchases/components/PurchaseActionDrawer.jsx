@@ -155,7 +155,7 @@ const PurchaseActionDrawer = ({
               </div>
               {latestReceipt ? (
                 <div className="mt-4 flex items-start gap-3 rounded-2xl border border-border/60 bg-background/70 p-3">
-                  <img
+                  <img loading="lazy"
                     src={latestReceipt.imageUrl}
                     alt="Receipt"
                     className="size-16 rounded-2xl object-cover"

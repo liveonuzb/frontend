@@ -115,7 +115,7 @@ const Index = () => {
               exit={{ opacity: 0, y: -12, scale: 0.98 }}
               transition={{ duration: 0.28, ease: "easeOut" }}
             >
-              <img
+              <img loading="lazy"
                 src={illustration.src}
                 alt={selectedOption.label}
                 className="max-h-[220px] w-full max-w-[230px] object-contain md:max-h-[290px] md:max-w-[320px]"

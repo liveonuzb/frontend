@@ -408,7 +408,7 @@ const TwoFactorSection = ({ t }) => {
               <div className="space-y-5">
                 {qrDataUrl ? (
                   <div className="flex justify-center">
-                    <img
+                    <img loading="lazy"
                       src={qrDataUrl}
                       alt="2FA QR code"
                       className="size-48 rounded-xl border bg-white p-2"

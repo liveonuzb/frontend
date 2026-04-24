@@ -177,7 +177,7 @@ const MealIngredientsEditorDrawer = ({
                 className="overflow-hidden rounded-2xl bg-muted"
                 style={{ aspectRatio: "16/9" }}
               >
-                <img
+                <img loading="lazy"
                   src={imageUrl}
                   alt={title}
                   className="h-full max-h-40 w-full object-cover"

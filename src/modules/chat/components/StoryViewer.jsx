@@ -51,7 +51,7 @@ const StoryViewer = ({ stories, initialStoryIndex = 0, onClose }) => {
         <div className="fixed inset-0 z-[120] bg-black flex items-center justify-center animate-in fade-in duration-300">
             {/* Background Blur */}
             <div className="absolute inset-0 opacity-40 blur-3xl pointer-events-none">
-                <img src={activeStory.content} alt="bg" className="w-full h-full object-cover" />
+                <img loading="lazy" src={activeStory.content} alt="bg" className="w-full h-full object-cover" />
             </div>
 
             <div className="relative w-full max-w-lg h-full md:h-[90dvh] md:rounded-3xl overflow-hidden bg-black shadow-2xl flex flex-col">
@@ -91,7 +91,7 @@ const StoryViewer = ({ stories, initialStoryIndex = 0, onClose }) => {
 
                 {/* Content */}
                 <div className="flex-1 relative group">
-                    <img
+                    <img loading="lazy"
                         src={activeStory.content}
                         alt="story"
                         className="w-full h-full object-contain md:object-cover pointer-events-none"

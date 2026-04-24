@@ -41,7 +41,7 @@ const BeforeAfterSlider = ({ beforeImage, afterImage, beforeLabel = "Avval", aft
             onMouseDown={handleMouseDown}
         >
             {/* After Image (Background) */}
-            <img 
+            <img loading="lazy" 
                 src={afterImage} 
                 alt="After" 
                 className="absolute inset-0 w-full h-full object-cover"
@@ -52,7 +52,7 @@ const BeforeAfterSlider = ({ beforeImage, afterImage, beforeLabel = "Avval", aft
                 className="absolute inset-0 w-full h-full overflow-hidden"
                 style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
             >
-                <img 
+                <img loading="lazy" 
                     src={beforeImage} 
                     alt="Before" 
                     className="absolute inset-0 w-full h-full object-cover"

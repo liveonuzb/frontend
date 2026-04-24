@@ -76,7 +76,7 @@ const BasicStep = ({ formData, setFormData, currentLanguage, currentLanguageMeta
               <div className="flex items-center gap-4 rounded-2xl border border-border/60 bg-muted/15 p-4">
                 <div className="size-20 shrink-0 overflow-hidden rounded-xl border bg-muted/30">
                   {formData.imagePreviewUrl ? (
-                    <img
+                    <img loading="lazy"
                       src={formData.imagePreviewUrl}
                       alt="Challenge cover"
                       className="h-full w-full object-cover"

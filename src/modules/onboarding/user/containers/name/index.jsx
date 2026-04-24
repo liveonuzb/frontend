@@ -66,8 +66,8 @@ const Index = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.28, ease: "easeOut" }}
           >
-            <img
-              src="/curious.png"
+            <img loading="lazy"
+              src="/curious.webp"
               alt="Onboarding illustration"
               className="max-h-[240px] w-full max-w-[240px] object-contain md:max-h-[340px] md:max-w-[340px]"
             />
