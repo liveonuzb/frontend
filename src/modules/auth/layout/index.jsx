@@ -53,7 +53,7 @@ const Index = () => {
       <div className="h-svh min-h-svh overflow-hidden p-5 md:p-0">
         <div className="grid h-full min-h-0 md:grid-cols-[minmax(390px,26vw)_1fr]">
           <section className="relative z-10 flex min-h-0 flex-col">
-            <header className="flex shrink-0 items-center justify-between">
+            <header className="flex shrink-0 items-center justify-between md:p-4">
               <Link
                 to="/"
                 className="inline-flex items-center transition-opacity hover:opacity-80"
@@ -65,14 +65,13 @@ const Index = () => {
                   alt={t("auth.layout.logoAlt")}
                 />
               </Link>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 md:mr-5">
                 <span className="grid size-9 place-items-center rounded-full transition-colors">
                   <ThemeToggle />
                 </span>
                 <LanguageSwitcher compact />
               </div>
             </header>
-
             <main className="flex min-h-0 flex-1 items-start justify-center pt-8 md:items-center md:pt-0">
               <Outlet />
             </main>
