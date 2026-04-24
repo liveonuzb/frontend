@@ -12,6 +12,7 @@ COPY package.json package-lock.json ./
 
 # Install dependencies
 RUN #npm ci --silent
+RUN apk add --no-cache autoconf automake libtool nasm build-base python3
 RUN npm i --legacy-peer-deps
 
 # Copy source code
