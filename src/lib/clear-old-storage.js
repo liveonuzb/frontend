@@ -1,7 +1,5 @@
-import dayjs from "dayjs";
-
 export const clearOldClientStorage = () => {
-  const STORAGE_VERSION = dayjs().format("YYYY-MM-DD HH:mm");
+  const STORAGE_VERSION = "v1";
 
   const currentVersion = localStorage.getItem("storage_version");
 
