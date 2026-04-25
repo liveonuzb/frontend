@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Breadcrumbs from "@/components/breadcrumbs";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
+import useAppModeTheme from "@/hooks/app/use-app-mode-theme.js";
 
 const LayoutHeader = ({
   mobileChromeHidden,
@@ -15,6 +16,7 @@ const LayoutHeader = ({
   desktopRightContent,
 }) => {
   const { t } = useTranslation();
+  const modeTheme = useAppModeTheme();
   const displayName =
     `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
     user?.username ||
@@ -37,8 +39,9 @@ const LayoutHeader = ({
         <div className="flex w-full items-center justify-between gap-2">
           <SidebarTrigger className="-ml-1" />
           <Link to={"/"} className={"absolute left-1/2 -translate-x-1/2"}>
-            <img loading="lazy"
-              src="/logo-mini.png"
+            <img
+              loading="lazy"
+              src={modeTheme.assets.logo}
               alt="Logo"
               className="pointer-events-none size-8 "
             />

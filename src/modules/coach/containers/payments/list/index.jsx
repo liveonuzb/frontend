@@ -2,7 +2,12 @@ import React from "react";
 import { chain, get, isArray, trim } from "lodash";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { toast } from "sonner";
-import { DownloadIcon, PlusIcon, RotateCcwIcon, Trash2Icon } from "lucide-react";
+import {
+  DownloadIcon,
+  PlusIcon,
+  RotateCcwIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { useBreadcrumbStore } from "@/store";
 import { api } from "@/hooks/api/use-api";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -32,6 +37,7 @@ import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
 import { usePaymentFilters } from "./use-filters.js";
 import { SoftDeleteAlert, HardDeleteAlert } from "./delete-alert.jsx";
+import GlobalPaymentDetailsCard from "@/modules/coach/containers/payments/components/global-payment-details-card.jsx";
 
 const PaymentsListPage = () => {
   const { setBreadcrumbs } = useBreadcrumbStore();
@@ -72,9 +78,20 @@ const PaymentsListPage = () => {
     if (method) params.method = method;
 
     return params;
-  }, [deferredSearch, selectedMonth, lifecycle, status, method, sortBy, sortDir, currentPage, pageSize]);
+  }, [
+    deferredSearch,
+    selectedMonth,
+    lifecycle,
+    status,
+    method,
+    sortBy,
+    sortDir,
+    currentPage,
+    pageSize,
+  ]);
 
-  const { data, isLoading, isFetching, refetch } = useCoachPayments(queryParams);
+  const { data, isLoading, isFetching, refetch } =
+    useCoachPayments(queryParams);
   const payments = get(data, "data.data", []);
   const meta = get(data, "data.meta", {
     total: 0,
@@ -136,7 +153,16 @@ const PaymentsListPage = () => {
 
   React.useEffect(() => {
     setRowSelection({});
-  }, [search, selectedMonth, lifecycle, status, method, sortBy, sortDir, currentPage]);
+  }, [
+    search,
+    selectedMonth,
+    lifecycle,
+    status,
+    method,
+    sortBy,
+    sortDir,
+    currentPage,
+  ]);
 
   const selectedPaymentIds = React.useMemo(
     () =>
@@ -159,12 +185,17 @@ const PaymentsListPage = () => {
     const formData = new FormData();
     formData.append("file", file);
     try {
-      const response = await api.post("/coach/payments/receipts/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const response = await api.post(
+        "/coach/payments/receipts/upload",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      );
       const payload = response.data?.data ?? response.data;
       const ref = payload?.receiptRef || payload?.url || "";
-      const access = payload?.accessUrl || payload?.url || payload?.receiptRef || "";
+      const access =
+        payload?.accessUrl || payload?.url || payload?.receiptRef || "";
       if (isEdit) {
         setEditReceiptUrl(ref);
         setEditReceiptAccessUrl(access);
@@ -210,7 +241,11 @@ const PaymentsListPage = () => {
       setAddPaymentSearch("");
     } catch (error) {
       const message = error?.response?.data?.message;
-      toast.error(isArray(message) ? message.join(", ") : message || "To'lovni qayd etishda xatolik");
+      toast.error(
+        isArray(message)
+          ? message.join(", ")
+          : message || "To'lovni qayd etishda xatolik",
+      );
     }
   };
 
@@ -229,7 +264,11 @@ const PaymentsListPage = () => {
       setEditReceiptAccessUrl("");
     } catch (error) {
       const message = error?.response?.data?.message;
-      toast.error(isArray(message) ? message.join(", ") : message || "Yangilashda xatolik");
+      toast.error(
+        isArray(message)
+          ? message.join(", ")
+          : message || "Yangilashda xatolik",
+      );
     }
   };
 
@@ -245,7 +284,11 @@ const PaymentsListPage = () => {
       setCancellationReason("");
     } catch (error) {
       const message = error?.response?.data?.message;
-      toast.error(isArray(message) ? message.join(", ") : message || "Bekor qilishda xatolik");
+      toast.error(
+        isArray(message)
+          ? message.join(", ")
+          : message || "Bekor qilishda xatolik",
+      );
     }
   };
 
@@ -263,7 +306,11 @@ const PaymentsListPage = () => {
       setRefundAmount("");
     } catch (error) {
       const message = error?.response?.data?.message;
-      toast.error(isArray(message) ? message.join(", ") : message || "Qaytarishda xatolik");
+      toast.error(
+        isArray(message)
+          ? message.join(", ")
+          : message || "Qaytarishda xatolik",
+      );
     }
   };
 
@@ -275,7 +322,9 @@ const PaymentsListPage = () => {
       setPaymentToSoftDelete(null);
     } catch (error) {
       const message = error?.response?.data?.message;
-      toast.error(isArray(message) ? message.join(", ") : message || "O'chirib bo'lmadi");
+      toast.error(
+        isArray(message) ? message.join(", ") : message || "O'chirib bo'lmadi",
+      );
     }
   };
 
@@ -285,7 +334,9 @@ const PaymentsListPage = () => {
       toast.success("To'lov tiklandi");
     } catch (error) {
       const message = error?.response?.data?.message;
-      toast.error(isArray(message) ? message.join(", ") : message || "Tiklab bo'lmadi");
+      toast.error(
+        isArray(message) ? message.join(", ") : message || "Tiklab bo'lmadi",
+      );
     }
   };
 
@@ -302,7 +353,9 @@ const PaymentsListPage = () => {
       setRowSelection({});
     } catch (error) {
       const message = error?.response?.data?.message;
-      toast.error(isArray(message) ? message.join(", ") : message || "O'chirib bo'lmadi");
+      toast.error(
+        isArray(message) ? message.join(", ") : message || "O'chirib bo'lmadi",
+      );
     }
   };
 
@@ -314,7 +367,11 @@ const PaymentsListPage = () => {
       setRowSelection({});
     } catch (error) {
       const message = error?.response?.data?.message;
-      toast.error(isArray(message) ? message.join(", ") : message || "Trashga yuborib bo'lmadi");
+      toast.error(
+        isArray(message)
+          ? message.join(", ")
+          : message || "Trashga yuborib bo'lmadi",
+      );
     }
   };
 
@@ -326,7 +383,9 @@ const PaymentsListPage = () => {
       setRowSelection({});
     } catch (error) {
       const message = error?.response?.data?.message;
-      toast.error(isArray(message) ? message.join(", ") : message || "Tiklab bo'lmadi");
+      toast.error(
+        isArray(message) ? message.join(", ") : message || "Tiklab bo'lmadi",
+      );
     }
   };
 
@@ -362,7 +421,11 @@ const PaymentsListPage = () => {
       toast.success("CSV eksport tayyorlandi");
     } catch (error) {
       const message = error?.response?.data?.message;
-      toast.error(isArray(message) ? message.join(", ") : message || "CSV eksport qilib bo'lmadi");
+      toast.error(
+        isArray(message)
+          ? message.join(", ")
+          : message || "CSV eksport qilib bo'lmadi",
+      );
     } finally {
       setIsExporting(false);
     }
@@ -473,7 +536,9 @@ const PaymentsListPage = () => {
           className="hidden xl:flex items-center justify-center size-9 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-50 transition-colors"
           aria-label="Yangilash"
         >
-          <RotateCcwIcon className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
+          <RotateCcwIcon
+            className={`size-4 ${isFetching ? "animate-spin" : ""}`}
+          />
         </button>
       </div>
 
@@ -513,6 +578,7 @@ const PaymentsListPage = () => {
           }
         />
       ) : null}
+      <GlobalPaymentDetailsCard />
 
       <DataGrid
         table={table}

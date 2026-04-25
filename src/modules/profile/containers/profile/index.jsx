@@ -16,6 +16,7 @@ import {
   CheckIcon,
   ChevronRightIcon,
   CrownIcon,
+  PaletteIcon,
   PencilIcon,
   ZapIcon,
   CheckCircle2Icon,
@@ -34,7 +35,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import GamificationBadges from "@/components/gamification-badges";
 import { Progress } from "@/components/ui/progress";
 import CoachConnectionDetailsDrawer from "@/components/coach-connection-details-drawer";
-import { useBreadcrumbStore, useAuthStore } from "@/store";
+import { useBreadcrumbStore, useAuthStore, useAppModeStore, APP_MODES } from "@/store";
+import ModeDrawer from "@/components/mode-drawer";
 import { Button } from "@/components/ui/button";
 import OnboardingHealthReportCard from "@/components/onboarding-health-report-card";
 import { cn } from "@/lib/utils";
@@ -343,6 +345,34 @@ const getOverviewValue = (tabId, user, completion, t) => {
     default:
       return undefined;
   }
+};
+
+const MODE_LABELS = {
+  [APP_MODES.FOCUS]: "Focus",
+  [APP_MODES.ZEN]: "Zen",
+  [APP_MODES.MADAGASCAR]: "Madagascar",
+};
+
+const InlineModeItem = () => {
+  const [open, setOpen] = React.useState(false);
+  const mode = useAppModeStore((state) => state.mode);
+  const label = MODE_LABELS[mode] ?? "Madagascar";
+
+  return (
+    <>
+      <Card className="overflow-hidden py-6">
+        <CardContent className="p-0">
+          <SettingsItem
+            icon={PaletteIcon}
+            label="Mode"
+            value={label}
+            onClick={() => setOpen(true)}
+          />
+        </CardContent>
+      </Card>
+      <ModeDrawer open={open} onOpenChange={setOpen} />
+    </>
+  );
 };
 
 const InlineLangItem = ({
@@ -707,6 +737,8 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
         />
       ) : null}
 
+      <InlineModeItem />
+
       {map(SETTINGS_GROUPS, (group, index) => (
         <SettingsGroupCard
           key={index}
@@ -859,6 +891,7 @@ const SettingsSidebar = ({ activeTab, completion, onTabChange, user }) => {
           t={t}
         />
       ))}
+      <InlineModeItem />
       <Card className="border-border/60 py-6 shadow-none">
         <CardContent className="space-y-4 p-6">
           <div className="space-y-2">

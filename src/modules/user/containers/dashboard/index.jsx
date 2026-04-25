@@ -56,15 +56,6 @@ const DashboardContainer = () => {
             onLabelClick={openDailyPage}
           />
         </div>
-
-        <OnboardingHealthReportCard
-          title={t("user.dashboard.healthReport.title")}
-          description={t("user.dashboard.healthReport.description")}
-          badge={t("user.dashboard.healthReport.badge")}
-          actionLabel={t("user.dashboard.healthReport.action")}
-          onAction={() => navigate(getUserOnboardingReportPath())}
-        />
-
         <ConnectedCoachBanner />
         <CoachInvitationsSection />
         <CoachActivitySection />

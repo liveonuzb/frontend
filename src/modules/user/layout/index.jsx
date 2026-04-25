@@ -146,21 +146,10 @@ const Index = () => {
         icon: RulerIcon,
       },
       {
-        to: "/user/report",
-        label: "Report",
-        icon: FileChartColumnIcon,
-      },
-      {
-        to: "/user/workout",
-        label: "Mashg'ulot",
-        icon: DumbbellIcon,
-      },
-      {
         to: "/user/challenges",
         label: "Musobaqalar",
         icon: TrophyIcon,
       },
-
       {
         to: "/user/friends",
         label: "Do'stlar",

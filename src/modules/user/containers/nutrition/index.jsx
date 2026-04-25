@@ -365,7 +365,7 @@ const Index = () => {
   const [mealFilter, setMealFilter] = React.useState("all");
   const [sourceFilters, setSourceFilters] = React.useState([]);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
-  const isPremiumActive = user?.premium?.status === "active";
+  const isPremiumActive = true;
   const isCurrentPlanCoachAssigned = currentPlan?.source === "coach";
   const isCurrentPlanUpdateAvailable =
     currentPlan?.syncStatus === "update_available";
@@ -1011,7 +1011,14 @@ const Index = () => {
     <PageTransition mode="fade">
       <div className="flex flex-col gap-6">
         <div className={"flex md:justify-end"}>
-          <DateNav date={date} onChange={setDate} format={"short"} className={'shadow md:shadow-none flex-1 md:flex-none rounded-2xl flex justify-between'} />
+          <DateNav
+            date={date}
+            onChange={setDate}
+            format={"short"}
+            className={
+              "shadow md:shadow-none flex-1 md:flex-none rounded-2xl flex justify-between"
+            }
+          />
         </div>
         {plans.length > 0 ? (
           <div
