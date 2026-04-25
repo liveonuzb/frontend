@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { get, isEqual } from "lodash";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import AuthSubmitButton from "@/modules/auth/components/auth-submit-button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { PasswordInput } from "@/components/ui/password-input";
 import { PasswordStrength } from "@/components/password-strength";
@@ -154,15 +154,15 @@ const SetPasswordForm = () => {
       </Field>
 
       <Field>
-        <Button
+        <AuthSubmitButton
           type="submit"
           disabled={isSubmitting || isPending}
-          className={"h-11 mt-5 md:mt-8"}
+          className={"mt-5 md:mt-8"}
         >
           {isSubmitting || isPending
             ? t("auth.setPassword.saving")
             : t("auth.setPassword.saveButton")}
-        </Button>
+        </AuthSubmitButton>
       </Field>
     </form>
   );

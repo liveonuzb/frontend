@@ -5,20 +5,23 @@ import { NuqsAdapter } from "nuqs/adapters/react-router/v7";
 import GetMe from "@/providers/get-me/index.jsx";
 import { TooltipProvider } from "@/components/ui/tooltip.jsx";
 import TelegramProvider from "@/providers/telegram/index.jsx";
+import AppModeProvider from "@/providers/app-mode/index.jsx";
 
 const Index = ({ children }) => {
   return (
     <TelegramProvider>
-      <NuqsAdapter>
-        <Query>
-          <GetMe>
-            <TooltipProvider>
-              {children}
-              <Toaster richColors position={"top-right"} closeButton />
-            </TooltipProvider>
-          </GetMe>
-        </Query>
-      </NuqsAdapter>
+      <AppModeProvider>
+        <NuqsAdapter>
+          <Query>
+            <GetMe>
+              <TooltipProvider>
+                {children}
+                <Toaster richColors position={"top-right"} closeButton />
+              </TooltipProvider>
+            </GetMe>
+          </Query>
+        </NuqsAdapter>
+      </AppModeProvider>
     </TelegramProvider>
   );
 };

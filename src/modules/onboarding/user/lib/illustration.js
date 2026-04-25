@@ -154,10 +154,17 @@ export const getOnboardingBmiMeta = (weightValue, heightValue) => {
   };
 };
 
-const buildIllustrationPath = (gender, ageValue, tier = DEFAULT_TIER) => {
+const DEFAULT_BASE = "/madagascar/onboarding";
+
+const buildIllustrationPath = (
+  gender,
+  ageValue,
+  tier = DEFAULT_TIER,
+  base = DEFAULT_BASE,
+) => {
   if (!gender) {
     return {
-      src: "/onboarding/curious.webp",
+      src: `${base}/curious.webp`,
       alt: "Onboarding illustration",
     };
   }
@@ -167,16 +174,23 @@ const buildIllustrationPath = (gender, ageValue, tier = DEFAULT_TIER) => {
   const variantPrefix = ageVariant ? `${gender}-${ageVariant}` : gender;
 
   return {
-    src: `/onboarding/${variantPrefix}-${normalizedTier}.webp`,
+    src: `${base}/${variantPrefix}-${normalizedTier}.webp`,
     alt: `${variantPrefix} illustration`,
   };
 };
 
-export const getOnboardingPersonIllustration = (gender, ageValue) =>
-  buildIllustrationPath(gender, ageValue, DEFAULT_TIER);
+export const getOnboardingPersonIllustration = (
+  gender,
+  ageValue,
+  base = DEFAULT_BASE,
+) => buildIllustrationPath(gender, ageValue, DEFAULT_TIER, base);
 
-export const getOnboardingTierIllustration = (gender, ageValue, tier) =>
-  buildIllustrationPath(gender, ageValue, tier);
+export const getOnboardingTierIllustration = (
+  gender,
+  ageValue,
+  tier,
+  base = DEFAULT_BASE,
+) => buildIllustrationPath(gender, ageValue, tier, base);
 
 export const getOnboardingHeightIllustration = (
   gender,

@@ -83,12 +83,6 @@ const restrictions = [
   },
 ];
 
-const goalIllustrations = {
-  lose: "/onboarding/lose.webp",
-  maintain: "/onboarding/maintain.webp",
-  gain: "/onboarding/gain.webp",
-};
-
 const getRestrictionTone = (selectedValue, goal) => {
   if (selectedValue === "vegetarian" || selectedValue === "vegan") {
     return ONBOARDING_ACCENTS.green;
@@ -181,7 +175,6 @@ const Index = () => {
     selectedRestrictions.length === 1 &&
     selectedRestrictions[0]?.value === "none";
   const activeTone = getRestrictionTone(selectedRestrictions[0]?.value, goal);
-  const heroImage = goalIllustrations[goal] ?? "/onboarding/curious.webp";
 
   const handleComplete = async () => {
     const payload = {
@@ -234,67 +227,37 @@ const Index = () => {
   );
 
   return (
-    <div className="relative flex h-full flex-1 flex-col overflow-hidden pt-3 md:pt-8  px-5">
+    <div className="relative flex h-full max-h-full flex-1 flex-col overflow-hidden pt-3 md:pt-8  px-5">
       <PageAura tone={activeTone} />
 
-      <div className="relative z-10 flex w-full flex-1 flex-col gap-5 md:mx-auto md:max-w-4xl">
+      <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
         <OnboardingQuestion
           question={t("onboarding.dietRestrictions.question")}
         />
 
-        <div className="relative mb-1 flex min-h-[180px] items-end justify-center overflow-hidden md:min-h-[260px]">
-          <motion.div
-            key={heroImage}
-            className="flex h-full w-full items-end justify-center"
-            initial={{ opacity: 0, y: 22, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.28, ease: "easeOut" }}
-          >
-            <img
-              loading="lazy"
-              src={heroImage}
-              alt="Diet preferences illustration"
-              className="max-h-[220px] w-full max-w-[240px] object-contain md:max-h-[300px] md:max-w-[320px]"
-            />
-          </motion.div>
+        <motion.div
+          key={`diet-meta-${selectedRestrictions.map((item) => item.value).join("-") || "empty"}`}
+          className={cn(
+            "mx-auto mb-3 w-full max-w-[320px] rounded-[20px] border bg-background/85 px-3 py-2 text-center backdrop-blur md:mb-4 md:max-w-[420px] md:rounded-[24px] md:px-4 md:py-3",
+            activeTone.border,
+          )}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.24 }}
+        >
+          <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground md:text-xs">
+            Nutrition filters
+          </p>
+          <p className="text-sm font-bold md:text-base">
+            {hasNoneSelected
+              ? "No restrictions"
+              : hasSelection
+                ? `${selectedRestrictions.length} preference${selectedRestrictions.length > 1 ? "s" : ""} selected`
+                : "Choose what to avoid"}
+          </p>
+        </motion.div>
 
-          <motion.div
-            key={`diet-meta-${selectedRestrictions.map((item) => item.value).join("-") || "empty"}`}
-            className={cn(
-              "absolute bottom-0 max-w-[280px] rounded-[24px] border bg-background/85 px-4 py-3 text-center backdrop-blur md:max-w-[360px] md:rounded-[28px]",
-              activeTone.border,
-            )}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.24 }}
-          >
-            <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground md:text-xs">
-              Nutrition filters
-            </p>
-            <p className="text-base font-bold md:text-lg">
-              {hasNoneSelected
-                ? "No restrictions"
-                : hasSelection
-                  ? `${selectedRestrictions.length} preference${selectedRestrictions.length > 1 ? "s" : ""} selected`
-                  : "Choose what to avoid"}
-            </p>
-            <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
-              {map(selectedRestrictions.slice(0, 3), (item) => (
-                <span
-                  key={item.value}
-                  className={cn(
-                    "rounded-full px-2.5 py-1 text-[11px] font-semibold md:text-xs",
-                    activeTone.badgeTone,
-                  )}
-                >
-                  {t(`onboarding.dietRestrictions.${item.labelKey}`)}
-                </span>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-3 pb-1 md:grid-cols-2">
+        <div className="grid flex-1 grid-cols-2 gap-2 pb-1 md:gap-2.5">
           {map(restrictions, (item) => {
             const isActive = isSelected(item.value);
 
@@ -305,7 +268,7 @@ const Index = () => {
                 onClick={() => handleToggle(item.value)}
                 aria-pressed={isActive}
                 className={cn(
-                  "relative flex items-center gap-4 rounded-[24px] border p-4 text-left transition-all md:rounded-3xl",
+                  "relative flex min-h-[64px] items-center gap-2 rounded-[18px] border px-2.5 py-2 text-left transition-all md:min-h-[80px] md:gap-3 md:rounded-2xl md:px-3 md:py-3",
                   isActive
                     ? `bg-gradient-to-br ${activeTone.cardTone} ${activeTone.border}`
                     : "border-border/70 bg-background/90 hover:border-primary/30",
@@ -313,27 +276,27 @@ const Index = () => {
               >
                 <div
                   className={cn(
-                    "flex size-11 shrink-0 items-center justify-center rounded-2xl transition-colors",
+                    "flex size-8 shrink-0 items-center justify-center rounded-xl transition-colors md:size-10 md:rounded-2xl",
                     isActive
                       ? activeTone.badgeTone
                       : "bg-muted text-foreground",
                   )}
                 >
-                  <item.icon className="size-5" />
+                  <item.icon className="size-4 md:size-5" />
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold leading-5 text-foreground">
+                  <p className="text-xs font-semibold leading-tight text-foreground md:text-sm">
                     {t(`onboarding.dietRestrictions.${item.labelKey}`)}
                   </p>
-                  <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                  <p className="mt-0.5 hidden text-xs leading-snug text-muted-foreground md:block">
                     {t(`onboarding.dietRestrictions.${item.descriptionKey}`)}
                   </p>
                 </div>
 
                 <div
                   className={cn(
-                    "flex size-7 shrink-0 items-center justify-center rounded-full border transition-colors",
+                    "flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors md:size-6",
                     isActive
                       ? `${activeTone.border} bg-background/70`
                       : "border-border bg-background text-muted-foreground",
@@ -341,7 +304,7 @@ const Index = () => {
                 >
                   <CheckIcon
                     className={cn(
-                      "size-4 transition-all",
+                      "size-3 transition-all md:size-4",
                       isActive ? activeTone.textTone : "text-transparent",
                     )}
                   />

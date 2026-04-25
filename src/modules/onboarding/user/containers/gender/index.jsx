@@ -11,33 +11,36 @@ import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import { ChevronRight } from "lucide-react";
 import PageAura from "../../components/page-aura.jsx";
 import { getGenderTone, ONBOARDING_TONES } from "../../lib/tones.js";
-
-const genders = [
-  {
-    value: "male",
-    label: "Moto moto",
-    description: "Masculine plan visuals and body guidance.",
-    image: "/onboarding/male-2.webp",
-  },
-  {
-    value: "female",
-    label: "Gloria",
-    description: "Feminine plan visuals and body guidance.",
-    image: "/onboarding/female-2.webp",
-  },
-];
+import useAppModeTheme from "@/hooks/app/use-app-mode-theme";
 
 const Index = () => {
   const navigate = useNavigate();
   const { gender, setField } = useOnboardingStore();
+  const modeTheme = useAppModeTheme();
+  const base = modeTheme.assets.onboardingBase;
 
   useOnboardingAutoSave("user", "gender");
+
+  const genders = [
+    {
+      value: "male",
+      label: "Moto moto",
+      description: "Masculine plan visuals and body guidance.",
+      image: `${base}/male-2.webp`,
+    },
+    {
+      value: "female",
+      label: "Gloria",
+      description: "Feminine plan visuals and body guidance.",
+      image: `${base}/female-2.webp`,
+    },
+  ];
 
   const selectedGender = genders.find((item) => item.value === gender) ?? null;
   const tone = selectedGender
     ? getGenderTone(selectedGender.value)
     : ONBOARDING_TONES.neutral;
-  const heroImage = selectedGender?.image ?? "/onboarding/curious.webp";
+  const heroImage = selectedGender?.image ?? modeTheme.assets.curious;
 
   const handleSelect = (value) => {
     setField("gender", value);

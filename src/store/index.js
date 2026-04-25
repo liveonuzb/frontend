@@ -1,6 +1,7 @@
 export { default as useAuthStore } from "./auth-store";
 export { default as useBreadcrumbStore } from "./breadcrumb-store";
 export { default as useLanguageStore } from "./language-store";
+export { default as useAppModeStore, APP_MODES } from "./app-mode-store";
 export { default as useOnboardingStore } from "./onboarding-store";
 export { default as useGamificationStore } from "./gamification-store";
 export { default as useNotificationsStore } from "./notifications-store";

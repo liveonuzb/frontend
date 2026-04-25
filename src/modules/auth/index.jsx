@@ -3,6 +3,8 @@ import { Navigate, Route, Routes } from "react-router";
 import { useAuthStore } from "@/store";
 
 import Layout from "@/modules/auth/layout/index.jsx";
+import SelectLanguagePage from "@/pages/select-language/index.jsx";
+import SelectModePage from "@/pages/select-mode/index.jsx";
 import SignInPage from "@/modules/auth/pages/sign-in/index.jsx";
 import SignUpPage from "@/modules/auth/pages/sign-up/index.jsx";
 import ForgotPasswordPage from "@/modules/auth/pages/forgot-password/index.jsx";
@@ -16,6 +18,10 @@ const Index = () => {
 
   return (
     <Routes>
+      {/* Full-page routes — no auth layout wrapper */}
+      <Route path="select-language" element={<SelectLanguagePage />} />
+      <Route path="select-mode" element={<SelectModePage />} />
+
       <Route element={<Layout />}>
         {passwordSetupRequired ? (
           <>

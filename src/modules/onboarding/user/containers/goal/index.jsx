@@ -9,54 +9,56 @@ import { ChevronRight } from "lucide-react";
 import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-context";
 import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-question";
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
-
-const goals = [
-  {
-    value: "lose",
-    label: "Lose",
-    title: "Lean down",
-    description: "Burn fat and get leaner with a steady calorie deficit.",
-    image: "/onboarding/lose.webp",
-    accent: "from-rose-500/18 via-orange-400/10 to-transparent",
-    border: "border-rose-500/20",
-    pageTint: "from-rose-500/12 via-orange-400/8 to-transparent",
-    dotTone: "bg-gradient-to-br from-rose-500 to-orange-500",
-    buttonTone:
-      "from-rose-500 to-orange-500 hover:from-rose-500/90 hover:to-orange-500/90 text-white shadow-[0_18px_44px_rgba(244,63,94,0.24)]",
-  },
-  {
-    value: "maintain",
-    label: "Maintain",
-    title: "Hold your rhythm",
-    description: "Keep your current shape while building consistent habits.",
-    image: "/onboarding/maintain.webp",
-    accent: "from-emerald-500/18 via-teal-400/10 to-transparent",
-    border: "border-emerald-500/20",
-    pageTint: "from-emerald-500/12 via-teal-400/8 to-transparent",
-    dotTone: "bg-gradient-to-br from-emerald-500 to-teal-500",
-    buttonTone:
-      "from-emerald-500 to-teal-500 hover:from-emerald-500/90 hover:to-teal-500/90 text-white shadow-[0_18px_44px_rgba(16,185,129,0.24)]",
-  },
-  {
-    value: "gain",
-    label: "Gain",
-    title: "Build up",
-    description: "Add quality mass and strength with a stronger intake.",
-    image: "/onboarding/gain.webp",
-    accent: "from-sky-500/18 via-indigo-400/10 to-transparent",
-    border: "border-sky-500/20",
-    pageTint: "from-sky-500/12 via-indigo-400/8 to-transparent",
-    dotTone: "bg-gradient-to-br from-sky-500 to-indigo-500",
-    buttonTone:
-      "from-sky-500 to-indigo-500 hover:from-sky-500/90 hover:to-indigo-500/90 text-white shadow-[0_18px_44px_rgba(59,130,246,0.24)]",
-  },
-];
+import useOnboardingBase from "@/hooks/app/use-onboarding-base";
 
 const Index = () => {
   const navigate = useNavigate();
   const { goal, setField } = useOnboardingStore();
+  const base = useOnboardingBase();
 
   useOnboardingAutoSave("user", "goal");
+
+  const goals = [
+    {
+      value: "lose",
+      label: "Lose",
+      title: "Lean down",
+      description: "Burn fat and get leaner with a steady calorie deficit.",
+      image: `${base}/lose.webp`,
+      accent: "from-rose-500/18 via-orange-400/10 to-transparent",
+      border: "border-rose-500/20",
+      pageTint: "from-rose-500/12 via-orange-400/8 to-transparent",
+      dotTone: "bg-gradient-to-br from-rose-500 to-orange-500",
+      buttonTone:
+        "from-rose-500 to-orange-500 hover:from-rose-500/90 hover:to-orange-500/90 text-white shadow-[0_18px_44px_rgba(244,63,94,0.24)]",
+    },
+    {
+      value: "maintain",
+      label: "Maintain",
+      title: "Hold your rhythm",
+      description: "Keep your current shape while building consistent habits.",
+      image: `${base}/maintain.webp`,
+      accent: "from-emerald-500/18 via-teal-400/10 to-transparent",
+      border: "border-emerald-500/20",
+      pageTint: "from-emerald-500/12 via-teal-400/8 to-transparent",
+      dotTone: "bg-gradient-to-br from-emerald-500 to-teal-500",
+      buttonTone:
+        "from-emerald-500 to-teal-500 hover:from-emerald-500/90 hover:to-teal-500/90 text-white shadow-[0_18px_44px_rgba(16,185,129,0.24)]",
+    },
+    {
+      value: "gain",
+      label: "Gain",
+      title: "Build up",
+      description: "Add quality mass and strength with a stronger intake.",
+      image: `${base}/gain.webp`,
+      accent: "from-sky-500/18 via-indigo-400/10 to-transparent",
+      border: "border-sky-500/20",
+      pageTint: "from-sky-500/12 via-indigo-400/8 to-transparent",
+      dotTone: "bg-gradient-to-br from-sky-500 to-indigo-500",
+      buttonTone:
+        "from-sky-500 to-indigo-500 hover:from-sky-500/90 hover:to-indigo-500/90 text-white shadow-[0_18px_44px_rgba(59,130,246,0.24)]",
+    },
+  ];
 
   const selectedGoal = goals.find((item) => item.value === goal) ?? goals[1];
   const hasSelection = Boolean(goal);

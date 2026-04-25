@@ -41,7 +41,7 @@ const LanguageDrawerPicker = ({
         variant={"ghost"}
         className={cn(
           compact
-            ? "size-9 shrink-0 p-0"
+            ? "size-11 shrink-0 p-0"
             : "justify-start gap-2 bg-background/80 supports-[backdrop-filter]:bg-background/70 w-[148px]",
           className,
         )}

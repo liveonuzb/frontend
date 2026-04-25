@@ -9,20 +9,21 @@ import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-
 import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-question";
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import { ChevronRight } from "lucide-react";
+import useOnboardingBase from "@/hooks/app/use-onboarding-base";
 
-const getAggressiveImage = (goal) => {
-  if (goal === "lose") return "/onboarding/lose.webp";
-  if (goal === "gain") return "/onboarding/gain.webp";
-  return "/onboarding/maintain.webp";
+const getAggressiveImage = (goal, base) => {
+  if (goal === "lose") return `${base}/lose.webp`;
+  if (goal === "gain") return `${base}/gain.webp`;
+  return `${base}/maintain.webp`;
 };
 
-const getPaceOptions = (goal) => [
+const getPaceOptions = (goal, base) => [
   {
     value: 0.25,
     label: "0.25",
     title: "Easy rhythm",
     description: "Small weekly changes with a lighter routine.",
-    image: "/onboarding/slow.webp",
+    image: `${base}/slow.webp`,
     accent: "from-sky-500/20 via-cyan-400/10 to-transparent",
     border: "border-sky-500/20",
     pageTint: "from-sky-500/12 via-cyan-400/8 to-transparent",
@@ -35,7 +36,7 @@ const getPaceOptions = (goal) => [
     label: "0.5",
     title: "Balanced pace",
     description: "Best balance between momentum and sustainability.",
-    image: "/onboarding/recommend.webp",
+    image: `${base}/recommend.webp`,
     accent: "from-emerald-500/20 via-lime-400/10 to-transparent",
     border: "border-emerald-500/20",
     pageTint: "from-emerald-500/12 via-lime-400/8 to-transparent",
@@ -48,7 +49,7 @@ const getPaceOptions = (goal) => [
     label: "0.75",
     title: "Focused push",
     description: "Noticeable weekly progress with more structure.",
-    image: "/onboarding/focussed.webp",
+    image: `${base}/focussed.webp`,
     accent: "from-amber-500/20 via-orange-400/10 to-transparent",
     border: "border-amber-500/20",
     pageTint: "from-amber-500/12 via-orange-400/8 to-transparent",
@@ -61,7 +62,7 @@ const getPaceOptions = (goal) => [
     label: "1.0",
     title: "Fast track",
     description: "Most aggressive pace. Better for short bursts.",
-    image: "/onboarding/aggressive.webp",
+    image: `${base}/aggressive.webp`,
     accent: "from-rose-500/20 via-fuchsia-400/10 to-transparent",
     border: "border-rose-500/20",
     pageTint: "from-rose-500/12 via-fuchsia-400/8 to-transparent",
@@ -74,10 +75,11 @@ const getPaceOptions = (goal) => [
 const Index = () => {
   const navigate = useNavigate();
   const { weeklyPace, goal, setField } = useOnboardingStore();
+  const base = useOnboardingBase();
 
   useOnboardingAutoSave("user", "weekly-pace");
 
-  const paceOptions = getPaceOptions(goal);
+  const paceOptions = getPaceOptions(goal, base);
   const selectedPace =
     paceOptions.find((pace) => pace.value === Number(weeklyPace)) ??
     paceOptions[1];
@@ -111,7 +113,7 @@ const Index = () => {
   );
 
   return (
-    <div className="relative flex h-full flex-1 flex-col justify-center overflow-hidden pt-3 md:pt-8 px-5">
+    <div className="relative flex h-full max-h-full flex-1 flex-col overflow-hidden pt-3 md:pt-8 px-5">
       <div className="pointer-events-none absolute inset-0">
         <motion.div
           key={`page-wash-${selectedPace.value}`}
@@ -145,9 +147,9 @@ const Index = () => {
         />
       </div>
 
-      <div className="relative z-10 flex w-full flex-1 flex-col justify-center md:mx-auto md:max-w-4xl">
+      <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
         <OnboardingQuestion question="Set your weekly pace" />
-        <div className="relative mb-3 flex min-h-[190px] flex-[0.95] items-end justify-center overflow-hidden sm:min-h-[220px] md:mb-5 md:min-h-[320px] md:flex-[0.9]">
+        <div className="relative mb-3 flex min-h-[140px] flex-1 items-end justify-center overflow-hidden sm:min-h-[170px] md:mb-5 md:min-h-[280px]">
           <AnimatePresence mode="wait">
             <motion.div
               key={selectedPace.image}
@@ -160,7 +162,7 @@ const Index = () => {
               <img
                 loading="lazy"
                 src={selectedPace.image}
-                className="max-h-[220px] w-full max-w-[250px] object-contain drop-shadow-[0_18px_32px_rgba(0,0,0,0.12)] sm:max-h-[250px] sm:max-w-[280px] md:max-h-[300px] md:max-w-sm md:drop-shadow-[0_24px_44px_rgba(0,0,0,0.14)]"
+                className="max-h-[170px] w-full max-w-[200px] object-contain drop-shadow-[0_18px_32px_rgba(0,0,0,0.12)] sm:max-h-[210px] sm:max-w-[240px] md:max-h-[280px] md:max-w-sm md:drop-shadow-[0_24px_44px_rgba(0,0,0,0.14)]"
                 alt={`${selectedPace.label} pace illustration`}
               />
             </motion.div>
@@ -218,7 +220,7 @@ const Index = () => {
                 }}
                 transition={{ duration: 0.22, ease: "easeOut" }}
                 className={cn(
-                  "relative flex min-h-[102px] flex-col items-start gap-2 rounded-[24px] border px-3 py-3 text-left md:min-h-0 md:gap-4 md:rounded-3xl md:px-4",
+                  "relative flex min-h-[72px] flex-col items-start gap-1.5 rounded-[20px] border px-2.5 py-2 text-left md:min-h-0 md:gap-4 md:rounded-3xl md:px-4 md:py-3",
                   isActive
                     ? `bg-gradient-to-r ${pace.accent} ${pace.border}`
                     : "",
@@ -226,7 +228,7 @@ const Index = () => {
               >
                 <motion.img
                   src={pace.image}
-                  className="size-10 rounded-2xl object-cover md:size-16"
+                  className="size-8 rounded-xl object-cover md:size-16"
                   alt={`${pace.label} illustration`}
                   animate={
                     isActive
@@ -262,16 +264,21 @@ const Index = () => {
 
                 <motion.div
                   className={cn(
-                    "absolute right-3 top-3 flex size-5 shrink-0 items-center justify-center rounded-full border-2 md:size-6",
+                    "absolute right-2 top-2 flex size-4 shrink-0 items-center justify-center rounded-full border-2 md:right-3 md:top-3 md:size-6",
                     isActive
-                      ? `${pace.border} ${pace.accent}`
+                      ? `${pace.border} bg-background/70`
                       : "border-muted-foreground/25",
                   )}
                   animate={isActive ? { scale: 1 } : { scale: 0.92 }}
                   transition={{ duration: 0.18 }}
                 >
                   <motion.div
-                    className="size-3 rounded-full bg-background"
+                    className={cn(
+                      "size-2.5 rounded-full transition-all md:size-3",
+                      isActive
+                        ? `bg-gradient-to-br ${pace.buttonTone}`
+                        : "bg-background",
+                    )}
                     animate={
                       isActive
                         ? { scale: 0.9, opacity: 1 }

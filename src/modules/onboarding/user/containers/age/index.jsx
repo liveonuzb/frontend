@@ -12,6 +12,7 @@ import { ChevronRight } from "lucide-react";
 import PageAura from "../../components/page-aura.jsx";
 import { getOnboardingPersonIllustration } from "../../lib/illustration.js";
 import { getAgeTone } from "../../lib/tones.js";
+import useOnboardingBase from "@/hooks/app/use-onboarding-base";
 
 const getAgeProfile = (ageValue) => {
   const ageNumber = Number(ageValue);
@@ -39,11 +40,12 @@ const getAgeProfile = (ageValue) => {
 const Index = () => {
   const navigate = useNavigate();
   const { age, setField, gender, firstName } = useOnboardingStore();
+  const base = useOnboardingBase();
 
   useOnboardingAutoSave("user", "age");
 
   const currentAge = age || "26";
-  const illustration = getOnboardingPersonIllustration(gender, currentAge);
+  const illustration = getOnboardingPersonIllustration(gender, currentAge, base);
   const tone = getAgeTone(currentAge);
   const profile = getAgeProfile(currentAge);
 

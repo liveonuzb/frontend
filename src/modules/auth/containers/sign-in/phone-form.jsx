@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router";
-import { Button } from "@/components/ui/button";
+import AuthSubmitButton from "@/modules/auth/components/auth-submit-button";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { PasswordInput } from "@/components/ui/password-input";
 import { PhoneInput } from "@/components/ui/phone-input.jsx";
@@ -164,15 +164,15 @@ const PhoneForm = () => {
       </Field>
 
       <Field>
-        <Button
+        <AuthSubmitButton
           type="submit"
           disabled={isSubmitting || isPending}
-          className={"h-11 mt-5 md:mt-8"}
+          className={"mt-5 md:mt-8"}
         >
           {isSubmitting || isPending
             ? t("auth.signIn.loggingIn")
             : t("auth.signIn.loginButton")}
-        </Button>
+        </AuthSubmitButton>
       </Field>
     </form>
   );

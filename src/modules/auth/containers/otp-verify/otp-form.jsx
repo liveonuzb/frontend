@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/button";
+import AuthSubmitButton from "@/modules/auth/components/auth-submit-button";
 import { Field, FieldError } from "@/components/ui/field";
 import {
   InputOTP,
@@ -257,15 +257,15 @@ const OtpForm = () => {
       </Field>
 
       <Field>
-        <Button
+        <AuthSubmitButton
           type="submit"
           disabled={isSubmitting || isPending}
-          className={"h-11 mt-5 md:mt-8"}
+          className={"mt-5 md:mt-8"}
         >
           {isSubmitting || isPending
             ? t("auth.otpVerify.verifying")
             : t("auth.otpVerify.verifyButton")}
-        </Button>
+        </AuthSubmitButton>
       </Field>
 
       <p className="text-muted-foreground text-center text-sm">

@@ -47,6 +47,7 @@ import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-
 import PageAura from "../../components/page-aura.jsx";
 import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
 import { useAuthStore } from "@/store";
+import useOnboardingBase from "@/hooks/app/use-onboarding-base";
 
 const LATEST_REPORT_QUERY_KEY = (language) => [
   "onboarding-report",
@@ -73,10 +74,10 @@ const getLanguageLabel = (language, t) => {
   return t("onboarding.report.languages.uz");
 };
 
-const REPORT_LOADING_SCENES = [
+const getReportLoadingScenes = (base) => [
   {
     key: "collecting",
-    imageSrc: "/onboarding/report-1.webp",
+    imageSrc: `${base}/report-1.webp`,
     imageClassName: "object-[50%_35%]",
     glowClassName: "from-cyan-400/24 via-emerald-300/12 to-transparent",
     orbitClassName: "border-cyan-300/35",
@@ -103,7 +104,7 @@ const REPORT_LOADING_SCENES = [
   },
   {
     key: "analyzing",
-    imageSrc: "/onboarding/report-2.webp",
+    imageSrc: `${base}/report-2.webp`,
     imageClassName: "object-[50%_38%]",
     glowClassName: "from-indigo-400/22 via-sky-300/12 to-transparent",
     orbitClassName: "border-indigo-300/35",
@@ -130,7 +131,7 @@ const REPORT_LOADING_SCENES = [
   },
   {
     key: "planning",
-    imageSrc: "/onboarding/report-3.webp",
+    imageSrc: `${base}/report-3.webp`,
     imageClassName: "object-[50%_42%]",
     glowClassName: "from-amber-300/24 via-lime-300/12 to-transparent",
     orbitClassName: "border-amber-300/40",
@@ -157,7 +158,7 @@ const REPORT_LOADING_SCENES = [
   },
   {
     key: "finalizing",
-    imageSrc: "/onboarding/report-4.webp",
+    imageSrc: `${base}/report-4.webp`,
     imageClassName: "object-[50%_44%]",
     glowClassName: "from-yellow-300/28 via-orange-300/16 to-transparent",
     orbitClassName: "border-yellow-300/45",
@@ -205,6 +206,7 @@ const formatDateTime = (value, locale) => {
 };
 
 const ReportLoadingState = ({ slides, activeStage, onSelectStage, t }) => {
+  const base = useOnboardingBase();
   const activeSlide = slides[activeStage] ?? slides[0];
 
   return (
@@ -295,7 +297,7 @@ const ReportLoadingState = ({ slides, activeStage, onSelectStage, t }) => {
                           slide.imageClassName,
                         )}
                         onError={(event) => {
-                          event.currentTarget.src = "/onboarding/report-1.webp";
+                          event.currentTarget.src = `${base}/report-1.webp`;
                         }}
                         animate={{ y: [0, -10, 0], scale: [1, 1.015, 1] }}
                         transition={{
@@ -485,6 +487,7 @@ const ReportErrorState = ({ title, description, onRetry, onDashboard, t }) => {
 };
 
 const ReportContent = ({ report, onStartPlan, t, locale }) => {
+  const base = useOnboardingBase();
   const snapshot = get(report, "inputSnapshot", {});
   const targets = get(snapshot, "targets", {});
   const analytics = get(snapshot, "analytics", {});
@@ -604,14 +607,14 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
       title: t("onboarding.report.sections.nutrition", {
         defaultValue: "Nutrition",
       }),
-      image: "/onboarding/report-1.webp",
+      image: `${base}/report-1.webp`,
       Icon: SaladIcon,
       section: get(report, "report.nutritionGuidance"),
     },
     {
       key: "water",
       title: t("onboarding.report.sections.water", { defaultValue: "Water" }),
-      image: "/onboarding/report-2.webp",
+      image: `${base}/report-2.webp`,
       Icon: DropletsIcon,
       section: get(report, "report.hydrationGuidance"),
     },
@@ -620,14 +623,14 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
       title: t("onboarding.report.sections.workout", {
         defaultValue: "Workout",
       }),
-      image: "/onboarding/report-3.webp",
+      image: `${base}/report-3.webp`,
       Icon: DumbbellIcon,
       section: get(report, "report.movementGuidance"),
     },
     {
       key: "sleep",
       title: t("onboarding.report.sections.sleep", { defaultValue: "Sleep" }),
-      image: "/onboarding/report-4.webp",
+      image: `${base}/report-4.webp`,
       Icon: MoonIcon,
       section: {
         summary: t("onboarding.report.sleepSummary", {
@@ -642,7 +645,7 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
       title: t("onboarding.report.sections.progress", {
         defaultValue: "Progress",
       }),
-      image: "/onboarding/report-1.webp",
+      image: `${base}/report-1.webp`,
       Icon: TrendingUpIcon,
       section: get(report, "report.goalInterpretation"),
     },
@@ -800,7 +803,7 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
               </div>
             </motion.div>
             <motion.img
-              src="/onboarding/report-1.webp"
+              src={`${base}/report-1.webp`}
               alt=""
               className="absolute bottom-0 left-1/2 h-[250px] w-[200px] -translate-x-1/2 object-contain drop-shadow-[0_30px_60px_rgba(15,23,42,0.18)] sm:h-[370px] sm:w-[280px] lg:h-[470px] lg:w-[350px]"
               animate={{ y: [0, -10, 0], scale: [1, 1.015, 1] }}
@@ -919,7 +922,7 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
                     alt=""
                     className="absolute bottom-0 left-1/2 h-32 w-28 -translate-x-1/2 object-contain sm:h-44 sm:w-36"
                     onError={(event) => {
-                      event.currentTarget.src = "/onboarding/report-1.webp";
+                      event.currentTarget.src = `${base}/report-1.webp`;
                     }}
                   />
                   <div className="absolute left-3 top-3 flex size-8 items-center justify-center rounded-xl bg-white text-[#E68A00] shadow-sm sm:left-4 sm:top-4 sm:size-10">
@@ -1052,6 +1055,7 @@ const Index = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
+  const base = useOnboardingBase();
   const onboardingCompleted = useAuthStore(
     (state) => state.onboardingCompleted,
   );
@@ -1084,7 +1088,7 @@ const Index = () => {
 
   const loadingSlides = React.useMemo(
     () =>
-      REPORT_LOADING_SCENES.map((scene, index) => ({
+      getReportLoadingScenes(base).map((scene, index) => ({
         ...scene,
         step: t(`onboarding.report.loadingSlides.${scene.key}.step`, {
           defaultValue: t("onboarding.report.stepLabel", { index: index + 1 }),

@@ -6,8 +6,9 @@ const useLanguageStore = create()(
   persist(
     (set) => ({
       currentLanguage: "uz",
+      hasSelectedLanguage: false,
       setCurrentLanguage: (language) => {
-        set({ currentLanguage: language });
+        set({ currentLanguage: language, hasSelectedLanguage: true });
         void i18n.changeLanguage(language);
       },
     }),

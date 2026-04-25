@@ -1,5 +1,5 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
+import AuthSubmitButton from "@/modules/auth/components/auth-submit-button";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { PasswordInput } from "@/components/ui/password-input";
 import { PasswordStrength } from "@/components/password-strength";
@@ -209,15 +209,15 @@ const PhoneForm = ({ referralCode }) => {
       </Field>
 
       <Field>
-        <Button
+        <AuthSubmitButton
           type="submit"
           disabled={isSubmitting || isPending}
-          className={"h-11 mt-5 md:mt-8"}
+          className={"mt-5 md:mt-8"}
         >
           {isSubmitting || isPending
             ? t("auth.signUp.signingUp")
             : t("auth.signUp.signUpButton")}
-        </Button>
+        </AuthSubmitButton>
       </Field>
     </form>
   );

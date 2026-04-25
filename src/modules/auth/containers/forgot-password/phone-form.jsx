@@ -1,5 +1,5 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
+import AuthSubmitButton from "@/modules/auth/components/auth-submit-button";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { PhoneInput } from "@/components/ui/phone-input.jsx";
 
@@ -113,15 +113,15 @@ const PhoneForm = () => {
       </Field>
 
       <Field>
-        <Button
+        <AuthSubmitButton
           type="submit"
           disabled={isSubmitting || isPending}
-          className={"h-11 mt-5 md:mt-8"}
+          className={"mt-5 md:mt-8"}
         >
           {isSubmitting || isPending
             ? t("auth.forgotPassword.sending")
             : t("auth.forgotPassword.sendButton")}
-        </Button>
+        </AuthSubmitButton>
       </Field>
     </form>
   );

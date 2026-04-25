@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from "react";
-import { Navigate, Route, Routes } from "react-router";
+import { Navigate, Route, Routes, useLocation } from "react-router";
 import PageLoader from "@/components/page-loader/index.jsx";
-import { useAuthStore } from "@/store";
+import { useAuthStore, useLanguageStore, useAppModeStore } from "@/store";
 import ProtectedRoute from "@/components/protected-route";
 import { getPostAuthRoute } from "@/modules/auth/lib/auth-utils.js";
 import { useTelegram } from "@/hooks/use-telegram";
@@ -32,11 +32,42 @@ const Index = () => {
   const { isAuthenticated, onboardingCompleted, user } = useAuthStore();
   const { isTelegramWebApp } = useTelegram();
   const passwordSetupRequired = Boolean(user?.passwordSetupRequired);
+  const hasSelectedLanguage = useLanguageStore(
+    (state) => state.hasSelectedLanguage,
+  );
+  const appMode = useAppModeStore((state) => state.mode);
+  const location = useLocation();
   useTelegramAuth();
   useTelegramBackButton();
 
   if (isTelegramWebApp && !isAuthenticated) {
     return <PageLoader />;
+  }
+
+  // Pre-auth onboarding flow: language -> mode -> auth -> onboarding
+  // Telegram web app skips these since it has its own auth flow.
+  if (!isTelegramWebApp) {
+    const referralPaths = ["/r/", "/ref/", "/join"];
+    const isReferralPath = referralPaths.some((path) =>
+      location.pathname.startsWith(path),
+    );
+
+    if (!isReferralPath) {
+      if (
+        !hasSelectedLanguage &&
+        location.pathname !== "/auth/select-language"
+      ) {
+        return <Navigate to="/auth/select-language" replace />;
+      }
+      if (
+        hasSelectedLanguage &&
+        !appMode &&
+        location.pathname !== "/auth/select-mode" &&
+        location.pathname !== "/auth/select-language"
+      ) {
+        return <Navigate to="/auth/select-mode" replace />;
+      }
+    }
   }
 
   return (

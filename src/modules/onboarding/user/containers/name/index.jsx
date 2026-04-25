@@ -15,6 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronRight } from "lucide-react";
 import PageAura from "../../components/page-aura.jsx";
 import { ONBOARDING_TONES } from "../../lib/tones.js";
+import useAppModeTheme from "@/hooks/app/use-app-mode-theme";
 
 const schema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -25,6 +26,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { firstName, lastName, setFields } = useOnboardingStore();
   const tone = ONBOARDING_TONES.neutral;
+  const modeTheme = useAppModeTheme();
 
   useOnboardingAutoSave("user", "name");
 
@@ -67,7 +69,7 @@ const Index = () => {
             transition={{ duration: 0.28, ease: "easeOut" }}
           >
             <img loading="lazy"
-              src="/curious.webp"
+              src={modeTheme.assets.curious}
               alt="Onboarding illustration"
               className="max-h-[240px] w-full max-w-[240px] object-contain md:max-h-[340px] md:max-w-[340px]"
             />
