@@ -6,8 +6,13 @@ import GetMe from "@/providers/get-me/index.jsx";
 import { TooltipProvider } from "@/components/ui/tooltip.jsx";
 import TelegramProvider from "@/providers/telegram/index.jsx";
 import AppModeProvider from "@/providers/app-mode/index.jsx";
+import { clearOldClientStorage } from "@/lib/clear-old-storage.js";
 
 const Index = ({ children }) => {
+  React.useEffect(() => {
+    clearOldClientStorage();
+  }, []);
+
   return (
     <TelegramProvider>
       <AppModeProvider>
