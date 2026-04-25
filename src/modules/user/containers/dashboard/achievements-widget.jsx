@@ -31,17 +31,17 @@ const AchievementsWidget = () => {
           navigateToAchievements();
         }
       }}
-      className="group relative h-full cursor-pointer overflow-hidden rounded-[28px] border border-amber-500/15 bg-gradient-to-br from-amber-500/[0.08] via-card to-card px-5 py-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-amber-500/30 hover:shadow-xl hover:shadow-amber-500/5 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+      className="group relative h-full cursor-pointer overflow-hidden rounded-[28px] border border-[rgb(var(--accent-rgb)/0.15)] bg-gradient-to-br from-[rgb(var(--accent-rgb)/0.08)] via-card to-card px-5 py-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[rgb(var(--accent-rgb)/0.30)] hover:shadow-xl hover:shadow-[rgb(var(--accent-rgb)/0.05)] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--accent-rgb)/0.40)]"
     >
-      <div className="absolute inset-x-8 top-0 h-24 rounded-full bg-amber-500/8 blur-3xl transition-opacity group-hover:opacity-90" />
+      <div className="absolute inset-x-8 top-0 h-24 rounded-full bg-[rgb(var(--accent-rgb)/0.08)] blur-3xl transition-opacity group-hover:opacity-90" />
       <div className="relative flex h-full flex-col">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-600/70">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[rgb(var(--accent-strong-rgb)/0.70)]">
               Yutuqlar
             </p>
             <h3 className="mt-1 inline-flex items-center gap-2 text-lg font-black tracking-tight">
-              <AwardIcon className="size-4 text-amber-500" />
+              <AwardIcon className="size-4 text-[rgb(var(--accent-rgb))]" />
               Achievements
             </h3>
           </div>
@@ -51,7 +51,7 @@ const AchievementsWidget = () => {
               event.stopPropagation();
               navigateToAchievements();
             }}
-            className="text-sm font-semibold text-amber-600 hover:underline"
+            className="text-sm font-semibold text-[rgb(var(--accent-strong-rgb))] hover:underline"
           >
             Ko&apos;rish
           </button>
@@ -65,7 +65,7 @@ const AchievementsWidget = () => {
           {map(unlocked, (item) => (
             <div
               key={item.id}
-              className="flex size-10 items-center justify-center rounded-xl bg-amber-500/10 text-lg transition-transform hover:scale-110"
+              className="flex size-10 items-center justify-center rounded-xl bg-[rgb(var(--accent-rgb)/0.10)] text-lg transition-transform hover:scale-110"
               title={`${item.name} — ${item.description}`}
             >
               {item.icon || "🏆"}
@@ -101,7 +101,7 @@ const AchievementsWidget = () => {
               </p>
             </div>
           ) : (
-            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-center text-sm font-medium text-amber-600">
+            <div className="rounded-2xl border border-[rgb(var(--accent-rgb)/0.20)] bg-[rgb(var(--accent-rgb)/0.05)] px-3 py-2 text-center text-sm font-medium text-[rgb(var(--accent-strong-rgb))]">
               Barcha yutuqlar ochilgan! 🎉
             </div>
           )}

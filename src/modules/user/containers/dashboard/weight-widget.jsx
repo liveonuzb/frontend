@@ -117,7 +117,7 @@ export default function WeightWidget({
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-sm">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-orange-500/15 text-base">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-[rgb(var(--accent-rgb)/0.15)] text-base">
               ⚖️
             </span>
             Vazn
@@ -152,7 +152,7 @@ export default function WeightWidget({
           <div className="space-y-1">
             <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-orange-400 to-orange-500 transition-all duration-700"
+                className="h-full rounded-full bg-gradient-to-r from-[rgb(var(--accent-rgb))] to-[rgb(var(--accent-strong-rgb))] transition-all duration-700"
                 style={{ width: `${Math.round(progressDone * 100)}%` }}
               />
             </div>
@@ -176,7 +176,7 @@ export default function WeightWidget({
           }}
           className="mt-auto flex w-full items-center gap-2 rounded-xl bg-muted/60 px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-muted"
         >
-          <span className="flex size-7 items-center justify-center rounded-lg bg-orange-500/20 text-base">
+          <span className="flex size-7 items-center justify-center rounded-lg bg-[rgb(var(--accent-rgb)/0.20)] text-base">
             📊
           </span>
           <span className="truncate">Ko'krak / Bel / Son</span>

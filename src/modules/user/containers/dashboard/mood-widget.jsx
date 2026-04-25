@@ -39,7 +39,7 @@ export default function MoodWidget({ dateKey, readOnly = false }) {
     <Card className="py-6">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-sm">
-          <span className="flex size-7 items-center justify-center rounded-lg bg-purple-500/15 text-base">
+          <span className="flex size-7 items-center justify-center rounded-lg bg-[rgb(var(--accent-rgb)/0.15)] text-base">
             😊
           </span>
           Kayfiyat

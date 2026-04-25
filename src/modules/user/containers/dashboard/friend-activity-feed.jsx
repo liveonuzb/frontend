@@ -115,24 +115,24 @@ const FriendActivityFeed = ({
   }, [navigate, onOpenChallenges]);
 
   return (
-    <div className="group relative h-full overflow-hidden rounded-[28px] border border-violet-500/15 bg-gradient-to-br from-violet-500/[0.08] via-card to-card px-5 py-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-violet-500/30 hover:shadow-xl hover:shadow-violet-500/5">
-      <div className="absolute inset-x-8 top-0 h-24 rounded-full bg-violet-500/8 blur-3xl transition-opacity group-hover:opacity-90" />
+    <div className="group relative h-full overflow-hidden rounded-[28px] border border-[rgb(var(--accent-rgb)/0.15)] bg-gradient-to-br from-[rgb(var(--accent-rgb)/0.08)] via-card to-card px-5 py-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[rgb(var(--accent-rgb)/0.30)] hover:shadow-xl hover:shadow-[rgb(var(--accent-rgb)/0.05)]">
+      <div className="absolute inset-x-8 top-0 h-24 rounded-full bg-[rgb(var(--accent-rgb)/0.08)] blur-3xl transition-opacity group-hover:opacity-90" />
 
       <div className="relative flex h-full flex-col">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-violet-600/70">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[rgb(var(--accent-strong-rgb)/0.70)]">
               Community
             </p>
             <h3 className="mt-1 inline-flex items-center gap-2 text-lg font-black tracking-tight">
-              <ActivityIcon className="size-4 text-violet-500" />
+              <ActivityIcon className="size-4 text-[rgb(var(--accent-rgb))]" />
               Do&apos;stlar faoliyati
             </h3>
           </div>
           <Button
             size="sm"
             variant="outline"
-            className="shrink-0 border-violet-500/20 bg-violet-500/5 text-violet-700 hover:bg-violet-500/10"
+            className="shrink-0 border-[rgb(var(--accent-rgb)/0.20)] bg-[rgb(var(--accent-rgb)/0.05)] text-[rgb(var(--accent-strong-rgb))] hover:bg-[rgb(var(--accent-rgb)/0.10)]"
             onClick={handleAddFriend}
           >
             <UserPlusIcon className="mr-1.5 size-3.5" />
@@ -143,7 +143,7 @@ const FriendActivityFeed = ({
         <div className="mt-4 flex-1 space-y-2">
           {size(friends) === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed py-8 text-center">
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-violet-500/10 text-violet-500">
+              <div className="flex size-12 items-center justify-center rounded-2xl bg-[rgb(var(--accent-rgb)/0.10)] text-[rgb(var(--accent-rgb))]">
                 <UsersIcon className="size-5" />
               </div>
               <div>
@@ -166,7 +166,7 @@ const FriendActivityFeed = ({
                 >
                   <Avatar className="size-9 border border-border/40">
                     <AvatarImage src={friend.avatarUrl || undefined} />
-                    <AvatarFallback className="bg-violet-500/10 text-xs font-bold text-violet-600">
+                    <AvatarFallback className="bg-[rgb(var(--accent-rgb)/0.10)] text-xs font-bold text-[rgb(var(--accent-strong-rgb))]">
                       {resolveInitials(friend.name)}
                     </AvatarFallback>
                   </Avatar>
@@ -196,12 +196,12 @@ const FriendActivityFeed = ({
                   <div className="relative">
                     <Avatar className="size-9 border border-border/40">
                       <AvatarImage src={activity.avatarUrl || undefined} />
-                      <AvatarFallback className="bg-violet-500/10 text-xs font-bold text-violet-600">
+                      <AvatarFallback className="bg-[rgb(var(--accent-rgb)/0.10)] text-xs font-bold text-[rgb(var(--accent-strong-rgb))]">
                         {resolveInitials(activity.name)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-card">
-                      <ZapIcon className="size-2.5 text-amber-500" />
+                      <ZapIcon className="size-2.5 text-[rgb(var(--accent-rgb))]" />
                     </div>
                   </div>
                   <div className="min-w-0 flex-1">

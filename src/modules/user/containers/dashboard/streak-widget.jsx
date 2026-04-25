@@ -35,16 +35,16 @@ const StreakWidget = ({ streak, longestStreak, trackedDays }) => {
       : 0;
 
   return (
-    <div className="group relative h-full overflow-hidden rounded-[28px] border border-orange-500/15 bg-gradient-to-br from-orange-500/[0.08] via-card to-card px-5 py-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5">
-      <div className="absolute inset-x-8 top-0 h-24 rounded-full bg-orange-500/8 blur-3xl transition-opacity group-hover:opacity-90" />
+    <div className="group relative h-full overflow-hidden rounded-[28px] border border-[rgb(var(--accent-rgb)/0.15)] bg-gradient-to-br from-[rgb(var(--accent-rgb)/0.08)] via-card to-card px-5 py-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[rgb(var(--accent-rgb)/0.30)] hover:shadow-xl hover:shadow-[rgb(var(--accent-rgb)/0.05)]">
+      <div className="absolute inset-x-8 top-0 h-24 rounded-full bg-[rgb(var(--accent-rgb)/0.08)] blur-3xl transition-opacity group-hover:opacity-90" />
       <div className="relative flex h-full flex-col">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-orange-600/70">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[rgb(var(--accent-strong-rgb)/0.70)]">
               Streak
             </p>
             <h3 className="mt-1 inline-flex items-center gap-2 text-lg font-black tracking-tight">
-              <FlameIcon className="size-4 text-orange-500" />
+              <FlameIcon className="size-4 text-[rgb(var(--accent-rgb))]" />
               Kundalik streak
             </h3>
           </div>
@@ -52,7 +52,7 @@ const StreakWidget = ({ streak, longestStreak, trackedDays }) => {
             className={cn(
               "flex size-14 flex-col items-center justify-center rounded-2xl font-black",
               resolvedStreak > 0
-                ? "bg-orange-500/10 text-orange-600"
+                ? "bg-[rgb(var(--accent-rgb)/0.10)] text-[rgb(var(--accent-strong-rgb))]"
                 : "bg-muted text-muted-foreground",
             )}
           >
@@ -64,11 +64,11 @@ const StreakWidget = ({ streak, longestStreak, trackedDays }) => {
         <div className="mt-4 space-y-2">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>Keyingi nishon: {nextMilestone} kun</span>
-            <span className="font-semibold text-orange-600">{progressToNext}%</span>
+            <span className="font-semibold text-[rgb(var(--accent-strong-rgb))]">{progressToNext}%</span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-orange-500/10">
+          <div className="h-2 overflow-hidden rounded-full bg-[rgb(var(--accent-rgb)/0.10)]">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-orange-400 to-orange-600 transition-all duration-500"
+              className="h-full rounded-full bg-gradient-to-r from-[rgb(var(--accent-rgb))] to-[rgb(var(--accent-strong-rgb))] transition-all duration-500"
               style={{ width: `${progressToNext}%` }}
             />
           </div>

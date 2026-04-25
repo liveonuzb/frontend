@@ -75,15 +75,15 @@ export default function CurrentChallengeWidget({
   );
 
   return (
-    <div className="group relative h-full overflow-hidden rounded-[28px] border border-amber-500/20 bg-gradient-to-br from-amber-500/[0.10] via-card to-card px-5 py-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-amber-500/35 hover:shadow-xl hover:shadow-amber-500/5">
-      <div className="absolute inset-x-8 top-0 h-24 rounded-full bg-amber-500/10 blur-3xl transition-opacity group-hover:opacity-90" />
+    <div className="group relative h-full overflow-hidden rounded-[28px] border border-[rgb(var(--accent-rgb)/0.20)] bg-gradient-to-br from-[rgb(var(--accent-rgb)/0.10)] via-card to-card px-5 py-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[rgb(var(--accent-rgb)/0.35)] hover:shadow-xl hover:shadow-[rgb(var(--accent-rgb)/0.05)]">
+      <div className="absolute inset-x-8 top-0 h-24 rounded-full bg-[rgb(var(--accent-rgb)/0.10)] blur-3xl transition-opacity group-hover:opacity-90" />
       <div className="relative flex h-full flex-col">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-600/80 dark:text-amber-300/80">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[rgb(var(--accent-strong-rgb)/0.80)]">
             Challenge
           </p>
           <h3 className="mt-1 inline-flex items-center gap-2 text-lg font-black tracking-tight">
-            <TrophyIcon className="size-4 text-amber-500" />
+            <TrophyIcon className="size-4 text-[rgb(var(--accent-rgb))]" />
             Joriy challenge
           </h3>
         </div>
@@ -92,7 +92,7 @@ export default function CurrentChallengeWidget({
           <button
             type="button"
             onClick={() => handleOpenChallenge(currentChallenge.id)}
-            className="mt-4 flex w-full flex-1 flex-col gap-4 rounded-[22px] border border-amber-500/15 bg-background/85 p-4 text-left transition-colors hover:border-amber-500/30 hover:bg-background"
+            className="mt-4 flex w-full flex-1 flex-col gap-4 rounded-[22px] border border-[rgb(var(--accent-rgb)/0.15)] bg-background/85 p-4 text-left transition-colors hover:border-[rgb(var(--accent-rgb)/0.30)] hover:bg-background"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -104,7 +104,7 @@ export default function CurrentChallengeWidget({
                 </p>
               </div>
               {currentChallenge.rankLabel ? (
-                <div className="shrink-0 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
+                <div className="shrink-0 rounded-full border border-[rgb(var(--accent-rgb)/0.20)] bg-[rgb(var(--accent-rgb)/0.10)] px-2.5 py-1 text-xs font-semibold text-[rgb(var(--accent-strong-rgb))]">
                   {currentChallenge.rankLabel}
                 </div>
               ) : null}
@@ -115,14 +115,14 @@ export default function CurrentChallengeWidget({
                 <span>{currentChallenge.metricSummary}</span>
                 <span>{currentChallenge.progress}%</span>
               </div>
-              <Progress value={currentChallenge.progress} className="h-2.5 bg-amber-500/15" />
+              <Progress value={currentChallenge.progress} className="h-2.5 bg-[rgb(var(--accent-rgb)/0.15)]" />
             </div>
 
             <div className="flex items-center justify-between gap-3">
               <p className="min-w-0 truncate text-xs text-muted-foreground">
                 {currentChallenge.contextLabel}
               </p>
-              <div className="inline-flex items-center gap-1 text-sm font-semibold text-amber-600 dark:text-amber-300">
+              <div className="inline-flex items-center gap-1 text-sm font-semibold text-[rgb(var(--accent-strong-rgb))]">
                 <span>View</span>
                 <ArrowRightIcon className="size-4" />
               </div>

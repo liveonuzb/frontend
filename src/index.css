@@ -11,6 +11,12 @@
   --btn-to: var(--color-orange-500);
   --btn-shadow: rgba(245, 158, 11, 0.26);
 
+  /* Mode-specific decorative accent (RGB triplet — used in
+     `rgb(var(--accent) / 0.15)` style arbitrary Tailwind values).
+     Default = madagascar (amber/orange). */
+  --accent-rgb: 245 158 11;
+  --accent-strong-rgb: 234 88 12;
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -78,6 +84,10 @@ html[data-app-mode="focus"] {
   --btn-to: var(--color-zinc-700);
   --btn-shadow: rgba(71, 85, 105, 0.22);
 
+  /* Decorative accent (slate) */
+  --accent-rgb: 100 116 139;
+  --accent-strong-rgb: 71 85 105;
+
   /* Surfaces & borders (slate-tinted) */
   --background: oklch(0.992 0.003 256);
   --card: oklch(1 0.002 256);
@@ -114,6 +124,10 @@ html.dark[data-app-mode="focus"] {
   --btn-from: var(--color-slate-500);
   --btn-to: var(--color-zinc-600);
   --btn-shadow: rgba(71, 85, 105, 0.30);
+
+  /* Decorative accent (slate, dark) */
+  --accent-rgb: 148 163 184;
+  --accent-strong-rgb: 100 116 139;
 
   /* Surfaces & borders (slate-tinted, dark) */
   --background: oklch(0.145 0.008 256);
@@ -153,6 +167,10 @@ html[data-app-mode="zen"] {
   --btn-to: var(--color-green-700);
   --btn-shadow: rgba(20, 148, 122, 0.22);
 
+  /* Decorative accent (teal/green) */
+  --accent-rgb: 20 184 166;
+  --accent-strong-rgb: 13 148 136;
+
   /* Surfaces & borders (sage-tinted) */
   --background: oklch(0.992 0.005 162);
   --card: oklch(1 0.004 162);
@@ -190,6 +208,10 @@ html.dark[data-app-mode="zen"] {
   --btn-to: var(--color-green-600);
   --btn-shadow: rgba(20, 148, 122, 0.30);
 
+  /* Decorative accent (teal/green, dark) */
+  --accent-rgb: 45 212 191;
+  --accent-strong-rgb: 20 184 166;
+
   /* Surfaces & borders (sage-tinted, dark) */
   --background: oklch(0.16 0.018 162);
   --card: oklch(0.22 0.022 162);
@@ -217,6 +239,10 @@ html[data-app-mode="madagascar"] {
   --btn-to: var(--color-orange-500);
   --btn-shadow: rgba(245, 158, 11, 0.26);
 
+  /* Decorative accent (amber/orange) */
+  --accent-rgb: 245 158 11;
+  --accent-strong-rgb: 234 88 12;
+
   /* Surfaces & borders (warm-tinted) */
   --background: oklch(0.992 0.005 58);
   --card: oklch(1 0.004 58);
@@ -239,6 +265,10 @@ html[data-app-mode="madagascar"] {
 }
 
 html.dark[data-app-mode="madagascar"] {
+  /* Decorative accent (amber/orange, dark) */
+  --accent-rgb: 251 191 36;
+  --accent-strong-rgb: 245 158 11;
+
   /* Surfaces & borders (warm-tinted, dark) */
   --background: oklch(0.16 0.02 58);
   --card: oklch(0.22 0.024 58);

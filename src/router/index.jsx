@@ -45,8 +45,10 @@ const Index = () => {
   }
 
   // Pre-auth onboarding flow: language -> mode -> auth -> onboarding
-  // Telegram web app skips these since it has its own auth flow.
-  if (!isTelegramWebApp) {
+  // Telegram web app skips these since it has its own auth flow,
+  // EXCEPT for new auto-registered users who still need to pick language/mode
+  // before set-password (passwordSetupRequired = true).
+  if (!isTelegramWebApp || passwordSetupRequired) {
     const referralPaths = ["/r/", "/ref/", "/join"];
     const isReferralPath = referralPaths.some((path) =>
       location.pathname.startsWith(path),

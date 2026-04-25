@@ -98,14 +98,14 @@ export default function ChallengeInvitationsSection() {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="inline-flex items-center gap-2 text-lg font-semibold">
-            <TrophyIcon className="size-5 text-amber-500" />
+            <TrophyIcon className="size-5 text-[rgb(var(--accent-rgb))]" />
             Challenge takliflari
           </h2>
           <p className="text-sm text-muted-foreground">
             Do&apos;stlaringiz sizni challenge&apos;larga taklif qildi.
           </p>
         </div>
-        <div className="inline-flex w-fit items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-700 dark:text-amber-300">
+        <div className="inline-flex w-fit items-center rounded-full border border-[rgb(var(--accent-rgb)/0.30)] bg-[rgb(var(--accent-rgb)/0.10)] px-3 py-1 text-xs font-medium text-[rgb(var(--accent-strong-rgb))]">
           {invitations.length} ta taklif
         </div>
       </div>
@@ -134,7 +134,7 @@ export default function ChallengeInvitationsSection() {
           return (
             <div
               key={invitation.id}
-              className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/[0.08] to-background p-4"
+              className="rounded-2xl border border-[rgb(var(--accent-rgb)/0.20)] bg-gradient-to-br from-[rgb(var(--accent-rgb)/0.08)] to-background p-4"
             >
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex items-start gap-3">

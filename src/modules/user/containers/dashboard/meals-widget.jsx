@@ -68,7 +68,7 @@ export default function MealsWidget({
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-sm">
-            <UtensilsIcon className="size-4 text-orange-500" />
+            <UtensilsIcon className="size-4 text-[rgb(var(--accent-rgb))]" />
             Ovqatlar
           </CardTitle>
           <button
@@ -148,7 +148,7 @@ export default function MealsWidget({
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold">{get(config, "label")}</p>
                 <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                  <FlameIcon className="size-3 text-orange-400" />
+                  <FlameIcon className="size-3 text-[rgb(var(--accent-rgb))]" />
                   {calories > 0 ? `${calories} kcal` : "0 kcal"}
                 </p>
               </div>
