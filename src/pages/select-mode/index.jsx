@@ -1,13 +1,7 @@
 import React, { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router";
-import {
-  ChevronRight,
-  LeafIcon,
-  PalmtreeIcon,
-  TargetIcon,
-  XIcon,
-} from "lucide-react";
+import { ChevronRight, LeafIcon, PalmtreeIcon, TargetIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAppModeStore, APP_MODES } from "@/store";
@@ -71,23 +65,13 @@ const SelectModePage = () => {
 
   const active = MODES.find((m) => m.value === selected) ?? MODES[0];
   const returnTo = location.state?.returnTo;
-  const isRevisit = Boolean(mode);
 
   const handleContinue = () => {
-    setMode(selected);
     if (returnTo) {
       navigate(returnTo, { replace: true });
       return;
     }
     navigate("/auth");
-  };
-
-  const handleClose = () => {
-    if (returnTo) {
-      navigate(returnTo, { replace: true });
-    } else {
-      navigate(-1);
-    }
   };
 
   return (
@@ -125,17 +109,6 @@ const SelectModePage = () => {
         />
       </div>
 
-      {isRevisit ? (
-        <button
-          type="button"
-          onClick={handleClose}
-          className="absolute right-4 top-4 z-20 grid size-10 place-items-center rounded-full border border-border/70 bg-background/80 text-muted-foreground backdrop-blur transition-colors hover:text-foreground md:right-6 md:top-6"
-          aria-label="Close"
-        >
-          <XIcon className="size-5" />
-        </button>
-      ) : null}
-
       <div className="relative z-10 mx-auto flex h-full w-full max-w-lg flex-1 flex-col justify-center">
         <div className="flex flex-col items-center text-center">
           <h1 className="text-2xl font-bold leading-tight md:text-3xl">
@@ -171,7 +144,10 @@ const SelectModePage = () => {
               <motion.button
                 key={item.value}
                 type="button"
-                onClick={() => setSelected(item.value)}
+                onClick={() => {
+                  setSelected(item.value);
+                  setMode(item.value);
+                }}
                 whileTap={{ scale: 0.98 }}
                 className={cn(
                   "relative flex items-start gap-3 rounded-[20px] border bg-background/90 px-4 py-3 text-left transition-all md:gap-4 md:rounded-3xl md:px-5 md:py-4",
@@ -190,7 +166,9 @@ const SelectModePage = () => {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-bold md:text-base">{item.title}</p>
+                    <p className="text-sm font-bold md:text-base">
+                      {item.title}
+                    </p>
                     {item.value === APP_MODES.FOCUS ? (
                       <span
                         className={cn(

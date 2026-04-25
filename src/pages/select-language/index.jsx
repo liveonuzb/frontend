@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router";
-import { CheckIcon, ChevronRight, XIcon } from "lucide-react";
+import { CheckIcon, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useLanguageStore, useAppModeStore } from "@/store";
@@ -46,16 +46,13 @@ const LANGUAGES = [
 const SelectLanguagePage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setCurrentLanguage, currentLanguage, hasSelectedLanguage } =
-    useLanguageStore();
+  const { setCurrentLanguage, currentLanguage } = useLanguageStore();
   const { mode } = useAppModeStore();
   const modeTheme = useAppModeTheme();
   const [selected, setSelected] = useState(currentLanguage || "uz");
 
   const active = LANGUAGES.find((l) => l.code === selected) ?? LANGUAGES[0];
   const returnTo = location.state?.returnTo;
-  // "Revisit" mode = user came here after already finishing the initial flow.
-  const isRevisit = hasSelectedLanguage && Boolean(mode);
 
   const handleContinue = () => {
     setCurrentLanguage(selected);
@@ -67,14 +64,6 @@ const SelectLanguagePage = () => {
       navigate("/auth/select-mode");
     } else {
       navigate("/auth");
-    }
-  };
-
-  const handleClose = () => {
-    if (returnTo) {
-      navigate(returnTo, { replace: true });
-    } else {
-      navigate(-1);
     }
   };
 
@@ -102,17 +91,6 @@ const SelectLanguagePage = () => {
           transition={{ duration: 0.36, ease: "easeOut" }}
         />
       </div>
-
-      {isRevisit ? (
-        <button
-          type="button"
-          onClick={handleClose}
-          className="absolute right-4 top-4 z-20 grid size-10 place-items-center rounded-full border border-border/70 bg-background/80 text-muted-foreground backdrop-blur transition-colors hover:text-foreground md:right-6 md:top-6"
-          aria-label="Close"
-        >
-          <XIcon className="size-5" />
-        </button>
-      ) : null}
 
       <div className="relative z-10 mx-auto flex h-full w-full max-w-lg flex-1 flex-col justify-center">
         <div className="flex flex-col items-center text-center">

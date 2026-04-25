@@ -1,34 +1,29 @@
 import React from "react";
-import { useAppModeStore, APP_MODES } from "@/store";
+import { APP_MODES, useAppModeStore } from "@/store";
 
-/**
- * Syncs the selected app mode to a `data-app-mode` attribute on <html>
- * so CSS can switch the shadcn color palette per mode.
- *
- *  - `focus`      → shadcn default neutral palette (clean, minimal)
- *  - `zen`        → soft sage green palette (calm, nature-inspired)
- *  - `madagascar` → warm orange palette (wild, energetic — site default)
- *  - no mode yet  → falls back to Madagascar (site default)
- */
+const MODE_DATASET_MAP = {
+  [APP_MODES.FOCUS]: "focus",
+  [APP_MODES.ZEN]: "zen",
+  [APP_MODES.MADAGASCAR]: "madagascar",
+};
+
+const DEFAULT_APP_MODE = APP_MODES.FOCUS;
+
 const AppModeProvider = ({ children }) => {
   const mode = useAppModeStore((state) => state.mode);
 
   React.useEffect(() => {
     const root = document.documentElement;
-    const resolved =
-      mode === APP_MODES.FOCUS
-        ? "focus"
-        : mode === APP_MODES.ZEN
-          ? "zen"
-          : "madagascar";
-    root.dataset.appMode = resolved;
+
+    root.dataset.appMode =
+      MODE_DATASET_MAP[mode] ?? MODE_DATASET_MAP[DEFAULT_APP_MODE];
 
     return () => {
       delete root.dataset.appMode;
     };
   }, [mode]);
 
-  return children;
+  return <>{children}</>;
 };
 
 export default AppModeProvider;

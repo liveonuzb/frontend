@@ -10,7 +10,8 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
-
+import { motion } from "framer-motion";
+import { useAppModeStore } from "@/store/index.js";
 const LanguageDrawerPicker = ({
   value,
   onValueChange,
@@ -22,6 +23,7 @@ const LanguageDrawerPicker = ({
   ariaLabel = "Til tanlash",
 }) => {
   const [open, setOpen] = React.useState(false);
+  const { mode } = useAppModeStore();
 
   const resolvedLanguage =
     find(languages, (language) => language.code === value) || languages[0];
@@ -33,6 +35,12 @@ const LanguageDrawerPicker = ({
     },
     [onValueChange],
   );
+
+  const modes = {
+    madagascar: "from-amber-500/18 via-orange-400/10 to-transparent",
+    zen: "from-teal-500/15 via-green-400/8 to-transparent",
+    focus: "from-slate-500/16 via-zinc-400/9 to-transparent",
+  };
 
   return (
     <Drawer open={open} onOpenChange={setOpen} direction="bottom">
@@ -71,34 +79,51 @@ const LanguageDrawerPicker = ({
             const isSelected = language.code === resolvedLanguage?.code;
 
             return (
-              <button
+              <motion.button
                 key={language.id || language.code}
                 type="button"
-                className="block w-full text-left"
                 onClick={() => handleSelect(language.code)}
+                whileTap={{ scale: 0.98 }}
+                className={cn(
+                  "relative flex w-full items-center gap-4 rounded-[24px] border bg-background/90 px-4 py-4 text-left transition-all md:gap-5 md:rounded-3xl md:px-5 md:py-5",
+                  isSelected
+                    ? `bg-gradient-to-br ${modes[mode]}`
+                    : "border-border/70 hover:border-primary/30",
+                )}
               >
+                <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-background/80 text-3xl shadow-sm md:size-14 md:text-4xl">
+                  {language.flag || "🌐"}
+                </span>
+
+                <div className="min-w-0 flex-1">
+                  <p className="text-base font-bold md:text-lg">
+                    {language.label || language.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground md:text-sm">
+                    {language.native || language.code.toUpperCase()}
+                  </p>
+                </div>
+
                 <div
                   className={cn(
-                    "flex items-center justify-between gap-3 rounded-2xl border p-4",
-                    isSelected && "border-primary",
+                    "flex size-6 shrink-0 items-center justify-center rounded-full border-2 md:size-7",
+                    isSelected
+                      ? `${language.border} bg-background/70`
+                      : "border-muted-foreground/25",
                   )}
                 >
-                  <div className="flex min-w-0 items-center gap-3">
-                    <span className="text-base leading-none">
-                      {language.flag || "🌐"}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="font-medium">{language.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {language.code.toUpperCase()}
-                      </p>
-                    </div>
-                  </div>
                   {isSelected ? (
-                    <CheckIcon className="size-4 text-primary" />
+                    <div
+                      className={cn(
+                        "flex size-4 items-center justify-center rounded-full md:size-5",
+                        language.dotTone,
+                      )}
+                    >
+                      <CheckIcon className="size-3 text-white md:size-3.5" />
+                    </div>
                   ) : null}
                 </div>
-              </button>
+              </motion.button>
             );
           })}
         </div>
