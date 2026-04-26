@@ -829,7 +829,6 @@ html[data-app-mode="madagascar"] {
         center center;
       background-size: contain;
     }
-
     .dinner {
       background: url("/public/madagascar/dashboard/light/dinner.png") no-repeat
         center center;
@@ -860,6 +859,37 @@ html[data-app-mode="madagascar"] {
       background: url("/public/madagascar/dashboard/light/water-icon.png")
         no-repeat center center;
       background-size: cover;
+    }
+  }
+  .mood-widget {
+    .bad {
+      background: url("/public/madagascar/mood/male/bad.png") no-repeat center
+        center;
+      background-size: contain;
+    }
+
+    .tired {
+      background: url("/public/madagascar/mood/male/tired.png") no-repeat center
+        center;
+      background-size: contain;
+    }
+
+    .neutral {
+      background: url("/public/madagascar/mood/male/neutral.png") no-repeat
+        center center;
+      background-size: contain;
+    }
+
+    .good {
+      background: url("/public/madagascar/mood/male/good.png") no-repeat center
+        center;
+      background-size: contain;
+    }
+
+    .amazing {
+      background: url("/public/madagascar/mood/male/amazing.png") no-repeat
+        center center;
+      background-size: contain;
     }
   }
 }
