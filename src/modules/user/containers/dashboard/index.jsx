@@ -11,7 +11,6 @@ import BmiWidget from "./bmi-widget.jsx";
 import WeightWidget from "./weight-widget.jsx";
 import WorkoutWidget from "./workout-widget.jsx";
 import CoachInvitationsSection from "./coach-invitations-section.jsx";
-import ChallengeInvitationsSection from "./challenge-invitations-section.jsx";
 import CoachActivitySection from "./coach-activity-section.jsx";
 import MoodReminderDrawer from "./mood-reminder-drawer.jsx";
 import { normalizeDateKey } from "./query-helpers.js";
@@ -44,8 +43,6 @@ const DashboardContainer = () => {
         <ConnectedCoachBanner />
         <CoachInvitationsSection />
         <CoachActivitySection />
-        <ChallengeInvitationsSection />
-
         <div className="grid grid-flow-row-dense auto-rows-min grid-cols-1 items-stretch gap-4 md:grid-cols-2 lg:grid-cols-11">
           <div className="md:col-span-1 lg:col-span-3">
             <CalorieGaugeWidget dateKey={dateKey} showCalorieModeToggle />

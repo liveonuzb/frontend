@@ -7,7 +7,6 @@ import usePatchQuery from "@/hooks/api/use-patch-query";
 import usePostQuery from "@/hooks/api/use-post-query";
 import { Button } from "@/components/ui/button";
 import { getApiResponseData } from "@/lib/api-response";
-import WeeklyCheckInDrawer from "./weekly-check-in-drawer.jsx";
 import {
   DASHBOARD_ME_QUERY_KEY,
   DASHBOARD_COACH_FEEDBACK_QUERY_KEY,
@@ -24,7 +23,10 @@ export default function CoachActivitySection() {
       queryKey: DASHBOARD_ME_QUERY_KEY,
     },
   });
-  const user = React.useMemo(() => getApiResponseData(userData, null), [userData]);
+  const user = React.useMemo(
+    () => getApiResponseData(userData, null),
+    [userData],
+  );
   const hasCoachConnection = Boolean(get(user, "coachConnection.assignmentId"));
   const { data: checkInsData } = useGetQuery({
     url: "/users/me/check-ins",
@@ -90,9 +92,12 @@ export default function CoachActivitySection() {
       return;
     }
 
-    const matchedCheckIn = pendingCheckIns.find((item) => item.id === checkInId);
+    const matchedCheckIn = pendingCheckIns.find(
+      (item) => item.id === checkInId,
+    );
 
     if (matchedCheckIn) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       openCheckIn(matchedCheckIn);
     }
 
@@ -265,7 +270,9 @@ export default function CoachActivitySection() {
                   </div>
                   <Button
                     variant="outline"
-                    disabled={isCompletingTask && isCompletingTaskId === task.id}
+                    disabled={
+                      isCompletingTask && isCompletingTaskId === task.id
+                    }
                     onClick={() => handleCompleteTask(task.id)}
                   >
                     Bajarildi
@@ -276,14 +283,6 @@ export default function CoachActivitySection() {
           </div>
         </div>
       ) : null}
-      <WeeklyCheckInDrawer
-        checkIn={activeCheckIn}
-        form={checkInForm}
-        setForm={setCheckInForm}
-        onSubmit={handleSubmitCheckIn}
-        isSubmitting={submitMutation.isPending}
-        onClose={() => setActiveCheckIn(null)}
-      />
     </>
   );
 }

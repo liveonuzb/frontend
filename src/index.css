@@ -875,6 +875,11 @@ html[data-app-mode="madagascar"] {
     }
   }
   .mood-widget {
+    .how {
+      background: url("/public/madagascar/mood/male/how.png") no-repeat center
+        center;
+      background-size: contain;
+    }
     .bad {
       background: url("/public/madagascar/mood/male/bad.png") no-repeat center
         center;
@@ -947,9 +952,25 @@ html[data-app-mode="madagascar"] {
 
 html[data-app-mode="madagascar"].dark {
   .meals-widget {
-    background:
-      url("/public/madagascar/dashboard/dark/background-meals.png"),
-      no-repeat center center;
-    background-size: cover;
+    .breakfast {
+      background: url("/public/madagascar/dashboard/light/breakfast.png")
+        no-repeat center center;
+      background-size: contain;
+    }
+    .lunch {
+      background: url("/public/madagascar/dashboard/light/lunch.png") no-repeat
+        center center;
+      background-size: contain;
+    }
+    .dinner {
+      background: url("/public/madagascar/dashboard/light/dinner.png") no-repeat
+        center center;
+      background-size: contain;
+    }
+    .snack {
+      background: url("/public/madagascar/dashboard/light/snack.png") no-repeat
+        center center;
+      background-size: contain;
+    }
   }
 }

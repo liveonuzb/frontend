@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ArrowRightIcon,
   FlameIcon,
-  HandPlatter,
   PlusIcon,
   UtensilsIcon,
 } from "lucide-react";
@@ -84,7 +83,7 @@ export default function MealsWidget({
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="flex flex-1 flex-col justify-between gap-y-5">
+      <CardContent className="flex flex-1 flex-col justify-between gap-3">
         {map(entries(mealTypeConfig), ([type = "", config = {}]) => {
           const foods = get(dayData, ["meals", type], []);
 
@@ -101,7 +100,7 @@ export default function MealsWidget({
           const progress = mealGoal > 0 ? Math.min(calories / mealGoal, 1) : 0;
           const ringSize = 56;
           const ringRadius = 25;
-          const ringStroke = 5;
+          const ringStroke = 4;
           const circumference = 2 * Math.PI * ringRadius;
           const dashOffset = circumference * (1 - progress);
           const gradientId = `dashboardMealRingGrad-${type}`;
@@ -155,7 +154,7 @@ export default function MealsWidget({
                   </defs>
                 </svg>
 
-                <div className="absolute left-1/2 top-1/2 flex size-[45px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[#fff8ed] shadow-inner">
+                <div className="absolute left-1/2 top-1/2 flex size-[46px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-secondary shadow-inner">
                   <div
                     className={cn(
                       get(config, "icon"),

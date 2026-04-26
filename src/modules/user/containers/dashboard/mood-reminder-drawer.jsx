@@ -8,6 +8,7 @@ import {
   DrawerTitle,
   DrawerDescription,
   DrawerBody,
+  DrawerFooter,
 } from "@/components/ui/drawer";
 import useGetQuery from "@/hooks/api/use-get-query";
 import usePutQuery from "@/hooks/api/use-put-query";
@@ -19,20 +20,11 @@ import {
   getDayDataFromResponse,
   normalizeDateKey,
 } from "./query-helpers.js";
-
-/* ─────────────────────────────────────────────
-   MOOD REMINDER DRAWER (Dashboard-only)
-   Pops a bottom drawer when the user has been
-   actively using the dashboard for ≥60s, has
-   tapped at least once, and hasn't logged today's
-   mood. Once dismissed it stays hidden for the
-   rest of the day (per user, per device).
-   ───────────────────────────────────────────── */
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button.jsx";
 
 const STORAGE_PREFIX = "mood-reminder:dismissed-on";
 const ACTIVE_THRESHOLD_MS = 60000;
-const TICK_MS = 2000;
-const RETRY_AFTER_BLOCKING_MS = 5000;
 
 const storageKey = (userId) => `${STORAGE_PREFIX}:${userId}`;
 
@@ -40,9 +32,10 @@ export default function MoodReminderDrawer() {
   const userId = useAuthStore((state) => state.user?.id);
   const queryClient = useQueryClient();
   const today = normalizeDateKey(new Date());
-  const [open, setOpen] = useState(false);
 
-  // Same cache slot the dashboard MoodWidget uses → no extra fetch.
+  const [open, setOpen] = useState(false);
+  const [selectedMood, setSelectedMood] = useState(null);
+
   const { data } = useGetQuery({
     url: `/daily-tracking/${today}`,
     queryProps: {
@@ -50,6 +43,7 @@ export default function MoodReminderDrawer() {
       enabled: Boolean(userId),
     },
   });
+
   const dayData = getDayDataFromResponse(data, today);
   const mood = dayData?.mood ?? null;
 
@@ -62,110 +56,56 @@ export default function MoodReminderDrawer() {
   });
 
   useEffect(() => {
-    if (!userId) return;
-    if (mood !== null) return;
-    if (typeof window === "undefined") return;
+    if (!userId || mood !== null) return;
 
-    const dismissedOn = window.localStorage.getItem(storageKey(userId));
+    const dismissedOn = localStorage.getItem(storageKey(userId));
     if (dismissedOn === today) return;
 
-    const state = {
-      activeMs: 0,
-      lastTick: 0, // 0 = uninitialized; set on first qualifying tick
-      interacted: false,
-      cancelled: false,
-      blockingTimeoutId: null,
-    };
-
-    const onPointerDown = () => {
-      state.interacted = true;
-    };
-    const onVisibility = () => {
-      // Reset anchor whenever visibility flips so we don't credit hidden
-      // time as "active".
-      state.lastTick = Date.now();
-    };
-
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("visibilitychange", onVisibility);
-
-    const tryOpen = () => {
-      if (state.cancelled) return;
-      // Re-check mood from cache — user may have logged via the widget
-      // while the timer was running.
-      const fresh = queryClient.getQueryData(getDashboardDayQueryKey(today));
-      if (getDayDataFromResponse(fresh, today)?.mood) return;
-
-      // Anti-collision: another bottom drawer (camera, nutrition, etc.) is
-      // open — wait and retry.
-      const blocking = document.querySelector(
-        '[data-vaul-drawer-direction="bottom"]:not([data-mood-reminder-drawer="true"])',
-      );
-      if (blocking) {
-        state.blockingTimeoutId = window.setTimeout(
-          tryOpen,
-          RETRY_AFTER_BLOCKING_MS,
-        );
-        return;
-      }
-
+    const timer = setTimeout(() => {
       setOpen(true);
-    };
+    }, ACTIVE_THRESHOLD_MS);
 
-    const intervalId = window.setInterval(() => {
-      if (state.cancelled) return;
-      const now = Date.now();
-      if (document.visibilityState !== "visible") {
-        state.lastTick = now;
-        return;
-      }
-      if (!state.interacted) {
-        state.lastTick = now;
-        return;
-      }
-      if (state.lastTick === 0) {
-        state.lastTick = now;
-        return;
-      }
-      state.activeMs += now - state.lastTick;
-      state.lastTick = now;
-      if (state.activeMs >= ACTIVE_THRESHOLD_MS) {
-        window.clearInterval(intervalId);
-        tryOpen();
-      }
-    }, TICK_MS);
+    return () => clearTimeout(timer);
+  }, [userId, mood, today]);
 
-    return () => {
-      state.cancelled = true;
-      window.clearInterval(intervalId);
-      if (state.blockingTimeoutId) window.clearTimeout(state.blockingTimeoutId);
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("visibilitychange", onVisibility);
-    };
-  }, [userId, mood, today, queryClient]);
+  const saveMood = async (moodValue) => {
+    if (!moodValue) return;
 
-  const dismiss = () => {
-    if (userId && typeof window !== "undefined") {
-      window.localStorage.setItem(storageKey(userId), today);
+    await setMoodMutation.mutateAsync({
+      url: `/daily-tracking/${today}`,
+      attributes: {
+        steps: dayData?.steps,
+        workoutMinutes: dayData?.workoutMinutes,
+        burnedCalories: dayData?.burnedCalories,
+        sleepHours: dayData?.sleepHours,
+        mood: moodValue,
+      },
+    });
+  };
+
+  const closeDrawer = async () => {
+    if (userId) {
+      localStorage.setItem(storageKey(userId), today);
     }
+
+    if (selectedMood && mood === null) {
+      try {
+        await saveMood(selectedMood);
+        toast.success("Kayfiyat saqlandi");
+      } catch {
+        toast.error("Kayfiyatni saqlab bo'lmadi");
+      }
+    }
+
     setOpen(false);
   };
 
-  const selectMood = async (value) => {
-    if (setMoodMutation.isPending) return;
+  const confirmMood = async () => {
+    if (!selectedMood) return;
+
     try {
-      await setMoodMutation.mutateAsync({
-        url: `/daily-tracking/${today}`,
-        attributes: {
-          steps: dayData.steps,
-          workoutMinutes: dayData.workoutMinutes,
-          burnedCalories: dayData.burnedCalories,
-          sleepHours: dayData.sleepHours,
-          mood: value,
-        },
-      });
+      await saveMood(selectedMood);
       toast.success("Kayfiyat saqlandi");
-      // Mood is now non-null → effect early-exit prevents reopen.
       setOpen(false);
     } catch {
       toast.error("Kayfiyatni saqlab bo'lmadi");
@@ -175,38 +115,67 @@ export default function MoodReminderDrawer() {
   return (
     <Drawer
       open={open}
-      onOpenChange={(next) => (next ? setOpen(true) : dismiss())}
+      onOpenChange={(next) => {
+        if (next) {
+          setOpen(true);
+        } else {
+          closeDrawer();
+        }
+      }}
       direction="bottom"
     >
       <DrawerContent data-mood-reminder-drawer="true">
         <DrawerHeader className="text-center">
           <DrawerTitle>Bugungi kayfiyatingiz?</DrawerTitle>
           <DrawerDescription>
-            Kuningiz qanday o'tayotganini bir tugma bilan belgilang.
+            Kuningiz qanday o'tayotganini belgilang
           </DrawerDescription>
         </DrawerHeader>
-        <DrawerBody className="pb-6">
-          <div className="grid grid-cols-5 gap-2 px-2">
-            {MOOD_OPTIONS.map(({ value, emoji, label }) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => selectMood(value)}
-                disabled={setMoodMutation.isPending}
-                className={cn(
-                  "flex flex-col items-center gap-1.5 rounded-2xl border bg-card p-3 transition",
-                  "hover:scale-105 hover:border-primary",
-                  "disabled:cursor-not-allowed disabled:opacity-50",
-                )}
-              >
-                <span className="text-3xl leading-none">{emoji}</span>
-                <span className="text-[11px] font-medium leading-tight">
-                  {label}
-                </span>
-              </button>
-            ))}
+
+        <DrawerBody className="mood-widget">
+          <div className="w-1/2 h-44 how mx-auto -mb-8" />
+
+          <div className="grid grid-cols-5 gap-2 px-2 pb-3">
+            {MOOD_OPTIONS.map(({ value, label }) => {
+              const active = selectedMood === value;
+
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setSelectedMood(value)}
+                  className={cn(
+                    "flex flex-col items-center gap-2 rounded-2xl border bg-card transition-all py-3",
+                    active
+                      ? "border-primary scale-105 shadow-lg"
+                      : "hover:scale-105",
+                  )}
+                >
+                  <motion.div
+                    className={`size-8 ${value}`}
+                    animate={{
+                      scale: active ? 1.35 : 1,
+                    }}
+                    transition={{ duration: 0.2 }}
+                  />
+
+                  <span className="text-[9px] font-medium">{label}</span>
+                </button>
+              );
+            })}
           </div>
         </DrawerBody>
+
+        <DrawerFooter className="text-center">
+          <Button
+            type="button"
+            onClick={confirmMood}
+            className="h-11"
+            disabled={!selectedMood || setMoodMutation.isPending}
+          >
+            Confirm
+          </Button>
+        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   );
