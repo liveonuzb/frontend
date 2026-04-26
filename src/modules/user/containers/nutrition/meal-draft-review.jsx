@@ -13,6 +13,7 @@ import IngredientEditDrawer from "./ingredient-edit-drawer.jsx";
 import {
   buildMealIngredientsPayload,
   formatIngredientHint,
+  getIngredientNutritionPreview,
   getMealIngredientTotals,
   getMealIngredientsGrams,
   normalizeMealIngredients,
@@ -37,8 +38,26 @@ export const getDraftPortion = (item = {}) => {
   );
 };
 
-export const getDraftNutritionPreview = (item = {}) =>
-  getMealIngredientTotals(item?.ingredients, item?.nutrition);
+export const getDraftNutritionPreview = (item = {}) => {
+  const totals = getMealIngredientTotals(item?.ingredients, item?.nutrition);
+
+  // Backend may return ingredients without nutrition data yet (e.g. matchStatus=unmatched).
+  // In that case the ingredient sum is all-zero, so fall back to item-level nutrition
+  // which the AI always provides on the scan response.
+  if (
+    totals.calories === 0 &&
+    totals.protein === 0 &&
+    totals.carbs === 0 &&
+    totals.fat === 0
+  ) {
+    const fallback = normalizeMealNutrition(item?.nutrition);
+    if (fallback.calories > 0) {
+      return fallback;
+    }
+  }
+
+  return totals;
+};
 
 export const isDraftReviewNeeded = (item = {}) =>
   Boolean(item?.reviewNeeded) ||
@@ -94,20 +113,8 @@ export const buildMealPayloadFromDraft = (
   };
 };
 
-export const getDraftImageUrl = (item = {}) => {
-  if (item?.imageUrl || item?.image) {
-    return item.imageUrl || item.image || null;
-  }
-
-  if (!Array.isArray(item?.ingredients)) {
-    return null;
-  }
-
-  return (
-    item.ingredients.find((ingredient) => ingredient?.matchedFood?.imageUrl)
-      ?.matchedFood?.imageUrl || null
-  );
-};
+export const getDraftImageUrl = (item = {}) =>
+  item?.imageUrl || item?.image || null;
 
 export const MealDraftSummaryCard = ({
   items,
@@ -178,17 +185,16 @@ export const MealDraftSummaryCard = ({
 };
 
 const getIngredientBadge = (ingredient = {}) => {
-  if (ingredient.reviewNeeded || ingredient.matchStatus === "unmatched") {
+  // Camera-scan ingredients are always AI-estimated. The only other source
+  // that survives into review is the manual-edit drawer (commitEditedIngredient
+  // sets matchStatus: "manual"), which we surface as a plain "Manual" tag.
+  if (
+    ingredient.matchStatus === "manual" ||
+    ingredient.nutritionSource === "manual"
+  ) {
     return {
-      label: "Tekshirish",
-      className: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-    };
-  }
-
-  if (ingredient.matchStatus === "matched") {
-    return {
-      label: "Catalog",
-      className: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+      label: "Manual",
+      className: "bg-muted text-muted-foreground",
     };
   }
 
@@ -202,16 +208,6 @@ const getIngredientBadge = (ingredient = {}) => {
     };
   }
 
-  if (
-    ingredient.matchStatus === "manual" ||
-    ingredient.nutritionSource === "manual"
-  ) {
-    return {
-      label: "Manual",
-      className: "bg-muted text-muted-foreground",
-    };
-  }
-
   return null;
 };
 
@@ -221,6 +217,10 @@ const IngredientCompactRow = ({ ingredient, onEdit, onDelete }) => {
     [ingredient],
   );
   const badge = getIngredientBadge(ingredient);
+  const preview = React.useMemo(
+    () => getIngredientNutritionPreview(ingredient),
+    [ingredient],
+  );
 
   return (
     <div className="rounded-2xl border border-border/50 bg-background/55 px-3 py-2.5">
@@ -242,10 +242,12 @@ const IngredientCompactRow = ({ ingredient, onEdit, onDelete }) => {
             <span className="font-semibold tabular-nums text-foreground">
               {Math.round(toNumber(ingredient.grams, 0))} g
             </span>
-            {hint ? <span>{hint}</span> : null}
-            {ingredient?.matchedFood?.name ? (
-              <span className="truncate">· {ingredient.matchedFood.name}</span>
+            {preview.calories > 0 ? (
+              <span className="font-semibold tabular-nums text-foreground">
+                · {preview.calories} kcal
+              </span>
             ) : null}
+            {hint ? <span>{hint}</span> : null}
           </div>
         </div>
 

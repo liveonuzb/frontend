@@ -349,6 +349,7 @@ export const useFoodScan = () => {
   const draftImageMutation = usePostQuery();
   const draftTextMutation = usePostQuery();
   const ingredientMutation = usePostQuery();
+  const batchIngredientsMutation = usePostQuery();
   const uploadMutation = usePostFileQuery({});
   const audioMutation = usePostQuery();
 
@@ -406,6 +407,8 @@ export const useFoodScan = () => {
         toNumber(get(ingredient, "estimatedGrams"), grams),
       );
 
+      const nutrition = get(ingredient, "nutrition", null);
+
       return {
         id: get(ingredient, "id", fallbackId),
         name: String(get(ingredient, "name", "Ingredient")).trim(),
@@ -417,11 +420,13 @@ export const useFoodScan = () => {
             ? null
             : toNumber(get(ingredient, "estimatedQuantity"), null),
         estimatedUnit: get(ingredient, "estimatedUnit", null),
-        nutritionSource: get(ingredient, "nutritionSource", null),
-        matchStatus: get(ingredient, "matchStatus", "unmatched"),
-        reviewNeeded: Boolean(get(ingredient, "reviewNeeded")),
-        matchedFood: get(ingredient, "matchedFood", null),
-        nutrition: get(ingredient, "nutrition", null),
+        // Camera/image draft path is AI-only — backend catalog metadata is
+        // discarded so the UI and the saved meal payload never reference it.
+        nutritionSource: "ai",
+        matchStatus: "ai-estimated",
+        reviewNeeded: nutrition == null,
+        matchedFood: null,
+        nutrition,
       };
     },
     [],
@@ -437,7 +442,8 @@ export const useFoodScan = () => {
           portionGrams: toNumber(get(item, "portionGrams"), 0),
           aiNotes: get(item, "aiNotes", null),
           reviewNeeded: Boolean(get(item, "reviewNeeded")),
-          nutritionSource: get(item, "nutritionSource", "none"),
+          // Force AI-only source — see normalizeDraftIngredient comment.
+          nutritionSource: "ai",
           nutrition: {
             calories: toNumber(get(item, "nutrition.calories"), 0),
             protein: toNumber(get(item, "nutrition.protein"), 0),
@@ -518,6 +524,30 @@ export const useFoodScan = () => {
         "ingredient-1",
       );
     },
+    // Batch: send all ingredients in parallel (AI-only, no catalog lookup)
+    // Returns array of enriched ingredient objects keyed by original id.
+    analyzeIngredientsBatch: async (ingredients = []) => {
+      const results = await Promise.allSettled(
+        ingredients.map(({ name, grams }) =>
+          batchIngredientsMutation.mutateAsync({
+            url: "/foods/analyze-ingredient",
+            attributes: { name, grams },
+          }),
+        ),
+      );
+
+      return results
+        .map((result, index) => {
+          if (result.status !== "fulfilled") return null;
+          const payload = getResponsePayload(result.value);
+          const enriched = normalizeDraftIngredient(
+            get(payload, "ingredient", payload),
+            ingredients[index].id || `ingredient-${index + 1}`,
+          );
+          return { ...enriched, originalId: ingredients[index].id };
+        })
+        .filter(Boolean);
+    },
     uploadMealCapture: async (imageInput) => {
       const file = await imageInputToFile(imageInput);
       const formData = new FormData();
@@ -556,6 +586,7 @@ export const useFoodScan = () => {
     isAnalyzingDraftImage: draftImageMutation.isPending,
     isAnalyzingDraftText: draftTextMutation.isPending,
     isAnalyzingIngredient: ingredientMutation.isPending,
+    isAnalyzingIngredientsBatch: batchIngredientsMutation.isPending,
     isUploadingCapture: uploadMutation.isPending,
     isTranscribingAudio: audioMutation.isPending,
   };

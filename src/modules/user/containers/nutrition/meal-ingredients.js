@@ -110,10 +110,8 @@ export const buildMealIngredientsPayload = (ingredients = []) =>
     estimatedGrams: ingredient.estimatedGrams,
     estimatedQuantity: ingredient.estimatedQuantity,
     estimatedUnit: ingredient.estimatedUnit,
-    nutritionSource: ingredient.nutritionSource,
-    matchStatus: ingredient.matchStatus,
+    nutritionSource: ingredient.nutritionSource || "ai",
     reviewNeeded: ingredient.reviewNeeded,
-    matchedFood: ingredient.matchedFood,
     nutrition: getIngredientNutritionPreview(ingredient),
   }));
 
