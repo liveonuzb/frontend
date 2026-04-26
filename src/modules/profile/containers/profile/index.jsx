@@ -16,8 +16,10 @@ import {
   CheckIcon,
   ChevronRightIcon,
   CrownIcon,
+  MoonIcon,
   PaletteIcon,
   PencilIcon,
+  SunIcon,
   ZapIcon,
   CheckCircle2Icon,
 } from "lucide-react";
@@ -37,6 +39,7 @@ import { Progress } from "@/components/ui/progress";
 import CoachConnectionDetailsDrawer from "@/components/coach-connection-details-drawer";
 import { useBreadcrumbStore, useAuthStore, useAppModeStore, APP_MODES } from "@/store";
 import ModeDrawer from "@/components/mode-drawer";
+import { useTheme } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import OnboardingHealthReportCard from "@/components/onboarding-health-report-card";
 import { cn } from "@/lib/utils";
@@ -372,6 +375,25 @@ const InlineModeItem = () => {
       </Card>
       <ModeDrawer open={open} onOpenChange={setOpen} />
     </>
+  );
+};
+
+const InlineThemeItem = () => {
+  const { theme, toggleTheme } = useTheme();
+  const label = theme === "dark" ? "Qorong'u" : "Yorug'";
+  const Icon = theme === "dark" ? MoonIcon : SunIcon;
+
+  return (
+    <Card className="overflow-hidden py-6">
+      <CardContent className="p-0">
+        <SettingsItem
+          icon={Icon}
+          label="Mavzu"
+          value={label}
+          onClick={toggleTheme}
+        />
+      </CardContent>
+    </Card>
   );
 };
 
@@ -738,6 +760,7 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
       ) : null}
 
       <InlineModeItem />
+      <InlineThemeItem />
 
       {map(SETTINGS_GROUPS, (group, index) => (
         <SettingsGroupCard
@@ -892,6 +915,7 @@ const SettingsSidebar = ({ activeTab, completion, onTabChange, user }) => {
         />
       ))}
       <InlineModeItem />
+      <InlineThemeItem />
       <Card className="border-border/60 py-6 shadow-none">
         <CardContent className="space-y-4 p-6">
           <div className="space-y-2">

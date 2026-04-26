@@ -16,6 +16,19 @@ import {
 
 export const MODE_OPTIONS = [
   {
+    value: APP_MODES.MADAGASCAR,
+    title: "Madagascar mode",
+    description: "Wild, playful and energetic.",
+    icon: PalmtreeIcon,
+    accent: "from-amber-500/18 via-orange-400/10 to-transparent",
+    pageTint: "from-amber-500/20 via-orange-400/10 to-transparent",
+    border: "border-amber-500/25",
+    iconTone: "bg-gradient-to-br from-amber-500 to-orange-500 text-white",
+    dotTone: "bg-gradient-to-br from-amber-500 to-orange-500",
+    buttonTone:
+      "from-amber-500 to-orange-500 hover:from-amber-500/90 hover:to-orange-500/90 text-white shadow-[0_18px_44px_rgba(245,158,11,0.26)]",
+  },
+  {
     value: APP_MODES.FOCUS,
     title: "Focus mode",
     description: "Clean, minimal and distraction-free.",
@@ -27,6 +40,7 @@ export const MODE_OPTIONS = [
     dotTone: "bg-gradient-to-br from-slate-500 to-zinc-600",
     buttonTone:
       "from-slate-600 to-zinc-700 hover:from-slate-600/90 hover:to-zinc-700/90 text-white shadow-[0_18px_44px_rgba(71,85,105,0.22)]",
+    soon: true,
   },
   {
     value: APP_MODES.ZEN,
@@ -40,25 +54,13 @@ export const MODE_OPTIONS = [
     dotTone: "bg-gradient-to-br from-teal-500 to-green-600",
     buttonTone:
       "from-teal-600 to-green-700 hover:from-teal-600/90 hover:to-green-700/90 text-white shadow-[0_18px_44px_rgba(20,148,122,0.22)]",
-  },
-  {
-    value: APP_MODES.MADAGASCAR,
-    title: "Madagascar mode",
-    description: "Wild, playful and energetic.",
-    icon: PalmtreeIcon,
-    accent: "from-amber-500/18 via-orange-400/10 to-transparent",
-    pageTint: "from-amber-500/20 via-orange-400/10 to-transparent",
-    border: "border-amber-500/25",
-    iconTone: "bg-gradient-to-br from-amber-500 to-orange-500 text-white",
-    dotTone: "bg-gradient-to-br from-amber-500 to-orange-500",
-    buttonTone:
-      "from-amber-500 to-orange-500 hover:from-amber-500/90 hover:to-orange-500/90 text-white shadow-[0_18px_44px_rgba(245,158,11,0.26)]",
+    soon: true,
   },
 ];
 
 export function ModeDrawer({ open, onOpenChange }) {
   const { mode, setMode } = useAppModeStore();
-  const [selected, setSelected] = useState(mode || APP_MODES.FOCUS);
+  const [selected, setSelected] = useState(mode || APP_MODES.MADAGASCAR);
 
   useEffect(() => {
     if (open) {
@@ -107,17 +109,21 @@ export function ModeDrawer({ open, onOpenChange }) {
         <div className="relative z-10 flex flex-col gap-2.5 px-4 pt-3">
           {MODE_OPTIONS.map((item) => {
             const isActive = selected === item.value;
+            const isSoon = Boolean(item.soon);
             return (
               <motion.button
                 key={item.value}
                 type="button"
-                onClick={() => setSelected(item.value)}
-                whileTap={{ scale: 0.98 }}
+                onClick={() => !isSoon && setSelected(item.value)}
+                whileTap={isSoon ? {} : { scale: 0.98 }}
+                disabled={isSoon}
                 className={cn(
                   "relative flex items-center gap-3 rounded-[18px] border bg-background/90 px-3.5 py-3 text-left transition-all",
-                  isActive
-                    ? `bg-gradient-to-br ${item.accent} ${item.border}`
-                    : "border-border/70 hover:border-primary/30",
+                  isSoon
+                    ? "cursor-not-allowed opacity-50"
+                    : isActive
+                      ? `bg-gradient-to-br ${item.accent} ${item.border}`
+                      : "border-border/70 hover:border-primary/30",
                 )}
               >
                 <div
@@ -136,20 +142,26 @@ export function ModeDrawer({ open, onOpenChange }) {
                     {item.description}
                   </p>
                 </div>
-                <div
-                  className={cn(
-                    "flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-all",
-                    isActive
-                      ? `${item.border} bg-background/70`
-                      : "border-muted-foreground/25",
-                  )}
-                >
-                  {isActive && (
-                    <div
-                      className={cn("size-2.5 rounded-full", item.dotTone)}
-                    />
-                  )}
-                </div>
+                {isSoon ? (
+                  <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Soon
+                  </span>
+                ) : (
+                  <div
+                    className={cn(
+                      "flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-all",
+                      isActive
+                        ? `${item.border} bg-background/70`
+                        : "border-muted-foreground/25",
+                    )}
+                  >
+                    {isActive && (
+                      <div
+                        className={cn("size-2.5 rounded-full", item.dotTone)}
+                      />
+                    )}
+                  </div>
+                )}
               </motion.button>
             );
           })}

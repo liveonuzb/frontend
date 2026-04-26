@@ -73,8 +73,9 @@ const buildMealPlanPayload = (plan = {}) => ({
 });
 
 const syncMealPlanCache = (queryClient, response) => {
-  const nextState = normalizeMealPlanState(get(response, "data", {}));
-  queryClient.setQueryData(MEAL_PLAN_QUERY_KEY, { data: nextState });
+  const nextState = normalizeMealPlanState(get(response, "data.data", {}));
+  // Store in the same shape as the Axios response so the useMemo path is consistent.
+  queryClient.setQueryData(MEAL_PLAN_QUERY_KEY, { data: { data: nextState } });
   return nextState;
 };
 
@@ -144,7 +145,7 @@ export const useMealPlan = (options = {}) => {
   });
 
   const mealPlanState = React.useMemo(
-    () => normalizeMealPlanState(get(data, "data", defaultMealPlanState)),
+    () => normalizeMealPlanState(get(data, "data.data", defaultMealPlanState)),
     [data],
   );
 

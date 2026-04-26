@@ -230,7 +230,7 @@ const FloatingActionButton = () => {
               className="fixed inset-0 z-[70] bg-background/70 backdrop-blur-sm md:hidden"
               onClick={closeFab}
             />
-            <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[71] flex justify-end px-8 pb-8 pb-safe-or-4 md:hidden">
+            <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[71] flex justify-end px-5 pb-6 pb-safe-or-4 md:hidden">
               <div className="relative pointer-events-auto">
                 <FabMenuPanel
                   latestWeight={latestWeight}

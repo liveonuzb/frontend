@@ -83,7 +83,7 @@ export const APP_MODE_THEMES = {
   },
 };
 
-export const DEFAULT_APP_MODE_THEME = APP_MODE_THEMES[APP_MODES.FOCUS];
+export const DEFAULT_APP_MODE_THEME = APP_MODE_THEMES[APP_MODES.MADAGASCAR];
 
 export const getAppModeTheme = (mode) =>
   APP_MODE_THEMES[mode] ?? DEFAULT_APP_MODE_THEME;

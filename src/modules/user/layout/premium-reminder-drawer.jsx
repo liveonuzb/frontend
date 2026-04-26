@@ -66,7 +66,9 @@ const getPlanSavings = (plan, basePlan) => {
     return null;
   }
 
-  const comparablePrice = Math.round((basePrice / baseDurationDays) * planDurationDays);
+  const comparablePrice = Math.round(
+    (basePrice / baseDurationDays) * planDurationDays,
+  );
   const savings = comparablePrice - planPrice;
 
   return savings > 0 ? savings : null;
@@ -267,7 +269,10 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
       );
     } catch (error) {
       toast.error(
-        getRequestErrorMessage(error, t("profile.premiumReminder.toasts.error")),
+        getRequestErrorMessage(
+          error,
+          t("profile.premiumReminder.toasts.error"),
+        ),
       );
     }
   }, [
@@ -307,7 +312,7 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
           <DrawerHeader className="flex flex-col items-center justify-center space-y-1 text-center">
             <DrawerTitle className="flex items-center justify-center gap-2 leading-tight">
               <SparklesIcon className="size-4 shrink-0" />
-              {t("profile.premiumReminder.title")}
+              Go wild with Pro
             </DrawerTitle>
             <DrawerDescription>
               {t("profile.premiumReminder.description")}
@@ -322,9 +327,7 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
               <div className="mt-3 space-y-2 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <CheckIcon className="size-4" />
-                  <span>
-                    {t("profile.premiumReminder.benefits.mealPlan")}
-                  </span>
+                  <span>{t("profile.premiumReminder.benefits.mealPlan")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckIcon className="size-4" />
@@ -342,18 +345,15 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
           <DrawerFooter>
             <Button
               type="button"
-              className="bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:from-amber-600 hover:to-amber-700"
+              className={"h-11"}
               onClick={handleContinueFromReminder}
             >
-              <SparklesIcon className="mr-1.5 size-4" />
-              7 kun tekin sinov boshlash
-            </Button>
-            <Button type="button" onClick={handleContinueFromReminder}>
-              {t("profile.premiumReminder.actions.viewPlans")}
+              See pro plans
             </Button>
             <Button
               type="button"
-              variant="outline"
+              variant="link"
+              className={"underline h-11"}
               onClick={() => setReminderOpen(false)}
             >
               {t("profile.premiumReminder.actions.later")}
@@ -365,7 +365,9 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
       <Drawer open={planOpen} onOpenChange={setPlanOpen} direction="bottom">
         <DrawerContent>
           <DrawerHeader className="flex flex-col items-center justify-center space-y-1 text-center">
-            <DrawerTitle>{t("profile.premiumReminder.plans.title")}</DrawerTitle>
+            <DrawerTitle>
+              {t("profile.premiumReminder.plans.title")}
+            </DrawerTitle>
             <DrawerDescription>
               {t("profile.premiumReminder.plans.description")}
             </DrawerDescription>
@@ -385,7 +387,8 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
                 const isSelected = selectedPlan?.code === plan.code;
                 const monthlyEquivalent = getPlanMonthlyEquivalent(plan);
                 const savings = getPlanSavings(plan, shortestPlan);
-                const hasFeatures = Array.isArray(plan.features) && plan.features.length > 0;
+                const hasFeatures =
+                  Array.isArray(plan.features) && plan.features.length > 0;
 
                 return (
                   <button
@@ -529,7 +532,9 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
                 }}
               />
             </div>
-            <DrawerTitle>{t("profile.premiumReminder.payment.title")}</DrawerTitle>
+            <DrawerTitle>
+              {t("profile.premiumReminder.payment.title")}
+            </DrawerTitle>
             <DrawerDescription>
               {t("profile.premiumReminder.payment.description")}
             </DrawerDescription>
@@ -537,11 +542,13 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
           <div className="space-y-4 px-4 pb-2">
             <div className="rounded-2xl border p-4">
               <p className="font-medium">
-                {selectedPlan?.name || t("profile.premiumReminder.payment.planLabel")}
+                {selectedPlan?.name ||
+                  t("profile.premiumReminder.payment.planLabel")}
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                {selectedPlan?.period || t("profile.premiumReminder.payment.periodLabel")} •{" "}
-                {formatPrice(selectedPlan?.price, t)} UZS
+                {selectedPlan?.period ||
+                  t("profile.premiumReminder.payment.periodLabel")}{" "}
+                • {formatPrice(selectedPlan?.price, t)} UZS
               </p>
             </div>
 
@@ -571,7 +578,11 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
                             </p>
                           </div>
                         </div>
-                        {isSelected ? <Badge>{t("profile.premiumReminder.plans.selected")}</Badge> : null}
+                        {isSelected ? (
+                          <Badge>
+                            {t("profile.premiumReminder.plans.selected")}
+                          </Badge>
+                        ) : null}
                       </div>
                     </div>
                   </button>
@@ -615,7 +626,9 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
             <div className="mb-2 flex size-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-500">
               <CheckIcon className="size-6" />
             </div>
-            <DrawerTitle>{t("profile.premiumReminder.success.title")}</DrawerTitle>
+            <DrawerTitle>
+              {t("profile.premiumReminder.success.title")}
+            </DrawerTitle>
             <DrawerDescription>
               {t("profile.premiumReminder.success.description")}
             </DrawerDescription>
@@ -623,7 +636,8 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
           <div className="px-4 pb-2">
             <div className="rounded-2xl border p-4 text-left">
               <p className="font-medium">
-                {selectedPlan?.name || t("profile.premiumReminder.payment.planLabel")}
+                {selectedPlan?.name ||
+                  t("profile.premiumReminder.payment.planLabel")}
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
                 {t("profile.premium.paymentMethod")}:{" "}

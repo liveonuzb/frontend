@@ -18,11 +18,6 @@ export const FOODS_AUDIO_TRANSCRIPT_HISTORY_QUERY_KEY = [
 
 const GRAM_BASED_UNITS = new Set(["g", "ml"]);
 
-// Stable empty references so consumers that use these in useMemo/useEffect deps
-// don't get new references on every render and don't cause infinite loops.
-const EMPTY_FOODS = [];
-const EMPTY_FOOD_MAP = new Map();
-
 const MIME_EXTENSION_MAP = {
   "image/jpeg": "jpg",
   "image/png": "png",
@@ -208,6 +203,19 @@ const useFoodCatalog = () => {
     [data, currentLanguage],
   );
 
+  const foods = React.useMemo(
+    () =>
+      get(data, "data.data.foods", []).map((food) =>
+        createCatalogFood(food, currentLanguage),
+      ),
+    [data, currentLanguage],
+  );
+
+  const foodMap = React.useMemo(
+    () => new Map(foods.map((food) => [food.barcode, food])),
+    [foods],
+  );
+
   const quickAdd = React.useMemo(
     () => get(quickAddData, "data.data", { favorites: [], recent: [] }),
     [quickAddData],
@@ -243,10 +251,8 @@ const useFoodCatalog = () => {
     favorites,
     recentFoods,
     favoriteIdSet,
-    // Kept for backward compat with components that haven't migrated to useFoodsByCategory.
-    // Use stable module-level constants so consumers don't get new references on every render.
-    foods: EMPTY_FOODS,
-    foodMap: EMPTY_FOOD_MAP,
+    foods,
+    foodMap,
   };
 };
 

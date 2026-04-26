@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ArrowRightIcon,
   FlameIcon,
+  HandPlatter,
   PlusIcon,
   UtensilsIcon,
 } from "lucide-react";
@@ -16,12 +17,14 @@ import {
   getDayDataFromResponse,
   getGoalsStateFromResponses,
 } from "./query-helpers.js";
+import { Button } from "@/components/ui/button.jsx";
+import { cn } from "@/lib/utils.js";
 
 const mealTypeConfig = {
-  breakfast: { label: "Nonushta", icon: "🍳" },
-  lunch: { label: "Tushlik", icon: "🥗" },
-  dinner: { label: "Kechki ovqat", icon: "🍲" },
-  snack: { label: "Snack", icon: "🥜" },
+  breakfast: { label: "Nonushta", icon: "breakfast" },
+  lunch: { label: "Tushlik", icon: "lunch" },
+  dinner: { label: "Kechki ovqat", icon: "dinner" },
+  snack: { label: "Snack", icon: "snack" },
 };
 
 const mealPctGoal = {
@@ -64,11 +67,11 @@ export default function MealsWidget({
   );
 
   return (
-    <Card className="h-full py-6">
+    <Card className="h-full py-6 meals-widget">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-sm">
-            <UtensilsIcon className="size-4 text-[rgb(var(--accent-rgb))]" />
+            <UtensilsIcon className="size-4 text-orange-500" />
             Ovqatlar
           </CardTitle>
           <button
@@ -83,20 +86,24 @@ export default function MealsWidget({
       <CardContent className="flex flex-1 flex-col justify-between gap-y-5">
         {map(entries(mealTypeConfig), ([type = "", config = {}]) => {
           const foods = get(dayData, ["meals", type], []);
+
           const calories = reduce(
             foods,
             (sum, food) => sum + get(food, "cal", 0) * get(food, "qty", 1),
             0,
           );
+
           const mealGoal = Math.round(
             get(goals, "calories", 0) * get(mealPctGoal, type, 0.25),
           );
+
           const progress = mealGoal > 0 ? Math.min(calories / mealGoal, 1) : 0;
-          const ringSize = 48;
-          const ringRadius = 19;
-          const ringStroke = 3;
+          const ringSize = 64;
+          const ringRadius = 29;
+          const ringStroke = 6;
           const circumference = 2 * Math.PI * ringRadius;
           const dashOffset = circumference * (1 - progress);
+          const gradientId = `dashboardMealRingGrad-${type}`;
 
           return (
             <div
@@ -104,15 +111,21 @@ export default function MealsWidget({
               className="group/meal flex cursor-pointer items-center gap-3 py-1"
               onClick={() => (onOpen ? onOpen() : navigate("/user/nutrition"))}
             >
-              <div className="relative shrink-0" style={{ width: ringSize, height: ringSize }}>
-                <svg width={ringSize} height={ringSize} className="rotate-[-90deg]">
+              <div
+                className="relative shrink-0"
+                style={{ width: ringSize, height: ringSize }}
+              >
+                <svg
+                  width={ringSize}
+                  height={ringSize}
+                  className="rotate-[-90deg]"
+                >
                   <circle
                     cx={ringSize / 2}
                     cy={ringSize / 2}
                     r={ringRadius}
                     fill="none"
-                    stroke="currentColor"
-                    className="text-muted/30"
+                    stroke="#efd8b7"
                     strokeWidth={ringStroke}
                   />
                   <circle
@@ -120,7 +133,7 @@ export default function MealsWidget({
                     cy={ringSize / 2}
                     r={ringRadius}
                     fill="none"
-                    stroke="url(#dashboardMealRingGrad)"
+                    stroke={`url(#${gradientId})`}
                     strokeWidth={ringStroke}
                     strokeLinecap="round"
                     strokeDasharray={circumference}
@@ -129,26 +142,32 @@ export default function MealsWidget({
                   />
                   <defs>
                     <linearGradient
-                      id="dashboardMealRingGrad"
+                      id={gradientId}
                       x1="0%"
                       y1="0%"
                       x2="100%"
                       y2="0%"
                     >
-                      <stop offset="0%" stopColor="#a3e635" />
-                      <stop offset="100%" stopColor="#65a30d" />
+                      <stop offset="0%" stopColor="#d7e8b8" />
+                      <stop offset="100%" stopColor="#5fb34e" />
                     </linearGradient>
                   </defs>
                 </svg>
-                <div className="absolute inset-0 flex items-center justify-center text-xl">
-                  {get(config, "icon")}
+
+                <div className="absolute left-1/2 top-1/2 flex size-[58px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[#fff8ed] shadow-inner">
+                  <div
+                    className={cn(
+                      get(config, "icon"),
+                      "size-9 bg-contain bg-center bg-no-repeat",
+                    )}
+                  />
                 </div>
               </div>
 
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold">{get(config, "label")}</p>
                 <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                  <FlameIcon className="size-3 text-[rgb(var(--accent-rgb))]" />
+                  <FlameIcon className="size-3 text-orange-400" />
                   {calories > 0 ? `${calories} kcal` : "0 kcal"}
                 </p>
               </div>

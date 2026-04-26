@@ -1,11 +1,8 @@
 import React from "react";
 import { useNavigate } from "react-router";
-import { useTranslation } from "react-i18next";
 import { useBreadcrumbStore } from "@/store";
 import PageTransition from "@/components/page-transition";
 import DateNav from "@/components/date-nav";
-import OnboardingHealthReportCard from "@/components/onboarding-health-report-card";
-import { getUserOnboardingReportPath } from "@/lib/app-paths";
 import ConnectedCoachBanner from "./connected-coach-banner.jsx";
 import CalorieGaugeWidget from "./calorie-gauge-widget.jsx";
 import MealsWidget from "./meals-widget.jsx";
@@ -14,17 +11,12 @@ import MoodWidget from "./mood-widget.jsx";
 import BmiWidget from "./bmi-widget.jsx";
 import WeightWidget from "./weight-widget.jsx";
 import WorkoutWidget from "./workout-widget.jsx";
-import StreakWidget from "./streak-widget.jsx";
-import AchievementsWidget from "./achievements-widget.jsx";
 import CoachInvitationsSection from "./coach-invitations-section.jsx";
 import ChallengeInvitationsSection from "./challenge-invitations-section.jsx";
 import CoachActivitySection from "./coach-activity-section.jsx";
-import CurrentChallengeWidget from "./current-challenge-widget.jsx";
-import FriendActivityFeed from "./friend-activity-feed.jsx";
 import { normalizeDateKey } from "./query-helpers.js";
 
 const DashboardContainer = () => {
-  const { t } = useTranslation();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = React.useState(() => new Date());
@@ -82,18 +74,6 @@ const DashboardContainer = () => {
           </div>
           <div className="md:col-span-2 lg:col-span-5">
             <WorkoutWidget />
-          </div>
-          <div className="md:col-span-1 lg:col-span-3">
-            <StreakWidget />
-          </div>
-          <div className="md:col-span-1 lg:col-span-4">
-            <AchievementsWidget />
-          </div>
-          <div className="md:col-span-1 lg:col-span-4">
-            <CurrentChallengeWidget />
-          </div>
-          <div className="md:col-span-2 lg:col-span-11">
-            <FriendActivityFeed />
           </div>
         </div>
       </div>

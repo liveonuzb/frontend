@@ -20,9 +20,11 @@ import {
   useCoachMealPlan,
   useCoachMealPlansMutations,
 } from "@/modules/coach/lib/hooks/useCoachMealPlans";
+import useFoodCatalog from "@/hooks/app/use-food-catalog";
 
 const MealPlanFormDrawer = ({ mode, mealPlanId, open, onOpenChange }) => {
   const mutations = useCoachMealPlansMutations();
+  const { foods } = useFoodCatalog();
 
   const { data: existingData, isLoading: isLoadingPlan } = useCoachMealPlan(
     mealPlanId,
@@ -145,6 +147,7 @@ const MealPlanFormDrawer = ({ mode, mealPlanId, open, onOpenChange }) => {
         <AiGeneratorDrawer
           open={aiGeneratorOpen}
           onOpenChange={setAiGeneratorOpen}
+          foods={foods}
           onGenerate={handleAiGenerate}
         />
       </>
@@ -223,6 +226,7 @@ const MealPlanFormDrawer = ({ mode, mealPlanId, open, onOpenChange }) => {
       <AiGeneratorDrawer
         open={aiGeneratorOpen}
         onOpenChange={setAiGeneratorOpen}
+        foods={foods}
         onGenerate={handleAiGenerate}
       />
     </>

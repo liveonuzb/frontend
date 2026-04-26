@@ -1,21 +1,15 @@
 import { map, take } from "lodash";
-import React from "react";
+import React, { useEffect } from "react";
 import { Navigate, Outlet, NavLink, useLocation } from "react-router";
 import {
   LayoutDashboardIcon,
   UtensilsIcon,
   RulerIcon,
-  MessageSquareIcon,
   DumbbellIcon,
-  TrophyIcon,
-  UserPlusIcon,
-  WalletCardsIcon,
-  FileChartColumnIcon,
 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -27,10 +21,8 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import RoleSwitcher from "@/components/role-switcher";
-import NavUser from "@/components/nav-user";
 import NotificationCenter from "@/components/notification-center";
 import KeyboardShortcutsProvider from "@/components/keyboard-shortcuts";
-import GamificationBadges from "@/components/gamification-badges";
 import { useAddMealOverlayStore, useAuthStore } from "@/store";
 import MobileNav from "./mobile-nav.jsx";
 import PullToRefresh from "@/components/pull-to-refresh";
@@ -102,10 +94,6 @@ const Index = () => {
     (state) => state.isActionDrawerOpen,
   );
 
-  React.useEffect(() => {
-    setSidebarOpen(preferredSidebarState !== "collapsed");
-  }, [preferredSidebarState]);
-
   const displayName =
     `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
     user?.username ||
@@ -141,33 +129,23 @@ const Index = () => {
         icon: UtensilsIcon,
       },
       {
+        to: "/user/workout",
+        label: "Mashg'ulotlar",
+        icon: DumbbellIcon,
+      },
+      {
         to: "/user/measurements",
         label: "O'lchamlar",
         icon: RulerIcon,
       },
-      {
-        to: "/user/challenges",
-        label: "Musobaqalar",
-        icon: TrophyIcon,
-      },
-      {
-        to: "/user/friends",
-        label: "Do'stlar",
-        icon: UserPlusIcon,
-      },
-      {
-        to: "/user/payments",
-        label: "To'lovlar",
-        icon: WalletCardsIcon,
-      },
-      {
-        to: "/user/chat",
-        label: "Chat",
-        icon: MessageSquareIcon,
-      },
     ],
     [],
   );
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSidebarOpen(preferredSidebarState !== "collapsed");
+  }, [preferredSidebarState]);
 
   if (standaloneProfilePath) {
     return <Navigate to={standaloneProfilePath} replace />;
@@ -192,10 +170,6 @@ const Index = () => {
               pathname={location.pathname}
             />
           </SidebarContent>
-          <SidebarFooter>
-            <GamificationBadges compact className="px-2 pb-2" />
-            <NavUser />
-          </SidebarFooter>
         </Sidebar>
         <SidebarInset className="min-w-0 overflow-hidden md:overflow-visible">
           {isMobileChatView ? (

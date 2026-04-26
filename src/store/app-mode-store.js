@@ -10,9 +10,9 @@ export const APP_MODES = {
 const useAppModeStore = create()(
   persist(
     (set) => ({
-      mode: null, // "focus" | "zen" | "madagascar" | null
+      mode: APP_MODES.MADAGASCAR,
       setMode: (mode) => set({ mode }),
-      resetMode: () => set({ mode: null }),
+      resetMode: () => set({ mode: APP_MODES.MADAGASCAR }),
     }),
     {
       name: "app-mode-storage",
