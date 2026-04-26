@@ -53,7 +53,7 @@ import {
   useCoachMealPlans,
   useCoachWorkoutPlans,
 } from "@/hooks/app/use-coach.js";
-import DateNav from "@/components/date-nav";
+import StrippedCalendar from "@/components/stripped-calendar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -600,11 +600,11 @@ export default function ClientDetailDrawerContent({ clientId, onClose }) {
                 To&apos;lov, ovqatlanish, rejalar va weekly check-in ma&apos;lumotlari.
               </DrawerDescription>
             </div>
-            <DateNav
+            <StrippedCalendar
               date={selectedDate}
               onChange={setSelectedDate}
               maxDate={maxDate}
-              className="justify-between xl:justify-end"
+              className="w-full xl:max-w-md"
             />
           </div>
 

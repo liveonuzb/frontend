@@ -1,8 +1,7 @@
 import React from "react";
-import { useNavigate } from "react-router";
 import { useBreadcrumbStore } from "@/store";
 import PageTransition from "@/components/page-transition";
-import DateNav from "@/components/date-nav";
+import StrippedCalendar from "@/components/stripped-calendar";
 import ConnectedCoachBanner from "./connected-coach-banner.jsx";
 import CalorieGaugeWidget from "./calorie-gauge-widget.jsx";
 import MealsWidget from "./meals-widget.jsx";
@@ -14,21 +13,15 @@ import WorkoutWidget from "./workout-widget.jsx";
 import CoachInvitationsSection from "./coach-invitations-section.jsx";
 import ChallengeInvitationsSection from "./challenge-invitations-section.jsx";
 import CoachActivitySection from "./coach-activity-section.jsx";
+import MoodReminderDrawer from "./mood-reminder-drawer.jsx";
 import { normalizeDateKey } from "./query-helpers.js";
 
 const DashboardContainer = () => {
   const { setBreadcrumbs } = useBreadcrumbStore();
-  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = React.useState(() => new Date());
   const dateKey = React.useMemo(
     () => normalizeDateKey(selectedDate),
     [selectedDate],
-  );
-  const openDailyPage = React.useCallback(
-    (date) => {
-      navigate(`/user/dashboard/day?date=${normalizeDateKey(date)}`);
-    },
-    [navigate],
   );
 
   React.useEffect(() => {
@@ -42,10 +35,10 @@ const DashboardContainer = () => {
     <PageTransition mode="slide-up">
       <div className="flex flex-col gap-6">
         <div className="flex justify-end">
-          <DateNav
+          <StrippedCalendar
             date={selectedDate}
             onChange={setSelectedDate}
-            onLabelClick={openDailyPage}
+            className="w-full max-w-md"
           />
         </div>
         <ConnectedCoachBanner />
@@ -77,6 +70,7 @@ const DashboardContainer = () => {
           </div>
         </div>
       </div>
+      <MoodReminderDrawer />
     </PageTransition>
   );
 };

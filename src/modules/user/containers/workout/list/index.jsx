@@ -83,7 +83,7 @@ import {
   TrackingPageHeader,
   TrackingPageLayout,
 } from "@/components/tracking-page-shell";
-import DateNav from "@/components/date-nav/index.jsx";
+import StrippedCalendar from "@/components/stripped-calendar/index.jsx";
 
 const WEEK_DAYS = [
   "Yakshanba",
@@ -557,12 +557,11 @@ const Index = () => {
     <PageTransition mode="slide-up">
       <div className="flex flex-col gap-6">
         <div className={"flex md:justify-end"}>
-          <DateNav
+          <StrippedCalendar
             date={date}
             onChange={handleDateChange}
-            format={"short"}
             className={
-              "shadow md:shadow-none flex-1 md:flex-none rounded-2xl flex justify-between"
+              "shadow md:shadow-none flex-1 md:flex-none md:w-full md:max-w-md rounded-2xl px-1 py-1"
             }
           />
         </div>

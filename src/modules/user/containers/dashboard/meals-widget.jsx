@@ -74,13 +74,14 @@ export default function MealsWidget({
             <UtensilsIcon className="size-4 text-orange-500" />
             Ovqatlar
           </CardTitle>
-          <button
+          <Button
+            variant={"outlined"}
             type="button"
-            className="flex size-8 items-center justify-center rounded-md bg-muted transition-colors hover:bg-muted/80"
+            className="flex size-9 w-11 items-center justify-center rounded-md bg-muted transition-colors hover:bg-muted/80"
             onClick={() => (onOpen ? onOpen() : navigate("/user/nutrition"))}
           >
-            <ArrowRightIcon className="size-3.5" />
-          </button>
+            <ArrowRightIcon className="size-4" />
+          </Button>
         </div>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col justify-between gap-y-5">
@@ -98,9 +99,9 @@ export default function MealsWidget({
           );
 
           const progress = mealGoal > 0 ? Math.min(calories / mealGoal, 1) : 0;
-          const ringSize = 64;
-          const ringRadius = 29;
-          const ringStroke = 6;
+          const ringSize = 56;
+          const ringRadius = 25;
+          const ringStroke = 5;
           const circumference = 2 * Math.PI * ringRadius;
           const dashOffset = circumference * (1 - progress);
           const gradientId = `dashboardMealRingGrad-${type}`;
@@ -154,11 +155,11 @@ export default function MealsWidget({
                   </defs>
                 </svg>
 
-                <div className="absolute left-1/2 top-1/2 flex size-[58px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[#fff8ed] shadow-inner">
+                <div className="absolute left-1/2 top-1/2 flex size-[45px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[#fff8ed] shadow-inner">
                   <div
                     className={cn(
                       get(config, "icon"),
-                      "size-9 bg-contain bg-center bg-no-repeat",
+                      "size-8 bg-contain bg-center bg-no-repeat",
                     )}
                   />
                 </div>
@@ -175,7 +176,7 @@ export default function MealsWidget({
               {showQuickAdd ? (
                 <button
                   type="button"
-                  className="group-hover/meal:bg-primary/10 flex size-11 shrink-0 items-center justify-center rounded-full bg-muted/50 transition-colors hover:bg-muted"
+                  className="group-hover/meal:bg-primary/10 flex size-10 shrink-0 items-center justify-center rounded-full bg-muted/50 transition-colors hover:bg-muted cursor-pointer shadow"
                   onClick={(event) => {
                     event.stopPropagation();
                     if (onAddMeal) {

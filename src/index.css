@@ -854,6 +854,19 @@ html[data-app-mode="madagascar"] {
       background: url("/public/madagascar/dashboard/light/water-add.png")
         no-repeat center center;
       background-size: cover;
+      transition:
+        transform 0.08s ease,
+        filter 0.08s ease;
+      box-shadow: 0 6px 0 rgba(0, 0, 0, 0.25);
+
+      &:hover {
+        filter: brightness(0.95);
+      }
+      &:active {
+        transform: translateY(4px);
+        box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+        filter: brightness(0.9);
+      }
     }
     .icon {
       background: url("/public/madagascar/dashboard/light/water-icon.png")

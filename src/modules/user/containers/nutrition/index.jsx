@@ -55,7 +55,7 @@ import PlansDrawer from "./plans-drawer.jsx";
 import { SOURCE_META } from "./source-meta.js";
 import NutritionAnalyticsSection from "./nutrition-analytics-section.jsx";
 import { TrackingPageLayout } from "@/components/tracking-page-shell";
-import DateNav from "@/components/date-nav/index.jsx";
+import StrippedCalendar from "@/components/stripped-calendar/index.jsx";
 
 const mealConfig = {
   breakfast: { label: "Nonushta", emoji: "🍳", time: "06:00 - 10:00" },
@@ -1011,12 +1011,11 @@ const Index = () => {
     <PageTransition mode="fade">
       <div className="flex flex-col gap-6">
         <div className={"flex md:justify-end"}>
-          <DateNav
+          <StrippedCalendar
             date={date}
             onChange={setDate}
-            format={"short"}
             className={
-              "shadow md:shadow-none flex-1 md:flex-none rounded-2xl flex justify-between"
+              "shadow md:shadow-none flex-1 md:flex-none md:w-full md:max-w-md rounded-2xl px-1 py-1"
             }
           />
         </div>

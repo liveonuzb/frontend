@@ -1,7 +1,7 @@
 import { clamp, round } from "lodash";
 import React from "react";
 import { motion } from "framer-motion";
-import { ChevronRightIcon, PlusIcon, GlassWaterIcon } from "lucide-react";
+import { ChevronRightIcon, GlassWaterIcon } from "lucide-react";
 import QuickCupDrawer from "@/modules/user/containers/water/quick-cup-drawer";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card.jsx";

@@ -11,12 +11,12 @@ import {
 } from "@/components/ui/drawer";
 import useHealthGoals from "@/hooks/app/use-health-goals";
 import { cn } from "@/lib/utils";
-import { PlusIcon } from "lucide-react";
+import { PencilIcon, PlusIcon } from "lucide-react";
 import CustomCupDrawer from "./custom-cup-drawer";
 
 const CUP_SIZES = [
   { label: "50", value: 50 },
-  { label: "100", value: 150 },
+  { label: "150", value: 150 },
   { label: "250", value: 250 },
   { label: "400", value: 400 },
   { label: "500", value: 500 },
@@ -82,36 +82,74 @@ export default function QuickCupDrawer({ children }) {
             })}
 
             {/* Custom Capacity Button inline */}
-            <CustomCupDrawer>
-              <button
-                className={cn(
-                  "flex flex-col items-center justify-center gap-3 p-4 rounded-3xl transition-all duration-300 aspect-square shadow-sm hover:scale-105 group border border-dashed",
-                  !find(CUP_SIZES, { value: cupSize })
-                    ? "bg-primary/10 border-primary text-primary shadow-sm scale-105 border-solid"
-                    : "bg-card hover:bg-accent hover:border-primary border-border",
-                )}
-              >
-                {!find(CUP_SIZES, { value: cupSize }) ? (
-                  <>
-                    <div className="text-3xl opacity-90 group-hover:opacity-100 transition-opacity">
-                      💧
-                    </div>
-                    <span className="font-semibold text-sm text-primary transition-colors">
-                      {cupSize} ml
-                    </span>
-                  </>
-                ) : customCupSize ? (
-                  <>
-                    <div className={`cup_custom size-10`} />
-                    <span className="font-semibold text-sm text-muted-foreground group-hover:text-primary transition-colors">
-                      {customCupSize} ml
-                    </span>
-                  </>
-                ) : (
-                  <PlusIcon className="size-8 text-muted-foreground group-hover:text-primary group-hover:scale-110 transition-transform" />
-                )}
-              </button>
-            </CustomCupDrawer>
+            {(() => {
+              const isCustomActive = !find(CUP_SIZES, { value: cupSize });
+              const displayCustomSize =
+                customCupSize || (isCustomActive ? cupSize : null);
+              const hasCustom = Boolean(displayCustomSize);
+
+              return (
+                <CustomCupDrawer>
+                  <button
+                    className={cn(
+                      "relative flex flex-col items-center justify-center gap-3 p-4 rounded-3xl transition-all duration-300 aspect-square shadow-sm hover:scale-105 group border",
+                      hasCustom ? "border-solid" : "border-dashed",
+                      isCustomActive
+                        ? "bg-primary/10 border-primary text-primary scale-105"
+                        : "bg-card border-border hover:border-primary hover:bg-accent",
+                    )}
+                    aria-label={
+                      hasCustom
+                        ? `Maxsus hajm: ${displayCustomSize} ml — tahrirlash`
+                        : "Maxsus hajm qo'shish"
+                    }
+                  >
+                    {hasCustom ? (
+                      <>
+                        <div
+                          className={cn(
+                            "cup_custom size-10 transition-opacity",
+                            isCustomActive
+                              ? "opacity-100"
+                              : "opacity-90 group-hover:opacity-100",
+                          )}
+                        />
+                        <span
+                          className={cn(
+                            "font-semibold text-sm transition-colors tabular-nums",
+                            isCustomActive
+                              ? "text-primary"
+                              : "text-muted-foreground group-hover:text-foreground",
+                          )}
+                        >
+                          {displayCustomSize} ml
+                        </span>
+                        {/* Edit affordance — visible hint that the custom
+                            cup is editable. */}
+                        <span
+                          className={cn(
+                            "absolute top-2 right-2 flex size-6 items-center justify-center rounded-full shadow-sm transition-colors",
+                            isCustomActive
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-background/90 text-muted-foreground group-hover:text-primary",
+                          )}
+                          aria-hidden
+                        >
+                          <PencilIcon className="size-3" />
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <PlusIcon className="size-8 text-muted-foreground group-hover:text-primary group-hover:scale-110 transition-transform" />
+                        <span className="font-semibold text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+                          Maxsus
+                        </span>
+                      </>
+                    )}
+                  </button>
+                </CustomCupDrawer>
+              );
+            })()}
           </div>
         </DrawerBody>
       </DrawerContent>

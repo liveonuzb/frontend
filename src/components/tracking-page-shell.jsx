@@ -1,5 +1,5 @@
 import React from "react";
-import DateNav from "@/components/date-nav";
+import StrippedCalendar from "@/components/stripped-calendar";
 import { cn } from "@/lib/utils";
 
 export const TrackingPageHeader = ({
@@ -7,7 +7,6 @@ export const TrackingPageHeader = ({
   subtitle,
   date,
   onDateChange,
-  dateFormat = "long",
   actions,
   hideTitleOnMobile = true,
   className,
@@ -30,18 +29,17 @@ export const TrackingPageHeader = ({
 
       {date && onDateChange ? (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:self-center">
-          <DateNav
+          <StrippedCalendar
             date={date}
             onChange={onDateChange}
-            format={dateFormat}
-            className="justify-between rounded-[1.25rem] border px-2 py-1 sm:hidden"
+            className="rounded-[1.25rem] border px-1 py-1 sm:hidden"
           />
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             {actions}
-            <DateNav
+            <StrippedCalendar
               date={date}
               onChange={onDateChange}
-              className="hidden sm:flex"
+              className="hidden w-full max-w-md sm:flex"
             />
           </div>
         </div>
