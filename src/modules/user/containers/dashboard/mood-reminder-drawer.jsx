@@ -133,7 +133,7 @@ export default function MoodReminderDrawer() {
         </DrawerHeader>
 
         <DrawerBody className="mood-widget">
-          <div className="w-1/2 h-44 how mx-auto -mb-8" />
+          <div className="w-1/2 h-44 how mx-auto" />
 
           <div className="grid grid-cols-5 gap-2 px-2 pb-3">
             {MOOD_OPTIONS.map(({ value, label }) => {
