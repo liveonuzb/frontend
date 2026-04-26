@@ -15,11 +15,11 @@ import { PlusIcon } from "lucide-react";
 import CustomCupDrawer from "./custom-cup-drawer";
 
 const CUP_SIZES = [
-  { label: "50", value: 50, icon: "☕" },
-  { label: "100", value: 100, icon: "🥛" },
-  { label: "200", value: 200, icon: "🫗" },
-  { label: "300", value: 300, icon: "🍼" },
-  { label: "500", value: 500, icon: "🥤" },
+  { label: "50", value: 50 },
+  { label: "100", value: 150 },
+  { label: "250", value: 250 },
+  { label: "400", value: 400 },
+  { label: "500", value: 500 },
 ];
 
 export default function QuickCupDrawer({ children }) {
@@ -33,15 +33,14 @@ export default function QuickCupDrawer({ children }) {
     <Drawer open={open} onOpenChange={setOpen} direction="bottom">
       <DrawerTrigger asChild>{children}</DrawerTrigger>
       <DrawerContent>
-        <DrawerHeader className="border-b border-border/40 pb-4 mt-2">
+        <DrawerHeader>
           <DrawerTitle>Stakan hajmi</DrawerTitle>
           <DrawerDescription>
             Har safar ichadigan suvingiz miqdorini tanlang.
           </DrawerDescription>
         </DrawerHeader>
-
         <DrawerBody className="space-y-4 py-6">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-3 water-cup">
             {CUP_SIZES.map((cup) => {
               const active = cupSize === cup.value;
               return (
@@ -62,9 +61,12 @@ export default function QuickCupDrawer({ children }) {
                       : "bg-card border-transparent hover:border-border hover:bg-accent hover:scale-105 shadow-sm",
                   )}
                 >
-                  <div className="text-3xl opacity-90 group-hover:opacity-100 transition-opacity">
-                    {cup.icon}
-                  </div>
+                  <div
+                    className={cn(
+                      "text-3xl opacity-90 group-hover:opacity-100 transition-opacity size-10",
+                      `cup_${cup.value}`,
+                    )}
+                  />
                   <span
                     className={cn(
                       "font-semibold text-sm transition-colors tabular-nums",
@@ -100,9 +102,7 @@ export default function QuickCupDrawer({ children }) {
                   </>
                 ) : customCupSize ? (
                   <>
-                    <div className="text-3xl opacity-90 group-hover:opacity-100 transition-opacity">
-                      💧
-                    </div>
+                    <div className={`cup_custom size-10`} />
                     <span className="font-semibold text-sm text-muted-foreground group-hover:text-primary transition-colors">
                       {customCupSize} ml
                     </span>

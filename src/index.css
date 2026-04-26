@@ -892,6 +892,44 @@ html[data-app-mode="madagascar"] {
       background-size: contain;
     }
   }
+  .water-cup {
+    .cup_50 {
+      background:
+        url("/public/madagascar/cups/50.png") no-repeat center,
+        no-repeat center center;
+      background-size: contain;
+    }
+    .cup_150 {
+      background:
+        url("/public/madagascar/cups/150.png") no-repeat center,
+        no-repeat center center;
+      background-size: contain;
+    }
+    .cup_250 {
+      background:
+        url("/public/madagascar/cups/250.png") no-repeat center,
+        no-repeat center center;
+      background-size: contain;
+    }
+    .cup_400 {
+      background:
+        url("/public/madagascar/cups/400.png") no-repeat center,
+        no-repeat center center;
+      background-size: contain;
+    }
+    .cup_500 {
+      background:
+        url("/public/madagascar/cups/500.png") no-repeat center,
+        no-repeat center center;
+      background-size: contain;
+    }
+    .cup_custom {
+      background:
+        url("/public/madagascar/cups/custom.png") no-repeat center,
+        no-repeat center center;
+      background-size: contain;
+    }
+  }
 }
 
 html[data-app-mode="madagascar"].dark {
