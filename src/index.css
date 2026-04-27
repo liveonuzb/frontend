@@ -60,6 +60,13 @@
   --invert-foreground: var(--color-zinc-50);
 }
 
+body {
+  min-height: var(--tg-viewport-height, 100dvh);
+  background: #0b0f0c;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* ═══════════════════════════════════════════
    APP MODE PALETTES
    - [data-app-mode="madagascar"]: warm orange (site default, no override needed)
@@ -108,7 +115,6 @@ html[data-app-mode="focus"] {
   --sidebar-accent-foreground: oklch(0.205 0.012 256);
   --sidebar-border: oklch(0.91 0.014 256);
 }
-
 html.dark[data-app-mode="focus"] {
   --primary: oklch(0.922 0 0);
   --primary-foreground: oklch(0.205 0 0);
@@ -191,7 +197,6 @@ html[data-app-mode="zen"] {
   --sidebar-accent-foreground: oklch(0.22 0.025 162);
   --sidebar-border: oklch(0.9 0.025 162);
 }
-
 html.dark[data-app-mode="zen"] {
   --primary: oklch(0.7 0.13 160);
   --primary-foreground: oklch(0.13 0.04 160);
@@ -263,7 +268,6 @@ html[data-app-mode="madagascar"] {
   --sidebar-accent-foreground: oklch(0.22 0.025 58);
   --sidebar-border: oklch(0.9 0.028 58);
 }
-
 html.dark[data-app-mode="madagascar"] {
   /* Decorative accent (amber/orange, dark) */
   --accent-rgb: 251 191 36;
@@ -289,7 +293,6 @@ html.dark[data-app-mode="madagascar"] {
   --sidebar-accent-foreground: oklch(0.985 0.006 58);
   --sidebar-border: oklch(1 0.012 58 / 13%);
 }
-
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);

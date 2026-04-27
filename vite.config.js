@@ -6,6 +6,7 @@ import compression from "vite-plugin-compression";
 import viteImagemin from "vite-plugin-imagemin";
 
 export default defineConfig({
+  base: "/",
   plugins: [
     react(),
     tailwindcss(),
@@ -33,8 +34,6 @@ export default defineConfig({
     allowedHosts: true,
   },
 
-  base: "/",
-
   resolve: {
     alias: {
       "@": path.resolve(process.cwd(), "./src"),
@@ -48,7 +47,7 @@ export default defineConfig({
     sourcemap: false,
     cssCodeSplit: true,
     chunkSizeWarningLimit: 1000,
-
+    assetsInlineLimit: 4096,
     rollupOptions: {
       output: {
         manualChunks(id) {
