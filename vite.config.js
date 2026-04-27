@@ -41,15 +41,50 @@ export default defineConfig({
   },
 
   build: {
-    target: "esnext",
+    target: ["es2020", "chrome80", "safari13"],
+    modulePreload: {
+      polyfill: false,
+    },
     minify: "oxc",
     cssMinify: "lightningcss",
-    sourcemap: false,
     cssCodeSplit: true,
     chunkSizeWarningLimit: 1000,
-    assetsInlineLimit: 4096,
+    reportCompressedSize: false,
+    emptyOutDir: true,
+    sourcemap: false,
+    assetsInlineLimit: 1024,
+    esbuild: {
+      drop: ["console", "debugger"],
+      legalComments: "none",
+    },
+    optimizeDeps: {
+      include: [
+        "react",
+        "react-dom",
+        "react-router-dom",
+        "@tanstack/react-query",
+      ],
+      exclude: [
+        "jspdf",
+        "html2canvas",
+        "html5-qrcode",
+        "recordrtc",
+        "react-media-recorder",
+      ],
+    },
+
     rollupOptions: {
+      treeshake: {
+        moduleSideEffects: false,
+        propertyReadSideEffects: false,
+        tryCatchDeoptimization: false,
+      },
       output: {
+        compact: true,
+        generatedCode: {
+          constBindings: true,
+          objectShorthand: true,
+        },
         manualChunks(id) {
           if (!id.includes("node_modules")) return;
 
