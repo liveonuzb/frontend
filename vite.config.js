@@ -77,14 +77,8 @@ export default defineConfig({
       treeshake: {
         moduleSideEffects: false,
         propertyReadSideEffects: false,
-        tryCatchDeoptimization: false,
       },
       output: {
-        compact: true,
-        generatedCode: {
-          constBindings: true,
-          objectShorthand: true,
-        },
         manualChunks(id) {
           if (!id.includes("node_modules")) return;
 
