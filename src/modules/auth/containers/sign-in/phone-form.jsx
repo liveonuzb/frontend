@@ -19,6 +19,7 @@ import {
 import { useAuthMobileAutoFocus } from "@/modules/auth/lib/mobile-keyboard";
 import { useTranslation } from "react-i18next";
 import { get } from "lodash";
+import { Button } from "@/components/ui/button.jsx";
 
 const PhoneForm = () => {
   const { t } = useTranslation();
@@ -173,6 +174,16 @@ const PhoneForm = () => {
             ? t("auth.signIn.loggingIn")
             : t("auth.signIn.loginButton")}
         </AuthSubmitButton>
+        <Button
+          variant={"link"}
+          onClick={() => {
+            navigate("/auth/sign-up");
+          }}
+          disabled={isSubmitting || isPending}
+          className={"h-11 underline"}
+        >
+          Sign up
+        </Button>
       </Field>
     </form>
   );

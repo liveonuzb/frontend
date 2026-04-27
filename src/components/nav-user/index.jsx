@@ -52,8 +52,11 @@ const NavUser = () => {
   const isAlreadyCoach = includes(roles, "COACH");
 
   const initials = join(
-    take(map(displayName.split(" "), (n) => n[0]), 2),
-    ""
+    take(
+      map(displayName.split(" "), (n) => n[0]),
+      2,
+    ),
+    "",
   ).toUpperCase();
 
   const handleLogout = () => {
@@ -159,7 +162,9 @@ const NavUser = () => {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleCoachClick}>
                 <GraduationCapIcon />
-                {isAlreadyCoach ? t("common.navUser.coachCabinet") : t("common.navUser.becomeCoach")}
+                {isAlreadyCoach
+                  ? t("common.navUser.coachCabinet")
+                  : t("common.navUser.becomeCoach")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => openProfileEntry("premium")}>
                 <CreditCardIcon />

@@ -87,7 +87,11 @@ export const WeightTicker = ({
 
   const emitFromOffset = React.useCallback(
     (nextOffset) => {
-      const idx = clamp(Math.round(-nextOffset / NOTCH_SIZE), 0, stepsCount - 1);
+      const idx = clamp(
+        Math.round(-nextOffset / NOTCH_SIZE),
+        0,
+        stepsCount - 1,
+      );
       const next = Number((idx * step + min).toFixed(decimals));
       onChange?.(String(next));
     },
@@ -129,7 +133,14 @@ export const WeightTicker = ({
       window.addEventListener("pointerup", handleUp);
       window.addEventListener("pointercancel", handleUp);
     },
-    [emitFromOffset, isVertical, maxOffset, minOffset, rawOffset, snapToNearest],
+    [
+      emitFromOffset,
+      isVertical,
+      maxOffset,
+      minOffset,
+      rawOffset,
+      snapToNearest,
+    ],
   );
 
   // Wheel / trackpad scroll
@@ -174,14 +185,14 @@ export const WeightTicker = ({
     return (
       <div
         className={cn(
-          "flex shrink-0 flex-col items-center gap-2 text-foreground",
+          "flex shrink-0 flex-col items-end gap-2 text-foreground",
           className,
         )}
         style={{ "--ticker-accent": accentColor }}
       >
         {showValue ? (
-          <div className="flex items-baseline justify-center gap-1.5">
-            <motion.span className="text-4xl font-black leading-none tabular-nums md:text-5xl">
+          <div className="flex items-baseline justify-center gap-1.5 pr-2">
+            <motion.span className="text-2xl font-black leading-none tabular-nums md:text-5xl">
               {displayValue}
             </motion.span>
             <span className="text-base font-bold text-muted-foreground md:text-lg">
@@ -201,7 +212,7 @@ export const WeightTicker = ({
           <div
             aria-hidden
             className="pointer-events-none absolute z-10 -translate-y-1/2"
-            style={{ top: "50%", right: NOTCH_AREA + LABEL_SLOT + 2 }}
+            style={{ top: "14.5%", right: NOTCH_AREA + LABEL_SLOT + 2 }}
           >
             <span
               className="block h-0 w-0"
@@ -408,7 +419,10 @@ const TickCell = ({
   }
 
   return (
-    <li className="relative shrink-0" style={{ width: NOTCH_SIZE, height: "100%" }}>
+    <li
+      className="relative shrink-0"
+      style={{ width: NOTCH_SIZE, height: "100%" }}
+    >
       <div className="flex h-full w-full flex-col items-center">
         <div
           className="flex w-full items-end justify-center"

@@ -10,6 +10,7 @@ import {
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -40,6 +41,7 @@ import {
   useProfileOverlay,
 } from "@/modules/profile/hooks/use-profile-overlay";
 import { getStandaloneProfileTabPath } from "@/modules/profile/lib/profile-tab-navigation";
+import NavUser from "@/components/nav-user/index.jsx";
 
 const otherNav = [];
 
@@ -170,6 +172,9 @@ const Index = () => {
               pathname={location.pathname}
             />
           </SidebarContent>
+          <SidebarFooter>
+            <NavUser />
+          </SidebarFooter>
         </Sidebar>
         <SidebarInset className="min-w-0 overflow-hidden md:overflow-visible">
           {isMobileChatView ? (

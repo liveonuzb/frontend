@@ -74,7 +74,7 @@ const Index = () => {
   );
 
   return (
-    <div className="relative flex h-full max-h-full w-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8">
+    <div className="relative flex h-full max-h-full w-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8 pr-0">
       <PageAura tone={tone} />
 
       <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto">
@@ -101,7 +101,7 @@ const Index = () => {
           </p>
         </motion.div>
 
-        <div className="relative mt-3 flex flex-1 items-end justify-center overflow-hidden">
+        <div className="relative my-3 flex flex-1 items-end justify-center overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div
               key={`${illustration.src}-${currentHeight}`}
@@ -111,10 +111,11 @@ const Index = () => {
               exit={{ opacity: 0, y: -12, scale: 0.98 }}
               transition={{ duration: 0.28, ease: "easeOut" }}
             >
-              <img loading="lazy"
+              <img
+                loading="lazy"
                 src={illustration.src}
                 alt={illustration.alt}
-                className="max-h-full object-contain transition-all duration-300 md:max-w-[320px]"
+                className="max-h-full object-contain transition-all duration-300 max-w-[240px] md:max-w-[300px]"
                 style={{ height: `${illustrationHeight * 0.9}px` }}
               />
             </motion.div>

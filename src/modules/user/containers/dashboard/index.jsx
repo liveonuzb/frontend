@@ -14,7 +14,10 @@ import CoachInvitationsSection from "./coach-invitations-section.jsx";
 import CoachActivitySection from "./coach-activity-section.jsx";
 import MoodReminderDrawer from "./mood-reminder-drawer.jsx";
 import StreakReminderDrawer from "./streak-reminder-drawer.jsx";
+import StreakRestoreDrawer from "./streak-restore-drawer.jsx";
 import WaterReminderDrawer from "./water-reminder-drawer.jsx";
+import DailyReviewDrawer from "./daily-review-drawer.jsx";
+import TenDayPopupDrawer from "./ten-day-popup-drawer.jsx";
 import { normalizeDateKey } from "./query-helpers.js";
 
 const DashboardContainer = () => {
@@ -69,6 +72,9 @@ const DashboardContainer = () => {
           </div>
         </div>
       </div>
+      <StreakRestoreDrawer />
+      <DailyReviewDrawer />
+      <TenDayPopupDrawer />
       <MoodReminderDrawer />
       <StreakReminderDrawer />
       <WaterReminderDrawer />

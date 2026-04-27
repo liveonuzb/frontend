@@ -134,7 +134,7 @@ const Index = () => {
           </motion.div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 md:gap-2.5">
+        <div className="grid grid-cols-2 gap-2 md:gap-2.5 pb-5">
           {map(levels, (level) => {
             const isActive = activityLevel === level.value;
 

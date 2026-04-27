@@ -92,14 +92,14 @@ export default function MoodWidget({ dateKey, readOnly = false }) {
                   }
                 }}
                 className={cn(
-                  "flex flex-1 items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-60 py-2 cursor-pointer",
+                  "flex flex-1 items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-60 py-1 cursor-pointer",
                   isSelected
                     ? "bg-primary/15 ring-1 ring-primary"
                     : "bg-muted/30 hover:bg-muted/60",
                 )}
               >
                 <motion.div
-                  className={`size-9 ${value}`}
+                  className={`size-14 ${value}`}
                   animate={
                     isSelected
                       ? {

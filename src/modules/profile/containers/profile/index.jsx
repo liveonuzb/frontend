@@ -11,6 +11,7 @@ import {
   toUpper,
   filter,
   values,
+  isEmpty,
 } from "lodash";
 import {
   CheckIcon,
@@ -33,11 +34,16 @@ import {
   DrawerBody,
 } from "@/components/ui/drawer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import GamificationBadges from "@/components/gamification-badges";
 import { Progress } from "@/components/ui/progress";
 import CoachConnectionDetailsDrawer from "@/components/coach-connection-details-drawer";
-import { useBreadcrumbStore, useAuthStore, useAppModeStore, APP_MODES } from "@/store";
+import {
+  useBreadcrumbStore,
+  useAuthStore,
+  useAppModeStore,
+  APP_MODES,
+} from "@/store";
 import ModeDrawer from "@/components/mode-drawer";
 import { useTheme } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -359,41 +365,29 @@ const MODE_LABELS = {
 const InlineModeItem = () => {
   const [open, setOpen] = React.useState(false);
   const mode = useAppModeStore((state) => state.mode);
-  const label = MODE_LABELS[mode] ?? "Madagascar";
+  const { theme, toggleTheme } = useTheme();
+  const Icon = theme === "dark" ? MoonIcon : SunIcon;
 
   return (
     <>
-      <Card className="overflow-hidden py-6">
+      <Card className="overflow-hidden">
         <CardContent className="p-0">
           <SettingsItem
             icon={PaletteIcon}
-            label="Mode"
-            value={label}
+            label={"Mode"}
+            value={MODE_LABELS[mode] ?? "Madagascar"}
             onClick={() => setOpen(true)}
+          />
+          <SettingsItem
+            icon={Icon}
+            label="Theme"
+            value={theme === "dark" ? "Qorong'u" : "Yorug'"}
+            onClick={toggleTheme}
           />
         </CardContent>
       </Card>
       <ModeDrawer open={open} onOpenChange={setOpen} />
     </>
-  );
-};
-
-const InlineThemeItem = () => {
-  const { theme, toggleTheme } = useTheme();
-  const label = theme === "dark" ? "Qorong'u" : "Yorug'";
-  const Icon = theme === "dark" ? MoonIcon : SunIcon;
-
-  return (
-    <Card className="overflow-hidden py-6">
-      <CardContent className="p-0">
-        <SettingsItem
-          icon={Icon}
-          label="Mavzu"
-          value={label}
-          onClick={toggleTheme}
-        />
-      </CardContent>
-    </Card>
   );
 };
 
@@ -494,7 +488,7 @@ const SettingsGroupCard = ({
   user,
   t,
 }) => (
-  <Card className="overflow-hidden py-6">
+  <Card className="overflow-hidden">
     <CardContent className="p-0">
       {map(items, (tabId, index) => {
         const tab = getTabConfig(tabId, user, t);
@@ -680,14 +674,11 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
           </div>
         </CardContent>
       </Card>
-
-      {availableRoles.length > 1 ? (
-        <Card className="overflow-hidden py-2 shadow-none border-border/60">
-          <div className="px-6 py-3">
-            <p className="text-sm font-semibold text-primary tracking-wide">
-              {t("common.navUser.accounts")}
-            </p>
-          </div>
+      {!isEmpty(availableRoles) ? (
+        <Card className={"gap-0"}>
+          <CardHeader className={"py-3"}>
+            <CardTitle>{t("common.navUser.accounts")}</CardTitle>
+          </CardHeader>
           <CardContent className="p-0">
             {map(availableRoles, (role, index) => {
               const config = get(ROLE_CONFIG, role);
@@ -704,7 +695,7 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
                   <button
                     type="button"
                     onClick={() => handleRoleSwitch(role)}
-                    className="flex w-full items-center gap-3.5 px-6 py-3.5 text-left transition-colors hover:bg-muted/40 sm:px-7"
+                    className="flex w-full items-center gap-3.5 px-6 py-3.5 text-left transition-colors hover:bg-muted/40 cursor-pointer"
                   >
                     <div className="relative shrink-0">
                       <Avatar className="size-10 border border-border/50">
@@ -758,10 +749,7 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
           coachConnection={coachConnection}
         />
       ) : null}
-
       <InlineModeItem />
-      <InlineThemeItem />
-
       {map(SETTINGS_GROUPS, (group, index) => (
         <SettingsGroupCard
           key={index}
@@ -915,7 +903,6 @@ const SettingsSidebar = ({ activeTab, completion, onTabChange, user }) => {
         />
       ))}
       <InlineModeItem />
-      <InlineThemeItem />
       <Card className="border-border/60 py-6 shadow-none">
         <CardContent className="space-y-4 p-6">
           <div className="space-y-2">

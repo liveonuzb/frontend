@@ -18,6 +18,8 @@ import {
 import { useAuthMobileAutoFocus } from "@/modules/auth/lib/mobile-keyboard";
 import { useTranslation } from "react-i18next";
 import { get, isEqual } from "lodash";
+import { Button } from "@/components/ui/button.jsx";
+import { ArrowRight } from "iconsax-reactjs";
 
 const PhoneForm = ({ referralCode }) => {
   const { t } = useTranslation();
@@ -218,6 +220,16 @@ const PhoneForm = ({ referralCode }) => {
             ? t("auth.signUp.signingUp")
             : t("auth.signUp.signUpButton")}
         </AuthSubmitButton>
+        <Button
+          variant={"link"}
+          className={"h-11 underline"}
+          onClick={() => {
+            navigate("/auth/sign-in");
+          }}
+          disabled={isSubmitting || isPending}
+        >
+          Sign in <ArrowRight size={20} />
+        </Button>
       </Field>
     </form>
   );

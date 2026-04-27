@@ -88,7 +88,7 @@ const Index = () => {
                 loading="lazy"
                 src={heroImage}
                 alt={selectedGender?.label || "Onboarding illustration"}
-                className="max-h-[240px] object-contain md:max-h-[340px]"
+                className="h-[240px] max-h-[240px] object-contain md:max-h-[340px]"
               />
             </motion.div>
           </AnimatePresence>
@@ -125,7 +125,7 @@ const Index = () => {
                 type="button"
                 onClick={() => handleSelect(item.value)}
                 className={cn(
-                  "relative flex flex-col items-center gap-3 rounded-[28px] border px-4 py-4 transition-all",
+                  "relative flex flex-col items-center rounded-[28px] border px-4 py-4 transition-all",
                   isActive
                     ? `bg-gradient-to-br ${itemTone.cardTone} ${itemTone.border}`
                     : "border-border/70 bg-background/90 hover:border-primary/30",
@@ -136,7 +136,7 @@ const Index = () => {
                   loading="lazy"
                   src={item.image}
                   alt={item.label}
-                  className="h-24 object-contain md:h-44"
+                  className="h-24 object-contain md:h-40"
                 />
                 <div className="text-center">
                   <span className="text-base font-bold">{item.label}</span>

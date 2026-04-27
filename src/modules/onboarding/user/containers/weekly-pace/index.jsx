@@ -11,12 +11,6 @@ import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import { ChevronRight } from "lucide-react";
 import useOnboardingBase from "@/hooks/app/use-onboarding-base";
 
-const getAggressiveImage = (goal, base) => {
-  if (goal === "lose") return `${base}/lose.webp`;
-  if (goal === "gain") return `${base}/gain.webp`;
-  return `${base}/maintain.webp`;
-};
-
 const getPaceOptions = (goal, base) => [
   {
     value: 0.25,
@@ -104,7 +98,6 @@ const Index = () => {
           ? `bg-gradient-to-r ${selectedPace.buttonTone}`
           : "bg-primary text-primary-foreground",
       )}
-      size="lg"
       disabled={!hasSelection}
       onClick={handleContinue}
     >
@@ -191,7 +184,7 @@ const Index = () => {
         </div>
 
         <motion.div
-          className="z-10 grid w-full grid-cols-2 gap-2.5 pb-1"
+          className="z-10 grid w-full grid-cols-2 gap-2.5 pb-5"
           initial="hidden"
           animate="show"
           variants={{

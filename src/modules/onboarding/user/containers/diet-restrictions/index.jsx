@@ -257,7 +257,7 @@ const Index = () => {
           </p>
         </motion.div>
 
-        <div className="grid flex-1 grid-cols-2 gap-2 pb-1 md:gap-2.5">
+        <div className="grid flex-1 grid-cols-1 gap-2 pb-1 md:gap-2.5 pb-5">
           {map(restrictions, (item) => {
             const isActive = isSelected(item.value);
 
@@ -289,7 +289,7 @@ const Index = () => {
                   <p className="text-xs font-semibold leading-tight text-foreground md:text-sm">
                     {t(`onboarding.dietRestrictions.${item.labelKey}`)}
                   </p>
-                  <p className="mt-0.5 hidden text-xs leading-snug text-muted-foreground md:block">
+                  <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
                     {t(`onboarding.dietRestrictions.${item.descriptionKey}`)}
                   </p>
                 </div>

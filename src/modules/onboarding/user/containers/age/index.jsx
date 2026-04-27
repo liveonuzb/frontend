@@ -45,7 +45,11 @@ const Index = () => {
   useOnboardingAutoSave("user", "age");
 
   const currentAge = age || "26";
-  const illustration = getOnboardingPersonIllustration(gender, currentAge, base);
+  const illustration = getOnboardingPersonIllustration(
+    gender,
+    currentAge,
+    base,
+  );
   const tone = getAgeTone(currentAge);
   const profile = getAgeProfile(currentAge);
 
@@ -69,7 +73,7 @@ const Index = () => {
   );
 
   return (
-    <div className="relative flex h-full max-h-full w-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8">
+    <div className="relative flex h-full max-h-full w-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8 pr-0">
       <PageAura tone={tone} />
       <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
         <OnboardingQuestion
@@ -95,7 +99,7 @@ const Index = () => {
           </p>
         </motion.div>
 
-        <div className="relative mt-3 flex flex-1 items-end justify-center overflow-hidden">
+        <div className="relative my-3 flex flex-1 items-end justify-center overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div
               key={illustration.src}
@@ -105,15 +109,14 @@ const Index = () => {
               exit={{ opacity: 0, y: -12, scale: 0.98 }}
               transition={{ duration: 0.28, ease: "easeOut" }}
             >
-              <img loading="lazy"
+              <img
+                loading="lazy"
                 src={illustration.src}
-                className="max-h-full w-full max-w-[320px] object-contain"
+                className="h-[380px] w-full max-w-[320px] object-contain"
                 alt={illustration.alt}
               />
             </motion.div>
           </AnimatePresence>
-
-          {/* Vertical ticker anchored to the right edge */}
           <div className="absolute right-0 top-1/2 z-20 -translate-y-1/2">
             <WeightTicker
               value={currentAge}

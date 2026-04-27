@@ -110,7 +110,8 @@ const Index = () => {
               exit={{ opacity: 0, y: -12, scale: 0.98 }}
               transition={{ duration: 0.28, ease: "easeOut" }}
             >
-              <img loading="lazy"
+              <img
+                loading="lazy"
                 src={illustration.src}
                 alt={selectedOption.label}
                 className="max-h-[170px] w-full max-w-[200px] object-contain md:max-h-[260px] md:max-w-[300px]"
@@ -140,7 +141,7 @@ const Index = () => {
           </motion.div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 md:gap-2.5">
+        <div className="grid grid-cols-2 gap-2 md:gap-2.5 pb-5">
           {map(options, (option) => {
             const isActive = mealFrequency === option.value;
 

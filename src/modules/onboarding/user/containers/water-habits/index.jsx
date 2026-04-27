@@ -94,7 +94,7 @@ const Index = () => {
   );
 
   return (
-    <div className="relative flex h-full max-h-full flex-1 flex-col overflow-hidden pt-3 md:pt-8  px-5">
+    <div className="relative flex h-full max-h-full flex-1 flex-col overflow-hidden pt-3 md:pt-8 px-5">
       <PageAura tone={selectedOption.tone} />
 
       <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
@@ -110,7 +110,8 @@ const Index = () => {
               exit={{ opacity: 0, y: -12, scale: 0.98 }}
               transition={{ duration: 0.28, ease: "easeOut" }}
             >
-              <img loading="lazy"
+              <img
+                loading="lazy"
                 src={illustration.src}
                 alt={selectedOption.label}
                 className="max-h-[170px] w-full max-w-[200px] object-contain md:max-h-[260px] md:max-w-[300px]"
@@ -140,7 +141,7 @@ const Index = () => {
           </motion.div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 md:gap-2.5">
+        <div className="grid grid-cols-2 gap-2 md:gap-2.5 pb-5">
           {map(options, (option) => {
             const isActive = waterHabits === option.value;
 

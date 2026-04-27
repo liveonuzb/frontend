@@ -42,7 +42,7 @@ const Index = () => {
     <Button
       type="button"
       className={cn(
-        "w-full border-transparent transition-all",
+        "w-full border-transparent transition-all h-12",
         bmiMeta ? `bg-gradient-to-r ${bmiMeta.buttonTone}` : "",
       )}
       size="lg"
@@ -53,7 +53,7 @@ const Index = () => {
   );
 
   return (
-    <div className="relative flex h-full max-h-full w-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8">
+    <div className="relative flex h-full max-h-full w-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8 pr-0">
       {bmiMeta ? (
         <div className="pointer-events-none absolute inset-0">
           <motion.div
@@ -97,12 +97,13 @@ const Index = () => {
               : "What's your current weight?"
           }
         />
-
-        <BmiIdentifier
-          meta={bmiMeta}
-          heightValue={height?.value}
-          title="Current BMI"
-        />
+        <div className={"pr-5"}>
+          <BmiIdentifier
+            meta={bmiMeta}
+            heightValue={height?.value}
+            title="Current BMI"
+          />
+        </div>
 
         {/* Illustration fills the middle; vertical ticker pinned to the right */}
         <div className="relative mt-2 flex flex-1 items-end justify-center overflow-hidden">
@@ -115,15 +116,15 @@ const Index = () => {
               exit={{ opacity: 0, y: -12, scale: 0.98 }}
               transition={{ duration: 0.28, ease: "easeOut" }}
             >
-              <img loading="lazy"
+              <img
+                loading="lazy"
                 src={illustration.src}
                 alt={illustration.alt}
-                className="max-h-full object-contain transition-all duration-300 md:max-w-[320px]"
-                style={{ height: `${illustrationHeight * 0.9}px` }}
+                className="max-h-full object-contain transition-all duration-300 max-w-[280px] md:max-w-[320px]"
+                style={{ height: `${illustrationHeight * 0.85}px` }}
               />
             </motion.div>
           </AnimatePresence>
-
           <div className="absolute right-0 top-1/2 z-20 -translate-y-1/2">
             <WeightTicker
               value={currentVal}

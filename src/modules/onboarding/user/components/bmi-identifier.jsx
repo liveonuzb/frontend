@@ -16,7 +16,7 @@ export const BmiIdentifier = ({
   return (
     <motion.div
       className={cn(
-        "mx-auto w-full max-w-md rounded-2xl border bg-gradient-to-br px-3 py-2 backdrop-blur",
+        "mx-auto w-full max-w-md rounded-2xl border bg-gradient-to-br px-3 py-4 backdrop-blur",
         meta.border,
         meta.cardTone,
       )}

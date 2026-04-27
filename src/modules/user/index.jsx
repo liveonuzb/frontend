@@ -10,12 +10,17 @@ import { getStandaloneProfileTabPath } from "@/modules/profile/lib/profile-tab-n
 const DashboardPage = lazy(
   () => import("@/modules/user/pages/dashboard/index.jsx"),
 );
+const DashboardDailyReportDrawerPage = lazy(
+  () => import("@/modules/user/pages/dashboard/daily-report-drawer.jsx"),
+);
 const NutritionPage = lazy(
   () => import("@/modules/user/pages/nutrition/index.jsx"),
 );
 const WaterPage = lazy(() => import("@/modules/user/pages/water/index.jsx"));
 const HealthPage = lazy(() => import("@/modules/user/pages/health/index.jsx"));
 const ReportPage = lazy(() => import("@/modules/user/pages/report/index.jsx"));
+const DailyReportPage = lazy(() => import("@/modules/user/pages/report/daily.jsx"));
+const TenDayReportPage = lazy(() => import("@/modules/user/pages/report/ten-day.jsx"));
 
 const MeasurementsPage = lazy(
   () => import("@/modules/user/pages/measurements/index.jsx"),
@@ -93,7 +98,18 @@ const Index = () => {
               </ErrorBoundary>
             </Suspense>
           }
-        />
+        >
+          <Route
+            path="report/daily/:date?"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <ErrorBoundary>
+                  <DashboardDailyReportDrawerPage />
+                </ErrorBoundary>
+              </Suspense>
+            }
+          />
+        </Route>
         <Route
           path="nutrition"
           element={
@@ -130,6 +146,26 @@ const Index = () => {
             <Suspense fallback={<PageLoader />}>
               <ErrorBoundary>
                 <ReportPage />
+              </ErrorBoundary>
+            </Suspense>
+          }
+        />
+        <Route
+          path="report/daily/:date?"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <ErrorBoundary>
+                <DailyReportPage />
+              </ErrorBoundary>
+            </Suspense>
+          }
+        />
+        <Route
+          path="report/range/:days?"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <ErrorBoundary>
+                <TenDayReportPage />
               </ErrorBoundary>
             </Suspense>
           }
