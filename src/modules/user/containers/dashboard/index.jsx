@@ -13,6 +13,8 @@ import WorkoutWidget from "./workout-widget.jsx";
 import CoachInvitationsSection from "./coach-invitations-section.jsx";
 import CoachActivitySection from "./coach-activity-section.jsx";
 import MoodReminderDrawer from "./mood-reminder-drawer.jsx";
+import StreakReminderDrawer from "./streak-reminder-drawer.jsx";
+import WaterReminderDrawer from "./water-reminder-drawer.jsx";
 import { normalizeDateKey } from "./query-helpers.js";
 
 const DashboardContainer = () => {
@@ -68,6 +70,8 @@ const DashboardContainer = () => {
         </div>
       </div>
       <MoodReminderDrawer />
+      <StreakReminderDrawer />
+      <WaterReminderDrawer />
     </PageTransition>
   );
 };

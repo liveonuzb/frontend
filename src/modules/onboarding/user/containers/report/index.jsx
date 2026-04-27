@@ -205,9 +205,8 @@ const formatDateTime = (value, locale) => {
   }).format(date);
 };
 
-const ReportLoadingState = ({ slides, activeStage, onSelectStage, t }) => {
+const ReportLoadingState = ({ slides, activeStage, t }) => {
   const base = useOnboardingBase();
-  const activeSlide = slides[activeStage] ?? slides[0];
 
   return (
     <div className="relative flex h-full min-h-0 flex-1 items-center justify-center overflow-hidden px-3 py-3 md:px-6 md:py-5">
@@ -354,95 +353,6 @@ const ReportLoadingState = ({ slides, activeStage, onSelectStage, t }) => {
               );
             })}
           </motion.div>
-        </div>
-
-        <div className="relative overflow-hidden rounded-[24px] border border-border/60 bg-background/75 p-3 backdrop-blur-xl lg:rounded-[32px] lg:p-5">
-          <div className="hidden space-y-2 lg:block">
-            <p className="text-xs font-semibold uppercase text-primary">
-              {t("onboarding.report.generatingTitle")}
-            </p>
-            <p className="text-sm leading-6 text-muted-foreground">
-              {t("onboarding.report.generatingDescription")}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-4 gap-2 lg:mt-5 lg:block lg:space-y-3">
-            {map(slides, (slide, index) => {
-              const active = index === activeStage;
-              const StepIcon = slide.primaryIcon;
-
-              return (
-                <button
-                  key={`timeline-${slide.key}`}
-                  type="button"
-                  className={cn(
-                    "group grid w-full justify-items-center gap-1 rounded-xl border px-2 py-2 text-center transition-colors lg:grid-cols-[36px_minmax(0,1fr)] lg:justify-items-stretch lg:gap-3 lg:rounded-2xl lg:px-3 lg:py-3 lg:text-left",
-                    active
-                      ? "border-primary/25 bg-primary/[0.08]"
-                      : "border-border/60 bg-background/55 hover:border-primary/20",
-                  )}
-                  onClick={() => onSelectStage(index)}
-                >
-                  <span
-                    className={cn(
-                      "flex size-8 items-center justify-center rounded-xl border lg:size-9",
-                      active
-                        ? "border-primary/20 bg-primary/12 text-primary"
-                        : "border-border/70 bg-background text-muted-foreground",
-                    )}
-                  >
-                    <StepIcon className="size-4" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-[9px] font-semibold uppercase text-muted-foreground lg:text-[11px]">
-                      {slide.step}
-                    </span>
-                    <span className="mt-0.5 hidden truncate text-sm font-semibold lg:block">
-                      {slide.title}
-                    </span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="mt-3 flex gap-2 lg:mt-5">
-            {map(slides, (slide, index) => (
-              <button
-                key={`dot-${slide.key}`}
-                type="button"
-                className="h-2 flex-1 overflow-hidden rounded-full bg-muted"
-                onClick={() => onSelectStage(index)}
-                aria-label={slide.title}
-              >
-                <motion.span
-                  className="block h-full rounded-full bg-primary"
-                  initial={false}
-                  animate={{ width: index === activeStage ? "100%" : "0%" }}
-                  transition={{ duration: 0.45, ease: "easeOut" }}
-                />
-              </button>
-            ))}
-          </div>
-
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`active-${activeSlide.key}`}
-              className="mt-3 hidden rounded-2xl border border-primary/15 bg-primary/[0.06] px-4 py-4 lg:block"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.22, ease: "easeOut" }}
-            >
-              <div className="flex items-center gap-2 text-sm font-semibold">
-                <BotIcon className="size-4 text-primary" />
-                {activeSlide.title}
-              </div>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                {activeSlide.description}
-              </p>
-            </motion.div>
-          </AnimatePresence>
         </div>
       </div>
     </div>
