@@ -1,23 +1,16 @@
 import React, { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { map, get, size } from "lodash";
+import { map, get, size, some } from "lodash";
 import {
   PlusIcon,
   DumbbellIcon,
-  Settings2Icon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  MoreVerticalIcon,
   Trash2Icon,
 } from "lucide-react";
-import { cn } from "@/lib/utils.js";
 import { Button } from "@/components/ui/button.jsx";
-import { Card } from "@/components/ui/card.jsx";
 import { Input } from "@/components/ui/input.jsx";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog.jsx";
 import {
   NumberField,
   NumberFieldDecrement,
@@ -43,6 +36,37 @@ const BuilderMobileView = memo(({
   onOpenMobileLibrary,
 }) => {
   const { t } = useTranslation();
+  const [expandedExerciseId, setExpandedExerciseId] = React.useState(null);
+
+  React.useEffect(() => {
+    const hasExpandedExercise = some(
+      selectedDayExercises,
+      (exercise) => get(exercise, "id") === expandedExerciseId,
+    );
+
+    if (size(selectedDayExercises) > 0 && !hasExpandedExercise) {
+      setExpandedExerciseId(get(selectedDayExercises, "[0].id"));
+    }
+  }, [expandedExerciseId, selectedDayExercises]);
+
+  const handleUpdateSet = (exercise, setIndex, fieldKey, value) => {
+    const nextValue = value || 0;
+    onUpdateExercise(selectedDayId, get(exercise, "id"), {
+      sets: map(get(exercise, "sets", []), (set, index) =>
+        index === setIndex ? { ...set, [fieldKey]: nextValue } : set,
+      ),
+    });
+  };
+
+  const handleAddSet = (exercise) => {
+    const existingSets = get(exercise, "sets", []);
+    const lastSet = get(existingSets, [size(existingSets) - 1]);
+
+    onUpdateExercise(selectedDayId, get(exercise, "id"), {
+      sets: [...existingSets, createWorkoutSetTemplate(exercise, lastSet)],
+    });
+    setExpandedExerciseId(get(exercise, "id"));
+  };
 
   if (size(trainDays) === 0) {
     return (
@@ -114,154 +138,118 @@ const BuilderMobileView = memo(({
         </button>
       ) : (
         <>
-          <div className="space-y-1.5">
-            {map(selectedDayExercises, (ex) => (
-              <div
-                key={get(ex, "id")}
-                className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl border border-border/40 bg-card/60 hover:border-primary/30 transition-colors"
-              >
-                <span className="text-base shrink-0">{get(ex, "emoji")}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-bold truncate leading-tight">
-                    {get(ex, "name")}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground font-medium leading-tight mt-0.5">
-                    {getWorkoutExerciseSummary(ex, t)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-0.5 shrink-0">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <button
-                        type="button"
-                        className="p-1 text-muted-foreground hover:bg-muted rounded-md transition-colors"
-                      >
-                        <Settings2Icon className="size-3.5" />
-                      </button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[320px] rounded-3xl">
-                      <DialogHeader>
-                        <DialogTitle className="text-lg font-black">
-                          {get(ex, "name")}
-                        </DialogTitle>
-                      </DialogHeader>
-                      <div className="grid grid-cols-2 gap-4 py-4">
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                            {t("components.workoutPlanBuilder.tracking.sets")}
-                          </label>
-                          <NumberField
-                            value={size(get(ex, "sets", []))}
-                            onValueChange={(nextSetCount) => {
-                              const count = Math.max(1, nextSetCount || 1);
-                              const existingSets = get(ex, "sets", []);
-                              const nextSets = Array.from(
-                                { length: count },
-                                (_, setIndex) =>
-                                  createWorkoutSetTemplate(
-                                    ex,
-                                    get(existingSets, [setIndex]) ||
-                                      get(existingSets, [size(existingSets) - 1]),
-                                  ),
-                              );
-                              onUpdateExercise(selectedDayId, get(ex, "id"), {
-                                sets: nextSets,
-                              });
-                            }}
-                            min={1}
-                            step={1}
-                          >
-                            <NumberFieldGroup className="h-10 rounded-xl">
-                              <NumberFieldDecrement />
-                              <NumberFieldInput className="text-center font-bold" />
-                              <NumberFieldIncrement />
-                            </NumberFieldGroup>
-                          </NumberField>
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                            {t("components.workoutPlanBuilder.tracking.rest")}
-                          </label>
-                          <NumberField
-                            value={Number(get(ex, "rest", 60))}
-                            onValueChange={(val) =>
-                              onUpdateExercise(selectedDayId, get(ex, "id"), {
-                                rest: val || 0,
-                              })
-                            }
-                            min={0}
-                            step={5}
-                          >
-                            <NumberFieldGroup className="h-10 rounded-xl">
-                              <NumberFieldDecrement />
-                              <NumberFieldInput className="text-center font-bold" />
-                              <NumberFieldIncrement />
-                            </NumberFieldGroup>
-                          </NumberField>
-                        </div>
-                        {map(
-                          getWorkoutTrackingFields(get(ex, "trackingType"), t),
-                          (field) => (
-                            <div key={get(field, "key")} className="space-y-2">
-                              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                                {get(field, "label")}
-                              </label>
-                              <NumberField
-                                value={
-                                  Number(
-                                    get(
-                                      get(ex, "sets[0]"),
-                                      get(field, "key"),
-                                      0,
-                                    ),
-                                  ) || undefined
-                                }
-                                onValueChange={(nextValue) => {
-                                  const val = nextValue || 0;
-                                  onUpdateExercise(
-                                    selectedDayId,
-                                    get(ex, "id"),
-                                    {
-                                      sets: map(
-                                        get(ex, "sets", []),
-                                        (set) => ({
-                                          ...set,
-                                          [get(field, "key")]: val,
-                                        }),
-                                      ),
-                                    },
-                                  );
-                                }}
-                                min={get(field, "min", 0)}
-                                step={get(field, "step", 1)}
-                              >
-                                <NumberFieldGroup className="h-10 rounded-xl">
-                                  <NumberFieldDecrement />
-                                  <NumberFieldInput
-                                    className="text-center font-bold"
-                                    placeholder={get(field, "placeholder")}
-                                  />
-                                  <NumberFieldIncrement />
-                                </NumberFieldGroup>
-                              </NumberField>
-                            </div>
-                          ),
-                        )}
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+          <div className="flex flex-col gap-3">
+            {map(selectedDayExercises, (ex) => {
+              const isExpanded = expandedExerciseId === get(ex, "id");
+              const trackingFields = getWorkoutTrackingFields(
+                get(ex, "trackingType"),
+                t,
+              );
+              const gridClass =
+                size(trackingFields) === 1
+                  ? "grid-cols-[36px_1fr]"
+                  : "grid-cols-[36px_1fr_1fr]";
+
+              return (
+                <div
+                  key={get(ex, "id")}
+                  className="overflow-hidden rounded-3xl border bg-card shadow-sm"
+                >
                   <button
                     type="button"
+                    className="flex w-full items-center gap-3 px-4 py-4 text-left"
                     onClick={() =>
-                      onRemoveExercise(selectedDayId, get(ex, "id"))
+                      setExpandedExerciseId(isExpanded ? null : get(ex, "id"))
                     }
-                    className="p-1 text-destructive/60 hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
                   >
-                    <Trash2Icon className="size-3.5" />
+                    <span className="text-muted-foreground">
+                      {isExpanded ? <ChevronUpIcon /> : <ChevronDownIcon />}
+                    </span>
+                    <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-muted/40 text-xl">
+                      {get(ex, "imageUrl") ? (
+                        <img
+                          src={get(ex, "imageUrl")}
+                          alt={get(ex, "name")}
+                          className="size-full rounded-2xl object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        get(ex, "emoji") || "🏋️"
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-base font-black">
+                        {get(ex, "name")}
+                      </span>
+                      <span className="mt-1 block text-sm text-muted-foreground">
+                        {size(get(ex, "sets", []))} Sets
+                      </span>
+                    </span>
+                    <MoreVerticalIcon className="text-muted-foreground" />
                   </button>
+
+                  {isExpanded ? (
+                    <div className="flex flex-col gap-3 px-4 pb-4">
+                      {map(get(ex, "sets", []), (set, setIndex) => (
+                        <div
+                          key={setIndex}
+                          className={`grid ${gridClass} items-center gap-3 rounded-2xl bg-muted/50 px-3 py-3`}
+                        >
+                          <span className="text-center text-lg font-black">
+                            {setIndex + 1}
+                          </span>
+                          {map(trackingFields, (field) => (
+                            <NumberField
+                              key={get(field, "key")}
+                              value={
+                                Number(get(set, get(field, "key"))) ||
+                                undefined
+                              }
+                              onValueChange={(value) =>
+                                handleUpdateSet(
+                                  ex,
+                                  setIndex,
+                                  get(field, "key"),
+                                  value,
+                                )
+                              }
+                              min={get(field, "min")}
+                              step={get(field, "step")}
+                            >
+                              <NumberFieldGroup className="h-12 rounded-2xl bg-background">
+                                <NumberFieldDecrement />
+                                <NumberFieldInput className="text-center text-lg font-black" />
+                                <NumberFieldIncrement />
+                              </NumberFieldGroup>
+                            </NumberField>
+                          ))}
+                        </div>
+                      ))}
+
+                      <Button
+                        variant="outline"
+                        className="w-full rounded-2xl border-dashed"
+                        onClick={() => handleAddSet(ex)}
+                      >
+                        <PlusIcon data-icon="inline-start" />
+                        Add a set
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        className="w-full text-destructive"
+                        onClick={() =>
+                          onRemoveExercise(selectedDayId, get(ex, "id"))
+                        }
+                      >
+                        <Trash2Icon data-icon="inline-start" />
+                        Mashqni o'chirish
+                      </Button>
+                    </div>
+                  ) : null}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Add exercise button — after the list */}

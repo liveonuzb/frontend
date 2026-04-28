@@ -116,7 +116,6 @@ export default function WorkoutPlanFormDrawer({
       onSave={onBuilderSave}
       onClose={handleBuilderBack}
       isSaving={isSaving}
-      lockWeekDays
       submitLabel={
         isSaving
           ? t("components.workoutPlanBuilder.form.saving")

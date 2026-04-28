@@ -99,6 +99,22 @@ export const buildWeekDaySkeleton = () =>
     focus: "",
   }));
 
+/**
+ * Numbered-day skeleton ("1-kun", "2-kun", ...). Used for user-side plans
+ * where days are sequential workout days, not weekdays. The actual label
+ * formatting (i18n) is handled by the caller — `name` here stores a stable
+ * string that the UI can localize via the `dayName` key.
+ */
+export const buildNumberedDaySkeleton = (count = 3, formatName) =>
+  Array.from({ length: count }, (_, index) => ({
+    id: `day-${index}-${uid()}`,
+    name:
+      typeof formatName === "function"
+        ? formatName(index + 1)
+        : `${index + 1}-kun`,
+    focus: "",
+  }));
+
 export const initFromPlan = (plan, library = [], { lockWeekDays = false } = {}) => {
   const schedule = get(plan, "schedule", []);
 

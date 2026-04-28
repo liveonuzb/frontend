@@ -30,9 +30,29 @@ vi.mock("@/components/page-loader/index.jsx", () => ({
 }));
 
 vi.mock("@/components/workout-plan-builder", () => ({
-  default: ({ initialPlan, onSave, asPage, title }) => (
+  default: ({
+    initialPlan,
+    metaName,
+    metaDescription,
+    onMetaSave,
+    onSave,
+    asPage,
+    title,
+  }) => (
     <div data-testid="builder" data-as-page={String(asPage)}>
       <div data-testid="builder-title">{title}</div>
+      <div data-testid="builder-meta-name">{metaName}</div>
+      <div data-testid="builder-meta-description">{metaDescription}</div>
+      <button
+        onClick={() =>
+          onMetaSave({
+            name: "Edited plan name",
+            description: "Edited description",
+          })
+        }
+      >
+        edit-builder-meta
+      </button>
       <button
         onClick={() =>
           onSave({
@@ -148,15 +168,22 @@ describe("EditWorkoutPlanPage", () => {
     vi.clearAllMocks();
   });
 
-  it("renders as a full page with metadata fields and page builder", () => {
+  it("renders as a full page with metadata handled by the builder", () => {
     renderPage({ pathname: "/user/workout/plans/edit/plan-1" });
 
-    expect(screen.getByDisplayValue("Starter plan")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("Starter description")).toBeInTheDocument();
+    expect(screen.queryByText("Plan ma'lumotlari")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Plan nomi")).not.toBeInTheDocument();
     expect(screen.getByTestId("builder")).toHaveAttribute("data-as-page", "true");
+    expect(screen.getByTestId("builder-title")).toHaveTextContent("Starter plan");
+    expect(screen.getByTestId("builder-meta-name")).toHaveTextContent(
+      "Starter plan",
+    );
+    expect(screen.getByTestId("builder-meta-description")).toHaveTextContent(
+      "Starter description",
+    );
   });
 
-  it("saves metadata without leaving the edit page", async () => {
+  it("updates metadata through the builder and saves it with the plan", async () => {
     updatePlanMock.mockResolvedValue({
       ...defaultPlan,
       name: "Edited plan name",
@@ -165,13 +192,8 @@ describe("EditWorkoutPlanPage", () => {
 
     renderPage({ pathname: "/user/workout/plans/edit/plan-1" });
 
-    fireEvent.change(screen.getByLabelText("Plan nomi"), {
-      target: { value: "Edited plan name" },
-    });
-    fireEvent.change(screen.getByLabelText("Izoh"), {
-      target: { value: "Edited description" },
-    });
-    fireEvent.click(screen.getByText("Ma'lumotni saqlash"));
+    fireEvent.click(screen.getByText("edit-builder-meta"));
+    fireEvent.click(screen.getByText("save-builder"));
 
     await waitFor(() => {
       expect(updatePlanMock).toHaveBeenCalledWith(
@@ -179,14 +201,13 @@ describe("EditWorkoutPlanPage", () => {
         expect.objectContaining({
           name: "Edited plan name",
           description: "Edited description",
-          difficulty: "O'rta",
-          schedule: [{ day: "Dushanba", exercises: [] }],
+          schedule: [{ day: "Seshanba", exercises: [] }],
         }),
       );
     });
 
     expect(screen.getByTestId("location")).toHaveTextContent(
-      "/user/workout/plans/edit/plan-1",
+      "/user/workout/plans/plan-1",
     );
   });
 

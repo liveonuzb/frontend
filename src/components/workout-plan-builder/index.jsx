@@ -3,6 +3,7 @@ import React, {
   useMemo,
   useCallback,
   useEffect,
+  useDeferredValue,
 } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -23,7 +24,10 @@ import {
   Drawer,
   DrawerContent,
 } from "@/components/ui/drawer.jsx";
-import { useGetQuery } from "@/hooks/api";
+import {
+  useWorkoutExerciseCategories,
+  useWorkoutExercises,
+} from "@/hooks/app/use-workout-plans.js";
 
 // Extracted components
 import BuilderHeader from "./builder-header.jsx";
@@ -31,15 +35,16 @@ import BuilderFooter from "./builder-footer.jsx";
 import BuilderDesktopView from "./builder-desktop-view.jsx";
 import BuilderMobileView from "./builder-mobile-view.jsx";
 import BuilderMobileLibrary from "./builder-mobile-library.jsx";
+import BuilderMetaDrawer from "./builder-meta-drawer.jsx";
 
 // Utils
 import {
   buildExerciseItem,
+  buildNumberedDaySkeleton,
   buildWeekDaySkeleton,
   initFromPlan,
   buildSavePlan,
   filterExercises,
-  getCategories,
 } from "./builder-utils.js";
 
 const WorkoutPlanBuilder = ({
@@ -55,24 +60,15 @@ const WorkoutPlanBuilder = ({
   submitLabel = null,
   title = null,
   description = null,
+  metaName = null,
+  metaDescription = null,
+  onMetaSave = null,
   asPage = false,
 }) => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const planSource = initialPlan || initialData || null;
   const isActive = asPage || open;
-
-  // Fetch official exercises from admin library
-  const { data: exercisesData } = useGetQuery({
-    url: "/coach/exercises",
-    queryProps: {
-      queryKey: ["exercises", "public"],
-      enabled: isActive,
-    },
-  });
-
-  const libraryExercises = get(exercisesData, "data", []);
-  const categories = useMemo(() => getCategories(libraryExercises), [libraryExercises]);
 
   // Plan meta state
   const [planName, setPlanName] = useState("");
@@ -91,9 +87,43 @@ const WorkoutPlanBuilder = ({
   const [isSidebarOpen, setIsSidebarOpen] = useState(
     () => window.innerWidth >= 768,
   );
+  const deferredSearch = useDeferredValue(search.trim());
+  const {
+    categories: workoutCategories,
+    isLoading: isCategoriesLoading,
+  } = useWorkoutExerciseCategories({ enabled: isActive });
+  const categories = useMemo(
+    () => [
+      "all",
+      ...map(workoutCategories, (category) => get(category, "name")).filter(
+        Boolean,
+      ),
+    ],
+    [workoutCategories],
+  );
+  const selectedCategory = useMemo(
+    () =>
+      selectedGroup === "all"
+        ? null
+        : find(
+            workoutCategories,
+            (category) => get(category, "name") === selectedGroup,
+          ),
+    [selectedGroup, workoutCategories],
+  );
+  const { exercises: libraryExercises } = useWorkoutExercises(
+    {
+      categoryId: get(selectedCategory, "id"),
+      query: deferredSearch,
+    },
+    {
+      enabled: isActive && !isCategoriesLoading,
+    },
+  );
 
   // Mobile exercise library drawer
   const [mobileLibraryOpen, setMobileLibraryOpen] = useState(false);
+  const [metaDrawerOpen, setMetaDrawerOpen] = useState(false);
 
   // ─── Initialize from plan ──────────────────────────────────────────────
   useEffect(() => {
@@ -116,13 +146,34 @@ const WorkoutPlanBuilder = ({
       setPlanDescription("");
       setSelectedDayId(get(days, "[0].id", null));
     } else {
-      setTrainDays([]);
-      setExercisesByDay({});
+      // Numbered-day mode: seed with 3 starter days ("1-kun", "2-kun", "3-kun")
+      // so the user has something to drop exercises into. They can add or
+      // remove days freely.
+      const days = buildNumberedDaySkeleton(3, (n) =>
+        t("components.workoutPlanBuilder.dayName", { count: n }),
+      );
+      const exercises = fromPairs(map(days, (day) => [get(day, "id"), []]));
+      setTrainDays(days);
+      setExercisesByDay(exercises);
       setPlanName("");
       setPlanDescription("");
-      setSelectedDayId(null);
+      setSelectedDayId(get(days, "[0].id", null));
     }
-  }, [isActive, planSource, size(libraryExercises) > 0, lockWeekDays]);
+  }, [isActive, planSource, lockWeekDays, t]);
+
+  useEffect(() => {
+    if (metaName === null && metaDescription === null) return;
+
+    setPlanName(metaName ?? "");
+    setPlanDescription(metaDescription ?? "");
+  }, [metaDescription, metaName]);
+
+  useEffect(() => {
+    if (selectedGroup === "all" || categories.length <= 1) return;
+    if (!categories.includes(selectedGroup)) {
+      setSelectedGroup("all");
+    }
+  }, [categories, selectedGroup]);
 
   // ─── Filtered exercises for library ─────────────────────────────────────
   const filteredExercises = useMemo(
@@ -260,6 +311,18 @@ const WorkoutPlanBuilder = ({
     onSave(plan);
   }, [planSource, planName, planDescription, trainDays, exercisesByDay, onSave]);
 
+  const handleMetaSave = useCallback(
+    ({ name, description: nextDescription }) => {
+      setPlanName(name);
+      setPlanDescription(nextDescription);
+      onMetaSave?.({
+        name,
+        description: nextDescription,
+      });
+    },
+    [onMetaSave],
+  );
+
   const selectedDay = find(trainDays, (d) => get(d, "id") === selectedDayId);
   const selectedDayExercises = selectedDayId
     ? get(exercisesByDay, [selectedDayId], [])
@@ -274,9 +337,11 @@ const WorkoutPlanBuilder = ({
         onAddDay={addDay}
         onClose={onClose}
         lockWeekDays={lockWeekDays}
-        title={title}
-        description={description}
+        title={planName || title}
+        description={description || "Tahrirlash rejimi"}
         asPage={asPage}
+        onEditMeta={() => setMetaDrawerOpen(true)}
+        onOpenMobileLibrary={() => setMobileLibraryOpen(true)}
       />
 
       <div
@@ -326,6 +391,14 @@ const WorkoutPlanBuilder = ({
         isSaving={isSaving}
         saveLabel={submitLabel}
         asPage={asPage}
+      />
+
+      <BuilderMetaDrawer
+        open={metaDrawerOpen}
+        onOpenChange={setMetaDrawerOpen}
+        name={planName || title || ""}
+        description={planDescription}
+        onSave={handleMetaSave}
       />
     </>
   );

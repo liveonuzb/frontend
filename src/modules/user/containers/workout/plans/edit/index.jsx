@@ -2,41 +2,24 @@ import React from "react";
 import { get, trim } from "lodash";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import {
-  ArrowLeftIcon,
-  LoaderCircleIcon,
-  SaveIcon,
-} from "lucide-react";
 import PageLoader from "@/components/page-loader/index.jsx";
 import PageTransition from "@/components/page-transition";
 import WorkoutPlanBuilder from "@/components/workout-plan-builder";
-import { TrackingPageHeader } from "@/components/tracking-page-shell";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Field,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
   useActivateWorkoutPlan,
   useUpdateWorkoutPlan,
   useWorkoutPlanDetail,
 } from "@/hooks/app/use-workout-plans";
 import { useBreadcrumbStore } from "@/store";
-import {
-  buildWorkoutPlanMetaPayload,
-  resolveWorkoutPlanRouteState,
-} from "../../workout-plan-flow";
+import { resolveWorkoutPlanRouteState } from "../../workout-plan-flow";
 
 const EditWorkoutPlanPage = () => {
   const { planId } = useParams();
@@ -114,26 +97,6 @@ const EditWorkoutPlanPage = () => {
     );
   }, [effectivePlan, isCreatedDraft, navigate]);
 
-  const handleMetaSave = React.useCallback(async () => {
-    const normalizedName = trim(metaName);
-
-    if (!normalizedName) {
-      toast.error("Reja nomini kiriting");
-      return null;
-    }
-
-    const updatedPlan = await updatePlanMutation.updatePlan(
-      planId,
-      buildWorkoutPlanMetaPayload({
-        basePlan: effectivePlan,
-        name: normalizedName,
-        description: metaDescription,
-      }),
-    );
-    toast.success("Reja ma'lumotlari saqlandi");
-    return updatedPlan;
-  }, [effectivePlan, metaDescription, metaName, planId, updatePlanMutation]);
-
   const handleBuilderSave = React.useCallback(
     async (nextPlan) => {
       const normalizedName = trim(metaName);
@@ -198,74 +161,23 @@ const EditWorkoutPlanPage = () => {
 
   return (
     <PageTransition mode="slide-up">
-      <div className="flex flex-col gap-6">
-        <TrackingPageHeader
-          title={isCreatedDraft ? "Workout reja yaratish" : "Workout rejani tahrirlash"}
-          subtitle="Plan nomi, izohi, kunlari va mashqlarini alohida sahifada boshqaring."
-          hideTitleOnMobile={false}
-          actions={
-            <Button variant="outline" onClick={handleBack}>
-              <ArrowLeftIcon data-icon="inline-start" />
-              Orqaga
-            </Button>
-          }
-        />
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Plan ma'lumotlari</CardTitle>
-            <CardDescription>
-              Bu ma'lumotlar detail sahifa va plan listda ko'rinadi.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <FieldGroup className="gap-4 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-              <Field>
-                <FieldLabel htmlFor="edit-plan-name">Plan nomi</FieldLabel>
-                <Input
-                  id="edit-plan-name"
-                  value={metaName}
-                  onChange={(event) => setMetaName(event.target.value)}
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="edit-plan-description">Izoh</FieldLabel>
-                <Textarea
-                  id="edit-plan-description"
-                  value={metaDescription}
-                  onChange={(event) => setMetaDescription(event.target.value)}
-                  placeholder="Reja tavsifi"
-                />
-              </Field>
-            </FieldGroup>
-          </CardContent>
-          <CardFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={handleMetaSave}
-              disabled={!isMetaDirty || isSaving}
-            >
-              {isSaving ? (
-                <LoaderCircleIcon data-icon="inline-start" className="animate-spin" />
-              ) : (
-                <SaveIcon data-icon="inline-start" />
-              )}
-              Ma'lumotni saqlash
-            </Button>
-          </CardFooter>
-        </Card>
-
+      <div>
         <WorkoutPlanBuilder
           asPage
           open
           initialPlan={effectivePlan}
           onSave={handleBuilderSave}
           onClose={handleBack}
+          metaName={metaName}
+          metaDescription={metaDescription}
+          onMetaSave={({ name, description }) => {
+            setMetaName(name);
+            setMetaDescription(description);
+          }}
           isSaving={isSaving}
-          lockWeekDays
           submitLabel={isSaving ? "Saqlanmoqda..." : "Saqlash"}
-          title={get(effectivePlan, "name") || "Workout plan builder"}
-          description="Kunlar, mashqlar, setlar va tartibni tahrirlang."
+          title={metaName || get(effectivePlan, "name") || "Workout plan builder"}
+          description="Tahrirlash rejimi"
         />
       </div>
     </PageTransition>

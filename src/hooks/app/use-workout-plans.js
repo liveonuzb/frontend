@@ -232,6 +232,55 @@ export const useWorkoutCatalog = (options = {}) => {
   };
 };
 
+export const useWorkoutExerciseCategories = (options = {}) => {
+  const enabled = options.enabled ?? true;
+  const { data, ...query } = useGetQuery({
+    url: "/user/workout/plans/exercise-categories",
+    queryProps: {
+      queryKey: ["user", "workout", "exercise-categories"],
+      enabled,
+    },
+  });
+
+  const categories = React.useMemo(
+    () => getApiResponseData(data, []),
+    [data],
+  );
+
+  return {
+    ...query,
+    data,
+    categories: Array.isArray(categories) ? categories : [],
+  };
+};
+
+export const useWorkoutExercises = (params = {}, options = {}) => {
+  const enabled = options.enabled ?? true;
+  const queryParams = React.useMemo(
+    () => ({
+      ...(params.categoryId ? { categoryId: params.categoryId } : {}),
+      ...(params.query ? { query: params.query } : {}),
+    }),
+    [params.categoryId, params.query],
+  );
+  const { data, ...query } = useGetQuery({
+    url: "/user/workout/plans/exercises",
+    params: queryParams,
+    queryProps: {
+      queryKey: ["user", "workout", "exercises", queryParams],
+      enabled,
+    },
+  });
+
+  const exercises = React.useMemo(() => getApiResponseData(data, []), [data]);
+
+  return {
+    ...query,
+    data,
+    exercises: Array.isArray(exercises) ? exercises : [],
+  };
+};
+
 export const useGenerateWorkoutPlan = () => {
   const mutation = usePostQuery();
 
