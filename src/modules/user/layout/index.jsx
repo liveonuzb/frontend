@@ -6,6 +6,7 @@ import {
   UtensilsIcon,
   RulerIcon,
   DumbbellIcon,
+  TrophyIcon,
 } from "lucide-react";
 import {
   Sidebar,
@@ -139,6 +140,11 @@ const Index = () => {
         to: "/user/measurements",
         label: "O'lchamlar",
         icon: RulerIcon,
+      },
+      {
+        to: "/user/challenges",
+        label: "Musobaqalar",
+        icon: TrophyIcon,
       },
     ],
     [],

@@ -8,7 +8,11 @@ import {
 } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import CreateWorkoutPlanPage from "./index.jsx";
-import { useCreateWorkoutPlan } from "@/hooks/app/use-workout-plans";
+import {
+  useCreateWorkoutPlan,
+  useGenerateWorkoutPlan,
+  useWorkoutCatalog,
+} from "@/hooks/app/use-workout-plans";
 
 vi.mock("sonner", () => ({
   toast: {
@@ -17,31 +21,14 @@ vi.mock("sonner", () => ({
   },
 }));
 
-vi.mock("../../workout-plan-form-drawer.jsx", () => ({
-  default: ({
-    mode,
-    view,
-    metaName,
-    metaDescription,
-    onMetaNameChange,
-    onMetaDescriptionChange,
-    onMetaSubmit,
-    onOpenChange,
-  }) => (
-    <div>
-      <div data-testid="drawer-mode">{`${mode}:${view}`}</div>
-      <div data-testid="meta-name">{metaName}</div>
-      <div data-testid="meta-description">{metaDescription}</div>
-      <button onClick={() => onMetaNameChange("Updated template name")}>
-        change-name
-      </button>
-      <button onClick={() => onMetaDescriptionChange("Updated description")}>
-        change-description
-      </button>
-      <button onClick={() => onMetaSubmit()}>submit-meta</button>
-      <button onClick={() => onOpenChange(false)}>close-drawer</button>
-    </div>
-  ),
+vi.mock("@/components/page-transition", () => ({
+  default: ({ children }) => <>{children}</>,
+}));
+
+vi.mock("@/store", () => ({
+  useBreadcrumbStore: () => ({
+    setBreadcrumbs: vi.fn(),
+  }),
 }));
 
 vi.mock("@/hooks/app/use-workout-plans", async (importOriginal) => {
@@ -50,10 +37,13 @@ vi.mock("@/hooks/app/use-workout-plans", async (importOriginal) => {
   return {
     ...actual,
     useCreateWorkoutPlan: vi.fn(),
+    useGenerateWorkoutPlan: vi.fn(),
+    useWorkoutCatalog: vi.fn(),
   };
 });
 
 const createPlanMock = vi.fn();
+const generatePlanMock = vi.fn();
 
 const LocationLayout = () => {
   const location = useLocation();
@@ -77,12 +67,16 @@ const renderPage = (initialEntry) => {
         element: <LocationLayout />,
         children: [
           {
-            path: "user/workout",
-            element: <div data-testid="workout-parent">Workout parent</div>,
+            path: "user/workout/plans",
+            element: <div data-testid="plans-route">Plans route</div>,
           },
           {
             path: "user/workout/plans/create",
             element: <CreateWorkoutPlanPage />,
+          },
+          {
+            path: "user/workout/plans/:planId",
+            element: <div data-testid="detail-route">Detail route</div>,
           },
           {
             path: "user/workout/plans/edit/:planId",
@@ -102,9 +96,26 @@ const renderPage = (initialEntry) => {
 describe("CreateWorkoutPlanPage", () => {
   beforeEach(() => {
     createPlanMock.mockReset();
+    generatePlanMock.mockReset();
     useCreateWorkoutPlan.mockReturnValue({
       createPlan: createPlanMock,
       isPending: false,
+    });
+    useGenerateWorkoutPlan.mockReturnValue({
+      generatePlan: generatePlanMock,
+      isPending: false,
+    });
+    useWorkoutCatalog.mockReturnValue({
+      catalog: {
+        equipments: [
+          { id: 1, name: "Barbell" },
+          { id: 2, name: "Dumbbell" },
+        ],
+        muscles: [
+          { id: 10, name: "Chest" },
+          { id: 11, name: "Back" },
+        ],
+      },
     });
   });
 
@@ -112,10 +123,9 @@ describe("CreateWorkoutPlanPage", () => {
     vi.clearAllMocks();
   });
 
-  it("opens the meta step first and preserves template defaults", () => {
+  it("opens as a full page and preserves template defaults", () => {
     renderPage({
       pathname: "/user/workout/plans/create",
-      search: "?tab=plans&date=2026-04-14",
       state: {
         initialPlan: {
           name: "Template plan",
@@ -124,24 +134,21 @@ describe("CreateWorkoutPlanPage", () => {
       },
     });
 
-    expect(screen.getByTestId("drawer-mode")).toHaveTextContent("create:meta");
-    expect(screen.getByTestId("meta-name")).toHaveTextContent("Template plan");
-    expect(screen.getByTestId("meta-description")).toHaveTextContent(
-      "Template description",
-    );
+    expect(screen.getByDisplayValue("Template plan")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Template description")).toBeInTheDocument();
+    expect(screen.getByText("Manual")).toBeInTheDocument();
   });
 
-  it("creates a draft and redirects to the builder route while preserving search params", async () => {
+  it("creates a draft and redirects to the full edit page", async () => {
     createPlanMock.mockResolvedValue({
       id: "plan-42",
-      name: "Updated template name",
-      description: "Updated description",
+      name: "Template plan",
+      description: "Template description",
       schedule: [{ day: "Dushanba", exercises: [] }],
     });
 
     renderPage({
       pathname: "/user/workout/plans/create",
-      search: "?tab=plans&date=2026-04-14",
       state: {
         initialPlan: {
           name: "Template plan",
@@ -153,15 +160,13 @@ describe("CreateWorkoutPlanPage", () => {
       },
     });
 
-    fireEvent.click(screen.getByText("change-name"));
-    fireEvent.click(screen.getByText("change-description"));
-    fireEvent.click(screen.getByText("submit-meta"));
+    fireEvent.click(screen.getByText("Keyingi"));
 
     await waitFor(() => {
       expect(createPlanMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          name: "Updated template name",
-          description: "Updated description",
+          name: "Template plan",
+          description: "Template description",
           difficulty: "O'rta",
           schedule: [{ day: "Dushanba", exercises: [] }],
           source: "template",
@@ -171,26 +176,74 @@ describe("CreateWorkoutPlanPage", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("location")).toHaveTextContent(
-        "/user/workout/plans/edit/plan-42?tab=plans&date=2026-04-14&step=builder",
+        "/user/workout/plans/edit/plan-42",
       );
     });
-
     expect(screen.getByTestId("route-state")).toHaveTextContent(
       "\"shouldActivateOnSave\":true",
     );
   });
 
-  it("closes back to the workout parent while preserving the parent search params", async () => {
-    renderPage({
-      pathname: "/user/workout/plans/create",
-      search: "?tab=history&date=2026-04-14",
+  it("generates and saves an AI preview with 1RM data", async () => {
+    generatePlanMock.mockResolvedValue({
+      id: null,
+      name: "AI Upper",
+      description: "Generated plan",
+      days: 28,
+      daysPerWeek: 4,
+      schedule: [{ day: "Dushanba", focus: "Chest", exercises: [] }],
+      generationMeta: {
+        benchmark: {
+          oneRepMaxKg: 46,
+        },
+      },
+      source: "ai",
+    });
+    createPlanMock.mockResolvedValue({
+      id: "ai-plan-1",
+      name: "AI Upper",
     });
 
-    fireEvent.click(screen.getByText("close-drawer"));
+    renderPage({ pathname: "/user/workout/plans/create" });
+
+    fireEvent.click(screen.getByRole("tab", { name: /AI Generate/i }));
+
+    await screen.findByText("AI plan sozlamalari");
+    fireEvent.click(screen.getByRole("button", { name: /Generate plan/i }));
+
+    await waitFor(() => {
+      expect(generatePlanMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          benchmark: expect.objectContaining({
+            exerciseName: "Bench Press",
+            weightKg: 40,
+            reps: 5,
+            oneRepMaxKg: 46,
+          }),
+        }),
+      );
+    });
+
+    await screen.findByText("AI Upper");
+    fireEvent.click(screen.getByText("Saqlash"));
+
+    await waitFor(() => {
+      expect(createPlanMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: "AI Upper",
+          source: "ai",
+          generationMeta: expect.objectContaining({
+            benchmark: expect.objectContaining({
+              oneRepMaxKg: 46,
+            }),
+          }),
+        }),
+      );
+    });
 
     await waitFor(() => {
       expect(screen.getByTestId("location")).toHaveTextContent(
-        "/user/workout?tab=history&date=2026-04-14",
+        "/user/workout/plans/ai-plan-1",
       );
     });
   });

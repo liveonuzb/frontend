@@ -23,10 +23,14 @@ const BuilderHeader = memo(({
   lockWeekDays,
   title = null,
   description = null,
+  asPage = false,
 }) => {
   const { t } = useTranslation();
   const dayScrollRef = useRef(null);
   const activeDayRef = useRef(null);
+  const HeaderWrapper = asPage ? "div" : DrawerHeader;
+  const TitleWrapper = asPage ? "h2" : DrawerTitle;
+  const DescriptionWrapper = asPage ? "p" : DrawerDescription;
 
   useEffect(() => {
     if (activeDayRef.current && dayScrollRef.current) {
@@ -39,8 +43,8 @@ const BuilderHeader = memo(({
   }, [selectedDayId]);
 
   return (
-    <DrawerHeader>
-      <DrawerTitle className="flex items-center md:gap-x-3">
+    <HeaderWrapper className="gap-0.5 p-4 md:gap-1.5 md:text-left flex flex-col">
+      <TitleWrapper className="flex items-center text-base font-medium md:gap-x-3">
         <Button
           variant="outline"
           size="icon"
@@ -54,10 +58,10 @@ const BuilderHeader = memo(({
           {title || t("components.workoutPlanBuilder.header.title")}
           <SparklesIcon className="size-3.5 text-amber-500" />
         </div>
-      </DrawerTitle>
-      <DrawerDescription className="text-center md:text-start">
+      </TitleWrapper>
+      <DescriptionWrapper className="text-sm text-muted-foreground text-center md:text-start">
         {description || t("components.workoutPlanBuilder.header.description")}
-      </DrawerDescription>
+      </DescriptionWrapper>
 
       {/* Day pills */}
       <div
@@ -100,7 +104,7 @@ const BuilderHeader = memo(({
           </button>
         ) : null}
       </div>
-    </DrawerHeader>
+    </HeaderWrapper>
   );
 });
 

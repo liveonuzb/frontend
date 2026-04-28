@@ -21,33 +21,22 @@ vi.mock("sonner", () => ({
   },
 }));
 
-vi.mock("../../workout-plan-form-drawer.jsx", () => ({
-  default: ({
-    mode,
-    view,
-    metaName,
-    metaDescription,
-    onMetaNameChange,
-    onMetaDescriptionChange,
-    onMetaSubmit,
-    onBuilderSave,
-    onBuilderBack,
-    onOpenChange,
-  }) => (
-    <div>
-      <div data-testid="drawer-mode">{`${mode}:${view}`}</div>
-      <div data-testid="meta-name">{metaName}</div>
-      <div data-testid="meta-description">{metaDescription}</div>
-      <button onClick={() => onMetaNameChange("Edited plan name")}>
-        change-name
-      </button>
-      <button onClick={() => onMetaDescriptionChange("Edited description")}>
-        change-description
-      </button>
-      <button onClick={() => onMetaSubmit?.()}>submit-meta</button>
+vi.mock("@/components/page-transition", () => ({
+  default: ({ children }) => <>{children}</>,
+}));
+
+vi.mock("@/components/page-loader/index.jsx", () => ({
+  default: () => <div data-testid="page-loader">Loading</div>,
+}));
+
+vi.mock("@/components/workout-plan-builder", () => ({
+  default: ({ initialPlan, onSave, asPage, title }) => (
+    <div data-testid="builder" data-as-page={String(asPage)}>
+      <div data-testid="builder-title">{title}</div>
       <button
         onClick={() =>
-          onBuilderSave?.({
+          onSave({
+            ...initialPlan,
             name: "Builder saved plan",
             description: "Builder saved description",
             schedule: [{ day: "Seshanba", exercises: [] }],
@@ -56,10 +45,14 @@ vi.mock("../../workout-plan-form-drawer.jsx", () => ({
       >
         save-builder
       </button>
-      <button onClick={() => onBuilderBack?.()}>builder-back</button>
-      <button onClick={() => onOpenChange?.(false)}>close-drawer</button>
     </div>
   ),
+}));
+
+vi.mock("@/store", () => ({
+  useBreadcrumbStore: () => ({
+    setBreadcrumbs: vi.fn(),
+  }),
 }));
 
 vi.mock("@/hooks/app/use-workout-plans", async (importOriginal) => {
@@ -107,8 +100,12 @@ const renderPage = (initialEntry) => {
         element: <LocationLayout />,
         children: [
           {
-            path: "user/workout",
-            element: <div data-testid="workout-parent">Workout parent</div>,
+            path: "user/workout/plans",
+            element: <div data-testid="plans-route">Plans route</div>,
+          },
+          {
+            path: "user/workout/plans/:planId",
+            element: <div data-testid="detail-route">Detail route</div>,
           },
           {
             path: "user/workout/plans/edit/:planId",
@@ -151,46 +148,30 @@ describe("EditWorkoutPlanPage", () => {
     vi.clearAllMocks();
   });
 
-  it("opens the meta step first on the canonical edit route", () => {
-    renderPage({
-      pathname: "/user/workout/plans/edit/plan-1",
-      search: "?tab=plans&date=2026-04-14",
-    });
+  it("renders as a full page with metadata fields and page builder", () => {
+    renderPage({ pathname: "/user/workout/plans/edit/plan-1" });
 
-    expect(screen.getByTestId("drawer-mode")).toHaveTextContent("edit:meta");
-    expect(screen.getByTestId("meta-name")).toHaveTextContent("Starter plan");
+    expect(screen.getByDisplayValue("Starter plan")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Starter description")).toBeInTheDocument();
+    expect(screen.getByTestId("builder")).toHaveAttribute("data-as-page", "true");
   });
 
-  it("sanitizes invalid step values back to the meta route", async () => {
-    renderPage({
-      pathname: "/user/workout/plans/edit/plan-1",
-      search: "?tab=plans&step=invalid",
-    });
-
-    await waitFor(() => {
-      expect(screen.getByTestId("location")).toHaveTextContent(
-        "/user/workout/plans/edit/plan-1?tab=plans",
-      );
-    });
-
-    expect(screen.getByTestId("drawer-mode")).toHaveTextContent("edit:meta");
-  });
-
-  it("patches meta and navigates to the builder step while preserving search params", async () => {
+  it("saves metadata without leaving the edit page", async () => {
     updatePlanMock.mockResolvedValue({
       ...defaultPlan,
       name: "Edited plan name",
       description: "Edited description",
     });
 
-    renderPage({
-      pathname: "/user/workout/plans/edit/plan-1",
-      search: "?tab=plans&date=2026-04-14",
-    });
+    renderPage({ pathname: "/user/workout/plans/edit/plan-1" });
 
-    fireEvent.click(screen.getByText("change-name"));
-    fireEvent.click(screen.getByText("change-description"));
-    fireEvent.click(screen.getByText("submit-meta"));
+    fireEvent.change(screen.getByLabelText("Plan nomi"), {
+      target: { value: "Edited plan name" },
+    });
+    fireEvent.change(screen.getByLabelText("Izoh"), {
+      target: { value: "Edited description" },
+    });
+    fireEvent.click(screen.getByText("Ma'lumotni saqlash"));
 
     await waitFor(() => {
       expect(updatePlanMock).toHaveBeenCalledWith(
@@ -204,37 +185,12 @@ describe("EditWorkoutPlanPage", () => {
       );
     });
 
-    await waitFor(() => {
-      expect(screen.getByTestId("location")).toHaveTextContent(
-        "/user/workout/plans/edit/plan-1?tab=plans&date=2026-04-14&step=builder",
-      );
-    });
+    expect(screen.getByTestId("location")).toHaveTextContent(
+      "/user/workout/plans/edit/plan-1",
+    );
   });
 
-  it("returns from builder to the meta step without dropping the parent search params", async () => {
-    renderPage({
-      pathname: "/user/workout/plans/edit/plan-1",
-      search: "?tab=plans&date=2026-04-14&step=builder",
-      state: {
-        initialPlan: defaultPlan,
-        shouldActivateOnSave: true,
-      },
-    });
-
-    expect(screen.getByTestId("drawer-mode")).toHaveTextContent("create:builder");
-
-    fireEvent.click(screen.getByText("builder-back"));
-
-    await waitFor(() => {
-      expect(screen.getByTestId("location")).toHaveTextContent(
-        "/user/workout/plans/edit/plan-1?tab=plans&date=2026-04-14",
-      );
-    });
-
-    expect(screen.getByTestId("drawer-mode")).toHaveTextContent("create:meta");
-  });
-
-  it("updates and activates a created draft on final builder save, then closes to the parent route", async () => {
+  it("updates and activates a newly created draft on builder save", async () => {
     const callOrder = [];
 
     updatePlanMock.mockImplementation(async (_planId, plan) => {
@@ -254,7 +210,6 @@ describe("EditWorkoutPlanPage", () => {
 
     renderPage({
       pathname: "/user/workout/plans/edit/plan-1",
-      search: "?tab=plans&date=2026-04-14&step=builder",
       state: {
         initialPlan: defaultPlan,
         shouldActivateOnSave: true,
@@ -267,7 +222,8 @@ describe("EditWorkoutPlanPage", () => {
       expect(updatePlanMock).toHaveBeenCalledWith(
         "plan-1",
         expect.objectContaining({
-          name: "Builder saved plan",
+          name: "Starter plan",
+          description: "Starter description",
           schedule: [{ day: "Seshanba", exercises: [] }],
         }),
       );
@@ -277,17 +233,16 @@ describe("EditWorkoutPlanPage", () => {
       expect(activatePlanMock).toHaveBeenCalledWith(
         "plan-1",
         expect.objectContaining({
-          name: "Builder saved plan",
+          name: "Starter plan",
           schedule: [{ day: "Seshanba", exercises: [] }],
         }),
       );
     });
 
     expect(callOrder).toEqual(["update", "activate"]);
-
     await waitFor(() => {
       expect(screen.getByTestId("location")).toHaveTextContent(
-        "/user/workout?tab=plans&date=2026-04-14",
+        "/user/workout/plans/plan-1",
       );
     });
   });

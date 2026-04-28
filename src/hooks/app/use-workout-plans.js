@@ -7,6 +7,7 @@ import {
   usePatchQuery,
   usePostQuery,
 } from "@/hooks/api";
+import { getApiResponseData } from "@/lib/api-response";
 import { WORKOUT_OVERVIEW_QUERY_KEY } from "@/hooks/app/use-workout-overview";
 
 export const WORKOUT_PLANS_QUERY_KEY = ["user", "workout", "plans"];
@@ -46,6 +47,7 @@ const normalizePlan = (plan) => {
       Number(plan.daysPerWeek ?? countDaysPerWeek(schedule)) ||
       countDaysPerWeek(schedule),
     schedule,
+    generationMeta: plan.generationMeta ?? null,
     startDate: plan.startDate ?? null,
     createdAt: plan.createdAt ?? null,
     updatedAt: plan.updatedAt ?? null,
@@ -109,6 +111,7 @@ export const buildWorkoutPlanPayload = (plan = {}) => ({
       ? undefined
       : Number(plan.daysPerWeek),
   schedule: Array.isArray(plan.schedule) ? plan.schedule : [],
+  generationMeta: plan.generationMeta ?? undefined,
   source: plan.source,
   startDate: plan.startDate,
 });
@@ -199,6 +202,54 @@ export const useCreateWorkoutPlan = () => {
   return {
     ...mutation,
     createPlan,
+  };
+};
+
+export const useWorkoutCatalog = (options = {}) => {
+  const enabled = options.enabled ?? true;
+  const { data, ...query } = useGetQuery({
+    url: "/user/workout/plans/catalog",
+    queryProps: {
+      queryKey: ["user", "workout", "catalog"],
+      enabled,
+    },
+  });
+
+  const catalog = React.useMemo(
+    () =>
+      getApiResponseData(data, {
+        equipments: [],
+        muscles: [],
+        bodyParts: [],
+        exercises: [],
+      }),
+    [data],
+  );
+
+  return {
+    ...query,
+    catalog,
+  };
+};
+
+export const useGenerateWorkoutPlan = () => {
+  const mutation = usePostQuery();
+
+  const generatePlan = React.useCallback(
+    async (payload) => {
+      const response = await mutation.mutateAsync({
+        url: "/user/workout/plans/generate",
+        attributes: payload,
+      });
+
+      return getApiResponseData(response, null);
+    },
+    [mutation],
+  );
+
+  return {
+    ...mutation,
+    generatePlan,
   };
 };
 

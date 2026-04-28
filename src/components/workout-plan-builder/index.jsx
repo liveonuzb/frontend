@@ -55,17 +55,19 @@ const WorkoutPlanBuilder = ({
   submitLabel = null,
   title = null,
   description = null,
+  asPage = false,
 }) => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const planSource = initialPlan || initialData || null;
+  const isActive = asPage || open;
 
   // Fetch official exercises from admin library
   const { data: exercisesData } = useGetQuery({
     url: "/coach/exercises",
     queryProps: {
       queryKey: ["exercises", "public"],
-      enabled: open,
+      enabled: isActive,
     },
   });
 
@@ -95,7 +97,7 @@ const WorkoutPlanBuilder = ({
 
   // ─── Initialize from plan ──────────────────────────────────────────────
   useEffect(() => {
-    if (!open) return;
+    if (!isActive) return;
     if (planSource) {
       const { days, exercises } = initFromPlan(planSource, libraryExercises, {
         lockWeekDays,
@@ -120,7 +122,7 @@ const WorkoutPlanBuilder = ({
       setPlanDescription("");
       setSelectedDayId(null);
     }
-  }, [open, planSource, size(libraryExercises) > 0, lockWeekDays]);
+  }, [isActive, planSource, size(libraryExercises) > 0, lockWeekDays]);
 
   // ─── Filtered exercises for library ─────────────────────────────────────
   const filteredExercises = useMemo(
@@ -263,6 +265,99 @@ const WorkoutPlanBuilder = ({
     ? get(exercisesByDay, [selectedDayId], [])
     : [];
 
+  const builderContent = (
+    <>
+      <BuilderHeader
+        trainDays={trainDays}
+        selectedDayId={selectedDayId}
+        onSelectDay={setSelectedDayId}
+        onAddDay={addDay}
+        onClose={onClose}
+        lockWeekDays={lockWeekDays}
+        title={title}
+        description={description}
+        asPage={asPage}
+      />
+
+      <div
+        data-vaul-no-drag
+        className="flex flex-col h-full animate-in fade-in duration-300 overflow-hidden"
+      >
+        {isMobile ? (
+          <BuilderMobileView
+            trainDays={trainDays}
+            selectedDay={selectedDay}
+            selectedDayId={selectedDayId}
+            selectedDayExercises={selectedDayExercises}
+            lockWeekDays={lockWeekDays}
+            onUpdateDay={updateDay}
+            onUpdateExercise={updateExercise}
+            onRemoveExercise={removeExercise}
+            onOpenMobileLibrary={() => setMobileLibraryOpen(true)}
+          />
+        ) : (
+          <BuilderDesktopView
+            trainDays={trainDays}
+            trainDayColumns={trainDayColumns}
+            kanbanValue={kanbanValue}
+            filteredExercises={filteredExercises}
+            categories={categories}
+            search={search}
+            selectedGroup={selectedGroup}
+            isSidebarOpen={isSidebarOpen}
+            lockWeekDays={lockWeekDays}
+            onSearch={setSearch}
+            onSelectGroup={setSelectedGroup}
+            onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+            onKanbanChange={handleKanbanChange}
+            onExternalDragEnd={handleExternalDragEnd}
+            onRemoveExercise={removeExercise}
+            onRemoveDay={removeDay}
+            onUpdateDay={updateDay}
+            onUpdateExercise={updateExercise}
+            onAddDay={addDay}
+            onAddExerciseToDay={addExerciseToDay}
+          />
+        )}
+      </div>
+
+      <BuilderFooter
+        onSave={handleSave}
+        isSaving={isSaving}
+        saveLabel={submitLabel}
+        asPage={asPage}
+      />
+    </>
+  );
+
+  if (asPage) {
+    return (
+      <>
+        <div
+          className={cn(
+            "flex h-[calc(100svh-9rem)] min-h-[640px] flex-col overflow-hidden rounded-3xl border bg-card text-sm shadow-sm",
+            fullscreen && "min-h-[calc(100svh-8rem)]",
+          )}
+        >
+          {builderContent}
+        </div>
+
+        <BuilderMobileLibrary
+          open={mobileLibraryOpen}
+          onOpenChange={setMobileLibraryOpen}
+          filteredExercises={filteredExercises}
+          categories={categories}
+          search={search}
+          selectedGroup={selectedGroup}
+          selectedDayId={selectedDayId}
+          onSearch={setSearch}
+          onSelectGroup={setSelectedGroup}
+          onAddExerciseToDay={addExerciseToDay}
+        />
+      </>
+    );
+  }
+
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="right">
       <DrawerContent
@@ -270,64 +365,7 @@ const WorkoutPlanBuilder = ({
           "p-0 data-[vaul-drawer-direction=right]:w-full data-[vaul-drawer-direction=right]:sm:max-w-full",
         )}
       >
-        <BuilderHeader
-          trainDays={trainDays}
-          selectedDayId={selectedDayId}
-          onSelectDay={setSelectedDayId}
-          onAddDay={addDay}
-          onClose={onClose}
-          lockWeekDays={lockWeekDays}
-          title={title}
-          description={description}
-        />
-
-        <div
-          data-vaul-no-drag
-          className="flex flex-col h-full animate-in fade-in duration-300 overflow-hidden"
-        >
-          {isMobile ? (
-            <BuilderMobileView
-              trainDays={trainDays}
-              selectedDay={selectedDay}
-              selectedDayId={selectedDayId}
-              selectedDayExercises={selectedDayExercises}
-              lockWeekDays={lockWeekDays}
-              onUpdateDay={updateDay}
-              onUpdateExercise={updateExercise}
-              onRemoveExercise={removeExercise}
-              onOpenMobileLibrary={() => setMobileLibraryOpen(true)}
-            />
-          ) : (
-            <BuilderDesktopView
-              trainDays={trainDays}
-              trainDayColumns={trainDayColumns}
-              kanbanValue={kanbanValue}
-              filteredExercises={filteredExercises}
-              categories={categories}
-              search={search}
-              selectedGroup={selectedGroup}
-              isSidebarOpen={isSidebarOpen}
-              lockWeekDays={lockWeekDays}
-              onSearch={setSearch}
-              onSelectGroup={setSelectedGroup}
-              onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
-              onKanbanChange={handleKanbanChange}
-              onExternalDragEnd={handleExternalDragEnd}
-              onRemoveExercise={removeExercise}
-              onRemoveDay={removeDay}
-              onUpdateDay={updateDay}
-              onUpdateExercise={updateExercise}
-              onAddDay={addDay}
-              onAddExerciseToDay={addExerciseToDay}
-            />
-          )}
-        </div>
-
-        <BuilderFooter
-          onSave={handleSave}
-          isSaving={isSaving}
-          saveLabel={submitLabel}
-        />
+        {builderContent}
       </DrawerContent>
 
       {/* Mobile: exercise library bottom drawer */}

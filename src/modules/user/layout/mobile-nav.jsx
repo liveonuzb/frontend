@@ -2,7 +2,7 @@ import { get, map } from "lodash";
 import { NavLink, useLocation } from "react-router";
 import { cn } from "@/lib/utils";
 import { Home2 } from "iconsax-reactjs";
-import { Salad, RulerIcon, DumbbellIcon } from "lucide-react";
+import { Salad, DumbbellIcon, TrophyIcon } from "lucide-react";
 
 import FloatingActionButton from "@/components/fab";
 
@@ -18,9 +18,9 @@ const MobileNav = ({ hidden = false }) => {
       icon: DumbbellIcon,
     },
     {
-      to: "/user/measurements",
-      label: "O'lchamlar",
-      icon: RulerIcon,
+      to: "/user/challenges",
+      label: "Musobaqalar",
+      icon: TrophyIcon,
     },
   ];
 
