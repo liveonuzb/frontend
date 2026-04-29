@@ -42,7 +42,7 @@ const FeatureSubNav = ({ items = [], className, mobile = false }) => {
                     )}
                   >
                     <item.icon className="size-3.5" />
-                    <span className="text-sm">{item.label}</span>
+                    <span className="text-xs">{item.label}</span>
                   </NavLink>
                 );
               })}
