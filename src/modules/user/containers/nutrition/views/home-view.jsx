@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronRightIcon } from "lucide-react";
+import { ChevronRightIcon, TargetIcon } from "lucide-react";
 import CalorieGaugeWidget from "@/components/calorie-gauge-widget";
 import { TrackingPageLayout } from "@/components/tracking-page-shell";
 import StrippedCalendar from "@/components/stripped-calendar/index.jsx";
@@ -37,6 +37,7 @@ export default function NutritionHomeView(props) {
     onRemoveScan,
     onOpenDraftScan,
     setIsPlansDrawerOpen,
+    onOpenGoalWizard,
     isOnline,
     isDayLoading,
     handleCopyFromYesterday,
@@ -50,7 +51,16 @@ export default function NutritionHomeView(props) {
         </div>
       ) : null}
 
-      <div className="flex md:justify-end">
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <Button
+          type="button"
+          variant="outline"
+          className="md:w-auto"
+          onClick={onOpenGoalWizard}
+        >
+          <TargetIcon className="size-4" />
+          Maqsadimni yangilash
+        </Button>
         <StrippedCalendar
           date={date}
           onChange={setDate}

@@ -2,6 +2,13 @@ import React from "react";
 import { entries, get, map, reduce } from "lodash";
 import { useNavigate } from "react-router";
 import useGetQuery from "@/hooks/api/use-get-query";
+import { useDailyTrackingActions } from "@/hooks/app/use-daily-tracking";
+import { useSavedMeals } from "@/hooks/app/use-saved-meals";
+import {
+  buildLoggedMealFromSavedMealTemplate,
+  getWeekdayNameFromDate,
+  useSavedMealTemplates,
+} from "@/hooks/app/use-saved-meal-templates";
 import { useAddMealOverlayStore } from "@/store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -18,6 +25,7 @@ import {
 } from "./query-helpers.js";
 import { Button } from "@/components/ui/button.jsx";
 import { cn } from "@/lib/utils.js";
+import { toast } from "sonner";
 
 const mealTypeConfig = {
   breakfast: { label: "Nonushta", icon: "breakfast" },
@@ -43,6 +51,9 @@ export default function MealsWidget({
   const openActionDrawer = useAddMealOverlayStore(
     (state) => state.openActionDrawer,
   );
+  const { addMeal } = useDailyTrackingActions();
+  const { items: savedMeals } = useSavedMeals({ enabled: showQuickAdd });
+  const { templates, recurringPatterns } = useSavedMealTemplates();
   const { data: trackingData } = useGetQuery({
     url: `/daily-tracking/${dateKey}`,
     queryProps: {
@@ -64,6 +75,60 @@ export default function MealsWidget({
     () => getGoalsStateFromResponses({ goalsResponse: goalsData, user: null }),
     [goalsData],
   );
+  const savedMealsById = React.useMemo(() => {
+    return savedMeals.reduce((acc, item) => {
+      acc[item.id] = item;
+      return acc;
+    }, {});
+  }, [savedMeals]);
+  const templatesById = React.useMemo(() => {
+    return templates.reduce((acc, template) => {
+      acc[template.id] = template;
+      return acc;
+    }, {});
+  }, [templates]);
+  const suggestedPattern = React.useMemo(() => {
+    const weekday = getWeekdayNameFromDate(dateKey);
+    return (
+      recurringPatterns.find((pattern) => {
+        if (pattern.weekday !== weekday) return false;
+        const template = templatesById[pattern.templateId];
+        if (!template) return false;
+        const foods = get(dayData, ["meals", pattern.mealKey], []);
+        if (foods.length > 0) return false;
+        return template.mealIds.some((mealId) => savedMealsById[mealId]);
+      }) || null
+    );
+  }, [dateKey, dayData, recurringPatterns, savedMealsById, templatesById]);
+  const suggestedTemplate = suggestedPattern
+    ? templatesById[suggestedPattern.templateId]
+    : null;
+
+  const handleApplySuggestedPattern = React.useCallback(async () => {
+    if (!suggestedPattern || !suggestedTemplate) return;
+
+    const mealsToLog = suggestedTemplate.mealIds
+      .map((mealId) => savedMealsById[mealId])
+      .filter(Boolean);
+
+    if (mealsToLog.length === 0) {
+      toast.error("Shablondagi taomlar topilmadi");
+      return;
+    }
+
+    try {
+      for (const savedMeal of mealsToLog) {
+        await addMeal(
+          dateKey,
+          suggestedPattern.mealKey,
+          buildLoggedMealFromSavedMealTemplate(savedMeal),
+        );
+      }
+      toast.success(`${suggestedTemplate.name} qo'shildi`);
+    } catch {
+      toast.error("Odatiy shablonni qo'shib bo'lmadi");
+    }
+  }, [addMeal, dateKey, savedMealsById, suggestedPattern, suggestedTemplate]);
 
   return (
     <Card className="h-full py-6 meals-widget">
@@ -84,6 +149,30 @@ export default function MealsWidget({
         </div>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col justify-between gap-3">
+        {suggestedPattern && suggestedTemplate ? (
+          <div className="rounded-2xl border bg-primary/5 p-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-bold">
+                  Bugun {suggestedPattern.weekday} — siz odatda{" "}
+                  {suggestedTemplate.name} yeysiz
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {suggestedPattern.mealType} uchun{" "}
+                  {suggestedTemplate.mealIds.length} ta taom
+                </p>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                className="shrink-0"
+                onClick={handleApplySuggestedPattern}
+              >
+                Qo'shish
+              </Button>
+            </div>
+          </div>
+        ) : null}
         {map(entries(mealTypeConfig), ([type = "", config = {}]) => {
           const foods = get(dayData, ["meals", type], []);
 

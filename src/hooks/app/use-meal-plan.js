@@ -9,6 +9,7 @@ import {
 } from "@/hooks/api";
 
 export const MEAL_PLAN_QUERY_KEY = ["meal-plans", "me"];
+export const MEAL_PLAN_TEMPLATES_QUERY_KEY = ["meal-plans", "templates"];
 
 const defaultMealPlanState = {
   plans: [],
@@ -34,6 +35,33 @@ const normalizePlan = (plan) => {
     startDate: plan.startDate ?? null,
     createdAt: plan.createdAt ?? null,
     updatedAt: plan.updatedAt ?? null,
+  };
+};
+
+const normalizeTemplate = (template) => {
+  if (!template) {
+    return null;
+  }
+
+  return {
+    ...template,
+    id: template.id,
+    title: template.title || template.name || "Tayyor shablon",
+    name: template.name || template.title || "Tayyor shablon",
+    description: template.description ?? null,
+    weeklyKanban:
+      template.weeklyKanban &&
+      typeof template.weeklyKanban === "object" &&
+      !Array.isArray(template.weeklyKanban)
+        ? template.weeklyKanban
+        : {},
+    tags: Array.isArray(template.tags) ? template.tags : [],
+    goal: template.goal || "maintenance",
+    mealCount: template.mealCount ?? null,
+    mealsCount: template.mealsCount ?? 0,
+    daysWithMeals: template.daysWithMeals ?? 0,
+    coach: template.coach ?? null,
+    updatedAt: template.updatedAt ?? null,
   };
 };
 
@@ -325,6 +353,31 @@ export const useMealPlan = (options = {}) => {
     isPausingPlan: pausePlanMutation.isPending,
     isRemovingPlan: deletePlanMutation.isPending,
     isClearingAllPlans: clearAllMutation.isPending,
+  };
+};
+
+export const useMealPlanTemplates = (options = {}) => {
+  const enabled = options.enabled ?? true;
+  const goal = options.goal || "all";
+  const { data, ...query } = useGetQuery({
+    url: "/meal-plans/templates",
+    params: goal && goal !== "all" ? { goal } : undefined,
+    queryProps: {
+      queryKey: [...MEAL_PLAN_TEMPLATES_QUERY_KEY, goal],
+      enabled,
+    },
+  });
+
+  const payload = get(data, "data.data", get(data, "data", {}));
+  const templates = Array.isArray(payload.items)
+    ? filter(map(payload.items, normalizeTemplate), Boolean)
+    : [];
+
+  return {
+    ...query,
+    templates,
+    goals: Array.isArray(payload.goals) ? payload.goals : [],
+    meta: payload.meta ?? {},
   };
 };
 

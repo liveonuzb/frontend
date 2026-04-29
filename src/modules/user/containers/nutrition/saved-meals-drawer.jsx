@@ -1,6 +1,7 @@
 import React from "react";
 import { Skeleton } from "@/components/ui/skeleton.jsx";
 import { Button } from "@/components/ui/button.jsx";
+import { Checkbox } from "@/components/ui/checkbox.jsx";
 import {
   Drawer,
   DrawerBody,
@@ -8,13 +9,22 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer.jsx";
+import { Input } from "@/components/ui/input.jsx";
 import { ScrollArea } from "@/components/ui/scroll-area.jsx";
-import { PencilIcon, Trash2Icon, ZapIcon } from "lucide-react";
+import {
+  CheckIcon,
+  LayersIcon,
+  PencilIcon,
+  PlusIcon,
+  Trash2Icon,
+  ZapIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   useSavedMeals,
   useSavedMealsActions,
 } from "@/hooks/app/use-saved-meals";
+import { useSavedMealTemplates } from "@/hooks/app/use-saved-meal-templates";
 import { NutritionDrawerContent } from "./nutrition-drawer-layout.jsx";
 import MealIngredientsEditorDrawer from "./meal-ingredients-editor-drawer.jsx";
 
@@ -56,7 +66,24 @@ const SavedMealsDrawer = ({
 }) => {
   const { items, isLoading } = useSavedMeals();
   const { updateSavedMeal, deleteSavedMeal, isSaving } = useSavedMealsActions();
+  const {
+    templates,
+    createTemplate,
+    updateTemplate,
+    deleteTemplate,
+  } = useSavedMealTemplates();
+  const [activeTab, setActiveTab] = React.useState("meals");
   const [editingMeal, setEditingMeal] = React.useState(null);
+  const [editingTemplateId, setEditingTemplateId] = React.useState(null);
+  const [templateName, setTemplateName] = React.useState("");
+  const [selectedMealIds, setSelectedMealIds] = React.useState([]);
+
+  const savedMealsById = React.useMemo(() => {
+    return items.reduce((acc, item) => {
+      acc[item.id] = item;
+      return acc;
+    }, {});
+  }, [items]);
 
   const handleQuickLog = React.useCallback(
     async (savedMeal) => {
@@ -77,7 +104,101 @@ const SavedMealsDrawer = ({
         toast.error("Taomni log qilib bo'lmadi");
       }
     },
-    [dateKey, mealType, onAddMeal],
+    [dateKey, disabled, mealType, onAddMeal],
+  );
+
+  const resetTemplateForm = React.useCallback(() => {
+    setEditingTemplateId(null);
+    setTemplateName("");
+    setSelectedMealIds([]);
+  }, []);
+
+  const startCreateTemplate = React.useCallback(() => {
+    setActiveTab("templates");
+    setEditingTemplateId("new");
+    setTemplateName("Mening nonushtam");
+    setSelectedMealIds(items.slice(0, 3).map((item) => item.id));
+  }, [items]);
+
+  const startEditTemplate = React.useCallback((template) => {
+    setActiveTab("templates");
+    setEditingTemplateId(template.id);
+    setTemplateName(template.name);
+    setSelectedMealIds(template.mealIds);
+  }, []);
+
+  const toggleTemplateMeal = React.useCallback((savedMealId) => {
+    setSelectedMealIds((current) =>
+      current.includes(savedMealId)
+        ? current.filter((item) => item !== savedMealId)
+        : [...current, savedMealId],
+    );
+  }, []);
+
+  const handleSaveTemplate = React.useCallback(() => {
+    const safeName = templateName.trim();
+    const mealIds = selectedMealIds.filter((id) => savedMealsById[id]);
+
+    if (!safeName) {
+      toast.error("Shablon nomini kiriting");
+      return;
+    }
+
+    if (mealIds.length === 0) {
+      toast.error("Kamida bitta taom tanlang");
+      return;
+    }
+
+    if (editingTemplateId === "new") {
+      createTemplate({ name: safeName, mealIds });
+      toast.success("Shablon yaratildi");
+    } else {
+      updateTemplate(editingTemplateId, { name: safeName, mealIds });
+      toast.success("Shablon yangilandi");
+    }
+
+    resetTemplateForm();
+  }, [
+    createTemplate,
+    editingTemplateId,
+    resetTemplateForm,
+    savedMealsById,
+    selectedMealIds,
+    templateName,
+    updateTemplate,
+  ]);
+
+  const handleApplyTemplate = React.useCallback(
+    async (template) => {
+      if (!onAddMeal || !dateKey || !mealType) return;
+      if (disabled) {
+        toast.error("Tarmoq yo'q — shablon log qilib bo'lmaydi");
+        return;
+      }
+
+      const mealsToLog = template.mealIds
+        .map((id) => savedMealsById[id])
+        .filter(Boolean);
+
+      if (mealsToLog.length === 0) {
+        toast.error("Shablonda mavjud taom topilmadi");
+        return;
+      }
+
+      try {
+        for (const savedMeal of mealsToLog) {
+          await onAddMeal(
+            dateKey,
+            mealType,
+            buildLoggedMealFromSavedMeal(savedMeal),
+          );
+        }
+        toast.success(`${template.name} qo'shildi`);
+      } catch {
+        toast.error("Shablonni log qilib bo'lmadi");
+      }
+    },
+    [dateKey, disabled, mealType, onAddMeal, savedMealsById],
   );
 
   const handleDelete = React.useCallback(
@@ -119,18 +240,184 @@ const SavedMealsDrawer = ({
           <DrawerHeader>
             <DrawerTitle>Mening taomlarim</DrawerTitle>
             <DrawerDescription>
-              Oldin saqlangan taomlarni tez log qiling yoki ingredientlarini
-              tahrirlang.
+              Taomlarni alohida yoki shablon sifatida tez log qiling.
             </DrawerDescription>
           </DrawerHeader>
 
           <DrawerBody className="p-0">
             <ScrollArea className="h-full px-5 pb-8">
+              <div className="sticky top-0 z-10 flex gap-2 bg-background pb-3 pt-1">
+                <Button
+                  type="button"
+                  variant={activeTab === "meals" ? "default" : "outline"}
+                  className="h-10 flex-1 rounded-2xl"
+                  onClick={() => setActiveTab("meals")}
+                >
+                  Taomlar
+                </Button>
+                <Button
+                  type="button"
+                  variant={activeTab === "templates" ? "default" : "outline"}
+                  className="h-10 flex-1 rounded-2xl"
+                  onClick={() => setActiveTab("templates")}
+                >
+                  Shablonlar
+                </Button>
+              </div>
+
               {isLoading ? (
                 <div className="space-y-3 py-2">
                   {[0, 1, 2].map((index) => (
                     <SavedMealSkeleton key={index} />
                   ))}
+                </div>
+              ) : activeTab === "templates" ? (
+                <div className="space-y-3 py-2">
+                  {editingTemplateId ? (
+                    <div className="space-y-3 rounded-3xl border bg-card p-4">
+                      <Input
+                        value={templateName}
+                        onChange={(event) =>
+                          setTemplateName(event.target.value)
+                        }
+                        placeholder="Shablon nomi"
+                        className="rounded-2xl"
+                      />
+
+                      <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+                        {items.map((item) => {
+                          const isChecked = selectedMealIds.includes(item.id);
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() => toggleTemplateMeal(item.id)}
+                              className="flex w-full items-center gap-3 rounded-2xl border px-3 py-2 text-left transition-colors hover:bg-muted/30"
+                            >
+                              <Checkbox checked={isChecked} />
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-semibold">
+                                  {item.name}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {item.calories} kcal · {Math.round(item.grams)} g
+                                </p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={resetTemplateForm}
+                        >
+                          Bekor qilish
+                        </Button>
+                        <Button type="button" onClick={handleSaveTemplate}>
+                          <CheckIcon className="size-4" />
+                          Saqlash
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-12 w-full rounded-2xl border-dashed"
+                      onClick={startCreateTemplate}
+                      disabled={items.length === 0}
+                    >
+                      <PlusIcon className="size-4" />
+                      Yangi shablon
+                    </Button>
+                  )}
+
+                  {!editingTemplateId && templates.length === 0 ? (
+                    <div className="flex min-h-[220px] items-center justify-center rounded-3xl border border-dashed bg-muted/15 px-6 text-center text-sm text-muted-foreground">
+                      Hali shablon yo&apos;q. Bir nechta saqlangan taomni
+                      bitta guruhga yig'ib qo'ying.
+                    </div>
+                  ) : null}
+
+                  {!editingTemplateId
+                    ? templates.map((template) => {
+                        const templateMeals = template.mealIds
+                          .map((id) => savedMealsById[id])
+                          .filter(Boolean);
+                        return (
+                          <div
+                            key={template.id}
+                            className="rounded-3xl border bg-card px-3 py-3"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+                                <LayersIcon className="size-5" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h3 className="truncate text-sm font-bold">
+                                  {template.name}
+                                </h3>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  {templateMeals.length} ta taom ·{" "}
+                                  {templateMeals.reduce(
+                                    (sum, item) => sum + item.calories,
+                                    0,
+                                  )}{" "}
+                                  kcal
+                                </p>
+                              </div>
+                              <div className="flex shrink-0 items-center gap-1">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-xs"
+                                  className="rounded-full text-muted-foreground"
+                                  onClick={() => startEditTemplate(template)}
+                                  aria-label="Shablonni tahrirlash"
+                                >
+                                  <PencilIcon className="size-3.5" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="icon-xs"
+                                  className="rounded-full"
+                                  disabled={disabled}
+                                  onClick={() => void handleApplyTemplate(template)}
+                                  aria-label="Shablonni log qilish"
+                                >
+                                  <ZapIcon className="size-3.5" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-xs"
+                                  className="rounded-full text-muted-foreground hover:text-destructive"
+                                  onClick={() => deleteTemplate(template.id)}
+                                  aria-label="Shablonni o'chirish"
+                                >
+                                  <Trash2Icon className="size-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+                            {templateMeals.length > 0 ? (
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {templateMeals.slice(0, 4).map((item) => (
+                                  <span
+                                    key={item.id}
+                                    className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground"
+                                  >
+                                    {item.name}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : null}
+                          </div>
+                        );
+                      })
+                    : null}
                 </div>
               ) : items.length === 0 ? (
                 <div className="flex min-h-[240px] items-center justify-center rounded-3xl border border-dashed bg-muted/15 px-6 text-center text-sm text-muted-foreground">

@@ -28,10 +28,20 @@ import {
   ChevronRightIcon,
   SparklesIcon,
   FlameIcon,
+  RepeatIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils.js";
 import { Button } from "@/components/ui/button.jsx";
 import { Input } from "@/components/ui/input.jsx";
+import { Checkbox } from "@/components/ui/checkbox.jsx";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select.jsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,6 +49,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.jsx";
 import useFoodCatalog from "@/hooks/app/use-food-catalog";
+import { useSavedMeals } from "@/hooks/app/use-saved-meals";
+import {
+  buildPlanFoodFromSavedMeal,
+  mealTypeToMealKey,
+  useSavedMealTemplates,
+} from "@/hooks/app/use-saved-meal-templates";
 import { toast } from "sonner";
 import {
   Kanban,
@@ -167,6 +183,13 @@ const Index = ({
     isLoading: isCatalogLoading,
     isError: isCatalogError,
   } = useFoodCatalog();
+  const { items: savedMeals } = useSavedMeals({ enabled: open !== false });
+  const {
+    templates: savedMealTemplates,
+    recurringPatterns,
+    upsertRecurringPattern,
+    deleteRecurringPattern,
+  } = useSavedMealTemplates();
   const [selectedDay, setSelectedDay] = useState(
     propSelectedDay || getTodayDayName(),
   );
@@ -176,6 +199,8 @@ const Index = ({
   );
   const [foodLibraryOpen, setFoodLibraryOpen] = useState(false);
   const [targetColId, setTargetColId] = useState(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const [templateTargetColId, setTemplateTargetColId] = useState("");
 
   const dayScrollRef = useRef(null);
   const activeDayRef = useRef(null);
@@ -282,6 +307,52 @@ const Index = ({
   }, [categoriesWithAll, selectedCategoryId]);
 
   const currentDayColumns = daysData[selectedDay] || [];
+  const savedMealsById = useMemo(
+    () => new Map(savedMeals.map((item) => [item.id, item])),
+    [savedMeals],
+  );
+  const selectedTemplate = useMemo(
+    () => find(savedMealTemplates, { id: selectedTemplateId }) || null,
+    [savedMealTemplates, selectedTemplateId],
+  );
+  const templateTargetColumn = useMemo(
+    () =>
+      find(currentDayColumns, { id: templateTargetColId }) ||
+      currentDayColumns[0] ||
+      null,
+    [currentDayColumns, templateTargetColId],
+  );
+  const recurringPatternForTarget = useMemo(() => {
+    if (!templateTargetColumn) return null;
+    return (
+      find(
+        recurringPatterns,
+        (pattern) =>
+          pattern.weekday === selectedDay &&
+          pattern.mealType === templateTargetColumn.type,
+      ) || null
+    );
+  }, [recurringPatterns, selectedDay, templateTargetColumn]);
+  const isRecurringTemplateActive =
+    Boolean(selectedTemplateId) &&
+    recurringPatternForTarget?.templateId === selectedTemplateId;
+
+  useEffect(() => {
+    if (!selectedTemplateId && savedMealTemplates[0]?.id) {
+      setSelectedTemplateId(savedMealTemplates[0].id);
+    }
+  }, [savedMealTemplates, selectedTemplateId]);
+
+  useEffect(() => {
+    if (
+      templateTargetColId &&
+      currentDayColumns.some((column) => column.id === templateTargetColId)
+    ) {
+      return;
+    }
+
+    setTemplateTargetColId(currentDayColumns[0]?.id || "");
+  }, [currentDayColumns, templateTargetColId]);
 
   // lodash keyBy + mapValues bilan kanban columns map
   const kanbanColumns = useMemo(() => {
@@ -409,6 +480,76 @@ const Index = ({
       setEditingFood({ ...newFood, colId });
     },
     [selectedDay],
+  );
+
+  const addTemplateToColumn = useCallback(() => {
+    if (!selectedTemplate || !templateTargetColumn) {
+      toast.error("Shablon va ovqatlanish vaqtini tanlang");
+      return;
+    }
+
+    const templateMeals = selectedTemplate.mealIds
+      .map((mealId) => savedMealsById.get(mealId))
+      .filter(Boolean);
+
+    if (templateMeals.length === 0) {
+      toast.error("Bu shablondagi taomlar topilmadi");
+      return;
+    }
+
+    const foodsToAdd = templateMeals.map((meal, index) =>
+      buildPlanFoodFromSavedMeal(meal, `${selectedTemplate.id}-${index}`),
+    );
+
+    setDaysData((prev) => {
+      const dayData = [...(prev[selectedDay] || [])];
+      const colIndex = findIndex(dayData, { id: templateTargetColumn.id });
+      if (colIndex === -1) return prev;
+
+      dayData[colIndex] = {
+        ...dayData[colIndex],
+        items: [...dayData[colIndex].items, ...foodsToAdd],
+      };
+
+      return { ...prev, [selectedDay]: dayData };
+    });
+
+    toast.success(`${selectedTemplate.name} rejaga qo'shildi`);
+  }, [
+    savedMealsById,
+    selectedDay,
+    selectedTemplate,
+    templateTargetColumn,
+  ]);
+
+  const toggleRecurringTemplate = useCallback(
+    (checked) => {
+      if (!selectedTemplate || !templateTargetColumn) return;
+
+      if (!checked) {
+        if (recurringPatternForTarget?.id) {
+          deleteRecurringPattern(recurringPatternForTarget.id);
+          toast.success("Haftalik odat o'chirildi");
+        }
+        return;
+      }
+
+      upsertRecurringPattern({
+        weekday: selectedDay,
+        mealType: templateTargetColumn.type,
+        mealKey: mealTypeToMealKey(templateTargetColumn.type),
+        templateId: selectedTemplate.id,
+      });
+      toast.success("Haftalik odat saqlandi");
+    },
+    [
+      deleteRecurringPattern,
+      recurringPatternForTarget,
+      selectedDay,
+      selectedTemplate,
+      templateTargetColumn,
+      upsertRecurringPattern,
+    ],
   );
 
   const removeFood = useCallback(
@@ -647,6 +788,68 @@ const Index = ({
               );
             })}
           </div>
+          {savedMealTemplates.length > 0 && currentDayColumns.length > 0 ? (
+            <div className="mt-4 grid gap-2 rounded-2xl border bg-muted/20 p-3 text-left md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-center">
+              <Select
+                value={selectedTemplateId}
+                onValueChange={setSelectedTemplateId}
+              >
+                <SelectTrigger className="h-10 w-full rounded-2xl bg-background">
+                  <SelectValue placeholder="Shablon tanlang" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {savedMealTemplates.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={templateTargetColId}
+                onValueChange={setTemplateTargetColId}
+              >
+                <SelectTrigger className="h-10 w-full rounded-2xl bg-background">
+                  <SelectValue placeholder="Vaqt tanlang" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {currentDayColumns.map((column) => (
+                      <SelectItem key={column.id} value={column.id}>
+                        {column.type}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+
+              <Button
+                type="button"
+                className="h-10 rounded-2xl"
+                onClick={addTemplateToColumn}
+              >
+                <PlusIcon className="size-4" />
+                Qo'llash
+              </Button>
+
+              {selectedTemplate && templateTargetColumn ? (
+                <label className="flex cursor-pointer items-center gap-2 rounded-2xl border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground md:col-span-3">
+                  <Checkbox
+                    checked={isRecurringTemplateActive}
+                    onCheckedChange={(checked) =>
+                      toggleRecurringTemplate(Boolean(checked))
+                    }
+                  />
+                  <RepeatIcon className="size-3.5" />
+                  Har {selectedDay} {templateTargetColumn.type.toLowerCase()}{" "}
+                  uchun {selectedTemplate.name} ishlatilsin
+                </label>
+              ) : null}
+            </div>
+          ) : null}
         </DrawerHeader>
 
         <div

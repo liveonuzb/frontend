@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuthStore, useBreadcrumbStore } from "@/store";
 import useHealthGoals from "@/hooks/app/use-health-goals";
+import useWorkoutCalorieAdjustmentPreference from "@/hooks/app/use-workout-calorie-adjustment";
 import useMealPlan from "@/hooks/app/use-meal-plan";
 import {
   normalizeDayData,
@@ -62,6 +63,8 @@ import NutritionMealsView from "./views/meals-view.jsx";
 import NutritionPlansView from "./views/plans-view.jsx";
 import NutritionReportView from "./views/report-view.jsx";
 import InlineScanReviewDrawer from "./inline-scan-review-drawer.jsx";
+import GoalRecalculationDrawer from "./goal-recalculation-drawer.jsx";
+import TemplateLibraryDrawer from "./template-library-drawer.jsx";
 import {
   buildMealPayloadFromDraft,
   getDraftNutritionPreview,
@@ -249,6 +252,8 @@ const NutritionContent = ({ entryView = "home" }) => {
     isLoading: isGoalsLoading,
     isFetching: isGoalsFetching,
   } = useHealthGoals();
+  const { enabled: workoutCalorieAdjustmentEnabled } =
+    useWorkoutCalorieAdjustmentPreference();
   const {
     addMeal: addMealAction,
     removeMeal: removeMealAction,
@@ -381,6 +386,9 @@ const NutritionContent = ({ entryView = "home" }) => {
   const [isShoppingOpen, setIsShoppingOpen] = React.useState(false);
   const [isAIOpen, setIsAIOpen] = React.useState(false);
   const [isPlansDrawerOpen, setIsPlansDrawerOpen] = React.useState(false);
+  const [isTemplateLibraryOpen, setIsTemplateLibraryOpen] =
+    React.useState(false);
+  const [isGoalWizardOpen, setIsGoalWizardOpen] = React.useState(false);
   const [isActionDrawerOpen, setIsActionDrawerOpen] = React.useState(false);
   const [isCancelPlanOpen, setIsCancelPlanOpen] = React.useState(false);
   const [isPlanMetaOpen, setIsPlanMetaOpen] = React.useState(false);
@@ -447,6 +455,11 @@ const NutritionContent = ({ entryView = "home" }) => {
     setIsAIOpen(true);
   }, [isPremiumActive, openPremiumForAi]);
 
+  const handleOpenTemplateLibrary = React.useCallback(() => {
+    setIsPlansDrawerOpen(false);
+    setIsTemplateLibraryOpen(true);
+  }, []);
+
   React.useEffect(() => {
     return setMealDuplicateConfirmHandler(
       (context) =>
@@ -480,6 +493,59 @@ const NutritionContent = ({ entryView = "home" }) => {
       callback();
     }, 180);
   }, []);
+
+  const handleTemplateSelected = React.useCallback(
+    async (template) => {
+      const weeklyKanban =
+        template?.weeklyKanban &&
+        typeof template.weeklyKanban === "object" &&
+        !Array.isArray(template.weeklyKanban)
+          ? template.weeklyKanban
+          : {};
+      const mealCount =
+        template?.mealCount ||
+        Math.max(
+          1,
+          ...Object.values(weeklyKanban).map((day) =>
+            Array.isArray(day) ? day.length : 0,
+          ),
+        );
+
+      try {
+        const nextState = await saveDraftPlan({
+          name: `${template?.title || template?.name || "Tayyor shablon"} nusxa`,
+          description: template?.description || null,
+          source: "template",
+          goal: template?.goal || "maintenance",
+          mealCount,
+          weeklyKanban,
+        });
+        const nextPlan =
+          nextState?.draftPlan ||
+          nextState?.plans?.find(
+            (plan) =>
+              plan.status === "draft" &&
+              plan.name?.startsWith(template?.title || template?.name || ""),
+          ) ||
+          nextState?.plans?.[0] ||
+          null;
+
+        if (nextPlan?.id) {
+          setSelectedPlanId(nextPlan.id);
+        }
+
+        setBuilderInitialData(nextPlan?.weeklyKanban || weeklyKanban);
+        setIsTemplateLibraryOpen(false);
+        schedulePlanMetaDrawerOpen(() => {
+          setIsBuilderOpen(true);
+        });
+        toast.success("Shablon asosida reja yaratildi");
+      } catch {
+        toast.error("Shablondan reja yaratib bo'lmadi");
+      }
+    },
+    [saveDraftPlan, schedulePlanMetaDrawerOpen],
+  );
 
   const openPlanMetaCreateDrawer = React.useCallback(() => {
     setPlanMetaMode("create");
@@ -768,6 +834,57 @@ const NutritionContent = ({ entryView = "home" }) => {
   const { refetch: refetchYesterday } = useDailyTrackingDay(yesterdayKey, {
     enabled: false,
   });
+  const workoutCalorieAdjustment = React.useMemo(() => {
+    const todayKey = new Date().toISOString().split("T")[0];
+
+    if (
+      !workoutCalorieAdjustmentEnabled ||
+      dateKey !== todayKey ||
+      !dayData.burnedCalories
+    ) {
+      return 0;
+    }
+
+    return Math.max(0, Math.round(Number(dayData.burnedCalories) || 0));
+  }, [dateKey, dayData.burnedCalories, workoutCalorieAdjustmentEnabled]);
+  const effectiveGoals = React.useMemo(
+    () =>
+      workoutCalorieAdjustment > 0
+        ? {
+            ...goals,
+            calories: Number(goals.calories || 0) + workoutCalorieAdjustment,
+          }
+        : goals,
+    [goals, workoutCalorieAdjustment],
+  );
+
+  React.useEffect(() => {
+    if (!workoutCalorieAdjustment) {
+      return;
+    }
+
+    const baseCalories = Number(goals.calories || 0);
+    const toastKey = `${dateKey}:${baseCalories}:${workoutCalorieAdjustment}`;
+    const storageKey = "liveon:nutrition:workout-calorie-adjustment-toast:v1";
+
+    if (
+      typeof window !== "undefined" &&
+      window.localStorage.getItem(storageKey) === toastKey
+    ) {
+      return;
+    }
+
+    toast.success(
+      `Bugun ${workoutCalorieAdjustment} kcal yoqdingiz — maqsadingiz ${baseCalories} → ${
+        baseCalories + workoutCalorieAdjustment
+      } kcal ga ko'paytirildi`,
+    );
+
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(storageKey, toastKey);
+    }
+  }, [dateKey, goals.calories, workoutCalorieAdjustment]);
+
   const meals = React.useMemo(
     () => ({
       breakfast: dayData.meals.breakfast.map((item) =>
@@ -961,7 +1078,7 @@ const NutritionContent = ({ entryView = "home" }) => {
     fat: Math.round(totals.fat),
   };
 
-  const remaining = goals.calories - roundedTotals.calories;
+  const remaining = effectiveGoals.calories - roundedTotals.calories;
 
   const handleRemoveFood = async (type, food) => {
     try {
@@ -1457,7 +1574,7 @@ const NutritionContent = ({ entryView = "home" }) => {
     setDate,
     plans,
     currentPlan,
-    goals,
+    goals: effectiveGoals,
     roundedTotals,
     calorieGoalMeta,
     isGoalLoadingState,
@@ -1475,6 +1592,7 @@ const NutritionContent = ({ entryView = "home" }) => {
     setIsActionDrawerOpen,
     setIsSavedMealsOpen,
     setIsPlansDrawerOpen,
+    onOpenGoalWizard: () => setIsGoalWizardOpen(true),
     handleRemoveFood,
     handleLogPlanned,
     handleTogglePlanned,
@@ -1496,7 +1614,7 @@ const NutritionContent = ({ entryView = "home" }) => {
           setDate={setDate}
           currentPlan={currentPlan}
           roundedTotals={roundedTotals}
-          goals={goals}
+          goals={effectiveGoals}
           isGoalLoadingState={isGoalLoadingState}
           calorieGoalMeta={calorieGoalMeta}
         />
@@ -1516,6 +1634,7 @@ const NutritionContent = ({ entryView = "home" }) => {
           }}
           onCreateManual={openPlanMetaCreateDrawer}
           onCreateAI={handleOpenAiGenerator}
+          onCreateFromTemplate={handleOpenTemplateLibrary}
         />
       ) : entryView === "meals" ? (
         <NutritionMealsView {...sharedViewProps} />
@@ -1564,6 +1683,18 @@ const NutritionContent = ({ entryView = "home" }) => {
         }}
         onCreateManual={openPlanMetaCreateDrawer}
         onCreateAI={handleOpenAiGenerator}
+        onCreateFromTemplate={handleOpenTemplateLibrary}
+      />
+
+      <TemplateLibraryDrawer
+        open={isTemplateLibraryOpen}
+        onOpenChange={setIsTemplateLibraryOpen}
+        onSelectTemplate={handleTemplateSelected}
+      />
+
+      <GoalRecalculationDrawer
+        open={isGoalWizardOpen}
+        onOpenChange={setIsGoalWizardOpen}
       />
 
       <Drawer open={isAIOpen} onOpenChange={setIsAIOpen} direction="bottom">
@@ -1603,7 +1734,7 @@ const NutritionContent = ({ entryView = "home" }) => {
           }
         }}
         scan={selectedScan}
-        goals={goals}
+        goals={effectiveGoals}
         onConfirm={handleConfirmInlineScan}
         onConfirmAll={handleConfirmAllInlineScans}
         onDiscard={() => {

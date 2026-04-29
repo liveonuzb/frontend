@@ -10,6 +10,7 @@ import {
   DrawerDescription,
 } from "@/components/ui/drawer";
 import {
+  BookOpenIcon,
   CheckIcon,
   ChevronRightIcon,
   PencilIcon,
@@ -57,6 +58,7 @@ export default function PlansDrawer({
   onSelectPlanForShopping,
   onCreateManual,
   onCreateAI,
+  onCreateFromTemplate,
 }) {
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
@@ -92,6 +94,10 @@ export default function PlansDrawer({
             <Button variant="outline" onClick={onCreateManual}>
               <PencilIcon className="size-4" />
               Qo&apos;lda yaratish
+            </Button>
+            <Button variant="outline" onClick={onCreateFromTemplate}>
+              <BookOpenIcon className="size-4" />
+              Shablondan tanlash
             </Button>
             <Button onClick={onCreateAI}>
               <SparklesIcon className="size-4" />

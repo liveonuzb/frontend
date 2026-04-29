@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { SparklesIcon, PencilIcon } from "lucide-react";
+import { BookOpenIcon, SparklesIcon, PencilIcon } from "lucide-react";
 import NutritionPlansList from "../nutrition-plans-list.jsx";
 
 export default function NutritionPlansView({
@@ -15,6 +15,7 @@ export default function NutritionPlansView({
   onSelectPlanForShopping,
   onCreateManual,
   onCreateAI,
+  onCreateFromTemplate,
 }) {
   return (
     <div className="flex flex-col gap-6">
@@ -34,6 +35,10 @@ export default function NutritionPlansView({
           <Button variant="outline" onClick={onCreateManual}>
             <PencilIcon className="size-4" />
             Qo&apos;lda yaratish
+          </Button>
+          <Button variant="outline" onClick={onCreateFromTemplate}>
+            <BookOpenIcon className="size-4" />
+            Shablondan tanlash
           </Button>
           <Button onClick={onCreateAI}>
             <SparklesIcon className="size-4" />

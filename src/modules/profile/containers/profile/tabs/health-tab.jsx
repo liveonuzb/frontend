@@ -13,6 +13,7 @@ import {
 import { useGetQuery } from "@/hooks/api";
 import useHealthGoals from "@/hooks/app/use-health-goals";
 import useMe from "@/hooks/app/use-me";
+import useWorkoutCalorieAdjustmentPreference from "@/hooks/app/use-workout-calorie-adjustment";
 import { getApiResponseData } from "@/lib/api-response";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -997,6 +998,21 @@ const HealthTabContent = ({
           })}
         />
 
+        <div className="flex items-center justify-between gap-4 rounded-2xl border bg-card/70 px-4 py-3">
+          <div className="min-w-0">
+            <p className="text-sm font-bold">
+              Workout kaloriyasini qo'shish
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Bugun yoqilgan kcal nutrition targetga avtomatik qo'shiladi.
+            </p>
+          </div>
+          <Switch
+            checked={workoutCalorieAdjustmentEnabled}
+            onCheckedChange={setWorkoutCalorieAdjustmentEnabled}
+          />
+        </div>
+
         <div className="space-y-3">
           <GoalMetricCard
             meta={METRIC_META.calories}
@@ -1174,6 +1190,10 @@ export const HealthTab = ({ embedded = false }) => {
     saveGoals,
     isHydratingGoals,
   } = useHealthGoals();
+  const {
+    enabled: workoutCalorieAdjustmentEnabled,
+    setEnabled: setWorkoutCalorieAdjustmentEnabled,
+  } = useWorkoutCalorieAdjustmentPreference();
 
   const [periodDays, setPeriodDays] = React.useState(14);
   const initialForm = React.useMemo(() => createInitialForm(goals), [goals]);
