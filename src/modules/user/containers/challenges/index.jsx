@@ -50,7 +50,6 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import CreateChallengeDrawer from "./create-challenge-drawer";
 
 // ── constants ────────────────────────────────────────────────────────────────
 
@@ -401,7 +400,9 @@ export default function ChallengesContainer() {
   // ── tab + search state ──
   const [activeTab, setActiveTab] = React.useState("shaxsiy");
   const [search, setSearch] = React.useState("");
-  const [createOpen, setCreateOpen] = React.useState(false);
+  const openCreateFlow = React.useCallback(() => {
+    navigate("/user/challenges/create");
+  }, [navigate]);
 
   // ── invite drawer state ──
   const [isInviteDrawerOpen, setIsInviteDrawerOpen] = React.useState(false);
@@ -559,7 +560,7 @@ export default function ChallengesContainer() {
           <Button
             size="icon"
             className="hidden size-11 rounded-2xl shadow-lg shadow-primary/20 sm:flex"
-            onClick={() => setCreateOpen(true)}
+            onClick={openCreateFlow}
           >
             <PlusIcon className="size-5" />
           </Button>
@@ -721,7 +722,7 @@ export default function ChallengesContainer() {
           ) : activeTab === "shaxsiy" && activeList.length === 0 ? (
             <ShaxsiyEmptyState
               key="shaxsiy-empty"
-              onCreateClick={() => setCreateOpen(true)}
+              onCreateClick={openCreateFlow}
             />
           ) : activeList.length === 0 ? (
             <OmmabopEmptyState key="ommabop-empty" />
@@ -762,14 +763,11 @@ export default function ChallengesContainer() {
       {/* ── Floating create button (mobile) ── */}
       <button
         type="button"
-        onClick={() => setCreateOpen(true)}
+        onClick={openCreateFlow}
         className="fixed bottom-24 right-5 z-40 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-2xl shadow-primary/40 transition-all hover:scale-105 hover:shadow-primary/50 active:scale-95 sm:hidden"
       >
         <PlusIcon className="size-7" />
       </button>
-
-      {/* ── Create challenge drawer ── */}
-      <CreateChallengeDrawer open={createOpen} onOpenChange={setCreateOpen} />
 
       {/* ── Invite friends drawer (for existing challenges) ── */}
       <Drawer

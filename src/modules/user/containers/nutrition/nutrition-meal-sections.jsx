@@ -1,7 +1,13 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ListFilterIcon, SearchIcon, XIcon } from "lucide-react";
+import {
+  ListFilterIcon,
+  PencilIcon,
+  SearchIcon,
+  Trash2Icon,
+  XIcon,
+} from "lucide-react";
 import MealSection from "./meal-section.jsx";
 
 export default function NutritionMealSections({
@@ -13,6 +19,7 @@ export default function NutritionMealSections({
   activeFilterCount = 0,
   setIsFilterDrawerOpen,
   filteredMealSections,
+  mealFeedbackById = {},
   activeMealType,
   setSelectedMealTypeForAdd,
   setIsActionDrawerOpen,
@@ -24,10 +31,48 @@ export default function NutritionMealSections({
   onRetryScan,
   onRemoveScan,
   onOpenDraftScan,
+  onTransferMeal,
+  onCopyMealToToday,
+  readOnly = false,
   isLoading = false,
   addDisabled = false,
   onCopyFromYesterday,
+  onBulkRemove,
 }) {
+  const [isSelectionMode, setIsSelectionMode] = React.useState(false);
+  const [selectedItems, setSelectedItems] = React.useState({});
+  const selectedList = React.useMemo(() => Object.values(selectedItems), [selectedItems]);
+
+  const clearSelection = React.useCallback(() => {
+    setSelectedItems({});
+    setIsSelectionMode(false);
+  }, []);
+
+  const toggleSelectedItem = React.useCallback((mealType, food) => {
+    if (!food?.id) return;
+
+    setSelectedItems((current) => {
+      const key = `${mealType}:${food.id}`;
+      if (current[key]) {
+        const next = { ...current };
+        delete next[key];
+        return next;
+      }
+
+      return {
+        ...current,
+        [key]: { mealType, food },
+      };
+    });
+  }, []);
+
+  const handleBulkDelete = React.useCallback(async () => {
+    if (selectedList.length === 0) return;
+
+    await onBulkRemove?.(selectedList);
+    clearSelection();
+  }, [clearSelection, onBulkRemove, selectedList]);
+
   return (
     <>
       <div className="flex flex-col gap-3">
@@ -75,6 +120,26 @@ export default function NutritionMealSections({
             ))}
           </div>
           <div className="sticky right-0 ml-auto flex h-full items-center bg-background/80 pl-2 backdrop-blur-sm">
+            {!readOnly ? (
+              <Button
+                variant={isSelectionMode ? "default" : "outline"}
+                className="mr-2 shrink-0"
+                onClick={() => {
+                  if (isSelectionMode) {
+                    clearSelection();
+                  } else {
+                    setIsSelectionMode(true);
+                  }
+                }}
+              >
+                {isSelectionMode ? (
+                  <XIcon className="size-4" />
+                ) : (
+                  <PencilIcon className="size-4" />
+                )}
+                {isSelectionMode ? "Bekor" : "Tahrirlash"}
+              </Button>
+            ) : null}
             <Button
               variant="outline"
               size="icon"
@@ -101,6 +166,7 @@ export default function NutritionMealSections({
             time={section.time}
             items={section.foods || []}
             plannedItems={section.plannedItems || []}
+            mealFeedbackById={mealFeedbackById}
             onRemove={handleRemoveFood}
             onAdd={() => {
               setSelectedMealTypeForAdd(type);
@@ -112,10 +178,17 @@ export default function NutritionMealSections({
             onRetryScan={onRetryScan}
             onRemoveScan={onRemoveScan}
             onOpenDraftScan={onOpenDraftScan}
+            onTransferMeal={onTransferMeal}
+            onCopyMealToToday={onCopyMealToToday}
             onTogglePlanned={handleTogglePlanned}
+            readOnly={readOnly}
             isLoading={isLoading}
             addDisabled={addDisabled}
             onCopyFromYesterday={onCopyFromYesterday}
+            isSelectionMode={!readOnly && isSelectionMode}
+            selectedItems={selectedItems}
+            onToggleSelect={toggleSelectedItem}
+            onEnterSelectionMode={() => setIsSelectionMode(true)}
           />
         ))
       ) : (
@@ -126,6 +199,27 @@ export default function NutritionMealSections({
           </p>
         </div>
       )}
+      {isSelectionMode ? (
+        <div className="fixed inset-x-4 bottom-4 z-40 mx-auto flex max-w-md items-center justify-between gap-3 rounded-2xl border bg-background/95 p-3 shadow-lg backdrop-blur">
+          <div className="min-w-0">
+            <p className="text-sm font-bold">
+              {selectedList.length} ta ovqat tanlandi
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Tanlangan ovqatlarni bir vaqtda o'chirish
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="destructive"
+            disabled={selectedList.length === 0}
+            onClick={() => void handleBulkDelete()}
+          >
+            <Trash2Icon className="size-4" />
+            {selectedList.length} ta o'chirish
+          </Button>
+        </div>
+      ) : null}
     </>
   );
 }

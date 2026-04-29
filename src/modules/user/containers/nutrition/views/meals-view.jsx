@@ -22,6 +22,7 @@ export default function NutritionMealsView(props) {
     activeNutritionFilterCount,
     setIsFilterDrawerOpen,
     filteredMealSections,
+    mealFeedbackById,
     activeMealType,
     setSelectedMealTypeForAdd,
     setIsActionDrawerOpen,
@@ -37,6 +38,8 @@ export default function NutritionMealsView(props) {
     isOnline,
     isDayLoading,
     handleCopyFromYesterday,
+    handleBulkRemoveFoods,
+    onTransferMeal,
   } = props;
 
   return (
@@ -113,10 +116,13 @@ export default function NutritionMealsView(props) {
           activeFilterCount={activeNutritionFilterCount}
           setIsFilterDrawerOpen={setIsFilterDrawerOpen}
           filteredMealSections={filteredMealSections}
+          mealFeedbackById={mealFeedbackById}
           activeMealType={activeMealType}
           setSelectedMealTypeForAdd={setSelectedMealTypeForAdd}
           setIsActionDrawerOpen={setIsActionDrawerOpen}
           handleRemoveFood={handleRemoveFood}
+          onBulkRemove={handleBulkRemoveFoods}
+          onTransferMeal={onTransferMeal}
           handleLogPlanned={handleLogPlanned}
           handleTogglePlanned={handleTogglePlanned}
           onImageUpload={onImageUpload}

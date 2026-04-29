@@ -25,6 +25,7 @@ export default function NutritionHomeView(props) {
     activeNutritionFilterCount,
     setIsFilterDrawerOpen,
     filteredMealSections,
+    mealFeedbackById,
     activeMealType,
     setSelectedMealTypeForAdd,
     setIsActionDrawerOpen,
@@ -40,7 +41,11 @@ export default function NutritionHomeView(props) {
     onOpenGoalWizard,
     isOnline,
     isDayLoading,
+    isPastDate,
     handleCopyFromYesterday,
+    handleBulkRemoveFoods,
+    onCopyMealToToday,
+    onTransferMeal,
   } = props;
 
   return (
@@ -67,6 +72,13 @@ export default function NutritionHomeView(props) {
           className="shadow md:shadow-none flex-1 rounded-2xl px-1 py-1 md:max-w-md md:flex-none md:w-full"
         />
       </div>
+
+      {isPastDate ? (
+        <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 px-4 py-3 text-sm font-semibold text-blue-800 dark:text-blue-200">
+          O'tgan kun readonly ko'rinishda ochildi. Kerakli ovqatdagi plus
+          tugmasi orqali uni bugungi kunga qo'shishingiz mumkin.
+        </div>
+      ) : null}
 
       {plans.length > 0 ? (
         <button
@@ -143,10 +155,14 @@ export default function NutritionHomeView(props) {
           activeFilterCount={activeNutritionFilterCount}
           setIsFilterDrawerOpen={setIsFilterDrawerOpen}
           filteredMealSections={filteredMealSections}
+          mealFeedbackById={mealFeedbackById}
           activeMealType={activeMealType}
           setSelectedMealTypeForAdd={setSelectedMealTypeForAdd}
           setIsActionDrawerOpen={setIsActionDrawerOpen}
           handleRemoveFood={handleRemoveFood}
+          onBulkRemove={handleBulkRemoveFoods}
+          onTransferMeal={onTransferMeal}
+          onCopyMealToToday={onCopyMealToToday}
           handleLogPlanned={handleLogPlanned}
           handleTogglePlanned={handleTogglePlanned}
           onImageUpload={onImageUpload}
@@ -155,7 +171,8 @@ export default function NutritionHomeView(props) {
           onRemoveScan={onRemoveScan}
           onOpenDraftScan={onOpenDraftScan}
           isLoading={isDayLoading}
-          addDisabled={!isOnline}
+          readOnly={isPastDate}
+          addDisabled={!isOnline || isPastDate}
           onCopyFromYesterday={handleCopyFromYesterday}
         />
       </TrackingPageLayout>

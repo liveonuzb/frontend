@@ -11,8 +11,10 @@ import {
 import {
   CameraIcon,
   CheckCircle2Icon,
+  CopyIcon,
   MinusCircleIcon,
   CalculatorIcon,
+  MoveRightIcon,
   PencilIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button.jsx";
@@ -61,6 +63,7 @@ const FoodLogDrawer = ({
   onEat,
   onCamera,
   onEditPortion,
+  onTransfer,
   readOnly = false,
 }) => {
   const { goals } = useHealthGoals();
@@ -220,7 +223,14 @@ const FoodLogDrawer = ({
                 ko&apos;ra oladi.
               </p>
             ) : (
-              <div className={"grid grid-cols-3 gap-4"}>
+              <div
+                className="grid gap-3"
+                style={{
+                  gridTemplateColumns: `repeat(${
+                    3 + (isConsumed ? 2 : 0)
+                  }, minmax(0, 1fr))`,
+                }}
+              >
                 {isConsumed && onEditPortion ? (
                   <Button
                     onClick={() => {
@@ -231,6 +241,32 @@ const FoodLogDrawer = ({
                     className={"h-12"}
                   >
                     <PencilIcon className="size-5 text-primary" />
+                  </Button>
+                ) : null}
+                {isConsumed && onTransfer ? (
+                  <Button
+                    onClick={() => {
+                      onTransfer("copy");
+                      onClose();
+                    }}
+                    variant="outline"
+                    className="h-12"
+                    aria-label="Nusxa olish"
+                  >
+                    <CopyIcon className="size-5 text-sky-500" />
+                  </Button>
+                ) : null}
+                {isConsumed && onTransfer ? (
+                  <Button
+                    onClick={() => {
+                      onTransfer("move");
+                      onClose();
+                    }}
+                    variant="outline"
+                    className="h-12"
+                    aria-label="Ko'chirish"
+                  >
+                    <MoveRightIcon className="size-5 text-amber-500" />
                   </Button>
                 ) : null}
                 {onCamera ? (

@@ -120,13 +120,15 @@ export const useCoachChallengesStore = create((set, get) => ({
         }
       }
 
-      await api.post("/challenges", payload);
+      const createResponse = await api.post("/challenges", payload);
+      const createdChallenge = createResponse?.data?.data ?? createResponse?.data;
       toast.success("Maxsus musobaqa yaratildi!");
       await Promise.all([
         get().fetchChallenges({}, { silent: true }),
         get().fetchMyInvitations("PENDING", { silent: true }),
       ]);
       if (onSuccess) onSuccess();
+      return createdChallenge;
     } catch (error) {
       console.error("Error creating custom challenge:", error);
       if (uploadedImageId) {
@@ -155,9 +157,11 @@ export const useCoachChallengesStore = create((set, get) => ({
       actionLoading: { ...state.actionLoading, updating: true },
     }));
     try {
-      await api.patch(`/challenges/${id}`, data);
+      const response = await api.patch(`/challenges/${id}`, data);
+      const updatedChallenge = response?.data?.data ?? response?.data;
       await get().fetchChallenges({}, { silent: true });
       if (onSuccess) onSuccess();
+      return updatedChallenge;
     } catch (error) {
       console.error("Error updating challenge:", error);
       toast.error(
@@ -296,7 +300,7 @@ export const useCoachChallengesStore = create((set, get) => ({
     }));
 
     try {
-      await api.post(`/challenges/${challengeId}/invite`, { userIds });
+      await api.post(`/challenges/${challengeId}/invitations`, { userIds });
       toast.success("Taklifnomalar yuborildi");
       await Promise.all([
         get().fetchChallenges({}, { silent: true }),
@@ -344,7 +348,7 @@ export const useCoachChallengesStore = create((set, get) => ({
     }));
 
     try {
-      await api.patch(`/challenges/invitations/${invitationId}/respond`, {
+      await api.post(`/challenges/invitations/${invitationId}/respond`, {
         status,
       });
       toast.success(

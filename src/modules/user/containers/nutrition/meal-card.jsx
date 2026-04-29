@@ -7,6 +7,8 @@ import {
   CheckIcon,
   InfoIcon,
   Loader2Icon,
+  MessageCircleIcon,
+  PlusIcon,
   RefreshCwIcon,
   Trash2Icon,
 } from "lucide-react";
@@ -16,6 +18,13 @@ import CameraLogDrawer from "./camera-log-drawer.jsx";
 import MealIngredientsEditorDrawer from "./meal-ingredients-editor-drawer.jsx";
 import { Card, CardContent } from "@/components/ui/card.jsx";
 import { Button } from "@/components/ui/button.jsx";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog.jsx";
 import { Skeleton } from "@/components/ui/skeleton.jsx";
 import { getNutritionSourceMeta } from "./source-meta.js";
 
@@ -39,12 +48,19 @@ const MealCard = memo(
     onRetryScan,
     onRemoveScan,
     onOpenDraftScan,
+    onTransferMeal,
+    onCopyMealToToday,
     readOnly = false,
+    isSelectionMode = false,
+    isSelected = false,
+    onToggleSelect,
+    onEnterSelectionMode,
   }) => {
     const [logOpen, setLogOpen] = useState(false);
     const [portionOpen, setPortionOpen] = useState(false);
     const [cameraOpen, setCameraOpen] = useState(false);
     const [ingredientsOpen, setIngredientsOpen] = useState(false);
+    const [coachFeedbackOpen, setCoachFeedbackOpen] = useState(false);
 
     const isConsumed = get(food, "isConsumed", false);
     const qty = get(food, "qty", 1);
@@ -56,6 +72,13 @@ const MealCard = memo(
     const emoji = get(food, "emoji", "🍽️");
     const image = get(food, "image", null);
     const ingredients = get(food, "ingredients", []);
+    const coachFeedback = Array.isArray(get(food, "coachFeedback", []))
+      ? get(food, "coachFeedback", [])
+      : [];
+    const hasCoachFeedback = coachFeedback.length > 0;
+    const isCoachApproved =
+      get(food, "coachApproved", false) ||
+      get(food, "source", null) === "coach-meal-plan";
     const hasIngredientBreakdown =
       Array.isArray(ingredients) && ingredients.length > 0;
     const sourceMeta = getNutritionSourceMeta(
@@ -63,6 +86,17 @@ const MealCard = memo(
       get(food, "isFromPlanLinked", false) ? "meal-plan" : "manual",
     );
     const scanStatus = get(food, "status", null);
+    const canSelect = isConsumed && !readOnly;
+    const longPressTimerRef = React.useRef(null);
+    const longPressTriggeredRef = React.useRef(false);
+
+    React.useEffect(() => {
+      return () => {
+        if (longPressTimerRef.current) {
+          window.clearTimeout(longPressTimerRef.current);
+        }
+      };
+    }, []);
 
     if (["scanning", "draft", "error"].includes(scanStatus)) {
       const scanImage = get(food, "image", null);
@@ -217,8 +251,39 @@ const MealCard = memo(
     };
 
     const handleOpenDetails = () => {
+      if (longPressTriggeredRef.current) {
+        longPressTriggeredRef.current = false;
+        return;
+      }
+
+      if (isSelectionMode) {
+        if (canSelect) {
+          onToggleSelect?.(mealType, food);
+        }
+        return;
+      }
+
       if (!isConsumed) return;
       setLogOpen(true);
+    };
+
+    const handlePointerDown = () => {
+      if (!canSelect || isSelectionMode || typeof window === "undefined") {
+        return;
+      }
+
+      longPressTimerRef.current = window.setTimeout(() => {
+        longPressTriggeredRef.current = true;
+        onEnterSelectionMode?.();
+        onToggleSelect?.(mealType, food);
+      }, 450);
+    };
+
+    const clearLongPress = () => {
+      if (longPressTimerRef.current) {
+        window.clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
     };
 
     const handlePortionConfirm = (portionGrams, macros) => {
@@ -301,6 +366,10 @@ const MealCard = memo(
                 "bg-red-500/5 border-red-500/30 shadow-sm shadow-red-500/10",
             )}
             onClick={handleOpenDetails}
+            onPointerDown={handlePointerDown}
+            onPointerUp={clearLongPress}
+            onPointerLeave={clearLongPress}
+            onPointerCancel={clearLongPress}
           >
             <CardContent className="flex items-stretch p-0">
               {/* Avatar */}
@@ -343,6 +412,26 @@ const MealCard = memo(
                     </div>
                   </motion.div>
                 )}
+                {isSelectionMode && canSelect ? (
+                  <button
+                    type="button"
+                    className={cn(
+                      "absolute left-2 top-2 grid size-6 place-items-center rounded-full border bg-background/90 shadow-sm",
+                      isSelected
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border text-muted-foreground",
+                    )}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onToggleSelect?.(mealType, food);
+                    }}
+                    aria-label={
+                      isSelected ? "Tanlovdan olish" : "Ovqatni tanlash"
+                    }
+                  >
+                    {isSelected ? <CheckIcon className="size-3.5" /> : null}
+                  </button>
+                ) : null}
               </div>
 
               {/* Info */}
@@ -378,6 +467,25 @@ const MealCard = memo(
                       {unit}
                     </span>
                   )}
+                  {hasCoachFeedback ? (
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 transition-colors hover:bg-amber-500/25 dark:text-amber-300"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setCoachFeedbackOpen(true);
+                      }}
+                    >
+                      <MessageCircleIcon className="size-3" />
+                      Coach izohi
+                    </button>
+                  ) : null}
+                  {isCoachApproved ? (
+                    <span className="inline-flex items-center gap-1 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
+                      <CheckCircle2Icon className="size-3" />
+                      Coach tasdiqlagan
+                    </span>
+                  ) : null}
                   <div className="flex items-center gap-1.5">
                     {MACROS.map(({ key, color }) => (
                       <span
@@ -427,7 +535,28 @@ const MealCard = memo(
                 </span>
 
                 {/* Plan item: check (not logged) → info (logged, green) */}
-                {isFromPlan && (
+                {isSelectionMode && canSelect ? (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onToggleSelect?.(mealType, food);
+                    }}
+                    className={cn(
+                      "size-9 rounded-full border flex items-center justify-center transition-all duration-200",
+                      isSelected
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border/60 text-muted-foreground hover:bg-muted",
+                    )}
+                    aria-label={
+                      isSelected ? "Tanlovdan olish" : "Ovqatni tanlash"
+                    }
+                  >
+                    {isSelected ? <CheckIcon className="size-4" /> : null}
+                  </button>
+                ) : null}
+
+                {!isSelectionMode && isFromPlan && (
                   <button
                     onClick={(event) => {
                       event.stopPropagation();
@@ -452,7 +581,7 @@ const MealCard = memo(
                   </button>
                 )}
 
-                {isConsumed && !isFromPlan && (
+                {!isSelectionMode && isConsumed && !isFromPlan && (
                   <button
                     onClick={(event) => {
                       event.stopPropagation();
@@ -469,10 +598,61 @@ const MealCard = memo(
                     <InfoIcon className="size-4" />
                   </button>
                 )}
+
+                {!isSelectionMode && readOnly && isConsumed ? (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onCopyMealToToday?.(mealType, food);
+                    }}
+                    className="size-9 rounded-full border border-primary/25 bg-primary/10 text-primary transition-all duration-200 hover:bg-primary hover:text-primary-foreground"
+                    aria-label="Bugunga qo'shish"
+                    title="Bugunga qo'shish"
+                  >
+                    <PlusIcon className="size-4" />
+                  </button>
+                ) : null}
               </div>
             </CardContent>
           </Card>
         </motion.div>
+
+        <Dialog open={coachFeedbackOpen} onOpenChange={setCoachFeedbackOpen}>
+          <DialogContent className="max-w-md rounded-2xl">
+            <DialogHeader>
+              <DialogTitle>Coach izohi</DialogTitle>
+              <DialogDescription>{food.name}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              {coachFeedback.map((feedback) => (
+                <div
+                  key={feedback.id}
+                  className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold">
+                        {feedback.coach?.name || "Coach"}
+                      </p>
+                      {feedback.title ? (
+                        <p className="mt-0.5 text-xs font-semibold text-amber-700 dark:text-amber-300">
+                          {feedback.title}
+                        </p>
+                      ) : null}
+                    </div>
+                    <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">
+                      {feedback.createdAt || feedback.contextDate || ""}
+                    </span>
+                  </div>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">
+                    {feedback.message}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <FoodLogDrawer
           food={food}
@@ -490,6 +670,11 @@ const MealCard = memo(
                       ? setIngredientsOpen(true)
                       : setPortionOpen(true)
                 : undefined
+          }
+          onTransfer={
+            readOnly || !isConsumed
+              ? undefined
+              : (mode) => onTransferMeal?.({ mode, mealType, food })
           }
           readOnly={readOnly}
         />

@@ -33,9 +33,6 @@ const FriendsPage = lazy(
 const ChallengesPage = lazy(
   () => import("@/modules/user/pages/challenges/index.jsx"),
 );
-const ChallengeDetailPage = lazy(
-  () => import("@/modules/user/pages/challenges/detail/index.jsx"),
-);
 const PaymentsPage = lazy(
   () => import("@/modules/user/pages/payments/index.jsx"),
 );
@@ -202,21 +199,11 @@ const Index = () => {
           }
         />
         <Route
-          path="challenges"
+          path="challenges/*"
           element={
             <Suspense fallback={<PageLoader />}>
               <ErrorBoundary>
                 <ChallengesPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
-        />
-        <Route
-          path="challenges/:id"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <ChallengeDetailPage />
               </ErrorBoundary>
             </Suspense>
           }

@@ -1,4 +1,12 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   DrawerBody,
   DrawerDescription,
@@ -67,9 +75,11 @@ export default function ManualAddDrawer({
   onClose,
 }) {
   const [search, setSearch] = useState(initialSearch);
+  const deferredSearch = useDeferredValue(search);
   const [selectedTabKey, setSelectedTabKey] = useState(null);
   const [editingFood, setEditingFood] = useState(null);
   const [grams, setGrams] = useState(100);
+  const loadMoreRef = useRef(null);
 
   useLayoutEffect(() => {
     if (editingFood) setGrams(editingFood.defaultAmount || 100);
@@ -111,7 +121,13 @@ export default function ManualAddDrawer({
     isLoading: isFoodsLoading,
     isError: isFoodsError,
     refetch: refetchFoods,
-  } = useFoodsByCategory(selectedCategoryId);
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useFoodsByCategory(selectedCategoryId, {
+    search: deferredSearch,
+    enabled: Boolean(selectedCategoryId),
+  });
 
   const foods = useMemo(
     () =>
@@ -185,14 +201,29 @@ export default function ManualAddDrawer({
     if (selectedTabKey === "__favorites__") return filteredFavorites;
     if (selectedTabKey === "__recent__") return filteredRecentFoods;
 
-    const normalizedSearch = search.trim().toLowerCase();
-    if (!normalizedSearch) return foods;
-    return foods.filter(
-      (food) =>
-        food.name.toLowerCase().includes(normalizedSearch) ||
-        food.originalName?.toLowerCase().includes(normalizedSearch),
+    return foods;
+  }, [foods, filteredFavorites, filteredRecentFoods, selectedTabKey]);
+
+  useEffect(() => {
+    const node = loadMoreRef.current;
+
+    if (!node || !hasNextPage || isFetchingNextPage || !selectedCategoryId) {
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          void fetchNextPage();
+        }
+      },
+      { rootMargin: "240px 0px" },
     );
-  }, [foods, filteredFavorites, filteredRecentFoods, search, selectedTabKey]);
+
+    observer.observe(node);
+
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, selectedCategoryId]);
 
   const calculateMacros = (baseFood, amount) => calcMacros(baseFood, amount);
 
@@ -436,6 +467,27 @@ export default function ManualAddDrawer({
                   );
                 })}
               </AnimatePresence>
+              {selectedCategoryId && hasNextPage ? (
+                <div ref={loadMoreRef} className="flex justify-center py-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="rounded-full text-xs font-bold text-muted-foreground"
+                    disabled={isFetchingNextPage}
+                    onClick={() => void fetchNextPage()}
+                  >
+                    {isFetchingNextPage ? (
+                      <>
+                        <Loader2Icon className="mr-2 size-3.5 animate-spin" />
+                        Yuklanmoqda
+                      </>
+                    ) : (
+                      "Yana yuklash"
+                    )}
+                  </Button>
+                </div>
+              ) : null}
             </div>
           ) : (
             <div className="text-center py-12 px-4">

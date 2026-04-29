@@ -1,20 +1,28 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { Navigate, Route, Routes } from "react-router";
+import PageLoader from "@/components/page-loader/index.jsx";
 import NutritionShell from "./nutrition-shell.jsx";
-import NutritionHomePage from "./home/index.jsx";
-import NutritionPlansPage from "./plans/index.jsx";
-import NutritionMealsPage from "./meals/index.jsx";
-import NutritionReportPage from "./report/index.jsx";
+
+const NutritionHomePage = lazy(() => import("./home/index.jsx"));
+const NutritionPlansPage = lazy(() => import("./plans/index.jsx"));
+const NutritionMealsPage = lazy(() => import("./meals/index.jsx"));
+const NutritionHistoryPage = lazy(() => import("./history/index.jsx"));
+const NutritionReportPage = lazy(() => import("./report/index.jsx"));
+
+const withSuspense = (element) => (
+  <Suspense fallback={<PageLoader />}>{element}</Suspense>
+);
 
 const NutritionRoutes = () => {
   return (
     <Routes>
       <Route element={<NutritionShell />}>
         <Route index element={<Navigate to="home" replace />} />
-        <Route path="home" element={<NutritionHomePage />} />
-        <Route path="plans" element={<NutritionPlansPage />} />
-        <Route path="meals" element={<NutritionMealsPage />} />
-        <Route path="report" element={<NutritionReportPage />} />
+        <Route path="home" element={withSuspense(<NutritionHomePage />)} />
+        <Route path="plans" element={withSuspense(<NutritionPlansPage />)} />
+        <Route path="meals" element={withSuspense(<NutritionMealsPage />)} />
+        <Route path="history" element={withSuspense(<NutritionHistoryPage />)} />
+        <Route path="report" element={withSuspense(<NutritionReportPage />)} />
       </Route>
     </Routes>
   );

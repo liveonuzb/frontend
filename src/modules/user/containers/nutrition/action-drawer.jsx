@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/drawer.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import {
+  BarcodeIcon,
   CameraIcon,
   ChefHatIcon,
   KeyboardIcon,
@@ -29,6 +30,7 @@ import AudioTranscriptDrawer from "./audio-transcript-drawer.jsx";
 import TextAddDrawer from "./text-add-drawer.jsx";
 import ManualAddDrawer from "./manual-add-drawer.jsx";
 import AiMealDraftDrawer from "./ai-meal-draft-drawer.jsx";
+import BarcodeAddDrawer from "./barcode-add-drawer.jsx";
 import { useFoodAudioTranscriptHistory } from "@/hooks/app/use-food-catalog";
 
 const toIsoByDateKeyAndTimeHint = (dateKey, timeHint) => {
@@ -213,7 +215,7 @@ const ActionDrawer = ({
           <DrawerHeader>
             <DrawerTitle>Ovqat qo'shish</DrawerTitle>
             <DrawerDescription>
-              Ovqatni kamera, audio, matn yoki katalog orqali qo&apos;shishingiz
+              Ovqatni kamera, barcode, audio, matn yoki katalog orqali qo&apos;shishingiz
               mumkin.
             </DrawerDescription>
           </DrawerHeader>
@@ -229,6 +231,19 @@ const ActionDrawer = ({
                 <CameraIcon className="size-5 text-blue-500" />
               </div>
               Kamera orqali
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              disabled={disabled}
+              className="w-full h-16 rounded-2xl justify-start items-center px-4 hover:bg-primary/5 hover:border-primary/30 transition-all font-bold text-[15px] text-foreground border-border/50 group"
+              onClick={() => setActiveNested("barcode")}
+            >
+              <div className="size-10 rounded-full bg-cyan-500/10 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+                <BarcodeIcon className="size-5 text-cyan-500" />
+              </div>
+              Barcode orqali
             </Button>
 
             <Button
@@ -320,6 +335,27 @@ const ActionDrawer = ({
           onCloseAll?.();
         }}
       />
+
+      {/* BarcodeAddDrawer */}
+      <Drawer
+        open={activeNested === "barcode"}
+        onOpenChange={(value) => !value && setActiveNested(null)}
+        direction="bottom"
+      >
+        <NutritionDrawerContent
+          size="full"
+          className="h-[100dvh] max-h-[100dvh] rounded-none border-0 bg-black"
+        >
+          <BarcodeAddDrawer
+            dateKey={dateKey}
+            mealType={mealType}
+            onClose={() => {
+              setActiveNested(null);
+              onCloseAll?.();
+            }}
+          />
+        </NutritionDrawerContent>
+      </Drawer>
 
       {/* AudioAddDrawer */}
       <Drawer

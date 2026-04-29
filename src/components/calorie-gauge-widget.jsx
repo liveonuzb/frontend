@@ -11,6 +11,38 @@ import {
 import { Separator } from "@/components/ui/separator.jsx";
 import { cn } from "@/lib/utils";
 
+const getGoalAlerts = ({ consumed, goal, macroItems }) => {
+  const alerts = [];
+  const protein = macroItems.find((item) => item.key === "protein");
+  const fat = macroItems.find((item) => item.key === "fat");
+
+  if (protein?.target > 0 && protein.current / protein.target < 0.7) {
+    alerts.push({
+      key: "protein-low",
+      label: "Oqsil kam",
+      className: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-200",
+    });
+  }
+
+  if (fat?.target > 0 && fat.current / fat.target > 1.3) {
+    alerts.push({
+      key: "fat-high",
+      label: "Yog' oshib ketdi",
+      className: "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-200",
+    });
+  }
+
+  if (goal > 0 && consumed >= goal * 0.9 && consumed <= goal) {
+    alerts.push({
+      key: "calorie-close",
+      label: "Maqsadga yaqin",
+      className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200",
+    });
+  }
+
+  return alerts;
+};
+
 export default function CalorieGaugeWidget({
   consumed = 0,
   goal = 2200,
@@ -108,6 +140,7 @@ export default function CalorieGaugeWidget({
 
   const macroItems = [
     {
+      key: "protein",
       label: "Oqsil",
       current: round(macros.protein?.current || 0),
       target: macros.protein?.target || 150,
@@ -115,6 +148,7 @@ export default function CalorieGaugeWidget({
       color: "#ef4444",
     },
     {
+      key: "carbs",
       label: "Uglevod",
       current: round(macros.carbs?.current || 0),
       target: macros.carbs?.target || 250,
@@ -122,6 +156,7 @@ export default function CalorieGaugeWidget({
       color: "#f59e0b",
     },
     {
+      key: "fat",
       label: "Yog'",
       current: round(macros.fat?.current || 0),
       target: macros.fat?.target || 70,
@@ -129,6 +164,7 @@ export default function CalorieGaugeWidget({
       color: "#22c55e",
     },
   ];
+  const goalAlerts = getGoalAlerts({ consumed, goal, macroItems });
 
   return (
     <Card
@@ -337,7 +373,22 @@ export default function CalorieGaugeWidget({
             </text>
           </svg>
         </div>
-        <Separator className={"mt-14 mb-6"} />
+        {goalAlerts.length > 0 ? (
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            {goalAlerts.map((alert) => (
+              <span
+                key={alert.key}
+                className={cn(
+                  "inline-flex h-7 items-center rounded-full border px-3 text-xs font-bold",
+                  alert.className,
+                )}
+              >
+                {alert.label}
+              </span>
+            ))}
+          </div>
+        ) : null}
+        <Separator className={cn(goalAlerts.length > 0 ? "mt-6" : "mt-14", "mb-6")} />
         <div className="flex justify-around items-center">
           {macroItems.map((m) => (
             <div key={m.label} className="flex flex-col items-center gap-1">

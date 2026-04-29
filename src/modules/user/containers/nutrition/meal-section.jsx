@@ -1,4 +1,5 @@
 import React from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   Card,
   CardContent,
@@ -59,6 +60,7 @@ const MealSection = ({
   time,
   items = [],
   plannedItems = [],
+  mealFeedbackById = {},
   onRemove,
   onAdd,
   onTogglePlanned,
@@ -68,15 +70,22 @@ const MealSection = ({
   onRetryScan,
   onRemoveScan,
   onOpenDraftScan,
+  onTransferMeal,
+  onCopyMealToToday,
   readOnly = false,
   showAddButton = true,
   isLoading = false,
   addDisabled = false,
   onCopyFromYesterday,
+  isSelectionMode = false,
+  selectedItems = {},
+  onToggleSelect,
+  onEnterSelectionMode,
 }) => {
   const config = mealConfig[type];
   const displayTime = time || config.time;
   const [isOpen, setIsOpen] = React.useState(() => getStoredOpenState(type));
+  const virtualParentRef = React.useRef(null);
 
   React.useEffect(() => {
     if (isActive) setIsOpen(true);
@@ -135,6 +144,17 @@ const MealSection = ({
   }, [items, plannedItems]);
 
   const currentKcal = Math.round(sumBy(items, (f) => (f.cal ?? 0) * (f.qty ?? 1)));
+  const shouldVirtualize = allSectionItems.length >= 20;
+  const rowVirtualizer = useVirtualizer({
+    count: allSectionItems.length,
+    getScrollElement: () => virtualParentRef.current,
+    estimateSize: () => 112,
+    overscan: 6,
+    getItemKey: (index) => {
+      const food = allSectionItems[index];
+      return food?.id || `${food?.name || "meal"}-${index}`;
+    },
+  });
 
   const handleSaveImage = (
     mealType,
@@ -144,6 +164,35 @@ const MealSection = ({
     macros,
   ) => {
     onImageUpload(mealType, food.id, imageDataUrl, adjustedGrams, macros);
+  };
+
+  const renderMealCard = (food, i) => {
+    const itemFeedback = food.id ? mealFeedbackById[food.id] || [] : [];
+
+    return (
+      <MealCard
+        key={food.id || `${food.name}-${i}`}
+        food={{ ...food, coachFeedback: itemFeedback }}
+        index={i}
+        mealType={type}
+        isFromPlan={Boolean(food.isFromPlanLinked)}
+        onRemove={onRemove}
+        onTogglePlanned={onTogglePlanned}
+        onLogPlanned={onLogPlanned}
+        onSaveImage={handleSaveImage}
+        onUpdateLoggedMeal={onUpdateMeal}
+        onRetryScan={onRetryScan}
+        onRemoveScan={onRemoveScan}
+        onOpenDraftScan={onOpenDraftScan}
+        onTransferMeal={onTransferMeal}
+        onCopyMealToToday={onCopyMealToToday}
+        readOnly={readOnly}
+        isSelectionMode={isSelectionMode}
+        isSelected={Boolean(selectedItems[`${type}:${food.id}`])}
+        onToggleSelect={onToggleSelect}
+        onEnterSelectionMode={onEnterSelectionMode}
+      />
+    );
   };
 
   return (
@@ -219,27 +268,40 @@ const MealSection = ({
                     <MealCardSkeleton key={item} />
                   ))}
                 </div>
+              ) : !isEmpty(allSectionItems) && shouldVirtualize ? (
+                <div
+                  ref={virtualParentRef}
+                  className="max-h-[620px] overflow-y-auto pr-1"
+                  style={{
+                    height: Math.min(620, rowVirtualizer.getTotalSize()),
+                  }}
+                >
+                  <div
+                    className="relative w-full"
+                    style={{ height: rowVirtualizer.getTotalSize() }}
+                  >
+                    {rowVirtualizer.getVirtualItems().map((virtualItem) => {
+                      const food = allSectionItems[virtualItem.index];
+                      return (
+                        <div
+                          key={virtualItem.key}
+                          data-index={virtualItem.index}
+                          ref={rowVirtualizer.measureElement}
+                          className="absolute left-0 top-0 w-full pb-2"
+                          style={{
+                            transform: `translateY(${virtualItem.start}px)`,
+                          }}
+                        >
+                          {renderMealCard(food, virtualItem.index)}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               ) : !isEmpty(allSectionItems) ? (
                 <div className="space-y-2">
                   <AnimatePresence initial={false}>
-                    {map(allSectionItems, (food, i) => (
-                      <MealCard
-                        key={food.id || `${food.name}-${i}`}
-                        food={food}
-                        index={i}
-                        mealType={type}
-                        isFromPlan={Boolean(food.isFromPlanLinked)}
-                        onRemove={onRemove}
-                        onTogglePlanned={onTogglePlanned}
-                        onLogPlanned={onLogPlanned}
-                        onSaveImage={handleSaveImage}
-                        onUpdateLoggedMeal={onUpdateMeal}
-                        onRetryScan={onRetryScan}
-                        onRemoveScan={onRemoveScan}
-                        onOpenDraftScan={onOpenDraftScan}
-                        readOnly={readOnly}
-                      />
-                    ))}
+                    {map(allSectionItems, renderMealCard)}
                   </AnimatePresence>
                 </div>
               ) : (

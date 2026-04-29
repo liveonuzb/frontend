@@ -1,6 +1,7 @@
 import {
   BarChart3Icon,
   ClipboardListIcon,
+  HistoryIcon,
   HouseIcon,
   SoupIcon,
 } from "lucide-react";
@@ -24,6 +25,12 @@ export const NUTRITION_NAV_ITEMS = [
     label: "Meals",
     icon: SoupIcon,
     match: (pathname) => pathname.startsWith("/user/nutrition/meals"),
+  },
+  {
+    to: "/user/nutrition/history",
+    label: "History",
+    icon: HistoryIcon,
+    match: (pathname) => pathname.startsWith("/user/nutrition/history"),
   },
   {
     to: "/user/nutrition/report",

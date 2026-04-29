@@ -25,6 +25,10 @@ export const SOURCE_META = {
     label: "Rejadan",
     tone: "bg-primary/10 text-primary",
   },
+  "coach-meal-plan": {
+    label: "Rejadan",
+    tone: "bg-primary/10 text-primary",
+  },
 };
 
 export const getNutritionSourceMeta = (source, fallback = "manual") => {

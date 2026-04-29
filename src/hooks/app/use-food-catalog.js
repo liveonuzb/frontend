@@ -1,12 +1,14 @@
 import React from "react";
 import { get, round } from "lodash";
-import { useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import {
   useDeleteQuery,
   useGetQuery,
   usePostFileQuery,
   usePostQuery,
 } from "@/hooks/api";
+import { api } from "@/hooks/api/use-api.js";
+import { getApiResponseData } from "@/lib/api-response.js";
 import useLanguageStore from "@/store/language-store";
 
 export const FOODS_CATALOG_QUERY_KEY = ["foods", "catalog"];
@@ -17,6 +19,7 @@ export const FOODS_AUDIO_TRANSCRIPT_HISTORY_QUERY_KEY = [
 ];
 
 const GRAM_BASED_UNITS = new Set(["g", "ml"]);
+const FOODS_CATALOG_PAGE_SIZE = 20;
 
 const MIME_EXTENSION_MAP = {
   "image/jpeg": "jpg",
@@ -256,26 +259,91 @@ const useFoodCatalog = () => {
   };
 };
 
-export const useFoodsByCategory = (categoryId) => {
+export const useFoodsByCategory = (categoryId, options = {}) => {
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
-  const { data, ...query } = useGetQuery({
-    url: "/foods/catalog",
-    params: categoryId ? { categoryId } : undefined,
-    queryProps: {
-      queryKey: ["foods", "catalog", "category", categoryId],
-      enabled: !!categoryId,
+  const search = String(options.search ?? "").trim();
+  const pageSize = options.pageSize ?? FOODS_CATALOG_PAGE_SIZE;
+  const enabled = options.enabled ?? true;
+  const query = useInfiniteQuery({
+    queryKey: ["foods", "catalog", "category", categoryId, search, pageSize],
+    enabled: Boolean(categoryId && enabled),
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
+      api.get("/foods/catalog", {
+        params: {
+          categoryId,
+          page: pageParam,
+          limit: pageSize,
+          search: search || undefined,
+        },
+      }),
+    getNextPageParam: (lastPage) => {
+      const payload = getApiResponseData(lastPage, {});
+      const pagination = get(payload, "pagination", {});
+
+      return pagination.hasNextPage ? Number(pagination.page || 1) + 1 : undefined;
     },
   });
 
   const foods = React.useMemo(
     () =>
-      get(data, "data.data.foods", []).map((food) =>
-        createCatalogFood(food, currentLanguage),
+      get(query.data, "pages", []).flatMap((page) =>
+        get(getApiResponseData(page, {}), "foods", []).map((food) =>
+          createCatalogFood(food, currentLanguage),
+        ),
       ),
-    [data, currentLanguage],
+    [currentLanguage, query.data],
   );
 
-  return { ...query, foods };
+  const pagination = React.useMemo(() => {
+    const pages = get(query.data, "pages", []);
+    const lastPage = pages[pages.length - 1];
+
+    return get(getApiResponseData(lastPage, {}), "pagination", {
+      page: 1,
+      limit: pageSize,
+      total: foods.length,
+      totalPages: 1,
+      hasNextPage: false,
+      hasPrevPage: false,
+    });
+  }, [foods.length, pageSize, query.data]);
+
+  return { ...query, foods, pagination };
+};
+
+export const useFoodBarcodeLookup = () => {
+  const currentLanguage = useLanguageStore((state) => state.currentLanguage);
+  const [isLookingUp, setIsLookingUp] = React.useState(false);
+
+  const lookupFoodByBarcode = React.useCallback(
+    async (code) => {
+      const normalizedCode = String(code || "").trim();
+
+      if (!normalizedCode) {
+        return null;
+      }
+
+      setIsLookingUp(true);
+      try {
+        const response = await api.get(
+          `/foods/barcode/${encodeURIComponent(normalizedCode)}`,
+        );
+        const payload = getApiResponseData(response);
+        const food = get(payload, "food", payload);
+
+        return food ? createCatalogFood(food, currentLanguage) : null;
+      } finally {
+        setIsLookingUp(false);
+      }
+    },
+    [currentLanguage],
+  );
+
+  return {
+    lookupFoodByBarcode,
+    isLookingUp,
+  };
 };
 
 export const useFoodQuickAddActions = () => {

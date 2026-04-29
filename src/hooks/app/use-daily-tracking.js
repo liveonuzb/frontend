@@ -1,5 +1,5 @@
 import React from "react";
-import { get, clamp, map, filter, find } from "lodash";
+import { get, clamp, map, find } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -267,6 +267,108 @@ export const useDailyTrackingDay = (date, options = {}) => {
     data,
     dateKey,
     dayData,
+  };
+};
+
+export const useDailyTrackingHistory = (params = {}) => {
+  const queryParams = React.useMemo(
+    () => ({
+      startDate: params.startDate || undefined,
+      endDate: params.endDate || undefined,
+      mealType:
+        params.mealType && params.mealType !== "all"
+          ? params.mealType
+          : undefined,
+      q: params.q?.trim() || undefined,
+    }),
+    [params.endDate, params.mealType, params.q, params.startDate],
+  );
+
+  const { data, ...query } = useGetQuery({
+    url: "/daily-tracking/history",
+    params: queryParams,
+    queryProps: {
+      queryKey: ["daily-tracking", "history", queryParams],
+      enabled: params.enabled ?? true,
+    },
+  });
+
+  const days = React.useMemo(
+    () =>
+      get(data, "data.data.days", get(data, "data.days", [])).map((day) =>
+        normalizeDayData(day),
+      ),
+    [data],
+  );
+
+  const meta = React.useMemo(
+    () => get(data, "data.data.meta", get(data, "data.meta", null)),
+    [data],
+  );
+
+  return {
+    ...query,
+    data,
+    days,
+    meta,
+  };
+};
+
+const normalizeMealFeedback = (item = {}) => ({
+  id: item.id,
+  mealItemId: item.mealItemId ?? null,
+  title: item.title ?? "",
+  message: item.message ?? "",
+  contextDate: item.contextDate ?? null,
+  createdAt: item.createdAt ?? null,
+  coach: {
+    id: item.coach?.id ?? null,
+    name: item.coach?.name ?? "Coach",
+    avatar: item.coach?.avatar ?? null,
+  },
+});
+
+export const useDailyTrackingMealFeedback = (params = {}) => {
+  const queryParams = React.useMemo(
+    () => ({
+      startDate: params.startDate || undefined,
+      endDate: params.endDate || undefined,
+      mealItemId: params.mealItemId || undefined,
+    }),
+    [params.endDate, params.mealItemId, params.startDate],
+  );
+
+  const { data, ...query } = useGetQuery({
+    url: "/daily-tracking/meal-feedback",
+    params: queryParams,
+    queryProps: {
+      queryKey: ["daily-tracking", "meal-feedback", queryParams],
+      enabled: params.enabled ?? true,
+    },
+  });
+
+  const items = React.useMemo(
+    () =>
+      get(data, "data.data.items", get(data, "data.items", [])).map(
+        normalizeMealFeedback,
+      ),
+    [data],
+  );
+
+  const byMealId = React.useMemo(() => {
+    const grouped = {};
+    items.forEach((item) => {
+      if (!item.mealItemId) return;
+      grouped[item.mealItemId] = [...(grouped[item.mealItemId] || []), item];
+    });
+    return grouped;
+  }, [items]);
+
+  return {
+    ...query,
+    data,
+    items,
+    byMealId,
   };
 };
 
