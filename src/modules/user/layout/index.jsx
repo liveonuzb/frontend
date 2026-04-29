@@ -7,6 +7,7 @@ import {
   RulerIcon,
   DumbbellIcon,
   TrophyIcon,
+  UserPlusIcon,
 } from "lucide-react";
 import {
   Sidebar,
@@ -43,6 +44,7 @@ import {
 } from "@/modules/profile/hooks/use-profile-overlay";
 import { getStandaloneProfileTabPath } from "@/modules/profile/lib/profile-tab-navigation";
 import NavUser from "@/components/nav-user/index.jsx";
+import { Shop } from "iconsax-reactjs";
 
 const otherNav = [];
 
@@ -93,6 +95,9 @@ const Index = () => {
   );
   const mobileChromeHidden = useMobileChromeHidden();
   const isMobileChatView = location.pathname.startsWith("/user/chat");
+  const isFeatureScopedMobileNav =
+    location.pathname.startsWith("/user/workout") ||
+    location.pathname.startsWith("/user/nutrition");
   const isAddMealOverlayOpen = useAddMealOverlayStore(
     (state) => state.isActionDrawerOpen,
   );
@@ -127,12 +132,12 @@ const Index = () => {
         icon: LayoutDashboardIcon,
       },
       {
-        to: "/user/nutrition",
+        to: "/user/nutrition/home",
         label: "Ovqatlanish",
         icon: UtensilsIcon,
       },
       {
-        to: "/user/workout",
+        to: "/user/workout/home",
         label: "Mashg'ulotlar",
         icon: DumbbellIcon,
       },
@@ -145,6 +150,16 @@ const Index = () => {
         to: "/user/challenges",
         label: "Musobaqalar",
         icon: TrophyIcon,
+      },
+      {
+        to: "/user/friends",
+        label: "Do'stlar",
+        icon: UserPlusIcon,
+      },
+      {
+        to: "/user/marketplace",
+        label: "Marketplace",
+        icon: Shop,
       },
     ],
     [],
@@ -182,7 +197,12 @@ const Index = () => {
             <NavUser />
           </SidebarFooter>
         </Sidebar>
-        <SidebarInset className="min-w-0 overflow-hidden md:overflow-visible">
+        <SidebarInset
+          className={cn(
+            "min-w-0 md:overflow-visible",
+            isFeatureScopedMobileNav ? "overflow-visible" : "overflow-hidden",
+          )}
+        >
           {isMobileChatView ? (
             <div className="hidden md:block">
               <LayoutHeader
@@ -238,8 +258,12 @@ const Index = () => {
           )}
           <div
             className={cn(
-              "relative min-w-0 flex-1 overflow-x-auto md:mt-0 md:overflow-visible md:p-6 md:pb-3",
-              isMobileChatView ? "mt-0 p-0 pb-0" : "mt-16 p-3 pb-12",
+              "relative min-w-0 flex-1 md:mt-0 md:overflow-visible md:p-6 md:pb-3",
+              isMobileChatView
+                ? "mt-0 p-0 pb-0"
+                : isFeatureScopedMobileNav
+                  ? "mt-16 overflow-visible p-3 pb-4"
+                  : "mt-16 overflow-x-auto p-3 pb-12",
             )}
           >
             <PullToRefresh

@@ -31,10 +31,12 @@ const BuilderDesktopView = memo(({
   categories,
   search,
   selectedGroup,
+  selectedDayId,
   isSidebarOpen,
   lockWeekDays,
   onSearch,
   onSelectGroup,
+  onSelectDay,
   onToggleSidebar,
   onKanbanChange,
   onExternalDragEnd,
@@ -46,6 +48,19 @@ const BuilderDesktopView = memo(({
   onAddExerciseToDay,
 }) => {
   const { t } = useTranslation();
+  const selectedColumnRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (!selectedColumnRef.current) {
+      return;
+    }
+
+    selectedColumnRef.current.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+  }, [selectedDayId]);
 
   return (
     <div className="flex-1 flex overflow-hidden">
@@ -105,14 +120,16 @@ const BuilderDesktopView = memo(({
                 </div>
               ) : (
                 map(filteredExercises, (ex) => {
-                  const firstDay = get(trainDays, "[0]");
+                  const selectedDay =
+                    find(trainDays, (day) => get(day, "id") === selectedDayId) ||
+                    get(trainDays, "[0]");
                   return (
                     <ExerciseLibraryItem
                       key={`lib-${get(ex, "id")}`}
                       exercise={ex}
                       onAdd={() =>
-                        firstDay
-                          ? onAddExerciseToDay(ex, get(firstDay, "id"))
+                        selectedDay
+                          ? onAddExerciseToDay(ex, get(selectedDay, "id"))
                           : toast.error(t("components.workoutPlanBuilder.toasts.addDayFirst"))
                       }
                     />
@@ -147,11 +164,14 @@ const BuilderDesktopView = memo(({
             {map(trainDayColumns, (col) => (
               <BuilderColumn
                 key={get(col, "id")}
+                ref={selectedDayId === get(col, "id") ? selectedColumnRef : null}
                 col={col}
+                isSelected={selectedDayId === get(col, "id")}
                 onRemoveExercise={onRemoveExercise}
                 onRemoveColumn={onRemoveDay}
                 onUpdateDay={onUpdateDay}
                 onUpdateExercise={onUpdateExercise}
+                onSelect={onSelectDay}
                 lockWeekDays={lockWeekDays}
               />
             ))}

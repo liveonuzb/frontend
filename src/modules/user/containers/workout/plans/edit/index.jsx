@@ -30,6 +30,16 @@ const EditWorkoutPlanPage = () => {
     () => resolveWorkoutPlanRouteState(location.state),
     [location.state],
   );
+  const initialSelectedDayIndex = React.useMemo(() => {
+    const query = new URLSearchParams(location.search);
+    const rawDay = query.get("day");
+    if (rawDay === null) {
+      return null;
+    }
+
+    const rawValue = Number(rawDay);
+    return Number.isInteger(rawValue) && rawValue >= 0 ? rawValue : null;
+  }, [location.search]);
   const updatePlanMutation = useUpdateWorkoutPlan();
   const activatePlanMutation = useActivateWorkoutPlan();
   const {
@@ -161,10 +171,14 @@ const EditWorkoutPlanPage = () => {
 
   return (
     <PageTransition mode="slide-up">
-      <div>
+      <div className="min-h-[60svh]">
         <WorkoutPlanBuilder
-          asPage
           open
+          onOpenChange={(open) => {
+            if (!open) {
+              handleBack();
+            }
+          }}
           initialPlan={effectivePlan}
           onSave={handleBuilderSave}
           onClose={handleBack}
@@ -174,6 +188,7 @@ const EditWorkoutPlanPage = () => {
             setMetaName(name);
             setMetaDescription(description);
           }}
+          initialSelectedDayIndex={initialSelectedDayIndex}
           isSaving={isSaving}
           submitLabel={isSaving ? "Saqlanmoqda..." : "Saqlash"}
           title={metaName || get(effectivePlan, "name") || "Workout plan builder"}

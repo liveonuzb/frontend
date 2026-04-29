@@ -111,6 +111,10 @@ const renderPage = () => {
         element: <WorkoutPlanDetailPage />,
       },
       {
+        path: "/user/workout/plans/:planId/days/:dayIndex",
+        element: <div data-testid="day-detail-route">Day detail route</div>,
+      },
+      {
         path: "/user/workout/plans",
         element: <div data-testid="plans-route">Plans route</div>,
       },
@@ -168,20 +172,20 @@ describe("WorkoutPlanDetailPage", () => {
 
     expect(screen.getAllByText("AI Upper").length).toBeGreaterThan(0);
     expect(screen.getByText("AI asoslari")).toBeInTheDocument();
-    expect(screen.getByText(/Bench Press/)).toBeInTheDocument();
     expect(screen.getAllByText("46 kg").length).toBeGreaterThan(0);
     expect(screen.getByText("Day 1")).toBeInTheDocument();
   });
 
-  it("opens exercise instructions drawer from the selected day exercise list", () => {
-    renderPage();
+  it("navigates to a separate day detail page when a day is selected", async () => {
+    const router = renderPage();
 
-    fireEvent.click(screen.getByText(/Bench Press/));
+    fireEvent.click(screen.getByText("Day 1"));
 
-    expect(screen.getByText("Instructions")).toBeInTheDocument();
-    expect(screen.getByText("Records")).toBeInTheDocument();
-    expect(screen.getByText("Focus area")).toBeInTheDocument();
-    expect(screen.getByText("Lie on bench")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(
+        "/user/workout/plans/plan-1/days/0",
+      );
+    });
   });
 
   it("activates the plan and opens the session drawer", async () => {

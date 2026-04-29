@@ -28,6 +28,7 @@ export const buildWorkoutPlanMetaPayload = ({
     ...buildWorkoutPlanPayload(basePlan || {}),
     name: trim(String(name || "")),
     description: trim(String(description || "")),
+    coverImageUrl: get(basePlan, "coverImageUrl", undefined),
   };
 
   if (!Array.isArray(payload.schedule)) {

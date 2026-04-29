@@ -59,6 +59,11 @@ export const normalizeWorkoutLog = (log = {}) => {
     source: log.source ?? "quick-log",
     sessionName: log.sessionName ?? null,
     planId: log.planId ?? null,
+    planDayIndex:
+      log.planDayIndex === undefined || log.planDayIndex === null
+        ? null
+        : Number(log.planDayIndex),
+    planDayKey: log.planDayKey ?? null,
     exercise: {
       id: get(log, "exercise.id", null),
       name: get(log, "exercise.name", ""),

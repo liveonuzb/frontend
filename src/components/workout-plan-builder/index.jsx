@@ -63,6 +63,7 @@ const WorkoutPlanBuilder = ({
   metaName = null,
   metaDescription = null,
   onMetaSave = null,
+  initialSelectedDayIndex = null,
   asPage = false,
 }) => {
   const { t } = useTranslation();
@@ -136,7 +137,11 @@ const WorkoutPlanBuilder = ({
       setExercisesByDay(exercises);
       setPlanName(get(planSource, "name", ""));
       setPlanDescription(get(planSource, "description", ""));
-      setSelectedDayId(get(days, "[0].id", null));
+      const requestedDayId =
+        typeof initialSelectedDayIndex === "number" && initialSelectedDayIndex >= 0
+          ? get(days, `[${initialSelectedDayIndex}].id`, null)
+          : null;
+      setSelectedDayId(requestedDayId || get(days, "[0].id", null));
     } else if (lockWeekDays) {
       const days = buildWeekDaySkeleton();
       const exercises = fromPairs(map(days, (day) => [get(day, "id"), []]));
@@ -159,7 +164,7 @@ const WorkoutPlanBuilder = ({
       setPlanDescription("");
       setSelectedDayId(get(days, "[0].id", null));
     }
-  }, [isActive, planSource, lockWeekDays, t]);
+  }, [isActive, planSource, lockWeekDays, t, initialSelectedDayIndex]);
 
   useEffect(() => {
     if (metaName === null && metaDescription === null) return;
@@ -369,10 +374,12 @@ const WorkoutPlanBuilder = ({
             categories={categories}
             search={search}
             selectedGroup={selectedGroup}
+            selectedDayId={selectedDayId}
             isSidebarOpen={isSidebarOpen}
             lockWeekDays={lockWeekDays}
             onSearch={setSearch}
             onSelectGroup={setSelectedGroup}
+            onSelectDay={setSelectedDayId}
             onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
             onKanbanChange={handleKanbanChange}
             onExternalDragEnd={handleExternalDragEnd}

@@ -22,6 +22,37 @@ export const getWorkoutPlanDetailQueryKey = (planId) => [
 const resolveResponseData = (response, fallback = null) =>
   get(response, "data.data", get(response, "data", fallback));
 
+const sanitizeJsonPayload = (value) => {
+  if (value === undefined) {
+    return null;
+  }
+
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) =>
+      item === undefined ? null : sanitizeJsonPayload(item),
+    );
+  }
+
+  if (typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([, item]) => item !== undefined)
+        .map(([key, item]) => [key, sanitizeJsonPayload(item)]),
+    );
+  }
+
+  return String(value);
+};
+
 const countDaysPerWeek = (schedule = []) =>
   Array.isArray(schedule)
     ? filter(
@@ -41,6 +72,7 @@ const normalizePlan = (plan) => {
     ...plan,
     name: plan.name || "Mening workout rejam",
     description: plan.description || "",
+    coverImageUrl: plan.coverImageUrl || null,
     difficulty: plan.difficulty || "O'rta",
     days: Number(plan.days ?? 28) || 28,
     daysPerWeek:
@@ -48,6 +80,14 @@ const normalizePlan = (plan) => {
       countDaysPerWeek(schedule),
     schedule,
     generationMeta: plan.generationMeta ?? null,
+    dayProgress: Array.isArray(plan.dayProgress)
+      ? plan.dayProgress.map((item) => ({
+          dayIndex: Number(item?.dayIndex ?? 0) || 0,
+          completed: Boolean(item?.completed),
+          completedAt: item?.completedAt ?? null,
+          exerciseCount: Number(item?.exerciseCount ?? 0) || 0,
+        }))
+      : [],
     startDate: plan.startDate ?? null,
     createdAt: plan.createdAt ?? null,
     updatedAt: plan.updatedAt ?? null,
@@ -99,6 +139,7 @@ export const normalizeWorkoutPlansState = (payload = {}) => {
 export const buildWorkoutPlanPayload = (plan = {}) => ({
   name: plan.name,
   description: plan.description,
+  coverImageUrl: plan.coverImageUrl,
   difficulty: plan.difficulty,
   days:
     plan.days === undefined || plan.days === null || plan.days === ""
@@ -110,8 +151,11 @@ export const buildWorkoutPlanPayload = (plan = {}) => ({
     plan.daysPerWeek === ""
       ? undefined
       : Number(plan.daysPerWeek),
-  schedule: Array.isArray(plan.schedule) ? plan.schedule : [],
-  generationMeta: plan.generationMeta ?? undefined,
+  schedule: sanitizeJsonPayload(Array.isArray(plan.schedule) ? plan.schedule : []),
+  generationMeta:
+    plan.generationMeta === undefined
+      ? undefined
+      : sanitizeJsonPayload(plan.generationMeta),
   source: plan.source,
   startDate: plan.startDate,
 });
@@ -299,6 +343,37 @@ export const useGenerateWorkoutPlan = () => {
   return {
     ...mutation,
     generatePlan,
+  };
+};
+
+export const useRegenerateWorkoutPlanDay = () => {
+  const queryClient = useQueryClient();
+  const mutation = usePostQuery({
+    mutationProps: {
+      onSuccess: async (_, variables) => {
+        await invalidateWorkoutPlanQueries(queryClient, {
+          planId: variables?.planId,
+        });
+      },
+    },
+  });
+
+  const regenerateDay = React.useCallback(
+    async (planId, dayIndex, payload = {}) => {
+      const response = await mutation.mutateAsync({
+        url: `/user/workout/plans/${planId}/days/${dayIndex}/regenerate`,
+        attributes: payload,
+        planId,
+      });
+
+      return normalizePlan(resolveResponseData(response));
+    },
+    [mutation],
+  );
+
+  return {
+    ...mutation,
+    regenerateDay,
   };
 };
 

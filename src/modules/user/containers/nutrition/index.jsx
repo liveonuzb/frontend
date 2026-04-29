@@ -53,9 +53,10 @@ import NutritionFilterDrawer from "./nutrition-filter-drawer.jsx";
 import SavedMealsDrawer from "./saved-meals-drawer.jsx";
 import PlansDrawer from "./plans-drawer.jsx";
 import { SOURCE_META } from "./source-meta.js";
-import NutritionAnalyticsSection from "./nutrition-analytics-section.jsx";
-import { TrackingPageLayout } from "@/components/tracking-page-shell";
-import StrippedCalendar from "@/components/stripped-calendar/index.jsx";
+import NutritionHomeView from "./views/home-view.jsx";
+import NutritionMealsView from "./views/meals-view.jsx";
+import NutritionPlansView from "./views/plans-view.jsx";
+import NutritionReportView from "./views/report-view.jsx";
 
 const mealConfig = {
   breakfast: { label: "Nonushta", emoji: "🍳", time: "06:00 - 10:00" },
@@ -186,7 +187,7 @@ const getPlanSourceMeta = (source) => {
   };
 };
 
-const Index = () => {
+const Index = ({ entryView = "home" }) => {
   const user = useAuthStore((state) => state.user);
   const { setBreadcrumbs } = useBreadcrumbStore();
   const { openProfile } = useProfileOverlay();
@@ -715,11 +716,20 @@ const Index = () => {
   );
 
   React.useEffect(() => {
+    const breadcrumbTitle =
+      entryView === "plans"
+        ? "Ovqatlanish rejalari"
+        : entryView === "meals"
+          ? "Ovqatlar"
+          : entryView === "report"
+            ? "Ovqatlanish hisobotlari"
+            : "Ovqatlanish";
+
     setBreadcrumbs([
       { url: "/user", title: "Bosh sahifa" },
-      { url: "/user/nutrition", title: "Mening Rejam" },
+      { url: "/user/nutrition/home", title: breadcrumbTitle },
     ]);
-  }, [setBreadcrumbs]);
+  }, [entryView, setBreadcrumbs]);
 
   const allFoods = Object.values(meals).flat();
   const totals = allFoods.reduce(
@@ -1007,228 +1017,105 @@ const Index = () => {
     }, []);
   }, [mealFilter, sortedMealSections, sourceFilters]);
 
+  const handleMealImageUpload = React.useCallback(
+    (mealType, foodId, imageDataUrl, adjustedGrams, macros) => {
+      if (adjustedGrams != null && macros) {
+        void patchMeal(dateKey, mealType, foodId, {
+          ...(imageDataUrl != null ? { image: imageDataUrl } : {}),
+          ...(imageDataUrl != null ? { source: "camera" } : {}),
+          grams: adjustedGrams,
+          cal: macros.cal,
+          protein: macros.protein,
+          carbs: macros.carbs,
+          fat: macros.fat,
+        }).catch(() => {
+          toast.error("Ovqatni yangilab bo'lmadi");
+        });
+        return;
+      }
+
+      if (imageDataUrl != null) {
+        void patchMeal(dateKey, mealType, foodId, {
+          image: imageDataUrl,
+          source: "camera",
+        }).catch(() => {
+          toast.error("Rasmni saqlab bo'lmadi");
+        });
+      }
+    },
+    [dateKey, patchMeal],
+  );
+
+  const handleUpdateMeal = React.useCallback(
+    (mealType, foodId, patch) => {
+      void patchMeal(dateKey, mealType, foodId, patch).catch(() => {
+        toast.error("Ovqatni yangilab bo'lmadi");
+      });
+    },
+    [dateKey, patchMeal],
+  );
+
+  const sharedViewProps = {
+    date,
+    setDate,
+    plans,
+    currentPlan,
+    goals,
+    roundedTotals,
+    calorieGoalMeta,
+    isGoalLoadingState,
+    mealConfig,
+    mealFilter,
+    setMealFilter,
+    sourceFilters,
+    setIsFilterDrawerOpen,
+    filteredMealSections,
+    activeMealType,
+    setSelectedMealTypeForAdd,
+    setIsActionDrawerOpen,
+    setIsSavedMealsOpen,
+    setIsPlansDrawerOpen,
+    handleRemoveFood,
+    handleLogPlanned,
+    handleTogglePlanned,
+    onImageUpload: handleMealImageUpload,
+    onUpdateMeal: handleUpdateMeal,
+  };
+
   return (
     <PageTransition mode="fade">
-      <div className="flex flex-col gap-6">
-        <div className={"flex md:justify-end"}>
-          <StrippedCalendar
-            date={date}
-            onChange={setDate}
-            className={
-              "shadow md:shadow-none flex-1 md:flex-none md:w-full md:max-w-md rounded-2xl px-1 py-1"
-            }
-          />
-        </div>
-        {plans.length > 0 ? (
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => setIsPlansDrawerOpen(true)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                setIsPlansDrawerOpen(true);
-              }
-            }}
-            className="rounded-[2rem] border p-4 sm:p-5 transition-colors hover:bg-accent/40"
-          >
-            <div className="flex items-center justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Mening rejalarim
-                </p>
-                <h3 className="mt-1 truncate text-base font-black">
-                  {currentPlan?.name || "Reja tanlang"}
-                </h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {plans.length} ta reja •{" "}
-                  {currentPlan?.status === "active"
-                    ? "Faol reja"
-                    : "Saqlangan reja"}
-                  {currentPlan
-                    ? ` • ${getPlanSourceLabel(currentPlan.source)}`
-                    : ""}
-                </p>
-              </div>
-              <div className="flex items-center gap-3 shrink-0">
-                {currentPlan?.status === "active" ? (
-                  <div className="flex size-11 items-center justify-center rounded-2xl bg-green-500/10">
-                    <CheckIcon className="size-5 text-green-500" />
-                  </div>
-                ) : (
-                  <div className="flex size-11 items-center justify-center rounded-2xl bg-amber-500/10">
-                    <div className="size-2.5 rounded-full bg-amber-500" />
-                  </div>
-                )}
-                <ChevronRightIcon className="size-5 text-muted-foreground" />
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => setIsPlansDrawerOpen(true)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                setIsPlansDrawerOpen(true);
-              }
-            }}
-            className="rounded-[2rem] border border-dashed p-5 transition-colors hover:bg-accent/30"
-          >
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Mening rejalarim
-                </p>
-                <h3 className="mt-1 text-base font-black">
-                  Ovqatlanish rejasi yo'q
-                </h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Qo'lda yoki AI bilan yangi reja yarating
-                </p>
-              </div>
-              <ChevronRightIcon className="size-5 shrink-0 text-muted-foreground" />
-            </div>
-          </div>
-        )}
-
-        <TrackingPageLayout
-          aside={
-            <CalorieGaugeWidget
-              consumed={roundedTotals.calories}
-              goal={goals.calories}
-              macros={{
-                protein: {
-                  current: roundedTotals.protein,
-                  target: goals.protein,
-                },
-                carbs: { current: roundedTotals.carbs, target: goals.carbs },
-                fat: { current: roundedTotals.fat, target: goals.fat },
-              }}
-              isGoalLoading={isGoalLoadingState}
-              goalMeta={calorieGoalMeta}
-              className="w-full py-6"
-            />
-          }
-        >
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-2 pb-1 overflow-x-auto no-scrollbar relative">
-              <div className="flex w-full gap-2 min-w-max lg:w-auto lg:max-w-full">
-                <Button
-                  type="button"
-                  className="shrink-0"
-                  variant={mealFilter === "all" ? "default" : "outline"}
-                  onClick={() => setMealFilter("all")}
-                >
-                  Barchasi
-                </Button>
-                {Object.entries(mealConfig).map(([type, config]) => (
-                  <Button
-                    key={type}
-                    type="button"
-                    className="shrink-0"
-                    variant={mealFilter === type ? "default" : "outline"}
-                    onClick={() => setMealFilter(type)}
-                  >
-                    {config.label}
-                  </Button>
-                ))}
-              </div>
-              <div className="sticky right-0 flex items-center bg-background/80 pl-2 backdrop-blur-sm -mr-1 ml-auto h-full">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="shrink-0 relative"
-                  onClick={() => setIsFilterDrawerOpen(true)}
-                >
-                  <ListFilterIcon className="size-4" />
-                  {sourceFilters.length > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-primary text-[8px] text-primary-foreground font-bold">
-                      {sourceFilters.length}
-                    </span>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {filteredMealSections.length === 0 ? (
-            <div className="rounded-[2rem] border border-dashed p-6 text-sm text-muted-foreground">
-              <p>Tanlangan filter bo'yicha ovqat bo'limlari topilmadi.</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setMealFilter("all");
-                    setSourceFilters([]);
-                  }}
-                >
-                  Filterni tozalash
-                </Button>
-                {!isPremiumActive ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={openPremiumForAi}
-                  >
-                    Premium olish
-                  </Button>
-                ) : null}
-              </div>
-            </div>
-          ) : (
-            map(filteredMealSections, ([type, section]) => (
-              <MealSection
-                key={type}
-                type={type}
-                isActive={type === activeMealType}
-                time={section.time}
-                items={section.foods || []}
-                plannedItems={section.plannedItems || []}
-                onRemove={handleRemoveFood}
-                onAdd={() => {
-                  setSelectedMealTypeForAdd(type);
-                  setIsActionDrawerOpen(true);
-                }}
-                onLogPlanned={handleLogPlanned}
-                onImageUpload={(t, foodId, img, adjustedGrams, macros) => {
-                  if (adjustedGrams != null && macros) {
-                    void patchMeal(dateKey, t, foodId, {
-                      ...(img != null ? { image: img } : {}),
-                      ...(img != null ? { source: "camera" } : {}),
-                      grams: adjustedGrams,
-                      cal: macros.cal,
-                      protein: macros.protein,
-                      carbs: macros.carbs,
-                      fat: macros.fat,
-                    }).catch(() => {
-                      toast.error("Ovqatni yangilab bo'lmadi");
-                    });
-                  } else if (img != null) {
-                    void patchMeal(dateKey, t, foodId, {
-                      image: img,
-                      source: "camera",
-                    }).catch(() => {
-                      toast.error("Rasmni saqlab bo'lmadi");
-                    });
-                  }
-                }}
-                onUpdateMeal={(t, foodId, patch) => {
-                  void patchMeal(dateKey, t, foodId, patch).catch(() => {
-                    toast.error("Ovqatni yangilab bo'lmadi");
-                  });
-                }}
-                onTogglePlanned={handleTogglePlanned}
-              />
-            ))
-          )}
-        </TrackingPageLayout>
-
-        <NutritionAnalyticsSection />
-      </div>
+      {entryView === "report" ? (
+        <NutritionReportView
+          date={date}
+          setDate={setDate}
+          currentPlan={currentPlan}
+          roundedTotals={roundedTotals}
+          goals={goals}
+          isGoalLoadingState={isGoalLoadingState}
+          calorieGoalMeta={calorieGoalMeta}
+        />
+      ) : entryView === "plans" ? (
+        <NutritionPlansView
+          orderedPlans={orderedPlans}
+          currentPlan={currentPlan}
+          planInsightsMap={planInsightsMap}
+          getPlanStatusMeta={getPlanStatusMeta}
+          getPlanSourceMeta={getPlanSourceMeta}
+          onActivatePlan={handleActivatePlan}
+          onOpenPlanActions={handleOpenPlanActions}
+          onRemovePlan={handleRemovePlanFromCard}
+          onSelectPlanForShopping={(planId) => {
+            setSelectedPlanId(planId);
+            setIsShoppingOpen(true);
+          }}
+          onCreateManual={openPlanMetaCreateDrawer}
+          onCreateAI={handleOpenAiGenerator}
+        />
+      ) : entryView === "meals" ? (
+        <NutritionMealsView {...sharedViewProps} />
+      ) : (
+        <NutritionHomeView {...sharedViewProps} />
+      )}
 
       <MealPlanBuilder
         initialData={builderInitialData || currentPlan?.weeklyKanban || {}}

@@ -17,6 +17,7 @@ import {
   SearchIcon,
   Settings2Icon,
   SparklesIcon,
+  HistoryIcon,
   TimerIcon,
   ZapIcon,
 } from "lucide-react";
@@ -35,11 +36,21 @@ import { Input } from "@/components/ui/input";
 import CalorieGaugeWidget from "@/modules/user/containers/dashboard/calorie-gauge-widget.jsx";
 import useWorkoutOverview from "@/hooks/app/use-workout-overview";
 import useWorkoutPlan from "@/hooks/app/use-workout-plan";
-import { useWorkoutCatalog } from "@/hooks/app/use-workout-plans";
+import usePremium from "@/hooks/app/use-premium";
+import { useWorkoutSessionHistory } from "@/hooks/app/use-workout-sessions";
+import {
+  useWorkoutCatalog,
+  useWorkoutExerciseCategories,
+  useWorkoutExercises,
+} from "@/hooks/app/use-workout-plans";
 import { useBreadcrumbStore } from "@/store";
 import { cn } from "@/lib/utils";
-import SessionDrawer from "../session-drawer";
-import { deriveWorkoutPlanMetrics } from "../utils";
+import {
+  deriveWorkoutPlanMetrics,
+  getFirstWorkoutDayIndex,
+  getNextStartableDayIndex,
+  isWorkoutDayLocked,
+} from "../utils";
 
 const IMAGE_SET = {
   athlete:
@@ -48,8 +59,7 @@ const IMAGE_SET = {
     "https://images.unsplash.com/photo-1534367610401-9f5ed68180aa?auto=format&fit=crop&w=900&q=80",
   runner:
     "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?auto=format&fit=crop&w=900&q=80",
-  abs:
-    "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=500&q=80",
+  abs: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=500&q=80",
   dumbbell:
     "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=500&q=80",
   pushup:
@@ -60,91 +70,6 @@ const IMAGE_SET = {
     "https://images.unsplash.com/photo-1593079831268-3381b0db4a77?auto=format&fit=crop&w=500&q=80",
 };
 
-const CHALLENGES = [
-  {
-    title: "FULL BODY CHALLENGE",
-    kicker: "28 KUNLIK",
-    description: "4 haftada o'zingizni o'zgartiring",
-    image: IMAGE_SET.athlete,
-    tone: "primary",
-  },
-  {
-    title: "YOG' YOQISH CHALLENGE",
-    kicker: "30 KUNLIK",
-    description: "Yog'ni yoqish va formani yaxshilash",
-    image: IMAGE_SET.athleteAlt,
-    tone: "teal",
-  },
-  {
-    title: "MUSCLE BUILD CHALLENGE",
-    kicker: "MUSCLE BUILD",
-    description: "Mushaklar o'sishi va kuch oshirish",
-    image: IMAGE_SET.dumbbell,
-    tone: "blue",
-  },
-];
-
-const FOCUS_FILTERS = [
-  "Abs",
-  "Chest",
-  "Leg",
-  "Arm",
-  "Back",
-  "Shoulder",
-  "Full Body",
-];
-
-const FEATURED_WORKOUTS = [
-  {
-    name: "Abs Beginner",
-    focus: "Abs",
-    duration: "15 daqiqa",
-    exercises: 16,
-    difficulty: 2,
-    image: IMAGE_SET.abs,
-  },
-  {
-    name: "Abs Intermediate",
-    focus: "Abs",
-    duration: "24 daqiqa",
-    exercises: 21,
-    difficulty: 3,
-    image: IMAGE_SET.dumbbell,
-  },
-  {
-    name: "Abs Advanced",
-    focus: "Abs",
-    duration: "27 daqiqa",
-    exercises: 21,
-    difficulty: 3,
-    image: IMAGE_SET.athleteAlt,
-  },
-  {
-    name: "Chest Starter",
-    focus: "Chest",
-    duration: "20 daqiqa",
-    exercises: 14,
-    difficulty: 2,
-    image: IMAGE_SET.bench,
-  },
-  {
-    name: "Leg Power",
-    focus: "Leg",
-    duration: "28 daqiqa",
-    exercises: 18,
-    difficulty: 3,
-    image: IMAGE_SET.runner,
-  },
-  {
-    name: "Back Strength",
-    focus: "Back",
-    duration: "25 daqiqa",
-    exercises: 17,
-    difficulty: 3,
-    image: IMAGE_SET.pushup,
-  },
-];
-
 const QUICK_FILTERS = [
   { label: "7-15 daqiqa", icon: ClockIcon },
   { label: "< 7 daqiqa", icon: TimerIcon },
@@ -154,48 +79,22 @@ const QUICK_FILTERS = [
   { label: "Keep Fit", icon: HeartIcon },
 ];
 
-const FALLBACK_PLANS = [
-  {
-    id: "sample-upper",
-    name: "My Upper Body Day",
-    daysPerWeek: 4,
-    totalExercises: 20,
-    createdAt: "2024-05-12",
-    image: IMAGE_SET.athlete,
-  },
-  {
-    id: "sample-loss",
-    name: "Fat Loss Plan",
-    daysPerWeek: 5,
-    totalExercises: 24,
-    createdAt: "2024-05-09",
-    image: IMAGE_SET.woman,
-  },
-  {
-    id: "sample-home",
-    name: "Home Workout Plan",
-    daysPerWeek: 3,
-    totalExercises: 15,
-    createdAt: "2024-05-06",
-    image: IMAGE_SET.pushup,
-  },
-  {
-    id: "sample-leg",
-    name: "Leg Day Power",
-    daysPerWeek: 4,
-    totalExercises: 18,
-    createdAt: "2024-05-02",
-    image: IMAGE_SET.dumbbell,
-  },
-];
+const getDateKey = (value = new Date()) => {
+  const date = value instanceof Date ? value : new Date(value);
 
-const getDateKey = (date = new Date()) => date.toISOString().split("T")[0];
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
 
-const getWeekDays = () => {
+  return date.toISOString().split("T")[0];
+};
+
+const getWeekDays = (completedDates = []) => {
   const labels = ["YAK", "DU", "SE", "CH", "PA", "JU", "SH"];
   const today = new Date();
   const start = new Date(today);
   start.setDate(today.getDate() - ((today.getDay() + 2) % 7));
+  const completedDateSet = new Set(completedDates);
 
   return Array.from({ length: 7 }, (_, index) => {
     const date = new Date(start);
@@ -205,9 +104,49 @@ const getWeekDays = () => {
       label: labels[date.getDay()],
       day: date.getDate(),
       isToday: getDateKey(date) === getDateKey(today),
-      done: index < 2,
+      done: completedDateSet.has(getDateKey(date)),
     };
   });
+};
+
+const calculateCurrentStreak = (sessions = []) => {
+  const uniqueDays = Array.from(
+    new Set(
+      sessions.map((item) => getDateKey(get(item, "endedAt"))).filter(Boolean),
+    ),
+  ).sort((a, b) => (a > b ? -1 : 1));
+
+  if (uniqueDays.length === 0) {
+    return 0;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const latest = new Date(uniqueDays[0]);
+  latest.setHours(0, 0, 0, 0);
+
+  const diffFromToday = Math.round((today - latest) / 86400000);
+  if (diffFromToday > 1) {
+    return 0;
+  }
+
+  let streak = 1;
+  for (let index = 1; index < uniqueDays.length; index += 1) {
+    const previous = new Date(uniqueDays[index - 1]);
+    const current = new Date(uniqueDays[index]);
+    previous.setHours(0, 0, 0, 0);
+    current.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.round((previous - current) / 86400000);
+    if (diffDays === 1) {
+      streak += 1;
+    } else {
+      break;
+    }
+  }
+
+  return streak;
 };
 
 const formatDate = (value) => {
@@ -242,126 +181,251 @@ const getPlanImage = (plan, index) =>
   ];
 
 const buildPlanCards = (plans = []) => {
-  const normalized = plans.slice(0, 4).map((plan, index) => ({
+  return plans.slice(0, 4).map((plan, index) => ({
     ...plan,
     totalExercises:
       Number(get(plan, "totalExercises")) || countPlanExercises(plan) || 0,
     image: getPlanImage(plan, index),
   }));
-
-  return normalized.length > 0 ? normalized : FALLBACK_PLANS;
 };
 
-const buildNextWorkouts = (activePlan) => {
+const toStartOfDay = (value) => {
+  const date = value instanceof Date ? new Date(value) : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
+const addDays = (date, days) => {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+  return nextDate;
+};
+
+const formatWorkoutRecommendationLabel = (date, now = new Date()) => {
+  const targetDate = toStartOfDay(date);
+  const today = toStartOfDay(now);
+
+  if (!targetDate || !today) {
+    return "Tavsiya etiladi";
+  }
+
+  const diffDays = Math.round((targetDate - today) / 86400000);
+
+  if (diffDays === 0) {
+    return "Bugun";
+  }
+
+  if (diffDays === 1) {
+    return "Ertaga";
+  }
+
+  return new Intl.DateTimeFormat("uz-UZ", {
+    day: "numeric",
+    month: "short",
+  }).format(targetDate);
+};
+
+const buildNextWorkouts = (activePlan, now = new Date()) => {
   const schedule = get(activePlan, "schedule", []);
+  const nextStartableDayIndex = getNextStartableDayIndex(activePlan);
+  const firstWorkoutDayIndex = getFirstWorkoutDayIndex(schedule);
+  const startDayIndex =
+    nextStartableDayIndex >= 0 ? nextStartableDayIndex : firstWorkoutDayIndex;
+  const planStartDate = toStartOfDay(
+    get(activePlan, "startDate") || get(activePlan, "createdAt") || now,
+  );
+  const today = toStartOfDay(now) ?? new Date();
+  const initialRecommendedDate =
+    planStartDate && startDayIndex >= 0
+      ? (() => {
+          const candidate = addDays(planStartDate, startDayIndex);
+          return candidate > today ? candidate : today;
+        })()
+      : today;
+
   const planned = schedule
-    .filter((day) => get(day, "exercises", []).length > 0)
+    .map((day, dayIndex) => ({ day, dayIndex }))
+    .filter(
+      ({ day, dayIndex }) =>
+        dayIndex >= Math.max(0, startDayIndex) &&
+        get(day, "exercises", []).length > 0,
+    )
     .slice(0, 3)
-    .map((day, index) => ({
-      id: `${get(activePlan, "id", "active")}-${index}`,
-      title: get(day, "title") || get(day, "name") || `Day ${index + 1}`,
-      time:
-        index === 0
-          ? "Bugun · 17:00"
-          : index === 1
-            ? "Ertaga · 17:00"
-            : "29 May · 17:00",
-      image:
-        get(day, "exercises[0].imageUrl") ||
-        get(day, "exercises[0].image") ||
-        [IMAGE_SET.bench, IMAGE_SET.athleteAlt, IMAGE_SET.dumbbell][index],
-    }));
+    .map(({ day, dayIndex }, index) => {
+      const recommendedDate = addDays(
+        initialRecommendedDate,
+        dayIndex - Math.max(0, startDayIndex),
+      );
+
+      return {
+        id: `${get(activePlan, "id", "active")}-${dayIndex}`,
+        dayIndex,
+        isStartable: !isWorkoutDayLocked(activePlan, dayIndex),
+        title: get(day, "title") || get(day, "name") || `Day ${dayIndex + 1}`,
+        time: formatWorkoutRecommendationLabel(recommendedDate, now),
+        image:
+          get(day, "exercises[0].imageUrl") ||
+          get(day, "exercises[0].image") ||
+          [IMAGE_SET.bench, IMAGE_SET.athleteAlt, IMAGE_SET.dumbbell][index],
+      };
+    });
 
   if (planned.length > 0) {
     return planned;
   }
 
-  return [
-    {
-      id: "next-chest",
-      title: "Chest & Triceps",
-      time: "Bugun · 17:00",
-      image: IMAGE_SET.bench,
-    },
-    {
-      id: "next-back",
-      title: "Back & Biceps",
-      time: "Ertaga · 17:00",
-      image: IMAGE_SET.athleteAlt,
-    },
-    {
-      id: "next-shoulder",
-      title: "Shoulders & Arms",
-      time: "29 May · 17:00",
-      image: IMAGE_SET.dumbbell,
-    },
-  ];
+  return [];
 };
 
-const buildCatalogWorkouts = (catalog, selectedFocus) => {
-  const exercises = Array.isArray(catalog?.exercises) ? catalog.exercises : [];
+const normalizeValue = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase();
 
+const isFullBodyFilter = (value) =>
+  ["full body", "butun tana"].includes(normalizeValue(value));
+
+const getPrimaryBodyFocus = (exercise) =>
+  get(exercise, "bodyParts[0]") ||
+  get(exercise, "targetMuscles[0]") ||
+  get(exercise, "category") ||
+  "General";
+
+const formatExerciseDuration = (exercise) => {
+  const durationSeconds = Number(get(exercise, "defaultDurationSeconds")) || 0;
+
+  if (durationSeconds > 0) {
+    return `${Math.max(1, Math.round(durationSeconds / 60))} daqiqa`;
+  }
+
+  const trackingType = normalizeValue(get(exercise, "trackingType"));
+  const sets = Number(get(exercise, "defaultSets")) || 0;
+
+  if (trackingType.includes("duration")) {
+    return "10-15 daqiqa";
+  }
+
+  if (sets > 0) {
+    return `${sets} set`;
+  }
+
+  return "Tayyor mashq";
+};
+
+const getExerciseDifficulty = (exercise) => {
+  const trackingType = normalizeValue(get(exercise, "trackingType"));
+  const equipmentCount = Array.isArray(get(exercise, "equipments"))
+    ? exercise.equipments.length
+    : 0;
+
+  if (trackingType === "duration_only" || trackingType === "reps_only") {
+    return equipmentCount > 0 ? 2 : 1;
+  }
+
+  if (trackingType === "duration_distance") {
+    return 2;
+  }
+
+  return equipmentCount > 1 ? 4 : 3;
+};
+
+const buildFocusFilters = (bodyParts = []) => {
+  const names = bodyParts
+    .map((item) => get(item, "name"))
+    .filter(Boolean)
+    .slice(0, 7);
+
+  return names.length > 0 ? names : ["Butun tana"];
+};
+
+const buildChallengeCards = (categories = [], exercises = []) =>
+  categories.slice(0, 3).map((category, index) => {
+    const categoryExercises = exercises.filter((exercise) =>
+      Array.isArray(get(exercise, "categoryIds"))
+        ? exercise.categoryIds.includes(category.id)
+        : get(exercise, "categoryId") === category.id,
+    );
+    const leadExercise = categoryExercises[0];
+
+    return {
+      id: category.id,
+      title: get(category, "name", "Workout"),
+      kicker: `${categoryExercises.length || 0} mashq`,
+      description:
+        categoryExercises.length > 0
+          ? categoryExercises
+              .slice(0, 3)
+              .map((exercise) => get(exercise, "name"))
+              .filter(Boolean)
+              .join(" • ")
+          : "Hozircha mashqlar mavjud emas",
+      image:
+        get(leadExercise, "imageUrl") ||
+        [IMAGE_SET.athlete, IMAGE_SET.athleteAlt, IMAGE_SET.dumbbell][
+          index % 3
+        ],
+      tone: index % 3 === 1 ? "teal" : index % 3 === 2 ? "blue" : "primary",
+      categoryId: category.id,
+    };
+  });
+
+const buildCatalogWorkouts = (
+  exercises = [],
+  selectedFocus,
+  selectedCategoryId,
+) => {
   return exercises
     .filter((exercise) => {
+      if (
+        selectedCategoryId &&
+        !(
+          (Array.isArray(get(exercise, "categoryIds")) &&
+            exercise.categoryIds.includes(selectedCategoryId)) ||
+          get(exercise, "categoryId") === selectedCategoryId
+        )
+      ) {
+        return false;
+      }
+
+      if (isFullBodyFilter(selectedFocus)) {
+        return true;
+      }
+
       const haystack = [
         get(exercise, "name"),
-        get(exercise, "bodyPart.name"),
-        get(exercise, "muscle.name"),
-        get(exercise, "primaryMuscle.name"),
+        ...(Array.isArray(get(exercise, "bodyParts"))
+          ? exercise.bodyParts
+          : []),
+        ...(Array.isArray(get(exercise, "targetMuscles"))
+          ? exercise.targetMuscles
+          : []),
+        ...(Array.isArray(get(exercise, "equipments"))
+          ? exercise.equipments
+          : []),
+        get(exercise, "category"),
       ]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
 
-      if (selectedFocus === "Full Body") {
-        return true;
-      }
-
-      return haystack.includes(selectedFocus.toLowerCase());
+      return haystack.includes(normalizeValue(selectedFocus));
     })
     .slice(0, 3)
-    .map((exercise, index) => ({
-      name: get(exercise, "name") || FEATURED_WORKOUTS[index].name,
-      focus: selectedFocus,
-      duration: `${15 + index * 5} daqiqa`,
-      exercises: 12 + index * 4,
-      difficulty: Math.min(4, index + 2),
-      image: get(exercise, "imageUrl") || FEATURED_WORKOUTS[index].image,
+    .map((exercise) => ({
+      name: get(exercise, "name") || "Workout",
+      focus: getPrimaryBodyFocus(exercise),
+      duration: formatExerciseDuration(exercise),
+      exercises: 1,
+      difficulty: getExerciseDifficulty(exercise),
+      image: get(exercise, "imageUrl") || IMAGE_SET.athlete,
       sourceExercise: exercise,
     }));
 };
-
-function WorkoutHeader() {
-  return (
-    <header className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-      <div>
-        <h1 className="text-4xl font-black tracking-normal md:text-5xl">
-          Workout
-        </h1>
-        <p className="mt-1 text-lg text-muted-foreground">
-          Train. Track. Transform.
-        </p>
-      </div>
-
-      <div className="flex items-center gap-3">
-        <Badge
-          variant="secondary"
-          className="h-11 gap-2 rounded-full px-4 text-base font-bold"
-        >
-          <FlameIcon className="text-primary" />
-          <span>7</span>
-          <span className="text-xs font-medium text-muted-foreground">
-            Day streak
-          </span>
-        </Badge>
-        <Badge className="h-11 gap-2 rounded-full px-4 text-base font-bold">
-          <CrownIcon />
-          PRO
-        </Badge>
-      </div>
-    </header>
-  );
-}
 
 function SearchBar({ search, onSearchChange }) {
   return (
@@ -387,8 +451,11 @@ function SearchBar({ search, onSearchChange }) {
   );
 }
 
-function WeeklyGoalCard({ completed, target }) {
-  const days = React.useMemo(() => getWeekDays(), []);
+function WeeklyGoalCard({ completed, target, completedDates }) {
+  const days = React.useMemo(
+    () => getWeekDays(completedDates),
+    [completedDates],
+  );
   const progress =
     target > 0 ? Math.min(100, Math.round((completed / target) * 100)) : 0;
 
@@ -445,7 +512,7 @@ function WeeklyGoalCard({ completed, target }) {
   );
 }
 
-function ChallengeCard({ challenge }) {
+function ChallengeCard({ challenge, onStart }) {
   const toneClass =
     challenge.tone === "teal"
       ? "from-teal-500 to-emerald-700"
@@ -460,13 +527,16 @@ function ChallengeCard({ challenge }) {
           <p className="text-sm font-bold uppercase tracking-normal text-white/85">
             {challenge.kicker}
           </p>
-          <h3 className="text-2xl font-black leading-tight">{challenge.title}</h3>
+          <h3 className="text-2xl font-black leading-tight">
+            {challenge.title}
+          </h3>
           <p className="text-sm font-medium text-white/90">
             {challenge.description}
           </p>
           <Button
             variant="secondary"
             className="mt-auto rounded-full px-8 text-foreground"
+            onClick={() => onStart(challenge)}
           >
             Boshlash
           </Button>
@@ -483,7 +553,7 @@ function ChallengeCard({ challenge }) {
   );
 }
 
-function ChallengeSection({ onViewAll }) {
+function ChallengeSection({ challenges, onViewAll, onStartChallenge }) {
   return (
     <section className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-4">
@@ -494,8 +564,12 @@ function ChallengeSection({ onViewAll }) {
         </Button>
       </div>
       <div className="flex gap-4 overflow-x-auto pb-1 md:grid md:grid-cols-3 md:overflow-visible">
-        {CHALLENGES.map((challenge) => (
-          <ChallengeCard key={challenge.title} challenge={challenge} />
+        {challenges.map((challenge) => (
+          <ChallengeCard
+            key={challenge.id}
+            challenge={challenge}
+            onStart={onStartChallenge}
+          />
         ))}
       </div>
     </section>
@@ -519,33 +593,33 @@ function DifficultyBolts({ value }) {
 }
 
 function WorkoutExplorer({
-  catalog,
+  exercises,
+  bodyParts,
+  selectedCategoryId,
   selectedFocus,
   onFocusChange,
   search,
   onStart,
 }) {
   const catalogRows = React.useMemo(
-    () => buildCatalogWorkouts(catalog, selectedFocus),
-    [catalog, selectedFocus],
+    () => buildCatalogWorkouts(exercises, selectedFocus, selectedCategoryId),
+    [exercises, selectedCategoryId, selectedFocus],
   );
-  const fallbackRows = FEATURED_WORKOUTS.filter(
-    (workout) =>
-      selectedFocus === "Full Body" ||
-      workout.focus.toLowerCase() === selectedFocus.toLowerCase(),
-  );
-  const baseRows = catalogRows.length > 0 ? catalogRows : fallbackRows;
-  const rows = baseRows
+  const rows = catalogRows
     .filter((workout) =>
       workout.name.toLowerCase().includes(search.trim().toLowerCase()),
     )
     .slice(0, 3);
+  const focusFilters = React.useMemo(
+    () => buildFocusFilters(bodyParts),
+    [bodyParts],
+  );
 
   return (
     <section className="flex flex-col gap-4">
       <h2 className="text-xl font-black">Body Focus</h2>
       <div className="flex gap-3 overflow-x-auto pb-1">
-        {FOCUS_FILTERS.map((filter) => (
+        {focusFilters.map((filter) => (
           <Button
             key={filter}
             variant={selectedFocus === filter ? "outline" : "secondary"}
@@ -564,6 +638,11 @@ function WorkoutExplorer({
 
       <Card className="overflow-hidden p-0">
         <CardContent className="p-0">
+          {rows.length === 0 ? (
+            <div className="px-6 py-12 text-center text-sm text-muted-foreground">
+              Hozircha mos mashqlar topilmadi.
+            </div>
+          ) : null}
           {rows.map((workout, index) => (
             <div
               key={`${workout.name}-${index}`}
@@ -606,25 +685,27 @@ function WorkoutExplorer({
         </CardContent>
       </Card>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {QUICK_FILTERS.map((item) => {
-          const Icon = item.icon;
+      {rows.length > 0 ? (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {QUICK_FILTERS.map((item) => {
+            const Icon = item.icon;
 
-          return (
-            <Button
-              key={item.label}
-              variant="outline"
-              className="h-12 justify-center rounded-2xl font-semibold"
-            >
-              <Icon
-                data-icon="inline-start"
-                className={item.accent ? "text-blue-500" : undefined}
-              />
-              {item.label}
-            </Button>
-          );
-        })}
-      </div>
+            return (
+              <Button
+                key={item.label}
+                variant="outline"
+                className="h-12 justify-center rounded-2xl font-semibold"
+              >
+                <Icon
+                  data-icon="inline-start"
+                  className={item.accent ? "text-blue-500" : undefined}
+                />
+                {item.label}
+              </Button>
+            );
+          })}
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -698,16 +779,22 @@ function PlansStrip({ plans, onViewAll, onCreate, onOpenPlan }) {
         </Button>
       </div>
       <div className="flex gap-4 overflow-x-auto pb-2">
+        {cards.length === 0 ? (
+          <Card className="grid min-w-72 place-items-center border-dashed p-6 text-center">
+            <div>
+              <p className="text-sm font-semibold">Hozircha reja yo‘q</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Birinchi workout rejangizni yarating yoki AI bilan boshlang.
+              </p>
+            </div>
+          </Card>
+        ) : null}
         {cards.map((plan, index) => (
           <PlanCard
             key={get(plan, "id", get(plan, "name"))}
             plan={plan}
             index={index}
-            onOpen={() =>
-              get(plan, "id", "").startsWith("sample-")
-                ? onViewAll()
-                : onOpenPlan(plan)
-            }
+            onOpen={() => onOpenPlan(plan)}
           />
         ))}
         <Card
@@ -724,19 +811,25 @@ function PlansStrip({ plans, onViewAll, onCreate, onOpenPlan }) {
   );
 }
 
-function NextWorkoutCard({ items, onOpenPlans, onStart }) {
+function NextWorkoutCard({ items, onOpenPlans, onOpenHistory, onStart }) {
   return (
     <Card>
       <CardHeader>
         <CardTitle>Keyingi mashg'ulot</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
+        {items.length === 0 ? (
+          <div className="rounded-2xl border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+            Faol plan yo‘q. Reja yaratganingizdan keyin keyingi mashg‘ulot shu
+            yerda ko‘rinadi.
+          </div>
+        ) : null}
         {items.map((item) => (
           <button
             key={item.id}
             type="button"
             className="grid grid-cols-[72px_1fr_auto] items-center gap-3 rounded-2xl border bg-background p-2 text-left transition-colors hover:bg-muted/40"
-            onClick={onStart}
+            onClick={() => onStart(item)}
           >
             <img
               src={item.image}
@@ -754,9 +847,13 @@ function NextWorkoutCard({ items, onOpenPlans, onStart }) {
           </button>
         ))}
       </CardContent>
-      <CardFooter>
+      <CardFooter className="grid grid-cols-2 gap-3">
         <Button variant="outline" className="w-full" onClick={onOpenPlans}>
           Barchasini ko'rish
+        </Button>
+        <Button variant="secondary" className="w-full" onClick={onOpenHistory}>
+          <HistoryIcon data-icon="inline-start" />
+          Tarix
         </Button>
       </CardFooter>
     </Card>
@@ -790,16 +887,14 @@ const WorkoutDashboardPage = () => {
   const navigate = useNavigate();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const [search, setSearch] = React.useState("");
-  const [selectedFocus, setSelectedFocus] = React.useState("Abs");
-  const [sessionDrawerOpen, setSessionDrawerOpen] = React.useState(false);
-  const [sessionInitialDayIdx, setSessionInitialDayIdx] = React.useState(0);
+  const [selectedFocus, setSelectedFocus] = React.useState("Butun tana");
+  const [selectedCategoryId, setSelectedCategoryId] = React.useState(null);
   const { overview: workoutOverview } = useWorkoutOverview();
+  const { sessions: sessionHistory } = useWorkoutSessionHistory();
   const { catalog } = useWorkoutCatalog();
-  const {
-    plans,
-    activePlan: rawActivePlan,
-    startPlan,
-  } = useWorkoutPlan();
+  const { categories } = useWorkoutExerciseCategories();
+  const { exercises } = useWorkoutExercises();
+  const { plans, activePlan: rawActivePlan, startPlan } = useWorkoutPlan();
   const activePlan = React.useMemo(
     () => deriveWorkoutPlanMetrics(rawActivePlan),
     [rawActivePlan],
@@ -808,7 +903,22 @@ const WorkoutDashboardPage = () => {
     () => buildNextWorkouts(activePlan),
     [activePlan],
   );
+  const challenges = React.useMemo(
+    () => buildChallengeCards(categories, exercises),
+    [categories, exercises],
+  );
   const todayKey = React.useMemo(() => getDateKey(new Date()), []);
+
+  const completedDates = React.useMemo(
+    () =>
+      Array.isArray(get(workoutOverview, "recentWorkoutDays"))
+        ? workoutOverview.recentWorkoutDays
+            .map((item) => item?.date)
+            .filter(Boolean)
+        : [],
+    [workoutOverview],
+  );
+
   const targetWorkouts =
     Number(get(activePlan, "daysPerWeek")) ||
     Number(get(workoutOverview, "weeklyStats.target")) ||
@@ -817,7 +927,7 @@ const WorkoutDashboardPage = () => {
     targetWorkouts,
     Number(get(workoutOverview, "weeklyStats.count")) ||
       Number(get(activePlan, "completedWorkouts")) ||
-      2,
+      0,
   );
 
   React.useEffect(() => {
@@ -827,34 +937,85 @@ const WorkoutDashboardPage = () => {
     ]);
   }, [setBreadcrumbs]);
 
+  React.useEffect(() => {
+    const focusFilters = buildFocusFilters(get(catalog, "bodyParts", []));
+
+    if (
+      focusFilters.length > 0 &&
+      !focusFilters.some((item) => item === selectedFocus)
+    ) {
+      setSelectedFocus(focusFilters[0]);
+    }
+  }, [catalog, selectedFocus]);
+
   const openPlans = React.useCallback(() => {
     navigate("/user/workout/plans");
+  }, [navigate]);
+
+  const openHistory = React.useCallback(() => {
+    navigate("/user/workout/history");
   }, [navigate]);
 
   const createPlan = React.useCallback(() => {
     navigate("/user/workout/plans/create");
   }, [navigate]);
 
-  const handleStartSession = React.useCallback(async () => {
-    if (!activePlan) {
-      navigate("/user/workout/plans/create");
-      return;
-    }
+  const handleChallengeStart = React.useCallback((challenge) => {
+    setSelectedCategoryId(get(challenge, "categoryId") ?? null);
+    toast.info(
+      `${get(challenge, "title", "Workout")} bo'yicha mashqlar filtrlab ko'rsatildi.`,
+    );
+  }, []);
 
-    try {
-      if (get(activePlan, "status") !== "active" && get(activePlan, "id")) {
-        await startPlan(activePlan);
+  const handleStartSession = React.useCallback(
+    async (targetWorkout = null) => {
+      if (!activePlan) {
+        navigate("/user/workout/plans/create");
+        return;
       }
 
-      setSessionInitialDayIdx(0);
-      setSessionDrawerOpen(true);
-    } catch (error) {
-      toast.error(
-        get(error, "response.data.message") ||
-          "Sessiyani boshlashda xatolik yuz berdi",
-      );
-    }
-  }, [activePlan, navigate, startPlan]);
+      try {
+        if (get(activePlan, "status") !== "active" && get(activePlan, "id")) {
+          await startPlan(activePlan);
+        }
+
+        const nextWorkoutDayIndex =
+          Number.isInteger(get(targetWorkout, "dayIndex")) &&
+          get(targetWorkout, "dayIndex") >= 0
+            ? get(targetWorkout, "dayIndex")
+            : getNextStartableDayIndex(activePlan);
+        const fallbackWorkoutDayIndex = getFirstWorkoutDayIndex(
+          get(activePlan, "schedule", []),
+        );
+        const resolvedDayIndex =
+          nextWorkoutDayIndex >= 0
+            ? nextWorkoutDayIndex
+            : fallbackWorkoutDayIndex >= 0
+              ? fallbackWorkoutDayIndex
+              : 0;
+
+        if (
+          Number.isInteger(get(targetWorkout, "dayIndex")) &&
+          isWorkoutDayLocked(activePlan, resolvedDayIndex)
+        ) {
+          navigate(
+            `/user/workout/plans/${get(activePlan, "id")}/days/${resolvedDayIndex}`,
+          );
+          return;
+        }
+
+        navigate(
+          `/user/workout/plans/${get(activePlan, "id")}/days/${resolvedDayIndex}/session`,
+        );
+      } catch (error) {
+        toast.error(
+          get(error, "response.data.message") ||
+            "Sessiyani boshlashda xatolik yuz berdi",
+        );
+      }
+    },
+    [activePlan, navigate, startPlan],
+  );
 
   const handleStartWorkout = React.useCallback(
     (workout) => {
@@ -872,18 +1033,23 @@ const WorkoutDashboardPage = () => {
   return (
     <PageTransition mode="slide-up">
       <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-6 pb-4">
-        <WorkoutHeader />
-
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
           <main className="flex min-w-0 flex-col gap-6">
             <SearchBar search={search} onSearchChange={setSearch} />
             <WeeklyGoalCard
               completed={completedWorkouts}
               target={targetWorkouts}
+              completedDates={completedDates}
             />
-            <ChallengeSection onViewAll={() => navigate("/user/challenges")} />
+            <ChallengeSection
+              challenges={challenges}
+              onViewAll={openPlans}
+              onStartChallenge={handleChallengeStart}
+            />
             <WorkoutExplorer
-              catalog={catalog}
+              exercises={exercises}
+              bodyParts={get(catalog, "bodyParts", [])}
+              selectedCategoryId={selectedCategoryId}
               search={search}
               selectedFocus={selectedFocus}
               onFocusChange={setSelectedFocus}
@@ -906,19 +1072,12 @@ const WorkoutDashboardPage = () => {
             <NextWorkoutCard
               items={nextWorkouts}
               onOpenPlans={openPlans}
+              onOpenHistory={openHistory}
               onStart={handleStartSession}
             />
             <CustomPlanCard onCreate={createPlan} />
           </aside>
         </div>
-
-        <SessionDrawer
-          open={sessionDrawerOpen}
-          onOpenChange={setSessionDrawerOpen}
-          plan={activePlan}
-          initialDayIdx={sessionInitialDayIdx}
-          dateKey={todayKey}
-        />
       </div>
     </PageTransition>
   );

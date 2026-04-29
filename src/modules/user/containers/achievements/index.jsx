@@ -9,13 +9,21 @@ import {
   StarIcon,
   TrendingUpIcon,
   TrendingDownIcon,
+  HistoryIcon,
 } from "lucide-react";
 import { useGetQuery } from "@/hooks/api";
 import { useBreadcrumbStore } from "@/store";
 import PageTransition from "@/components/page-transition";
 import PageLoader from "@/components/page-loader";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import {
   Drawer,
@@ -48,9 +56,10 @@ const getCategoryLabel = (category) => {
 };
 
 const AchievementCard = ({ item, onClick }) => {
-  const progressPct = item.threshold > 0
-    ? Math.min(100, Math.round((item.progress / item.threshold) * 100))
-    : 0;
+  const progressPct =
+    item.threshold > 0
+      ? Math.min(100, Math.round((item.progress / item.threshold) * 100))
+      : 0;
 
   return (
     <button
@@ -75,7 +84,7 @@ const AchievementCard = ({ item, onClick }) => {
           </div>
           <div className="min-w-0">
             <p className="font-semibold leading-tight">{item.name}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
+            <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
               {item.description}
             </p>
           </div>
@@ -145,83 +154,82 @@ const XP_TYPE_LABELS = {
   MANUAL: "Qo'lda",
 };
 
-const XpHistorySection = () => {
-  const [page, setPage] = React.useState(0);
-  const limit = 15;
-  const { data, isLoading } = useGetQuery({
-    url: "/gamification/xp/history",
-    params: { limit, offset: page * limit },
-    queryProps: { queryKey: ["gamification", "xp-history", page] },
-  });
-  const payload = getApiResponseData(data, {});
-  const items = payload?.items ?? [];
-  const total = payload?.total ?? 0;
-  const hasMore = (page + 1) * limit < total;
+/** Shared list — used in both the sidebar card and the mobile drawer */
+const XpHistoryList = ({ items, isLoading, hasMore, page, onNextPage, onPrevPage }) => {
+  if (isLoading && items.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+        Yuklanmoqda...
+      </div>
+    );
+  }
 
-  if (!isLoading && items.length === 0 && page === 0) return null;
+  if (!isLoading && items.length === 0 && page === 0) {
+    return (
+      <div className="flex items-center justify-center rounded-2xl border border-dashed py-10 text-sm text-muted-foreground">
+        Hali XP tarixi yo&apos;q
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-3">
-      <h2 className="text-lg font-bold flex items-center gap-2">
-        <ZapIcon className="size-4 text-amber-500" />
-        XP tarixi
-      </h2>
-      <Card>
-        <CardContent className="p-0 divide-y divide-border/60">
-          {isLoading && items.length === 0 ? (
-            <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
-              Yuklanmoqda...
-            </div>
-          ) : (
-            map(items, (entry) => {
-              const isEarned = entry.amount > 0;
-              return (
+    <div className="flex flex-col gap-0">
+      <div className="divide-y divide-border/60">
+        {map(items, (entry) => {
+          const isEarned = entry.amount > 0;
+          return (
+            <div
+              key={entry.id}
+              className="flex items-center justify-between gap-3 px-1 py-3"
+            >
+              <div className="flex min-w-0 items-center gap-3">
                 <div
-                  key={entry.id}
-                  className="flex items-center justify-between gap-3 px-4 py-3"
+                  className={cn(
+                    "flex size-8 shrink-0 items-center justify-center rounded-xl",
+                    isEarned
+                      ? "bg-amber-500/10 text-amber-600"
+                      : "bg-red-500/10 text-red-500",
+                  )}
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={`flex size-8 shrink-0 items-center justify-center rounded-xl ${isEarned ? "bg-amber-500/10 text-amber-600" : "bg-red-500/10 text-red-500"}`}
-                    >
-                      {isEarned ? (
-                        <TrendingUpIcon className="size-4" />
-                      ) : (
-                        <TrendingDownIcon className="size-4" />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {entry.note || XP_TYPE_LABELS[entry.type] || entry.type}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(entry.createdAt), "dd.MM.yyyy HH:mm")}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p
-                      className={`text-sm font-bold ${isEarned ? "text-amber-500" : "text-red-500"}`}
-                    >
-                      {isEarned ? "+" : ""}{entry.amount} XP
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {entry.balance} XP
-                    </p>
-                  </div>
+                  {isEarned ? (
+                    <TrendingUpIcon className="size-4" />
+                  ) : (
+                    <TrendingDownIcon className="size-4" />
+                  )}
                 </div>
-              );
-            })
-          )}
-        </CardContent>
-      </Card>
-      {(hasMore || page > 0) ? (
-        <div className="flex items-center justify-center gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">
+                    {entry.note || XP_TYPE_LABELS[entry.type] || entry.type}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {format(new Date(entry.createdAt), "dd.MM.yyyy HH:mm")}
+                  </p>
+                </div>
+              </div>
+              <div className="shrink-0 text-right">
+                <p
+                  className={cn(
+                    "text-sm font-bold",
+                    isEarned ? "text-amber-500" : "text-red-500",
+                  )}
+                >
+                  {isEarned ? "+" : ""}
+                  {entry.amount} XP
+                </p>
+                <p className="text-xs text-muted-foreground">{entry.balance} XP</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {hasMore || page > 0 ? (
+        <div className="mt-3 flex items-center justify-center gap-3">
           {page > 0 ? (
             <button
               type="button"
               className="text-xs text-muted-foreground hover:text-foreground"
-              onClick={() => setPage((p) => p - 1)}
+              onClick={onPrevPage}
             >
               Oldingi
             </button>
@@ -230,7 +238,7 @@ const XpHistorySection = () => {
             <button
               type="button"
               className="text-xs text-primary hover:underline"
-              onClick={() => setPage((p) => p + 1)}
+              onClick={onNextPage}
             >
               Ko&apos;proq ko&apos;rish
             </button>
@@ -241,10 +249,95 @@ const XpHistorySection = () => {
   );
 };
 
+/** Hook that fetches XP history — shared between sidebar and drawer */
+const useXpHistory = () => {
+  const [page, setPage] = React.useState(0);
+  const limit = 20;
+  const { data, isLoading } = useGetQuery({
+    url: "/gamification/xp/history",
+    params: { limit, offset: page * limit },
+    queryProps: { queryKey: ["gamification", "xp-history", page] },
+  });
+  const payload = getApiResponseData(data, {});
+  const items = payload?.items ?? [];
+  const total = payload?.total ?? 0;
+  const hasMore = (page + 1) * limit < total;
+
+  return {
+    items,
+    isLoading,
+    hasMore,
+    page,
+    nextPage: () => setPage((p) => p + 1),
+    prevPage: () => setPage((p) => p - 1),
+  };
+};
+
+/** Sidebar card — desktop only */
+const XpHistoryCard = () => {
+  const { items, isLoading, hasMore, page, nextPage, prevPage } = useXpHistory();
+
+  return (
+    <Card className="py-6">
+      <CardHeader className="px-6 pb-4">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <ZapIcon className="size-4 text-amber-500" />
+          XP tarixi
+        </CardTitle>
+        <CardDescription>
+          Barcha XP yutish va sarflash holatlari
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="px-6">
+        <XpHistoryList
+          items={items}
+          isLoading={isLoading}
+          hasMore={hasMore}
+          page={page}
+          onNextPage={nextPage}
+          onPrevPage={prevPage}
+        />
+      </CardContent>
+    </Card>
+  );
+};
+
+/** Mobile drawer that contains XP history */
+const XpHistoryDrawer = ({ open, onOpenChange }) => {
+  const { items, isLoading, hasMore, page, nextPage, prevPage } = useXpHistory();
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle className="flex items-center gap-2">
+            <ZapIcon className="size-4 text-amber-500" />
+            XP tarixi
+          </DrawerTitle>
+          <DrawerDescription>
+            Barcha XP yutish va sarflash holatlari
+          </DrawerDescription>
+        </DrawerHeader>
+        <DrawerBody className="pb-6">
+          <XpHistoryList
+            items={items}
+            isLoading={isLoading}
+            hasMore={hasMore}
+            page={page}
+            onNextPage={nextPage}
+            onPrevPage={prevPage}
+          />
+        </DrawerBody>
+      </DrawerContent>
+    </Drawer>
+  );
+};
+
 const AchievementsPage = () => {
   const { setBreadcrumbs } = useBreadcrumbStore();
   const [selectedCategory, setSelectedCategory] = React.useState(null);
   const [selectedItem, setSelectedItem] = React.useState(null);
+  const [xpDrawerOpen, setXpDrawerOpen] = React.useState(false);
 
   React.useEffect(() => {
     setBreadcrumbs([
@@ -270,9 +363,7 @@ const AchievementsPage = () => {
     ? getApiResponseData(categoriesData, [])
     : [];
   const achievementsPayload = getApiResponseData(achievementsData, []);
-  const achievements = Array.isArray(achievementsPayload)
-    ? achievementsPayload
-    : [];
+  const achievements = Array.isArray(achievementsPayload) ? achievementsPayload : [];
 
   const unlockedCount = filter(achievements, { unlocked: true }).length;
   const totalCount = achievements.length;
@@ -281,8 +372,9 @@ const AchievementsPage = () => {
 
   return (
     <PageTransition mode="slide-up">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 pb-24">
-        {/* Header */}
+      <div className="flex w-full flex-col gap-6 pb-24">
+
+        {/* ── Full-width banner ── */}
         <Card className="overflow-hidden border-0 bg-gradient-to-br from-amber-500/20 via-primary/5 to-background">
           <CardContent className="px-5 py-6 md:px-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -303,9 +395,7 @@ const AchievementsPage = () => {
                 <Card className="rounded-2xl border bg-background/70 py-4 shadow-none">
                   <CardContent className="space-y-1 px-4">
                     <p className="text-xs text-muted-foreground">Ochilgan</p>
-                    <p className="text-xl font-black text-amber-500">
-                      {unlockedCount}
-                    </p>
+                    <p className="text-xl font-black text-amber-500">{unlockedCount}</p>
                   </CardContent>
                 </Card>
                 <Card className="rounded-2xl border bg-background/70 py-4 shadow-none">
@@ -330,7 +420,7 @@ const AchievementsPage = () => {
           </CardContent>
         </Card>
 
-        {/* Category filter */}
+        {/* ── Category filter — full width ── */}
         {categories.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             <button
@@ -368,38 +458,58 @@ const AchievementsPage = () => {
           </div>
         ) : null}
 
-        {/* Achievements grid */}
-        {achievements.length > 0 ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {map(achievements, (item) => (
-              <AchievementCard
-                key={item.id}
-                item={item}
-                onClick={setSelectedItem}
-              />
-            ))}
-          </div>
-        ) : (
-          <Card className="rounded-3xl border-dashed">
-            <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-              <StarIcon className="size-10 text-muted-foreground/30" />
-              <p className="font-semibold">Yutuqlar topilmadi</p>
-              <p className="text-sm text-muted-foreground">
-                Bu kategoriyada hali yutuqlar yo&apos;q.
-              </p>
-            </CardContent>
-          </Card>
-        )}
+        {/* ── Two-column body: achievements + XP sidebar ── */}
+        <div className="flex w-full flex-col gap-6 lg:flex-row lg:items-start">
 
-        {/* XP History */}
-        <XpHistorySection />
+          {/* Left: achievements grid */}
+          <div className="flex min-w-0 flex-1 flex-col gap-4">
+            {achievements.length > 0 ? (
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {map(achievements, (item) => (
+                  <AchievementCard
+                    key={item.id}
+                    item={item}
+                    onClick={setSelectedItem}
+                  />
+                ))}
+              </div>
+            ) : (
+              <Card className="rounded-3xl border-dashed">
+                <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+                  <StarIcon className="size-10 text-muted-foreground/30" />
+                  <p className="font-semibold">Yutuqlar topilmadi</p>
+                  <p className="text-sm text-muted-foreground">
+                    Bu kategoriyada hali yutuqlar yo&apos;q.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Mobile: XP tarixi button */}
+            <Button
+              variant="outline"
+              className="lg:hidden w-full gap-2"
+              onClick={() => setXpDrawerOpen(true)}
+            >
+              <HistoryIcon className="size-4" />
+              XP tarixi
+            </Button>
+          </div>
+
+          {/* Right: XP history sidebar — desktop only */}
+          <aside className="hidden lg:block lg:w-80 xl:w-96 lg:shrink-0 lg:sticky lg:top-4 lg:max-h-[calc(100svh-6rem)] lg:overflow-y-auto">
+            <XpHistoryCard />
+          </aside>
+        </div>
       </div>
 
       {/* Achievement detail drawer */}
       <Drawer
         direction="bottom"
         open={!!selectedItem}
-        onOpenChange={(open) => { if (!open) setSelectedItem(null); }}
+        onOpenChange={(open) => {
+          if (!open) setSelectedItem(null);
+        }}
       >
         <DrawerContent>
           <DrawerHeader>
@@ -463,7 +573,8 @@ const AchievementsPage = () => {
                       value={Math.min(
                         100,
                         Math.round(
-                          ((selectedItem.progress ?? 0) / selectedItem.threshold) * 100,
+                          ((selectedItem.progress ?? 0) / selectedItem.threshold) *
+                            100,
                         ),
                       )}
                       className="h-2"
@@ -488,6 +599,9 @@ const AchievementsPage = () => {
           </DrawerBody>
         </DrawerContent>
       </Drawer>
+
+      {/* Mobile XP history drawer */}
+      <XpHistoryDrawer open={xpDrawerOpen} onOpenChange={setXpDrawerOpen} />
     </PageTransition>
   );
 };

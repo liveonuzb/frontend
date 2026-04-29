@@ -137,3 +137,66 @@ export const deriveWorkoutPlanMetrics = (plan) => {
     daysPerWeek: normalizedDaysPerWeek,
   };
 };
+
+export const normalizePlanDayProgress = (dayProgress = [], schedule = []) => {
+  const normalizedSchedule = isArray(schedule) ? schedule : [];
+
+  return normalizedSchedule.map((day, dayIndex) => {
+    const matched = find(dayProgress, (item) => Number(item?.dayIndex) === dayIndex);
+    const exerciseCount = isArray(get(day, "exercises")) ? get(day, "exercises.length") : 0;
+
+    return {
+      dayIndex,
+      completed: Boolean(get(matched, "completed")),
+      completedAt: get(matched, "completedAt", null),
+      exerciseCount: Number(get(matched, "exerciseCount") ?? exerciseCount) || exerciseCount,
+    };
+  });
+};
+
+export const getFirstWorkoutDayIndex = (schedule = []) =>
+  isArray(schedule)
+    ? schedule.findIndex((day) => isArray(get(day, "exercises")) && get(day, "exercises.length") > 0)
+    : -1;
+
+export const isWorkoutDayLocked = (plan, dayIndex) => {
+  if (!plan || dayIndex <= 0) {
+    return false;
+  }
+
+  const dayProgress = normalizePlanDayProgress(get(plan, "dayProgress", []), get(plan, "schedule", []));
+
+  for (let index = 0; index < dayIndex; index += 1) {
+    const previousDay = dayProgress[index];
+    if (previousDay && previousDay.exerciseCount > 0 && !previousDay.completed) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+export const getNextStartableDayIndex = (plan) => {
+  const schedule = isArray(get(plan, "schedule")) ? get(plan, "schedule") : [];
+  const firstWorkoutDayIndex = getFirstWorkoutDayIndex(schedule);
+
+  if (firstWorkoutDayIndex < 0) {
+    return 0;
+  }
+
+  for (let dayIndex = firstWorkoutDayIndex; dayIndex < schedule.length; dayIndex += 1) {
+    const exerciseCount = isArray(get(schedule[dayIndex], "exercises"))
+      ? get(schedule[dayIndex], "exercises.length")
+      : 0;
+
+    if (exerciseCount === 0) {
+      continue;
+    }
+
+    if (!isWorkoutDayLocked(plan, dayIndex)) {
+      return dayIndex;
+    }
+  }
+
+  return firstWorkoutDayIndex;
+};

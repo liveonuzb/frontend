@@ -19,31 +19,43 @@ import {
 import SortableExerciseItem from "./sortable-exercise-item.jsx";
 
 const BuilderColumn = memo(
+  React.forwardRef(
   ({
     col,
+    isSelected = false,
     onRemoveExercise,
     onRemoveColumn,
     onUpdateDay,
     onUpdateExercise,
+    onSelect,
     lockWeekDays = false,
-  }) => {
+  }, ref) => {
     const { t } = useTranslation();
     const items = get(col, "items", []);
 
     return (
       <KanbanColumn
+        ref={ref}
         value={get(col, "id")}
         className="relative flex w-72 shrink-0 flex-col gap-4 sm:w-80"
       >
         <Card
+          data-selected={isSelected ? "true" : "false"}
           className={cn(
             "relative flex-1 min-h-[400px] space-y-3 rounded-2xl border-border/40 bg-card/60 p-3 shadow-sm ring-1 ring-inset ring-transparent backdrop-blur-xl transition-all duration-300",
             "hover:border-primary/30 hover:bg-card/80 hover:shadow-md hover:ring-primary/10",
+            isSelected && "border-primary/50 bg-card shadow-md ring-primary/20",
           )}
         >
           <div className="absolute inset-x-0 top-0 h-1.5 rounded-t-2xl bg-gradient-to-r from-primary/30 via-primary/10 to-transparent opacity-50" />
 
-          <div className="group/header relative z-10 flex flex-col gap-2 rounded-xl border border-transparent px-2 py-2 transition-all duration-300 hover:border-border/50 hover:bg-muted/40">
+          <div
+            onClick={() => onSelect?.(get(col, "id"))}
+            className={cn(
+              "group/header relative z-10 flex w-full flex-col gap-2 rounded-xl border border-transparent px-2 py-2 text-left transition-all duration-300 hover:border-border/50 hover:bg-muted/40",
+              isSelected && "border-primary/20 bg-primary/5",
+            )}
+          >
             <div className="flex w-full items-center justify-between">
               <div className="flex min-w-0 flex-1 items-center gap-1.5">
                 {!lockWeekDays ? (
@@ -128,7 +140,7 @@ const BuilderColumn = memo(
         </Card>
       </KanbanColumn>
     );
-  },
+  }),
 );
 
 export default BuilderColumn;

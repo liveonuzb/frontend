@@ -55,7 +55,11 @@ import {
   getUserFromResponse,
   normalizeDateKey,
 } from "@/modules/user/containers/dashboard/query-helpers.js";
-import { deriveWorkoutPlanMetrics } from "../utils";
+import {
+  deriveWorkoutPlanMetrics,
+  getFirstWorkoutDayIndex,
+  getNextStartableDayIndex,
+} from "../utils";
 
 const resolveText = (translations, fallback, language) => {
   if (translations && typeof translations === "object") {
@@ -134,6 +138,7 @@ const PlanCard = ({
 }) => {
   const dayCount = get(plan, "daysPerWeek") || 0;
   const exerciseCount = get(plan, "totalExercises") || 0;
+  const coverImageUrl = get(plan, "coverImageUrl");
   const updatedLabel = formatDate(
     get(plan, "updatedAt") || get(plan, "createdAt"),
   );
@@ -147,12 +152,21 @@ const PlanCard = ({
         aria-label={`${title} rejani ko'rish`}
         className={cn(
           "relative h-32 w-32 shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br shadow-inner transition group-hover:scale-[1.01]",
-          pickGradient(get(plan, "id")),
+          !coverImageUrl && pickGradient(get(plan, "id")),
         )}
       >
-        <div className="absolute inset-0 flex items-center justify-center">
-          <DumbbellIcon className="size-10 text-white/85" strokeWidth={2} />
-        </div>
+        {coverImageUrl ? (
+          <img
+            src={coverImageUrl}
+            alt={title}
+            className="size-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <DumbbellIcon className="size-10 text-white/85" strokeWidth={2} />
+          </div>
+        )}
       </button>
 
       {/* Content */}
@@ -411,7 +425,15 @@ const WorkoutPlansPage = () => {
       const activatedPlan = await startPlan(plan);
       toast.success(`"${get(plan, "name", "Workout reja")}" boshlandi`);
       if (get(activatedPlan, "id")) {
-        navigate(`/user/workout/plans/${get(activatedPlan, "id")}`);
+        const schedule = Array.isArray(get(activatedPlan, "schedule"))
+          ? get(activatedPlan, "schedule")
+          : [];
+        const nextWorkoutDayIndex = getNextStartableDayIndex(activatedPlan);
+        const fallbackWorkoutDayIndex = getFirstWorkoutDayIndex(schedule);
+
+        navigate(
+          `/user/workout/plans/${get(activatedPlan, "id")}/days/${nextWorkoutDayIndex >= 0 ? nextWorkoutDayIndex : fallbackWorkoutDayIndex >= 0 ? fallbackWorkoutDayIndex : 0}/session`,
+        );
       }
     } catch (error) {
       toast.error(

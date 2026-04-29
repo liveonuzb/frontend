@@ -11,9 +11,9 @@ const MobileNav = ({ hidden = false }) => {
 
   const items = [
     { to: "/user/dashboard", icon: Home2, label: "Dashboard" },
-    { to: "/user/nutrition", icon: Salad, label: "Ovqatlanish" },
+    { to: "/user/nutrition/home", icon: Salad, label: "Ovqatlanish" },
     {
-      to: "/user/workout",
+      to: "/user/workout/home",
       label: "Mashg'ulotlar",
       icon: DumbbellIcon,
     },
@@ -36,6 +36,8 @@ const MobileNav = ({ hidden = false }) => {
           <NavLink
             key={get(item, "to", "")}
             to={get(item, "to", "")}
+            title={get(item, "label", "")}
+            aria-label={get(item, "label", "")}
             className={() =>
               cn(
                 "flex items-center justify-center rounded-full transition-all duration-200 p-[15px]",

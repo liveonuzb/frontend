@@ -111,7 +111,7 @@ const Index = () => {
           />
         </Route>
         <Route
-          path="nutrition"
+          path="nutrition/*"
           element={
             <Suspense fallback={<PageLoader />}>
               <ErrorBoundary>

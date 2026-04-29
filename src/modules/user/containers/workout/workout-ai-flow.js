@@ -32,8 +32,10 @@ export const calculateOneRepMax = (weightKg, reps) => {
 
 export const buildGenerateWorkoutPlanPayload = ({
   name,
+  coverImageUrl,
   goal,
   level,
+  days,
   daysPerWeek,
   equipmentMode,
   selectedEquipmentIds,
@@ -42,30 +44,39 @@ export const buildGenerateWorkoutPlanPayload = ({
   benchmarkWeight,
   benchmarkReps,
   caloriesGoal,
+  benchmarkEnabled = true,
 }) => {
   const oneRepMaxKg = calculateOneRepMax(benchmarkWeight, benchmarkReps);
 
-  return {
+  const payload = {
     name: name?.trim() || "My Upper Body Day",
+    coverImageUrl: coverImageUrl?.trim() || undefined,
     goal,
     level,
+    days: Number(days) || 28,
     daysPerWeek: Number(daysPerWeek) || 4,
     equipmentMode,
     selectedEquipmentIds: map(selectedEquipmentIds, Number),
     focusMuscleIds: map(focusMuscleIds, Number),
-    benchmark: {
+    caloriesGoal: Number(caloriesGoal) || 2400,
+  };
+
+  if (benchmarkEnabled) {
+    payload.benchmark = {
       exerciseName: benchmarkExercise || "Bench Press",
       weightKg: Number(benchmarkWeight) || 0,
       reps: Number(benchmarkReps) || 1,
       oneRepMaxKg,
-    },
-    caloriesGoal: Number(caloriesGoal) || 2400,
-  };
+    };
+  }
+
+  return payload;
 };
 
 export const getGeneratedPlanSavePayload = (preview) => ({
   name: get(preview, "name", "AI workout reja"),
   description: get(preview, "description", ""),
+  coverImageUrl: get(preview, "coverImageUrl", null),
   difficulty: get(preview, "difficulty", "beginner"),
   days: get(preview, "days", 28),
   daysPerWeek: get(preview, "daysPerWeek", 4),

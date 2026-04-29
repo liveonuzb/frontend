@@ -34,6 +34,7 @@ vi.mock("@/components/workout-plan-builder", () => ({
     initialPlan,
     metaName,
     metaDescription,
+    initialSelectedDayIndex,
     onMetaSave,
     onSave,
     asPage,
@@ -43,6 +44,9 @@ vi.mock("@/components/workout-plan-builder", () => ({
       <div data-testid="builder-title">{title}</div>
       <div data-testid="builder-meta-name">{metaName}</div>
       <div data-testid="builder-meta-description">{metaDescription}</div>
+      <div data-testid="builder-selected-day-index">
+        {String(initialSelectedDayIndex)}
+      </div>
       <button
         onClick={() =>
           onMetaSave({
@@ -168,18 +172,32 @@ describe("EditWorkoutPlanPage", () => {
     vi.clearAllMocks();
   });
 
-  it("renders as a full page with metadata handled by the builder", () => {
+  it("renders as a drawer builder with metadata handled by the builder", () => {
     renderPage({ pathname: "/user/workout/plans/edit/plan-1" });
 
     expect(screen.queryByText("Plan ma'lumotlari")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Plan nomi")).not.toBeInTheDocument();
-    expect(screen.getByTestId("builder")).toHaveAttribute("data-as-page", "true");
+    expect(screen.getByTestId("builder")).toHaveAttribute("data-as-page", "undefined");
     expect(screen.getByTestId("builder-title")).toHaveTextContent("Starter plan");
     expect(screen.getByTestId("builder-meta-name")).toHaveTextContent(
       "Starter plan",
     );
     expect(screen.getByTestId("builder-meta-description")).toHaveTextContent(
       "Starter description",
+    );
+    expect(screen.getByTestId("builder-selected-day-index")).toHaveTextContent(
+      "null",
+    );
+  });
+
+  it("passes the requested day index from the query string to the builder", () => {
+    renderPage({
+      pathname: "/user/workout/plans/edit/plan-1",
+      search: "?day=2",
+    });
+
+    expect(screen.getByTestId("builder-selected-day-index")).toHaveTextContent(
+      "2",
     );
   });
 

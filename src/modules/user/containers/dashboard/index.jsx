@@ -19,6 +19,9 @@ import WaterReminderDrawer from "./water-reminder-drawer.jsx";
 import DailyReviewDrawer from "./daily-review-drawer.jsx";
 import TenDayPopupDrawer from "./ten-day-popup-drawer.jsx";
 import { normalizeDateKey } from "./query-helpers.js";
+import StreakWidget from "@/modules/user/containers/dashboard/streak-widget.jsx";
+import AchievementsWidget from "@/modules/user/containers/dashboard/achievements-widget.jsx";
+import FriendActivityFeed from "@/modules/user/containers/dashboard/friend-activity-feed.jsx";
 
 const DashboardContainer = () => {
   const { setBreadcrumbs } = useBreadcrumbStore();
@@ -69,6 +72,15 @@ const DashboardContainer = () => {
           </div>
           <div className="md:col-span-2 lg:col-span-5">
             <WorkoutWidget />
+          </div>
+          <div className="md:col-span-2 lg:col-span-3">
+            <AchievementsWidget />
+          </div>
+          <div className="md:col-span-2 lg:col-span-5">
+            <FriendActivityFeed />
+          </div>
+          <div className="md:col-span-2 lg:col-span-3">
+            <StreakWidget />
           </div>
         </div>
       </div>
