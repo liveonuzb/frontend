@@ -31,11 +31,23 @@ export default function NutritionHomeView(props) {
     handleTogglePlanned,
     onImageUpload,
     onUpdateMeal,
+    onRetryScan,
+    onRemoveScan,
+    onOpenDraftScan,
     setIsPlansDrawerOpen,
+    isOnline,
+    isDayLoading,
+    handleCopyFromYesterday,
   } = props;
 
   return (
     <div className="flex flex-col gap-6">
+      {!isOnline ? (
+        <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-800 dark:text-amber-200">
+          Tarmoq yo&apos;q — o&apos;zgarishlar saqlanmaydi
+        </div>
+      ) : null}
+
       <div className="flex md:justify-end">
         <StrippedCalendar
           date={date}
@@ -125,6 +137,12 @@ export default function NutritionHomeView(props) {
           handleTogglePlanned={handleTogglePlanned}
           onImageUpload={onImageUpload}
           onUpdateMeal={onUpdateMeal}
+          onRetryScan={onRetryScan}
+          onRemoveScan={onRemoveScan}
+          onOpenDraftScan={onOpenDraftScan}
+          isLoading={isDayLoading}
+          addDisabled={!isOnline}
+          onCopyFromYesterday={handleCopyFromYesterday}
         />
       </TrackingPageLayout>
 

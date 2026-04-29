@@ -65,6 +65,18 @@ const StatBadge = ({ label, value, goal, unit, color }) => {
   );
 };
 
+const ChartSkeleton = () => (
+  <div className="rounded-[28px] border bg-card p-5 shadow-sm sm:p-6 space-y-4">
+    <Skeleton className="h-5 w-40 rounded-lg" />
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {[0, 1, 2, 3].map((i) => (
+        <Skeleton key={i} className="h-20 rounded-2xl" />
+      ))}
+    </div>
+    <Skeleton className="h-40 w-full rounded-2xl" />
+  </div>
+);
+
 export default function NutritionAnalyticsSection() {
   const [days, setDays] = React.useState(7);
 
@@ -86,17 +98,7 @@ export default function NutritionAnalyticsSection() {
   }));
 
   if (isLoading) {
-    return (
-      <div className="rounded-[28px] border bg-card p-5 shadow-sm sm:p-6 space-y-4">
-        <Skeleton className="h-5 w-40 rounded-lg" />
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-20 rounded-2xl" />
-          ))}
-        </div>
-        <Skeleton className="h-40 w-full rounded-2xl" />
-      </div>
-    );
+    return <ChartSkeleton />;
   }
 
   if (daily.length === 0) return null;

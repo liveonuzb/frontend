@@ -4,10 +4,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useDeleteQuery, useGetQuery, usePatchQuery, usePostQuery } from "@/hooks/api";
 import {
   buildMealIngredientsPayload,
+  getMealIngredientTotals,
   normalizeMealIngredients,
   normalizeMealNutrition,
   toNumber,
 } from "@/modules/user/containers/nutrition/meal-ingredients.js";
+import { toast } from "sonner";
 
 export const SAVED_MEALS_QUERY_KEY = ["user", "saved-meals"];
 
@@ -88,14 +90,39 @@ export const useSavedMealsActions = () => {
 
   const createSavedMeal = React.useCallback(
     async (meal) => {
+      const payload = buildSavedMealPayload(meal);
+      const totals = getMealIngredientTotals(payload.ingredients);
+      const currentItems =
+        getPayload(queryClient.getQueryData(SAVED_MEALS_QUERY_KEY))?.items?.map(
+          normalizeSavedMeal,
+        ) || [];
+      const duplicate = currentItems.find((item) => {
+        const sameName =
+          item.name.trim().toLowerCase() === payload.name.trim().toLowerCase();
+        const closeCalories =
+          Math.abs(Number(item.calories || 0) - Number(totals.calories || 0)) <=
+          25;
+        return sameName && closeCalories;
+      });
+
+      if (duplicate) {
+        toast.warning(`Bunday ovqat allaqachon saqlangan: ${duplicate.name}`, {
+          action: {
+            label: "Ko'rish",
+            onClick: () => undefined,
+          },
+        });
+        return duplicate;
+      }
+
       const response = await postMutation.mutateAsync({
         url: "/users/me/saved-meals",
-        attributes: buildSavedMealPayload(meal),
+        attributes: payload,
       });
       await invalidate();
       return normalizeSavedMeal(getPayload(response));
     },
-    [invalidate, postMutation],
+    [invalidate, postMutation, queryClient],
   );
 
   const updateSavedMeal = React.useCallback(

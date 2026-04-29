@@ -60,7 +60,7 @@ const FeatureSubNav = ({ items = [], className, mobile = false }) => {
                   key={item.to}
                   to={item.to}
                   className={cn(
-                    "inline-flex shrink-0 items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-colors",
+                    "inline-flex shrink-0 items-center gap-2 rounded-3xl px-8 py-2 text-sm font-semibold transition-colors",
                     active
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground",

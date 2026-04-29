@@ -576,6 +576,7 @@ export default function CameraDrawer({
   open,
   onClose,
   onOpenText,
+  onInlineCapture,
   isStackedChildOpen = false,
 }) {
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
@@ -660,6 +661,11 @@ export default function CameraDrawer({
   }, [recentMeals, recentMealsOpen, selectedRecentMealId]);
 
   const handleCapture = async (dataUrl) => {
+    if (onInlineCapture) {
+      onInlineCapture(dataUrl);
+      return;
+    }
+
     setCapturedImage(dataUrl);
     setScannedItems([]);
     setScanError(null);

@@ -1,6 +1,7 @@
 import React from "react";
 import { get, clamp, map, filter, find } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   useDeleteQuery,
   useGetQuery,
@@ -20,6 +21,18 @@ import {
 
 const WORKOUT_OVERVIEW_QUERY_KEY = ["user", "workout", "overview"];
 const WORKOUT_PLAN_QUERY_KEY = ["user", "workout", "plans"];
+
+let duplicateMealConfirmHandler = null;
+
+export const setMealDuplicateConfirmHandler = (handler) => {
+  duplicateMealConfirmHandler = handler;
+
+  return () => {
+    if (duplicateMealConfirmHandler === handler) {
+      duplicateMealConfirmHandler = null;
+    }
+  };
+};
 
 export const getTodayKey = () => new Date().toISOString().split("T")[0];
 
@@ -204,6 +217,36 @@ const buildMealPatchPayload = (mealType, patch = {}) => {
   return payload;
 };
 
+const normalizeMealDuplicateName = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase();
+
+const isDuplicateMeal = (currentMeals = [], nextMeal = {}) =>
+  currentMeals.some((meal) => {
+    if (nextMeal.savedMealId && meal.savedMealId === nextMeal.savedMealId) {
+      return true;
+    }
+
+    return (
+      normalizeMealDuplicateName(meal.name) ===
+        normalizeMealDuplicateName(nextMeal.name) &&
+      Number(meal.grams ?? 0) === Number(nextMeal.grams ?? 0)
+    );
+  });
+
+const confirmDuplicateMeal = async (context) => {
+  if (duplicateMealConfirmHandler) {
+    return duplicateMealConfirmHandler(context);
+  }
+
+  return typeof window === "undefined"
+    ? true
+    : window.confirm(
+        "Bu ovqat bugun shu bo'limga allaqachon qo'shilgan. Yana qo'shishni xohlaysizmi?",
+      );
+};
+
 export const useDailyTrackingDay = (date, options = {}) => {
   const dateKey = normalizeDateKey(date);
   const { data, ...query } = useGetQuery({
@@ -343,22 +386,64 @@ export const useDailyTrackingActions = () => {
 
   const addMeal = React.useCallback(
     async (date = getTodayKey(), mealType, food) => {
-      const response = await postMutation.mutateAsync({
-        url: `/daily-tracking/${normalizeDateKey(date)}/meals`,
-        attributes: buildMealPayload(mealType, food),
+      const dateKey = normalizeDateKey(date);
+      const queryKey = getDailyTrackingQueryKey(dateKey);
+      const previousQueryData = queryClient.getQueryData(queryKey);
+      const previousDayData = {
+        ...getCachedDayData(queryClient, dateKey),
+        date: dateKey,
+      };
+      const optimisticMeal = normalizeMealItem({
+        ...food,
+        id: `optimistic-${dateKey}-${mealType}-${Date.now()}`,
+        source: food?.source ?? null,
+        addedAt: food?.addedAt ?? new Date().toISOString(),
       });
-      const dayData = syncResponse(response);
-      const invalidations = [
-        queryClient.invalidateQueries({ queryKey: FOODS_QUICK_ADD_QUERY_KEY }),
-        syncGamificationState(),
-      ];
-      if (food?.savedMealId) {
-        invalidations.push(
-          queryClient.invalidateQueries({ queryKey: SAVED_MEALS_QUERY_KEY }),
-        );
+
+      if (
+        isDuplicateMeal(previousDayData.meals?.[mealType] || [], optimisticMeal)
+      ) {
+        const shouldContinue = await confirmDuplicateMeal({
+          dateKey,
+          mealType,
+          food: optimisticMeal,
+        });
+
+        if (!shouldContinue) {
+          return previousDayData;
+        }
       }
-      await Promise.all(invalidations);
-      return dayData;
+
+      setTrackingCache(queryClient, {
+        ...previousDayData,
+        meals: {
+          ...previousDayData.meals,
+          [mealType]: [...(previousDayData.meals?.[mealType] || []), optimisticMeal],
+        },
+      });
+
+      try {
+        const response = await postMutation.mutateAsync({
+          url: `/daily-tracking/${dateKey}/meals`,
+          attributes: buildMealPayload(mealType, food),
+        });
+        const dayData = syncResponse(response);
+        const invalidations = [
+          queryClient.invalidateQueries({ queryKey: FOODS_QUICK_ADD_QUERY_KEY }),
+          syncGamificationState(),
+        ];
+        if (food?.savedMealId) {
+          invalidations.push(
+            queryClient.invalidateQueries({ queryKey: SAVED_MEALS_QUERY_KEY }),
+          );
+        }
+        await Promise.all(invalidations);
+        return dayData;
+      } catch (error) {
+        queryClient.setQueryData(queryKey, previousQueryData);
+        toast.error("Ovqat qo'shilmadi — o'zgarish qaytarildi");
+        throw error;
+      }
     },
     [postMutation, queryClient, syncGamificationState, syncResponse],
   );
@@ -369,12 +454,36 @@ export const useDailyTrackingActions = () => {
         return getCachedDayData(queryClient, date);
       }
 
-      const response = await deleteMutation.mutateAsync({
-        url: `/daily-tracking/${normalizeDateKey(date)}/meals/${foodId}`,
+      const dateKey = normalizeDateKey(date);
+      const queryKey = getDailyTrackingQueryKey(dateKey);
+      const previousQueryData = queryClient.getQueryData(queryKey);
+      const previousDayData = {
+        ...getCachedDayData(queryClient, dateKey),
+        date: dateKey,
+      };
+
+      setTrackingCache(queryClient, {
+        ...previousDayData,
+        meals: {
+          ...previousDayData.meals,
+          [mealType]: (previousDayData.meals?.[mealType] || []).filter(
+            (item) => item.id !== foodId,
+          ),
+        },
       });
-      const dayData = syncResponse(response);
-      await queryClient.invalidateQueries({ queryKey: FOODS_QUICK_ADD_QUERY_KEY });
-      return dayData;
+
+      try {
+        const response = await deleteMutation.mutateAsync({
+          url: `/daily-tracking/${dateKey}/meals/${foodId}`,
+        });
+        const dayData = syncResponse(response);
+        await queryClient.invalidateQueries({ queryKey: FOODS_QUICK_ADD_QUERY_KEY });
+        return dayData;
+      } catch (error) {
+        queryClient.setQueryData(queryKey, previousQueryData);
+        toast.error("Ovqat o'chirilmadi — o'zgarish qaytarildi");
+        throw error;
+      }
     },
     [deleteMutation, queryClient, syncResponse],
   );

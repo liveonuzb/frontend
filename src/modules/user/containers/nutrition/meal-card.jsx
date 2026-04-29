@@ -2,12 +2,21 @@ import React, { memo, useState } from "react";
 import { motion } from "framer-motion";
 import { get, round, multiply } from "lodash";
 import { cn } from "@/lib/utils.js";
-import { CheckIcon, XIcon, InfoIcon } from "lucide-react";
+import {
+  CheckCircle2Icon,
+  CheckIcon,
+  InfoIcon,
+  Loader2Icon,
+  RefreshCwIcon,
+  Trash2Icon,
+} from "lucide-react";
 import FoodLogDrawer from "./food-log-drawer.jsx";
 import PortionEditorDrawer from "./portion-editor-drawer.jsx";
 import CameraLogDrawer from "./camera-log-drawer.jsx";
 import MealIngredientsEditorDrawer from "./meal-ingredients-editor-drawer.jsx";
 import { Card, CardContent } from "@/components/ui/card.jsx";
+import { Button } from "@/components/ui/button.jsx";
+import { Skeleton } from "@/components/ui/skeleton.jsx";
 import { getNutritionSourceMeta } from "./source-meta.js";
 
 const MACROS = [
@@ -27,6 +36,9 @@ const MealCard = memo(
     onLogPlanned,
     onSaveImage,
     onUpdateLoggedMeal,
+    onRetryScan,
+    onRemoveScan,
+    onOpenDraftScan,
     readOnly = false,
   }) => {
     const [logOpen, setLogOpen] = useState(false);
@@ -50,6 +62,139 @@ const MealCard = memo(
       get(food, "source", null),
       get(food, "isFromPlanLinked", false) ? "meal-plan" : "manual",
     );
+    const scanStatus = get(food, "status", null);
+
+    if (["scanning", "draft", "error"].includes(scanStatus)) {
+      const scanImage = get(food, "image", null);
+      const scanTitle =
+        scanStatus === "scanning"
+          ? "AI tahlil qilmoqda..."
+          : scanStatus === "error"
+            ? "Tahlil qilib bo'lmadi"
+            : food.name || "AI topgan ovqat";
+
+      return (
+        <motion.div
+          layout
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, height: 0 }}
+          transition={{ duration: 0.2, delay: index * 0.03 }}
+        >
+          <Card
+            className={cn(
+              "relative overflow-hidden transition-all duration-300",
+              scanStatus === "draft" &&
+                "cursor-pointer border-emerald-500/30 bg-emerald-500/5",
+              scanStatus === "scanning" && "border-primary/25 bg-primary/5",
+              scanStatus === "error" && "border-destructive/30 bg-destructive/5",
+            )}
+            onClick={() => scanStatus === "draft" && onOpenDraftScan?.(food)}
+          >
+            <CardContent className="flex items-stretch p-0">
+              <div className="relative flex size-24 shrink-0 items-center justify-center overflow-hidden border-r bg-muted/40">
+                {scanImage ? (
+                  <img
+                    loading="lazy"
+                    src={scanImage}
+                    alt={scanTitle}
+                    className={cn(
+                      "size-full object-cover",
+                      scanStatus === "scanning" && "opacity-70 blur-[1px]",
+                    )}
+                  />
+                ) : (
+                  <span className="text-xl leading-none">🍽️</span>
+                )}
+                {scanStatus === "scanning" ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/35">
+                    <Loader2Icon className="size-5 animate-spin text-primary" />
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="flex min-w-0 flex-1 flex-col justify-center gap-1 px-3 py-2.5">
+                {scanStatus === "scanning" ? (
+                  <>
+                    <Skeleton className="h-4 w-2/3 rounded" />
+                    <Skeleton className="h-3 w-1/2 rounded" />
+                    <div className="flex gap-1.5 pt-1">
+                      <Skeleton className="h-5 w-14 rounded-full" />
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                      <Skeleton className="h-5 w-14 rounded-full" />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="truncate text-[13px] font-bold leading-snug">
+                      {scanTitle}
+                    </p>
+                    {scanStatus === "draft" ? (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
+                          <CheckCircle2Icon className="size-3" />
+                          Tayyor — tekshiring
+                        </span>
+                        <span className="text-[10px] font-semibold text-muted-foreground">
+                          P {food.protein || 0}g · C {food.carbs || 0}g · F{" "}
+                          {food.fat || 0}g
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="text-xs font-medium text-destructive">
+                        {food.error || "Rasmni qayta yuborib ko'ring."}
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+
+              <div className="flex w-24 shrink-0 flex-col items-end justify-center gap-2 border-l border-border/20 px-3 py-2.5">
+                {scanStatus === "draft" ? (
+                  <span className="whitespace-nowrap text-[15px] font-black leading-none text-emerald-600 tabular-nums dark:text-emerald-400">
+                    {food.cal || 0}
+                    <span className="ml-0.5 text-[9px] font-bold uppercase text-muted-foreground">
+                      kcal
+                    </span>
+                  </span>
+                ) : null}
+
+                {scanStatus === "error" ? (
+                  <div className="flex gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      className="rounded-full"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onRetryScan?.(food);
+                      }}
+                      aria-label="Qayta urinish"
+                    >
+                      <RefreshCwIcon className="size-3.5" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      className="rounded-full text-destructive hover:text-destructive"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onRemoveScan?.(food.id);
+                      }}
+                      aria-label="O'chirish"
+                    >
+                      <Trash2Icon className="size-3.5" />
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      );
+    }
 
     const isOverConsumed =
       isConsumed &&

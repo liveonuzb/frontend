@@ -68,6 +68,8 @@ const ActionDrawer = ({
   initialNested,
   onOpenSavedMeals,
   onCloseAll,
+  disabled = false,
+  onInlineCameraCapture,
 }) => {
   const [activeNested, setActiveNested] = useState(null);
   const [selectedMealType, setSelectedMealType] = useState(mealType);
@@ -219,6 +221,7 @@ const ActionDrawer = ({
             <Button
               type="button"
               variant="outline"
+              disabled={disabled}
               className="w-full h-16 rounded-2xl justify-start items-center px-4 hover:bg-primary/5 hover:border-primary/30 transition-all font-bold text-[15px] text-foreground border-border/50 group"
               onClick={() => setActiveNested("camera")}
             >
@@ -231,6 +234,7 @@ const ActionDrawer = ({
             <Button
               type="button"
               variant="outline"
+              disabled={disabled}
               className="w-full h-16 rounded-2xl justify-start items-center px-4 hover:bg-primary/5 hover:border-primary/30 transition-all font-bold text-[15px] text-foreground border-border/50 group"
               onClick={() => {
                 resetTranscriptState();
@@ -248,6 +252,7 @@ const ActionDrawer = ({
             <Button
               type="button"
               variant="outline"
+              disabled={disabled}
               className="w-full h-16 rounded-2xl justify-start items-center px-4 hover:bg-primary/5 hover:border-primary/30 transition-all font-bold text-[15px] text-foreground border-border/50 group"
               onClick={() => setActiveNested("catalog")}
             >
@@ -260,6 +265,7 @@ const ActionDrawer = ({
             <Button
               type="button"
               variant="outline"
+              disabled={disabled}
               className="w-full h-16 rounded-2xl justify-start items-center px-4 hover:bg-primary/5 hover:border-primary/30 transition-all font-bold text-[15px] text-foreground border-border/50 group"
               onClick={() => {
                 resetTranscriptState();
@@ -275,6 +281,7 @@ const ActionDrawer = ({
             <Button
               type="button"
               variant="outline"
+              disabled={disabled}
               className="w-full h-16 rounded-2xl justify-start items-center px-4 hover:bg-primary/5 hover:border-primary/30 transition-all font-bold text-[15px] text-foreground border-border/50 group"
               onClick={() => onOpenSavedMeals?.()}
             >
@@ -293,6 +300,12 @@ const ActionDrawer = ({
         onOpenChange={(value) => !value && setActiveNested(null)}
         dateKey={dateKey}
         mealType={mealType}
+        onInlineCapture={(dataUrl) => {
+          onInlineCameraCapture?.(dataUrl, selectedMealType || mealType);
+          closeStackedCameraText();
+          setActiveNested(null);
+          onCloseAll?.();
+        }}
         isStackedChildOpen={cameraTextOpen || cameraAiDraftOpen}
         onOpenText={() => {
           resetTranscriptState();

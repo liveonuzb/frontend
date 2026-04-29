@@ -24,10 +24,28 @@ import {
   NutritionDrawerBody,
 } from "./nutrition-drawer-layout.jsx";
 import NutritionPlansList from "./nutrition-plans-list.jsx";
+import { Skeleton } from "@/components/ui/skeleton.jsx";
+
+const PlanCardSkeleton = () => (
+  <div className="rounded-3xl border bg-card p-4">
+    <div className="flex items-center justify-between gap-4">
+      <div className="min-w-0 flex-1 space-y-2">
+        <Skeleton className="h-4 w-2/3 rounded" />
+        <Skeleton className="h-3 w-1/2 rounded" />
+        <div className="flex gap-2">
+          <Skeleton className="h-6 w-16 rounded-full" />
+          <Skeleton className="h-6 w-20 rounded-full" />
+        </div>
+      </div>
+      <Skeleton className="size-10 rounded-full" />
+    </div>
+  </div>
+);
 
 export default function PlansDrawer({
   open,
   onOpenChange,
+  isLoading = false,
   orderedPlans,
   currentPlan,
   planInsightsMap,
@@ -52,17 +70,21 @@ export default function PlansDrawer({
 
         <NutritionDrawerBody className="pb-5">
           <div className="max-h-[58vh] space-y-3 overflow-y-auto pr-1">
-            <NutritionPlansList
-              orderedPlans={orderedPlans}
-              currentPlan={currentPlan}
-              planInsightsMap={planInsightsMap}
-              getPlanStatusMeta={getPlanStatusMeta}
-              getPlanSourceMeta={getPlanSourceMeta}
-              onActivatePlan={onActivatePlan}
-              onOpenPlanActions={onOpenPlanActions}
-              onRemovePlan={onRemovePlan}
-              onSelectPlanForShopping={onSelectPlanForShopping}
-            />
+            {isLoading ? (
+              [0, 1, 2].map((item) => <PlanCardSkeleton key={item} />)
+            ) : (
+              <NutritionPlansList
+                orderedPlans={orderedPlans}
+                currentPlan={currentPlan}
+                planInsightsMap={planInsightsMap}
+                getPlanStatusMeta={getPlanStatusMeta}
+                getPlanSourceMeta={getPlanSourceMeta}
+                onActivatePlan={onActivatePlan}
+                onOpenPlanActions={onOpenPlanActions}
+                onRemovePlan={onRemovePlan}
+                onSelectPlanForShopping={onSelectPlanForShopping}
+              />
+            )}
           </div>
         </NutritionDrawerBody>
         <DrawerFooter>

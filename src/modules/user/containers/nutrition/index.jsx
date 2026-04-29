@@ -7,11 +7,13 @@ import useHealthGoals from "@/hooks/app/use-health-goals";
 import useMealPlan from "@/hooks/app/use-meal-plan";
 import {
   normalizeDayData,
+  setMealDuplicateConfirmHandler,
   useDailyTrackingActions,
   useDailyTrackingDay,
 } from "@/hooks/app/use-daily-tracking";
 import useFoodCatalog, {
   enrichTrackedMealItem,
+  useFoodScan,
 } from "@/hooks/app/use-food-catalog";
 import {
   PlusIcon,
@@ -28,6 +30,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import PageTransition from "@/components/page-transition";
+import ErrorBoundary from "@/components/error-boundary/index.jsx";
+import useOnlineStatus from "@/hooks/utils/use-online-status.js";
 import {
   Drawer,
   DrawerBody,
@@ -57,6 +61,32 @@ import NutritionHomeView from "./views/home-view.jsx";
 import NutritionMealsView from "./views/meals-view.jsx";
 import NutritionPlansView from "./views/plans-view.jsx";
 import NutritionReportView from "./views/report-view.jsx";
+import InlineScanReviewDrawer from "./inline-scan-review-drawer.jsx";
+import {
+  buildMealPayloadFromDraft,
+  getDraftNutritionPreview,
+} from "./meal-draft-review.jsx";
+
+const NutritionErrorFallback = () => (
+  <div className="flex min-h-[55vh] items-center justify-center px-4">
+    <div className="max-w-sm rounded-3xl border bg-card p-6 text-center shadow-sm">
+      <div className="mx-auto mb-4 grid size-12 place-items-center rounded-full bg-destructive/10 text-destructive">
+        !
+      </div>
+      <h2 className="text-lg font-black">Xatolik yuz berdi</h2>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Nutrition sahifasini yuklashda muammo chiqdi.
+      </p>
+      <Button
+        type="button"
+        className="mt-5 w-full"
+        onClick={() => window.location.reload()}
+      >
+        Qayta urinish
+      </Button>
+    </div>
+  </div>
+);
 
 const mealConfig = {
   breakfast: { label: "Nonushta", emoji: "🍳", time: "06:00 - 10:00" },
@@ -187,8 +217,9 @@ const getPlanSourceMeta = (source) => {
   };
 };
 
-const Index = ({ entryView = "home" }) => {
+const NutritionContent = ({ entryView = "home" }) => {
   const user = useAuthStore((state) => state.user);
+  const isOnline = useOnlineStatus();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const { openProfile } = useProfileOverlay();
   const location = useLocation();
@@ -366,6 +397,10 @@ const Index = ({ entryView = "home" }) => {
   const [mealFilter, setMealFilter] = React.useState("all");
   const [sourceFilters, setSourceFilters] = React.useState([]);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
+  const [pendingScans, setPendingScans] = React.useState([]);
+  const [selectedScanId, setSelectedScanId] = React.useState(null);
+  const [isSavingInlineScan, setIsSavingInlineScan] = React.useState(false);
+  const [duplicateMealPrompt, setDuplicateMealPrompt] = React.useState(null);
   const isPremiumActive = true;
   const isCurrentPlanCoachAssigned = currentPlan?.source === "coach";
   const isCurrentPlanUpdateAvailable =
@@ -385,6 +420,15 @@ const Index = ({ entryView = "home" }) => {
     setIsPlansDrawerOpen(false);
     setIsAIOpen(true);
   }, [isPremiumActive, openPremiumForAi]);
+
+  React.useEffect(() => {
+    return setMealDuplicateConfirmHandler(
+      (context) =>
+        new Promise((resolve) => {
+          setDuplicateMealPrompt({ ...context, resolve });
+        }),
+    );
+  }, []);
 
   const handleAiGenerated = (normalizedPlan) => {
     setSelectedPlanId(normalizedPlan.id);
@@ -694,6 +738,7 @@ const Index = ({ entryView = "home" }) => {
     refetch: refetchDay,
   } = useDailyTrackingDay(dateKey);
   const { foodMap } = useFoodCatalog();
+  const { analyzeMealImageDraft, uploadMealCapture } = useFoodScan();
   const { refetch: refetchYesterday } = useDailyTrackingDay(yesterdayKey, {
     enabled: false,
   });
@@ -714,6 +759,145 @@ const Index = ({ entryView = "home" }) => {
     }),
     [dayData.meals, foodMap],
   );
+
+  const processInlineScan = React.useCallback(
+    async (scan) => {
+      const scanId = scan.id;
+
+      setPendingScans((current) =>
+        current.map((item) =>
+          item.id === scanId
+            ? { ...item, status: "scanning", error: null }
+            : item,
+        ),
+      );
+
+      try {
+        const uploadedImageUrl =
+          scan.imageUrl || (await uploadMealCapture(scan.imageDataUrl));
+        const response = await analyzeMealImageDraft({
+          imageUrl: uploadedImageUrl,
+        });
+        const draftItems = (Array.isArray(response?.items)
+          ? response.items
+          : []
+        ).map((item) => ({
+          ...item,
+          imageUrl: uploadedImageUrl || scan.imageDataUrl,
+        }));
+
+        if (draftItems.length === 0) {
+          setPendingScans((current) =>
+            current.map((item) =>
+              item.id === scanId
+                ? {
+                    ...item,
+                    imageUrl: uploadedImageUrl,
+                    status: "error",
+                    error: "AI bu rasm uchun draft tayyorlay olmadi.",
+                  }
+                : item,
+            ),
+          );
+          return;
+        }
+
+        setPendingScans((current) =>
+          current.flatMap((item) => {
+            if (item.id !== scanId) {
+              return [item];
+            }
+
+            return draftItems.map((draftItem, index) => ({
+              ...item,
+              id: index === 0 ? scanId : `${scanId}-${index + 1}`,
+              groupId: item.groupId || scanId,
+              imageUrl: uploadedImageUrl,
+              status: "draft",
+              item: draftItem,
+              error: null,
+            }));
+          }),
+        );
+      } catch (error) {
+        setPendingScans((current) =>
+          current.map((item) =>
+            item.id === scanId
+              ? {
+                  ...item,
+                  status: "error",
+                  error:
+                    error?.response?.data?.message ||
+                    "Ovqatni AI orqali aniqlab bo'lmadi",
+                }
+              : item,
+          ),
+        );
+      }
+    },
+    [analyzeMealImageDraft, uploadMealCapture],
+  );
+
+  const handleInlineCameraCapture = React.useCallback(
+    (imageDataUrl, mealType = "breakfast") => {
+      const scan = {
+        id: `scan-${Date.now().toString(36)}-${Math.random()
+          .toString(36)
+          .slice(2, 8)}`,
+        groupId: null,
+        dateKey,
+        mealType,
+        imageDataUrl,
+        imageUrl: null,
+        status: "scanning",
+        item: null,
+        error: null,
+      };
+
+      setPendingScans((current) => [...current, scan]);
+      toast("Rasm qabul qilindi, AI tahlil qilmoqda");
+      void processInlineScan(scan);
+    },
+    [dateKey, processInlineScan],
+  );
+
+  const pendingScanFoodsByType = React.useMemo(() => {
+    return pendingScans.reduce(
+      (acc, scan) => {
+        const preview = scan.item ? getDraftNutritionPreview(scan.item) : {};
+        const food = {
+          id: scan.id,
+          status: scan.status,
+          source: "camera",
+          name: scan.item?.title || "",
+          cal: preview.calories || 0,
+          protein: preview.protein || 0,
+          carbs: preview.carbs || 0,
+          fat: preview.fat || 0,
+          image: scan.imageUrl || scan.imageDataUrl,
+          error: scan.error,
+          scanId: scan.id,
+        };
+        const mealType = scan.mealType || "breakfast";
+        acc[mealType] = [...(acc[mealType] || []), food];
+        return acc;
+      },
+      { breakfast: [], lunch: [], dinner: [], snack: [] },
+    );
+  }, [pendingScans]);
+
+  const selectedScan = React.useMemo(
+    () => pendingScans.find((scan) => scan.id === selectedScanId) || null,
+    [pendingScans, selectedScanId],
+  );
+  const selectedScanDraftGroup = React.useMemo(() => {
+    if (!selectedScan) return [];
+    const groupId = selectedScan.groupId || selectedScan.id;
+    return pendingScans.filter(
+      (scan) =>
+        (scan.groupId || scan.id) === groupId && scan.status === "draft",
+    );
+  }, [pendingScans, selectedScan]);
 
   React.useEffect(() => {
     const breadcrumbTitle =
@@ -940,7 +1124,10 @@ const Index = ({ entryView = "home" }) => {
         {
           ...config,
           name: config.label,
-          foods: meals[type] || [],
+          foods: [
+            ...(meals[type] || []),
+            ...(pendingScanFoodsByType[type] || []),
+          ],
           plannedItems: plannedByType[type] || [],
         },
       ]);
@@ -958,7 +1145,10 @@ const Index = ({ entryView = "home" }) => {
         ...config,
         name: config.label,
         time: col.time || config.time,
-        foods: meals[key] || [],
+        foods: [
+          ...(meals[key] || []),
+          ...(pendingScanFoodsByType[key] || []),
+        ],
         plannedItems: plannedByType[key] || [],
       };
 
@@ -966,7 +1156,10 @@ const Index = ({ entryView = "home" }) => {
     }, {});
 
     const loggedOnlyKeys = Object.keys(mealConfig).filter(
-      (key) => !plannedSections[key] && (meals[key] || []).length > 0,
+      (key) =>
+        !plannedSections[key] &&
+        ((meals[key] || []).length > 0 ||
+          (pendingScanFoodsByType[key] || []).length > 0),
     );
 
     return [...Object.keys(plannedSections), ...loggedOnlyKeys].map((key) => [
@@ -974,11 +1167,14 @@ const Index = ({ entryView = "home" }) => {
       plannedSections[key] || {
         ...mealConfig[key],
         name: mealConfig[key].label,
-        foods: meals[key] || [],
+        foods: [
+          ...(meals[key] || []),
+          ...(pendingScanFoodsByType[key] || []),
+        ],
         plannedItems: plannedByType[key] || [],
       },
     ]);
-  }, [currentDayPlan, meals, plannedByType]);
+  }, [currentDayPlan, meals, pendingScanFoodsByType, plannedByType]);
 
   const filteredMealSections = React.useMemo(() => {
     return sortedMealSections.reduce((sections, [type, section]) => {
@@ -1055,6 +1251,100 @@ const Index = ({ entryView = "home" }) => {
     [dateKey, patchMeal],
   );
 
+  const handleRetryScan = React.useCallback(
+    (food) => {
+      const scan = pendingScans.find((item) => item.id === food?.scanId);
+      if (!scan) return;
+      void processInlineScan(scan);
+    },
+    [pendingScans, processInlineScan],
+  );
+
+  const handleRemoveScan = React.useCallback((scanId) => {
+    setPendingScans((current) => current.filter((scan) => scan.id !== scanId));
+    setSelectedScanId((current) => (current === scanId ? null : current));
+  }, []);
+
+  const handleOpenDraftScan = React.useCallback((food) => {
+    if (!food?.scanId) return;
+    setSelectedScanId(food.scanId);
+  }, []);
+
+  const handleConfirmInlineScan = React.useCallback(
+    async (draft) => {
+      if (!selectedScan || !draft) return;
+
+      setIsSavingInlineScan(true);
+      try {
+        const manualNutrition = draft.manualNutritionOverride;
+        const mealPayload = manualNutrition
+          ? {
+              name: draft.title || "Ovqat",
+              source: "camera",
+              qty: 1,
+              grams: Math.max(0, Number(draft.manualGramsOverride) || 0),
+              cal: Math.max(0, Number(manualNutrition.calories) || 0),
+              protein: Math.max(0, Number(manualNutrition.protein) || 0),
+              carbs: Math.max(0, Number(manualNutrition.carbs) || 0),
+              fat: Math.max(0, Number(manualNutrition.fat) || 0),
+              fiber: Math.max(0, Number(manualNutrition.fiber) || 0),
+              image: selectedScan.imageUrl || selectedScan.imageDataUrl,
+            }
+          : buildMealPayloadFromDraft(draft, {
+              source: "camera",
+              image: selectedScan.imageUrl || selectedScan.imageDataUrl,
+            });
+
+        await addMealAction(
+          selectedScan.dateKey || dateKey,
+          selectedScan.mealType || "breakfast",
+          mealPayload,
+        );
+        setPendingScans((current) =>
+          current.filter((scan) => scan.id !== selectedScan.id),
+        );
+        setSelectedScanId(null);
+        toast.success(`${draft.title || "Ovqat"} qo'shildi`);
+      } catch {
+        toast.error("AI topgan ovqatni saqlab bo'lmadi");
+      } finally {
+        setIsSavingInlineScan(false);
+      }
+    },
+    [addMealAction, dateKey, selectedScan],
+  );
+
+  const handleConfirmAllInlineScans = React.useCallback(async () => {
+    if (!selectedScanDraftGroup.length) return;
+
+    setIsSavingInlineScan(true);
+    try {
+      for (const scan of selectedScanDraftGroup) {
+        if (!scan.item) continue;
+
+        await addMealAction(
+          scan.dateKey || dateKey,
+          scan.mealType || "breakfast",
+          buildMealPayloadFromDraft(scan.item, {
+            source: "camera",
+            image: scan.imageUrl || scan.imageDataUrl,
+          }),
+        );
+      }
+
+      const idsToRemove = new Set(selectedScanDraftGroup.map((scan) => scan.id));
+      setPendingScans((current) =>
+        current.filter((scan) => !idsToRemove.has(scan.id)),
+      );
+      setSelectedScanId(null);
+      toast.success(`${selectedScanDraftGroup.length} ta ovqat qo'shildi`);
+    } catch {
+      toast.error("AI topgan ovqatlarni saqlab bo'lmadi");
+    } finally {
+      setIsSavingInlineScan(false);
+    }
+  }, [addMealAction, dateKey, selectedScanDraftGroup]);
+
   const sharedViewProps = {
     date,
     setDate,
@@ -1078,8 +1368,14 @@ const Index = ({ entryView = "home" }) => {
     handleRemoveFood,
     handleLogPlanned,
     handleTogglePlanned,
+    handleCopyFromYesterday,
     onImageUpload: handleMealImageUpload,
     onUpdateMeal: handleUpdateMeal,
+    onRetryScan: handleRetryScan,
+    onRemoveScan: handleRemoveScan,
+    onOpenDraftScan: handleOpenDraftScan,
+    isOnline,
+    isDayLoading,
   };
 
   return (
@@ -1142,6 +1438,7 @@ const Index = ({ entryView = "home" }) => {
       <PlansDrawer
         open={isPlansDrawerOpen}
         onOpenChange={setIsPlansDrawerOpen}
+        isLoading={isMealPlanLoading}
         orderedPlans={orderedPlans}
         currentPlan={currentPlan}
         planInsightsMap={planInsightsMap}
@@ -1175,6 +1472,8 @@ const Index = ({ entryView = "home" }) => {
         mealType={selectedMealTypeForAdd}
         onOpenSavedMeals={() => setIsSavedMealsOpen(true)}
         onCloseAll={() => setIsActionDrawerOpen(false)}
+        disabled={!isOnline}
+        onInlineCameraCapture={handleInlineCameraCapture}
       />
 
       <SavedMealsDrawer
@@ -1183,7 +1482,69 @@ const Index = ({ entryView = "home" }) => {
         dateKey={dateKey}
         mealType={selectedMealTypeForAdd}
         onAddMeal={addMealAction}
+        disabled={!isOnline}
       />
+
+      <InlineScanReviewDrawer
+        open={Boolean(selectedScan)}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setSelectedScanId(null);
+          }
+        }}
+        scan={selectedScan}
+        goals={goals}
+        onConfirm={handleConfirmInlineScan}
+        onConfirmAll={handleConfirmAllInlineScans}
+        onDiscard={() => {
+          if (selectedScan?.id) {
+            handleRemoveScan(selectedScan.id);
+          }
+        }}
+        groupDraftCount={selectedScanDraftGroup.length}
+        isSaving={isSavingInlineScan}
+      />
+
+      <Drawer
+        open={Boolean(duplicateMealPrompt)}
+        onOpenChange={(nextOpen) => {
+          if (nextOpen) return;
+          duplicateMealPrompt?.resolve(false);
+          setDuplicateMealPrompt(null);
+        }}
+        direction="bottom"
+      >
+        <NutritionDrawerContent size="sm">
+          <DrawerHeader>
+            <DrawerTitle>Bu ovqat allaqachon qo'shilgan</DrawerTitle>
+            <DrawerDescription>
+              {duplicateMealPrompt?.food?.name || "Bu ovqat"} bugun shu
+              bo'limda bor. Yana qo'shishni xohlaysizmi?
+            </DrawerDescription>
+          </DrawerHeader>
+          <DrawerFooter>
+            <Button
+              type="button"
+              onClick={() => {
+                duplicateMealPrompt?.resolve(true);
+                setDuplicateMealPrompt(null);
+              }}
+            >
+              Ha, qo'shish
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                duplicateMealPrompt?.resolve(false);
+                setDuplicateMealPrompt(null);
+              }}
+            >
+              Yo'q
+            </Button>
+          </DrawerFooter>
+        </NutritionDrawerContent>
+      </Drawer>
 
       <Drawer
         open={isPlanMetaOpen}
@@ -1406,5 +1767,11 @@ const Index = ({ entryView = "home" }) => {
     </PageTransition>
   );
 };
+
+const Index = (props) => (
+  <ErrorBoundary fallback={<NutritionErrorFallback />}>
+    <NutritionContent {...props} />
+  </ErrorBoundary>
+);
 
 export default Index;

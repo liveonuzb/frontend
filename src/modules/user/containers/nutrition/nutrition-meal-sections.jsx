@@ -18,6 +18,12 @@ export default function NutritionMealSections({
   handleTogglePlanned,
   onImageUpload,
   onUpdateMeal,
+  onRetryScan,
+  onRemoveScan,
+  onOpenDraftScan,
+  isLoading = false,
+  addDisabled = false,
+  onCopyFromYesterday,
 }) {
   return (
     <>
@@ -78,7 +84,13 @@ export default function NutritionMealSections({
           onLogPlanned={handleLogPlanned}
           onImageUpload={onImageUpload}
           onUpdateMeal={onUpdateMeal}
+          onRetryScan={onRetryScan}
+          onRemoveScan={onRemoveScan}
+          onOpenDraftScan={onOpenDraftScan}
           onTogglePlanned={handleTogglePlanned}
+          isLoading={isLoading}
+          addDisabled={addDisabled}
+          onCopyFromYesterday={onCopyFromYesterday}
         />
       ))}
     </>

@@ -9,7 +9,8 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils.js";
 import { Button } from "@/components/ui/button.jsx";
-import { ChevronDownIcon, PlusIcon } from "lucide-react";
+import { ChevronDownIcon, CopyIcon, PlusIcon } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton.jsx";
 import EmptyState from "@/components/empty-state/index.jsx";
 import { map, sumBy, isEmpty } from "lodash";
 import MealCard from "./meal-card.jsx";
@@ -27,6 +28,31 @@ const getMealIdentity = (item = {}) =>
     .filter(Boolean)
     .join(":");
 
+const getStoredOpenState = (type) => {
+  if (typeof window === "undefined") return true;
+
+  const value = window.localStorage.getItem(`nutrition:meal-section:${type}`);
+  return value == null ? true : value === "open";
+};
+
+const MealCardSkeleton = () => (
+  <div className="flex overflow-hidden rounded-2xl border bg-card">
+    <Skeleton className="size-24 shrink-0 rounded-none" />
+    <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 px-3 py-3">
+      <Skeleton className="h-4 w-2/3 rounded" />
+      <div className="flex gap-2">
+        <Skeleton className="h-5 w-14 rounded-full" />
+        <Skeleton className="h-5 w-16 rounded-full" />
+        <Skeleton className="h-5 w-20 rounded-full" />
+      </div>
+    </div>
+    <div className="flex w-20 shrink-0 flex-col items-end justify-center gap-3 border-l border-border/20 px-3">
+      <Skeleton className="h-4 w-12 rounded" />
+      <Skeleton className="size-9 rounded-full" />
+    </div>
+  </div>
+);
+
 const MealSection = ({
   type,
   isActive = false,
@@ -39,16 +65,30 @@ const MealSection = ({
   onLogPlanned,
   onImageUpload,
   onUpdateMeal,
+  onRetryScan,
+  onRemoveScan,
+  onOpenDraftScan,
   readOnly = false,
   showAddButton = true,
+  isLoading = false,
+  addDisabled = false,
+  onCopyFromYesterday,
 }) => {
   const config = mealConfig[type];
   const displayTime = time || config.time;
-  const [isOpen, setIsOpen] = React.useState(true);
+  const [isOpen, setIsOpen] = React.useState(() => getStoredOpenState(type));
 
   React.useEffect(() => {
     if (isActive) setIsOpen(true);
   }, [isActive]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      `nutrition:meal-section:${type}`,
+      isOpen ? "open" : "closed",
+    );
+  }, [isOpen, type]);
 
   const allSectionItems = React.useMemo(() => {
     const loggedQueues = new Map();
@@ -173,7 +213,13 @@ const MealSection = ({
             transition={{ duration: 0.25, ease: "easeInOut" }}
           >
             <CardContent className="">
-              {!isEmpty(allSectionItems) ? (
+              {isLoading ? (
+                <div className="space-y-2">
+                  {[0, 1, 2].map((item) => (
+                    <MealCardSkeleton key={item} />
+                  ))}
+                </div>
+              ) : !isEmpty(allSectionItems) ? (
                 <div className="space-y-2">
                   <AnimatePresence initial={false}>
                     {map(allSectionItems, (food, i) => (
@@ -188,6 +234,9 @@ const MealSection = ({
                         onLogPlanned={onLogPlanned}
                         onSaveImage={handleSaveImage}
                         onUpdateLoggedMeal={onUpdateMeal}
+                        onRetryScan={onRetryScan}
+                        onRemoveScan={onRemoveScan}
+                        onOpenDraftScan={onOpenDraftScan}
                         readOnly={readOnly}
                       />
                     ))}
@@ -207,11 +256,27 @@ const MealSection = ({
               )}
             </CardContent>
             {showAddButton && onAdd && !readOnly ? (
-              <CardFooter className={"mt-5 pb-0"}>
+              <CardFooter className={"mt-5 gap-2 pb-0"}>
+                {onCopyFromYesterday ? (
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    disabled={addDisabled}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onCopyFromYesterday(type);
+                    }}
+                    aria-label={`${config.label} kechagi ovqatlardan nusxa ko'chirish`}
+                    title="Kechagi nusxa"
+                  >
+                    <CopyIcon className="size-4" />
+                  </Button>
+                ) : null}
                 <Button
                   size="default"
                   variant={"outline"}
                   className="flex-1"
+                  disabled={addDisabled}
                   onClick={(e) => {
                     e.stopPropagation();
                     onAdd();

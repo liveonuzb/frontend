@@ -28,11 +28,23 @@ export default function NutritionMealsView(props) {
     handleTogglePlanned,
     onImageUpload,
     onUpdateMeal,
+    onRetryScan,
+    onRemoveScan,
+    onOpenDraftScan,
     setIsSavedMealsOpen,
+    isOnline,
+    isDayLoading,
+    handleCopyFromYesterday,
   } = props;
 
   return (
     <div className="flex flex-col gap-6">
+      {!isOnline ? (
+        <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-800 dark:text-amber-200">
+          Tarmoq yo&apos;q — o&apos;zgarishlar saqlanmaydi
+        </div>
+      ) : null}
+
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-sm font-medium text-muted-foreground">
@@ -51,6 +63,7 @@ export default function NutritionMealsView(props) {
           </Button>
           <Button
             type="button"
+            disabled={!isOnline}
             onClick={() => {
               setSelectedMealTypeForAdd(activeMealType);
               setIsActionDrawerOpen(true);
@@ -104,6 +117,12 @@ export default function NutritionMealsView(props) {
           handleTogglePlanned={handleTogglePlanned}
           onImageUpload={onImageUpload}
           onUpdateMeal={onUpdateMeal}
+          onRetryScan={onRetryScan}
+          onRemoveScan={onRemoveScan}
+          onOpenDraftScan={onOpenDraftScan}
+          isLoading={isDayLoading}
+          addDisabled={!isOnline}
+          onCopyFromYesterday={handleCopyFromYesterday}
         />
       </TrackingPageLayout>
     </div>

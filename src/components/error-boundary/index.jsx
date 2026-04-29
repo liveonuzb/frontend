@@ -18,6 +18,17 @@ class ErrorBoundary extends React.Component {
 
     render() {
         if (this.state.hasError) {
+            if (this.props.fallback) {
+                if (typeof this.props.fallback === "function") {
+                    return this.props.fallback({
+                        error: this.state.error,
+                        reset: () => this.setState({ hasError: false, error: null }),
+                    });
+                }
+
+                return this.props.fallback;
+            }
+
             return (
                 <div className="flex items-center justify-center min-h-[60vh]">
                     <div className="text-center max-w-md">

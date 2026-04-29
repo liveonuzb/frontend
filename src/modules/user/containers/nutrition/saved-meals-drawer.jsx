@@ -32,12 +32,27 @@ const buildLoggedMealFromSavedMeal = (savedMeal) => ({
   ingredients: savedMeal.ingredients,
 });
 
+const SavedMealSkeleton = () => (
+  <div className="flex items-center gap-3 rounded-3xl border bg-card px-3 py-2.5">
+    <Skeleton className="size-12 shrink-0 rounded-2xl" />
+    <div className="min-w-0 flex-1 space-y-2">
+      <Skeleton className="h-4 w-2/3 rounded" />
+      <div className="flex gap-2">
+        <Skeleton className="h-5 w-14 rounded-full" />
+        <Skeleton className="h-5 w-16 rounded-full" />
+        <Skeleton className="h-5 w-20 rounded-full" />
+      </div>
+    </div>
+  </div>
+);
+
 const SavedMealsDrawer = ({
   open,
   onOpenChange,
   dateKey,
   mealType,
   onAddMeal,
+  disabled = false,
 }) => {
   const { items, isLoading } = useSavedMeals();
   const { updateSavedMeal, deleteSavedMeal, isSaving } = useSavedMealsActions();
@@ -46,6 +61,10 @@ const SavedMealsDrawer = ({
   const handleQuickLog = React.useCallback(
     async (savedMeal) => {
       if (!onAddMeal || !dateKey || !mealType) return;
+      if (disabled) {
+        toast.error("Tarmoq yo'q — taom log qilib bo'lmaydi");
+        return;
+      }
 
       try {
         await onAddMeal(
@@ -110,7 +129,7 @@ const SavedMealsDrawer = ({
               {isLoading ? (
                 <div className="space-y-3 py-2">
                   {[0, 1, 2].map((index) => (
-                    <Skeleton key={index} className="h-20 rounded-3xl" />
+                    <SavedMealSkeleton key={index} />
                   ))}
                 </div>
               ) : items.length === 0 ? (
@@ -177,6 +196,7 @@ const SavedMealsDrawer = ({
                             type="button"
                             size="icon-xs"
                             className="rounded-full"
+                            disabled={disabled}
                             onClick={(event) => {
                               event.stopPropagation();
                               void handleQuickLog(item);
