@@ -105,6 +105,8 @@ const NUTRITION_SOURCE_FILTERS = [
   { key: "meal-plan", label: SOURCE_META["meal-plan"].label },
 ];
 
+const CALORIE_FILTER_DEFAULT = [0, 1000];
+
 const WEEK_DAYS = [
   "Dushanba",
   "Seshanba",
@@ -215,6 +217,22 @@ const getPlanSourceMeta = (source) => {
     badgeClassName:
       "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300",
   };
+};
+
+const normalizeSearchText = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase();
+
+const getMealDateKey = (food, fallbackDateKey) => {
+  const value = food?.addedAt || food?.createdAt || food?.date || fallbackDateKey;
+  const parsed = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return fallbackDateKey;
+  }
+
+  return parsed.toISOString().slice(0, 10);
 };
 
 const NutritionContent = ({ entryView = "home" }) => {
@@ -396,6 +414,14 @@ const NutritionContent = ({ entryView = "home" }) => {
     React.useState("breakfast");
   const [mealFilter, setMealFilter] = React.useState("all");
   const [sourceFilters, setSourceFilters] = React.useState([]);
+  const [mealSearch, setMealSearch] = React.useState("");
+  const [calorieRange, setCalorieRange] = React.useState(
+    CALORIE_FILTER_DEFAULT,
+  );
+  const [filterDateRange, setFilterDateRange] = React.useState({
+    start: "",
+    end: "",
+  });
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
   const [pendingScans, setPendingScans] = React.useState([]);
   const [selectedScanId, setSelectedScanId] = React.useState(null);
@@ -1177,6 +1203,51 @@ const NutritionContent = ({ entryView = "home" }) => {
   }, [currentDayPlan, meals, pendingScanFoodsByType, plannedByType]);
 
   const filteredMealSections = React.useMemo(() => {
+    const searchTerm = normalizeSearchText(mealSearch);
+    const [minCalories, maxCalories] = calorieRange;
+    const hasCalorieFilter =
+      minCalories > CALORIE_FILTER_DEFAULT[0] ||
+      maxCalories < CALORIE_FILTER_DEFAULT[1];
+    const hasDateFilter = Boolean(filterDateRange.start || filterDateRange.end);
+
+    const matchesSearch = (food) => {
+      if (!searchTerm) return true;
+      return [
+        food?.name,
+        food?.title,
+        food?.description,
+        food?.barcode,
+        ...(Array.isArray(food?.ingredients)
+          ? food.ingredients.map((ingredient) => ingredient?.name)
+          : []),
+      ]
+        .filter(Boolean)
+        .some((value) =>
+          String(value).toLowerCase().includes(searchTerm),
+        );
+    };
+
+    const matchesCalories = (food) => {
+      if (!hasCalorieFilter) return true;
+      const calories = Math.round(Number(food?.cal ?? food?.calories ?? 0));
+      return calories >= minCalories && calories <= maxCalories;
+    };
+
+    const matchesDateRange = (food) => {
+      if (!hasDateFilter) return true;
+      const itemDateKey = getMealDateKey(food, dateKey);
+      if (filterDateRange.start && itemDateKey < filterDateRange.start) {
+        return false;
+      }
+      if (filterDateRange.end && itemDateKey > filterDateRange.end) {
+        return false;
+      }
+      return true;
+    };
+
+    const matchesAdvancedFilters = (food) =>
+      matchesSearch(food) && matchesCalories(food) && matchesDateRange(food);
+
     return sortedMealSections.reduce((sections, [type, section]) => {
       if (mealFilter !== "all" && type !== mealFilter) {
         return sections;
@@ -1185,16 +1256,23 @@ const NutritionContent = ({ entryView = "home" }) => {
       const isActiveSource = (src) =>
         sourceFilters.length === 0 || sourceFilters.includes(src);
 
-      const filteredFoods = (section.foods || []).filter((food) =>
-        isActiveSource(food.source || "manual"),
+      const filteredFoods = (section.foods || []).filter(
+        (food) =>
+          isActiveSource(food.source || "manual") &&
+          matchesAdvancedFilters(food),
       );
 
       const filteredPlannedItems = isActiveSource("meal-plan")
-        ? section.plannedItems || []
+        ? (section.plannedItems || []).filter((food) =>
+            matchesAdvancedFilters(food),
+          )
         : [];
 
       if (
-        sourceFilters.length > 0 &&
+        (sourceFilters.length > 0 ||
+          searchTerm ||
+          hasCalorieFilter ||
+          hasDateFilter) &&
         filteredFoods.length === 0 &&
         filteredPlannedItems.length === 0
       ) {
@@ -1211,7 +1289,36 @@ const NutritionContent = ({ entryView = "home" }) => {
       ]);
       return sections;
     }, []);
-  }, [mealFilter, sortedMealSections, sourceFilters]);
+  }, [
+    calorieRange,
+    dateKey,
+    filterDateRange.end,
+    filterDateRange.start,
+    mealFilter,
+    mealSearch,
+    sortedMealSections,
+    sourceFilters,
+  ]);
+
+  const activeNutritionFilterCount = React.useMemo(() => {
+    let count = sourceFilters.length;
+    if (normalizeSearchText(mealSearch)) count += 1;
+    if (
+      calorieRange[0] > CALORIE_FILTER_DEFAULT[0] ||
+      calorieRange[1] < CALORIE_FILTER_DEFAULT[1]
+    ) {
+      count += 1;
+    }
+    if (filterDateRange.start || filterDateRange.end) count += 1;
+    return count;
+  }, [calorieRange, filterDateRange.end, filterDateRange.start, mealSearch, sourceFilters.length]);
+
+  const clearNutritionFilters = React.useCallback(() => {
+    setSourceFilters([]);
+    setMealSearch("");
+    setCalorieRange(CALORIE_FILTER_DEFAULT);
+    setFilterDateRange({ start: "", end: "" });
+  }, []);
 
   const handleMealImageUpload = React.useCallback(
     (mealType, foodId, imageDataUrl, adjustedGrams, macros) => {
@@ -1358,6 +1465,9 @@ const NutritionContent = ({ entryView = "home" }) => {
     mealFilter,
     setMealFilter,
     sourceFilters,
+    mealSearch,
+    setMealSearch,
+    activeNutritionFilterCount,
     setIsFilterDrawerOpen,
     filteredMealSections,
     activeMealType,
@@ -1754,6 +1864,14 @@ const NutritionContent = ({ entryView = "home" }) => {
         <NutritionDrawerContent size="sm">
           <NutritionFilterDrawer
             activeFilters={sourceFilters}
+            mealSearch={mealSearch}
+            onMealSearchChange={setMealSearch}
+            calorieRange={calorieRange}
+            onCalorieRangeChange={setCalorieRange}
+            dateRange={filterDateRange}
+            onDateRangeChange={setFilterDateRange}
+            activeFilterCount={activeNutritionFilterCount}
+            onClearFilters={clearNutritionFilters}
             onToggleFilter={(key) =>
               setSourceFilters((current) =>
                 current.includes(key)

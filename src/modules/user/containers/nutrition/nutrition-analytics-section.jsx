@@ -21,6 +21,15 @@ const PERIOD_OPTIONS = [
   { value: 30, label: "30 kun" },
 ];
 
+const toDateKey = (date) => date.toISOString().slice(0, 10);
+
+const getDefaultCustomRange = () => {
+  const end = new Date();
+  const start = new Date(end);
+  start.setDate(start.getDate() - 6);
+  return { start: toDateKey(start), end: toDateKey(end) };
+};
+
 const formatDay = (dateStr) => {
   if (!dateStr) return "";
   const d = new Date(dateStr + "T00:00:00");
@@ -79,17 +88,38 @@ const ChartSkeleton = () => (
 
 export default function NutritionAnalyticsSection() {
   const [days, setDays] = React.useState(7);
+  const [rangeMode, setRangeMode] = React.useState("preset");
+  const [customRange, setCustomRange] = React.useState(getDefaultCustomRange);
+
+  const hasCustomRange =
+    rangeMode === "custom" && customRange.start && customRange.end;
+  const hasValidCustomRange =
+    hasCustomRange && customRange.start <= customRange.end;
+  const reportParams = hasValidCustomRange
+    ? { startDate: customRange.start, endDate: customRange.end }
+    : { days };
 
   const { data, isLoading } = useGetQuery({
     url: "/daily-tracking/reports/health",
-    params: { days },
-    queryProps: { queryKey: ["daily-tracking", "health-report", days] },
+    params: reportParams,
+    queryProps: {
+      queryKey: [
+        "daily-tracking",
+        "health-report",
+        rangeMode,
+        days,
+        customRange.start,
+        customRange.end,
+      ],
+    },
   });
 
   const report = data?.data;
   const daily = report?.daily ?? [];
   const summary = report?.summary ?? {};
   const goals = report?.goals ?? {};
+  const period = report?.period ?? {};
+  const periodDays = period.days ?? days;
 
   const chartData = map(daily, (entry) => ({
     date: formatDay(entry.date),
@@ -116,10 +146,13 @@ export default function NutritionAnalyticsSection() {
             <button
               key={opt.value}
               type="button"
-              onClick={() => setDays(opt.value)}
+              onClick={() => {
+                setRangeMode("preset");
+                setDays(opt.value);
+              }}
               className={cn(
                 "rounded-xl border px-2.5 py-1 text-xs font-medium transition-colors",
-                days === opt.value
+                rangeMode === "preset" && days === opt.value
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-border bg-transparent text-muted-foreground hover:text-foreground",
               )}
@@ -127,8 +160,56 @@ export default function NutritionAnalyticsSection() {
               {opt.label}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => setRangeMode("custom")}
+            className={cn(
+              "rounded-xl border px-2.5 py-1 text-xs font-medium transition-colors",
+              rangeMode === "custom"
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border bg-transparent text-muted-foreground hover:text-foreground",
+            )}
+          >
+            Boshqa
+          </button>
         </div>
       </div>
+
+      {rangeMode === "custom" ? (
+        <div className="space-y-2 rounded-2xl border bg-muted/20 p-3">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <input
+              type="date"
+              value={customRange.start}
+              max={customRange.end || undefined}
+              onChange={(event) =>
+                setCustomRange((current) => ({
+                  ...current,
+                  start: event.target.value,
+                }))
+              }
+              className="h-10 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary"
+            />
+            <input
+              type="date"
+              value={customRange.end}
+              min={customRange.start || undefined}
+              onChange={(event) =>
+                setCustomRange((current) => ({
+                  ...current,
+                  end: event.target.value,
+                }))
+              }
+              className="h-10 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary"
+            />
+          </div>
+          {!hasValidCustomRange ? (
+            <p className="text-xs font-medium text-destructive">
+              Sana oralig'ini to'g'ri tanlang.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {/* Stat badges */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -155,7 +236,7 @@ export default function NutritionAnalyticsSection() {
           <div className="flex items-center gap-1.5">
             <TargetIcon className="size-3 text-muted-foreground" />
             <span className="text-[10px] text-muted-foreground">
-              {days} kundan
+              {periodDays} kundan
             </span>
           </div>
         </div>
@@ -167,7 +248,7 @@ export default function NutritionAnalyticsSection() {
           </p>
           <div className="flex items-center gap-1.5">
             <span className="text-[10px] text-muted-foreground">
-              {days} kundan {summary.daysTracked ?? 0} ta
+              {periodDays} kundan {summary.daysTracked ?? 0} ta
             </span>
           </div>
         </div>

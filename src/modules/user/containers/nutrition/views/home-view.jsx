@@ -20,7 +20,9 @@ export default function NutritionHomeView(props) {
     mealConfig,
     mealFilter,
     setMealFilter,
-    sourceFilters,
+    mealSearch,
+    setMealSearch,
+    activeNutritionFilterCount,
     setIsFilterDrawerOpen,
     filteredMealSections,
     activeMealType,
@@ -126,7 +128,9 @@ export default function NutritionHomeView(props) {
           mealConfig={mealConfig}
           mealFilter={mealFilter}
           setMealFilter={setMealFilter}
-          sourceFilters={sourceFilters}
+          mealSearch={mealSearch}
+          setMealSearch={setMealSearch}
+          activeFilterCount={activeNutritionFilterCount}
           setIsFilterDrawerOpen={setIsFilterDrawerOpen}
           filteredMealSections={filteredMealSections}
           activeMealType={activeMealType}
