@@ -55,9 +55,9 @@ import { useMobileChromeHidden } from "@/hooks/app/use-mobile-chrome-hidden";
 
 const mainNav = [
   { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboardIcon },
-  { to: "/admin/users", label: "Foydalanuvchilar", icon: UsersIcon },
+  { to: "/admin/users/list", label: "Foydalanuvchilar", icon: UsersIcon },
   { to: "/admin/coaches", label: "Murabbiylar", icon: ShieldCheckIcon },
-  { to: "/admin/challenges", label: "Musobaqalar", icon: TrophyIcon },
+  { to: "/admin/challenges/list", label: "Musobaqalar", icon: TrophyIcon },
 ];
 
 const contentNav = [
@@ -82,14 +82,14 @@ const contentNav = [
     icon: HeartPulseIcon,
   },
 
-  { to: "/admin/workouts", label: "Mashg'ulotlar", icon: DumbbellIcon },
+  { to: "/admin/workouts/list", label: "Mashg'ulotlar", icon: DumbbellIcon },
   {
     to: "/admin/workout-plans",
     label: "Workout rejalari",
     icon: DumbbellIcon,
   },
   {
-    to: "/admin/workout-categories",
+    to: "/admin/workout-categories/list",
     label: "Mashg'ulot Kategoriyalari",
     icon: TagIcon,
   },
@@ -103,7 +103,7 @@ const contentNav = [
     label: "Tana qismlari",
     icon: TagIcon,
   },
-  { to: "/admin/equipments", label: "Jihozlar", icon: WrenchIcon },
+  { to: "/admin/equipments/list", label: "Jihozlar", icon: WrenchIcon },
 ];
 
 const premiumNav = [
