@@ -188,7 +188,7 @@ const EditAchievementPage = () => {
                         <FormControl>
                           <OptionDrawerPicker
                             value={field.value}
-                            onValueChange={field.onChange}
+                            onChange={field.onChange}
                             options={ACHIEVEMENT_CATEGORY_OPTIONS}
                             title="Kategoriya tanlang"
                             placeholder="Kategoriya"
@@ -211,7 +211,7 @@ const EditAchievementPage = () => {
                         <FormControl>
                           <OptionDrawerPicker
                             value={field.value}
-                            onValueChange={field.onChange}
+                            onChange={field.onChange}
                             options={ACHIEVEMENT_METRIC_OPTIONS}
                             title="Metric tanlang"
                             placeholder="Metric"

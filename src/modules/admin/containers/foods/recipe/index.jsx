@@ -69,13 +69,6 @@ const FoodRecipeDrawer = () => {
   });
   const food = getPayload(foodData);
 
-  const { data: ingredientsData, isLoading: isIngredientsLoading } = useGetQuery({
-    url: "/admin/ingredients",
-    params: { page: 1, pageSize: 100, status: "active" },
-    queryProps: { queryKey: ["admin", "ingredients", "recipe-picker"] },
-  });
-  const ingredients = get(ingredientsData, "data.data", []);
-
   React.useEffect(() => {
     if (!food) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -88,19 +81,6 @@ const FoodRecipeDrawer = () => {
   }, [food]);
 
   const mutation = usePatchQuery({ queryKey: ["admin", "foods"] });
-  const options = React.useMemo(
-    () =>
-      map(ingredients, (ingredient) => ({
-        value: ingredient.id,
-        label: resolveLabel(
-          ingredient.translations,
-          ingredient.name,
-          currentLanguage,
-        ),
-        description: `${ingredient.calories} kcal / 100g`,
-      })),
-    [currentLanguage, ingredients],
-  );
 
   const handleSave = async () => {
     try {
@@ -138,7 +118,7 @@ const FoodRecipeDrawer = () => {
           </DrawerDescription>
         </DrawerHeader>
 
-        {isFoodLoading || isIngredientsLoading ? (
+        {isFoodLoading ? (
           <div className="flex min-h-72 items-center justify-center">
             <Spinner />
           </div>
@@ -156,7 +136,7 @@ const FoodRecipeDrawer = () => {
                         <Label>Ingredient</Label>
                         <OptionDrawerPicker
                           value={row.ingredientId}
-                          onValueChange={(value) =>
+                          onChange={(value) =>
                             setRows((current) =>
                               current.map((item, itemIndex) =>
                                 itemIndex === index
@@ -165,9 +145,25 @@ const FoodRecipeDrawer = () => {
                               ),
                             )
                           }
-                          options={options}
+                          url="/admin/ingredients"
+                          params={{ page: 1, pageSize: 100, status: "active" }}
+                          queryKey={["admin", "ingredients", "recipe-picker"]}
+                          valueKey="id"
+                          getOptionLabel={(ingredient) =>
+                            resolveLabel(
+                              ingredient.translations,
+                              ingredient.name,
+                              currentLanguage,
+                            )
+                          }
+                          getOptionDescription={(ingredient) =>
+                            `${ingredient.calories} kcal / 100g`
+                          }
                           title="Ingredient tanlang"
                           placeholder="Ingredient"
+                          searchPlaceholder="Ingredient qidirish..."
+                          loadingText="Ingredientlar yuklanmoqda..."
+                          emptyText="Ingredient topilmadi"
                           triggerClassName="h-10"
                         />
                       </div>

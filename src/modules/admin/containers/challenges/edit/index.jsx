@@ -26,7 +26,6 @@ import StepReward from "@/modules/user/containers/challenges/create/step-reward.
 import { StepSection } from "@/modules/user/containers/challenges/create/form-fields.jsx";
 import {
   CHALLENGES_QUERY_KEY,
-  cleanupChallengeImage,
   getChallengeQueryKey,
   resolveChallengeApiErrorMessage,
   uploadChallengeImage,
@@ -51,7 +50,6 @@ const createInitialForm = () => ({
   imagePreviewUrl: "",
   imageId: null,
   uploadedImageId: null,
-  removeImage: false,
   metricType: "STEPS",
   metricTarget: 10000,
   metricAggregation: "SUM",
@@ -180,7 +178,6 @@ const buildPayload = (form, currentLanguage) => {
     rewardMode: form.rewardMode,
     joinFeeXp: Number(form.joinFeeXp) || 0,
     maxParticipants: Number(form.maxParticipants) || null,
-    removeImage: Boolean(form.removeImage),
   };
 
   if (form.uploadedImageId) payload.imageId = form.uploadedImageId;
@@ -315,8 +312,6 @@ const EditChallengePage = () => {
   const [stepIndex, setStepIndex] = React.useState(0);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isImageUploading, setIsImageUploading] = React.useState(false);
-  const uploadedImageIdRef = React.useRef(null);
-  const cleanupOnUnmountRef = React.useRef(true);
   const challengeQueryKey = React.useMemo(() => getChallengeQueryKey(id), [id]);
 
   const { data: challengeData, isLoading, error: challengeError } = useGetQuery({
@@ -331,19 +326,6 @@ const EditChallengePage = () => {
     queryKey: challengeQueryKey,
     listKey: CHALLENGES_QUERY_KEY,
   });
-
-  React.useEffect(() => {
-    uploadedImageIdRef.current = form.uploadedImageId;
-  }, [form.uploadedImageId]);
-
-  React.useEffect(
-    () => () => {
-      if (cleanupOnUnmountRef.current && uploadedImageIdRef.current) {
-        void cleanupChallengeImage(uploadedImageIdRef.current);
-      }
-    },
-    [],
-  );
 
   React.useEffect(() => {
     const challenge = get(challengeData, "data");
@@ -368,16 +350,13 @@ const EditChallengePage = () => {
     }
 
     const previewUrl = URL.createObjectURL(file);
-    let previousUploadedImageId = null;
 
     setForm((current) => {
       if (current.imagePreviewUrl?.startsWith("blob:")) URL.revokeObjectURL(current.imagePreviewUrl);
-      previousUploadedImageId = current.uploadedImageId;
       return {
         ...current,
         imagePreviewUrl: previewUrl,
         uploadedImageId: null,
-        removeImage: false,
       };
     });
 
@@ -395,11 +374,9 @@ const EditChallengePage = () => {
           ...current,
           imagePreviewUrl: uploadedImageUrl,
           uploadedImageId,
-          removeImage: false,
         };
       });
 
-      if (previousUploadedImageId) await cleanupChallengeImage(previousUploadedImageId);
       toast.success("Rasm yuklandi");
     } catch (error) {
       if (previewUrl.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
@@ -407,7 +384,6 @@ const EditChallengePage = () => {
         ...current,
         imagePreviewUrl: current.imageId ? current.imagePreviewUrl : "",
         uploadedImageId: null,
-        removeImage: false,
       }));
       toast.error(resolveChallengeApiErrorMessage(error, "Rasmni yuklab bo'lmadi"));
     } finally {
@@ -416,17 +392,14 @@ const EditChallengePage = () => {
   }, []);
 
   const handleImageRemove = React.useCallback(() => {
-    const currentUploadedImageId = uploadedImageIdRef.current;
     setForm((current) => {
       if (current.imagePreviewUrl?.startsWith("blob:")) URL.revokeObjectURL(current.imagePreviewUrl);
       return {
         ...current,
         imagePreviewUrl: "",
         uploadedImageId: null,
-        removeImage: Boolean(current.imageId),
       };
     });
-    if (currentUploadedImageId) void cleanupChallengeImage(currentUploadedImageId);
   }, []);
 
   const handleBack = () => {
@@ -458,19 +431,8 @@ const EditChallengePage = () => {
         attributes: buildPayload(form, currentLanguage),
       });
       toast.success("Musobaqa yangilandi");
-      cleanupOnUnmountRef.current = false;
-      uploadedImageIdRef.current = null;
       closeDrawer();
     } catch (error) {
-      if (form.uploadedImageId) {
-        await cleanupChallengeImage(form.uploadedImageId);
-        uploadedImageIdRef.current = null;
-        setForm((current) => ({
-          ...current,
-          uploadedImageId: null,
-          imagePreviewUrl: current.imageId ? current.imagePreviewUrl : "",
-        }));
-      }
       toast.error(resolveChallengeApiErrorMessage(error, "Musobaqani saqlab bo'lmadi"));
     } finally {
       setIsSubmitting(false);

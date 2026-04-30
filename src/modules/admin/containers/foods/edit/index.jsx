@@ -320,7 +320,7 @@ const FoodFormDrawer = ({
                         <FormControl>
                           <OptionDrawerPicker
                             value={field.value}
-                            onValueChange={field.onChange}
+                            onChange={field.onChange}
                             options={NUTRITION_MODES}
                             title="Nutrition mode"
                             placeholder="Mode tanlang"
@@ -404,7 +404,7 @@ const FoodFormDrawer = ({
                         <FormControl>
                           <OptionDrawerPicker
                             value={field.value}
-                            onValueChange={field.onChange}
+                            onChange={field.onChange}
                             options={SERVING_UNITS}
                             title="O'lchov birligini tanlang"
                             description="Porsiya va maksimal kunlik miqdor uchun birlik"

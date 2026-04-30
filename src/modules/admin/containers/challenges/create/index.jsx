@@ -26,7 +26,6 @@ import StepReward from "@/modules/user/containers/challenges/create/step-reward.
 import { StepSection } from "@/modules/user/containers/challenges/create/form-fields.jsx";
 import {
   CHALLENGES_QUERY_KEY,
-  cleanupChallengeImage,
   resolveChallengeApiErrorMessage,
   uploadChallengeImage,
 } from "../api.js";
@@ -50,7 +49,6 @@ const createInitialForm = () => ({
   imagePreviewUrl: "",
   imageId: null,
   uploadedImageId: null,
-  removeImage: false,
   metricType: "STEPS",
   metricTarget: 10000,
   metricAggregation: "SUM",
@@ -239,22 +237,7 @@ const CreateChallengePage = () => {
   const [stepIndex, setStepIndex] = React.useState(0);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isImageUploading, setIsImageUploading] = React.useState(false);
-  const uploadedImageIdRef = React.useRef(null);
-  const cleanupOnUnmountRef = React.useRef(true);
   const { mutateAsync, isPending } = usePostQuery({ queryKey: CHALLENGES_QUERY_KEY });
-
-  React.useEffect(() => {
-    uploadedImageIdRef.current = form.uploadedImageId;
-  }, [form.uploadedImageId]);
-
-  React.useEffect(
-    () => () => {
-      if (cleanupOnUnmountRef.current && uploadedImageIdRef.current) {
-        void cleanupChallengeImage(uploadedImageIdRef.current);
-      }
-    },
-    [],
-  );
 
   const closeDrawer = React.useCallback(() => {
     navigate("/admin/challenges/list");
@@ -272,16 +255,13 @@ const CreateChallengePage = () => {
     }
 
     const previewUrl = URL.createObjectURL(file);
-    let previousUploadedImageId = null;
 
     setForm((current) => {
       if (current.imagePreviewUrl?.startsWith("blob:")) URL.revokeObjectURL(current.imagePreviewUrl);
-      previousUploadedImageId = current.uploadedImageId;
       return {
         ...current,
         imagePreviewUrl: previewUrl,
         uploadedImageId: null,
-        removeImage: false,
       };
     });
 
@@ -299,11 +279,9 @@ const CreateChallengePage = () => {
           ...current,
           imagePreviewUrl: uploadedImageUrl,
           uploadedImageId,
-          removeImage: false,
         };
       });
 
-      if (previousUploadedImageId) await cleanupChallengeImage(previousUploadedImageId);
       toast.success("Rasm yuklandi");
     } catch (error) {
       if (previewUrl.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
@@ -311,7 +289,6 @@ const CreateChallengePage = () => {
         ...current,
         imagePreviewUrl: "",
         uploadedImageId: null,
-        removeImage: false,
       }));
       toast.error(resolveChallengeApiErrorMessage(error, "Rasmni yuklab bo'lmadi"));
     } finally {
@@ -320,17 +297,14 @@ const CreateChallengePage = () => {
   }, []);
 
   const handleImageRemove = React.useCallback(() => {
-    const currentUploadedImageId = uploadedImageIdRef.current;
     setForm((current) => {
       if (current.imagePreviewUrl?.startsWith("blob:")) URL.revokeObjectURL(current.imagePreviewUrl);
       return {
         ...current,
         imagePreviewUrl: "",
         uploadedImageId: null,
-        removeImage: false,
       };
     });
-    if (currentUploadedImageId) void cleanupChallengeImage(currentUploadedImageId);
   }, []);
 
   const handleBack = () => {
@@ -362,15 +336,8 @@ const CreateChallengePage = () => {
         attributes: buildPayload(form, currentLanguage),
       });
       toast.success("Musobaqa yaratildi");
-      cleanupOnUnmountRef.current = false;
-      uploadedImageIdRef.current = null;
       closeDrawer();
     } catch (error) {
-      if (form.uploadedImageId) {
-        await cleanupChallengeImage(form.uploadedImageId);
-        uploadedImageIdRef.current = null;
-        setForm((current) => ({ ...current, uploadedImageId: null, imagePreviewUrl: "" }));
-      }
       toast.error(resolveChallengeApiErrorMessage(error, "Musobaqani saqlab bo'lmadi"));
     } finally {
       setIsSubmitting(false);

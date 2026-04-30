@@ -351,7 +351,7 @@ const IngredientFormDrawer = ({ mode }) => {
                   <IngredientImagePicker value={imagePreview} uploadedImageId={uploadedImageId} onChange={({ imageId, imageUrl, previousUploadedImageId }) => { setUploadedImageId(imageId); setImagePreview(imageUrl); setRemoveImage(false); if (previousUploadedImageId) void cleanupImage(previousUploadedImageId); }} onRemove={() => { setImagePreview(null); setRemoveImage(Boolean(item?.imageUrl)); if (uploadedImageId) void cleanupImage(uploadedImageId); setUploadedImageId(null); }} />
                   <FormField control={form.control} name="name" render={({ field }) => <FormItem><FormLabel>Nomi ({currentLanguage.toUpperCase()})</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>} />
                   {["calories", "protein", "carbs", "fat"].map((name) => <FormField key={name} control={form.control} name={name} render={({ field }) => <FormItem><FormLabel>{name}</FormLabel><FormControl><NumberInput value={field.value} onChange={field.onChange} step={name === "calories" ? 1 : 0.1} /></FormControl><FormMessage /></FormItem>} />)}
-                  <FormField control={form.control} name="servingUnit" render={({ field }) => <FormItem><FormLabel>O'lchov birligi</FormLabel><FormControl><OptionDrawerPicker value={field.value} onValueChange={field.onChange} options={SERVING_UNITS} title="O'lchov birligi" placeholder="Tanlang" /></FormControl><FormMessage /></FormItem>} />
+                  <FormField control={form.control} name="servingUnit" render={({ field }) => <FormItem><FormLabel>O'lchov birligi</FormLabel><FormControl><OptionDrawerPicker value={field.value} onChange={field.onChange} options={SERVING_UNITS} title="O'lchov birligi" placeholder="Tanlang" /></FormControl><FormMessage /></FormItem>} />
                 </form>
               </Form>
             </DrawerBody>
@@ -411,9 +411,9 @@ const PriceDrawer = () => {
               <Form {...form}>
                 <form id="ingredient-price-form" className="flex flex-col gap-4" onSubmit={form.handleSubmit(onSubmit)}>
                   <FormField control={form.control} name="priceAmount" render={({ field }) => <FormItem><FormLabel>Narx</FormLabel><FormControl><NumberInput value={field.value} onChange={field.onChange} step={100} /></FormControl><FormMessage /></FormItem>} />
-                  <FormField control={form.control} name="priceUnit" render={({ field }) => <FormItem><FormLabel>Narx birligi</FormLabel><FormControl><OptionDrawerPicker value={field.value} onValueChange={field.onChange} options={PRICE_UNITS} title="Narx birligi" placeholder="Tanlang" /></FormControl><FormMessage /></FormItem>} />
+                  <FormField control={form.control} name="priceUnit" render={({ field }) => <FormItem><FormLabel>Narx birligi</FormLabel><FormControl><OptionDrawerPicker value={field.value} onChange={field.onChange} options={PRICE_UNITS} title="Narx birligi" placeholder="Tanlang" /></FormControl><FormMessage /></FormItem>} />
                   <FormField control={form.control} name="currency" render={({ field }) => <FormItem><FormLabel>Valyuta</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>} />
-                  <FormField control={form.control} name="budgetTier" render={({ field }) => <FormItem><FormLabel>Budget turi</FormLabel><FormControl><OptionDrawerPicker value={field.value} onValueChange={field.onChange} options={BUDGET_TIERS} title="Budget turi" placeholder="Tanlang" /></FormControl><FormMessage /></FormItem>} />
+                  <FormField control={form.control} name="budgetTier" render={({ field }) => <FormItem><FormLabel>Budget turi</FormLabel><FormControl><OptionDrawerPicker value={field.value} onChange={field.onChange} options={BUDGET_TIERS} title="Budget turi" placeholder="Tanlang" /></FormControl><FormMessage /></FormItem>} />
                   <div className="rounded-2xl border bg-muted/30 p-3 text-sm">
                     <div className="text-muted-foreground">Taxminiy 100g narx</div>
                     <div className="mt-1 font-semibold">{formatMoney(previewPer100g, form.watch("currency"))}</div>

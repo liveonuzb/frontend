@@ -204,7 +204,7 @@ const CreateSpecialization = () => {
                     <FormControl>
                       <OptionDrawerPicker
                         value={field.value}
-                        onValueChange={field.onChange}
+                        onChange={field.onChange}
                         options={CATEGORY_OPTIONS}
                         title="Kategoriya tanlang"
                         description="Yo'nalish qaysi sport kategoriyasiga tegishli ekanini belgilang"
