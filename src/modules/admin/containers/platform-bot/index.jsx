@@ -49,6 +49,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { getApiResponseData } from "@/lib/api-response";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 
 const ADMIN_PLATFORM_BOT_QUERY_KEY = ["admin", "platform-bot"];
 const ADMIN_PLATFORM_BOT_USERS_QUERY_KEY = ["admin", "platform-bot", "users"];
@@ -104,6 +105,7 @@ const StatCard = ({ label, value, description }) => (
 );
 
 const PlatformBotPage = () => {
+  const { canManageGrowth } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const [search, setSearch] = React.useState("");
   const [mutedFilter, setMutedFilter] = React.useState("all");
@@ -174,6 +176,8 @@ const PlatformBotPage = () => {
   const hasNextPage = offset + PAGE_SIZE < totalUsers;
 
   const handleRegisterWebhook = async () => {
+    if (!canManageGrowth) return;
+
     try {
       await webhookMutation.mutateAsync({
         url: "/admin/platform-bot/webhook",
@@ -185,6 +189,8 @@ const PlatformBotPage = () => {
   };
 
   const handleBroadcast = async () => {
+    if (!canManageGrowth) return;
+
     if (!broadcastText.trim()) {
       toast.error("Xabar matnini kiriting.");
       return;
@@ -222,56 +228,58 @@ const PlatformBotPage = () => {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleRegisterWebhook}
-              disabled={webhookMutation.isPending}
-            >
-              <RefreshCwIcon data-icon="inline-start" />
-              Webhookni yangilash
-            </Button>
-            <Sheet open={broadcastOpen} onOpenChange={setBroadcastOpen}>
-              <SheetTrigger asChild>
-                <Button type="button">
-                  <MegaphoneIcon data-icon="inline-start" />
-                  Broadcast
-                </Button>
-              </SheetTrigger>
-              <SheetContent>
-                <SheetHeader>
-                  <SheetTitle>Broadcast xabar yuborish</SheetTitle>
-                  <SheetDescription>
-                    Xabar muted bo'lmagan barcha platform bot chatlariga
-                    yuboriladi.
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="flex flex-col gap-3 px-6">
-                  <Textarea
-                    value={broadcastText}
-                    onChange={(event) => setBroadcastText(event.target.value)}
-                    placeholder="Xabar matni"
-                    rows={8}
-                    maxLength={1000}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {broadcastText.length}/1000 belgi
-                  </p>
-                </div>
-                <SheetFooter>
-                  <Button
-                    type="button"
-                    onClick={handleBroadcast}
-                    disabled={broadcastMutation.isPending}
-                  >
-                    <SendIcon data-icon="inline-start" />
-                    Yuborish
+          {canManageGrowth ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleRegisterWebhook}
+                disabled={webhookMutation.isPending}
+              >
+                <RefreshCwIcon data-icon="inline-start" />
+                Webhookni yangilash
+              </Button>
+              <Sheet open={broadcastOpen} onOpenChange={setBroadcastOpen}>
+                <SheetTrigger asChild>
+                  <Button type="button">
+                    <MegaphoneIcon data-icon="inline-start" />
+                    Broadcast
                   </Button>
-                </SheetFooter>
-              </SheetContent>
-            </Sheet>
-          </div>
+                </SheetTrigger>
+                <SheetContent>
+                  <SheetHeader>
+                    <SheetTitle>Broadcast xabar yuborish</SheetTitle>
+                    <SheetDescription>
+                      Xabar muted bo'lmagan barcha platform bot chatlariga
+                      yuboriladi.
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="flex flex-col gap-3 px-6">
+                    <Textarea
+                      value={broadcastText}
+                      onChange={(event) => setBroadcastText(event.target.value)}
+                      placeholder="Xabar matni"
+                      rows={8}
+                      maxLength={1000}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {broadcastText.length}/1000 belgi
+                    </p>
+                  </div>
+                  <SheetFooter>
+                    <Button
+                      type="button"
+                      onClick={handleBroadcast}
+                      disabled={broadcastMutation.isPending || !canManageGrowth}
+                    >
+                      <SendIcon data-icon="inline-start" />
+                      Yuborish
+                    </Button>
+                  </SheetFooter>
+                </SheetContent>
+              </Sheet>
+            </div>
+          ) : null}
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">

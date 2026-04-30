@@ -153,6 +153,7 @@ const formatDate = (value) => {
 
 export const useColumns = ({
   activeLanguages,
+  canManage,
   canReorder,
   currentLanguage,
   isUpdating,
@@ -289,7 +290,7 @@ export const useColumns = ({
             <div className="flex items-center">
               <Switch
                 checked={isActive}
-                disabled={isUpdating}
+                disabled={!canManage || isUpdating}
                 onCheckedChange={() => onToggleActive(item)}
               />
             </div>
@@ -326,6 +327,7 @@ export const useColumns = ({
           <div className="flex justify-end">
             <SpecializationActionsMenu
               item={get(info, "row.original")}
+              canManage={canManage}
               onTranslate={onTranslate}
               onEdit={onEdit}
               onDelete={onDelete}
@@ -339,6 +341,7 @@ export const useColumns = ({
     ],
     [
       activeLanguages,
+      canManage,
       canReorder,
       currentLanguage,
       isUpdating,

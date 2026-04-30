@@ -26,6 +26,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 
 const formatDate = (dateStr) => {
   if (!dateStr) return "-";
@@ -59,6 +60,7 @@ const getFullName = (user) => {
 
 const Index = () => {
   const { id } = useParams();
+  const { canManageGrowth } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const [addMemberOpen, setAddMemberOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -115,6 +117,8 @@ const Index = () => {
 
   const handleAddMember = React.useCallback(
     async (userId) => {
+      if (!canManageGrowth) return;
+
       try {
         await addMemberMutation.mutateAsync({
           url: `/admin/premium/families/${id}/members`,
@@ -132,11 +136,13 @@ const Index = () => {
         );
       }
     },
-    [addMemberMutation, id],
+    [addMemberMutation, canManageGrowth, id],
   );
 
   const handleRemoveMember = React.useCallback(
     async (memberId) => {
+      if (!canManageGrowth) return;
+
       if (!window.confirm("Bu a'zoni oiladan olib tashlashni tasdiqlaysizmi?"))
         return;
 
@@ -154,7 +160,7 @@ const Index = () => {
         );
       }
     },
-    [removeMemberMutation, id],
+    [canManageGrowth, removeMemberMutation, id],
   );
 
   if (isLoading) {
@@ -261,14 +267,16 @@ const Index = () => {
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
             A'zolar ({members.length})
           </h2>
-          <Button
-            size="sm"
-            className="gap-1.5"
-            onClick={() => setAddMemberOpen(true)}
-          >
-            <PlusIcon className="size-4" />
-            A'zo qo'shish
-          </Button>
+          {canManageGrowth ? (
+            <Button
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setAddMemberOpen(true)}
+            >
+              <PlusIcon className="size-4" />
+              A'zo qo'shish
+            </Button>
+          ) : null}
         </div>
 
         {members.length > 0 ? (
@@ -306,14 +314,16 @@ const Index = () => {
                   <span className="hidden text-xs text-muted-foreground sm:block">
                     {formatDate(addedDate)}
                   </span>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="text-destructive hover:bg-destructive/10"
-                    onClick={() => handleRemoveMember(memberId)}
-                  >
-                    <Trash2Icon className="size-4" />
-                  </Button>
+                  {canManageGrowth ? (
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="text-destructive hover:bg-destructive/10"
+                      onClick={() => handleRemoveMember(memberId)}
+                    >
+                      <Trash2Icon className="size-4" />
+                    </Button>
+                  ) : null}
                 </div>
               );
             })}

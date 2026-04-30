@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
 import { usePromoCodeFilters } from "./use-filters.js";
@@ -25,6 +26,7 @@ const QUERY_KEY = ["admin", "promo-codes"];
 
 const Index = () => {
   const navigate = useNavigate();
+  const { canManageGrowth } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
 
   const { data: promoData, isLoading, isFetching, refetch } = useGetQuery({
@@ -75,6 +77,8 @@ const Index = () => {
 
   const handleToggleActive = React.useCallback(
     async (promoCode) => {
+      if (!canManageGrowth) return;
+
       try {
         await patchMutation.mutateAsync({
           url: `/admin/premium/promo-codes/${get(promoCode, "id")}`,
@@ -94,11 +98,13 @@ const Index = () => {
         );
       }
     },
-    [patchMutation],
+    [canManageGrowth, patchMutation],
   );
 
   const handleDelete = React.useCallback(
     async (promoCode) => {
+      if (!canManageGrowth) return;
+
       if (!window.confirm(`"${get(promoCode, "code")}" promo kodni o'chirmoqchimisiz?`))
         return;
 
@@ -116,12 +122,16 @@ const Index = () => {
         );
       }
     },
-    [deleteMutation],
+    [canManageGrowth, deleteMutation],
   );
 
   const columns = useColumns({
+    canManage: canManageGrowth,
     handleToggleActive,
-    onEdit: (promoCode) => navigate(`edit/${get(promoCode, "id")}`),
+    onEdit: (promoCode) => {
+      if (!canManageGrowth) return;
+      navigate(`edit/${get(promoCode, "id")}`);
+    },
     onDelete: handleDelete,
   });
 
@@ -136,10 +146,12 @@ const Index = () => {
     <div className="flex w-full flex-col gap-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Promo kodlar</h1>
-        <Button onClick={() => navigate("create")} className="gap-1.5">
-          <PlusIcon />
-          Promo kod qo'shish
-        </Button>
+        {canManageGrowth ? (
+          <Button onClick={() => navigate("create")} className="gap-1.5">
+            <PlusIcon />
+            Promo kod qo'shish
+          </Button>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

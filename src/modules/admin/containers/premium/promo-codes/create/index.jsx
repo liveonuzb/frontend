@@ -17,9 +17,11 @@ import {
 import PromoCodeForm, {
   emptyPromoCodeForm,
 } from "../components/promo-code-form.jsx";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 
 const CreatePromoCode = () => {
   const navigate = useNavigate();
+  const { canManageGrowth } = useAdminPermissions();
   const [form, setForm] = React.useState(emptyPromoCodeForm);
 
   const createMutation = usePostQuery({
@@ -28,6 +30,8 @@ const CreatePromoCode = () => {
   const isCreating = createMutation.isPending;
 
   const handleSave = React.useCallback(async () => {
+    if (!canManageGrowth) return;
+
     const code = form.code.trim();
     if (!code) {
       toast.error("Promo kodni kiriting");
@@ -70,7 +74,7 @@ const CreatePromoCode = () => {
           : message || "Promo kodni saqlab bo'lmadi",
       );
     }
-  }, [createMutation, form, navigate]);
+  }, [canManageGrowth, createMutation, form, navigate]);
 
   const handleOpenChange = (open) => {
     if (!open) navigate("/admin/premium/promo-codes");
@@ -95,7 +99,7 @@ const CreatePromoCode = () => {
           </div>
 
           <DrawerFooter className="gap-2 border-t bg-muted/5 px-6 py-4">
-            <Button onClick={handleSave} disabled={isCreating}>
+            <Button onClick={handleSave} disabled={isCreating || !canManageGrowth}>
               Yaratish
             </Button>
             <DrawerClose asChild>

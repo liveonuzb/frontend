@@ -21,6 +21,7 @@ const countFilledTranslations = (translations = {}) =>
 
 export const useColumns = ({
   activeLanguages,
+  canManage,
   currentLanguage,
   isReorderEnabled,
   isUpdating,
@@ -73,6 +74,7 @@ export const useColumns = ({
           skeleton: adminListSkeletons.avatarText,
           expandedContent: (row) => (
             <CategoryFoodsGrid
+              canManage={canManage}
               categoryId={row.id}
               currentLanguage={currentLanguage}
             />
@@ -187,7 +189,7 @@ export const useColumns = ({
           return (
             <Switch
               checked={isActive}
-              disabled={isUpdating}
+              disabled={!canManage || isUpdating}
               onCheckedChange={() => handleToggleActive(category)}
             />
           );
@@ -223,6 +225,7 @@ export const useColumns = ({
           <div className="flex justify-end">
             <ActionsMenu
               category={info.row.original}
+              canManage={canManage}
               onEdit={openEditDrawer}
               onDelete={setCategoryToDelete}
               onTranslations={openTranslationsDrawer}
@@ -233,6 +236,7 @@ export const useColumns = ({
     ],
     [
       activeLanguages,
+      canManage,
       currentLanguage,
       handleToggleActive,
       isReorderEnabled,

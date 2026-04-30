@@ -38,6 +38,7 @@ import AddMealOverlay from "./add-meal-overlay.jsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { isNavItemActive } from "@/lib/navigation";
 import {
   PROFILE_OVERVIEW_TAB,
   useProfileOverlay,
@@ -56,29 +57,38 @@ const NavGroup = ({ label, items, pathname }) => {
       <SidebarGroupLabel>{label}</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
-          {map(items, (item) => (
-            <SidebarMenuItem key={item.to ?? item.label}>
-              {item.onClick ? (
-                <SidebarMenuButton
-                  isActive={item.isActive}
-                  onClick={item.onClick}
-                >
-                  <item.icon />
-                  <span>{item.label}</span>
-                </SidebarMenuButton>
-              ) : (
-                <SidebarMenuButton
-                  isActive={pathname.startsWith(item.to)}
-                  asChild
-                >
-                  <NavLink to={item.to}>
+          {map(items, (item) => {
+            const isActive = isNavItemActive(pathname, item, items);
+
+            return (
+              <SidebarMenuItem key={item.to ?? item.label}>
+                {item.onClick ? (
+                  <SidebarMenuButton
+                    isActive={item.isActive}
+                    onClick={item.onClick}
+                    tooltip={item.label}
+                  >
                     <item.icon />
                     <span>{item.label}</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              )}
-            </SidebarMenuItem>
-          ))}
+                  </SidebarMenuButton>
+                ) : (
+                  <SidebarMenuButton
+                    isActive={isActive}
+                    asChild
+                    tooltip={item.label}
+                  >
+                    <NavLink
+                      to={item.to}
+                      aria-current={isActive ? "page" : undefined}
+                    >
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                )}
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

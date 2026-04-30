@@ -44,6 +44,9 @@ const EquipmentsPage = lazy(
   () => import("@/modules/admin/pages/equipments/index.jsx"),
 );
 const RevenuePage = lazy(() => import("@/modules/admin/pages/revenue/index.jsx"));
+const WithdrawalsPage = lazy(
+  () => import("@/modules/admin/pages/withdrawals/index.jsx"),
+);
 // Old SubscriptionsPage replaced by redirect to premium subscriptions tab
 const PremiumPage = lazy(() => import("@/modules/admin/pages/premium/index.jsx"));
 const ReportsPage = lazy(() => import("@/modules/admin/pages/reports/index.jsx"));
@@ -227,6 +230,16 @@ const Index = () => {
             <Suspense fallback={<PageLoader />}>
               <ErrorBoundary>
                 <RevenuePage />
+              </ErrorBoundary>
+            </Suspense>
+          }
+        />
+        <Route
+          path="withdrawals"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <ErrorBoundary>
+                <WithdrawalsPage />
               </ErrorBoundary>
             </Suspense>
           }

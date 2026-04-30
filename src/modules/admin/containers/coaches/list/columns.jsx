@@ -77,6 +77,7 @@ const getCoachSpecializations = (coach) =>
 export { getCoachBio, getCoachSpecializations };
 
 export const useColumns = ({
+  canManageSupport,
   isCoachActionPending,
   onView,
   onStatusUpdate,
@@ -174,6 +175,7 @@ export const useColumns = ({
           <div className="flex justify-end">
             <CoachActionsMenu
               coach={get(info, "row.original")}
+              canManage={canManageSupport}
               isPending={isCoachActionPending(get(info, "row.original.id"))}
               onView={onView}
               onStatusUpdate={onStatusUpdate}
@@ -183,6 +185,6 @@ export const useColumns = ({
         ),
       },
     ],
-    [isCoachActionPending, onMarketplaceUpdate, onStatusUpdate, onView],
+    [canManageSupport, isCoachActionPending, onMarketplaceUpdate, onStatusUpdate, onView],
   );
 };

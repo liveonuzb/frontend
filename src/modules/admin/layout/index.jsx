@@ -1,6 +1,6 @@
-import { map } from "lodash";
+import { filter, map, some, includes } from "lodash";
 import React from "react";
-import { Outlet, NavLink } from "react-router";
+import { Outlet, NavLink, useLocation } from "react-router";
 import {
   FileClockIcon,
   FileSpreadsheetIcon,
@@ -23,6 +23,7 @@ import {
   MedalIcon,
   BotIcon,
   HeartPulseIcon,
+  WalletCardsIcon,
 } from "lucide-react";
 import {
   Sidebar,
@@ -52,12 +53,28 @@ import {
 } from "@/modules/profile/hooks/use-profile-overlay";
 import LayoutHeader from "@/components/layout-header.jsx";
 import { useMobileChromeHidden } from "@/hooks/app/use-mobile-chrome-hidden";
+import { isNavItemActive } from "@/lib/navigation";
 
 const mainNav = [
   { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboardIcon },
-  { to: "/admin/users/list", label: "Foydalanuvchilar", icon: UsersIcon },
-  { to: "/admin/coaches", label: "Murabbiylar", icon: ShieldCheckIcon },
-  { to: "/admin/challenges/list", label: "Musobaqalar", icon: TrophyIcon },
+  {
+    to: "/admin/users/list",
+    label: "Foydalanuvchilar",
+    icon: UsersIcon,
+    roles: ["SUPER_ADMIN", "SUPPORT", "READONLY_ADMIN"],
+  },
+  {
+    to: "/admin/coaches",
+    label: "Murabbiylar",
+    icon: ShieldCheckIcon,
+    roles: ["SUPER_ADMIN", "SUPPORT", "READONLY_ADMIN"],
+  },
+  {
+    to: "/admin/challenges/list",
+    label: "Musobaqalar",
+    icon: TrophyIcon,
+    roles: ["SUPER_ADMIN", "CONTENT_MANAGER", "GROWTH", "READONLY_ADMIN"],
+  },
 ];
 
 const contentNav = [
@@ -107,43 +124,148 @@ const contentNav = [
 ];
 
 const premiumNav = [
-  { to: "/admin/revenue", label: "Daromad", icon: TrendingUpIcon },
-  { to: "/admin/premium", label: "Premium", icon: GemIcon },
-  { to: "/admin/premium/subscriptions", label: "Obunalar", icon: CrownIcon },
+  {
+    to: "/admin/revenue",
+    label: "Daromad",
+    icon: TrendingUpIcon,
+    roles: ["SUPER_ADMIN", "FINANCE", "READONLY_ADMIN"],
+  },
+  {
+    to: "/admin/withdrawals",
+    label: "Yechib olishlar",
+    icon: WalletCardsIcon,
+    roles: ["SUPER_ADMIN", "FINANCE", "READONLY_ADMIN"],
+  },
+  {
+    to: "/admin/premium",
+    label: "Premium",
+    icon: GemIcon,
+    roles: ["SUPER_ADMIN", "GROWTH", "FINANCE", "READONLY_ADMIN"],
+  },
+  {
+    to: "/admin/premium/subscriptions",
+    label: "Obunalar",
+    icon: CrownIcon,
+    roles: ["SUPER_ADMIN", "GROWTH", "FINANCE", "READONLY_ADMIN"],
+  },
 ];
 
 const systemNav = [
-  { to: "/admin/reports", label: "Hisobotlar", icon: FileSpreadsheetIcon },
-  { to: "/admin/audit-logs", label: "Audit log", icon: FileClockIcon },
-  { to: "/admin/platform-bot", label: "Platform Bot", icon: BotIcon },
-  { to: "/admin/languages", label: "Tillar", icon: GlobeIcon },
-  { to: "/admin/settings", label: "Sozlamalar", icon: SettingsIcon },
+  {
+    to: "/admin/reports",
+    label: "Hisobotlar",
+    icon: FileSpreadsheetIcon,
+  },
+  {
+    to: "/admin/audit-logs",
+    label: "Audit log",
+    icon: FileClockIcon,
+    roles: ["SUPER_ADMIN", "READONLY_ADMIN"],
+  },
+  {
+    to: "/admin/platform-bot",
+    label: "Platform Bot",
+    icon: BotIcon,
+    roles: ["SUPER_ADMIN", "GROWTH"],
+  },
+  {
+    to: "/admin/languages",
+    label: "Tillar",
+    icon: GlobeIcon,
+    roles: ["SUPER_ADMIN", "CONTENT_MANAGER"],
+  },
+  {
+    to: "/admin/settings",
+    label: "Sozlamalar",
+    icon: SettingsIcon,
+    roles: ["SUPER_ADMIN"],
+  },
 ];
 
-const NavGroup = ({ label, items }) => (
-  <SidebarGroup>
-    <SidebarGroupLabel>{label}</SidebarGroupLabel>
-    <SidebarGroupContent>
-      <SidebarMenu>
-        {map(items, (item) => (
-          <SidebarMenuItem key={item.to}>
-            <SidebarMenuButton asChild>
-              <NavLink to={item.to}>
-                <item.icon />
-                <span>{item.label}</span>
-              </NavLink>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        ))}
-      </SidebarMenu>
-    </SidebarGroupContent>
-  </SidebarGroup>
-);
+const NavGroup = ({ label, items }) => {
+  const { pathname } = useLocation();
+
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel>{label}</SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {map(items, (item) => {
+            const isActive = isNavItemActive(pathname, item, items);
+
+            return (
+              <SidebarMenuItem key={item.to}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive}
+                  tooltip={item.label}
+                >
+                  <NavLink
+                    to={item.to}
+                    aria-current={isActive ? "page" : undefined}
+                  >
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
+};
+
+const CONTENT_ROLES = ["SUPER_ADMIN", "CONTENT_MANAGER", "READONLY_ADMIN"];
+const ADMIN_ROLES = [
+  "SUPER_ADMIN",
+  "CONTENT_MANAGER",
+  "SUPPORT",
+  "FINANCE",
+  "GROWTH",
+  "READONLY_ADMIN",
+];
+
+const canSeeNavItem = (roles, item) => {
+  const allowedRoles = item.roles || ADMIN_ROLES;
+  return some(allowedRoles, (role) => includes(roles, role));
+};
+
+const getVisibleNavItems = (items, roles) =>
+  filter(
+    map(items, (item) => ({
+      ...item,
+      roles: item.roles || CONTENT_ROLES,
+    })),
+    (item) => canSeeNavItem(roles, item),
+  );
 
 const Index = () => {
-  const { user } = useAuthStore();
+  const { user, roles } = useAuthStore();
   const { openProfile } = useProfileOverlay();
   const mobileChromeHidden = useMobileChromeHidden();
+
+  const visibleMainNav = React.useMemo(
+    () =>
+      filter(
+        mainNav,
+        (item) => canSeeNavItem(roles, item.roles ? item : { ...item, roles: ADMIN_ROLES }),
+      ),
+    [roles],
+  );
+  const visibleContentNav = React.useMemo(
+    () => getVisibleNavItems(contentNav, roles),
+    [roles],
+  );
+  const visiblePremiumNav = React.useMemo(
+    () => filter(premiumNav, (item) => canSeeNavItem(roles, item)),
+    [roles],
+  );
+  const visibleSystemNav = React.useMemo(
+    () => filter(systemNav, (item) => canSeeNavItem(roles, item.roles ? item : { ...item, roles: ADMIN_ROLES })),
+    [roles],
+  );
 
   return (
     <SidebarProvider>
@@ -152,10 +274,18 @@ const Index = () => {
           <RoleSwitcher />
         </SidebarHeader>
         <SidebarContent>
-          <NavGroup label="Asosiy" items={mainNav} />
-          <NavGroup label="Kontent" items={contentNav} />
-          <NavGroup label="Premium" items={premiumNav} />
-          <NavGroup label="Tizim" items={systemNav} />
+          {visibleMainNav.length ? (
+            <NavGroup label="Asosiy" items={visibleMainNav} />
+          ) : null}
+          {visibleContentNav.length ? (
+            <NavGroup label="Kontent" items={visibleContentNav} />
+          ) : null}
+          {visiblePremiumNav.length ? (
+            <NavGroup label="Premium" items={visiblePremiumNav} />
+          ) : null}
+          {visibleSystemNav.length ? (
+            <NavGroup label="Tizim" items={visibleSystemNav} />
+          ) : null}
         </SidebarContent>
         <SidebarFooter>
           <NavUser />

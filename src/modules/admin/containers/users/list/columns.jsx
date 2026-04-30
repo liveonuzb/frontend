@@ -20,6 +20,8 @@ export const useColumns = ({
   currentPage,
   pageSize,
   isUserActionPending,
+  canManageSupport,
+  canManageGrowth,
   canManageUser,
   canGiftPremium,
   onView,
@@ -200,6 +202,8 @@ export const useColumns = ({
             <UserActionsMenu
               user={row.original}
               isUserActionPending={isUserActionPending}
+              canManageSupport={canManageSupport}
+              canManageGrowth={canManageGrowth}
               canManageUser={canManageUser}
               canGiftPremium={canGiftPremium}
               onView={onView}
@@ -219,6 +223,8 @@ export const useColumns = ({
       currentPage,
       pageSize,
       isUserActionPending,
+      canManageSupport,
+      canManageGrowth,
       canManageUser,
       canGiftPremium,
       onView,

@@ -20,6 +20,7 @@ import {
   LanguagesIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 
 const revenueRanges = [
   { label: "Hafta", value: "week" },
@@ -33,18 +34,21 @@ const reports = [
     title: "Foydalanuvchilar",
     description: "Barcha foydalanuvchilar ro'yxatini Excel ko'rinishida yuklab olish.",
     icon: UsersIcon,
+    capability: "support.read",
   },
   {
     id: "premium-users",
     title: "Premium foydalanuvchilar",
     description: "Faqat faol premium foydalanuvchilarni Excel formatda oling.",
     icon: UsersIcon,
+    capability: "support.read",
   },
   {
     id: "foods",
     title: "Ovqatlar bazasi",
     description: "Ovqatlar, kategoriya va tarjimalarni Excel formatda eksport qiling.",
     icon: UtensilsIcon,
+    capability: "content.read",
   },
   {
     id: "missing-translations",
@@ -52,6 +56,7 @@ const reports = [
     description:
       "Food va category ichidagi yetishmayotgan tarjimalarni alohida hisobotda oling.",
     icon: LanguagesIcon,
+    capability: "content.manage",
   },
 ];
 
@@ -68,8 +73,13 @@ const downloadBlob = ({ blob, fileName }) => {
 };
 
 const Index = () => {
+  const { canReadFinance, hasCapability } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const { request } = useApi();
+  const visibleReports = React.useMemo(
+    () => reports.filter((report) => hasCapability(report.capability)),
+    [hasCapability],
+  );
 
   const getDownloadPayload = React.useCallback(
     async (url, params = {}) => {
@@ -123,6 +133,9 @@ const Index = () => {
   }, [setBreadcrumbs]);
 
   const handleExport = React.useCallback(async (id) => {
+    const report = reports.find((item) => item.id === id);
+    if (!report || !hasCapability(report.capability)) return;
+
     try {
       setLoadingId(id);
 
@@ -151,9 +164,12 @@ const Index = () => {
     exportFoodsReport,
     exportMissingTranslationsReport,
     exportUsersReport,
+    hasCapability,
   ]);
 
   const handleRevenueExport = React.useCallback(async () => {
+    if (!canReadFinance) return;
+
     try {
       setLoadingId("revenue");
       downloadBlob(await exportRevenueReport({ range: revenueRange }));
@@ -168,7 +184,7 @@ const Index = () => {
     } finally {
       setLoadingId(null);
     }
-  }, [exportRevenueReport, revenueRange]);
+  }, [canReadFinance, exportRevenueReport, revenueRange]);
 
   return (
     <PageTransition className="space-y-6">
@@ -185,7 +201,7 @@ const Index = () => {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        {reports.map((report) => (
+        {visibleReports.map((report) => (
           <Card key={report.id}>
             <CardHeader className="py-6">
               <div className="flex items-start justify-between gap-4">
@@ -211,42 +227,44 @@ const Index = () => {
           </Card>
         ))}
 
-        <Card>
-          <CardHeader className="py-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <ReceiptTextIcon className="size-5 text-primary" />
-                  Revenue hisobot
-                </CardTitle>
-                <CardDescription className="mt-2">
-                  Overview, chart bucketlar, expense va oxirgi transactionlar
-                  bilan Excel eksport.
-                </CardDescription>
+        {canReadFinance ? (
+          <Card>
+            <CardHeader className="py-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <ReceiptTextIcon className="size-5 text-primary" />
+                    Revenue hisobot
+                  </CardTitle>
+                  <CardDescription className="mt-2">
+                    Overview, chart bucketlar, expense va oxirgi transactionlar
+                    bilan Excel eksport.
+                  </CardDescription>
+                </div>
+                <Button
+                  onClick={() => void handleRevenueExport()}
+                  disabled={loadingId === "revenue"}
+                  className="gap-2"
+                >
+                  <DownloadIcon className="size-4" />
+                  {loadingId === "revenue" ? "Yuklanmoqda..." : "Excel yuklash"}
+                </Button>
               </div>
-              <Button
-                onClick={() => void handleRevenueExport()}
-                disabled={loadingId === "revenue"}
-                className="gap-2"
-              >
-                <DownloadIcon className="size-4" />
-                {loadingId === "revenue" ? "Yuklanmoqda..." : "Excel yuklash"}
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-2 pb-6">
-            {revenueRanges.map((range) => (
-              <Button
-                key={range.value}
-                variant={revenueRange === range.value ? "default" : "outline"}
-                size="sm"
-                onClick={() => setRevenueRange(range.value)}
-              >
-                {range.label}
-              </Button>
-            ))}
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-2 pb-6">
+              {revenueRanges.map((range) => (
+                <Button
+                  key={range.value}
+                  variant={revenueRange === range.value ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setRevenueRange(range.value)}
+                >
+                  {range.label}
+                </Button>
+              ))}
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
     </PageTransition>
   );

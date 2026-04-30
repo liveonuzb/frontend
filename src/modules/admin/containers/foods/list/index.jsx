@@ -43,6 +43,7 @@ import {
 } from "@/components/reui/data-grid";
 import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
 import { cn } from "@/lib/utils";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import FoodBulkCategoryDrawer from "../components/FoodBulkCategoryDrawer";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
@@ -67,6 +68,7 @@ const resolveLabel = (translations, fallback, language) => {
 
 const Index = () => {
   const navigate = useNavigate();
+  const { canManageContent } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
 
@@ -390,22 +392,26 @@ const Index = () => {
   const selectedFoodCount = selectedFoodIds.length;
 
   const openCreateDrawer = () => {
+    if (!canManageContent) return;
     navigate("create");
   };
 
   const openEditDrawer = (food) => {
+    if (!canManageContent) return;
     navigate(`edit/${food.id}`);
   };
 
   const openTranslationsDrawer = (food) => {
+    if (!canManageContent) return;
     navigate(`translate/${food.id}`);
   };
   const openRecipeDrawer = (food) => {
+    if (!canManageContent) return;
     navigate(`recipe/${food.id}`);
   };
 
   const handleDelete = async () => {
-    if (!foodToDelete) return;
+    if (!canManageContent || !foodToDelete) return;
 
     try {
       await deleteFood(foodToDelete.id);
@@ -449,6 +455,8 @@ const Index = () => {
 
   const handleImportFoods = React.useCallback(
     async (event) => {
+      if (!canManageContent) return;
+
       const file = event.target.files?.[0];
       if (!file) return;
 
@@ -468,10 +476,12 @@ const Index = () => {
         event.target.value = "";
       }
     },
-    [importFoods],
+    [canManageContent, importFoods],
   );
 
   const handleToggleStatus = async (food) => {
+    if (!canManageContent) return;
+
     try {
       await updateFoodStatus(food.id, !food.isActive);
       toast.success(
@@ -488,6 +498,8 @@ const Index = () => {
   };
 
   const handleRestoreFood = async (food) => {
+    if (!canManageContent) return;
+
     try {
       await restoreFood(food.id);
       toast.success("Ovqat trashdan tiklandi");
@@ -502,7 +514,7 @@ const Index = () => {
   };
 
   const handleBulkStatus = async (nextIsActive) => {
-    if (!selectedFoodIds.length) return;
+    if (!canManageContent || !selectedFoodIds.length) return;
 
     try {
       await updateFoodsStatus({
@@ -526,7 +538,7 @@ const Index = () => {
   };
 
   const handleBulkRestore = async () => {
-    if (!selectedFoodIds.length) return;
+    if (!canManageContent || !selectedFoodIds.length) return;
 
     try {
       await restoreFoods({ ids: selectedFoodIds });
@@ -543,7 +555,7 @@ const Index = () => {
   };
 
   const handleBulkTrash = async () => {
-    if (!selectedFoodIds.length) return;
+    if (!canManageContent || !selectedFoodIds.length) return;
 
     try {
       await trashFoods({ ids: selectedFoodIds });
@@ -560,6 +572,8 @@ const Index = () => {
   };
 
   const handleBulkAssignCategories = async () => {
+    if (!canManageContent) return;
+
     if (!selectedFoodIds.length || !bulkCategoryIds.length) {
       toast.error("Kamida bitta kategoriya tanlang");
       return;
@@ -587,7 +601,7 @@ const Index = () => {
   };
 
   const handleHardDelete = async () => {
-    if (!hardDeleteTarget?.ids?.length) return;
+    if (!canManageContent || !hardDeleteTarget?.ids?.length) return;
 
     try {
       await hardDeleteFoods({ ids: hardDeleteTarget.ids });
@@ -610,7 +624,8 @@ const Index = () => {
 
   const columns = useColumns({
     activeLanguages,
-    canReorder,
+    canManage: canManageContent,
+    canReorder: canManageContent && canReorder,
     categoryById,
     cuisineById,
     currentLanguage,
@@ -632,7 +647,7 @@ const Index = () => {
     manualSorting: true,
     manualPagination: true,
     pageCount: get(meta, "totalPages", 1),
-    enableRowSelection: true,
+    enableRowSelection: canManageContent,
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => row.id.toString(),
     onRowSelectionChange: setRowSelection,
@@ -661,7 +676,7 @@ const Index = () => {
   });
 
   const handleDragEnd = async (event) => {
-    if (!canReorder) return;
+    if (!canManageContent || !canReorder) return;
 
     const { active, over } = event;
     if (!active || !over || active.id === over.id) return;
@@ -711,24 +726,28 @@ const Index = () => {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <input
-            ref={importFileInputRef}
-            type="file"
-            accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
-            className="hidden"
-            onChange={(event) => void handleImportFoods(event)}
-          />
-          <Button
-            variant="outline"
-            onClick={() => importFileInputRef.current?.click()}
-            disabled={isImporting}
-            className="gap-1.5"
-          >
-            <UploadIcon className="size-4" />
-            <span className="hidden sm:inline">
-              {isImporting ? "Import..." : "Excel import"}
-            </span>
-          </Button>
+          {canManageContent ? (
+            <>
+              <input
+                ref={importFileInputRef}
+                type="file"
+                accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                className="hidden"
+                onChange={(event) => void handleImportFoods(event)}
+              />
+              <Button
+                variant="outline"
+                onClick={() => importFileInputRef.current?.click()}
+                disabled={isImporting}
+                className="gap-1.5"
+              >
+                <UploadIcon className="size-4" />
+                <span className="hidden sm:inline">
+                  {isImporting ? "Import..." : "Excel import"}
+                </span>
+              </Button>
+            </>
+          ) : null}
           <Button
             variant="outline"
             onClick={() => void handleExportFoods()}
@@ -748,10 +767,12 @@ const Index = () => {
           >
             <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
           </Button>
-          <Button onClick={openCreateDrawer} className="gap-1.5">
-            <PlusIcon className="size-4" />
-            <span className="hidden xs:inline">Yangi ovqat</span>
-          </Button>
+          {canManageContent ? (
+            <Button onClick={openCreateDrawer} className="gap-1.5">
+              <PlusIcon className="size-4" />
+              <span className="hidden xs:inline">Yangi ovqat</span>
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -771,7 +792,7 @@ const Index = () => {
         <div className="w-full flex flex-col gap-2.5">
           <DataGridContainer>
             <ScrollArea className="w-full">
-              {canReorder ? (
+              {canManageContent && canReorder ? (
                 <DataGridTableDndRows
                   table={table}
                   dataIds={paginatedFoodIds}
@@ -788,7 +809,7 @@ const Index = () => {
               Yuklanmoqda...
             </div>
           ) : null}
-          {!canReorder ? (
+          {canManageContent && !canReorder ? (
             <div className="px-2 text-xs text-muted-foreground">
               Tartiblash faqat filterlarsiz va standart saralashda ishlaydi.
             </div>
@@ -801,7 +822,7 @@ const Index = () => {
         </div>
       </DataGrid>
 
-      {selectedFoodCount > 0 ? (
+      {canManageContent && selectedFoodCount > 0 ? (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-3">
           <div className="pointer-events-auto flex w-full max-w-6xl flex-wrap items-center gap-2 rounded-2xl border bg-background/95 px-3 py-2.5 shadow-2xl backdrop-blur">
             <Badge variant="secondary">{selectedFoodCount} ta</Badge>

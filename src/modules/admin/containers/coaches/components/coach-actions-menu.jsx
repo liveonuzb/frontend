@@ -16,6 +16,7 @@ import {
 
 const CoachActionsMenu = ({
   coach,
+  canManage,
   isPending,
   onView,
   onStatusUpdate,
@@ -41,14 +42,14 @@ const CoachActionsMenu = ({
         {coachStatus === "pending" && (
           <>
             <DropdownMenuItem
-              disabled={isPending}
+              disabled={isPending || !canManage}
               onClick={() => onStatusUpdate(coachId, "approved")}
             >
               <CheckCircleIcon className="size-4 text-green-500" />
               Tasdiqlash
             </DropdownMenuItem>
             <DropdownMenuItem
-              disabled={isPending}
+              disabled={isPending || !canManage}
               onClick={() => onStatusUpdate(coachId, "rejected")}
             >
               <XCircleIcon className="size-4 text-red-500" />
@@ -62,7 +63,7 @@ const CoachActionsMenu = ({
             {mpStatus === "pending" ? (
               <>
                 <DropdownMenuItem
-                  disabled={isPending}
+                  disabled={isPending || !canManage}
                   onClick={() =>
                     onMarketplaceUpdate(
                       coachId,
@@ -75,7 +76,7 @@ const CoachActionsMenu = ({
                   Marketplacega chiqarish
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  disabled={isPending}
+                  disabled={isPending || !canManage}
                   onClick={() =>
                     onMarketplaceUpdate(
                       coachId,
@@ -90,7 +91,7 @@ const CoachActionsMenu = ({
               </>
             ) : mpStatus === "approved" ? (
               <DropdownMenuItem
-                disabled={isPending}
+                disabled={isPending || !canManage}
                 onClick={() =>
                   onMarketplaceUpdate(
                     coachId,
@@ -104,7 +105,7 @@ const CoachActionsMenu = ({
               </DropdownMenuItem>
             ) : (
               <DropdownMenuItem
-                disabled={isPending}
+                disabled={isPending || !canManage}
                 onClick={() =>
                   onMarketplaceUpdate(
                     coachId,

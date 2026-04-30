@@ -17,6 +17,7 @@ import {
 import PromoCodeForm, {
   emptyPromoCodeForm,
 } from "../components/promo-code-form.jsx";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 
 const formatDateValue = (dateStr) => {
   if (!dateStr) return "";
@@ -44,6 +45,7 @@ const createFormFromData = (data) => ({
 const EditPromoCode = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { canManageGrowth } = useAdminPermissions();
 
   const { data: promoData, isLoading } = useGetQuery({
     url: "/admin/premium/promo-codes",
@@ -66,6 +68,8 @@ const EditPromoCode = () => {
   const isUpdating = patchMutation.isPending;
 
   const handleSave = React.useCallback(async () => {
+    if (!canManageGrowth) return;
+
     const code = form.code.trim();
     if (!code) {
       toast.error("Promo kodni kiriting");
@@ -108,7 +112,7 @@ const EditPromoCode = () => {
           : message || "Promo kodni saqlab bo'lmadi",
       );
     }
-  }, [form, id, navigate, patchMutation]);
+  }, [canManageGrowth, form, id, navigate, patchMutation]);
 
   const handleOpenChange = (open) => {
     if (!open) navigate("/admin/premium/promo-codes");
@@ -135,7 +139,7 @@ const EditPromoCode = () => {
           </div>
 
           <DrawerFooter className="gap-2 border-t bg-muted/5 px-6 py-4">
-            <Button onClick={handleSave} disabled={isUpdating}>
+            <Button onClick={handleSave} disabled={isUpdating || !canManageGrowth}>
               Saqlash
             </Button>
             <DrawerClose asChild>

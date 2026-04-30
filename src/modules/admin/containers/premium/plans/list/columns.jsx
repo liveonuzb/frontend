@@ -8,7 +8,7 @@ const formatPrice = (price) => {
   return Number(price).toLocaleString("uz-UZ") + " UZS";
 };
 
-export const useColumns = ({ handleToggleActive, onEdit, onDelete }) => {
+export const useColumns = ({ canManage, handleToggleActive, onEdit, onDelete }) => {
   return React.useMemo(
     () => [
       {
@@ -127,6 +127,7 @@ export const useColumns = ({ handleToggleActive, onEdit, onDelete }) => {
           <div className="flex justify-end">
             <ActionsMenu
               plan={info.row.original}
+              canManage={canManage}
               onEdit={onEdit}
               onToggleActive={handleToggleActive}
               onDelete={onDelete}
@@ -135,6 +136,6 @@ export const useColumns = ({ handleToggleActive, onEdit, onDelete }) => {
         ),
       },
     ],
-    [handleToggleActive, onEdit, onDelete],
+    [canManage, handleToggleActive, onEdit, onDelete],
   );
 };

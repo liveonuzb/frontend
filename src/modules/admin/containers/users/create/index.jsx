@@ -22,15 +22,22 @@ import {
   normalizeFormRoles,
   toggleFormRole,
 } from "../config";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 
 const ROLE_OPTIONS = [
   { value: "USER", label: "User", disabled: true },
   { value: "COACH", label: "Coach" },
   { value: "SUPER_ADMIN", label: "Super Admin" },
+  { value: "CONTENT_MANAGER", label: "Content manager" },
+  { value: "SUPPORT", label: "Support" },
+  { value: "FINANCE", label: "Finance" },
+  { value: "GROWTH", label: "Growth" },
+  { value: "READONLY_ADMIN", label: "Readonly admin" },
 ];
 
 const CreateUser = () => {
   const navigate = useNavigate();
+  const { canManageSupport } = useAdminPermissions();
   const [form, setForm] = useState(createInitialUserForm());
 
   const { mutateAsync: createUser, isPending: isCreating } = usePostQuery({
@@ -38,6 +45,8 @@ const CreateUser = () => {
   });
 
   const handleSave = async () => {
+    if (!canManageSupport) return;
+
     if (!trim(get(form, "firstName"))) {
       toast.error("Ismni kiriting");
       return;
@@ -180,7 +189,7 @@ const CreateUser = () => {
           <DrawerFooter className="px-6 pb-6 pt-2">
             <Button
               onClick={handleSave}
-              disabled={isCreating}
+              disabled={isCreating || !canManageSupport}
               className="gap-2"
             >
               {isCreating ? (

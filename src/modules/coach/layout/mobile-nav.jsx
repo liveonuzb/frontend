@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from "react-router";
 import { cn } from "@/lib/utils";
+import { isNavItemActive } from "@/lib/navigation";
 import {
   LayoutDashboardIcon,
   UsersIcon,
@@ -32,12 +33,15 @@ export default function CoachMobileNav({ hidden = false }) {
             key={item.to}
             to={item.to}
             title={item.label}
+            aria-current={
+              isNavItemActive(pathname, item, navItems) ? "page" : undefined
+            }
             className={() =>
               cn(
-                "flex items-center justify-center rounded-full transition-all duration-200 p-[15px]",
-                pathname.startsWith(item.to)
-                  ? "text-primary bg-primary/10"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                "flex items-center justify-center rounded-full p-[15px] transition-all duration-200",
+                isNavItemActive(pathname, item, navItems)
+                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
               )
             }
           >

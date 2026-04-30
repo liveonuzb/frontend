@@ -32,6 +32,7 @@ import {
 import {
   DataGrid,
   DataGridContainer,
+  DataGridTable,
   DataGridTableDndRowHandle,
   DataGridTableDndRows,
 } from "@/components/reui/data-grid";
@@ -40,6 +41,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import {
   getCategoryBadgeAppearance,
 } from "@/lib/category-badge";
@@ -75,7 +77,7 @@ const countFilledTranslations = (translations = {}) =>
     ),
   );
 
-const CategoryFoodsGrid = ({ categoryId, currentLanguage }) => {
+const CategoryFoodsGrid = ({ canManage, categoryId, currentLanguage }) => {
   const { data: foodsData, isLoading, isFetching } = useGetQuery({
     url: `/admin/food-categories/${categoryId}/foods`,
     queryProps: {
@@ -101,13 +103,17 @@ const CategoryFoodsGrid = ({ categoryId, currentLanguage }) => {
 
   const columns = React.useMemo(
     () => [
-      {
-        id: "dnd",
-        header: "",
-        cell: () => <DataGridTableDndRowHandle />,
-        meta: { skeleton: adminListSkeletons.action },
-        size: 32,
-      },
+      ...(canManage
+        ? [
+            {
+              id: "dnd",
+              header: "",
+              cell: () => <DataGridTableDndRowHandle />,
+              meta: { skeleton: adminListSkeletons.action },
+              size: 32,
+            },
+          ]
+        : []),
       {
         accessorKey: "name",
         header: "Ovqat",
@@ -193,7 +199,7 @@ const CategoryFoodsGrid = ({ categoryId, currentLanguage }) => {
           ),
       },
     ],
-    [currentLanguage],
+    [canManage, currentLanguage],
   );
 
   const table = useReactTable({
@@ -205,7 +211,7 @@ const CategoryFoodsGrid = ({ categoryId, currentLanguage }) => {
 
   const handleDragEnd = React.useCallback(
     async ({ active, over }) => {
-      if (!active || !over || active.id === over.id) return;
+      if (!canManage || !active || !over || active.id === over.id) return;
 
       const dataIds = map(foods, (food) => toString(get(food, "id")));
       const oldIndex = dataIds.indexOf(active.id);
@@ -236,7 +242,7 @@ const CategoryFoodsGrid = ({ categoryId, currentLanguage }) => {
         );
       }
     },
-    [foods, reorderFoods],
+    [canManage, foods, reorderFoods],
   );
 
   if (isLoading) {
@@ -262,13 +268,17 @@ const CategoryFoodsGrid = ({ categoryId, currentLanguage }) => {
         <ScrollArea className="w-full">
           <DataGrid
             table={table}
-            tableLayout={{ rowsDraggable: true, width: "auto" }}
+            tableLayout={{ rowsDraggable: canManage, width: "auto" }}
             isLoading={isLoading}
           >
-            <DataGridTableDndRows
-              dataIds={map(foods, (food) => toString(get(food, "id")))}
-              handleDragEnd={handleDragEnd}
-            />
+            {canManage ? (
+              <DataGridTableDndRows
+                dataIds={map(foods, (food) => toString(get(food, "id")))}
+                handleDragEnd={handleDragEnd}
+              />
+            ) : (
+              <DataGridTable />
+            )}
           </DataGrid>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
@@ -285,6 +295,7 @@ const CategoryFoodsGrid = ({ categoryId, currentLanguage }) => {
 
 const Index = () => {
   const navigate = useNavigate();
+  const { canManageContent } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const CATEGORIES_QUERY_KEY = ["admin", "food-categories"];
@@ -419,17 +430,18 @@ const Index = () => {
     [activeLanguages, currentLanguage],
   );
 
-  const isReorderEnabled = canReorder;
+  const isReorderEnabled = canManageContent && canReorder;
 
   const openTranslationsDrawer = React.useCallback(
     (category) => {
+      if (!canManageContent) return;
       navigate(`translate/${get(category, "id")}`);
     },
-    [navigate],
+    [canManageContent, navigate],
   );
 
   const handleDelete = React.useCallback(async () => {
-    if (!categoryToDelete) return;
+    if (!canManageContent || !categoryToDelete) return;
 
     try {
       await deleteCategory(get(categoryToDelete, "id"));
@@ -448,10 +460,12 @@ const Index = () => {
           : message || "Kategoriyani o'chirib bo'lmadi",
       );
     }
-  }, [categoryToDelete, deleteCategory]);
+  }, [canManageContent, categoryToDelete, deleteCategory]);
 
   const handleToggleActive = React.useCallback(
     async (category) => {
+      if (!canManageContent) return;
+
       try {
         await updateCategory(get(category, "id"), {
           isActive: !get(category, "isActive"),
@@ -470,17 +484,21 @@ const Index = () => {
         );
       }
     },
-    [updateCategory],
+    [canManageContent, updateCategory],
   );
 
   const columns = useColumns({
     activeLanguages,
+    canManage: canManageContent,
     currentLanguage,
     isReorderEnabled,
     isUpdating,
     resolveLabel,
     handleToggleActive,
-    openEditDrawer: (category) => navigate(`edit/${get(category, "id")}`),
+    openEditDrawer: (category) => {
+      if (!canManageContent) return;
+      navigate(`edit/${get(category, "id")}`);
+    },
     openTranslationsDrawer,
     setCategoryToDelete,
     CategoryFoodsGrid,
@@ -519,6 +537,7 @@ const Index = () => {
 
   const handleCategoryDragEnd = React.useCallback(
     async ({ active, over }) => {
+      if (!canManageContent) return;
       if (!active || !over || active.id === over.id) return;
       if (!isReorderEnabled) return;
 
@@ -553,7 +572,7 @@ const Index = () => {
         );
       }
     },
-    [categories, isReorderEnabled, reorderCategories],
+    [canManageContent, categories, isReorderEnabled, reorderCategories],
   );
 
   return (
@@ -571,10 +590,12 @@ const Index = () => {
           >
             <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
           </Button>
-          <Button onClick={() => navigate("create")} className="gap-1.5">
-            <PlusIcon />
-            Kategoriya qo'shish
-          </Button>
+          {canManageContent ? (
+            <Button onClick={() => navigate("create")} className="gap-1.5">
+              <PlusIcon />
+              Kategoriya qo'shish
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -593,7 +614,7 @@ const Index = () => {
             ? ` \u2022 ${get(currentLanguageMeta, "flag") ? `${get(currentLanguageMeta, "flag")} ` : ""}${get(currentLanguageMeta, "name")}`
             : ""}
         </p>
-        {!isReorderEnabled ? (
+        {canManageContent && !isReorderEnabled ? (
           <p>Filter yoqilganda drag and drop o'chadi</p>
         ) : null}
       </div>
@@ -610,12 +631,16 @@ const Index = () => {
         <div className="flex flex-col gap-2.5">
           <DataGridContainer>
             <ScrollArea className="w-full">
-            <DataGridTableDndRows
-              dataIds={map(categories, (category) =>
-                toString(get(category, "id")),
+              {isReorderEnabled ? (
+                <DataGridTableDndRows
+                  dataIds={map(categories, (category) =>
+                    toString(get(category, "id")),
+                  )}
+                  handleDragEnd={handleCategoryDragEnd}
+                />
+              ) : (
+                <DataGridTable />
               )}
-              handleDragEnd={handleCategoryDragEnd}
-            />
               <ScrollBar orientation="horizontal" />
             </ScrollArea>
           </DataGridContainer>

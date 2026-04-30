@@ -25,6 +25,7 @@ import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagina
 import { Filters } from "@/components/reui/filters.jsx";
 import { cn } from "@/lib/utils";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 
 const QUERY_KEY = ["admin", "cuisines"];
 const ITEMS_PER_PAGE = 10;
@@ -43,31 +44,35 @@ const getErrorMessage = (error, fallback) => {
   return isArray(message) ? join(message, ", ") : message || fallback;
 };
 
-const ActionsMenu = ({ row, onEdit, onTranslate, onDelete }) => (
-  <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-      <Button variant="ghost" size="icon-sm" aria-label="Amallar">
-        <MoreVerticalIcon />
-      </Button>
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="end">
-      <DropdownMenuItem onClick={() => onTranslate(row)}>
-        <GlobeIcon />
-        Tarjimalar
-      </DropdownMenuItem>
-      <DropdownMenuItem onClick={() => onEdit(row)}>
-        <PencilIcon />
-        Tahrirlash
-      </DropdownMenuItem>
-      <DropdownMenuItem variant="destructive" onClick={() => onDelete(row)}>
-        <Trash2Icon />
-        O'chirish
-      </DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>
-);
+const ActionsMenu = ({ row, canManage, onEdit, onTranslate, onDelete }) => {
+  if (!canManage) return null;
 
-const CuisineFoodsGrid = ({ cuisineId, currentLanguage }) => {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon-sm" aria-label="Amallar">
+          <MoreVerticalIcon />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => onTranslate(row)}>
+          <GlobeIcon />
+          Tarjimalar
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onEdit(row)}>
+          <PencilIcon />
+          Tahrirlash
+        </DropdownMenuItem>
+        <DropdownMenuItem variant="destructive" onClick={() => onDelete(row)}>
+          <Trash2Icon />
+          O'chirish
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
+const CuisineFoodsGrid = ({ canManage, cuisineId, currentLanguage }) => {
   const { data, isLoading, isFetching } = useGetQuery({
     url: `/admin/cuisines/${cuisineId}/foods`,
     queryProps: {
@@ -81,13 +86,17 @@ const CuisineFoodsGrid = ({ cuisineId, currentLanguage }) => {
   });
   const columns = React.useMemo(
     () => [
-      {
-        id: "dnd",
-        header: "",
-        cell: () => <DataGridTableDndRowHandle />,
-        meta: { skeleton: adminListSkeletons.action },
-        size: 32,
-      },
+      ...(canManage
+        ? [
+            {
+              id: "dnd",
+              header: "",
+              cell: () => <DataGridTableDndRowHandle />,
+              meta: { skeleton: adminListSkeletons.action },
+              size: 32,
+            },
+          ]
+        : []),
       {
         accessorKey: "name",
         header: "Ovqat",
@@ -133,7 +142,7 @@ const CuisineFoodsGrid = ({ cuisineId, currentLanguage }) => {
         cell: (info) => info.getValue() ? <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700">Faol</Badge> : <Badge variant="outline" className="bg-slate-500/10 text-slate-700">Nofaol</Badge>,
       },
     ],
-    [currentLanguage],
+    [canManage, currentLanguage],
   );
   const table = useReactTable({
     data: foods,
@@ -143,7 +152,7 @@ const CuisineFoodsGrid = ({ cuisineId, currentLanguage }) => {
   });
   const handleDragEnd = React.useCallback(
     async ({ active, over }) => {
-      if (!active || !over || active.id === over.id) return;
+      if (!canManage || !active || !over || active.id === over.id) return;
       const dataIds = map(foods, (food) => toString(food.id));
       const oldIndex = dataIds.indexOf(active.id);
       const newIndex = dataIds.indexOf(over.id);
@@ -164,7 +173,7 @@ const CuisineFoodsGrid = ({ cuisineId, currentLanguage }) => {
         toast.error(getErrorMessage(error, "Ovqatlar tartibini saqlab bo'lmadi"));
       }
     },
-    [cuisineId, foods, reorderMutation],
+    [canManage, cuisineId, foods, reorderMutation],
   );
 
   if (isLoading) {
@@ -179,8 +188,12 @@ const CuisineFoodsGrid = ({ cuisineId, currentLanguage }) => {
     <div className="flex flex-col gap-3 px-4 pb-4">
       <DataGridContainer>
         <ScrollArea className="w-full">
-          <DataGrid table={table} tableLayout={{ rowsDraggable: true, width: "auto" }} isLoading={isLoading}>
-            <DataGridTableDndRows dataIds={map(foods, (food) => toString(food.id))} handleDragEnd={handleDragEnd} />
+          <DataGrid table={table} tableLayout={{ rowsDraggable: canManage, width: "auto" }} isLoading={isLoading}>
+            {canManage ? (
+              <DataGridTableDndRows dataIds={map(foods, (food) => toString(food.id))} handleDragEnd={handleDragEnd} />
+            ) : (
+              <DataGridTable />
+            )}
           </DataGrid>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
@@ -192,6 +205,7 @@ const CuisineFoodsGrid = ({ cuisineId, currentLanguage }) => {
 
 const ListPage = () => {
   const navigate = useNavigate();
+  const { canManageContent } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const [expanded, setExpanded] = React.useState({});
@@ -208,7 +222,7 @@ const ListPage = () => {
   const currentPage = Math.max(1, Number(pageQuery) || 1);
   const pageSize = Math.min(100, Math.max(1, Number(pageSizeQuery) || ITEMS_PER_PAGE));
   const sorting = React.useMemo(() => (sortBy === "orderKey" && sortDir === "asc" ? [] : [{ id: sortBy, desc: sortDir === "desc" }]), [sortBy, sortDir]);
-  const canReorder = trim(name) === "" && nameOp === "contains" && status === "all" && statusOp === "is" && translations === "all" && translationsOp === "is" && sortBy === "orderKey" && sortDir === "asc" && currentPage === 1;
+  const canReorder = canManageContent && trim(name) === "" && nameOp === "contains" && status === "all" && statusOp === "is" && translations === "all" && translationsOp === "is" && sortBy === "orderKey" && sortDir === "asc" && currentPage === 1;
 
   React.useEffect(() => {
     setBreadcrumbs([{ url: "/admin/cuisines/list", title: "Oshxonalar" }]);
@@ -278,7 +292,7 @@ const ListPage = () => {
         enableSorting: true,
         meta: {
           skeleton: adminListSkeletons.avatarText,
-          expandedContent: (row) => <CuisineFoodsGrid cuisineId={row.id} currentLanguage={currentLanguage} />,
+          expandedContent: (row) => <CuisineFoodsGrid canManage={canManageContent} cuisineId={row.id} currentLanguage={currentLanguage} />,
         },
         cell: (info) => (
           <div className="font-medium">
@@ -329,6 +343,7 @@ const ListPage = () => {
         cell: (info) => (
           <Switch
             checked={Boolean(info.getValue())}
+            disabled={!canManageContent}
             onCheckedChange={(checked) =>
               patchMutation.mutate({ url: `/admin/cuisines/${info.row.original.id}`, attributes: { isActive: checked } })
             }
@@ -352,10 +367,12 @@ const ListPage = () => {
           <div className="flex justify-end">
             <ActionsMenu
               row={info.row.original}
+              canManage={canManageContent}
               onEdit={(row) => navigate(`edit/${row.id}`)}
               onTranslate={(row) => navigate(`translate/${row.id}`)}
               onDelete={async (row) => {
                 try {
+                  if (!canManageContent) return;
                   await deleteMutation.mutateAsync({ url: `/admin/cuisines/${row.id}` });
                   toast.success("Oshxona o'chirildi");
                 } catch (error) {
@@ -367,7 +384,7 @@ const ListPage = () => {
         ),
       },
     ],
-    [activeLanguages, canReorder, currentLanguage, deleteMutation, navigate, patchMutation],
+    [activeLanguages, canManageContent, canReorder, currentLanguage, deleteMutation, navigate, patchMutation],
   );
   const table = useReactTable({
     data: items,
@@ -429,7 +446,7 @@ const ListPage = () => {
     });
   }, [setName, setNameOp, setPageQuery, setStatus, setStatusOp, setTranslations, setTranslationsOp]);
   const handleDragEnd = async ({ active, over }) => {
-    if (!canReorder || !active || !over || active.id === over.id) return;
+    if (!canManageContent || !canReorder || !active || !over || active.id === over.id) return;
     const ids = items.map((item) => String(item.id));
     const oldIndex = ids.indexOf(active.id);
     const newIndex = ids.indexOf(over.id);
@@ -457,10 +474,12 @@ const ListPage = () => {
           <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching}>
             <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
           </Button>
-          <Button onClick={() => navigate("create")}>
-            <PlusIcon data-icon="inline-start" />
-            Yangi oshxona
-          </Button>
+          {canManageContent ? (
+            <Button onClick={() => navigate("create")}>
+              <PlusIcon data-icon="inline-start" />
+              Yangi oshxona
+            </Button>
+          ) : null}
         </div>
       </div>
       <Filters fields={filterFields} filters={activeFilters} onChange={handleFiltersChange} />

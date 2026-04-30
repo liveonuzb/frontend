@@ -24,6 +24,7 @@ import {
   useDeleteQuery,
 } from "@/hooks/api";
 import { useAuthStore } from "@/store";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import { PRIVILEGED_ROLES } from "../config";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
@@ -36,6 +37,7 @@ const EMPTY_ROLES = [];
 
 const Index = () => {
   const navigate = useNavigate();
+  const { canManageSupport, canManageGrowth } = useAdminPermissions();
   const currentUserRoles = useAuthStore((state) => state.roles ?? EMPTY_ROLES);
   const isSuperAdmin = includes(currentUserRoles, "SUPER_ADMIN");
 
@@ -191,24 +193,26 @@ const Index = () => {
 
   const canManageUser = React.useCallback(
     (user) =>
-      isSuperAdmin ||
-      !some(user?.roles ?? [user?.role], (role) =>
-        includes(PRIVILEGED_ROLES, role),
-      ),
-    [isSuperAdmin],
+      canManageSupport &&
+      (isSuperAdmin ||
+        !some(user?.roles ?? [user?.role], (role) =>
+          includes(PRIVILEGED_ROLES, role),
+        )),
+    [canManageSupport, isSuperAdmin],
   );
 
   const canGiftPremium = React.useCallback(
     (user) =>
+      canManageGrowth &&
       canManageUser(user) &&
       !some(user?.roles ?? [user?.role], (role) =>
         includes(PRIVILEGED_ROLES, role),
       ),
-    [canManageUser],
+    [canManageGrowth, canManageUser],
   );
 
   const confirmDelete = React.useCallback(async () => {
-    if (!deleteCandidate) return;
+    if (!canManageSupport || !deleteCandidate) return;
 
     if (!canManageUser(deleteCandidate)) {
       toast.error("Admin accountlarni faqat super admin o'chira oladi");
@@ -230,7 +234,7 @@ const Index = () => {
           : message || "O'chirib bo'lmadi",
       );
     }
-  }, [canManageUser, deleteCandidate, deleteUserMutation, refetch]);
+  }, [canManageSupport, canManageUser, deleteCandidate, deleteUserMutation, refetch]);
 
   // --- View / Edit / Gift / Ban / CoachStatus / CancelPremium ---
   const [viewUser, setViewUser] = React.useState(null);
@@ -253,8 +257,9 @@ const Index = () => {
   );
 
   const handleCreateOpen = React.useCallback(() => {
+    if (!canManageSupport) return;
     navigate("create");
-  }, [navigate]);
+  }, [canManageSupport, navigate]);
 
   const handleGiftOpen = React.useCallback(
     (user) => {
@@ -299,6 +304,8 @@ const Index = () => {
 
   const handleExtendPremium = React.useCallback(
     async (user) => {
+      if (!canManageGrowth) return;
+
       if (!user?.premium?.id) {
         toast.error("Foydalanuvchida premium obuna yo'q");
         return;
@@ -319,11 +326,13 @@ const Index = () => {
         );
       }
     },
-    [extendSubscription],
+    [canManageGrowth, extendSubscription],
   );
 
   const handleCoachStatusUpdate = React.useCallback(
     async (user, nextStatus) => {
+      if (!canManageSupport) return;
+
       try {
         await updateCoachStatus({
           url: `/admin/coaches/${user.id}/status`,
@@ -343,13 +352,15 @@ const Index = () => {
         );
       }
     },
-    [updateCoachStatus],
+    [canManageSupport, updateCoachStatus],
   );
 
   const columns = useColumns({
     currentPage,
     pageSize,
     isUserActionPending,
+    canManageSupport,
+    canManageGrowth,
     canManageUser,
     canGiftPremium,
     onView: handleView,
@@ -411,10 +422,12 @@ const Index = () => {
             >
               <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
             </Button>
-            <Button onClick={handleCreateOpen} className="gap-1.5">
-              <PlusIcon className="size-4" />
-              Foydalanuvchi qo'shish
-            </Button>
+            {canManageSupport ? (
+              <Button onClick={handleCreateOpen} className="gap-1.5">
+                <PlusIcon className="size-4" />
+                Foydalanuvchi qo'shish
+              </Button>
+            ) : null}
           </div>
         </div>
 

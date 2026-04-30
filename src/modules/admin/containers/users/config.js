@@ -4,6 +4,11 @@ const roleColors = {
   USER: "secondary",
   COACH: "default",
   SUPER_ADMIN: "outline",
+  CONTENT_MANAGER: "outline",
+  SUPPORT: "outline",
+  FINANCE: "outline",
+  GROWTH: "outline",
+  READONLY_ADMIN: "outline",
 };
 
 const roleBgColors = {
@@ -12,15 +17,37 @@ const roleBgColors = {
     "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800",
   SUPER_ADMIN:
     "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800",
+  CONTENT_MANAGER:
+    "bg-violet-500/10 text-violet-700 dark:text-violet-400 border-violet-200 dark:border-violet-800",
+  SUPPORT:
+    "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-200 dark:border-cyan-800",
+  FINANCE:
+    "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800",
+  GROWTH:
+    "bg-pink-500/10 text-pink-700 dark:text-pink-400 border-pink-200 dark:border-pink-800",
+  READONLY_ADMIN:
+    "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700",
 };
 
 const roleLabels = {
   USER: "User",
   COACH: "Coach",
   SUPER_ADMIN: "Super Admin",
+  CONTENT_MANAGER: "Content manager",
+  SUPPORT: "Support",
+  FINANCE: "Finance",
+  GROWTH: "Growth",
+  READONLY_ADMIN: "Readonly admin",
 };
 
-const PRIVILEGED_ROLES = ["SUPER_ADMIN"];
+const PRIVILEGED_ROLES = [
+  "SUPER_ADMIN",
+  "CONTENT_MANAGER",
+  "SUPPORT",
+  "FINANCE",
+  "GROWTH",
+  "READONLY_ADMIN",
+];
 
 const statusConfig = {
   active: {

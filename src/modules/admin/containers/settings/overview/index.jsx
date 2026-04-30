@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Spinner } from "@/components/ui/spinner.jsx";
 import { useBreadcrumbStore } from "@/store";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
 import {
@@ -19,12 +20,14 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import PageTransition from "@/components/page-transition";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 
 const Index = () => {
+  const { canManageSettings } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const queryClient = useQueryClient();
 
-  const { data: settingsData } = useGetQuery({
+  const { data: settingsData, isLoading } = useGetQuery({
     url: "/admin/settings",
     queryProps: {
       queryKey: ["admin", "settings"],
@@ -36,7 +39,7 @@ const Index = () => {
     globalCommissionRate: 20,
     registrationEnabled: true,
     minPayoutAmount: 50000,
-    appName: "EduConnect",
+    appName: "LiveOn",
   });
 
   const updateMutation = usePatchQuery({
@@ -66,6 +69,8 @@ const Index = () => {
   }, [setBreadcrumbs]);
 
   const handleSave = async () => {
+    if (!canManageSettings) return;
+
     try {
       await updateMutation.mutateAsync({
         url: "/admin/settings",
@@ -97,7 +102,7 @@ const Index = () => {
           </div>
           <Button
             onClick={handleSave}
-            disabled={isUpdating}
+            disabled={isUpdating || !canManageSettings}
             className="gap-2 font-bold px-6"
           >
             <SaveIcon className="h-4 w-4" />
@@ -105,7 +110,12 @@ const Index = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {isLoading ? (
+          <div className="flex min-h-72 items-center justify-center rounded-2xl border bg-background">
+            <Spinner className="size-8 text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-6">
             {/* General Settings */}
             <Card className="border-border/50 shadow-sm overflow-hidden group">
@@ -121,7 +131,8 @@ const Index = () => {
                   <Input
                     value={formData.appName}
                     onChange={(e) => handleChange("appName", e.target.value)}
-                    placeholder="Masalan: EduConnect"
+                    placeholder="Masalan: LiveOn"
+                    disabled={!canManageSettings}
                   />
                 </div>
                 <div className="flex items-center justify-between p-4 bg-muted/20 border rounded-xl">
@@ -136,6 +147,7 @@ const Index = () => {
                     onCheckedChange={(val) =>
                       handleChange("registrationEnabled", val)
                     }
+                    disabled={!canManageSettings}
                   />
                 </div>
               </CardContent>
@@ -165,6 +177,7 @@ const Index = () => {
                         )
                       }
                       className="pr-10"
+                      disabled={!canManageSettings}
                     />
                     <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                       <span className="text-sm font-bold text-muted-foreground">
@@ -183,6 +196,7 @@ const Index = () => {
                         handleChange("minPayoutAmount", Number(e.target.value))
                       }
                       className="pl-12"
+                      disabled={!canManageSettings}
                     />
                     <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none border-r pr-3">
                       <span className="text-xs font-bold text-muted-foreground">
@@ -222,6 +236,7 @@ const Index = () => {
                       handleChange("maintenanceMode", val)
                     }
                     className="data-[state=checked]:bg-red-500"
+                    disabled={!canManageSettings}
                   />
                 </div>
 
@@ -272,7 +287,8 @@ const Index = () => {
               </CardContent>
             </Card>
           </div>
-        </div>
+          </div>
+        )}
       </div>
     </PageTransition>
   );

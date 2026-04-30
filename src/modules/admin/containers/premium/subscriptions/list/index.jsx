@@ -24,6 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
 import { useSubscriptionFilters } from "./use-filters.js";
@@ -32,6 +33,7 @@ import { CancelAlert } from "./cancel-alert.jsx";
 const SUBSCRIPTIONS_QUERY_KEY = ["admin", "premium-subscriptions"];
 
 const Index = () => {
+  const { canManageGrowth } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const queryClient = useQueryClient();
 
@@ -131,7 +133,7 @@ const Index = () => {
   });
 
   const handleCancel = React.useCallback(async () => {
-    if (!cancelCandidate) return;
+    if (!canManageGrowth || !cancelCandidate) return;
     try {
       await cancelMutation.mutateAsync({
         url: `/admin/premium/subscriptions/${get(cancelCandidate, "id")}/cancel`,
@@ -147,10 +149,10 @@ const Index = () => {
           : message || "Xatolik yuz berdi",
       );
     }
-  }, [cancelCandidate, cancelMutation]);
+  }, [canManageGrowth, cancelCandidate, cancelMutation]);
 
   const handleExtend = React.useCallback(async () => {
-    if (!extendDialog.subscriptionId) return;
+    if (!canManageGrowth || !extendDialog.subscriptionId) return;
     try {
       const days = Number(extendDays);
       await extendMutation.mutateAsync({
@@ -168,10 +170,12 @@ const Index = () => {
           : message || "Xatolik yuz berdi",
       );
     }
-  }, [extendDialog.subscriptionId, extendDays, extendMutation]);
+  }, [canManageGrowth, extendDialog.subscriptionId, extendDays, extendMutation]);
 
   const handleToggleAutoRenew = React.useCallback(
     async (subscriptionId) => {
+      if (!canManageGrowth) return;
+
       try {
         await toggleAutoRenewMutation.mutateAsync({
           url: `/admin/premium/subscriptions/${subscriptionId}/toggle-auto-renew`,
@@ -187,13 +191,16 @@ const Index = () => {
         );
       }
     },
-    [toggleAutoRenewMutation],
+    [canManageGrowth, toggleAutoRenewMutation],
   );
 
   const columns = useColumns({
+    canManage: canManageGrowth,
     onExtend: (subscription) =>
-      setExtendDialog({ open: true, subscriptionId: get(subscription, "id") }),
-    onCancel: setCancelCandidate,
+      canManageGrowth
+        ? setExtendDialog({ open: true, subscriptionId: get(subscription, "id") })
+        : undefined,
+    onCancel: (subscription) => canManageGrowth && setCancelCandidate(subscription),
     onToggleAutoRenew: handleToggleAutoRenew,
   });
 

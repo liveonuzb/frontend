@@ -13,6 +13,36 @@ export const ROLE_CONFIG = {
     icon: ShieldCheckIcon,
     path: "/admin",
   },
+  CONTENT_MANAGER: {
+    label: "Content manager",
+    description: "Kontent boshqaruvi",
+    icon: ShieldCheckIcon,
+    path: "/admin",
+  },
+  SUPPORT: {
+    label: "Support",
+    description: "Foydalanuvchi yordami",
+    icon: ShieldCheckIcon,
+    path: "/admin",
+  },
+  FINANCE: {
+    label: "Finance",
+    description: "Moliya operatsiyalari",
+    icon: ShieldCheckIcon,
+    path: "/admin",
+  },
+  GROWTH: {
+    label: "Growth",
+    description: "Marketing va premium",
+    icon: ShieldCheckIcon,
+    path: "/admin",
+  },
+  READONLY_ADMIN: {
+    label: "Readonly admin",
+    description: "Faqat ko'rish",
+    icon: ShieldCheckIcon,
+    path: "/admin",
+  },
   COACH: {
     label: "Coach",
     description: "Murabbiy paneli",

@@ -28,6 +28,15 @@ const renderRouteElement = (element) => (
   <Suspense fallback={<PageLoader />}>{element}</Suspense>
 );
 
+const ADMIN_ROLES = [
+  "SUPER_ADMIN",
+  "CONTENT_MANAGER",
+  "SUPPORT",
+  "FINANCE",
+  "GROWTH",
+  "READONLY_ADMIN",
+];
+
 const Index = () => {
   const { isAuthenticated, onboardingCompleted, user } = useAuthStore();
   const { isTelegramWebApp } = useTelegram();
@@ -102,7 +111,7 @@ const Index = () => {
       <Route
         path="/admin/*"
         element={
-          <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+          <ProtectedRoute allowedRoles={ADMIN_ROLES}>
             {renderRouteElement(<AdminModule />)}
           </ProtectedRoute>
         }

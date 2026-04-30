@@ -96,12 +96,6 @@
       "title": "Локации",
       "addLocation": "Добавить локацию"
     },
-    "permissions": {
-      "title": "Разрешения",
-      "domain": "Домен",
-      "read": "Чтение",
-      "manage": "Управление"
-    },
     "revenue": {
       "title": "Доходы",
       "totalRevenue": "Общий доход",
@@ -150,7 +144,6 @@
       "workoutBodyParts": "Части тела",
       "equipments": "Оборудование",
       "locations": "Локации",
-      "permissions": "Разрешения",
       "revenue": "Доходы",
       "subscriptions": "Подписки",
       "reports": "Отчеты",

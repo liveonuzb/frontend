@@ -70,6 +70,7 @@ import {
   ArrowDownIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import ExpenseActionsMenu from "../components/expense-actions-menu";
 import { toast } from "sonner";
@@ -159,6 +160,7 @@ const getDefaultExpenseForm = () => ({
 });
 
 const Revenue = () => {
+  const { canManageFinance } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const [dateRange, setDateRange] = React.useState("month");
   const [expenseDrawerOpen, setExpenseDrawerOpen] = React.useState(false);
@@ -268,12 +270,14 @@ const Revenue = () => {
   );
 
   const handleCreateOpen = React.useCallback(() => {
+    if (!canManageFinance) return;
     setEditingExpense(null);
     setExpenseForm(getDefaultExpenseForm());
     setExpenseDrawerOpen(true);
-  }, []);
+  }, [canManageFinance]);
 
   const handleEditOpen = React.useCallback((expense) => {
+    if (!canManageFinance) return;
     setEditingExpense(expense);
     setExpenseForm({
       category: get(expense, "category", ""),
@@ -286,9 +290,11 @@ const Revenue = () => {
       notes: get(expense, "notes", ""),
     });
     setExpenseDrawerOpen(true);
-  }, []);
+  }, [canManageFinance]);
 
   const handleExpenseSave = React.useCallback(async () => {
+    if (!canManageFinance) return;
+
     const payload = {
       category: trim(expenseForm.category),
       amount: Number(expenseForm.amount),
@@ -316,10 +322,10 @@ const Revenue = () => {
           : message || "Xarajatni saqlab bo'lmadi",
       );
     }
-  }, [createExpense, editingExpense, expenseForm, updateExpense]);
+  }, [canManageFinance, createExpense, editingExpense, expenseForm, updateExpense]);
 
   const handleExpenseDelete = React.useCallback(async () => {
-    if (!deleteExpenseCandidate) {
+    if (!canManageFinance || !deleteExpenseCandidate) {
       return;
     }
 
@@ -335,7 +341,7 @@ const Revenue = () => {
           : message || "Xarajatni o'chirib bo'lmadi",
       );
     }
-  }, [deleteExpense, deleteExpenseCandidate]);
+  }, [canManageFinance, deleteExpense, deleteExpenseCandidate]);
 
   const transactionColumns = React.useMemo(
     () => [
@@ -456,6 +462,7 @@ const Revenue = () => {
           <div className="flex justify-end">
             <ExpenseActionsMenu
               expense={get(info, "row.original")}
+              canManage={canManageFinance}
               onEdit={handleEditOpen}
               onDelete={setDeleteExpenseCandidate}
             />
@@ -463,7 +470,7 @@ const Revenue = () => {
         ),
       },
     ],
-    [handleEditOpen, isDeleting, isUpdating],
+    [canManageFinance, handleEditOpen, isDeleting, isUpdating],
   );
 
   const transactionsTable = useReactTable({
@@ -502,10 +509,12 @@ const Revenue = () => {
                 </Button>
               ))}
             </div>
-            <Button onClick={handleCreateOpen}>
-              <PlusIcon data-icon="inline-start" />
-              Xarajat qo'shish
-            </Button>
+            {canManageFinance ? (
+              <Button onClick={handleCreateOpen}>
+                <PlusIcon data-icon="inline-start" />
+                Xarajat qo'shish
+              </Button>
+            ) : null}
           </div>
         </div>
 
@@ -765,10 +774,12 @@ const Revenue = () => {
                   Tanlangan davr uchun operatsion expense ro'yxati
                 </p>
               </div>
-              <Button variant="outline" onClick={handleCreateOpen}>
-                <ReceiptIcon data-icon="inline-start" />
-                Xarajat qo'shish
-              </Button>
+              {canManageFinance ? (
+                <Button variant="outline" onClick={handleCreateOpen}>
+                  <ReceiptIcon data-icon="inline-start" />
+                  Xarajat qo'shish
+                </Button>
+              ) : null}
             </div>
             <DataGridContainer>
               <ScrollArea className="w-full">

@@ -59,6 +59,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 
 const emptyForm = {
   name: "",
@@ -144,6 +145,7 @@ const LocalizedCatalogManager = ({
   isDeleting,
   refetch,
 }) => {
+  const { canManageContent } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const { data: languagesData } = useGetQuery({
@@ -239,6 +241,7 @@ const LocalizedCatalogManager = ({
   ]);
 
   const isReorderEnabled =
+    canManageContent &&
     deferredSearch.trim() === "" &&
     statusFilter === "all" &&
     translationFilter === "all";
@@ -339,22 +342,25 @@ const LocalizedCatalogManager = ({
   );
 
   const openCreateDrawer = React.useCallback(() => {
+    if (!canManageContent) return;
     setEditingItem(null);
     setForm(emptyForm);
     setDrawerOpen(true);
-  }, []);
+  }, [canManageContent]);
 
   const openEditDrawer = React.useCallback(
     (item) => {
+      if (!canManageContent) return;
       setEditingItem(item);
       setForm(createFormFromItem(item, currentLanguage));
       setDrawerOpen(true);
     },
-    [currentLanguage],
+    [canManageContent, currentLanguage],
   );
 
   const openTranslationsDrawer = React.useCallback(
     (item) => {
+      if (!canManageContent) return;
       setTranslatingItem(item);
       setTranslationForm(
         Object.fromEntries(
@@ -370,10 +376,12 @@ const LocalizedCatalogManager = ({
       );
       setTranslationsDrawerOpen(true);
     },
-    [activeLanguages],
+    [activeLanguages, canManageContent],
   );
 
   const submitDrawer = React.useCallback(async () => {
+    if (!canManageContent) return;
+
     const trimmedName = form.name.trim();
 
     if (!trimmedName) {
@@ -406,6 +414,7 @@ const LocalizedCatalogManager = ({
     }
   }, [
     createItem,
+    canManageContent,
     currentLanguage,
     editingItem,
     form,
@@ -414,7 +423,7 @@ const LocalizedCatalogManager = ({
   ]);
 
   const submitTranslations = React.useCallback(async () => {
-    if (!translatingItem) {
+    if (!canManageContent || !translatingItem) {
       return;
     }
 
@@ -429,10 +438,10 @@ const LocalizedCatalogManager = ({
     } catch (error) {
       toast.error(getErrorMessage(error, "Tarjimalarni saqlab bo'lmadi"));
     }
-  }, [translationForm, translatingItem, updateItem]);
+  }, [canManageContent, translationForm, translatingItem, updateItem]);
 
   const confirmDelete = React.useCallback(async () => {
-    if (!itemToDelete) {
+    if (!canManageContent || !itemToDelete) {
       return;
     }
 
@@ -445,10 +454,12 @@ const LocalizedCatalogManager = ({
         getErrorMessage(error, `${singularLabel}ni o'chirib bo'lmadi`),
       );
     }
-  }, [deleteItem, itemToDelete, singularLabel]);
+  }, [canManageContent, deleteItem, itemToDelete, singularLabel]);
 
   const handleToggleStatus = React.useCallback(
     async (item, checked) => {
+      if (!canManageContent) return;
+
       try {
         await updateItem(get(item, "id"), { isActive: checked });
         toast.success("Status yangilandi");
@@ -456,7 +467,7 @@ const LocalizedCatalogManager = ({
         toast.error(getErrorMessage(error, "Statusni saqlab bo'lmadi"));
       }
     },
-    [updateItem],
+    [canManageContent, updateItem],
   );
 
   const columns = React.useMemo(
@@ -534,6 +545,7 @@ const LocalizedCatalogManager = ({
           <div className="flex justify-center">
             <Switch
               checked={Boolean(info.getValue())}
+              disabled={!canManageContent}
               onCheckedChange={(checked) =>
                 void handleToggleStatus(get(info, "row.original"), checked)
               }
@@ -550,6 +562,7 @@ const LocalizedCatalogManager = ({
           <div className="flex justify-end">
             <CatalogItemActionsMenu
               item={get(info, "row.original")}
+              canManage={canManageContent}
               onEdit={openEditDrawer}
               onDelete={setItemToDelete}
               onTranslations={openTranslationsDrawer}
@@ -560,6 +573,7 @@ const LocalizedCatalogManager = ({
     ],
     [
       activeLanguages,
+      canManageContent,
       currentLanguage,
       handleToggleStatus,
       isReorderEnabled,
@@ -578,7 +592,7 @@ const LocalizedCatalogManager = ({
 
   const handleDragEnd = React.useCallback(
     async ({ active, over }) => {
-      if (!over || active.id === over.id || !isReorderEnabled) {
+      if (!canManageContent || !over || active.id === over.id || !isReorderEnabled) {
         return;
       }
 
@@ -608,7 +622,7 @@ const LocalizedCatalogManager = ({
         toast.error(getErrorMessage(error, "Tartibni saqlab bo'lmadi"));
       }
     },
-    [filteredItems, isReorderEnabled, reorderItems],
+    [canManageContent, filteredItems, isReorderEnabled, reorderItems],
   );
 
   return (
@@ -624,10 +638,12 @@ const LocalizedCatalogManager = ({
               <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
             </Button>
           ) : null}
-          <Button onClick={openCreateDrawer} className="gap-2">
-            <PlusIcon />
-            Yangi {singularLabel}
-          </Button>
+          {canManageContent ? (
+            <Button onClick={openCreateDrawer} className="gap-2">
+              <PlusIcon />
+              Yangi {singularLabel}
+            </Button>
+          ) : null}
         </div>
       </div>
 

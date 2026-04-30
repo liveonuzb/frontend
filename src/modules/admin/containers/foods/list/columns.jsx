@@ -11,6 +11,7 @@ import FoodImageCell from "./food-image-cell.jsx";
 
 export const useColumns = ({
   activeLanguages,
+  canManage,
   canReorder,
   categoryById,
   cuisineById,
@@ -28,14 +29,18 @@ export const useColumns = ({
 }) => {
   return React.useMemo(
     () => [
-      {
-        id: "select",
-        header: () => <DataGridTableRowSelectAll />,
-        cell: ({ row }) => <DataGridTableRowSelect row={row} />,
-        enableSorting: false,
-        meta: { skeleton: adminListSkeletons.action },
-        size: 40,
-      },
+      ...(canManage
+        ? [
+            {
+              id: "select",
+              header: () => <DataGridTableRowSelectAll />,
+              cell: ({ row }) => <DataGridTableRowSelect row={row} />,
+              enableSorting: false,
+              meta: { skeleton: adminListSkeletons.action },
+              size: 40,
+            },
+          ]
+        : []),
       ...(canReorder
         ? [
             {
@@ -216,7 +221,7 @@ export const useColumns = ({
               <Switch
                 checked={Boolean(info.getValue())}
                 onCheckedChange={() => void handleToggleStatus(food)}
-                disabled={food.isTrashed}
+                disabled={!canManage || food.isTrashed}
               />
             </div>
           );
@@ -232,6 +237,7 @@ export const useColumns = ({
           <div className="flex justify-end">
             <ActionsMenu
               food={info.row.original}
+              canManage={canManage}
               onEdit={openEditDrawer}
               onDelete={setFoodToDelete}
               onRestore={handleRestoreFood}
@@ -245,6 +251,7 @@ export const useColumns = ({
     ],
     [
       activeLanguages,
+      canManage,
       canReorder,
       categoryById,
       cuisineById,

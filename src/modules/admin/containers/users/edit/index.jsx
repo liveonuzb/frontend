@@ -18,16 +18,23 @@ import { CheckCircle2Icon, LoaderCircleIcon, PencilIcon } from "lucide-react";
 import { PhoneInput } from "@/components/ui/phone-input.jsx";
 import { toast } from "sonner";
 import { normalizeFormRoles, toggleFormRole } from "../config";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 
 const ROLE_OPTIONS = [
   { value: "USER", label: "User", disabled: true },
   { value: "COACH", label: "Coach" },
   { value: "SUPER_ADMIN", label: "Super Admin" },
+  { value: "CONTENT_MANAGER", label: "Content manager" },
+  { value: "SUPPORT", label: "Support" },
+  { value: "FINANCE", label: "Finance" },
+  { value: "GROWTH", label: "Growth" },
+  { value: "READONLY_ADMIN", label: "Readonly admin" },
 ];
 
 const EditUser = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { canManageSupport } = useAdminPermissions();
 
   const { data: userData, isLoading } = useGetQuery({
     url: `/admin/users/${id}`,
@@ -65,6 +72,8 @@ const EditUser = () => {
   });
 
   const handleSave = async () => {
+    if (!canManageSupport) return;
+
     if (!trim(form.firstName)) {
       toast.error("Ismni kiriting");
       return;
@@ -194,7 +203,7 @@ const EditUser = () => {
           <DrawerFooter className="px-6 pb-6 pt-2">
             <Button
               onClick={handleSave}
-              disabled={isUpdating}
+              disabled={isUpdating || !canManageSupport}
               className="gap-2"
             >
               {isUpdating ? (

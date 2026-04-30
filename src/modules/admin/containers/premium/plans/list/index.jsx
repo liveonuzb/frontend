@@ -27,6 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
 import { usePlanFilters } from "./use-filters.js";
@@ -36,6 +37,7 @@ const PLANS_QUERY_KEY = ["admin", "premium-plans"];
 
 const Index = () => {
   const navigate = useNavigate();
+  const { canManageGrowth } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
 
   const { data: plansData, isLoading, isFetching, refetch } = useGetQuery({
@@ -68,6 +70,8 @@ const Index = () => {
 
   const handleToggleActive = React.useCallback(
     async (plan) => {
+      if (!canManageGrowth) return;
+
       try {
         await patchMutation.mutateAsync({
           url: `/admin/premium/plans/${get(plan, "id")}`,
@@ -87,11 +91,11 @@ const Index = () => {
         );
       }
     },
-    [patchMutation],
+    [canManageGrowth, patchMutation],
   );
 
   const handleDelete = React.useCallback(async () => {
-    if (!planToDelete) return;
+    if (!canManageGrowth || !planToDelete) return;
 
     try {
       await deleteMutation.mutateAsync({
@@ -107,7 +111,7 @@ const Index = () => {
           : message || "Planni o'chirib bo'lmadi",
       );
     }
-  }, [planToDelete, deleteMutation]);
+  }, [canManageGrowth, planToDelete, deleteMutation]);
 
   const deferredSearch = React.useDeferredValue(search);
 
@@ -135,8 +139,12 @@ const Index = () => {
   }, [plans, deferredSearch, typeFilter, statusFilter]);
 
   const columns = useColumns({
+    canManage: canManageGrowth,
     handleToggleActive,
-    onEdit: (plan) => navigate(`edit/${get(plan, "id")}`),
+    onEdit: (plan) => {
+      if (!canManageGrowth) return;
+      navigate(`edit/${get(plan, "id")}`);
+    },
     onDelete: setPlanToDelete,
   });
 
@@ -151,10 +159,12 @@ const Index = () => {
     <div className="flex w-full flex-col gap-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Planlar</h1>
-        <Button onClick={() => navigate("create")} className="gap-1.5">
-          <PlusIcon />
-          Plan qo'shish
-        </Button>
+        {canManageGrowth ? (
+          <Button onClick={() => navigate("create")} className="gap-1.5">
+            <PlusIcon />
+            Plan qo'shish
+          </Button>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

@@ -45,6 +45,7 @@ import LayoutHeader from "@/components/layout-header.jsx";
 import { useMobileChromeHidden } from "@/hooks/app/use-mobile-chrome-hidden";
 import { get, map } from "lodash";
 import { cn } from "@/lib/utils";
+import { isNavItemActive } from "@/lib/navigation";
 
 const mainNav = [
   { to: "/coach/dashboard", label: "Dashboard", icon: LayoutDashboardIcon },
@@ -76,25 +77,40 @@ const mainNav = [
   },
 ];
 
-const NavGroup = ({ label, items }) => (
-  <SidebarGroup>
-    <SidebarGroupLabel>{label}</SidebarGroupLabel>
-    <SidebarGroupContent>
-      <SidebarMenu>
-        {map(items, (item) => (
-          <SidebarMenuItem key={item.to}>
-            <SidebarMenuButton asChild>
-              <NavLink to={item.to}>
-                <item.icon />
-                <span>{item.label}</span>
-              </NavLink>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        ))}
-      </SidebarMenu>
-    </SidebarGroupContent>
-  </SidebarGroup>
-);
+const NavGroup = ({ label, items }) => {
+  const { pathname } = useLocation();
+
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel>{label}</SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {map(items, (item) => {
+            const isActive = isNavItemActive(pathname, item, items);
+
+            return (
+              <SidebarMenuItem key={item.to}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive}
+                  tooltip={item.label}
+                >
+                  <NavLink
+                    to={item.to}
+                    aria-current={isActive ? "page" : undefined}
+                  >
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
+};
 
 const Index = () => {
   const location = useLocation();

@@ -17,6 +17,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import PageTransition from "@/components/page-transition";
 import { cn } from "@/lib/utils";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import {
   ADMIN_ACHIEVEMENTS_QUERY_KEY,
   resolveAchievementApiErrorMessage,
@@ -33,6 +34,7 @@ const getErrorMessage = (error, fallback) => {
 
 const AchievementsListPage = () => {
   const navigate = useNavigate();
+  const { canManageContent } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentMode = useAppModeStore((state) => state.mode) || "madagascar";
   const currentLanguage = useLanguageStore((state) => state.currentLanguage) || "uz";
@@ -208,6 +210,8 @@ const AchievementsListPage = () => {
   );
 
   const handleToggleActive = async (item) => {
+    if (!canManageContent) return;
+
     try {
       await updateItem(get(item, "id"), {
         isActive: !get(item, "isActive"),
@@ -219,7 +223,7 @@ const AchievementsListPage = () => {
   };
 
   const handleDelete = async () => {
-    if (!itemToDelete) return;
+    if (!canManageContent || !itemToDelete) return;
 
     try {
       await removeItem({
@@ -238,7 +242,7 @@ const AchievementsListPage = () => {
   };
 
   const handleDragEnd = async (event) => {
-    if (!canReorder) return;
+    if (!canManageContent || !canReorder) return;
 
     const { active, over } = event;
 
@@ -287,7 +291,8 @@ const AchievementsListPage = () => {
 
   const columns = useColumns({
     activeLanguages,
-    canReorder,
+    canManage: canManageContent,
+    canReorder: canManageContent && canReorder,
     currentMode,
     currentLanguage,
     isUpdating: isUpdating || isReordering,
@@ -355,10 +360,12 @@ const AchievementsListPage = () => {
                 className={cn("size-4", isFetching && "animate-spin")}
               />
             </Button>
-            <Button onClick={() => navigate("create")} className="gap-1.5">
-              <PlusIcon />
-              Achievement qo'shish
-            </Button>
+            {canManageContent ? (
+              <Button onClick={() => navigate("create")} className="gap-1.5">
+                <PlusIcon />
+                Achievement qo'shish
+              </Button>
+            ) : null}
           </div>
         </div>
 
@@ -370,7 +377,7 @@ const AchievementsListPage = () => {
           <div className="flex w-full flex-col gap-2.5">
             <DataGridContainer>
               <ScrollArea className="w-full">
-                {canReorder ? (
+                {canManageContent && canReorder ? (
                   <DataGridTableDndRows
                     dataIds={map(items, (item) => toString(get(item, "id")))}
                     handleDragEnd={handleDragEnd}
@@ -381,7 +388,7 @@ const AchievementsListPage = () => {
                 <ScrollBar orientation="horizontal" />
               </ScrollArea>
             </DataGridContainer>
-            {!canReorder ? (
+            {canManageContent && !canReorder ? (
               <div className="px-2 text-xs text-muted-foreground">
                 Tartiblash faqat filterlarsiz va birinchi sahifada ishlaydi.
               </div>

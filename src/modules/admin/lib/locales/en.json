@@ -96,12 +96,6 @@
       "title": "Locations",
       "addLocation": "Add location"
     },
-    "permissions": {
-      "title": "Permissions",
-      "domain": "Domain",
-      "read": "Read",
-      "manage": "Manage"
-    },
     "revenue": {
       "title": "Revenue",
       "totalRevenue": "Total Revenue",
@@ -150,7 +144,6 @@
       "workoutBodyParts": "Body Parts",
       "equipments": "Equipments",
       "locations": "Locations",
-      "permissions": "Permissions",
       "revenue": "Revenue",
       "subscriptions": "Subscriptions",
       "reports": "Reports",

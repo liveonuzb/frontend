@@ -10,34 +10,39 @@ import {
 
 const CatalogItemActionsMenu = ({
   item,
+  canManage = true,
   onEdit,
   onDelete,
   onTranslations,
-}) => (
-  <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-      <Button variant="ghost" size="icon-sm" aria-label="Amallar">
-        <MoreVerticalIcon className="size-4" />
-      </Button>
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="end" className="w-56">
-      <DropdownMenuItem onClick={() => onTranslations(item)}>
-        <GlobeIcon className="size-4" />
-        Tarjimalar
-      </DropdownMenuItem>
-      <DropdownMenuItem onClick={() => onEdit(item)}>
-        <PencilIcon className="size-4" />
-        Tahrirlash
-      </DropdownMenuItem>
-      <DropdownMenuItem
-        variant="destructive"
-        onClick={() => onDelete(item)}
-      >
-        <Trash2Icon className="size-4" />
-        O'chirish
-      </DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>
-);
+}) => {
+  if (!canManage) return null;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon-sm" aria-label="Amallar">
+          <MoreVerticalIcon className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuItem onClick={() => onTranslations(item)}>
+          <GlobeIcon className="size-4" />
+          Tarjimalar
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onEdit(item)}>
+          <PencilIcon className="size-4" />
+          Tahrirlash
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          variant="destructive"
+          onClick={() => onDelete(item)}
+        >
+          <Trash2Icon className="size-4" />
+          O'chirish
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
 
 export default CatalogItemActionsMenu;

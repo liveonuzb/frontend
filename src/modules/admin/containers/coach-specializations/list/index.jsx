@@ -25,6 +25,7 @@ import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagina
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import PageTransition from "@/components/page-transition";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
 import { useSpecializationFilters } from "./use-filters.js";
@@ -71,6 +72,7 @@ const getSupportedActiveLanguages = (languages) => {
 
 const Index = () => {
   const navigate = useNavigate();
+  const { canManageContent } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const {
@@ -248,7 +250,7 @@ const Index = () => {
   }, [currentPage, hasMeta, meta, setPageQuery]);
 
   const handleDelete = async () => {
-    if (!itemToDelete) return;
+    if (!canManageContent || !itemToDelete) return;
 
     try {
       await deleteItem(get(itemToDelete, "id"));
@@ -260,6 +262,8 @@ const Index = () => {
   };
 
   const handleToggleActive = async (item) => {
+    if (!canManageContent) return;
+
     try {
       await updateItem(get(item, "id"), {
         isActive: !get(item, "isActive"),
@@ -271,7 +275,7 @@ const Index = () => {
   };
 
   const handleDragEnd = async (event) => {
-    if (!canReorder) return;
+    if (!canManageContent || !canReorder) return;
 
     const { active, over } = event;
 
@@ -317,7 +321,8 @@ const Index = () => {
 
   const columns = useColumns({
     activeLanguages,
-    canReorder,
+    canManage: canManageContent,
+    canReorder: canManageContent && canReorder,
     currentLanguage,
     isUpdating: isUpdating || isReordering,
     onToggleActive: handleToggleActive,
@@ -384,10 +389,12 @@ const Index = () => {
                 className={cn("size-4", isFetching && "animate-spin")}
               />
             </Button>
-            <Button onClick={() => navigate("create")} className="gap-1.5">
-              <PlusIcon />
-              Yo'nalish qo'shish
-            </Button>
+            {canManageContent ? (
+              <Button onClick={() => navigate("create")} className="gap-1.5">
+                <PlusIcon />
+                Yo'nalish qo'shish
+              </Button>
+            ) : null}
           </div>
         </div>
 
@@ -399,7 +406,7 @@ const Index = () => {
           <div className="flex w-full flex-col gap-2.5">
             <DataGridContainer>
               <ScrollArea className="w-full">
-                {canReorder ? (
+                {canManageContent && canReorder ? (
                   <DataGridTableDndRows
                     dataIds={map(items, (item) => toString(get(item, "id")))}
                     handleDragEnd={handleDragEnd}
@@ -410,7 +417,7 @@ const Index = () => {
                 <ScrollBar orientation="horizontal" />
               </ScrollArea>
             </DataGridContainer>
-            {!canReorder ? (
+            {canManageContent && !canReorder ? (
               <div className="px-2 text-xs text-muted-foreground">
                 Tartiblash faqat filterlarsiz va birinchi sahifada ishlaydi.
               </div>

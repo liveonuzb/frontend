@@ -11,11 +11,13 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import { PlanForm } from "../components/plan-form.jsx";
 
 const EditPlan = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { canManageGrowth } = useAdminPermissions();
 
   const { data: plansData, isLoading } = useGetQuery({
     url: "/admin/premium/plans",
@@ -31,6 +33,8 @@ const EditPlan = () => {
 
   const handleSave = React.useCallback(
     async (payload) => {
+      if (!canManageGrowth) return;
+
       if (!payload.name || !payload.name.trim()) {
         toast.error("Plan nomini kiriting");
         return;
@@ -52,7 +56,7 @@ const EditPlan = () => {
         );
       }
     },
-    [id, navigate, patchMutation],
+    [canManageGrowth, id, navigate, patchMutation],
   );
 
   const handleOpenChange = (open) => {
@@ -78,7 +82,7 @@ const EditPlan = () => {
           <PlanForm
             defaultValues={plan}
             onSubmit={handleSave}
-            isSubmitting={isUpdating}
+            isSubmitting={isUpdating || !canManageGrowth}
             submitLabel="Saqlash"
           />
         </div>

@@ -1,6 +1,7 @@
 import { get, map } from "lodash";
 import { NavLink, useLocation } from "react-router";
 import { cn } from "@/lib/utils";
+import { isNavItemActive } from "@/lib/navigation";
 import { Home2 } from "iconsax-reactjs";
 import { Salad, DumbbellIcon, TrophyIcon } from "lucide-react";
 
@@ -32,24 +33,29 @@ const MobileNav = ({ hidden = false }) => {
       )}
     >
       <div className="flex justify-between items-center bg-secondary/70 backdrop-blur-md border border-border/40 shadow-2xl rounded-full px-2 py-1.5 gap-0.5">
-        {map(items, (item = {}) => (
-          <NavLink
-            key={get(item, "to", "")}
-            to={get(item, "to", "")}
-            title={get(item, "label", "")}
-            aria-label={get(item, "label", "")}
-            className={() =>
-              cn(
-                "flex items-center justify-center rounded-full transition-all duration-200 p-[15px]",
-                pathname.startsWith(get(item, "to", ""))
-                  ? "text-primary bg-primary/10"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
-              )
-            }
-          >
-            <item.icon className="size-[24px]" />
-          </NavLink>
-        ))}
+        {map(items, (item = {}) => {
+          const isActive = isNavItemActive(pathname, item, items);
+
+          return (
+            <NavLink
+              key={get(item, "to", "")}
+              to={get(item, "to", "")}
+              title={get(item, "label", "")}
+              aria-label={get(item, "label", "")}
+              aria-current={isActive ? "page" : undefined}
+              className={() =>
+                cn(
+                  "flex items-center justify-center rounded-full p-[15px] transition-all duration-200",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                )
+              }
+            >
+              <item.icon className="size-[24px]" />
+            </NavLink>
+          );
+        })}
       </div>
       <FloatingActionButton />
     </div>

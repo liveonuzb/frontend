@@ -67,6 +67,7 @@ const formatDate = (value) => {
 
 export const useColumns = ({
   activeLanguages,
+  canManage,
   canReorder,
   currentMode,
   currentLanguage,
@@ -252,7 +253,7 @@ export const useColumns = ({
             <div className="flex items-center">
               <Switch
                 checked={info.getValue()}
-                disabled={isUpdating}
+                disabled={!canManage || isUpdating}
                 onCheckedChange={() => onToggleActive(item)}
               />
             </div>
@@ -285,6 +286,7 @@ export const useColumns = ({
           <div className={cn("flex justify-end")}>
             <AchievementActionsMenu
               item={get(info, "row.original")}
+              canManage={canManage}
               onImages={onImages}
               onTranslate={onTranslate}
               onEdit={onEdit}
@@ -297,6 +299,7 @@ export const useColumns = ({
     ],
     [
       activeLanguages,
+      canManage,
       canReorder,
       currentMode,
       currentLanguage,

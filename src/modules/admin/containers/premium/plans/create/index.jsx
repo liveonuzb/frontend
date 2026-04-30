@@ -11,10 +11,12 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import { PlanForm } from "../components/plan-form.jsx";
 
 const CreatePlan = () => {
   const navigate = useNavigate();
+  const { canManageGrowth } = useAdminPermissions();
 
   const createMutation = usePostQuery({
     queryKey: ["admin", "premium-plans"],
@@ -23,6 +25,8 @@ const CreatePlan = () => {
 
   const handleSave = React.useCallback(
     async (payload) => {
+      if (!canManageGrowth) return;
+
       if (!payload.name || !payload.name.trim()) {
         toast.error("Plan nomini kiriting");
         return;
@@ -44,7 +48,7 @@ const CreatePlan = () => {
         );
       }
     },
-    [createMutation, navigate],
+    [canManageGrowth, createMutation, navigate],
   );
 
   const handleOpenChange = (open) => {
@@ -67,7 +71,7 @@ const CreatePlan = () => {
 
           <PlanForm
             onSubmit={handleSave}
-            isSubmitting={isCreating}
+            isSubmitting={isCreating || !canManageGrowth}
             submitLabel="Yaratish"
           />
         </div>

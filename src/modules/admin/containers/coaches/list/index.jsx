@@ -26,6 +26,7 @@ import {
   DataGridTable,
 } from "@/components/reui/data-grid";
 import { useBreadcrumbStore } from "@/store";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
 import {
   useColumns,
@@ -43,6 +44,7 @@ import { useCoachFilters } from "./use-filters.js";
 const ITEMS_PER_PAGE = 10;
 
 const Index = () => {
+  const { canManageSupport } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const {
     currentPage,
@@ -144,6 +146,8 @@ const Index = () => {
 
   const handleStatusUpdate = React.useCallback(
     async (coachId, status) => {
+      if (!canManageSupport) return;
+
       setCoachPendingState(coachId, true);
       try {
         await updateCoachStatus(coachId, status);
@@ -164,11 +168,13 @@ const Index = () => {
         setCoachPendingState(coachId, false);
       }
     },
-    [setCoachPendingState, updateCoachStatus, get(viewCoach, "id")],
+    [canManageSupport, setCoachPendingState, updateCoachStatus, get(viewCoach, "id")],
   );
 
   const handleMarketplaceStatusUpdate = React.useCallback(
     async (coachId, status, successText) => {
+      if (!canManageSupport) return;
+
       setCoachPendingState(coachId, true);
       try {
         await updateCoachMarketplaceStatus(coachId, status);
@@ -194,10 +200,11 @@ const Index = () => {
         setCoachPendingState(coachId, false);
       }
     },
-    [setCoachPendingState, updateCoachMarketplaceStatus, get(viewCoach, "id")],
+    [canManageSupport, setCoachPendingState, updateCoachMarketplaceStatus, get(viewCoach, "id")],
   );
 
   const columns = useColumns({
+    canManageSupport,
     isCoachActionPending,
     onView: setViewCoach,
     onStatusUpdate: handleStatusUpdate,
@@ -290,7 +297,7 @@ const Index = () => {
                           onClick={() =>
                             handleStatusUpdate(get(viewCoach, "id"), "approved")
                           }
-                          disabled={isCoachActionPending(get(viewCoach, "id"))}
+                          disabled={!canManageSupport || isCoachActionPending(get(viewCoach, "id"))}
                         >
                           Tasdiqlash
                         </Button>
@@ -300,7 +307,7 @@ const Index = () => {
                           onClick={() =>
                             handleStatusUpdate(get(viewCoach, "id"), "rejected")
                           }
-                          disabled={isCoachActionPending(get(viewCoach, "id"))}
+                          disabled={!canManageSupport || isCoachActionPending(get(viewCoach, "id"))}
                         >
                           Rad etish
                         </Button>
@@ -416,7 +423,7 @@ const Index = () => {
                         <div className="flex flex-wrap gap-2">
                           <Button
                             size="sm"
-                            disabled={isCoachActionPending(
+                            disabled={!canManageSupport || isCoachActionPending(
                               get(viewCoach, "id"),
                             )}
                             onClick={() =>
@@ -433,7 +440,7 @@ const Index = () => {
                             size="sm"
                             variant="outline"
                             className="text-red-600 hover:text-red-700"
-                            disabled={isCoachActionPending(
+                            disabled={!canManageSupport || isCoachActionPending(
                               get(viewCoach, "id"),
                             )}
                             onClick={() =>
@@ -449,7 +456,7 @@ const Index = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            disabled={isCoachActionPending(
+                            disabled={!canManageSupport || isCoachActionPending(
                               get(viewCoach, "id"),
                             )}
                             onClick={() =>

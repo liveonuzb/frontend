@@ -4,7 +4,16 @@ import { includes } from "lodash";
 import { normalizeRoles } from "@/lib/roles";
 
 const defaultRoles = [];
-const rolePriority = ["SUPER_ADMIN", "COACH", "USER"];
+const rolePriority = [
+  "SUPER_ADMIN",
+  "CONTENT_MANAGER",
+  "SUPPORT",
+  "FINANCE",
+  "GROWTH",
+  "READONLY_ADMIN",
+  "COACH",
+  "USER",
+];
 
 const getNextActiveRole = (roles, currentRole) => {
   if (currentRole && includes(roles, currentRole)) {

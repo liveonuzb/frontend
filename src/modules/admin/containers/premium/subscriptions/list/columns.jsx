@@ -37,7 +37,7 @@ const getDaysRemaining = (dateStr) => {
   return diff > 0 ? diff : null;
 };
 
-export const useColumns = ({ onExtend, onCancel, onToggleAutoRenew }) => {
+export const useColumns = ({ canManage, onExtend, onCancel, onToggleAutoRenew }) => {
   return React.useMemo(
     () => [
       {
@@ -121,7 +121,7 @@ export const useColumns = ({ onExtend, onCancel, onToggleAutoRenew }) => {
             <Switch
               checked={get(subscription, "autoRenew", false)}
               onCheckedChange={() => onToggleAutoRenew(get(subscription, "id"))}
-              disabled={get(subscription, "status") !== "ACTIVE"}
+              disabled={!canManage || get(subscription, "status") !== "ACTIVE"}
             />
           );
         },
@@ -186,6 +186,7 @@ export const useColumns = ({ onExtend, onCancel, onToggleAutoRenew }) => {
           <div className="flex justify-end">
             <SubscriptionActionsMenu
               subscription={get(info, "row.original")}
+              canManage={canManage}
               onExtend={onExtend}
               onCancel={onCancel}
             />
@@ -193,6 +194,6 @@ export const useColumns = ({ onExtend, onCancel, onToggleAutoRenew }) => {
         ),
       },
     ],
-    [onCancel, onExtend, onToggleAutoRenew],
+    [canManage, onCancel, onExtend, onToggleAutoRenew],
   );
 };

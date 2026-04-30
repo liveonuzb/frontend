@@ -19,6 +19,11 @@ const ROLE_OPTIONS = [
   { value: "USER", label: "User" },
   { value: "COACH", label: "Coach" },
   { value: "SUPER_ADMIN", label: "Super Admin" },
+  { value: "CONTENT_MANAGER", label: "Content manager" },
+  { value: "SUPPORT", label: "Support" },
+  { value: "FINANCE", label: "Finance" },
+  { value: "GROWTH", label: "Growth" },
+  { value: "READONLY_ADMIN", label: "Readonly admin" },
 ];
 
 const STATUS_OPTIONS = [
@@ -72,6 +77,11 @@ export const useUserFilters = () => {
       "USER",
       "COACH",
       "SUPER_ADMIN",
+      "CONTENT_MANAGER",
+      "SUPPORT",
+      "FINANCE",
+      "GROWTH",
+      "READONLY_ADMIN",
     ]).withDefault("all"),
   );
   const [roleOperator, setRoleOperator] = useQueryState(

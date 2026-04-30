@@ -96,12 +96,6 @@
       "title": "Manzillar",
       "addLocation": "Manzil qo'shish"
     },
-    "permissions": {
-      "title": "Ruxsatnomalar",
-      "domain": "Soha",
-      "read": "O'qish",
-      "manage": "Boshqarish"
-    },
     "revenue": {
       "title": "Daromadlar",
       "totalRevenue": "Umumiy daromad",
@@ -150,7 +144,6 @@
       "workoutBodyParts": "Tana qismlari",
       "equipments": "Uskunalar",
       "locations": "Manzillar",
-      "permissions": "Ruxsatnomalar",
       "revenue": "Daromadlar",
       "subscriptions": "Obunalar",
       "reports": "Hisobotlar",

@@ -50,6 +50,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart.jsx";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 
 const overviewCardConfig = [
   {
@@ -124,27 +125,6 @@ const getRelativeTimeLabel = (isoString) => {
   return `${deltaDays} kun oldin`;
 };
 
-const quickActionItems = [
-  {
-    label: "Yangi foydalanuvchi",
-    icon: UserPlusIcon,
-    path: "/admin/users",
-    variant: "outline",
-  },
-  {
-    label: "Hisobot export",
-    icon: FileDownIcon,
-    path: "/admin/reports",
-    variant: "outline",
-  },
-  {
-    label: "Tizim sozlamalari",
-    icon: SettingsIcon,
-    path: "/admin/settings",
-    variant: "outline",
-  },
-];
-
 const topContentPlaceholder = [
   { name: "Tuxum bilan non", type: "food", detail: "150 kaloriya" },
   { name: "Tovuqli salat", type: "food", detail: "220 kaloriya" },
@@ -154,6 +134,12 @@ const topContentPlaceholder = [
 ];
 
 const Index = () => {
+  const {
+    roles,
+    canManageSupport,
+    canManageSettings,
+    canReadSupport,
+  } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const { data: dashboardData, isLoading } = useGetQuery({
     url: "/admin/dashboard",
@@ -234,15 +220,49 @@ const Index = () => {
     },
   ];
 
-  const pendingActions = [
+  const canReadAudit =
+    roles.includes("SUPER_ADMIN") || roles.includes("READONLY_ADMIN");
+  const quickActionItems = [
+    ...(canManageSupport
+      ? [
+          {
+            label: "Yangi foydalanuvchi",
+            icon: UserPlusIcon,
+            path: "/admin/users/list/create",
+            variant: "outline",
+          },
+        ]
+      : []),
     {
-      label: "Coach tasdiqlash",
-      count: get(metrics, "pendingCoaches", 0),
-      icon: ShieldCheckIcon,
-      path: "/admin/coaches",
-      color: "text-yellow-600 dark:text-yellow-400",
-      bg: "bg-yellow-500/10",
+      label: "Hisobot export",
+      icon: FileDownIcon,
+      path: "/admin/reports",
+      variant: "outline",
     },
+    ...(canManageSettings
+      ? [
+          {
+            label: "Tizim sozlamalari",
+            icon: SettingsIcon,
+            path: "/admin/settings",
+            variant: "outline",
+          },
+        ]
+      : []),
+  ];
+  const pendingActions = [
+    ...(canReadSupport
+      ? [
+          {
+            label: "Coach tasdiqlash",
+            count: get(metrics, "pendingCoaches", 0),
+            icon: ShieldCheckIcon,
+            path: "/admin/coaches",
+            color: "text-yellow-600 dark:text-yellow-400",
+            bg: "bg-yellow-500/10",
+          },
+        ]
+      : []),
     {
       label: "Hal qilinmagan hisobotlar",
       count: 0,
@@ -745,12 +765,14 @@ const Index = () => {
                   Admin actionlarining oxirgi yozuvlari
                 </CardDescription>
               </div>
-              <Link
-                to="/admin/audit-logs"
-                className="shrink-0 text-sm font-medium text-primary underline-offset-4 hover:underline"
-              >
-                Barchasini ko'rish
-              </Link>
+              {canReadAudit ? (
+                <Link
+                  to="/admin/audit-logs"
+                  className="shrink-0 text-sm font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  Barchasini ko'rish
+                </Link>
+              ) : null}
             </CardHeader>
             <CardContent className="flex-1 max-h-[360px] space-y-3 overflow-y-auto pr-1">
               {recentAuditLogsPreview.length > 0 ? (
