@@ -39,8 +39,10 @@ import {
   GlobeIcon,
   LoaderCircleIcon,
   PlusIcon,
+  RotateCcwIcon,
   WrenchIcon,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
 import { useEquipmentFilters } from "./use-filters.js";
@@ -109,7 +111,7 @@ const Index = () => {
 
   const EQUIPMENTS_QUERY_KEY = ["admin", "workout-equipments"];
 
-  const { data: equipmentsData, isLoading } = useGetQuery({
+  const { data: equipmentsData, isLoading, isFetching, refetch } = useGetQuery({
     url: "/admin/workout-equipments",
     queryProps: { queryKey: EQUIPMENTS_QUERY_KEY },
   });
@@ -357,10 +359,15 @@ const Index = () => {
           <WrenchIcon className="text-primary" />
           Mashg'ulot jihozlari
         </h1>
-        <Button onClick={() => navigate("create")} className="gap-1.5">
-          <PlusIcon />
-          Jihoz qo'shish
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching}>
+            <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
+          </Button>
+          <Button onClick={() => navigate("create")} className="gap-1.5">
+            <PlusIcon />
+            Jihoz qo'shish
+          </Button>
+        </div>
       </div>
 
       <Filter
@@ -389,7 +396,6 @@ const Index = () => {
               rowsDraggable: isReorderEnabled,
               width: "auto",
             }}
-            loadingMode="none"
             isLoading={isLoading}
           >
             <DataGridTableDndRows

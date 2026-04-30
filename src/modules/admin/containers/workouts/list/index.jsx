@@ -689,6 +689,14 @@ const Index = () => {
             <DownloadIcon className="size-4" />
             {isExporting ? "Export..." : "Excel export"}
           </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => queryClient.invalidateQueries({ queryKey: WORKOUTS_QUERY_KEY })}
+            disabled={isFetching}
+          >
+            <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
+          </Button>
           <Button onClick={openCreateDrawer} className="gap-1.5">
             <PlusIcon className="size-4" />
             Yangi mashg'ulot
@@ -703,15 +711,6 @@ const Index = () => {
           handleFiltersChange={handleFiltersChange}
           className="flex-1"
         />
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => queryClient.invalidateQueries({ queryKey: WORKOUTS_QUERY_KEY })}
-          className="hidden xl:flex"
-          disabled={isLoading}
-        >
-          <RotateCcwIcon className={cn("size-4", isLoading && "animate-spin")} />
-        </Button>
       </div>
 
       <DataGridContainer>

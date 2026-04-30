@@ -2,6 +2,7 @@ import React from "react";
 import { get, map } from "lodash";
 import { Badge } from "@/components/ui/badge";
 import { DataGridColumnHeader } from "@/components/reui/data-grid";
+import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import {
   getAvatarColor,
   getInitials,
@@ -36,6 +37,7 @@ export const useColumns = ({
         id: "index",
         header: "#",
         size: 56,
+        meta: { skeleton: adminListSkeletons.index },
         cell: (info) => (currentPage - 1) * pageSize + info.row.index + 1,
       },
       {
@@ -44,7 +46,7 @@ export const useColumns = ({
           <DataGridColumnHeader column={column} title="Foydalanuvchi" />
         ),
         enableSorting: true,
-        meta: { cellClassName: "min-w-[220px]" },
+        meta: { skeleton: adminListSkeletons.avatarText, cellClassName: "min-w-[220px]" },
         cell: ({ row }) => {
           const user = row.original;
           return (
@@ -76,7 +78,7 @@ export const useColumns = ({
           <DataGridColumnHeader column={column} title="Email" />
         ),
         enableSorting: true,
-        meta: { cellClassName: "min-w-[180px]" },
+        meta: { skeleton: adminListSkeletons.text, cellClassName: "min-w-[180px]" },
         cell: ({ row }) => {
           const email = row.original.email;
           return (
@@ -89,7 +91,7 @@ export const useColumns = ({
       {
         accessorKey: "phone",
         header: "Telefon",
-        meta: { cellClassName: "min-w-[140px]" },
+        meta: { skeleton: adminListSkeletons.text, cellClassName: "min-w-[140px]" },
         cell: (info) => (
           <span className="text-sm text-muted-foreground">
             {info.getValue() || "—"}
@@ -99,7 +101,7 @@ export const useColumns = ({
       {
         id: "roles",
         header: "Rollar",
-        meta: { cellClassName: "min-w-[160px]" },
+        meta: { skeleton: adminListSkeletons.badge, cellClassName: "min-w-[160px]" },
         cell: ({ row }) => {
           const user = row.original;
           return (
@@ -131,6 +133,7 @@ export const useColumns = ({
           <DataGridColumnHeader column={column} title="Status" />
         ),
         enableSorting: true,
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => {
           const status = info.getValue();
           return (
@@ -149,7 +152,7 @@ export const useColumns = ({
           <DataGridColumnHeader column={column} title="Qo'shilgan" />
         ),
         enableSorting: true,
-        meta: { cellClassName: "min-w-[120px]" },
+        meta: { skeleton: adminListSkeletons.text, cellClassName: "min-w-[120px]" },
         cell: (info) => (
           <span className="text-sm text-muted-foreground">
             {info.getValue() || "—"}
@@ -160,6 +163,7 @@ export const useColumns = ({
         id: "actions",
         header: "",
         size: 56,
+        meta: { skeleton: adminListSkeletons.action },
         cell: ({ row }) => (
           <div className="flex justify-end">
             <UserActionsMenu

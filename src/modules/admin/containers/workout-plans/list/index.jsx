@@ -605,10 +605,20 @@ const Index = () => {
             </p>
           </div>
 
-          <Button onClick={openCreateDrawer}>
-            <PlusIcon className="mr-2 size-4" />
-            Yangi shablon
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => refetch()}
+              disabled={isFetching}
+            >
+              <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
+            </Button>
+            <Button onClick={openCreateDrawer}>
+              <PlusIcon className="mr-2 size-4" />
+              Yangi shablon
+            </Button>
+          </div>
         </section>
 
         <section className="space-y-4">
@@ -619,18 +629,9 @@ const Index = () => {
               handleFiltersChange={handleFiltersChange}
               className="flex-1"
             />
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => refetch()}
-              className="hidden sm:flex"
-              disabled={isFetching}
-            >
-              <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
-            </Button>
           </div>
 
-          <DataGrid table={table} recordCount={sortedTemplates.length}>
+          <DataGrid table={table} isLoading={isLoading} recordCount={sortedTemplates.length}>
             <div className="w-full space-y-2.5">
               <DataGridContainer>
                 <ScrollArea>

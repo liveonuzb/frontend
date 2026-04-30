@@ -43,6 +43,7 @@ import { cn } from "@/lib/utils";
 import {
   getCategoryBadgeAppearance,
 } from "@/lib/category-badge";
+import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
 import { useCategoryFilters } from "./use-filters.js";
@@ -104,12 +105,13 @@ const CategoryFoodsGrid = ({ categoryId, currentLanguage }) => {
         id: "dnd",
         header: "",
         cell: () => <DataGridTableDndRowHandle />,
+        meta: { skeleton: adminListSkeletons.action },
         size: 32,
       },
       {
         accessorKey: "name",
         header: "Ovqat",
-        meta: { cellClassName: "w-[32%]" },
+        meta: { skeleton: adminListSkeletons.avatarText, cellClassName: "w-[32%]" },
         cell: (info) => {
           const food = get(info, "row.original");
 
@@ -145,6 +147,7 @@ const CategoryFoodsGrid = ({ categoryId, currentLanguage }) => {
       {
         id: "macros",
         header: "Makrolar",
+        meta: { skeleton: adminListSkeletons.text },
         cell: (info) => {
           const food = get(info, "row.original");
           return (
@@ -159,6 +162,7 @@ const CategoryFoodsGrid = ({ categoryId, currentLanguage }) => {
         id: "serving",
         header: "Birlik",
         size: 96,
+        meta: { skeleton: adminListSkeletons.text },
         cell: (info) => (
           <div className="text-xs text-muted-foreground">
             {get(info, "row.original.servingSize")}{" "}
@@ -170,6 +174,7 @@ const CategoryFoodsGrid = ({ categoryId, currentLanguage }) => {
         accessorKey: "isActive",
         header: "Status",
         size: 96,
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) =>
           info.getValue() ? (
             <Badge
@@ -258,7 +263,6 @@ const CategoryFoodsGrid = ({ categoryId, currentLanguage }) => {
           <DataGrid
             table={table}
             tableLayout={{ rowsDraggable: true, width: "auto" }}
-            loadingMode="none"
             isLoading={isLoading}
           >
             <DataGridTableDndRows
@@ -558,10 +562,20 @@ const Index = () => {
         <h1 className="text-2xl font-bold tracking-tight">
           Ovqat kategoriyalari
         </h1>
-        <Button onClick={() => navigate("create")} className="gap-1.5">
-          <PlusIcon />
-          Kategoriya qo'shish
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => refetch()}
+            disabled={isFetching}
+          >
+            <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
+          </Button>
+          <Button onClick={() => navigate("create")} className="gap-1.5">
+            <PlusIcon />
+            Kategoriya qo'shish
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -570,15 +584,6 @@ const Index = () => {
           activeFilters={activeFilters}
           handleFiltersChange={handleFiltersChange}
         />
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => refetch()}
-          className="hidden sm:flex"
-          disabled={isFetching}
-        >
-          <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
-        </Button>
       </div>
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">

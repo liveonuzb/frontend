@@ -13,7 +13,7 @@ import {
 } from "../api.js";
 
 const Index = () => {
-  const { data, isLoading } = useGetQuery({
+  const { data, isLoading, isFetching, refetch } = useGetQuery({
     url: WORKOUT_BODY_PARTS_ENDPOINT,
     queryProps: { queryKey: WORKOUT_BODY_PARTS_QUERY_KEY },
   });
@@ -78,9 +78,11 @@ const Index = () => {
       deleteItem={deleteBodyPart}
       reorderItems={reorderBodyParts}
       isLoading={isLoading}
+      isFetching={isFetching}
       isCreating={isCreating}
       isUpdating={isUpdating}
       isDeleting={isDeleting}
+      refetch={refetch}
     />
   );
 };

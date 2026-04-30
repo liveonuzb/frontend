@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, Outlet } from "react-router";
-import { PlusIcon, UsersIcon } from "lucide-react";
+import { PlusIcon, RotateCcwIcon, UsersIcon } from "lucide-react";
 import {
   getCoreRowModel,
   getSortedRowModel,
@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { get, includes, some, isArray, join } from "lodash";
 import PageTransition from "@/components/page-transition";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   DataGrid,
   DataGridContainer,
@@ -339,6 +340,9 @@ const Index = () => {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching}>
+              <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
+            </Button>
             <Button onClick={handleCreateOpen}>
               <PlusIcon className="size-4" />
               Foydalanuvchi qo'shish

@@ -5,6 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { DataGridColumnHeader, DataGridTableRowSelect, DataGridTableRowSelectAll, DataGridTableDndRowHandle } from "@/components/reui/data-grid";
 import { cn } from "@/lib/utils";
 import { getCategoryBadgeAppearance } from "@/lib/category-badge";
+import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import ActionsMenu from "./actions-menu.jsx";
 import FoodImageCell from "./food-image-cell.jsx";
 
@@ -32,6 +33,7 @@ export const useColumns = ({
         header: () => <DataGridTableRowSelectAll />,
         cell: ({ row }) => <DataGridTableRowSelect row={row} />,
         enableSorting: false,
+        meta: { skeleton: adminListSkeletons.action },
         size: 40,
       },
       ...(canReorder
@@ -40,6 +42,7 @@ export const useColumns = ({
               id: "dnd",
               header: "",
               cell: () => <DataGridTableDndRowHandle />,
+              meta: { skeleton: adminListSkeletons.action },
               size: 32,
             },
           ]
@@ -50,6 +53,7 @@ export const useColumns = ({
         cell: (info) => (currentPage - 1) * pageSize + info.row.index + 1,
         size: 60,
         meta: {
+          skeleton: adminListSkeletons.index,
           cellClassName: "hidden md:table-cell",
           headerClassName: "hidden md:table-cell",
         },
@@ -58,6 +62,7 @@ export const useColumns = ({
         accessorKey: "imageUrl",
         header: "Rasm",
         cell: (info) => <FoodImageCell food={info.row.original} />,
+        meta: { skeleton: adminListSkeletons.image },
         size: 72,
       },
       {
@@ -66,6 +71,7 @@ export const useColumns = ({
           <DataGridColumnHeader column={column} title="Ovqat" />
         ),
         enableSorting: true,
+        meta: { skeleton: adminListSkeletons.avatarText },
         cell: (info) => (
           <div className="font-medium">
             {resolveLabel(
@@ -79,6 +85,7 @@ export const useColumns = ({
       {
         accessorKey: "categoryIds",
         header: "Kategoriyalar",
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => (
           <div className="flex flex-wrap gap-1">
             {lodashMap(info.getValue(), (categoryId) => {
@@ -107,6 +114,7 @@ export const useColumns = ({
       {
         accessorKey: "cuisineIds",
         header: "Oshxonalar",
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => (
           <div className="flex flex-wrap gap-1">
             {lodashMap(info.getValue(), (cuisineId) => {
@@ -134,6 +142,7 @@ export const useColumns = ({
         accessorKey: "nutritionMode",
         header: "Mode",
         size: 96,
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => (
           <Badge variant="outline">
             {info.getValue() === "recipe" ? "Recipe" : "Manual"}
@@ -143,6 +152,7 @@ export const useColumns = ({
       {
         id: "translations",
         header: "Tarjimalar",
+        meta: { skeleton: adminListSkeletons.translations },
         cell: (info) => {
           const translations = get(info, "row.original.translations", {});
 
@@ -171,6 +181,7 @@ export const useColumns = ({
           <DataGridColumnHeader column={column} title="Kaloriya" />
         ),
         enableSorting: true,
+        meta: { skeleton: adminListSkeletons.text },
         cell: (info) => (
           <div className="text-right font-medium">{info.getValue()}</div>
         ),
@@ -182,6 +193,7 @@ export const useColumns = ({
           <DataGridColumnHeader column={column} title="Birlik" />
         ),
         enableSorting: true,
+        meta: { skeleton: adminListSkeletons.text },
         cell: (info) => (
           <div className="text-muted-foreground text-xs">
             {info.getValue()} {info.row.original.servingUnit}
@@ -195,6 +207,7 @@ export const useColumns = ({
           <DataGridColumnHeader column={column} title="Status" />
         ),
         enableSorting: true,
+        meta: { skeleton: adminListSkeletons.status },
         cell: (info) => {
           const food = info.row.original;
 
@@ -214,6 +227,7 @@ export const useColumns = ({
         id: "actions",
         header: "",
         size: 50,
+        meta: { skeleton: adminListSkeletons.action },
         cell: (info) => (
           <div className="flex justify-end">
             <ActionsMenu

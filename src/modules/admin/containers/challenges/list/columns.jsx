@@ -13,6 +13,7 @@ import {
   UsersIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import ActionsMenu from "./actions-menu.jsx";
 
 const STATUS_META = {
@@ -178,7 +179,7 @@ export const useColumns = ({
       {
         accessorKey: "title",
         header: "Musobaqa",
-        meta: { cellClassName: "w-[34%]" },
+        meta: { skeleton: adminListSkeletons.avatarText, cellClassName: "w-[34%]" },
         cell: (info) => {
           const challenge = info.row.original;
           const localizedTitle = resolveLocalizedText(
@@ -224,6 +225,7 @@ export const useColumns = ({
         accessorKey: "type",
         header: "Turi",
         size: 120,
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => {
           const type = info.getValue();
           const meta = TYPE_META[type] || TYPE_META.GLOBAL;
@@ -241,6 +243,7 @@ export const useColumns = ({
         accessorKey: "status",
         header: "Holati",
         size: 130,
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => {
           const status = info.getValue();
           const meta = STATUS_META[status] || STATUS_META.UPCOMING;
@@ -258,6 +261,7 @@ export const useColumns = ({
         id: "period",
         header: "Muddati",
         size: 180,
+        meta: { skeleton: adminListSkeletons.text },
         cell: (info) => {
           const challenge = info.row.original;
 
@@ -281,6 +285,7 @@ export const useColumns = ({
         id: "stats",
         header: "Statistika",
         size: 170,
+        meta: { skeleton: adminListSkeletons.text },
         cell: (info) => {
           const challenge = info.row.original;
           const rewardSummary = getRewardSummary(challenge);
@@ -313,6 +318,7 @@ export const useColumns = ({
         id: "actions",
         header: "",
         size: 50,
+        meta: { skeleton: adminListSkeletons.action },
         cell: (info) => (
           <div className="flex justify-end">
             <ActionsMenu

@@ -7,7 +7,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { ChevronDownIcon, ChevronUpIcon, GlobeIcon, LoaderCircleIcon, MoreVerticalIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, GlobeIcon, LoaderCircleIcon, MoreVerticalIcon, PencilIcon, PlusIcon, RotateCcwIcon, Trash2Icon } from "lucide-react";
 import { useGetQuery, usePostQuery, usePatchQuery, useDeleteQuery } from "@/hooks/api";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,7 @@ import { DataGridColumnHeader } from "@/components/reui/data-grid/data-grid-colu
 import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
 import { Filters } from "@/components/reui/filters.jsx";
 import { cn } from "@/lib/utils";
+import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 
 const QUERY_KEY = ["admin", "cuisines"];
 const ITEMS_PER_PAGE = 10;
@@ -84,12 +85,13 @@ const CuisineFoodsGrid = ({ cuisineId, currentLanguage }) => {
         id: "dnd",
         header: "",
         cell: () => <DataGridTableDndRowHandle />,
+        meta: { skeleton: adminListSkeletons.action },
         size: 32,
       },
       {
         accessorKey: "name",
         header: "Ovqat",
-        meta: { cellClassName: "min-w-[260px]" },
+        meta: { skeleton: adminListSkeletons.avatarText, cellClassName: "min-w-[260px]" },
         cell: (info) => {
           const food = info.row.original;
           return (
@@ -110,6 +112,7 @@ const CuisineFoodsGrid = ({ cuisineId, currentLanguage }) => {
       {
         id: "macros",
         header: "Makrolar",
+        meta: { skeleton: adminListSkeletons.text },
         cell: (info) => {
           const food = info.row.original;
           return <span className="text-xs text-muted-foreground">P {food.protein} / C {food.carbs} / F {food.fat}</span>;
@@ -119,12 +122,14 @@ const CuisineFoodsGrid = ({ cuisineId, currentLanguage }) => {
         id: "serving",
         header: "Birlik",
         size: 96,
+        meta: { skeleton: adminListSkeletons.text },
         cell: (info) => <span className="text-xs text-muted-foreground">{get(info, "row.original.servingSize")} {get(info, "row.original.servingUnit")}</span>,
       },
       {
         accessorKey: "isActive",
         header: "Status",
         size: 96,
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => info.getValue() ? <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700">Faol</Badge> : <Badge variant="outline" className="bg-slate-500/10 text-slate-700">Nofaol</Badge>,
       },
     ],
@@ -174,7 +179,7 @@ const CuisineFoodsGrid = ({ cuisineId, currentLanguage }) => {
     <div className="flex flex-col gap-3 px-4 pb-4">
       <DataGridContainer>
         <ScrollArea className="w-full">
-          <DataGrid table={table} tableLayout={{ rowsDraggable: true, width: "auto" }} loadingMode="none" isLoading={isLoading}>
+          <DataGrid table={table} tableLayout={{ rowsDraggable: true, width: "auto" }} isLoading={isLoading}>
             <DataGridTableDndRows dataIds={map(foods, (food) => toString(food.id))} handleDragEnd={handleDragEnd} />
           </DataGrid>
           <ScrollBar orientation="horizontal" />
@@ -225,7 +230,7 @@ const ListPage = () => {
     }),
     [currentPage, deferredName, nameOp, pageSize, sortBy, sortDir, status, statusOp, translations, translationsOp],
   );
-  const { data, isLoading } = useGetQuery({
+  const { data, isLoading, isFetching, refetch } = useGetQuery({
     url: "/admin/cuisines",
     params,
     queryProps: { queryKey: [...QUERY_KEY, params] },
@@ -246,12 +251,14 @@ const ListPage = () => {
         id: "dnd",
         header: "",
         cell: () => (canReorder ? <DataGridTableDndRowHandle /> : null),
+        meta: { skeleton: adminListSkeletons.action },
         size: 36,
       },
       {
         id: "expand",
         header: "",
         size: 52,
+        meta: { skeleton: adminListSkeletons.action },
         cell: (info) => (
           <Button
             variant="ghost"
@@ -270,6 +277,7 @@ const ListPage = () => {
         header: ({ column }) => <DataGridColumnHeader column={column} title="Nomi" />,
         enableSorting: true,
         meta: {
+          skeleton: adminListSkeletons.avatarText,
           expandedContent: (row) => <CuisineFoodsGrid cuisineId={row.id} currentLanguage={currentLanguage} />,
         },
         cell: (info) => (
@@ -282,6 +290,7 @@ const ListPage = () => {
         accessorKey: "foodCount",
         header: "Ovqatlar",
         size: 100,
+        meta: { skeleton: adminListSkeletons.text },
         cell: (info) => `${info.getValue() ?? 0} ta`,
       },
       {
@@ -289,6 +298,7 @@ const ListPage = () => {
         header: "Tarjimalar",
         enableSorting: false,
         size: 120,
+        meta: { skeleton: adminListSkeletons.translations },
         cell: (info) => (
           <div className="flex items-center gap-1">
             {map(activeLanguages, (language) => {
@@ -315,6 +325,7 @@ const ListPage = () => {
         header: ({ column }) => <DataGridColumnHeader column={column} title="Status" />,
         enableSorting: true,
         size: 90,
+        meta: { skeleton: adminListSkeletons.status },
         cell: (info) => (
           <Switch
             checked={Boolean(info.getValue())}
@@ -329,12 +340,14 @@ const ListPage = () => {
         header: ({ column }) => <DataGridColumnHeader column={column} title="Yaratilgan" />,
         enableSorting: true,
         size: 150,
+        meta: { skeleton: adminListSkeletons.text },
         cell: (info) => info.getValue() ? <span className="whitespace-nowrap text-sm">{new Intl.DateTimeFormat("uz-UZ", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(info.getValue()))}</span> : "-",
       },
       {
         id: "actions",
         header: "",
         size: 52,
+        meta: { skeleton: adminListSkeletons.action },
         cell: (info) => (
           <div className="flex justify-end">
             <ActionsMenu
@@ -440,10 +453,15 @@ const ListPage = () => {
           <h1 className="text-2xl font-bold">Oshxonalar</h1>
           <p className="text-sm text-muted-foreground">O'zbek, turk, rus kabi oshxona turlarini boshqaring</p>
         </div>
-        <Button onClick={() => navigate("create")}>
-          <PlusIcon data-icon="inline-start" />
-          Yangi oshxona
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching}>
+            <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
+          </Button>
+          <Button onClick={() => navigate("create")}>
+            <PlusIcon data-icon="inline-start" />
+            Yangi oshxona
+          </Button>
+        </div>
       </div>
       <Filters fields={filterFields} filters={activeFilters} onChange={handleFiltersChange} />
       <DataGrid table={table} isLoading={isLoading} recordCount={get(meta, "total", 0)}>

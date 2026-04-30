@@ -54,8 +54,11 @@ import {
   LoaderCircleIcon,
   PencilIcon,
   PlusIcon,
+  RotateCcwIcon,
   Trash2Icon,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 
 const emptyForm = {
   name: "",
@@ -135,9 +138,11 @@ const LocalizedCatalogManager = ({
   deleteItem,
   reorderItems,
   isLoading,
+  isFetching,
   isCreating,
   isUpdating,
   isDeleting,
+  refetch,
 }) => {
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
@@ -466,10 +471,12 @@ const LocalizedCatalogManager = ({
           ) : (
             <span className="block size-4" />
           ),
+        meta: { skeleton: adminListSkeletons.action },
       },
       {
         accessorKey: "name",
         header: title,
+        meta: { skeleton: adminListSkeletons.avatarText },
         cell: (info) => (
           <div className="flex flex-col gap-1">
             <span className="font-medium">
@@ -489,6 +496,7 @@ const LocalizedCatalogManager = ({
         id: "translations",
         header: "Tarjimalar",
         size: 160,
+        meta: { skeleton: adminListSkeletons.translations },
         cell: (info) => {
           const translations = get(info, "row.original.translations", {});
 
@@ -521,6 +529,7 @@ const LocalizedCatalogManager = ({
         accessorKey: "isActive",
         header: "Status",
         size: 100,
+        meta: { skeleton: adminListSkeletons.status },
         cell: (info) => (
           <div className="flex justify-center">
             <Switch
@@ -536,6 +545,7 @@ const LocalizedCatalogManager = ({
         id: "actions",
         header: "",
         size: 50,
+        meta: { skeleton: adminListSkeletons.action },
         cell: (info) => (
           <div className="flex justify-end">
             <CatalogItemActionsMenu
@@ -608,10 +618,17 @@ const LocalizedCatalogManager = ({
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{description}</p>
         </div>
-        <Button onClick={openCreateDrawer} className="gap-2 self-start">
-          <PlusIcon />
-          Yangi {singularLabel}
-        </Button>
+        <div className="flex items-center gap-2 self-start">
+          {refetch ? (
+            <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching}>
+              <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
+            </Button>
+          ) : null}
+          <Button onClick={openCreateDrawer} className="gap-2">
+            <PlusIcon />
+            Yangi {singularLabel}
+          </Button>
+        </div>
       </div>
 
       <Filters

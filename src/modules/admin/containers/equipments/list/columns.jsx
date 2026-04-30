@@ -11,6 +11,7 @@ import {
   DataGridTableDndRowHandle,
 } from "@/components/reui/data-grid";
 import { cn } from "@/lib/utils";
+import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import ActionsMenu from "./actions-menu.jsx";
 
 const resolveLabel = (translations, fallback, language) => {
@@ -58,11 +59,13 @@ export const useColumns = ({
           ) : (
             <span className="block size-4" />
           ),
+        meta: { skeleton: adminListSkeletons.action },
       },
       {
         accessorKey: "imageUrl",
         header: "Rasm",
         size: 92,
+        meta: { skeleton: adminListSkeletons.image },
         cell: (info) => {
           const equipment = info.row.original;
 
@@ -85,6 +88,7 @@ export const useColumns = ({
         accessorKey: "name",
         header: "Jihoz",
         meta: {
+          skeleton: adminListSkeletons.avatarText,
           cellClassName: "w-[34%]",
         },
         cell: (info) => {
@@ -109,6 +113,7 @@ export const useColumns = ({
         id: "translations",
         header: "Tarjimalar",
         size: 150,
+        meta: { skeleton: adminListSkeletons.translations },
         cell: (info) => {
           const equipment = info.row.original;
           const translations = equipment.translations || {};
@@ -142,6 +147,7 @@ export const useColumns = ({
         accessorKey: "isActive",
         header: "Status",
         size: 110,
+        meta: { skeleton: adminListSkeletons.status },
         cell: (info) => {
           const equipment = info.row.original;
 
@@ -164,6 +170,7 @@ export const useColumns = ({
         id: "actions",
         header: "",
         size: 50,
+        meta: { skeleton: adminListSkeletons.action },
         cell: (info) => (
           <div className="flex justify-end">
             <ActionsMenu

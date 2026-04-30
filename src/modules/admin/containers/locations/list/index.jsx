@@ -410,7 +410,12 @@ const LocationsIndex = () => {
           <h1 className="text-2xl font-bold tracking-tight">Locations</h1>
           <p className="mt-1 text-sm text-muted-foreground">Country, region, district va city ro&apos;yxatini boshqaring. Kengaytirganda child elementlar lazy yuklanadi.</p>
         </div>
-        <Button onClick={openCreateDrawer} className="gap-1.5"><PlusIcon className="size-4" />Location qo&apos;shish</Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={handleRefresh} disabled={isFetching}>
+            <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
+          </Button>
+          <Button onClick={openCreateDrawer} className="gap-1.5"><PlusIcon className="size-4" />Location qo&apos;shish</Button>
+        </div>
       </div>
 
       <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-5">
@@ -419,9 +424,6 @@ const LocationsIndex = () => {
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Filter filterFields={filterFields} activeFilters={activeFilters} handleFiltersChange={handleFiltersChange} />
-        <Button variant="outline" size="icon" onClick={handleRefresh} className="hidden sm:flex" disabled={isFetching}>
-          <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
-        </Button>
       </div>
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">

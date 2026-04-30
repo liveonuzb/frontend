@@ -3,7 +3,7 @@ import { useNavigate, Outlet } from "react-router";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { filter as lodashFilter, find, get, values } from "lodash";
 import { toast } from "sonner";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, RotateCcwIcon } from "lucide-react";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
 import { useDeleteQuery, useGetQuery } from "@/hooks/api";
 import {
@@ -12,6 +12,7 @@ import {
   DataGridTable,
 } from "@/components/reui/data-grid";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
@@ -44,7 +45,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
-  const { data: challengesData, isLoading } = useGetQuery({
+  const { data: challengesData, isLoading, isFetching, refetch } = useGetQuery({
     url: "/admin/challenges",
     queryProps: { queryKey: CHALLENGES_QUERY_KEY },
   });
@@ -163,10 +164,15 @@ const Index = () => {
     <div className="flex w-full flex-col gap-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Musobaqalar</h1>
-        <Button onClick={openCreateDrawer} className="gap-1.5">
-          <PlusIcon className="size-4" />
-          Musobaqa qo'shish
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching}>
+            <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
+          </Button>
+          <Button onClick={openCreateDrawer} className="gap-1.5">
+            <PlusIcon className="size-4" />
+            Musobaqa qo'shish
+          </Button>
+        </div>
       </div>
 
       <Filter
@@ -188,7 +194,6 @@ const Index = () => {
         <ScrollArea className="w-full">
           <DataGrid
             table={table}
-            loadingMode="none"
             isLoading={isLoading}
             recordCount={filteredChallenges.length}
           >

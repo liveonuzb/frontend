@@ -17,6 +17,7 @@ import {
 } from "@/components/reui/data-grid";
 import { cn } from "@/lib/utils";
 import { getCategoryBadgeAppearance } from "@/lib/category-badge";
+import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import ActionsMenu from "./actions-menu.jsx";
 import WorkoutImageCell from "./workout-image-cell.jsx";
 
@@ -59,6 +60,7 @@ export const useColumns = ({
         header: () => <DataGridTableRowSelectAll />,
         cell: ({ row }) => <DataGridTableRowSelect row={row} />,
         enableSorting: false,
+        meta: { skeleton: adminListSkeletons.action },
         size: 40,
       },
       ...(canReorder
@@ -67,6 +69,7 @@ export const useColumns = ({
               id: "dnd",
               header: "",
               cell: () => <DataGridTableDndRowHandle />,
+              meta: { skeleton: adminListSkeletons.action },
               size: 32,
             },
           ]
@@ -75,12 +78,14 @@ export const useColumns = ({
         accessorKey: "id",
         header: "#",
         cell: (info) => (currentPage - 1) * ITEMS_PER_PAGE + info.row.index + 1,
+        meta: { skeleton: adminListSkeletons.index },
         size: 60,
       },
       {
         id: "image",
         header: "Rasm/Video",
         cell: (info) => <WorkoutImageCell workout={info.row.original} />,
+        meta: { skeleton: adminListSkeletons.image },
         size: 72,
       },
       {
@@ -89,6 +94,7 @@ export const useColumns = ({
           <DataGridColumnHeader column={column} title="Mashg'ulot" />
         ),
         enableSorting: true,
+        meta: { skeleton: adminListSkeletons.avatarText },
         cell: (info) => (
           <div className="flex flex-col gap-0.5">
             <div className="font-medium">
@@ -104,6 +110,7 @@ export const useColumns = ({
       {
         accessorKey: "equipments",
         header: "Inventar",
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => (
           <div className="flex flex-wrap gap-1 max-w-[150px]">
             {lodashMap(info.getValue(), (eq, idx) => (
@@ -122,6 +129,7 @@ export const useColumns = ({
       {
         accessorKey: "categoryIds",
         header: "Kategoriyalar",
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => (
           <div className="flex flex-wrap gap-1">
             {lodashMap(info.getValue(), (categoryId) => {
@@ -150,6 +158,7 @@ export const useColumns = ({
       {
         id: "translations",
         header: "Tarjimalar",
+        meta: { skeleton: adminListSkeletons.translations },
         cell: (info) => {
           const translations = get(info, "row.original.translations", {});
 
@@ -178,6 +187,7 @@ export const useColumns = ({
           <DataGridColumnHeader column={column} title="Status" />
         ),
         enableSorting: true,
+        meta: { skeleton: adminListSkeletons.status },
         cell: (info) => {
           const workout = info.row.original;
 
@@ -197,6 +207,7 @@ export const useColumns = ({
         id: "actions",
         header: "",
         size: 50,
+        meta: { skeleton: adminListSkeletons.action },
         cell: (info) => (
           <div className="flex justify-end">
             <ActionsMenu

@@ -48,7 +48,10 @@ import {
   GlobeIcon,
   LoaderCircleIcon,
   PlusIcon,
+  RotateCcwIcon,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
 import { useCategoryFilters } from "./use-filters.js";
@@ -108,12 +111,14 @@ const CategoryWorkoutsGrid = ({ categoryId, currentLanguage }) => {
         id: "dnd",
         header: "",
         cell: () => <DataGridTableDndRowHandle />,
+        meta: { skeleton: adminListSkeletons.action },
         size: 32,
       },
       {
         accessorKey: "name",
         header: "Mashg'ulot",
         meta: {
+          skeleton: adminListSkeletons.avatarText,
           cellClassName: "w-[32%]",
         },
         cell: (info) => {
@@ -152,6 +157,7 @@ const CategoryWorkoutsGrid = ({ categoryId, currentLanguage }) => {
         accessorKey: "isActive",
         header: "Status",
         size: 96,
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) =>
           info.getValue() ? (
             <Badge
@@ -247,7 +253,6 @@ const CategoryWorkoutsGrid = ({ categoryId, currentLanguage }) => {
               rowsDraggable: true,
               width: "auto",
             }}
-            loadingMode="none"
             isLoading={isLoading}
           >
             <DataGridTableDndRows
@@ -283,7 +288,7 @@ const Index = () => {
 
   const CATEGORIES_QUERY_KEY = ["admin", "workout-categories"];
 
-  const { data: categoriesData, isLoading } = useGetQuery({
+  const { data: categoriesData, isLoading, isFetching, refetch } = useGetQuery({
     url: "/admin/workout-categories",
     queryProps: { queryKey: CATEGORIES_QUERY_KEY },
   });
@@ -565,10 +570,15 @@ const Index = () => {
         <h1 className="text-2xl font-bold tracking-tight">
           Mashg'ulot kategoriyalari
         </h1>
-        <Button onClick={() => navigate("create")} className="gap-1.5">
-          <PlusIcon className="size-4" />
-          Kategoriya qo'shish
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching}>
+            <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
+          </Button>
+          <Button onClick={() => navigate("create")} className="gap-1.5">
+            <PlusIcon className="size-4" />
+            Kategoriya qo'shish
+          </Button>
+        </div>
       </div>
 
       <Filter
@@ -597,7 +607,6 @@ const Index = () => {
               rowsDraggable: isReorderEnabled,
               width: "auto",
             }}
-            loadingMode="none"
             isLoading={isLoading}
           >
             <DataGridTableDndRows

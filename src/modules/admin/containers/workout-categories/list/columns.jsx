@@ -12,6 +12,7 @@ import {
 } from "@/components/reui/data-grid";
 import { cn } from "@/lib/utils";
 import { getCategoryBadgeAppearance } from "@/lib/category-badge";
+import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import ActionsMenu from "./actions-menu.jsx";
 
 const resolveLabel = (translations, fallback, language) => {
@@ -61,12 +62,14 @@ export const useColumns = ({
         id: "dnd",
         header: "",
         cell: () => (isReorderEnabled ? <DataGridTableDndRowHandle /> : null),
+        meta: { skeleton: adminListSkeletons.action },
         size: 36,
       },
       {
         id: "expand",
         header: "",
         size: 52,
+        meta: { skeleton: adminListSkeletons.action },
         cell: (info) => (
           <Button
             variant="ghost"
@@ -88,6 +91,7 @@ export const useColumns = ({
         accessorKey: "name",
         header: "Kategoriya",
         meta: {
+          skeleton: adminListSkeletons.avatarText,
           expandedContent: (row) => (
             <CategoryWorkoutsGrid
               categoryId={row.id}
@@ -127,6 +131,7 @@ export const useColumns = ({
         accessorKey: "workoutCount",
         header: "Mashqlar",
         size: 96,
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => (
           <Badge variant="outline">{info.getValue() ?? 0} ta</Badge>
         ),
@@ -135,6 +140,7 @@ export const useColumns = ({
         id: "translations",
         header: "Tarjimalar",
         size: 170,
+        meta: { skeleton: adminListSkeletons.translations },
         cell: (info) => {
           const translations = info.row.original.translations || {};
           const filledCount = countFilledTranslations(translations);
@@ -170,6 +176,7 @@ export const useColumns = ({
         accessorKey: "color",
         header: "Badge rangi",
         size: 120,
+        meta: { skeleton: adminListSkeletons.text },
         cell: (info) => {
           const appearance = getCategoryBadgeAppearance(info.getValue());
 
@@ -190,6 +197,7 @@ export const useColumns = ({
         accessorKey: "isActive",
         header: "Status",
         size: 160,
+        meta: { skeleton: adminListSkeletons.status },
         cell: (info) => {
           const isActive = info.getValue();
           const category = info.row.original;
@@ -217,6 +225,7 @@ export const useColumns = ({
         id: "actions",
         header: "",
         size: 50,
+        meta: { skeleton: adminListSkeletons.action },
         cell: (info) => (
           <div className="flex justify-end">
             <ActionsMenu

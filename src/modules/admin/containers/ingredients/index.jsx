@@ -8,7 +8,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { BadgeDollarSignIcon, ImageIcon, LoaderCircleIcon, MoreVerticalIcon, PencilIcon, PlusIcon, Trash2Icon, GlobeIcon, UploadIcon } from "lucide-react";
+import { BadgeDollarSignIcon, ImageIcon, LoaderCircleIcon, MoreVerticalIcon, PencilIcon, PlusIcon, RotateCcwIcon, Trash2Icon, GlobeIcon, UploadIcon } from "lucide-react";
 import { useGetQuery, usePostQuery, usePatchQuery, useDeleteQuery } from "@/hooks/api";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,7 @@ import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagina
 import { Filters } from "@/components/reui/filters.jsx";
 import { NumberField, NumberFieldDecrement, NumberFieldGroup, NumberFieldIncrement, NumberFieldInput } from "@/components/reui/number-field";
 import { cn } from "@/lib/utils";
+import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 
 const QUERY_KEY = ["admin", "ingredients"];
 const ITEMS_PER_PAGE = 10;
@@ -208,7 +209,7 @@ const ListPage = () => {
     sortBy,
     sortDir,
   }), [currentPage, deferredName, hasImage, hasImageOp, nameOp, pageSize, sortBy, sortDir, status, statusOp, translations, translationsOp]);
-  const { data, isLoading } = useGetQuery({ url: "/admin/ingredients", params, queryProps: { queryKey: [...QUERY_KEY, params] } });
+  const { data, isLoading, isFetching, refetch } = useGetQuery({ url: "/admin/ingredients", params, queryProps: { queryKey: [...QUERY_KEY, params] } });
   const { data: languagesData } = useGetQuery({ url: "/admin/languages", queryProps: { queryKey: ["admin", "languages"] } });
   const items = get(data, "data.data", []);
   const meta = get(data, "data.meta", { total: 0, totalPages: 1 });
@@ -219,19 +220,19 @@ const ListPage = () => {
   const patchMutation = usePatchQuery({ queryKey: QUERY_KEY });
   const deleteMutation = useDeleteQuery({ queryKey: QUERY_KEY });
   const columns = React.useMemo(() => [
-    { id: "dnd", header: "", cell: () => (canReorder ? <DataGridTableDndRowHandle /> : null), size: 36 },
-    { accessorKey: "imageUrl", header: "Rasm", size: 72, cell: (info) => info.getValue() ? <img src={info.getValue()} alt="" className="size-10 rounded-xl object-cover" /> : <div className="flex size-10 items-center justify-center rounded-xl border bg-muted text-xs">No</div> },
-    { accessorKey: "name", header: ({ column }) => <DataGridColumnHeader column={column} title="Nomi" />, enableSorting: true, cell: (info) => <div className="font-medium">{resolveLabel(info.row.original.translations, info.row.original.name, currentLanguage)}</div> },
-    { id: "translations", header: "Tarjimalar", enableSorting: false, size: 120, cell: (info) => <div className="flex items-center gap-1">{map(activeLanguages, (language) => { const code = get(language, "code"); const hasTranslation = Boolean(trim(get(info.row.original, `translations.${code}`, ""))); return <div key={get(language, "id", code)} title={`${get(language, "name", code)}: ${hasTranslation ? "Bor" : "Yo'q"}`} className={cn("flex size-5 items-center justify-center rounded border text-[10px]", hasTranslation ? "border-primary/30 bg-primary/10 text-primary" : "border-transparent bg-muted opacity-40")}>{get(language, "flag") || code}</div>; })}</div> },
-    { accessorKey: "calories", header: ({ column }) => <DataGridColumnHeader column={column} title="Kaloriya" />, enableSorting: true, size: 100 },
-    { id: "macros", header: "Makrolar", cell: (info) => <span className="text-xs text-muted-foreground">P {info.row.original.protein} / C {info.row.original.carbs} / F {info.row.original.fat}</span> },
-    { accessorKey: "servingUnit", header: "Birlik", size: 80 },
-    { accessorKey: "pricePer100g", header: ({ column }) => <DataGridColumnHeader column={column} title="Narx / 100g" />, enableSorting: true, size: 130, cell: (info) => <span className="whitespace-nowrap text-sm">{formatMoney(info.getValue(), info.row.original.currency)}</span> },
-    { accessorKey: "budgetTier", header: ({ column }) => <DataGridColumnHeader column={column} title="Budget" />, enableSorting: true, size: 110, cell: (info) => info.getValue() ? <Badge variant="outline" className={budgetTierClassName(info.getValue())}>{budgetTierLabel(info.getValue())}</Badge> : <span className="text-muted-foreground">-</span> },
-    { accessorKey: "priceUpdatedAt", header: ({ column }) => <DataGridColumnHeader column={column} title="Narx sanasi" />, enableSorting: true, size: 150, cell: (info) => info.getValue() ? <span className="whitespace-nowrap text-sm">{dayjs(info.getValue()).format("DD.MM.YYYY HH:mm")}</span> : <span className="text-muted-foreground">-</span> },
-    { accessorKey: "isActive", header: ({ column }) => <DataGridColumnHeader column={column} title="Status" />, enableSorting: true, size: 90, cell: (info) => <Switch checked={Boolean(info.getValue())} onCheckedChange={(checked) => patchMutation.mutate({ url: `/admin/ingredients/${info.row.original.id}`, attributes: { isActive: checked } })} /> },
-    { accessorKey: "createdAt", header: ({ column }) => <DataGridColumnHeader column={column} title="Yaratilgan" />, enableSorting: true, size: 150, cell: (info) => info.getValue() ? <span className="whitespace-nowrap text-sm">{dayjs(info.getValue()).format("DD.MM.YYYY HH:mm")}</span> : "-" },
-    { id: "actions", header: "", size: 52, cell: (info) => <div className="flex justify-end"><ActionsMenu row={info.row.original} onEdit={(row) => navigate(`edit/${row.id}`)} onTranslate={(row) => navigate(`translate/${row.id}`)} onPrice={(row) => navigate(`price/${row.id}`)} onDelete={async (row) => { try { await deleteMutation.mutateAsync({ url: `/admin/ingredients/${row.id}` }); toast.success("Ingredient o'chirildi"); } catch (error) { toast.error(getErrorMessage(error, "Ingredientni o'chirib bo'lmadi")); } }} /></div> },
+    { id: "dnd", header: "", cell: () => (canReorder ? <DataGridTableDndRowHandle /> : null), meta: { skeleton: adminListSkeletons.action }, size: 36 },
+    { accessorKey: "imageUrl", header: "Rasm", meta: { skeleton: adminListSkeletons.image }, size: 72, cell: (info) => info.getValue() ? <img src={info.getValue()} alt="" className="size-10 rounded-xl object-cover" /> : <div className="flex size-10 items-center justify-center rounded-xl border bg-muted text-xs">No</div> },
+    { accessorKey: "name", header: ({ column }) => <DataGridColumnHeader column={column} title="Nomi" />, enableSorting: true, meta: { skeleton: adminListSkeletons.avatarText }, cell: (info) => <div className="font-medium">{resolveLabel(info.row.original.translations, info.row.original.name, currentLanguage)}</div> },
+    { id: "translations", header: "Tarjimalar", enableSorting: false, meta: { skeleton: adminListSkeletons.translations }, size: 120, cell: (info) => <div className="flex items-center gap-1">{map(activeLanguages, (language) => { const code = get(language, "code"); const hasTranslation = Boolean(trim(get(info.row.original, `translations.${code}`, ""))); return <div key={get(language, "id", code)} title={`${get(language, "name", code)}: ${hasTranslation ? "Bor" : "Yo'q"}`} className={cn("flex size-5 items-center justify-center rounded border text-[10px]", hasTranslation ? "border-primary/30 bg-primary/10 text-primary" : "border-transparent bg-muted opacity-40")}>{get(language, "flag") || code}</div>; })}</div> },
+    { accessorKey: "calories", header: ({ column }) => <DataGridColumnHeader column={column} title="Kaloriya" />, enableSorting: true, meta: { skeleton: adminListSkeletons.text }, size: 100 },
+    { id: "macros", header: "Makrolar", meta: { skeleton: adminListSkeletons.text }, cell: (info) => <span className="text-xs text-muted-foreground">P {info.row.original.protein} / C {info.row.original.carbs} / F {info.row.original.fat}</span> },
+    { accessorKey: "servingUnit", header: "Birlik", meta: { skeleton: adminListSkeletons.text }, size: 80 },
+    { accessorKey: "pricePer100g", header: ({ column }) => <DataGridColumnHeader column={column} title="Narx / 100g" />, enableSorting: true, meta: { skeleton: adminListSkeletons.text }, size: 130, cell: (info) => <span className="whitespace-nowrap text-sm">{formatMoney(info.getValue(), info.row.original.currency)}</span> },
+    { accessorKey: "budgetTier", header: ({ column }) => <DataGridColumnHeader column={column} title="Budget" />, enableSorting: true, meta: { skeleton: adminListSkeletons.badge }, size: 110, cell: (info) => info.getValue() ? <Badge variant="outline" className={budgetTierClassName(info.getValue())}>{budgetTierLabel(info.getValue())}</Badge> : <span className="text-muted-foreground">-</span> },
+    { accessorKey: "priceUpdatedAt", header: ({ column }) => <DataGridColumnHeader column={column} title="Narx sanasi" />, enableSorting: true, meta: { skeleton: adminListSkeletons.text }, size: 150, cell: (info) => info.getValue() ? <span className="whitespace-nowrap text-sm">{dayjs(info.getValue()).format("DD.MM.YYYY HH:mm")}</span> : <span className="text-muted-foreground">-</span> },
+    { accessorKey: "isActive", header: ({ column }) => <DataGridColumnHeader column={column} title="Status" />, enableSorting: true, meta: { skeleton: adminListSkeletons.status }, size: 90, cell: (info) => <Switch checked={Boolean(info.getValue())} onCheckedChange={(checked) => patchMutation.mutate({ url: `/admin/ingredients/${info.row.original.id}`, attributes: { isActive: checked } })} /> },
+    { accessorKey: "createdAt", header: ({ column }) => <DataGridColumnHeader column={column} title="Yaratilgan" />, enableSorting: true, meta: { skeleton: adminListSkeletons.text }, size: 150, cell: (info) => info.getValue() ? <span className="whitespace-nowrap text-sm">{dayjs(info.getValue()).format("DD.MM.YYYY HH:mm")}</span> : "-" },
+    { id: "actions", header: "", meta: { skeleton: adminListSkeletons.action }, size: 52, cell: (info) => <div className="flex justify-end"><ActionsMenu row={info.row.original} onEdit={(row) => navigate(`edit/${row.id}`)} onTranslate={(row) => navigate(`translate/${row.id}`)} onPrice={(row) => navigate(`price/${row.id}`)} onDelete={async (row) => { try { await deleteMutation.mutateAsync({ url: `/admin/ingredients/${row.id}` }); toast.success("Ingredient o'chirildi"); } catch (error) { toast.error(getErrorMessage(error, "Ingredientni o'chirib bo'lmadi")); } }} /></div> },
   ], [activeLanguages, canReorder, currentLanguage, deleteMutation, navigate, patchMutation]);
   const filterFields = React.useMemo(() => [
     { label: "Nomi", key: "name", type: "text", defaultOperator: "contains", placeholder: "Ingredient qidirish" },
@@ -287,7 +288,12 @@ const ListPage = () => {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-3">
         <div><h1 className="text-2xl font-bold">Ingredientlar</h1><p className="text-sm text-muted-foreground">100g asosidagi nutrition katalog</p></div>
-        <Button onClick={() => navigate("create")}><PlusIcon data-icon="inline-start" />Yangi ingredient</Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching}>
+            <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
+          </Button>
+          <Button onClick={() => navigate("create")}><PlusIcon data-icon="inline-start" />Yangi ingredient</Button>
+        </div>
       </div>
       <Filters fields={filterFields} filters={activeFilters} onChange={handleFiltersChange} />
       <DataGrid table={table} isLoading={isLoading} recordCount={get(meta, "total", 0)}>

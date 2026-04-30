@@ -3,6 +3,7 @@ import { filter, find, get } from "lodash";
 import { Globe2Icon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DataGridColumnHeader } from "@/components/reui/data-grid";
+import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import ActionsMenu from "./actions-menu.jsx";
 
 function resolveText(translations, fallback, language) {
@@ -54,6 +55,7 @@ export const useColumns = ({
         accessorKey: "id",
         header: "#",
         cell: (info) => (currentPage - 1) * ITEMS_PER_PAGE + info.row.index + 1,
+        meta: { skeleton: adminListSkeletons.index },
         size: 56,
       },
       {
@@ -62,6 +64,7 @@ export const useColumns = ({
           <DataGridColumnHeader column={column} title="Workout shablon" />
         ),
         enableSorting: true,
+        meta: { skeleton: adminListSkeletons.avatarText },
         cell: (info) => {
           const template = info.row.original;
           const localizedName = resolveText(
@@ -92,6 +95,7 @@ export const useColumns = ({
           <DataGridColumnHeader column={column} title="Qiyinchilik" />
         ),
         enableSorting: true,
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => (
           <Badge variant="outline">{info.getValue() || "—"}</Badge>
         ),
@@ -103,6 +107,7 @@ export const useColumns = ({
           <DataGridColumnHeader column={column} title="Reja" />
         ),
         enableSorting: true,
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => {
           const template = info.row.original;
           return (
@@ -118,6 +123,7 @@ export const useColumns = ({
       {
         accessorKey: "translations",
         header: "Tarjimalar",
+        meta: { skeleton: adminListSkeletons.translations },
         cell: (info) => {
           const template = info.row.original;
           const titleCount = countFilledTranslations(
@@ -149,6 +155,7 @@ export const useColumns = ({
           <DataGridColumnHeader column={column} title="Status" />
         ),
         enableSorting: true,
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => (
           <Badge variant={info.getValue() ? "default" : "outline"}>
             {info.getValue() ? "Faol" : "Nofaol"}
@@ -162,6 +169,7 @@ export const useColumns = ({
           <DataGridColumnHeader column={column} title="Yangilangan" />
         ),
         enableSorting: true,
+        meta: { skeleton: adminListSkeletons.text },
         cell: (info) => formatDate(info.getValue()),
         size: 140,
       },
@@ -170,6 +178,7 @@ export const useColumns = ({
         header: "",
         size: 50,
         enableSorting: false,
+        meta: { skeleton: adminListSkeletons.action },
         cell: (info) => (
           <div className="flex justify-end">
             <ActionsMenu

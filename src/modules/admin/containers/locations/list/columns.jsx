@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { countFilledLocationTranslations } from "@/lib/location-translations.js";
+import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import ActionsMenu from "./actions-menu.jsx";
 
 const TYPE_LABELS = {
@@ -46,7 +47,7 @@ export const useColumns = ({
       {
         accessorKey: "name",
         header: "Location",
-        meta: { cellClassName: "min-w-[320px]" },
+        meta: { skeleton: adminListSkeletons.avatarText, cellClassName: "min-w-[320px]" },
         cell: (info) => {
           const location = info.row.original;
           const depth = location.depth || 0;
@@ -106,6 +107,7 @@ export const useColumns = ({
         accessorKey: "type",
         header: "Tur",
         size: 120,
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => {
           const type = info.getValue();
 
@@ -125,7 +127,7 @@ export const useColumns = ({
       {
         accessorKey: "pathLabel",
         header: "Tree path",
-        meta: { cellClassName: "min-w-[260px]" },
+        meta: { skeleton: adminListSkeletons.text, cellClassName: "min-w-[260px]" },
         cell: (info) => (
           <div className="text-xs text-muted-foreground">{info.getValue()}</div>
         ),
@@ -134,6 +136,7 @@ export const useColumns = ({
         id: "translations",
         header: "Tarjimalar",
         size: 180,
+        meta: { skeleton: adminListSkeletons.translations },
         cell: (info) => {
           const translations = get(info, "row.original.translations", {});
           const filledCount = countFilledLocationTranslations(translations);
@@ -167,6 +170,7 @@ export const useColumns = ({
         accessorKey: "isActive",
         header: "Status",
         size: 150,
+        meta: { skeleton: adminListSkeletons.status },
         cell: (info) => {
           const isActive = info.getValue();
           const location = info.row.original;
@@ -194,6 +198,7 @@ export const useColumns = ({
         id: "actions",
         header: "",
         size: 56,
+        meta: { skeleton: adminListSkeletons.action },
         cell: (info) => (
           <div className="flex justify-end">
             <ActionsMenu

@@ -740,6 +740,14 @@ const Index = () => {
               {isExporting ? "Export..." : "Excel export"}
             </span>
           </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => refetch()}
+            disabled={isFetching}
+          >
+            <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
+          </Button>
           <Button onClick={openCreateDrawer} className="gap-1.5">
             <PlusIcon className="size-4" />
             <span className="hidden xs:inline">Yangi ovqat</span>
@@ -753,15 +761,6 @@ const Index = () => {
           activeFilters={activeFilters}
           handleFiltersChange={handleFiltersChange}
         />
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => refetch()}
-          className="hidden xl:flex"
-          disabled={isFetching}
-        >
-          <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
-        </Button>
       </div>
 
       <DataGrid

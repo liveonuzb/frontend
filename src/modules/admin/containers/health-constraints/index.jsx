@@ -8,7 +8,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { GlobeIcon, MoreVerticalIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { GlobeIcon, MoreVerticalIcon, PencilIcon, PlusIcon, RotateCcwIcon, Trash2Icon } from "lucide-react";
 import { useDeleteQuery, useGetQuery, usePatchQuery, usePostQuery } from "@/hooks/api";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +26,7 @@ import { DataGridColumnHeader } from "@/components/reui/data-grid/data-grid-colu
 import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
 import { Filters } from "@/components/reui/filters.jsx";
 import { cn } from "@/lib/utils";
+import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 
 const QUERY_KEY = ["admin", "health-constraints"];
 const ITEMS_PER_PAGE = 10;
@@ -146,7 +147,7 @@ const ListPage = () => {
     }),
     [currentPage, deferredName, genderScope, genderScopeOp, nameOp, pageSize, sortBy, sortDir, status, statusOp, translations, translationsOp, type, typeOp],
   );
-  const { data, isLoading } = useGetQuery({
+  const { data, isLoading, isFetching, refetch } = useGetQuery({
     url: "/admin/health-constraints",
     params,
     queryProps: { queryKey: [...QUERY_KEY, params] },
@@ -166,12 +167,14 @@ const ListPage = () => {
         id: "dnd",
         header: "",
         cell: () => (canReorder ? <DataGridTableDndRowHandle /> : null),
+        meta: { skeleton: adminListSkeletons.action },
         size: 36,
       },
       {
         accessorKey: "name",
         header: ({ column }) => <DataGridColumnHeader column={column} title="Nomi" />,
         enableSorting: true,
+        meta: { skeleton: adminListSkeletons.avatarText },
         cell: (info) => (
           <div className="min-w-0">
             <p className="truncate font-medium">
@@ -186,6 +189,7 @@ const ListPage = () => {
         header: ({ column }) => <DataGridColumnHeader column={column} title="Turi" />,
         enableSorting: true,
         size: 150,
+        meta: { skeleton: adminListSkeletons.text },
         cell: (info) => optionLabel(TYPE_OPTIONS, info.getValue()),
       },
       {
@@ -193,6 +197,7 @@ const ListPage = () => {
         header: ({ column }) => <DataGridColumnHeader column={column} title="Jins" />,
         enableSorting: true,
         size: 110,
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => <Badge variant="outline">{optionLabel(GENDER_SCOPE_OPTIONS, info.getValue())}</Badge>,
       },
       {
@@ -200,6 +205,7 @@ const ListPage = () => {
         header: "Tarjimalar",
         enableSorting: false,
         size: 120,
+        meta: { skeleton: adminListSkeletons.translations },
         cell: (info) => (
           <div className="flex items-center gap-1">
             {map(activeLanguages, (language) => {
@@ -228,6 +234,7 @@ const ListPage = () => {
         header: ({ column }) => <DataGridColumnHeader column={column} title="Status" />,
         enableSorting: true,
         size: 90,
+        meta: { skeleton: adminListSkeletons.status },
         cell: (info) => (
           <Switch
             checked={Boolean(info.getValue())}
@@ -245,12 +252,14 @@ const ListPage = () => {
         header: ({ column }) => <DataGridColumnHeader column={column} title="Yaratilgan" />,
         enableSorting: true,
         size: 150,
+        meta: { skeleton: adminListSkeletons.text },
         cell: (info) => dayjs(info.getValue()).format("DD.MM.YYYY HH:mm"),
       },
       {
         id: "actions",
         header: "",
         size: 52,
+        meta: { skeleton: adminListSkeletons.action },
         cell: (info) => (
           <div className="flex justify-end">
             <ActionsMenu
@@ -365,10 +374,15 @@ const ListPage = () => {
           <h1 className="text-2xl font-bold">Health Constraints</h1>
           <p className="text-sm text-muted-foreground">Onboarding va workout reja uchun sog'liq cheklovlari</p>
         </div>
-        <Button onClick={() => navigate("create")}>
-          <PlusIcon data-icon="inline-start" />
-          Yangi constraint
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching}>
+            <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
+          </Button>
+          <Button onClick={() => navigate("create")}>
+            <PlusIcon data-icon="inline-start" />
+            Yangi constraint
+          </Button>
+        </div>
       </div>
       <Filters fields={filterFields} filters={activeFilters} onChange={handleFiltersChange} />
       <DataGrid table={table} isLoading={isLoading} recordCount={get(meta, "total", 0)}>

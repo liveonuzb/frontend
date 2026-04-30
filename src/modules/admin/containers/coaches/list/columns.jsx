@@ -3,6 +3,7 @@ import { get, isArray, trim } from "lodash";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import CoachActionsMenu from "./actions-menu.jsx";
 
 const coachStatusConfig = {
@@ -86,6 +87,7 @@ export const useColumns = ({
       {
         accessorKey: "firstName",
         header: "Murabbiy",
+        meta: { skeleton: adminListSkeletons.avatarText },
         cell: (info) => {
           const coach = get(info, "row.original");
           const firstName = getCoachFirstName(coach);
@@ -114,6 +116,7 @@ export const useColumns = ({
       {
         accessorKey: "coachStatus",
         header: "Status",
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => {
           const status = info.getValue() || "pending";
           const config = get(
@@ -134,6 +137,7 @@ export const useColumns = ({
       {
         accessorKey: "coachMarketplaceStatus",
         header: "Marketplace",
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => {
           const status = info.getValue() || "none";
           const config = get(
@@ -154,6 +158,7 @@ export const useColumns = ({
       {
         accessorKey: "joinedAt",
         header: "Sana",
+        meta: { skeleton: adminListSkeletons.text },
         cell: (info) => (
           <span className="text-xs text-muted-foreground">
             {info.getValue() || "\u2014"}
@@ -164,6 +169,7 @@ export const useColumns = ({
         id: "actions",
         header: "",
         size: 50,
+        meta: { skeleton: adminListSkeletons.action },
         cell: (info) => (
           <div className="flex justify-end">
             <CoachActionsMenu
