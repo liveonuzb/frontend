@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner.jsx";
 import {
   Drawer,
   DrawerClose,
@@ -85,17 +86,20 @@ const EditFoodCategory = () => {
   const { id } = useParams();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
 
-  const { data: categoriesData, isLoading } = useGetQuery({
-    url: "/admin/food-categories",
-    queryProps: { queryKey: ["admin", "food-categories"] },
+  const { data: categoryData, isLoading } = useGetQuery({
+    url: `/admin/food-categories/${id}`,
+    queryProps: {
+      queryKey: ["admin", "food-categories", id],
+      enabled: Boolean(id),
+    },
   });
-  const categories = get(categoriesData, "data.data", []);
-  const category = find(categories, (c) => String(get(c, "id")) === String(id));
+  const category = get(categoryData, "data.data", null) || get(categoryData, "data", null);
 
   const [form, setForm] = React.useState(emptyForm);
 
   React.useEffect(() => {
     if (category) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm(createFormFromCategory(category, currentLanguage));
     }
   }, [category, currentLanguage]);
@@ -123,6 +127,10 @@ const EditFoodCategory = () => {
         attributes: {
           name,
           color: getStoredColorValue(form),
+          translations: {
+            ...(get(category, "translations", {}) || {}),
+            [currentLanguage]: name,
+          },
         },
       });
       toast.success("Kategoriya yangilandi");
@@ -135,13 +143,11 @@ const EditFoodCategory = () => {
           : message || "Kategoriyani saqlab bo'lmadi",
       );
     }
-  }, [form, id, navigate, patchMutation]);
+  }, [category, currentLanguage, form, id, navigate, patchMutation]);
 
   const handleOpenChange = (open) => {
     if (!open) navigate("/admin/food-categories/list");
   };
-
-  if (isLoading) return null;
 
   return (
     <Drawer open onOpenChange={handleOpenChange} direction="bottom">
@@ -158,6 +164,11 @@ const EditFoodCategory = () => {
             </DrawerDescription>
           </DrawerHeader>
 
+          {isLoading || !category ? (
+            <div className="flex min-h-72 items-center justify-center px-4 py-8">
+              <Spinner className="size-8 text-muted-foreground" />
+            </div>
+          ) : (
           <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-6">
             <div className="flex flex-col gap-2">
               <Label className="flex items-center gap-2 text-sm font-medium">
@@ -266,7 +277,9 @@ const EditFoodCategory = () => {
               </div>
             </div>
           </div>
+          )}
 
+          {!isLoading && category ? (
           <DrawerFooter className="gap-2 border-t bg-muted/5 px-6 py-4">
             <Button onClick={handleSave} disabled={isUpdating}>
               Saqlash
@@ -275,6 +288,7 @@ const EditFoodCategory = () => {
               <Button variant="outline">Bekor qilish</Button>
             </DrawerClose>
           </DrawerFooter>
+          ) : null}
         </div>
       </DrawerContent>
     </Drawer>

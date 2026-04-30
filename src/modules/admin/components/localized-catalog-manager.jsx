@@ -145,7 +145,7 @@ const LocalizedCatalogManager = ({
     url: "/admin/languages",
     queryProps: { queryKey: ["admin", "languages"] },
   });
-  const languages = get(languagesData, "data", []);
+  const languages = get(languagesData, "data.data", get(languagesData, "data", []));
 
   const [search, setSearch] = useQueryState("q", parseAsString.withDefault(""));
   const [statusFilter, setStatusFilter] = useQueryState(
@@ -486,7 +486,7 @@ const LocalizedCatalogManager = ({
         ),
       },
       {
-        accessorKey: "translations",
+        id: "translations",
         header: "Tarjimalar",
         size: 160,
         cell: (info) => {
@@ -496,15 +496,21 @@ const LocalizedCatalogManager = ({
             <div className="flex items-center gap-1">
               {map(activeLanguages, (language) => (
                 <div
-                  key={get(language, "id")}
+                  key={get(language, "id", get(language, "code"))}
+                  title={`${get(language, "name", get(language, "code"))}: ${
+                    typeof get(translations, get(language, "code")) === "string" &&
+                    trim(get(translations, get(language, "code")))
+                      ? "Bor"
+                      : "Yo'q"
+                  }`}
                   className={
-                    typeof get(translations, get(language, "code")) ===
-                      "string" && trim(get(translations, get(language, "code")))
+                    typeof get(translations, get(language, "code")) === "string" &&
+                    trim(get(translations, get(language, "code")))
                       ? "flex size-5 items-center justify-center rounded border border-primary/30 bg-primary/10 text-[10px] text-primary"
                       : "flex size-5 items-center justify-center rounded border border-transparent bg-muted text-[10px] opacity-40"
                   }
                 >
-                  {get(language, "flag")}
+                  {get(language, "flag") || get(language, "code")}
                 </div>
               ))}
             </div>

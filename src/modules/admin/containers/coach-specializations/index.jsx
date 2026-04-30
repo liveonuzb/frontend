@@ -4,6 +4,7 @@ import { Route, Routes, Navigate } from "react-router";
 import ListPage from "./list/index.jsx";
 import CreatePage from "./create/index.jsx";
 import EditPage from "./edit/index.jsx";
+import TranslatePage from "./translation/index.jsx";
 
 const CoachSpecializationsIndex = () => {
   return (
@@ -12,6 +13,7 @@ const CoachSpecializationsIndex = () => {
       <Route path="list" element={<ListPage />}>
         <Route path="create" element={<CreatePage />} />
         <Route path="edit/:id" element={<EditPage />} />
+        <Route path="translate/:id" element={<TranslatePage />} />
       </Route>
     </Routes>
   );

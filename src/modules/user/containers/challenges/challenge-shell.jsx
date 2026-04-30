@@ -6,7 +6,6 @@ import { CHALLENGE_NAV_ITEMS } from "./challenge-nav-items.js";
 const PRIMARY_TAB_PATHS = [
   "/user/challenges/home",
   "/user/challenges/my",
-  "/user/challenges/explore",
   "/user/challenges/report",
 ];
 

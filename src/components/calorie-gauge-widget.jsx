@@ -5,7 +5,6 @@ import { ChevronsUpDown, FlameIcon } from "lucide-react";
 import {
   Card,
   CardContent,
-  CardFooter,
   CardHeader,
 } from "@/components/ui/card.jsx";
 import { Separator } from "@/components/ui/separator.jsx";
@@ -54,7 +53,6 @@ export default function CalorieGaugeWidget({
   onClick,
   className,
   isGoalLoading = false,
-  goalMeta = null,
   showCalorieModeToggle = false,
   defaultCalorieMode = "remaining",
   calorieMode,
@@ -64,6 +62,10 @@ export default function CalorieGaugeWidget({
   const excess = consumed - goal;
   const remaining = clamp(goal - consumed, 0, Infinity);
   const pct = clamp(consumed / goal, 0, 1);
+  const consumedLabel = round(consumed).toLocaleString();
+  const goalLabel = round(goal).toLocaleString();
+  const pctLabel = goal > 0 ? round((consumed / goal) * 100) : 0;
+  const gaugeAriaLabel = `Bugun ${consumedLabel}/${goalLabel} kaloriya iste'mol qilindi (${pctLabel}%)`;
   const [internalCalorieMode, setInternalCalorieMode] = React.useState(
     defaultCalorieMode === "eaten" ? "eaten" : "remaining",
   );
@@ -203,8 +205,38 @@ export default function CalorieGaugeWidget({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="flex justify-center flex-1 items-center">
+        <div className="space-y-4 md:hidden">
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                {centerLabel}
+              </p>
+              <p className={cn("mt-1 text-3xl font-black", centerIsOver && "text-red-500")}>
+                {centerValueLabel}
+                <span className="ml-1 text-sm text-muted-foreground">kcal</span>
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground">Yeyilgan</p>
+              <p className="text-sm font-bold">
+                {consumedLabel}/{goalLabel} kcal
+              </p>
+            </div>
+          </div>
+          <div className="h-3 overflow-hidden rounded-full bg-muted">
+            <motion.div
+              className={cn("h-full rounded-full", isOver ? "bg-red-500" : "bg-lime-500")}
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.min(100, pctLabel)}%` }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+            />
+          </div>
+        </div>
+
+        <div className="hidden justify-center flex-1 items-center md:flex">
           <svg
+            role="img"
+            aria-label={gaugeAriaLabel}
             viewBox={`0 0 ${vw} ${vh}`}
             style={{
               width: "100%",

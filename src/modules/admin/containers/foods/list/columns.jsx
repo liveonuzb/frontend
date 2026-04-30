@@ -12,6 +12,7 @@ export const useColumns = ({
   activeLanguages,
   canReorder,
   categoryById,
+  cuisineById,
   currentLanguage,
   currentPage,
   pageSize,
@@ -19,6 +20,7 @@ export const useColumns = ({
   handleToggleStatus,
   handleRestoreFood,
   openEditDrawer,
+  openRecipeDrawer,
   openTranslationsDrawer,
   setFoodToDelete,
   setHardDeleteTarget,
@@ -100,6 +102,42 @@ export const useColumns = ({
               );
             })}
           </div>
+        ),
+      },
+      {
+        accessorKey: "cuisineIds",
+        header: "Oshxonalar",
+        cell: (info) => (
+          <div className="flex flex-wrap gap-1">
+            {lodashMap(info.getValue(), (cuisineId) => {
+              const cuisine = get(cuisineById, cuisineId);
+              if (!cuisine) return null;
+
+              return (
+                <Badge
+                  key={cuisine.id}
+                  variant="outline"
+                  className="h-5 px-1.5 text-[10px]"
+                >
+                  {resolveLabel(
+                    cuisine.translations,
+                    cuisine.name,
+                    currentLanguage,
+                  )}
+                </Badge>
+              );
+            })}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "nutritionMode",
+        header: "Mode",
+        size: 96,
+        cell: (info) => (
+          <Badge variant="outline">
+            {info.getValue() === "recipe" ? "Recipe" : "Manual"}
+          </Badge>
         ),
       },
       {
@@ -185,6 +223,7 @@ export const useColumns = ({
               onRestore={handleRestoreFood}
               onHardDelete={setHardDeleteTarget}
               onTranslations={openTranslationsDrawer}
+              onRecipe={openRecipeDrawer}
             />
           </div>
         ),
@@ -194,6 +233,7 @@ export const useColumns = ({
       activeLanguages,
       canReorder,
       categoryById,
+      cuisineById,
       currentLanguage,
       currentPage,
       pageSize,
@@ -201,6 +241,7 @@ export const useColumns = ({
       handleToggleStatus,
       handleRestoreFood,
       openEditDrawer,
+      openRecipeDrawer,
       openTranslationsDrawer,
       setFoodToDelete,
       setHardDeleteTarget,

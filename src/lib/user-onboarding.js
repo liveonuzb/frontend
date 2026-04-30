@@ -55,6 +55,9 @@ export const normalizeUserOnboarding = (onboarding) => {
     dietRestrictions: isArray(onboarding.dietRestrictions)
       ? onboarding.dietRestrictions
       : [],
+    healthConstraints: isArray(onboarding.healthConstraints)
+      ? onboarding.healthConstraints
+      : [],
   };
 };
 
@@ -121,6 +124,11 @@ export const toUserOnboardingPayload = (patch = {}) => {
   if ("dietRestrictions" in patch) {
     payload.dietRestrictions = isArray(patch.dietRestrictions)
       ? patch.dietRestrictions
+      : undefined;
+  }
+  if ("healthConstraints" in patch) {
+    payload.healthConstraints = isArray(patch.healthConstraints)
+      ? patch.healthConstraints.filter((item) => item !== "none")
       : undefined;
   }
 

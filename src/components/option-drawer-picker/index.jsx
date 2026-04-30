@@ -1,7 +1,12 @@
 import React from "react";
-import { find, map } from "lodash";
-import { CheckIcon, ChevronDownIcon } from "lucide-react";
+import { filter, find, get, includes, map, toLower, trim } from "lodash";
+import { CheckIcon, ChevronDownIcon, SearchIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import {
   Drawer,
   DrawerContent,
@@ -20,11 +25,26 @@ const OptionDrawerPicker = ({
   description,
   placeholder = "Tanlang",
   triggerClassName,
+  searchPlaceholder = "Qidirish...",
 }) => {
   const [open, setOpen] = React.useState(false);
+  const [search, setSearch] = React.useState("");
 
-  const selectedOption =
-    find(options, (option) => option.value === value) ?? options[0] ?? null;
+  const selectedOption = find(options, (option) => option.value === value);
+  const normalizedSearch = toLower(trim(search));
+  const filteredOptions = normalizedSearch
+    ? filter(options, (option) => {
+        const searchableText = toLower(
+          [
+            get(option, "label", ""),
+            get(option, "description", ""),
+            get(option, "value", ""),
+          ].join(" "),
+        );
+
+        return includes(searchableText, normalizedSearch);
+      })
+    : options;
 
   const handleSelect = React.useCallback(
     (nextValue) => {
@@ -35,7 +55,14 @@ const OptionDrawerPicker = ({
   );
 
   return (
-    <Drawer open={open} onOpenChange={setOpen} direction="bottom">
+    <Drawer
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (!nextOpen) setSearch("");
+      }}
+      direction="bottom"
+    >
       <Button
         type="button"
         variant="outline"
@@ -49,7 +76,7 @@ const OptionDrawerPicker = ({
         <span className="truncate">
           {selectedOption?.label || placeholder}
         </span>
-        <ChevronDownIcon className="size-4 text-muted-foreground" />
+        <ChevronDownIcon data-icon="inline-end" />
       </Button>
 
       <DrawerContent>
@@ -58,10 +85,20 @@ const OptionDrawerPicker = ({
           {description ? (
             <DrawerDescription>{description}</DrawerDescription>
           ) : null}
+          <InputGroup className="mt-3 h-11">
+            <InputGroupAddon>
+              <SearchIcon />
+            </InputGroupAddon>
+            <InputGroupInput
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={searchPlaceholder}
+            />
+          </InputGroup>
         </DrawerHeader>
-        <div className="space-y-2 px-4 pb-4">
-          {map(options, (option) => {
-            const isSelected = option.value === selectedOption?.value;
+        <div className="no-scrollbar flex h-96 max-h-96 flex-col gap-2 overflow-y-auto px-4 pb-4">
+          {map(filteredOptions, (option) => {
+            const isSelected = option.value === value;
 
             return (
               <button
@@ -84,7 +121,9 @@ const OptionDrawerPicker = ({
                       </p>
                     ) : null}
                   </div>
-                  {isSelected ? <CheckIcon className="size-4 text-primary" /> : null}
+                  {isSelected ? (
+                    <CheckIcon className="size-4 text-primary" />
+                  ) : null}
                 </div>
               </button>
             );

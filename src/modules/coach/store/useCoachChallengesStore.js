@@ -331,7 +331,7 @@ export const useCoachChallengesStore = create((set, get) => ({
       onSuccess,
     ),
 
-  respondToInvitation: async (invitationId, status, onSuccess) => {
+  respondToInvitation: async (invitationId, action, onSuccess) => {
     if (!invitationId) {
       return;
     }
@@ -349,17 +349,17 @@ export const useCoachChallengesStore = create((set, get) => ({
 
     try {
       await api.post(`/challenges/invitations/${invitationId}/respond`, {
-        status,
+        action,
       });
       toast.success(
-        status === "ACCEPTED"
+        action === "ACCEPT"
           ? "Taklif qabul qilindi"
           : "Taklif rad etildi",
       );
       await Promise.all([
         get().fetchMyInvitations("PENDING", { silent: true }),
         get().fetchChallenges({}, { silent: true }),
-        ...(status === "ACCEPTED"
+        ...(action === "ACCEPT"
           ? [invalidateGamificationQueries(queryClient)]
           : []),
       ]);

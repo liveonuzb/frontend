@@ -12,7 +12,9 @@ import {
 import { Input } from "@/components/ui/input.jsx";
 import { ScrollArea } from "@/components/ui/scroll-area.jsx";
 import {
+  ArrowDownAZIcon,
   CheckIcon,
+  Clock3Icon,
   LayersIcon,
   PencilIcon,
   PlusIcon,
@@ -42,6 +44,12 @@ const buildLoggedMealFromSavedMeal = (savedMeal) => ({
   ingredients: savedMeal.ingredients,
 });
 
+const getSavedMealSortTime = (item) => {
+  const value = item?.lastUsedAt || item?.updatedAt || item?.createdAt;
+  const time = new Date(value || 0).getTime();
+  return Number.isFinite(time) ? time : 0;
+};
+
 const SavedMealSkeleton = () => (
   <div className="flex items-center gap-3 rounded-3xl border bg-card px-3 py-2.5">
     <Skeleton className="size-12 shrink-0 rounded-2xl" />
@@ -62,6 +70,7 @@ const SavedMealsDrawer = ({
   dateKey,
   mealType,
   onAddMeal,
+  onAddMealsBatch,
   disabled = false,
 }) => {
   const { items, isLoading } = useSavedMeals();
@@ -77,6 +86,23 @@ const SavedMealsDrawer = ({
   const [editingTemplateId, setEditingTemplateId] = React.useState(null);
   const [templateName, setTemplateName] = React.useState("");
   const [selectedMealIds, setSelectedMealIds] = React.useState([]);
+  const [sortMode, setSortMode] = React.useState("recent");
+
+  const sortedItems = React.useMemo(() => {
+    const nextItems = [...items];
+
+    if (sortMode === "alphabet") {
+      return nextItems.sort((left, right) =>
+        left.name.localeCompare(right.name, "uz", { sensitivity: "base" }),
+      );
+    }
+
+    return nextItems.sort((left, right) => {
+      const byTime = getSavedMealSortTime(right) - getSavedMealSortTime(left);
+      if (byTime !== 0) return byTime;
+      return left.name.localeCompare(right.name, "uz", { sensitivity: "base" });
+    });
+  }, [items, sortMode]);
 
   const savedMealsById = React.useMemo(() => {
     return items.reduce((acc, item) => {
@@ -117,8 +143,8 @@ const SavedMealsDrawer = ({
     setActiveTab("templates");
     setEditingTemplateId("new");
     setTemplateName("Mening nonushtam");
-    setSelectedMealIds(items.slice(0, 3).map((item) => item.id));
-  }, [items]);
+    setSelectedMealIds(sortedItems.slice(0, 3).map((item) => item.id));
+  }, [sortedItems]);
 
   const startEditTemplate = React.useCallback((template) => {
     setActiveTab("templates");
@@ -170,7 +196,7 @@ const SavedMealsDrawer = ({
 
   const handleApplyTemplate = React.useCallback(
     async (template) => {
-      if (!onAddMeal || !dateKey || !mealType) return;
+      if ((!onAddMeal && !onAddMealsBatch) || !dateKey || !mealType) return;
       if (disabled) {
         toast.error("Tarmoq yo'q — shablon log qilib bo'lmaydi");
         return;
@@ -186,19 +212,29 @@ const SavedMealsDrawer = ({
       }
 
       try {
-        for (const savedMeal of mealsToLog) {
-          await onAddMeal(
+        if (onAddMealsBatch) {
+          await onAddMealsBatch(
             dateKey,
-            mealType,
-            buildLoggedMealFromSavedMeal(savedMeal),
+            mealsToLog.map((savedMeal) => ({
+              mealType,
+              food: buildLoggedMealFromSavedMeal(savedMeal),
+            })),
           );
+        } else {
+          for (const savedMeal of mealsToLog) {
+            await onAddMeal(
+              dateKey,
+              mealType,
+              buildLoggedMealFromSavedMeal(savedMeal),
+            );
+          }
         }
         toast.success(`${template.name} qo'shildi`);
       } catch {
         toast.error("Shablonni log qilib bo'lmadi");
       }
     },
-    [dateKey, disabled, mealType, onAddMeal, savedMealsById],
+    [dateKey, disabled, mealType, onAddMeal, onAddMealsBatch, savedMealsById],
   );
 
   const handleDelete = React.useCallback(
@@ -285,7 +321,7 @@ const SavedMealsDrawer = ({
                       />
 
                       <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
-                        {items.map((item) => {
+                        {sortedItems.map((item) => {
                           const isChecked = selectedMealIds.includes(item.id);
                           return (
                             <button
@@ -328,7 +364,7 @@ const SavedMealsDrawer = ({
                       variant="outline"
                       className="h-12 w-full rounded-2xl border-dashed"
                       onClick={startCreateTemplate}
-                      disabled={items.length === 0}
+                    disabled={sortedItems.length === 0}
                     >
                       <PlusIcon className="size-4" />
                       Yangi shablon
@@ -419,14 +455,37 @@ const SavedMealsDrawer = ({
                       })
                     : null}
                 </div>
-              ) : items.length === 0 ? (
+              ) : sortedItems.length === 0 ? (
                 <div className="flex min-h-[240px] items-center justify-center rounded-3xl border border-dashed bg-muted/15 px-6 text-center text-sm text-muted-foreground">
                   Hali saqlangan taom yo&apos;q. AI orqali ovqat
                   qo&apos;shayotganda uni saqlab qo&apos;yishingiz mumkin.
                 </div>
               ) : (
                 <div className="space-y-2 py-2">
-                  {items.map((item) => (
+                  <div className="flex items-center gap-2 pb-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={sortMode === "recent" ? "default" : "outline"}
+                      className="h-9 rounded-2xl px-3 text-xs"
+                      onClick={() => setSortMode("recent")}
+                    >
+                      <Clock3Icon className="size-3.5" />
+                      So'nggi
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={sortMode === "alphabet" ? "default" : "outline"}
+                      className="h-9 rounded-2xl px-3 text-xs"
+                      onClick={() => setSortMode("alphabet")}
+                    >
+                      <ArrowDownAZIcon className="size-3.5" />
+                      Alifbo
+                    </Button>
+                  </div>
+
+                  {sortedItems.map((item) => (
                     <div
                       key={item.id}
                       onClick={() => setEditingMeal(item)}

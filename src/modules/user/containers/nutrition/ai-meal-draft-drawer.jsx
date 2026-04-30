@@ -247,7 +247,7 @@ export default function AiMealDraftDrawer({
         await addMealAction(targetDateKey || dateKey, mealType, {
           ...buildMealPayloadFromDraft(item, {
             source: inputSource,
-            addedAt: inputSource === "audio" ? loggedAtHint : undefined,
+            addedAt: loggedAtHint || undefined,
             savedMealId,
           }),
           addedFromPlan: false,
@@ -299,16 +299,20 @@ export default function AiMealDraftDrawer({
           />
         </div>
 
-        {inputSource === "audio" && loggedAtHintLabel ? (
+        {loggedAtHintLabel ? (
           <div className="rounded-2xl border px-3 py-3 text-sm">
-            <span className="text-muted-foreground">Aniqlangan vaqt:</span>{" "}
+            <span className="text-muted-foreground">
+              {inputSource === "audio" ? "Aniqlangan vaqt:" : "Tanlangan vaqt:"}
+            </span>{" "}
             <span className="font-semibold">{loggedAtHintLabel}</span>
           </div>
         ) : null}
 
-        {inputSource === "audio" && targetDateLabel ? (
+        {targetDateLabel ? (
           <div className="rounded-2xl border px-3 py-3 text-sm">
-            <span className="text-muted-foreground">Aniqlangan kun:</span>{" "}
+            <span className="text-muted-foreground">
+              {inputSource === "audio" ? "Aniqlangan kun:" : "Tanlangan kun:"}
+            </span>{" "}
             <span className="font-semibold capitalize">{targetDateLabel}</span>
           </div>
         ) : null}

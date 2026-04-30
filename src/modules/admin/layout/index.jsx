@@ -7,6 +7,7 @@ import {
   LayoutDashboardIcon,
   UsersIcon,
   UtensilsIcon,
+  SoupIcon,
   SettingsIcon,
   TagIcon,
   TrendingUpIcon,
@@ -21,6 +22,7 @@ import {
   WrenchIcon,
   MedalIcon,
   BotIcon,
+  HeartPulseIcon,
 } from "lucide-react";
 import {
   Sidebar,
@@ -60,18 +62,26 @@ const mainNav = [
 
 const contentNav = [
   {
-    to: "/admin/coach-specializations",
-    label: "Sport yo'nalishlari",
-    icon: MedalIcon,
-  },
-  { to: "/admin/foods", label: "Ovqatlar bazasi", icon: UtensilsIcon },
-  { to: "/admin/achievements", label: "Achievements", icon: AwardIcon },
-  { to: "/admin/locations", label: "Locations", icon: MapPinnedIcon },
-  {
-    to: "/admin/food-categories",
+    to: "/admin/food-categories/list",
     label: "Ovqat Kategoriyalari",
     icon: TagIcon,
   },
+  { to: "/admin/foods/list", label: "Ovqatlar bazasi", icon: UtensilsIcon },
+  { to: "/admin/ingredients/list", label: "Ingredientlar", icon: SoupIcon },
+  { to: "/admin/cuisines/list", label: "Oshxonalar", icon: GlobeIcon },
+  { to: "/admin/locations", label: "Locations", icon: MapPinnedIcon },
+  {
+    to: "/admin/coach-specializations/list",
+    label: "Sport yo'nalishlari",
+    icon: MedalIcon,
+  },
+  { to: "/admin/achievements/list", label: "Achievements", icon: AwardIcon },
+  {
+    to: "/admin/health-constraints/list",
+    label: "Health Constraints",
+    icon: HeartPulseIcon,
+  },
+
   { to: "/admin/workouts", label: "Mashg'ulotlar", icon: DumbbellIcon },
   {
     to: "/admin/workout-plans",

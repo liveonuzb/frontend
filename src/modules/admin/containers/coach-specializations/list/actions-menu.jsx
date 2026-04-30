@@ -1,5 +1,10 @@
 import React from "react";
-import { MoreVerticalIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import {
+  GlobeIcon,
+  MoreVerticalIcon,
+  PencilIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -8,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const SpecializationActionsMenu = ({ item, onEdit, onDelete }) => (
+const SpecializationActionsMenu = ({ item, onEdit, onDelete, onTranslate }) => (
   <DropdownMenu>
     <DropdownMenuTrigger asChild>
       <Button variant="ghost" size="icon-sm" aria-label="Amallar">
@@ -16,6 +21,10 @@ const SpecializationActionsMenu = ({ item, onEdit, onDelete }) => (
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuItem onClick={() => onTranslate(item)}>
+        <GlobeIcon className="size-4" />
+        Tarjima qo'shish
+      </DropdownMenuItem>
       <DropdownMenuItem onClick={() => onEdit(item)}>
         <PencilIcon className="size-4" />
         Tahrirlash

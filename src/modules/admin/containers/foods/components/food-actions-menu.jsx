@@ -5,6 +5,7 @@ import {
   PencilIcon,
   RotateCcwIcon,
   Trash2Icon,
+  UtensilsIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +22,7 @@ const FoodActionsMenu = ({
   onRestore,
   onHardDelete,
   onTranslations,
+  onRecipe,
 }) => (
   <DropdownMenu>
     <DropdownMenuTrigger asChild>
@@ -53,6 +55,10 @@ const FoodActionsMenu = ({
           <DropdownMenuItem onClick={() => onTranslations(food)}>
             <GlobeIcon className="size-4" />
             Tarjimalar
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onRecipe(food)}>
+            <UtensilsIcon className="size-4" />
+            Recipe
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onEdit(food)}>
             <PencilIcon className="size-4" />

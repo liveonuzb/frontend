@@ -52,10 +52,13 @@ const NOTIFICATION_ICONS = {
   premium_upsell: { icon: CrownIcon, color: "text-primary" },
   achievement_earned: { icon: TrophyIcon, color: "text-amber-500" },
   referral_reward: { icon: GiftIcon, color: "text-emerald-500" },
+  challenge_leaderboard: { icon: TrophyIcon, color: "text-amber-500" },
 };
 
-const getNotificationIcon = (type) =>
-  NOTIFICATION_ICONS[type] || { icon: BellIcon, color: "text-muted-foreground" };
+const getNotificationIcon = (notification) =>
+  NOTIFICATION_ICONS[notification?.metadata?.kind] ||
+  NOTIFICATION_ICONS[notification?.type] ||
+  { icon: BellIcon, color: "text-muted-foreground" };
 
 const formatRelativeTime = (dateStr) => {
   if (!dateStr) return "";
@@ -79,7 +82,7 @@ const formatRelativeTime = (dateStr) => {
 };
 
 const NotificationItem = ({ notification, onMarkRead }) => {
-  const { icon: Icon, color } = getNotificationIcon(notification.type);
+  const { icon: Icon, color } = getNotificationIcon(notification);
   const isRead = Boolean(notification.read ?? notification.readAt);
 
   return (

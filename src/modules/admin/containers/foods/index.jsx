@@ -4,6 +4,8 @@ import { Route, Routes, Navigate } from "react-router";
 import ListPage from "./list/index.jsx";
 import CreatePage from "./create/index.jsx";
 import EditPage from "./edit/index.jsx";
+import TranslatePage from "./translation/index.jsx";
+import RecipePage from "./recipe/index.jsx";
 
 const FoodsIndex = () => {
   return (
@@ -12,6 +14,8 @@ const FoodsIndex = () => {
       <Route path="list" element={<ListPage />}>
         <Route path="create" element={<CreatePage />} />
         <Route path="edit/:id" element={<EditPage />} />
+        <Route path="translate/:id" element={<TranslatePage />} />
+        <Route path="recipe/:id" element={<RecipePage />} />
       </Route>
     </Routes>
   );

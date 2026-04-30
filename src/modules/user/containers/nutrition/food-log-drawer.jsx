@@ -16,6 +16,7 @@ import {
   CalculatorIcon,
   MoveRightIcon,
   PencilIcon,
+  Share2Icon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button.jsx";
 import { cn } from "@/lib/utils.js";
@@ -23,6 +24,8 @@ import GaugeProgress from "@/components/meal-plan-builder/gauge-progress.jsx";
 import useHealthGoals from "@/hooks/app/use-health-goals";
 import { NutritionDrawerContent } from "./nutrition-drawer-layout.jsx";
 import { getNutritionSourceMeta } from "./source-meta.js";
+import { MEAL_LABELS } from "@/modules/user/lib/meal-config";
+import useShare from "@/hooks/utils/use-share";
 
 const formatLoggedAt = (value) => {
   if (!value) return null;
@@ -35,13 +38,6 @@ const formatLoggedAt = (value) => {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
-};
-
-const mealTypeLabels = {
-  breakfast: "Nonushta",
-  lunch: "Tushlik",
-  dinner: "Kechki ovqat",
-  snack: "Snack",
 };
 
 const formatLoggedDate = (value) => {
@@ -67,6 +63,8 @@ const FoodLogDrawer = ({
   readOnly = false,
 }) => {
   const { goals } = useHealthGoals();
+  const { share } = useShare();
+  const shareCardRef = React.useRef(null);
   const isConsumed = get(food, "isConsumed", false);
   const grams = get(food, "grams", null);
   const unit = get(food, "unit", "g");
@@ -84,9 +82,50 @@ const FoodLogDrawer = ({
     source,
     get(food, "isFromPlanLinked", false) ? "meal-plan" : "manual",
   );
-  const mealTypeLabel = mealTypeLabels[mealType] || mealType;
+  const mealTypeLabel = MEAL_LABELS[mealType] || mealType;
 
   if (!food) return null;
+
+  const handleShare = async () => {
+    const title = `${food.name} — ${totalCal} kcal`;
+    const text = `Men bugun ${food.name} edim — ${totalCal} kcal`;
+
+    try {
+      if (
+        shareCardRef.current &&
+        typeof navigator !== "undefined" &&
+        navigator.share &&
+        navigator.canShare
+      ) {
+        const { default: html2canvas } = await import("html2canvas");
+        const canvas = await html2canvas(shareCardRef.current, {
+          backgroundColor: null,
+          scale: Math.min(2, window.devicePixelRatio || 1),
+          useCORS: true,
+        });
+        const blob = await new Promise((resolve) =>
+          canvas.toBlob(resolve, "image/png"),
+        );
+
+        if (blob) {
+          const file = new File(
+            [blob],
+            `meal-${food.id || Date.now()}.png`,
+            { type: "image/png" },
+          );
+
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({ title, text, files: [file] });
+            return;
+          }
+        }
+      }
+    } catch {
+      // Fall back to plain text share below.
+    }
+
+    await share({ title, text });
+  };
 
   return (
     <Drawer
@@ -132,7 +171,7 @@ const FoodLogDrawer = ({
         </DrawerHeader>
         <DrawerBody>
           {isConsumed && (
-            <div className="pb-2">
+            <div ref={shareCardRef} className="pb-2">
               <div className="flex flex-col items-center">
                 <GaugeProgress
                   value={totalCal}
@@ -227,7 +266,7 @@ const FoodLogDrawer = ({
                 className="grid gap-3"
                 style={{
                   gridTemplateColumns: `repeat(${
-                    3 + (isConsumed ? 2 : 0)
+                    3 + (isConsumed ? 3 : 0)
                   }, minmax(0, 1fr))`,
                 }}
               >
@@ -267,6 +306,16 @@ const FoodLogDrawer = ({
                     aria-label="Ko'chirish"
                   >
                     <MoveRightIcon className="size-5 text-amber-500" />
+                  </Button>
+                ) : null}
+                {isConsumed ? (
+                  <Button
+                    onClick={handleShare}
+                    variant="outline"
+                    className="h-12"
+                    aria-label="Ulashish"
+                  >
+                    <Share2Icon className="size-5 text-indigo-500" />
                   </Button>
                 ) : null}
                 {onCamera ? (

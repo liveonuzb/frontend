@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { keys, findIndex, indexOf, find, map, includes, forEach } from "lodash";
 import * as React from "react"
-import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import {
   defaultDropAnimationSideEffects,
   DndContext,
@@ -47,6 +46,7 @@ const ColumnContext = createContext({
 })
 
 const ItemContext = createContext({
+  attributes: {},
   listeners: undefined,
   isDragging: false,
   disabled: false,
@@ -467,7 +467,7 @@ function KanbanItem({
   }
 
   return (
-    <ItemContext.Provider value={{ listeners, isDragging: isItemDragging, disabled }}>
+    <ItemContext.Provider value={{ attributes, listeners, isDragging: isItemDragging, disabled }}>
       <Comp
         data-slot="kanban-item"
         data-value={value}
@@ -475,7 +475,6 @@ function KanbanItem({
         data-disabled={disabled}
         ref={setNodeRef}
         style={style}
-        {...attributes}
         className={cn(
           isSortableDragging && "z-50 opacity-50",
           disabled && "opacity-50",
@@ -495,7 +494,7 @@ function KanbanItemHandle({
   children,
   ...props
 }) {
-  const { listeners, isDragging, disabled } = useContext(ItemContext)
+  const { attributes, listeners, isDragging, disabled } = useContext(ItemContext)
 
   const Comp = asChild ? Slot.Root : "div"
 
@@ -504,6 +503,7 @@ function KanbanItemHandle({
       data-slot="kanban-item-handle"
       data-dragging={isDragging}
       data-disabled={disabled}
+      {...attributes}
       {...listeners}
       className={cn(cursor && (isDragging ? "cursor-grabbing!" : "cursor-grab!"), className)}
       {...props}>
@@ -543,9 +543,6 @@ function KanbanOverlay({
   ...props
 }) {
   const { activeId, isColumn, modifiers } = useContext(KanbanContext)
-  const [mounted, setMounted] = useState(false)
-
-  useLayoutEffect(() => setMounted(true), [])
 
   const variant = activeId ? (isColumn(activeId) ? "column" : "item") : "item"
 
@@ -556,7 +553,7 @@ function KanbanOverlay({
         : children
       : null
 
-  if (!mounted) return null
+  if (typeof document === "undefined") return null
 
   return createPortal(<DragOverlay
     dropAnimation={dropAnimationConfig}

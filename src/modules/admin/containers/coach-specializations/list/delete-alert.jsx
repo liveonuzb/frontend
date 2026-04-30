@@ -24,7 +24,7 @@ export const DeleteAlert = ({
         <AlertDialogHeader>
           <AlertDialogTitle>Yo'nalishni o'chirish</AlertDialogTitle>
           <AlertDialogDescription>
-            Haqiqatan ham &quot;{get(item, "nameUz") || get(item, "key")}&quot;
+            Haqiqatan ham &quot;{get(item, "name") || get(item, "key")}&quot;
             yo'nalishini o&apos;chirmoqchimisiz? Bu amalni qaytarib
             bo&apos;lmaydi.
           </AlertDialogDescription>

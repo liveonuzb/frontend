@@ -43,13 +43,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import GaugeProgress from "../../../../components/meal-plan-builder/gauge-progress.jsx";
 import { NutritionDrawerContent } from "./nutrition-drawer-layout.jsx";
 import { Drawer } from "@/components/ui/drawer";
-
-const mealConfig = {
-  breakfast: { label: "Nonushta", emoji: "🍳", time: "06:00 - 10:00" },
-  lunch: { label: "Tushlik", emoji: "🥗", time: "12:00 - 14:00" },
-  dinner: { label: "Kechki ovqat", emoji: "🍲", time: "18:00 - 21:00" },
-  snack: { label: "Snack", emoji: "🥜", time: "Istalgan vaqt" },
-};
+import { getMealConfig } from "@/modules/user/lib/meal-config";
 
 const calcMacros = (food, amount) => {
   const isUnit = food?.unit && food.unit !== "g" && food.unit !== "ml";
@@ -71,6 +65,7 @@ const getSliderMax = (food) => {
 export default function ManualAddDrawer({
   dateKey,
   mealType,
+  loggedAt = null,
   initialSearch = "",
   onClose,
 }) {
@@ -244,6 +239,7 @@ export default function ManualAddDrawer({
         protein: macros.protein,
         carbs: macros.carbs,
         fat: macros.fat,
+        addedAt: loggedAt || undefined,
         addedFromPlan: false,
       });
       toast.success(`${editingFood.name} qo'shildi!`);
@@ -253,7 +249,7 @@ export default function ManualAddDrawer({
     }
   };
 
-  const config = mealConfig[mealType] || { label: "Ovqat", emoji: "🍽️" };
+  const config = getMealConfig(mealType, { label: "Ovqat", emoji: "🍽️" });
 
   return (
     <>

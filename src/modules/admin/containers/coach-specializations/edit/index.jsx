@@ -1,298 +1,323 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { get, find, trim, isArray, join } from "lodash";
+import { filter, find, get, isArray, join, trim } from "lodash";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { CheckCircle2Icon, LoaderCircleIcon } from "lucide-react";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
+import { useLanguageStore } from "@/store";
+import OptionDrawerPicker from "@/components/option-drawer-picker";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   Drawer,
-  DrawerContent,
   DrawerBody,
+  DrawerContent,
   DrawerDescription,
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  CheckCircle2Icon,
-  LoaderCircleIcon,
-  PencilIcon,
-} from "lucide-react";
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner.jsx";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import SpecializationImagePicker from "../components/SpecializationImagePicker";
+import {
+  CATEGORY_OPTIONS,
+  FALLBACK_LANGUAGE,
+  SUPPORTED_TRANSLATION_FIELDS,
+} from "../constants";
 
-const CATEGORY_OPTIONS = [
-  { value: "FITNESS", label: "\uD83D\uDCAA Fitness" },
-  { value: "YOGA", label: "\uD83E\uDDD8 Yoga" },
-  { value: "BOXING", label: "\uD83E\uDD4A Boks" },
-  { value: "FOOTBALL", label: "\u26BD Futbol" },
-  { value: "SWIMMING", label: "\uD83C\uDFCA Suzish" },
-  { value: "TENNIS", label: "\uD83C\uDFBE Tennis" },
-  { value: "BASKETBALL", label: "\uD83C\uDFC0 Basketbol" },
-  { value: "MARTIAL_ARTS", label: "\uD83E\uDD4B Jang san'ati" },
-  { value: "RUNNING", label: "\uD83C\uDFC3 Yugurish" },
-  { value: "GYMNASTICS", label: "\uD83E\uDD38 Gimnastika" },
-  { value: "DANCE", label: "\uD83D\uDC83 Raqs" },
-  { value: "CHEERLEADING", label: "\uD83D\uDCE3 Cheerleading" },
-  { value: "SKATING", label: "\u26F8\uFE0F Muz uchish" },
-  { value: "CYCLING", label: "\uD83D\uDEB4 Velosiped" },
-  { value: "CLIMBING", label: "\uD83E\uDDD7 Toqqa chiqish" },
-  { value: "OTHER", label: "\uD83C\uDFC5 Boshqa" },
-];
+const editSchema = z.object({
+  category: z.string().trim().min(1, "Kategoriyani tanlang"),
+  name: z.string().trim().min(1, "Nom kiriting"),
+  imageUrl: z.string().optional(),
+  isActive: z.boolean().default(true),
+});
 
 const emptyForm = {
   category: "",
-  key: "",
-  nameUz: "",
-  nameRu: "",
-  nameEn: "",
-  emoji: "",
-  sortOrder: 0,
+  name: "",
+  imageUrl: "",
   isActive: true,
+};
+
+const getResponsePayload = (response) =>
+  get(response, "data.data", get(response, "data", response));
+
+const getErrorMessage = (error, fallback) => {
+  const message = get(error, "response.data.message");
+  return isArray(message) ? join(message, ", ") : message || fallback;
+};
+
+const getSupportedActiveLanguages = (languages) => {
+  const activeLanguages = filter(
+    languages,
+    (language) =>
+      get(language, "isActive") &&
+      Boolean(SUPPORTED_TRANSLATION_FIELDS[get(language, "code")]),
+  );
+
+  return activeLanguages.length ? activeLanguages : [FALLBACK_LANGUAGE];
+};
+
+const resolveCurrentLanguage = (activeLanguages, currentLanguage) =>
+  find(
+    activeLanguages,
+    (language) => get(language, "code") === currentLanguage,
+  ) || get(activeLanguages, "0", FALLBACK_LANGUAGE);
+
+const resolveLocalizedName = (item, language) =>
+  trim(get(item, `translations.${language}`, "")) ||
+  trim(get(item, "translations.uz", "")) ||
+  trim(get(item, "name", ""));
+
+const buildEditPayload = (values, activeLanguage) => {
+  const name = trim(get(values, "name", ""));
+  const languageCode = get(activeLanguage, "code", "uz");
+
+  return {
+    category: get(values, "category"),
+    name,
+    translations: {
+      [languageCode]: name,
+    },
+    imageUrl: get(values, "imageUrl"),
+    isActive: get(values, "isActive"),
+  };
 };
 
 const EditSpecialization = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const [form, setForm] = useState(emptyForm);
+  const currentLanguage = useLanguageStore((state) => state.currentLanguage);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-  const { data: specializationsData, isLoading } = useGetQuery({
-    url: "/admin/coach-specializations",
+  const form = useForm({
+    resolver: zodResolver(editSchema),
+    defaultValues: emptyForm,
+  });
+
+  const { data: specializationData, isLoading } = useGetQuery({
+    url: `/admin/coach-specializations/${id}`,
     queryProps: {
-      queryKey: ["admin", "coach-specializations"],
+      queryKey: ["admin", "coach-specializations", id],
+      enabled: Boolean(id),
     },
   });
-  const allItems = get(specializationsData, "data.data", []);
-  const item = find(allItems, (i) => String(get(i, "id")) === String(id));
+  const item = getResponsePayload(specializationData);
 
-  const { mutateAsync: patchItem, isPending: isUpdating } = usePatchQuery({
+  const { data: languagesData } = useGetQuery({
+    url: "/admin/languages",
+    queryProps: {
+      queryKey: ["admin", "languages"],
+    },
+  });
+  const languages = get(languagesData, "data.data", []);
+
+  const activeLanguages = useMemo(
+    () => getSupportedActiveLanguages(languages),
+    [languages],
+  );
+  const activeLanguage = useMemo(
+    () => resolveCurrentLanguage(activeLanguages, currentLanguage),
+    [activeLanguages, currentLanguage],
+  );
+
+  const initialValues = useMemo(() => {
+    if (!item) return emptyForm;
+
+    return {
+      category: get(item, "category", ""),
+      name: resolveLocalizedName(item, get(activeLanguage, "code", "uz")),
+      imageUrl: get(item, "imageUrl", ""),
+      isActive: get(item, "isActive", true),
+    };
+  }, [activeLanguage, item]);
+
+  React.useEffect(() => {
+    if (item) {
+      form.reset(initialValues);
+    }
+  }, [form, initialValues, item]);
+
+  const imageUrl = form.watch("imageUrl");
+
+  const { mutateAsync, isPending } = usePatchQuery({
     queryKey: ["admin", "coach-specializations"],
   });
 
-  useEffect(() => {
-    if (item) {
-      setForm({
-        category: get(item, "category", ""),
-        key: get(item, "key", ""),
-        nameUz: get(item, "nameUz", ""),
-        nameRu: get(item, "nameRu", ""),
-        nameEn: get(item, "nameEn", ""),
-        emoji: get(item, "emoji", ""),
-        sortOrder: get(item, "sortOrder", 0),
-        isActive: get(item, "isActive", true),
-      });
-    }
-  }, [item]);
-
-  const handleSave = async () => {
-    if (!trim(get(form, "category"))) {
-      toast.error("Kategoriyani tanlang");
-      return;
-    }
-    if (!trim(get(form, "key"))) {
-      toast.error("Kalit (key) kiriting");
-      return;
-    }
-    if (!trim(get(form, "nameUz"))) {
-      toast.error("Nomi (UZ) kiriting");
+  const onSubmit = async (values) => {
+    if (isUploadingImage) {
+      toast.error("Rasm yuklanishini kuting");
       return;
     }
 
-    try {
-      await patchItem({
+    await mutateAsync(
+      {
         url: `/admin/coach-specializations/${id}`,
-        attributes: form,
-      });
-      toast.success("Yo'nalish yangilandi");
-      navigate("/admin/coach-specializations/list");
-    } catch (error) {
-      const message = get(error, "response.data.message");
-      toast.error(
-        isArray(message)
-          ? join(message, ", ")
-          : message || "Yo'nalishni saqlab bo'lmadi",
-      );
-    }
+        attributes: buildEditPayload(values, activeLanguage),
+      },
+      {
+        onSuccess: (response) => {
+          const responseData = getResponsePayload(response);
+          toast.success(
+            get(responseData, "message") || "Yo'nalish yangilandi",
+          );
+          navigate("/admin/coach-specializations/list");
+        },
+        onError: (error) => {
+          toast.error(getErrorMessage(error, "Yo'nalishni saqlab bo'lmadi"));
+        },
+      },
+    );
   };
 
   const handleOpenChange = (open) => {
     if (!open) navigate("/admin/coach-specializations/list");
   };
 
-  if (isLoading) return null;
+  const isSubmitting = isPending || isUploadingImage;
 
   return (
     <Drawer open onOpenChange={handleOpenChange} direction="bottom">
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle className="flex items-center gap-2">
-            <PencilIcon />
-            Yo'nalishni tahrirlash
-          </DrawerTitle>
-          <DrawerDescription>
+      <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-lg">
+        <DrawerHeader className="items-center text-center">
+          <DrawerTitle>Yo'nalishni tahrirlash</DrawerTitle>
+          <DrawerDescription className="max-w-sm">
             Yo'nalish ma'lumotlarini o'zgartiring
           </DrawerDescription>
         </DrawerHeader>
 
-        <DrawerBody className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label className="text-xs font-bold">Kategoriya *</Label>
-            <Select
-              value={get(form, "category", "")}
-              onValueChange={(value) =>
-                setForm((current) => ({ ...current, category: value }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Kategoriyani tanlang" />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORY_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label className="text-xs font-bold">Kalit (key) *</Label>
-            <Input
-              value={get(form, "key", "")}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  key: get(event, "target.value"),
-                }))
-              }
-              placeholder="masalan: weight_loss"
-              className="h-11"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label className="text-xs font-bold">Nomi (UZ) *</Label>
-            <Input
-              value={get(form, "nameUz", "")}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  nameUz: get(event, "target.value"),
-                }))
-              }
-              placeholder="Vazn yo'qotish"
-              className="h-11"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-2">
-              <Label className="text-xs font-bold">Nomi (RU)</Label>
-              <Input
-                value={get(form, "nameRu", "")}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    nameRu: get(event, "target.value"),
-                  }))
-                }
-                placeholder="Похудение"
-                className="h-11"
-              />
+        <DrawerBody>
+          {isLoading ? (
+            <div className="flex min-h-72 items-center justify-center">
+              <Spinner className="size-8 text-muted-foreground" />
             </div>
-            <div className="flex flex-col gap-2">
-              <Label className="text-xs font-bold">Nomi (EN)</Label>
-              <Input
-                value={get(form, "nameEn", "")}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    nameEn: get(event, "target.value"),
-                  }))
-                }
-                placeholder="Weight Loss"
-                className="h-11"
-              />
-            </div>
-          </div>
+          ) : (
+            <Form {...form}>
+              <form
+                id="coach-specialization-edit-form"
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="flex flex-col gap-4"
+              >
+                <FormField
+                  control={form.control}
+                  name="imageUrl"
+                  render={() => (
+                    <FormItem>
+                      <SpecializationImagePicker
+                        value={imageUrl}
+                        onUploadingChange={setIsUploadingImage}
+                        onChange={(nextUrl) =>
+                          form.setValue("imageUrl", nextUrl, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          })
+                        }
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-bold">
+                        Kategoriya *
+                      </FormLabel>
+                      <FormControl>
+                        <OptionDrawerPicker
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          options={CATEGORY_OPTIONS}
+                          title="Kategoriya tanlang"
+                          description="Yo'nalish qaysi sport kategoriyasiga tegishli ekanini belgilang"
+                          placeholder="Kategoriyani tanlang"
+                          triggerClassName="h-11"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-2">
-              <Label className="text-xs font-bold">Emoji</Label>
-              <Input
-                value={get(form, "emoji", "")}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    emoji: get(event, "target.value"),
-                  }))
-                }
-                placeholder="\uD83C\uDFCB\uFE0F"
-                className="h-11"
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label className="text-xs font-bold">Tartib raqami</Label>
-              <Input
-                type="number"
-                value={get(form, "sortOrder", 0)}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    sortOrder: Number(get(event, "target.value")) || 0,
-                  }))
-                }
-                placeholder="0"
-                className="h-11"
-              />
-            </div>
-          </div>
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2 text-xs font-bold">
+                        <span>{get(activeLanguage, "flag")}</span>
+                        Nomi ({get(activeLanguage, "name", "Faol til")}) *
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder={`${get(activeLanguage, "name", "Faol til")} tilida nom`}
+                          className="h-11"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-          <div className="flex items-center justify-between rounded-2xl border px-4 py-3">
-            <div>
-              <Label>Status</Label>
-              <p className="text-xs text-muted-foreground">
-                Faol bo'lsa, ilovada ko'rinadi.
-              </p>
-            </div>
-            <Switch
-              checked={get(form, "isActive", true)}
-              onCheckedChange={(checked) =>
-                setForm((current) => ({ ...current, isActive: checked }))
-              }
-            />
-          </div>
+                <FormField
+                  control={form.control}
+                  name="isActive"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center justify-between rounded-2xl border px-4 py-3">
+                        <div>
+                          <Label>Status</Label>
+                          <p className="text-xs text-muted-foreground">
+                            Faol bo'lsa, ilovada ko'rinadi.
+                          </p>
+                        </div>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </form>
+            </Form>
+          )}
         </DrawerBody>
 
-        <DrawerFooter>
-          <Button
-            onClick={handleSave}
-            disabled={isUpdating}
-            className="gap-2"
-          >
-            {isUpdating ? (
-              <LoaderCircleIcon className="animate-spin" />
-            ) : (
-              <CheckCircle2Icon />
-            )}
-            O'zgarishlarni saqlash
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => navigate("/admin/coach-specializations/list")}
-          >
-            Bekor qilish
-          </Button>
-        </DrawerFooter>
+        {!isLoading ? (
+          <DrawerFooter>
+            <Button
+              type="submit"
+              form="coach-specialization-edit-form"
+              disabled={isSubmitting}
+              className="gap-2"
+            >
+              {isSubmitting ? (
+                <LoaderCircleIcon className="animate-spin" />
+              ) : (
+                <CheckCircle2Icon />
+              )}
+              O'zgarishlarni saqlash
+            </Button>
+          </DrawerFooter>
+        ) : null}
       </DrawerContent>
     </Drawer>
   );

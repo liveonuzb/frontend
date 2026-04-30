@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router";
 import {
+  find,
   get,
   isArray,
   isObject,
@@ -8,15 +9,73 @@ import {
   toNumber,
   trim,
 } from "lodash";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { toast } from "sonner";
 import { useLanguageStore } from "@/store";
 import {
   useGetQuery,
-  usePostQuery,
   usePatchQuery,
   useDeleteQuery,
 } from "@/hooks/api";
-import FoodFormDrawer from "../components/FoodFormDrawer.jsx";
+import {
+  Drawer,
+  DrawerBody,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner.jsx";
+import OptionDrawerPicker from "@/components/option-drawer-picker";
+import MultipleDrawerPicker from "@/components/multiple-drawer-picker";
+import {
+  NumberField,
+  NumberFieldDecrement,
+  NumberFieldGroup,
+  NumberFieldIncrement,
+  NumberFieldInput,
+} from "@/components/reui/number-field";
+import FoodImagePicker from "../components/FoodImagePicker.jsx";
+
+const foodSchema = z.object({
+  name: z.string().min(1, "Ovqat nomini kiriting"),
+  categoryIds: z.array(z.number()).min(1, "Kamida bitta kategoriya tanlang"),
+  cuisineIds: z.array(z.number()).optional(),
+  nutritionMode: z.enum(["manual", "recipe"]),
+  calories: z.number({ invalid_type_error: "Kaloriya kiriting" }).min(0),
+  maxIntake: z.number().min(0).optional(),
+  protein: z.number().min(0),
+  carbs: z.number().min(0),
+  fat: z.number().min(0),
+  servingUnit: z.enum(["g", "ml", "dona", "qoshiq"]),
+  servingSize: z.number().min(0),
+});
+
+const SERVING_UNITS = [
+  { value: "g", label: "Gram" },
+  { value: "ml", label: "mL" },
+  { value: "dona", label: "Dona" },
+  { value: "qoshiq", label: "Qoshiq" },
+];
+
+const NUTRITION_MODES = [
+  { value: "manual", label: "Qo'lda kiritish" },
+  { value: "recipe", label: "Recipe orqali" },
+];
 
 const resolveLabel = (translations, fallback, language) => {
   if (isObject(translations)) {
@@ -29,9 +88,387 @@ const resolveLabel = (translations, fallback, language) => {
   return fallback;
 };
 
+const RHFNumberField = ({
+  value,
+  onChange,
+  minValue = 0,
+  step = 1,
+  placeholder = "0",
+  formatOptions,
+}) => (
+  <NumberField
+    value={value ?? undefined}
+    onValueChange={(v) => onChange(v ?? 0)}
+    minValue={minValue}
+    step={step}
+    formatOptions={formatOptions}
+  >
+    <NumberFieldGroup className="h-10 rounded-xl bg-background w-full">
+      <NumberFieldDecrement className="px-3 rounded-s-xl" />
+      <NumberFieldInput
+        placeholder={placeholder}
+        className="px-3 text-sm flex-1"
+      />
+      <NumberFieldIncrement className="px-3 rounded-e-xl" />
+    </NumberFieldGroup>
+  </NumberField>
+);
+
+const FoodFormDrawer = ({
+  open,
+  onOpenChange,
+  editingFood,
+  initialValues,
+  currentLanguage,
+  currentLanguageMeta,
+  imagePreview,
+  uploadedImageId,
+  isUploadingImage,
+  isDeletingImage,
+  isUpdating,
+  isLoading,
+  onImageUploaded,
+  onRemoveImage,
+  onUploadingImageChange,
+  onSave,
+}) => {
+  const form = useForm({
+    resolver: zodResolver(foodSchema),
+    defaultValues: {
+      name: "",
+      categoryIds: [],
+      cuisineIds: [],
+      nutritionMode: "manual",
+      calories: 0,
+      maxIntake: undefined,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+      servingUnit: "g",
+      servingSize: 100,
+    },
+  });
+
+  const watchedUnit = form.watch("servingUnit");
+  const watchedUnitLabel =
+    get(
+      find(SERVING_UNITS, (unit) => unit.value === watchedUnit),
+      "label",
+    ) || watchedUnit;
+
+  React.useEffect(() => {
+    if (open && initialValues) {
+      form.reset({
+        name: initialValues.name ?? "",
+        categoryIds: initialValues.categoryIds ?? [],
+        cuisineIds: initialValues.cuisineIds ?? [],
+        nutritionMode: initialValues.nutritionMode ?? "manual",
+        calories: Number(initialValues.calories) || 0,
+        maxIntake:
+          initialValues.maxIntake !== "" && initialValues.maxIntake != null
+            ? Number(initialValues.maxIntake)
+            : undefined,
+        protein: Number(initialValues.protein) || 0,
+        carbs: Number(initialValues.carbs) || 0,
+        fat: Number(initialValues.fat) || 0,
+        servingUnit: initialValues.servingUnit || "g",
+        servingSize: Number(initialValues.servingSize) || 100,
+      });
+    }
+  }, [form, initialValues, open]);
+
+  const handleSubmit = form.handleSubmit(async (data) => {
+    await onSave(data);
+    form.reset();
+  });
+  const isPending = isUpdating || isUploadingImage || isDeletingImage;
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-md mx-auto">
+        <DrawerHeader className="text-center">
+          <DrawerTitle className="text-lg font-bold">
+            Ovqatni tahrirlash
+          </DrawerTitle>
+          <DrawerDescription className="mt-1">
+            {currentLanguageMeta?.flag ? `${currentLanguageMeta.flag} ` : ""}
+            {currentLanguageMeta?.name ?? currentLanguage.toUpperCase()} tilida
+            ma&apos;lumot kiriting
+          </DrawerDescription>
+        </DrawerHeader>
+
+        {isLoading || !editingFood ? (
+          <div className="flex min-h-72 items-center justify-center px-4 py-8">
+            <Spinner className="size-8 text-muted-foreground" />
+          </div>
+        ) : (
+          <>
+            <DrawerBody>
+              <Form {...form}>
+                <form
+                  id="food-edit-form"
+                  onSubmit={handleSubmit}
+                  className="flex flex-col gap-5"
+                >
+                  <FoodImagePicker
+                    value={imagePreview}
+                    uploadedImageId={uploadedImageId}
+                    onChange={onImageUploaded}
+                    onRemove={onRemoveImage}
+                    onUploadingChange={onUploadingImageChange}
+                    disabled={isDeletingImage}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Nomi ({currentLanguage.toUpperCase()}){" "}
+                          <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Masalan: Olma" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="categoryIds"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Kategoriyalar{" "}
+                          <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <MultipleDrawerPicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            url="/admin/food-categories"
+                            queryKey={FOOD_CATEGORIES_QUERY_KEY}
+                            valueKey="id"
+                            title="Kategoriyalarni tanlang"
+                            description="Ovqat tegishli bo'lgan kategoriyalarni belgilang"
+                            placeholder="Kategoriyalarni tanlang"
+                            searchPlaceholder="Kategoriya qidirish..."
+                            emptyText="Kategoriya topilmadi"
+                            triggerClassName="h-11"
+                            getOptionLabel={(category) =>
+                              resolveLabel(
+                                category.translations,
+                                category.name,
+                                currentLanguage,
+                              )
+                            }
+                            getOptionDescription={(category) =>
+                              `ID: ${category.id}`
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="cuisineIds"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Oshxonalar</FormLabel>
+                        <FormControl>
+                          <MultipleDrawerPicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            url="/admin/cuisines"
+                            queryKey={CUISINES_QUERY_KEY}
+                            valueKey="id"
+                            title="Oshxonalarni tanlang"
+                            description="Ovqat tegishli bo'lgan oshxonalarni belgilang"
+                            placeholder="Oshxonalarni tanlang"
+                            searchPlaceholder="Oshxona qidirish..."
+                            emptyText="Oshxona topilmadi"
+                            triggerClassName="h-11"
+                            getOptionLabel={(cuisine) =>
+                              resolveLabel(
+                                cuisine.translations,
+                                cuisine.name,
+                                currentLanguage,
+                              )
+                            }
+                            getOptionDescription={(cuisine) =>
+                              `ID: ${cuisine.id}`
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="nutritionMode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nutrition mode</FormLabel>
+                        <FormControl>
+                          <OptionDrawerPicker
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            options={NUTRITION_MODES}
+                            title="Nutrition mode"
+                            placeholder="Mode tanlang"
+                            triggerClassName="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="calories"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Kaloriya <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <RHFNumberField
+                            value={field.value}
+                            onChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="maxIntake"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Maks. kunlik miqdor</FormLabel>
+                        <FormControl>
+                          <RHFNumberField
+                            value={field.value}
+                            onChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {[
+                    ["protein", "Protein (g)"],
+                    ["carbs", "Uglevod (g)"],
+                    ["fat", "Yog' (g)"],
+                  ].map(([name, label]) => (
+                    <FormField
+                      key={name}
+                      control={form.control}
+                      name={name}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{label}</FormLabel>
+                          <FormControl>
+                            <RHFNumberField
+                              value={field.value}
+                              onChange={field.onChange}
+                              step={0.1}
+                              placeholder="0.0"
+                              formatOptions={{ maximumFractionDigits: 1 }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ))}
+
+                  <FormField
+                    control={form.control}
+                    name="servingUnit"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>O&apos;lchov birligi</FormLabel>
+                        <FormControl>
+                          <OptionDrawerPicker
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            options={SERVING_UNITS}
+                            title="O'lchov birligini tanlang"
+                            description="Porsiya va maksimal kunlik miqdor uchun birlik"
+                            placeholder="O'lchov birligini tanlang"
+                            triggerClassName="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="servingSize"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Porsiya miqdori</FormLabel>
+                        <FormControl>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1">
+                              <RHFNumberField
+                                value={field.value}
+                                onChange={field.onChange}
+                                step={0.1}
+                                placeholder="100"
+                                formatOptions={{ maximumFractionDigits: 1 }}
+                              />
+                            </div>
+                            <span className="shrink-0 rounded-xl border bg-muted/60 px-3 py-2 text-sm font-semibold text-muted-foreground min-w-[56px] text-center">
+                              {watchedUnitLabel || "g"}
+                            </span>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </form>
+              </Form>
+            </DrawerBody>
+
+            <DrawerFooter className="border-t bg-muted/5 gap-2 px-5 py-4">
+              <Button type="submit" form="food-edit-form" disabled={isPending}>
+                Saqlash
+              </Button>
+              <DrawerClose asChild>
+                <Button variant="outline" type="button">
+                  Bekor qilish
+                </Button>
+              </DrawerClose>
+            </DrawerFooter>
+          </>
+        )}
+      </DrawerContent>
+    </Drawer>
+  );
+};
+
 const createFormFromFood = (food, language) => ({
   name: resolveLabel(food?.translations, food?.name ?? "", language),
   categoryIds: isArray(food?.categoryIds) ? food.categoryIds : [],
+  cuisineIds: isArray(food?.cuisineIds) ? food.cuisineIds : [],
+  nutritionMode: get(food, "nutritionMode", "manual"),
   calories: String(get(food, "calories", "")),
   protein: String(get(food, "protein", "")),
   carbs: String(get(food, "carbs", "")),
@@ -52,6 +489,8 @@ const createFoodPayload = (form, uploadedImageId, editingFood, language) => {
   return {
     name: localizedName,
     categoryIds: form.categoryIds,
+    cuisineIds: form.cuisineIds ?? [],
+    nutritionMode: form.nutritionMode ?? "manual",
     calories: toNumber(form.calories) || 0,
     protein: toNumber(form.protein) || 0,
     carbs: toNumber(form.carbs) || 0,
@@ -76,6 +515,7 @@ const createFoodPayload = (form, uploadedImageId, editingFood, language) => {
 const FOODS_QUERY_KEY = ["admin", "foods"];
 const FOOD_CATEGORIES_QUERY_KEY = ["admin", "food-categories"];
 const FOOD_CATEGORY_FOODS_QUERY_KEY = ["admin", "food-category-foods"];
+const CUISINES_QUERY_KEY = ["admin", "cuisines"];
 
 const EditFoodPage = () => {
   const { id } = useParams();
@@ -90,12 +530,6 @@ const EditFoodPage = () => {
     },
   });
   const editingFood = get(foodData, "data.data", null) || get(foodData, "data", null);
-
-  const { data: categoriesData } = useGetQuery({
-    url: "/admin/food-categories",
-    queryProps: { queryKey: FOOD_CATEGORIES_QUERY_KEY },
-  });
-  const categories = get(categoriesData, "data.data", []);
 
   const { data: languagesData } = useGetQuery({
     url: "/admin/languages",
@@ -117,14 +551,15 @@ const EditFoodPage = () => {
     queryKey: FOODS_QUERY_KEY,
     listKey: [...FOOD_CATEGORY_FOODS_QUERY_KEY],
   });
-  const uploadMutation = usePostQuery();
   const imageDeleteMutation = useDeleteQuery();
 
   const [uploadedImageId, setUploadedImageId] = React.useState(null);
   const [imagePreview, setImagePreview] = React.useState(null);
   const [imageInitialized, setImageInitialized] = React.useState(false);
-  const fileInputRef = React.useRef(null);
+  const [isUploadingImage, setIsUploadingImage] = React.useState(false);
+  const [removeImage, setRemoveImage] = React.useState(false);
   const uploadedImageIdRef = React.useRef(null);
+  const cleanupOnUnmountRef = React.useRef(true);
 
   React.useEffect(() => {
     uploadedImageIdRef.current = uploadedImageId;
@@ -132,7 +567,9 @@ const EditFoodPage = () => {
 
   React.useEffect(() => {
     if (editingFood && !imageInitialized) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setImagePreview(editingFood?.imageUrl || null);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setImageInitialized(true);
     }
   }, [editingFood, imageInitialized]);
@@ -151,13 +588,17 @@ const EditFoodPage = () => {
     [imageDeleteMutation],
   );
 
-  React.useEffect(() => {
-    return () => {
-      if (uploadedImageIdRef.current) {
+  React.useEffect(
+    () => () => {
+      if (cleanupOnUnmountRef.current && uploadedImageIdRef.current) {
         void deleteFoodImage(uploadedImageIdRef.current).catch(() => {});
       }
-    };
-  }, [deleteFoodImage]);
+    },
+    // This cleanup must run only on unmount. Running it on every mutation
+    // render can repeatedly delete the same temporary image.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
   const cleanupUploadedImage = React.useCallback(
     async (imageId = uploadedImageIdRef.current) => {
@@ -175,82 +616,18 @@ const EditFoodPage = () => {
     [deleteFoodImage],
   );
 
-  const uploadFoodImage = React.useCallback(
-    async (file) => {
-      const formData = new FormData();
-      formData.append("image", file);
-      const response = await uploadMutation.mutateAsync({
-        url: "/admin/food-images",
-        attributes: formData,
-        config: { headers: { "Content-Type": "multipart/form-data" } },
-      });
-      return get(response, "data");
-    },
-    [uploadMutation],
-  );
+  const handleImageUploaded = React.useCallback(
+    ({ imageId, imageUrl, previousUploadedImageId }) => {
+      setUploadedImageId(imageId);
+      setImagePreview(imageUrl);
+      setRemoveImage(false);
 
-  const handleImageChange = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      toast.error("Faqat rasm yuklash mumkin");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Rasm 5MB dan kichik bo'lishi kerak");
-      return;
-    }
-
-    const previousPreview = imagePreview;
-    const previousUploadedImageId = uploadedImageId;
-    const localPreview = URL.createObjectURL(file);
-
-    if (startsWith(imagePreview, "blob:")) {
-      URL.revokeObjectURL(imagePreview);
-    }
-
-    setImagePreview(localPreview);
-
-    try {
-      const uploaded = await uploadFoodImage(file);
-      const nextUploadedImageId = get(uploaded, "id", null);
-
-      setUploadedImageId(nextUploadedImageId);
-      setImagePreview(get(uploaded, "url", localPreview));
-
-      if (startsWith(localPreview, "blob:")) {
-        URL.revokeObjectURL(localPreview);
-      }
-
-      if (
-        previousUploadedImageId &&
-        previousUploadedImageId !== nextUploadedImageId
-      ) {
+      if (previousUploadedImageId && previousUploadedImageId !== imageId) {
         void cleanupUploadedImage(previousUploadedImageId);
       }
-      toast.success("Rasm yuklandi");
-    } catch (error) {
-      if (startsWith(localPreview, "blob:")) {
-        URL.revokeObjectURL(localPreview);
-      }
-
-      setUploadedImageId(previousUploadedImageId);
-      setImagePreview(previousPreview);
-
-      const message = error?.response?.data?.message;
-      toast.error(
-        isArray(message)
-          ? message.join(", ")
-          : message || "Rasmni yuklab bo'lmadi",
-      );
-    } finally {
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    }
-  };
+    },
+    [cleanupUploadedImage],
+  );
 
   const handleRemoveImage = () => {
     const currentUploadedImageId = uploadedImageIdRef.current;
@@ -261,10 +638,7 @@ const EditFoodPage = () => {
 
     setUploadedImageId(null);
     setImagePreview(null);
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    setRemoveImage(Boolean(editingFood?.imageUrl));
 
     if (currentUploadedImageId) {
       void cleanupUploadedImage(currentUploadedImageId);
@@ -281,6 +655,8 @@ const EditFoodPage = () => {
       {
         name: data.name,
         categoryIds: data.categoryIds,
+        cuisineIds: data.cuisineIds ?? [],
+        nutritionMode: data.nutritionMode,
         calories: String(data.calories),
         protein: String(data.protein),
         carbs: String(data.carbs),
@@ -289,7 +665,7 @@ const EditFoodPage = () => {
         servingUnit: data.servingUnit,
         maxIntake: data.maxIntake !== undefined ? String(data.maxIntake) : "",
         translations: editingFood?.translations ?? {},
-        removeImage: false,
+        removeImage,
       },
       uploadedImageId,
       editingFood,
@@ -302,7 +678,9 @@ const EditFoodPage = () => {
         attributes: payload,
       });
       toast.success("Ovqat yangilandi");
+      cleanupOnUnmountRef.current = false;
       setUploadedImageId(null);
+      uploadedImageIdRef.current = null;
       navigate("../list");
     } catch (error) {
       const message = error?.response?.data?.message;
@@ -329,17 +707,17 @@ const EditFoodPage = () => {
         onOpenChange={handleOpenChange}
         editingFood={null}
         initialValues={null}
-        categories={categories}
         currentLanguage={currentLanguage}
         currentLanguageMeta={currentLanguageMeta}
         imagePreview={null}
-        fileInputRef={fileInputRef}
+        uploadedImageId={null}
         isUploadingImage={false}
         isDeletingImage={false}
         isCreating={false}
         isUpdating={false}
-        onImageChange={() => {}}
+        onImageUploaded={() => {}}
         onRemoveImage={() => {}}
+        onUploadingImageChange={() => {}}
         onSave={() => {}}
       />
     );
@@ -351,17 +729,17 @@ const EditFoodPage = () => {
       onOpenChange={handleOpenChange}
       editingFood={editingFood}
       initialValues={initialValues}
-      categories={categories}
       currentLanguage={currentLanguage}
       currentLanguageMeta={currentLanguageMeta}
       imagePreview={imagePreview}
-      fileInputRef={fileInputRef}
-      isUploadingImage={uploadMutation.isPending}
+      uploadedImageId={uploadedImageId}
+      isUploadingImage={isUploadingImage}
       isDeletingImage={imageDeleteMutation.isPending}
       isCreating={false}
       isUpdating={patchMutation.isPending}
-      onImageChange={handleImageChange}
+      onImageUploaded={handleImageUploaded}
       onRemoveImage={handleRemoveImage}
+      onUploadingImageChange={setIsUploadingImage}
       onSave={handleSave}
     />
   );

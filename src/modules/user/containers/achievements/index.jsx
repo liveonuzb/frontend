@@ -12,7 +12,7 @@ import {
   HistoryIcon,
 } from "lucide-react";
 import { useGetQuery } from "@/hooks/api";
-import { useBreadcrumbStore } from "@/store";
+import { useAppModeStore, useBreadcrumbStore } from "@/store";
 import PageTransition from "@/components/page-transition";
 import PageLoader from "@/components/page-loader";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +55,49 @@ const getCategoryLabel = (category) => {
   );
 };
 
-const AchievementCard = ({ item, onClick }) => {
+const getAchievementImage = (item, mode = "madagascar") => {
+  const field =
+    mode === "zen"
+      ? "imageZenUrl"
+      : mode === "focus"
+        ? "imageFocusUrl"
+        : "imageMadagascarUrl";
+
+  return (
+    item?.[field] ||
+    item?.imageUrl ||
+    item?.imageMadagascarUrl ||
+    item?.imageZenUrl ||
+    item?.imageFocusUrl ||
+    ""
+  );
+};
+
+const AchievementImage = ({ item, mode, className }) => {
+  const imageUrl = getAchievementImage(item, mode);
+
+  return (
+    <div
+      className={cn(
+        "flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl",
+        item?.unlocked ? "bg-amber-500/15" : "bg-muted/60 grayscale",
+        className,
+      )}
+    >
+      {imageUrl ? (
+        <img
+          src={imageUrl}
+          alt={item?.name || "Achievement rasmi"}
+          className="size-full object-cover"
+        />
+      ) : (
+        <AwardIcon className="size-6 text-muted-foreground/50" />
+      )}
+    </div>
+  );
+};
+
+const AchievementCard = ({ item, mode, onClick }) => {
   const progressPct =
     item.threshold > 0
       ? Math.min(100, Math.round((item.progress / item.threshold) * 100))
@@ -74,14 +116,7 @@ const AchievementCard = ({ item, onClick }) => {
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-3">
-          <div
-            className={cn(
-              "flex size-12 shrink-0 items-center justify-center rounded-2xl text-2xl",
-              item.unlocked ? "bg-amber-500/15" : "bg-muted/60 grayscale",
-            )}
-          >
-            {item.icon || "🏆"}
-          </div>
+          <AchievementImage item={item} mode={mode} />
           <div className="min-w-0">
             <p className="font-semibold leading-tight">{item.name}</p>
             <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
@@ -335,6 +370,7 @@ const XpHistoryDrawer = ({ open, onOpenChange }) => {
 
 const AchievementsPage = () => {
   const { setBreadcrumbs } = useBreadcrumbStore();
+  const currentMode = useAppModeStore((state) => state.mode) || "madagascar";
   const [selectedCategory, setSelectedCategory] = React.useState(null);
   const [selectedItem, setSelectedItem] = React.useState(null);
   const [xpDrawerOpen, setXpDrawerOpen] = React.useState(false);
@@ -353,9 +389,17 @@ const AchievementsPage = () => {
 
   const { data: achievementsData, isLoading } = useGetQuery({
     url: "/gamification/achievements",
-    params: selectedCategory ? { category: selectedCategory } : {},
+    params: {
+      mode: currentMode,
+      ...(selectedCategory ? { category: selectedCategory } : {}),
+    },
     queryProps: {
-      queryKey: ["gamification", "achievements", selectedCategory ?? "all"],
+      queryKey: [
+        "gamification",
+        "achievements",
+        selectedCategory ?? "all",
+        currentMode,
+      ],
     },
   });
 
@@ -469,6 +513,7 @@ const AchievementsPage = () => {
                   <AchievementCard
                     key={item.id}
                     item={item}
+                    mode={currentMode}
                     onClick={setSelectedItem}
                   />
                 ))}
@@ -514,14 +559,11 @@ const AchievementsPage = () => {
         <DrawerContent>
           <DrawerHeader>
             <div className="flex items-center gap-4">
-              <div
-                className={cn(
-                  "flex size-14 shrink-0 items-center justify-center rounded-2xl text-3xl",
-                  selectedItem?.unlocked ? "bg-amber-500/15" : "bg-muted/60 grayscale",
-                )}
-              >
-                {selectedItem?.icon || "🏆"}
-              </div>
+              <AchievementImage
+                item={selectedItem}
+                mode={currentMode}
+                className="size-14"
+              />
               <div>
                 <DrawerTitle>{selectedItem?.name}</DrawerTitle>
                 <DrawerDescription>

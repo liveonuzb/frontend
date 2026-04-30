@@ -74,18 +74,37 @@ const toIsoDate = (value, endOfDay = false) => {
 const parseRouteState = (pathname) => {
   const marker = "/challenges/create";
   const markerIndex = pathname.indexOf(marker);
-  const suffix = markerIndex >= 0 ? pathname.slice(markerIndex + marker.length) : "";
-  const parts = suffix.split("/").filter(Boolean);
+  if (markerIndex >= 0) {
+    const suffix = pathname.slice(markerIndex + marker.length);
+    const parts = suffix.split("/").filter(Boolean);
 
-  if (parts.length === 0) {
-    return { challengeId: null, stepKey: "basic", invalid: false };
+    if (parts.length === 0) {
+      return { challengeId: null, stepKey: "basic", invalid: false, source: "create" };
+    }
+
+    if (parts.length === 2 && STEP_KEYS.includes(parts[1])) {
+      return { challengeId: parts[0], stepKey: parts[1], invalid: false, source: "create" };
+    }
+
+    return {
+      challengeId: parts[0] || null,
+      stepKey: "basic",
+      invalid: true,
+      source: "create",
+    };
   }
 
-  if (parts.length === 2 && STEP_KEYS.includes(parts[1])) {
-    return { challengeId: parts[0], stepKey: parts[1], invalid: false };
+  const editMatch = pathname.match(/\/challenges\/([^/]+)\/edit$/);
+  if (editMatch?.[1]) {
+    return {
+      challengeId: editMatch[1],
+      stepKey: "basic",
+      invalid: false,
+      source: "edit",
+    };
   }
 
-  return { challengeId: parts[0] || null, stepKey: "basic", invalid: true };
+  return { challengeId: null, stepKey: "basic", invalid: true, source: "create" };
 };
 
 const buildPlaceRewards = (items) =>
@@ -355,8 +374,13 @@ export default function ChallengeCreateContainer() {
   }, []);
 
   const closeDrawer = React.useCallback(() => {
+    if (routeState.source === "edit" && routeState.challengeId) {
+      navigate(`/user/challenges/${routeState.challengeId}`);
+      return;
+    }
+
     navigate("/user/challenges/my");
-  }, [navigate]);
+  }, [navigate, routeState.challengeId, routeState.source]);
 
   const handleBack = () => {
     if (currentStepIndex === 0 || !routeState.challengeId) {

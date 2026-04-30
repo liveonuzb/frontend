@@ -1,11 +1,12 @@
 "use client";
 import { clamp, map, times } from "lodash";
-import { createContext, useContext, useId, useMemo, useRef } from "react";
+import { createContext, Fragment, useContext, useId, useMemo, useRef } from "react";
 import { useDataGrid } from "@/components/reui/data-grid/data-grid";
 import {
   DataGridTableBase,
   DataGridTableBody,
   DataGridTableBodyRow,
+  DataGridTableBodyRowExpandded,
   DataGridTableBodyRowCell,
   DataGridTableBodyRowSkeleton,
   DataGridTableBodyRowSkeletonCell,
@@ -216,7 +217,14 @@ function DataGridTableDndRows({ handleDragEnd, dataIds }) {
                 strategy={verticalListSortingStrategy}
               >
                 {map(table.getRowModel().rows, (row) => {
-                  return <DataGridTableDndRow row={row} key={row.id} />;
+                  return (
+                    <Fragment key={row.id}>
+                      <DataGridTableDndRow row={row} />
+                      {row.getIsExpanded() && (
+                        <DataGridTableBodyRowExpandded row={row} />
+                      )}
+                    </Fragment>
+                  );
                 })}
               </SortableContext>
             ) : (

@@ -10,26 +10,87 @@ const FOOD_SORT_FIELDS = [
   "servingSize",
   "createdAt",
   "isActive",
+  "nutritionMode",
 ];
 const FOOD_SORT_DIRECTIONS = ["asc", "desc"];
+const TEXT_OPERATORS = [
+  "contains",
+  "not_contains",
+  "starts_with",
+  "ends_with",
+  "is",
+  "empty",
+  "not_empty",
+];
+const SELECT_OPERATORS = ["is", "is_not", "empty", "not_empty"];
 
-export const useFoodFilters = ({ categories = [], currentLanguage, resolveLabel }) => {
+const textOperatorOptions = [
+  { value: "contains", label: "contains" },
+  { value: "not_contains", label: "does not contain" },
+  { value: "starts_with", label: "starts with" },
+  { value: "ends_with", label: "ends with" },
+  { value: "is", label: "is exactly" },
+  { value: "empty", label: "is empty" },
+  { value: "not_empty", label: "is not empty" },
+];
+
+const selectOperatorOptions = [
+  { value: "is", label: "is" },
+  { value: "is_not", label: "is not" },
+  { value: "empty", label: "is empty" },
+  { value: "not_empty", label: "is not empty" },
+];
+
+export const useFoodFilters = ({
+  categories = [],
+  cuisines = [],
+  currentLanguage,
+  resolveLabel,
+}) => {
   const [search, setSearch] = useQueryState("q", parseAsString.withDefault(""));
+  const [searchOp, setSearchOp] = useQueryState(
+    "qOp",
+    parseAsStringEnum(TEXT_OPERATORS).withDefault("contains"),
+  );
   const [categoryFilter, setCategoryFilter] = useQueryState(
     "category",
     parseAsString.withDefault("all"),
+  );
+  const [categoryOp, setCategoryOp] = useQueryState(
+    "categoryOp",
+    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+  );
+  const [cuisineFilter, setCuisineFilter] = useQueryState(
+    "cuisine",
+    parseAsString.withDefault("all"),
+  );
+  const [cuisineOp, setCuisineOp] = useQueryState(
+    "cuisineOp",
+    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
   );
   const [statusFilter, setStatusFilter] = useQueryState(
     "status",
     parseAsStringEnum(["all", "active", "inactive"]).withDefault("all"),
   );
+  const [statusOp, setStatusOp] = useQueryState(
+    "statusOp",
+    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+  );
   const [hasImageFilter, setHasImageFilter] = useQueryState(
     "hasImage",
     parseAsStringEnum(["all", "yes", "no"]).withDefault("all"),
   );
+  const [hasImageOp, setHasImageOp] = useQueryState(
+    "hasImageOp",
+    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+  );
   const [translationsFilter, setTranslationsFilter] = useQueryState(
     "translations",
     parseAsStringEnum(["all", "complete", "missing"]).withDefault("all"),
+  );
+  const [translationsOp, setTranslationsOp] = useQueryState(
+    "translationsOp",
+    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
   );
   const [duplicatesFilter, setDuplicatesFilter] = useQueryState(
     "duplicates",
@@ -38,6 +99,10 @@ export const useFoodFilters = ({ categories = [], currentLanguage, resolveLabel 
   const [pageQuery, setPageQuery] = useQueryState(
     "page",
     parseAsString.withDefault("1"),
+  );
+  const [pageSizeQuery, setPageSizeQuery] = useQueryState(
+    "pageSize",
+    parseAsString.withDefault(String(ITEMS_PER_PAGE)),
   );
   const [sortBy, setSortBy] = useQueryState(
     "sortBy",
@@ -49,7 +114,7 @@ export const useFoodFilters = ({ categories = [], currentLanguage, resolveLabel 
   );
 
   const currentPage = Math.max(1, Number(pageQuery) || 1);
-  const pageSize = ITEMS_PER_PAGE;
+  const pageSize = Math.max(1, Number(pageSizeQuery) || ITEMS_PER_PAGE);
 
   const sorting = React.useMemo(
     () =>
@@ -61,10 +126,17 @@ export const useFoodFilters = ({ categories = [], currentLanguage, resolveLabel 
 
   const canReorder =
     search.trim() === "" &&
+    searchOp === "contains" &&
     categoryFilter === "all" &&
+    categoryOp === "is" &&
+    cuisineFilter === "all" &&
+    cuisineOp === "is" &&
     statusFilter === "all" &&
+    statusOp === "is" &&
     hasImageFilter === "all" &&
+    hasImageOp === "is" &&
     translationsFilter === "all" &&
+    translationsOp === "is" &&
     duplicatesFilter === "all" &&
     sortBy === "orderKey" &&
     sortDir === "asc" &&
@@ -77,6 +149,7 @@ export const useFoodFilters = ({ categories = [], currentLanguage, resolveLabel 
         key: "q",
         type: "text",
         defaultOperator: "contains",
+        operators: textOperatorOptions,
         placeholder: "Ovqat qidirish",
       },
       {
@@ -84,6 +157,7 @@ export const useFoodFilters = ({ categories = [], currentLanguage, resolveLabel 
         key: "category",
         type: "select",
         defaultOperator: "is",
+        operators: selectOperatorOptions,
         options: [
           { value: "all", label: "Barcha kategoriyalar" },
           ...lodashMap(categories, (category) => ({
@@ -97,10 +171,29 @@ export const useFoodFilters = ({ categories = [], currentLanguage, resolveLabel 
         ],
       },
       {
+        label: "Oshxona",
+        key: "cuisine",
+        type: "select",
+        defaultOperator: "is",
+        operators: selectOperatorOptions,
+        options: [
+          { value: "all", label: "Barcha oshxonalar" },
+          ...lodashMap(cuisines, (cuisine) => ({
+            value: String(cuisine.id),
+            label: resolveLabel(
+              cuisine.translations,
+              cuisine.name,
+              currentLanguage,
+            ),
+          })),
+        ],
+      },
+      {
         label: "Status",
         key: "status",
         type: "select",
         defaultOperator: "is",
+        operators: selectOperatorOptions,
         options: [
           { value: "all", label: "Barchasi" },
           { value: "active", label: "Faol" },
@@ -112,6 +205,7 @@ export const useFoodFilters = ({ categories = [], currentLanguage, resolveLabel 
         key: "hasImage",
         type: "select",
         defaultOperator: "is",
+        operators: selectOperatorOptions,
         options: [
           { value: "all", label: "Barchasi" },
           { value: "yes", label: "Rasmli" },
@@ -123,6 +217,7 @@ export const useFoodFilters = ({ categories = [], currentLanguage, resolveLabel 
         key: "translations",
         type: "select",
         defaultOperator: "is",
+        operators: selectOperatorOptions,
         options: [
           { value: "all", label: "Barchasi" },
           { value: "complete", label: "To'liq" },
@@ -134,60 +229,70 @@ export const useFoodFilters = ({ categories = [], currentLanguage, resolveLabel 
         key: "duplicates",
         type: "select",
         defaultOperator: "is",
+        operators: selectOperatorOptions,
         options: [
           { value: "all", label: "Barchasi" },
           { value: "only", label: "Faqat dublikatlar" },
         ],
       },
     ],
-    [categories, currentLanguage, resolveLabel],
+    [categories, cuisines, currentLanguage, resolveLabel],
   );
 
   const activeFilters = React.useMemo(() => {
     const items = [];
 
-    if (search.trim()) {
+    if (search.trim() || searchOp !== "contains") {
       items.push({
         id: "q",
         field: "q",
-        operator: "contains",
-        values: [search],
+        operator: searchOp,
+        values: search.trim() ? [search] : [],
       });
     }
 
-    if (categoryFilter !== "all") {
+    if (categoryFilter !== "all" || categoryOp !== "is") {
       items.push({
         id: "category",
         field: "category",
-        operator: "is",
-        values: [categoryFilter],
+        operator: categoryOp,
+        values: categoryFilter !== "all" ? [categoryFilter] : [],
       });
     }
 
-    if (statusFilter !== "all") {
+    if (cuisineFilter !== "all" || cuisineOp !== "is") {
+      items.push({
+        id: "cuisine",
+        field: "cuisine",
+        operator: cuisineOp,
+        values: cuisineFilter !== "all" ? [cuisineFilter] : [],
+      });
+    }
+
+    if (statusFilter !== "all" || statusOp !== "is") {
       items.push({
         id: "status",
         field: "status",
-        operator: "is",
-        values: [statusFilter],
+        operator: statusOp,
+        values: statusFilter !== "all" ? [statusFilter] : [],
       });
     }
 
-    if (hasImageFilter !== "all") {
+    if (hasImageFilter !== "all" || hasImageOp !== "is") {
       items.push({
         id: "hasImage",
         field: "hasImage",
-        operator: "is",
-        values: [hasImageFilter],
+        operator: hasImageOp,
+        values: hasImageFilter !== "all" ? [hasImageFilter] : [],
       });
     }
 
-    if (translationsFilter !== "all") {
+    if (translationsFilter !== "all" || translationsOp !== "is") {
       items.push({
         id: "translations",
         field: "translations",
-        operator: "is",
-        values: [translationsFilter],
+        operator: translationsOp,
+        values: translationsFilter !== "all" ? [translationsFilter] : [],
       });
     }
 
@@ -203,50 +308,64 @@ export const useFoodFilters = ({ categories = [], currentLanguage, resolveLabel 
     return items;
   }, [
     categoryFilter,
+    categoryOp,
+    cuisineFilter,
+    cuisineOp,
     duplicatesFilter,
     hasImageFilter,
+    hasImageOp,
     search,
+    searchOp,
     translationsFilter,
+    translationsOp,
     statusFilter,
+    statusOp,
   ]);
 
   const handleFiltersChange = React.useCallback(
     (nextFilters) => {
-      const nextSearch =
-        nextFilters.find((filter) => filter.field === "q")?.values?.[0] ?? "";
-      const nextCategory =
-        nextFilters.find((filter) => filter.field === "category")?.values?.[0] ??
-        "all";
-      const nextStatus =
-        nextFilters.find((filter) => filter.field === "status")?.values?.[0] ??
-        "all";
-      const nextHasImage =
-        nextFilters.find((filter) => filter.field === "hasImage")?.values?.[0] ??
-        "all";
-      const nextTranslations =
-        nextFilters.find((filter) => filter.field === "translations")
-          ?.values?.[0] ?? "all";
-      const nextDuplicates =
-        nextFilters.find((filter) => filter.field === "duplicates")
-          ?.values?.[0] ?? "all";
+      const byField = (field) =>
+        nextFilters.find((filter) => filter.field === field);
+      const nextSearch = byField("q")?.values?.[0] ?? "";
+      const nextCategory = byField("category")?.values?.[0] ?? "all";
+      const nextCuisine = byField("cuisine")?.values?.[0] ?? "all";
+      const nextStatus = byField("status")?.values?.[0] ?? "all";
+      const nextHasImage = byField("hasImage")?.values?.[0] ?? "all";
+      const nextTranslations = byField("translations")?.values?.[0] ?? "all";
+      const nextDuplicates = byField("duplicates")?.values?.[0] ?? "all";
+
       React.startTransition(() => {
         void setSearch(nextSearch);
+        void setSearchOp(byField("q")?.operator ?? "contains");
         void setCategoryFilter(nextCategory);
+        void setCategoryOp(byField("category")?.operator ?? "is");
+        void setCuisineFilter(nextCuisine);
+        void setCuisineOp(byField("cuisine")?.operator ?? "is");
         void setStatusFilter(nextStatus);
+        void setStatusOp(byField("status")?.operator ?? "is");
         void setHasImageFilter(nextHasImage);
+        void setHasImageOp(byField("hasImage")?.operator ?? "is");
         void setTranslationsFilter(nextTranslations);
+        void setTranslationsOp(byField("translations")?.operator ?? "is");
         void setDuplicatesFilter(nextDuplicates);
         void setPageQuery("1");
       });
     },
     [
       setCategoryFilter,
+      setCategoryOp,
+      setCuisineFilter,
+      setCuisineOp,
       setDuplicatesFilter,
       setHasImageFilter,
+      setHasImageOp,
       setPageQuery,
       setSearch,
+      setSearchOp,
       setTranslationsFilter,
+      setTranslationsOp,
       setStatusFilter,
+      setStatusOp,
     ],
   );
 
@@ -274,15 +393,23 @@ export const useFoodFilters = ({ categories = [], currentLanguage, resolveLabel 
 
   return {
     search,
+    searchOp,
     categoryFilter,
+    categoryOp,
+    cuisineFilter,
+    cuisineOp,
     statusFilter,
+    statusOp,
     hasImageFilter,
+    hasImageOp,
     translationsFilter,
+    translationsOp,
     duplicatesFilter,
     sortBy,
     sortDir,
     pageQuery,
     setPageQuery,
+    setPageSizeQuery,
     currentPage,
     pageSize,
     sorting,

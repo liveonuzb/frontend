@@ -10,7 +10,6 @@ import {
   isObject,
   keyBy,
   map as lodashMap,
-  pickBy,
   trim,
   values,
 } from "lodash";
@@ -44,14 +43,11 @@ import {
 } from "@/components/reui/data-grid";
 import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
 import { cn } from "@/lib/utils";
-import FoodTranslationsDrawer from "../components/FoodTranslationsDrawer";
 import FoodBulkCategoryDrawer from "../components/FoodBulkCategoryDrawer";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
 import { useFoodFilters } from "./use-filters.js";
 import { DeleteAlert, HardDeleteAlert } from "./delete-alert.jsx";
-
-const ITEMS_PER_PAGE = 10;
 
 const resolveLabel = (translations, fallback, language) => {
   if (isObject(translations)) {
@@ -76,9 +72,17 @@ const Index = () => {
 
   const { data: categoriesData } = useGetQuery({
     url: "/admin/food-categories",
-    queryProps: { queryKey: ["admin", "food-categories"] },
+    params: { pageSize: 100 },
+    queryProps: { queryKey: ["admin", "food-categories", "options"] },
   });
   const categories = get(categoriesData, "data.data", []);
+
+  const { data: cuisinesData } = useGetQuery({
+    url: "/admin/cuisines",
+    params: { pageSize: 100 },
+    queryProps: { queryKey: ["admin", "cuisines", "options"] },
+  });
+  const cuisines = get(cuisinesData, "data.data", []);
 
   const { data: languagesData } = useGetQuery({
     url: "/admin/languages",
@@ -88,15 +92,23 @@ const Index = () => {
 
   const {
     search,
+    searchOp,
     categoryFilter,
+    categoryOp,
+    cuisineFilter,
+    cuisineOp,
     statusFilter,
+    statusOp,
     hasImageFilter,
+    hasImageOp,
     translationsFilter,
+    translationsOp,
     duplicatesFilter,
     sortBy,
     sortDir,
     pageQuery,
     setPageQuery,
+    setPageSizeQuery,
     currentPage,
     pageSize,
     sorting,
@@ -105,34 +117,57 @@ const Index = () => {
     activeFilters,
     handleFiltersChange,
     handleSortingChange,
-  } = useFoodFilters({ categories, currentLanguage, resolveLabel });
+  } = useFoodFilters({ categories, cuisines, currentLanguage, resolveLabel });
 
   const deferredSearch = React.useDeferredValue(search);
   const queryParams = React.useMemo(
     () => ({
-      ...(trim(deferredSearch) ? { q: trim(deferredSearch) } : {}),
+      ...(trim(deferredSearch) ? { name: trim(deferredSearch) } : {}),
+      ...(trim(deferredSearch) || searchOp !== "contains"
+        ? { nameOp: searchOp }
+        : {}),
       ...(categoryFilter !== "all" ? { categoryId: categoryFilter } : {}),
+      ...(categoryFilter !== "all" || categoryOp !== "is"
+        ? { categoryOp }
+        : {}),
+      ...(cuisineFilter !== "all" ? { cuisineId: cuisineFilter } : {}),
+      ...(cuisineFilter !== "all" || cuisineOp !== "is" ? { cuisineOp } : {}),
       ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      ...(statusFilter !== "all" || statusOp !== "is" ? { statusOp } : {}),
       ...(hasImageFilter !== "all" ? { hasImage: hasImageFilter } : {}),
+      ...(hasImageFilter !== "all" || hasImageOp !== "is"
+        ? { hasImageOp }
+        : {}),
       ...(translationsFilter !== "all"
         ? { translations: translationsFilter }
+        : {}),
+      ...(translationsFilter !== "all" || translationsOp !== "is"
+        ? { translationsOp }
         : {}),
       ...(duplicatesFilter !== "all" ? { duplicates: duplicatesFilter } : {}),
       sortBy,
       sortDir,
       page: currentPage,
-      pageSize: ITEMS_PER_PAGE,
+      pageSize,
     }),
     [
       categoryFilter,
+      categoryOp,
+      cuisineFilter,
+      cuisineOp,
       currentPage,
       deferredSearch,
       duplicatesFilter,
       hasImageFilter,
+      hasImageOp,
+      pageSize,
+      searchOp,
       sortBy,
       sortDir,
       translationsFilter,
+      translationsOp,
       statusFilter,
+      statusOp,
     ],
   );
 
@@ -150,6 +185,7 @@ const Index = () => {
     },
   });
   const foods = get(foodsData, "data.data", []);
+  const hasMeta = Boolean(get(foodsData, "data.meta"));
   const meta = get(foodsData, "data.meta", {
     total: 0,
     page: 1,
@@ -203,15 +239,6 @@ const Index = () => {
     mutationProps: { onSuccess: invalidateFoodAndCategories },
   });
 
-  const isUpdating =
-    statusMutation.isPending ||
-    bulkStatusMutation.isPending ||
-    bulkTrashMutation.isPending ||
-    restoreMutation.isPending ||
-    bulkRestoreMutation.isPending ||
-    bulkAssignCategoriesMutation.isPending ||
-    hardDeleteMutation.isPending ||
-    reorderMutation.isPending;
   const isDeleting = deleteMutation.isPending;
   const isBulkUpdatingStatus = bulkStatusMutation.isPending;
   const isBulkTrashing = bulkTrashMutation.isPending;
@@ -220,11 +247,6 @@ const Index = () => {
   const isRestoring = restoreMutation.isPending || bulkRestoreMutation.isPending;
   const isImporting = importMutation.isPending;
 
-  const updateFood = React.useCallback(
-    async (id, payload, config = {}) =>
-      statusMutation.mutateAsync({ url: `/admin/foods/${id}`, attributes: payload, config }),
-    [statusMutation],
-  );
   const deleteFood = React.useCallback(
     async (id) => deleteMutation.mutateAsync({ url: `/admin/foods/${id}` }),
     [deleteMutation],
@@ -303,24 +325,18 @@ const Index = () => {
     () => keyBy(categories, "id"),
     [categories],
   );
+  const cuisineById = React.useMemo(
+    () => keyBy(cuisines, (cuisine) => cuisine.id),
+    [cuisines],
+  );
   const assignableCategories = React.useMemo(
     () => lodashFilter(categories, (category) => category.isActive),
     [categories],
   );
 
-  const currentLanguageMeta = React.useMemo(
-    () =>
-      find(activeLanguages, (language) => language.code === currentLanguage),
-    [activeLanguages, currentLanguage],
-  );
-
-  const [translationsDrawerOpen, setTranslationsDrawerOpen] =
-    React.useState(false);
   const [bulkCategoryDrawerOpen, setBulkCategoryDrawerOpen] =
     React.useState(false);
-  const [translatingFood, setTranslatingFood] = React.useState(null);
   const [rowSelection, setRowSelection] = React.useState({});
-  const [translationForm, setTranslationForm] = React.useState({});
   const [bulkCategoryIds, setBulkCategoryIds] = React.useState([]);
   const [foodToDelete, setFoodToDelete] = React.useState(null);
   const [hardDeleteTarget, setHardDeleteTarget] = React.useState(null);
@@ -335,11 +351,12 @@ const Index = () => {
   }, [setBreadcrumbs]);
 
   React.useEffect(() => {
+    if (!hasMeta || isFetching) return;
     const totalPages = get(meta, "totalPages", 1);
     if (currentPage > totalPages) {
       void setPageQuery(String(totalPages));
     }
-  }, [currentPage, meta, setPageQuery]);
+  }, [currentPage, hasMeta, isFetching, meta, setPageQuery]);
 
   React.useEffect(() => {
     setRowSelection({});
@@ -348,6 +365,7 @@ const Index = () => {
     currentPage,
     duplicatesFilter,
     hasImageFilter,
+    pageSize,
     search,
     sortBy,
     sortDir,
@@ -380,52 +398,10 @@ const Index = () => {
   };
 
   const openTranslationsDrawer = (food) => {
-    setTranslatingFood(food);
-    setTranslationForm(
-      Object.fromEntries(
-        lodashMap(activeLanguages, (language) => [
-          language.code,
-          resolveLabel(food?.translations, food?.name ?? "", language.code),
-        ]),
-      ),
-    );
-    setTranslationsDrawerOpen(true);
+    navigate(`translate/${food.id}`);
   };
-
-  const handleTranslationSave = async () => {
-    if (!translatingFood) return;
-
-    const localizedName = trim(
-      String(get(translationForm, currentLanguage, "")),
-    );
-    const cleanedTranslations = pickBy(
-      Object.fromEntries(
-        lodashMap(translationForm || {}, (value, code) => [
-          code,
-          trim(String(value ?? "")),
-        ]),
-      ),
-      Boolean,
-    );
-    const payload = {
-      translations: cleanedTranslations,
-      ...(localizedName ? { name: localizedName } : {}),
-    };
-
-    try {
-      await updateFood(translatingFood.id, payload);
-      toast.success("Tarjimalar yangilandi");
-      setTranslationsDrawerOpen(false);
-      setTranslatingFood(null);
-      setTranslationForm({});
-    } catch (error) {
-      const message = error?.response?.data?.message;
-      toast.error(
-        isArray(message)
-          ? message.join(", ")
-          : message || "Tarjimalarni saqlab bo'lmadi",
-      );
-    }
+  const openRecipeDrawer = (food) => {
+    navigate(`recipe/${food.id}`);
   };
 
   const handleDelete = async () => {
@@ -636,6 +612,7 @@ const Index = () => {
     activeLanguages,
     canReorder,
     categoryById,
+    cuisineById,
     currentLanguage,
     currentPage,
     pageSize,
@@ -643,6 +620,7 @@ const Index = () => {
     handleToggleStatus,
     handleRestoreFood,
     openEditDrawer,
+    openRecipeDrawer,
     openTranslationsDrawer,
     setFoodToDelete,
     setHardDeleteTarget,
@@ -660,16 +638,25 @@ const Index = () => {
     onRowSelectionChange: setRowSelection,
     onSortingChange: handleSortingChange,
     onPaginationChange: (updater) => {
-      const prev = { pageIndex: currentPage - 1, pageSize: ITEMS_PER_PAGE };
+      const prev = { pageIndex: currentPage - 1, pageSize };
       const next = typeof updater === "function" ? updater(prev) : updater;
+      const nextPage = Number(next.pageIndex) + 1;
+      const nextPageSize = Number(next.pageSize) || pageSize;
+      if (
+        (!Number.isFinite(nextPage) || nextPage === currentPage) &&
+        nextPageSize === pageSize
+      ) {
+        return;
+      }
       React.startTransition(() => {
-        void setPageQuery(String(next.pageIndex + 1));
+        void setPageQuery(String(nextPageSize === pageSize ? nextPage : 1));
+        void setPageSizeQuery(String(nextPageSize));
       });
     },
     state: {
       rowSelection,
       sorting,
-      pagination: { pageIndex: currentPage - 1, pageSize: ITEMS_PER_PAGE },
+      pagination: { pageIndex: currentPage - 1, pageSize },
     },
   });
 
@@ -873,25 +860,6 @@ const Index = () => {
       ) : null}
 
       <Outlet />
-
-      <FoodTranslationsDrawer
-        open={translationsDrawerOpen}
-        onOpenChange={(open) => {
-          setTranslationsDrawerOpen(open);
-          if (!open) {
-            setTranslatingFood(null);
-            setTranslationForm({});
-          }
-        }}
-        translatingFood={translatingFood}
-        translationForm={translationForm}
-        setTranslationForm={setTranslationForm}
-        activeLanguages={activeLanguages}
-        currentLanguage={currentLanguage}
-        currentLanguageMeta={currentLanguageMeta}
-        isUpdating={isUpdating}
-        onSave={handleTranslationSave}
-      />
 
       <FoodBulkCategoryDrawer
         open={bulkCategoryDrawerOpen}

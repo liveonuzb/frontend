@@ -1,269 +1,281 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { get, trim, isArray, join } from "lodash";
-import { usePostQuery } from "@/hooks/api";
+import { filter, find, get, trim, isArray, join } from "lodash";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { CheckCircle2Icon, LoaderCircleIcon } from "lucide-react";
+import { useGetQuery, usePostQuery } from "@/hooks/api";
+import { useLanguageStore } from "@/store";
+import OptionDrawerPicker from "@/components/option-drawer-picker";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   Drawer,
-  DrawerContent,
   DrawerBody,
+  DrawerContent,
   DrawerDescription,
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  CheckCircle2Icon,
-  LoaderCircleIcon,
-  PlusIcon,
-} from "lucide-react";
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import SpecializationImagePicker from "../components/SpecializationImagePicker";
+import {
+  CATEGORY_OPTIONS,
+  FALLBACK_LANGUAGE,
+  SUPPORTED_TRANSLATION_FIELDS,
+} from "../constants";
 
-const CATEGORY_OPTIONS = [
-  { value: "FITNESS", label: "\uD83D\uDCAA Fitness" },
-  { value: "YOGA", label: "\uD83E\uDDD8 Yoga" },
-  { value: "BOXING", label: "\uD83E\uDD4A Boks" },
-  { value: "FOOTBALL", label: "\u26BD Futbol" },
-  { value: "SWIMMING", label: "\uD83C\uDFCA Suzish" },
-  { value: "TENNIS", label: "\uD83C\uDFBE Tennis" },
-  { value: "BASKETBALL", label: "\uD83C\uDFC0 Basketbol" },
-  { value: "MARTIAL_ARTS", label: "\uD83E\uDD4B Jang san'ati" },
-  { value: "RUNNING", label: "\uD83C\uDFC3 Yugurish" },
-  { value: "GYMNASTICS", label: "\uD83E\uDD38 Gimnastika" },
-  { value: "DANCE", label: "\uD83D\uDC83 Raqs" },
-  { value: "CHEERLEADING", label: "\uD83D\uDCE3 Cheerleading" },
-  { value: "SKATING", label: "\u26F8\uFE0F Muz uchish" },
-  { value: "CYCLING", label: "\uD83D\uDEB4 Velosiped" },
-  { value: "CLIMBING", label: "\uD83E\uDDD7 Toqqa chiqish" },
-  { value: "OTHER", label: "\uD83C\uDFC5 Boshqa" },
-];
+const createSchema = z.object({
+  category: z.string().trim().min(1, "Kategoriyani tanlang"),
+  name: z.string().trim().min(1, "Nom kiriting"),
+  imageUrl: z.string().optional(),
+  isActive: z.boolean().default(true),
+});
 
-const emptyForm = {
-  category: "",
-  key: "",
-  nameUz: "",
-  nameRu: "",
-  nameEn: "",
-  emoji: "",
-  sortOrder: 0,
-  isActive: true,
+const getResponsePayload = (response) =>
+  get(response, "data.data", get(response, "data", response));
+
+const getErrorMessage = (error, fallback) => {
+  const message = get(error, "response.data.message");
+  return isArray(message) ? join(message, ", ") : message || fallback;
+};
+
+const getSupportedActiveLanguages = (languages) => {
+  const activeLanguages = filter(
+    languages,
+    (language) =>
+      get(language, "isActive") &&
+      Boolean(SUPPORTED_TRANSLATION_FIELDS[get(language, "code")]),
+  );
+
+  return activeLanguages.length ? activeLanguages : [FALLBACK_LANGUAGE];
+};
+
+const resolveCurrentLanguage = (activeLanguages, currentLanguage) =>
+  find(
+    activeLanguages,
+    (language) => get(language, "code") === currentLanguage,
+  ) || get(activeLanguages, "0", FALLBACK_LANGUAGE);
+
+const buildCreatePayload = (values, activeLanguage) => {
+  const name = trim(get(values, "name", ""));
+  const languageCode = get(activeLanguage, "code", "uz");
+  const payload = {
+    category: get(values, "category"),
+    name,
+    translations: {
+      [languageCode]: name,
+    },
+    imageUrl: get(values, "imageUrl"),
+    isActive: get(values, "isActive"),
+  };
+
+  return payload;
 };
 
 const CreateSpecialization = () => {
   const navigate = useNavigate();
-  const [form, setForm] = useState(emptyForm);
+  const currentLanguage = useLanguageStore((state) => state.currentLanguage);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-  const { mutateAsync: postItem, isPending: isCreating } = usePostQuery({
+  const form = useForm({
+    resolver: zodResolver(createSchema),
+    defaultValues: {
+      category: "",
+      name: "",
+      imageUrl: "",
+      isActive: true,
+    },
+  });
+
+  const imageUrl = form.watch("imageUrl");
+
+  const { data: languagesData } = useGetQuery({
+    url: "/admin/languages",
+    queryProps: {
+      queryKey: ["admin", "languages"],
+    },
+  });
+  const languages = get(languagesData, "data.data", []);
+
+  const activeLanguages = useMemo(
+    () => getSupportedActiveLanguages(languages),
+    [languages],
+  );
+  const activeLanguage = useMemo(
+    () => resolveCurrentLanguage(activeLanguages, currentLanguage),
+    [activeLanguages, currentLanguage],
+  );
+
+  const { mutateAsync, isPending } = usePostQuery({
     queryKey: ["admin", "coach-specializations"],
   });
 
-  const handleSave = async () => {
-    if (!trim(get(form, "category"))) {
-      toast.error("Kategoriyani tanlang");
-      return;
-    }
-    if (!trim(get(form, "key"))) {
-      toast.error("Kalit (key) kiriting");
-      return;
-    }
-    if (!trim(get(form, "nameUz"))) {
-      toast.error("Nomi (UZ) kiriting");
+  const onSubmit = async (values) => {
+    if (isUploadingImage) {
+      toast.error("Rasm yuklanishini kuting");
       return;
     }
 
-    try {
-      await postItem({
+    await mutateAsync(
+      {
         url: "/admin/coach-specializations",
-        attributes: form,
-      });
-      toast.success("Yangi yo'nalish qo'shildi");
-      navigate("/admin/coach-specializations/list");
-    } catch (error) {
-      const message = get(error, "response.data.message");
-      toast.error(
-        isArray(message)
-          ? join(message, ", ")
-          : message || "Yo'nalishni saqlab bo'lmadi",
-      );
-    }
+        attributes: buildCreatePayload(values, activeLanguage),
+      },
+      {
+        onSuccess: (response) => {
+          const responseData = getResponsePayload(response);
+          toast.success(
+            get(responseData, "message") || "Yangi yo'nalish qo'shildi",
+          );
+          navigate("/admin/coach-specializations/list");
+        },
+        onError: (error) => {
+          toast.error(getErrorMessage(error, "Yo'nalishni saqlab bo'lmadi"));
+        },
+      },
+    );
   };
 
   const handleOpenChange = (open) => {
     if (!open) navigate("/admin/coach-specializations/list");
   };
 
+  const isSubmitting = isPending || isUploadingImage;
+
   return (
     <Drawer open onOpenChange={handleOpenChange} direction="bottom">
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle className="flex items-center gap-2">
-            <PlusIcon />
-            Yangi yo'nalish qo'shish
-          </DrawerTitle>
-          <DrawerDescription>
-            Yangi sport yo'nalishini qo'shing
+      <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-lg">
+        <DrawerHeader className="items-center text-center">
+          <DrawerTitle>Yangi yo'nalish qo'shish</DrawerTitle>
+          <DrawerDescription className="max-w-sm">
+            Asosiy ma'lumotlarni kiriting. Tarjimalar keyin actions orqali
+            qo'shiladi
           </DrawerDescription>
         </DrawerHeader>
 
-        <DrawerBody className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label className="text-xs font-bold">Kategoriya *</Label>
-            <Select
-              value={get(form, "category", "")}
-              onValueChange={(value) =>
-                setForm((current) => ({ ...current, category: value }))
-              }
+        <DrawerBody>
+          <Form {...form}>
+            <form
+              id="coach-specialization-create-form"
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="flex flex-col gap-4"
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Kategoriyani tanlang" />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORY_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label className="text-xs font-bold">Kalit (key) *</Label>
-            <Input
-              value={get(form, "key", "")}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  key: get(event, "target.value"),
-                }))
-              }
-              placeholder="masalan: weight_loss"
-              className="h-11"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label className="text-xs font-bold">Nomi (UZ) *</Label>
-            <Input
-              value={get(form, "nameUz", "")}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  nameUz: get(event, "target.value"),
-                }))
-              }
-              placeholder="Vazn yo'qotish"
-              className="h-11"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-2">
-              <Label className="text-xs font-bold">Nomi (RU)</Label>
-              <Input
-                value={get(form, "nameRu", "")}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    nameRu: get(event, "target.value"),
-                  }))
-                }
-                placeholder="Похудение"
-                className="h-11"
+              <FormField
+                control={form.control}
+                name="imageUrl"
+                render={() => (
+                  <FormItem>
+                    <SpecializationImagePicker
+                      value={imageUrl}
+                      onUploadingChange={setIsUploadingImage}
+                      onChange={(nextUrl) =>
+                        form.setValue("imageUrl", nextUrl, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        })
+                      }
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label className="text-xs font-bold">Nomi (EN)</Label>
-              <Input
-                value={get(form, "nameEn", "")}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    nameEn: get(event, "target.value"),
-                  }))
-                }
-                placeholder="Weight Loss"
-                className="h-11"
-              />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-2">
-              <Label className="text-xs font-bold">Emoji</Label>
-              <Input
-                value={get(form, "emoji", "")}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    emoji: get(event, "target.value"),
-                  }))
-                }
-                placeholder="\uD83C\uDFCB\uFE0F"
-                className="h-11"
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-bold">
+                      Kategoriya *
+                    </FormLabel>
+                    <FormControl>
+                      <OptionDrawerPicker
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        options={CATEGORY_OPTIONS}
+                        title="Kategoriya tanlang"
+                        description="Yo'nalish qaysi sport kategoriyasiga tegishli ekanini belgilang"
+                        placeholder="Kategoriyani tanlang"
+                        triggerClassName="h-11"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label className="text-xs font-bold">Tartib raqami</Label>
-              <Input
-                type="number"
-                value={get(form, "sortOrder", 0)}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    sortOrder: Number(get(event, "target.value")) || 0,
-                  }))
-                }
-                placeholder="0"
-                className="h-11"
-              />
-            </div>
-          </div>
 
-          <div className="flex items-center justify-between rounded-2xl border px-4 py-3">
-            <div>
-              <Label>Status</Label>
-              <p className="text-xs text-muted-foreground">
-                Faol bo'lsa, ilovada ko'rinadi.
-              </p>
-            </div>
-            <Switch
-              checked={get(form, "isActive", true)}
-              onCheckedChange={(checked) =>
-                setForm((current) => ({ ...current, isActive: checked }))
-              }
-            />
-          </div>
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2 text-xs font-bold">
+                      <span>{get(activeLanguage, "flag")}</span>
+                      Nomi ({get(activeLanguage, "name", "Faol til")}) *
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder={`${get(activeLanguage, "name", "Faol til")} tilida nom`}
+                        className="h-11"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="isActive"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center justify-between rounded-2xl border px-4 py-3">
+                      <div>
+                        <Label>Status</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Faol bo'lsa, ilovada ko'rinadi.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </form>
+          </Form>
         </DrawerBody>
 
         <DrawerFooter>
           <Button
-            onClick={handleSave}
-            disabled={isCreating}
+            type="submit"
+            form="coach-specialization-create-form"
+            disabled={isSubmitting}
             className="gap-2"
           >
-            {isCreating ? (
+            {isSubmitting ? (
               <LoaderCircleIcon className="animate-spin" />
             ) : (
               <CheckCircle2Icon />
             )}
             Qo'shish
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => navigate("/admin/coach-specializations/list")}
-          >
-            Bekor qilish
           </Button>
         </DrawerFooter>
       </DrawerContent>

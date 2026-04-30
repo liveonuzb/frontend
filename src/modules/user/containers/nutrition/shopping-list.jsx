@@ -61,127 +61,261 @@ const buildShoppingList = (weeklyPlan) => {
   ]);
 };
 
-const downloadPDF = (shoppingList, planName, checkedItems) => {
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
+const getItemAmountLabel = (item) => {
+  const amount = Number(get(item, "grams")) || Number(get(item, "defaultAmount")) || 0;
+  const unit = get(item, "unit", "g");
+  return amount > 0 ? `${amount} ${unit}` : "";
+};
+
+const getItemMetaLabel = (item) => {
+  const cal = Number(get(item, "cal")) || 0;
+  const protein = Number(get(item, "protein")) || 0;
+  const carbs = Number(get(item, "carbs")) || 0;
+  const fat = Number(get(item, "fat")) || 0;
+  const macros = [];
+
+  if (cal) macros.push(`${cal} kcal`);
+  if (protein) macros.push(`P ${protein}g`);
+  if (carbs) macros.push(`C ${carbs}g`);
+  if (fat) macros.push(`F ${fat}g`);
+
+  return macros.join("  ");
+};
+
+const getFileSafeName = (value, fallback) => {
+  const safe = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return safe || fallback;
+};
+
+const downloadPDF = (weeklyPlan, shoppingList, planName, checkedItems) => {
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const pageW = doc.internal.pageSize.getWidth();
-  const margin = 18;
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 14;
   const contentW = pageW - margin * 2;
-  let y = 20;
-
-  const addPage = () => {
-    doc.addPage();
-    y = 20;
-  };
-
-  const checkY = (needed = 8) => {
-    if (y + needed > 275) addPage();
-  };
-
-  doc.setFillColor(249, 115, 22);
-  doc.roundedRect(margin, y, contentW, 20, 3, 3, "F");
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(14);
-  doc.setFont("helvetica", "bold");
-  doc.text("Xaridlar ro'yxati", margin + 6, y + 13);
-
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
+  const bottomLimit = pageH - 20;
   const dateStr = new Date().toLocaleDateString("uz-UZ", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
-  doc.text(dateStr, pageW - margin - 6, y + 13, { align: "right" });
+  let y = 16;
 
-  y += 26;
-
-  if (planName) {
-    doc.setTextColor(100, 100, 100);
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "italic");
-    doc.text(`Reja: ${planName}`, margin, y);
-    y += 7;
-  }
-
-  const total = shoppingList.length;
-  const bought = shoppingList.filter((i) => checkedItems[i.name]).length;
-  doc.setTextColor(80, 80, 80);
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.text(
-    `Jami: ${total} ta mahsulot  |  Xarid qilingan: ${bought}`,
-    margin,
-    y,
-  );
-  y += 10;
-
-  doc.setDrawColor(220, 220, 220);
-  doc.line(margin, y, pageW - margin, y);
-  y += 6;
-
-  shoppingList.forEach((item, idx) => {
-    checkY(10);
-
-    const isChecked = !!checkedItems[item.name];
-
-    if (idx % 2 === 0) {
-      doc.setFillColor(250, 250, 250);
-      doc.roundedRect(margin, y - 4, contentW, 9, 1, 1, "F");
-    }
-
-    doc.setDrawColor(180, 180, 180);
-    doc.setLineWidth(0.4);
-    doc.rect(margin + 1, y - 3, 5, 5);
-    if (isChecked) {
-      doc.setDrawColor(34, 197, 94); // green
-      doc.setLineWidth(0.8);
-      doc.line(margin + 2, y, margin + 3.5, y + 1.5);
-      doc.line(margin + 3.5, y + 1.5, margin + 5.5, y - 1.5);
-    }
-
-    doc.setTextColor(
-      isChecked ? 160 : 30,
-      isChecked ? 160 : 30,
-      isChecked ? 160 : 30,
-    );
-    doc.setFontSize(10);
-    doc.setFont("helvetica", isChecked ? "normal" : "bold");
-    doc.text(item.name, margin + 9, y + 0.5);
-
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(80, 80, 80);
-    const amountStr =
-      item.totalAmount > 0
-        ? `${item.totalAmount} ${item.unit}`
-        : `x${item.count}`;
-    doc.text(amountStr, pageW - margin - 28, y + 0.5, { align: "right" });
-
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(150, 150, 150);
-    const metaStr =
-      item.totalAmount > 0
-        ? `x${item.count} • ${item.totalCal} kcal`
-        : `${item.totalCal} kcal`;
-    doc.text(metaStr, pageW - margin, y + 0.5, { align: "right" });
-
-    y += 10;
+  doc.setProperties({
+    title: planName ? `${planName} - haftalik menyu` : "Haftalik menyu",
+    subject: "LiveOn meal plan export",
+    creator: "LiveOn",
   });
 
-  // --- Footer ---
-  y += 4;
-  checkY(10);
-  doc.setDrawColor(220, 220, 220);
-  doc.line(margin, y, pageW - margin, y);
-  y += 6;
-  doc.setTextColor(160, 160, 160);
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "italic");
-  doc.text("LiveOn — Sog'lom turmush tarzi", margin, y);
+  const addPage = () => {
+    doc.addPage();
+    y = 16;
+  };
 
-  const fileName = planName
-    ? `xaridlar-${planName.toLowerCase().replace(/\s+/g, "-")}.pdf`
-    : "xaridlar-royxati.pdf";
+  const checkY = (needed = 10) => {
+    if (y + needed > bottomLimit) addPage();
+  };
+
+  const addHeader = () => {
+    doc.setFillColor(255, 247, 237);
+    doc.roundedRect(margin, y, contentW, 24, 4, 4, "F");
+    doc.setFillColor(249, 115, 22);
+    doc.roundedRect(margin + 5, y + 5, 14, 14, 3, 3, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text("LO", margin + 12, y + 14, { align: "center" });
+
+    doc.setTextColor(30, 41, 59);
+    doc.setFontSize(15);
+    doc.text("LiveOn", margin + 24, y + 10);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text("Haftalik menyu va xarid ro'yxati", margin + 24, y + 17);
+    doc.text(dateStr, pageW - margin - 5, y + 10, { align: "right" });
+    if (planName) {
+      doc.text(planName, pageW - margin - 5, y + 17, { align: "right" });
+    }
+
+    y += 32;
+  };
+
+  const addSectionTitle = (title, subtitle) => {
+    checkY(18);
+    doc.setTextColor(15, 23, 42);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.text(title, margin, y);
+    if (subtitle) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text(subtitle, pageW - margin, y, { align: "right" });
+    }
+    y += 5;
+    doc.setDrawColor(226, 232, 240);
+    doc.line(margin, y, pageW - margin, y);
+    y += 7;
+  };
+
+  const addWrappedText = (text, x, maxWidth, options = {}) => {
+    const lines = doc.splitTextToSize(String(text || ""), maxWidth);
+    doc.text(lines, x, y, options);
+    y += lines.length * 4;
+  };
+
+  addHeader();
+  addSectionTitle("Haftalik menyu", "1 ustunli ko'rinish");
+
+  each(weekDays, (day) => {
+    const columns = defaultTo(weeklyPlan[day], []);
+    const dayItemCount = columns.reduce(
+      (sum, col) => sum + size(defaultTo(get(col, "items"), [])),
+      0,
+    );
+
+    checkY(18);
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(margin, y - 4, contentW, 9, 2, 2, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.text(day, margin + 3, y + 1);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`${dayItemCount} ta ovqat`, pageW - margin - 3, y + 1, {
+      align: "right",
+    });
+    y += 10;
+
+    if (!dayItemCount) {
+      doc.setFontSize(8);
+      doc.setTextColor(148, 163, 184);
+      doc.text("Reja kiritilmagan", margin + 3, y);
+      y += 7;
+      return;
+    }
+
+    each(columns, (col) => {
+      const items = defaultTo(get(col, "items"), []);
+      if (isEmpty(items)) return;
+
+      checkY(12);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(249, 115, 22);
+      doc.text(`${get(col, "type", "Ovqat")} ${get(col, "time") ? `(${get(col, "time")})` : ""}`, margin + 3, y);
+      y += 5;
+
+      each(items, (item) => {
+        const amount = getItemAmountLabel(item);
+        const meta = getItemMetaLabel(item);
+
+        checkY(meta ? 12 : 8);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(30, 41, 59);
+        addWrappedText(get(item, "name", "Ovqat"), margin + 6, contentW - 40);
+        if (amount) {
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(8);
+          doc.setTextColor(71, 85, 105);
+          doc.text(amount, pageW - margin - 3, y - 4, { align: "right" });
+        }
+        if (meta) {
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(7);
+          doc.setTextColor(100, 116, 139);
+          doc.text(meta, margin + 8, y);
+          y += 4;
+        }
+      });
+
+      y += 2;
+    });
+
+    y += 3;
+  });
+
+  addPage();
+  addHeader();
+  const total = shoppingList.length;
+  const bought = shoppingList.filter((item) => checkedItems[item.name]).length;
+  addSectionTitle("Xarid ro'yxati", `${bought}/${total} belgilangan`);
+
+  if (isEmpty(shoppingList)) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.text("Xarid ro'yxati bo'sh.", margin, y);
+  } else {
+    shoppingList.forEach((item, idx) => {
+      checkY(12);
+      const isChecked = !!checkedItems[item.name];
+
+      if (idx % 2 === 0) {
+        doc.setFillColor(248, 250, 252);
+        doc.roundedRect(margin, y - 4, contentW, 10, 2, 2, "F");
+      }
+
+      doc.setDrawColor(isChecked ? 34 : 203, isChecked ? 197 : 213, isChecked ? 94 : 225);
+      doc.setLineWidth(0.4);
+      doc.rect(margin + 2, y - 2.5, 4.5, 4.5);
+      if (isChecked) {
+        doc.setLineWidth(0.8);
+        doc.line(margin + 2.8, y - 0.2, margin + 4.0, y + 1.1);
+        doc.line(margin + 4.0, y + 1.1, margin + 6.0, y - 1.5);
+      }
+
+      doc.setFont("helvetica", isChecked ? "normal" : "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(isChecked ? 148 : 30, isChecked ? 163 : 41, isChecked ? 184 : 59);
+      doc.text(item.name, margin + 10, y + 0.5);
+
+      const amountStr =
+        item.totalAmount > 0
+          ? `${item.totalAmount} ${item.unit}`
+          : `x${item.count}`;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(71, 85, 105);
+      doc.text(amountStr, pageW - margin - 38, y + 0.5, { align: "right" });
+
+      const metaStr =
+        item.totalAmount > 0
+          ? `x${item.count} marta, ${item.totalCal} kcal`
+          : `${item.totalCal} kcal`;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(100, 116, 139);
+      doc.text(metaStr, pageW - margin - 3, y + 0.5, { align: "right" });
+
+      y += 10;
+    });
+  }
+
+  const pageCount = doc.getNumberOfPages();
+  for (let page = 1; page <= pageCount; page += 1) {
+    doc.setPage(page);
+    doc.setDrawColor(226, 232, 240);
+    doc.line(margin, pageH - 13, pageW - margin, pageH - 13);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(148, 163, 184);
+    doc.text("LiveOn - Sog'lom turmush tarzi", margin, pageH - 8);
+    doc.text(`${page}/${pageCount}`, pageW - margin, pageH - 8, {
+      align: "right",
+    });
+  }
+
+  const fileName = `${getFileSafeName(planName, "haftalik-menyu")}.pdf`;
   doc.save(fileName);
 };
 
@@ -287,7 +421,12 @@ export const ShoppingList = ({
               variant="outline"
               className="gap-2"
               onClick={() =>
-                downloadPDF(shoppingList, planName, checkedShoppingItems)
+                downloadPDF(
+                  weeklyKanban,
+                  shoppingList,
+                  planName,
+                  checkedShoppingItems,
+                )
               }
             >
               <DownloadIcon className="size-3.5" />

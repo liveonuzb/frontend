@@ -17,7 +17,12 @@ const SortableFoodItem = memo(
         onClick={() => onEdit(item)}
       >
         <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-muted/20 to-transparent pointer-events-none" />
-        <KanbanItemHandle className="p-1 -ml-1 text-muted-foreground opacity-30 hover:opacity-100 transition-opacity absolute left-1.5 top-1/2 -translate-y-1/2 z-20">
+        <KanbanItemHandle
+          aria-label={`${item.name} ni ko'chirish`}
+          title="Space bilan ushlang, yo'nalish tugmalari bilan joylang"
+          onClick={(event) => event.stopPropagation()}
+          className="p-1 -ml-1 text-muted-foreground opacity-30 hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 transition-opacity absolute left-1.5 top-1/2 -translate-y-1/2 z-20 rounded"
+        >
           <GripVerticalIcon className="size-4" />
         </KanbanItemHandle>
 
@@ -81,5 +86,7 @@ const SortableFoodItem = memo(
     );
   },
 );
+
+SortableFoodItem.displayName = "SortableFoodItem";
 
 export default SortableFoodItem;

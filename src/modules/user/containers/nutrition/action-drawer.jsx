@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button.jsx";
 import {
   BarcodeIcon,
+  CalendarClockIcon,
   CameraIcon,
   ChefHatIcon,
   KeyboardIcon,
@@ -30,8 +31,18 @@ import AudioTranscriptDrawer from "./audio-transcript-drawer.jsx";
 import TextAddDrawer from "./text-add-drawer.jsx";
 import ManualAddDrawer from "./manual-add-drawer.jsx";
 import AiMealDraftDrawer from "./ai-meal-draft-drawer.jsx";
-import BarcodeAddDrawer from "./barcode-add-drawer.jsx";
 import { useFoodAudioTranscriptHistory } from "@/hooks/app/use-food-catalog";
+import MealDateTimeDrawer, {
+  clampMealDateKey,
+  formatMealTime,
+  getDateKey,
+  getMealDateStartKey,
+  getTimePartsFromDate,
+  resolveDayjsLocale,
+  toMealDateTimeIso,
+} from "./meal-date-time-drawer.jsx";
+import useLanguageStore from "@/store/language-store";
+import { useAuthStore } from "@/store";
 
 const toIsoByDateKeyAndTimeHint = (dateKey, timeHint) => {
   if (!dateKey || !timeHint || timeHint.hour == null || timeHint.minute == null) {
@@ -73,6 +84,10 @@ const ActionDrawer = ({
   disabled = false,
   onInlineCameraCapture,
 }) => {
+  const currentLanguage = useLanguageStore((state) => state.currentLanguage);
+  const user = useAuthStore((state) => state.user);
+  const dayjsLocale = resolveDayjsLocale(currentLanguage);
+  const mealDateMinKey = getMealDateStartKey(user, dateKey);
   const [activeNested, setActiveNested] = useState(null);
   const [selectedMealType, setSelectedMealType] = useState(mealType);
   const [transcriptText, setTranscriptText] = useState("");
@@ -84,9 +99,17 @@ const ActionDrawer = ({
   const [inputSource, setInputSource] = useState("manual");
   const [cameraTextOpen, setCameraTextOpen] = useState(false);
   const [cameraAiDraftOpen, setCameraAiDraftOpen] = useState(false);
+  const [cameraInitialMode, setCameraInitialMode] = useState("camera");
+  const [mealTimeOpen, setMealTimeOpen] = useState(false);
+  const [selectedMealTime, setSelectedMealTime] = useState(() => ({
+    dateKey: clampMealDateKey(dateKey || getDateKey(new Date()), mealDateMinKey),
+    ...getTimePartsFromDate(),
+  }));
   const isRootDrawerOpen = open && !activeNested;
   const isCameraTextFlow = activeNested === "camera" && cameraTextOpen;
   const isCameraAiDraftFlow = activeNested === "camera" && cameraAiDraftOpen;
+  const selectedDateKey = selectedMealTime.dateKey || dateKey;
+  const selectedLoggedAt = toMealDateTimeIso(selectedMealTime);
   const shouldLoadAudioTranscriptHistory =
     open &&
     (activeNested === "audio" ||
@@ -111,12 +134,33 @@ const ActionDrawer = ({
       setActiveNested(null);
       setCameraTextOpen(false);
       setCameraAiDraftOpen(false);
+      setCameraInitialMode("camera");
+      setMealTimeOpen(false);
     }
   }, [open, initialNested]);
 
   useEffect(() => {
     if (mealType) setSelectedMealType(mealType);
   }, [mealType]);
+
+  useEffect(() => {
+    if (!open) return;
+    setSelectedMealTime({
+      dateKey: clampMealDateKey(
+        dateKey || getDateKey(new Date()),
+        mealDateMinKey,
+      ),
+      ...getTimePartsFromDate(),
+    });
+  }, [dateKey, mealDateMinKey, open]);
+
+  useEffect(() => {
+    setSelectedMealTime((current) => {
+      const nextDateKey = clampMealDateKey(current.dateKey, mealDateMinKey);
+      if (nextDateKey === current.dateKey) return current;
+      return { ...current, dateKey: nextDateKey };
+    });
+  }, [mealDateMinKey]);
 
   const resetTranscriptState = useCallback(() => {
     setTranscriptText("");
@@ -224,8 +268,29 @@ const ActionDrawer = ({
               type="button"
               variant="outline"
               disabled={disabled}
+              className="h-14 w-full justify-start rounded-2xl border-dashed px-4 text-left"
+              onClick={() => setMealTimeOpen(true)}
+            >
+              <div className="mr-3 flex size-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
+                <CalendarClockIcon className="size-5 text-emerald-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold">Sana va vaqt</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {formatMealTime(selectedMealTime, dayjsLocale)}
+                </p>
+              </div>
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              disabled={disabled}
               className="w-full h-16 rounded-2xl justify-start items-center px-4 hover:bg-primary/5 hover:border-primary/30 transition-all font-bold text-[15px] text-foreground border-border/50 group"
-              onClick={() => setActiveNested("camera")}
+              onClick={() => {
+                setCameraInitialMode("camera");
+                setActiveNested("camera");
+              }}
             >
               <div className="size-10 rounded-full bg-blue-500/10 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
                 <CameraIcon className="size-5 text-blue-500" />
@@ -238,7 +303,10 @@ const ActionDrawer = ({
               variant="outline"
               disabled={disabled}
               className="w-full h-16 rounded-2xl justify-start items-center px-4 hover:bg-primary/5 hover:border-primary/30 transition-all font-bold text-[15px] text-foreground border-border/50 group"
-              onClick={() => setActiveNested("barcode")}
+              onClick={() => {
+                setCameraInitialMode("barcode");
+                setActiveNested("camera");
+              }}
             >
               <div className="size-10 rounded-full bg-cyan-500/10 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
                 <BarcodeIcon className="size-5 text-cyan-500" />
@@ -313,8 +381,10 @@ const ActionDrawer = ({
       <CameraDrawer
         open={activeNested === "camera"}
         onOpenChange={(value) => !value && setActiveNested(null)}
-        dateKey={dateKey}
+        dateKey={selectedDateKey}
+        loggedAt={selectedLoggedAt}
         mealType={mealType}
+        initialMode={cameraInitialMode}
         onInlineCapture={(dataUrl) => {
           onInlineCameraCapture?.(dataUrl, selectedMealType || mealType);
           closeStackedCameraText();
@@ -336,27 +406,6 @@ const ActionDrawer = ({
         }}
       />
 
-      {/* BarcodeAddDrawer */}
-      <Drawer
-        open={activeNested === "barcode"}
-        onOpenChange={(value) => !value && setActiveNested(null)}
-        direction="bottom"
-      >
-        <NutritionDrawerContent
-          size="full"
-          className="h-[100dvh] max-h-[100dvh] rounded-none border-0 bg-black"
-        >
-          <BarcodeAddDrawer
-            dateKey={dateKey}
-            mealType={mealType}
-            onClose={() => {
-              setActiveNested(null);
-              onCloseAll?.();
-            }}
-          />
-        </NutritionDrawerContent>
-      </Drawer>
-
       {/* AudioAddDrawer */}
       <Drawer
         open={activeNested === "audio"}
@@ -376,12 +425,12 @@ const ActionDrawer = ({
               const safeTranscript = String(transcript || "").trim();
               const resolvedMealType = suggestedMealType || selectedMealType;
               const resolvedLoggedAt = toIsoByDateKeyAndTimeHint(
-                dateKey,
+                selectedDateKey,
                 suggestedTimeHint,
               );
               const resolvedTargetDateKey =
                 typeof suggestedDateHint?.offsetDays === "number"
-                  ? shiftDateKeyByDays(dateKey, suggestedDateHint.offsetDays)
+                  ? shiftDateKeyByDays(selectedDateKey, suggestedDateHint.offsetDays)
                   : null;
               setTranscriptText((current) =>
                 [String(current || "").trim(), safeTranscript]
@@ -506,8 +555,9 @@ const ActionDrawer = ({
       >
         <NutritionDrawerContent size="lg">
           <ManualAddDrawer
-            dateKey={dateKey}
+            dateKey={selectedDateKey}
             mealType={mealType}
+            loggedAt={selectedLoggedAt}
             initialSearch=""
             onClose={() => {
               setActiveNested(null);
@@ -533,12 +583,20 @@ const ActionDrawer = ({
       >
         <NutritionDrawerContent size="lg">
           <AiMealDraftDrawer
-            dateKey={audioTargetDateKey || dateKey}
+            dateKey={audioTargetDateKey || selectedDateKey}
             mealType={selectedMealType}
             initialText={transcriptText}
             inputSource={inputSource}
-            loggedAtHint={inputSource === "audio" ? audioLoggedAtHint : null}
-            targetDateKey={inputSource === "audio" ? audioTargetDateKey : null}
+            loggedAtHint={
+              inputSource === "audio"
+                ? audioLoggedAtHint || selectedLoggedAt
+                : selectedLoggedAt
+            }
+            targetDateKey={
+              inputSource === "audio"
+                ? audioTargetDateKey || selectedDateKey
+                : selectedDateKey
+            }
             onClose={() => {
               if (isCameraAiDraftFlow) {
                 closeStackedCameraText();
@@ -553,6 +611,16 @@ const ActionDrawer = ({
           />
         </NutritionDrawerContent>
       </Drawer>
+
+      <MealDateTimeDrawer
+        open={mealTimeOpen}
+        onOpenChange={setMealTimeOpen}
+        value={selectedMealTime}
+        onChange={setSelectedMealTime}
+        onDone={() => setMealTimeOpen(false)}
+        locale={dayjsLocale}
+        minDateKey={mealDateMinKey}
+      />
     </div>
   );
 };

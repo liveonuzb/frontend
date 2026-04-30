@@ -2,16 +2,77 @@ import React from "react";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 import { get, find } from "lodash";
 
+const ITEMS_PER_PAGE = 10;
+const SORT_FIELDS = ["orderKey", "name", "createdAt", "isActive"];
+const SORT_DIRECTIONS = ["asc", "desc"];
+const TEXT_OPERATORS = [
+  "contains",
+  "not_contains",
+  "starts_with",
+  "ends_with",
+  "is",
+  "empty",
+  "not_empty",
+];
+const SELECT_OPERATORS = ["is", "is_not", "empty", "not_empty"];
+
 export const useCategoryFilters = () => {
   const [search, setSearch] = useQueryState("q", parseAsString.withDefault(""));
+  const [searchOperator, setSearchOperator] = useQueryState(
+    "qOp",
+    parseAsStringEnum(TEXT_OPERATORS).withDefault("contains"),
+  );
   const [statusFilter, setStatusFilter] = useQueryState(
     "status",
     parseAsStringEnum(["all", "active", "inactive"]).withDefault("all"),
   );
+  const [statusOperator, setStatusOperator] = useQueryState(
+    "statusOp",
+    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+  );
   const [translationFilter, setTranslationFilter] = useQueryState(
     "translations",
-    parseAsStringEnum(["all", "complete", "incomplete"]).withDefault("all"),
+    parseAsStringEnum(["all", "complete", "missing"]).withDefault("all"),
   );
+  const [translationOperator, setTranslationOperator] = useQueryState(
+    "translationsOp",
+    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+  );
+  const [pageQuery, setPageQuery] = useQueryState(
+    "page",
+    parseAsString.withDefault("1"),
+  );
+  const [pageSizeQuery, setPageSizeQuery] = useQueryState(
+    "pageSize",
+    parseAsString.withDefault(String(ITEMS_PER_PAGE)),
+  );
+  const [sortBy, setSortBy] = useQueryState(
+    "sortBy",
+    parseAsStringEnum(SORT_FIELDS).withDefault("orderKey"),
+  );
+  const [sortDir, setSortDir] = useQueryState(
+    "sortDir",
+    parseAsStringEnum(SORT_DIRECTIONS).withDefault("asc"),
+  );
+  const currentPage = Math.max(1, Number(pageQuery) || 1);
+  const pageSize = Math.min(100, Math.max(1, Number(pageSizeQuery) || 10));
+  const sorting = React.useMemo(
+    () =>
+      sortBy === "orderKey" && sortDir === "asc"
+        ? []
+        : [{ id: sortBy, desc: sortDir === "desc" }],
+    [sortBy, sortDir],
+  );
+  const canReorder =
+    search.trim() === "" &&
+    searchOperator === "contains" &&
+    statusFilter === "all" &&
+    statusOperator === "is" &&
+    translationFilter === "all" &&
+    translationOperator === "is" &&
+    sortBy === "orderKey" &&
+    sortDir === "asc" &&
+    currentPage === 1;
 
   const filterFields = React.useMemo(
     () => [
@@ -41,7 +102,7 @@ export const useCategoryFilters = () => {
         options: [
           { value: "all", label: "Barcha tarjimalar" },
           { value: "complete", label: "Tarjimasi to'liq" },
-          { value: "incomplete", label: "Tarjimasi to'liq emas" },
+          { value: "missing", label: "Tarjimasi to'liq emas" },
         ],
       },
     ],
@@ -55,8 +116,15 @@ export const useCategoryFilters = () => {
       items.push({
         id: "q",
         field: "q",
-        operator: "contains",
+        operator: searchOperator,
         values: [search],
+      });
+    } else if (searchOperator !== "contains") {
+      items.push({
+        id: "q",
+        field: "q",
+        operator: searchOperator,
+        values: [],
       });
     }
 
@@ -64,8 +132,15 @@ export const useCategoryFilters = () => {
       items.push({
         id: "status",
         field: "status",
-        operator: "is",
+        operator: statusOperator,
         values: [statusFilter],
+      });
+    } else if (statusOperator !== "is") {
+      items.push({
+        id: "status",
+        field: "status",
+        operator: statusOperator,
+        values: [],
       });
     }
 
@@ -73,13 +148,27 @@ export const useCategoryFilters = () => {
       items.push({
         id: "translations",
         field: "translations",
-        operator: "is",
+        operator: translationOperator,
         values: [translationFilter],
+      });
+    } else if (translationOperator !== "is") {
+      items.push({
+        id: "translations",
+        field: "translations",
+        operator: translationOperator,
+        values: [],
       });
     }
 
     return items;
-  }, [search, statusFilter, translationFilter]);
+  }, [
+    search,
+    searchOperator,
+    statusFilter,
+    statusOperator,
+    translationFilter,
+    translationOperator,
+  ]);
 
   const handleFiltersChange = React.useCallback(
     (nextFilters) => {
@@ -88,32 +177,92 @@ export const useCategoryFilters = () => {
         "values[0]",
         "",
       );
+      const nextSearchOperator = get(
+        find(nextFilters, (f) => get(f, "field") === "q"),
+        "operator",
+        "contains",
+      );
       const nextStatus = get(
         find(nextFilters, (f) => get(f, "field") === "status"),
         "values[0]",
         "all",
+      );
+      const nextStatusOperator = get(
+        find(nextFilters, (f) => get(f, "field") === "status"),
+        "operator",
+        "is",
       );
       const nextTranslations = get(
         find(nextFilters, (f) => get(f, "field") === "translations"),
         "values[0]",
         "all",
       );
+      const nextTranslationsOperator = get(
+        find(nextFilters, (f) => get(f, "field") === "translations"),
+        "operator",
+        "is",
+      );
 
       React.startTransition(() => {
         void setSearch(nextSearch);
+        void setSearchOperator(nextSearchOperator);
         void setStatusFilter(nextStatus);
+        void setStatusOperator(nextStatusOperator);
         void setTranslationFilter(nextTranslations);
+        void setTranslationOperator(nextTranslationsOperator);
+        void setPageQuery("1");
       });
     },
-    [setSearch, setStatusFilter, setTranslationFilter],
+    [
+      setPageQuery,
+      setSearch,
+      setSearchOperator,
+      setStatusFilter,
+      setStatusOperator,
+      setTranslationFilter,
+      setTranslationOperator,
+    ],
+  );
+
+  const handleSortingChange = React.useCallback(
+    (updater) => {
+      const nextSorting =
+        typeof updater === "function" ? updater(sorting) : updater;
+      const nextSort = nextSorting?.[0];
+
+      React.startTransition(() => {
+        void setPageQuery("1");
+        if (!nextSort) {
+          void setSortBy("orderKey");
+          void setSortDir("asc");
+          return;
+        }
+        void setSortBy(nextSort.id);
+        void setSortDir(nextSort.desc ? "desc" : "asc");
+      });
+    },
+    [setPageQuery, setSortBy, setSortDir, sorting],
   );
 
   return {
     search,
+    searchOperator,
     statusFilter,
+    statusOperator,
     translationFilter,
+    translationOperator,
+    currentPage,
+    pageSize,
+    pageQuery,
+    setPageQuery,
+    setPageSizeQuery,
+    sortBy,
+    sortDir,
+    sorting,
+    canReorder,
     filterFields,
     activeFilters,
     handleFiltersChange,
+    handleSortingChange,
   };
 };

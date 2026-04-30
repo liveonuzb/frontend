@@ -20,13 +20,7 @@ import {
   NutritionDrawerBody,
   NutritionDrawerContent,
 } from "./nutrition-drawer-layout.jsx";
-
-const mealTypeOptions = [
-  { value: "breakfast", label: "Nonushta" },
-  { value: "lunch", label: "Tushlik" },
-  { value: "dinner", label: "Kechki ovqat" },
-  { value: "snack", label: "Snack" },
-];
+import { MEAL_TYPE_OPTIONS } from "@/modules/user/lib/meal-config";
 
 const getTodayKey = () => new Date().toISOString().split("T")[0];
 
@@ -99,7 +93,7 @@ export default function MealTransferDrawer({
                 <SelectValue placeholder="Bo'limni tanlang" />
               </SelectTrigger>
               <SelectContent>
-                {mealTypeOptions.map((option) => (
+                {MEAL_TYPE_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>

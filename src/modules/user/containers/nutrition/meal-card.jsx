@@ -61,6 +61,7 @@ const MealCard = memo(
     const [cameraOpen, setCameraOpen] = useState(false);
     const [ingredientsOpen, setIngredientsOpen] = useState(false);
     const [coachFeedbackOpen, setCoachFeedbackOpen] = useState(false);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
     const isConsumed = get(food, "isConsumed", false);
     const qty = get(food, "qty", 1);
@@ -267,6 +268,47 @@ const MealCard = memo(
       setLogOpen(true);
     };
 
+    const handleKeyboardOpen = () => {
+      if (isSelectionMode) {
+        if (canSelect) {
+          onToggleSelect?.(mealType, food);
+        }
+        return;
+      }
+
+      if (isConsumed) {
+        setLogOpen(true);
+        return;
+      }
+
+      if (readOnly) return;
+
+      if (hasIngredientBreakdown) {
+        setIngredientsOpen(true);
+      } else {
+        setPortionOpen(true);
+      }
+    };
+
+    const handleCardKeyDown = (event) => {
+      if (event.target !== event.currentTarget) return;
+
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        handleKeyboardOpen();
+        return;
+      }
+
+      if (
+        (event.key === "Delete" || event.key === "Backspace") &&
+        isConsumed &&
+        !readOnly
+      ) {
+        event.preventDefault();
+        setDeleteConfirmOpen(true);
+      }
+    };
+
     const handlePointerDown = () => {
       if (!canSelect || isSelectionMode || typeof window === "undefined") {
         return;
@@ -354,6 +396,9 @@ const MealCard = memo(
           transition={{ duration: 0.2, delay: index * 0.03 }}
         >
           <Card
+            role="button"
+            tabIndex={0}
+            aria-label={`${food.name} ovqat kartasi`}
             className={cn(
               "relative overflow-hidden transition-all duration-300",
               isConsumed && "cursor-pointer",
@@ -370,6 +415,7 @@ const MealCard = memo(
             onPointerUp={clearLongPress}
             onPointerLeave={clearLongPress}
             onPointerCancel={clearLongPress}
+            onKeyDown={handleCardKeyDown}
           >
             <CardContent className="flex items-stretch p-0">
               {/* Avatar */}
@@ -650,6 +696,36 @@ const MealCard = memo(
                   </p>
                 </div>
               ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+          <DialogContent className="max-w-sm rounded-2xl">
+            <DialogHeader>
+              <DialogTitle>Ovqatni o'chirish?</DialogTitle>
+              <DialogDescription>
+                {food.name} ushbu kunlik logdan olib tashlanadi.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDeleteConfirmOpen(false)}
+              >
+                Bekor qilish
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => {
+                  setDeleteConfirmOpen(false);
+                  onRemove?.(mealType, food);
+                }}
+              >
+                O'chirish
+              </Button>
             </div>
           </DialogContent>
         </Dialog>

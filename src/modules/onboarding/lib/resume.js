@@ -22,6 +22,10 @@ export const getNextUserOnboardingPath = (state) => {
     return "gender";
   }
 
+  if (!hasValue(state.healthConstraints)) {
+    return "health-constraints";
+  }
+
   if (!hasValue(state.age)) {
     return "age";
   }

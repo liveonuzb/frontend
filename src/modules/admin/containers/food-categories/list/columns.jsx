@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { DataGridTableDndRowHandle } from "@/components/reui/data-grid";
+import { DataGridColumnHeader } from "@/components/reui/data-grid/data-grid-column-header";
 import { cn } from "@/lib/utils";
 import { getCategoryBadgeAppearance } from "@/lib/category-badge";
 import ActionsMenu from "./actions-menu.jsx";
@@ -60,7 +61,11 @@ export const useColumns = ({
       },
       {
         accessorKey: "name",
-        header: "Kategoriya",
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Kategoriya" />
+        ),
+        enableSorting: true,
+        size: 310,
         meta: {
           expandedContent: (row) => (
             <CategoryFoodsGrid
@@ -162,29 +167,42 @@ export const useColumns = ({
       },
       {
         accessorKey: "isActive",
-        header: "Status",
-        size: 160,
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Status" />
+        ),
+        enableSorting: true,
+        size: 90,
         cell: (info) => {
           const isActive = info.getValue();
           const category = get(info, "row.original");
 
           return (
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={isActive}
-                disabled={isUpdating}
-                onCheckedChange={() => handleToggleActive(category)}
-              />
-              <span
-                className={cn(
-                  "text-xs font-medium",
-                  isActive ? "text-emerald-600" : "text-muted-foreground",
-                )}
-              >
-                {isActive ? "Faol" : "Nofaol"}
-              </span>
-            </div>
+            <Switch
+              checked={isActive}
+              disabled={isUpdating}
+              onCheckedChange={() => handleToggleActive(category)}
+            />
           );
+        },
+      },
+      {
+        accessorKey: "createdAt",
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Yaratilgan" />
+        ),
+        enableSorting: true,
+        size: 150,
+        cell: (info) => {
+          const value = info.getValue();
+          return value
+            ? new Intl.DateTimeFormat("uz-UZ", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              }).format(new Date(value))
+            : "-";
         },
       },
       {

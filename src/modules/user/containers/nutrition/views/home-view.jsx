@@ -1,11 +1,37 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { ChevronRightIcon, TargetIcon } from "lucide-react";
 import CalorieGaugeWidget from "@/components/calorie-gauge-widget";
-import { TrackingPageLayout } from "@/components/tracking-page-shell";
-import StrippedCalendar from "@/components/stripped-calendar/index.jsx";
-import NutritionAnalyticsSection from "../nutrition-analytics-section.jsx";
-import NutritionMealSections from "../nutrition-meal-sections.jsx";
+import { Button } from "@/components/ui/button";
+import {
+  BookmarkIcon,
+  DropletsIcon,
+  PlusIcon,
+  TargetIcon,
+  UtensilsIcon,
+} from "lucide-react";
+import { NutritionDatePicker } from "../nutrition-header.jsx";
+import NutritionPlansSection from "../nutrition-plans-section.jsx";
+
+const clampPercent = (value, target) => {
+  if (!target) return 0;
+  return Math.max(0, Math.min(100, Math.round((value / target) * 100)));
+};
+
+const MacroProgress = ({ label, value, target, className }) => (
+  <div className="rounded-2xl border bg-card p-4">
+    <div className="flex items-center justify-between gap-3 text-sm">
+      <span className="font-bold">{label}</span>
+      <span className="text-muted-foreground">
+        {value}/{target}g
+      </span>
+    </div>
+    <div className="mt-3 h-2 rounded-full bg-muted">
+      <div
+        className={`h-full rounded-full ${className}`}
+        style={{ width: `${clampPercent(value, target)}%` }}
+      />
+    </div>
+  </div>
+);
 
 export default function NutritionHomeView(props) {
   const {
@@ -15,38 +41,28 @@ export default function NutritionHomeView(props) {
     currentPlan,
     goals,
     roundedTotals,
+    waterConsumedMl,
+    waterGoalMl,
     calorieGoalMeta,
     isGoalLoadingState,
-    mealConfig,
-    mealFilter,
-    setMealFilter,
-    mealSearch,
-    setMealSearch,
-    activeNutritionFilterCount,
-    setIsFilterDrawerOpen,
-    filteredMealSections,
-    mealFeedbackById,
     activeMealType,
     setSelectedMealTypeForAdd,
     setIsActionDrawerOpen,
-    handleRemoveFood,
-    handleLogPlanned,
-    handleTogglePlanned,
-    onImageUpload,
-    onUpdateMeal,
-    onRetryScan,
-    onRemoveScan,
-    onOpenDraftScan,
+    setIsSavedMealsOpen,
     setIsPlansDrawerOpen,
     onOpenGoalWizard,
     isOnline,
-    isDayLoading,
     isPastDate,
-    handleCopyFromYesterday,
-    handleBulkRemoveFoods,
-    onCopyMealToToday,
-    onTransferMeal,
   } = props;
+  const caloriePercent = clampPercent(roundedTotals.calories, goals.calories);
+  const proteinPercent = clampPercent(roundedTotals.protein, goals.protein);
+  const waterPercent = clampPercent(waterConsumedMl, waterGoalMl);
+  const healthScore = Math.round(
+    (Math.min(caloriePercent, 100) +
+      Math.min(proteinPercent, 100) +
+      Math.min(waterPercent, 100)) /
+      3,
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -66,10 +82,9 @@ export default function NutritionHomeView(props) {
           <TargetIcon className="size-4" />
           Maqsadimni yangilash
         </Button>
-        <StrippedCalendar
+        <NutritionDatePicker
           date={date}
           onChange={setDate}
-          className="shadow md:shadow-none flex-1 rounded-2xl px-1 py-1 md:max-w-md md:flex-none md:w-full"
         />
       </div>
 
@@ -80,104 +95,119 @@ export default function NutritionHomeView(props) {
         </div>
       ) : null}
 
-      {plans.length > 0 ? (
-        <button
-          type="button"
-          onClick={() => setIsPlansDrawerOpen(true)}
-          className="rounded-[2rem] border p-4 text-left transition-colors hover:bg-accent/40 sm:p-5"
-        >
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Mening rejalarim
-              </p>
-              <h3 className="mt-1 truncate text-base font-black">
-                {currentPlan?.name || "Reja tanlang"}
-              </h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {plans.length} ta reja •{" "}
-                {currentPlan?.status === "active"
-                  ? "Faol reja"
-                  : "Saqlangan reja"}
-              </p>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-3xl border bg-card p-5">
+            <p className="text-sm font-bold text-muted-foreground">
+              Kunlik health score
+            </p>
+            <div className="mt-4 flex items-end gap-3">
+              <span className="text-5xl font-black tracking-tight">
+                {healthScore}
+              </span>
+              <span className="pb-2 text-sm font-bold text-muted-foreground">
+                /100
+              </span>
             </div>
-            <ChevronRightIcon className="size-5 shrink-0 text-muted-foreground" />
+            <p className="mt-3 text-sm text-muted-foreground">
+              Kaloriya, oqsil va suv progressi asosida.
+            </p>
           </div>
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setIsPlansDrawerOpen(true)}
-          className="rounded-[2rem] border border-dashed p-5 text-left transition-colors hover:bg-accent/30"
-        >
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Mening rejalarim
-              </p>
-              <h3 className="mt-1 text-base font-black">
-                Ovqatlanish rejasi yo&apos;q
-              </h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Qo&apos;lda yoki AI bilan yangi reja yarating
-              </p>
-            </div>
-            <ChevronRightIcon className="size-5 shrink-0 text-muted-foreground" />
-          </div>
-        </button>
-      )}
 
-      <TrackingPageLayout
-        aside={
-          <CalorieGaugeWidget
-            consumed={roundedTotals.calories}
-            goal={goals.calories}
-            macros={{
-              protein: {
-                current: roundedTotals.protein,
-                target: goals.protein,
-              },
-              carbs: { current: roundedTotals.carbs, target: goals.carbs },
-              fat: { current: roundedTotals.fat, target: goals.fat },
-            }}
-            isGoalLoading={isGoalLoadingState}
-            goalMeta={calorieGoalMeta}
-            className="w-full py-6"
+          <div className="rounded-3xl border bg-card p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-bold text-muted-foreground">
+                  Suv progress
+                </p>
+                <p className="mt-2 text-2xl font-black">
+                  {waterConsumedMl} / {waterGoalMl} ml
+                </p>
+              </div>
+              <div className="grid size-12 place-items-center rounded-2xl bg-blue-500/10 text-blue-600">
+                <DropletsIcon className="size-6" />
+              </div>
+            </div>
+            <div className="mt-5 h-2 rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-blue-500"
+                style={{ width: `${waterPercent}%` }}
+              />
+            </div>
+          </div>
+
+          <MacroProgress
+            label="Protein"
+            value={roundedTotals.protein}
+            target={goals.protein}
+            className="bg-red-500"
           />
-        }
-      >
-        <NutritionMealSections
-          mealConfig={mealConfig}
-          mealFilter={mealFilter}
-          setMealFilter={setMealFilter}
-          mealSearch={mealSearch}
-          setMealSearch={setMealSearch}
-          activeFilterCount={activeNutritionFilterCount}
-          setIsFilterDrawerOpen={setIsFilterDrawerOpen}
-          filteredMealSections={filteredMealSections}
-          mealFeedbackById={mealFeedbackById}
-          activeMealType={activeMealType}
-          setSelectedMealTypeForAdd={setSelectedMealTypeForAdd}
-          setIsActionDrawerOpen={setIsActionDrawerOpen}
-          handleRemoveFood={handleRemoveFood}
-          onBulkRemove={handleBulkRemoveFoods}
-          onTransferMeal={onTransferMeal}
-          onCopyMealToToday={onCopyMealToToday}
-          handleLogPlanned={handleLogPlanned}
-          handleTogglePlanned={handleTogglePlanned}
-          onImageUpload={onImageUpload}
-          onUpdateMeal={onUpdateMeal}
-          onRetryScan={onRetryScan}
-          onRemoveScan={onRemoveScan}
-          onOpenDraftScan={onOpenDraftScan}
-          isLoading={isDayLoading}
-          readOnly={isPastDate}
-          addDisabled={!isOnline || isPastDate}
-          onCopyFromYesterday={handleCopyFromYesterday}
-        />
-      </TrackingPageLayout>
+          <MacroProgress
+            label="Carbs"
+            value={roundedTotals.carbs}
+            target={goals.carbs}
+            className="bg-amber-500"
+          />
+          <MacroProgress
+            label="Fat"
+            value={roundedTotals.fat}
+            target={goals.fat}
+            className="bg-emerald-500"
+          />
 
-      <NutritionAnalyticsSection />
+          <div className="rounded-2xl border bg-card p-4">
+            <p className="text-sm font-bold">Tez harakatlar</p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <Button
+                disabled={!isOnline || isPastDate}
+                onClick={() => {
+                  setSelectedMealTypeForAdd(activeMealType);
+                  setIsActionDrawerOpen(true);
+                }}
+              >
+                <PlusIcon className="size-4" />
+                Ovqat
+              </Button>
+              <Button variant="outline" onClick={() => setIsSavedMealsOpen(true)}>
+                <BookmarkIcon className="size-4" />
+                Saqlangan
+              </Button>
+              <Button variant="outline" onClick={() => setIsPlansDrawerOpen(true)}>
+                <UtensilsIcon className="size-4" />
+                Rejalar
+              </Button>
+              <Button variant="outline" onClick={onOpenGoalWizard}>
+                <TargetIcon className="size-4" />
+                Maqsad
+              </Button>
+            </div>
+          </div>
+
+          <div className="sm:col-span-2">
+            <NutritionPlansSection
+              plans={plans}
+              currentPlan={currentPlan}
+              onOpenPlans={() => setIsPlansDrawerOpen(true)}
+            />
+          </div>
+        </div>
+
+        <CalorieGaugeWidget
+          consumed={roundedTotals.calories}
+          goal={goals.calories}
+          macros={{
+            protein: {
+              current: roundedTotals.protein,
+              target: goals.protein,
+            },
+            carbs: { current: roundedTotals.carbs, target: goals.carbs },
+            fat: { current: roundedTotals.fat, target: goals.fat },
+          }}
+          isGoalLoading={isGoalLoadingState}
+          goalMeta={calorieGoalMeta}
+          className="h-fit w-full py-6"
+        />
+      </div>
     </div>
   );
 }

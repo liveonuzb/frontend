@@ -106,11 +106,11 @@ describe("useCoachChallengesStore endpoints", () => {
 
     await useCoachChallengesStore
       .getState()
-      .respondToInvitation("invitation-1", "ACCEPTED");
+      .respondToInvitation("invitation-1", "ACCEPT");
 
     expect(mocks.apiPost).toHaveBeenCalledWith(
       "/challenges/invitations/invitation-1/respond",
-      { status: "ACCEPTED" },
+      { action: "ACCEPT" },
     );
     expect(mocks.apiPatch).not.toHaveBeenCalled();
   });

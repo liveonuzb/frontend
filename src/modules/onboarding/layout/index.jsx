@@ -130,6 +130,9 @@ const OnboardingLayoutInner = () => {
       dietRestrictions: Array.isArray(userOnboarding?.dietRestrictions)
         ? userOnboarding.dietRestrictions
         : [],
+      healthConstraints: Array.isArray(userOnboarding?.healthConstraints)
+        ? userOnboarding.healthConstraints
+        : [],
       experience: coachOnboarding?.experience ?? "",
       specializations: Array.isArray(coachOnboarding?.specializations)
         ? coachOnboarding.specializations

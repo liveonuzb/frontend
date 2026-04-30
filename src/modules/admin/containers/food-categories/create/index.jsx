@@ -66,6 +66,9 @@ const CreateFoodCategory = () => {
         attributes: {
           name,
           color: getStoredColorValue(form),
+          translations: {
+            [currentLanguage]: name,
+          },
         },
       });
       toast.success("Kategoriya yaratildi");

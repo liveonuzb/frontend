@@ -1,14 +1,23 @@
 import React from "react";
 import { compact, get, includes, join, map, orderBy, some, take } from "lodash";
-import { format } from "date-fns";
+import { eachDayOfInterval, format } from "date-fns";
 import { uz } from "date-fns/locale";
 import { useNavigate, useParams } from "react-router";
+import { toast } from "sonner";
 import {
   ArrowLeftIcon,
   CalendarRangeIcon,
+  CheckIcon,
+  CopyIcon,
   CrownIcon,
   FlagIcon,
+  HeartIcon,
+  LoaderCircleIcon,
+  MailPlusIcon,
   MedalIcon,
+  MessageSquareIcon,
+  PencilIcon,
+  SendIcon,
   TargetIcon,
   TrophyIcon,
   UsersIcon,
@@ -16,19 +25,34 @@ import {
   ZapIcon,
   SparklesIcon,
   LogOutIcon,
-  ExternalLinkIcon
+  Share2Icon,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import useGetQuery from "@/hooks/api/use-get-query";
+import { api } from "@/hooks/api/use-api";
+import { getApiResponseData } from "@/lib/api-response";
 import PageTransition from "@/components/page-transition";
 import { cn } from "@/lib/utils";
 import { useAuthStore, useBreadcrumbStore } from "@/store";
 import { useChallengeStore } from "@/store/challenges-store";
+import FriendsPickerDrawer from "../friends-picker-drawer.jsx";
 
 const METRIC_META = {
   STEPS: { label: "Qadam", unit: "qadam" },
@@ -69,6 +93,79 @@ const formatDate = (value) => {
 
 const formatDateRange = (startDate, endDate) =>
   `${formatDate(startDate)} - ${formatDate(endDate)}`;
+
+const formatCommentTime = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return format(date, "d MMM, HH:mm", { locale: uz });
+};
+
+const normalizePercent = (value) => Math.max(0, Math.min(100, Number(value) || 0));
+
+const getDailyProgressEntries = (challenge, metricTarget) => {
+  const source =
+    get(challenge, "dailyProgress") ||
+    get(challenge, "myDailyProgress") ||
+    get(challenge, "progressHistory") ||
+    get(challenge, "myProgress.history") ||
+    [];
+  const sourceItems = Array.isArray(source) ? source : [];
+  const byDay = new Map(
+    sourceItems
+      .map((item) => {
+        const rawDate = get(item, "date") || get(item, "day") || get(item, "loggedAt");
+        const date = rawDate ? new Date(rawDate) : null;
+        if (!date || Number.isNaN(date.getTime())) return null;
+        const value = Number(
+          get(item, "metricValue") ?? get(item, "value") ?? get(item, "amount") ?? 0,
+        );
+        const progress = normalizePercent(
+          get(item, "progress") ?? (metricTarget > 0 ? (value / metricTarget) * 100 : 0),
+        );
+        return [format(date, "yyyy-MM-dd"), { value, progress }];
+      })
+      .filter(Boolean),
+  );
+
+  const start = challenge?.startDate ? new Date(challenge.startDate) : new Date();
+  const end = challenge?.endDate ? new Date(challenge.endDate) : start;
+  const safeStart = Number.isNaN(start.getTime()) ? new Date() : start;
+  const safeEnd =
+    Number.isNaN(end.getTime()) || end.getTime() < safeStart.getTime() ? safeStart : end;
+  const today = new Date();
+  const fallbackProgress = normalizePercent(challenge?.myProgress);
+  const fallbackValue = Number(challenge?.myMetricValue ?? 0);
+
+  return eachDayOfInterval({ start: safeStart, end: safeEnd }).map((date) => {
+    const key = format(date, "yyyy-MM-dd");
+    const entry = byDay.get(key);
+    const isToday = format(date, "yyyy-MM-dd") === format(today, "yyyy-MM-dd");
+    const isPast = date.getTime() < new Date(format(today, "yyyy-MM-dd")).getTime();
+    const progress = entry?.progress ?? (isToday ? fallbackProgress : 0);
+    const value = entry?.value ?? (isToday ? fallbackValue : 0);
+
+    return {
+      key,
+      label: format(date, "d MMM", { locale: uz }),
+      value,
+      progress,
+      state: progress >= 100 ? "done" : isPast ? "missed" : "pending",
+    };
+  });
+};
+
+const getSparklinePoints = (items) => {
+  if (!items.length) return "";
+  const maxValue = Math.max(...items.map((item) => Number(item.value) || 0), 1);
+  return items
+    .map((item, index) => {
+      const x = items.length === 1 ? 100 : (index / (items.length - 1)) * 100;
+      const y = 36 - ((Number(item.value) || 0) / maxValue) * 32;
+      return `${x},${y}`;
+    })
+    .join(" ");
+};
 
 const resolveDisplayName = (participant) => {
   const profile = get(participant, "user.profile");
@@ -165,7 +262,15 @@ export default function ChallengeDetailContainer() {
     fetchChallengeDetail,
     clearChallengeDetail,
     joinChallenge,
+    inviteFriends,
+    updateChallenge,
   } = useChallengeStore();
+  const [friendsPickerOpen, setFriendsPickerOpen] = React.useState(false);
+  const [shareCopied, setShareCopied] = React.useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false);
+  const [commentBody, setCommentBody] = React.useState("");
+  const [commentSubmitting, setCommentSubmitting] = React.useState(false);
+  const [reactingCommentId, setReactingCommentId] = React.useState(null);
 
   React.useEffect(() => {
     if (challengeId) {
@@ -206,6 +311,24 @@ export default function ChallengeDetailContainer() {
   const metricTarget = Number(
     get(challengeDetail, "metricDetails.target") ?? get(challengeDetail, "metricTarget") ?? 0,
   );
+  const dailyProgress = React.useMemo(
+    () => getDailyProgressEntries(challengeDetail, metricTarget),
+    [challengeDetail, metricTarget],
+  );
+  const sparklinePoints = React.useMemo(
+    () => getSparklinePoints(dailyProgress),
+    [dailyProgress],
+  );
+  const topThreeRanking = React.useMemo(() => take(ranking, 3), [ranking]);
+  const podiumRanking = React.useMemo(
+    () =>
+      compact([
+        topThreeRanking.find((participant) => participant.rank === 2),
+        topThreeRanking.find((participant) => participant.rank === 1),
+        topThreeRanking.find((participant) => participant.rank === 3),
+      ]),
+    [topThreeRanking],
+  );
   const participantCount =
     Number(get(challengeDetail, "_count.participants") ?? ranking.length) || 0;
   const maxParticipants = Number(get(challengeDetail, "maxParticipants", 0)) || null;
@@ -217,6 +340,34 @@ export default function ChallengeDetailContainer() {
   const isJoinClosed = includes(["COMPLETED", "CANCELLED"], get(challengeDetail, "status"));
   const joinFeeXp = Number(get(challengeDetail, "joinFeeXp", 0));
   const isJoining = Boolean(get(actionLoading, `joiningById.${challengeId}`));
+  const isInvitingFriends = Boolean(actionLoading?.inviting);
+  const isUpdatingChallenge = Boolean(actionLoading?.updating);
+  const creatorId =
+    get(challengeDetail, "creator.id") || get(challengeDetail, "creator.userId");
+  const isCreator = Boolean(user?.id && creatorId === user.id);
+  const canDiscussChallenge = Boolean(isCreator || isParticipant);
+  const canEditChallenge = Boolean(
+    isCreator && get(challengeDetail, "status") === "UPCOMING",
+  );
+  const canCancelChallenge = Boolean(
+    isCreator && !includes(["COMPLETED", "CANCELLED"], get(challengeDetail, "status")),
+  );
+  const shareUrl =
+    get(challengeDetail, "shareUrl") ||
+    (typeof window !== "undefined"
+      ? `${window.location.origin}/user/challenges/${challengeId}`
+      : `/user/challenges/${challengeId}`);
+  const commentsQuery = useGetQuery({
+    url: `/challenges/${challengeId}/comments`,
+    queryProps: {
+      queryKey: ["challenge-comments", challengeId],
+      enabled: Boolean(challengeId && canDiscussChallenge),
+    },
+  });
+  const challengeComments = React.useMemo(() => {
+    const payload = getApiResponseData(commentsQuery.data, []);
+    return Array.isArray(payload) ? payload : [];
+  }, [commentsQuery.data]);
 
   const handleJoin = React.useCallback(async () => {
     if (!challengeId || isJoining) return;
@@ -227,6 +378,94 @@ export default function ChallengeDetailContainer() {
       // store-level toast handles errors
     }
   }, [challengeId, fetchChallengeDetail, isJoining, joinChallenge]);
+
+  const handleShare = React.useCallback(async () => {
+    if (!challengeDetail) return;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: challengeDetail.title,
+          text: challengeDetail.description || "LiveOn challenge",
+          url: shareUrl,
+        });
+        return;
+      }
+
+      await navigator.clipboard.writeText(shareUrl);
+      setShareCopied(true);
+      toast.success("Challenge linki nusxalandi");
+      window.setTimeout(() => setShareCopied(false), 1800);
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        toast.error("Linkni ulashib bo'lmadi");
+      }
+    }
+  }, [challengeDetail, shareUrl]);
+
+  const handleFriendsConfirm = React.useCallback(
+    async (friends) => {
+      const userIds = map(friends, "id").filter(Boolean);
+      if (!challengeId || userIds.length === 0) {
+        return;
+      }
+
+      try {
+        await inviteFriends(challengeId, { userIds });
+      } catch {
+        // store-level toast
+      }
+    },
+    [challengeId, inviteFriends],
+  );
+
+  const handleCancelChallenge = React.useCallback(async () => {
+    if (!challengeId || isUpdatingChallenge) return;
+
+    try {
+      await updateChallenge(challengeId, { status: "CANCELLED" });
+      await fetchChallengeDetail(challengeId);
+      setCancelDialogOpen(false);
+      toast.success("Challenge bekor qilindi");
+    } catch {
+      // store-level toast
+    }
+  }, [challengeId, fetchChallengeDetail, isUpdatingChallenge, updateChallenge]);
+
+  const handleSubmitComment = React.useCallback(async () => {
+    const body = commentBody.trim();
+    if (!challengeId || !body || commentSubmitting) return;
+
+    setCommentSubmitting(true);
+    try {
+      await api.post(`/challenges/${challengeId}/comments`, { body });
+      setCommentBody("");
+      await commentsQuery.refetch();
+    } catch {
+      toast.error("Izoh yuborib bo'lmadi");
+    } finally {
+      setCommentSubmitting(false);
+    }
+  }, [challengeId, commentBody, commentSubmitting, commentsQuery]);
+
+  const handleReactComment = React.useCallback(
+    async (commentId) => {
+      if (!challengeId || !commentId || reactingCommentId) return;
+
+      setReactingCommentId(commentId);
+      try {
+        await api.post(`/challenges/${challengeId}/comments/${commentId}/reactions`, {
+          type: "LIKE",
+        });
+        await commentsQuery.refetch();
+      } catch {
+        toast.error("Reaction saqlanmadi");
+      } finally {
+        setReactingCommentId(null);
+      }
+    },
+    [challengeId, commentsQuery, reactingCommentId],
+  );
 
   if (isDetailLoading && !challengeDetail) {
     return (
@@ -274,6 +513,65 @@ export default function ChallengeDetailContainer() {
             Musobaqalarga qaytish
           </Button>
           <div className="flex items-center gap-3">
+            {canEditChallenge ? (
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-11 rounded-2xl font-bold"
+                onClick={() => navigate(`/user/challenges/${challengeId}/edit`)}
+                disabled={isUpdatingChallenge}
+              >
+                <PencilIcon className="mr-2 size-4" />
+                Tahrirlash
+              </Button>
+            ) : null}
+            {canCancelChallenge ? (
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-11 rounded-2xl font-bold text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => setCancelDialogOpen(true)}
+                disabled={isUpdatingChallenge}
+              >
+                {isUpdatingChallenge ? (
+                  <LoaderCircleIcon className="mr-2 size-4 animate-spin" />
+                ) : (
+                  <LogOutIcon className="mr-2 size-4" />
+                )}
+                Bekor qilish
+              </Button>
+            ) : null}
+            {isCreator ? (
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-11 rounded-2xl font-bold"
+                onClick={() => setFriendsPickerOpen(true)}
+                disabled={isInvitingFriends}
+              >
+                {isInvitingFriends ? (
+                  <LoaderCircleIcon className="mr-2 size-4 animate-spin" />
+                ) : (
+                  <MailPlusIcon className="mr-2 size-4" />
+                )}
+                Taklif qilish
+              </Button>
+            ) : null}
+            <Button
+              variant="outline"
+              size="lg"
+              className="h-11 rounded-2xl font-bold"
+              onClick={handleShare}
+            >
+              {shareCopied ? (
+                <CheckIcon className="mr-2 size-4" />
+              ) : typeof navigator !== "undefined" && navigator.share ? (
+                <Share2Icon className="mr-2 size-4" />
+              ) : (
+                <CopyIcon className="mr-2 size-4" />
+              )}
+              {shareCopied ? "Nusxalandi" : "Ulashish"}
+            </Button>
             <Button
               size="lg"
               onClick={handleJoin}
@@ -413,6 +711,80 @@ export default function ChallengeDetailContainer() {
           </div>
         </motion.div>
 
+        {isParticipant ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+            className="rounded-2xl border bg-card p-5 shadow-sm"
+          >
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="flex items-center gap-2 text-lg font-black tracking-tight">
+                  <CalendarRangeIcon className="size-5 text-primary" />
+                  Kunlik progress
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Har kunlik bajarilish holati va metric trend.
+                </p>
+              </div>
+              <Badge variant="secondary" className="rounded-lg">
+                {Math.round(normalizePercent(challengeDetail.myProgress))}% bajarildi
+              </Badge>
+            </div>
+
+            <div className="mb-4 flex flex-wrap gap-2">
+              {dailyProgress.map((day) => (
+                <div
+                  key={day.key}
+                  className={cn(
+                    "flex min-w-14 flex-col items-center gap-1 rounded-xl border px-2 py-2 text-center",
+                    day.state === "done" &&
+                      "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+                    day.state === "missed" &&
+                      "border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300",
+                    day.state === "pending" && "border-border bg-muted/30 text-muted-foreground",
+                  )}
+                >
+                  <span className="text-[10px] font-bold">{day.label}</span>
+                  <span className="flex size-6 items-center justify-center rounded-full bg-background text-xs font-black">
+                    {day.state === "done" ? <CheckIcon className="size-3.5" /> : day.state === "missed" ? "x" : "·"}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-xl border bg-background p-4">
+              <div className="mb-3 flex items-center justify-between text-xs font-bold text-muted-foreground">
+                <span>Trend</span>
+                <span>
+                  {Number(challengeDetail.myMetricValue ?? 0).toLocaleString()} {metricMeta.unit}
+                </span>
+              </div>
+              <svg
+                viewBox="0 0 100 40"
+                className="h-16 w-full overflow-visible"
+                role="img"
+                aria-label="Kunlik progress trend"
+              >
+                <polyline
+                  points={sparklinePoints}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-primary"
+                />
+              </svg>
+              <Progress
+                value={normalizePercent(challengeDetail.myProgress)}
+                className="mt-3 h-2 bg-emerald-500/10 [&>div]:bg-emerald-500"
+              />
+            </div>
+          </motion.div>
+        ) : null}
+
         {/* Ranking Hall of Fame */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -449,12 +821,55 @@ export default function ChallengeDetailContainer() {
             </div>
           ) : (
             <div className="space-y-2">
+              {podiumRanking.length ? (
+                <div className="grid items-end gap-3 md:grid-cols-3">
+                  {podiumRanking.map((participant) => {
+                    const name = resolveDisplayName(participant);
+                    const avatarUrl = participant?.user?.profile?.avatarUrl ?? null;
+                    const metricValue = Number(participant?.metricValue ?? 0);
+                    const isFirst = participant.rank === 1;
+                    const isCurrentUser =
+                      participant?.userId === user?.id || participant?.user?.id === user?.id;
+
+                    return (
+                      <div
+                        key={`podium-${participant.id}`}
+                        className={cn(
+                          "flex flex-col items-center rounded-2xl border bg-card p-4 text-center shadow-sm",
+                          isFirst && "md:-mt-4 md:pb-8",
+                          isCurrentUser && "border-amber-400 bg-amber-50 dark:bg-amber-950/20",
+                        )}
+                      >
+                        <RankBadge rank={participant.rank} />
+                        <Avatar
+                          className={cn(
+                            "my-3 ring-4 ring-background",
+                            isFirst ? "size-16" : "size-12",
+                          )}
+                        >
+                          <AvatarImage src={avatarUrl || undefined} alt={name} />
+                          <AvatarFallback className="font-black">
+                            {initialsFromName(name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <p className="line-clamp-1 text-sm font-black">{name}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {metricValue.toLocaleString()} {metricMeta.unit}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+
               {ranking.map((participant, i) => {
                 const name = resolveDisplayName(participant);
                 const avatarUrl = participant?.user?.profile?.avatarUrl ?? null;
                 const metricValue = Number(participant?.metricValue ?? 0);
                 const progress = Number(participant?.progress ?? 0);
                 const isTop3 = participant.rank <= 3;
+                const isCurrentUser =
+                  participant?.userId === user?.id || participant?.user?.id === user?.id;
 
                 return (
                   <motion.div
@@ -467,7 +882,9 @@ export default function ChallengeDetailContainer() {
                       "group relative grid gap-3 rounded-2xl border p-3 transition-all sm:grid-cols-[auto,1fr,auto,auto] items-center",
                       isTop3
                         ? "border-primary/20 bg-gradient-to-r from-primary/10 via-background to-background shadow-md shadow-primary/5"
-                        : "border-border/40 bg-card/40 backdrop-blur-sm hover:border-primary/20 hover:bg-card/60"
+                        : "border-border/40 bg-card/40 backdrop-blur-sm hover:border-primary/20 hover:bg-card/60",
+                      isCurrentUser &&
+                        "border-amber-400 bg-amber-50 shadow-sm dark:bg-amber-950/20"
                     )}
                   >
                     {/* Rank Badge */}
@@ -528,7 +945,150 @@ export default function ChallengeDetailContainer() {
             </div>
           )}
         </motion.div>
+
+        {canDiscussChallenge ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45 }}
+            className="rounded-2xl border bg-card p-5 shadow-sm"
+          >
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="flex items-center gap-2 text-lg font-black tracking-tight">
+                  <MessageSquareIcon className="size-5 text-primary" />
+                  Izohlar
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Ishtirokchilar fikr almashishi va reaction qoldirishi mumkin.
+                </p>
+              </div>
+              <Badge variant="secondary" className="rounded-lg">
+                {challengeComments.length} ta
+              </Badge>
+            </div>
+
+            <div className="mb-5 space-y-3">
+              <Textarea
+                value={commentBody}
+                onChange={(event) => setCommentBody(event.target.value)}
+                maxLength={500}
+                placeholder="Izoh yozing..."
+                className="min-h-24 resize-none"
+              />
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs text-muted-foreground">
+                  {commentBody.length}/500
+                </span>
+                <Button
+                  type="button"
+                  onClick={handleSubmitComment}
+                  disabled={commentSubmitting || !commentBody.trim()}
+                >
+                  {commentSubmitting ? (
+                    <LoaderCircleIcon className="mr-2 size-4 animate-spin" />
+                  ) : (
+                    <SendIcon className="mr-2 size-4" />
+                  )}
+                  Yuborish
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {commentsQuery.isLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-16 rounded-xl" />
+                  <Skeleton className="h-16 rounded-xl" />
+                </div>
+              ) : challengeComments.length ? (
+                challengeComments.map((comment) => {
+                  const authorName = resolveDisplayName({ user: comment.author });
+                  const avatarUrl = comment?.author?.profile?.avatarUrl ?? null;
+                  const likeCount = Number(comment?.reactions?.LIKE ?? 0);
+                  const liked = Array.isArray(comment?.myReactions)
+                    ? comment.myReactions.includes("LIKE")
+                    : false;
+
+                  return (
+                    <div key={comment.id} className="rounded-xl border bg-background p-3">
+                      <div className="flex gap-3">
+                        <Avatar className="size-9">
+                          <AvatarImage src={avatarUrl || undefined} alt={authorName} />
+                          <AvatarFallback className="text-[10px] font-black">
+                            {initialsFromName(authorName)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm font-bold">{authorName}</p>
+                            <span className="text-xs text-muted-foreground">
+                              {formatCommentTime(comment.createdAt)}
+                            </span>
+                          </div>
+                          <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+                            {comment.body}
+                          </p>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className={cn(
+                              "mt-2 h-8 px-2",
+                              liked && "text-rose-600 hover:text-rose-600",
+                            )}
+                            disabled={reactingCommentId === comment.id}
+                            onClick={() => handleReactComment(comment.id)}
+                          >
+                            <HeartIcon
+                              className={cn("mr-1.5 size-4", liked && "fill-current")}
+                            />
+                            {likeCount}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+                  Hozircha izoh yo'q.
+                </div>
+              )}
+            </div>
+          </motion.div>
+        ) : null}
       </div>
+      <FriendsPickerDrawer
+        key={`detail-invite-${challengeId}-${friendsPickerOpen ? "open" : "closed"}`}
+        open={friendsPickerOpen}
+        onOpenChange={setFriendsPickerOpen}
+        selectedIds={[]}
+        onConfirm={handleFriendsConfirm}
+      />
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Challenge bekor qilinsinmi?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bu challenge yopiladi va foydalanuvchilar unga qo'shila olmaydi.
+              Amalni qaytarib bo'lmaydi.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isUpdatingChallenge}>
+              Ortga qaytish
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={handleCancelChallenge}
+              disabled={isUpdatingChallenge}
+            >
+              {isUpdatingChallenge ? "Bekor qilinmoqda..." : "Ha, bekor qilish"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageTransition>
   );
 }

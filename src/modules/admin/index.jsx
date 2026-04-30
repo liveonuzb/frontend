@@ -19,6 +19,12 @@ const LocationsPage = lazy(
 const FoodCategoriesPage = lazy(
   () => import("@/modules/admin/pages/food-categories/index.jsx"),
 );
+const IngredientsPage = lazy(
+  () => import("@/modules/admin/pages/ingredients/index.jsx"),
+);
+const CuisinesPage = lazy(
+  () => import("@/modules/admin/pages/cuisines/index.jsx"),
+);
 const WorkoutsPage = lazy(
   () => import("@/modules/admin/pages/workouts/index.jsx"),
 );
@@ -64,6 +70,9 @@ const PlatformBotPage = lazy(
 );
 const CoachSpecializationsPage = lazy(
   () => import("@/modules/admin/pages/coach-specializations/index.jsx"),
+);
+const HealthConstraintsPage = lazy(
+  () => import("@/modules/admin/pages/health-constraints/index.jsx"),
 );
 const NotFound = lazy(() => import("@/pages/not-found/index.jsx"));
 
@@ -128,6 +137,26 @@ const Index = () => {
             <Suspense fallback={<PageLoader />}>
               <ErrorBoundary>
                 <FoodCategoriesPage />
+              </ErrorBoundary>
+            </Suspense>
+          }
+        />
+        <Route
+          path="ingredients/*"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <ErrorBoundary>
+                <IngredientsPage />
+              </ErrorBoundary>
+            </Suspense>
+          }
+        />
+        <Route
+          path="cuisines/*"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <ErrorBoundary>
+                <CuisinesPage />
               </ErrorBoundary>
             </Suspense>
           }
@@ -302,6 +331,16 @@ const Index = () => {
             <Suspense fallback={<PageLoader />}>
               <ErrorBoundary>
                 <CoachSpecializationsPage />
+              </ErrorBoundary>
+            </Suspense>
+          }
+        />
+        <Route
+          path="health-constraints/*"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <ErrorBoundary>
+                <HealthConstraintsPage />
               </ErrorBoundary>
             </Suspense>
           }

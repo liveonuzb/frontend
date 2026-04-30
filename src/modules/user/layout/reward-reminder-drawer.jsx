@@ -47,10 +47,17 @@ const getRewardConfirmLabel = (notification) => {
 const getRewardIcon = (notification) => {
   const type = String(notification?.type ?? "").trim().toLowerCase();
   const metadata = getRewardMetadata(notification);
-  const icon = typeof metadata.icon === "string" ? metadata.icon.trim() : "";
+  const imageUrl =
+    typeof metadata.imageUrl === "string" ? metadata.imageUrl.trim() : "";
 
-  if (type === "achievement_earned" && icon) {
-    return <span className="text-4xl leading-none">{icon}</span>;
+  if (type === "achievement_earned" && imageUrl) {
+    return (
+      <img
+        src={imageUrl}
+        alt=""
+        className="size-14 rounded-2xl object-cover"
+      />
+    );
   }
 
   if (type === "achievement_earned") {
@@ -192,12 +199,14 @@ const RewardReminderDrawer = () => {
     }
 
     if (!unreadRewards.some((notification) => notification.id === ackedId)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAckedId(null);
     }
   }, [ackedId, unreadRewards]);
 
   React.useEffect(() => {
     if (!currentNotification) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsOpen(false);
       return;
     }

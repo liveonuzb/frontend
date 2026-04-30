@@ -61,6 +61,13 @@
     "waterHabits": {
       "question": "What are your water habits?"
     },
+    "healthConstraints": {
+      "question": "Any injuries or health constraints?",
+      "summaryHint": "Choose at least one option for a safer workout plan.",
+      "noneSummary": "No constraints",
+      "selectedCount": "{{count}} constraints selected",
+      "defaultDescription": "This will be considered when building your plan."
+    },
     "dietRestrictions": {
       "question": "Any diet restrictions?",
       "subtitle": "We'll shape meals and suggestions around this.",

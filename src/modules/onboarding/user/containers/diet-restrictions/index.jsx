@@ -106,7 +106,8 @@ const Index = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const onboardingState = useOnboardingStore();
-  const { dietRestrictions, reset, setField, goal } = onboardingState;
+  const { dietRestrictions, reset, setField, goal, healthConstraints } =
+    onboardingState;
   const { initializeUser, setOnboardingCompleted, user } = useAuthStore();
 
   useOnboardingAutoSave("user", "diet-restrictions");
@@ -191,6 +192,7 @@ const Index = () => {
         activityLevel: onboardingState.activityLevel,
         mealFrequency: onboardingState.mealFrequency,
         waterHabits: onboardingState.waterHabits,
+        healthConstraints,
         dietRestrictions,
       }),
       completed: true,

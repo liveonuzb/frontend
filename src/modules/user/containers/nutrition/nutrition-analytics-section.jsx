@@ -18,6 +18,7 @@ import {
 import {
   AlertTriangleIcon,
   BarChart3Icon,
+  DownloadIcon,
   FlameIcon,
   TargetIcon,
   TrophyIcon,
@@ -37,6 +38,13 @@ const MACRO_SERIES = [
   { key: "Oqsil (g)", goalKey: "protein", label: "Oqsil", color: "#ef4444" },
   { key: "Uglevod (g)", goalKey: "carbs", label: "Uglevod", color: "#f59e0b" },
   { key: "Yog' (g)", goalKey: "fat", label: "Yog'", color: "#3b82f6" },
+];
+
+const TREND_CARD_SERIES = [
+  { key: "Oqsil (g)", label: "Protein", unit: "g", color: "#ef4444" },
+  { key: "Uglevod (g)", label: "Carbs", unit: "g", color: "#f59e0b" },
+  { key: "Yog' (g)", label: "Fat", unit: "g", color: "#3b82f6" },
+  { key: "Suv (ml)", label: "Water", unit: "ml", color: "#06b6d4" },
 ];
 
 const SOURCE_COLORS = ["#2563eb", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#64748b"];
@@ -65,6 +73,143 @@ const formatDay = (dateStr) => {
   if (!dateStr) return "";
   const d = new Date(dateStr + "T00:00:00");
   return d.toLocaleDateString("uz-UZ", { month: "short", day: "numeric" });
+};
+
+const escapeCsvCell = (value) => {
+  if (value === null || value === undefined) return "";
+  const text = String(value);
+  return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+};
+
+const toCsv = (rows) =>
+  rows.map((row) => row.map(escapeCsvCell).join(",")).join("\r\n");
+
+const downloadCsv = (filename, csv) => {
+  if (typeof document === "undefined") return;
+  const blob = new Blob([`\uFEFF${csv}`], {
+    type: "text/csv;charset=utf-8",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+};
+
+const buildNutritionCsv = ({ daily, summary, goals, period, sourceBreakdown }) => {
+  const mealRows = daily.flatMap((entry) => {
+    const meals = Array.isArray(entry.meals) ? entry.meals : [];
+    if (meals.length === 0) {
+      return [
+        [
+          entry.date,
+          "",
+          "",
+          "",
+          "",
+          Math.round(Number(entry.calories || 0)),
+          Math.round(Number(entry.protein || 0)),
+          Math.round(Number(entry.carbs || 0)),
+          Math.round(Number(entry.fat || 0)),
+          "",
+        ],
+      ];
+    }
+
+    return meals.map((meal) => [
+      entry.date,
+      meal.addedAt || "",
+      meal.mealType || "",
+      meal.name || "",
+      meal.source || "",
+      Math.round(Number(meal.calories || 0)),
+      Math.round(Number(meal.protein || 0)),
+      Math.round(Number(meal.carbs || 0)),
+      Math.round(Number(meal.fat || 0)),
+      Math.round(Number(meal.fiber || 0)),
+    ]);
+  });
+  const rows = [
+    ["Liveon nutrition report"],
+    ["start_date", period.startDate || ""],
+    ["end_date", period.endDate || ""],
+    ["days", period.days || ""],
+    [],
+    ["meals"],
+    [
+      "date",
+      "added_at",
+      "meal_type",
+      "food_name",
+      "source",
+      "calories",
+      "protein_g",
+      "carbs_g",
+      "fat_g",
+      "fiber_g",
+    ],
+    ...mealRows,
+    [],
+    ["daily_totals"],
+    [
+      "date",
+      "calories",
+      "protein_g",
+      "carbs_g",
+      "fat_g",
+      "water_ml",
+      "steps",
+      "workout_minutes",
+      "sleep_hours",
+      "mood",
+    ],
+    ...daily.map((entry) => [
+      entry.date,
+      Math.round(Number(entry.calories || 0)),
+      Math.round(Number(entry.protein || 0)),
+      Math.round(Number(entry.carbs || 0)),
+      Math.round(Number(entry.fat || 0)),
+      Math.round(Number(entry.waterMl || 0)),
+      Math.round(Number(entry.steps || 0)),
+      Math.round(Number(entry.workoutMinutes || 0)),
+      entry.sleepHours || "",
+      entry.mood || "",
+    ]),
+    [],
+    ["summary"],
+    ["avg_calories", summary.avgCalories ?? 0],
+    ["avg_protein_g", summary.avgProtein ?? 0],
+    ["avg_water_ml", summary.avgWaterMl ?? 0],
+    ["avg_steps", summary.avgSteps ?? 0],
+    ["avg_workout_minutes", summary.avgWorkoutMinutes ?? 0],
+    ["avg_sleep_hours", summary.avgSleepHours ?? 0],
+    ["calories_goal_met_days", summary.caloriesGoalMet ?? 0],
+    ["water_goal_met_days", summary.waterGoalMet ?? 0],
+    ["steps_goal_met_days", summary.stepsGoalMet ?? 0],
+    ["workout_goal_met_days", summary.workoutGoalMet ?? 0],
+    [],
+    ["goals"],
+    ["calories", goals.calories ?? ""],
+    ["protein_g", goals.protein ?? ""],
+    ["water_ml", goals.waterMl ?? ""],
+    ["steps", goals.steps ?? ""],
+    ["workout_minutes", goals.workoutMinutes ?? ""],
+    ["sleep_hours", goals.sleepHours ?? ""],
+    [],
+    ["source_breakdown"],
+    ["source", "label", "count", "percent"],
+    ...sourceBreakdown.map((item) => [
+      item.source,
+      getSourceLabel(item.source),
+      item.count,
+      item.percent,
+    ]),
+  ];
+
+  return toCsv(rows);
 };
 
 const getWeekComparisonRanges = () => {
@@ -437,6 +582,69 @@ const MacroTrendChart = React.memo(
 );
 MacroTrendChart.displayName = "MacroTrendChart";
 
+const MacroTrendCards = React.memo(({ chartData }) => {
+  if (chartData.length === 0) return null;
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {TREND_CARD_SERIES.map((item) => {
+        const values = chartData.map((entry) => Number(entry[item.key] || 0));
+        const first = values.find((value) => value > 0) || 0;
+        const last = [...values].reverse().find((value) => value > 0) || 0;
+        const delta =
+          first > 0 ? Math.round(((last - first) / first) * 100) : 0;
+        const average = values.length
+          ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length)
+          : 0;
+
+        return (
+          <div key={item.key} className="rounded-2xl border bg-card px-4 py-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  {item.label}
+                </p>
+                <p className="mt-1 text-lg font-black">
+                  {average}
+                  <span className="ml-1 text-xs text-muted-foreground">
+                    {item.unit}
+                  </span>
+                </p>
+              </div>
+              <span
+                className={cn(
+                  "rounded-full px-2 py-1 text-xs font-bold",
+                  delta >= 0
+                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                    : "bg-red-500/10 text-red-700 dark:text-red-300",
+                )}
+              >
+                {delta >= 0 ? "+" : ""}
+                {delta}%
+              </span>
+            </div>
+            <div className="mt-3 h-16">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+                  <Line
+                    type="monotone"
+                    dataKey={item.key}
+                    stroke={item.color}
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+});
+MacroTrendCards.displayName = "MacroTrendCards";
+
 const ChartSkeleton = () => (
   <div className="rounded-[28px] border bg-card p-5 shadow-sm sm:p-6 space-y-4">
     <Skeleton className="h-5 w-40 rounded-lg" />
@@ -481,7 +689,7 @@ export default function NutritionAnalyticsSection() {
     },
   });
 
-  const comparisonRanges = React.useMemo(getWeekComparisonRanges, []);
+  const comparisonRanges = React.useMemo(() => getWeekComparisonRanges(), []);
   const { data: currentWeekData } = useGetQuery({
     url: "/daily-tracking/reports/health",
     params: comparisonRanges.current,
@@ -529,6 +737,7 @@ export default function NutritionAnalyticsSection() {
         "Oqsil (g)": entry.protein,
         "Uglevod (g)": entry.carbs,
         "Yog' (g)": entry.fat,
+        "Suv (ml)": entry.waterMl,
       })),
     [daily],
   );
@@ -590,6 +799,19 @@ export default function NutritionAnalyticsSection() {
 
     return { best, hardest };
   }, [goals.calories, trackedCalorieDays]);
+  const handleExportCsv = React.useCallback(() => {
+    const start = period.startDate || "start";
+    const end = period.endDate || "end";
+    const csv = buildNutritionCsv({
+      daily,
+      summary,
+      goals,
+      period,
+      sourceBreakdown,
+    });
+
+    downloadCsv(`nutrition-report-${start}-${end}.csv`, csv);
+  }, [daily, goals, period, sourceBreakdown, summary]);
 
   const toggleMacro = React.useCallback((key) => {
     setActiveMacros((current) => {
@@ -616,7 +838,15 @@ export default function NutritionAnalyticsSection() {
           <FlameIcon className="size-4 text-orange-500" />
           <h2 className="text-base font-bold">Ovqatlanish statistikasi</h2>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-transparent px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <DownloadIcon className="size-3.5" />
+            CSV
+          </button>
           {PERIOD_OPTIONS.map((opt) => (
             <button
               key={opt.value}
@@ -780,6 +1010,8 @@ export default function NutritionAnalyticsSection() {
         chartData={chartData}
         calorieGoal={goals.calories ?? 0}
       />
+
+      <MacroTrendCards chartData={chartData} />
 
       {comparisonEnabled ? (
         <WeekComparisonChart

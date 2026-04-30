@@ -22,7 +22,9 @@ function isUserStoreEmpty(state) {
     !state.mealFrequency &&
     !state.waterHabits &&
     (!isArray(state.dietRestrictions) ||
-      state.dietRestrictions.length === 0)
+      state.dietRestrictions.length === 0) &&
+    (!isArray(state.healthConstraints) ||
+      state.healthConstraints.length === 0)
   );
 }
 
@@ -114,6 +116,9 @@ function mergeUserDraft(serverData, setFields) {
   }
   if (isArray(serverData.dietRestrictions)) {
     fields.dietRestrictions = serverData.dietRestrictions;
+  }
+  if (isArray(serverData.healthConstraints)) {
+    fields.healthConstraints = serverData.healthConstraints;
   }
 
   if (keys(fields).length > 0) {

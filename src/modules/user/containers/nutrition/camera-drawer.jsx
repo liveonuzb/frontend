@@ -9,25 +9,35 @@ import {
 } from "@/components/ui/drawer.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import {
+  BarcodeIcon,
+  CheckIcon,
   ChevronUpIcon,
   FlipHorizontalIcon,
   ImageIcon,
   KeyboardIcon,
   Loader2Icon,
+  PlusIcon,
   RefreshCwIcon,
+  RefreshCcwIcon,
   XIcon,
   ZapIcon,
   ZapOffIcon,
 } from "lucide-react";
+import BarcodeScanner from "@/components/barcode-scanner";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils.js";
 import useLanguageStore from "@/store/language-store";
 import { useAuthStore } from "@/store";
-import { useFoodScan } from "@/hooks/app/use-food-catalog";
+import {
+  useFoodBarcodeLookup,
+  useFoodScan,
+} from "@/hooks/app/use-food-catalog";
 import { useDailyTrackingActions } from "@/hooks/app/use-daily-tracking";
 import useHealthGoals from "@/hooks/app/use-health-goals";
 import { toast } from "sonner";
 import { NutritionDrawerContent } from "./nutrition-drawer-layout.jsx";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import {
   useSavedMeals,
   useSavedMealsActions,
@@ -69,6 +79,37 @@ const buildLoggedMealFromSavedMeal = (savedMeal, addedAt) => ({
   ingredients: savedMeal.ingredients,
   addedAt,
 });
+
+const toNumber = (value, fallback = 0) => {
+  const normalized = Number(value);
+  return Number.isFinite(normalized) ? normalized : fallback;
+};
+
+const getSliderMax = (food) => {
+  const unit = food?.unit || "g";
+  const isUnit = unit !== "g" && unit !== "ml";
+  return isUnit ? (food?.step || 1) * 20 : 1000;
+};
+
+const calcMacros = (food, amount) => {
+  const unit = food?.unit || "g";
+  const isUnit = unit !== "g" && unit !== "ml";
+  const factor = isUnit ? amount / (food.defaultAmount || 1) : amount / 100;
+
+  return {
+    cal: Math.round((food?.baseCal ?? food?.cal ?? 0) * factor),
+    protein: Math.round((food?.baseProtein ?? food?.protein ?? 0) * factor),
+    carbs: Math.round((food?.baseCarbs ?? food?.carbs ?? 0) * factor),
+    fat: Math.round((food?.baseFat ?? food?.fat ?? 0) * factor),
+  };
+};
+
+const barcodeMacroInputs = [
+  { key: "cal", label: "Kcal" },
+  { key: "protein", label: "Oqsil" },
+  { key: "carbs", label: "Uglevod" },
+  { key: "fat", label: "Yog'" },
+];
 
 const RecentMealsPill = ({ meals = [], isLoading = false, onOpen }) => {
   if (!isLoading && meals.length === 0) return null;
@@ -117,6 +158,11 @@ const RecentMealsPill = ({ meals = [], isLoading = false, onOpen }) => {
 
 const ScanCameraView = ({
   isActive,
+  scanMode,
+  onScanModeChange,
+  scannerKey,
+  onBarcodeScan,
+  isBarcodeLocked,
   onCapture,
   onOpenText,
   recentMeals,
@@ -171,7 +217,7 @@ const ScanCameraView = ({
   );
 
   useEffect(() => {
-    if (!isActive) {
+    if (!isActive || scanMode !== "camera") {
       stopCamera();
       return undefined;
     }
@@ -188,7 +234,7 @@ const ScanCameraView = ({
     startCamera("environment");
 
     return stopCamera;
-  }, [isActive, startCamera, stopCamera]);
+  }, [isActive, scanMode, startCamera, stopCamera]);
 
   const switchCamera = () => {
     const next = facing === "environment" ? "user" : "environment";
@@ -264,14 +310,27 @@ const ScanCameraView = ({
         className="relative w-full overflow-hidden rounded-2xl bg-black"
         style={{ aspectRatio: "3/4" }}
       >
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="h-full w-full object-cover"
-          style={{ transform: facing === "user" ? "scaleX(-1)" : "none" }}
-        />
+        {scanMode === "barcode" ? (
+          <BarcodeScanner
+            key={scannerKey}
+            onScan={onBarcodeScan}
+            onClose={() => onScanModeChange("camera")}
+            showClose={false}
+            showTopBar={false}
+            showHint={false}
+            showFrame={false}
+            className="h-full min-h-0"
+          />
+        ) : (
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="h-full w-full object-cover"
+            style={{ transform: facing === "user" ? "scaleX(-1)" : "none" }}
+          />
+        )}
 
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-transparent via-transparent to-black opacity-40 pointer-events-none" />
 
@@ -282,7 +341,7 @@ const ScanCameraView = ({
             <div className="absolute bottom-0 left-0 h-8 w-8 rounded-bl-lg border-b-[3px] border-l-[3px] border-primary" />
             <div className="absolute right-0 bottom-0 h-8 w-8 rounded-br-lg border-r-[3px] border-b-[3px] border-primary" />
 
-            {isScanning ? (
+            {isScanning || isBarcodeLocked ? (
               <motion.div
                 initial={{ top: 0, opacity: 0 }}
                 animate={{ top: "100%", opacity: [0, 1, 1, 0] }}
@@ -297,7 +356,30 @@ const ScanCameraView = ({
           </div>
         </div>
 
-        {hasFlash ? (
+        <div className="absolute top-3 left-1/2 z-10 grid -translate-x-1/2 grid-cols-2 rounded-full border border-white/15 bg-black/45 p-1 text-[11px] font-black text-white shadow-lg backdrop-blur-md">
+          <button
+            type="button"
+            onClick={() => onScanModeChange("camera")}
+            className={cn(
+              "rounded-full px-3 py-1.5 transition-colors",
+              scanMode === "camera" ? "bg-white text-foreground" : "text-white/75",
+            )}
+          >
+            AI
+          </button>
+          <button
+            type="button"
+            onClick={() => onScanModeChange("barcode")}
+            className={cn(
+              "rounded-full px-3 py-1.5 transition-colors",
+              scanMode === "barcode" ? "bg-white text-foreground" : "text-white/75",
+            )}
+          >
+            Barcode
+          </button>
+        </div>
+
+        {hasFlash && scanMode === "camera" ? (
           <button
             type="button"
             onClick={toggleFlash}
@@ -314,7 +396,7 @@ const ScanCameraView = ({
           </button>
         ) : null}
 
-        {hasMultipleCams ? (
+        {hasMultipleCams && scanMode === "camera" ? (
           <button
             type="button"
             onClick={switchCamera}
@@ -326,11 +408,17 @@ const ScanCameraView = ({
         ) : null}
 
         <div className="absolute right-0 bottom-5 left-0 z-10">
-          <RecentMealsPill
-            meals={recentMeals}
-            isLoading={isRecentMealsLoading}
-            onOpen={onOpenRecentMeals}
-          />
+          {scanMode === "barcode" ? (
+            <div className="mx-auto max-w-[280px] rounded-full border border-white/15 bg-black/50 px-4 py-2 text-center text-xs font-bold text-white shadow-lg backdrop-blur-md">
+              Shtrix-kodni marker ichida ushlab turing
+            </div>
+          ) : (
+            <RecentMealsPill
+              meals={recentMeals}
+              isLoading={isRecentMealsLoading}
+              onOpen={onOpenRecentMeals}
+            />
+          )}
         </div>
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
@@ -348,7 +436,7 @@ const ScanCameraView = ({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            disabled={isScanning}
+            disabled={isScanning || scanMode === "barcode"}
             className="flex min-w-16 flex-col items-center gap-1.5 text-foreground transition-transform active:scale-95 disabled:opacity-50"
           >
             <span className="flex size-11 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
@@ -360,18 +448,26 @@ const ScanCameraView = ({
 
         <button
           type="button"
-          onClick={handleCapture}
-          disabled={!ready || isScanning}
+          onClick={
+            scanMode === "barcode"
+              ? () => onScanModeChange("camera")
+              : handleCapture
+          }
+          disabled={scanMode === "camera" && (!ready || isScanning)}
           className="flex size-[72px] items-center justify-center rounded-full border-[5px] border-muted bg-background shadow-sm ring-1 ring-border transition-transform active:scale-95 disabled:opacity-40"
         >
-          <div className="size-12 rounded-full bg-foreground" />
+          {scanMode === "barcode" ? (
+            <BarcodeIcon className="size-7 text-foreground" />
+          ) : (
+            <div className="size-12 rounded-full bg-foreground" />
+          )}
         </button>
 
         <div className="flex justify-center">
           <button
             type="button"
             onClick={handleOpenText}
-            disabled={isScanning}
+            disabled={isScanning || scanMode === "barcode"}
             className="flex min-w-16 flex-col items-center gap-1.5 text-foreground transition-transform active:scale-95 disabled:opacity-50"
           >
             <span className="flex size-11 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
@@ -570,20 +666,215 @@ const ResultView = ({
   );
 };
 
+const BarcodeLookupPanel = ({
+  amount,
+  foundFood,
+  foundMacros,
+  isLookingUp,
+  manualFood,
+  onAddFoundFood,
+  onAddManualFood,
+  onAmountChange,
+  onManualFieldChange,
+  onReset,
+  scannedCode,
+  status,
+}) => {
+  if (status === "scanning") return null;
+
+  if (status === "loading" || isLookingUp) {
+    return (
+      <div className="rounded-3xl border bg-card p-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="size-11 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <Loader2Icon className="size-5 animate-spin text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-black">Barcode tekshirilmoqda</p>
+            <p className="text-xs text-muted-foreground">{scannedCode}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "found" && foundFood && foundMacros) {
+    return (
+      <div className="rounded-3xl border bg-card p-4 shadow-sm">
+        <div className="flex items-start gap-4">
+          <div className="size-16 shrink-0 overflow-hidden rounded-3xl bg-muted flex items-center justify-center">
+            {foundFood.image ? (
+              <img
+                src={foundFood.image}
+                alt={foundFood.name}
+                className="size-full object-cover"
+              />
+            ) : (
+              <BarcodeIcon className="size-7 text-muted-foreground" />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-black text-emerald-600">
+              <CheckIcon className="size-3" />
+              Topildi
+            </div>
+            <h3 className="truncate text-lg font-black">{foundFood.name}</h3>
+            <p className="text-xs font-semibold text-muted-foreground">
+              {scannedCode}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-4 gap-2">
+          {[
+            ["Kcal", foundMacros.cal],
+            ["Oqsil", `${foundMacros.protein}g`],
+            ["Uglevod", `${foundMacros.carbs}g`],
+            ["Yog'", `${foundMacros.fat}g`],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-2xl bg-muted/60 px-3 py-2 text-center">
+              <p className="text-[10px] font-bold text-muted-foreground">{label}</p>
+              <p className="text-sm font-black">{value}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-bold text-muted-foreground">Miqdori</span>
+            <span className="text-xl font-black text-primary">
+              {amount}
+              {foundFood.unit || "g"}
+            </span>
+          </div>
+          <Slider
+            value={[amount]}
+            min={foundFood.step || 10}
+            max={getSliderMax(foundFood)}
+            step={foundFood.step || 10}
+            onValueChange={([value]) => onAmountChange(value)}
+          />
+        </div>
+
+        <div className="mt-5 grid grid-cols-[auto_1fr] gap-2">
+          <Button type="button" variant="outline" size="icon" onClick={onReset}>
+            <RefreshCcwIcon className="size-4" />
+          </Button>
+          <Button type="button" onClick={onAddFoundFood}>
+            <PlusIcon className="mr-2 size-4" />
+            Qo'shish
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-3xl border bg-card p-4 shadow-sm">
+      <div className="mb-5">
+        <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-[11px] font-black text-amber-600">
+          <BarcodeIcon className="size-3" />
+          Topilmadi
+        </div>
+        <h3 className="text-lg font-black">Ovqatni qo'l bilan kiriting</h3>
+        <p className="text-xs font-semibold text-muted-foreground">
+          Barcode: {scannedCode || "noma'lum"}
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        <Input
+          placeholder="Ovqat nomi"
+          value={manualFood.name}
+          onChange={(event) => onManualFieldChange("name", event.target.value)}
+        />
+        <div className="grid grid-cols-2 gap-2">
+          {barcodeMacroInputs.map((item) => (
+            <label key={item.key} className="space-y-1">
+              <span className="text-xs font-bold text-muted-foreground">
+                {item.label}
+              </span>
+              <Input
+                type="number"
+                inputMode="decimal"
+                min="0"
+                value={manualFood[item.key]}
+                onChange={(event) =>
+                  onManualFieldChange(item.key, event.target.value)
+                }
+              />
+            </label>
+          ))}
+        </div>
+        <div className="grid grid-cols-[1fr_96px] gap-2">
+          <label className="space-y-1">
+            <span className="text-xs font-bold text-muted-foreground">
+              Miqdor
+            </span>
+            <Input
+              type="number"
+              inputMode="decimal"
+              min="1"
+              value={manualFood.grams}
+              onChange={(event) => onManualFieldChange("grams", event.target.value)}
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-xs font-bold text-muted-foreground">
+              Birlik
+            </span>
+            <Input
+              value={manualFood.unit}
+              onChange={(event) => onManualFieldChange("unit", event.target.value)}
+            />
+          </label>
+        </div>
+      </div>
+
+      <div className="mt-5 grid grid-cols-[auto_1fr] gap-2">
+        <Button type="button" variant="outline" size="icon" onClick={onReset}>
+          <RefreshCcwIcon className="size-4" />
+        </Button>
+        <Button type="button" onClick={onAddManualFood}>
+          <PlusIcon className="mr-2 size-4" />
+          Qo'l bilan qo'shish
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 export default function CameraDrawer({
   dateKey,
+  loggedAt = null,
   mealType,
   open,
   onClose,
   onOpenText,
   onInlineCapture,
   isStackedChildOpen = false,
+  initialMode = "camera",
 }) {
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const user = useAuthStore((state) => state.user);
   const dayjsLocale = resolveDayjsLocale(currentLanguage);
   const mealDateMinKey = getMealDateStartKey(user, dateKey);
   const [view, setView] = useState("camera");
+  const [scanMode, setScanMode] = useState(initialMode);
+  const [barcodeScannerKey, setBarcodeScannerKey] = useState(0);
+  const [barcodeStatus, setBarcodeStatus] = useState("scanning");
+  const [scannedBarcode, setScannedBarcode] = useState("");
+  const [barcodeFood, setBarcodeFood] = useState(null);
+  const [barcodeAmount, setBarcodeAmount] = useState(100);
+  const [barcodeManualFood, setBarcodeManualFood] = useState({
+    name: "",
+    cal: "",
+    protein: "0",
+    carbs: "0",
+    fat: "0",
+    grams: "100",
+    unit: "g",
+  });
   const [scannedItems, setScannedItems] = useState([]);
   const [capturedImage, setCapturedImage] = useState(null);
   const [capturedImageUrl, setCapturedImageUrl] = useState(null);
@@ -601,6 +892,8 @@ export default function CameraDrawer({
 
   const { addMeal: addMealAction } = useDailyTrackingActions();
   const { createSavedMeal } = useSavedMealsActions();
+  const { lookupFoodByBarcode, isLookingUp: isBarcodeLookingUp } =
+    useFoodBarcodeLookup();
   const { items: recentMeals, isLoading: isRecentMealsLoading } = useSavedMeals({
     enabled: open && view === "camera",
   });
@@ -611,11 +904,30 @@ export default function CameraDrawer({
     isUploadingCapture,
   } = useFoodScan();
   const { goals } = useHealthGoals();
+  const barcodeMacros = React.useMemo(
+    () => (barcodeFood ? calcMacros(barcodeFood, barcodeAmount) : null),
+    [barcodeAmount, barcodeFood],
+  );
 
   useEffect(() => {
     if (!open) return;
 
     setView("camera");
+    setScanMode(initialMode);
+    setBarcodeScannerKey((current) => current + 1);
+    setBarcodeStatus("scanning");
+    setScannedBarcode("");
+    setBarcodeFood(null);
+    setBarcodeAmount(100);
+    setBarcodeManualFood({
+      name: "",
+      cal: "",
+      protein: "0",
+      carbs: "0",
+      fat: "0",
+      grams: "100",
+      unit: "g",
+    });
     setScannedItems([]);
     setCapturedImage(null);
     setCapturedImageUrl(null);
@@ -633,7 +945,7 @@ export default function CameraDrawer({
       ),
       ...getTimePartsFromDate(),
     });
-  }, [dateKey, mealDateMinKey, open]);
+  }, [dateKey, initialMode, mealDateMinKey, open]);
 
   useEffect(() => {
     setCopyMealTime((current) => {
@@ -647,10 +959,11 @@ export default function CameraDrawer({
   useEffect(() => {
     if (!open) {
       setView("camera");
+      setScanMode(initialMode);
       setRecentMealsOpen(false);
       setMealTimeOpen(false);
     }
-  }, [open]);
+  }, [initialMode, open]);
 
   useEffect(() => {
     if (!recentMealsOpen || selectedRecentMealId || recentMeals.length === 0) {
@@ -701,6 +1014,138 @@ export default function CameraDrawer({
     setScanError(null);
     setView("camera");
   }, []);
+
+  const resetBarcodeScanner = useCallback(() => {
+    setScannedBarcode("");
+    setBarcodeFood(null);
+    setBarcodeAmount(100);
+    setBarcodeStatus("scanning");
+    setBarcodeScannerKey((current) => current + 1);
+  }, []);
+
+  const handleScanModeChange = useCallback(
+    (nextMode) => {
+      setScanMode(nextMode);
+      if (nextMode === "barcode") {
+        resetBarcodeScanner();
+      }
+    },
+    [resetBarcodeScanner],
+  );
+
+  const handleBarcodeScan = useCallback(
+    async (code) => {
+      const normalizedCode = String(code || "").trim();
+
+      if (!normalizedCode || barcodeStatus === "loading") {
+        return;
+      }
+
+      setScannedBarcode(normalizedCode);
+      setBarcodeStatus("loading");
+      setBarcodeFood(null);
+
+      try {
+        const food = await lookupFoodByBarcode(normalizedCode);
+
+        if (!food) {
+          setBarcodeStatus("not-found");
+          return;
+        }
+
+        setBarcodeFood(food);
+        setBarcodeAmount(food.defaultAmount || 100);
+        setBarcodeStatus("found");
+      } catch (error) {
+        if (error?.response?.status === 404) {
+          setBarcodeStatus("not-found");
+          return;
+        }
+
+        setBarcodeStatus("error");
+        toast.error("Barcode bo'yicha ovqatni tekshirib bo'lmadi");
+      }
+    },
+    [barcodeStatus, lookupFoodByBarcode],
+  );
+
+  const handleBarcodeManualFieldChange = useCallback((key, value) => {
+    setBarcodeManualFood((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  }, []);
+
+  const handleAddBarcodeFood = useCallback(async () => {
+    if (!barcodeFood || !barcodeMacros) return;
+
+    try {
+      await addMealAction(dateKey, mealType, {
+        ...barcodeFood,
+        source: "barcode",
+        qty: 1,
+        grams: barcodeAmount,
+        cal: barcodeMacros.cal,
+        protein: barcodeMacros.protein,
+        carbs: barcodeMacros.carbs,
+        fat: barcodeMacros.fat,
+        addedAt: loggedAt || undefined,
+        addedFromPlan: false,
+      });
+      toast.success(`${barcodeFood.name} qo'shildi!`);
+      onClose();
+    } catch {
+      toast.error("Ovqatni qo'shib bo'lmadi");
+    }
+  }, [
+    addMealAction,
+    barcodeAmount,
+    barcodeFood,
+    barcodeMacros,
+    dateKey,
+    loggedAt,
+    mealType,
+    onClose,
+  ]);
+
+  const handleAddManualBarcodeFood = useCallback(async () => {
+    const name = barcodeManualFood.name.trim();
+
+    if (!name) {
+      toast.error("Ovqat nomini kiriting");
+      return;
+    }
+
+    try {
+      await addMealAction(dateKey, mealType, {
+        id: `barcode-${scannedBarcode || Date.now()}`,
+        name,
+        barcode: scannedBarcode || null,
+        source: "barcode-manual",
+        qty: 1,
+        grams: Math.max(1, toNumber(barcodeManualFood.grams, 100)),
+        unit: barcodeManualFood.unit || "g",
+        cal: Math.max(0, Math.round(toNumber(barcodeManualFood.cal))),
+        protein: Math.max(0, toNumber(barcodeManualFood.protein)),
+        carbs: Math.max(0, toNumber(barcodeManualFood.carbs)),
+        fat: Math.max(0, toNumber(barcodeManualFood.fat)),
+        addedAt: loggedAt || undefined,
+        addedFromPlan: false,
+      });
+      toast.success(`${name} qo'shildi!`);
+      onClose();
+    } catch {
+      toast.error("Ovqatni qo'shib bo'lmadi");
+    }
+  }, [
+    addMealAction,
+    barcodeManualFood,
+    dateKey,
+    loggedAt,
+    mealType,
+    onClose,
+    scannedBarcode,
+  ]);
 
   const handleIngredientUpdate = useCallback(
     (draftId, ingredientId, ingredient) => {
@@ -794,6 +1239,7 @@ export default function CameraDrawer({
             source: "camera",
             image: capturedImageUrl,
             savedMealId,
+            addedAt: loggedAt || undefined,
           }),
           addedFromPlan: false,
         });
@@ -895,10 +1341,14 @@ export default function CameraDrawer({
                 ) : (
                   <>
                     <DrawerTitle className="text-base font-semibold">
-                      Ovqatni aniqlash
+                      {scanMode === "barcode"
+                        ? "Barcode skanerlash"
+                        : "Ovqatni aniqlash"}
                     </DrawerTitle>
                     <DrawerDescription>
-                      Ovqatni kadr ichiga joylashtiring va AI uchun rasm oling.
+                      {scanMode === "barcode"
+                        ? "Shtrix-kodni kadr ichiga joylashtiring."
+                        : "Ovqatni kadr ichiga joylashtiring va AI uchun rasm oling."}
                     </DrawerDescription>
                   </>
                 )}
@@ -924,12 +1374,35 @@ export default function CameraDrawer({
                 >
                   <ScanCameraView
                     isActive={open && view === "camera"}
+                    scanMode={scanMode}
+                    onScanModeChange={handleScanModeChange}
+                    scannerKey={barcodeScannerKey}
+                    onBarcodeScan={handleBarcodeScan}
+                    isBarcodeLocked={barcodeStatus !== "scanning"}
                     onCapture={handleCapture}
                     onOpenText={onOpenText}
                     recentMeals={recentMeals}
                     isRecentMealsLoading={isRecentMealsLoading}
                     onOpenRecentMeals={handleOpenRecentMeals}
                   />
+                  {scanMode === "barcode" ? (
+                    <div className="mt-4">
+                      <BarcodeLookupPanel
+                        amount={barcodeAmount}
+                        foundFood={barcodeFood}
+                        foundMacros={barcodeMacros}
+                        isLookingUp={isBarcodeLookingUp}
+                        manualFood={barcodeManualFood}
+                        onAddFoundFood={handleAddBarcodeFood}
+                        onAddManualFood={handleAddManualBarcodeFood}
+                        onAmountChange={setBarcodeAmount}
+                        onManualFieldChange={handleBarcodeManualFieldChange}
+                        onReset={resetBarcodeScanner}
+                        scannedCode={scannedBarcode}
+                        status={barcodeStatus}
+                      />
+                    </div>
+                  ) : null}
                 </motion.div>
               ) : null}
 

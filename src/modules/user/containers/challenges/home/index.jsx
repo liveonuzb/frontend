@@ -1,85 +1,125 @@
 import React from "react";
-import { get } from "lodash";
+import { get, includes, trim } from "lodash";
 import { Link, useNavigate } from "react-router";
-import { motion } from "framer-motion";
 import {
   ArrowRightIcon,
   CheckCircle2Icon,
   PlusIcon,
-  SparklesIcon,
+  SearchIcon,
   TrophyIcon,
 } from "lucide-react";
 import PageTransition from "@/components/page-transition";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useAuthStore, useBreadcrumbStore } from "@/store";
 import { useChallengeStore } from "@/store/challenges-store";
+import ChallengeCard from "../challenge-card.jsx";
 import InvitationsBanner from "../invitations-banner.jsx";
 import {
   formatChallengeDateRange,
+  getMetricMeta,
   getMyProgress,
   getParticipantCount,
-  getPresetCover,
 } from "../challenge-utils.js";
 
-const StatCard = ({ label, value }) => (
-  <div className="rounded-2xl border bg-card/80 p-4">
-    <p className="text-2xl font-black tabular-nums">{value}</p>
-    <p className="text-xs font-semibold text-muted-foreground">{label}</p>
+const FILTERS = [
+  { value: "ALL", label: "Barchasi" },
+  { value: "ACTIVE", label: "Faol" },
+  { value: "UPCOMING", label: "Kutilmoqda" },
+  { value: "STEPS", label: "Qadam" },
+  { value: "WORKOUT_MINUTES", label: "Mashq" },
+  { value: "BURNED_CALORIES", label: "Kaloriya" },
+  { value: "SLEEP_HOURS", label: "Uyqu" },
+];
+
+const PageHeader = () => (
+  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div className="min-w-0">
+      <h1 className="text-3xl font-semibold tracking-tight">Chellenjlar</h1>
+      <p className="text-sm text-muted-foreground">
+        Takliflar, faol musobaqalar va barcha ochiq chellenjlar.
+      </p>
+    </div>
+    <Button asChild className="sm:w-auto">
+      <Link to="/user/challenges/create">
+        <PlusIcon data-icon="inline-start" />
+        Yaratish
+      </Link>
+    </Button>
   </div>
+);
+
+const StatCard = ({ label, value }) => (
+  <Card size="sm">
+    <CardHeader>
+      <CardTitle className="text-2xl tabular-nums">{value}</CardTitle>
+      <CardDescription>{label}</CardDescription>
+    </CardHeader>
+  </Card>
 );
 
 const ActiveChallengeTile = ({ challenge, onClick }) => {
   const progress = getMyProgress(challenge);
-  const preset = getPresetCover(challenge.coverPreset || "run");
+  const metricType =
+    get(challenge, "metricDetails.type") || challenge.metricType || "STEPS";
+  const metricMeta = getMetricMeta(metricType);
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="group w-[280px] shrink-0 overflow-hidden rounded-[1.5rem] border bg-card text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
-    >
-      <div className="relative aspect-video overflow-hidden">
-        {challenge?.image?.url ? (
-          <img
-            src={challenge.image.url}
-            alt={challenge.title}
-            className="size-full object-cover transition duration-500 group-hover:scale-105"
-            loading="lazy"
-          />
-        ) : (
-          <div
-            className={`flex size-full items-center justify-center bg-gradient-to-br ${preset.from} ${preset.to} text-5xl`}
-          >
-            {preset.emoji}
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 p-4">
-          <h3 className="line-clamp-1 text-base font-black text-white">
-            {challenge.title}
-          </h3>
-          <p className="text-xs font-semibold text-white/75">
-            {formatChallengeDateRange(challenge.startDate, challenge.endDate)}
-          </p>
-        </div>
-      </div>
-      <div className="space-y-2 p-4">
-        <div className="flex items-center justify-between text-xs">
-          <span className="font-bold text-emerald-600">
-            {Math.round(progress)}% bajarildi
-          </span>
+    <Card size="sm" className="w-[280px] shrink-0">
+      <CardHeader>
+        <CardTitle className="line-clamp-1">{challenge.title}</CardTitle>
+        <CardDescription>
+          {formatChallengeDateRange(challenge.startDate, challenge.endDate)}
+        </CardDescription>
+        <CardAction>
+          <Badge variant="secondary">{metricMeta.label}</Badge>
+        </CardAction>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-3 text-sm">
+          <span className="font-medium">{Math.round(progress)}% bajarildi</span>
           <span className="text-muted-foreground">
             {getParticipantCount(challenge)} ishtirokchi
           </span>
         </div>
         <Progress value={progress} className="h-2" />
-      </div>
-    </button>
+      </CardContent>
+      <CardFooter>
+        <Button type="button" variant="outline" size="sm" className="w-full" onClick={onClick}>
+          Ko'rish
+          <ArrowRightIcon data-icon="inline-end" />
+        </Button>
+      </CardFooter>
+    </Card>
   );
 };
+
+const EmptyState = ({ title, description, action }) => (
+  <Card>
+    <CardHeader className="items-center text-center">
+      <CardTitle>{title}</CardTitle>
+      <CardDescription>{description}</CardDescription>
+    </CardHeader>
+    {action ? <CardFooter className="justify-center">{action}</CardFooter> : null}
+  </Card>
+);
 
 export default function ChallengeHomeContainer() {
   const navigate = useNavigate();
@@ -92,8 +132,12 @@ export default function ChallengeHomeContainer() {
     actionLoading,
     fetchChallenges,
     fetchMyInvitations,
+    joinChallenge,
     respondToInvitation,
   } = useChallengeStore();
+  const [search, setSearch] = React.useState("");
+  const [filter, setFilter] = React.useState("ALL");
+  const deferredSearch = React.useDeferredValue(search);
 
   React.useEffect(() => {
     fetchChallenges();
@@ -136,6 +180,29 @@ export default function ChallengeHomeContainer() {
   );
   const latestCompleted = completedChallenges[0];
 
+  const filteredChallenges = React.useMemo(() => {
+    const q = trim(deferredSearch).toLowerCase();
+    return challengeList.filter((challenge) => {
+      if (challenge.status === "CANCELLED") return false;
+      const metricType =
+        get(challenge, "metricDetails.type") || challenge.metricType;
+      const matchesFilter =
+        filter === "ALL" ||
+        challenge.status === filter ||
+        metricType === filter;
+      if (!matchesFilter) return false;
+      if (!q) return true;
+      return (
+        includes(String(get(challenge, "title", "")).toLowerCase(), q) ||
+        includes(String(get(challenge, "description", "")).toLowerCase(), q) ||
+        includes(
+          String(get(challenge, "creator.profile.firstName", "")).toLowerCase(),
+          q,
+        )
+      );
+    });
+  }, [challengeList, deferredSearch, filter]);
+
   const handleInvitationResponse = React.useCallback(
     async (invitationId, action) => {
       if (actionLoading?.respondingById?.[invitationId]) return;
@@ -148,23 +215,22 @@ export default function ChallengeHomeContainer() {
     [actionLoading?.respondingById, respondToInvitation],
   );
 
+  const handleJoin = React.useCallback(
+    async (challengeId) => {
+      if (actionLoading?.joiningById?.[challengeId]) return;
+      try {
+        await joinChallenge(challengeId);
+      } catch {
+        // store-level toast
+      }
+    },
+    [actionLoading?.joiningById, joinChallenge],
+  );
+
   return (
     <PageTransition>
       <div className="flex flex-col gap-6 pb-24">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-black tracking-tight">Chellenjlar</h1>
-            <p className="text-sm text-muted-foreground">
-              Faol musobaqalar, takliflar va natijalar.
-            </p>
-          </div>
-          <Button asChild className="hidden rounded-2xl sm:inline-flex">
-            <Link to="/user/challenges/create">
-              <PlusIcon className="mr-2 size-4" />
-              Yaratish
-            </Link>
-          </Button>
-        </div>
+        <PageHeader />
 
         <InvitationsBanner
           invitations={pendingInvitations}
@@ -188,24 +254,29 @@ export default function ChallengeHomeContainer() {
           />
         </div>
 
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black">Faol chellenjlar</h2>
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold">Mening faol chellenjlarim</h2>
+              <p className="text-sm text-muted-foreground">
+                Bugun davom ettirishingiz mumkin bo'lgan musobaqalar.
+              </p>
+            </div>
             <Button variant="ghost" size="sm" asChild>
               <Link to="/user/challenges/my">
                 Mening
-                <ArrowRightIcon className="ml-1 size-4" />
+                <ArrowRightIcon data-icon="inline-end" />
               </Link>
             </Button>
           </div>
           {isLoading ? (
             <div className="flex gap-3 overflow-hidden">
               {Array.from({ length: 2 }).map((_, index) => (
-                <Skeleton key={index} className="h-56 w-[280px] shrink-0 rounded-[1.5rem]" />
+                <Skeleton key={index} className="h-44 w-[280px] shrink-0" />
               ))}
             </div>
           ) : activeChallenges.length ? (
-            <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1 no-scrollbar">
+            <div className="flex gap-3 overflow-x-auto pb-1 no-scrollbar">
               {activeChallenges.map((challenge) => (
                 <ActiveChallengeTile
                   key={challenge.id}
@@ -215,66 +286,133 @@ export default function ChallengeHomeContainer() {
               ))}
             </div>
           ) : (
-            <div className="rounded-[1.5rem] border border-dashed bg-muted/20 p-6 text-center">
-              <p className="font-bold">Hali hech qanday chellenjga qo'shilmagansiz</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Barcha chellenjlarni ko'rib, mosini tanlang.
-              </p>
-              <Button asChild className="mt-4 rounded-2xl">
-                <Link to="/user/challenges/explore">Ko'rish</Link>
-              </Button>
-            </div>
+            <EmptyState
+              title="Faol chellenj yo'q"
+              description="Quyidagi ro'yxatdan mos chellenjni topib qo'shiling."
+            />
           )}
         </section>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-[1.5rem] border bg-card/80 p-5">
-            <div className="mb-3 flex size-11 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600">
-              <TrophyIcon className="size-5" />
-            </div>
-            <h2 className="text-lg font-black">So'nggi natija</h2>
-            {latestCompleted ? (
-              <p className="mt-2 text-sm text-muted-foreground">
-                {latestCompleted.title} —{" "}
-                {get(latestCompleted, "myRank")
-                  ? `${get(latestCompleted, "myRank")}-o'rin`
-                  : "muvaffaqiyatli yakunlandi"}
-              </p>
-            ) : (
-              <p className="mt-2 text-sm text-muted-foreground">
-                Hali tugallangan chellenj yo'q.
-              </p>
-            )}
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>So'nggi natija</CardTitle>
+              <CardDescription>
+                Yakunlangan chellenjlardagi oxirgi holatingiz.
+              </CardDescription>
+              <CardAction>
+                <TrophyIcon />
+              </CardAction>
+            </CardHeader>
+            <CardContent>
+              {latestCompleted ? (
+                <p className="text-sm text-muted-foreground">
+                  {latestCompleted.title} -{" "}
+                  {get(latestCompleted, "myRank")
+                    ? `${get(latestCompleted, "myRank")}-o'rin`
+                    : "muvaffaqiyatli yakunlandi"}
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Hali tugallangan chellenj yo'q.
+                </p>
+              )}
+            </CardContent>
+          </Card>
 
-          <motion.div
-            whileHover={{ y: -3 }}
-            className="relative overflow-hidden rounded-[1.5rem] bg-gradient-to-br from-primary to-emerald-500 p-5 text-primary-foreground shadow-xl shadow-primary/20"
-          >
-            <SparklesIcon className="mb-8 size-8 opacity-90" />
-            <h2 className="text-2xl font-black tracking-tight">
-              O'z chellenjingizni yarating
-            </h2>
-            <p className="mt-2 max-w-sm text-sm text-primary-foreground/80">
-              Do'stlaringizni taklif qiling, maqsad qo'ying va XP uchun bellashing.
-            </p>
-            <Button
-              variant="secondary"
-              className="mt-5 rounded-2xl font-bold"
-              onClick={() => navigate("/user/challenges/create")}
-            >
-              <PlusIcon className="mr-2 size-4" />
-              Yaratish
-            </Button>
-          </motion.div>
+          <Card>
+            <CardHeader>
+              <CardTitle>O'z chellenjingizni yarating</CardTitle>
+              <CardDescription>
+                Do'stlaringizni taklif qiling, maqsad qo'ying va XP uchun bellashing.
+              </CardDescription>
+              <CardAction>
+                <CheckCircle2Icon />
+              </CardAction>
+            </CardHeader>
+            <CardFooter>
+              <Button onClick={() => navigate("/user/challenges/create")}>
+                <PlusIcon data-icon="inline-start" />
+                Yaratish
+              </Button>
+            </CardFooter>
+          </Card>
         </div>
 
+        <section className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold">Barcha chellenjlar</h2>
+              <p className="text-sm text-muted-foreground">
+                Ommaviy va do'stlaringiz yaratgan chellenjlarni toping.
+              </p>
+            </div>
+            <Badge variant="outline">{filteredChallenges.length} ta</Badge>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <InputGroup className="h-10">
+              <InputGroupAddon>
+                <SearchIcon />
+              </InputGroupAddon>
+              <InputGroupInput
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Chellenj qidirish..."
+              />
+            </InputGroup>
+
+            <div className="overflow-x-auto pb-1 no-scrollbar">
+              <ToggleGroup
+                type="single"
+                variant="outline"
+                size="sm"
+                value={filter}
+                onValueChange={(value) => value && setFilter(value)}
+                className="min-w-max"
+              >
+                {FILTERS.map((item) => (
+                  <ToggleGroupItem key={item.value} value={item.value}>
+                    {item.label}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </div>
+          </div>
+
+          {isLoading ? (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <Skeleton key={index} className="aspect-[4/5]" />
+              ))}
+            </div>
+          ) : filteredChallenges.length ? (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {filteredChallenges.map((challenge) => (
+                <ChallengeCard
+                  key={challenge.id}
+                  challenge={challenge}
+                  userId={user?.id}
+                  isBusy={Boolean(get(actionLoading, `joiningById.${challenge.id}`))}
+                  onJoin={handleJoin}
+                  onViewDetail={(id) => navigate(`/user/challenges/${id}`)}
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              title="Chellenj topilmadi"
+              description="Qidiruv yoki filterni o'zgartirib ko'ring."
+            />
+          )}
+        </section>
+
         <Button
-          size="icon"
-          className="fixed bottom-24 right-5 z-40 size-14 rounded-full shadow-2xl shadow-primary/40 sm:hidden"
+          size="icon-lg"
+          className="fixed bottom-24 right-5 sm:hidden"
           onClick={() => navigate("/user/challenges/create")}
         >
-          <PlusIcon className="size-7" />
+          <PlusIcon />
         </Button>
       </div>
     </PageTransition>

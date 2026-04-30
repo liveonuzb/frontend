@@ -167,11 +167,6 @@ export const useMealPlan = (options = {}) => {
     queryKey: MEAL_PLAN_QUERY_KEY,
     mutationProps,
   });
-  const clearAllMutation = useDeleteQuery({
-    queryKey: MEAL_PLAN_QUERY_KEY,
-    mutationProps,
-  });
-
   const mealPlanState = React.useMemo(
     () => normalizeMealPlanState(get(data, "data.data", defaultMealPlanState)),
     [data],
@@ -323,13 +318,6 @@ export const useMealPlan = (options = {}) => {
     [deletePlanMutation, mealPlanState, queryClient],
   );
 
-  const clearAllPlans = React.useCallback(async () => {
-    const response = await clearAllMutation.mutateAsync({
-      url: "/meal-plans/me",
-    });
-    return syncMealPlanCache(queryClient, response);
-  }, [clearAllMutation, queryClient]);
-
   return {
     ...query,
     ...mealPlanState,
@@ -342,7 +330,6 @@ export const useMealPlan = (options = {}) => {
     applyCoachUpdate,
     pausePlan,
     removePlan,
-    clearAllPlans,
     isSavingDraft: createDraftMutation.isPending || updatePlanMutation.isPending,
     isGeneratingAi: generateAiMutation.isPending,
     isStartingPlan: activatePlanMutation.isPending,
@@ -352,7 +339,6 @@ export const useMealPlan = (options = {}) => {
     isApplyingCoachUpdate: applyCoachUpdateMutation.isPending,
     isPausingPlan: pausePlanMutation.isPending,
     isRemovingPlan: deletePlanMutation.isPending,
-    isClearingAllPlans: clearAllMutation.isPending,
   };
 };
 

@@ -6,10 +6,8 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import {
-  entries,
   filter as lodashFilter,
   find,
-  fromPairs,
   get,
   isArray,
   join,
@@ -21,8 +19,6 @@ import {
 } from "lodash";
 import { toast } from "sonner";
 import {
-  CheckCircle2Icon,
-  GlobeIcon,
   LoaderCircleIcon,
   PlusIcon,
   RotateCcwIcon,
@@ -30,7 +26,6 @@ import {
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
 import {
   useGetQuery,
-  usePostQuery,
   usePatchQuery,
   useDeleteQuery,
 } from "@/hooks/api";
@@ -40,20 +35,10 @@ import {
   DataGridTableDndRowHandle,
   DataGridTableDndRows,
 } from "@/components/reui/data-grid";
+import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import {
   getCategoryBadgeAppearance,
@@ -300,18 +285,11 @@ const Index = () => {
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const CATEGORIES_QUERY_KEY = ["admin", "food-categories"];
 
-  const { data: categoriesData, isLoading, isFetching, refetch } = useGetQuery({
-    url: "/admin/food-categories",
-    queryProps: { queryKey: CATEGORIES_QUERY_KEY },
-  });
-  const categories = get(categoriesData, "data.data", []);
-
   const patchMutation = usePatchQuery({ queryKey: CATEGORIES_QUERY_KEY });
   const deleteMutation = useDeleteQuery({ queryKey: CATEGORIES_QUERY_KEY });
   const reorderMutation = usePatchQuery({ queryKey: CATEGORIES_QUERY_KEY });
 
   const isUpdating = patchMutation.isPending || reorderMutation.isPending;
-  const isDeleting = deleteMutation.isPending;
 
   const updateCategory = React.useCallback(
     async (id, payload) =>
@@ -347,19 +325,74 @@ const Index = () => {
 
   const {
     search,
+    searchOperator,
     statusFilter,
+    statusOperator,
     translationFilter,
+    translationOperator,
+    currentPage,
+    pageSize,
+    setPageQuery,
+    setPageSizeQuery,
+    sortBy,
+    sortDir,
+    sorting,
+    canReorder,
     filterFields,
     activeFilters,
     handleFiltersChange,
+    handleSortingChange,
   } = useCategoryFilters();
 
-  const [translationsDrawerOpen, setTranslationsDrawerOpen] =
-    React.useState(false);
-  const [translatingCategory, setTranslatingCategory] = React.useState(null);
+  const deferredSearch = React.useDeferredValue(search);
+  const queryParams = React.useMemo(
+    () => ({
+      ...(trim(deferredSearch) ? { name: trim(deferredSearch) } : {}),
+      ...(trim(deferredSearch) || searchOperator !== "contains"
+        ? { nameOp: searchOperator }
+        : {}),
+      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      ...(statusFilter !== "all" || statusOperator !== "is"
+        ? { statusOp: statusOperator }
+        : {}),
+      ...(translationFilter !== "all" ? { translations: translationFilter } : {}),
+      ...(translationFilter !== "all" || translationOperator !== "is"
+        ? { translationsOp: translationOperator }
+        : {}),
+      sortBy,
+      sortDir,
+      page: currentPage,
+      pageSize,
+    }),
+    [
+      currentPage,
+      deferredSearch,
+      pageSize,
+      searchOperator,
+      sortBy,
+      sortDir,
+      statusFilter,
+      statusOperator,
+      translationFilter,
+      translationOperator,
+    ],
+  );
+
+  const { data: categoriesData, isLoading, isFetching, refetch } = useGetQuery({
+    url: "/admin/food-categories",
+    params: queryParams,
+    queryProps: { queryKey: [...CATEGORIES_QUERY_KEY, queryParams] },
+  });
+  const categories = get(categoriesData, "data.data", []);
+  const meta = get(categoriesData, "data.meta", {
+    total: 0,
+    page: 1,
+    pageSize,
+    totalPages: 1,
+  });
+
   const [categoryToDelete, setCategoryToDelete] = React.useState(null);
   const [expanded, setExpanded] = React.useState({});
-  const [translationForm, setTranslationForm] = React.useState({});
 
   React.useEffect(() => {
     setBreadcrumbs([
@@ -382,114 +415,14 @@ const Index = () => {
     [activeLanguages, currentLanguage],
   );
 
-  const deferredSearch = React.useDeferredValue(search);
-
-  const filteredCategories = React.useMemo(() => {
-    const query = deferredSearch.trim().toLowerCase();
-
-    return lodashFilter(categories, (category) => {
-      if (query) {
-        const searchableValues = [
-          get(category, "name"),
-          resolveLabel(
-            get(category, "translations"),
-            get(category, "name"),
-            currentLanguage,
-          ),
-          ...values(get(category, "translations", {})),
-        ];
-
-        const matchesSearch = searchableValues.some((value) =>
-          toString(value).toLowerCase().includes(query),
-        );
-        if (!matchesSearch) return false;
-      }
-
-      if (statusFilter !== "all") {
-        const isActive = get(category, "isActive");
-        if (statusFilter === "active" ? !isActive : isActive) return false;
-      }
-
-      if (translationFilter !== "all") {
-        const filledCount = countFilledTranslations(
-          get(category, "translations", {}),
-        );
-        const isComplete =
-          size(activeLanguages) > 0 && filledCount >= size(activeLanguages);
-        if (translationFilter === "complete" ? !isComplete : isComplete)
-          return false;
-      }
-
-      return true;
-    });
-  }, [
-    activeLanguages.length,
-    categories,
-    currentLanguage,
-    deferredSearch,
-    statusFilter,
-    translationFilter,
-  ]);
-
-  const isReorderEnabled =
-    deferredSearch.trim() === "" &&
-    statusFilter === "all" &&
-    translationFilter === "all";
+  const isReorderEnabled = canReorder;
 
   const openTranslationsDrawer = React.useCallback(
     (category) => {
-      setTranslatingCategory(category);
-      setTranslationForm(
-        fromPairs(
-          map(activeLanguages, (language) => [
-            get(language, "code"),
-            resolveLabel(
-              get(category, "translations"),
-              get(category, "name", ""),
-              get(language, "code"),
-            ),
-          ]),
-        ),
-      );
-      setTranslationsDrawerOpen(true);
+      navigate(`translate/${get(category, "id")}`);
     },
-    [activeLanguages],
+    [navigate],
   );
-
-  const handleTranslationSave = React.useCallback(async () => {
-    if (!translatingCategory) return;
-
-    const localizedName = trim(
-      toString(get(translationForm, currentLanguage, "")),
-    );
-    const cleanedTranslations = fromPairs(
-      lodashFilter(
-        map(entries(translationForm || {}), ([code, value]) => [
-          code,
-          trim(toString(value)),
-        ]),
-        ([, value]) => Boolean(value),
-      ),
-    );
-
-    try {
-      await updateCategory(get(translatingCategory, "id"), {
-        ...(localizedName ? { name: localizedName } : {}),
-        translations: cleanedTranslations,
-      });
-      toast.success("Tarjimalar yangilandi");
-      setTranslationsDrawerOpen(false);
-      setTranslatingCategory(null);
-      setTranslationForm({});
-    } catch (error) {
-      const message = get(error, "response.data.message");
-      toast.error(
-        isArray(message)
-          ? join(message, ", ")
-          : message || "Tarjimalarni saqlab bo'lmadi",
-      );
-    }
-  }, [currentLanguage, translatingCategory, translationForm, updateCategory]);
 
   const handleDelete = React.useCallback(async () => {
     if (!categoryToDelete) return;
@@ -550,10 +483,30 @@ const Index = () => {
   });
 
   const table = useReactTable({
-    data: filteredCategories,
+    data: categories,
     columns,
-    state: { expanded },
+    manualSorting: true,
+    manualPagination: true,
+    pageCount: get(meta, "totalPages", 1),
+    state: {
+      expanded,
+      sorting,
+      pagination: { pageIndex: currentPage - 1, pageSize },
+    },
     onExpandedChange: setExpanded,
+    onSortingChange: handleSortingChange,
+    onPaginationChange: (updater) => {
+      const next =
+        typeof updater === "function"
+          ? updater({ pageIndex: currentPage - 1, pageSize })
+          : updater;
+      const nextPage = Number(next.pageIndex) + 1;
+      const nextPageSize = Number(next.pageSize) || pageSize;
+      React.startTransition(() => {
+        void setPageQuery(String(nextPageSize === pageSize ? nextPage : 1));
+        void setPageSizeQuery(String(nextPageSize));
+      });
+    },
     getCoreRowModel: getCoreRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
     getRowCanExpand: () => true,
@@ -565,7 +518,7 @@ const Index = () => {
       if (!active || !over || active.id === over.id) return;
       if (!isReorderEnabled) return;
 
-      const dataIds = map(filteredCategories, (category) =>
+      const dataIds = map(categories, (category) =>
         toString(get(category, "id")),
       );
       const oldIndex = dataIds.indexOf(active.id);
@@ -573,7 +526,7 @@ const Index = () => {
 
       if (oldIndex < 0 || newIndex < 0) return;
 
-      const ordered = [...filteredCategories];
+      const ordered = [...categories];
       const [movedCategory] = ordered.splice(oldIndex, 1);
       ordered.splice(newIndex, 0, movedCategory);
 
@@ -596,7 +549,7 @@ const Index = () => {
         );
       }
     },
-    [filteredCategories, isReorderEnabled, reorderCategories],
+    [categories, isReorderEnabled, reorderCategories],
   );
 
   return (
@@ -630,7 +583,7 @@ const Index = () => {
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <p>
-          {filteredCategories.length} ta kategoriya
+          {get(meta, "total", 0)} ta kategoriya
           {currentLanguageMeta
             ? ` \u2022 ${get(currentLanguageMeta, "flag") ? `${get(currentLanguageMeta, "flag")} ` : ""}${get(currentLanguageMeta, "name")}`
             : ""}
@@ -640,29 +593,36 @@ const Index = () => {
         ) : null}
       </div>
 
-      <DataGridContainer>
-        <ScrollArea className="w-full">
-          <DataGrid
-            table={table}
-            tableLayout={{
-              rowsDraggable: isReorderEnabled,
-              width: "auto",
-            }}
-            loadingMode="none"
-            isLoading={isLoading}
-          >
+      <DataGrid
+        table={table}
+        recordCount={get(meta, "total", 0)}
+        tableLayout={{
+          rowsDraggable: isReorderEnabled,
+          width: "auto",
+        }}
+        isLoading={isLoading}
+      >
+        <div className="flex flex-col gap-2.5">
+          <DataGridContainer>
+            <ScrollArea className="w-full">
             <DataGridTableDndRows
-              dataIds={map(filteredCategories, (category) =>
+              dataIds={map(categories, (category) =>
                 toString(get(category, "id")),
               )}
               handleDragEnd={handleCategoryDragEnd}
             />
-          </DataGrid>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
-      </DataGridContainer>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          </DataGridContainer>
+          <DataGridPagination
+            info="{from} - {to} / {count} ta kategoriya"
+            rowsPerPageLabel="Sahifada:"
+            sizes={[10, 25, 50, 100]}
+          />
+        </div>
+      </DataGrid>
 
-      {!isLoading && !filteredCategories.length ? (
+      {!isLoading && !categories.length ? (
         <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
           Filtrlarga mos kategoriya topilmadi.
         </div>
@@ -671,121 +631,6 @@ const Index = () => {
       {isLoading ? (
         <div className="text-sm text-muted-foreground">Yuklanmoqda...</div>
       ) : null}
-
-      {/* Translations Drawer */}
-      <Drawer
-        open={translationsDrawerOpen}
-        onOpenChange={(open) => {
-          setTranslationsDrawerOpen(open);
-          if (!open) {
-            setTranslatingCategory(null);
-            setTranslationForm({});
-          }
-        }}
-        direction="bottom"
-      >
-        <DrawerContent className="mx-auto max-h-[90vh] data-[vaul-drawer-direction=bottom]:md:max-w-lg">
-          <div className="mx-auto flex w-full min-h-0 flex-1 flex-col">
-            <DrawerHeader>
-              <DrawerTitle className="flex items-center gap-2">
-                <GlobeIcon className="size-5" />
-                Tarjimalarni boshqarish
-              </DrawerTitle>
-              <DrawerDescription>
-                Barcha faol tillar shu yerdan tahrirlanadi. Istasangiz joriy
-                locale nomini ham shu drawerda yangilashingiz mumkin.
-              </DrawerDescription>
-            </DrawerHeader>
-
-            <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-6">
-              <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-sm">
-                <p className="font-medium">
-                  {translatingCategory
-                    ? resolveLabel(
-                        translatingCategory.translations,
-                        translatingCategory.name,
-                        currentLanguage,
-                      )
-                    : "Kategoriya"}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Joriy til:{" "}
-                  {get(currentLanguageMeta, "flag")
-                    ? `${get(currentLanguageMeta, "flag")} `
-                    : ""}
-                  {get(
-                    currentLanguageMeta,
-                    "name",
-                    currentLanguage.toUpperCase(),
-                  )}
-                  . Shu til qiymati saqlansa, asosiy nom ham yangilanadi.
-                </p>
-              </div>
-
-              {activeLanguages.length > 0 ? (
-                <div className="flex flex-col gap-4">
-                  {map(activeLanguages, (language) => (
-                    <div
-                      key={get(language, "id")}
-                      className="flex flex-col gap-2"
-                    >
-                      <Label className="flex items-center gap-2 text-xs font-medium">
-                        <span>{get(language, "flag")}</span>
-                        {get(language, "name")}
-                        {get(language, "code") === currentLanguage ? (
-                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-                            Asosiy
-                          </span>
-                        ) : null}
-                      </Label>
-                      <div className="relative">
-                        <Input
-                          value={get(
-                            translationForm,
-                            get(language, "code"),
-                            "",
-                          )}
-                          onChange={(event) =>
-                            setTranslationForm((current) => ({
-                              ...current,
-                              [language.code]: event.target.value,
-                            }))
-                          }
-                          placeholder={`${get(language, "name")} tilidagi tarjima`}
-                          className="pr-10"
-                        />
-                        {get(translationForm, get(language, "code")) ? (
-                          <CheckCircle2Icon className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-emerald-500" />
-                        ) : null}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-4 text-sm text-muted-foreground">
-                  Qo'shimcha faol tillar topilmadi.
-                </div>
-              )}
-            </div>
-
-            <DrawerFooter className="gap-2 border-t bg-muted/5 px-6 py-4">
-              <Button
-                onClick={handleTranslationSave}
-                disabled={
-                  isUpdating ||
-                  isDeleting ||
-                  !size(activeLanguages)
-                }
-              >
-                Tarjimalarni saqlash
-              </Button>
-              <DrawerClose asChild>
-                <Button variant="outline">Bekor qilish</Button>
-              </DrawerClose>
-            </DrawerFooter>
-          </div>
-        </DrawerContent>
-      </Drawer>
 
       <DeleteAlert
         category={categoryToDelete}

@@ -61,6 +61,13 @@
     "waterHabits": {
       "question": "Suv ichish odatingiz qanday?"
     },
+    "healthConstraints": {
+      "question": "Jarohat yoki sog'liq cheklovingiz bormi?",
+      "summaryHint": "Workout reja xavfsiz bo'lishi uchun tanlang.",
+      "noneSummary": "Cheklov yo'q",
+      "selectedCount": "{{count}} ta cheklov tanlandi",
+      "defaultDescription": "Reja tuzishda bu holat inobatga olinadi."
+    },
     "dietRestrictions": {
       "question": "Parhez cheklovlaringiz bormi?",
       "subtitle": "Ovqat tavsiyalari va menyularni shu tanlovga moslaymiz.",

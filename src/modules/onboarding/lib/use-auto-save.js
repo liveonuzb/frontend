@@ -26,6 +26,7 @@ function extractDraftData(state, type) {
       mealFrequency: state.mealFrequency,
       waterHabits: state.waterHabits,
       dietRestrictions: state.dietRestrictions,
+      healthConstraints: state.healthConstraints,
     };
   }
 
@@ -58,6 +59,7 @@ function buildSelector(type) {
       mealFrequency: s.mealFrequency,
       waterHabits: s.waterHabits,
       dietRestrictions: s.dietRestrictions,
+      healthConstraints: s.healthConstraints,
     });
   }
 

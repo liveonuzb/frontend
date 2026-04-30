@@ -133,9 +133,9 @@ const NutritionFilterDrawer = ({
           </div>
         </div>
 
-        <div className="space-y-4 rounded-2xl border p-4">
+        <fieldset className="space-y-4 rounded-2xl border p-4">
           <div>
-            <p className="text-sm font-semibold">Manbalar</p>
+            <legend className="text-sm font-semibold">Manbalar</legend>
             <p className="text-xs text-muted-foreground">
               Qaysi manbadan qo'shilgan ovqatlarni ko'rsatish kerak?
             </p>
@@ -151,11 +151,12 @@ const NutritionFilterDrawer = ({
                 <Switch
                   checked={isActive}
                   onCheckedChange={() => onToggleFilter(filter.key)}
+                  aria-label={`${filter.label} manbasini filtrlash`}
                 />
               </div>
             );
           })}
-        </div>
+        </fieldset>
       </DrawerBody>
     </>
   );

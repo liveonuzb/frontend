@@ -16,6 +16,7 @@ const createInitialState = () => ({
   mealFrequency: "",
   waterHabits: "",
   dietRestrictions: [],
+  healthConstraints: [],
   coachCategory: null,
   coachCategories: [],
   targetAudience: [],

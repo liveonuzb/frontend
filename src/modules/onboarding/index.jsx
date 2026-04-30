@@ -7,6 +7,7 @@ import Layout from "@/modules/onboarding/layout/index.jsx";
 import EntryPage from "@/modules/onboarding/user/pages/entry/index.jsx";
 import NamePage from "@/modules/onboarding/user/pages/name/index.jsx";
 import GenderPage from "@/modules/onboarding/user/pages/gender/index.jsx";
+import HealthConstraintsPage from "@/modules/onboarding/user/pages/health-constraints/index.jsx";
 import AgePage from "@/modules/onboarding/user/pages/age/index.jsx";
 import HeightPage from "@/modules/onboarding/user/pages/height/index.jsx";
 import CurrentWeightPage from "@/modules/onboarding/user/pages/current-weight/index.jsx";
@@ -41,6 +42,7 @@ const Index = () => {
         {/* User Onboarding Routes */}
         <Route path="name" element={<NamePage />} />
         <Route path="gender" element={<GenderPage />} />
+        <Route path="health-constraints" element={<HealthConstraintsPage />} />
         <Route path="age" element={<AgePage />} />
         <Route path="height" element={<HeightPage />} />
         <Route path="current-weight" element={<CurrentWeightPage />} />

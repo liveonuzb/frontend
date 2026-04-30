@@ -15,13 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton.jsx";
 import EmptyState from "@/components/empty-state/index.jsx";
 import { map, sumBy, isEmpty } from "lodash";
 import MealCard from "./meal-card.jsx";
-
-const mealConfig = {
-  breakfast: { label: "Nonushta", emoji: "🍳", time: "06:00 - 10:00" },
-  lunch: { label: "Tushlik", emoji: "🥗", time: "12:00 - 14:00" },
-  dinner: { label: "Kechki ovqat", emoji: "🍲", time: "18:00 - 21:00" },
-  snack: { label: "Snack", emoji: "🥜", time: "Istalgan vaqt" },
-};
+import { getMealConfig } from "@/modules/user/lib/meal-config";
 
 const getMealIdentity = (item = {}) =>
   item.barcode ||
@@ -82,7 +76,11 @@ const MealSection = ({
   onToggleSelect,
   onEnterSelectionMode,
 }) => {
-  const config = mealConfig[type];
+  const config = getMealConfig(type, {
+    label: "Ovqat",
+    emoji: "🍽️",
+    time: "Istalgan vaqt",
+  });
   const displayTime = time || config.time;
   const [isOpen, setIsOpen] = React.useState(() => getStoredOpenState(type));
   const virtualParentRef = React.useRef(null);
@@ -223,7 +221,7 @@ const MealSection = ({
                 )}
               </div>
               <span className="text-[11px] text-muted-foreground font-medium mt-0.5 block">
-                {displayTime}
+                {config.label} • {currentKcal} kcal • {allSectionItems.length} ta ovqat • {displayTime}
               </span>
             </div>
           </div>
@@ -305,16 +303,47 @@ const MealSection = ({
                   </AnimatePresence>
                 </div>
               ) : (
-                <EmptyState
-                  emoji={config.emoji}
-                  title={`${config.label} bo'sh`}
-                  description={
-                    readOnly
-                      ? "Bu bo'limda hali ovqat log qilinmagan"
-                      : "Ovqat qo'shishingiz mumkin"
-                  }
-                  className="py-2"
-                />
+                <div className="space-y-3">
+                  <EmptyState
+                    emoji={config.emoji}
+                    title={`${config.label} bo'sh`}
+                    description={
+                      readOnly
+                        ? "Bu bo'limda hali ovqat log qilinmagan"
+                        : "Ovqat qo'shish uchun tezkor variantni tanlang"
+                    }
+                    className="py-2"
+                  />
+                  {!readOnly ? (
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      {onCopyFromYesterday ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={addDisabled}
+                          onClick={() => onCopyFromYesterday(type)}
+                        >
+                          Kechagi nusxa
+                        </Button>
+                      ) : null}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={addDisabled}
+                        onClick={onAdd}
+                      >
+                        Saqlanganlardan
+                      </Button>
+                      <Button
+                        type="button"
+                        disabled={addDisabled}
+                        onClick={onAdd}
+                      >
+                        Rasmga olish
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
               )}
             </CardContent>
             {showAddButton && onAdd && !readOnly ? (

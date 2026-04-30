@@ -43,12 +43,15 @@ const Index = () => {
   const heroImage = selectedGender?.image ?? modeTheme.assets.curious;
 
   const handleSelect = (value) => {
+    if (value !== gender) {
+      setField("healthConstraints", []);
+    }
     setField("gender", value);
   };
 
   const handleContinue = () => {
     if (gender) {
-      navigate("/user/onboarding/age");
+      navigate("/user/onboarding/health-constraints");
     }
   };
 

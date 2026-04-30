@@ -1,14 +1,20 @@
 import React from "react";
 import { get, includes, trim } from "lodash";
 import { Link, useNavigate } from "react-router";
-import { motion } from "framer-motion";
 import { CompassIcon, PlusIcon, TrophyIcon } from "lucide-react";
 import PageTransition from "@/components/page-transition";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useAuthStore, useBreadcrumbStore } from "@/store";
 import { useChallengeStore } from "@/store/challenges-store";
-import { cn } from "@/lib/utils";
 import ChallengeCard from "../challenge-card.jsx";
 
 const FILTERS = [
@@ -19,29 +25,29 @@ const FILTERS = [
 ];
 
 const EmptyState = () => (
-  <div className="flex flex-col items-center justify-center rounded-[1.75rem] border border-dashed bg-muted/20 px-5 py-16 text-center">
-    <div className="mb-5 flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-      <TrophyIcon className="size-8" />
-    </div>
-    <h3 className="text-xl font-black">Hali chellenjingiz yo'q</h3>
-    <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-      Chellenj yarating yoki boshqalarning musobaqalariga qo'shiling.
-    </p>
-    <div className="mt-5 flex flex-wrap justify-center gap-2">
-      <Button asChild className="rounded-2xl">
+  <Card>
+    <CardHeader className="items-center text-center">
+      <TrophyIcon />
+      <CardTitle>Hali chellenjingiz yo'q</CardTitle>
+      <CardDescription>
+        Chellenj yarating yoki boshqalarning musobaqalariga qo'shiling.
+      </CardDescription>
+    </CardHeader>
+    <CardFooter className="justify-center gap-2">
+      <Button asChild>
         <Link to="/user/challenges/create">
-          <PlusIcon className="mr-2 size-4" />
+          <PlusIcon data-icon="inline-start" />
           Yaratish
         </Link>
       </Button>
-      <Button asChild variant="outline" className="rounded-2xl">
-        <Link to="/user/challenges/explore">
-          <CompassIcon className="mr-2 size-4" />
+      <Button asChild variant="outline">
+        <Link to="/user/challenges/home">
+          <CompassIcon data-icon="inline-start" />
           Ko'rish
         </Link>
       </Button>
-    </div>
-  </div>
+    </CardFooter>
+  </Card>
 );
 
 export default function ChallengeMyContainer() {
@@ -126,41 +132,38 @@ export default function ChallengeMyContainer() {
               Qatnashayotgan va yaratgan chellenjlaringiz.
             </p>
           </div>
-          <Button asChild className="hidden rounded-2xl sm:inline-flex">
+          <Button asChild className="hidden sm:inline-flex">
             <Link to="/user/challenges/create">
-              <PlusIcon className="mr-2 size-4" />
+              <PlusIcon data-icon="inline-start" />
               Yaratish
             </Link>
           </Button>
         </div>
 
-        <div className="-mx-1 overflow-x-auto px-1 pb-1 no-scrollbar">
-          <div className="flex min-w-max gap-2">
+        <div className="overflow-x-auto pb-1 no-scrollbar">
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            size="sm"
+            value={filter}
+            onValueChange={(value) => value && setFilter(value)}
+            className="min-w-max"
+          >
             {FILTERS.map((item) => (
-              <button
+              <ToggleGroupItem
                 key={item.value}
-                type="button"
-                onClick={() => setFilter(item.value)}
-                className={cn(
-                  "rounded-full border px-4 py-2 text-sm font-bold transition-colors",
-                  filter === item.value
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-background text-muted-foreground hover:bg-muted",
-                )}
+                value={item.value}
               >
                 {item.label}
-              </button>
+              </ToggleGroupItem>
             ))}
-          </div>
+          </ToggleGroup>
         </div>
 
         {isLoading ? (
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 4 }).map((_, index) => (
-              <Skeleton
-                key={index}
-                className="aspect-[4/5] rounded-[1.75rem]"
-              />
+              <Skeleton key={index} className="aspect-[4/5]" />
             ))}
           </div>
         ) : !hasAny ? (
@@ -170,10 +173,7 @@ export default function ChallengeMyContainer() {
             <section className="space-y-3">
               <h2 className="text-lg font-black">Qatnashayotganlarim</h2>
               {myJoined.length ? (
-                <motion.div
-                  layout
-                  className="grid gap-5 md:grid-cols-2 xl:grid-cols-3"
-                >
+                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                   {myJoined.map((challenge) => (
                     <ChallengeCard
                       key={challenge.id}
@@ -187,25 +187,26 @@ export default function ChallengeMyContainer() {
                       onViewDetail={(id) => navigate(`/user/challenges/${id}`)}
                     />
                   ))}
-                </motion.div>
+                </div>
               ) : (
-                <p className="rounded-2xl border border-dashed p-5 text-sm text-muted-foreground">
+                <Card>
+                  <CardHeader>
+                    <CardDescription>
                   {includes(["ACTIVE", "UPCOMING", "COMPLETED"], filter)
                     ? `${trim(
                         FILTERS.find((item) => item.value === filter)?.label,
                       )} holatida qatnashayotgan chellenj yo'q.`
                     : "Hali hech qanday chellenjga qatnashmayapsiz."}
-                </p>
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
               )}
             </section>
 
             <section className="space-y-3">
               <h2 className="text-lg font-black">Yaratganlarim</h2>
               {myCreated.length ? (
-                <motion.div
-                  layout
-                  className="grid gap-5 md:grid-cols-2 xl:grid-cols-3"
-                >
+                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                   {myCreated.map((challenge) => (
                     <ChallengeCard
                       key={challenge.id}
@@ -219,22 +220,26 @@ export default function ChallengeMyContainer() {
                       onViewDetail={(id) => navigate(`/user/challenges/${id}`)}
                     />
                   ))}
-                </motion.div>
+                </div>
               ) : (
-                <p className="rounded-2xl border border-dashed p-5 text-sm text-muted-foreground">
-                  Bu filterda yaratgan chellenjingiz yo'q.
-                </p>
+                <Card>
+                  <CardHeader>
+                    <CardDescription>
+                      Bu filterda yaratgan chellenjingiz yo'q.
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
               )}
             </section>
           </div>
         )}
 
         <Button
-          size="icon"
-          className="fixed bottom-24 right-5 z-40 size-14 rounded-full shadow-2xl shadow-primary/40"
+          size="icon-lg"
+          className="fixed bottom-24 right-5"
           onClick={() => navigate("/user/challenges/create")}
         >
-          <PlusIcon className="size-7" />
+          <PlusIcon />
         </Button>
       </div>
     </PageTransition>

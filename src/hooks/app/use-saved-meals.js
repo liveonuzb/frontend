@@ -5,10 +5,8 @@ import { useDeleteQuery, useGetQuery, usePatchQuery, usePostQuery } from "@/hook
 import {
   buildMealIngredientsPayload,
   getMealIngredientTotals,
-  normalizeMealIngredients,
-  normalizeMealNutrition,
-  toNumber,
 } from "@/modules/user/containers/nutrition/meal-ingredients.js";
+import { normalizeSavedMeal } from "@/modules/user/lib/nutrition-normalizers";
 import { toast } from "sonner";
 
 export const SAVED_MEALS_QUERY_KEY = ["user", "saved-meals"];
@@ -16,36 +14,7 @@ export const SAVED_MEALS_QUERY_KEY = ["user", "saved-meals"];
 const getPayload = (response) =>
   get(response, "data.data", get(response, "data", null));
 
-export const normalizeSavedMeal = (item = {}) => {
-  const ingredients = normalizeMealIngredients(item?.ingredients);
-  const nutrition = normalizeMealNutrition({
-    calories: item?.calories,
-    protein: item?.protein,
-    carbs: item?.carbs,
-    fat: item?.fat,
-    fiber: item?.fiber,
-  });
-
-  return {
-    id: item?.id,
-    name: item?.name || "Taom",
-    source: item?.source || "saved-meal",
-    imageUrl: item?.imageUrl || null,
-    calories: nutrition.calories,
-    protein: nutrition.protein,
-    carbs: nutrition.carbs,
-    fat: nutrition.fat,
-    fiber: nutrition.fiber,
-    createdAt: item?.createdAt || null,
-    updatedAt: item?.updatedAt || null,
-    lastUsedAt: item?.lastUsedAt || null,
-    ingredients,
-    grams: ingredients.reduce(
-      (sum, ingredient) => sum + Math.max(0, toNumber(ingredient.grams, 0)),
-      0,
-    ),
-  };
-};
+export { normalizeSavedMeal };
 
 const buildSavedMealPayload = (meal = {}) => ({
   name: String(meal?.name || "").trim(),

@@ -22,13 +22,11 @@ import {
   useDailyTrackingHistory,
 } from "@/hooks/app/use-daily-tracking";
 import { toast } from "sonner";
+import { MEAL_TYPE_OPTIONS } from "@/modules/user/lib/meal-config";
 
 const mealTypeOptions = [
   { value: "all", label: "Barcha bo'limlar" },
-  { value: "breakfast", label: "Nonushta" },
-  { value: "lunch", label: "Tushlik" },
-  { value: "dinner", label: "Kechki ovqat" },
-  { value: "snack", label: "Snack" },
+  ...MEAL_TYPE_OPTIONS,
 ];
 
 const toDateKey = (date) => date.toISOString().slice(0, 10);

@@ -1,19 +1,16 @@
 import React from "react";
 import {
-  filter as lodashFilter,
   find,
   get,
   map,
-  size,
   trim,
-  toString,
 } from "lodash";
 import { ImageIcon } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
   DataGridTableDndRowHandle,
 } from "@/components/reui/data-grid";
+import { cn } from "@/lib/utils";
 import ActionsMenu from "./actions-menu.jsx";
 
 const resolveLabel = (translations, fallback, language) => {
@@ -39,14 +36,6 @@ const resolveLabel = (translations, fallback, language) => {
 
   return fallback;
 };
-
-const countFilledTranslations = (translations = {}) =>
-  size(
-    lodashFilter(
-      Object.values(translations),
-      (value) => typeof value === "string" && trim(value).length > 0,
-    ),
-  );
 
 export const useColumns = ({
   activeLanguages,
@@ -117,37 +106,34 @@ export const useColumns = ({
         },
       },
       {
-        accessorKey: "translations",
+        id: "translations",
         header: "Tarjimalar",
         size: 150,
         cell: (info) => {
           const equipment = info.row.original;
-          const filledCount = countFilledTranslations(
-            equipment.translations || {},
-          );
-          const isComplete =
-            activeLanguages.length > 0 && filledCount >= activeLanguages.length;
+          const translations = equipment.translations || {};
 
           return (
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">
-                {filledCount}/{activeLanguages.length || 1}
-              </Badge>
-              {isComplete ? (
-                <Badge
-                  variant="outline"
-                  className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                >
-                  To'liq
-                </Badge>
-              ) : (
-                <Badge
-                  variant="outline"
-                  className="bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                >
-                  Kam
-                </Badge>
-              )}
+            <div className="flex items-center gap-1">
+              {map(activeLanguages, (language) => {
+                const code = get(language, "code");
+                const hasTranslation = Boolean(trim(get(translations, code, "")));
+
+                return (
+                  <div
+                    key={get(language, "id", code)}
+                    title={`${get(language, "name", code)}: ${hasTranslation ? "Bor" : "Yo'q"}`}
+                    className={cn(
+                      "flex size-5 items-center justify-center rounded border text-[10px]",
+                      hasTranslation
+                        ? "border-primary/30 bg-primary/10 text-primary"
+                        : "border-transparent bg-muted opacity-40",
+                    )}
+                  >
+                    {get(language, "flag") || code}
+                  </div>
+                );
+              })}
             </div>
           );
         },
@@ -191,7 +177,7 @@ export const useColumns = ({
       },
     ],
     [
-      activeLanguages.length,
+      activeLanguages,
       currentLanguage,
       handleToggleStatus,
       isReorderEnabled,

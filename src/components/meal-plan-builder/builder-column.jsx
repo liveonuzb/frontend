@@ -69,7 +69,11 @@ const BuilderColumn = memo(
           <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-primary/30 via-primary/10 to-transparent rounded-t-2xl opacity-50" />
           <div className="flex items-center justify-between px-2 py-2 hover:bg-muted/40 rounded-xl transition-all duration-300 border border-transparent hover:border-border/50 relative z-10 group/header">
             <div className="flex items-center gap-1.5 flex-1 min-w-0">
-              <KanbanColumnHandle className="p-1 -ml-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground">
+              <KanbanColumnHandle
+                aria-label={`${col.type} bo'limini ko'chirish`}
+                title="Space bilan ushlang, yo'nalish tugmalari bilan joylang"
+                className="p-1 -ml-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              >
                 <GripVerticalIcon className="size-4" />
               </KanbanColumnHandle>
               <div className="size-5 rounded-full bg-primary/20 flex items-center justify-center shrink-0 border border-primary/20 shadow-inner">
@@ -199,5 +203,7 @@ const BuilderColumn = memo(
     );
   },
 );
+
+BuilderColumn.displayName = "BuilderColumn";
 
 export default BuilderColumn;

@@ -4,6 +4,7 @@ import {
   get,
   isArray,
   join,
+  map,
   toString,
   trim,
   filter as lodashFilter,
@@ -12,17 +13,15 @@ import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { MedalIcon, PlusIcon, RotateCcwIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useBreadcrumbStore } from "@/store";
-import {
-  useGetQuery,
-  usePatchQuery,
-  useDeleteQuery,
-} from "@/hooks/api";
+import { useBreadcrumbStore, useLanguageStore } from "@/store";
+import { useGetQuery, usePatchQuery, useDeleteQuery } from "@/hooks/api";
 import {
   DataGrid,
   DataGridContainer,
   DataGridTable,
+  DataGridTableDndRows,
 } from "@/components/reui/data-grid";
+import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import PageTransition from "@/components/page-transition";
@@ -30,8 +29,26 @@ import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
 import { useSpecializationFilters } from "./use-filters.js";
 import { DeleteAlert } from "./delete-alert.jsx";
+import {
+  FALLBACK_LANGUAGE,
+  SUPPORTED_TRANSLATION_FIELDS,
+} from "../constants.js";
 
 const QUERY_KEY = ["admin", "coach-specializations"];
+
+const resolveLabel = (item, language, withFallback = true) => {
+  const value = trim(get(item, `translations.${language}`, ""));
+
+  if (value || !withFallback) {
+    return value;
+  }
+
+  return (
+    trim(get(item, "translations.uz", "")) ||
+    trim(get(item, "name", "")) ||
+    "-"
+  );
+};
 
 const getErrorMessage = (error, fallback) => {
   const message = get(error, "response.data.message");
@@ -41,17 +58,108 @@ const getErrorMessage = (error, fallback) => {
   return message || fallback;
 };
 
+const getSupportedActiveLanguages = (languages) => {
+  const activeLanguages = lodashFilter(
+    languages,
+    (language) =>
+      get(language, "isActive") &&
+      Boolean(SUPPORTED_TRANSLATION_FIELDS[get(language, "code")]),
+  );
+
+  return activeLanguages.length ? activeLanguages : [FALLBACK_LANGUAGE];
+};
+
 const Index = () => {
   const navigate = useNavigate();
   const { setBreadcrumbs } = useBreadcrumbStore();
+  const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const {
-    search,
+    nameFilter,
+    nameOperator,
     categoryFilter,
+    categoryOperator,
     statusFilter,
+    statusOperator,
+    hasImageFilter,
+    hasImageOperator,
+    translationsFilter,
+    translationsOperator,
+    setPageQuery,
+    setPageSizeQuery,
+    currentPage,
+    pageSize,
+    canReorder,
+    sortBy,
+    sortDir,
+    sorting,
     filterFields,
     activeFilters,
     handleFiltersChange,
+    handleSortingChange,
   } = useSpecializationFilters();
+
+  const deferredName = React.useDeferredValue(nameFilter);
+  const queryParams = React.useMemo(
+    () => ({
+      ...(trim(deferredName) ? { name: trim(deferredName) } : {}),
+      ...((trim(deferredName) ||
+        nameOperator === "empty" ||
+        nameOperator === "not_empty") &&
+      nameOperator !== "contains"
+        ? { nameOp: nameOperator }
+        : {}),
+      ...(categoryFilter !== "all" ? { category: categoryFilter } : {}),
+      ...((categoryFilter !== "all" ||
+        categoryOperator === "empty" ||
+        categoryOperator === "not_empty") &&
+      categoryOperator !== "is"
+        ? { categoryOp: categoryOperator }
+        : {}),
+      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      ...((statusFilter !== "all" ||
+        statusOperator === "empty" ||
+        statusOperator === "not_empty") &&
+      statusOperator !== "is"
+        ? { statusOp: statusOperator }
+        : {}),
+      ...(hasImageFilter !== "all" ? { hasImage: hasImageFilter } : {}),
+      ...((hasImageFilter !== "all" ||
+        hasImageOperator === "empty" ||
+        hasImageOperator === "not_empty") &&
+      hasImageOperator !== "is"
+        ? { hasImageOp: hasImageOperator }
+        : {}),
+      ...(translationsFilter !== "all"
+        ? { translations: translationsFilter }
+        : {}),
+      ...((translationsFilter !== "all" ||
+        translationsOperator === "empty" ||
+        translationsOperator === "not_empty") &&
+      translationsOperator !== "is"
+        ? { translationsOp: translationsOperator }
+        : {}),
+      sortBy,
+      sortDir,
+      page: currentPage,
+      pageSize,
+    }),
+    [
+      categoryFilter,
+      categoryOperator,
+      currentPage,
+      deferredName,
+      hasImageFilter,
+      hasImageOperator,
+      nameOperator,
+      pageSize,
+      sortBy,
+      sortDir,
+      statusFilter,
+      statusOperator,
+      translationsFilter,
+      translationsOperator,
+    ],
+  );
 
   const {
     data: specializationsData,
@@ -60,16 +168,38 @@ const Index = () => {
     refetch,
   } = useGetQuery({
     url: "/admin/coach-specializations",
+    params: queryParams,
     queryProps: {
-      queryKey: QUERY_KEY,
+      queryKey: [...QUERY_KEY, queryParams],
     },
   });
-  const allItems = get(specializationsData, "data.data", []);
+  const items = get(specializationsData, "data.data", []);
+  const hasMeta = Boolean(get(specializationsData, "data.meta"));
+  const meta = get(specializationsData, "data.meta", {
+    total: 0,
+    page: currentPage,
+    pageSize,
+    totalPages: currentPage,
+  });
+
+  const { data: languagesData } = useGetQuery({
+    url: "/admin/languages",
+    queryProps: {
+      queryKey: ["admin", "languages"],
+    },
+  });
+  const activeLanguages = React.useMemo(
+    () => getSupportedActiveLanguages(get(languagesData, "data.data", [])),
+    [languagesData],
+  );
 
   const { mutateAsync: patchItem, isPending: isUpdating } = usePatchQuery({
     queryKey: QUERY_KEY,
   });
   const { mutateAsync: removeItem, isPending: isDeleting } = useDeleteQuery({
+    queryKey: QUERY_KEY,
+  });
+  const { mutateAsync: patchReorder, isPending: isReordering } = usePatchQuery({
     queryKey: QUERY_KEY,
   });
 
@@ -90,6 +220,15 @@ const Index = () => {
     [removeItem],
   );
 
+  const reorderItems = React.useCallback(
+    async (payload) =>
+      patchReorder({
+        url: "/admin/coach-specializations/reorder",
+        attributes: payload,
+      }),
+    [patchReorder],
+  );
+
   const [itemToDelete, setItemToDelete] = React.useState(null);
 
   React.useEffect(() => {
@@ -99,31 +238,14 @@ const Index = () => {
     ]);
   }, [setBreadcrumbs]);
 
-  const deferredSearch = React.useDeferredValue(search);
+  React.useEffect(() => {
+    if (!hasMeta) return;
 
-  const filteredItems = React.useMemo(() => {
-    const searchValue = trim(deferredSearch).toLowerCase();
-
-    return lodashFilter(allItems, (item) => {
-      const matchesSearch =
-        !searchValue ||
-        (get(item, "nameUz", "") || "").toLowerCase().includes(searchValue) ||
-        (get(item, "nameRu", "") || "").toLowerCase().includes(searchValue) ||
-        (get(item, "nameEn", "") || "").toLowerCase().includes(searchValue) ||
-        (get(item, "key", "") || "").toLowerCase().includes(searchValue);
-
-      const matchesCategory =
-        categoryFilter === "all" || get(item, "category") === categoryFilter;
-
-      const matchesStatus =
-        statusFilter === "all" ||
-        (statusFilter === "active"
-          ? get(item, "isActive")
-          : !get(item, "isActive"));
-
-      return matchesSearch && matchesCategory && matchesStatus;
-    });
-  }, [allItems, categoryFilter, deferredSearch, statusFilter]);
+    const totalPages = get(meta, "totalPages", 1);
+    if (currentPage > totalPages) {
+      void setPageQuery(String(totalPages));
+    }
+  }, [currentPage, hasMeta, meta, setPageQuery]);
 
   const handleDelete = async () => {
     if (!itemToDelete) return;
@@ -148,18 +270,87 @@ const Index = () => {
     }
   };
 
+  const handleDragEnd = async (event) => {
+    if (!canReorder) return;
+
+    const { active, over } = event;
+
+    if (!active || !over || active.id === over.id) {
+      return;
+    }
+
+    const currentIds = map(items, (item) => toString(get(item, "id")));
+    const oldIndex = currentIds.indexOf(active.id);
+    const newIndex = currentIds.indexOf(over.id);
+
+    if (oldIndex < 0 || newIndex < 0) {
+      return;
+    }
+
+    const ordered = [...items];
+    const [movedItem] = ordered.splice(oldIndex, 1);
+    ordered.splice(newIndex, 0, movedItem);
+
+    const movedIndex = ordered.findIndex(
+      (item) => get(item, "id") === get(movedItem, "id"),
+    );
+    const prevId =
+      movedIndex > 0
+        ? toString(get(ordered, `${movedIndex - 1}.id`))
+        : undefined;
+    const nextId =
+      movedIndex < ordered.length - 1
+        ? toString(get(ordered, `${movedIndex + 1}.id`))
+        : undefined;
+
+    try {
+      await reorderItems({
+        movedId: toString(get(movedItem, "id")),
+        prevId,
+        nextId,
+      });
+      toast.success("Tartib yangilandi");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Tartibni saqlab bo'lmadi"));
+    }
+  };
+
   const columns = useColumns({
-    isUpdating,
+    activeLanguages,
+    canReorder,
+    currentLanguage,
+    isUpdating: isUpdating || isReordering,
     onToggleActive: handleToggleActive,
+    resolveLabel,
+    onTranslate: (item) => navigate(`translate/${get(item, "id")}`),
     onEdit: (item) => navigate(`edit/${get(item, "id")}`),
     onDelete: setItemToDelete,
   });
 
   const table = useReactTable({
-    data: filteredItems,
+    data: items,
     columns,
+    manualSorting: true,
+    manualPagination: true,
+    pageCount: get(meta, "totalPages", 1),
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => toString(get(row, "id")),
+    onSortingChange: handleSortingChange,
+    onPaginationChange: (updater) => {
+      const prev = { pageIndex: currentPage - 1, pageSize };
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      const nextPage = String(get(next, "pageIndex", 0) + 1);
+      const nextPageSize = String(get(next, "pageSize", pageSize));
+
+      void setPageQuery(nextPage);
+      if (nextPageSize !== String(pageSize)) {
+        void setPageSizeQuery(nextPageSize);
+      }
+    },
+    state: {
+      sorting,
+      pagination: { pageIndex: currentPage - 1, pageSize },
+    },
   });
 
   return (
@@ -200,18 +391,37 @@ const Index = () => {
           </div>
         </div>
 
-        <DataGridContainer>
-          <ScrollArea className="w-full">
-            <DataGrid
-              table={table}
-              isLoading={isLoading}
-              recordCount={filteredItems.length}
-            >
-              <DataGridTable />
-            </DataGrid>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-        </DataGridContainer>
+        <DataGrid
+          table={table}
+          isLoading={isLoading}
+          recordCount={get(meta, "total", 0)}
+        >
+          <div className="flex w-full flex-col gap-2.5">
+            <DataGridContainer>
+              <ScrollArea className="w-full">
+                {canReorder ? (
+                  <DataGridTableDndRows
+                    dataIds={map(items, (item) => toString(get(item, "id")))}
+                    handleDragEnd={handleDragEnd}
+                  />
+                ) : (
+                  <DataGridTable />
+                )}
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+            </DataGridContainer>
+            {!canReorder ? (
+              <div className="px-2 text-xs text-muted-foreground">
+                Tartiblash faqat filterlarsiz va birinchi sahifada ishlaydi.
+              </div>
+            ) : null}
+            <DataGridPagination
+              info="{from} - {to} / {count} ta yo'nalish"
+              rowsPerPageLabel="Sahifada:"
+              sizes={[10, 25, 50, 100]}
+            />
+          </div>
+        </DataGrid>
 
         <DeleteAlert
           item={itemToDelete}

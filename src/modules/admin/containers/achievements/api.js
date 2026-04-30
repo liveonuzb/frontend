@@ -1,4 +1,4 @@
-import { join } from "lodash";
+import { get, join } from "lodash";
 
 export const ADMIN_ACHIEVEMENTS_QUERY_KEY = ["admin", "achievements"];
 
@@ -33,29 +33,59 @@ export const ACHIEVEMENT_METRIC_OPTIONS = Object.entries(
   ACHIEVEMENT_METRIC_LABELS,
 ).map(([value, label]) => ({ value, label }));
 
+export const APP_MODE_OPTIONS = [
+  { value: "madagascar", label: "Madagascar" },
+  { value: "zen", label: "Zen" },
+  { value: "focus", label: "Focus" },
+];
+
+export const IMAGE_FIELD_BY_MODE = {
+  madagascar: "imageMadagascarUrl",
+  zen: "imageZenUrl",
+  focus: "imageFocusUrl",
+};
+
+export const resolveAchievementImage = (achievement, mode = "madagascar") =>
+  get(achievement, IMAGE_FIELD_BY_MODE[mode]) ||
+  get(achievement, "imageMadagascarUrl") ||
+  get(achievement, "imageZenUrl") ||
+  get(achievement, "imageFocusUrl") ||
+  get(achievement, "imageUrl") ||
+  "";
+
 export const createEmptyAchievementForm = () => ({
   key: "",
   name: "",
   description: "",
-  icon: "🏆",
+  imageMadagascarUrl: "",
+  imageZenUrl: "",
+  imageFocusUrl: "",
   category: "NUTRITION",
   metric: "MEAL_LOG",
   threshold: "1",
   xpReward: "0",
-  sortOrder: "0",
   isActive: true,
 });
 
-export const normalizeAchievementForm = (achievement = {}) => ({
+export const normalizeAchievementForm = (achievement = {}, language = "uz") => ({
   key: achievement.key ?? "",
-  name: achievement.name ?? "",
-  description: achievement.description ?? "",
-  icon: achievement.icon ?? "🏆",
+  name:
+    get(achievement, `translations.${language}`) ??
+    get(achievement, "translations.uz") ??
+    achievement.name ??
+    "",
+  description:
+    get(achievement, `descriptionTranslations.${language}`) ??
+    get(achievement, "descriptionTranslations.uz") ??
+    achievement.description ??
+    "",
+  imageMadagascarUrl: achievement.imageMadagascarUrl ?? "",
+  imageZenUrl: achievement.imageZenUrl ?? "",
+  imageFocusUrl: achievement.imageFocusUrl ?? "",
   category: achievement.category ?? "NUTRITION",
   metric: achievement.metric ?? "MEAL_LOG",
   threshold: String(achievement.threshold ?? 1),
   xpReward: String(achievement.xpReward ?? 0),
-  sortOrder: String(achievement.sortOrder ?? 0),
   isActive: achievement.isActive ?? true,
 });
 
@@ -69,15 +99,10 @@ const parseIntField = (value, label, minimum = 0) => {
   return parsed;
 };
 
-export const buildAchievementPayload = (formData) => {
+export const buildAchievementPayload = (formData, language = "uz") => {
   const key = String(formData.key ?? "").trim().toLowerCase();
   const name = String(formData.name ?? "").trim();
   const description = String(formData.description ?? "").trim();
-  const icon = String(formData.icon ?? "").trim();
-
-  if (!key) {
-    throw new Error("Achievement key kiritilishi shart.");
-  }
 
   if (!name) {
     throw new Error("Achievement nomi kiritilishi shart.");
@@ -87,20 +112,23 @@ export const buildAchievementPayload = (formData) => {
     throw new Error("Achievement tavsifi kiritilishi shart.");
   }
 
-  if (!icon) {
-    throw new Error("Achievement icon kiritilishi shart.");
-  }
-
   return {
-    key,
+    ...(key ? { key } : {}),
     name,
     description,
-    icon,
+    translations: {
+      [language]: name,
+    },
+    descriptionTranslations: {
+      [language]: description,
+    },
+    imageMadagascarUrl: String(formData.imageMadagascarUrl ?? "").trim(),
+    imageZenUrl: String(formData.imageZenUrl ?? "").trim(),
+    imageFocusUrl: String(formData.imageFocusUrl ?? "").trim(),
     category: formData.category,
     metric: formData.metric,
     threshold: parseIntField(formData.threshold, "Threshold", 1),
     xpReward: parseIntField(formData.xpReward, "XP reward", 0),
-    sortOrder: parseIntField(formData.sortOrder, "Sort order", 0),
     isActive: Boolean(formData.isActive),
   };
 };
