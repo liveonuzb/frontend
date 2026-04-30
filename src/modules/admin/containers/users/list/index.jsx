@@ -3,7 +3,6 @@ import { useNavigate, Outlet } from "react-router";
 import { PlusIcon, RotateCcwIcon, UsersIcon } from "lucide-react";
 import {
   getCoreRowModel,
-  getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import { toast } from "sonner";
@@ -41,37 +40,95 @@ const Index = () => {
   const isSuperAdmin = includes(currentUserRoles, "SUPER_ADMIN");
 
   const {
-    currentPage,
-    pageSize,
+    nameFilter,
+    nameOperator,
+    search,
+    roleFilter,
+    roleOperator,
+    statusFilter,
+    statusOperator,
+    premiumFilter,
+    premiumOperator,
+    coachStatusFilter,
+    coachStatusOperator,
+    sortBy,
+    sortDir,
+    sorting,
     setPageQuery,
     setPageSizeQuery,
+    currentPage,
+    pageSize,
     filterFields,
     activeFilters,
     handleFiltersChange,
-    search,
-    roleFilter,
-    statusFilter,
-    sorting,
-    setSorting,
+    handleSortingChange,
   } = useUserFilters();
 
-  const [sortBy, order] = React.useMemo(() => {
-    const first = sorting?.[0];
-    if (!first) return [undefined, undefined];
-    return [first.id, first.desc ? "desc" : "asc"];
-  }, [sorting]);
+  const deferredName = React.useDeferredValue(nameFilter);
+  const deferredSearch = React.useDeferredValue(search);
 
   const queryParams = React.useMemo(
     () => ({
-      ...(search.trim() ? { q: search.trim() } : {}),
+      ...(deferredName.trim() ? { name: deferredName.trim() } : {}),
+      ...((deferredName.trim() ||
+        nameOperator === "empty" ||
+        nameOperator === "not_empty") &&
+      nameOperator !== "contains"
+        ? { nameOp: nameOperator }
+        : {}),
+      ...(deferredSearch.trim() ? { q: deferredSearch.trim() } : {}),
       ...(roleFilter !== "all" ? { role: roleFilter } : {}),
+      ...((roleFilter !== "all" ||
+        roleOperator === "empty" ||
+        roleOperator === "not_empty") &&
+      roleOperator !== "is"
+        ? { roleOp: roleOperator }
+        : {}),
       ...(statusFilter !== "all" ? { status: statusFilter } : {}),
-      sortBy: sortBy ?? "createdAt",
-      sortDir: order ?? "desc",
+      ...((statusFilter !== "all" ||
+        statusOperator === "empty" ||
+        statusOperator === "not_empty") &&
+      statusOperator !== "is"
+        ? { statusOp: statusOperator }
+        : {}),
+      ...(premiumFilter !== "all" ? { premium: premiumFilter } : {}),
+      ...((premiumFilter !== "all" ||
+        premiumOperator === "empty" ||
+        premiumOperator === "not_empty") &&
+      premiumOperator !== "is"
+        ? { premiumOp: premiumOperator }
+        : {}),
+      ...(coachStatusFilter !== "all"
+        ? { coachStatus: coachStatusFilter }
+        : {}),
+      ...((coachStatusFilter !== "all" ||
+        coachStatusOperator === "empty" ||
+        coachStatusOperator === "not_empty") &&
+      coachStatusOperator !== "is"
+        ? { coachStatusOp: coachStatusOperator }
+        : {}),
+      sortBy,
+      sortDir,
       page: currentPage,
       pageSize,
     }),
-    [currentPage, pageSize, search, roleFilter, statusFilter, sortBy, order],
+    [
+      coachStatusFilter,
+      coachStatusOperator,
+      currentPage,
+      deferredName,
+      deferredSearch,
+      nameOperator,
+      pageSize,
+      premiumFilter,
+      premiumOperator,
+      roleFilter,
+      roleOperator,
+      sortBy,
+      sortDir,
+      statusFilter,
+      statusOperator,
+    ],
   );
 
   // --- Data fetching (direct API hooks) ---
@@ -309,7 +366,7 @@ const Index = () => {
     data: users,
     columns,
     state: { sorting, pagination: { pageIndex: currentPage - 1, pageSize } },
-    onSortingChange: setSorting,
+    onSortingChange: handleSortingChange,
     onPaginationChange: (updater) => {
       const previous = { pageIndex: currentPage - 1, pageSize };
       const next = typeof updater === "function" ? updater(previous) : updater;
@@ -319,7 +376,6 @@ const Index = () => {
       });
     },
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
     manualPagination: true,
     manualSorting: true,
     rowCount: totalCount,
@@ -329,32 +385,38 @@ const Index = () => {
   return (
     <PageTransition>
       <div className="flex w-full flex-col gap-6">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <UsersIcon className="size-6" />
-              Foydalanuvchilar
-            </h1>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              Real user accountlar va rollarni boshqaring
-            </p>
-          </div>
+        <div className="flex flex-col gap-2">
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <UsersIcon className="size-6" />
+            Foydalanuvchilar
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Real user accountlar va rollarni boshqaring
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <Filter
+            filterFields={filterFields}
+            activeFilters={activeFilters}
+            handleFiltersChange={handleFiltersChange}
+          />
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching}>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => refetch()}
+              className="hidden sm:flex"
+              disabled={isFetching}
+            >
               <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
             </Button>
-            <Button onClick={handleCreateOpen}>
+            <Button onClick={handleCreateOpen} className="gap-1.5">
               <PlusIcon className="size-4" />
               Foydalanuvchi qo'shish
             </Button>
           </div>
         </div>
-
-        <Filter
-          filterFields={filterFields}
-          activeFilters={activeFilters}
-          handleFiltersChange={handleFiltersChange}
-        />
 
         <DataGrid
           table={table}

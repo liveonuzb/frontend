@@ -1,25 +1,29 @@
 import React from "react";
+import { addDays, differenceInCalendarDays, format } from "date-fns";
 import { useNavigate, useParams } from "react-router";
-import { format } from "date-fns";
-import { get, find } from "lodash";
-import { filter as lodashFilter, entries, fromPairs, values, sum } from "lodash";
+import { find, get, values } from "lodash";
 import { toast } from "sonner";
-import { ArrowLeftIcon, LoaderCircleIcon } from "lucide-react";
+import { ArrowLeftIcon, CheckCircle2Icon, LoaderCircleIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
+  DrawerBody,
   DrawerContent,
-  DrawerDescription,
+  DrawerFooter,
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { DrawerBody } from "@/components/ui/drawer";
-import { useLanguageStore } from "@/store";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
-
-import BasicStep from "../create/basic-step.jsx";
-import SettingsStep from "../create/settings-step.jsx";
-import TranslationsStep from "../create/translations-step.jsx";
+import { useLanguageStore } from "@/store";
+import { cn } from "@/lib/utils";
+import ChallengeCoverPicker from "@/modules/user/containers/challenges/create/challenge-cover-picker.jsx";
+import StepDuration from "@/modules/user/containers/challenges/create/step-duration.jsx";
+import StepMetric from "@/modules/user/containers/challenges/create/step-metric.jsx";
+import StepReward from "@/modules/user/containers/challenges/create/step-reward.jsx";
+import { StepSection } from "@/modules/user/containers/challenges/create/form-fields.jsx";
 import {
   CHALLENGES_QUERY_KEY,
   cleanupChallengeImage,
@@ -28,40 +32,54 @@ import {
   uploadChallengeImage,
 } from "../api.js";
 
-const STEP_KEYS = ["basic", "settings", "translations"];
+const STEPS = [
+  { key: "basic", label: "Asosiy" },
+  { key: "metric", label: "O'lchov" },
+  { key: "duration", label: "Vaqt" },
+  { key: "reward", label: "Mukofot" },
+];
 
-const STEP_CONTENT = {
-  basic: {
-    title: "Musobaqani tahrirlash",
-    description: "Sarlavha, ta'rif, holat va cover rasmini yangilang.",
-  },
-  settings: {
-    title: "Musobaqa sozlamalari",
-    description: "Vaqt, metrikalar va mukofot konfiguratsiyasi.",
-  },
-  translations: {
-    title: "Tarjimalar",
-    description: "Barcha aktiv tillardagi sarlavha va ta'rif matnlarini tahrirlang.",
-  },
-};
+const todayInput = () => format(new Date(), "yyyy-MM-dd");
+const addDaysInput = (days) => format(addDays(new Date(), days), "yyyy-MM-dd");
 
-const formatDateTimeInput = (value) => {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "";
-  return format(parsed, "yyyy-MM-dd'T'HH:mm");
-};
+const createInitialForm = () => ({
+  title: "",
+  description: "",
+  translations: {},
+  descriptionTranslations: {},
+  status: "UPCOMING",
+  imagePreviewUrl: "",
+  imageId: null,
+  uploadedImageId: null,
+  removeImage: false,
+  metricType: "STEPS",
+  metricTarget: 10000,
+  metricAggregation: "SUM",
+  durationDays: 7,
+  startDate: todayInput(),
+  endDate: addDaysInput(7),
+  rewardMode: "FIXED_XP",
+  rewardXp: 100,
+  rewardPercent: 80,
+  placeRewards: [
+    { place: 1, value: 50 },
+    { place: 2, value: 30 },
+    { place: 3, value: 20 },
+  ],
+  joinFeeXp: 0,
+  maxParticipants: 0,
+});
 
-const resolveLocalizedText = (translations, fallback, language) => {
+const resolveText = (translations, fallback, language) => {
   if (translations && typeof translations === "object") {
-    const direct = String(translations?.[language] ?? "").trim();
+    const direct = String(get(translations, language, "")).trim();
     if (direct) return direct;
 
-    const uzText = String(translations?.uz ?? "").trim();
+    const uzText = String(get(translations, "uz", "")).trim();
     if (uzText) return uzText;
 
-    const firstValue = find(
-      values(translations),
-      (value) => String(value ?? "").trim().length > 0,
+    const firstValue = find(values(translations), (value) =>
+      String(value ?? "").trim(),
     );
     if (firstValue) return String(firstValue).trim();
   }
@@ -69,401 +87,485 @@ const resolveLocalizedText = (translations, fallback, language) => {
   return String(fallback ?? "").trim();
 };
 
-const getChallengeRewardMode = (challenge) =>
-  challenge.rewardMode || challenge.rewardDetails?.mode || "FIXED_XP";
-
-const getChallengeImageUrl = (challenge) =>
-  challenge.image?.url || challenge.imageUrl || "";
-
-const extractPlaceRewards = (challenge) => {
-  const source =
-    challenge.rewardDetails?.placeRewards || challenge.placeRewards;
-  if (!source || typeof source !== "object" || Array.isArray(source)) return {};
-  return source;
-};
-
 const cleanTranslations = (translations = {}) =>
-  fromPairs(
-    lodashFilter(
-      entries(translations).map(([code, value]) => [code, String(value ?? "").trim()]),
-      ([code, value]) => Boolean(code) && Boolean(value),
-    ),
+  Object.fromEntries(
+    Object.entries(translations)
+      .map(([code, value]) => [code, String(value ?? "").trim()])
+      .filter(([code, value]) => Boolean(code) && Boolean(value)),
   );
 
-const parseNonNegativeInt = (value, fieldLabel) => {
-  const parsed = Number(value);
-  if (!Number.isInteger(parsed) || parsed < 0) {
-    throw new Error(`${fieldLabel} noto'g'ri kiritildi`);
-  }
-  return parsed;
+const toInputDate = (value, fallback) => {
+  const date = value ? new Date(value) : null;
+  return date && !Number.isNaN(date.getTime()) ? format(date, "yyyy-MM-dd") : fallback;
 };
 
-const parseRewardPercent = (value) => {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0 || parsed > 100) {
-    throw new Error("Mukofot foizi 0.01 - 100 oralig'ida bo'lishi kerak");
-  }
-  return parsed;
+const toIsoDate = (value, endOfDay = false) => {
+  const date = new Date(`${value}T${endOfDay ? "23:59:59" : "00:00:00"}`);
+  return date.toISOString();
 };
 
-const parsePositiveFloat = (value, fieldLabel) => {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    throw new Error(`${fieldLabel} 0 dan katta bo'lishi kerak`);
-  }
-  return parsed;
+const parsePlaceRewards = (value) => {
+  const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  return [1, 2, 3].map((place) => ({
+    place,
+    value: Number(source[String(place)] ?? source[place]) || [50, 30, 20][place - 1],
+  }));
 };
 
-const parseNullablePositiveInt = (value, fieldLabel) => {
-  if (value === "") return null;
-  const parsed = Number.parseInt(value, 10);
-  if (!Number.isFinite(parsed) || parsed < 1) {
-    throw new Error(`${fieldLabel} 1 yoki undan katta bo'lishi kerak`);
-  }
-  return parsed;
-};
+const buildPlaceRewards = (items) =>
+  items.slice(0, 3).reduce((result, item) => {
+    if (Number(item.value) > 0) result[String(item.place)] = Number(item.value);
+    return result;
+  }, {});
 
-const buildPlaceRewards = (formData) => {
-  const placeValues = [
-    ["1", formData.firstPlaceXp],
-    ["2", formData.secondPlaceXp],
-    ["3", formData.thirdPlaceXp],
-  ];
-
-  const rewards = fromPairs(
-    lodashFilter(placeValues, ([, rawValue]) => String(rawValue).trim() !== "").map(
-      ([place, rawValue]) => [place, parseNonNegativeInt(rawValue, `${place}-o'rin mukofoti`)],
-    ),
-  );
-
-  if (!Object.keys(rewards).length) {
-    throw new Error("Kamida bitta o'rin uchun qiymat kiriting");
+const validateStep = (stepKey, form) => {
+  if (stepKey === "basic" && !form.title.trim()) {
+    throw new Error("Musobaqa nomini kiriting");
   }
 
-  return rewards;
-};
-
-const buildPayload = (formData, currentLanguage) => {
-  const title = formData.title.trim();
-  if (!title) throw new Error("Sarlavha kiritilishi shart");
-
-  const startDate = new Date(formData.startDate);
-  const endDate = new Date(formData.endDate);
-
-  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
-    throw new Error("Sanalar noto'g'ri kiritilgan");
+  if (stepKey === "metric" && (!Number(form.metricTarget) || Number(form.metricTarget) <= 0)) {
+    throw new Error("Maqsad qiymati 0 dan katta bo'lishi kerak");
   }
 
-  if (endDate.getTime() <= startDate.getTime()) {
-    throw new Error("Tugash sanasi boshlanish sanasidan keyin bo'lishi kerak");
-  }
-
-  const joinFeeXp = parseNonNegativeInt(formData.joinFeeXp, "Kirish narxi");
-
-  let rewardXp;
-  let rewardPercent;
-  let placeRewards;
-
-  if (formData.rewardMode === "FIXED_XP") {
-    rewardXp = parseNonNegativeInt(formData.rewardXp, "Mukofot");
-  } else if (formData.rewardMode === "PERCENT_OF_POOL") {
-    rewardPercent = parseRewardPercent(formData.rewardPercent);
-    if (joinFeeXp <= 0) {
-      throw new Error("Foizli mukofotda kirish narxi 0 dan katta bo'lishi kerak");
+  if (stepKey === "duration") {
+    const start = new Date(form.startDate);
+    const end = new Date(form.endDate);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      throw new Error("Sanalarni tekshiring");
     }
-  } else {
-    placeRewards = buildPlaceRewards(formData);
-    if (joinFeeXp > 0) {
-      const totalPercent = sum(values(placeRewards));
-      if (totalPercent <= 0 || totalPercent > 100) {
-        throw new Error(
-          "Kirish narxi bo'lsa o'rinlar foizlari jami 0.01 - 100 oralig'ida bo'lishi kerak",
-        );
-      }
+    if (end.getTime() < start.getTime()) {
+      throw new Error("Tugash sanasi boshlanish sanasidan keyin bo'lishi kerak");
     }
   }
 
-  const titleTranslations = cleanTranslations({
-    ...(formData.translations || {}),
-    [currentLanguage]: title,
-  });
-  const descriptionTranslations = cleanTranslations({
-    ...(formData.descriptionTranslations || {}),
-    ...(formData.description.trim()
-      ? { [currentLanguage]: formData.description.trim() }
-      : {}),
-  });
+  if (stepKey === "reward" && form.rewardMode === "PLACE_XP") {
+    const rewards = form.placeRewards.slice(0, 3).map((item) => Number(item.value) || 0);
+    const total = rewards.reduce((sum, value) => sum + value, 0);
+    if (Number(form.joinFeeXp) <= 0) {
+      throw new Error("O'rin bo'yicha mukofot uchun kirish narxi 0 dan katta bo'lishi kerak");
+    }
+    if (rewards.length !== 3 || rewards.some((value) => value <= 0)) {
+      throw new Error("1, 2 va 3-o'rin foizlari 0 dan katta bo'lishi kerak");
+    }
+    if (total !== 100) {
+      throw new Error("O'rinlar foizi jami 100% bo'lishi kerak");
+    }
+    if (!(rewards[0] > rewards[1] && rewards[1] > rewards[2])) {
+      throw new Error("1-o'rin foizi 2-o'rindan, 2-o'rin esa 3-o'rindan katta bo'lishi kerak");
+    }
+  }
+};
 
-  return {
+const buildPayload = (form, currentLanguage) => {
+  const title = form.title.trim();
+  if (!title) throw new Error("Musobaqa nomini kiriting");
+
+  const payload = {
     title,
-    description: formData.description.trim() || undefined,
-    translations: titleTranslations,
-    descriptionTranslations,
-    type: "GLOBAL",
-    status: formData.status,
-    startDate: startDate.toISOString(),
-    endDate: endDate.toISOString(),
-    joinFeeXp,
-    rewardMode: formData.rewardMode,
-    rewardXp,
-    rewardPercent,
-    placeRewards,
-    metricType: formData.metricType,
-    metricAggregation: formData.metricAggregation,
-    metricTarget: parsePositiveFloat(formData.metricTarget, "Challenge maqsadi"),
-    removeImage: Boolean(formData.removeImage),
-    maxParticipants: parseNullablePositiveInt(formData.maxParticipants, "Maksimal ishtirokchi"),
+    description: form.description.trim() || undefined,
+    translations: cleanTranslations({
+      ...(form.translations || {}),
+      [currentLanguage]: title,
+    }),
+    descriptionTranslations: cleanTranslations({
+      ...(form.descriptionTranslations || {}),
+      ...(form.description.trim() ? { [currentLanguage]: form.description.trim() } : {}),
+    }),
+    status: form.status || "UPCOMING",
+    metricType: form.metricType,
+    metricAggregation: form.metricAggregation,
+    metricTarget: Number(form.metricTarget),
+    startDate: toIsoDate(form.startDate),
+    endDate: toIsoDate(form.endDate, true),
+    rewardMode: form.rewardMode,
+    joinFeeXp: Number(form.joinFeeXp) || 0,
+    maxParticipants: Number(form.maxParticipants) || null,
+    removeImage: Boolean(form.removeImage),
   };
+
+  if (form.uploadedImageId) payload.imageId = form.uploadedImageId;
+
+  if (form.rewardMode === "FIXED_XP") {
+    payload.rewardXp = Number(form.rewardXp) || 0;
+  } else if (form.rewardMode === "PERCENT_OF_POOL") {
+    payload.rewardPercent = Number(form.rewardPercent) || 0;
+  } else {
+    payload.placeRewards = buildPlaceRewards(form.placeRewards);
+  }
+
+  return payload;
 };
 
-const buildFormDataFromChallenge = (challenge, currentLanguage) => {
-  const rewardMode = getChallengeRewardMode(challenge);
-  const placeRewards = extractPlaceRewards(challenge);
-  const challengeTranslations =
-    challenge.translations && typeof challenge.translations === "object"
+const challengeToForm = (challenge, currentLanguage) => {
+  const base = createInitialForm();
+  const rewardDetails = challenge?.rewardDetails || {};
+  const startDate = toInputDate(challenge?.startDate, base.startDate);
+  const endDate = toInputDate(challenge?.endDate, base.endDate);
+  const durationDays = differenceInCalendarDays(new Date(endDate), new Date(startDate));
+  const translations =
+    challenge?.translations && typeof challenge.translations === "object"
       ? challenge.translations
       : {};
-  const challengeDescriptionTranslations =
-    challenge.descriptionTranslations &&
-    typeof challenge.descriptionTranslations === "object"
+  const descriptionTranslations =
+    challenge?.descriptionTranslations && typeof challenge.descriptionTranslations === "object"
       ? challenge.descriptionTranslations
       : {};
 
   return {
-    title: resolveLocalizedText(
-      challengeTranslations,
-      challenge.title ?? "",
-      currentLanguage,
-    ),
-    description: resolveLocalizedText(
-      challengeDescriptionTranslations,
-      challenge.description ?? "",
-      currentLanguage,
-    ),
-    translations: challengeTranslations,
-    descriptionTranslations: challengeDescriptionTranslations,
-    status: challenge.status ?? "UPCOMING",
-    startDate: formatDateTimeInput(challenge.startDate),
-    endDate: formatDateTimeInput(challenge.endDate),
-    joinFeeXp: String(challenge.joinFeeXp ?? 0),
-    rewardMode,
-    rewardXp: String(
-      challenge.rewardDetails?.fixedXp ?? challenge.rewardXp ?? 0,
-    ),
-    rewardPercent: String(
-      challenge.rewardDetails?.percent ?? challenge.rewardPercent ?? "",
-    ),
-    firstPlaceXp: String(placeRewards["1"] ?? ""),
-    secondPlaceXp: String(placeRewards["2"] ?? ""),
-    thirdPlaceXp: String(placeRewards["3"] ?? ""),
-    maxParticipants:
-      challenge.maxParticipants === null ||
-      challenge.maxParticipants === undefined
-        ? ""
-        : String(challenge.maxParticipants),
-    metricType:
-      challenge.metricDetails?.type ?? challenge.metricType ?? "STEPS",
+    ...base,
+    title: resolveText(translations, challenge?.title, currentLanguage),
+    description: resolveText(descriptionTranslations, challenge?.description, currentLanguage),
+    translations,
+    descriptionTranslations,
+    status: challenge?.status || "UPCOMING",
+    imagePreviewUrl: challenge?.image?.url || challenge?.imageUrl || "",
+    imageId: challenge?.imageId || challenge?.image?.id || null,
+    uploadedImageId: null,
+    metricType: challenge?.metricDetails?.type || challenge?.metricType || base.metricType,
     metricAggregation:
-      challenge.metricDetails?.aggregation ??
-      challenge.metricAggregation ??
-      "SUM",
-    metricTarget: String(
-      challenge.metricDetails?.target ?? challenge.metricTarget ?? 10000,
-    ),
-    imageFile: null,
-    imagePreviewUrl: getChallengeImageUrl(challenge),
-    imageId: challenge.imageId ?? challenge.image?.id ?? null,
-    removeImage: false,
+      challenge?.metricDetails?.aggregation ||
+      challenge?.metricAggregation ||
+      base.metricAggregation,
+    metricTarget:
+      Number(challenge?.metricDetails?.target ?? challenge?.metricTarget) || base.metricTarget,
+    startDate,
+    endDate,
+    durationDays: durationDays > 0 ? durationDays : null,
+    rewardMode: challenge?.rewardMode || rewardDetails.mode || base.rewardMode,
+    rewardXp: Number(challenge?.rewardXp ?? rewardDetails.fixedXp) || base.rewardXp,
+    rewardPercent: Number(challenge?.rewardPercent ?? rewardDetails.percent) || base.rewardPercent,
+    placeRewards: parsePlaceRewards(challenge?.placeRewards || rewardDetails.placeRewards),
+    joinFeeXp: Number(challenge?.joinFeeXp) || 0,
+    maxParticipants: Number(challenge?.maxParticipants) || 0,
   };
 };
+
+const ChallengeBasicStep = ({ form, setForm, onImageChange, onImageRemove }) => (
+  <div className="space-y-4">
+    <StepSection
+      title="Asosiy ma'lumotlar"
+      description="Challenge nomi, qisqa tavsifi va ko'rinadigan cover rasmini belgilang."
+    >
+      <ChallengeCoverPicker
+        imagePreviewUrl={form.imagePreviewUrl}
+        onImageChange={onImageChange}
+        onImageRemove={onImageRemove}
+        className="aspect-[5/2] min-h-48"
+      />
+      <div className="space-y-2">
+        <label className="text-sm font-bold">Sarlavha</label>
+        <Input
+          value={form.title}
+          onChange={(event) =>
+            setForm((current) => ({ ...current, title: event.target.value }))
+          }
+          placeholder="Chellenj nomi"
+          className="h-10"
+        />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-bold">Tavsif</label>
+        <Textarea
+          value={form.description}
+          onChange={(event) =>
+            setForm((current) => ({ ...current, description: event.target.value }))
+          }
+          placeholder="Chellenj haqida qisqacha"
+          className="min-h-24 resize-none"
+        />
+      </div>
+    </StepSection>
+    <StepSection
+      title="Admin holati"
+      description="Challenge userlarga qaysi holatda ko'rinishini belgilang."
+    >
+      <ToggleGroup
+        type="single"
+        value={form.status}
+        onValueChange={(value) => {
+          if (value) setForm((current) => ({ ...current, status: value }));
+        }}
+        className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4"
+        spacing={2}
+      >
+        {[
+          ["UPCOMING", "Boshlanmagan"],
+          ["ACTIVE", "Faol"],
+          ["COMPLETED", "Yakunlangan"],
+          ["CANCELLED", "Bekor qilingan"],
+        ].map(([value, label]) => (
+          <ToggleGroupItem
+            key={value}
+            value={value}
+            className="h-auto rounded-md border px-3 py-2 data-[state=on]:border-primary data-[state=on]:bg-primary/10"
+          >
+            <span className="text-xs font-medium">{label}</span>
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
+    </StepSection>
+  </div>
+);
 
 const EditChallengePage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const currentLanguage = useLanguageStore((state) => state.currentLanguage);
-  const challengeQueryKey = React.useMemo(
-    () => getChallengeQueryKey(id),
-    [id],
-  );
+  const currentLanguage = useLanguageStore((state) => state.currentLanguage) || "uz";
+  const [form, setForm] = React.useState(createInitialForm);
+  const [stepIndex, setStepIndex] = React.useState(0);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isImageUploading, setIsImageUploading] = React.useState(false);
+  const uploadedImageIdRef = React.useRef(null);
+  const cleanupOnUnmountRef = React.useRef(true);
+  const challengeQueryKey = React.useMemo(() => getChallengeQueryKey(id), [id]);
 
-  const { data: challengeData, isLoading: isChallengeLoading, error: challengeError } =
-    useGetQuery({
-      url: `/admin/challenges/${id}`,
-      queryProps: {
-        queryKey: challengeQueryKey,
-        enabled: Boolean(id),
-      },
-    });
-  const updateMutation = usePatchQuery({
+  const { data: challengeData, isLoading, error: challengeError } = useGetQuery({
+    url: `/admin/challenges/${id}`,
+    queryProps: {
+      queryKey: challengeQueryKey,
+      enabled: Boolean(id),
+    },
+  });
+
+  const { mutateAsync, isPending } = usePatchQuery({
     queryKey: challengeQueryKey,
     listKey: CHALLENGES_QUERY_KEY,
   });
 
-  const { data: languagesData } = useGetQuery({
-    url: "/admin/languages",
-    queryProps: { queryKey: ["admin", "languages"] },
-  });
-  const languages = get(languagesData, "data.data", []);
-  const activeLanguages = React.useMemo(
-    () => lodashFilter(languages, (language) => language.isActive),
-    [languages],
-  );
-  const currentLanguageMeta = React.useMemo(
-    () => activeLanguages.find((l) => l.code === currentLanguage),
-    [activeLanguages, currentLanguage],
-  );
+  React.useEffect(() => {
+    uploadedImageIdRef.current = form.uploadedImageId;
+  }, [form.uploadedImageId]);
 
-  const challenge = get(challengeData, "data", null);
-
-  const [activeStep, setActiveStep] = React.useState(0);
-  const [formData, setFormData] = React.useState(null);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  React.useEffect(
+    () => () => {
+      if (cleanupOnUnmountRef.current && uploadedImageIdRef.current) {
+        void cleanupChallengeImage(uploadedImageIdRef.current);
+      }
+    },
+    [],
+  );
 
   React.useEffect(() => {
-    if (challenge && !formData) {
-      setFormData(buildFormDataFromChallenge(challenge, currentLanguage));
+    const challenge = get(challengeData, "data");
+    if (challenge) {
+      setForm(challengeToForm(challenge, currentLanguage));
     }
-  }, [challenge, currentLanguage, formData]);
+  }, [challengeData, currentLanguage]);
 
-  const handleOpenChange = (open) => {
-    if (!open) navigate("/admin/challenges/list");
-  };
+  const closeDrawer = React.useCallback(() => {
+    navigate("/admin/challenges/list");
+  }, [navigate]);
+
+  const handleImageChange = React.useCallback(async (file) => {
+    if (!file.type?.startsWith("image/")) {
+      toast.error("Faqat rasm yuklash mumkin");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Rasm 5MB dan kichik bo'lishi kerak");
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    let previousUploadedImageId = null;
+
+    setForm((current) => {
+      if (current.imagePreviewUrl?.startsWith("blob:")) URL.revokeObjectURL(current.imagePreviewUrl);
+      previousUploadedImageId = current.uploadedImageId;
+      return {
+        ...current,
+        imagePreviewUrl: previewUrl,
+        uploadedImageId: null,
+        removeImage: false,
+      };
+    });
+
+    setIsImageUploading(true);
+    try {
+      const uploadedImage = await uploadChallengeImage(file);
+      const uploadedImageId = uploadedImage?.id ?? null;
+      const uploadedImageUrl = uploadedImage?.url || previewUrl;
+
+      setForm((current) => {
+        if (current.imagePreviewUrl?.startsWith("blob:")) {
+          URL.revokeObjectURL(current.imagePreviewUrl);
+        }
+        return {
+          ...current,
+          imagePreviewUrl: uploadedImageUrl,
+          uploadedImageId,
+          removeImage: false,
+        };
+      });
+
+      if (previousUploadedImageId) await cleanupChallengeImage(previousUploadedImageId);
+      toast.success("Rasm yuklandi");
+    } catch (error) {
+      if (previewUrl.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
+      setForm((current) => ({
+        ...current,
+        imagePreviewUrl: current.imageId ? current.imagePreviewUrl : "",
+        uploadedImageId: null,
+        removeImage: false,
+      }));
+      toast.error(resolveChallengeApiErrorMessage(error, "Rasmni yuklab bo'lmadi"));
+    } finally {
+      setIsImageUploading(false);
+    }
+  }, []);
+
+  const handleImageRemove = React.useCallback(() => {
+    const currentUploadedImageId = uploadedImageIdRef.current;
+    setForm((current) => {
+      if (current.imagePreviewUrl?.startsWith("blob:")) URL.revokeObjectURL(current.imagePreviewUrl);
+      return {
+        ...current,
+        imagePreviewUrl: "",
+        uploadedImageId: null,
+        removeImage: Boolean(current.imageId),
+      };
+    });
+    if (currentUploadedImageId) void cleanupChallengeImage(currentUploadedImageId);
+  }, []);
 
   const handleBack = () => {
-    setActiveStep((prev) => Math.max(0, prev - 1));
+    if (stepIndex === 0) {
+      closeDrawer();
+      return;
+    }
+    setStepIndex((current) => current - 1);
   };
 
-  const handleSubmit = React.useCallback(async () => {
-    if (!formData) return;
-
-    let payload;
-    let uploadedImageId = null;
-
+  const handleNext = async () => {
+    const stepKey = STEPS[stepIndex].key;
     try {
-      payload = buildPayload(formData, currentLanguage);
+      validateStep(stepKey, form);
     } catch (error) {
-      toast.error(error?.message || "Ma'lumotlarni tekshiring");
+      toast.error(error.message);
+      return;
+    }
+
+    if (stepIndex < STEPS.length - 1) {
+      setStepIndex((current) => current + 1);
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const requestPayload = { ...payload };
-
-      if (formData.imageFile) {
-        uploadedImageId = await uploadChallengeImage(formData.imageFile);
-        requestPayload.imageId = uploadedImageId;
-      }
-
-      await updateMutation.mutateAsync({
+      await mutateAsync({
         url: `/admin/challenges/${id}`,
-        attributes: requestPayload,
+        attributes: buildPayload(form, currentLanguage),
       });
-
-      toast.success("Musobaqa muvaffaqiyatli yangilandi");
-      navigate("/admin/challenges/list");
+      toast.success("Musobaqa yangilandi");
+      cleanupOnUnmountRef.current = false;
+      uploadedImageIdRef.current = null;
+      closeDrawer();
     } catch (error) {
-      toast.error(
-        resolveChallengeApiErrorMessage(error, "Saqlashda xatolik"),
-      );
-      await cleanupChallengeImage(uploadedImageId);
+      if (form.uploadedImageId) {
+        await cleanupChallengeImage(form.uploadedImageId);
+        uploadedImageIdRef.current = null;
+        setForm((current) => ({
+          ...current,
+          uploadedImageId: null,
+          imagePreviewUrl: current.imageId ? current.imagePreviewUrl : "",
+        }));
+      }
+      toast.error(resolveChallengeApiErrorMessage(error, "Musobaqani saqlab bo'lmadi"));
     } finally {
       setIsSubmitting(false);
     }
-  }, [currentLanguage, formData, id, navigate, updateMutation]);
+  };
 
-  const stepKey = STEP_KEYS[activeStep];
-  const headerContent = get(STEP_CONTENT, stepKey);
-
-  if (!isChallengeLoading && challengeError) {
+  const renderStep = () => {
+    const stepKey = STEPS[stepIndex].key;
+    if (stepKey === "metric") return <StepMetric form={form} setForm={setForm} />;
+    if (stepKey === "duration") return <StepDuration form={form} setForm={setForm} />;
+    if (stepKey === "reward") return <StepReward form={form} setForm={setForm} />;
     return (
-      <Drawer open onOpenChange={handleOpenChange} direction="bottom">
-        <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-sm outline-none">
-          <DrawerHeader className="px-6 py-5">
-            <DrawerTitle className="text-center">Xatolik</DrawerTitle>
-            <DrawerDescription className="text-center">
-              {resolveChallengeApiErrorMessage(
-                challengeError,
-                "Musobaqa ma'lumotlarini yuklab bo'lmadi",
-              )}
-            </DrawerDescription>
-          </DrawerHeader>
-        </DrawerContent>
-      </Drawer>
+      <ChallengeBasicStep
+        form={form}
+        setForm={setForm}
+        onImageChange={handleImageChange}
+        onImageRemove={handleImageRemove}
+      />
     );
-  }
+  };
 
-  if (isChallengeLoading || !formData) {
-    return (
-      <Drawer open onOpenChange={handleOpenChange} direction="bottom">
-        <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-sm outline-none">
-          <DrawerHeader className="px-6 py-5">
-            <DrawerTitle className="text-center">Yuklanmoqda...</DrawerTitle>
-            <DrawerDescription className="text-center">
-              Musobaqa ma'lumotlari yuklanmoqda
-            </DrawerDescription>
-          </DrawerHeader>
-          <DrawerBody className="flex items-center justify-center py-12">
-            <LoaderCircleIcon className="size-8 animate-spin text-muted-foreground" />
-          </DrawerBody>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
+  const isSaving = isSubmitting || isImageUploading || isPending;
 
   return (
-    <Drawer open onOpenChange={handleOpenChange} direction="bottom">
-      <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-sm outline-none">
-        <DrawerHeader className="relative px-6 py-5">
-          {activeStep > 0 && (
-            <div className="absolute left-4 top-4 z-20">
-              <Button
-                type="button"
-                variant="secondary"
-                size="icon"
-                className="size-8 rounded-full"
-                onClick={handleBack}
-              >
-                <ArrowLeftIcon className="size-4" />
-              </Button>
+    <Drawer
+      open
+      direction="bottom"
+      shouldScaleBackground={false}
+      onOpenChange={(open) => {
+        if (!open) closeDrawer();
+      }}
+    >
+      <DrawerContent className="overflow-hidden data-[vaul-drawer-direction=bottom]:max-w-2xl">
+        <DrawerHeader className="shrink-0 border-b text-left">
+          <div className="flex items-start gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="shrink-0"
+              onClick={handleBack}
+              disabled={isSaving}
+            >
+              <ArrowLeftIcon className="size-4" />
+            </Button>
+            <div className="min-w-0 flex-1">
+              <DrawerTitle>Musobaqani tahrirlash</DrawerTitle>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {STEPS[stepIndex].label} · {stepIndex + 1}/{STEPS.length}
+              </p>
+              <div className="mt-3 flex gap-1.5">
+                {STEPS.map((step, index) => (
+                  <span
+                    key={step.key}
+                    className={cn(
+                      "h-1.5 flex-1 rounded-full",
+                      index <= stepIndex ? "bg-primary" : "bg-muted",
+                    )}
+                  />
+                ))}
+              </div>
             </div>
-          )}
-          <DrawerTitle className="text-center">{get(headerContent, "title")}</DrawerTitle>
-          <DrawerDescription className="text-center">
-            {get(headerContent, "description")}
-          </DrawerDescription>
+          </div>
         </DrawerHeader>
 
-        {activeStep === 0 && (
-          <BasicStep
-            formData={formData}
-            setFormData={setFormData}
-            currentLanguage={currentLanguage}
-            currentLanguageMeta={currentLanguageMeta}
-            onNext={() => setActiveStep(1)}
-          />
-        )}
-        {activeStep === 1 && (
-          <SettingsStep
-            formData={formData}
-            setFormData={setFormData}
-            onNext={() => setActiveStep(2)}
-            onBack={handleBack}
-          />
-        )}
-        {activeStep === 2 && (
-          <TranslationsStep
-            formData={formData}
-            setFormData={setFormData}
-            activeLanguages={activeLanguages}
-            currentLanguage={currentLanguage}
-            currentLanguageMeta={currentLanguageMeta}
-            onSubmit={handleSubmit}
-            onBack={handleBack}
-            isSubmitting={isSubmitting}
-            submitLabel="Saqlash"
-          />
-        )}
+        <DrawerBody className="no-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto py-5">
+          {challengeError ? (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+              {resolveChallengeApiErrorMessage(challengeError, "Musobaqa ma'lumotlarini yuklab bo'lmadi")}
+            </div>
+          ) : isLoading ? (
+            <div className="flex min-h-72 items-center justify-center">
+              <LoaderCircleIcon className="size-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            renderStep()
+          )}
+        </DrawerBody>
+
+        {!challengeError ? (
+          <DrawerFooter className="shrink-0 border-t sm:flex-row">
+            <Button type="button" variant="outline" className="sm:flex-1" onClick={handleBack} disabled={isSaving}>
+              Orqaga
+            </Button>
+            <Button type="button" className="sm:flex-1" onClick={handleNext} disabled={isSaving || isLoading}>
+              {isSaving ? <LoaderCircleIcon className="mr-2 size-4 animate-spin" /> : null}
+              {isImageUploading ? "Rasm yuklanmoqda..." : stepIndex === STEPS.length - 1 ? (
+                <>
+                  <CheckCircle2Icon className="mr-2 size-4" />
+                  Saqlash
+                </>
+              ) : "Keyingi"}
+            </Button>
+          </DrawerFooter>
+        ) : null}
       </DrawerContent>
     </Drawer>
   );

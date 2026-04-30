@@ -1,20 +1,14 @@
 import React from "react";
 import { get, isArray, join } from "lodash";
-import { GiftIcon, Loader2Icon } from "lucide-react";
+import { CheckIcon, GiftIcon, Loader2Icon } from "lucide-react";
 import { toast } from "sonner";
 import { useGetQuery, usePostQuery } from "@/hooks/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import FormDrawerShell from "./form-drawer-shell.jsx";
 
 const formatPrice = (price) => {
@@ -33,14 +27,15 @@ const GiftPremiumDrawer = ({ user, open, onOpenChange }) => {
   const [note, setNote] = React.useState("");
 
   const { data: plansResponse, isLoading: isLoadingPlans } = useGetQuery({
-    url: "/admin/premium/plans/giftable",
+    url: "/admin/subscription-plans",
     queryProps: {
       queryKey: ["admin", "giftable-plans"],
       enabled: open,
     },
   });
 
-  const plans = get(plansResponse, "data", []);
+  const rawPlans = get(plansResponse, "data", []);
+  const plans = isArray(rawPlans) ? rawPlans : [];
 
   const giftMutation = usePostQuery({
     queryKey: ["admin-users"],
@@ -51,7 +46,6 @@ const GiftPremiumDrawer = ({ user, open, onOpenChange }) => {
     [plans, selectedSlug],
   );
 
-  // Reset form when drawer opens/closes
   React.useEffect(() => {
     if (open) {
       setSelectedSlug("");
@@ -129,44 +123,56 @@ const GiftPremiumDrawer = ({ user, open, onOpenChange }) => {
         </>
       }
     >
-      {/* Plan select */}
+      {/* Plan selection */}
       <div className="space-y-2">
-        <Label htmlFor="gift-plan">Plan</Label>
+        <Label>Plan</Label>
         {isLoadingPlans ? (
           <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
             <Loader2Icon className="size-4 animate-spin" />
             Planlar yuklanmoqda...
           </div>
         ) : (
-          <Select value={selectedSlug} onValueChange={setSelectedSlug}>
-            <SelectTrigger id="gift-plan">
-              <SelectValue placeholder="Planni tanlang" />
-            </SelectTrigger>
-            <SelectContent>
-              {plans.map((plan) => (
-                <SelectItem key={plan.slug} value={plan.slug}>
-                  <div className="flex items-center gap-2">
-                    <span>{plan.name}</span>
-                    <Badge
-                      variant="outline"
-                      className={get(typeBadgeMap, [plan.type, "className"], "")}
-                    >
-                      {get(typeBadgeMap, [plan.type, "label"], plan.type)}
-                    </Badge>
-                    <span className="text-muted-foreground">
-                      {formatPrice(plan.price)}
-                    </span>
+          <div className="grid gap-2">
+            {plans.map((plan) => {
+              const isSelected = selectedSlug === plan.slug;
+              return (
+                <button
+                  key={plan.slug}
+                  type="button"
+                  onClick={() => setSelectedSlug(plan.slug)}
+                  className={cn(
+                    "relative flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors",
+                    isSelected
+                      ? "border-primary bg-primary/5 ring-1 ring-primary"
+                      : "border-border hover:bg-muted/50",
+                  )}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm">{plan.name}</span>
+                      <Badge
+                        variant="outline"
+                        className={get(typeBadgeMap, [plan.type, "className"], "")}
+                      >
+                        {get(typeBadgeMap, [plan.type, "label"], plan.type)}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {formatPrice(plan.price)} · {plan.durationDays} kun
+                    </p>
                   </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                  {isSelected ? (
+                    <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                      <CheckIcon className="size-3" />
+                    </div>
+                  ) : (
+                    <div className="size-5 shrink-0 rounded-full border-2 border-muted-foreground/25" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
         )}
-        {selectedPlan?.durationDays ? (
-          <p className="text-xs text-muted-foreground">
-            Standart muddat: {selectedPlan.durationDays} kun
-          </p>
-        ) : null}
       </div>
 
       {/* Days override */}

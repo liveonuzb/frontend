@@ -11,7 +11,7 @@ export const Filter = ({
         fields={filterFields}
         filters={activeFilters}
         onChange={handleFiltersChange}
-        allowMultiple={false}
+        className="flex-1"
       />
     </div>
   );

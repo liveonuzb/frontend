@@ -1,12 +1,13 @@
 import React from "react";
 import { ImageIcon, Trash2Icon, UploadIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const ChallengeCoverPicker = ({
-  imageFile,
   imagePreviewUrl,
   onImageChange,
   onImageRemove,
+  className,
 }) => {
   const inputRef = React.useRef(null);
 
@@ -14,7 +15,7 @@ const ChallengeCoverPicker = ({
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm font-bold">Rasm</span>
-        {imageFile ? (
+        {imagePreviewUrl ? (
           <Button type="button" variant="ghost" size="sm" onClick={onImageRemove}>
             <Trash2Icon className="mr-2 size-4" />
             O'chirish
@@ -25,7 +26,10 @@ const ChallengeCoverPicker = ({
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="group relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg border border-dashed bg-muted/30 text-left transition hover:border-primary/50 hover:bg-primary/5"
+        className={cn(
+          "group relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg border border-dashed bg-muted/30 text-left transition hover:border-primary/50 hover:bg-primary/5",
+          className,
+        )}
       >
         {imagePreviewUrl ? (
           <img

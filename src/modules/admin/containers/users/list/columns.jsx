@@ -147,6 +147,37 @@ export const useColumns = ({
         },
       },
       {
+        id: "premium",
+        header: "Premium",
+        meta: { skeleton: adminListSkeletons.badge, cellClassName: "min-w-[140px]" },
+        cell: ({ row }) => {
+          const premium = row.original.premium;
+          const status = get(premium, "status", "free");
+          if (status === "free") {
+            return (
+              <span className="text-xs text-muted-foreground">Tekin</span>
+            );
+          }
+          const config = premiumStatusConfig[status];
+          return (
+            <div className="flex flex-col gap-0.5">
+              <Badge
+                variant="outline"
+                className={get(config, "className")}
+              >
+                {get(config, "label", status)}
+              </Badge>
+              {get(premium, "planName") ? (
+                <span className="text-[11px] text-muted-foreground">
+                  {premium.planName}
+                  {premium.endDate ? ` · ${premium.endDate}` : ""}
+                </span>
+              ) : null}
+            </div>
+          );
+        },
+      },
+      {
         accessorKey: "joinedAt",
         header: ({ column }) => (
           <DataGridColumnHeader column={column} title="Qo'shilgan" />

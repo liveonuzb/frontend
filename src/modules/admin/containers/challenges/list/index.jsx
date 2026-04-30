@@ -45,7 +45,12 @@ const Index = () => {
   const navigate = useNavigate();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
-  const { data: challengesData, isLoading, isFetching, refetch } = useGetQuery({
+  const {
+    data: challengesData,
+    isLoading,
+    isFetching,
+    refetch,
+  } = useGetQuery({
     url: "/admin/challenges",
     queryProps: { queryKey: CHALLENGES_QUERY_KEY },
   });
@@ -112,19 +117,19 @@ const Index = () => {
   }, [challenges, currentLanguage, deferredSearch, statusFilter, typeFilter]);
 
   const openCreateDrawer = React.useCallback(() => {
-    navigate("create");
+    navigate("/admin/challenges/list/create");
   }, [navigate]);
 
   const openEditDrawer = React.useCallback(
     (challenge) => {
-      navigate(`edit/${challenge.id}`);
+      navigate(`/admin/challenges/list/edit/${challenge.id}`);
     },
     [navigate],
   );
 
   const openTranslationsDrawer = React.useCallback(
     (challenge) => {
-      navigate(`edit/${challenge.id}`);
+      navigate(`/admin/challenges/list/translate/${challenge.id}`);
     },
     [navigate],
   );
@@ -165,8 +170,15 @@ const Index = () => {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Musobaqalar</h1>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching}>
-            <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => refetch()}
+            disabled={isFetching}
+          >
+            <RotateCcwIcon
+              className={cn("size-4", isFetching && "animate-spin")}
+            />
           </Button>
           <Button onClick={openCreateDrawer} className="gap-1.5">
             <PlusIcon className="size-4" />

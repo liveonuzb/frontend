@@ -27,13 +27,14 @@ export const uploadChallengeImage = async (imageFile) => {
     headers: { "Content-Type": "multipart/form-data" },
   });
 
-  const uploadedImageId = uploadResponse.data?.id ?? null;
+  const uploadedImage = uploadResponse.data?.data ?? uploadResponse.data ?? {};
+  const uploadedImageId = uploadedImage?.id ?? null;
 
   if (!uploadedImageId) {
     throw new Error("Rasm yuklangandan keyin imageId olinmadi");
   }
 
-  return uploadedImageId;
+  return uploadedImage;
 };
 
 export const cleanupChallengeImage = async (imageId) => {
