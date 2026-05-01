@@ -58,7 +58,7 @@ const Index = () => {
     url: "/admin/languages",
     queryProps: { queryKey: ["admin", "languages"] },
   });
-  const challenges = get(challengesData, "data.items", []);
+  const challenges = get(challengesData, "data.data", []);
   const languages = get(languagesData, "data.data", []);
   const activeLanguages = React.useMemo(
     () => lodashFilter(languages, (language) => language.isActive),

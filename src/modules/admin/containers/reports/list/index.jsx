@@ -14,6 +14,7 @@ import { useBreadcrumbStore } from "@/store";
 import {
   DownloadIcon,
   FileSpreadsheetIcon,
+  ClipboardCheckIcon,
   ReceiptTextIcon,
   UsersIcon,
   UtensilsIcon,
@@ -54,9 +55,17 @@ const reports = [
     id: "missing-translations",
     title: "Tarjimasi yetishmayotganlar",
     description:
-      "Food va category ichidagi yetishmayotgan tarjimalarni alohida hisobotda oling.",
+      "Admin kataloglardagi yetishmayotgan tarjimalarni alohida hisobotda oling.",
     icon: LanguagesIcon,
     capability: "content.manage",
+  },
+  {
+    id: "content-quality",
+    title: "Content Quality",
+    description:
+      "Tarjima, rasm, nutrition va budget muammolarini bitta Excel reportda oling.",
+    icon: ClipboardCheckIcon,
+    capability: "content.read",
   },
 ];
 
@@ -117,6 +126,11 @@ const Index = () => {
     [getDownloadPayload],
   );
 
+  const exportContentQualityReport = React.useCallback(
+    async () => getDownloadPayload("/admin/content-quality/export"),
+    [getDownloadPayload],
+  );
+
   const exportRevenueReport = React.useCallback(
     async (params = {}) =>
       getDownloadPayload("/admin/reports/revenue/export", params),
@@ -147,6 +161,8 @@ const Index = () => {
         downloadBlob(await exportFoodsReport());
       } else if (id === "missing-translations") {
         downloadBlob(await exportMissingTranslationsReport());
+      } else if (id === "content-quality") {
+        downloadBlob(await exportContentQualityReport());
       }
 
       toast.success("Hisobot yuklab olindi");
@@ -162,6 +178,7 @@ const Index = () => {
     }
   }, [
     exportFoodsReport,
+    exportContentQualityReport,
     exportMissingTranslationsReport,
     exportUsersReport,
     hasCapability,

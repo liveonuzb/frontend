@@ -170,8 +170,8 @@ const PlatformBotPage = () => {
   );
   const webhookInfo = get(statusPayload, "webhookInfo", null);
   const stats = get(statusPayload, "stats", {});
-  const users = get(usersPayload, "items", []);
-  const totalUsers = get(usersPayload, "total", 0);
+  const users = Array.isArray(usersPayload) ? usersPayload : [];
+  const totalUsers = get(usersQuery.data, "data.meta.total", 0);
   const hasPreviousPage = offset > 0;
   const hasNextPage = offset + PAGE_SIZE < totalUsers;
 

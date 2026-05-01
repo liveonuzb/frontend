@@ -24,6 +24,8 @@ import {
   BotIcon,
   HeartPulseIcon,
   WalletCardsIcon,
+  ClipboardCheckIcon,
+  TargetIcon,
 } from "lucide-react";
 import {
   Sidebar,
@@ -79,6 +81,11 @@ const mainNav = [
 
 const contentNav = [
   {
+    to: "/admin/content-quality",
+    label: "Content Quality",
+    icon: ClipboardCheckIcon,
+  },
+  {
     to: "/admin/food-categories/list",
     label: "Ovqat Kategoriyalari",
     icon: TagIcon,
@@ -97,6 +104,11 @@ const contentNav = [
     to: "/admin/health-constraints/list",
     label: "Health Constraints",
     icon: HeartPulseIcon,
+  },
+  {
+    to: "/admin/user-goals/list",
+    label: "Maqsadlar",
+    icon: TargetIcon,
   },
 
   { to: "/admin/workouts/list", label: "Mashg'ulotlar", icon: DumbbellIcon },
@@ -155,6 +167,13 @@ const systemNav = [
     to: "/admin/reports",
     label: "Hisobotlar",
     icon: FileSpreadsheetIcon,
+    roles: [
+      "SUPER_ADMIN",
+      "CONTENT_MANAGER",
+      "SUPPORT",
+      "FINANCE",
+      "READONLY_ADMIN",
+    ],
   },
   {
     to: "/admin/audit-logs",

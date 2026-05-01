@@ -4,6 +4,7 @@ import { Navigate, Route, Routes } from "react-router";
 import Layout from "@/modules/admin/layout/index.jsx";
 import PageLoader from "@/components/page-loader/index.jsx";
 import ErrorBoundary from "@/components/error-boundary/index.jsx";
+import AdminCapabilityRoute from "@/modules/admin/components/admin-capability-route.jsx";
 
 const DashboardPage = lazy(
   () => import("@/modules/admin/pages/dashboard/index.jsx"),
@@ -50,6 +51,9 @@ const WithdrawalsPage = lazy(
 // Old SubscriptionsPage replaced by redirect to premium subscriptions tab
 const PremiumPage = lazy(() => import("@/modules/admin/pages/premium/index.jsx"));
 const ReportsPage = lazy(() => import("@/modules/admin/pages/reports/index.jsx"));
+const ContentQualityPage = lazy(
+  () => import("@/modules/admin/pages/content-quality/index.jsx"),
+);
 const ActivityFeedPage = lazy(
   () => import("@/modules/admin/pages/activity-feed/index.jsx"),
 );
@@ -77,7 +81,20 @@ const CoachSpecializationsPage = lazy(
 const HealthConstraintsPage = lazy(
   () => import("@/modules/admin/pages/health-constraints/index.jsx"),
 );
+const UserGoalsPage = lazy(
+  () => import("@/modules/admin/pages/user-goals/index.jsx"),
+);
 const NotFound = lazy(() => import("@/pages/not-found/index.jsx"));
+
+const renderAdminRoute = (Component, guardProps = { capability: "admin.read" }) => (
+  <AdminCapabilityRoute {...guardProps}>
+    <Suspense fallback={<PageLoader />}>
+      <ErrorBoundary>
+        <Component />
+      </ErrorBoundary>
+    </Suspense>
+  </AdminCapabilityRoute>
+);
 
 const Index = () => {
   return (
@@ -86,163 +103,67 @@ const Index = () => {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route
           path="dashboard"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <DashboardPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(DashboardPage)}
         />
         <Route
           path="users/*"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <UsersPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(UsersPage, { capability: "support.read" })}
         />
         <Route
           path="coaches"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <CoachesPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(CoachesPage, { capability: "support.read" })}
         />
         <Route
           path="foods/*"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <FoodsPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(FoodsPage, { capability: "content.read" })}
         />
         <Route
           path="locations"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <LocationsPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(LocationsPage, { capability: "content.read" })}
         />
         <Route
           path="food-categories/*"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <FoodCategoriesPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(FoodCategoriesPage, { capability: "content.read" })}
         />
         <Route
           path="ingredients/*"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <IngredientsPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(IngredientsPage, { capability: "content.read" })}
         />
         <Route
           path="cuisines/*"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <CuisinesPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(CuisinesPage, { capability: "content.read" })}
         />
         <Route
           path="workouts/*"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <WorkoutsPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(WorkoutsPage, { capability: "content.read" })}
         />
         <Route
           path="workout-plans"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <WorkoutPlansPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(WorkoutPlansPage, { capability: "content.read" })}
         />
         <Route
           path="workout-categories/*"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <WorkoutCategoriesPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(WorkoutCategoriesPage, { capability: "content.read" })}
         />
         <Route
           path="workout-muscles"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <WorkoutMusclesPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(WorkoutMusclesPage, { capability: "content.read" })}
         />
         <Route
           path="workout-body-parts"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <WorkoutBodyPartsPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(WorkoutBodyPartsPage, { capability: "content.read" })}
         />
         <Route
           path="equipments/*"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <EquipmentsPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(EquipmentsPage, { capability: "content.read" })}
         />
         <Route
           path="revenue"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <RevenuePage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(RevenuePage, { capability: "finance.read" })}
         />
         <Route
           path="withdrawals"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <WithdrawalsPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(WithdrawalsPage, { capability: "finance.read" })}
         />
         <Route
           path="subscriptions"
@@ -250,113 +171,57 @@ const Index = () => {
         />
         <Route
           path="premium/*"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <PremiumPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(PremiumPage, { capability: "growth.read" })}
         />
         <Route
           path="reports"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <ReportsPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(ReportsPage)}
+        />
+        <Route
+          path="content-quality"
+          element={renderAdminRoute(ContentQualityPage, { capability: "content.read" })}
         />
         <Route
           path="activity-feed"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <ActivityFeedPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(ActivityFeedPage)}
         />
         <Route
           path="audit-logs"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <AuditLogsPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(AuditLogsPage, {
+            roles: ["SUPER_ADMIN", "READONLY_ADMIN"],
+          })}
         />
         <Route
           path="languages/*"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <LanguagesPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(LanguagesPage, { capability: "content.read" })}
         />
         <Route
           path="achievements/*"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <AchievementsPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(AchievementsPage, { capability: "content.read" })}
         />
         <Route
           path="settings"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <SettingsPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(SettingsPage, { capability: "settings.manage" })}
         />
         <Route
           path="platform-bot"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <PlatformBotPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(PlatformBotPage, { capability: "growth.read" })}
         />
         <Route
           path="challenges/*"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <ChallengesPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(ChallengesPage, { capability: "content.read" })}
         />
         <Route
           path="coach-specializations/*"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <CoachSpecializationsPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(CoachSpecializationsPage, { capability: "content.read" })}
         />
         <Route
           path="health-constraints/*"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <HealthConstraintsPage />
-              </ErrorBoundary>
-            </Suspense>
-          }
+          element={renderAdminRoute(HealthConstraintsPage, { capability: "content.read" })}
+        />
+        <Route
+          path="user-goals/*"
+          element={renderAdminRoute(UserGoalsPage, { capability: "content.read" })}
         />
         <Route
           path="*"

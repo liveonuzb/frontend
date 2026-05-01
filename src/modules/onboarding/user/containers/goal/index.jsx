@@ -1,8 +1,9 @@
-import { map } from "lodash";
+import { filter, get, includes, isArray, map } from "lodash";
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
+import { useGetQuery } from "@/hooks/api";
 import { cn } from "@/lib/utils";
 import { useOnboardingStore } from "@/store";
 import { ChevronRight } from "lucide-react";
@@ -11,60 +12,103 @@ import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-q
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import useOnboardingBase from "@/hooks/app/use-onboarding-base";
 
+const DEFAULT_GOALS = [
+  {
+    key: "lose",
+    name: "Lose weight",
+    description: "Burn fat and get leaner with a steady calorie deficit.",
+  },
+  {
+    key: "maintain",
+    name: "Maintain weight",
+    description: "Keep your current shape while building consistent habits.",
+  },
+  {
+    key: "gain",
+    name: "Gain weight",
+    description: "Add quality mass and strength with a stronger intake.",
+  },
+];
+
+const goalToneByKey = (base) => ({
+  lose: {
+    image: `${base}/lose.webp`,
+    accent: "from-rose-500/18 via-orange-400/10 to-transparent",
+    border: "border-rose-500/20",
+    pageTint: "from-rose-500/12 via-orange-400/8 to-transparent",
+    dotTone: "bg-gradient-to-br from-rose-500 to-orange-500",
+    buttonTone:
+      "from-rose-500 to-orange-500 hover:from-rose-500/90 hover:to-orange-500/90 text-white shadow-[0_18px_44px_rgba(244,63,94,0.24)]",
+  },
+  maintain: {
+    image: `${base}/maintain.webp`,
+    accent: "from-emerald-500/18 via-teal-400/10 to-transparent",
+    border: "border-emerald-500/20",
+    pageTint: "from-emerald-500/12 via-teal-400/8 to-transparent",
+    dotTone: "bg-gradient-to-br from-emerald-500 to-teal-500",
+    buttonTone:
+      "from-emerald-500 to-teal-500 hover:from-emerald-500/90 hover:to-teal-500/90 text-white shadow-[0_18px_44px_rgba(16,185,129,0.24)]",
+  },
+  gain: {
+    image: `${base}/gain.webp`,
+    accent: "from-sky-500/18 via-indigo-400/10 to-transparent",
+    border: "border-sky-500/20",
+    pageTint: "from-sky-500/12 via-indigo-400/8 to-transparent",
+    dotTone: "bg-gradient-to-br from-sky-500 to-indigo-500",
+    buttonTone:
+      "from-sky-500 to-indigo-500 hover:from-sky-500/90 hover:to-indigo-500/90 text-white shadow-[0_18px_44px_rgba(59,130,246,0.24)]",
+  },
+});
+
 const Index = () => {
   const navigate = useNavigate();
-  const { goal, setField } = useOnboardingStore();
+  const { goal, goals: selectedGoals = [], setFields } = useOnboardingStore();
   const base = useOnboardingBase();
 
   useOnboardingAutoSave("user", "goal");
 
-  const goals = [
-    {
-      value: "lose",
-      label: "Lose",
-      title: "Lean down",
-      description: "Burn fat and get leaner with a steady calorie deficit.",
-      image: `${base}/lose.webp`,
-      accent: "from-rose-500/18 via-orange-400/10 to-transparent",
-      border: "border-rose-500/20",
-      pageTint: "from-rose-500/12 via-orange-400/8 to-transparent",
-      dotTone: "bg-gradient-to-br from-rose-500 to-orange-500",
-      buttonTone:
-        "from-rose-500 to-orange-500 hover:from-rose-500/90 hover:to-orange-500/90 text-white shadow-[0_18px_44px_rgba(244,63,94,0.24)]",
-    },
-    {
-      value: "maintain",
-      label: "Maintain",
-      title: "Hold your rhythm",
-      description: "Keep your current shape while building consistent habits.",
-      image: `${base}/maintain.webp`,
-      accent: "from-emerald-500/18 via-teal-400/10 to-transparent",
-      border: "border-emerald-500/20",
-      pageTint: "from-emerald-500/12 via-teal-400/8 to-transparent",
-      dotTone: "bg-gradient-to-br from-emerald-500 to-teal-500",
-      buttonTone:
-        "from-emerald-500 to-teal-500 hover:from-emerald-500/90 hover:to-teal-500/90 text-white shadow-[0_18px_44px_rgba(16,185,129,0.24)]",
-    },
-    {
-      value: "gain",
-      label: "Gain",
-      title: "Build up",
-      description: "Add quality mass and strength with a stronger intake.",
-      image: `${base}/gain.webp`,
-      accent: "from-sky-500/18 via-indigo-400/10 to-transparent",
-      border: "border-sky-500/20",
-      pageTint: "from-sky-500/12 via-indigo-400/8 to-transparent",
-      dotTone: "bg-gradient-to-br from-sky-500 to-indigo-500",
-      buttonTone:
-        "from-sky-500 to-indigo-500 hover:from-sky-500/90 hover:to-indigo-500/90 text-white shadow-[0_18px_44px_rgba(59,130,246,0.24)]",
-    },
-  ];
+  const { data } = useGetQuery({
+    url: "/user/onboarding/goals",
+    queryProps: { queryKey: ["user", "onboarding", "goals"] },
+  });
+  const apiGoals = get(data, "data.data", get(data, "data", []));
+  const toneMap = React.useMemo(() => goalToneByKey(base), [base]);
+  const goals = React.useMemo(() => {
+    const source =
+      isArray(apiGoals) && apiGoals.length ? apiGoals : DEFAULT_GOALS;
+    return source.map((item, index) => {
+      const tone =
+        toneMap[item.key] ??
+        toneMap[["lose", "maintain", "gain"][index % 3]] ??
+        toneMap.maintain;
+      return {
+        value: item.key,
+        label: item.name,
+        title: item.name,
+        description: item.description || "",
+        calculationMode: item.calculationMode || item.key,
+        ...tone,
+        image: item.imageUrl || tone.image,
+      };
+    });
+  }, [apiGoals, toneMap]);
 
-  const selectedGoal = goals.find((item) => item.value === goal) ?? goals[1];
-  const hasSelection = Boolean(goal);
+  const selectedGoal =
+    goals.find((item) => includes(selectedGoals, item.value)) ??
+    goals.find((item) => item.calculationMode === goal) ??
+    goals[1] ??
+    goals[0];
+  const hasSelection = selectedGoals.length > 0 || Boolean(goal);
 
   const handleSelect = (value) => {
-    setField("goal", value);
+    const nextGoals = includes(selectedGoals, value)
+      ? filter(selectedGoals, (item) => item !== value)
+      : [...selectedGoals, value];
+    const primary = goals.find((item) => item.value === nextGoals[0]);
+    setFields({
+      goals: nextGoals,
+      goal: primary?.calculationMode || nextGoals[0] || "",
+    });
   };
 
   const handleContinue = () => {
@@ -183,7 +227,7 @@ const Index = () => {
           }}
         >
           {map(goals, (item) => {
-            const isActive = selectedGoal.value === item.value;
+            const isActive = includes(selectedGoals, item.value);
 
             return (
               <motion.button

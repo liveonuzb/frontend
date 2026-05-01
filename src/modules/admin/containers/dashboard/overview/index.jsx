@@ -139,6 +139,9 @@ const Index = () => {
     canManageSupport,
     canManageSettings,
     canReadSupport,
+    canReadContent,
+    canReadFinance,
+    canManageContent,
   } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const { data: dashboardData, isLoading } = useGetQuery({
@@ -222,6 +225,8 @@ const Index = () => {
 
   const canReadAudit =
     roles.includes("SUPER_ADMIN") || roles.includes("READONLY_ADMIN");
+  const canUseReports =
+    canReadSupport || canReadContent || canReadFinance || canManageContent;
   const quickActionItems = [
     ...(canManageSupport
       ? [
@@ -233,12 +238,16 @@ const Index = () => {
           },
         ]
       : []),
-    {
-      label: "Hisobot export",
-      icon: FileDownIcon,
-      path: "/admin/reports",
-      variant: "outline",
-    },
+    ...(canUseReports
+      ? [
+          {
+            label: "Hisobot export",
+            icon: FileDownIcon,
+            path: "/admin/reports",
+            variant: "outline",
+          },
+        ]
+      : []),
     ...(canManageSettings
       ? [
           {

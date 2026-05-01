@@ -5,7 +5,7 @@ import EditPage from "./edit/index.jsx";
 import ListPage from "./list/index.jsx";
 import TranslationPage from "./translation/index.jsx";
 
-const CuisinesIndex = () => (
+const UserGoalsIndex = () => (
   <Routes>
     <Route index element={<Navigate to="list" replace />} />
     <Route path="list" element={<ListPage />}>
@@ -16,4 +16,4 @@ const CuisinesIndex = () => (
   </Routes>
 );
 
-export default CuisinesIndex;
+export default UserGoalsIndex;
