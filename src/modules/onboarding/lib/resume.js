@@ -38,7 +38,7 @@ export const getNextUserOnboardingPath = (state) => {
     return "current-weight";
   }
 
-  if (!hasValue(state.goal)) {
+  if (!hasValue(state.goals) && !hasValue(state.goal)) {
     return "goal";
   }
 

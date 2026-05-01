@@ -115,6 +115,11 @@ const OnboardingLayoutInner = () => {
         unit: userOnboarding?.currentWeightUnit ?? "kg",
       },
       goal: userOnboarding?.goal ?? "",
+      goals: Array.isArray(userOnboarding?.goals)
+        ? userOnboarding.goals
+        : userOnboarding?.goal
+          ? [userOnboarding.goal]
+          : [],
       targetWeight: {
         value:
           userOnboarding?.targetWeightValue !== null &&
