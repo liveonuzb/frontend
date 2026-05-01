@@ -1,4 +1,4 @@
-import { filter, get, includes, isArray, map } from "lodash";
+import { get, includes, isArray, map } from "lodash";
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";
@@ -62,7 +62,7 @@ const goalToneByKey = (base) => ({
 
 const Index = () => {
   const navigate = useNavigate();
-  const { goal, goals: selectedGoals = [], setFields } = useOnboardingStore();
+  const { goal, weightGoal, setFields } = useOnboardingStore();
   const base = useOnboardingBase();
 
   useOnboardingAutoSave("user", "goal");
@@ -76,44 +76,46 @@ const Index = () => {
   const goals = React.useMemo(() => {
     const source =
       isArray(apiGoals) && apiGoals.length ? apiGoals : DEFAULT_GOALS;
-    return source.map((item, index) => {
-      const tone =
-        toneMap[item.key] ??
-        toneMap[["lose", "maintain", "gain"][index % 3]] ??
-        toneMap.maintain;
-      return {
-        value: item.key,
-        label: item.name,
-        title: item.name,
-        description: item.description || "",
-        calculationMode: item.calculationMode || item.key,
-        ...tone,
-        image: item.imageUrl || tone.image,
-      };
-    });
+    const weightGoals = source.filter(
+      (item) => (item.goalType || "weight") === "weight",
+    );
+    return (weightGoals.length ? weightGoals : DEFAULT_GOALS).map(
+      (item, index) => {
+        const tone =
+          toneMap[item.key] ??
+          toneMap[["lose", "maintain", "gain"][index % 3]] ??
+          toneMap.maintain;
+        return {
+          value: item.key,
+          label: item.name,
+          title: item.name,
+          description: item.description || "",
+          calculationMode: item.calculationMode || item.key,
+          ...tone,
+          image: item.imageUrl || tone.image,
+        };
+      },
+    );
   }, [apiGoals, toneMap]);
 
   const selectedGoal =
-    goals.find((item) => includes(selectedGoals, item.value)) ??
+    goals.find((item) => item.value === weightGoal) ??
     goals.find((item) => item.calculationMode === goal) ??
     goals[1] ??
     goals[0];
-  const hasSelection = selectedGoals.length > 0 || Boolean(goal);
+  const hasSelection = Boolean(weightGoal || goal);
 
   const handleSelect = (value) => {
-    const nextGoals = includes(selectedGoals, value)
-      ? filter(selectedGoals, (item) => item !== value)
-      : [...selectedGoals, value];
-    const primary = goals.find((item) => item.value === nextGoals[0]);
+    const primary = goals.find((item) => item.value === value);
     setFields({
-      goals: nextGoals,
-      goal: primary?.calculationMode || nextGoals[0] || "",
+      weightGoal: value,
+      goal: primary?.calculationMode || value,
     });
   };
 
   const handleContinue = () => {
     if (hasSelection) {
-      navigate("/user/onboarding/target-weight");
+      navigate("/user/onboarding/other-goals");
     }
   };
 
@@ -227,7 +229,9 @@ const Index = () => {
           }}
         >
           {map(goals, (item) => {
-            const isActive = includes(selectedGoals, item.value);
+            const isActive =
+              item.value === weightGoal ||
+              (!weightGoal && item.calculationMode === goal);
 
             return (
               <motion.button

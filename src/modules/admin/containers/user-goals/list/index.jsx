@@ -31,6 +31,7 @@ import {
   ITEMS_PER_PAGE,
   QUERY_KEY,
   CALCULATION_MODE_OPTIONS,
+  GOAL_TYPE_OPTIONS,
   resolveLabel,
   SELECT_OPERATORS,
   SORT_DIRECTIONS,
@@ -68,6 +69,14 @@ const ListPage = () => {
     "translationsOp",
     parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
   );
+  const [goalType, setGoalType] = useQueryState(
+    "goalType",
+    parseAsStringEnum(["all", "weight", "other"]).withDefault("all"),
+  );
+  const [goalTypeOp, setGoalTypeOp] = useQueryState(
+    "goalTypeOp",
+    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+  );
   const [pageQuery, setPageQuery] = useQueryState(
     "page",
     parseAsString.withDefault("1"),
@@ -103,6 +112,8 @@ const ListPage = () => {
     statusOp === "is" &&
     translations === "all" &&
     translationsOp === "is" &&
+    goalType === "all" &&
+    goalTypeOp === "is" &&
     sortBy === "orderKey" &&
     sortDir === "asc" &&
     currentPage === 1;
@@ -126,6 +137,8 @@ const ListPage = () => {
       ...(translations !== "all" || translationsOp !== "is"
         ? { translationsOp }
         : {}),
+      ...(goalType !== "all" ? { goalType } : {}),
+      ...(goalType !== "all" || goalTypeOp !== "is" ? { goalTypeOp } : {}),
     }),
     [
       currentPage,
@@ -138,6 +151,8 @@ const ListPage = () => {
       statusOp,
       translations,
       translationsOp,
+      goalType,
+      goalTypeOp,
     ],
   );
   const { data, isLoading, isFetching, refetch } = useGetQuery({
@@ -210,6 +225,18 @@ const ListPage = () => {
         ),
       },
       {
+        accessorKey: "goalType",
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Turi" />
+        ),
+        enableSorting: true,
+        size: 140,
+        meta: { skeleton: adminListSkeletons.text },
+        cell: (info) =>
+          GOAL_TYPE_OPTIONS.find((option) => option.value === info.getValue())
+            ?.label || info.getValue(),
+      },
+      {
         accessorKey: "calculationMode",
         header: ({ column }) => (
           <DataGridColumnHeader column={column} title="Hisoblash" />
@@ -218,9 +245,11 @@ const ListPage = () => {
         size: 130,
         meta: { skeleton: adminListSkeletons.text },
         cell: (info) =>
-          CALCULATION_MODE_OPTIONS.find(
-            (option) => option.value === info.getValue(),
-          )?.label || info.getValue(),
+          info.row.original.goalType === "weight"
+            ? CALCULATION_MODE_OPTIONS.find(
+                (option) => option.value === info.getValue(),
+              )?.label || info.getValue()
+            : "-",
       },
       {
         id: "translations",
@@ -379,6 +408,13 @@ const ListPage = () => {
         options: STATUS_OPTIONS,
       },
       {
+        label: "Turi",
+        key: "goalType",
+        type: "select",
+        defaultOperator: "is",
+        options: [{ value: "all", label: "Barchasi" }, ...GOAL_TYPE_OPTIONS],
+      },
+      {
         label: "Tarjimalar",
         key: "translations",
         type: "select",
@@ -410,6 +446,14 @@ const ListPage = () => {
         values: status !== "all" ? [status] : [],
       });
     }
+    if (goalType !== "all" || goalTypeOp !== "is") {
+      list.push({
+        id: "goalType",
+        field: "goalType",
+        operator: goalTypeOp,
+        values: goalType !== "all" ? [goalType] : [],
+      });
+    }
     if (translations !== "all" || translationsOp !== "is") {
       list.push({
         id: "translations",
@@ -419,7 +463,16 @@ const ListPage = () => {
       });
     }
     return list;
-  }, [name, nameOp, status, statusOp, translations, translationsOp]);
+  }, [
+    goalType,
+    goalTypeOp,
+    name,
+    nameOp,
+    status,
+    statusOp,
+    translations,
+    translationsOp,
+  ]);
   const handleFiltersChange = React.useCallback(
     (next) => {
       const byField = (field) => next.find((item) => item.field === field);
@@ -428,6 +481,8 @@ const ListPage = () => {
         void setNameOp(byField("name")?.operator ?? "contains");
         void setStatus(byField("status")?.values?.[0] ?? "all");
         void setStatusOp(byField("status")?.operator ?? "is");
+        void setGoalType(byField("goalType")?.values?.[0] ?? "all");
+        void setGoalTypeOp(byField("goalType")?.operator ?? "is");
         void setTranslations(byField("translations")?.values?.[0] ?? "all");
         void setTranslationsOp(byField("translations")?.operator ?? "is");
         void setPageQuery("1");
@@ -439,6 +494,8 @@ const ListPage = () => {
       setPageQuery,
       setStatus,
       setStatusOp,
+      setGoalType,
+      setGoalTypeOp,
       setTranslations,
       setTranslationsOp,
     ],

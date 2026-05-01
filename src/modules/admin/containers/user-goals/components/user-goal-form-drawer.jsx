@@ -30,6 +30,7 @@ import { useLanguageStore } from "@/store";
 
 import {
   CALCULATION_MODE_OPTIONS,
+  GOAL_TYPE_OPTIONS,
   getPayload,
   QUERY_KEY,
   resolveLabel,
@@ -56,10 +57,12 @@ const UserGoalFormDrawer = ({ mode }) => {
       name: "",
       description: "",
       imageUrl: "",
+      goalType: "other",
       calculationMode: "maintain",
       key: "",
     },
   });
+  const goalType = form.watch("goalType");
   const postMutation = usePostQuery({ queryKey: QUERY_KEY });
   const patchMutation = usePatchQuery({ queryKey: QUERY_KEY });
   const mutation = isEdit ? patchMutation : postMutation;
@@ -74,6 +77,7 @@ const UserGoalFormDrawer = ({ mode }) => {
         currentLanguage,
       ),
       imageUrl: item.imageUrl || "",
+      goalType: item.goalType || "other",
       calculationMode: item.calculationMode || "maintain",
       key: item.key || "",
     });
@@ -86,6 +90,10 @@ const UserGoalFormDrawer = ({ mode }) => {
       url: isEdit ? `/admin/user-goals/${id}` : "/admin/user-goals",
       attributes: {
         ...values,
+        calculationMode:
+          values.goalType === "weight"
+            ? values.calculationMode || "maintain"
+            : "maintain",
         translations: {
           ...(item?.translations ?? {}),
           [currentLanguage]: values.name,
@@ -169,16 +177,16 @@ const UserGoalFormDrawer = ({ mode }) => {
                   />
                   <FormField
                     control={form.control}
-                    name="calculationMode"
+                    name="goalType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Hisoblash rejimi</FormLabel>
+                        <FormLabel>Maqsad turi</FormLabel>
                         <FormControl>
                           <OptionDrawerPicker
                             value={field.value}
                             onChange={field.onChange}
-                            options={CALCULATION_MODE_OPTIONS}
-                            title="Hisoblash rejimi"
+                            options={GOAL_TYPE_OPTIONS}
+                            title="Maqsad turi"
                             placeholder="Tanlang"
                           />
                         </FormControl>
@@ -186,6 +194,27 @@ const UserGoalFormDrawer = ({ mode }) => {
                       </FormItem>
                     )}
                   />
+                  {goalType === "weight" ? (
+                    <FormField
+                      control={form.control}
+                      name="calculationMode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Hisoblash rejimi</FormLabel>
+                          <FormControl>
+                            <OptionDrawerPicker
+                              value={field.value}
+                              onChange={field.onChange}
+                              options={CALCULATION_MODE_OPTIONS}
+                              title="Hisoblash rejimi"
+                              placeholder="Tanlang"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ) : null}
                   <FormField
                     control={form.control}
                     name="key"

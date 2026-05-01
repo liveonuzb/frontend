@@ -10,6 +10,7 @@ const createInitialState = () => ({
   height: { value: "", unit: "cm" },
   currentWeight: { value: "", unit: "kg" },
   goal: "",
+  weightGoal: "",
   goals: [],
   targetWeight: { value: "", unit: "kg" },
   weeklyPace: 0.5,

@@ -17,6 +17,7 @@ function isUserStoreEmpty(state) {
     !state.height?.value &&
     !state.currentWeight?.value &&
     !state.goal &&
+    !state.weightGoal &&
     (!isArray(state.goals) || state.goals.length === 0) &&
     !state.targetWeight?.value &&
     !state.activityLevel &&
@@ -95,6 +96,7 @@ function mergeUserDraft(serverData, setFields) {
     };
   }
   if (serverData.goal) fields.goal = serverData.goal;
+  if (serverData.weightGoal) fields.weightGoal = serverData.weightGoal;
   if (isArray(serverData.goals)) fields.goals = serverData.goals;
   if (serverData.targetWeight) {
     fields.targetWeight = {

@@ -8,6 +8,7 @@ export const ONBOARDING_STEPS = [
   "height",
   "current-weight",
   "goal",
+  "other-goals",
   "target-weight",
   "weekly-pace",
   "activity-level",

@@ -9,6 +9,7 @@ import AgePage from "@/modules/onboarding/user/pages/age/index.jsx";
 import HeightPage from "@/modules/onboarding/user/pages/height/index.jsx";
 import CurrentWeightPage from "@/modules/onboarding/user/pages/current-weight/index.jsx";
 import GoalPage from "@/modules/onboarding/user/pages/goal/index.jsx";
+import OtherGoalsPage from "@/modules/onboarding/user/pages/other-goals/index.jsx";
 import TargetWeightPage from "@/modules/onboarding/user/pages/target-weight/index.jsx";
 import WeeklyPacePage from "@/modules/onboarding/user/pages/weekly-pace/index.jsx";
 import ActivityLevelPage from "@/modules/onboarding/user/pages/activity-level/index.jsx";
@@ -28,6 +29,7 @@ const UserOnboardingModule = () => {
         <Route path="height" element={<HeightPage />} />
         <Route path="current-weight" element={<CurrentWeightPage />} />
         <Route path="goal" element={<GoalPage />} />
+        <Route path="other-goals" element={<OtherGoalsPage />} />
         <Route path="target-weight" element={<TargetWeightPage />} />
         <Route path="weekly-pace" element={<WeeklyPacePage />} />
         <Route path="activity-level" element={<ActivityLevelPage />} />

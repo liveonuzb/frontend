@@ -16,6 +16,7 @@ export const SELECT_OPERATORS = ["is", "is_not", "empty", "not_empty"];
 export const SORT_FIELDS = [
   "orderKey",
   "name",
+  "goalType",
   "calculationMode",
   "createdAt",
   "isActive",
@@ -34,13 +35,29 @@ export const CALCULATION_MODE_OPTIONS = [
   { value: "gain", label: "Vazn olish" },
 ];
 
-export const userGoalSchema = z.object({
-  name: z.string().trim().min(1, "Nom kiriting"),
-  description: z.string().optional(),
-  imageUrl: z.string().optional(),
-  calculationMode: z.enum(["lose", "maintain", "gain"]),
-  key: z.string().optional(),
-});
+export const GOAL_TYPE_OPTIONS = [
+  { value: "weight", label: "Vazn bo'yicha" },
+  { value: "other", label: "Boshqa" },
+];
+
+export const userGoalSchema = z
+  .object({
+    name: z.string().trim().min(1, "Nom kiriting"),
+    description: z.string().optional(),
+    imageUrl: z.string().optional(),
+    goalType: z.enum(["weight", "other"]),
+    calculationMode: z.enum(["lose", "maintain", "gain"]).optional(),
+    key: z.string().optional(),
+  })
+  .superRefine((values, ctx) => {
+    if (values.goalType === "weight" && !values.calculationMode) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["calculationMode"],
+        message: "Hisoblash rejimini tanlang",
+      });
+    }
+  });
 
 export const translateSchema = z.object({}).catchall(
   z.object({
