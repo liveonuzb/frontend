@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, Outlet } from "react-router";
+import { useNavigate, Outlet, useMatch } from "react-router";
 import {
   chain,
   filter as lodashFilter,
@@ -21,13 +21,13 @@ import {
   usePatchQuery,
   useDeleteQuery,
 } from "@/hooks/api";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -42,11 +42,10 @@ import {
   DataGridTableDndRows,
   DataGridTable,
 } from "@/components/reui/data-grid";
+import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
   DownloadIcon,
   GlobeIcon,
   PlusIcon,
@@ -57,12 +56,20 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Spinner } from "@/components/ui/spinner.jsx";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
 import { useWorkoutFilters } from "./use-filters.js";
 import { DeleteAlert, HardDeleteAlert } from "./delete-alert.jsx";
 
-const ITEMS_PER_PAGE = 10;
+const getMutationErrorMessage = (error, fallback) => {
+  const response = error?.response?.data;
+  const message = response?.message;
+  const dependencySummary = response?.dependencySummary;
+  const baseMessage = isArray(message) ? message.join(", ") : message;
+
+  return [baseMessage || fallback, dependencySummary].filter(Boolean).join(" ");
+};
 
 const resolveLabel = (translations, fallback, language) => {
   if (isObject(translations)) {
@@ -82,8 +89,13 @@ const resolveLabel = (translations, fallback, language) => {
 const Index = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { isSuperAdmin } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
+  const canHardDelete = isSuperAdmin;
+  const translateMatch = useMatch("/admin/workouts/list/translate/:id");
+  const translatingWorkoutId = get(translateMatch, "params.id");
+  const translationsDrawerOpen = Boolean(translatingWorkoutId);
 
   const { data: categoriesData } = useGetQuery({
     url: "/admin/workout-categories",
@@ -106,11 +118,13 @@ const Index = () => {
     duplicatesFilter,
     lifecycleFilter,
     currentPage,
+    pageSize,
     sortBy,
     sortDir,
     sorting,
     queryParams,
     setPageQuery,
+    setPageSizeQuery,
     filterFields,
     activeFilters,
     handleFiltersChange,
@@ -121,7 +135,7 @@ const Index = () => {
     const p = {};
     Object.entries(queryParams).forEach(([key, value]) => {
       if (value === "" || value === null || value === undefined || value === "all") return;
-      if (key === "pageSize") { p.limit = value; }
+      if (key === "pageSize") { p.pageSize = value; }
       else if (key === "q" || key === "search") { p.query = value; }
       else if (key === "sortDir") { p.sortOrder = value; }
       else if (key === "sortBy") { p.sortBy = value; }
@@ -151,6 +165,18 @@ const Index = () => {
   const workouts = get(workoutsData, "data.data", []);
   const meta = get(workoutsData, "data.meta", {});
 
+  const {
+    data: translatingWorkoutData,
+    isLoading: isTranslatingLoading,
+  } = useGetQuery({
+    url: `/admin/workouts/${translatingWorkoutId || ""}`,
+    queryProps: {
+      queryKey: [...WORKOUTS_QUERY_KEY, "detail", translatingWorkoutId],
+      enabled: Boolean(translatingWorkoutId),
+    },
+  });
+  const translatingWorkout = get(translatingWorkoutData, "data.data");
+
   const updateMutation = usePatchQuery({
     queryKey: WORKOUTS_QUERY_KEY,
   });
@@ -178,7 +204,7 @@ const Index = () => {
   const assignCategoriesMutation = usePatchQuery({
     queryKey: WORKOUTS_QUERY_KEY,
   });
-  const hardDeleteMutation = useDeleteQuery({
+  const hardDeleteMutation = usePatchQuery({
     queryKey: WORKOUTS_QUERY_KEY,
   });
 
@@ -217,11 +243,8 @@ const Index = () => {
     [activeLanguages, currentLanguage],
   );
 
-  const [translationsDrawerOpen, setTranslationsDrawerOpen] =
-    React.useState(false);
   const [bulkCategoryDrawerOpen, setBulkCategoryDrawerOpen] =
     React.useState(false);
-  const [translatingWorkout, setTranslatingWorkout] = React.useState(null);
   const [rowSelection, setRowSelection] = React.useState({});
   const [translationForm, setTranslationForm] = React.useState({});
   const [bulkCategoryIds, setBulkCategoryIds] = React.useState([]);
@@ -269,6 +292,7 @@ const Index = () => {
     sortBy,
     sortDir,
     translationsFilter,
+    pageSize,
     statusFilter,
   ]);
 
@@ -296,8 +320,24 @@ const Index = () => {
     navigate(`edit/${workout.id}`);
   };
 
+  React.useEffect(() => {
+    if (!translatingWorkout) return;
+
+    setTranslationForm(
+      Object.fromEntries(
+        lodashMap(activeLanguages, (language) => [
+          language.code,
+          resolveLabel(
+            translatingWorkout?.translations,
+            translatingWorkout?.name ?? "",
+            language.code,
+          ),
+        ]),
+      ),
+    );
+  }, [activeLanguages, translatingWorkout]);
+
   const openTranslationsDrawer = (workout) => {
-    setTranslatingWorkout(workout);
     setTranslationForm(
       Object.fromEntries(
         lodashMap(activeLanguages, (language) => [
@@ -310,7 +350,7 @@ const Index = () => {
         ]),
       ),
     );
-    setTranslationsDrawerOpen(true);
+    navigate(`translate/${workout.id}`);
   };
 
   const handleTranslationSave = async () => {
@@ -339,9 +379,8 @@ const Index = () => {
         attributes: payload,
       });
       toast.success("Tarjimalar yangilandi");
-      setTranslationsDrawerOpen(false);
-      setTranslatingWorkout(null);
       setTranslationForm({});
+      navigate("/admin/workouts/list");
     } catch (error) {
       const message = error?.response?.data?.message;
       toast.error(
@@ -423,7 +462,7 @@ const Index = () => {
   const handleToggleStatus = async (workout) => {
     try {
       await statusMutation.mutateAsync({
-        url: `/admin/workouts/${workout.id}/status`,
+        url: `/admin/workouts/${workout.id}`,
         attributes: { isActive: !workout.isActive },
       });
       toast.success(
@@ -464,7 +503,7 @@ const Index = () => {
       await bulkStatusMutation.mutateAsync({
         url: "/admin/workouts/status",
         attributes: {
-          workoutIds: selectedWorkoutIds,
+          ids: selectedWorkoutIds,
           isActive: nextIsActive,
         },
       });
@@ -489,7 +528,7 @@ const Index = () => {
     try {
       await bulkRestoreMutation.mutateAsync({
         url: "/admin/workouts/restore",
-        attributes: { workoutIds: selectedWorkoutIds },
+        attributes: { ids: selectedWorkoutIds },
       });
       toast.success(
         `${selectedWorkoutIds.length} ta mashg'ulot trashdan tiklandi`,
@@ -510,7 +549,7 @@ const Index = () => {
     try {
       await trashMutation.mutateAsync({
         url: "/admin/workouts/trash",
-        attributes: { workoutIds: selectedWorkoutIds },
+        attributes: { ids: selectedWorkoutIds },
       });
       toast.success(
         `${selectedWorkoutIds.length} ta mashg'ulot trashga yuborildi`,
@@ -533,9 +572,9 @@ const Index = () => {
     }
     try {
       await assignCategoriesMutation.mutateAsync({
-        url: "/admin/workouts/assign-categories",
+        url: "/admin/workouts/categories",
         attributes: {
-          workoutIds: selectedWorkoutIds,
+          ids: selectedWorkoutIds,
           categoryIds: bulkCategoryIds,
         },
       });
@@ -556,11 +595,11 @@ const Index = () => {
   };
 
   const handleHardDelete = async () => {
-    if (!hardDeleteTarget?.ids?.length) return;
+    if (!canHardDelete || !hardDeleteTarget?.ids?.length) return;
     try {
       await hardDeleteMutation.mutateAsync({
         url: "/admin/workouts/hard-delete",
-        attributes: { data: { workoutIds: hardDeleteTarget.ids } },
+        attributes: { ids: hardDeleteTarget.ids },
       });
       toast.success(
         hardDeleteTarget.ids.length === 1
@@ -570,17 +609,18 @@ const Index = () => {
       setHardDeleteTarget(null);
       setRowSelection({});
     } catch (error) {
-      const message = error?.response?.data?.message;
       toast.error(
-        isArray(message)
-          ? message.join(", ")
-          : message || "Mashg'ulotlarni butunlay o'chirib bo'lmadi",
+        getMutationErrorMessage(
+          error,
+          "Mashg'ulotlarni butunlay o'chirib bo'lmadi",
+        ),
       );
     }
   };
 
   const columns = useColumns({
     activeLanguages,
+    canHardDelete,
     canReorder,
     categoryById,
     currentLanguage,
@@ -597,14 +637,28 @@ const Index = () => {
     data: workouts,
     columns,
     manualSorting: true,
+    manualPagination: true,
+    pageCount: get(meta, "totalPages", 1),
     enableRowSelection: true,
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => row.id.toString(),
     onRowSelectionChange: setRowSelection,
     onSortingChange: handleSortingChange,
+    onPaginationChange: (updater) => {
+      const prev = { pageIndex: currentPage - 1, pageSize };
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      const nextPage = String(get(next, "pageIndex", 0) + 1);
+      const nextPageSize = String(get(next, "pageSize", pageSize));
+
+      void setPageQuery(nextPage);
+      if (nextPageSize !== String(pageSize)) {
+        void setPageSizeQuery(nextPageSize);
+      }
+    },
     state: {
       rowSelection,
       sorting,
+      pagination: { pageIndex: currentPage - 1, pageSize },
     },
   });
 
@@ -713,13 +767,14 @@ const Index = () => {
         />
       </div>
 
-      <DataGridContainer>
-        <ScrollArea className="w-full">
-          <DataGrid
-            table={table}
-            isLoading={isLoading}
-            recordCount={workouts.length}
-          >
+      <DataGrid
+        table={table}
+        isLoading={isLoading}
+        recordCount={get(meta, "total", 0)}
+      >
+        <div className="flex w-full flex-col gap-2.5">
+          <DataGridContainer>
+            <ScrollArea className="w-full">
             {canReorder ? (
               <DataGridTableDndRows
                 table={table}
@@ -729,52 +784,21 @@ const Index = () => {
             ) : (
               <DataGridTable />
             )}
-          </DataGrid>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
-        {isLoading ? (
-          <div className="px-4 pb-4 text-sm text-muted-foreground">
-            Yuklanmoqda...
-          </div>
-        ) : null}
-        {!canReorder ? (
-          <div className="px-4 pb-4 text-xs text-muted-foreground">
-            Tartiblash faqat filterlarsiz va standart saralashda ishlaydi.
-          </div>
-        ) : null}
-      </DataGridContainer>
-
-      {get(meta, "total", 0) > ITEMS_PER_PAGE ? (
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">
-            {get(meta, "total", 0)} ta mashg'ulotdan{" "}
-            {(currentPage - 1) * ITEMS_PER_PAGE + 1}-
-            {Math.min(currentPage * ITEMS_PER_PAGE, get(meta, "total", 0))}{" "}
-            ko'rsatilmoqda
-          </p>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon-sm"
-              disabled={currentPage === 1}
-              onClick={() => void setPageQuery(String(currentPage - 1))}
-            >
-              <ChevronLeftIcon className="size-4" />
-            </Button>
-            <span className="text-sm font-medium px-2">
-              {currentPage} / {get(meta, "totalPages", 1)}
-            </span>
-            <Button
-              variant="outline"
-              size="icon-sm"
-              disabled={currentPage === get(meta, "totalPages", 1)}
-              onClick={() => void setPageQuery(String(currentPage + 1))}
-            >
-              <ChevronRightIcon className="size-4" />
-            </Button>
-          </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          </DataGridContainer>
+          {!canReorder ? (
+            <div className="px-2 text-xs text-muted-foreground">
+              Tartiblash faqat filterlarsiz va standart saralashda ishlaydi.
+            </div>
+          ) : null}
+          <DataGridPagination
+            info="{from} - {to} / {count} ta mashg'ulot"
+            rowsPerPageLabel="Sahifada:"
+            sizes={[10, 25, 50, 100]}
+          />
         </div>
-      ) : null}
+      </DataGrid>
 
       {selectedWorkoutCount > 0 ? (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-4">
@@ -793,20 +817,22 @@ const Index = () => {
                   <RotateCcwIcon className="size-4" />
                   Tiklash
                 </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5 text-destructive"
-                  disabled={isHardDeleting}
-                  onClick={() =>
-                    setHardDeleteTarget({
-                      ids: selectedWorkoutIds,
-                    })
-                  }
-                >
-                  <Trash2Icon className="size-4" />
-                  Butunlay o'chirish
-                </Button>
+                {canHardDelete ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 text-destructive"
+                    disabled={isHardDeleting}
+                    onClick={() =>
+                      setHardDeleteTarget({
+                        ids: selectedWorkoutIds,
+                      })
+                    }
+                  >
+                    <Trash2Icon className="size-4" />
+                    Butunlay o'chirish
+                  </Button>
+                ) : null}
               </>
             ) : lifecycleFilter === "active" ? (
               <>
@@ -872,10 +898,9 @@ const Index = () => {
       <Drawer
         open={translationsDrawerOpen}
         onOpenChange={(open) => {
-          setTranslationsDrawerOpen(open);
           if (!open) {
-            setTranslatingWorkout(null);
             setTranslationForm({});
+            navigate("/admin/workouts/list");
           }
         }}
         direction="bottom"
@@ -893,66 +918,72 @@ const Index = () => {
               </DrawerDescription>
             </DrawerHeader>
 
-            <div className="px-6 py-4 space-y-5">
-              <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-sm">
-                <p className="font-medium">
-                  {translatingWorkout
-                    ? resolveLabel(
-                        translatingWorkout.translations,
-                        translatingWorkout.name,
-                        currentLanguage,
-                      )
-                    : "Mashg'ulot"}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Joriy til:{" "}
-                  {currentLanguageMeta?.flag
-                    ? `${currentLanguageMeta.flag} `
-                    : ""}
-                  {currentLanguageMeta?.name ?? currentLanguage.toUpperCase()}.
-                  Shu til qiymati saqlansa, asosiy nom ham yangilanadi.
-                </p>
+            {isTranslatingLoading ? (
+              <div className="flex min-h-64 items-center justify-center px-6 py-10">
+                <Spinner className="size-8 text-muted-foreground" />
               </div>
-
-              {activeLanguages.length > 0 ? (
-                <div className="space-y-4">
-                  {lodashMap(activeLanguages, (language) => (
-                    <div key={language.id} className="space-y-2">
-                      <Label className="text-xs font-medium flex items-center gap-2">
-                        <span>{language.flag}</span>
-                        {language.name}
-                        {language.code === currentLanguage ? (
-                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-                            Asosiy
-                          </span>
-                        ) : null}
-                      </Label>
-                      <Input
-                        value={translationForm[language.code] || ""}
-                        onChange={(event) =>
-                          setTranslationForm((current) => ({
-                            ...current,
-                            [language.code]: event.target.value,
-                          }))
-                        }
-                        placeholder={`${language.name} tilidagi tarjima`}
-                      />
-                    </div>
-                  ))}
+            ) : (
+              <div className="px-6 py-4 space-y-5">
+                <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-sm">
+                  <p className="font-medium">
+                    {translatingWorkout
+                      ? resolveLabel(
+                          translatingWorkout.translations,
+                          translatingWorkout.name,
+                          currentLanguage,
+                        )
+                      : "Mashg'ulot"}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Joriy til:{" "}
+                    {currentLanguageMeta?.flag
+                      ? `${currentLanguageMeta.flag} `
+                      : ""}
+                    {currentLanguageMeta?.name ??
+                      currentLanguage.toUpperCase()}
+                    . Shu til qiymati saqlansa, asosiy nom ham yangilanadi.
+                  </p>
                 </div>
-              ) : null}
-            </div>
+
+                {activeLanguages.length > 0 ? (
+                  <div className="space-y-4">
+                    {lodashMap(activeLanguages, (language) => (
+                      <div key={language.id} className="space-y-2">
+                        <Label className="text-xs font-medium flex items-center gap-2">
+                          <span>{language.flag}</span>
+                          {language.name}
+                          {language.code === currentLanguage ? (
+                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                              Asosiy
+                            </span>
+                          ) : null}
+                        </Label>
+                        <Input
+                          value={translationForm[language.code] || ""}
+                          onChange={(event) =>
+                            setTranslationForm((current) => ({
+                              ...current,
+                              [language.code]: event.target.value,
+                            }))
+                          }
+                          placeholder={`${language.name} tilidagi tarjima`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            )}
 
             <DrawerFooter className="border-t bg-muted/5 gap-2 px-6 py-4">
               <Button
                 onClick={handleTranslationSave}
-                disabled={isUpdating || !activeLanguages.length}
+                disabled={
+                  isUpdating || isTranslatingLoading || !activeLanguages.length
+                }
               >
                 Tarjimalarni saqlash
               </Button>
-              <DrawerClose asChild>
-                <Button variant="outline">Bekor qilish</Button>
-              </DrawerClose>
             </DrawerFooter>
           </div>
         </DrawerContent>
@@ -1029,9 +1060,6 @@ const Index = () => {
               >
                 Kategoriyalarni biriktirish
               </Button>
-              <DrawerClose asChild>
-                <Button variant="outline">Bekor qilish</Button>
-              </DrawerClose>
             </DrawerFooter>
           </div>
         </DrawerContent>

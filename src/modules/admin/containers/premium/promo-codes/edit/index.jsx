@@ -5,9 +5,9 @@ import { toast } from "sonner";
 import { PencilIcon } from "lucide-react";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner.jsx";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -118,8 +118,6 @@ const EditPromoCode = () => {
     if (!open) navigate("/admin/premium/promo-codes");
   };
 
-  if (isLoading) return null;
-
   return (
     <Drawer open onOpenChange={handleOpenChange} direction="bottom">
       <DrawerContent className="mx-auto max-h-[90vh] data-[vaul-drawer-direction=bottom]:md:max-w-lg">
@@ -134,17 +132,20 @@ const EditPromoCode = () => {
             </DrawerDescription>
           </DrawerHeader>
 
+          {isLoading ? (
+            <div className="flex min-h-72 items-center justify-center px-4 py-10">
+              <Spinner className="size-8 text-muted-foreground" />
+            </div>
+          ) : (
           <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-4">
             <PromoCodeForm form={form} setForm={setForm} />
           </div>
+          )}
 
           <DrawerFooter className="gap-2 border-t bg-muted/5 px-6 py-4">
-            <Button onClick={handleSave} disabled={isUpdating || !canManageGrowth}>
+            <Button onClick={handleSave} disabled={isUpdating || isLoading || !canManageGrowth}>
               Saqlash
             </Button>
-            <DrawerClose asChild>
-              <Button variant="outline">Bekor qilish</Button>
-            </DrawerClose>
           </DrawerFooter>
         </div>
       </DrawerContent>

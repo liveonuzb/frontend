@@ -12,6 +12,7 @@ import FoodImageCell from "./food-image-cell.jsx";
 export const useColumns = ({
   activeLanguages,
   canManage,
+  canHardDelete,
   canReorder,
   categoryById,
   cuisineById,
@@ -238,6 +239,7 @@ export const useColumns = ({
             <ActionsMenu
               food={info.row.original}
               canManage={canManage}
+              canHardDelete={canHardDelete}
               onEdit={openEditDrawer}
               onDelete={setFoodToDelete}
               onRestore={handleRestoreFood}
@@ -252,6 +254,7 @@ export const useColumns = ({
     [
       activeLanguages,
       canManage,
+      canHardDelete,
       canReorder,
       categoryById,
       cuisineById,

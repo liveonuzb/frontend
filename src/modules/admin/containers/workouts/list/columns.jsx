@@ -42,6 +42,7 @@ const ITEMS_PER_PAGE = 10;
 
 export const useColumns = ({
   activeLanguages,
+  canHardDelete,
   canReorder,
   categoryById,
   currentLanguage,
@@ -132,8 +133,8 @@ export const useColumns = ({
         meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => (
           <div className="flex flex-wrap gap-1">
-            {lodashMap(info.getValue(), (categoryId) => {
-              const category = get(categoryById, categoryId);
+            {lodashMap(info.row.original.categories || [], (item) => {
+              const category = item || get(categoryById, item?.id);
               if (!category) return null;
               const appearance = getCategoryBadgeAppearance(category.color);
 
@@ -212,6 +213,7 @@ export const useColumns = ({
           <div className="flex justify-end">
             <ActionsMenu
               workout={info.row.original}
+              canHardDelete={canHardDelete}
               onEdit={openEditDrawer}
               onDelete={setWorkoutToDelete}
               onRestore={handleRestoreWorkout}
@@ -224,6 +226,7 @@ export const useColumns = ({
     ],
     [
       activeLanguages,
+      canHardDelete,
       canReorder,
       categoryById,
       currentLanguage,

@@ -26,7 +26,6 @@ import {
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
 import {
   useGetQuery,
-  usePostQuery,
   usePatchQuery,
   useDeleteQuery,
 } from "@/hooks/api";
@@ -65,10 +64,19 @@ const resolveLabel = (translations, fallback, language) => {
   return fallback;
 };
 
+const getMutationErrorMessage = (error, fallback) => {
+  const response = error?.response?.data;
+  const message = response?.message;
+  const dependencySummary = response?.dependencySummary;
+  const baseMessage = isArray(message) ? message.join(", ") : message;
+
+  return [baseMessage || fallback, dependencySummary].filter(Boolean).join(" ");
+};
 
 const Index = () => {
   const navigate = useNavigate();
-  const { canManageContent } = useAdminPermissions();
+  const { canManageContent, isSuperAdmin } = useAdminPermissions();
+  const canHardDelete = canManageContent && isSuperAdmin;
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
 
@@ -236,18 +244,13 @@ const Index = () => {
     mutationProps: { onSuccess: invalidateFoodAndCategories },
   });
   const reorderMutation = usePatchQuery({ queryKey: FOODS_QUERY_KEY });
-  const importMutation = usePostQuery({
-    queryKey: FOODS_QUERY_KEY,
-    mutationProps: { onSuccess: invalidateFoodAndCategories },
-  });
-
   const isDeleting = deleteMutation.isPending;
   const isBulkUpdatingStatus = bulkStatusMutation.isPending;
   const isBulkTrashing = bulkTrashMutation.isPending;
   const isAssigningCategories = bulkAssignCategoriesMutation.isPending;
   const isHardDeleting = hardDeleteMutation.isPending;
   const isRestoring = restoreMutation.isPending || bulkRestoreMutation.isPending;
-  const isImporting = importMutation.isPending;
+  const [isImporting, setIsImporting] = React.useState(false);
 
   const deleteFood = React.useCallback(
     async (id) => deleteMutation.mutateAsync({ url: `/admin/foods/${id}` }),
@@ -294,28 +297,40 @@ const Index = () => {
     [hardDeleteMutation],
   );
   const exportFoods = React.useCallback(async () => {
-    const response = await request.get("/admin/foods/export", {
+    const response = await request.post("/admin/foods/export/jobs", null, {
       params: queryParams,
-      responseType: "blob",
     });
-    return {
-      blob: get(response, "data"),
-      fileName:
-        response.headers?.["content-disposition"]?.match(/filename="?([^"]+)"?/)?.[1] || "foods.xlsx",
-    };
+    return get(response, "data.data", get(response, "data"));
   }, [queryParams, request]);
+
   const importFoods = React.useCallback(
     async (file) => {
       const formData = new FormData();
       formData.append("file", file);
-      const response = await importMutation.mutateAsync({
-        url: "/admin/foods/import",
-        attributes: formData,
-        config: { headers: { "Content-Type": "multipart/form-data" } },
+      const previewResponse = await request.post(
+        "/admin/foods/import/preview",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } },
+      );
+      const preview = get(previewResponse, "data.data", get(previewResponse, "data"));
+
+      if (get(preview, "invalidCount", 0) > 0) {
+        return {
+          preview,
+          job: null,
+        };
+      }
+
+      const jobResponse = await request.post("/admin/foods/import/jobs", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
-      return get(response, "data");
+
+      return {
+        preview,
+        job: get(jobResponse, "data.data", get(jobResponse, "data")),
+      };
     },
-    [importMutation],
+    [request],
   );
 
   const activeLanguages = React.useMemo(
@@ -430,17 +445,8 @@ const Index = () => {
   const handleExportFoods = React.useCallback(async () => {
     try {
       setIsExporting(true);
-      const { blob, fileName } = await exportFoods();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-
-      link.href = url;
-      link.download = fileName || "foods.xlsx";
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-      toast.success("Ovqatlar Excel faylga eksport qilindi");
+      await exportFoods();
+      toast.success("Ovqatlar eksport job sifatida boshlandi");
     } catch (error) {
       const message = error?.response?.data?.message;
       toast.error(
@@ -461,10 +467,19 @@ const Index = () => {
       if (!file) return;
 
       try {
+        setIsImporting(true);
         const result = await importFoods(file);
-        toast.success(
-          `${get(result, "importedCount", 0)} ta ovqat Excel orqali import qilindi`,
-        );
+        const invalidCount = get(result, "preview.invalidCount", 0);
+
+        if (invalidCount > 0) {
+          const firstError = get(result, "preview.errors.0.error");
+          toast.error(
+            `${invalidCount} ta qatorda xato bor. ${firstError || "Import boshlanmadi."}`,
+          );
+          return;
+        }
+
+        toast.success("Ovqat import job sifatida boshlandi");
       } catch (error) {
         const message = error?.response?.data?.message;
         toast.error(
@@ -473,6 +488,7 @@ const Index = () => {
             : message || "Excel import qilib bo'lmadi",
         );
       } finally {
+        setIsImporting(false);
         event.target.value = "";
       }
     },
@@ -601,7 +617,7 @@ const Index = () => {
   };
 
   const handleHardDelete = async () => {
-    if (!canManageContent || !hardDeleteTarget?.ids?.length) return;
+    if (!canHardDelete || !hardDeleteTarget?.ids?.length) return;
 
     try {
       await hardDeleteFoods({ ids: hardDeleteTarget.ids });
@@ -613,11 +629,11 @@ const Index = () => {
       setHardDeleteTarget(null);
       setRowSelection({});
     } catch (error) {
-      const message = error?.response?.data?.message;
       toast.error(
-        isArray(message)
-          ? message.join(", ")
-          : message || "Ovqatlarni butunlay o'chirib bo'lmadi",
+        getMutationErrorMessage(
+          error,
+          "Ovqatlarni butunlay o'chirib bo'lmadi",
+        ),
       );
     }
   };
@@ -625,6 +641,7 @@ const Index = () => {
   const columns = useColumns({
     activeLanguages,
     canManage: canManageContent,
+    canHardDelete,
     canReorder: canManageContent && canReorder,
     categoryById,
     cuisineById,

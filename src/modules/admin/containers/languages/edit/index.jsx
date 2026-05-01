@@ -5,10 +5,10 @@ import { useGetQuery, usePatchQuery } from "@/hooks/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner.jsx";
 import { Switch } from "@/components/ui/switch";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -85,10 +85,6 @@ const EditLanguage = () => {
     if (!open) navigate("/admin/languages/list");
   };
 
-  if (isLoading) {
-    return null;
-  }
-
   return (
     <Drawer open onOpenChange={handleOpenChange} direction="bottom">
       <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-md mx-auto max-h-[90vh]">
@@ -103,6 +99,11 @@ const EditLanguage = () => {
             </DrawerDescription>
           </DrawerHeader>
 
+          {isLoading ? (
+            <div className="flex min-h-72 items-center justify-center px-4 py-10">
+              <Spinner className="size-8 text-muted-foreground" />
+            </div>
+          ) : (
           <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-6">
             <div className="flex flex-col gap-2">
               <Label className="text-xs font-bold flex items-center gap-2">
@@ -171,21 +172,17 @@ const EditLanguage = () => {
               </Label>
             </div>
           </div>
+          )}
 
           <DrawerFooter className="gap-2 border-t bg-muted/5 p-6">
             <Button
               onClick={handleSave}
               size="lg"
               className="w-full"
-              disabled={isUpdating}
+              disabled={isUpdating || isLoading}
             >
               O'zgarishlarni saqlash
             </Button>
-            <DrawerClose asChild>
-              <Button variant="ghost" className="w-full">
-                Bekor qilish
-              </Button>
-            </DrawerClose>
           </DrawerFooter>
         </div>
       </DrawerContent>

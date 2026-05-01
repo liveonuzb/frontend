@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -156,11 +155,6 @@ const CreateLanguage = () => {
             >
               Tilni qo'shish
             </Button>
-            <DrawerClose asChild>
-              <Button variant="ghost" className="w-full">
-                Bekor qilish
-              </Button>
-            </DrawerClose>
           </DrawerFooter>
         </div>
       </DrawerContent>

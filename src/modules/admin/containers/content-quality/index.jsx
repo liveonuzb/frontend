@@ -157,7 +157,11 @@ const getIssueActionPath = ({ sectionKey, groupKey, issueId }) => {
   }
 
   if (sectionKey === "nutrition") {
-    if (groupKey === "recipeFoodsWithoutItems" || groupKey === "recipeFoodsWithUnknownCost") {
+    if (
+      groupKey === "recipeFoodsWithoutItems" ||
+      groupKey === "recipeFoodsWithUnknownCost" ||
+      groupKey === "recipeFoodsWithInvalidNutrition"
+    ) {
       return `${catalogListRoutes.foods}/recipe/${issueId}`;
     }
 

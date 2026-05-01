@@ -1,6 +1,7 @@
 import React from "react";
 import { get } from "lodash";
 import { Badge } from "@/components/ui/badge";
+import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import ActionsMenu from "./actions-menu.jsx";
 
 const formatPrice = (price) => {
@@ -14,6 +15,8 @@ export const useColumns = ({ canManage, handleToggleActive, onEdit, onDelete }) 
       {
         accessorKey: "name",
         header: "Nomi",
+        size: 260,
+        meta: { skeleton: adminListSkeletons.avatarText },
         cell: (info) => {
           const plan = get(info, "row.original");
           return (
@@ -30,6 +33,7 @@ export const useColumns = ({ canManage, handleToggleActive, onEdit, onDelete }) 
         accessorKey: "type",
         header: "Turi",
         size: 120,
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => {
           const type = info.getValue();
           return type === "FAMILY" ? (
@@ -53,6 +57,7 @@ export const useColumns = ({ canManage, handleToggleActive, onEdit, onDelete }) 
         accessorKey: "price",
         header: "Narxi",
         size: 180,
+        meta: { skeleton: adminListSkeletons.text },
         cell: (info) => {
           const plan = get(info, "row.original");
           const price = get(plan, "price");
@@ -76,6 +81,7 @@ export const useColumns = ({ canManage, handleToggleActive, onEdit, onDelete }) 
         accessorKey: "durationDays",
         header: "Muddat",
         size: 100,
+        meta: { skeleton: adminListSkeletons.text },
         cell: (info) => {
           const value = info.getValue();
           return (
@@ -89,6 +95,7 @@ export const useColumns = ({ canManage, handleToggleActive, onEdit, onDelete }) 
         accessorKey: "trialDays",
         header: "Sinov",
         size: 100,
+        meta: { skeleton: adminListSkeletons.text },
         cell: (info) => {
           const value = info.getValue();
           return (
@@ -102,6 +109,7 @@ export const useColumns = ({ canManage, handleToggleActive, onEdit, onDelete }) 
         accessorKey: "isActive",
         header: "Status",
         size: 100,
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) =>
           info.getValue() ? (
             <Badge
@@ -123,6 +131,7 @@ export const useColumns = ({ canManage, handleToggleActive, onEdit, onDelete }) 
         id: "actions",
         header: "",
         size: 50,
+        meta: { skeleton: adminListSkeletons.action },
         cell: (info) => (
           <div className="flex justify-end">
             <ActionsMenu

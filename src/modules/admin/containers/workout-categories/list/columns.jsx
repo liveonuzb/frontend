@@ -68,6 +68,7 @@ export const useColumns = ({
       {
         id: "expand",
         header: "",
+        enableSorting: false,
         size: 52,
         meta: { skeleton: adminListSkeletons.action },
         cell: (info) => (
@@ -90,6 +91,8 @@ export const useColumns = ({
       {
         accessorKey: "name",
         header: "Kategoriya",
+        enableSorting: true,
+        size: 300,
         meta: {
           skeleton: adminListSkeletons.avatarText,
           expandedContent: (row) => (
@@ -130,6 +133,7 @@ export const useColumns = ({
       {
         accessorKey: "workoutCount",
         header: "Mashqlar",
+        enableSorting: false,
         size: 96,
         meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => (
@@ -139,6 +143,7 @@ export const useColumns = ({
       {
         id: "translations",
         header: "Tarjimalar",
+        enableSorting: false,
         size: 170,
         meta: { skeleton: adminListSkeletons.translations },
         cell: (info) => {
@@ -175,6 +180,7 @@ export const useColumns = ({
       {
         accessorKey: "color",
         header: "Badge rangi",
+        enableSorting: false,
         size: 120,
         meta: { skeleton: adminListSkeletons.text },
         cell: (info) => {
@@ -196,27 +202,20 @@ export const useColumns = ({
       {
         accessorKey: "isActive",
         header: "Status",
-        size: 160,
+        enableSorting: true,
+        size: 96,
         meta: { skeleton: adminListSkeletons.status },
         cell: (info) => {
           const isActive = info.getValue();
           const category = info.row.original;
 
           return (
-            <div className="flex items-center gap-2">
+            <div className="flex justify-center">
               <Switch
                 checked={isActive}
                 disabled={isUpdating}
                 onCheckedChange={() => handleToggleActive(category)}
               />
-              <span
-                className={cn(
-                  "text-xs font-medium",
-                  isActive ? "text-emerald-600" : "text-muted-foreground",
-                )}
-              >
-                {isActive ? "Faol" : "Nofaol"}
-              </span>
             </div>
           );
         },
@@ -224,6 +223,7 @@ export const useColumns = ({
       {
         id: "actions",
         header: "",
+        enableSorting: false,
         size: 50,
         meta: { skeleton: adminListSkeletons.action },
         cell: (info) => (

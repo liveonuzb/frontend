@@ -1,12 +1,10 @@
 import React from "react";
-import { useNavigate, Outlet } from "react-router";
+import { useNavigate, Outlet, useMatch } from "react-router";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import {
-  filter as lodashFilter,
   find,
   get,
   map,
-  size,
   trim,
   toString,
 } from "lodash";
@@ -19,6 +17,8 @@ import {
 import {
   DataGrid,
   DataGridContainer,
+  DataGridPagination,
+  DataGridTable,
   DataGridTableDndRows,
 } from "@/components/reui/data-grid";
 import { Button } from "@/components/ui/button";
@@ -101,21 +101,94 @@ const Index = () => {
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const {
     search,
+    searchOperator,
     statusFilter,
+    statusOperator,
     imageFilter,
+    imageOperator,
     translationFilter,
+    translationOperator,
+    sortBy,
+    sortDir,
+    sorting,
+    currentPage,
+    pageSize,
+    setPageQuery,
+    setPageSizeQuery,
+    canReorder,
     filterFields,
     activeFilters,
     handleFiltersChange,
+    handleSortingChange,
   } = useEquipmentFilters();
 
   const EQUIPMENTS_QUERY_KEY = ["admin", "workout-equipments"];
+  const deferredSearch = React.useDeferredValue(search);
+  const queryParams = React.useMemo(
+    () => ({
+      ...(deferredSearch.trim() ? { q: deferredSearch.trim() } : {}),
+      ...((deferredSearch.trim() ||
+        searchOperator === "empty" ||
+        searchOperator === "not_empty") &&
+      searchOperator !== "contains"
+        ? { qOp: searchOperator }
+        : {}),
+      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      ...((statusFilter !== "all" ||
+        statusOperator === "empty" ||
+        statusOperator === "not_empty") &&
+      statusOperator !== "is"
+        ? { statusOp: statusOperator }
+        : {}),
+      ...(imageFilter !== "all" ? { hasImage: imageFilter } : {}),
+      ...((imageFilter !== "all" ||
+        imageOperator === "empty" ||
+        imageOperator === "not_empty") &&
+      imageOperator !== "is"
+        ? { hasImageOp: imageOperator }
+        : {}),
+      ...(translationFilter !== "all"
+        ? { translations: translationFilter }
+        : {}),
+      ...((translationFilter !== "all" ||
+        translationOperator === "empty" ||
+        translationOperator === "not_empty") &&
+      translationOperator !== "is"
+        ? { translationsOp: translationOperator }
+        : {}),
+      sortBy,
+      sortDir,
+      page: currentPage,
+      pageSize,
+    }),
+    [
+      currentPage,
+      deferredSearch,
+      imageFilter,
+      imageOperator,
+      pageSize,
+      searchOperator,
+      sortBy,
+      sortDir,
+      statusFilter,
+      statusOperator,
+      translationFilter,
+      translationOperator,
+    ],
+  );
 
   const { data: equipmentsData, isLoading, isFetching, refetch } = useGetQuery({
     url: "/admin/workout-equipments",
-    queryProps: { queryKey: EQUIPMENTS_QUERY_KEY },
+    params: queryParams,
+    queryProps: { queryKey: [...EQUIPMENTS_QUERY_KEY, queryParams] },
   });
   const equipments = get(equipmentsData, "data.data", []);
+  const meta = get(equipmentsData, "data.meta", {
+    total: 0,
+    page: currentPage,
+    pageSize,
+    totalPages: 1,
+  });
 
   const patchMutation = usePatchQuery({ queryKey: EQUIPMENTS_QUERY_KEY });
   const deleteMutation = useDeleteQuery({ queryKey: EQUIPMENTS_QUERY_KEY });
@@ -157,8 +230,21 @@ const Index = () => {
   });
   const languages = get(languagesData, "data.data", []);
 
-  const [translationsDrawerOpen, setTranslationsDrawerOpen] =
-    React.useState(false);
+  const translateMatch = useMatch("/admin/equipments/list/translate/:id");
+  const translatingEquipmentId = get(translateMatch, "params.id");
+  const translationsDrawerOpen = Boolean(translatingEquipmentId);
+  const { data: translatingEquipmentData, isLoading: isTranslatingLoading } =
+    useGetQuery({
+      url: `/admin/workout-equipments/${translatingEquipmentId || ""}`,
+      queryProps: {
+        queryKey: [
+          ...EQUIPMENTS_QUERY_KEY,
+          "detail",
+          translatingEquipmentId,
+        ],
+        enabled: Boolean(translatingEquipmentId),
+      },
+    });
   const [translatingEquipment, setTranslatingEquipment] = React.useState(null);
   const [equipmentToDelete, setEquipmentToDelete] = React.useState(null);
   const [translationForm, setTranslationForm] = React.useState({});
@@ -175,64 +261,38 @@ const Index = () => {
     [languages],
   );
 
+  React.useEffect(() => {
+    const equipment = get(translatingEquipmentData, "data.data");
+    if (!equipment) return;
+
+    setTranslatingEquipment(equipment);
+    setTranslationForm(
+      Object.fromEntries(
+        activeLanguages.map((language) => [
+          language.code,
+          resolveLabel(
+            equipment?.translations,
+            equipment?.name ?? "",
+            language.code,
+          ),
+        ]),
+      ),
+    );
+  }, [activeLanguages, translatingEquipmentData]);
+
   const currentLanguageMeta = React.useMemo(
     () => activeLanguages.find((language) => language.code === currentLanguage),
     [activeLanguages, currentLanguage],
   );
 
-  const deferredSearch = React.useDeferredValue(search);
+  React.useEffect(() => {
+    const totalPages = Math.max(1, Number(get(meta, "totalPages")) || 1);
+    if (currentPage > totalPages) {
+      void setPageQuery(String(totalPages));
+    }
+  }, [currentPage, meta, setPageQuery]);
 
-  const filteredEquipments = React.useMemo(() => {
-    const searchValue = deferredSearch.trim().toLowerCase();
-
-    return equipments.filter((equipment) => {
-      const localizedName = resolveLabel(
-        equipment.translations,
-        equipment.name,
-        currentLanguage,
-      );
-      const matchesSearch =
-        !searchValue ||
-        localizedName.toLowerCase().includes(searchValue) ||
-        equipment.name.toLowerCase().includes(searchValue);
-      const matchesStatus =
-        statusFilter === "all" ||
-        (statusFilter === "active" ? equipment.isActive : !equipment.isActive);
-      const hasImage = Boolean(equipment.imageUrl);
-      const matchesImage =
-        imageFilter === "all" ||
-        (imageFilter === "with-image" ? hasImage : !hasImage);
-
-      if (translationFilter === "all") {
-        return matchesSearch && matchesStatus && matchesImage;
-      }
-
-      const filledCount = countFilledTranslations(equipment.translations || {});
-      const isComplete =
-        activeLanguages.length > 0 && filledCount >= activeLanguages.length;
-
-      return (
-        matchesSearch &&
-        matchesStatus &&
-        matchesImage &&
-        (translationFilter === "complete" ? isComplete : !isComplete)
-      );
-    });
-  }, [
-    activeLanguages.length,
-    currentLanguage,
-    deferredSearch,
-    equipments,
-    imageFilter,
-    statusFilter,
-    translationFilter,
-  ]);
-
-  const isReorderEnabled =
-    deferredSearch.trim() === "" &&
-    statusFilter === "all" &&
-    imageFilter === "all" &&
-    translationFilter === "all";
+  const isReorderEnabled = canReorder;
 
   const openTranslationsDrawer = React.useCallback(
     (equipment) => {
@@ -249,9 +309,9 @@ const Index = () => {
           ]),
         ),
       );
-      setTranslationsDrawerOpen(true);
+      navigate(`translate/${equipment.id}`);
     },
-    [activeLanguages],
+    [activeLanguages, navigate],
   );
 
   const submitTranslations = React.useCallback(async () => {
@@ -264,13 +324,13 @@ const Index = () => {
         translations: cleanTranslations(translationForm),
       });
       toast.success("Tarjimalar yangilandi");
-      setTranslationsDrawerOpen(false);
+      navigate("/admin/equipments/list");
       setTranslatingEquipment(null);
       setTranslationForm({});
     } catch (error) {
       toast.error(getErrorMessage(error, "Tarjimalarni saqlab bo'lmadi"));
     }
-  }, [translationForm, translatingEquipment, updateEquipment]);
+  }, [navigate, translationForm, translatingEquipment, updateEquipment]);
 
   const confirmDelete = React.useCallback(async () => {
     if (!equipmentToDelete) {
@@ -309,10 +369,32 @@ const Index = () => {
   });
 
   const table = useReactTable({
-    data: filteredEquipments,
+    data: equipments,
     columns,
+    manualPagination: true,
+    manualSorting: true,
+    pageCount: get(meta, "totalPages", 1),
     getCoreRowModel: getCoreRowModel(),
+    onSortingChange: handleSortingChange,
+    onPaginationChange: (updater) => {
+      const prev = { pageIndex: currentPage - 1, pageSize };
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      const nextPage = String(get(next, "pageIndex", 0) + 1);
+      const nextPageSize = String(get(next, "pageSize", pageSize));
+
+      void setPageQuery(nextPage);
+      if (nextPageSize !== String(pageSize)) {
+        void setPageSizeQuery(nextPageSize);
+      }
+    },
     getRowId: (row) => String(row.id),
+    state: {
+      sorting,
+      pagination: {
+        pageIndex: currentPage - 1,
+        pageSize,
+      },
+    },
   });
 
   const handleEquipmentDragEnd = React.useCallback(
@@ -321,7 +403,7 @@ const Index = () => {
         return;
       }
 
-      const dataIds = filteredEquipments.map((equipment) =>
+      const dataIds = equipments.map((equipment) =>
         String(equipment.id),
       );
       const oldIndex = dataIds.indexOf(active.id);
@@ -331,7 +413,7 @@ const Index = () => {
         return;
       }
 
-      const ordered = [...filteredEquipments];
+      const ordered = [...equipments];
       const [movedEquipment] = ordered.splice(oldIndex, 1);
       ordered.splice(newIndex, 0, movedEquipment);
 
@@ -349,7 +431,7 @@ const Index = () => {
         toast.error(getErrorMessage(error, "Jihoz tartibini saqlab bo'lmadi"));
       }
     },
-    [filteredEquipments, isReorderEnabled, reorderEquipments],
+    [equipments, isReorderEnabled, reorderEquipments],
   );
 
   return (
@@ -378,7 +460,7 @@ const Index = () => {
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <p>
-          {filteredEquipments.length} ta jihoz
+          {get(meta, "total", 0)} ta jihoz
           {currentLanguageMeta
             ? ` • ${currentLanguageMeta.flag ? `${currentLanguageMeta.flag} ` : ""}${currentLanguageMeta.name}`
             : ""}
@@ -388,28 +470,34 @@ const Index = () => {
         ) : null}
       </div>
 
-      <DataGridContainer>
-        <ScrollArea className="w-full">
-          <DataGrid
-            table={table}
-            tableLayout={{
-              rowsDraggable: isReorderEnabled,
-              width: "auto",
-            }}
-            isLoading={isLoading}
-          >
-            <DataGridTableDndRows
-              dataIds={map(filteredEquipments, (equipment) =>
-                toString(get(equipment, "id")),
-              )}
-              handleDragEnd={handleEquipmentDragEnd}
-            />
-          </DataGrid>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
-      </DataGridContainer>
+      <DataGrid
+        table={table}
+        isLoading={isLoading}
+        recordCount={get(meta, "total", 0)}
+      >
+        <DataGridContainer>
+          <ScrollArea className="w-full">
+            {isReorderEnabled ? (
+              <DataGridTableDndRows
+                dataIds={map(equipments, (equipment) =>
+                  toString(get(equipment, "id")),
+                )}
+                handleDragEnd={handleEquipmentDragEnd}
+              />
+            ) : (
+              <DataGridTable />
+            )}
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </DataGridContainer>
+        <DataGridPagination
+          info="{from} - {to} / {count} ta jihoz"
+          rowsPerPageLabel="Sahifada:"
+          sizes={[10, 25, 50, 100]}
+        />
+      </DataGrid>
 
-      {!isLoading && !filteredEquipments.length ? (
+      {!isLoading && !equipments.length ? (
         <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
           Filtrlarga mos jihoz topilmadi.
         </div>
@@ -421,7 +509,13 @@ const Index = () => {
 
       <Drawer
         open={translationsDrawerOpen}
-        onOpenChange={setTranslationsDrawerOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            navigate("/admin/equipments/list");
+            setTranslatingEquipment(null);
+            setTranslationForm({});
+          }
+        }}
         direction="bottom"
       >
         <DrawerContent className="mx-auto max-h-[90vh] data-[vaul-drawer-direction=bottom]:md:max-w-lg">
@@ -439,33 +533,39 @@ const Index = () => {
             </DrawerHeader>
 
             <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
-              {map(activeLanguages, (language) => (
-                <div
-                  key={get(language, "code")}
-                  className="flex flex-col gap-2"
-                >
-                  <Label className="flex items-center gap-2 text-sm font-medium">
-                    <span>{get(language, "flag", "Lang")}</span>
-                    {get(language, "name")}
-                  </Label>
-                  <Input
-                    value={get(translationForm, get(language, "code"), "")}
-                    onChange={(event) =>
-                      setTranslationForm((current) => ({
-                        ...current,
-                        [language.code]: event.target.value,
-                      }))
-                    }
-                    placeholder={`${language.name} tilida nom`}
-                  />
+              {isTranslatingLoading ? (
+                <div className="flex min-h-48 items-center justify-center">
+                  <LoaderCircleIcon className="size-6 animate-spin text-muted-foreground" />
                 </div>
-              ))}
+              ) : (
+                map(activeLanguages, (language) => (
+                  <div
+                    key={get(language, "code")}
+                    className="flex flex-col gap-2"
+                  >
+                    <Label className="flex items-center gap-2 text-sm font-medium">
+                      <span>{get(language, "flag", "Lang")}</span>
+                      {get(language, "name")}
+                    </Label>
+                    <Input
+                      value={get(translationForm, get(language, "code"), "")}
+                      onChange={(event) =>
+                        setTranslationForm((current) => ({
+                          ...current,
+                          [language.code]: event.target.value,
+                        }))
+                      }
+                      placeholder={`${language.name} tilida nom`}
+                    />
+                  </div>
+                ))
+              )}
             </div>
 
             <DrawerFooter className="px-6 pb-6 pt-2">
               <Button
                 onClick={submitTranslations}
-                disabled={isUpdating}
+                disabled={isUpdating || isTranslatingLoading}
                 className="gap-2"
               >
                 {isUpdating ? (
@@ -474,13 +574,6 @@ const Index = () => {
                   <CheckCircle2Icon />
                 )}
                 Tarjimalarni saqlash
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setTranslationsDrawerOpen(false)}
-              >
-                Bekor qilish
               </Button>
             </DrawerFooter>
           </div>

@@ -52,6 +52,18 @@ export const normalizeUserOnboarding = (onboarding) => {
     activityLevel: onboarding.activityLevel ?? null,
     mealFrequency: onboarding.mealFrequency ?? null,
     waterHabits: onboarding.waterHabits ?? null,
+    allergyIngredientIds: isArray(onboarding.allergyIngredientIds)
+      ? onboarding.allergyIngredientIds
+      : [],
+    dislikedIngredientIds: isArray(onboarding.dislikedIngredientIds)
+      ? onboarding.dislikedIngredientIds
+      : [],
+    nutritionPreferenceKeys: isArray(onboarding.nutritionPreferenceKeys)
+      ? onboarding.nutritionPreferenceKeys
+      : [],
+    allergyOtherText: onboarding.allergyOtherText ?? "",
+    dislikedOtherText: onboarding.dislikedOtherText ?? "",
+    nutritionPreferenceOtherText: onboarding.nutritionPreferenceOtherText ?? "",
     dietRestrictions: isArray(onboarding.dietRestrictions)
       ? onboarding.dietRestrictions
       : [],
@@ -120,6 +132,31 @@ export const toUserOnboardingPayload = (patch = {}) => {
   }
   if ("waterHabits" in patch) {
     payload.waterHabits = patch.waterHabits || undefined;
+  }
+  if ("allergyIngredientIds" in patch) {
+    payload.allergyIngredientIds = isArray(patch.allergyIngredientIds)
+      ? patch.allergyIngredientIds
+      : undefined;
+  }
+  if ("dislikedIngredientIds" in patch) {
+    payload.dislikedIngredientIds = isArray(patch.dislikedIngredientIds)
+      ? patch.dislikedIngredientIds
+      : undefined;
+  }
+  if ("nutritionPreferenceKeys" in patch) {
+    payload.nutritionPreferenceKeys = isArray(patch.nutritionPreferenceKeys)
+      ? patch.nutritionPreferenceKeys
+      : undefined;
+  }
+  if ("allergyOtherText" in patch) {
+    payload.allergyOtherText = patch.allergyOtherText || undefined;
+  }
+  if ("dislikedOtherText" in patch) {
+    payload.dislikedOtherText = patch.dislikedOtherText || undefined;
+  }
+  if ("nutritionPreferenceOtherText" in patch) {
+    payload.nutritionPreferenceOtherText =
+      patch.nutritionPreferenceOtherText || undefined;
   }
   if ("dietRestrictions" in patch) {
     payload.dietRestrictions = isArray(patch.dietRestrictions)

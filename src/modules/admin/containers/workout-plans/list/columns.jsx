@@ -2,6 +2,7 @@ import React from "react";
 import { filter, find, get } from "lodash";
 import { Globe2Icon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { DataGridColumnHeader } from "@/components/reui/data-grid";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import ActionsMenu from "./actions-menu.jsx";
@@ -45,6 +46,8 @@ export const useColumns = ({
   currentLanguage,
   currentPage,
   languageCount,
+  isSaving,
+  onToggleStatus,
   openEditDrawer,
   openTranslationsDrawer,
   setDeleteCandidate,
@@ -155,12 +158,20 @@ export const useColumns = ({
           <DataGridColumnHeader column={column} title="Status" />
         ),
         enableSorting: true,
-        meta: { skeleton: adminListSkeletons.badge },
-        cell: (info) => (
-          <Badge variant={info.getValue() ? "default" : "outline"}>
-            {info.getValue() ? "Faol" : "Nofaol"}
-          </Badge>
-        ),
+        meta: { skeleton: adminListSkeletons.status },
+        cell: (info) => {
+          const template = info.row.original;
+
+          return (
+            <div className="flex justify-center">
+              <Switch
+                checked={Boolean(info.getValue())}
+                disabled={isSaving}
+                onCheckedChange={() => onToggleStatus(template)}
+              />
+            </div>
+          );
+        },
         size: 110,
       },
       {
@@ -194,7 +205,9 @@ export const useColumns = ({
     [
       currentLanguage,
       currentPage,
+      isSaving,
       languageCount,
+      onToggleStatus,
       openEditDrawer,
       openTranslationsDrawer,
       setDeleteCandidate,

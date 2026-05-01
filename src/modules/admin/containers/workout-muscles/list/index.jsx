@@ -1,7 +1,5 @@
 import React from "react";
-import { get } from "lodash";
 import {
-  useGetQuery,
   usePostQuery,
   usePatchQuery,
   useDeleteQuery,
@@ -13,13 +11,6 @@ import {
 } from "../api.js";
 
 const Index = () => {
-  const { data, isLoading, isFetching, refetch } = useGetQuery({
-    url: WORKOUT_MUSCLES_ENDPOINT,
-    queryProps: { queryKey: WORKOUT_MUSCLES_QUERY_KEY },
-  });
-
-  const muscles = get(data, "data.data", []);
-
   const { mutateAsync: createMutation, isPending: isCreating } = usePostQuery({
     queryKey: WORKOUT_MUSCLES_QUERY_KEY,
   });
@@ -69,17 +60,15 @@ const Index = () => {
       description="Workoutlar uchun asosiy mushak katalogini va tarjimalarini boshqaring."
       singularLabel="mushak"
       pluralSearchPlaceholder="Mushak qidirish"
-      items={muscles}
+      endpoint={WORKOUT_MUSCLES_ENDPOINT}
+      queryKey={WORKOUT_MUSCLES_QUERY_KEY}
       createItem={createMuscle}
       updateItem={updateMuscle}
       deleteItem={deleteMuscle}
       reorderItems={reorderMuscles}
-      isLoading={isLoading}
-      isFetching={isFetching}
       isCreating={isCreating}
       isUpdating={isUpdating}
       isDeleting={isDeleting}
-      refetch={refetch}
     />
   );
 };

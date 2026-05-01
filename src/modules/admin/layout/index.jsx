@@ -26,6 +26,7 @@ import {
   WalletCardsIcon,
   ClipboardCheckIcon,
   TargetIcon,
+  LeafIcon,
 } from "lucide-react";
 import {
   Sidebar,
@@ -56,26 +57,32 @@ import {
 import LayoutHeader from "@/components/layout-header.jsx";
 import { useMobileChromeHidden } from "@/hooks/app/use-mobile-chrome-hidden";
 import { isNavItemActive } from "@/lib/navigation";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 
 const mainNav = [
-  { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboardIcon },
+  {
+    to: "/admin/dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboardIcon,
+    capability: "admin.read",
+  },
   {
     to: "/admin/users/list",
     label: "Foydalanuvchilar",
     icon: UsersIcon,
-    roles: ["SUPER_ADMIN", "SUPPORT", "READONLY_ADMIN"],
+    capability: "support.read",
   },
   {
     to: "/admin/coaches",
     label: "Murabbiylar",
     icon: ShieldCheckIcon,
-    roles: ["SUPER_ADMIN", "SUPPORT", "READONLY_ADMIN"],
+    capability: "support.read",
   },
   {
     to: "/admin/challenges/list",
     label: "Musobaqalar",
     icon: TrophyIcon,
-    roles: ["SUPER_ADMIN", "CONTENT_MANAGER", "GROWTH", "READONLY_ADMIN"],
+    capability: "content.read",
   },
 ];
 
@@ -84,55 +91,105 @@ const contentNav = [
     to: "/admin/content-quality",
     label: "Content Quality",
     icon: ClipboardCheckIcon,
+    capability: "content.read",
   },
   {
     to: "/admin/food-categories/list",
     label: "Ovqat Kategoriyalari",
     icon: TagIcon,
+    capability: "content.read",
   },
-  { to: "/admin/foods/list", label: "Ovqatlar bazasi", icon: UtensilsIcon },
-  { to: "/admin/ingredients/list", label: "Ingredientlar", icon: SoupIcon },
-  { to: "/admin/cuisines/list", label: "Oshxonalar", icon: GlobeIcon },
-  { to: "/admin/locations", label: "Locations", icon: MapPinnedIcon },
+  {
+    to: "/admin/foods/list",
+    label: "Ovqatlar bazasi",
+    icon: UtensilsIcon,
+    capability: "content.read",
+  },
+  {
+    to: "/admin/ingredients/list",
+    label: "Ingredientlar",
+    icon: SoupIcon,
+    capability: "content.read",
+  },
+  {
+    to: "/admin/cuisines/list",
+    label: "Oshxonalar",
+    icon: GlobeIcon,
+    capability: "content.read",
+  },
+  {
+    to: "/admin/locations",
+    label: "Locations",
+    icon: MapPinnedIcon,
+    capability: "content.read",
+  },
   {
     to: "/admin/coach-specializations/list",
     label: "Sport yo'nalishlari",
     icon: MedalIcon,
+    capability: "content.read",
   },
-  { to: "/admin/achievements/list", label: "Achievements", icon: AwardIcon },
+  {
+    to: "/admin/achievements/list",
+    label: "Achievements",
+    icon: AwardIcon,
+    capability: "content.read",
+  },
   {
     to: "/admin/health-constraints/list",
     label: "Health Constraints",
     icon: HeartPulseIcon,
+    capability: "content.read",
   },
   {
     to: "/admin/user-goals/list",
     label: "Maqsadlar",
     icon: TargetIcon,
+    capability: "content.read",
+  },
+  {
+    to: "/admin/nutrition-preferences/list",
+    label: "Ovqatlanish talablari",
+    icon: LeafIcon,
+    capability: "content.read",
   },
 
-  { to: "/admin/workouts/list", label: "Mashg'ulotlar", icon: DumbbellIcon },
+  {
+    to: "/admin/workouts/list",
+    label: "Mashg'ulotlar",
+    icon: DumbbellIcon,
+    capability: "content.read",
+  },
   {
     to: "/admin/workout-plans",
     label: "Workout rejalari",
     icon: DumbbellIcon,
+    capability: "content.read",
   },
   {
     to: "/admin/workout-categories/list",
     label: "Mashg'ulot Kategoriyalari",
     icon: TagIcon,
+    capability: "content.read",
   },
   {
     to: "/admin/workout-muscles",
     label: "Mashq muskullari",
     icon: DumbbellIcon,
+    capability: "content.read",
   },
   {
     to: "/admin/workout-body-parts",
     label: "Tana qismlari",
     icon: TagIcon,
+    capability: "content.read",
   },
-  { to: "/admin/equipments/list", label: "Jihozlar", icon: WrenchIcon },
+  {
+    to: "/admin/equipments/list",
+    label: "Jihozlar",
+    icon: WrenchIcon,
+    capability: "content.read",
+  },
 ];
 
 const premiumNav = [
@@ -140,25 +197,25 @@ const premiumNav = [
     to: "/admin/revenue",
     label: "Daromad",
     icon: TrendingUpIcon,
-    roles: ["SUPER_ADMIN", "FINANCE", "READONLY_ADMIN"],
+    capability: "finance.read",
   },
   {
     to: "/admin/withdrawals",
     label: "Yechib olishlar",
     icon: WalletCardsIcon,
-    roles: ["SUPER_ADMIN", "FINANCE", "READONLY_ADMIN"],
+    capability: "finance.read",
   },
   {
     to: "/admin/premium",
     label: "Premium",
     icon: GemIcon,
-    roles: ["SUPER_ADMIN", "GROWTH", "FINANCE", "READONLY_ADMIN"],
+    capability: "growth.read",
   },
   {
     to: "/admin/premium/subscriptions",
     label: "Obunalar",
     icon: CrownIcon,
-    roles: ["SUPER_ADMIN", "GROWTH", "FINANCE", "READONLY_ADMIN"],
+    capability: "growth.read",
   },
 ];
 
@@ -167,37 +224,31 @@ const systemNav = [
     to: "/admin/reports",
     label: "Hisobotlar",
     icon: FileSpreadsheetIcon,
-    roles: [
-      "SUPER_ADMIN",
-      "CONTENT_MANAGER",
-      "SUPPORT",
-      "FINANCE",
-      "READONLY_ADMIN",
-    ],
+    capability: "admin.read",
   },
   {
     to: "/admin/audit-logs",
     label: "Audit log",
     icon: FileClockIcon,
-    roles: ["SUPER_ADMIN", "READONLY_ADMIN"],
+    capability: "admin.read",
   },
   {
     to: "/admin/platform-bot",
     label: "Platform Bot",
     icon: BotIcon,
-    roles: ["SUPER_ADMIN", "GROWTH"],
+    capability: "growth.read",
   },
   {
     to: "/admin/languages",
     label: "Tillar",
     icon: GlobeIcon,
-    roles: ["SUPER_ADMIN", "CONTENT_MANAGER"],
+    capability: "content.read",
   },
   {
     to: "/admin/settings",
     label: "Sozlamalar",
     icon: SettingsIcon,
-    roles: ["SUPER_ADMIN"],
+    capability: "settings.manage",
   },
 ];
 
@@ -246,44 +297,59 @@ const ADMIN_ROLES = [
   "READONLY_ADMIN",
 ];
 
-const canSeeNavItem = (roles, item) => {
+const canSeeNavItem = (roles, item, permissions) => {
+  if (item.capability) {
+    return permissions.hasCapability(item.capability);
+  }
+
   const allowedRoles = item.roles || ADMIN_ROLES;
   return some(allowedRoles, (role) => includes(roles, role));
 };
 
-const getVisibleNavItems = (items, roles) =>
+const getVisibleNavItems = (items, roles, permissions) =>
   filter(
     map(items, (item) => ({
       ...item,
       roles: item.roles || CONTENT_ROLES,
     })),
-    (item) => canSeeNavItem(roles, item),
+    (item) => canSeeNavItem(roles, item, permissions),
   );
 
 const Index = () => {
   const { user, roles } = useAuthStore();
+  const permissions = useAdminPermissions();
   const { openProfile } = useProfileOverlay();
   const mobileChromeHidden = useMobileChromeHidden();
 
   const visibleMainNav = React.useMemo(
     () =>
-      filter(
-        mainNav,
-        (item) => canSeeNavItem(roles, item.roles ? item : { ...item, roles: ADMIN_ROLES }),
+      filter(mainNav, (item) =>
+        canSeeNavItem(
+          roles,
+          item.roles ? item : { ...item, roles: ADMIN_ROLES },
+          permissions,
+        ),
       ),
-    [roles],
+    [permissions, roles],
   );
   const visibleContentNav = React.useMemo(
-    () => getVisibleNavItems(contentNav, roles),
-    [roles],
+    () => getVisibleNavItems(contentNav, roles, permissions),
+    [permissions, roles],
   );
   const visiblePremiumNav = React.useMemo(
-    () => filter(premiumNav, (item) => canSeeNavItem(roles, item)),
-    [roles],
+    () => filter(premiumNav, (item) => canSeeNavItem(roles, item, permissions)),
+    [permissions, roles],
   );
   const visibleSystemNav = React.useMemo(
-    () => filter(systemNav, (item) => canSeeNavItem(roles, item.roles ? item : { ...item, roles: ADMIN_ROLES })),
-    [roles],
+    () =>
+      filter(systemNav, (item) =>
+        canSeeNavItem(
+          roles,
+          item.roles ? item : { ...item, roles: ADMIN_ROLES },
+          permissions,
+        ),
+      ),
+    [permissions, roles],
   );
 
   return (

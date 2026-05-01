@@ -2,6 +2,7 @@ import React from "react";
 import { get } from "lodash";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 
 const formatDate = (dateStr) => {
   if (!dateStr) return "-";
@@ -32,6 +33,7 @@ export const useColumns = () => {
       {
         id: "owner",
         header: "Egasi",
+        meta: { skeleton: adminListSkeletons.avatarText },
         cell: (info) => {
           const row = get(info, "row.original");
           const owner = get(row, "owner");
@@ -67,6 +69,7 @@ export const useColumns = () => {
       {
         id: "members",
         header: "A'zolar",
+        meta: { skeleton: adminListSkeletons.badge },
         size: 100,
         cell: (info) => {
           const count = get(info, "row.original.memberCount", 0) ||
@@ -77,6 +80,7 @@ export const useColumns = () => {
       {
         id: "subscription",
         header: "Obuna",
+        meta: { skeleton: adminListSkeletons.text },
         cell: (info) => {
           const row = get(info, "row.original");
           const planName =
@@ -109,6 +113,7 @@ export const useColumns = () => {
       {
         id: "createdAt",
         header: "Yaratilgan",
+        meta: { skeleton: adminListSkeletons.text },
         size: 130,
         cell: (info) => (
           <span className="text-sm text-muted-foreground">

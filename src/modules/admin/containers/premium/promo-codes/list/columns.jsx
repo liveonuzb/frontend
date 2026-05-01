@@ -1,6 +1,7 @@
 import React from "react";
 import { get } from "lodash";
 import { Badge } from "@/components/ui/badge";
+import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import ActionsMenu from "./actions-menu.jsx";
 
 const formatDate = (dateStr) => {
@@ -66,6 +67,8 @@ export const useColumns = ({ canManage, handleToggleActive, onEdit, onDelete }) 
       {
         accessorKey: "code",
         header: "Kod",
+        size: 160,
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => (
           <Badge variant="outline" className="font-mono">
             {info.getValue()}
@@ -75,6 +78,8 @@ export const useColumns = ({ canManage, handleToggleActive, onEdit, onDelete }) 
       {
         id: "discount",
         header: "Chegirma",
+        size: 140,
+        meta: { skeleton: adminListSkeletons.text },
         cell: (info) => {
           const row = get(info, "row.original");
           return (
@@ -85,6 +90,8 @@ export const useColumns = ({ canManage, handleToggleActive, onEdit, onDelete }) 
       {
         id: "usage",
         header: "Ishlatish",
+        size: 130,
+        meta: { skeleton: adminListSkeletons.text },
         cell: (info) => {
           const row = get(info, "row.original");
           const usedCount = get(row, "usedCount", 0);
@@ -100,6 +107,7 @@ export const useColumns = ({ canManage, handleToggleActive, onEdit, onDelete }) 
         accessorKey: "stackable",
         header: "Stackable",
         size: 100,
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) =>
           info.getValue() ? (
             <Badge
@@ -120,6 +128,8 @@ export const useColumns = ({ canManage, handleToggleActive, onEdit, onDelete }) 
       {
         id: "validity",
         header: "Amal muddati",
+        size: 220,
+        meta: { skeleton: adminListSkeletons.text },
         cell: (info) => {
           const row = get(info, "row.original");
           return (
@@ -134,12 +144,14 @@ export const useColumns = ({ canManage, handleToggleActive, onEdit, onDelete }) 
         id: "status",
         header: "Status",
         size: 130,
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => getStatusBadge(get(info, "row.original")),
       },
       {
         id: "actions",
         header: "",
         size: 50,
+        meta: { skeleton: adminListSkeletons.action },
         cell: (info) => (
           <div className="flex justify-end">
             <ActionsMenu

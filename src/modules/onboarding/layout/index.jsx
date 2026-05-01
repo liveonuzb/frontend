@@ -131,6 +131,23 @@ const OnboardingLayoutInner = () => {
       activityLevel: userOnboarding?.activityLevel ?? "",
       mealFrequency: userOnboarding?.mealFrequency ?? "",
       waterHabits: userOnboarding?.waterHabits ?? "",
+      allergyIngredientIds: Array.isArray(userOnboarding?.allergyIngredientIds)
+        ? userOnboarding.allergyIngredientIds
+        : [],
+      dislikedIngredientIds: Array.isArray(
+        userOnboarding?.dislikedIngredientIds,
+      )
+        ? userOnboarding.dislikedIngredientIds
+        : [],
+      nutritionPreferenceKeys: Array.isArray(
+        userOnboarding?.nutritionPreferenceKeys,
+      )
+        ? userOnboarding.nutritionPreferenceKeys
+        : [],
+      allergyOtherText: userOnboarding?.allergyOtherText ?? "",
+      dislikedOtherText: userOnboarding?.dislikedOtherText ?? "",
+      nutritionPreferenceOtherText:
+        userOnboarding?.nutritionPreferenceOtherText ?? "",
       dietRestrictions: Array.isArray(userOnboarding?.dietRestrictions)
         ? userOnboarding.dietRestrictions
         : [],

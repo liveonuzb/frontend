@@ -1,7 +1,5 @@
 import React from "react";
-import { get } from "lodash";
 import {
-  useGetQuery,
   usePostQuery,
   usePatchQuery,
   useDeleteQuery,
@@ -13,13 +11,6 @@ import {
 } from "../api.js";
 
 const Index = () => {
-  const { data, isLoading, isFetching, refetch } = useGetQuery({
-    url: WORKOUT_BODY_PARTS_ENDPOINT,
-    queryProps: { queryKey: WORKOUT_BODY_PARTS_QUERY_KEY },
-  });
-
-  const bodyParts = get(data, "data.data", []);
-
   const { mutateAsync: createMutation, isPending: isCreating } = usePostQuery({
     queryKey: WORKOUT_BODY_PARTS_QUERY_KEY,
   });
@@ -72,17 +63,15 @@ const Index = () => {
       description="Workoutlar uchun tana qismi katalogini va tarjimalarini boshqaring."
       singularLabel="tana qismi"
       pluralSearchPlaceholder="Tana qismi qidirish"
-      items={bodyParts}
+      endpoint={WORKOUT_BODY_PARTS_ENDPOINT}
+      queryKey={WORKOUT_BODY_PARTS_QUERY_KEY}
       createItem={createBodyPart}
       updateItem={updateBodyPart}
       deleteItem={deleteBodyPart}
       reorderItems={reorderBodyParts}
-      isLoading={isLoading}
-      isFetching={isFetching}
       isCreating={isCreating}
       isUpdating={isUpdating}
       isDeleting={isDeleting}
-      refetch={refetch}
     />
   );
 };

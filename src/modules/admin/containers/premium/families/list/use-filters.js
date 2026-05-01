@@ -2,8 +2,23 @@ import React from "react";
 import { parseAsString, useQueryState } from "nuqs";
 import { get, find } from "lodash";
 
+const DEFAULT_PAGE_SIZE = 10;
+
 export const useFamilyFilters = () => {
   const [search, setSearch] = useQueryState("q", parseAsString.withDefault(""));
+  const [pageQuery, setPageQuery] = useQueryState(
+    "page",
+    parseAsString.withDefault("1"),
+  );
+  const [pageSizeQuery, setPageSizeQuery] = useQueryState(
+    "pageSize",
+    parseAsString.withDefault(String(DEFAULT_PAGE_SIZE)),
+  );
+  const currentPage = Math.max(1, Number(pageQuery) || 1);
+  const pageSize = Math.min(
+    100,
+    Math.max(1, Number(pageSizeQuery) || DEFAULT_PAGE_SIZE),
+  );
 
   const filterFields = React.useMemo(
     () => [
@@ -43,13 +58,18 @@ export const useFamilyFilters = () => {
 
       React.startTransition(() => {
         void setSearch(nextSearch);
+        void setPageQuery("1");
       });
     },
-    [setSearch],
+    [setPageQuery, setSearch],
   );
 
   return {
     search,
+    currentPage,
+    pageSize,
+    setPageQuery,
+    setPageSizeQuery,
     filterFields,
     activeFilters,
     handleFiltersChange,

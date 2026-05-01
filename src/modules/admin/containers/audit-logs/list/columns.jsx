@@ -3,6 +3,7 @@ import { get } from "lodash";
 import { Badge } from "@/components/ui/badge";
 import { DataGridColumnHeader } from "@/components/reui/data-grid";
 import { cn } from "@/lib/utils";
+import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import { auditActionLabels, auditEntityLabels } from "./config.js";
 
 const auditActionBadgeClassNames = {
@@ -108,6 +109,7 @@ export const useColumns = ({ currentPage, pageSize }) => {
         cell: (info) =>
           (currentPage - 1) * ITEMS_PER_PAGE + get(info, "row.index") + 1,
         size: 60,
+        meta: { skeleton: adminListSkeletons.index },
       },
       {
         accessorKey: "createdAt",
@@ -125,6 +127,8 @@ export const useColumns = ({ currentPage, pageSize }) => {
             </p>
           </div>
         ),
+        size: 180,
+        meta: { skeleton: adminListSkeletons.avatarText },
       },
       {
         accessorKey: "adminUser",
@@ -135,6 +139,8 @@ export const useColumns = ({ currentPage, pageSize }) => {
         cell: (info) => (
           <span className="font-medium">{info.getValue()}</span>
         ),
+        size: 180,
+        meta: { skeleton: adminListSkeletons.text },
       },
       {
         accessorKey: "action",
@@ -153,6 +159,8 @@ export const useColumns = ({ currentPage, pageSize }) => {
             {get(auditActionLabels, info.getValue(), info.getValue())}
           </Badge>
         ),
+        size: 180,
+        meta: { skeleton: adminListSkeletons.badge },
       },
       {
         accessorKey: "entityType",
@@ -171,6 +179,8 @@ export const useColumns = ({ currentPage, pageSize }) => {
             {get(auditEntityLabels, info.getValue(), info.getValue())}
           </Badge>
         ),
+        size: 160,
+        meta: { skeleton: adminListSkeletons.badge },
       },
       {
         accessorKey: "entityLabel",
@@ -180,6 +190,8 @@ export const useColumns = ({ currentPage, pageSize }) => {
             {info.getValue() || "\u2014"}
           </span>
         ),
+        size: 180,
+        meta: { skeleton: adminListSkeletons.text },
       },
       {
         accessorKey: "summary",
@@ -187,6 +199,8 @@ export const useColumns = ({ currentPage, pageSize }) => {
         cell: (info) => (
           <p className="min-w-[280px] text-sm leading-6">{info.getValue()}</p>
         ),
+        size: 320,
+        meta: { skeleton: adminListSkeletons.text },
       },
     ],
     [currentPage, ITEMS_PER_PAGE],

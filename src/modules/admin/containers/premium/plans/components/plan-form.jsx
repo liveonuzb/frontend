@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { DrawerClose, DrawerFooter } from "@/components/ui/drawer";
+import { DrawerFooter } from "@/components/ui/drawer";
 
 const slugify = (text) =>
   text
@@ -370,9 +370,6 @@ const PlanForm = ({ defaultValues, onSubmit, isSubmitting, submitLabel }) => {
         <Button onClick={handleSubmit} disabled={isSubmitting}>
           {submitLabel}
         </Button>
-        <DrawerClose asChild>
-          <Button variant="outline">Bekor qilish</Button>
-        </DrawerClose>
       </DrawerFooter>
     </>
   );

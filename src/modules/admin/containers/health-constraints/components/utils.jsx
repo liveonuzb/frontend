@@ -73,7 +73,10 @@ export const getPayload = (response) =>
 
 export const getErrorMessage = (error, fallback) => {
   const message = get(error, "response.data.message");
-  return isArray(message) ? join(message, ", ") : message || fallback;
+  const dependencySummary = get(error, "response.data.dependencySummary");
+  const baseMessage = isArray(message) ? join(message, ", ") : message;
+
+  return [baseMessage || fallback, dependencySummary].filter(Boolean).join(" ");
 };
 
 export const optionLabel = (options, value) =>

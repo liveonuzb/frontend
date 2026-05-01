@@ -4,8 +4,9 @@ import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 import { get, isArray, map, trim } from "lodash";
 import dayjs from "dayjs";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { PlusIcon, RotateCcwIcon } from "lucide-react";
+import { DownloadIcon, PlusIcon, RotateCcwIcon, UploadIcon } from "lucide-react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,8 +23,10 @@ import { DataGridColumnHeader } from "@/components/reui/data-grid/data-grid-colu
 import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
 import { Filters } from "@/components/reui/filters.jsx";
 import { useDeleteQuery, useGetQuery, usePatchQuery } from "@/hooks/api";
+import useApi from "@/hooks/api/use-api.js";
 import { cn } from "@/lib/utils";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
 
 import {
@@ -42,10 +45,28 @@ import {
 } from "../components/utils.jsx";
 import ActionsMenu from "./actions-menu.jsx";
 
+const downloadBlob = ({ blob, fileName }) => {
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = fileName || "ingredients.xlsx";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+};
+
 const ListPage = () => {
   const navigate = useNavigate();
+  const { canReadContent, canManageContent } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
+  const queryClient = useQueryClient();
+  const { request } = useApi();
+  const importFileInputRef = React.useRef(null);
+  const [isExporting, setIsExporting] = React.useState(false);
+  const [isImporting, setIsImporting] = React.useState(false);
   const [name, setName] = useQueryState(
     "name",
     parseAsString.withDefault(""),
@@ -60,6 +81,14 @@ const ListPage = () => {
   );
   const [statusOp, setStatusOp] = useQueryState(
     "statusOp",
+    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+  );
+  const [isAllergic, setIsAllergic] = useQueryState(
+    "isAllergic",
+    parseAsStringEnum(["all", "yes", "no"]).withDefault("all"),
+  );
+  const [isAllergicOp, setIsAllergicOp] = useQueryState(
+    "isAllergicOp",
     parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
   );
   const [hasImage, setHasImage] = useQueryState(
@@ -111,6 +140,8 @@ const ListPage = () => {
     nameOp === "contains" &&
     status === "all" &&
     statusOp === "is" &&
+    isAllergic === "all" &&
+    isAllergicOp === "is" &&
     hasImage === "all" &&
     hasImageOp === "is" &&
     translations === "all" &&
@@ -132,6 +163,10 @@ const ListPage = () => {
       ...(trim(deferredName) || nameOp !== "contains" ? { nameOp } : {}),
       ...(status !== "all" ? { status } : {}),
       ...(status !== "all" || statusOp !== "is" ? { statusOp } : {}),
+      ...(isAllergic !== "all" ? { isAllergic } : {}),
+      ...(isAllergic !== "all" || isAllergicOp !== "is"
+        ? { isAllergicOp }
+        : {}),
       ...(hasImage !== "all" ? { hasImage } : {}),
       ...(hasImage !== "all" || hasImageOp !== "is" ? { hasImageOp } : {}),
       ...(translations !== "all" ? { translations } : {}),
@@ -148,6 +183,8 @@ const ListPage = () => {
       deferredName,
       hasImage,
       hasImageOp,
+      isAllergic,
+      isAllergicOp,
       nameOp,
       pageSize,
       sortBy,
@@ -177,6 +214,101 @@ const ListPage = () => {
   }, [languagesData]);
   const patchMutation = usePatchQuery({ queryKey: QUERY_KEY });
   const deleteMutation = useDeleteQuery({ queryKey: QUERY_KEY });
+  const exportIngredients = React.useCallback(async () => {
+    const response = await request.get("/admin/ingredients/export", {
+      params,
+      responseType: "blob",
+    });
+
+    return {
+      blob: get(response, "data"),
+      fileName:
+        response.headers?.["content-disposition"]?.match(
+          /filename="?([^"]+)"?/,
+        )?.[1] || "ingredients.xlsx",
+    };
+  }, [params, request]);
+  const importIngredients = React.useCallback(
+    async (file) => {
+      const buildFormData = () => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return formData;
+      };
+      const previewResponse = await request.post(
+        "/admin/ingredients/import/preview",
+        buildFormData(),
+        { headers: { "Content-Type": "multipart/form-data" } },
+      );
+      const preview = get(previewResponse, "data.data", get(previewResponse, "data"));
+
+      if (get(preview, "invalidCount", 0) > 0) {
+        return { preview, job: null };
+      }
+
+      const jobResponse = await request.post(
+        "/admin/ingredients/import/jobs",
+        buildFormData(),
+        { headers: { "Content-Type": "multipart/form-data" } },
+      );
+
+      return {
+        preview,
+        job: get(jobResponse, "data.data", get(jobResponse, "data")),
+      };
+    },
+    [request],
+  );
+  const handleExportIngredients = React.useCallback(async () => {
+    if (!canReadContent) return;
+
+    try {
+      setIsExporting(true);
+      downloadBlob(await exportIngredients());
+      toast.success("Ingredientlar Excel formatda yuklandi");
+    } catch (error) {
+      toast.error(
+        getErrorMessage(error, "Ingredientlarni Excelga export qilib bo'lmadi"),
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  }, [canReadContent, exportIngredients]);
+  const handleImportIngredients = React.useCallback(
+    async (event) => {
+      if (!canManageContent) return;
+
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      try {
+        setIsImporting(true);
+        const result = await importIngredients(file);
+        const invalidCount = get(result, "preview.invalidCount", 0);
+
+        if (invalidCount > 0) {
+          const firstError = get(result, "preview.errors.0.error");
+          toast.error(
+            `${invalidCount} ta qatorda xato bor. ${
+              firstError || "Import boshlanmadi."
+            }`,
+          );
+          return;
+        }
+
+        await queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+        toast.success("Ingredient import job sifatida boshlandi");
+      } catch (error) {
+        toast.error(
+          getErrorMessage(error, "Ingredientlarni Excel import qilib bo'lmadi"),
+        );
+      } finally {
+        setIsImporting(false);
+        event.target.value = "";
+      }
+    },
+    [canManageContent, importIngredients, queryClient],
+  );
   const columns = React.useMemo(
     () => [
       {
@@ -279,6 +411,26 @@ const ListPage = () => {
         header: "Birlik",
         meta: { skeleton: adminListSkeletons.text },
         size: 80,
+      },
+      {
+        accessorKey: "isAllergic",
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Allergen" />
+        ),
+        enableSorting: true,
+        meta: { skeleton: adminListSkeletons.status },
+        size: 100,
+        cell: (info) =>
+          info.getValue() ? (
+            <Badge
+              variant="outline"
+              className="border-rose-200 bg-rose-50 text-rose-700"
+            >
+              Ha
+            </Badge>
+          ) : (
+            <span className="text-muted-foreground">Yo'q</span>
+          ),
       },
       {
         accessorKey: "pricePer100g",
@@ -430,6 +582,17 @@ const ListPage = () => {
         ],
       },
       {
+        label: "Allergen",
+        key: "isAllergic",
+        type: "select",
+        defaultOperator: "is",
+        options: [
+          { value: "all", label: "Barchasi" },
+          { value: "yes", label: "Allergen" },
+          { value: "no", label: "Allergen emas" },
+        ],
+      },
+      {
         label: "Rasm",
         key: "hasImage",
         type: "select",
@@ -472,6 +635,14 @@ const ListPage = () => {
         values: status !== "all" ? [status] : [],
       });
     }
+    if (isAllergic !== "all" || isAllergicOp !== "is") {
+      list.push({
+        id: "isAllergic",
+        field: "isAllergic",
+        operator: isAllergicOp,
+        values: isAllergic !== "all" ? [isAllergic] : [],
+      });
+    }
     if (hasImage !== "all" || hasImageOp !== "is") {
       list.push({
         id: "hasImage",
@@ -492,6 +663,8 @@ const ListPage = () => {
   }, [
     hasImage,
     hasImageOp,
+    isAllergic,
+    isAllergicOp,
     name,
     nameOp,
     status,
@@ -507,6 +680,8 @@ const ListPage = () => {
         void setNameOp(byField("name")?.operator ?? "contains");
         void setStatus(byField("status")?.values?.[0] ?? "all");
         void setStatusOp(byField("status")?.operator ?? "is");
+        void setIsAllergic(byField("isAllergic")?.values?.[0] ?? "all");
+        void setIsAllergicOp(byField("isAllergic")?.operator ?? "is");
         void setHasImage(byField("hasImage")?.values?.[0] ?? "all");
         void setHasImageOp(byField("hasImage")?.operator ?? "is");
         void setTranslations(byField("translations")?.values?.[0] ?? "all");
@@ -517,6 +692,8 @@ const ListPage = () => {
     [
       setHasImage,
       setHasImageOp,
+      setIsAllergic,
+      setIsAllergicOp,
       setName,
       setNameOp,
       setPageQuery,
@@ -595,6 +772,41 @@ const ListPage = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {canManageContent ? (
+            <>
+              <input
+                ref={importFileInputRef}
+                type="file"
+                accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                className="hidden"
+                onChange={(event) => void handleImportIngredients(event)}
+              />
+              <Button
+                variant="outline"
+                onClick={() => importFileInputRef.current?.click()}
+                disabled={isImporting}
+                className="gap-1.5"
+              >
+                <UploadIcon className="size-4" />
+                <span className="hidden sm:inline">
+                  {isImporting ? "Import..." : "Excel import"}
+                </span>
+              </Button>
+            </>
+          ) : null}
+          {canReadContent ? (
+            <Button
+              variant="outline"
+              onClick={() => void handleExportIngredients()}
+              disabled={isExporting}
+              className="gap-1.5"
+            >
+              <DownloadIcon className="size-4" />
+              <span className="hidden sm:inline">
+                {isExporting ? "Export..." : "Excel export"}
+              </span>
+            </Button>
+          ) : null}
           <Button
             variant="outline"
             size="icon"

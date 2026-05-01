@@ -23,7 +23,6 @@ import {
 import {
   Drawer,
   DrawerBody,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -742,9 +741,6 @@ const CreateWorkoutPage = () => {
           <Button onClick={handleSave} disabled={isCreating}>
             Yaratish
           </Button>
-          <DrawerClose asChild>
-            <Button variant="outline">Bekor qilish</Button>
-          </DrawerClose>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

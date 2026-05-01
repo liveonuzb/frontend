@@ -12,7 +12,6 @@ import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner.jsx";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -284,9 +283,6 @@ const EditFoodCategory = () => {
             <Button onClick={handleSave} disabled={isUpdating}>
               Saqlash
             </Button>
-            <DrawerClose asChild>
-              <Button variant="outline">Bekor qilish</Button>
-            </DrawerClose>
           </DrawerFooter>
           ) : null}
         </div>

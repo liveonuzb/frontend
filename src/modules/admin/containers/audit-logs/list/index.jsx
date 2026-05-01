@@ -1,7 +1,6 @@
 import React from "react";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
-import { clamp, get, find } from "lodash";
+import { get } from "lodash";
 import { useBreadcrumbStore } from "@/store";
 import { useGetQuery } from "@/hooks/api";
 import { Button } from "@/components/ui/button";
@@ -9,19 +8,15 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   DataGrid,
   DataGridContainer,
+  DataGridPagination,
   DataGridTable,
 } from "@/components/reui/data-grid";
 import PageTransition from "@/components/page-transition";
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  FileClockIcon,
-} from "lucide-react";
+import { FileClockIcon, RotateCcwIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
 import { useAuditLogFilters } from "./use-filters.js";
-
-const ITEMS_PER_PAGE = 10;
 
 const Index = () => {
   const { setBreadcrumbs } = useBreadcrumbStore();
@@ -31,12 +26,18 @@ const Index = () => {
     deferredSearch,
     actionFilter,
     entityFilter,
+    adminId,
+    entityId,
+    dateFrom,
+    dateTo,
     currentPage,
+    pageSize,
     sortBy,
     sortDir,
     sorting,
     handleSortingChange,
     setPageQuery,
+    setPageSizeQuery,
   } = useAuditLogFilters({ actions: [], entityTypes: [] });
 
   const queryParams = React.useMemo(
@@ -44,23 +45,36 @@ const Index = () => {
       ...(search.trim() ? { q: deferredSearch.trim() } : {}),
       ...(actionFilter !== "all" ? { action: actionFilter } : {}),
       ...(entityFilter !== "all" ? { entityType: entityFilter } : {}),
+      ...(adminId.trim() ? { adminId: adminId.trim() } : {}),
+      ...(entityId.trim() ? { entityId: entityId.trim() } : {}),
+      ...(dateFrom.trim() ? { dateFrom: dateFrom.trim() } : {}),
+      ...(dateTo.trim() ? { dateTo: dateTo.trim() } : {}),
       sortBy,
       sortDir,
       page: currentPage,
-      pageSize: ITEMS_PER_PAGE,
+      pageSize,
     }),
     [
       actionFilter,
+      adminId,
       currentPage,
+      dateFrom,
       deferredSearch,
       entityFilter,
-      search,
+      entityId,
       sortBy,
       sortDir,
+      pageSize,
+      search,
     ],
   );
 
-  const { data: auditLogsData, isLoading } = useGetQuery({
+  const {
+    data: auditLogsData,
+    isLoading,
+    isFetching,
+    refetch,
+  } = useGetQuery({
     url: "/admin/audit-logs",
     params: queryParams,
     queryProps: {
@@ -78,11 +92,8 @@ const Index = () => {
   const entityTypes = get(auditLogsData, "data.meta.entityTypes", []);
 
   // Rebuild filter fields with real actions/entityTypes from the API
-  const {
-    filterFields,
-    activeFilters,
-    handleFiltersChange,
-  } = useAuditLogFilters({ actions, entityTypes });
+  const { filterFields, activeFilters, handleFiltersChange } =
+    useAuditLogFilters({ actions, entityTypes });
 
   React.useEffect(() => {
     setBreadcrumbs([
@@ -99,17 +110,35 @@ const Index = () => {
     }
   }, [currentPage, get(meta, "totalPages"), setPageQuery]);
 
-  const columns = useColumns({ currentPage, pageSize: ITEMS_PER_PAGE });
+  const columns = useColumns({ currentPage, pageSize });
 
   const table = useReactTable({
     data: auditLogs,
     columns,
     manualSorting: true,
+    manualPagination: true,
+    pageCount: get(meta, "totalPages", 1),
     getCoreRowModel: getCoreRowModel(),
     onSortingChange: handleSortingChange,
+    onPaginationChange: (updater) => {
+      const next =
+        typeof updater === "function"
+          ? updater({ pageIndex: currentPage - 1, pageSize })
+          : updater;
+      const nextPageSize = Number(get(next, "pageSize")) || pageSize;
+
+      React.startTransition(() => {
+        void setPageQuery(
+          String(nextPageSize === pageSize ? Number(get(next, "pageIndex", 0)) + 1 : 1),
+        );
+        void setPageSizeQuery(String(nextPageSize));
+      });
+    },
     state: {
       sorting,
+      pagination: { pageIndex: currentPage - 1, pageSize },
     },
+    rowCount: get(meta, "total", 0),
   });
 
   return (
@@ -125,68 +154,38 @@ const Index = () => {
           </p>
         </div>
 
-        <Filter
-          filterFields={filterFields}
-          activeFilters={activeFilters}
-          handleFiltersChange={handleFiltersChange}
-        />
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <Filter
+            filterFields={filterFields}
+            activeFilters={activeFilters}
+            handleFiltersChange={handleFiltersChange}
+          />
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="self-start sm:self-auto"
+          >
+            <RotateCcwIcon
+              className={cn("size-4", isFetching && "animate-spin")}
+            />
+          </Button>
+        </div>
 
-        <DataGridContainer>
-          <ScrollArea className="w-full">
-            <DataGrid
-              table={table}
-              isLoading={isLoading}
-              recordCount={auditLogs.length}
-            >
+        <DataGrid
+          table={table}
+          isLoading={isLoading || isFetching}
+          recordCount={get(meta, "total", 0)}
+        >
+          <DataGridContainer>
+            <ScrollArea className="w-full">
               <DataGridTable />
-            </DataGrid>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-          {isLoading ? (
-            <div className="px-4 pb-4 text-sm text-muted-foreground">
-              Yuklanmoqda...
-            </div>
-          ) : null}
-        </DataGridContainer>
-
-        {get(meta, "total", 0) > ITEMS_PER_PAGE ? (
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              {(currentPage - 1) * ITEMS_PER_PAGE + 1}-
-              {clamp(currentPage * ITEMS_PER_PAGE, 0, get(meta, "total", 0))}{" "}
-              / {get(meta, "total", 0)}
-            </p>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon-sm"
-                onClick={() =>
-                  void setPageQuery(String(clamp(currentPage - 1, 1, get(meta, "totalPages", 1))))
-                }
-                disabled={currentPage === 1}
-              >
-                <ChevronLeftIcon />
-              </Button>
-              <span className="px-2 text-sm font-medium">
-                {currentPage} / {get(meta, "totalPages", 1)}
-              </span>
-              <Button
-                variant="outline"
-                size="icon-sm"
-                onClick={() =>
-                  void setPageQuery(
-                    String(
-                      clamp(currentPage + 1, 1, get(meta, "totalPages", 1)),
-                    ),
-                  )
-                }
-                disabled={currentPage === get(meta, "totalPages", 1)}
-              >
-                <ChevronRightIcon />
-              </Button>
-            </div>
-          </div>
-        ) : null}
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          </DataGridContainer>
+          <DataGridPagination table={table} />
+        </DataGrid>
       </div>
     </PageTransition>
   );

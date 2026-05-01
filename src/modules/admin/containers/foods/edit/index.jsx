@@ -22,7 +22,6 @@ import {
 import {
   Drawer,
   DrawerBody,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -42,6 +41,10 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner.jsx";
 import OptionDrawerPicker from "@/components/option-drawer-picker";
 import MultipleDrawerPicker from "@/components/multiple-drawer-picker";
+import {
+  UnsavedChangesAlert,
+  useUnsavedChangesGuard,
+} from "@/modules/admin/components/unsaved-changes-guard";
 import {
   NumberField,
   NumberFieldDecrement,
@@ -177,14 +180,29 @@ const FoodFormDrawer = ({
     }
   }, [form, initialValues, open]);
 
-  const handleSubmit = form.handleSubmit(async (data) => {
-    await onSave(data);
-    form.reset();
-  });
   const isPending = isUpdating || isUploadingImage || isDeletingImage;
+  const unsavedChanges = useUnsavedChangesGuard({
+    when:
+      (form.formState.isDirty || Boolean(uploadedImageId)) && !isPending,
+  });
+
+  const handleSubmit = form.handleSubmit(async (data) => {
+    const result = await onSave(data);
+    form.reset(data);
+    result?.afterReset?.();
+  });
+
+  const handleOpenChange = (nextOpen) => {
+    if (!nextOpen) {
+      unsavedChanges.requestLeave(() => onOpenChange(false));
+      return;
+    }
+
+    onOpenChange(nextOpen);
+  };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
+    <Drawer open={open} onOpenChange={handleOpenChange} direction="bottom">
       <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-md mx-auto">
         <DrawerHeader className="text-center">
           <DrawerTitle className="text-lg font-bold">
@@ -451,15 +469,22 @@ const FoodFormDrawer = ({
               <Button type="submit" form="food-edit-form" disabled={isPending}>
                 Saqlash
               </Button>
-              <DrawerClose asChild>
-                <Button variant="outline" type="button">
-                  Bekor qilish
-                </Button>
-              </DrawerClose>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => handleOpenChange(false)}
+              >
+                Bekor qilish
+              </Button>
             </DrawerFooter>
           </>
         )}
       </DrawerContent>
+      <UnsavedChangesAlert
+        open={unsavedChanges.confirmOpen}
+        onCancel={unsavedChanges.cancelLeave}
+        onConfirm={unsavedChanges.confirmLeave}
+      />
     </Drawer>
   );
 };
@@ -681,7 +706,9 @@ const EditFoodPage = () => {
       cleanupOnUnmountRef.current = false;
       setUploadedImageId(null);
       uploadedImageIdRef.current = null;
-      navigate("../list");
+      return {
+        afterReset: () => navigate("../list"),
+      };
     } catch (error) {
       const message = error?.response?.data?.message;
       toast.error(

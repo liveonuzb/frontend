@@ -1,5 +1,6 @@
 import React from "react";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
+import { useLocation, useNavigate } from "react-router";
 import CatalogItemActionsMenu from "./catalog-item-actions-menu";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 import {
@@ -18,6 +19,7 @@ import { useGetQuery } from "@/hooks/api";
 import {
   DataGrid,
   DataGridContainer,
+  DataGridPagination,
   DataGridTable,
   DataGridTableDndRowHandle,
   DataGridTableDndRows,
@@ -66,6 +68,20 @@ const emptyForm = {
   isActive: true,
 };
 
+const DEFAULT_PAGE_SIZE = 20;
+const TEXT_OPERATORS = [
+  "contains",
+  "not_contains",
+  "starts_with",
+  "ends_with",
+  "is",
+  "empty",
+  "not_empty",
+];
+const SELECT_OPERATORS = ["is", "is_not", "empty", "not_empty"];
+const SORT_FIELDS = ["orderKey", "name", "createdAt", "isActive"];
+const SORT_DIRECTIONS = ["asc", "desc"];
+
 const resolveLabel = (translations, fallback, language) => {
   if (translations && typeof translations === "object") {
     const direct = get(translations, language);
@@ -111,10 +127,10 @@ const cleanTranslations = (translations = {}) =>
 
 const getErrorMessage = (error, fallback) => {
   const message = get(error, "response.data.message");
-  if (isArray(message)) {
-    return join(message, ", ");
-  }
-  return message || fallback;
+  const dependencySummary = get(error, "response.data.dependencySummary");
+  const baseMessage = isArray(message) ? join(message, ", ") : message;
+
+  return [baseMessage || fallback, dependencySummary].filter(Boolean).join(" ");
 };
 
 const createFormFromItem = (item, language) => ({
@@ -134,6 +150,9 @@ const LocalizedCatalogManager = ({
   singularLabel,
   pluralSearchPlaceholder,
   items = [],
+  endpoint,
+  queryKey,
+  meta: providedMeta,
   createItem,
   updateItem,
   deleteItem,
@@ -146,6 +165,8 @@ const LocalizedCatalogManager = ({
   refetch,
 }) => {
   const { canManageContent } = useAdminPermissions();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const { data: languagesData } = useGetQuery({
@@ -155,23 +176,81 @@ const LocalizedCatalogManager = ({
   const languages = get(languagesData, "data.data", get(languagesData, "data", []));
 
   const [search, setSearch] = useQueryState("q", parseAsString.withDefault(""));
+  const [searchOperator, setSearchOperator] = useQueryState(
+    "qOp",
+    parseAsStringEnum(TEXT_OPERATORS).withDefault("contains"),
+  );
   const [statusFilter, setStatusFilter] = useQueryState(
     "status",
     parseAsStringEnum(["all", "active", "inactive"]).withDefault("all"),
   );
+  const [statusOperator, setStatusOperator] = useQueryState(
+    "statusOp",
+    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+  );
   const [translationFilter, setTranslationFilter] = useQueryState(
     "translations",
-    parseAsStringEnum(["all", "complete", "incomplete"]).withDefault("all"),
+    parseAsStringEnum(["all", "complete", "missing"]).withDefault("all"),
+  );
+  const [translationOperator, setTranslationOperator] = useQueryState(
+    "translationsOp",
+    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+  );
+  const [pageQuery, setPageQuery] = useQueryState(
+    "page",
+    parseAsString.withDefault("1"),
+  );
+  const [pageSizeQuery, setPageSizeQuery] = useQueryState(
+    "pageSize",
+    parseAsString.withDefault(String(DEFAULT_PAGE_SIZE)),
+  );
+  const [sortBy, setSortBy] = useQueryState(
+    "sortBy",
+    parseAsStringEnum(SORT_FIELDS).withDefault("orderKey"),
+  );
+  const [sortDir, setSortDir] = useQueryState(
+    "sortDir",
+    parseAsStringEnum(SORT_DIRECTIONS).withDefault("asc"),
+  );
+  const currentPage = Math.max(1, Number(pageQuery) || 1);
+  const pageSize = Math.min(
+    100,
+    Math.max(1, Number(pageSizeQuery) || DEFAULT_PAGE_SIZE),
+  );
+  const sorting = React.useMemo(
+    () =>
+      sortBy === "orderKey" && sortDir === "asc"
+        ? []
+        : [{ id: sortBy, desc: sortDir === "desc" }],
+    [sortBy, sortDir],
   );
 
-  const [drawerOpen, setDrawerOpen] = React.useState(false);
-  const [translationsDrawerOpen, setTranslationsDrawerOpen] =
-    React.useState(false);
   const [editingItem, setEditingItem] = React.useState(null);
   const [translatingItem, setTranslatingItem] = React.useState(null);
   const [itemToDelete, setItemToDelete] = React.useState(null);
   const [form, setForm] = React.useState(emptyForm);
   const [translationForm, setTranslationForm] = React.useState({});
+  const relativeDrawerPath = React.useMemo(() => {
+    const currentPath = location.pathname.replace(/\/+$/, "");
+    const basePath = route.replace(/\/+$/, "");
+
+    if (!currentPath.startsWith(basePath)) return "";
+
+    return currentPath.slice(basePath.length).replace(/^\/+/, "");
+  }, [location.pathname, route]);
+  const editMatch = relativeDrawerPath.match(/^edit\/([^/]+)$/);
+  const translateMatch = relativeDrawerPath.match(/^translate\/([^/]+)$/);
+  const routeMode =
+    relativeDrawerPath === "create"
+      ? "create"
+      : editMatch
+        ? "edit"
+        : translateMatch
+          ? "translate"
+          : null;
+  const routeItemId = editMatch?.[1] || translateMatch?.[1] || null;
+  const drawerOpen = routeMode === "create" || routeMode === "edit";
+  const translationsDrawerOpen = routeMode === "translate";
 
   React.useEffect(() => {
     setBreadcrumbs([
@@ -195,11 +274,125 @@ const LocalizedCatalogManager = ({
   );
 
   const deferredSearch = React.useDeferredValue(search);
+  const serverSide = Boolean(endpoint);
+  const queryParams = React.useMemo(
+    () => ({
+      ...(deferredSearch.trim() ? { q: deferredSearch.trim() } : {}),
+      ...((deferredSearch.trim() ||
+        searchOperator === "empty" ||
+        searchOperator === "not_empty") &&
+      searchOperator !== "contains"
+        ? { qOp: searchOperator }
+        : {}),
+      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      ...((statusFilter !== "all" ||
+        statusOperator === "empty" ||
+        statusOperator === "not_empty") &&
+      statusOperator !== "is"
+        ? { statusOp: statusOperator }
+        : {}),
+      ...(translationFilter !== "all"
+        ? { translations: translationFilter }
+        : {}),
+      ...((translationFilter !== "all" ||
+        translationOperator === "empty" ||
+        translationOperator === "not_empty") &&
+      translationOperator !== "is"
+        ? { translationsOp: translationOperator }
+        : {}),
+      sortBy,
+      sortDir,
+      page: currentPage,
+      pageSize,
+    }),
+    [
+      currentPage,
+      deferredSearch,
+      pageSize,
+      searchOperator,
+      sortBy,
+      sortDir,
+      statusFilter,
+      statusOperator,
+      translationFilter,
+      translationOperator,
+    ],
+  );
+  const serverQuery = useGetQuery({
+    url: endpoint || route,
+    params: queryParams,
+    queryProps: {
+      queryKey: [...(queryKey || [route]), queryParams],
+      enabled: serverSide,
+    },
+  });
+  const detailQuery = useGetQuery({
+    url: `${endpoint || route}/${routeItemId || ""}`,
+    queryProps: {
+      queryKey: [...(queryKey || [route]), "detail", routeItemId],
+      enabled: Boolean(serverSide && routeItemId),
+    },
+  });
+  const effectiveItems = serverSide
+    ? get(serverQuery, "data.data.data", [])
+    : items;
+  const effectiveMeta = serverSide
+    ? get(serverQuery, "data.data.meta", null)
+    : providedMeta;
+  const effectiveIsLoading = serverSide ? serverQuery.isLoading : isLoading;
+  const effectiveIsFetching = serverSide ? serverQuery.isFetching : isFetching;
+  const effectiveRefetch = serverSide ? serverQuery.refetch : refetch;
+  const routeItem = serverSide
+    ? get(detailQuery, "data.data")
+    : find(items, (item) => toString(get(item, "id")) === routeItemId);
+  const isDrawerItemLoading = Boolean(serverSide && routeItemId && detailQuery.isLoading);
+
+  React.useEffect(() => {
+    if (!effectiveMeta) return;
+
+    const nextTotalPages = Math.max(1, Number(get(effectiveMeta, "totalPages")) || 1);
+    if (currentPage > nextTotalPages) {
+      void setPageQuery(String(nextTotalPages));
+    }
+  }, [currentPage, effectiveMeta, setPageQuery]);
+
+  React.useEffect(() => {
+    if (routeMode === "create") {
+      setEditingItem(null);
+      setForm(emptyForm);
+      return;
+    }
+
+    if (routeMode === "edit" && routeItem) {
+      setEditingItem(routeItem);
+      setForm(createFormFromItem(routeItem, currentLanguage));
+    }
+  }, [currentLanguage, routeItem, routeMode]);
+
+  React.useEffect(() => {
+    if (routeMode !== "translate" || !routeItem) return;
+
+    setTranslatingItem(routeItem);
+    setTranslationForm(
+      Object.fromEntries(
+        map(activeLanguages, (language) => [
+          get(language, "code"),
+          resolveLabel(
+            get(routeItem, "translations"),
+            get(routeItem, "name", ""),
+            get(language, "code"),
+          ),
+        ]),
+      ),
+    );
+  }, [activeLanguages, routeItem, routeMode]);
 
   const filteredItems = React.useMemo(() => {
+    if (serverSide) return effectiveItems;
+
     const searchValue = deferredSearch.trim().toLowerCase();
 
-    return lodashFilter(items, (item) => {
+    return lodashFilter(effectiveItems, (item) => {
       const localizedName = resolveLabel(
         get(item, "translations"),
         get(item, "name"),
@@ -235,7 +428,8 @@ const LocalizedCatalogManager = ({
     activeLanguages.length,
     currentLanguage,
     deferredSearch,
-    items,
+    effectiveItems,
+    serverSide,
     statusFilter,
     translationFilter,
   ]);
@@ -243,8 +437,29 @@ const LocalizedCatalogManager = ({
   const isReorderEnabled =
     canManageContent &&
     deferredSearch.trim() === "" &&
+    searchOperator === "contains" &&
     statusFilter === "all" &&
-    translationFilter === "all";
+    statusOperator === "is" &&
+    translationFilter === "all" &&
+    translationOperator === "is" &&
+    sortBy === "orderKey" &&
+    sortDir === "asc" &&
+    currentPage === 1;
+
+  const paginatedItems = React.useMemo(() => {
+    if (serverSide) return filteredItems;
+
+    const start = (currentPage - 1) * pageSize;
+    return filteredItems.slice(start, start + pageSize);
+  }, [currentPage, filteredItems, pageSize, serverSide]);
+
+  const totalPages = Math.max(
+    1,
+    Number(get(effectiveMeta, "totalPages")) ||
+      Math.ceil(filteredItems.length / pageSize),
+  );
+  const recordCount =
+    Number(get(effectiveMeta, "total")) || filteredItems.length;
 
   const filterFields = React.useMemo(
     () => [
@@ -274,7 +489,7 @@ const LocalizedCatalogManager = ({
         options: [
           { value: "all", label: "Barcha tarjimalar" },
           { value: "complete", label: "Tarjimasi to'liq" },
-          { value: "incomplete", label: "Tarjimasi to'liq emas" },
+          { value: "missing", label: "Tarjimasi to'liq emas" },
         ],
       },
     ],
@@ -284,35 +499,63 @@ const LocalizedCatalogManager = ({
   const activeFilters = React.useMemo(() => {
     const next = [];
 
-    if (search.trim()) {
+    if (
+      search.trim() ||
+      searchOperator === "empty" ||
+      searchOperator === "not_empty"
+    ) {
       next.push({
         id: "q",
         field: "q",
-        operator: "contains",
-        values: [search],
+        operator: searchOperator,
+        values:
+          searchOperator === "empty" || searchOperator === "not_empty"
+            ? []
+            : [search],
       });
     }
 
-    if (statusFilter !== "all") {
+    if (
+      statusFilter !== "all" ||
+      statusOperator === "empty" ||
+      statusOperator === "not_empty"
+    ) {
       next.push({
         id: "status",
         field: "status",
-        operator: "is",
-        values: [statusFilter],
+        operator: statusOperator,
+        values:
+          statusOperator === "empty" || statusOperator === "not_empty"
+            ? []
+            : [statusFilter],
       });
     }
 
-    if (translationFilter !== "all") {
+    if (
+      translationFilter !== "all" ||
+      translationOperator === "empty" ||
+      translationOperator === "not_empty"
+    ) {
       next.push({
         id: "translations",
         field: "translations",
-        operator: "is",
-        values: [translationFilter],
+        operator: translationOperator,
+        values:
+          translationOperator === "empty" || translationOperator === "not_empty"
+            ? []
+            : [translationFilter],
       });
     }
 
     return next;
-  }, [search, statusFilter, translationFilter]);
+  }, [
+    search,
+    searchOperator,
+    statusFilter,
+    statusOperator,
+    translationFilter,
+    translationOperator,
+  ]);
 
   const handleFiltersChange = React.useCallback(
     (nextFilters) => {
@@ -321,41 +564,68 @@ const LocalizedCatalogManager = ({
         "values[0]",
         "",
       );
+      const nextSearchOperator = get(
+        find(nextFilters, (f) => get(f, "field") === "q"),
+        "operator",
+        "contains",
+      );
       const nextStatus = get(
         find(nextFilters, (f) => get(f, "field") === "status"),
         "values[0]",
         "all",
+      );
+      const nextStatusOperator = get(
+        find(nextFilters, (f) => get(f, "field") === "status"),
+        "operator",
+        "is",
       );
       const nextTranslations = get(
         find(nextFilters, (f) => get(f, "field") === "translations"),
         "values[0]",
         "all",
       );
+      const nextTranslationsOperator = get(
+        find(nextFilters, (f) => get(f, "field") === "translations"),
+        "operator",
+        "is",
+      );
 
       React.startTransition(() => {
         void setSearch(nextSearch);
+        void setSearchOperator(nextSearchOperator);
         void setStatusFilter(nextStatus);
+        void setStatusOperator(nextStatusOperator);
         void setTranslationFilter(nextTranslations);
+        void setTranslationOperator(nextTranslationsOperator);
+        void setPageQuery("1");
       });
     },
-    [setSearch, setStatusFilter, setTranslationFilter],
+    [
+      setPageQuery,
+      setSearch,
+      setSearchOperator,
+      setStatusFilter,
+      setStatusOperator,
+      setTranslationFilter,
+      setTranslationOperator,
+    ],
   );
 
   const openCreateDrawer = React.useCallback(() => {
     if (!canManageContent) return;
     setEditingItem(null);
     setForm(emptyForm);
-    setDrawerOpen(true);
-  }, [canManageContent]);
+    navigate(`${route}/create`);
+  }, [canManageContent, navigate, route]);
 
   const openEditDrawer = React.useCallback(
     (item) => {
       if (!canManageContent) return;
       setEditingItem(item);
       setForm(createFormFromItem(item, currentLanguage));
-      setDrawerOpen(true);
+      navigate(`${route}/edit/${get(item, "id")}`);
     },
-    [canManageContent, currentLanguage],
+    [canManageContent, currentLanguage, navigate, route],
   );
 
   const openTranslationsDrawer = React.useCallback(
@@ -374,9 +644,9 @@ const LocalizedCatalogManager = ({
           ]),
         ),
       );
-      setTranslationsDrawerOpen(true);
+      navigate(`${route}/translate/${get(item, "id")}`);
     },
-    [activeLanguages, canManageContent],
+    [activeLanguages, canManageContent, navigate, route],
   );
 
   const submitDrawer = React.useCallback(async () => {
@@ -406,7 +676,10 @@ const LocalizedCatalogManager = ({
         toast.success(`${singularLabel} yaratildi`);
       }
 
-      setDrawerOpen(false);
+      if (effectiveRefetch) {
+        void effectiveRefetch();
+      }
+      navigate(route);
       setEditingItem(null);
       setForm(emptyForm);
     } catch (error) {
@@ -417,7 +690,10 @@ const LocalizedCatalogManager = ({
     canManageContent,
     currentLanguage,
     editingItem,
+    effectiveRefetch,
     form,
+    navigate,
+    route,
     singularLabel,
     updateItem,
   ]);
@@ -432,13 +708,24 @@ const LocalizedCatalogManager = ({
         translations: cleanTranslations(translationForm),
       });
       toast.success("Tarjimalar yangilandi");
-      setTranslationsDrawerOpen(false);
+      if (effectiveRefetch) {
+        void effectiveRefetch();
+      }
+      navigate(route);
       setTranslatingItem(null);
       setTranslationForm({});
     } catch (error) {
       toast.error(getErrorMessage(error, "Tarjimalarni saqlab bo'lmadi"));
     }
-  }, [canManageContent, translationForm, translatingItem, updateItem]);
+  }, [
+    canManageContent,
+    effectiveRefetch,
+    navigate,
+    route,
+    translationForm,
+    translatingItem,
+    updateItem,
+  ]);
 
   const confirmDelete = React.useCallback(async () => {
     if (!canManageContent || !itemToDelete) {
@@ -448,13 +735,22 @@ const LocalizedCatalogManager = ({
     try {
       await deleteItem(get(itemToDelete, "id"));
       toast.success(`${singularLabel} o'chirildi`);
+      if (effectiveRefetch) {
+        void effectiveRefetch();
+      }
       setItemToDelete(null);
     } catch (error) {
       toast.error(
         getErrorMessage(error, `${singularLabel}ni o'chirib bo'lmadi`),
       );
     }
-  }, [canManageContent, deleteItem, itemToDelete, singularLabel]);
+  }, [
+    canManageContent,
+    deleteItem,
+    effectiveRefetch,
+    itemToDelete,
+    singularLabel,
+  ]);
 
   const handleToggleStatus = React.useCallback(
     async (item, checked) => {
@@ -463,11 +759,14 @@ const LocalizedCatalogManager = ({
       try {
         await updateItem(get(item, "id"), { isActive: checked });
         toast.success("Status yangilandi");
+        if (effectiveRefetch) {
+          void effectiveRefetch();
+        }
       } catch (error) {
         toast.error(getErrorMessage(error, "Statusni saqlab bo'lmadi"));
       }
     },
-    [canManageContent, updateItem],
+    [canManageContent, effectiveRefetch, updateItem],
   );
 
   const columns = React.useMemo(
@@ -487,6 +786,8 @@ const LocalizedCatalogManager = ({
       {
         accessorKey: "name",
         header: title,
+        enableSorting: true,
+        size: 280,
         meta: { skeleton: adminListSkeletons.avatarText },
         cell: (info) => (
           <div className="flex flex-col gap-1">
@@ -506,6 +807,7 @@ const LocalizedCatalogManager = ({
       {
         id: "translations",
         header: "Tarjimalar",
+        enableSorting: false,
         size: 160,
         meta: { skeleton: adminListSkeletons.translations },
         cell: (info) => {
@@ -539,6 +841,7 @@ const LocalizedCatalogManager = ({
       {
         accessorKey: "isActive",
         header: "Status",
+        enableSorting: true,
         size: 100,
         meta: { skeleton: adminListSkeletons.status },
         cell: (info) => (
@@ -556,6 +859,7 @@ const LocalizedCatalogManager = ({
       {
         id: "actions",
         header: "",
+        enableSorting: false,
         size: 50,
         meta: { skeleton: adminListSkeletons.action },
         cell: (info) => (
@@ -584,10 +888,49 @@ const LocalizedCatalogManager = ({
   );
 
   const table = useReactTable({
-    data: filteredItems,
+    data: paginatedItems,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => toString(get(row, "id")),
+    manualPagination: true,
+    manualSorting: true,
+    pageCount: totalPages,
+    onPaginationChange: (updater) => {
+      const next =
+        typeof updater === "function"
+          ? updater({ pageIndex: currentPage - 1, pageSize })
+          : updater;
+
+      React.startTransition(() => {
+        void setPageQuery(String(get(next, "pageIndex", 0) + 1));
+        void setPageSizeQuery(String(get(next, "pageSize", pageSize)));
+      });
+    },
+    onSortingChange: (updater) => {
+      const nextSorting =
+        typeof updater === "function" ? updater(sorting) : updater;
+      const nextSort = nextSorting?.[0];
+
+      React.startTransition(() => {
+        void setPageQuery("1");
+
+        if (!nextSort) {
+          void setSortBy("orderKey");
+          void setSortDir("asc");
+          return;
+        }
+
+        void setSortBy(nextSort.id);
+        void setSortDir(nextSort.desc ? "desc" : "asc");
+      });
+    },
+    state: {
+      sorting,
+      pagination: {
+        pageIndex: currentPage - 1,
+        pageSize,
+      },
+    },
   });
 
   const handleDragEnd = React.useCallback(
@@ -596,7 +939,7 @@ const LocalizedCatalogManager = ({
         return;
       }
 
-      const dataIds = map(filteredItems, (item) => toString(get(item, "id")));
+      const dataIds = map(paginatedItems, (item) => toString(get(item, "id")));
       const oldIndex = dataIds.indexOf(active.id);
       const newIndex = dataIds.indexOf(over.id);
 
@@ -604,9 +947,9 @@ const LocalizedCatalogManager = ({
         return;
       }
 
-      const moved = filteredItems[oldIndex];
-      const prev = filteredItems[newIndex - 1];
-      const next = filteredItems[newIndex + 1];
+      const moved = paginatedItems[oldIndex];
+      const prev = paginatedItems[newIndex - 1];
+      const next = paginatedItems[newIndex + 1];
 
       const prevId = newIndex > oldIndex ? over.id : prev?.id;
       const nextId = newIndex > oldIndex ? next?.id : over.id;
@@ -618,11 +961,20 @@ const LocalizedCatalogManager = ({
           nextId: nextId ? Number(nextId) : undefined,
         });
         toast.success("Tartib yangilandi");
+        if (effectiveRefetch) {
+          void effectiveRefetch();
+        }
       } catch (error) {
         toast.error(getErrorMessage(error, "Tartibni saqlab bo'lmadi"));
       }
     },
-    [canManageContent, filteredItems, isReorderEnabled, reorderItems],
+    [
+      canManageContent,
+      effectiveRefetch,
+      isReorderEnabled,
+      paginatedItems,
+      reorderItems,
+    ],
   );
 
   return (
@@ -633,9 +985,16 @@ const LocalizedCatalogManager = ({
           <p className="mt-1 text-sm text-muted-foreground">{description}</p>
         </div>
         <div className="flex items-center gap-2 self-start">
-          {refetch ? (
-            <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching}>
-              <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
+          {effectiveRefetch ? (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => effectiveRefetch()}
+              disabled={effectiveIsFetching}
+            >
+              <RotateCcwIcon
+                className={cn("size-4", effectiveIsFetching && "animate-spin")}
+              />
             </Button>
           ) : null}
           {canManageContent ? (
@@ -653,17 +1012,17 @@ const LocalizedCatalogManager = ({
         onChange={handleFiltersChange}
       />
 
-      <DataGridContainer>
-        <ScrollArea className="w-full">
-          <DataGrid
-            table={table}
-            isLoading={isLoading}
-            recordCount={filteredItems.length}
-          >
+      <DataGrid
+        table={table}
+        isLoading={effectiveIsLoading}
+        recordCount={recordCount}
+      >
+        <DataGridContainer>
+          <ScrollArea className="w-full">
             {isReorderEnabled ? (
               <DataGridTableDndRows
                 table={table}
-                dataIds={map(filteredItems, (item) =>
+                dataIds={map(paginatedItems, (item) =>
                   toString(get(item, "id")),
                 )}
                 handleDragEnd={handleDragEnd}
@@ -671,16 +1030,26 @@ const LocalizedCatalogManager = ({
             ) : (
               <DataGridTable />
             )}
-          </DataGrid>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
-      </DataGridContainer>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </DataGridContainer>
+        {canManageContent && !isReorderEnabled ? (
+          <div className="px-2 text-xs text-muted-foreground">
+            Tartiblash faqat filterlarsiz, `orderKey` bo'yicha va birinchi
+            sahifada ishlaydi.
+          </div>
+        ) : null}
+        <DataGridPagination
+          info="{from} - {to} / {count} ta yozuv"
+          sizes={[10, 25, 50, 100]}
+        />
+      </DataGrid>
 
       <Drawer
         open={drawerOpen}
         onOpenChange={(open) => {
-          setDrawerOpen(open);
           if (!open) {
+            navigate(route);
             setEditingItem(null);
             setForm(emptyForm);
           }
@@ -700,60 +1069,68 @@ const LocalizedCatalogManager = ({
           </DrawerHeader>
 
           <DrawerBody className="flex flex-col gap-4">
-            <div className="rounded-2xl border px-4 py-3 text-sm">
-              <p className="font-medium">
-                Joriy til:{" "}
-                {get(currentLanguageMeta, "flag")
-                  ? `${get(currentLanguageMeta, "flag")} `
-                  : ""}
-                {get(
-                  currentLanguageMeta,
-                  "name",
-                  currentLanguage.toUpperCase(),
-                )}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Qo'shimcha tarjimalar alohida drawerda boshqariladi.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label>Nomi ({currentLanguage.toUpperCase()})</Label>
-              <Input
-                value={get(form, "name")}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    name: get(event, "target.value"),
-                  }))
-                }
-                placeholder={`${singularLabel} nomini kiriting`}
-              />
-            </div>
-
-            <div className="flex items-center justify-between rounded-2xl border px-4 py-3">
-              <div>
-                <Label>Status</Label>
-                <p className="text-xs text-muted-foreground">
-                  Faol bo'lsa workout formida ko'rinadi.
-                </p>
+            {isDrawerItemLoading ? (
+              <div className="flex min-h-48 items-center justify-center">
+                <LoaderCircleIcon className="size-6 animate-spin text-muted-foreground" />
               </div>
-              <Switch
-                checked={get(form, "isActive")}
-                onCheckedChange={(checked) =>
-                  setForm((current) => ({
-                    ...current,
-                    isActive: checked,
-                  }))
-                }
-              />
-            </div>
+            ) : (
+              <>
+                <div className="rounded-2xl border px-4 py-3 text-sm">
+                  <p className="font-medium">
+                    Joriy til:{" "}
+                    {get(currentLanguageMeta, "flag")
+                      ? `${get(currentLanguageMeta, "flag")} `
+                      : ""}
+                    {get(
+                      currentLanguageMeta,
+                      "name",
+                      currentLanguage.toUpperCase(),
+                    )}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Qo'shimcha tarjimalar alohida drawerda boshqariladi.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <Label>Nomi ({currentLanguage.toUpperCase()})</Label>
+                  <Input
+                    value={get(form, "name")}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        name: get(event, "target.value"),
+                      }))
+                    }
+                    placeholder={`${singularLabel} nomini kiriting`}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between rounded-2xl border px-4 py-3">
+                  <div>
+                    <Label>Status</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Faol bo'lsa workout formida ko'rinadi.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={get(form, "isActive")}
+                    onCheckedChange={(checked) =>
+                      setForm((current) => ({
+                        ...current,
+                        isActive: checked,
+                      }))
+                    }
+                  />
+                </div>
+              </>
+            )}
           </DrawerBody>
 
           <DrawerFooter>
             <Button
               onClick={() => void submitDrawer()}
-              disabled={isCreating || isUpdating}
+              disabled={isCreating || isUpdating || isDrawerItemLoading}
               className="gap-2"
             >
               {isCreating || isUpdating ? (
@@ -763,7 +1140,7 @@ const LocalizedCatalogManager = ({
               )}
               Saqlash
             </Button>
-            <Button variant="outline" onClick={() => setDrawerOpen(false)}>
+            <Button variant="outline" onClick={() => navigate(route)}>
               Bekor qilish
             </Button>
           </DrawerFooter>
@@ -773,8 +1150,8 @@ const LocalizedCatalogManager = ({
       <Drawer
         open={translationsDrawerOpen}
         onOpenChange={(open) => {
-          setTranslationsDrawerOpen(open);
           if (!open) {
+            navigate(route);
             setTranslatingItem(null);
             setTranslationForm({});
           }
@@ -790,29 +1167,35 @@ const LocalizedCatalogManager = ({
           </DrawerHeader>
 
           <DrawerBody className="flex flex-col gap-4">
-            {map(activeLanguages, (language) => (
-              <div key={get(language, "id")} className="flex flex-col gap-2">
-                <Label>
-                  {get(language, "flag")} {get(language, "name")}
-                </Label>
-                <Input
-                  value={get(translationForm, get(language, "code"), "")}
-                  onChange={(event) =>
-                    setTranslationForm((current) => ({
-                      ...current,
-                      [language.code]: event.target.value,
-                    }))
-                  }
-                  placeholder={`${language.name} tarjimasi`}
-                />
+            {isDrawerItemLoading ? (
+              <div className="flex min-h-48 items-center justify-center">
+                <LoaderCircleIcon className="size-6 animate-spin text-muted-foreground" />
               </div>
-            ))}
+            ) : (
+              map(activeLanguages, (language) => (
+                <div key={get(language, "id")} className="flex flex-col gap-2">
+                  <Label>
+                    {get(language, "flag")} {get(language, "name")}
+                  </Label>
+                  <Input
+                    value={get(translationForm, get(language, "code"), "")}
+                    onChange={(event) =>
+                      setTranslationForm((current) => ({
+                        ...current,
+                        [language.code]: event.target.value,
+                      }))
+                    }
+                    placeholder={`${language.name} tarjimasi`}
+                  />
+                </div>
+              ))
+            )}
           </DrawerBody>
 
           <DrawerFooter>
             <Button
               onClick={() => void submitTranslations()}
-              disabled={isUpdating}
+              disabled={isUpdating || isDrawerItemLoading}
               className="gap-2"
             >
               {isUpdating ? (
@@ -821,12 +1204,6 @@ const LocalizedCatalogManager = ({
                 <CheckCircle2Icon />
               )}
               Tarjimalarni saqlash
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setTranslationsDrawerOpen(false)}
-            >
-              Bekor qilish
             </Button>
           </DrawerFooter>
         </DrawerContent>

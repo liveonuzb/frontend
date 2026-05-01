@@ -23,6 +23,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Spinner } from "@/components/ui/spinner.jsx";
 import { Button } from "@/components/ui/button";
 import { useDeleteQuery, useGetQuery, usePatchQuery, usePostQuery } from "@/hooks/api";
@@ -60,6 +61,7 @@ const IngredientFormDrawer = ({ mode }) => {
       carbs: 0,
       fat: 0,
       servingUnit: "g",
+      isAllergic: false,
     },
   });
   const postMutation = usePostQuery({ queryKey: QUERY_KEY });
@@ -78,6 +80,7 @@ const IngredientFormDrawer = ({ mode }) => {
         carbs: Number(item.carbs) || 0,
         fat: Number(item.fat) || 0,
         servingUnit: item.servingUnit || "g",
+        isAllergic: Boolean(item.isAllergic),
       });
       setImagePreview(item.imageUrl || null);
     }
@@ -219,6 +222,26 @@ const IngredientFormDrawer = ({ mode }) => {
                           />
                         </FormControl>
                         <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="isAllergic"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between gap-4 rounded-2xl border px-4 py-3">
+                        <div>
+                          <FormLabel>Allergen sifatida ko'rsatish</FormLabel>
+                          <p className="text-xs text-muted-foreground">
+                            User onboardingda allergiya tanlovida chiqadi
+                          </p>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={Boolean(field.value)}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
                       </FormItem>
                     )}
                   />

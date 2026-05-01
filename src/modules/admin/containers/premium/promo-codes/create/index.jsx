@@ -7,7 +7,6 @@ import { usePostQuery } from "@/hooks/api";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -102,9 +101,6 @@ const CreatePromoCode = () => {
             <Button onClick={handleSave} disabled={isCreating || !canManageGrowth}>
               Yaratish
             </Button>
-            <DrawerClose asChild>
-              <Button variant="outline">Bekor qilish</Button>
-            </DrawerClose>
           </DrawerFooter>
         </div>
       </DrawerContent>

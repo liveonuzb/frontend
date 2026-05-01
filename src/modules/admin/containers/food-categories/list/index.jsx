@@ -454,10 +454,12 @@ const Index = () => {
       setCategoryToDelete(null);
     } catch (error) {
       const message = get(error, "response.data.message");
+      const dependencySummary = get(error, "response.data.dependencySummary");
+      const baseMessage = isArray(message) ? join(message, ", ") : message;
       toast.error(
-        isArray(message)
-          ? join(message, ", ")
-          : message || "Kategoriyani o'chirib bo'lmadi",
+        [baseMessage || "Kategoriyani o'chirib bo'lmadi", dependencySummary]
+          .filter(Boolean)
+          .join(" "),
       );
     }
   }, [canManageContent, categoryToDelete, deleteCategory]);

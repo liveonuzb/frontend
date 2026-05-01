@@ -1,7 +1,8 @@
 import React from "react";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { compact, filter, find, fromPairs, get, isArray, join, map, size, some, toString, trim, values } from "lodash";
+import { filter, find, fromPairs, get, isArray, join, map, size, toString, trim } from "lodash";
 import { toast } from "sonner";
+import { useMatch, useNavigate } from "react-router";
 import {
   CheckCircle2Icon,
   Globe2Icon,
@@ -21,15 +22,16 @@ import {
   useDeleteQuery,
 } from "@/hooks/api";
 import { cn } from "@/lib/utils";
-import { cleanLocationTranslations, countFilledLocationTranslations, resolveTranslatedLocationLabel } from "@/lib/location-translations.js";
-import { DataGrid, DataGridContainer, DataGridTable } from "@/components/reui/data-grid";
+import { cleanLocationTranslations, resolveTranslatedLocationLabel } from "@/lib/location-translations.js";
+import { DataGrid, DataGridContainer, DataGridPagination, DataGridTable } from "@/components/reui/data-grid";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
+import { Spinner } from "@/components/ui/spinner.jsx";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
 import { useLocationFilters } from "./use-filters.js";
@@ -53,9 +55,19 @@ const LocationStatCard = ({ icon: Icon, label, value, hint }) => (
 );
 
 const LocationsIndex = () => {
+  const navigate = useNavigate();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const { request } = useApi();
+  const createMatch = useMatch("/admin/locations/create");
+  const childCreateMatch = useMatch("/admin/locations/create/:parentId");
+  const editMatch = useMatch("/admin/locations/edit/:id");
+  const translateMatch = useMatch("/admin/locations/translate/:id");
+  const childParentId = get(childCreateMatch, "params.parentId");
+  const editingLocationId = get(editMatch, "params.id");
+  const translatingLocationId = get(translateMatch, "params.id");
+  const drawerOpen = Boolean(createMatch || childParentId || editingLocationId);
+  const translationsDrawerOpen = Boolean(translatingLocationId);
 
   // --- Languages ---
   const { data: languagesData } = useGetQuery({
@@ -63,16 +75,6 @@ const LocationsIndex = () => {
     queryProps: { queryKey: ["admin", "languages"] },
   });
   const languages = get(languagesData, "data.data", []);
-
-  // --- Root locations (countries) ---
-  const { data: rootData, isLoading, isFetching, refetch: refetchRoot } = useGetQuery({
-    url: "/admin/locations/children",
-    queryProps: { queryKey: ["admin", "locations", "root"] },
-  });
-  const rootLocations = React.useMemo(() => {
-    const items = get(rootData, "data.data", get(rootData, "data", []));
-    return isArray(items) ? items : [];
-  }, [rootData]);
 
   // --- Stats ---
   const { data: statsData, refetch: refetchStats } = useGetQuery({
@@ -82,6 +84,30 @@ const LocationsIndex = () => {
   const stats = get(statsData, "data.data", get(statsData, "data", {
     total: 0, active: 0, inactive: 0, countries: 0, regions: 0, districts: 0, cities: 0,
   }));
+
+  const { data: editingLocationData, isLoading: isEditingLocationLoading } =
+    useGetQuery({
+      url: `/admin/locations/${editingLocationId || ""}`,
+      queryProps: {
+        queryKey: ["admin", "locations", "detail", editingLocationId],
+        enabled: Boolean(editingLocationId),
+      },
+    });
+  const { data: translatingLocationData, isLoading: isTranslatingLocationLoading } =
+    useGetQuery({
+      url: `/admin/locations/${translatingLocationId || ""}`,
+      queryProps: {
+        queryKey: ["admin", "locations", "detail", translatingLocationId],
+        enabled: Boolean(translatingLocationId),
+      },
+    });
+  const { data: childParentData, isLoading: isChildParentLoading } = useGetQuery({
+    url: `/admin/locations/${childParentId || ""}`,
+    queryProps: {
+      queryKey: ["admin", "locations", "detail", childParentId],
+      enabled: Boolean(childParentId),
+    },
+  });
 
   // --- Mutations ---
   const { mutateAsync: createLocationMutation, isPending: isCreating } = usePostQuery({
@@ -111,11 +137,100 @@ const LocationsIndex = () => {
   );
 
   // --- Filters ---
-  const { search, typeFilter, statusFilter, translationFilter, filterFields, activeFilters, handleFiltersChange } = useLocationFilters();
+  const {
+    search,
+    searchOperator,
+    typeFilter,
+    typeOperator,
+    statusFilter,
+    statusOperator,
+    translationFilter,
+    translationOperator,
+    sortBy,
+    sortDir,
+    sorting,
+    currentPage,
+    pageSize,
+    setPageQuery,
+    setPageSizeQuery,
+    filterFields,
+    activeFilters,
+    handleFiltersChange,
+    handleSortingChange,
+  } = useLocationFilters();
+
+  const deferredSearch = React.useDeferredValue(search);
+  const queryParams = React.useMemo(
+    () => ({
+      ...(trim(deferredSearch) ? { q: trim(deferredSearch) } : {}),
+      ...((trim(deferredSearch) ||
+        searchOperator === "empty" ||
+        searchOperator === "not_empty") &&
+      searchOperator !== "contains"
+        ? { qOp: searchOperator }
+        : {}),
+      ...(typeFilter !== "all" ? { type: typeFilter } : {}),
+      ...((typeFilter !== "all" ||
+        typeOperator === "empty" ||
+        typeOperator === "not_empty") &&
+      typeOperator !== "is"
+        ? { typeOp: typeOperator }
+        : {}),
+      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      ...((statusFilter !== "all" ||
+        statusOperator === "empty" ||
+        statusOperator === "not_empty") &&
+      statusOperator !== "is"
+        ? { statusOp: statusOperator }
+        : {}),
+      ...(translationFilter !== "all"
+        ? { translations: translationFilter }
+        : {}),
+      ...((translationFilter !== "all" ||
+        translationOperator === "empty" ||
+        translationOperator === "not_empty") &&
+      translationOperator !== "is"
+        ? { translationsOp: translationOperator }
+        : {}),
+      sortBy,
+      sortDir,
+      page: currentPage,
+      pageSize,
+    }),
+    [
+      currentPage,
+      deferredSearch,
+      pageSize,
+      searchOperator,
+      sortBy,
+      sortDir,
+      statusFilter,
+      statusOperator,
+      translationFilter,
+      translationOperator,
+      typeFilter,
+      typeOperator,
+    ],
+  );
+
+  const { data: locationsData, isLoading, isFetching, refetch: refetchRoot } =
+    useGetQuery({
+      url: "/admin/locations",
+      params: queryParams,
+      queryProps: { queryKey: ["admin", "locations", "list", queryParams] },
+    });
+  const locations = React.useMemo(() => {
+    const items = get(locationsData, "data.data", []);
+    return isArray(items) ? items : [];
+  }, [locationsData]);
+  const meta = get(locationsData, "data.meta", {
+    total: 0,
+    page: currentPage,
+    pageSize,
+    totalPages: 1,
+  });
 
   // --- Local UI state ---
-  const [drawerOpen, setDrawerOpen] = React.useState(false);
-  const [translationsDrawerOpen, setTranslationsDrawerOpen] = React.useState(false);
   const [editingLocation, setEditingLocation] = React.useState(null);
   const [translatingLocation, setTranslatingLocation] = React.useState(null);
   const [locationToDelete, setLocationToDelete] = React.useState(null);
@@ -133,6 +248,52 @@ const LocationsIndex = () => {
   React.useEffect(() => {
     setBreadcrumbs([{ url: "/admin", title: "Admin" }, { url: "/admin/locations", title: "Locations" }]);
   }, [setBreadcrumbs]);
+
+  React.useEffect(() => {
+    const nextTotalPages = Math.max(1, Number(get(meta, "totalPages")) || 1);
+    if (currentPage > nextTotalPages) {
+      void setPageQuery(String(nextTotalPages));
+    }
+  }, [currentPage, meta, setPageQuery]);
+
+  React.useEffect(() => {
+    if (!createMatch) return;
+
+    setEditingLocation(null);
+    setForm(EMPTY_FORM);
+  }, [createMatch]);
+
+  React.useEffect(() => {
+    const parent = get(childParentData, "data.data");
+    if (!parent) return;
+
+    const nextType = NEXT_TYPE_MAP[parent.type];
+    if (!nextType) return;
+
+    setEditingLocation(null);
+    setForm({ name: "", type: nextType, parentId: parent.id, isActive: true });
+  }, [childParentData]);
+
+  React.useEffect(() => {
+    const location = get(editingLocationData, "data.data");
+    if (!location) return;
+
+    setEditingLocation(location);
+    setForm({
+      name: resolveTranslatedLocationLabel(location.translations, location.name || "", currentLanguage),
+      type: location.type || "country",
+      parentId: location.parentId || "",
+      isActive: Boolean(location.isActive),
+    });
+  }, [currentLanguage, editingLocationData]);
+
+  React.useEffect(() => {
+    const location = get(translatingLocationData, "data.data");
+    if (!location) return;
+
+    setTranslatingLocation(location);
+    setTranslationForm(fromPairs(map(activeLanguages, (language) => [language.code, resolveTranslatedLocationLabel(location.translations, location.name || "", language.code)])));
+  }, [activeLanguages, translatingLocationData]);
 
   // --- Fetch children lazily ---
   const handleExpand = React.useCallback(async (locationId) => {
@@ -180,14 +341,14 @@ const LocationsIndex = () => {
     const addWithChildren = (items, depth = 0, parentPath = []) => {
       items.forEach((item) => {
         const localizedName = resolveTranslatedLocationLabel(item.translations, item.name, currentLanguage);
-        const path = [...parentPath, localizedName];
+        const path = item.path?.length ? item.path : [...parentPath, localizedName];
         const hasChildren = Boolean(item._count?.children > 0 || item.childrenCount > 0 || item.hasChildren);
         result.push({
           ...item,
-          depth,
+          depth: item.depth ?? Math.max(path.length - 1, depth),
           name: localizedName,
           path,
-          pathLabel: path.join(" / "),
+          pathLabel: item.pathLabel || path.join(" / "),
           hasChildren,
         });
         if (expandedIds[item.id] && childrenMap[item.id]) {
@@ -195,41 +356,13 @@ const LocationsIndex = () => {
         }
       });
     };
-    addWithChildren(rootLocations);
+    addWithChildren(locations);
     return result;
-  }, [rootLocations, expandedIds, childrenMap, currentLanguage]);
+  }, [locations, expandedIds, childrenMap, currentLanguage]);
 
-  // --- Client-side filtering on the flat display list ---
-  const deferredSearch = React.useDeferredValue(search);
-  const filteredList = React.useMemo(() => {
-    const searchLower = trim(deferredSearch).toLowerCase();
-    const hasSearch = Boolean(searchLower);
-    const hasTypeFilter = typeFilter !== "all";
-    const hasStatusFilter = statusFilter !== "all";
-    const hasTranslationFilter = translationFilter !== "all";
-    const noFilters = !hasSearch && !hasTypeFilter && !hasStatusFilter && !hasTranslationFilter;
-
-    if (noFilters) return displayList;
-
-    return filter(displayList, (item) => {
-      if (hasSearch) {
-        const searchableValues = compact(map([item.name, item.pathLabel, ...values(item.translations || {})], (v) => toString(v).toLowerCase()));
-        if (!some(searchableValues, (v) => v.includes(searchLower))) return false;
-      }
-      if (hasTypeFilter && item.type !== typeFilter) return false;
-      if (hasStatusFilter) {
-        if (statusFilter === "active" && !item.isActive) return false;
-        if (statusFilter === "inactive" && item.isActive) return false;
-      }
-      if (hasTranslationFilter) {
-        const filledCount = countFilledLocationTranslations(item.translations || {});
-        const isComplete = filledCount >= activeLanguages.length;
-        if (translationFilter === "complete" && !isComplete) return false;
-        if (translationFilter === "incomplete" && isComplete) return false;
-      }
-      return true;
-    });
-  }, [displayList, deferredSearch, typeFilter, statusFilter, translationFilter, activeLanguages.length]);
+  const paginatedList = displayList;
+  const totalCount = Number(get(meta, "total")) || 0;
+  const totalPages = Math.max(1, Number(get(meta, "totalPages")) || 1);
 
   // --- Stats cards ---
   const statsCards = React.useMemo(() => [
@@ -244,16 +377,16 @@ const LocationsIndex = () => {
   const openCreateDrawer = React.useCallback(() => {
     setEditingLocation(null);
     setForm(EMPTY_FORM);
-    setDrawerOpen(true);
-  }, []);
+    navigate("/admin/locations/create");
+  }, [navigate]);
 
   const openChildDrawer = React.useCallback((location) => {
     const nextType = NEXT_TYPE_MAP[location.type];
     if (!nextType) return;
     setEditingLocation(null);
     setForm({ name: "", type: nextType, parentId: location.id, isActive: true });
-    setDrawerOpen(true);
-  }, []);
+    navigate(`/admin/locations/create/${location.id}`);
+  }, [navigate]);
 
   const openEditDrawer = React.useCallback((location) => {
     setEditingLocation(location);
@@ -263,14 +396,14 @@ const LocationsIndex = () => {
       parentId: location.parentId || "",
       isActive: Boolean(location.isActive),
     });
-    setDrawerOpen(true);
-  }, [currentLanguage]);
+    navigate(`/admin/locations/edit/${location.id}`);
+  }, [currentLanguage, navigate]);
 
   const openTranslationsDrawer = React.useCallback((location) => {
     setTranslatingLocation(location);
     setTranslationForm(fromPairs(map(activeLanguages, (language) => [language.code, resolveTranslatedLocationLabel(location.translations, location.name || "", language.code)])));
-    setTranslationsDrawerOpen(true);
-  }, [activeLanguages]);
+    navigate(`/admin/locations/translate/${location.id}`);
+  }, [activeLanguages, navigate]);
 
   // --- Save handler ---
   const handleSave = React.useCallback(async () => {
@@ -292,7 +425,7 @@ const LocationsIndex = () => {
         await createLocation(payload);
         toast.success("Location qo'shildi");
       }
-      setDrawerOpen(false);
+      navigate("/admin/locations");
       setEditingLocation(null);
       setForm(EMPTY_FORM);
       // Refetch relevant data
@@ -308,7 +441,7 @@ const LocationsIndex = () => {
       const message = get(error, "response.data.message");
       toast.error(isArray(message) ? join(message, ", ") : message || "Location saqlanmadi");
     }
-  }, [createLocation, currentLanguage, editingLocation, form, updateLocation, refetchRoot, refetchStats, refetchChildren]);
+  }, [createLocation, currentLanguage, editingLocation, form, navigate, updateLocation, refetchRoot, refetchStats, refetchChildren]);
 
   // --- Translation save handler ---
   const handleTranslationSave = React.useCallback(async () => {
@@ -318,7 +451,7 @@ const LocationsIndex = () => {
     try {
       await updateLocation(translatingLocation.id, { ...(localizedName ? { name: localizedName } : {}), translations: cleanedTranslations });
       toast.success("Tarjimalar yangilandi");
-      setTranslationsDrawerOpen(false);
+      navigate("/admin/locations");
       setTranslatingLocation(null);
       setTranslationForm({});
       refetchRoot();
@@ -329,7 +462,7 @@ const LocationsIndex = () => {
       const message = get(error, "response.data.message");
       toast.error(isArray(message) ? join(message, ", ") : message || "Tarjimalarni saqlab bo'lmadi");
     }
-  }, [currentLanguage, translatingLocation, translationForm, updateLocation, refetchRoot, refetchChildren]);
+  }, [currentLanguage, navigate, translatingLocation, translationForm, updateLocation, refetchRoot, refetchChildren]);
 
   // --- Delete handler ---
   const handleDelete = React.useCallback(async () => {
@@ -397,10 +530,35 @@ const LocationsIndex = () => {
 
   // --- React Table (flat, no getExpandedRowModel) ---
   const table = useReactTable({
-    data: filteredList,
+    data: paginatedList,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => toString(get(row, "id")),
+    manualPagination: true,
+    manualSorting: true,
+    pageCount: totalPages,
+    onSortingChange: handleSortingChange,
+    onPaginationChange: (updater) => {
+      const next =
+        typeof updater === "function"
+          ? updater({ pageIndex: currentPage - 1, pageSize })
+          : updater;
+      const nextPageSize = Number(get(next, "pageSize")) || pageSize;
+
+      React.startTransition(() => {
+        void setPageQuery(
+          String(nextPageSize === pageSize ? get(next, "pageIndex", 0) + 1 : 1),
+        );
+        void setPageSizeQuery(String(nextPageSize));
+      });
+    },
+    state: {
+      sorting,
+      pagination: {
+        pageIndex: currentPage - 1,
+        pageSize,
+      },
+    },
   });
 
   return (
@@ -427,17 +585,27 @@ const LocationsIndex = () => {
       </div>
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <p>{filteredList.length} ta location ko&apos;rsatilmoqda{currentLanguageMeta ? ` \u2022 ${currentLanguageMeta.flag ? `${currentLanguageMeta.flag} ` : ""}${currentLanguageMeta.name}` : ""}</p>
+        <p>{totalCount} ta location ko&apos;rsatilmoqda{currentLanguageMeta ? ` \u2022 ${currentLanguageMeta.flag ? `${currentLanguageMeta.flag} ` : ""}${currentLanguageMeta.name}` : ""}</p>
       </div>
 
-      <DataGridContainer>
-        <ScrollArea className="w-full">
-          <DataGrid table={table} isLoading={isLoading}><DataGridTable /></DataGrid>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
-      </DataGridContainer>
+      <DataGrid
+        table={table}
+        isLoading={isLoading || isFetching}
+        recordCount={totalCount}
+      >
+        <DataGridContainer>
+          <ScrollArea className="w-full">
+            <DataGridTable />
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </DataGridContainer>
+        <DataGridPagination
+          info="{from} - {to} / {count} ta location"
+          sizes={[10, 20, 50, 100]}
+        />
+      </DataGrid>
 
-      {!isLoading && !filteredList.length ? (
+      {!isLoading && !totalCount ? (
         <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
           {search || typeFilter !== "all" || statusFilter !== "all" || translationFilter !== "all"
             ? "Filterlarga mos location topilmadi."
@@ -447,70 +615,100 @@ const LocationsIndex = () => {
       ) : null}
 
       {/* Create/Edit Drawer */}
-      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen} direction="bottom">
+      <Drawer
+        open={drawerOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            navigate("/admin/locations");
+            setEditingLocation(null);
+            setForm(EMPTY_FORM);
+          }
+        }}
+        direction="bottom"
+      >
         <DrawerContent className="mx-auto max-h-[90vh] data-[vaul-drawer-direction=bottom]:md:max-w-lg">
           <div className="mx-auto flex w-full min-h-0 flex-1 flex-col">
             <DrawerHeader>
               <DrawerTitle className="flex items-center gap-2">{editingLocation ? <PencilIcon className="size-5" /> : <PlusIcon className="size-5" />}{editingLocation ? "Locationni tahrirlash" : "Yangi location"}</DrawerTitle>
               <DrawerDescription>Bu drawer faqat joriy locale nomi va statusni boshqaradi. Tree darajasi qayerdan ochilganiga qarab avtomatik belgilanadi.</DrawerDescription>
             </DrawerHeader>
-            <div className="no-scrollbar flex flex-1 flex-col gap-6 overflow-y-auto px-4 py-4">
-              <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-sm">
-                <p className="font-medium">Joriy til: {currentLanguageMeta?.flag ? `${currentLanguageMeta.flag} ` : ""}{get(currentLanguageMeta, "name", currentLanguage.toUpperCase())}</p>
-                <p className="mt-1 text-xs text-muted-foreground">Shu drawer saqlanganda {currentLanguage.toUpperCase()} nomi `name` va translation qiymati sifatida birga yangilanadi.</p>
+            {isEditingLocationLoading || isChildParentLoading ? (
+              <div className="flex min-h-64 items-center justify-center px-4 py-10">
+                <Spinner className="size-8 text-muted-foreground" />
               </div>
-              <div className="flex flex-col gap-2">
-                <Label>Location nomi</Label>
-                <Input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Masalan, Toshkent" />
+            ) : (
+              <div className="no-scrollbar flex flex-1 flex-col gap-6 overflow-y-auto px-4 py-4">
+                <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-sm">
+                  <p className="font-medium">Joriy til: {currentLanguageMeta?.flag ? `${currentLanguageMeta.flag} ` : ""}{get(currentLanguageMeta, "name", currentLanguage.toUpperCase())}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Shu drawer saqlanganda {currentLanguage.toUpperCase()} nomi `name` va translation qiymati sifatida birga yangilanadi.</p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label>Location nomi</Label>
+                  <Input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Masalan, Toshkent" />
+                </div>
+                <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-muted/15 px-4 py-3">
+                  <div><div className="font-medium">Faol holatda qolsin</div><div className="text-sm text-muted-foreground">Selectorlar faqat faol locationlarni ko&apos;rsatadi.</div></div>
+                  <Switch checked={form.isActive} onCheckedChange={(value) => setForm((current) => ({ ...current, isActive: Boolean(value) }))} />
+                </div>
               </div>
-              <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-muted/15 px-4 py-3">
-                <div><div className="font-medium">Faol holatda qolsin</div><div className="text-sm text-muted-foreground">Selectorlar faqat faol locationlarni ko&apos;rsatadi.</div></div>
-                <Switch checked={form.isActive} onCheckedChange={(value) => setForm((current) => ({ ...current, isActive: Boolean(value) }))} />
-              </div>
-            </div>
+            )}
             <DrawerFooter className="gap-2 border-t bg-muted/5 px-6 py-4">
-              <Button type="button" onClick={handleSave} disabled={isCreating || isUpdating || isDeleting}>{editingLocation ? "Saqlash" : "Yaratish"}</Button>
-              <DrawerClose asChild><Button variant="outline">Bekor qilish</Button></DrawerClose>
+              <Button type="button" onClick={handleSave} disabled={isCreating || isUpdating || isDeleting || isEditingLocationLoading || isChildParentLoading}>{editingLocation ? "Saqlash" : "Yaratish"}</Button>
             </DrawerFooter>
           </div>
         </DrawerContent>
       </Drawer>
 
       {/* Translations Drawer */}
-      <Drawer open={translationsDrawerOpen} onOpenChange={(open) => { setTranslationsDrawerOpen(open); if (!open) { setTranslatingLocation(null); setTranslationForm({}); } }} direction="bottom">
+      <Drawer
+        open={translationsDrawerOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            navigate("/admin/locations");
+            setTranslatingLocation(null);
+            setTranslationForm({});
+          }
+        }}
+        direction="bottom"
+      >
         <DrawerContent className="mx-auto max-h-[90vh] data-[vaul-drawer-direction=bottom]:md:max-w-lg">
           <div className="mx-auto flex w-full min-h-0 flex-1 flex-col">
             <DrawerHeader>
               <DrawerTitle className="flex items-center gap-2"><GlobeIcon className="size-5" />Tarjimalarni boshqarish</DrawerTitle>
               <DrawerDescription>`FoodCategory` oqimidagi kabi, barcha faol tillar shu drawerda tahrirlanadi.</DrawerDescription>
             </DrawerHeader>
-            <div className="no-scrollbar flex flex-1 flex-col gap-6 overflow-y-auto px-4 py-4">
-              <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-sm">
-                <p className="font-medium">{translatingLocation?.pathLabel || translatingLocation?.name || "Location"}</p>
-                <p className="mt-1 text-xs text-muted-foreground">Joriy til qiymati saqlansa, asosiy `name` ham yangilanadi.</p>
+            {isTranslatingLocationLoading ? (
+              <div className="flex min-h-64 items-center justify-center px-4 py-10">
+                <Spinner className="size-8 text-muted-foreground" />
               </div>
-              {activeLanguages.length > 0 ? (
-                <div className="flex flex-col gap-4">
-                  {map(activeLanguages, (language) => (
-                    <div key={language.id} className="flex flex-col gap-2">
-                      <Label className="flex items-center gap-2 text-xs font-medium">
-                        <span>{language.flag}</span>{language.name}
-                        {language.code === currentLanguage ? <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">Asosiy</span> : null}
-                      </Label>
-                      <div className="relative">
-                        <Input value={get(translationForm, language.code, "")} onChange={(event) => setTranslationForm((current) => ({ ...current, [language.code]: event.target.value }))} placeholder={`${language.name} tilidagi tarjima`} className="pr-10" />
-                        {get(translationForm, language.code) ? <CheckCircle2Icon className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-emerald-500" /> : null}
-                      </div>
-                    </div>
-                  ))}
+            ) : (
+              <div className="no-scrollbar flex flex-1 flex-col gap-6 overflow-y-auto px-4 py-4">
+                <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-sm">
+                  <p className="font-medium">{translatingLocation?.pathLabel || translatingLocation?.name || "Location"}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Joriy til qiymati saqlansa, asosiy `name` ham yangilanadi.</p>
                 </div>
-              ) : (
-                <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-4 text-sm text-muted-foreground">Qo&apos;shimcha faol tillar topilmadi.</div>
-              )}
-            </div>
+                {activeLanguages.length > 0 ? (
+                  <div className="flex flex-col gap-4">
+                    {map(activeLanguages, (language) => (
+                      <div key={language.id} className="flex flex-col gap-2">
+                        <Label className="flex items-center gap-2 text-xs font-medium">
+                          <span>{language.flag}</span>{language.name}
+                          {language.code === currentLanguage ? <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">Asosiy</span> : null}
+                        </Label>
+                        <div className="relative">
+                          <Input value={get(translationForm, language.code, "")} onChange={(event) => setTranslationForm((current) => ({ ...current, [language.code]: event.target.value }))} placeholder={`${language.name} tilidagi tarjima`} className="pr-10" />
+                          {get(translationForm, language.code) ? <CheckCircle2Icon className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-emerald-500" /> : null}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-4 text-sm text-muted-foreground">Qo&apos;shimcha faol tillar topilmadi.</div>
+                )}
+              </div>
+            )}
             <DrawerFooter className="gap-2 border-t bg-muted/5 px-6 py-4">
-              <Button onClick={handleTranslationSave} disabled={isUpdating || isCreating || isDeleting || !size(activeLanguages)}>Tarjimalarni saqlash</Button>
-              <DrawerClose asChild><Button variant="outline">Bekor qilish</Button></DrawerClose>
+              <Button onClick={handleTranslationSave} disabled={isUpdating || isCreating || isDeleting || isTranslatingLocationLoading || !size(activeLanguages)}>Tarjimalarni saqlash</Button>
             </DrawerFooter>
           </div>
         </DrawerContent>

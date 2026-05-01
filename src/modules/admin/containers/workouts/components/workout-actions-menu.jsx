@@ -20,6 +20,7 @@ const WorkoutActionsMenu = ({
   onDelete,
   onRestore,
   onHardDelete,
+  canHardDelete = false,
   onTranslations,
 }) => (
   <DropdownMenu>
@@ -35,18 +36,20 @@ const WorkoutActionsMenu = ({
             <RotateCcwIcon className="size-4 text-emerald-600" />
             Tiklash
           </DropdownMenuItem>
-          <DropdownMenuItem
-            variant="destructive"
-            onClick={() =>
-              onHardDelete({
-                ids: [workout.id],
-                label: workout.name,
-              })
-            }
-          >
-            <Trash2Icon className="size-4" />
-            Butunlay o'chirish
-          </DropdownMenuItem>
+          {canHardDelete ? (
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={() =>
+                onHardDelete({
+                  ids: [workout.id],
+                  label: workout.name,
+                })
+              }
+            >
+              <Trash2Icon className="size-4" />
+              Butunlay o'chirish
+            </DropdownMenuItem>
+          ) : null}
         </>
       ) : (
         <>

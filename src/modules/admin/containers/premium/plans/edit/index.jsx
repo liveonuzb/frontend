@@ -11,6 +11,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import { Spinner } from "@/components/ui/spinner.jsx";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import { PlanForm } from "../components/plan-form.jsx";
 
@@ -63,8 +64,6 @@ const EditPlan = () => {
     if (!open) navigate("/admin/premium/plans");
   };
 
-  if (isLoading) return null;
-
   return (
     <Drawer open onOpenChange={handleOpenChange} direction="bottom">
       <DrawerContent className="mx-auto max-h-[90vh] data-[vaul-drawer-direction=bottom]:md:max-w-lg">
@@ -79,12 +78,18 @@ const EditPlan = () => {
             </DrawerDescription>
           </DrawerHeader>
 
-          <PlanForm
-            defaultValues={plan}
-            onSubmit={handleSave}
-            isSubmitting={isUpdating || !canManageGrowth}
-            submitLabel="Saqlash"
-          />
+          {isLoading ? (
+            <div className="flex min-h-72 items-center justify-center px-4 py-10">
+              <Spinner className="size-8 text-muted-foreground" />
+            </div>
+          ) : (
+            <PlanForm
+              defaultValues={plan}
+              onSubmit={handleSave}
+              isSubmitting={isUpdating || !canManageGrowth}
+              submitLabel="Saqlash"
+            />
+          )}
         </div>
       </DrawerContent>
     </Drawer>

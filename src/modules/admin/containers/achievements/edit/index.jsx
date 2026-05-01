@@ -9,6 +9,10 @@ import { toast } from "sonner";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
 import { useLanguageStore } from "@/store";
 import OptionDrawerPicker from "@/components/option-drawer-picker";
+import {
+  UnsavedChangesAlert,
+  useUnsavedChangesGuard,
+} from "@/modules/admin/components/unsaved-changes-guard";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -87,6 +91,9 @@ const EditAchievementPage = () => {
   const { mutateAsync, isPending } = usePatchQuery({
     queryKey: ADMIN_ACHIEVEMENTS_QUERY_KEY,
   });
+  const unsavedChanges = useUnsavedChangesGuard({
+    when: form.formState.isDirty && !isPending,
+  });
 
   const onSubmit = async (values) => {
     await mutateAsync(
@@ -100,6 +107,7 @@ const EditAchievementPage = () => {
       {
         onSuccess: () => {
           toast.success("Achievement yangilandi.");
+          form.reset(values);
           navigate("/admin/achievements/list", { replace: true });
         },
         onError: (error) => {
@@ -115,12 +123,17 @@ const EditAchievementPage = () => {
   };
 
   const handleOpenChange = (open) => {
-    if (!open) navigate("/admin/achievements/list", { replace: true });
+    if (!open) {
+      unsavedChanges.requestLeave(() =>
+        navigate("/admin/achievements/list", { replace: true }),
+      );
+    }
   };
 
   return (
-    <Drawer open onOpenChange={handleOpenChange} direction="bottom">
-      <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-lg">
+    <>
+      <Drawer open onOpenChange={handleOpenChange} direction="bottom">
+        <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-lg">
         <DrawerHeader className="items-center text-center">
           <DrawerTitle>Achievementni tahrirlash</DrawerTitle>
           <DrawerDescription className="max-w-sm">
@@ -300,8 +313,14 @@ const EditAchievementPage = () => {
             </Button>
           </DrawerFooter>
         ) : null}
-      </DrawerContent>
-    </Drawer>
+        </DrawerContent>
+      </Drawer>
+      <UnsavedChangesAlert
+        open={unsavedChanges.confirmOpen}
+        onCancel={unsavedChanges.cancelLeave}
+        onConfirm={unsavedChanges.confirmLeave}
+      />
+    </>
   );
 };
 

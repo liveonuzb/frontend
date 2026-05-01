@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import SubscriptionActionsMenu from "./actions-menu.jsx";
 
 const statusConfig = {
@@ -43,6 +44,8 @@ export const useColumns = ({ canManage, onExtend, onCancel, onToggleAutoRenew })
       {
         accessorKey: "user",
         header: "Foydalanuvchi",
+        size: 260,
+        meta: { skeleton: adminListSkeletons.avatarText },
         cell: (info) => {
           const sub = get(info, "row.original");
           return (
@@ -68,6 +71,8 @@ export const useColumns = ({ canManage, onExtend, onCancel, onToggleAutoRenew })
       {
         accessorKey: "plan",
         header: "Plan",
+        size: 180,
+        meta: { skeleton: adminListSkeletons.avatarText },
         cell: (info) => {
           const sub = get(info, "row.original");
           const planName = get(sub, "plan.name", "Premium");
@@ -98,6 +103,7 @@ export const useColumns = ({ canManage, onExtend, onCancel, onToggleAutoRenew })
         accessorKey: "status",
         header: "Status",
         size: 130,
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => {
           const status = info.getValue();
           const config = get(statusConfig, status, statusConfig.ACTIVE);
@@ -115,6 +121,7 @@ export const useColumns = ({ canManage, onExtend, onCancel, onToggleAutoRenew })
         id: "autoRenew",
         header: "Auto-renew",
         size: 100,
+        meta: { skeleton: adminListSkeletons.status },
         cell: (info) => {
           const subscription = get(info, "row.original");
           return (
@@ -130,6 +137,7 @@ export const useColumns = ({ canManage, onExtend, onCancel, onToggleAutoRenew })
         id: "trial",
         header: "Sinov",
         size: 120,
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => {
           const sub = get(info, "row.original");
           const trialEndsAt = get(sub, "trialEndsAt");
@@ -151,6 +159,7 @@ export const useColumns = ({ canManage, onExtend, onCancel, onToggleAutoRenew })
         id: "promo",
         header: "Promo",
         size: 120,
+        meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => {
           const sub = get(info, "row.original");
           const promoCode = get(sub, "promoCode");
@@ -167,6 +176,8 @@ export const useColumns = ({ canManage, onExtend, onCancel, onToggleAutoRenew })
       {
         id: "period",
         header: "Muddat",
+        size: 220,
+        meta: { skeleton: adminListSkeletons.text },
         cell: (info) => {
           const sub = get(info, "row.original");
           const startDate = get(sub, "startDate");
@@ -182,6 +193,7 @@ export const useColumns = ({ canManage, onExtend, onCancel, onToggleAutoRenew })
         id: "actions",
         header: "",
         size: 50,
+        meta: { skeleton: adminListSkeletons.action },
         cell: (info) => (
           <div className="flex justify-end">
             <SubscriptionActionsMenu

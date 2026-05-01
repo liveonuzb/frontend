@@ -6,6 +6,7 @@ import { useLanguageStore } from "@/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner.jsx";
 import { Switch } from "@/components/ui/switch";
 import {
   Drawer,
@@ -46,13 +47,6 @@ const getErrorMessage = (error, fallback) => {
   if (Array.isArray(message)) return message.join(", ");
   return message || fallback;
 };
-
-const cleanTranslations = (translations = {}) =>
-  Object.fromEntries(
-    Object.entries(translations)
-      .map(([key, value]) => [key.trim(), String(value ?? "").trim()])
-      .filter(([key, value]) => Boolean(key) && Boolean(value)),
-  );
 
 const ImageUploadPreview = ({
   file,
@@ -127,12 +121,14 @@ const EditEquipment = () => {
   const { id } = useParams();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
 
-  const { data: equipmentsData, isLoading } = useGetQuery({
-    url: "/admin/workout-equipments",
-    queryProps: { queryKey: ["admin", "workout-equipments"] },
+  const { data: equipmentData, isLoading } = useGetQuery({
+    url: `/admin/workout-equipments/${id}`,
+    queryProps: {
+      queryKey: ["admin", "workout-equipments", "detail", id],
+      enabled: Boolean(id),
+    },
   });
-  const equipments = get(equipmentsData, "data.data", []);
-  const equipment = find(equipments, (e) => String(e.id) === String(id));
+  const equipment = get(equipmentData, "data.data");
 
   const { data: languagesData } = useGetQuery({
     url: "/admin/languages",
@@ -220,8 +216,6 @@ const EditEquipment = () => {
     if (!open) navigate("/admin/equipments/list");
   };
 
-  if (isLoading) return null;
-
   const currentImageUrl =
     form.removeImage || !equipment ? null : equipment.imageUrl;
 
@@ -240,6 +234,11 @@ const EditEquipment = () => {
             </DrawerDescription>
           </DrawerHeader>
 
+          {isLoading ? (
+            <div className="flex min-h-72 items-center justify-center px-4 py-10">
+              <Spinner className="size-8 text-muted-foreground" />
+            </div>
+          ) : (
           <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-6">
             <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-sm">
               <p className="font-medium">
@@ -324,11 +323,12 @@ const EditEquipment = () => {
               />
             </div>
           </div>
+          )}
 
           <DrawerFooter className="px-6 pb-6 pt-2">
             <Button
               onClick={handleSave}
-              disabled={isUpdating}
+              disabled={isUpdating || isLoading}
               className="gap-2"
             >
               {isUpdating ? (

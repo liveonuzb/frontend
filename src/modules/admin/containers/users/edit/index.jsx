@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
-import { get, isArray, join, trim } from "lodash";
+import { get, isArray, isEqual, join, trim } from "lodash";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner.jsx";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Drawer,
@@ -19,6 +20,10 @@ import { PhoneInput } from "@/components/ui/phone-input.jsx";
 import { toast } from "sonner";
 import { normalizeFormRoles, toggleFormRole } from "../config";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
+import {
+  UnsavedChangesAlert,
+  useUnsavedChangesGuard,
+} from "@/modules/admin/components/unsaved-changes-guard";
 
 const ROLE_OPTIONS = [
   { value: "USER", label: "User", disabled: true },
@@ -52,10 +57,11 @@ const EditUser = () => {
     phone: "",
     roles: ["USER"],
   });
+  const [initialForm, setInitialForm] = useState(null);
 
   useEffect(() => {
     if (user) {
-      setForm({
+      const nextForm = {
         firstName: get(user, "firstName", ""),
         lastName: get(user, "lastName", ""),
         email: get(user, "email", ""),
@@ -63,12 +69,18 @@ const EditUser = () => {
         roles: normalizeFormRoles(
           get(user, "roles") || [get(user, "role", "USER")],
         ),
-      });
+      };
+      setForm(nextForm);
+      setInitialForm(nextForm);
     }
   }, [user]);
 
   const { mutateAsync: updateUser, isPending: isUpdating } = usePatchQuery({
     queryKey: ["admin-users"],
+  });
+  const hasUnsavedChanges = Boolean(initialForm) && !isEqual(form, initialForm);
+  const unsavedChanges = useUnsavedChangesGuard({
+    when: hasUnsavedChanges && !isUpdating,
   });
 
   const handleSave = async () => {
@@ -91,7 +103,8 @@ const EditUser = () => {
         },
       });
       toast.success("Foydalanuvchi yangilandi");
-      navigate("/admin/users/list");
+      setInitialForm(form);
+      unsavedChanges.runWithoutGuard(() => navigate("/admin/users/list"));
     } catch (error) {
       const message = get(error, "response.data.message");
       toast.error(
@@ -103,10 +116,10 @@ const EditUser = () => {
   };
 
   const handleOpenChange = (open) => {
-    if (!open) navigate("/admin/users/list");
+    if (!open) {
+      unsavedChanges.requestLeave(() => navigate("/admin/users/list"));
+    }
   };
-
-  if (isLoading) return null;
 
   return (
     <Drawer open onOpenChange={handleOpenChange} direction="bottom">
@@ -125,6 +138,11 @@ const EditUser = () => {
             </DrawerDescription>
           </DrawerHeader>
 
+          {isLoading ? (
+            <div className="flex min-h-72 items-center justify-center px-4 py-10">
+              <Spinner className="size-8 text-muted-foreground" />
+            </div>
+          ) : (
           <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
@@ -199,11 +217,12 @@ const EditUser = () => {
               </div>
             </div>
           </div>
+          )}
 
           <DrawerFooter className="px-6 pb-6 pt-2">
             <Button
               onClick={handleSave}
-              disabled={isUpdating || !canManageSupport}
+              disabled={isUpdating || isLoading || !canManageSupport}
               className="gap-2"
             >
               {isUpdating ? (
@@ -215,13 +234,20 @@ const EditUser = () => {
             </Button>
             <Button
               variant="outline"
-              onClick={() => navigate("/admin/users/list")}
+              onClick={() =>
+                unsavedChanges.requestLeave(() => navigate("/admin/users/list"))
+              }
             >
               Bekor qilish
             </Button>
           </DrawerFooter>
         </div>
       </DrawerContent>
+      <UnsavedChangesAlert
+        open={unsavedChanges.confirmOpen}
+        onCancel={unsavedChanges.cancelLeave}
+        onConfirm={unsavedChanges.confirmLeave}
+      />
     </Drawer>
   );
 };

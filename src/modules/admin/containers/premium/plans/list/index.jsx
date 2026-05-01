@@ -5,7 +5,6 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import {
-  filter as lodashFilter,
   get,
   isArray,
   join,
@@ -22,6 +21,7 @@ import {
 import {
   DataGrid,
   DataGridContainer,
+  DataGridPagination,
   DataGridTable,
 } from "@/components/reui/data-grid";
 import { Button } from "@/components/ui/button";
@@ -40,25 +40,48 @@ const Index = () => {
   const { canManageGrowth } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
 
-  const { data: plansData, isLoading, isFetching, refetch } = useGetQuery({
-    url: "/admin/premium/plans",
-    queryProps: { queryKey: PLANS_QUERY_KEY },
-  });
-  const plans = get(plansData, "data.data", get(plansData, "data", []));
-
-  const patchMutation = usePatchQuery({ queryKey: PLANS_QUERY_KEY });
-  const deleteMutation = useDeleteQuery({ queryKey: PLANS_QUERY_KEY });
-
   const {
     search,
     typeFilter,
     statusFilter,
+    currentPage,
+    pageSize,
+    setPageQuery,
+    setPageSizeQuery,
     filterFields,
     activeFilters,
     handleFiltersChange,
   } = usePlanFilters();
 
   const [planToDelete, setPlanToDelete] = React.useState(null);
+  const deferredSearch = React.useDeferredValue(search);
+
+  const queryParams = React.useMemo(
+    () => ({
+      ...(deferredSearch.trim() ? { q: deferredSearch.trim() } : {}),
+      ...(typeFilter !== "all" ? { type: typeFilter } : {}),
+      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      page: currentPage,
+      pageSize,
+    }),
+    [currentPage, deferredSearch, pageSize, statusFilter, typeFilter],
+  );
+
+  const { data: plansData, isLoading, isFetching, refetch } = useGetQuery({
+    url: "/admin/premium/plans",
+    params: queryParams,
+    queryProps: { queryKey: [...PLANS_QUERY_KEY, queryParams] },
+  });
+  const plans = get(plansData, "data.data", []);
+  const meta = get(plansData, "data.meta", {
+    total: 0,
+    page: currentPage,
+    pageSize,
+    totalPages: 1,
+  });
+
+  const patchMutation = usePatchQuery({ queryKey: PLANS_QUERY_KEY });
+  const deleteMutation = useDeleteQuery({ queryKey: PLANS_QUERY_KEY });
 
   React.useEffect(() => {
     setBreadcrumbs([
@@ -113,31 +136,6 @@ const Index = () => {
     }
   }, [canManageGrowth, planToDelete, deleteMutation]);
 
-  const deferredSearch = React.useDeferredValue(search);
-
-  const filteredPlans = React.useMemo(() => {
-    const query = deferredSearch.trim().toLowerCase();
-
-    return lodashFilter(plans, (plan) => {
-      if (query) {
-        const name = toString(get(plan, "name")).toLowerCase();
-        const slug = toString(get(plan, "slug")).toLowerCase();
-        if (!name.includes(query) && !slug.includes(query)) return false;
-      }
-
-      if (typeFilter !== "all") {
-        if (get(plan, "type") !== typeFilter) return false;
-      }
-
-      if (statusFilter !== "all") {
-        const isActive = get(plan, "isActive");
-        if (statusFilter === "active" ? !isActive : isActive) return false;
-      }
-
-      return true;
-    });
-  }, [plans, deferredSearch, typeFilter, statusFilter]);
-
   const columns = useColumns({
     canManage: canManageGrowth,
     handleToggleActive,
@@ -149,22 +147,35 @@ const Index = () => {
   });
 
   const table = useReactTable({
-    data: filteredPlans,
+    data: plans,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => toString(get(row, "id")),
+    manualPagination: true,
+    pageCount: Math.max(1, Number(get(meta, "totalPages", 1))),
+    onPaginationChange: (updater) => {
+      const next =
+        typeof updater === "function"
+          ? updater({ pageIndex: currentPage - 1, pageSize })
+          : updater;
+
+      React.startTransition(() => {
+        void setPageQuery(String(get(next, "pageIndex", 0) + 1));
+        void setPageSizeQuery(String(get(next, "pageSize", pageSize)));
+      });
+    },
+    state: {
+      pagination: {
+        pageIndex: currentPage - 1,
+        pageSize,
+      },
+    },
   });
 
   return (
     <div className="flex w-full flex-col gap-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Planlar</h1>
-        {canManageGrowth ? (
-          <Button onClick={() => navigate("create")} className="gap-1.5">
-            <PlusIcon />
-            Plan qo'shish
-          </Button>
-        ) : null}
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -173,43 +184,52 @@ const Index = () => {
           activeFilters={activeFilters}
           handleFiltersChange={handleFiltersChange}
         />
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => refetch()}
-          className="hidden sm:flex"
-          disabled={isFetching}
-        >
-          <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => refetch()}
+            disabled={isFetching}
+          >
+            <RotateCcwIcon
+              className={cn("size-4", isFetching && "animate-spin")}
+            />
+          </Button>
+          {canManageGrowth ? (
+            <Button onClick={() => navigate("create")} className="gap-1.5">
+              <PlusIcon />
+              Plan qo'shish
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       <p className="text-sm text-muted-foreground">
-        {filteredPlans.length} ta plan
+        {get(meta, "total", 0)} ta plan
       </p>
 
-      <DataGridContainer>
-        <ScrollArea className="w-full">
-          <DataGrid
-            table={table}
-            tableLayout={{ width: "auto" }}
-            loadingMode="none"
-            isLoading={isLoading}
-          >
+      <DataGrid
+        table={table}
+        tableLayout={{ width: "auto" }}
+        isLoading={isLoading}
+        recordCount={get(meta, "total", 0)}
+      >
+        <DataGridContainer>
+          <ScrollArea className="w-full">
             <DataGridTable />
-          </DataGrid>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
-      </DataGridContainer>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </DataGridContainer>
+        <DataGridPagination
+          info="{from} - {to} / {count} ta plan"
+          sizes={[10, 20, 50, 100]}
+        />
+      </DataGrid>
 
-      {!isLoading && !filteredPlans.length ? (
+      {!isLoading && !plans.length ? (
         <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
           Filtrlarga mos plan topilmadi.
         </div>
-      ) : null}
-
-      {isLoading ? (
-        <div className="text-sm text-muted-foreground">Yuklanmoqda...</div>
       ) : null}
 
       <DeleteAlert

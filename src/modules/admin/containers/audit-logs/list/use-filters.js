@@ -8,11 +8,10 @@ import {
   auditEntityLabels,
 } from "./config.js";
 
+const ITEMS_PER_PAGE = 10;
+
 export const useAuditLogFilters = ({ actions = [], entityTypes = [] }) => {
-  const [search, setSearch] = useQueryState(
-    "q",
-    parseAsString.withDefault(""),
-  );
+  const [search, setSearch] = useQueryState("q", parseAsString.withDefault(""));
   const [actionFilter, setActionFilter] = useQueryState(
     "action",
     parseAsString.withDefault("all"),
@@ -21,9 +20,29 @@ export const useAuditLogFilters = ({ actions = [], entityTypes = [] }) => {
     "entityType",
     parseAsString.withDefault("all"),
   );
+  const [adminId, setAdminId] = useQueryState(
+    "adminId",
+    parseAsString.withDefault(""),
+  );
+  const [entityId, setEntityId] = useQueryState(
+    "entityId",
+    parseAsString.withDefault(""),
+  );
+  const [dateFrom, setDateFrom] = useQueryState(
+    "dateFrom",
+    parseAsString.withDefault(""),
+  );
+  const [dateTo, setDateTo] = useQueryState(
+    "dateTo",
+    parseAsString.withDefault(""),
+  );
   const [pageQuery, setPageQuery] = useQueryState(
     "page",
     parseAsString.withDefault("1"),
+  );
+  const [pageSizeQuery, setPageSizeQuery] = useQueryState(
+    "pageSize",
+    parseAsString.withDefault(String(ITEMS_PER_PAGE)),
   );
   const [sortBy, setSortBy] = useQueryState(
     "sortBy",
@@ -36,6 +55,7 @@ export const useAuditLogFilters = ({ actions = [], entityTypes = [] }) => {
 
   const deferredSearch = React.useDeferredValue(search);
   const currentPage = Math.max(1, Number(pageQuery) || 1);
+  const pageSize = Math.max(1, Number(pageSizeQuery) || ITEMS_PER_PAGE);
 
   const sorting = React.useMemo(
     () => [{ id: sortBy, desc: sortDir === "desc" }],
@@ -105,6 +125,36 @@ export const useAuditLogFilters = ({ actions = [], entityTypes = [] }) => {
           ),
         ],
       },
+      {
+        label: "Admin ID",
+        key: "adminId",
+        type: "text",
+        defaultOperator: "contains",
+        placeholder: "Admin ID",
+      },
+      {
+        label: "Entity ID",
+        key: "entityId",
+        type: "text",
+        defaultOperator: "contains",
+        placeholder: "Entity ID",
+      },
+      {
+        label: "Boshlanish sanasi",
+        key: "dateFrom",
+        type: "text",
+        defaultOperator: "is",
+        placeholder: "YYYY-MM-DD",
+        pattern: "^\\d{4}-\\d{2}-\\d{2}$",
+      },
+      {
+        label: "Tugash sanasi",
+        key: "dateTo",
+        type: "text",
+        defaultOperator: "is",
+        placeholder: "YYYY-MM-DD",
+        pattern: "^\\d{4}-\\d{2}-\\d{2}$",
+      },
     ],
     [actions, entityTypes],
   );
@@ -139,8 +189,44 @@ export const useAuditLogFilters = ({ actions = [], entityTypes = [] }) => {
       });
     }
 
+    if (adminId.trim()) {
+      items.push({
+        id: "adminId",
+        field: "adminId",
+        operator: "contains",
+        values: [adminId],
+      });
+    }
+
+    if (entityId.trim()) {
+      items.push({
+        id: "entityId",
+        field: "entityId",
+        operator: "contains",
+        values: [entityId],
+      });
+    }
+
+    if (dateFrom.trim()) {
+      items.push({
+        id: "dateFrom",
+        field: "dateFrom",
+        operator: "is",
+        values: [dateFrom],
+      });
+    }
+
+    if (dateTo.trim()) {
+      items.push({
+        id: "dateTo",
+        field: "dateTo",
+        operator: "is",
+        values: [dateTo],
+      });
+    }
+
     return items;
-  }, [actionFilter, entityFilter, search]);
+  }, [actionFilter, adminId, dateFrom, dateTo, entityFilter, entityId, search]);
 
   const handleFiltersChange = React.useCallback(
     (nextFilters) => {
@@ -159,15 +245,48 @@ export const useAuditLogFilters = ({ actions = [], entityTypes = [] }) => {
         "values[0]",
         "all",
       );
+      const nextAdminId = get(
+        find(nextFilters, (f) => get(f, "field") === "adminId"),
+        "values[0]",
+        "",
+      );
+      const nextEntityId = get(
+        find(nextFilters, (f) => get(f, "field") === "entityId"),
+        "values[0]",
+        "",
+      );
+      const nextDateFrom = get(
+        find(nextFilters, (f) => get(f, "field") === "dateFrom"),
+        "values[0]",
+        "",
+      );
+      const nextDateTo = get(
+        find(nextFilters, (f) => get(f, "field") === "dateTo"),
+        "values[0]",
+        "",
+      );
 
       React.startTransition(() => {
         void setSearch(nextSearch);
         void setActionFilter(nextAction);
         void setEntityFilter(nextEntity);
+        void setAdminId(nextAdminId);
+        void setEntityId(nextEntityId);
+        void setDateFrom(nextDateFrom);
+        void setDateTo(nextDateTo);
         void setPageQuery("1");
       });
     },
-    [setActionFilter, setEntityFilter, setPageQuery, setSearch],
+    [
+      setActionFilter,
+      setAdminId,
+      setDateFrom,
+      setDateTo,
+      setEntityFilter,
+      setEntityId,
+      setPageQuery,
+      setSearch,
+    ],
   );
 
   return {
@@ -175,9 +294,16 @@ export const useAuditLogFilters = ({ actions = [], entityTypes = [] }) => {
     deferredSearch,
     actionFilter,
     entityFilter,
+    adminId,
+    entityId,
+    dateFrom,
+    dateTo,
     pageQuery,
     setPageQuery,
+    pageSizeQuery,
+    setPageSizeQuery,
     currentPage,
+    pageSize,
     sortBy,
     sortDir,
     sorting,

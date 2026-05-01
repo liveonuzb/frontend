@@ -12,6 +12,7 @@ const EquipmentsIndex = () => {
       <Route path="list" element={<ListPage />}>
         <Route path="create" element={<CreatePage />} />
         <Route path="edit/:id" element={<EditPage />} />
+        <Route path="translate/:id" element={null} />
       </Route>
     </Routes>
   );

@@ -9,10 +9,10 @@ import AdminCapabilityRoute from "@/modules/admin/components/admin-capability-ro
 const DashboardPage = lazy(
   () => import("@/modules/admin/pages/dashboard/index.jsx"),
 );
-const UsersPage = lazy(
-  () => import("@/modules/admin/pages/users/index.jsx"),
+const UsersPage = lazy(() => import("@/modules/admin/pages/users/index.jsx"));
+const CoachesPage = lazy(
+  () => import("@/modules/admin/pages/coaches/index.jsx"),
 );
-const CoachesPage = lazy(() => import("@/modules/admin/pages/coaches/index.jsx"));
 const FoodsPage = lazy(() => import("@/modules/admin/pages/foods/index.jsx"));
 const LocationsPage = lazy(
   () => import("@/modules/admin/pages/locations/index.jsx"),
@@ -44,13 +44,19 @@ const WorkoutBodyPartsPage = lazy(
 const EquipmentsPage = lazy(
   () => import("@/modules/admin/pages/equipments/index.jsx"),
 );
-const RevenuePage = lazy(() => import("@/modules/admin/pages/revenue/index.jsx"));
+const RevenuePage = lazy(
+  () => import("@/modules/admin/pages/revenue/index.jsx"),
+);
 const WithdrawalsPage = lazy(
   () => import("@/modules/admin/pages/withdrawals/index.jsx"),
 );
 // Old SubscriptionsPage replaced by redirect to premium subscriptions tab
-const PremiumPage = lazy(() => import("@/modules/admin/pages/premium/index.jsx"));
-const ReportsPage = lazy(() => import("@/modules/admin/pages/reports/index.jsx"));
+const PremiumPage = lazy(
+  () => import("@/modules/admin/pages/premium/index.jsx"),
+);
+const ReportsPage = lazy(
+  () => import("@/modules/admin/pages/reports/index.jsx"),
+);
 const ContentQualityPage = lazy(
   () => import("@/modules/admin/pages/content-quality/index.jsx"),
 );
@@ -84,9 +90,15 @@ const HealthConstraintsPage = lazy(
 const UserGoalsPage = lazy(
   () => import("@/modules/admin/pages/user-goals/index.jsx"),
 );
+const NutritionPreferencesPage = lazy(
+  () => import("@/modules/admin/pages/nutrition-preferences/index.jsx"),
+);
 const NotFound = lazy(() => import("@/pages/not-found/index.jsx"));
 
-const renderAdminRoute = (Component, guardProps = { capability: "admin.read" }) => (
+const renderAdminRoute = (
+  Component,
+  guardProps = { capability: "admin.read" },
+) => (
   <AdminCapabilityRoute {...guardProps}>
     <Suspense fallback={<PageLoader />}>
       <ErrorBoundary>
@@ -101,69 +113,92 @@ const Index = () => {
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<Navigate to="dashboard" replace />} />
-        <Route
-          path="dashboard"
-          element={renderAdminRoute(DashboardPage)}
-        />
+        <Route path="dashboard" element={renderAdminRoute(DashboardPage)} />
         <Route
           path="users/*"
           element={renderAdminRoute(UsersPage, { capability: "support.read" })}
         />
         <Route
-          path="coaches"
-          element={renderAdminRoute(CoachesPage, { capability: "support.read" })}
+          path="coaches/*"
+          element={renderAdminRoute(CoachesPage, {
+            capability: "support.read",
+          })}
         />
         <Route
           path="foods/*"
           element={renderAdminRoute(FoodsPage, { capability: "content.read" })}
         />
         <Route
-          path="locations"
-          element={renderAdminRoute(LocationsPage, { capability: "content.read" })}
+          path="locations/*"
+          element={renderAdminRoute(LocationsPage, {
+            capability: "content.read",
+          })}
         />
         <Route
           path="food-categories/*"
-          element={renderAdminRoute(FoodCategoriesPage, { capability: "content.read" })}
+          element={renderAdminRoute(FoodCategoriesPage, {
+            capability: "content.read",
+          })}
         />
         <Route
           path="ingredients/*"
-          element={renderAdminRoute(IngredientsPage, { capability: "content.read" })}
+          element={renderAdminRoute(IngredientsPage, {
+            capability: "content.read",
+          })}
         />
         <Route
           path="cuisines/*"
-          element={renderAdminRoute(CuisinesPage, { capability: "content.read" })}
+          element={renderAdminRoute(CuisinesPage, {
+            capability: "content.read",
+          })}
         />
         <Route
           path="workouts/*"
-          element={renderAdminRoute(WorkoutsPage, { capability: "content.read" })}
+          element={renderAdminRoute(WorkoutsPage, {
+            capability: "content.read",
+          })}
         />
         <Route
-          path="workout-plans"
-          element={renderAdminRoute(WorkoutPlansPage, { capability: "content.read" })}
+          path="workout-plans/*"
+          element={renderAdminRoute(WorkoutPlansPage, {
+            capability: "content.read",
+          })}
         />
         <Route
           path="workout-categories/*"
-          element={renderAdminRoute(WorkoutCategoriesPage, { capability: "content.read" })}
+          element={renderAdminRoute(WorkoutCategoriesPage, {
+            capability: "content.read",
+          })}
         />
         <Route
-          path="workout-muscles"
-          element={renderAdminRoute(WorkoutMusclesPage, { capability: "content.read" })}
+          path="workout-muscles/*"
+          element={renderAdminRoute(WorkoutMusclesPage, {
+            capability: "content.read",
+          })}
         />
         <Route
-          path="workout-body-parts"
-          element={renderAdminRoute(WorkoutBodyPartsPage, { capability: "content.read" })}
+          path="workout-body-parts/*"
+          element={renderAdminRoute(WorkoutBodyPartsPage, {
+            capability: "content.read",
+          })}
         />
         <Route
           path="equipments/*"
-          element={renderAdminRoute(EquipmentsPage, { capability: "content.read" })}
+          element={renderAdminRoute(EquipmentsPage, {
+            capability: "content.read",
+          })}
         />
         <Route
           path="revenue"
-          element={renderAdminRoute(RevenuePage, { capability: "finance.read" })}
+          element={renderAdminRoute(RevenuePage, {
+            capability: "finance.read",
+          })}
         />
         <Route
           path="withdrawals"
-          element={renderAdminRoute(WithdrawalsPage, { capability: "finance.read" })}
+          element={renderAdminRoute(WithdrawalsPage, {
+            capability: "finance.read",
+          })}
         />
         <Route
           path="subscriptions"
@@ -173,13 +208,12 @@ const Index = () => {
           path="premium/*"
           element={renderAdminRoute(PremiumPage, { capability: "growth.read" })}
         />
-        <Route
-          path="reports"
-          element={renderAdminRoute(ReportsPage)}
-        />
+        <Route path="reports" element={renderAdminRoute(ReportsPage)} />
         <Route
           path="content-quality"
-          element={renderAdminRoute(ContentQualityPage, { capability: "content.read" })}
+          element={renderAdminRoute(ContentQualityPage, {
+            capability: "content.read",
+          })}
         />
         <Route
           path="activity-feed"
@@ -193,35 +227,57 @@ const Index = () => {
         />
         <Route
           path="languages/*"
-          element={renderAdminRoute(LanguagesPage, { capability: "content.read" })}
+          element={renderAdminRoute(LanguagesPage, {
+            capability: "content.read",
+          })}
         />
         <Route
           path="achievements/*"
-          element={renderAdminRoute(AchievementsPage, { capability: "content.read" })}
+          element={renderAdminRoute(AchievementsPage, {
+            capability: "content.read",
+          })}
         />
         <Route
           path="settings"
-          element={renderAdminRoute(SettingsPage, { capability: "settings.manage" })}
+          element={renderAdminRoute(SettingsPage, {
+            capability: "settings.manage",
+          })}
         />
         <Route
           path="platform-bot"
-          element={renderAdminRoute(PlatformBotPage, { capability: "growth.read" })}
+          element={renderAdminRoute(PlatformBotPage, {
+            capability: "growth.read",
+          })}
         />
         <Route
           path="challenges/*"
-          element={renderAdminRoute(ChallengesPage, { capability: "content.read" })}
+          element={renderAdminRoute(ChallengesPage, {
+            capability: "content.read",
+          })}
         />
         <Route
           path="coach-specializations/*"
-          element={renderAdminRoute(CoachSpecializationsPage, { capability: "content.read" })}
+          element={renderAdminRoute(CoachSpecializationsPage, {
+            capability: "content.read",
+          })}
         />
         <Route
           path="health-constraints/*"
-          element={renderAdminRoute(HealthConstraintsPage, { capability: "content.read" })}
+          element={renderAdminRoute(HealthConstraintsPage, {
+            capability: "content.read",
+          })}
         />
         <Route
           path="user-goals/*"
-          element={renderAdminRoute(UserGoalsPage, { capability: "content.read" })}
+          element={renderAdminRoute(UserGoalsPage, {
+            capability: "content.read",
+          })}
+        />
+        <Route
+          path="nutrition-preferences/*"
+          element={renderAdminRoute(NutritionPreferencesPage, {
+            capability: "content.read",
+          })}
         />
         <Route
           path="*"

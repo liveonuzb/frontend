@@ -1,0 +1,103 @@
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Spinner } from "@/components/ui/spinner.jsx";
+
+export function WorkoutPlanTranslationsDrawer({
+  open,
+  onOpenChange,
+  activeLanguages,
+  translationForm,
+  setTranslationForm,
+  isSaving,
+  isLoading,
+  onSave,
+}) {
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle>Workout shablon tarjimalari</DrawerTitle>
+          <DrawerDescription>
+            Nom va tavsifni barcha faol tillar uchun alohida boshqaring.
+          </DrawerDescription>
+        </DrawerHeader>
+
+        {isLoading ? (
+          <div className="flex min-h-80 items-center justify-center px-4 pb-4 sm:px-6">
+            <Spinner className="size-8 text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="space-y-4 overflow-y-auto px-4 pb-4 no-scrollbar sm:px-6">
+            {activeLanguages.map((language) => (
+              <div
+                key={language.code}
+                className="space-y-3 rounded-2xl border bg-card p-4"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{language.flag || ""}</span>
+                  <div>
+                    <p className="font-medium">{language.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {language.code.toUpperCase()}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Nomi</Label>
+                  <Input
+                    value={translationForm.titles?.[language.code] || ""}
+                    onChange={(event) =>
+                      setTranslationForm((current) => ({
+                        ...current,
+                        titles: {
+                          ...current.titles,
+                          [language.code]: event.target.value,
+                        },
+                      }))
+                    }
+                    placeholder="Tarjima qilingan nom"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Tavsif</Label>
+                  <Textarea
+                    value={translationForm.descriptions?.[language.code] || ""}
+                    onChange={(event) =>
+                      setTranslationForm((current) => ({
+                        ...current,
+                        descriptions: {
+                          ...current.descriptions,
+                          [language.code]: event.target.value,
+                        },
+                      }))
+                    }
+                    placeholder="Tarjima qilingan tavsif"
+                    className="min-h-24"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <DrawerFooter>
+          <Button onClick={onSave} disabled={isSaving || isLoading}>
+            Tarjimalarni saqlash
+          </Button>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
+}

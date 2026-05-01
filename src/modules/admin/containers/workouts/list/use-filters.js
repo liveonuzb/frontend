@@ -11,6 +11,7 @@ const FOOD_SORT_FIELDS = [
   "isActive",
 ];
 const FOOD_SORT_DIRECTIONS = ["asc", "desc"];
+const ITEMS_PER_PAGE = 10;
 
 const resolveLabel = (translations, fallback, language) => {
   if (isObject(translations)) {
@@ -59,6 +60,10 @@ export const useWorkoutFilters = ({ categories, currentLanguage }) => {
     "page",
     parseAsString.withDefault("1"),
   );
+  const [pageSizeQuery, setPageSizeQuery] = useQueryState(
+    "pageSize",
+    parseAsString.withDefault(String(ITEMS_PER_PAGE)),
+  );
   const [sortBy, setSortBy] = useQueryState(
     "sortBy",
     parseAsStringEnum(FOOD_SORT_FIELDS).withDefault("orderKey"),
@@ -70,6 +75,10 @@ export const useWorkoutFilters = ({ categories, currentLanguage }) => {
 
   const deferredSearch = React.useDeferredValue(search);
   const currentPage = Math.max(1, toNumber(pageQuery) || 1);
+  const pageSize = Math.min(
+    100,
+    Math.max(1, toNumber(pageSizeQuery) || ITEMS_PER_PAGE),
+  );
 
   const sorting = React.useMemo(
     () =>
@@ -295,7 +304,7 @@ export const useWorkoutFilters = ({ categories, currentLanguage }) => {
       sortBy,
       sortDir,
       page: currentPage,
-      pageSize: 10,
+      pageSize,
     }),
     [
       categoryFilter,
@@ -304,6 +313,7 @@ export const useWorkoutFilters = ({ categories, currentLanguage }) => {
       duplicatesFilter,
       hasImageFilter,
       lifecycleFilter,
+      pageSize,
       sortBy,
       sortDir,
       translationsFilter,
@@ -320,6 +330,7 @@ export const useWorkoutFilters = ({ categories, currentLanguage }) => {
     duplicatesFilter,
     lifecycleFilter,
     currentPage,
+    pageSize,
     sortBy,
     sortDir,
     sorting,
@@ -327,6 +338,7 @@ export const useWorkoutFilters = ({ categories, currentLanguage }) => {
     queryParams,
     pageQuery,
     setPageQuery,
+    setPageSizeQuery,
     filterFields,
     activeFilters,
     handleFiltersChange,

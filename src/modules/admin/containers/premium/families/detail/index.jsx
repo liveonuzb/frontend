@@ -16,6 +16,16 @@ import {
   useDeleteQuery,
 } from "@/hooks/api";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,6 +74,7 @@ const Index = () => {
   const { setBreadcrumbs } = useBreadcrumbStore();
   const [addMemberOpen, setAddMemberOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [memberToRemove, setMemberToRemove] = React.useState(null);
 
   const familyQueryKey = ["admin", "premium-family", id];
 
@@ -142,9 +153,6 @@ const Index = () => {
   const handleRemoveMember = React.useCallback(
     async (memberId) => {
       if (!canManageGrowth) return;
-
-      if (!window.confirm("Bu a'zoni oiladan olib tashlashni tasdiqlaysizmi?"))
-        return;
 
       try {
         await removeMemberMutation.mutateAsync({
@@ -319,7 +327,9 @@ const Index = () => {
                       variant="ghost"
                       size="icon-sm"
                       className="text-destructive hover:bg-destructive/10"
-                      onClick={() => handleRemoveMember(memberId)}
+                      onClick={() =>
+                        setMemberToRemove({ id: memberId, name: memberName })
+                      }
                     >
                       <Trash2Icon className="size-4" />
                     </Button>
@@ -407,6 +417,37 @@ const Index = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={Boolean(memberToRemove)}
+        onOpenChange={(open) => {
+          if (!open) setMemberToRemove(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>A'zoni olib tashlash</AlertDialogTitle>
+            <AlertDialogDescription>
+              {memberToRemove
+                ? `"${memberToRemove.name}" foydalanuvchini oiladan olib tashlashni tasdiqlaysizmi?`
+                : "Bu a'zoni oiladan olib tashlashni tasdiqlaysizmi?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={removeMemberMutation.isPending}
+              onClick={async () => {
+                await handleRemoveMember(memberToRemove?.id);
+                setMemberToRemove(null);
+              }}
+            >
+              Olib tashlash
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

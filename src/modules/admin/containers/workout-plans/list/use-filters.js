@@ -8,11 +8,11 @@ const SORT_FIELDS = [
   "difficulty",
   "daysPerWeek",
   "days",
-  "totalExercises",
   "updatedAt",
   "isActive",
 ];
 const SORT_DIRECTIONS = ["asc", "desc"];
+const ITEMS_PER_PAGE = 10;
 
 export const usePlanFilters = () => {
   const [search, setSearch] = useQueryState("q", parseAsString.withDefault(""));
@@ -39,6 +39,10 @@ export const usePlanFilters = () => {
   const [pageQuery, setPageQuery] = useQueryState(
     "page",
     parseAsString.withDefault("1"),
+  );
+  const [pageSizeQuery, setPageSizeQuery] = useQueryState(
+    "pageSize",
+    parseAsString.withDefault(String(ITEMS_PER_PAGE)),
   );
 
   const filterFields = React.useMemo(
@@ -187,6 +191,35 @@ export const usePlanFilters = () => {
   );
 
   const currentPage = Math.max(1, Number(pageQuery) || 1);
+  const pageSize = Math.min(
+    100,
+    Math.max(1, Number(pageSizeQuery) || ITEMS_PER_PAGE),
+  );
+
+  const queryParams = React.useMemo(
+    () => ({
+      ...(search.trim() ? { q: search.trim() } : {}),
+      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      ...(difficultyFilter !== "all" ? { difficulty: difficultyFilter } : {}),
+      ...(translationsFilter !== "all"
+        ? { translations: translationsFilter }
+        : {}),
+      sortBy,
+      sortDir,
+      page: currentPage,
+      pageSize,
+    }),
+    [
+      currentPage,
+      difficultyFilter,
+      pageSize,
+      search,
+      sortBy,
+      sortDir,
+      statusFilter,
+      translationsFilter,
+    ],
+  );
 
   return {
     search,
@@ -197,8 +230,11 @@ export const usePlanFilters = () => {
     sortDir,
     sorting,
     currentPage,
+    pageSize,
+    queryParams,
     pageQuery,
     setPageQuery,
+    setPageSizeQuery,
     filterFields,
     activeFilters,
     handleFiltersChange,

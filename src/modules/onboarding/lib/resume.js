@@ -59,6 +59,27 @@ export const getNextUserOnboardingPath = (state) => {
   }
 
   if (!hasValue(state.dietRestrictions)) {
+    if (
+      !hasValue(state.allergyIngredientIds) &&
+      !hasValue(state.allergyOtherText)
+    ) {
+      return "allergy-ingredients";
+    }
+
+    if (
+      !hasValue(state.dislikedIngredientIds) &&
+      !hasValue(state.dislikedOtherText)
+    ) {
+      return "disliked-ingredients";
+    }
+
+    if (
+      !hasValue(state.nutritionPreferenceKeys) &&
+      !hasValue(state.nutritionPreferenceOtherText)
+    ) {
+      return "nutrition-preferences";
+    }
+
     return "diet-restrictions";
   }
 

@@ -84,7 +84,7 @@ const FoodRecipeDrawer = () => {
 
   const handleSave = async () => {
     try {
-      await mutation.mutateAsync({
+      const response = await mutation.mutateAsync({
         url: `/admin/foods/${id}/recipe`,
         attributes: {
           ingredients: rows
@@ -95,7 +95,18 @@ const FoodRecipeDrawer = () => {
             })),
         },
       });
-      toast.success("Recipe saqlandi");
+      const recipeWarnings = get(getPayload(response), "recipeWarnings", []);
+      if (recipeWarnings.length) {
+        toast.warning(
+          get(
+            recipeWarnings,
+            "0.message",
+            "Recipe saqlandi, lekin ayrim ingredientlarda narx yo'q.",
+          ),
+        );
+      } else {
+        toast.success("Recipe saqlandi");
+      }
       navigate("/admin/foods/list");
     } catch (error) {
       toast.error(getErrorMessage(error, "Recipe saqlanmadi"));

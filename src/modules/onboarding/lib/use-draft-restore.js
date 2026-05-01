@@ -23,6 +23,15 @@ function isUserStoreEmpty(state) {
     !state.activityLevel &&
     !state.mealFrequency &&
     !state.waterHabits &&
+    (!isArray(state.allergyIngredientIds) ||
+      state.allergyIngredientIds.length === 0) &&
+    (!isArray(state.dislikedIngredientIds) ||
+      state.dislikedIngredientIds.length === 0) &&
+    (!isArray(state.nutritionPreferenceKeys) ||
+      state.nutritionPreferenceKeys.length === 0) &&
+    !state.allergyOtherText &&
+    !state.dislikedOtherText &&
+    !state.nutritionPreferenceOtherText &&
     (!isArray(state.dietRestrictions) ||
       state.dietRestrictions.length === 0) &&
     (!isArray(state.healthConstraints) ||
@@ -117,6 +126,25 @@ function mergeUserDraft(serverData, setFields) {
   }
   if (serverData.waterHabits) {
     fields.waterHabits = serverData.waterHabits;
+  }
+  if (isArray(serverData.allergyIngredientIds)) {
+    fields.allergyIngredientIds = serverData.allergyIngredientIds;
+  }
+  if (isArray(serverData.dislikedIngredientIds)) {
+    fields.dislikedIngredientIds = serverData.dislikedIngredientIds;
+  }
+  if (isArray(serverData.nutritionPreferenceKeys)) {
+    fields.nutritionPreferenceKeys = serverData.nutritionPreferenceKeys;
+  }
+  if (serverData.allergyOtherText) {
+    fields.allergyOtherText = serverData.allergyOtherText;
+  }
+  if (serverData.dislikedOtherText) {
+    fields.dislikedOtherText = serverData.dislikedOtherText;
+  }
+  if (serverData.nutritionPreferenceOtherText) {
+    fields.nutritionPreferenceOtherText =
+      serverData.nutritionPreferenceOtherText;
   }
   if (isArray(serverData.dietRestrictions)) {
     fields.dietRestrictions = serverData.dietRestrictions;

@@ -19,6 +19,8 @@ import {
   UsersIcon,
   UtensilsIcon,
   LanguagesIcon,
+  Loader2Icon,
+  RotateCcwIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
@@ -108,18 +110,6 @@ const Index = () => {
     [request],
   );
 
-  const exportUsersReport = React.useCallback(
-    async (params = {}) =>
-      getDownloadPayload("/admin/reports/users/export", params),
-    [getDownloadPayload],
-  );
-
-  const exportFoodsReport = React.useCallback(
-    async (params = {}) =>
-      getDownloadPayload("/admin/foods/export", params),
-    [getDownloadPayload],
-  );
-
   const exportMissingTranslationsReport = React.useCallback(
     async () =>
       getDownloadPayload("/admin/reports/missing-translations/export"),
@@ -138,6 +128,8 @@ const Index = () => {
   );
   const [revenueRange, setRevenueRange] = React.useState("month");
   const [loadingId, setLoadingId] = React.useState(null);
+  const [jobs, setJobs] = React.useState([]);
+  const [isJobsLoading, setIsJobsLoading] = React.useState(false);
 
   React.useEffect(() => {
     setBreadcrumbs([
@@ -145,6 +137,53 @@ const Index = () => {
       { url: "/admin/reports", title: "Hisobotlar" },
     ]);
   }, [setBreadcrumbs]);
+
+  const fetchJobs = React.useCallback(async () => {
+    try {
+      setIsJobsLoading(true);
+      const response = await request.get("/admin/jobs");
+      setJobs(get(response, "data.data", get(response, "data", [])) || []);
+    } catch {
+      toast.error("Joblar ro'yxatini olib bo'lmadi");
+    } finally {
+      setIsJobsLoading(false);
+    }
+  }, [request]);
+
+  React.useEffect(() => {
+    void fetchJobs();
+  }, [fetchJobs]);
+
+  const startExportJob = React.useCallback(
+    async (url, params = {}) => {
+      const response = await request.post(url, null, { params });
+      await fetchJobs();
+      return get(response, "data.data", get(response, "data"));
+    },
+    [fetchJobs, request],
+  );
+
+  const downloadJob = React.useCallback(
+    async (job) => {
+      try {
+        setLoadingId(job.id);
+        downloadBlob(
+          await getDownloadPayload(`/admin/jobs/${job.id}/download`),
+        );
+        toast.success("Job natijasi yuklab olindi");
+      } catch (error) {
+        const message = error?.response?.data?.message;
+        toast.error(
+          Array.isArray(message)
+            ? message.join(", ")
+            : message || "Job natijasini yuklab bo'lmadi",
+        );
+      } finally {
+        setLoadingId(null);
+      }
+    },
+    [getDownloadPayload],
+  );
 
   const handleExport = React.useCallback(async (id) => {
     const report = reports.find((item) => item.id === id);
@@ -154,18 +193,24 @@ const Index = () => {
       setLoadingId(id);
 
       if (id === "users") {
-        downloadBlob(await exportUsersReport());
+        await startExportJob("/admin/reports/users/export/jobs");
       } else if (id === "premium-users") {
-        downloadBlob(await exportUsersReport({ premium: "active" }));
+        await startExportJob("/admin/reports/users/export/jobs", {
+          premium: "active",
+        });
       } else if (id === "foods") {
-        downloadBlob(await exportFoodsReport());
+        await startExportJob("/admin/foods/export/jobs");
       } else if (id === "missing-translations") {
         downloadBlob(await exportMissingTranslationsReport());
       } else if (id === "content-quality") {
         downloadBlob(await exportContentQualityReport());
       }
 
-      toast.success("Hisobot yuklab olindi");
+      toast.success(
+        ["users", "premium-users", "foods"].includes(id)
+          ? "Hisobot job sifatida boshlandi"
+          : "Hisobot yuklab olindi",
+      );
     } catch (error) {
       const message = error?.response?.data?.message;
       toast.error(
@@ -177,11 +222,10 @@ const Index = () => {
       setLoadingId(null);
     }
   }, [
-    exportFoodsReport,
     exportContentQualityReport,
     exportMissingTranslationsReport,
-    exportUsersReport,
     hasCapability,
+    startExportJob,
   ]);
 
   const handleRevenueExport = React.useCallback(async () => {
@@ -283,6 +327,75 @@ const Index = () => {
           </Card>
         ) : null}
       </div>
+
+      <Card>
+        <CardHeader className="py-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <FileSpreadsheetIcon className="size-5 text-primary" />
+                Import/export joblar
+              </CardTitle>
+              <CardDescription className="mt-2">
+                Katta eksport va importlar background job sifatida bajariladi.
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => void fetchJobs()}
+              disabled={isJobsLoading}
+              className="gap-2"
+            >
+              {isJobsLoading ? (
+                <Loader2Icon className="size-4 animate-spin" />
+              ) : (
+                <RotateCcwIcon className="size-4" />
+              )}
+              Yangilash
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3 pb-6">
+          {jobs.length ? (
+            jobs.slice(0, 8).map((job) => {
+              const canDownload =
+                job?.result?.hasDownload || job?.result?.hasFailedRows;
+              return (
+                <div
+                  key={job.id}
+                  className="flex flex-col gap-3 rounded-xl border p-4 md:flex-row md:items-center md:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="font-semibold">{job.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {job.status} · {job.progress}% ·{" "}
+                      {job.result?.summary
+                        ? JSON.stringify(job.result.summary)
+                        : "natija tayyorlanmoqda"}
+                    </p>
+                    {job.error ? (
+                      <p className="text-sm text-destructive">{job.error}</p>
+                    ) : null}
+                  </div>
+                  <Button
+                    variant="outline"
+                    disabled={!canDownload || loadingId === job.id}
+                    onClick={() => void downloadJob(job)}
+                    className="gap-2"
+                  >
+                    <DownloadIcon className="size-4" />
+                    Yuklab olish
+                  </Button>
+                </div>
+              );
+            })
+          ) : (
+            <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+              Hali joblar yo'q.
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </PageTransition>
   );
 };

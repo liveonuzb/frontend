@@ -2,6 +2,8 @@ import React from "react";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 import { get, find } from "lodash";
 
+const DEFAULT_PAGE_SIZE = 10;
+
 export const usePlanFilters = () => {
   const [search, setSearch] = useQueryState("q", parseAsString.withDefault(""));
   const [typeFilter, setTypeFilter] = useQueryState(
@@ -11,6 +13,19 @@ export const usePlanFilters = () => {
   const [statusFilter, setStatusFilter] = useQueryState(
     "status",
     parseAsStringEnum(["all", "active", "inactive"]).withDefault("all"),
+  );
+  const [pageQuery, setPageQuery] = useQueryState(
+    "page",
+    parseAsString.withDefault("1"),
+  );
+  const [pageSizeQuery, setPageSizeQuery] = useQueryState(
+    "pageSize",
+    parseAsString.withDefault(String(DEFAULT_PAGE_SIZE)),
+  );
+  const currentPage = Math.max(1, Number(pageQuery) || 1);
+  const pageSize = Math.min(
+    100,
+    Math.max(1, Number(pageSizeQuery) || DEFAULT_PAGE_SIZE),
   );
 
   const filterFields = React.useMemo(
@@ -103,15 +118,20 @@ export const usePlanFilters = () => {
         void setSearch(nextSearch);
         void setTypeFilter(nextType);
         void setStatusFilter(nextStatus);
+        void setPageQuery("1");
       });
     },
-    [setSearch, setTypeFilter, setStatusFilter],
+    [setPageQuery, setSearch, setTypeFilter, setStatusFilter],
   );
 
   return {
     search,
     typeFilter,
     statusFilter,
+    currentPage,
+    pageSize,
+    setPageQuery,
+    setPageSizeQuery,
     filterFields,
     activeFilters,
     handleFiltersChange,

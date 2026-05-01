@@ -192,6 +192,13 @@ const Index = () => {
         activityLevel: onboardingState.activityLevel,
         mealFrequency: onboardingState.mealFrequency,
         waterHabits: onboardingState.waterHabits,
+        allergyIngredientIds: onboardingState.allergyIngredientIds,
+        dislikedIngredientIds: onboardingState.dislikedIngredientIds,
+        nutritionPreferenceKeys: onboardingState.nutritionPreferenceKeys,
+        allergyOtherText: onboardingState.allergyOtherText,
+        dislikedOtherText: onboardingState.dislikedOtherText,
+        nutritionPreferenceOtherText:
+          onboardingState.nutritionPreferenceOtherText,
         healthConstraints,
         dietRestrictions,
       }),

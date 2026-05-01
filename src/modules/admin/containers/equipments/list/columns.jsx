@@ -64,6 +64,7 @@ export const useColumns = ({
       {
         accessorKey: "imageUrl",
         header: "Rasm",
+        enableSorting: false,
         size: 92,
         meta: { skeleton: adminListSkeletons.image },
         cell: (info) => {
@@ -87,6 +88,8 @@ export const useColumns = ({
       {
         accessorKey: "name",
         header: "Jihoz",
+        enableSorting: true,
+        size: 280,
         meta: {
           skeleton: adminListSkeletons.avatarText,
           cellClassName: "w-[34%]",
@@ -112,6 +115,7 @@ export const useColumns = ({
       {
         id: "translations",
         header: "Tarjimalar",
+        enableSorting: false,
         size: 150,
         meta: { skeleton: adminListSkeletons.translations },
         cell: (info) => {
@@ -146,22 +150,20 @@ export const useColumns = ({
       {
         accessorKey: "isActive",
         header: "Status",
-        size: 110,
+        enableSorting: true,
+        size: 96,
         meta: { skeleton: adminListSkeletons.status },
         cell: (info) => {
           const equipment = info.row.original;
 
           return (
-            <div className="flex items-center gap-3">
+            <div className="flex justify-center">
               <Switch
                 checked={equipment.isActive}
                 onCheckedChange={(checked) =>
                   handleToggleStatus(equipment, checked)
                 }
               />
-              <span className="text-sm">
-                {equipment.isActive ? "Faol" : "Nofaol"}
-              </span>
             </div>
           );
         },
@@ -169,6 +171,7 @@ export const useColumns = ({
       {
         id: "actions",
         header: "",
+        enableSorting: false,
         size: 50,
         meta: { skeleton: adminListSkeletons.action },
         cell: (info) => (

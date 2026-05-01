@@ -22,6 +22,7 @@ const FoodActionsMenu = ({
   onDelete,
   onRestore,
   onHardDelete,
+  canHardDelete = false,
   onTranslations,
   onRecipe,
 }) => {
@@ -41,18 +42,20 @@ const FoodActionsMenu = ({
               <RotateCcwIcon className="size-4 text-emerald-600" />
               Tiklash
             </DropdownMenuItem>
-            <DropdownMenuItem
-              variant="destructive"
-              onClick={() =>
-                onHardDelete({
-                  ids: [food.id],
-                  label: food.name,
-                })
-              }
-            >
-              <Trash2Icon className="size-4" />
-              Butunlay o'chirish
-            </DropdownMenuItem>
+            {canHardDelete ? (
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() =>
+                  onHardDelete({
+                    ids: [food.id],
+                    label: food.name,
+                  })
+                }
+              >
+                <Trash2Icon className="size-4" />
+                Butunlay o'chirish
+              </DropdownMenuItem>
+            ) : null}
           </>
         ) : (
           <>

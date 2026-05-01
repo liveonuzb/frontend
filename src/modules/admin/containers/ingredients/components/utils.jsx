@@ -31,6 +31,7 @@ export const SORT_FIELDS = [
   "priceUpdatedAt",
   "createdAt",
   "isActive",
+  "isAllergic",
 ];
 export const SORT_DIRECTIONS = ["asc", "desc"];
 export const SERVING_UNITS = [
@@ -53,6 +54,29 @@ export const BUDGET_TIERS = [
   { value: "medium", label: "O'rtacha" },
   { value: "expensive", label: "Qimmat" },
 ];
+export const PRICE_SEASONS = [
+  { value: "all", label: "Yil davomida" },
+  { value: "spring", label: "Bahor" },
+  { value: "summer", label: "Yoz" },
+  { value: "autumn", label: "Kuz" },
+  { value: "winter", label: "Qish" },
+];
+export const PRICE_REGIONS = [
+  { value: "uzbekistan", label: "O'zbekiston" },
+  { value: "tashkent", label: "Toshkent" },
+  { value: "samarqand", label: "Samarqand" },
+  { value: "buxoro", label: "Buxoro" },
+  { value: "fargona", label: "Farg'ona" },
+  { value: "andijon", label: "Andijon" },
+  { value: "namangan", label: "Namangan" },
+  { value: "qashqadaryo", label: "Qashqadaryo" },
+  { value: "surxondaryo", label: "Surxondaryo" },
+  { value: "xorazm", label: "Xorazm" },
+  { value: "navoiy", label: "Navoiy" },
+  { value: "jizzax", label: "Jizzax" },
+  { value: "sirdaryo", label: "Sirdaryo" },
+  { value: "qoraqalpogiston", label: "Qoraqalpog'iston" },
+];
 
 export const ingredientSchema = z.object({
   name: z.string().trim().min(1, "Nom kiriting"),
@@ -61,6 +85,7 @@ export const ingredientSchema = z.object({
   carbs: z.number().min(0),
   fat: z.number().min(0),
   servingUnit: z.enum(["g", "ml", "dona", "qoshiq"]),
+  isAllergic: z.boolean().default(false),
 });
 
 export const priceSchema = z.object({
@@ -68,6 +93,12 @@ export const priceSchema = z.object({
   priceUnit: z.enum(["kg", "100g", "g", "litr", "ml", "dona"]),
   currency: z.string().trim().min(1, "Valyuta kiriting").max(8),
   budgetTier: z.enum(["auto", "cheap", "medium", "expensive"]),
+});
+
+export const regionalPriceSchema = priceSchema.extend({
+  regionKey: z.string().trim().min(1, "Region tanlang").max(64),
+  regionName: z.string().trim().min(1, "Region nomi kerak").max(120),
+  season: z.enum(["all", "spring", "summer", "autumn", "winter"]),
 });
 
 export const resolveLabel = (translations, fallback, language) =>
@@ -80,7 +111,10 @@ export const getPayload = (response) =>
 
 export const getErrorMessage = (error, fallback) => {
   const message = get(error, "response.data.message");
-  return isArray(message) ? join(message, ", ") : message || fallback;
+  const dependencySummary = get(error, "response.data.dependencySummary");
+  const baseMessage = isArray(message) ? join(message, ", ") : message;
+
+  return [baseMessage || fallback, dependencySummary].filter(Boolean).join(" ");
 };
 
 export const formatMoney = (value, currency = "UZS") =>

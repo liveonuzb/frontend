@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/card";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -899,9 +898,6 @@ const Revenue = () => {
                       ? "Qo'shilmoqda..."
                       : "Qo'shish"}
                 </Button>
-                <DrawerClose asChild>
-                  <Button variant="outline">Bekor qilish</Button>
-                </DrawerClose>
               </DrawerFooter>
             </div>
           </DrawerContent>

@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router";
-import { find, get, isArray, map, trim } from "lodash";
+import { find, get, isArray, trim } from "lodash";
 import { toast } from "sonner";
 import { PaletteIcon, PencilIcon, TagIcon } from "lucide-react";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner.jsx";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -82,12 +82,14 @@ const EditWorkoutCategory = () => {
   const { id } = useParams();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
 
-  const { data: categoriesData, isLoading } = useGetQuery({
-    url: "/admin/workout-categories",
-    queryProps: { queryKey: ["admin", "workout-categories"] },
+  const { data: categoryData, isLoading } = useGetQuery({
+    url: `/admin/workout-categories/${id}`,
+    queryProps: {
+      queryKey: ["admin", "workout-categories", "detail", id],
+      enabled: Boolean(id),
+    },
   });
-  const categories = get(categoriesData, "data.data", []);
-  const category = find(categories, (c) => String(c.id) === String(id));
+  const category = get(categoryData, "data.data");
 
   const [form, setForm] = React.useState(emptyForm);
 
@@ -138,8 +140,6 @@ const EditWorkoutCategory = () => {
     if (!open) navigate("/admin/workout-categories/list");
   };
 
-  if (isLoading) return null;
-
   return (
     <Drawer open onOpenChange={handleOpenChange} direction="bottom">
       <DrawerContent className="mx-auto max-h-[90vh] data-[vaul-drawer-direction=bottom]:md:max-w-lg">
@@ -155,6 +155,11 @@ const EditWorkoutCategory = () => {
             </DrawerDescription>
           </DrawerHeader>
 
+          {isLoading ? (
+            <div className="flex min-h-72 items-center justify-center px-4 py-10">
+              <Spinner className="size-8 text-muted-foreground" />
+            </div>
+          ) : (
           <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-4 space-y-6">
             <div className="space-y-2">
               <Label className="flex items-center gap-2 text-sm font-medium">
@@ -263,17 +268,15 @@ const EditWorkoutCategory = () => {
               </div>
             </div>
           </div>
+          )}
 
           <DrawerFooter className="gap-2 border-t bg-muted/5 px-6 py-4">
             <Button
               onClick={handleSave}
-              disabled={isUpdating}
+              disabled={isUpdating || isLoading}
             >
               Saqlash
             </Button>
-            <DrawerClose asChild>
-              <Button variant="outline">Bekor qilish</Button>
-            </DrawerClose>
           </DrawerFooter>
         </div>
       </DrawerContent>

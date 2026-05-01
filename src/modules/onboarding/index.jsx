@@ -18,6 +18,9 @@ import WeeklyPacePage from "@/modules/onboarding/user/pages/weekly-pace/index.js
 import ActivityLevelPage from "@/modules/onboarding/user/pages/activity-level/index.jsx";
 import MealFrequencyPage from "@/modules/onboarding/user/pages/meal-frequency/index.jsx";
 import WaterHabitsPage from "@/modules/onboarding/user/pages/water-habits/index.jsx";
+import AllergyIngredientsPage from "@/modules/onboarding/user/pages/allergy-ingredients/index.jsx";
+import DislikedIngredientsPage from "@/modules/onboarding/user/pages/disliked-ingredients/index.jsx";
+import NutritionPreferencesPage from "@/modules/onboarding/user/pages/nutrition-preferences/index.jsx";
 import DietRestrictionsPage from "@/modules/onboarding/user/pages/diet-restrictions/index.jsx";
 import ReportPage from "@/modules/onboarding/user/pages/report/index.jsx";
 
@@ -54,6 +57,9 @@ const Index = () => {
         <Route path="activity-level" element={<ActivityLevelPage />} />
         <Route path="meal-frequency" element={<MealFrequencyPage />} />
         <Route path="water-habits" element={<WaterHabitsPage />} />
+        <Route path="allergy-ingredients" element={<AllergyIngredientsPage />} />
+        <Route path="disliked-ingredients" element={<DislikedIngredientsPage />} />
+        <Route path="nutrition-preferences" element={<NutritionPreferencesPage />} />
         <Route path="diet-restrictions" element={<DietRestrictionsPage />} />
         <Route path="report" element={<ReportPage />} />
 

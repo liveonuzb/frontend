@@ -14,6 +14,9 @@ export const ONBOARDING_STEPS = [
   "activity-level",
   "meal-frequency",
   "water-habits",
+  "allergy-ingredients",
+  "disliked-ingredients",
+  "nutrition-preferences",
   "diet-restrictions",
 ];
 

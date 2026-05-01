@@ -8,7 +8,6 @@ import {
 } from "lodash";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -95,9 +94,6 @@ const FoodBulkCategoryDrawer = ({
           >
             Kategoriyalarni biriktirish
           </Button>
-          <DrawerClose asChild>
-            <Button variant="outline">Bekor qilish</Button>
-          </DrawerClose>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

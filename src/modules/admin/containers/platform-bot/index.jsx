@@ -1,10 +1,10 @@
 import React from "react";
 import { get } from "lodash";
 import { toast } from "sonner";
+import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
+import { parseAsString, useQueryState } from "nuqs";
 import {
   BotIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
   MegaphoneIcon,
   RefreshCwIcon,
   SendIcon,
@@ -14,6 +14,7 @@ import { useGetQuery, usePostQuery } from "@/hooks/api";
 import PageTransition from "@/components/page-transition";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Card,
   CardAction,
@@ -39,21 +40,21 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  DataGrid,
+  DataGridContainer,
+  DataGridPagination,
+  DataGridTable,
+} from "@/components/reui/data-grid";
 import { getApiResponseData } from "@/lib/api-response";
+import { cn } from "@/lib/utils";
+import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 
 const ADMIN_PLATFORM_BOT_QUERY_KEY = ["admin", "platform-bot"];
 const ADMIN_PLATFORM_BOT_USERS_QUERY_KEY = ["admin", "platform-bot", "users"];
-const PAGE_SIZE = 25;
+const DEFAULT_PAGE_SIZE = 25;
 
 const formatDateTime = (value) => {
   if (!value) {
@@ -107,12 +108,24 @@ const StatCard = ({ label, value, description }) => (
 const PlatformBotPage = () => {
   const { canManageGrowth } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
-  const [search, setSearch] = React.useState("");
-  const [mutedFilter, setMutedFilter] = React.useState("all");
-  const [offset, setOffset] = React.useState(0);
+  const [search, setSearch] = useQueryState("q", parseAsString.withDefault(""));
+  const [mutedFilter, setMutedFilter] = useQueryState(
+    "muted",
+    parseAsString.withDefault("all"),
+  );
+  const [pageQuery, setPageQuery] = useQueryState(
+    "page",
+    parseAsString.withDefault("1"),
+  );
+  const [pageSizeQuery, setPageSizeQuery] = useQueryState(
+    "pageSize",
+    parseAsString.withDefault(String(DEFAULT_PAGE_SIZE)),
+  );
   const [broadcastOpen, setBroadcastOpen] = React.useState(false);
   const [broadcastText, setBroadcastText] = React.useState("");
   const deferredSearch = React.useDeferredValue(search);
+  const currentPage = Math.max(1, Number(pageQuery) || 1);
+  const pageSize = Math.max(1, Number(pageSizeQuery) || DEFAULT_PAGE_SIZE);
 
   React.useEffect(() => {
     setBreadcrumbs([
@@ -130,8 +143,8 @@ const PlatformBotPage = () => {
 
   const usersParams = React.useMemo(
     () => ({
-      limit: PAGE_SIZE,
-      offset,
+      limit: pageSize,
+      offset: (currentPage - 1) * pageSize,
       ...(deferredSearch.trim() ? { q: deferredSearch.trim() } : {}),
       ...(mutedFilter === "muted"
         ? { muted: true }
@@ -139,7 +152,7 @@ const PlatformBotPage = () => {
           ? { muted: false }
           : {}),
     }),
-    [deferredSearch, mutedFilter, offset],
+    [currentPage, deferredSearch, mutedFilter, pageSize],
   );
 
   const usersQuery = useGetQuery({
@@ -172,8 +185,7 @@ const PlatformBotPage = () => {
   const stats = get(statusPayload, "stats", {});
   const users = Array.isArray(usersPayload) ? usersPayload : [];
   const totalUsers = get(usersQuery.data, "data.meta.total", 0);
-  const hasPreviousPage = offset > 0;
-  const hasNextPage = offset + PAGE_SIZE < totalUsers;
+  const totalPages = get(usersQuery.data, "data.meta.totalPages", 1);
 
   const handleRegisterWebhook = async () => {
     if (!canManageGrowth) return;
@@ -213,6 +225,113 @@ const PlatformBotPage = () => {
       toast.error("Broadcast yuborilmadi.");
     }
   };
+
+  const columns = React.useMemo(
+    () => [
+      {
+        accessorKey: "user",
+        header: "User",
+        cell: ({ row }) => {
+          const chat = row.original;
+
+          return (
+            <div className="flex min-w-[220px] flex-col gap-1">
+              <span className="font-medium">{resolveUserName(chat)}</span>
+              <span className="text-xs text-muted-foreground">
+                {chat.user?.email || chat.user?.phone || "-"}
+              </span>
+            </div>
+          );
+        },
+        size: 240,
+        meta: { skeleton: adminListSkeletons.avatarText },
+      },
+      {
+        accessorKey: "telegramId",
+        header: "Telegram",
+        cell: ({ row }) => {
+          const chat = row.original;
+
+          return (
+            <div className="flex min-w-[160px] flex-col gap-1">
+              <span>{chat.telegramId}</span>
+              <span className="text-xs text-muted-foreground">
+                {chat.username ? `@${chat.username}` : "-"}
+              </span>
+            </div>
+          );
+        },
+        size: 180,
+        meta: { skeleton: adminListSkeletons.text },
+      },
+      {
+        accessorKey: "languageCode",
+        header: "Til",
+        cell: (info) => info.getValue() || "-",
+        size: 90,
+        meta: { skeleton: adminListSkeletons.text },
+      },
+      {
+        accessorKey: "status",
+        header: "Holat",
+        cell: ({ row }) => {
+          const chat = row.original;
+
+          return (
+            <div className="flex min-w-[160px] flex-wrap gap-2">
+              <Badge variant={chat.userId ? "default" : "secondary"}>
+                {chat.userId ? "Linked" : "Unlinked"}
+              </Badge>
+              {chat.isMuted ? <Badge variant="outline">Muted</Badge> : null}
+            </div>
+          );
+        },
+        size: 180,
+        meta: { skeleton: adminListSkeletons.badge },
+      },
+      {
+        accessorKey: "phone",
+        header: "Telefon",
+        cell: (info) => info.getValue() || "-",
+        size: 150,
+        meta: { skeleton: adminListSkeletons.text },
+      },
+      {
+        accessorKey: "lastActiveAt",
+        header: "Oxirgi aktivlik",
+        cell: (info) => formatDateTime(info.getValue()),
+        size: 180,
+        meta: { skeleton: adminListSkeletons.text },
+      },
+    ],
+    [],
+  );
+
+  const table = useReactTable({
+    data: users,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    manualPagination: true,
+    pageCount: totalPages,
+    rowCount: totalUsers,
+    state: {
+      pagination: { pageIndex: currentPage - 1, pageSize },
+    },
+    onPaginationChange: (updater) => {
+      const next =
+        typeof updater === "function"
+          ? updater({ pageIndex: currentPage - 1, pageSize })
+          : updater;
+      const nextPageSize = Number(get(next, "pageSize")) || pageSize;
+
+      React.startTransition(() => {
+        void setPageQuery(
+          String(nextPageSize === pageSize ? Number(get(next, "pageIndex", 0)) + 1 : 1),
+        );
+        void setPageSizeQuery(String(nextPageSize));
+      });
+    },
+  });
 
   return (
     <PageTransition>
@@ -352,20 +471,20 @@ const PlatformBotPage = () => {
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <div className="grid gap-3 md:grid-cols-[1fr_220px]">
+            <div className="grid gap-3 md:grid-cols-[1fr_220px_auto]">
               <Input
                 value={search}
                 onChange={(event) => {
-                  setSearch(event.target.value);
-                  setOffset(0);
+                  void setSearch(event.target.value);
+                  void setPageQuery("1");
                 }}
                 placeholder="Telegram ID, username, ism yoki telefon bo'yicha qidirish"
               />
               <Select
                 value={mutedFilter}
                 onValueChange={(value) => {
-                  setMutedFilter(value);
-                  setOffset(0);
+                  void setMutedFilter(value);
+                  void setPageQuery("1");
                 }}
               >
                 <SelectTrigger>
@@ -377,110 +496,35 @@ const PlatformBotPage = () => {
                   <SelectItem value="muted">Muted</SelectItem>
                 </SelectContent>
               </Select>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => usersQuery.refetch()}
+                disabled={usersQuery.isFetching}
+              >
+                <RefreshCwIcon
+                  className={cn("size-4", usersQuery.isFetching && "animate-spin")}
+                />
+              </Button>
             </div>
 
-            <div className="overflow-x-auto rounded-2xl border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Telegram</TableHead>
-                    <TableHead>Til</TableHead>
-                    <TableHead>Holat</TableHead>
-                    <TableHead>Telefon</TableHead>
-                    <TableHead>Oxirgi aktivlik</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {usersQuery.isLoading ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className="py-10 text-center text-sm text-muted-foreground"
-                      >
-                        Yuklanmoqda...
-                      </TableCell>
-                    </TableRow>
-                  ) : users.length ? (
-                    users.map((chat) => (
-                      <TableRow key={chat.id}>
-                        <TableCell>
-                          <div className="flex flex-col gap-1">
-                            <span className="font-medium">
-                              {resolveUserName(chat)}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {chat.user?.email || chat.user?.phone || "-"}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col gap-1">
-                            <span>{chat.telegramId}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {chat.username ? `@${chat.username}` : "-"}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{chat.languageCode || "-"}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-2">
-                            <Badge
-                              variant={chat.userId ? "default" : "secondary"}
-                            >
-                              {chat.userId ? "Linked" : "Unlinked"}
-                            </Badge>
-                            {chat.isMuted ? (
-                              <Badge variant="outline">Muted</Badge>
-                            ) : null}
-                          </div>
-                        </TableCell>
-                        <TableCell>{chat.phone || "-"}</TableCell>
-                        <TableCell>
-                          {formatDateTime(chat.lastActiveAt)}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className="py-10 text-center text-sm text-muted-foreground"
-                      >
-                        Telegram chatlar topilmadi.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                {totalUsers ? offset + 1 : 0}-
-                {Math.min(offset + PAGE_SIZE, totalUsers)} / {totalUsers}
-              </p>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  onClick={() => setOffset(Math.max(offset - PAGE_SIZE, 0))}
-                  disabled={!hasPreviousPage}
-                >
-                  <ChevronLeftIcon />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  onClick={() => setOffset(offset + PAGE_SIZE)}
-                  disabled={!hasNextPage}
-                >
-                  <ChevronRightIcon />
-                </Button>
-              </div>
-            </div>
+            <DataGrid
+              table={table}
+              isLoading={usersQuery.isLoading || usersQuery.isFetching}
+              recordCount={totalUsers}
+            >
+              <DataGridContainer>
+                <ScrollArea className="w-full">
+                  <DataGridTable />
+                  <ScrollBar orientation="horizontal" />
+                </ScrollArea>
+              </DataGridContainer>
+              <DataGridPagination
+                info="{from} - {to} / {count} ta chat"
+                sizes={[10, 25, 50, 100]}
+              />
+            </DataGrid>
           </CardContent>
         </Card>
       </div>

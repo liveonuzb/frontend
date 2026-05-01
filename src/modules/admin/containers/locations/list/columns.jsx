@@ -4,6 +4,7 @@ import { ChevronDownIcon, ChevronRightIcon, LoaderIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { DataGridColumnHeader } from "@/components/reui/data-grid";
 import { cn } from "@/lib/utils";
 import { countFilledLocationTranslations } from "@/lib/location-translations.js";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
@@ -46,7 +47,11 @@ export const useColumns = ({
     () => [
       {
         accessorKey: "name",
-        header: "Location",
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Location" />
+        ),
+        enableSorting: true,
+        size: 320,
         meta: { skeleton: adminListSkeletons.avatarText, cellClassName: "min-w-[320px]" },
         cell: (info) => {
           const location = info.row.original;
@@ -105,7 +110,10 @@ export const useColumns = ({
       },
       {
         accessorKey: "type",
-        header: "Tur",
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Tur" />
+        ),
+        enableSorting: true,
         size: 120,
         meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => {
@@ -126,7 +134,11 @@ export const useColumns = ({
       },
       {
         accessorKey: "pathLabel",
-        header: "Tree path",
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Tree path" />
+        ),
+        enableSorting: true,
+        size: 260,
         meta: { skeleton: adminListSkeletons.text, cellClassName: "min-w-[260px]" },
         cell: (info) => (
           <div className="text-xs text-muted-foreground">{info.getValue()}</div>
@@ -168,28 +180,23 @@ export const useColumns = ({
       },
       {
         accessorKey: "isActive",
-        header: "Status",
-        size: 150,
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Status" />
+        ),
+        enableSorting: true,
+        size: 96,
         meta: { skeleton: adminListSkeletons.status },
         cell: (info) => {
           const isActive = info.getValue();
           const location = info.row.original;
 
           return (
-            <div className="flex items-center gap-2">
+            <div className="flex justify-center">
               <Switch
                 checked={isActive}
                 disabled={isUpdating}
                 onCheckedChange={() => handleToggleActive(location)}
               />
-              <span
-                className={cn(
-                  "text-xs font-medium",
-                  isActive ? "text-emerald-600" : "text-muted-foreground",
-                )}
-              >
-                {isActive ? "Faol" : "Nofaol"}
-              </span>
             </div>
           );
         },

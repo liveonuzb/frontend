@@ -9,6 +9,7 @@ import { useGetQuery, usePatchQuery } from "@/hooks/api";
 import {
   DataGrid,
   DataGridContainer,
+  DataGridPagination,
   DataGridTable,
 } from "@/components/reui/data-grid";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,8 @@ const Index = () => {
     autoRenewFilter,
     currentPage,
     pageSize,
+    setPageQuery,
+    setPageSizeQuery,
     filterFields,
     activeFilters,
     handleFiltersChange,
@@ -97,7 +100,13 @@ const Index = () => {
   });
 
   const subscriptions = get(subscriptionsData, "data.data", []);
-  const totalItems = get(subscriptionsData, "data.meta.total", 0);
+  const meta = get(subscriptionsData, "data.meta", {
+    total: 0,
+    page: currentPage,
+    pageSize,
+    totalPages: 1,
+  });
+  const totalItems = get(meta, "total", 0);
 
   const cancelMutation = usePatchQuery({
     queryKey: SUBSCRIPTIONS_QUERY_KEY,
@@ -209,6 +218,25 @@ const Index = () => {
     columns,
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => toString(get(row, "id")),
+    manualPagination: true,
+    pageCount: Math.max(1, Number(get(meta, "totalPages", 1))),
+    onPaginationChange: (updater) => {
+      const next =
+        typeof updater === "function"
+          ? updater({ pageIndex: currentPage - 1, pageSize })
+          : updater;
+
+      React.startTransition(() => {
+        void setPageQuery(String(get(next, "pageIndex", 0) + 1));
+        void setPageSizeQuery(String(get(next, "pageSize", pageSize)));
+      });
+    },
+    state: {
+      pagination: {
+        pageIndex: currentPage - 1,
+        pageSize,
+      },
+    },
   });
 
   return (
@@ -240,28 +268,28 @@ const Index = () => {
         {totalItems} ta obuna
       </p>
 
-      <DataGridContainer>
-        <ScrollArea className="w-full">
-          <DataGrid
-            table={table}
-            tableLayout={{ width: "auto" }}
-            loadingMode="none"
-            isLoading={isLoading}
-          >
+      <DataGrid
+        table={table}
+        tableLayout={{ width: "auto" }}
+        isLoading={isLoading}
+        recordCount={totalItems}
+      >
+        <DataGridContainer>
+          <ScrollArea className="w-full">
             <DataGridTable />
-          </DataGrid>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
-      </DataGridContainer>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </DataGridContainer>
+        <DataGridPagination
+          info="{from} - {to} / {count} ta obuna"
+          sizes={[10, 20, 50, 100]}
+        />
+      </DataGrid>
 
       {!isLoading && !subscriptions.length ? (
         <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
           Filtrlarga mos obuna topilmadi.
         </div>
-      ) : null}
-
-      {isLoading ? (
-        <div className="text-sm text-muted-foreground">Yuklanmoqda...</div>
       ) : null}
 
       {/* Extend Dialog */}

@@ -1,8 +1,6 @@
 import React from "react";
-import { useNavigate, Outlet } from "react-router";
+import { useNavigate, Outlet, useMatch } from "react-router";
 import {
-  chain,
-  compact,
   find as lodashFind,
   filter as lodashFilter,
   get,
@@ -25,6 +23,8 @@ import {
 import {
   DataGrid,
   DataGridContainer,
+  DataGridPagination,
+  DataGridTable,
   DataGridTableDndRowHandle,
   DataGridTableDndRows,
 } from "@/components/reui/data-grid";
@@ -33,7 +33,6 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -73,13 +72,6 @@ const resolveLabel = (translations, fallback, language) => {
 
   return fallback;
 };
-
-const countFilledTranslations = (translations = {}) =>
-  compact(
-    lodashMap(values(translations), (value) =>
-      typeof value === "string" && trim(value).length > 0 ? value : null,
-    ),
-  ).length;
 
 const CategoryWorkoutsGrid = ({ categoryId, currentLanguage }) => {
   const { data: workoutsData, isLoading, isFetching } = useGetQuery({
@@ -279,26 +271,88 @@ const Index = () => {
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const {
     search,
+    searchOperator,
     statusFilter,
+    statusOperator,
     translationFilter,
+    translationOperator,
+    sortBy,
+    sortDir,
+    sorting,
+    currentPage,
+    pageSize,
+    setPageQuery,
+    setPageSizeQuery,
+    canReorder,
     filterFields,
     activeFilters,
     handleFiltersChange,
+    handleSortingChange,
   } = useCategoryFilters();
 
   const CATEGORIES_QUERY_KEY = ["admin", "workout-categories"];
+  const deferredSearch = React.useDeferredValue(search);
+  const queryParams = React.useMemo(
+    () => ({
+      ...(deferredSearch.trim() ? { q: deferredSearch.trim() } : {}),
+      ...((deferredSearch.trim() ||
+        searchOperator === "empty" ||
+        searchOperator === "not_empty") &&
+      searchOperator !== "contains"
+        ? { qOp: searchOperator }
+        : {}),
+      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      ...((statusFilter !== "all" ||
+        statusOperator === "empty" ||
+        statusOperator === "not_empty") &&
+      statusOperator !== "is"
+        ? { statusOp: statusOperator }
+        : {}),
+      ...(translationFilter !== "all"
+        ? { translations: translationFilter }
+        : {}),
+      ...((translationFilter !== "all" ||
+        translationOperator === "empty" ||
+        translationOperator === "not_empty") &&
+      translationOperator !== "is"
+        ? { translationsOp: translationOperator }
+        : {}),
+      sortBy,
+      sortDir,
+      page: currentPage,
+      pageSize,
+    }),
+    [
+      currentPage,
+      deferredSearch,
+      pageSize,
+      searchOperator,
+      sortBy,
+      sortDir,
+      statusFilter,
+      statusOperator,
+      translationFilter,
+      translationOperator,
+    ],
+  );
 
   const { data: categoriesData, isLoading, isFetching, refetch } = useGetQuery({
     url: "/admin/workout-categories",
-    queryProps: { queryKey: CATEGORIES_QUERY_KEY },
+    params: queryParams,
+    queryProps: { queryKey: [...CATEGORIES_QUERY_KEY, queryParams] },
   });
   const categories = get(categoriesData, "data.data", []);
+  const meta = get(categoriesData, "data.meta", {
+    total: 0,
+    page: currentPage,
+    pageSize,
+    totalPages: 1,
+  });
 
   const patchMutation = usePatchQuery({ queryKey: CATEGORIES_QUERY_KEY });
   const deleteMutation = useDeleteQuery({ queryKey: CATEGORIES_QUERY_KEY });
   const reorderMutation = usePatchQuery({ queryKey: CATEGORIES_QUERY_KEY });
 
-  const isCreating = false;
   const isUpdating = patchMutation.isPending || reorderMutation.isPending;
   const isDeleting = deleteMutation.isPending;
 
@@ -334,8 +388,23 @@ const Index = () => {
   });
   const languages = get(languagesData, "data.data", []);
 
-  const [translationsDrawerOpen, setTranslationsDrawerOpen] =
-    React.useState(false);
+  const translateMatch = useMatch(
+    "/admin/workout-categories/list/translate/:id",
+  );
+  const translatingCategoryId = get(translateMatch, "params.id");
+  const translationsDrawerOpen = Boolean(translatingCategoryId);
+  const { data: translatingCategoryData, isLoading: isTranslatingLoading } =
+    useGetQuery({
+      url: `/admin/workout-categories/${translatingCategoryId || ""}`,
+      queryProps: {
+        queryKey: [
+          ...CATEGORIES_QUERY_KEY,
+          "detail",
+          translatingCategoryId,
+        ],
+        enabled: Boolean(translatingCategoryId),
+      },
+    });
   const [translatingCategory, setTranslatingCategory] = React.useState(null);
   const [categoryToDelete, setCategoryToDelete] = React.useState(null);
   const [expanded, setExpanded] = React.useState({});
@@ -353,60 +422,39 @@ const Index = () => {
     [languages],
   );
 
+  React.useEffect(() => {
+    const category = get(translatingCategoryData, "data.data");
+    if (!category) return;
+
+    setTranslatingCategory(category);
+    setTranslationForm(
+      Object.fromEntries(
+        lodashMap(activeLanguages, (language) => [
+          language.code,
+          resolveLabel(
+            category?.translations,
+            category?.name ?? "",
+            language.code,
+          ),
+        ]),
+      ),
+    );
+  }, [activeLanguages, translatingCategoryData]);
+
   const currentLanguageMeta = React.useMemo(
     () =>
       lodashFind(activeLanguages, (language) => language.code === currentLanguage),
     [activeLanguages, currentLanguage],
   );
 
-  const deferredSearch = React.useDeferredValue(search);
+  React.useEffect(() => {
+    const totalPages = Math.max(1, Number(get(meta, "totalPages")) || 1);
+    if (currentPage > totalPages) {
+      void setPageQuery(String(totalPages));
+    }
+  }, [currentPage, meta, setPageQuery]);
 
-  const filteredCategories = React.useMemo(() => {
-    const query = trim(deferredSearch).toLowerCase();
-
-    return chain(categories)
-      .filter((category) => {
-        if (!query) return true;
-        const searchableValues = [
-          category.name,
-          resolveLabel(category.translations, category.name, currentLanguage),
-          ...values(category.translations || {}),
-        ];
-        return searchableValues.some((value) =>
-          String(value ?? "")
-            .toLowerCase()
-            .includes(query),
-        );
-      })
-      .filter((category) => {
-        if (statusFilter === "all") return true;
-        return statusFilter === "active"
-          ? category.isActive
-          : !category.isActive;
-      })
-      .filter((category) => {
-        if (translationFilter === "all") return true;
-        const filledCount = countFilledTranslations(
-          category.translations || {},
-        );
-        const isComplete =
-          activeLanguages.length > 0 && filledCount >= activeLanguages.length;
-        return translationFilter === "complete" ? isComplete : !isComplete;
-      })
-      .value();
-  }, [
-    activeLanguages.length,
-    categories,
-    currentLanguage,
-    deferredSearch,
-    statusFilter,
-    translationFilter,
-  ]);
-
-  const isReorderEnabled =
-    trim(deferredSearch) === "" &&
-    statusFilter === "all" &&
-    translationFilter === "all";
+  const isReorderEnabled = canReorder;
 
   const openTranslationsDrawer = React.useCallback(
     (category) => {
@@ -423,9 +471,9 @@ const Index = () => {
           ]),
         ),
       );
-      setTranslationsDrawerOpen(true);
+      navigate(`translate/${category.id}`);
     },
-    [activeLanguages],
+    [activeLanguages, navigate],
   );
 
   const handleTranslationSave = React.useCallback(async () => {
@@ -433,11 +481,9 @@ const Index = () => {
 
     const localizedName = trim(String(get(translationForm, currentLanguage, "")));
     const cleanedTranslations = Object.fromEntries(
-      chain(translationForm || {})
-        .entries()
+      Object.entries(translationForm || {})
         .map(([code, value]) => [code, trim(String(value ?? ""))])
-        .filter(([, value]) => Boolean(value))
-        .value(),
+        .filter(([, value]) => Boolean(value)),
     );
 
     try {
@@ -446,7 +492,7 @@ const Index = () => {
         translations: cleanedTranslations,
       });
       toast.success("Tarjimalar yangilandi");
-      setTranslationsDrawerOpen(false);
+      navigate("/admin/workout-categories/list");
       setTranslatingCategory(null);
       setTranslationForm({});
     } catch (error) {
@@ -457,7 +503,13 @@ const Index = () => {
           : message || "Tarjimalarni saqlab bo'lmadi",
       );
     }
-  }, [currentLanguage, translatingCategory, translationForm, updateCategory]);
+  }, [
+    currentLanguage,
+    navigate,
+    translatingCategory,
+    translationForm,
+    updateCategory,
+  ]);
 
   const handleDelete = React.useCallback(async () => {
     if (!categoryToDelete) return;
@@ -473,10 +525,12 @@ const Index = () => {
       setCategoryToDelete(null);
     } catch (error) {
       const message = error?.response?.data?.message;
+      const dependencySummary = error?.response?.data?.dependencySummary;
+      const baseMessage = isArray(message) ? message.join(", ") : message;
       toast.error(
-        isArray(message)
-          ? message.join(", ")
-          : message || "Kategoriyani o'chirib bo'lmadi",
+        [baseMessage || "Kategoriyani o'chirib bo'lmadi", dependencySummary]
+          .filter(Boolean)
+          .join(" "),
       );
     }
   }, [categoryToDelete, deleteCategory]);
@@ -517,10 +571,32 @@ const Index = () => {
   });
 
   const table = useReactTable({
-    data: filteredCategories,
+    data: categories,
     columns,
-    state: { expanded },
+    manualPagination: true,
+    manualSorting: true,
+    pageCount: get(meta, "totalPages", 1),
+    state: {
+      expanded,
+      sorting,
+      pagination: {
+        pageIndex: currentPage - 1,
+        pageSize,
+      },
+    },
     onExpandedChange: setExpanded,
+    onSortingChange: handleSortingChange,
+    onPaginationChange: (updater) => {
+      const prev = { pageIndex: currentPage - 1, pageSize };
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      const nextPage = String(get(next, "pageIndex", 0) + 1);
+      const nextPageSize = String(get(next, "pageSize", pageSize));
+
+      void setPageQuery(nextPage);
+      if (nextPageSize !== String(pageSize)) {
+        void setPageSizeQuery(nextPageSize);
+      }
+    },
     getCoreRowModel: getCoreRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
     getRowCanExpand: () => true,
@@ -532,13 +608,13 @@ const Index = () => {
       if (!active || !over || active.id === over.id) return;
       if (!isReorderEnabled) return;
 
-      const dataIds = lodashMap(filteredCategories, (category) => String(category.id));
+      const dataIds = lodashMap(categories, (category) => String(category.id));
       const oldIndex = dataIds.indexOf(active.id);
       const newIndex = dataIds.indexOf(over.id);
 
       if (oldIndex < 0 || newIndex < 0) return;
 
-      const ordered = [...filteredCategories];
+      const ordered = [...categories];
       const [movedCategory] = ordered.splice(oldIndex, 1);
       ordered.splice(newIndex, 0, movedCategory);
 
@@ -561,7 +637,7 @@ const Index = () => {
         );
       }
     },
-    [filteredCategories, isReorderEnabled, reorderCategories],
+    [categories, isReorderEnabled, reorderCategories],
   );
 
   return (
@@ -589,7 +665,7 @@ const Index = () => {
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <p>
-          {filteredCategories.length} ta kategoriya
+          {get(meta, "total", 0)} ta kategoriya
           {currentLanguageMeta
             ? ` • ${currentLanguageMeta.flag ? `${currentLanguageMeta.flag} ` : ""}${currentLanguageMeta.name}`
             : ""}
@@ -599,28 +675,34 @@ const Index = () => {
         ) : null}
       </div>
 
-      <DataGridContainer>
-        <ScrollArea className="w-full">
-          <DataGrid
-            table={table}
-            tableLayout={{
-              rowsDraggable: isReorderEnabled,
-              width: "auto",
-            }}
-            isLoading={isLoading}
-          >
-            <DataGridTableDndRows
-              dataIds={lodashMap(filteredCategories, (category) =>
-                String(category.id),
-              )}
-              handleDragEnd={handleCategoryDragEnd}
-            />
-          </DataGrid>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
-      </DataGridContainer>
+      <DataGrid
+        table={table}
+        isLoading={isLoading}
+        recordCount={get(meta, "total", 0)}
+      >
+        <DataGridContainer>
+          <ScrollArea className="w-full">
+            {isReorderEnabled ? (
+              <DataGridTableDndRows
+                dataIds={lodashMap(categories, (category) =>
+                  String(category.id),
+                )}
+                handleDragEnd={handleCategoryDragEnd}
+              />
+            ) : (
+              <DataGridTable />
+            )}
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </DataGridContainer>
+        <DataGridPagination
+          info="{from} - {to} / {count} ta kategoriya"
+          rowsPerPageLabel="Sahifada:"
+          sizes={[10, 25, 50, 100]}
+        />
+      </DataGrid>
 
-      {!isLoading && !filteredCategories.length ? (
+      {!isLoading && !categories.length ? (
         <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
           Filtrlarga mos kategoriya topilmadi.
         </div>
@@ -633,8 +715,8 @@ const Index = () => {
       <Drawer
         open={translationsDrawerOpen}
         onOpenChange={(open) => {
-          setTranslationsDrawerOpen(open);
           if (!open) {
+            navigate("/admin/workout-categories/list");
             setTranslatingCategory(null);
             setTranslationForm({});
           }
@@ -675,7 +757,11 @@ const Index = () => {
                 </p>
               </div>
 
-              {activeLanguages.length > 0 ? (
+              {isTranslatingLoading ? (
+                <div className="flex min-h-48 items-center justify-center">
+                  <LoaderCircleIcon className="size-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : activeLanguages.length > 0 ? (
                 <div className="space-y-4">
                   {lodashMap(activeLanguages, (language) => (
                     <div key={language.id} className="space-y-2">
@@ -720,14 +806,12 @@ const Index = () => {
                 disabled={
                   isUpdating ||
                   isDeleting ||
+                  isTranslatingLoading ||
                   !activeLanguages.length
                 }
               >
                 Tarjimalarni saqlash
               </Button>
-              <DrawerClose asChild>
-                <Button variant="outline">Bekor qilish</Button>
-              </DrawerClose>
             </DrawerFooter>
           </div>
         </DrawerContent>

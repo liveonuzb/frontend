@@ -11,7 +11,6 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -211,9 +210,6 @@ const CreateWorkoutCategory = () => {
             <Button onClick={handleSave} disabled={isCreating}>
               Yaratish
             </Button>
-            <DrawerClose asChild>
-              <Button variant="outline">Bekor qilish</Button>
-            </DrawerClose>
           </DrawerFooter>
         </div>
       </DrawerContent>
