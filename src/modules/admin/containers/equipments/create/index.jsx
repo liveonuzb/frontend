@@ -29,6 +29,7 @@ import { toast } from "sonner";
 const emptyForm = {
   name: "",
   isActive: true,
+  isOnboarding: true,
   image: null,
 };
 
@@ -134,6 +135,7 @@ const CreateEquipment = () => {
         const formData = new FormData();
         formData.append("name", trimmedName);
         formData.append("isActive", String(form.isActive));
+        formData.append("isOnboarding", String(form.isOnboarding));
         formData.append("translations", JSON.stringify(translations));
         formData.append("image", form.image);
 
@@ -145,7 +147,12 @@ const CreateEquipment = () => {
       } else {
         await createMutation.mutateAsync({
           url: "/admin/workout-equipments",
-          attributes: { name: trimmedName, isActive: form.isActive, translations },
+          attributes: {
+            name: trimmedName,
+            isActive: form.isActive,
+            isOnboarding: form.isOnboarding,
+            translations,
+          },
         });
       }
 
@@ -246,6 +253,20 @@ const CreateEquipment = () => {
                 checked={form.isActive}
                 onCheckedChange={(checked) =>
                   setForm((current) => ({ ...current, isActive: checked }))
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-muted/15 px-4 py-3">
+              <div>
+                <p className="text-sm font-medium">Onboarding</p>
+                <p className="text-xs text-muted-foreground">
+                  Yoqilgan bo'lsa onboarding jihoz ro'yxatida birinchi chiqadi.
+                </p>
+              </div>
+              <Switch
+                checked={form.isOnboarding}
+                onCheckedChange={(checked) =>
+                  setForm((current) => ({ ...current, isOnboarding: checked }))
                 }
               />
             </div>

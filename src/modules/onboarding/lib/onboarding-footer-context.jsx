@@ -19,6 +19,10 @@ export const OnboardingFooterProvider = ({ children }) => {
   // setFooter writes to the ref and notifies the FooterSlot — NO state change
   // so the Provider tree NEVER re-renders from this call.
   const setFooter = React.useCallback((content) => {
+    if (contentRef.current === content) {
+      return;
+    }
+
     contentRef.current = content;
     listenersRef.current.forEach((fn) => fn());
   }, []);
@@ -46,7 +50,9 @@ export const FooterSlot = () => {
   const [, forceRender] = React.useReducer((c) => c + 1, 0);
 
   React.useEffect(() => {
-    return subscribe(forceRender);
+    const unsubscribe = subscribe(forceRender);
+    forceRender();
+    return unsubscribe;
   }, [subscribe]);
 
   return contentRef.current || null;
@@ -60,11 +66,9 @@ export const FooterSlot = () => {
 export const useOnboardingFooter = (content) => {
   const { setFooter } = React.useContext(OnboardingFooterContext);
 
-  // Sync content to ref after every render (no loop because setFooter never
-  // re-renders the provider/container, only the isolated FooterSlot)
-  React.useLayoutEffect(() => {
+  React.useEffect(() => {
     setFooter(content);
-  });
+  }, [content, setFooter]);
 
   // Clear when container unmounts
   React.useEffect(() => {

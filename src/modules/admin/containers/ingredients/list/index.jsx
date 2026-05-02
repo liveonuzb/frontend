@@ -91,6 +91,14 @@ const ListPage = () => {
     "isAllergicOp",
     parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
   );
+  const [onboarding, setOnboarding] = useQueryState(
+    "onboarding",
+    parseAsStringEnum(["all", "yes", "no"]).withDefault("all"),
+  );
+  const [onboardingOp, setOnboardingOp] = useQueryState(
+    "onboardingOp",
+    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+  );
   const [hasImage, setHasImage] = useQueryState(
     "hasImage",
     parseAsStringEnum(["all", "yes", "no"]).withDefault("all"),
@@ -142,6 +150,8 @@ const ListPage = () => {
     statusOp === "is" &&
     isAllergic === "all" &&
     isAllergicOp === "is" &&
+    onboarding === "all" &&
+    onboardingOp === "is" &&
     hasImage === "all" &&
     hasImageOp === "is" &&
     translations === "all" &&
@@ -167,6 +177,10 @@ const ListPage = () => {
       ...(isAllergic !== "all" || isAllergicOp !== "is"
         ? { isAllergicOp }
         : {}),
+      ...(onboarding !== "all" ? { onboarding } : {}),
+      ...(onboarding !== "all" || onboardingOp !== "is"
+        ? { onboardingOp }
+        : {}),
       ...(hasImage !== "all" ? { hasImage } : {}),
       ...(hasImage !== "all" || hasImageOp !== "is" ? { hasImageOp } : {}),
       ...(translations !== "all" ? { translations } : {}),
@@ -185,6 +199,8 @@ const ListPage = () => {
       hasImageOp,
       isAllergic,
       isAllergicOp,
+      onboarding,
+      onboardingOp,
       nameOp,
       pageSize,
       sortBy,
@@ -484,6 +500,26 @@ const ListPage = () => {
           ),
       },
       {
+        accessorKey: "isOnboarding",
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Onboarding" />
+        ),
+        enableSorting: true,
+        meta: { skeleton: adminListSkeletons.status },
+        size: 120,
+        cell: (info) => (
+          <Switch
+            checked={Boolean(info.getValue())}
+            onCheckedChange={(checked) =>
+              patchMutation.mutate({
+                url: `/admin/ingredients/${info.row.original.id}`,
+                attributes: { isOnboarding: checked },
+              })
+            }
+          />
+        ),
+      },
+      {
         accessorKey: "isActive",
         header: ({ column }) => (
           <DataGridColumnHeader column={column} title="Status" />
@@ -593,6 +629,17 @@ const ListPage = () => {
         ],
       },
       {
+        label: "Onboarding",
+        key: "onboarding",
+        type: "select",
+        defaultOperator: "is",
+        options: [
+          { value: "all", label: "Barchasi" },
+          { value: "yes", label: "Onboarding uchun" },
+          { value: "no", label: "Qo'shimcha" },
+        ],
+      },
+      {
         label: "Rasm",
         key: "hasImage",
         type: "select",
@@ -643,6 +690,14 @@ const ListPage = () => {
         values: isAllergic !== "all" ? [isAllergic] : [],
       });
     }
+    if (onboarding !== "all" || onboardingOp !== "is") {
+      list.push({
+        id: "onboarding",
+        field: "onboarding",
+        operator: onboardingOp,
+        values: onboarding !== "all" ? [onboarding] : [],
+      });
+    }
     if (hasImage !== "all" || hasImageOp !== "is") {
       list.push({
         id: "hasImage",
@@ -667,6 +722,8 @@ const ListPage = () => {
     isAllergicOp,
     name,
     nameOp,
+    onboarding,
+    onboardingOp,
     status,
     statusOp,
     translations,
@@ -682,6 +739,8 @@ const ListPage = () => {
         void setStatusOp(byField("status")?.operator ?? "is");
         void setIsAllergic(byField("isAllergic")?.values?.[0] ?? "all");
         void setIsAllergicOp(byField("isAllergic")?.operator ?? "is");
+        void setOnboarding(byField("onboarding")?.values?.[0] ?? "all");
+        void setOnboardingOp(byField("onboarding")?.operator ?? "is");
         void setHasImage(byField("hasImage")?.values?.[0] ?? "all");
         void setHasImageOp(byField("hasImage")?.operator ?? "is");
         void setTranslations(byField("translations")?.values?.[0] ?? "all");
@@ -696,6 +755,8 @@ const ListPage = () => {
       setIsAllergicOp,
       setName,
       setNameOp,
+      setOnboarding,
+      setOnboardingOp,
       setPageQuery,
       setStatus,
       setStatusOp,

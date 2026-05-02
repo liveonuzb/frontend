@@ -1,6 +1,10 @@
 import { isArray, keys } from "lodash";
 import { useEffect, useRef } from "react";
 import { useGetQuery } from "@/hooks/api";
+import {
+  normalizeExercisePreferencePair,
+  normalizeIngredientPreferencePair,
+} from "@/lib/user-onboarding";
 import { useOnboardingStore } from "@/store";
 import { mapCoachOnboardingDraftToStoreFields } from "./coach-onboarding-dto";
 
@@ -23,10 +27,45 @@ function isUserStoreEmpty(state) {
     !state.activityLevel &&
     !state.mealFrequency &&
     !state.waterHabits &&
+    !state.foodBudget &&
+    !(state.workoutLocation && state.workoutLocation !== "home") &&
+    (!isArray(state.equipmentIds) || state.equipmentIds.length === 0) &&
+    (!isArray(state.customEquipment) || state.customEquipment.length === 0) &&
+    (!isArray(state.workoutBodyPartIds) ||
+      state.workoutBodyPartIds.length === 0) &&
+    (!isArray(state.customWorkoutBodyParts) ||
+      state.customWorkoutBodyParts.length === 0) &&
+    (!isArray(state.preferredExerciseIds) ||
+      state.preferredExerciseIds.length === 0) &&
+    (!isArray(state.dislikedExerciseIds) ||
+      state.dislikedExerciseIds.length === 0) &&
+    (!isArray(state.customPreferredExercises) ||
+      state.customPreferredExercises.length === 0) &&
+    (!isArray(state.customDislikedExercises) ||
+      state.customDislikedExercises.length === 0) &&
+    (!isArray(state.completedUserOnboardingSteps) ||
+      state.completedUserOnboardingSteps.length === 0) &&
+    (!isArray(state.allergyIds) || state.allergyIds.length === 0) &&
     (!isArray(state.allergyIngredientIds) ||
       state.allergyIngredientIds.length === 0) &&
+    (!isArray(state.customAllergies) ||
+      state.customAllergies.length === 0) &&
+    (!isArray(state.dietRequirementIds) ||
+      state.dietRequirementIds.length === 0) &&
+    (!isArray(state.customDietRequirements) ||
+      state.customDietRequirements.length === 0) &&
+    (!isArray(state.dislikedFoodIds) ||
+      state.dislikedFoodIds.length === 0) &&
+    (!isArray(state.customDislikedFoods) ||
+      state.customDislikedFoods.length === 0) &&
+    (!isArray(state.preferredIngredientIds) ||
+      state.preferredIngredientIds.length === 0) &&
+    (!isArray(state.customPreferredIngredients) ||
+      state.customPreferredIngredients.length === 0) &&
     (!isArray(state.dislikedIngredientIds) ||
       state.dislikedIngredientIds.length === 0) &&
+    (!isArray(state.customDislikedIngredients) ||
+      state.customDislikedIngredients.length === 0) &&
     (!isArray(state.nutritionPreferenceKeys) ||
       state.nutritionPreferenceKeys.length === 0) &&
     !state.allergyOtherText &&
@@ -127,11 +166,81 @@ function mergeUserDraft(serverData, setFields) {
   if (serverData.waterHabits) {
     fields.waterHabits = serverData.waterHabits;
   }
+  if (serverData.foodBudget !== undefined && serverData.foodBudget !== null) {
+    fields.foodBudget = String(serverData.foodBudget);
+  }
+  if (serverData.budgetPeriod) {
+    fields.budgetPeriod = serverData.budgetPeriod;
+  }
+  if (serverData.budgetCurrency) {
+    fields.budgetCurrency = serverData.budgetCurrency;
+  }
+  if (serverData.workoutLocation) {
+    fields.workoutLocation = serverData.workoutLocation;
+  }
+  if (isArray(serverData.equipmentIds)) {
+    fields.equipmentIds = serverData.equipmentIds;
+  }
+  if (isArray(serverData.customEquipment)) {
+    fields.customEquipment = serverData.customEquipment;
+  }
+  if (isArray(serverData.workoutBodyPartIds)) {
+    fields.workoutBodyPartIds = serverData.workoutBodyPartIds;
+  }
+  if (isArray(serverData.customWorkoutBodyParts)) {
+    fields.customWorkoutBodyParts = serverData.customWorkoutBodyParts;
+  }
+  if (isArray(serverData.preferredExerciseIds)) {
+    fields.preferredExerciseIds = serverData.preferredExerciseIds;
+  }
+  if (isArray(serverData.dislikedExerciseIds)) {
+    fields.dislikedExerciseIds = serverData.dislikedExerciseIds;
+  }
+  if (isArray(serverData.customPreferredExercises)) {
+    fields.customPreferredExercises = serverData.customPreferredExercises;
+  }
+  if (isArray(serverData.customDislikedExercises)) {
+    fields.customDislikedExercises = serverData.customDislikedExercises;
+  }
+  if (isArray(serverData.completedUserOnboardingSteps)) {
+    fields.completedUserOnboardingSteps =
+      serverData.completedUserOnboardingSteps;
+  }
+  if (isArray(serverData.allergyIds)) {
+    fields.allergyIds = serverData.allergyIds;
+  }
   if (isArray(serverData.allergyIngredientIds)) {
     fields.allergyIngredientIds = serverData.allergyIngredientIds;
+    if (!isArray(serverData.allergyIds)) {
+      fields.allergyIds = serverData.allergyIngredientIds;
+    }
+  }
+  if (isArray(serverData.customAllergies)) {
+    fields.customAllergies = serverData.customAllergies;
+  }
+  if (isArray(serverData.dietRequirementIds)) {
+    fields.dietRequirementIds = serverData.dietRequirementIds;
+  }
+  if (isArray(serverData.customDietRequirements)) {
+    fields.customDietRequirements = serverData.customDietRequirements;
+  }
+  if (isArray(serverData.dislikedFoodIds)) {
+    fields.dislikedFoodIds = serverData.dislikedFoodIds;
+  }
+  if (isArray(serverData.customDislikedFoods)) {
+    fields.customDislikedFoods = serverData.customDislikedFoods;
+  }
+  if (isArray(serverData.preferredIngredientIds)) {
+    fields.preferredIngredientIds = serverData.preferredIngredientIds;
+  }
+  if (isArray(serverData.customPreferredIngredients)) {
+    fields.customPreferredIngredients = serverData.customPreferredIngredients;
   }
   if (isArray(serverData.dislikedIngredientIds)) {
     fields.dislikedIngredientIds = serverData.dislikedIngredientIds;
+  }
+  if (isArray(serverData.customDislikedIngredients)) {
+    fields.customDislikedIngredients = serverData.customDislikedIngredients;
   }
   if (isArray(serverData.nutritionPreferenceKeys)) {
     fields.nutritionPreferenceKeys = serverData.nutritionPreferenceKeys;
@@ -151,6 +260,24 @@ function mergeUserDraft(serverData, setFields) {
   }
   if (isArray(serverData.healthConstraints)) {
     fields.healthConstraints = serverData.healthConstraints;
+  }
+
+  if (
+    isArray(fields.preferredExerciseIds) ||
+    isArray(fields.dislikedExerciseIds) ||
+    isArray(fields.customPreferredExercises) ||
+    isArray(fields.customDislikedExercises)
+  ) {
+    Object.assign(fields, normalizeExercisePreferencePair(fields));
+  }
+
+  if (
+    isArray(fields.preferredIngredientIds) ||
+    isArray(fields.dislikedIngredientIds) ||
+    isArray(fields.customPreferredIngredients) ||
+    isArray(fields.customDislikedIngredients)
+  ) {
+    Object.assign(fields, normalizeIngredientPreferencePair(fields));
   }
 
   if (keys(fields).length > 0) {

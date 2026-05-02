@@ -2,6 +2,7 @@ import { map } from "lodash";
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useOnboardingStore } from "@/store";
@@ -14,6 +15,7 @@ import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
 import useOnboardingBase from "@/hooks/app/use-onboarding-base";
 
 const Index = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { activityLevel, setField } = useOnboardingStore();
   const base = useOnboardingBase();
@@ -21,34 +23,34 @@ const Index = () => {
   const levels = [
     {
       value: "sedentary",
-      label: "Sedentary",
-      title: "Low output",
-      description: "Mostly sitting, very little training.",
+      label: t("onboarding.activityLevel.sedentary"),
+      title: t("onboarding.activityLevel.sedentaryTitle"),
+      description: t("onboarding.activityLevel.sedentaryDescription"),
       image: `${base}/slow.webp`,
       tone: ONBOARDING_ACCENTS.amber,
     },
     {
       value: "lightly-active",
-      label: "Lightly active",
-      title: "Easy routine",
-      description: "Light movement one to three days a week.",
+      label: t("onboarding.activityLevel.lightlyActive"),
+      title: t("onboarding.activityLevel.lightlyActiveTitle"),
+      description: t("onboarding.activityLevel.lightlyActiveDescription"),
       image: `${base}/recommend.webp`,
       tone: ONBOARDING_ACCENTS.sky,
     },
     {
       value: "moderately-active",
-      label: "Moderately active",
-      title: "Balanced routine",
-      description: "Steady training three to five days a week.",
+      label: t("onboarding.activityLevel.moderatelyActive"),
+      title: t("onboarding.activityLevel.moderatelyActiveTitle"),
+      description: t("onboarding.activityLevel.moderatelyActiveDescription"),
       image: `${base}/focussed.webp`,
       tone: ONBOARDING_ACCENTS.green,
       recommended: true,
     },
     {
       value: "very-active",
-      label: "Very active",
-      title: "High output",
-      description: "Hard sessions on most days of the week.",
+      label: t("onboarding.activityLevel.veryActive"),
+      title: t("onboarding.activityLevel.veryActiveTitle"),
+      description: t("onboarding.activityLevel.veryActiveDescription"),
       image: `${base}/aggressive.webp`,
       tone: ONBOARDING_ACCENTS.rose,
     },
@@ -65,7 +67,7 @@ const Index = () => {
 
   const handleContinue = () => {
     if (hasSelection) {
-      navigate("/user/onboarding/meal-frequency");
+      navigate("/user/onboarding/workout-location");
     }
   };
 
@@ -82,7 +84,7 @@ const Index = () => {
       disabled={!hasSelection}
       onClick={handleContinue}
     >
-      Next <ChevronRight />
+      {t("onboarding.next")} <ChevronRight />
     </Button>,
   );
 
@@ -91,7 +93,7 @@ const Index = () => {
       <PageAura tone={selectedLevel.tone} />
 
       <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
-        <OnboardingQuestion question="How active are you?" />
+        <OnboardingQuestion question={t("onboarding.activityLevel.question")} />
 
         <div className="relative mb-3 flex min-h-[140px] flex-1 items-end justify-center overflow-hidden md:mb-4 md:min-h-[260px]">
           <AnimatePresence mode="wait">
@@ -123,7 +125,7 @@ const Index = () => {
             transition={{ duration: 0.24 }}
           >
             <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground md:text-xs">
-              Activity level
+              {t("onboarding.activityLevel.metaLabel")}
             </p>
             <p className="text-sm font-bold md:text-lg">
               {selectedLevel.title}
@@ -170,7 +172,7 @@ const Index = () => {
                           level.tone.badgeTone,
                         )}
                       >
-                        Recommended
+                        {t("onboarding.recommended")}
                       </span>
                     ) : null}
                   </div>

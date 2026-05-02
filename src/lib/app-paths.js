@@ -4,6 +4,19 @@ const trimSlashes = (value) =>
 export const USER_ONBOARDING_BASE_PATH = "/user/onboarding";
 export const COACH_ONBOARDING_BASE_PATH = "/coach/onboarding";
 
+export const ONBOARDING_FLOW_STATUS = {
+  draft: "DRAFT",
+  submitted: "SUBMITTED",
+  personalizing: "PERSONALIZING",
+  personalizationReady: "PERSONALIZATION_READY",
+  personalizationFailed: "PERSONALIZATION_FAILED",
+  resultConfirmed: "RESULT_CONFIRMED",
+  planGenerating: "PLAN_GENERATING",
+  planReady: "PLAN_READY",
+  planFailed: "PLAN_FAILED",
+  activated: "ACTIVATED",
+};
+
 export const getUserOnboardingPath = (step = "") => {
   const normalizedStep = trimSlashes(step).replace(/^coach\/?/, "");
   return normalizedStep
@@ -13,6 +26,62 @@ export const getUserOnboardingPath = (step = "") => {
 
 export const getUserOnboardingReportPath = () =>
   `${USER_ONBOARDING_BASE_PATH}/report`;
+
+export const getUserOnboardingPersonalizingPath = (jobId = "") => {
+  const normalizedJobId = trimSlashes(jobId);
+  return normalizedJobId
+    ? `${USER_ONBOARDING_BASE_PATH}/personalizing/${encodeURIComponent(normalizedJobId)}`
+    : `${USER_ONBOARDING_BASE_PATH}/personalizing`;
+};
+
+export const getUserOnboardingResultPath = () =>
+  `${USER_ONBOARDING_BASE_PATH}/result`;
+
+export const getUserOnboardingGeneratingPath = (jobId = "") => {
+  const normalizedJobId = trimSlashes(jobId);
+  return normalizedJobId
+    ? `${USER_ONBOARDING_BASE_PATH}/generating/${encodeURIComponent(normalizedJobId)}`
+    : `${USER_ONBOARDING_BASE_PATH}/generating`;
+};
+
+export const canAccessUserDashboard = (status, onboardingCompleted = false) => {
+  if (!status) {
+    return Boolean(onboardingCompleted);
+  }
+
+  return (
+    status === ONBOARDING_FLOW_STATUS.planReady ||
+    status === ONBOARDING_FLOW_STATUS.activated
+  );
+};
+
+export const getPostOnboardingPath = (user = {}) => {
+  const status = user?.onboardingFlowStatus ?? user?.onboarding?.flowStatus;
+  const personalizationJobId =
+    user?.latestPersonalizationJobId ??
+    user?.onboarding?.latestPersonalizationJobId;
+  const planJobId =
+    user?.latestPlanGenerationJobId ?? user?.onboarding?.latestPlanGenerationJobId;
+
+  switch (status) {
+    case ONBOARDING_FLOW_STATUS.submitted:
+    case ONBOARDING_FLOW_STATUS.personalizing:
+    case ONBOARDING_FLOW_STATUS.personalizationFailed:
+      return getUserOnboardingPersonalizingPath(personalizationJobId);
+    case ONBOARDING_FLOW_STATUS.personalizationReady:
+    case ONBOARDING_FLOW_STATUS.resultConfirmed:
+      return getUserOnboardingResultPath();
+    case ONBOARDING_FLOW_STATUS.planGenerating:
+    case ONBOARDING_FLOW_STATUS.planFailed:
+      return getUserOnboardingGeneratingPath(planJobId);
+    case ONBOARDING_FLOW_STATUS.planReady:
+    case ONBOARDING_FLOW_STATUS.activated:
+      return "/user";
+    case ONBOARDING_FLOW_STATUS.draft:
+    default:
+      return getUserOnboardingPath();
+  }
+};
 
 export const getCoachOnboardingPath = (step = "") => {
   const normalizedStep = trimSlashes(step).replace(/^coach\/?/, "");

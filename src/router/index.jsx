@@ -7,6 +7,10 @@ import { getPostAuthRoute } from "@/modules/auth/lib/auth-utils.js";
 import { useTelegram } from "@/hooks/use-telegram";
 import { useTelegramAuth } from "@/hooks/use-telegram-auth";
 import { useTelegramBackButton } from "@/hooks/use-telegram-back-button";
+import {
+  canAccessUserDashboard,
+  getPostOnboardingPath,
+} from "@/lib/app-paths.js";
 
 const AuthModule = lazy(() => import("@/modules/auth/index.jsx"));
 const UserOnboardingModule = lazy(
@@ -38,7 +42,8 @@ const ADMIN_ROLES = [
 ];
 
 const Index = () => {
-  const { isAuthenticated, onboardingCompleted, user } = useAuthStore();
+  const { isAuthenticated, onboardingCompleted, onboardingFlowStatus, user } =
+    useAuthStore();
   const { isTelegramWebApp } = useTelegram();
   const passwordSetupRequired = Boolean(user?.passwordSetupRequired);
   const hasSelectedLanguage = useLanguageStore(
@@ -146,10 +151,10 @@ const Index = () => {
         path="/user/*"
         element={
           <ProtectedRoute>
-            {onboardingCompleted ? (
+            {canAccessUserDashboard(onboardingFlowStatus, onboardingCompleted) ? (
               renderRouteElement(<UserModule />)
             ) : (
-              <Navigate to="/user/onboarding" replace />
+              <Navigate to={getPostOnboardingPath(user)} replace />
             )}
           </ProtectedRoute>
         }

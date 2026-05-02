@@ -113,6 +113,7 @@ const Index = () => {
     search,
     categoryFilter,
     statusFilter,
+    onboardingFilter,
     hasImageFilter,
     translationsFilter,
     duplicatesFilter,
@@ -141,6 +142,7 @@ const Index = () => {
       else if (key === "sortBy") { p.sortBy = value; }
       else if (key === "categoryId") { p.categoryId = value; }
       else if (key === "page") { p.page = value; }
+      else if (key === "onboarding") { p.onboarding = value; }
       else if (key === "status") {
         if (value === "active") p.isActive = "true";
         if (value === "inactive") p.isActive = "false";
@@ -264,6 +266,7 @@ const Index = () => {
     trim(search) === "" &&
     categoryFilter === "all" &&
     statusFilter === "all" &&
+    onboardingFilter === "all" &&
     hasImageFilter === "all" &&
     translationsFilter === "all" &&
     duplicatesFilter === "all" &&
@@ -480,6 +483,27 @@ const Index = () => {
     }
   };
 
+  const handleToggleOnboarding = async (workout) => {
+    try {
+      await patchMutation.mutateAsync({
+        url: `/admin/workouts/${workout.id}`,
+        attributes: { isOnboarding: !workout.isOnboarding },
+      });
+      toast.success(
+        workout.isOnboarding
+          ? "Mashg'ulot onboarding ro'yxatidan olindi"
+          : "Mashg'ulot onboarding ro'yxatiga qo'shildi",
+      );
+    } catch (error) {
+      toast.error(
+        getMutationErrorMessage(
+          error,
+          "Onboarding holatini o'zgartirib bo'lmadi",
+        ),
+      );
+    }
+  };
+
   const handleRestoreWorkout = async (workout) => {
     try {
       await restoreMutation.mutateAsync({
@@ -625,6 +649,7 @@ const Index = () => {
     categoryById,
     currentLanguage,
     currentPage,
+    handleToggleOnboarding,
     handleToggleStatus,
     handleRestoreWorkout,
     openEditDrawer,

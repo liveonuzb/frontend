@@ -1,5 +1,6 @@
 import React from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { get } from "lodash";
 import { cn } from "@/lib/utils";
 import { useGetQuery } from "@/hooks/api";
@@ -32,6 +33,7 @@ const getPrevCoachStep = (step) => {
 };
 
 const OnboardingLayoutInner = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
@@ -55,6 +57,11 @@ const OnboardingLayoutInner = () => {
 
   const showProgress = currentStepIndex >= 0;
   const progress = showProgress ? (currentStepIndex + 1) / totalSteps : 0;
+  const isPostOnboardingRoute = [
+    "personalizing",
+    "result",
+    "generating",
+  ].some((path) => currentPath === path || currentPath.startsWith(`${path}/`));
 
   const prevStep = isCoachStep
     ? getPrevCoachStep(currentPath)
@@ -131,14 +138,99 @@ const OnboardingLayoutInner = () => {
       activityLevel: userOnboarding?.activityLevel ?? "",
       mealFrequency: userOnboarding?.mealFrequency ?? "",
       waterHabits: userOnboarding?.waterHabits ?? "",
+      foodBudget:
+        userOnboarding?.foodBudget !== null &&
+        userOnboarding?.foodBudget !== undefined
+          ? String(userOnboarding.foodBudget)
+          : "",
+      budgetPeriod: userOnboarding?.budgetPeriod ?? "weekly",
+      budgetCurrency: userOnboarding?.budgetCurrency ?? "UZS",
+      workoutLocation: userOnboarding?.workoutLocation ?? "home",
+      equipmentIds: Array.isArray(userOnboarding?.equipmentIds)
+        ? userOnboarding.equipmentIds
+        : [],
+      customEquipment: Array.isArray(userOnboarding?.customEquipment)
+        ? userOnboarding.customEquipment
+        : [],
+      workoutBodyPartIds: Array.isArray(userOnboarding?.workoutBodyPartIds)
+        ? userOnboarding.workoutBodyPartIds
+        : [],
+      customWorkoutBodyParts: Array.isArray(
+        userOnboarding?.customWorkoutBodyParts,
+      )
+        ? userOnboarding.customWorkoutBodyParts
+        : [],
+      preferredExerciseIds: Array.isArray(
+        userOnboarding?.preferredExerciseIds,
+      )
+        ? userOnboarding.preferredExerciseIds
+        : [],
+      dislikedExerciseIds: Array.isArray(userOnboarding?.dislikedExerciseIds)
+        ? userOnboarding.dislikedExerciseIds
+        : [],
+      customPreferredExercises: Array.isArray(
+        userOnboarding?.customPreferredExercises,
+      )
+        ? userOnboarding.customPreferredExercises
+        : [],
+      customDislikedExercises: Array.isArray(
+        userOnboarding?.customDislikedExercises,
+      )
+        ? userOnboarding.customDislikedExercises
+        : [],
+      allergyIds: Array.isArray(userOnboarding?.allergyIds)
+        ? userOnboarding.allergyIds
+        : Array.isArray(userOnboarding?.allergyIngredientIds)
+          ? userOnboarding.allergyIngredientIds
+          : [],
       allergyIngredientIds: Array.isArray(userOnboarding?.allergyIngredientIds)
         ? userOnboarding.allergyIngredientIds
+        : [],
+      customAllergies: Array.isArray(userOnboarding?.customAllergies)
+        ? userOnboarding.customAllergies
+        : userOnboarding?.allergyOtherText
+          ? [userOnboarding.allergyOtherText]
+          : [],
+      dietRequirementIds: Array.isArray(userOnboarding?.dietRequirementIds)
+        ? userOnboarding.dietRequirementIds
+        : [],
+      customDietRequirements: Array.isArray(
+        userOnboarding?.customDietRequirements,
+      )
+        ? userOnboarding.customDietRequirements
+        : userOnboarding?.nutritionPreferenceOtherText
+          ? [userOnboarding.nutritionPreferenceOtherText]
+          : [],
+      dislikedFoodIds: Array.isArray(userOnboarding?.dislikedFoodIds)
+        ? userOnboarding.dislikedFoodIds
+        : [],
+      customDislikedFoods: Array.isArray(
+        userOnboarding?.customDislikedFoods,
+      )
+        ? userOnboarding.customDislikedFoods
+        : [],
+      preferredIngredientIds: Array.isArray(
+        userOnboarding?.preferredIngredientIds,
+      )
+        ? userOnboarding.preferredIngredientIds
+        : [],
+      customPreferredIngredients: Array.isArray(
+        userOnboarding?.customPreferredIngredients,
+      )
+        ? userOnboarding.customPreferredIngredients
         : [],
       dislikedIngredientIds: Array.isArray(
         userOnboarding?.dislikedIngredientIds,
       )
         ? userOnboarding.dislikedIngredientIds
         : [],
+      customDislikedIngredients: Array.isArray(
+        userOnboarding?.customDislikedIngredients,
+      )
+        ? userOnboarding.customDislikedIngredients
+        : userOnboarding?.dislikedOtherText
+          ? [userOnboarding.dislikedOtherText]
+          : [],
       nutritionPreferenceKeys: Array.isArray(
         userOnboarding?.nutritionPreferenceKeys,
       )
@@ -181,12 +273,12 @@ const OnboardingLayoutInner = () => {
     });
   }, [data, setFields]);
 
-  const maxWidthClass = "max-w-lg";
+  const maxWidthClass = isPostOnboardingRoute ? "max-w-5xl" : "max-w-lg";
 
   return (
     <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-background">
       {/* ── STICKY HEADER ── */}
-      {showProgress && (
+      {showProgress && !isPostOnboardingRoute && (
         <header className="shrink-0 px-4 pt-4 pb-3 bg-background border-b border-border/40">
           <div className={cn("mx-auto flex items-center gap-3", maxWidthClass)}>
             <button
@@ -199,7 +291,7 @@ const OnboardingLayoutInner = () => {
                 "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-background transition-all hover:bg-muted",
                 !prevPath && "opacity-30 pointer-events-none",
               )}
-              aria-label="Back"
+              aria-label={t("onboarding.back")}
             >
               <ChevronLeft className="h-4 w-4" />
             </button>

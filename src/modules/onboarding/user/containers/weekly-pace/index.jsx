@@ -2,6 +2,7 @@ import { map } from "lodash";
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useOnboardingStore } from "@/store";
@@ -11,12 +12,12 @@ import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import { ChevronRight } from "lucide-react";
 import useOnboardingBase from "@/hooks/app/use-onboarding-base";
 
-const getPaceOptions = (goal, base) => [
+const getPaceOptions = (goal, base, t) => [
   {
     value: 0.25,
     label: "0.25",
-    title: "Easy rhythm",
-    description: "Small weekly changes with a lighter routine.",
+    title: t("onboarding.weeklyPace.options.025.title"),
+    description: t("onboarding.weeklyPace.options.025.description"),
     image: `${base}/slow.webp`,
     accent: "from-sky-500/20 via-cyan-400/10 to-transparent",
     border: "border-sky-500/20",
@@ -28,8 +29,8 @@ const getPaceOptions = (goal, base) => [
   {
     value: 0.5,
     label: "0.5",
-    title: "Balanced pace",
-    description: "Best balance between momentum and sustainability.",
+    title: t("onboarding.weeklyPace.options.05.title"),
+    description: t("onboarding.weeklyPace.options.05.description"),
     image: `${base}/recommend.webp`,
     accent: "from-emerald-500/20 via-lime-400/10 to-transparent",
     border: "border-emerald-500/20",
@@ -41,8 +42,8 @@ const getPaceOptions = (goal, base) => [
   {
     value: 0.75,
     label: "0.75",
-    title: "Focused push",
-    description: "Noticeable weekly progress with more structure.",
+    title: t("onboarding.weeklyPace.options.075.title"),
+    description: t("onboarding.weeklyPace.options.075.description"),
     image: `${base}/focussed.webp`,
     accent: "from-amber-500/20 via-orange-400/10 to-transparent",
     border: "border-amber-500/20",
@@ -54,8 +55,8 @@ const getPaceOptions = (goal, base) => [
   {
     value: 1,
     label: "1.0",
-    title: "Fast track",
-    description: "Most aggressive pace. Better for short bursts.",
+    title: t("onboarding.weeklyPace.options.1.title"),
+    description: t("onboarding.weeklyPace.options.1.description"),
     image: `${base}/aggressive.webp`,
     accent: "from-rose-500/20 via-fuchsia-400/10 to-transparent",
     border: "border-rose-500/20",
@@ -67,13 +68,14 @@ const getPaceOptions = (goal, base) => [
 ];
 
 const Index = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { weeklyPace, goal, setField } = useOnboardingStore();
   const base = useOnboardingBase();
 
   useOnboardingAutoSave("user", "weekly-pace");
 
-  const paceOptions = getPaceOptions(goal, base);
+  const paceOptions = getPaceOptions(goal, base, t);
   const selectedPace =
     paceOptions.find((pace) => pace.value === Number(weeklyPace)) ??
     paceOptions[1];
@@ -101,7 +103,7 @@ const Index = () => {
       disabled={!hasSelection}
       onClick={handleContinue}
     >
-      Next <ChevronRight />
+      {t("onboarding.next")} <ChevronRight />
     </Button>,
   );
 
@@ -141,7 +143,7 @@ const Index = () => {
       </div>
 
       <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
-        <OnboardingQuestion question="Set your weekly pace" />
+        <OnboardingQuestion question={t("onboarding.weeklyPace.question")} />
         <div className="relative mb-3 flex min-h-[140px] flex-1 items-end justify-center overflow-hidden sm:min-h-[170px] md:mb-5 md:min-h-[280px]">
           <AnimatePresence mode="wait">
             <motion.div
@@ -156,7 +158,9 @@ const Index = () => {
                 loading="lazy"
                 src={selectedPace.image}
                 className="max-h-[170px] w-full max-w-[200px] object-contain drop-shadow-[0_18px_32px_rgba(0,0,0,0.12)] sm:max-h-[210px] sm:max-w-[240px] md:max-h-[280px] md:max-w-sm md:drop-shadow-[0_24px_44px_rgba(0,0,0,0.14)]"
-                alt={`${selectedPace.label} pace illustration`}
+                alt={t("onboarding.weeklyPace.heroAlt", {
+                  value: selectedPace.label,
+                })}
               />
             </motion.div>
           </AnimatePresence>
@@ -172,13 +176,13 @@ const Index = () => {
             transition={{ duration: 0.24, delay: 0.08 }}
           >
             <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground md:text-xs md:tracking-[0.24em]">
-              Weekly pace
+              {t("onboarding.weeklyPace.metaLabel")}
             </p>
             <p className="text-base font-bold md:text-lg">
               {selectedPace.title}
             </p>
             <p className="text-xs text-muted-foreground md:text-sm">
-              {selectedPace.label} kg / week
+              {t("onboarding.weeklyPace.rate", { value: selectedPace.label })}
             </p>
           </motion.div>
         </div>
@@ -222,7 +226,9 @@ const Index = () => {
                 <motion.img
                   src={pace.image}
                   className="size-8 rounded-xl object-cover md:size-16"
-                  alt={`${pace.label} illustration`}
+                  alt={t("onboarding.weeklyPace.imageAlt", {
+                    value: pace.label,
+                  })}
                   animate={
                     isActive
                       ? { scale: 1.06, rotate: -2 }
@@ -243,7 +249,7 @@ const Index = () => {
                           pace.badgeTone,
                         )}
                       >
-                        Recommended
+                        {t("onboarding.recommended")}
                       </span>
                     )}
                   </div>

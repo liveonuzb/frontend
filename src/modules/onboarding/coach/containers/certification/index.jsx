@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { FileTextIcon, Loader2Icon, UploadCloudIcon, XIcon } from "lucide-react";
 import { get } from "lodash";
 import { toast } from "sonner";
@@ -24,6 +25,7 @@ import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-q
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 
 const Index = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { request: api } = useApi();
   const {
@@ -51,13 +53,13 @@ const Index = () => {
       .split("?")[0]
       .split("/")
       .pop();
-    if (!raw) return "Sertifikat fayli";
+    if (!raw) return t("onboarding.coach.certification.fileFallback");
     try {
       return decodeURIComponent(raw);
     } catch {
       return raw;
     }
-  }, []);
+  }, [t]);
 
   const uploadSingleFile = React.useCallback(
     async (file) => {
@@ -103,7 +105,7 @@ const Index = () => {
 
     const invalidSize = files.find((file) => file.size > 8 * 1024 * 1024);
     if (invalidSize) {
-      toast.error("Har bir fayl 8MB dan katta bo'lmasligi kerak");
+      toast.error(t("onboarding.coach.certification.fileSizeError"));
       return;
     }
 
@@ -122,15 +124,24 @@ const Index = () => {
           "certificateFiles",
           Array.from(new Set([...(certificateFiles ?? []), ...uploadedUrls])),
         );
-        toast.success(`${uploadedUrls.length} ta sertifikat fayli yuklandi`);
+        toast.success(
+          t("onboarding.coach.certification.uploadSuccess", {
+            count: uploadedUrls.length,
+          }),
+        );
       }
 
       if (failedCount > 0) {
-        toast.error(`${failedCount} ta faylni yuklab bo'lmadi`);
+        toast.error(
+          t("onboarding.coach.certification.uploadFailedCount", {
+            count: failedCount,
+          }),
+        );
       }
     } catch (error) {
       const message =
-        get(error, "response.data.message") || "Fayllarni yuklab bo'lmadi";
+        get(error, "response.data.message") ||
+        t("onboarding.coach.certification.uploadError");
       toast.error(Array.isArray(message) ? message[0] : message);
     } finally {
       setIsUploadingFiles(false);
@@ -154,24 +165,32 @@ const Index = () => {
       disabled={isNextDisabled || isUploadingFiles}
       onClick={handleNext}
     >
-      Davom etish
+      {t("onboarding.coach.common.continue")}
     </Button>,
   );
 
   return (
     <div className="flex-1 flex flex-col h-full pb-4">
-      <OnboardingQuestion question="Sertifikat ma'lumotlari" />
+      <OnboardingQuestion
+        question={t("onboarding.coach.certification.question")}
+      />
 
       <div className="space-y-5 w-full">
         <Field>
-          <FieldLabel>Sertifikat holati</FieldLabel>
+          <FieldLabel>{t("onboarding.coach.certification.statusLabel")}</FieldLabel>
           <Select value={certMode} onValueChange={handleModeChange}>
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Variantni tanlang" />
+              <SelectValue
+                placeholder={t("onboarding.coach.certification.statusPlaceholder")}
+              />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">Sertifikatim yo'q</SelectItem>
-              <SelectItem value="custom">Sertifikatim bor</SelectItem>
+              <SelectItem value="none">
+                {t("onboarding.coach.certification.noCertificate")}
+              </SelectItem>
+              <SelectItem value="custom">
+                {t("onboarding.coach.certification.hasCertificate")}
+              </SelectItem>
             </SelectContent>
           </Select>
         </Field>
@@ -179,10 +198,10 @@ const Index = () => {
         {needsCertificateDetails ? (
           <>
             <Field>
-              <FieldLabel>Sertifikat nomi</FieldLabel>
+              <FieldLabel>{t("onboarding.coach.certification.nameLabel")}</FieldLabel>
               <Input
                 value={certificationType}
-                placeholder="Masalan, UEFA C, Boxing Coach, NASM CPT"
+                placeholder={t("onboarding.coach.certification.namePlaceholder")}
                 onChange={(event) =>
                   setField("certificationType", event.target.value)
                 }
@@ -190,7 +209,7 @@ const Index = () => {
             </Field>
 
             <Field>
-              <FieldLabel>Sertifikat raqami</FieldLabel>
+              <FieldLabel>{t("onboarding.coach.certification.numberLabel")}</FieldLabel>
               <Input
                 value={certificationNumber}
                 placeholder="ABC123456"
@@ -201,7 +220,7 @@ const Index = () => {
             </Field>
 
             <Field>
-              <FieldLabel>Sertifikat fayllari</FieldLabel>
+              <FieldLabel>{t("onboarding.coach.certification.filesLabel")}</FieldLabel>
               <div className="space-y-3">
                 <Button
                   type="button"
@@ -214,7 +233,7 @@ const Index = () => {
                   ) : (
                     <UploadCloudIcon className="size-4" />
                   )}
-                  Fayl yuklash
+                  {t("onboarding.coach.certification.uploadButton")}
                 </Button>
                 <input
                   ref={fileInputRef}
@@ -225,7 +244,7 @@ const Index = () => {
                   onChange={handleCertificateFileSelect}
                 />
                 <FieldDescription>
-                  JPG, PNG yoki PDF. Har bir fayl maksimum 8MB.
+                  {t("onboarding.coach.certification.fileDescription")}
                 </FieldDescription>
 
                 {(certificateFiles ?? []).length > 0 ? (
@@ -255,7 +274,7 @@ const Index = () => {
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    Kamida bitta sertifikat fayli yuklang.
+                    {t("onboarding.coach.certification.requiredFile")}
                   </p>
                 )}
               </div>

@@ -31,6 +31,7 @@ export const SORT_FIELDS = [
   "priceUpdatedAt",
   "createdAt",
   "isActive",
+  "isOnboarding",
   "isAllergic",
 ];
 export const SORT_DIRECTIONS = ["asc", "desc"];
@@ -86,6 +87,7 @@ export const ingredientSchema = z.object({
   fat: z.number().min(0),
   servingUnit: z.enum(["g", "ml", "dona", "qoshiq"]),
   isAllergic: z.boolean().default(false),
+  isOnboarding: z.boolean().default(true),
 });
 
 export const priceSchema = z.object({

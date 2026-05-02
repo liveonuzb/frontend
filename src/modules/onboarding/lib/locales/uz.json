@@ -1,8 +1,12 @@
 {
   "onboarding": {
     "next": "Keyingisi >",
+    "back": "Orqaga",
+    "recommended": "Tavsiya qilinadi",
+    "illustrationAlt": "Onboarding rasmi",
     "finish": "Yakunlash",
     "saving": "Saqlanmoqda...",
+    "skip": "O'tkazib yuborish",
     "name": {
       "question": "Ismingiz nima?",
       "firstName": "Ism",
@@ -15,18 +19,56 @@
     "gender": {
       "question": "Jinsingiz qaysi?",
       "male": "Erkak",
-      "female": "Ayol"
+      "maleDescription": "Erkaklar uchun vizual va tana bo'yicha yo'nalish.",
+      "female": "Ayol",
+      "femaleDescription": "Ayollar uchun vizual va tana bo'yicha yo'nalish.",
+      "metaLabel": "Jins"
     },
     "age": {
-      "question": "Yoshingiz nechida?"
+      "question": "Yoshingiz nechida?",
+      "questionWithName": "{{name}}, yoshingiz nechida?",
+      "unit": "yosh",
+      "metaLabel": "Yosh",
+      "profiles": {
+        "young": {
+          "title": "Yosh energiya",
+          "note": "Sur'at va tiklanishda biroz faolroq reja berish mumkin."
+        },
+        "balanced": {
+          "title": "Muvozanatli davr",
+          "note": "Rejangiz progress va barqaror odatlarni birlashtiradi."
+        },
+        "mature": {
+          "title": "Yetuk ritm",
+          "note": "Barqarorlik va tiklanish yanada muhim bo'ladi."
+        }
+      }
     },
     "height": {
       "question": "Bo'yingiz qancha?",
-      "unit": "sm"
+      "questionWithName": "{{name}}, bo'yingiz qancha?",
+      "unit": "sm",
+      "metaLabel": "Bo'y",
+      "profiles": {
+        "compact": {
+          "title": "Ixcham tana tuzilishi",
+          "note": "Maqsadlar pastroq bo'y profiliga mos kalibrlanadi."
+        },
+        "balanced": {
+          "title": "Muvozanatli tana tuzilishi",
+          "note": "Bu bo'y rejalashtirish diapazonining o'rtasiga yaqin."
+        },
+        "tall": {
+          "title": "Baland tana tuzilishi",
+          "note": "Energiya va vazn maqsadlari balandroq tana uchun moslanadi."
+        }
+      }
     },
     "currentWeight": {
       "question": "Hozirgi vazningiz qancha?",
-      "unit": "kg"
+      "questionWithName": "{{name}}, hozirgi vazningiz qancha?",
+      "unit": "kg",
+      "bmiTitle": "Hozirgi BMI"
     },
     "goal": {
       "question": "Maqsadingiz nima?",
@@ -39,34 +81,238 @@
     },
     "targetWeight": {
       "question": "Maqsad vazningiz qancha?",
-      "unit": "kg"
+      "questionWithName": "{{name}}, maqsad vazningiz qancha?",
+      "unit": "kg",
+      "bmiTitle": "Maqsad BMI",
+      "messages": {
+        "lose": "{{value}} kg tashlash keyingi bosqichingiz.",
+        "gain": "{{value}} kg qo'shish keyingi rivojlanish bosqichingiz.",
+        "maintain": "Siz hozirgi formangizga yaqin qolishni maqsad qilyapsiz."
+      }
     },
     "weeklyPace": {
-      "question": "Haftalik sur'atingiz qanday?"
+      "question": "Haftalik sur'atni belgilang",
+      "metaLabel": "Haftalik sur'at",
+      "rate": "Haftasiga {{value}} kg",
+      "heroAlt": "{{value}} sur'at rasmi",
+      "imageAlt": "{{value}} rasmi",
+      "options": {
+        "025": {
+          "title": "Yengil ritm",
+          "description": "Yengilroq tartib bilan kichik haftalik o'zgarishlar."
+        },
+        "05": {
+          "title": "Muvozanatli sur'at",
+          "description": "Tezlik va barqarorlik o'rtasidagi eng yaxshi balans."
+        },
+        "075": {
+          "title": "Fokuslangan harakat",
+          "description": "Ko'proq tuzilma bilan sezilarli haftalik progress."
+        },
+        "1": {
+          "title": "Tez yo'l",
+          "description": "Eng agressiv sur'at. Qisqa muddatli bosqichlar uchun yaxshiroq."
+        }
+      }
     },
     "activityLevel": {
       "question": "Qanchalik faolsiz?",
       "sedentary": "Passiv",
+      "sedentaryTitle": "Past faollik",
       "sedentaryDescription": "Mashq kam, ofisda ishlash",
       "lightlyActive": "Yengil faol",
+      "lightlyActiveTitle": "Yengil tartib",
       "lightlyActiveDescription": "Haftada 1-3 kun yengil mashq",
       "moderatelyActive": "O'rtacha faol",
+      "moderatelyActiveTitle": "Muvozanatli tartib",
       "moderatelyActiveDescription": "Haftada 3-5 kun o'rtacha mashq",
       "veryActive": "Juda faol",
-      "veryActiveDescription": "Haftada 6-7 kun og'ir mashq"
+      "veryActiveTitle": "Yuqori faollik",
+      "veryActiveDescription": "Haftada 6-7 kun og'ir mashq",
+      "metaLabel": "Faollik darajasi"
     },
     "mealFrequency": {
-      "question": "Kuniga necha marta ovqatlanasiz?"
+      "question": "Qanchalik tez-tez ovqatlanasiz?",
+      "metaLabel": "Ovqatlanish ritmi",
+      "options": {
+        "2": {
+          "label": "2 mahal",
+          "title": "Yengil tuzilma",
+          "description": "Nonushta va kechki ovqat."
+        },
+        "3": {
+          "label": "3 mahal",
+          "title": "Klassik ritm",
+          "description": "Nonushta, tushlik va kechki ovqat."
+        },
+        "4": {
+          "label": "4 mahal",
+          "title": "Barqaror yoqilg'i",
+          "description": "Uch mahal ovqat va bitta snack."
+        },
+        "5": {
+          "label": "5+ mahal",
+          "title": "Tez-tez ovqatlanish",
+          "description": "Kun davomida ko'proq kichik porsiyalar."
+        }
+      }
     },
     "waterHabits": {
-      "question": "Suv ichish odatingiz qanday?"
+      "question": "Qancha suv ichasiz?",
+      "metaLabel": "Suv ichish odati",
+      "options": {
+        "2": {
+          "label": "1-2 stakan",
+          "title": "Ko'paytirish kerak",
+          "description": "Odatda kuniga 0.5L dan kam."
+        },
+        "4": {
+          "label": "3-4 stakan",
+          "title": "Shakllanmoqda",
+          "description": "Taxminan kuniga 1L atrofida."
+        },
+        "6": {
+          "label": "5-6 stakan",
+          "title": "Muvozanatli gidratsiya",
+          "description": "Ko'p kunlarda 1.5L atrofida."
+        },
+        "8": {
+          "label": "7+ stakan",
+          "title": "Kuchli odat",
+          "description": "Kuniga 2 litr yoki undan ko'p."
+        }
+      }
+    },
+    "bmi": {
+      "underweight": {
+        "label": "Normadan past",
+        "description": "Bo'yingizga nisbatan muvozanatli BMI zonasidan pastroqsiz."
+      },
+      "healthy": {
+        "label": "Sog'lom diapazon",
+        "description": "Bu bo'yingizga mos muvozanatli BMI zonasida."
+      },
+      "aboveRange": {
+        "label": "Normadan yuqori",
+        "description": "Bu bo'yingizga nisbatan muvozanatli BMI zonasidan biroz yuqori."
+      },
+      "highRange": {
+        "label": "Yuqori diapazon",
+        "description": "Bu bo'yingizga nisbatan muvozanatli BMI zonasidan ancha yuqori."
+      }
+    },
+    "foodBudget": {
+      "title": "Ovqatlanish budjetingiz qancha?",
+      "description": "Meal plan siz tanlagan davr va UZS budjetga mos tuziladi.",
+      "helper": "Aniq bilmasangiz, bu bosqichni o'tkazib yuborishingiz mumkin.",
+      "placeholder": "Masalan: 350000",
+      "error": "Budjet manfiy bo'lmagan raqam bo'lishi kerak.",
+      "periods": {
+        "daily": "Kunlik",
+        "weekly": "Haftalik",
+        "monthly": "Oylik"
+      }
+    },
+    "chipSelect": {
+      "selectedCount": "{{count}} ta tanlandi",
+      "addCustom": "\"{{value}}\" ni custom sifatida qo'shish",
+      "empty": "Mos natija topilmadi.",
+      "nonOnboarding": "Qo'shimcha",
+      "selected": "Tanlangan"
+    },
+    "nutritionSteps": {
+      "allergies": {
+        "title": "Nimalarga allergiyangiz bor?",
+        "description": "Active allergiya ingredientlarini tanlang yoki o'zingiz custom qiymat qo'shing.",
+        "placeholder": "Yong'oq, tuxum, asal..."
+      },
+      "dietRequirements": {
+        "title": "Ovqatlanish talablaringiz qanday?",
+        "description": "Halol, vegetarian, glutensiz yoki boshqa talablarni belgilang.",
+        "placeholder": "Halal, high protein, no sugar..."
+      },
+      "dislikedFoods": {
+        "title": "Qaysi ovqatlarni yoqtirmaysiz?",
+        "description": "Meal planda kamaytirish yoki chiqarib tashlash kerak bo'lgan taomlarni belgilang.",
+        "placeholder": "Sho'rva, baliq, jigar..."
+      },
+      "preferredIngredients": {
+        "title": "Qaysi ingredientlarni yoqtirasiz?",
+        "description": "Yoqtirgan ingredientlaringiz meal planda ustuvor ko'rinadi.",
+        "placeholder": "Tovuq go'shti, guruch, bodring..."
+      },
+      "dislikedIngredients": {
+        "title": "Qaysi ingredientlarni yoqtirmaysiz?",
+        "description": "Rejada kamroq chiqishi kerak bo'lgan ingredientlarni tanlang yoki custom qo'shing.",
+        "placeholder": "Piyoz, kashnich, achchiq qalampir..."
+      },
+      "ingredients": {
+        "conflict": "Bu ingredient boshqa ro'yxatda tanlangan. Avval o'sha ro'yxatdan olib tashlang."
+      }
+    },
+    "workoutSteps": {
+      "location": {
+        "title": "Qayerda mashq qilasiz?",
+        "description": "Workout reja siz mashq qiladigan joyga mos tanlanadi.",
+        "options": {
+          "home": {
+            "label": "Uyda",
+            "description": "Kam jihoz yoki tana vazni bilan mashqlar"
+          },
+          "gym": {
+            "label": "Zalda",
+            "description": "Trenajor, gantel va og'irliklar bilan reja"
+          },
+          "outdoor": {
+            "label": "Tashqarida",
+            "description": "Yugurish, yurish va ochiq havodagi mashqlar"
+          }
+        }
+      },
+      "equipment": {
+        "title": "Qaysi jihozlaringiz bor?",
+        "description": "Active jihozlarni tanlang yoki yo'q bo'lsa custom qiymat qo'shing.",
+        "placeholder": "Gantel, turnik, yoga mat..."
+      },
+      "bodyParts": {
+        "title": "Tananing qaysi qismlariga e'tibor beramiz?",
+        "description": "Workout reja shu tana qismlariga ko'proq moslanadi.",
+        "placeholder": "Ko'krak, oyoq, bel, yelka..."
+      },
+      "exercises": {
+        "title": "Qaysi mashqlar sizga mos?",
+        "description": "Yoqtiradigan mashqlar ustuvor bo'ladi, yoqtirmaydiganlari rejadan chiqariladi.",
+        "placeholder": "Squat, push-up, yugurish...",
+        "conflict": "Bu mashq boshqa ro'yxatda tanlangan. Avval o'sha ro'yxatdan olib tashlang.",
+        "modes": {
+          "preferred": "Yoqtiraman",
+          "disliked": "Yoqtirmayman"
+        }
+      },
+      "preferredExercises": {
+        "title": "Qaysi mashqlarni yoqtirasiz?",
+        "description": "Bu mashqlar shaxsiy workout rejangizda ustuvor bo'ladi.",
+        "placeholder": "Squat, push-up, yugurish..."
+      },
+      "dislikedExercises": {
+        "title": "Qaysi mashqlarni yoqtirmaysiz?",
+        "description": "Bu mashqlar shaxsiy workout rejangizdan chiqariladi yoki kamaytiriladi.",
+        "placeholder": "Burpee, yugurish, plank..."
+      }
     },
     "healthConstraints": {
       "question": "Jarohat yoki sog'liq cheklovingiz bormi?",
       "summaryHint": "Workout reja xavfsiz bo'lishi uchun tanlang.",
+      "metaLabel": "Sog'liq xavfsizligi",
+      "none": "Cheklov yo'q",
+      "noneDescription": "Mashg'ulotlar uchun alohida sog'liq cheklovi yo'q",
       "noneSummary": "Cheklov yo'q",
       "selectedCount": "{{count}} ta cheklov tanlandi",
       "defaultDescription": "Reja tuzishda bu holat inobatga olinadi."
+    },
+    "otherGoals": {
+      "question": "Yana qanday maqsadlaringiz bor?",
+      "fallbackTitle": "Qo'shimcha maqsadlar"
     },
     "dietRestrictions": {
       "question": "Parhez cheklovlaringiz bormi?",
@@ -104,6 +350,143 @@
       "title": "Ajoyib natija!",
       "description": "Sizning shaxsiy profilingiz shakllantirildi.",
       "redirecting": "Bosh sahifaga yo'naltirilmoqda..."
+    },
+    "postOnboarding": {
+      "loading": {
+        "title": "Siz uchun hammasini sozlamoqdamiz",
+        "retry": "Qayta urinish",
+        "errorDescription": "Shaxsiy reja tayyorlashda xatolik yuz berdi. Qayta urinib ko'ring.",
+        "badges": {
+          "personalization": "Personalizatsiya",
+          "generation": "AI reja generatsiyasi"
+        },
+        "subtitles": {
+          "bmr": "BMR hisoblanmoqda...",
+          "metabolicAge": "Metabolik yoshingiz hisoblanmoqda...",
+          "calories": "Kaloriya normangiz aniqlanmoqda...",
+          "mealPlan": "Ovqatlanish rejasi moslanmoqda...",
+          "workoutPlan": "Mashg'ulot rejasi tuzilmoqda...",
+          "finalizing": "Natijalar yakunlanmoqda..."
+        },
+        "checklist": {
+          "wellnessPlan": "Sog'lomlashtirish rejasi moslanmoqda",
+          "bmrFormula": "BMR formulasi qo'llanmoqda",
+          "metabolicAge": "Metabolik yoshingiz hisoblanmoqda",
+          "calorieMacros": "Kaloriya va makro normangiz aniqlanmoqda",
+          "mealPlan": "Ovqatlanish rejasi tayyorlanmoqda",
+          "workoutPlan": "Mashg'ulot rejasi tayyorlanmoqda",
+          "finalizing": "Natijalar yakunlanmoqda"
+        }
+      },
+      "result": {
+        "readyBadge": "Shaxsiy targetlar tayyor",
+        "title": "Sizning rejangiz tayyor",
+        "subtitle": "Siz quyidagini o'zgartirishingiz kerak:",
+        "weightDifference": "Vazn farqi",
+        "weeklyPace": "Haftalik sur'at",
+        "dailyCalories": "Kunlik kaloriyangiz",
+        "next": "Keyingi",
+        "save": "Saqlash",
+        "cancel": "Bekor qilish",
+        "saved": "Natija yangilandi.",
+        "saveError": "Natijani saqlab bo'lmadi.",
+        "generateError": "Shaxsiy reja generatsiyasini boshlashda xatolik yuz berdi.",
+        "empty": "Personalizatsiya natijasi topilmadi.",
+        "recommended": "Tavsiya",
+        "lowCalorieWarning": "Bu kaloriya juda past bo'lishi mumkin. Sog'liq uchun xavfsiz diapazonni tanlang.",
+        "lowFatWarning": "Yog' miqdori juda past bo'lishi mumkin.",
+        "proteinRecommendation": "Tavsiya: {{min}}-{{max}} g (1.6-2.2 g/kg).",
+        "balanceUnknown": "Makro balansni hisoblash uchun yetarli ma'lumot yo'q.",
+        "balanceGood": "Makrolar kaloriyaga yaqin balansda.",
+        "balanceHigh": "Makrolar targetdan {{value}} kcal yuqori.",
+        "balanceLow": "Makrolar targetdan {{value}} kcal past.",
+        "howCalculated": "Qanday hisoblaymiz?",
+        "water": "Suv",
+        "steps": "Qadam",
+        "metabolicAge": "Metabolik yosh",
+        "equipment": "Jihozlar",
+        "equipmentSummary": "{{count}} ta jihoz tanlangan",
+        "equipmentPlaceholder": "Gantel, turnik, yoga mat...",
+        "metrics": {
+          "calories": "Kaloriya",
+          "carbs": "Uglevod",
+          "protein": "Oqsil",
+          "fat": "Yog'"
+        },
+        "quick": {
+          "mealsPerDay": "Ovqatlanish soni",
+          "weeklyWorkoutDays": "Workout kunlari",
+          "workoutLocation": "Workout joyi"
+        },
+        "options": {
+          "weeklyWeightChangeGoal": {
+            "0.25": "Haftasiga 0.25 kg",
+            "0.5": "Haftasiga 0.5 kg",
+            "0.75": "Haftasiga 0.75 kg",
+            "1": "Haftasiga 1 kg"
+          },
+          "mealsPerDay": {
+            "2": "2 mahal",
+            "3": "3 mahal",
+            "4": "4 mahal",
+            "5": "5 mahal"
+          },
+          "weeklyWorkoutDays": {
+            "2": "2 kun",
+            "3": "3 kun",
+            "4": "4 kun",
+            "5": "5 kun",
+            "6": "6 kun"
+          },
+          "workoutLocation": {
+            "home": "Uyda",
+            "gym": "Zalda",
+            "outdoor": "Tashqarida"
+          }
+        },
+        "edit": {
+          "dailyCalories": {
+            "title": "Kunlik kaloriyani tahrirlash",
+            "description": "Tavsiya qiymatni ko'ring yoki o'zingizga mos xavfsiz target kiriting."
+          },
+          "proteinGram": {
+            "title": "Oqsil targeti",
+            "description": "Gramda kiriting. Tavsiya vaznga nisbatan hisoblanadi."
+          },
+          "carbsGram": {
+            "title": "Uglevod targeti",
+            "description": "Uglevod kaloriyaviy balansga qanday ta'sir qilishini tekshiring."
+          },
+          "fatGram": {
+            "title": "Yog' targeti",
+            "description": "Gramda kiriting. Juda past yog' bo'lsa ogohlantiramiz."
+          },
+          "targetWeight": {
+            "title": "Maqsad vazn",
+            "description": "Maqsad vazn o'zgarsa kaloriya va makrolar qayta hisoblanadi."
+          },
+          "weeklyWeightChangeGoal": {
+            "title": "Haftalik sur'at",
+            "description": "Sur'at o'zgarsa kunlik kaloriya va taxminiy sana qayta hisoblanadi."
+          },
+          "mealsPerDay": {
+            "title": "Ovqatlanish soni",
+            "description": "Bu personal meal plan generatsiyasiga ta'sir qiladi."
+          },
+          "weeklyWorkoutDays": {
+            "title": "Workout kunlari",
+            "description": "Haftalik workout jadvali shu son asosida tuziladi."
+          },
+          "workoutLocation": {
+            "title": "Workout joyi",
+            "description": "Mashqlar uy, zal yoki tashqi muhitga mos tanlanadi."
+          },
+          "equipment": {
+            "title": "Jihozlarni tanlash",
+            "description": "Active jihozlardan tanlang yoki custom qiymat qo'shing."
+          }
+        }
+      }
     },
     "report": {
       "generatingEyebrow": "AI wellness report",
@@ -209,6 +592,161 @@
         "uz": "O'zbek",
         "ru": "Русский",
         "en": "English"
+      }
+    },
+    "coach": {
+      "common": {
+        "continue": "Davom etish",
+        "select": "Tanlash"
+      },
+      "category": {
+        "question": "Qaysi yo'nalishda murabbiylik qilasiz?",
+        "additional": "Qo'shimcha yo'nalishlar",
+        "options": {
+          "fitness": "Fitness",
+          "yoga": "Yoga",
+          "boxing": "Boks",
+          "football": "Futbol",
+          "swimming": "Suzish",
+          "tennis": "Tennis",
+          "basketball": "Basketbol",
+          "martialArts": "Jang san'ati",
+          "running": "Yugurish",
+          "gymnastics": "Gimnastika",
+          "dance": "Raqs",
+          "cheerleading": "Cheerleading",
+          "skating": "Muz uchish",
+          "cycling": "Velosiped",
+          "climbing": "Toqqa chiqish",
+          "other": "Boshqa"
+        }
+      },
+      "experience": {
+        "question": "Tajribangizni belgilang",
+        "options": {
+          "beginner": {
+            "label": "1 yildan kam",
+            "description": "Yangi boshlayotgan yoki kam sonli mijozlar bilan ishlagan."
+          },
+          "intermediate": {
+            "label": "1-3 yil",
+            "description": "Barqaror tajriba va amaliy coaching jarayonlari bor."
+          },
+          "advanced": {
+            "label": "3-5 yil",
+            "description": "Natijador klientlar va shakllangan metodika mavjud."
+          },
+          "expert": {
+            "label": "5+ yil",
+            "description": "Keng tajriba, ko'plab natijalar va chuqur ekspertiza."
+          }
+        },
+        "infoTitle": "Profilingiz tez tayyor bo'ladi",
+        "infoDescription": "Tajriba darajasi coach kabinetida va mijozlarga ko'rinadigan profil summarysida ishlatiladi."
+      },
+      "specialization": {
+        "question": "Yo'nalishlaringizni tanlang",
+        "customQuestion": "Yo'nalishlaringizni kiriting",
+        "fieldLabel": "Yo'nalishlar",
+        "placeholder": "Boks, Football, Yoga, Fitness",
+        "description": "Yo'nalishlarni vergul yoki yangi qatordan ajrating.",
+        "customCount": "{{count}} ta yo'nalish kiritildi",
+        "emptyTitle": "Bu kategoriya uchun yo'nalishlar topilmadi.",
+        "emptyDescription": "Davom etish tugmasini bosing.",
+        "selectedCount": "{{count}} ta yo'nalish tanlandi"
+      },
+      "targetAudience": {
+        "question": "Qaysi auditoriyaga xizmat ko'rsatasiz?",
+        "options": {
+          "children": "Bolalar (6-12 yosh)",
+          "teenagers": "O'smirlar (13-17 yosh)",
+          "beginners": "Boshlang'ich",
+          "intermediate": "O'rta daraja",
+          "advanced": "Ilg'or / Professional",
+          "seniors": "Kattalar (60+)"
+        },
+        "selectedCount": "{{count}} ta auditoriya tanlandi"
+      },
+      "availability": {
+        "question": "Haftalik ish jadvalingizni belgilang",
+        "dayOff": "Dam olish",
+        "start": "Boshlanish",
+        "end": "Tugash",
+        "days": {
+          "monday": "Dushanba",
+          "tuesday": "Seshanba",
+          "wednesday": "Chorshanba",
+          "thursday": "Payshanba",
+          "friday": "Juma",
+          "saturday": "Shanba",
+          "sunday": "Yakshanba"
+        }
+      },
+      "certification": {
+        "question": "Sertifikat ma'lumotlari",
+        "fileFallback": "Sertifikat fayli",
+        "fileSizeError": "Har bir fayl 8MB dan katta bo'lmasligi kerak.",
+        "uploadSuccess": "{{count}} ta sertifikat fayli yuklandi",
+        "uploadFailedCount": "{{count}} ta faylni yuklab bo'lmadi",
+        "uploadError": "Fayllarni yuklab bo'lmadi.",
+        "statusLabel": "Sertifikat holati",
+        "statusPlaceholder": "Variantni tanlang",
+        "noCertificate": "Sertifikatim yo'q",
+        "hasCertificate": "Sertifikatim bor",
+        "nameLabel": "Sertifikat nomi",
+        "namePlaceholder": "Masalan, UEFA C, Boxing Coach, NASM CPT",
+        "numberLabel": "Sertifikat raqami",
+        "filesLabel": "Sertifikat fayllari",
+        "uploadButton": "Fayl yuklash",
+        "fileDescription": "JPG, PNG yoki PDF. Har bir fayl maksimum 8MB.",
+        "requiredFile": "Kamida bitta sertifikat fayli yuklang."
+      },
+      "bio": {
+        "question": "Coach bio yozing",
+        "label": "Bio",
+        "placeholder": "Men sog'lom ovqatlanish va vazn boshqaruvi bo'yicha murabbiyman. Mijozlarimga reja, nazorat va kundalik odatlarni shakllantirishda yordam beraman.",
+        "minHint": "Kamida 10 ta belgi kiriting.",
+        "infoTitle": "Qisqa, aniq va ishonchli yozing",
+        "infoDescription": "Tajriba, asosiy yo'nalish va clientlarga bera oladigan natijangizni 2-3 gapda yozish kifoya."
+      },
+      "pricing": {
+        "question": "Narx va ish uslubingizni belgilang",
+        "workModeLabel": "Ishlash formati",
+        "workModes": {
+          "online": "Online",
+          "offline": "Offline",
+          "hybrid": "Hybrid"
+        },
+        "minPriceLabel": "Minimal narx (oyiga)",
+        "maxPriceLabel": "Maksimal narx (oyiga)",
+        "cityLabel": "Shahar",
+        "workplaceLabel": "Ish joyi"
+      },
+      "languages": {
+        "question": "Qaysi tillarda ishlaysiz?",
+        "helper": "Kamida bitta til tanlang.",
+        "reachTitle": "Ko'proq userga chiqing",
+        "reachDescription": "Tillar bo'yicha filter ishlaydi, mos userlar profilingizni tezroq topadi.",
+        "marketplaceTitle": "Marketplace uchun signal",
+        "marketplaceDescription": "To'g'ri til tanlovi sizning ko'rinishingizni oshiradi."
+      },
+      "avatar": {
+        "question": "Profil rasmingizni yuklang",
+        "imageOnlyError": "Faqat rasm fayl yuklash mumkin.",
+        "fileSizeError": "Rasm hajmi 5MB dan katta bo'lmasligi kerak.",
+        "uploadSuccess": "Profil rasmi yuklandi.",
+        "uploadError": "Rasmni yuklab bo'lmadi.",
+        "completeError": "Onboardingni yakunlab bo'lmadi.",
+        "successTitle": "Tabriklaymiz!",
+        "successDescription": "Sizning coach profilingiz muvaffaqiyatli yaratildi.",
+        "redirecting": "Coach paneliga yo'naltirilmoqda...",
+        "alt": "Profil rasmi",
+        "emptyLabel": "Rasm yuklash",
+        "idleHint": "Rasmni bosing yoki tortib tashlang",
+        "replaceHint": "Rasmni o'zgartirish uchun bosing",
+        "pickLabel": "Rasm tanlash",
+        "replaceLabel": "Rasmni almashtirish",
+        "helper": "Marketplace kartasida ko'rinadigan rasm. Ixtiyoriy — keyinroq qo'shishingiz mumkin."
       }
     },
     "coachOnboarding": {

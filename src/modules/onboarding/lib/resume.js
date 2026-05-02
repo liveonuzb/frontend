@@ -13,6 +13,10 @@ const hasValue = (value) => {
   return value !== null && value !== undefined && String(value).trim() !== "";
 };
 
+const hasCompletedStep = (state, step) =>
+  isArray(state.completedUserOnboardingSteps) &&
+  state.completedUserOnboardingSteps.includes(step);
+
 export const getNextUserOnboardingPath = (state) => {
   if (!hasValue(state.firstName) || !hasValue(state.lastName)) {
     return "name";
@@ -50,6 +54,44 @@ export const getNextUserOnboardingPath = (state) => {
     return "weekly-pace";
   }
 
+  if (!hasCompletedStep(state, "workout-location")) {
+    return "workout-location";
+  }
+
+  if (
+    !hasValue(state.equipmentIds) &&
+    !hasValue(state.customEquipment) &&
+    !hasCompletedStep(state, "workout-equipment")
+  ) {
+    return "workout-equipment";
+  }
+
+  if (
+    !hasValue(state.workoutBodyPartIds) &&
+    !hasValue(state.customWorkoutBodyParts) &&
+    !hasCompletedStep(state, "workout-body-parts")
+  ) {
+    return "workout-body-parts";
+  }
+
+  if (
+    !hasValue(state.preferredExerciseIds) &&
+    !hasValue(state.customPreferredExercises) &&
+    !hasCompletedStep(state, "preferred-exercises") &&
+    !hasCompletedStep(state, "exercise-preferences")
+  ) {
+    return "preferred-exercises";
+  }
+
+  if (
+    !hasValue(state.dislikedExerciseIds) &&
+    !hasValue(state.customDislikedExercises) &&
+    !hasCompletedStep(state, "disliked-exercises") &&
+    !hasCompletedStep(state, "exercise-preferences")
+  ) {
+    return "disliked-exercises";
+  }
+
   if (!hasValue(state.mealFrequency)) {
     return "meal-frequency";
   }
@@ -58,32 +100,47 @@ export const getNextUserOnboardingPath = (state) => {
     return "water-habits";
   }
 
-  if (!hasValue(state.dietRestrictions)) {
-    if (
-      !hasValue(state.allergyIngredientIds) &&
-      !hasValue(state.allergyOtherText)
-    ) {
-      return "allergy-ingredients";
-    }
-
-    if (
-      !hasValue(state.dislikedIngredientIds) &&
-      !hasValue(state.dislikedOtherText)
-    ) {
-      return "disliked-ingredients";
-    }
-
-    if (
-      !hasValue(state.nutritionPreferenceKeys) &&
-      !hasValue(state.nutritionPreferenceOtherText)
-    ) {
-      return "nutrition-preferences";
-    }
-
-    return "diet-restrictions";
+  if (!hasValue(state.foodBudget) && !hasCompletedStep(state, "food-budget")) {
+    return "food-budget";
   }
 
-  return "diet-restrictions";
+  if (
+    !hasValue(state.allergyIds) &&
+    !hasValue(state.allergyIngredientIds) &&
+    !hasValue(state.customAllergies) &&
+    !hasValue(state.allergyOtherText) &&
+    !hasCompletedStep(state, "allergies")
+  ) {
+    return "allergies";
+  }
+
+  if (
+    !hasValue(state.dietRequirementIds) &&
+    !hasValue(state.customDietRequirements) &&
+    !hasValue(state.nutritionPreferenceKeys) &&
+    !hasValue(state.nutritionPreferenceOtherText) &&
+    !hasCompletedStep(state, "diet-requirements")
+  ) {
+    return "diet-requirements";
+  }
+
+  if (
+    !hasValue(state.dislikedFoodIds) &&
+    !hasValue(state.customDislikedFoods) &&
+    !hasCompletedStep(state, "disliked-foods")
+  ) {
+    return "disliked-foods";
+  }
+
+  if (
+    !hasValue(state.preferredIngredientIds) &&
+    !hasValue(state.customPreferredIngredients) &&
+    !hasCompletedStep(state, "preferred-ingredients")
+  ) {
+    return "preferred-ingredients";
+  }
+
+  return "disliked-ingredients";
 };
 
 export const getResumeOnboardingPath = (state, onboardingCompleted) => {

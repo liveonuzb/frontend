@@ -14,13 +14,6 @@ import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import PageAura from "../../components/page-aura.jsx";
 import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
 
-const NONE_OPTION = {
-  key: "none",
-  name: "Cheklov yo'q",
-  description: "Mashg'ulotlar uchun alohida sog'liq cheklovi yo'q",
-  type: "none",
-};
-
 const getTone = (selected) => {
   if (selected?.type === "medical_condition") return ONBOARDING_ACCENTS.rose;
   if (selected?.type === "mobility_limitation") return ONBOARDING_ACCENTS.sky;
@@ -40,7 +33,19 @@ const Index = () => {
     queryProps: { queryKey: ["user", "onboarding", "health-constraints"] },
   });
   const constraints = get(data, "data.data", get(data, "data", []));
-  const options = React.useMemo(() => [NONE_OPTION, ...(constraints ?? [])], [constraints]);
+  const noneOption = React.useMemo(
+    () => ({
+      key: "none",
+      name: t("onboarding.healthConstraints.none"),
+      description: t("onboarding.healthConstraints.noneDescription"),
+      type: "none",
+    }),
+    [t],
+  );
+  const options = React.useMemo(
+    () => [noneOption, ...(constraints ?? [])],
+    [constraints, noneOption],
+  );
   const selectedOptions = filter(options, (item) => includes(healthConstraints, item.key));
   const hasSelection = selectedOptions.length > 0;
   const activeTone = getTone(selectedOptions[0]);
@@ -94,7 +99,7 @@ const Index = () => {
           transition={{ duration: 0.24 }}
         >
           <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground md:text-xs">
-            Health safety
+            {t("onboarding.healthConstraints.metaLabel")}
           </p>
           <p className="text-sm font-bold md:text-base">
             {hasSelection

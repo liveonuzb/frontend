@@ -1,6 +1,10 @@
 import { get, join, trim, some, includes } from "lodash";
 import { config } from "@/config.js";
-import { getUserOnboardingPath } from "@/lib/app-paths.js";
+import {
+  canAccessUserDashboard,
+  getPostOnboardingPath,
+  getUserOnboardingPath,
+} from "@/lib/app-paths.js";
 
 const normalizeAuthErrorMessage = (message) => {
   if (Array.isArray(message)) {
@@ -56,7 +60,21 @@ export const getPostAuthRoute = (user) => {
     return "/coach/dashboard";
   }
 
-  return get(user, "onboardingCompleted") ? "/user" : getUserOnboardingPath();
+  if (
+    get(user, "onboardingCompleted") &&
+    canAccessUserDashboard(
+      get(user, "onboardingFlowStatus"),
+      get(user, "onboardingCompleted"),
+    )
+  ) {
+    return "/user";
+  }
+
+  if (get(user, "onboardingCompleted")) {
+    return getPostOnboardingPath(user);
+  }
+
+  return getUserOnboardingPath();
 };
 
 export const getSocialAuthUrl = (provider) => {

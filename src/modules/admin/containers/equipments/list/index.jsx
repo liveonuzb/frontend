@@ -104,6 +104,8 @@ const Index = () => {
     searchOperator,
     statusFilter,
     statusOperator,
+    onboardingFilter,
+    onboardingOperator,
     imageFilter,
     imageOperator,
     translationFilter,
@@ -140,6 +142,13 @@ const Index = () => {
       statusOperator !== "is"
         ? { statusOp: statusOperator }
         : {}),
+      ...(onboardingFilter !== "all" ? { onboarding: onboardingFilter } : {}),
+      ...((onboardingFilter !== "all" ||
+        onboardingOperator === "empty" ||
+        onboardingOperator === "not_empty") &&
+      onboardingOperator !== "is"
+        ? { onboardingOp: onboardingOperator }
+        : {}),
       ...(imageFilter !== "all" ? { hasImage: imageFilter } : {}),
       ...((imageFilter !== "all" ||
         imageOperator === "empty" ||
@@ -166,6 +175,8 @@ const Index = () => {
       deferredSearch,
       imageFilter,
       imageOperator,
+      onboardingFilter,
+      onboardingOperator,
       pageSize,
       searchOperator,
       sortBy,
@@ -358,10 +369,25 @@ const Index = () => {
     [updateEquipment],
   );
 
+  const handleToggleOnboarding = React.useCallback(
+    async (equipment, checked) => {
+      try {
+        await updateEquipment(equipment.id, { isOnboarding: checked });
+        toast.success("Onboarding holati yangilandi");
+      } catch (error) {
+        toast.error(
+          getErrorMessage(error, "Onboarding holatini saqlab bo'lmadi"),
+        );
+      }
+    },
+    [updateEquipment],
+  );
+
   const columns = useColumns({
     activeLanguages,
     currentLanguage,
     isReorderEnabled,
+    handleToggleOnboarding,
     handleToggleStatus,
     openEditDrawer: (equipment) => navigate(`edit/${equipment.id}`),
     openTranslationsDrawer,

@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { get } from "lodash";
 import { toast } from "sonner";
 import { CheckCircle2Icon, Loader2Icon } from "lucide-react";
@@ -15,6 +16,7 @@ import { buildCoachOnboardingPayload } from "@/modules/onboarding/lib/coach-onbo
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 const Index = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { request: api } = useApi();
   const onboardingState = useOnboardingStore();
@@ -31,11 +33,11 @@ const Index = () => {
   const processFile = async (file) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      toast.error("Faqat rasm fayl yuklash mumkin");
+      toast.error(t("onboarding.coach.avatar.imageOnlyError"));
       return;
     }
     if (file.size > MAX_FILE_SIZE) {
-      toast.error("Rasm hajmi 5MB dan katta bo'lmasligi kerak");
+      toast.error(t("onboarding.coach.avatar.fileSizeError"));
       return;
     }
     setIsUploading(true);
@@ -48,10 +50,11 @@ const Index = () => {
       const uploadedUrl = response?.data?.data?.url ?? response?.data?.url ?? "";
       if (!uploadedUrl) throw new Error("Upload response invalid");
       setField("coachAvatar", uploadedUrl);
-      toast.success("Profil rasmi yuklandi");
+      toast.success(t("onboarding.coach.avatar.uploadSuccess"));
     } catch (error) {
       const message =
-        get(error, "response.data.message") || "Rasmni yuklab bo'lmadi";
+        get(error, "response.data.message") ||
+        t("onboarding.coach.avatar.uploadError");
       toast.error(Array.isArray(message) ? message[0] : message);
     } finally {
       setIsUploading(false);
@@ -83,7 +86,8 @@ const Index = () => {
       }, 2200);
     } catch (error) {
       const message =
-        get(error, "response.data.message") || "Onboardingni yakunlab bo'lmadi";
+        get(error, "response.data.message") ||
+        t("onboarding.coach.avatar.completeError");
       toast.error(Array.isArray(message) ? message[0] : message);
     } finally {
       setIsSubmitting(false);
@@ -101,12 +105,12 @@ const Index = () => {
       {isSubmitting || isProcessing ? (
         <>
           <Loader2Icon className="size-4 animate-spin mr-2" />
-          Saqlanmoqda...
+          {t("onboarding.saving")}
         </>
       ) : coachAvatar ? (
-        "Yakunlash"
+        t("onboarding.finish")
       ) : (
-        "O'tkazib yuborish"
+        t("onboarding.skip")
       )}
     </Button>,
   );
@@ -120,14 +124,16 @@ const Index = () => {
           </div>
         </div>
         <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold">Tabriklaymiz!</h2>
+          <h2 className="text-2xl font-bold">
+            {t("onboarding.coach.avatar.successTitle")}
+          </h2>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            Sizning coach profilingiz muvaffaqiyatli yaratildi.
+            {t("onboarding.coach.avatar.successDescription")}
           </p>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4">
           <Loader2Icon className="size-4 animate-spin" />
-          Coach paneliga yo&apos;naltirilmoqda...
+          {t("onboarding.coach.avatar.redirecting")}
         </div>
       </div>
     );
@@ -135,12 +141,12 @@ const Index = () => {
 
   return (
     <div className="flex-1 flex flex-col h-full pb-4">
-      <OnboardingQuestion question="Profil rasmingizni yuklang" />
+      <OnboardingQuestion question={t("onboarding.coach.avatar.question")} />
 
       <div className="flex flex-col items-center gap-6 w-full">
         <ImageUploadField
           value={coachAvatar}
-          alt="Profil rasmi"
+          alt={t("onboarding.coach.avatar.alt")}
           isUploading={isUploading}
           isDragging={isDragging}
           inputRef={fileInputRef}
@@ -153,16 +159,15 @@ const Index = () => {
           onDrop={handleDrop}
           onFileChange={handleFileChange}
           onClear={() => setField("coachAvatar", "")}
-          emptyLabel="Rasm yuklash"
-          idleHint="Rasmni bosing yoki tortib tashlang"
-          replaceHint="Rasmni o'zgartirish uchun bosing"
-          pickLabel="Rasm tanlash"
-          replaceLabel="Rasmni almashtirish"
+          emptyLabel={t("onboarding.coach.avatar.emptyLabel")}
+          idleHint={t("onboarding.coach.avatar.idleHint")}
+          replaceHint={t("onboarding.coach.avatar.replaceHint")}
+          pickLabel={t("onboarding.coach.avatar.pickLabel")}
+          replaceLabel={t("onboarding.coach.avatar.replaceLabel")}
         />
 
         <p className="text-xs text-muted-foreground text-center">
-          Marketplace kartasida ko&apos;rinadigan rasm. Ixtiyoriy — keyinroq
-          qo&apos;shishingiz mumkin.
+          {t("onboarding.coach.avatar.helper")}
         </p>
       </div>
     </div>

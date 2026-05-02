@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import OptionDrawerPicker from "@/components/option-drawer-picker";
 import MultipleDrawerPicker from "@/components/multiple-drawer-picker";
 import {
@@ -60,6 +61,7 @@ const foodSchema = z.object({
   fat: z.number().min(0),
   servingUnit: z.enum(["g", "ml", "dona", "qoshiq"]),
   servingSize: z.number().min(0),
+  isOnboarding: z.boolean().default(true),
 });
 
 const SERVING_UNITS = [
@@ -139,6 +141,7 @@ const FoodFormDrawer = ({
       fat: 0,
       servingUnit: "g",
       servingSize: 100,
+      isOnboarding: true,
     },
   });
 
@@ -415,6 +418,26 @@ const FoodFormDrawer = ({
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="isOnboarding"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between gap-4 rounded-2xl border px-4 py-3">
+                    <div>
+                      <FormLabel>Onboardingda ustuvor ko'rsatish</FormLabel>
+                      <p className="text-xs text-muted-foreground">
+                        Yoqilgan bo'lsa ovqat onboarding comboboxida birinchi chiqadi.
+                      </p>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={Boolean(field.value)}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
             </form>
           </Form>
         </DrawerBody>
@@ -455,6 +478,7 @@ const createFoodPayload = (form, uploadedImageId, language) => {
     fat: toNumber(form.fat) || 0,
     servingSize: toNumber(form.servingSize) || 0,
     servingUnit: form.servingUnit,
+    isOnboarding: form.isOnboarding !== false,
     translations: {
       [language]: localizedName,
     },
@@ -589,6 +613,7 @@ const CreateFoodPage = () => {
         fat: String(data.fat),
         servingSize: String(data.servingSize),
         servingUnit: data.servingUnit,
+        isOnboarding: data.isOnboarding,
         maxIntake: data.maxIntake !== undefined ? String(data.maxIntake) : "",
         translations: {},
         removeImage: false,

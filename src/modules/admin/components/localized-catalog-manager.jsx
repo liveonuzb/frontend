@@ -66,6 +66,7 @@ import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 const emptyForm = {
   name: "",
   isActive: true,
+  isOnboarding: true,
 };
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -79,7 +80,7 @@ const TEXT_OPERATORS = [
   "not_empty",
 ];
 const SELECT_OPERATORS = ["is", "is_not", "empty", "not_empty"];
-const SORT_FIELDS = ["orderKey", "name", "createdAt", "isActive"];
+const SORT_FIELDS = ["orderKey", "name", "createdAt", "isActive", "isOnboarding"];
 const SORT_DIRECTIONS = ["asc", "desc"];
 
 const resolveLabel = (translations, fallback, language) => {
@@ -140,6 +141,7 @@ const createFormFromItem = (item, language) => ({
     language,
   ),
   isActive: get(item, "isActive", true),
+  isOnboarding: get(item, "isOnboarding", true),
 });
 
 const LocalizedCatalogManager = ({
@@ -186,6 +188,14 @@ const LocalizedCatalogManager = ({
   );
   const [statusOperator, setStatusOperator] = useQueryState(
     "statusOp",
+    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+  );
+  const [onboardingFilter, setOnboardingFilter] = useQueryState(
+    "onboarding",
+    parseAsStringEnum(["all", "yes", "no"]).withDefault("all"),
+  );
+  const [onboardingOperator, setOnboardingOperator] = useQueryState(
+    "onboardingOp",
     parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
   );
   const [translationFilter, setTranslationFilter] = useQueryState(
@@ -291,6 +301,13 @@ const LocalizedCatalogManager = ({
       statusOperator !== "is"
         ? { statusOp: statusOperator }
         : {}),
+      ...(onboardingFilter !== "all" ? { onboarding: onboardingFilter } : {}),
+      ...((onboardingFilter !== "all" ||
+        onboardingOperator === "empty" ||
+        onboardingOperator === "not_empty") &&
+      onboardingOperator !== "is"
+        ? { onboardingOp: onboardingOperator }
+        : {}),
       ...(translationFilter !== "all"
         ? { translations: translationFilter }
         : {}),
@@ -310,6 +327,8 @@ const LocalizedCatalogManager = ({
       deferredSearch,
       pageSize,
       searchOperator,
+      onboardingFilter,
+      onboardingOperator,
       sortBy,
       sortDir,
       statusFilter,
@@ -407,9 +426,14 @@ const LocalizedCatalogManager = ({
         (statusFilter === "active"
           ? get(item, "isActive")
           : !get(item, "isActive"));
+      const matchesOnboarding =
+        onboardingFilter === "all" ||
+        (onboardingFilter === "yes"
+          ? get(item, "isOnboarding", true)
+          : !get(item, "isOnboarding", true));
 
       if (translationFilter === "all") {
-        return matchesSearch && matchesStatus;
+        return matchesSearch && matchesStatus && matchesOnboarding;
       }
 
       const filledCount = countFilledTranslations(
@@ -421,6 +445,7 @@ const LocalizedCatalogManager = ({
       return (
         matchesSearch &&
         matchesStatus &&
+        matchesOnboarding &&
         (translationFilter === "complete" ? isComplete : !isComplete)
       );
     });
@@ -429,6 +454,7 @@ const LocalizedCatalogManager = ({
     currentLanguage,
     deferredSearch,
     effectiveItems,
+    onboardingFilter,
     serverSide,
     statusFilter,
     translationFilter,
@@ -440,6 +466,8 @@ const LocalizedCatalogManager = ({
     searchOperator === "contains" &&
     statusFilter === "all" &&
     statusOperator === "is" &&
+    onboardingFilter === "all" &&
+    onboardingOperator === "is" &&
     translationFilter === "all" &&
     translationOperator === "is" &&
     sortBy === "orderKey" &&
@@ -479,6 +507,17 @@ const LocalizedCatalogManager = ({
           { value: "all", label: "Barcha statuslar" },
           { value: "active", label: "Faqat faol" },
           { value: "inactive", label: "Faqat nofaol" },
+        ],
+      },
+      {
+        label: "Onboarding",
+        key: "onboarding",
+        type: "select",
+        defaultOperator: "is",
+        options: [
+          { value: "all", label: "Barchasi" },
+          { value: "yes", label: "Onboarding uchun" },
+          { value: "no", label: "Qo'shimcha" },
         ],
       },
       {
@@ -532,6 +571,23 @@ const LocalizedCatalogManager = ({
     }
 
     if (
+      onboardingFilter !== "all" ||
+      onboardingOperator === "empty" ||
+      onboardingOperator === "not_empty"
+    ) {
+      next.push({
+        id: "onboarding",
+        field: "onboarding",
+        operator: onboardingOperator,
+        values:
+          onboardingOperator === "empty" ||
+          onboardingOperator === "not_empty"
+            ? []
+            : [onboardingFilter],
+      });
+    }
+
+    if (
       translationFilter !== "all" ||
       translationOperator === "empty" ||
       translationOperator === "not_empty"
@@ -551,6 +607,8 @@ const LocalizedCatalogManager = ({
   }, [
     search,
     searchOperator,
+    onboardingFilter,
+    onboardingOperator,
     statusFilter,
     statusOperator,
     translationFilter,
@@ -579,6 +637,16 @@ const LocalizedCatalogManager = ({
         "operator",
         "is",
       );
+      const nextOnboarding = get(
+        find(nextFilters, (f) => get(f, "field") === "onboarding"),
+        "values[0]",
+        "all",
+      );
+      const nextOnboardingOperator = get(
+        find(nextFilters, (f) => get(f, "field") === "onboarding"),
+        "operator",
+        "is",
+      );
       const nextTranslations = get(
         find(nextFilters, (f) => get(f, "field") === "translations"),
         "values[0]",
@@ -595,6 +663,8 @@ const LocalizedCatalogManager = ({
         void setSearchOperator(nextSearchOperator);
         void setStatusFilter(nextStatus);
         void setStatusOperator(nextStatusOperator);
+        void setOnboardingFilter(nextOnboarding);
+        void setOnboardingOperator(nextOnboardingOperator);
         void setTranslationFilter(nextTranslations);
         void setTranslationOperator(nextTranslationsOperator);
         void setPageQuery("1");
@@ -604,6 +674,8 @@ const LocalizedCatalogManager = ({
       setPageQuery,
       setSearch,
       setSearchOperator,
+      setOnboardingFilter,
+      setOnboardingOperator,
       setStatusFilter,
       setStatusOperator,
       setTranslationFilter,
@@ -662,6 +734,7 @@ const LocalizedCatalogManager = ({
     const payload = {
       name: trimmedName,
       isActive: form.isActive,
+      isOnboarding: form.isOnboarding,
       translations: {
         [currentLanguage]: trimmedName,
       },
@@ -769,6 +842,25 @@ const LocalizedCatalogManager = ({
     [canManageContent, effectiveRefetch, updateItem],
   );
 
+  const handleToggleOnboarding = React.useCallback(
+    async (item, checked) => {
+      if (!canManageContent) return;
+
+      try {
+        await updateItem(get(item, "id"), { isOnboarding: checked });
+        toast.success("Onboarding holati yangilandi");
+        if (effectiveRefetch) {
+          void effectiveRefetch();
+        }
+      } catch (error) {
+        toast.error(
+          getErrorMessage(error, "Onboarding holatini saqlab bo'lmadi"),
+        );
+      }
+    },
+    [canManageContent, effectiveRefetch, updateItem],
+  );
+
   const columns = React.useMemo(
     () => [
       {
@@ -857,6 +949,24 @@ const LocalizedCatalogManager = ({
         ),
       },
       {
+        accessorKey: "isOnboarding",
+        header: "Onboarding",
+        enableSorting: true,
+        size: 132,
+        meta: { skeleton: adminListSkeletons.status },
+        cell: (info) => (
+          <div className="flex justify-center">
+            <Switch
+              checked={Boolean(info.getValue())}
+              disabled={!canManageContent}
+              onCheckedChange={(checked) =>
+                void handleToggleOnboarding(get(info, "row.original"), checked)
+              }
+            />
+          </div>
+        ),
+      },
+      {
         id: "actions",
         header: "",
         enableSorting: false,
@@ -880,6 +990,7 @@ const LocalizedCatalogManager = ({
       canManageContent,
       currentLanguage,
       handleToggleStatus,
+      handleToggleOnboarding,
       isReorderEnabled,
       openEditDrawer,
       openTranslationsDrawer,
@@ -1119,6 +1230,24 @@ const LocalizedCatalogManager = ({
                       setForm((current) => ({
                         ...current,
                         isActive: checked,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="flex items-center justify-between rounded-2xl border px-4 py-3">
+                  <div>
+                    <Label>Onboarding</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Yoqilgan bo'lsa onboarding ro'yxatlarida birinchi chiqadi.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={get(form, "isOnboarding")}
+                    onCheckedChange={(checked) =>
+                      setForm((current) => ({
+                        ...current,
+                        isOnboarding: checked,
                       }))
                     }
                   />

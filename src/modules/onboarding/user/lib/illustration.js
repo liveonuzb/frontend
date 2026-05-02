@@ -85,8 +85,10 @@ export const calculateOnboardingBmi = (weightValue, heightValue) => {
   return weightNumber / (heightNumber / 100) ** 2;
 };
 
-export const getOnboardingBmiMeta = (weightValue, heightValue) => {
+export const getOnboardingBmiMeta = (weightValue, heightValue, t) => {
   const bmi = calculateOnboardingBmi(weightValue, heightValue);
+  const translate = (key, fallback) =>
+    typeof t === "function" ? t(key, { defaultValue: fallback }) : fallback;
 
   if (bmi === null) return null;
 
@@ -94,8 +96,11 @@ export const getOnboardingBmiMeta = (weightValue, heightValue) => {
     return {
       key: "underweight",
       bmi,
-      label: "Below range",
-      description: "You are still below the balanced BMI zone for your height.",
+      label: translate("onboarding.bmi.underweight.label", "Below range"),
+      description: translate(
+        "onboarding.bmi.underweight.description",
+        "You are still below the balanced BMI zone for your height.",
+      ),
       pageTint: "from-sky-500/12 via-cyan-400/8 to-transparent",
       border: "border-sky-500/20",
       badgeTone: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
@@ -110,8 +115,11 @@ export const getOnboardingBmiMeta = (weightValue, heightValue) => {
     return {
       key: "healthy",
       bmi,
-      label: "Healthy range",
-      description: "This sits inside the balanced BMI zone for your height.",
+      label: translate("onboarding.bmi.healthy.label", "Healthy range"),
+      description: translate(
+        "onboarding.bmi.healthy.description",
+        "This sits inside the balanced BMI zone for your height.",
+      ),
       pageTint: "from-emerald-500/12 via-lime-400/8 to-transparent",
       border: "border-emerald-500/20",
       badgeTone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
@@ -126,9 +134,11 @@ export const getOnboardingBmiMeta = (weightValue, heightValue) => {
     return {
       key: "above-range",
       bmi,
-      label: "Above range",
-      description:
+      label: translate("onboarding.bmi.aboveRange.label", "Above range"),
+      description: translate(
+        "onboarding.bmi.aboveRange.description",
         "This is a little above the balanced BMI zone for your height.",
+      ),
       pageTint: "from-amber-500/12 via-orange-400/8 to-transparent",
       border: "border-amber-500/20",
       badgeTone: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
@@ -142,8 +152,11 @@ export const getOnboardingBmiMeta = (weightValue, heightValue) => {
   return {
     key: "high-range",
     bmi,
-    label: "High range",
-    description: "This is well above the balanced BMI zone for your height.",
+    label: translate("onboarding.bmi.highRange.label", "High range"),
+    description: translate(
+      "onboarding.bmi.highRange.description",
+      "This is well above the balanced BMI zone for your height.",
+    ),
     pageTint: "from-rose-500/12 via-fuchsia-400/8 to-transparent",
     border: "border-rose-500/20",
     badgeTone: "bg-rose-500/10 text-rose-700 dark:text-rose-300",

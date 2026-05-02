@@ -109,6 +109,8 @@ const Index = () => {
     cuisineOp,
     statusFilter,
     statusOp,
+    onboardingFilter,
+    onboardingOp,
     hasImageFilter,
     hasImageOp,
     translationsFilter,
@@ -144,6 +146,10 @@ const Index = () => {
       ...(cuisineFilter !== "all" || cuisineOp !== "is" ? { cuisineOp } : {}),
       ...(statusFilter !== "all" ? { status: statusFilter } : {}),
       ...(statusFilter !== "all" || statusOp !== "is" ? { statusOp } : {}),
+      ...(onboardingFilter !== "all" ? { onboarding: onboardingFilter } : {}),
+      ...(onboardingFilter !== "all" || onboardingOp !== "is"
+        ? { onboardingOp }
+        : {}),
       ...(hasImageFilter !== "all" ? { hasImage: hasImageFilter } : {}),
       ...(hasImageFilter !== "all" || hasImageOp !== "is"
         ? { hasImageOp }
@@ -170,6 +176,8 @@ const Index = () => {
       duplicatesFilter,
       hasImageFilter,
       hasImageOp,
+      onboardingFilter,
+      onboardingOp,
       pageSize,
       searchOp,
       sortBy,
@@ -382,6 +390,7 @@ const Index = () => {
     currentPage,
     duplicatesFilter,
     hasImageFilter,
+    onboardingFilter,
     pageSize,
     search,
     sortBy,
@@ -509,6 +518,29 @@ const Index = () => {
         isArray(message)
           ? message.join(", ")
           : message || "Statusni o'zgartirib bo'lmadi",
+      );
+    }
+  };
+
+  const handleToggleOnboarding = async (food) => {
+    if (!canManageContent) return;
+
+    try {
+      await statusMutation.mutateAsync({
+        url: `/admin/foods/${food.id}`,
+        attributes: { isOnboarding: !food.isOnboarding },
+      });
+      toast.success(
+        food.isOnboarding
+          ? "Ovqat onboarding ro'yxatidan olindi"
+          : "Ovqat onboarding ro'yxatiga qo'shildi",
+      );
+    } catch (error) {
+      const message = error?.response?.data?.message;
+      toast.error(
+        isArray(message)
+          ? message.join(", ")
+          : message || "Onboarding holatini o'zgartirib bo'lmadi",
       );
     }
   };
@@ -649,6 +681,7 @@ const Index = () => {
     currentPage,
     pageSize,
     resolveLabel,
+    handleToggleOnboarding,
     handleToggleStatus,
     handleRestoreFood,
     openEditDrawer,

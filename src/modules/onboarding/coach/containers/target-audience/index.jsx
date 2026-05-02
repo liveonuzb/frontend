@@ -1,6 +1,7 @@
 import { map, includes, filter, isArray } from "lodash";
 import React from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { CheckIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useOnboardingStore } from "@/store";
@@ -10,15 +11,16 @@ import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import { cn } from "@/lib/utils";
 
 const TARGET_AUDIENCES = [
-  { value: "children", label: "Bolalar (6-12 yosh)", emoji: "\uD83D\uDC76" },
-  { value: "teenagers", label: "O'smirlar (13-17 yosh)", emoji: "\uD83E\uDDD1" },
-  { value: "beginners", label: "Boshlang'ich", emoji: "\uD83C\uDF31" },
-  { value: "intermediate", label: "O'rta daraja", emoji: "\uD83D\uDCC8" },
-  { value: "advanced", label: "Ilg'or/Professional", emoji: "\uD83C\uDFC6" },
-  { value: "seniors", label: "Kattalar (60+)", emoji: "\uD83E\uDDD3" },
+  { value: "children", i18nKey: "children", emoji: "\uD83D\uDC76" },
+  { value: "teenagers", i18nKey: "teenagers", emoji: "\uD83E\uDDD1" },
+  { value: "beginners", i18nKey: "beginners", emoji: "\uD83C\uDF31" },
+  { value: "intermediate", i18nKey: "intermediate", emoji: "\uD83D\uDCC8" },
+  { value: "advanced", i18nKey: "advanced", emoji: "\uD83C\uDFC6" },
+  { value: "seniors", i18nKey: "seniors", emoji: "\uD83E\uDDD3" },
 ];
 
 const Index = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { targetAudience, setField } = useOnboardingStore();
 
@@ -46,13 +48,15 @@ const Index = () => {
       disabled={selected.length === 0}
       onClick={handleNext}
     >
-      Davom etish
+      {t("onboarding.coach.common.continue")}
     </Button>,
   );
 
   return (
     <div className="flex-1 flex flex-col justify-center h-full pb-20">
-      <OnboardingQuestion question="Qaysi auditoriyaga xizmat ko'rsatasiz?" />
+      <OnboardingQuestion
+        question={t("onboarding.coach.targetAudience.question")}
+      />
 
       <div className="grid gap-3 w-full">
         {map(TARGET_AUDIENCES, (audience) => {
@@ -73,7 +77,11 @@ const Index = () => {
                 {audience.emoji}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="font-medium leading-none">{audience.label}</div>
+                <div className="font-medium leading-none">
+                  {t(
+                    `onboarding.coach.targetAudience.options.${audience.i18nKey}`,
+                  )}
+                </div>
               </div>
               {isSelected ? (
                 <span className="ml-auto inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
@@ -81,7 +89,7 @@ const Index = () => {
                 </span>
               ) : (
                 <span className="ml-auto text-xs text-muted-foreground">
-                  Tanlash
+                  {t("onboarding.coach.common.select")}
                 </span>
               )}
             </button>
@@ -91,7 +99,9 @@ const Index = () => {
 
       {selected.length > 0 ? (
         <p className="mt-4 text-center text-xs text-muted-foreground">
-          {selected.length} ta auditoriya tanlandi
+          {t("onboarding.coach.targetAudience.selectedCount", {
+            count: selected.length,
+          })}
         </p>
       ) : null}
     </div>

@@ -3,7 +3,7 @@ import { find, get, isEmpty, isEqual } from "lodash";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 
 const ITEMS_PER_PAGE = 10;
-const SORT_FIELDS = ["orderKey", "name", "createdAt", "isActive"];
+const SORT_FIELDS = ["orderKey", "name", "createdAt", "isActive", "isOnboarding"];
 const SORT_DIRECTIONS = ["asc", "desc"];
 const TEXT_OPERATORS = [
   "contains",
@@ -28,6 +28,14 @@ export const useEquipmentFilters = () => {
   );
   const [statusOperator, setStatusOperator] = useQueryState(
     "statusOp",
+    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+  );
+  const [onboardingFilter, setOnboardingFilter] = useQueryState(
+    "onboarding",
+    parseAsStringEnum(["all", "yes", "no"]).withDefault("all"),
+  );
+  const [onboardingOperator, setOnboardingOperator] = useQueryState(
+    "onboardingOp",
     parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
   );
   const [imageFilter, setImageFilter] = useQueryState(
@@ -64,6 +72,7 @@ export const useEquipmentFilters = () => {
   );
   const [visibleFilters, setVisibleFilters] = React.useState(() => ({
     status: statusFilter !== "all",
+    onboarding: onboardingFilter !== "all",
     hasImage: imageFilter !== "all",
     translations: translationFilter !== "all",
   }));
@@ -85,6 +94,8 @@ export const useEquipmentFilters = () => {
     searchOperator === "contains" &&
     statusFilter === "all" &&
     statusOperator === "is" &&
+    onboardingFilter === "all" &&
+    onboardingOperator === "is" &&
     imageFilter === "all" &&
     imageOperator === "is" &&
     translationFilter === "all" &&
@@ -111,6 +122,17 @@ export const useEquipmentFilters = () => {
           { value: "all", label: "Barcha statuslar" },
           { value: "active", label: "Faqat faol" },
           { value: "inactive", label: "Faqat nofaol" },
+        ],
+      },
+      {
+        label: "Onboarding",
+        key: "onboarding",
+        type: "select",
+        defaultOperator: "is",
+        options: [
+          { value: "all", label: "Barchasi" },
+          { value: "yes", label: "Onboarding uchun" },
+          { value: "no", label: "Qo'shimcha" },
         ],
       },
       {
@@ -176,6 +198,13 @@ export const useEquipmentFilters = () => {
     };
 
     pushSelect("status", statusFilter, statusOperator, visibleFilters.status, "all");
+    pushSelect(
+      "onboarding",
+      onboardingFilter,
+      onboardingOperator,
+      visibleFilters.onboarding,
+      "all",
+    );
     pushSelect("hasImage", imageFilter, imageOperator, visibleFilters.hasImage, "all");
     pushSelect(
       "translations",
@@ -189,6 +218,8 @@ export const useEquipmentFilters = () => {
   }, [
     imageFilter,
     imageOperator,
+    onboardingFilter,
+    onboardingOperator,
     search,
     searchOperator,
     statusFilter,
@@ -212,6 +243,10 @@ export const useEquipmentFilters = () => {
         get(find(nextFilters, (filter) => filter.field === "hasImage"), "values[0]", "all");
       const nextImageOperator =
         get(find(nextFilters, (filter) => filter.field === "hasImage"), "operator", "is");
+      const nextOnboarding =
+        get(find(nextFilters, (filter) => filter.field === "onboarding"), "values[0]", "all");
+      const nextOnboardingOperator =
+        get(find(nextFilters, (filter) => filter.field === "onboarding"), "operator", "is");
       const nextTranslations =
         get(find(nextFilters, (filter) => filter.field === "translations"), "values[0]", "all");
       const nextTranslationsOperator =
@@ -220,6 +255,7 @@ export const useEquipmentFilters = () => {
       React.startTransition(() => {
         setVisibleFilters({
           status: Boolean(find(nextFilters, (filter) => filter.field === "status")),
+          onboarding: Boolean(find(nextFilters, (filter) => filter.field === "onboarding")),
           hasImage: Boolean(find(nextFilters, (filter) => filter.field === "hasImage")),
           translations: Boolean(find(nextFilters, (filter) => filter.field === "translations")),
         });
@@ -227,6 +263,8 @@ export const useEquipmentFilters = () => {
         void setSearchOperator(nextSearchOperator);
         void setStatusFilter(nextStatus);
         void setStatusOperator(nextStatusOperator);
+        void setOnboardingFilter(nextOnboarding);
+        void setOnboardingOperator(nextOnboardingOperator);
         void setImageFilter(nextImage);
         void setImageOperator(nextImageOperator);
         void setTranslationFilter(nextTranslations);
@@ -237,6 +275,8 @@ export const useEquipmentFilters = () => {
     [
       setImageFilter,
       setImageOperator,
+      setOnboardingFilter,
+      setOnboardingOperator,
       setPageQuery,
       setSearch,
       setSearchOperator,
@@ -274,6 +314,8 @@ export const useEquipmentFilters = () => {
     searchOperator,
     statusFilter,
     statusOperator,
+    onboardingFilter,
+    onboardingOperator,
     imageFilter,
     imageOperator,
     translationFilter,

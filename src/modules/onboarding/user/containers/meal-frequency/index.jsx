@@ -2,6 +2,7 @@ import { map } from "lodash";
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useOnboardingStore } from "@/store";
@@ -14,46 +15,48 @@ import { getOnboardingTierIllustration } from "../../lib/illustration.js";
 import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
 import useOnboardingBase from "@/hooks/app/use-onboarding-base";
 
-const options = [
+const getOptions = (t) => [
   {
     value: "2",
-    label: "2 meals",
-    title: "Light structure",
-    description: "Breakfast and dinner.",
+    label: t("onboarding.mealFrequency.options.2.label"),
+    title: t("onboarding.mealFrequency.options.2.title"),
+    description: t("onboarding.mealFrequency.options.2.description"),
     tier: 1,
     tone: ONBOARDING_ACCENTS.amber,
   },
   {
     value: "3",
-    label: "3 meals",
-    title: "Classic rhythm",
-    description: "Breakfast, lunch and dinner.",
+    label: t("onboarding.mealFrequency.options.3.label"),
+    title: t("onboarding.mealFrequency.options.3.title"),
+    description: t("onboarding.mealFrequency.options.3.description"),
     tier: 2,
     tone: ONBOARDING_ACCENTS.green,
     recommended: true,
   },
   {
     value: "4",
-    label: "4 meals",
-    title: "Steady fuel",
-    description: "Three meals and one snack.",
+    label: t("onboarding.mealFrequency.options.4.label"),
+    title: t("onboarding.mealFrequency.options.4.title"),
+    description: t("onboarding.mealFrequency.options.4.description"),
     tier: 3,
     tone: ONBOARDING_ACCENTS.sky,
   },
   {
     value: "5",
-    label: "5+ meals",
-    title: "Frequent fuel",
-    description: "Many smaller meals during the day.",
+    label: t("onboarding.mealFrequency.options.5.label"),
+    title: t("onboarding.mealFrequency.options.5.title"),
+    description: t("onboarding.mealFrequency.options.5.description"),
     tier: 4,
     tone: ONBOARDING_ACCENTS.blue,
   },
 ];
 
 const Index = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { mealFrequency, setField, gender, age } = useOnboardingStore();
   const base = useOnboardingBase();
+  const options = React.useMemo(() => getOptions(t), [t]);
 
   useOnboardingAutoSave("user", "meal-frequency");
   const selectedOption =
@@ -89,7 +92,7 @@ const Index = () => {
       disabled={!hasSelection}
       onClick={handleContinue}
     >
-      Next <ChevronRight />
+      {t("onboarding.next")} <ChevronRight />
     </Button>,
   );
 
@@ -98,7 +101,7 @@ const Index = () => {
       <PageAura tone={selectedOption.tone} />
 
       <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
-        <OnboardingQuestion question="How often do you eat?" />
+        <OnboardingQuestion question={t("onboarding.mealFrequency.question")} />
 
         <div className="relative mb-3 flex min-h-[140px] flex-1 items-end justify-center overflow-hidden md:mb-4 md:min-h-[260px]">
           <AnimatePresence mode="wait">
@@ -130,7 +133,7 @@ const Index = () => {
             transition={{ duration: 0.24 }}
           >
             <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground md:text-xs">
-              Meal rhythm
+              {t("onboarding.mealFrequency.metaLabel")}
             </p>
             <p className="text-sm font-bold md:text-lg">
               {selectedOption.title}
@@ -169,7 +172,7 @@ const Index = () => {
                   </span>
                   {option.recommended ? (
                     <span className="hidden rounded-full border border-border/60 bg-background/75 px-2 py-1 text-[10px] font-semibold text-muted-foreground md:inline">
-                      Recommended
+                      {t("onboarding.recommended")}
                     </span>
                   ) : null}
                 </div>

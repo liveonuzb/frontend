@@ -1,6 +1,7 @@
 import { filter, includes, isArray , map } from "lodash";
 import React from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { Globe2Icon, LanguagesIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useOnboardingStore } from "@/store";
@@ -10,6 +11,7 @@ import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-q
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 
 const Index = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { coachLanguages, setField } = useOnboardingStore();
   const { languages } = useAppLanguages();
@@ -44,13 +46,15 @@ const Index = () => {
       size="lg"
       onClick={handleNext}
     >
-      {selectedLanguages.length > 0 ? "Davom etish" : "O'tkazib yuborish"}
+      {selectedLanguages.length > 0
+        ? t("onboarding.coach.common.continue")
+        : t("onboarding.skip")}
     </Button>,
   );
 
   return (
     <div className="flex-1 flex flex-col justify-center h-full pb-20">
-      <OnboardingQuestion question="Qaysi tillarda ishlaysiz?" />
+      <OnboardingQuestion question={t("onboarding.coach.languages.question")} />
 
       <div className="space-y-6 w-full">
         <div className="rounded-3xl border border-border/60 bg-card p-4">
@@ -74,7 +78,7 @@ const Index = () => {
             })}
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            Kamida bitta til tanlang.
+            {t("onboarding.coach.languages.helper")}
           </p>
         </div>
 
@@ -83,10 +87,11 @@ const Index = () => {
             <LanguagesIcon className="size-5 text-primary" />
           </div>
           <div className="space-y-1 text-left">
-            <div className="font-bold text-sm">Ko&apos;proq userga chiqing</div>
+            <div className="font-bold text-sm">
+              {t("onboarding.coach.languages.reachTitle")}
+            </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Tillar bo&apos;yicha filter ishlaydi, mos userlar profilingizni
-              tezroq topadi.
+              {t("onboarding.coach.languages.reachDescription")}
             </p>
           </div>
         </div>
@@ -95,10 +100,11 @@ const Index = () => {
             <Globe2Icon className="size-5 text-primary" />
           </div>
           <div className="space-y-1 text-left">
-            <div className="font-bold text-sm">Marketplace uchun signal</div>
+            <div className="font-bold text-sm">
+              {t("onboarding.coach.languages.marketplaceTitle")}
+            </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              To&apos;g&apos;ri til tanlovi sizning ko&apos;rinishingizni
-              oshiradi.
+              {t("onboarding.coach.languages.marketplaceDescription")}
             </p>
           </div>
         </div>

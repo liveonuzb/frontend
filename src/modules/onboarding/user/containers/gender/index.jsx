@@ -2,6 +2,7 @@ import { map } from "lodash";
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useOnboardingStore } from "@/store";
@@ -14,6 +15,7 @@ import { getGenderTone, ONBOARDING_TONES } from "../../lib/tones.js";
 import useAppModeTheme from "@/hooks/app/use-app-mode-theme";
 
 const Index = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { gender, setField } = useOnboardingStore();
   const modeTheme = useAppModeTheme();
@@ -24,14 +26,14 @@ const Index = () => {
   const genders = [
     {
       value: "male",
-      label: "Moto moto",
-      description: "Masculine plan visuals and body guidance.",
+      label: t("onboarding.gender.male"),
+      description: t("onboarding.gender.maleDescription"),
       image: `${base}/male-2.webp`,
     },
     {
       value: "female",
-      label: "Gloria",
-      description: "Feminine plan visuals and body guidance.",
+      label: t("onboarding.gender.female"),
+      description: t("onboarding.gender.femaleDescription"),
       image: `${base}/female-2.webp`,
     },
   ];
@@ -66,7 +68,7 @@ const Index = () => {
       disabled={!gender}
       onClick={handleContinue}
     >
-      Next <ChevronRight />
+      {t("onboarding.next")} <ChevronRight />
     </Button>,
   );
 
@@ -75,7 +77,7 @@ const Index = () => {
       <PageAura tone={tone} />
 
       <div className="relative z-10 flex w-full flex-1 flex-col justify-center md:mx-auto md:max-w-4xl">
-        <OnboardingQuestion question="What's your gender?" />
+        <OnboardingQuestion question={t("onboarding.gender.question")} />
 
         <div className="relative mb-4 flex min-h-[220px] items-end justify-center overflow-hidden md:min-h-[320px]">
           <AnimatePresence mode="wait">
@@ -90,7 +92,7 @@ const Index = () => {
               <img
                 loading="lazy"
                 src={heroImage}
-                alt={selectedGender?.label || "Onboarding illustration"}
+                alt={selectedGender?.label || t("onboarding.illustrationAlt")}
                 className="h-[240px] max-h-[240px] object-contain md:max-h-[340px]"
               />
             </motion.div>
@@ -108,7 +110,7 @@ const Index = () => {
               transition={{ duration: 0.24 }}
             >
               <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground md:text-xs">
-                Gender
+                {t("onboarding.gender.metaLabel")}
               </p>
               <p className="text-base font-bold md:text-lg">
                 {selectedGender.label}

@@ -1,6 +1,7 @@
 import { map } from "lodash";
 import React from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { SparklesIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useOnboardingStore } from "@/store";
@@ -9,32 +10,36 @@ import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-q
 import CoachOptionCard from "@/modules/onboarding/components/coach-option-card.jsx";
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 
-const experienceOptions = [
+const getExperienceOptions = (t) => [
   {
     value: "beginner",
-    label: "1 yildan kam",
-    description: "Yangi boshlayotgan yoki kam sonli mijozlar bilan ishlagan.",
+    label: t("onboarding.coach.experience.options.beginner.label"),
+    description: t("onboarding.coach.experience.options.beginner.description"),
   },
   {
     value: "intermediate",
-    label: "1-3 yil",
-    description: "Barqaror tajriba va amaliy coaching jarayonlari bor.",
+    label: t("onboarding.coach.experience.options.intermediate.label"),
+    description: t(
+      "onboarding.coach.experience.options.intermediate.description",
+    ),
   },
   {
     value: "advanced",
-    label: "3-5 yil",
-    description: "Natijador klientlar va shakllangan metodika mavjud.",
+    label: t("onboarding.coach.experience.options.advanced.label"),
+    description: t("onboarding.coach.experience.options.advanced.description"),
   },
   {
     value: "expert",
-    label: "5+ yil",
-    description: "Keng tajriba, ko'plab natijalar va chuqur ekspertiza.",
+    label: t("onboarding.coach.experience.options.expert.label"),
+    description: t("onboarding.coach.experience.options.expert.description"),
   },
 ];
 
 const Index = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { experience, setField } = useOnboardingStore();
+  const experienceOptions = React.useMemo(() => getExperienceOptions(t), [t]);
 
   useOnboardingAutoSave("coach", "coach/experience");
 
@@ -50,13 +55,13 @@ const Index = () => {
       disabled={!experience}
       onClick={handleNext}
     >
-      Next {" >"}
+      {t("onboarding.next")}
     </Button>,
   );
 
   return (
     <div className="flex-1 flex flex-col justify-center h-full pb-20">
-      <OnboardingQuestion question="Tajribangizni belgilang" />
+      <OnboardingQuestion question={t("onboarding.coach.experience.question")} />
 
       <div className="grid gap-3 w-full">
         {map(experienceOptions, (option) => (
@@ -77,11 +82,10 @@ const Index = () => {
         </div>
         <div className="space-y-1 text-left">
           <div className="font-bold text-sm">
-            Profilingiz darhol tayyor bo'ladi
+            {t("onboarding.coach.experience.infoTitle")}
           </div>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Tajriba darajasi coach kabinetida va mijozlarga ko'rinadigan profile
-            summaryda ishlatiladi.
+            {t("onboarding.coach.experience.infoDescription")}
           </p>
         </div>
       </div>

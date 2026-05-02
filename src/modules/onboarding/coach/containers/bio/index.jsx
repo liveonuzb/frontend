@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { FileTextIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -11,6 +12,7 @@ import { cn } from "@/lib/utils.js";
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 
 const Index = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { coachBio, setField } = useOnboardingStore();
 
@@ -30,25 +32,25 @@ const Index = () => {
       size="lg"
       onClick={handleNext}
     >
-      {isBioValid ? "Davom etish" : "O'tkazib yuborish"}
+      {isBioValid ? t("onboarding.coach.common.continue") : t("onboarding.skip")}
     </Button>,
   );
 
   return (
     <div className="flex-1 flex flex-col justify-center h-full pb-20">
-      <OnboardingQuestion question="Coach bio yozing" />
+      <OnboardingQuestion question={t("onboarding.coach.bio.question")} />
 
       <div className="space-y-6 w-full">
         <Field>
-          <FieldLabel>Bio</FieldLabel>
+          <FieldLabel>{t("onboarding.coach.bio.label")}</FieldLabel>
           <Textarea
-            placeholder="Men sog'lom ovqatlanish va vazn boshqaruvi bo'yicha murabbiyman. Mijozlarimga reja, nazorat va kundalik odatlarni shakllantirishda yordam beraman."
+            placeholder={t("onboarding.coach.bio.placeholder")}
             rows={8}
             value={coachBio}
             onChange={(event) => setField("coachBio", event.target.value)}
           />
           <div className="mt-3 flex items-center justify-between text-xs font-medium text-muted-foreground px-1">
-            <span>Kamida 10 ta belgi kiriting.</span>
+            <span>{t("onboarding.coach.bio.minHint")}</span>
             <span className={cn(isBioValid ? "text-primary" : "")}>
               {bioLength}/500
             </span>
@@ -61,11 +63,10 @@ const Index = () => {
           </div>
           <div className="space-y-1 text-left">
             <div className="font-bold text-sm">
-              Qisqa, aniq va ishonchli yozing
+              {t("onboarding.coach.bio.infoTitle")}
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Tajriba, asosiy yo&apos;nalish va clientlarga bera oladigan
-              natijangizni 2-3 gapda yozish kifoya.
+              {t("onboarding.coach.bio.infoDescription")}
             </p>
           </div>
         </div>

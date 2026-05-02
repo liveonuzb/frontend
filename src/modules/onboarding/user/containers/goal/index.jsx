@@ -2,6 +2,7 @@ import { get, includes, isArray, map } from "lodash";
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { useGetQuery } from "@/hooks/api";
 import { cn } from "@/lib/utils";
@@ -12,21 +13,21 @@ import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-q
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import useOnboardingBase from "@/hooks/app/use-onboarding-base";
 
-const DEFAULT_GOALS = [
+const getDefaultGoals = (t) => [
   {
     key: "lose",
-    name: "Lose weight",
-    description: "Burn fat and get leaner with a steady calorie deficit.",
+    name: t("onboarding.goal.lose"),
+    description: t("onboarding.goal.loseDescription"),
   },
   {
     key: "maintain",
-    name: "Maintain weight",
-    description: "Keep your current shape while building consistent habits.",
+    name: t("onboarding.goal.maintain"),
+    description: t("onboarding.goal.maintainDescription"),
   },
   {
     key: "gain",
-    name: "Gain weight",
-    description: "Add quality mass and strength with a stronger intake.",
+    name: t("onboarding.goal.gain"),
+    description: t("onboarding.goal.gainDescription"),
   },
 ];
 
@@ -61,6 +62,7 @@ const goalToneByKey = (base) => ({
 });
 
 const Index = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { goal, weightGoal, setFields } = useOnboardingStore();
   const base = useOnboardingBase();
@@ -73,13 +75,14 @@ const Index = () => {
   });
   const apiGoals = get(data, "data.data", get(data, "data", []));
   const toneMap = React.useMemo(() => goalToneByKey(base), [base]);
+  const defaultGoals = React.useMemo(() => getDefaultGoals(t), [t]);
   const goals = React.useMemo(() => {
     const source =
-      isArray(apiGoals) && apiGoals.length ? apiGoals : DEFAULT_GOALS;
+      isArray(apiGoals) && apiGoals.length ? apiGoals : defaultGoals;
     const weightGoals = source.filter(
       (item) => (item.goalType || "weight") === "weight",
     );
-    return (weightGoals.length ? weightGoals : DEFAULT_GOALS).map(
+    return (weightGoals.length ? weightGoals : defaultGoals).map(
       (item, index) => {
         const tone =
           toneMap[item.key] ??
@@ -96,7 +99,7 @@ const Index = () => {
         };
       },
     );
-  }, [apiGoals, toneMap]);
+  }, [apiGoals, defaultGoals, toneMap]);
 
   const selectedGoal =
     goals.find((item) => item.value === weightGoal) ??
@@ -132,7 +135,7 @@ const Index = () => {
       disabled={!hasSelection}
       onClick={handleContinue}
     >
-      Next <ChevronRight />
+      {t("onboarding.next")} <ChevronRight />
     </Button>,
   );
 
@@ -172,7 +175,7 @@ const Index = () => {
       </div>
 
       <div className="relative z-10 flex w-full flex-1 flex-col justify-center md:mx-auto md:max-w-4xl">
-        <OnboardingQuestion question="What's your goal?" />
+        <OnboardingQuestion question={t("onboarding.goal.question")} />
 
         <div className="relative mb-4 flex min-h-[210px] flex-[0.95] items-end justify-center overflow-hidden sm:min-h-[240px] md:mb-6 md:min-h-[340px] md:flex-[0.9]">
           <AnimatePresence mode="wait">

@@ -147,6 +147,7 @@ const EditEquipment = () => {
   const [form, setForm] = React.useState({
     name: "",
     isActive: true,
+    isOnboarding: true,
     image: null,
     removeImage: false,
   });
@@ -160,6 +161,7 @@ const EditEquipment = () => {
           currentLanguage,
         ),
         isActive: get(equipment, "isActive", true),
+        isOnboarding: get(equipment, "isOnboarding", true),
         image: null,
         removeImage: false,
       });
@@ -185,6 +187,7 @@ const EditEquipment = () => {
         const formData = new FormData();
         formData.append("name", trimmedName);
         formData.append("isActive", String(form.isActive));
+        formData.append("isOnboarding", String(form.isOnboarding));
         formData.append("translations", JSON.stringify(translations));
         if (form.image) formData.append("image", form.image);
         if (form.removeImage) formData.append("removeImage", "true");
@@ -200,6 +203,7 @@ const EditEquipment = () => {
           attributes: {
             name: trimmedName,
             isActive: form.isActive,
+            isOnboarding: form.isOnboarding,
             translations,
           },
         });
@@ -319,6 +323,20 @@ const EditEquipment = () => {
                 checked={form.isActive}
                 onCheckedChange={(checked) =>
                   setForm((current) => ({ ...current, isActive: checked }))
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-muted/15 px-4 py-3">
+              <div>
+                <p className="text-sm font-medium">Onboarding</p>
+                <p className="text-xs text-muted-foreground">
+                  Yoqilgan bo'lsa onboarding jihoz ro'yxatida birinchi chiqadi.
+                </p>
+              </div>
+              <Switch
+                checked={form.isOnboarding}
+                onCheckedChange={(checked) =>
+                  setForm((current) => ({ ...current, isOnboarding: checked }))
                 }
               />
             </div>

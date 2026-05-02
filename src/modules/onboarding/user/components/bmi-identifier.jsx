@@ -7,6 +7,7 @@ export const BmiIdentifier = ({
   heightValue,
   title = "BMI",
   note = null,
+  heightUnitLabel = "cm",
 }) => {
   if (!meta) return null;
 
@@ -45,7 +46,7 @@ export const BmiIdentifier = ({
         </div>
         {hasHeight ? (
           <span className="shrink-0 rounded-full border border-border/70 bg-background/70 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-            {numericHeight} cm
+            {numericHeight} {heightUnitLabel}
           </span>
         ) : null}
       </div>

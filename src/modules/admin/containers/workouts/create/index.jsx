@@ -58,6 +58,7 @@ import {
 const emptyForm = {
   name: "",
   isActive: true,
+  isOnboarding: true,
   trackingType: WORKOUT_TRACKING_TYPES.REPS_WEIGHT,
   defaultSets: "3",
   defaultReps: "12",
@@ -225,6 +226,7 @@ const createWorkoutPayload = (form, language) => {
     secondaryMuscles: cleanArray(form.secondaryMuscles),
     instructions: cleanArray(form.instructions),
     isActive: form.isActive,
+    isOnboarding: form.isOnboarding !== false,
     translations: {
       ...form.translations,
       [language]: localizedName,
@@ -495,6 +497,23 @@ const CreateWorkoutPage = () => {
                   setForm((current) => ({
                     ...current,
                     isActive: checked,
+                  }))
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-2xl border px-4 py-3">
+              <div>
+                <Label>Onboarding</Label>
+                <p className="text-xs text-muted-foreground">
+                  Yoqilgan bo'lsa onboarding mashq ro'yxatlarida birinchi chiqadi.
+                </p>
+              </div>
+              <Switch
+                checked={form.isOnboarding}
+                onCheckedChange={(checked) =>
+                  setForm((current) => ({
+                    ...current,
+                    isOnboarding: checked,
                   }))
                 }
               />

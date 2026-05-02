@@ -1,6 +1,7 @@
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useOnboardingStore } from "@/store";
@@ -14,30 +15,31 @@ import { getOnboardingPersonIllustration } from "../../lib/illustration.js";
 import { getAgeTone } from "../../lib/tones.js";
 import useOnboardingBase from "@/hooks/app/use-onboarding-base";
 
-const getAgeProfile = (ageValue) => {
+const getAgeProfile = (ageValue, t) => {
   const ageNumber = Number(ageValue);
 
   if (!Number.isFinite(ageNumber) || ageNumber <= 24) {
     return {
-      title: "Young energy",
-      note: "We can push a bit more on pace and recovery.",
+      title: t("onboarding.age.profiles.young.title"),
+      note: t("onboarding.age.profiles.young.note"),
     };
   }
 
   if (ageNumber >= 50) {
     return {
-      title: "Mature rhythm",
-      note: "Consistency and recovery will matter more.",
+      title: t("onboarding.age.profiles.mature.title"),
+      note: t("onboarding.age.profiles.mature.note"),
     };
   }
 
   return {
-    title: "Balanced phase",
-    note: "Your plan will blend progress with sustainable habits.",
+    title: t("onboarding.age.profiles.balanced.title"),
+    note: t("onboarding.age.profiles.balanced.note"),
   };
 };
 
 const Index = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { age, setField, gender, firstName } = useOnboardingStore();
   const base = useOnboardingBase();
@@ -51,7 +53,7 @@ const Index = () => {
     base,
   );
   const tone = getAgeTone(currentAge);
-  const profile = getAgeProfile(currentAge);
+  const profile = getAgeProfile(currentAge, t);
 
   const handleContinue = () => {
     setField("age", currentAge);
@@ -68,7 +70,7 @@ const Index = () => {
       size="lg"
       onClick={handleContinue}
     >
-      Next <ChevronRight />
+      {t("onboarding.next")} <ChevronRight />
     </Button>,
   );
 
@@ -78,7 +80,9 @@ const Index = () => {
       <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
         <OnboardingQuestion
           question={
-            firstName ? `${firstName} how old are you?` : "What's your age?"
+            firstName
+              ? t("onboarding.age.questionWithName", { name: firstName })
+              : t("onboarding.age.question")
           }
         />
 
@@ -92,7 +96,7 @@ const Index = () => {
           transition={{ duration: 0.24 }}
         >
           <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground md:text-xs">
-            Age
+            {t("onboarding.age.metaLabel")}
           </p>
           <p className="mt-0.5 text-sm font-bold md:text-base">
             {profile.title}
@@ -113,7 +117,7 @@ const Index = () => {
                 loading="lazy"
                 src={illustration.src}
                 className="h-[380px] w-full max-w-[320px] object-contain"
-                alt={illustration.alt}
+                alt={t("onboarding.illustrationAlt")}
               />
             </motion.div>
           </AnimatePresence>
@@ -126,7 +130,7 @@ const Index = () => {
               step={1}
               majorStep={5}
               labelStep={10}
-              unit="yrs"
+              unit={t("onboarding.age.unit")}
               orientation="vertical"
               verticalHeight={240}
             />

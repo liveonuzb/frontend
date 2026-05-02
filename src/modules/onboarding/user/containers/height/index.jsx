@@ -1,6 +1,7 @@
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useOnboardingStore } from "@/store";
@@ -16,30 +17,31 @@ import {
 } from "../../lib/illustration.js";
 import { getHeightTone } from "../../lib/tones.js";
 
-const getHeightProfile = (heightValue) => {
+const getHeightProfile = (heightValue, t) => {
   const heightNumber = Number(heightValue);
 
   if (!Number.isFinite(heightNumber) || heightNumber < 160) {
     return {
-      title: "Compact frame",
-      note: "Targets will be calibrated to a shorter height profile.",
+      title: t("onboarding.height.profiles.compact.title"),
+      note: t("onboarding.height.profiles.compact.note"),
     };
   }
 
   if (heightNumber < 180) {
     return {
-      title: "Balanced frame",
-      note: "This sits around the center of our height planning range.",
+      title: t("onboarding.height.profiles.balanced.title"),
+      note: t("onboarding.height.profiles.balanced.note"),
     };
   }
 
   return {
-    title: "Tall frame",
-    note: "Energy and weight targets will scale for a taller body frame.",
+    title: t("onboarding.height.profiles.tall.title"),
+    note: t("onboarding.height.profiles.tall.note"),
   };
 };
 
 const Index = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { height, setField, gender, age, firstName } = useOnboardingStore();
 
@@ -52,7 +54,7 @@ const Index = () => {
     currentHeight,
   );
   const tone = getHeightTone(currentHeight);
-  const profile = getHeightProfile(currentHeight);
+  const profile = getHeightProfile(currentHeight, t);
   const illustrationHeight = getOnboardingIllustrationHeight(currentHeight);
 
   const handleContinue = () => {
@@ -69,7 +71,7 @@ const Index = () => {
       )}
       onClick={handleContinue}
     >
-      Next <ChevronRight />
+      {t("onboarding.next")} <ChevronRight />
     </Button>,
   );
 
@@ -80,7 +82,9 @@ const Index = () => {
       <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto">
         <OnboardingQuestion
           question={
-            firstName ? `${firstName} how tall are you?` : "How tall are you?"
+            firstName
+              ? t("onboarding.height.questionWithName", { name: firstName })
+              : t("onboarding.height.question")
           }
         />
 
@@ -94,7 +98,7 @@ const Index = () => {
           transition={{ duration: 0.24 }}
         >
           <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground md:text-xs">
-            Height
+            {t("onboarding.height.metaLabel")}
           </p>
           <p className="mt-0.5 text-sm font-bold md:text-base">
             {profile.title}
@@ -114,7 +118,7 @@ const Index = () => {
               <img
                 loading="lazy"
                 src={illustration.src}
-                alt={illustration.alt}
+                alt={t("onboarding.illustrationAlt")}
                 className="max-h-full object-contain transition-all duration-300 max-w-[240px] md:max-w-[300px]"
                 style={{ height: `${illustrationHeight * 0.9}px` }}
               />

@@ -36,6 +36,10 @@ const initialState = {
   roles: defaultRoles,
   activeRole: null,
   onboardingCompleted: false,
+  onboardingFlowStatus: null,
+  onboardingNextPath: null,
+  latestPersonalizationJobId: null,
+  latestPlanGenerationJobId: null,
   pendingVerification: null,
   passwordReset: null,
   isHydrated: false,
@@ -90,6 +94,12 @@ const useAuthStore = create()(
           roles: nextRoles,
           activeRole: getNextActiveRole(nextRoles, currentRole),
           onboardingCompleted: Boolean(authData?.user?.onboardingCompleted),
+          onboardingFlowStatus: authData?.user?.onboardingFlowStatus ?? null,
+          onboardingNextPath: authData?.user?.onboardingNextPath ?? null,
+          latestPersonalizationJobId:
+            authData?.user?.latestPersonalizationJobId ?? null,
+          latestPlanGenerationJobId:
+            authData?.user?.latestPlanGenerationJobId ?? null,
           pendingVerification: null,
           passwordReset: null,
         }));
@@ -106,6 +116,11 @@ const useAuthStore = create()(
           roles: nextRoles,
           activeRole: getNextActiveRole(nextRoles, get().activeRole),
           onboardingCompleted: Boolean(userData?.onboardingCompleted),
+          onboardingFlowStatus: userData?.onboardingFlowStatus ?? null,
+          onboardingNextPath: userData?.onboardingNextPath ?? null,
+          latestPersonalizationJobId:
+            userData?.latestPersonalizationJobId ?? null,
+          latestPlanGenerationJobId: userData?.latestPlanGenerationJobId ?? null,
         }));
       },
 
@@ -133,6 +148,48 @@ const useAuthStore = create()(
             ? {
                 ...state.user,
                 onboardingCompleted: completed,
+              }
+            : state.user,
+        }));
+      },
+
+      setOnboardingFlow: (payload = {}) => {
+        set((state) => ({
+          onboardingFlowStatus:
+            payload.onboardingFlowStatus ??
+            payload.flowStatus ??
+            payload.status ??
+            state.onboardingFlowStatus,
+          onboardingNextPath:
+            payload.onboardingNextPath ?? payload.nextPath ?? state.onboardingNextPath,
+          latestPersonalizationJobId:
+            payload.latestPersonalizationJobId ??
+            payload.personalizationJobId ??
+            state.latestPersonalizationJobId,
+          latestPlanGenerationJobId:
+            payload.latestPlanGenerationJobId ??
+            payload.planGenerationJobId ??
+            state.latestPlanGenerationJobId,
+          user: state.user
+            ? {
+                ...state.user,
+                onboardingFlowStatus:
+                  payload.onboardingFlowStatus ??
+                  payload.flowStatus ??
+                  payload.status ??
+                  state.user.onboardingFlowStatus,
+                onboardingNextPath:
+                  payload.onboardingNextPath ??
+                  payload.nextPath ??
+                  state.user.onboardingNextPath,
+                latestPersonalizationJobId:
+                  payload.latestPersonalizationJobId ??
+                  payload.personalizationJobId ??
+                  state.user.latestPersonalizationJobId,
+                latestPlanGenerationJobId:
+                  payload.latestPlanGenerationJobId ??
+                  payload.planGenerationJobId ??
+                  state.user.latestPlanGenerationJobId,
               }
             : state.user,
         }));

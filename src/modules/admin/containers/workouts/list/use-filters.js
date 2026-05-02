@@ -9,6 +9,7 @@ const FOOD_SORT_FIELDS = [
   "servingSize",
   "createdAt",
   "isActive",
+  "isOnboarding",
 ];
 const FOOD_SORT_DIRECTIONS = ["asc", "desc"];
 const ITEMS_PER_PAGE = 10;
@@ -39,6 +40,10 @@ export const useWorkoutFilters = ({ categories, currentLanguage }) => {
   const [statusFilter, setStatusFilter] = useQueryState(
     "status",
     parseAsStringEnum(["all", "active", "inactive"]).withDefault("all"),
+  );
+  const [onboardingFilter, setOnboardingFilter] = useQueryState(
+    "onboarding",
+    parseAsStringEnum(["all", "yes", "no"]).withDefault("all"),
   );
   const [hasImageFilter, setHasImageFilter] = useQueryState(
     "hasImage",
@@ -126,6 +131,17 @@ export const useWorkoutFilters = ({ categories, currentLanguage }) => {
         ],
       },
       {
+        label: "Onboarding",
+        key: "onboarding",
+        type: "select",
+        defaultOperator: "is",
+        options: [
+          { value: "all", label: "Barchasi" },
+          { value: "yes", label: "Onboarding uchun" },
+          { value: "no", label: "Qo'shimcha" },
+        ],
+      },
+      {
         label: "YouTube Link",
         key: "hasImage",
         type: "select",
@@ -191,6 +207,15 @@ export const useWorkoutFilters = ({ categories, currentLanguage }) => {
       });
     }
 
+    if (onboardingFilter !== "all") {
+      items.push({
+        id: "onboarding",
+        field: "onboarding",
+        operator: "is",
+        values: [onboardingFilter],
+      });
+    }
+
     if (hasImageFilter !== "all") {
       items.push({
         id: "hasImage",
@@ -223,6 +248,7 @@ export const useWorkoutFilters = ({ categories, currentLanguage }) => {
     categoryFilter,
     duplicatesFilter,
     hasImageFilter,
+    onboardingFilter,
     search,
     translationsFilter,
     statusFilter,
@@ -238,6 +264,9 @@ export const useWorkoutFilters = ({ categories, currentLanguage }) => {
       const nextStatus =
         nextFilters.find((filter) => filter.field === "status")?.values?.[0] ??
         "all";
+      const nextOnboarding =
+        nextFilters.find((filter) => filter.field === "onboarding")
+          ?.values?.[0] ?? "all";
       const nextHasImage =
         nextFilters.find((filter) => filter.field === "hasImage")
           ?.values?.[0] ?? "all";
@@ -251,6 +280,7 @@ export const useWorkoutFilters = ({ categories, currentLanguage }) => {
         void setSearch(nextSearch);
         void setCategoryFilter(nextCategory);
         void setStatusFilter(nextStatus);
+        void setOnboardingFilter(nextOnboarding);
         void setHasImageFilter(nextHasImage);
         void setTranslationsFilter(nextTranslations);
         void setDuplicatesFilter(nextDuplicates);
@@ -261,6 +291,7 @@ export const useWorkoutFilters = ({ categories, currentLanguage }) => {
       setCategoryFilter,
       setDuplicatesFilter,
       setHasImageFilter,
+      setOnboardingFilter,
       setPageQuery,
       setSearch,
       setTranslationsFilter,
@@ -295,6 +326,7 @@ export const useWorkoutFilters = ({ categories, currentLanguage }) => {
       ...(trim(deferredSearch) ? { q: trim(deferredSearch) } : {}),
       ...(categoryFilter !== "all" ? { categoryId: categoryFilter } : {}),
       ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      ...(onboardingFilter !== "all" ? { onboarding: onboardingFilter } : {}),
       ...(hasImageFilter !== "all" ? { hasImage: hasImageFilter } : {}),
       ...(translationsFilter !== "all"
         ? { translations: translationsFilter }
@@ -312,6 +344,7 @@ export const useWorkoutFilters = ({ categories, currentLanguage }) => {
       deferredSearch,
       duplicatesFilter,
       hasImageFilter,
+      onboardingFilter,
       lifecycleFilter,
       pageSize,
       sortBy,
@@ -325,6 +358,7 @@ export const useWorkoutFilters = ({ categories, currentLanguage }) => {
     search,
     categoryFilter,
     statusFilter,
+    onboardingFilter,
     hasImageFilter,
     translationsFilter,
     duplicatesFilter,

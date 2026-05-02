@@ -4,11 +4,15 @@ import { Spinner } from "@/components/ui/spinner.jsx";
 import { useOnboardingStore, useAuthStore } from "@/store";
 import { getResumeOnboardingPath } from "@/modules/onboarding/lib/resume";
 import { useDraftRestore } from "@/modules/onboarding/lib/use-draft-restore";
-import { getOnboardingPathFromStep } from "@/lib/app-paths.js";
+import {
+  canAccessUserDashboard,
+  getOnboardingPathFromStep,
+  getPostOnboardingPath,
+} from "@/lib/app-paths.js";
 
 const Index = () => {
   const onboardingState = useOnboardingStore();
-  const { onboardingCompleted } = useAuthStore();
+  const { onboardingCompleted, onboardingFlowStatus, user } = useAuthStore();
 
   // Restore server draft into local store if local is empty (cross-device resume)
   const { isLoading: isDraftLoading } = useDraftRestore("user");
@@ -26,8 +30,16 @@ const Index = () => {
     );
   }
 
-  if (onboardingCompleted && !targetPath) {
+  if (
+    onboardingCompleted &&
+    canAccessUserDashboard(onboardingFlowStatus, onboardingCompleted) &&
+    !targetPath
+  ) {
     return <Navigate to="/user" replace />;
+  }
+
+  if (onboardingCompleted && !targetPath) {
+    return <Navigate to={getPostOnboardingPath(user)} replace />;
   }
 
   if (targetPath) {

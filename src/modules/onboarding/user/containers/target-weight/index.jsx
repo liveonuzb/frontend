@@ -1,6 +1,7 @@
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useOnboardingStore } from "@/store";
@@ -17,6 +18,7 @@ import {
 } from "../../lib/illustration.js";
 
 const Index = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const {
     targetWeight,
@@ -32,7 +34,7 @@ const Index = () => {
   useOnboardingAutoSave("user", "target-weight");
 
   const currentVal = targetWeight?.value || currentWeight?.value || "70.0";
-  const bmiMeta = getOnboardingBmiMeta(currentVal, height?.value);
+  const bmiMeta = getOnboardingBmiMeta(currentVal, height?.value, t);
   const illustration = getOnboardingWeightIllustration(
     gender,
     age,
@@ -50,13 +52,13 @@ const Index = () => {
     const target = Number(currentVal);
     const current = Number(currentWeight.value);
     if (goal === "lose" && target < current) {
-      return `Losing ${diff} kg is your next milestone.`;
+      return t("onboarding.targetWeight.messages.lose", { value: diff });
     }
     if (goal === "gain" && target > current) {
-      return `Gaining ${diff} kg is your next build phase.`;
+      return t("onboarding.targetWeight.messages.gain", { value: diff });
     }
     if (goal === "maintain") {
-      return "You are aiming to stay close to your current form.";
+      return t("onboarding.targetWeight.messages.maintain");
     }
     return null;
   };
@@ -76,7 +78,7 @@ const Index = () => {
       size="lg"
       onClick={handleContinue}
     >
-      Next <ChevronRight />
+      {t("onboarding.next")} <ChevronRight />
     </Button>,
   );
 
@@ -123,8 +125,10 @@ const Index = () => {
         <OnboardingQuestion
           question={
             firstName
-              ? `${firstName} what's your target weight?`
-              : "What's your target weight?"
+              ? t("onboarding.targetWeight.questionWithName", {
+                  name: firstName,
+                })
+              : t("onboarding.targetWeight.question")
           }
         />
 
@@ -132,8 +136,9 @@ const Index = () => {
           <BmiIdentifier
             meta={bmiMeta}
             heightValue={height?.value}
-            title="Target BMI"
+            title={t("onboarding.targetWeight.bmiTitle")}
             note={motivationalMessage}
+            heightUnitLabel={t("onboarding.height.unit")}
           />
         </div>
 
@@ -150,7 +155,7 @@ const Index = () => {
               <img
                 loading="lazy"
                 src={illustration.src}
-                alt={illustration.alt}
+                alt={t("onboarding.illustrationAlt")}
                 className="max-h-full object-contain transition-all duration-300 md:max-w-[320px]"
                 style={{ height: `${illustrationHeight * 0.9}px` }}
               />

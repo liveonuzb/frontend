@@ -47,6 +47,7 @@ export const useColumns = ({
   categoryById,
   currentLanguage,
   currentPage,
+  handleToggleOnboarding,
   handleToggleStatus,
   handleRestoreWorkout,
   openEditDrawer,
@@ -183,6 +184,28 @@ export const useColumns = ({
         },
       },
       {
+        accessorKey: "isOnboarding",
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Onboarding" />
+        ),
+        enableSorting: true,
+        meta: { skeleton: adminListSkeletons.status },
+        cell: (info) => {
+          const workout = info.row.original;
+
+          return (
+            <div className="flex justify-center">
+              <Switch
+                checked={Boolean(info.getValue())}
+                onCheckedChange={() => void handleToggleOnboarding(workout)}
+                disabled={workout.isTrashed}
+              />
+            </div>
+          );
+        },
+        size: 120,
+      },
+      {
         accessorKey: "isActive",
         header: ({ column }) => (
           <DataGridColumnHeader column={column} title="Status" />
@@ -232,6 +255,7 @@ export const useColumns = ({
       currentLanguage,
       currentPage,
       handleRestoreWorkout,
+      handleToggleOnboarding,
       handleToggleStatus,
       openEditDrawer,
       openTranslationsDrawer,

@@ -20,6 +20,7 @@ export const useColumns = ({
   currentPage,
   pageSize,
   resolveLabel,
+  handleToggleOnboarding,
   handleToggleStatus,
   handleRestoreFood,
   openEditDrawer,
@@ -208,6 +209,28 @@ export const useColumns = ({
         size: 100,
       },
       {
+        accessorKey: "isOnboarding",
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Onboarding" />
+        ),
+        enableSorting: true,
+        meta: { skeleton: adminListSkeletons.status },
+        cell: (info) => {
+          const food = info.row.original;
+
+          return (
+            <div className="flex justify-center">
+              <Switch
+                checked={Boolean(info.getValue())}
+                onCheckedChange={() => void handleToggleOnboarding(food)}
+                disabled={!canManage || food.isTrashed}
+              />
+            </div>
+          );
+        },
+        size: 120,
+      },
+      {
         accessorKey: "isActive",
         header: ({ column }) => (
           <DataGridColumnHeader column={column} title="Status" />
@@ -262,6 +285,7 @@ export const useColumns = ({
       currentPage,
       pageSize,
       resolveLabel,
+      handleToggleOnboarding,
       handleToggleStatus,
       handleRestoreFood,
       openEditDrawer,

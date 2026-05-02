@@ -1,6 +1,7 @@
 import { map, some } from "lodash";
 import React from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -12,13 +13,13 @@ import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import { cn } from "@/lib/utils";
 
 const DAYS = [
-  { key: "monday", label: "Dushanba" },
-  { key: "tuesday", label: "Seshanba" },
-  { key: "wednesday", label: "Chorshanba" },
-  { key: "thursday", label: "Payshanba" },
-  { key: "friday", label: "Juma" },
-  { key: "saturday", label: "Shanba" },
-  { key: "sunday", label: "Yakshanba" },
+  { key: "monday" },
+  { key: "tuesday" },
+  { key: "wednesday" },
+  { key: "thursday" },
+  { key: "friday" },
+  { key: "saturday" },
+  { key: "sunday" },
 ];
 
 const DEFAULT_AVAILABILITY = {
@@ -32,6 +33,7 @@ const DEFAULT_AVAILABILITY = {
 };
 
 const Index = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { availability, setAvailability } = useOnboardingStore();
 
@@ -71,13 +73,15 @@ const Index = () => {
       disabled={!hasAtLeastOneDay}
       onClick={handleNext}
     >
-      Davom etish
+      {t("onboarding.coach.common.continue")}
     </Button>,
   );
 
   return (
     <div className="flex-1 flex flex-col h-full pb-20">
-      <OnboardingQuestion question="Haftalik ish jadvalingizni belgilang" />
+      <OnboardingQuestion
+        question={t("onboarding.coach.availability.question")}
+      />
 
       <div className="space-y-3 w-full">
         {map(DAYS, (day) => {
@@ -110,11 +114,13 @@ const Index = () => {
                       !isEnabled && "text-muted-foreground",
                     )}
                   >
-                    {day.label}
+                    {t(`onboarding.coach.availability.days.${day.key}`)}
                   </span>
                 </div>
                 {!isEnabled ? (
-                  <span className="text-xs text-muted-foreground">Dam olish</span>
+                  <span className="text-xs text-muted-foreground">
+                    {t("onboarding.coach.availability.dayOff")}
+                  </span>
                 ) : null}
               </div>
 
@@ -122,7 +128,7 @@ const Index = () => {
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <div className="flex flex-col gap-1">
                     <span className="text-[11px] text-muted-foreground font-medium pl-1">
-                      Boshlanish
+                      {t("onboarding.coach.availability.start")}
                     </span>
                     <TimePicker
                       value={dayData.from}
@@ -131,7 +137,7 @@ const Index = () => {
                   </div>
                   <div className="flex flex-col gap-1">
                     <span className="text-[11px] text-muted-foreground font-medium pl-1">
-                      Tugash
+                      {t("onboarding.coach.availability.end")}
                     </span>
                     <TimePicker
                       value={dayData.to}

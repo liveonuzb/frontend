@@ -1,6 +1,7 @@
 import { map, filter, includes, isArray, compact, join } from "lodash";
 import React from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { CheckIcon, Loader2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +25,7 @@ const parseSpecializations = (value) => {
 };
 
 const Index = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { coachCategory, specializations, setField } = useOnboardingStore();
 
@@ -90,31 +92,35 @@ const Index = () => {
       disabled={!isValid}
       onClick={handleNext}
     >
-      Davom etish
+      {t("onboarding.coach.common.continue")}
     </Button>,
   );
 
   if (isOtherCategory) {
     return (
       <div className="flex-1 flex flex-col h-full pb-4">
-        <OnboardingQuestion question="Yo'nalishlaringizni kiriting" />
+        <OnboardingQuestion
+          question={t("onboarding.coach.specialization.customQuestion")}
+        />
 
         <Field>
-          <FieldLabel>Yo'nalishlar</FieldLabel>
+          <FieldLabel>{t("onboarding.coach.specialization.fieldLabel")}</FieldLabel>
           <Textarea
             rows={5}
             value={freeformValue}
-            placeholder="Boks, Football, Yoga, Fitness"
+            placeholder={t("onboarding.coach.specialization.placeholder")}
             onChange={(event) => setFreeformValue(event.target.value)}
           />
           <FieldDescription>
-            Yo'nalishlarni vergul yoki yangi qatordan ajrating.
+            {t("onboarding.coach.specialization.description")}
           </FieldDescription>
         </Field>
 
         {parsedFreeform.length > 0 ? (
           <p className="mt-3 text-center text-xs text-muted-foreground">
-            {parsedFreeform.length} ta yo'nalish kiritildi
+            {t("onboarding.coach.specialization.customCount", {
+              count: parsedFreeform.length,
+            })}
           </p>
         ) : null}
       </div>
@@ -123,7 +129,9 @@ const Index = () => {
 
   return (
     <div className="flex-1 flex flex-col h-full pb-4">
-      <OnboardingQuestion question="Yo'nalishlaringizni tanlang" />
+      <OnboardingQuestion
+        question={t("onboarding.coach.specialization.question")}
+      />
 
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
@@ -163,7 +171,7 @@ const Index = () => {
                   </span>
                 ) : (
                   <span className="ml-auto text-xs text-muted-foreground">
-                    Tanlash
+                    {t("onboarding.coach.common.select")}
                   </span>
                 )}
               </button>
@@ -173,17 +181,19 @@ const Index = () => {
       ) : (
         <div className="py-8 text-center">
           <p className="text-sm text-muted-foreground">
-            Bu kategoriya uchun yo'nalishlar topilmadi.
+            {t("onboarding.coach.specialization.emptyTitle")}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            Davom etish tugmasini bosing.
+            {t("onboarding.coach.specialization.emptyDescription")}
           </p>
         </div>
       )}
 
       {selected.length > 0 ? (
         <p className="mt-4 text-center text-xs text-muted-foreground">
-          {selected.length} ta yo'nalish tanlandi
+          {t("onboarding.coach.specialization.selectedCount", {
+            count: selected.length,
+          })}
         </p>
       ) : null}
     </div>

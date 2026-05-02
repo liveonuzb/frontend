@@ -12,12 +12,19 @@ export const ONBOARDING_STEPS = [
   "target-weight",
   "weekly-pace",
   "activity-level",
+  "workout-location",
+  "workout-equipment",
+  "workout-body-parts",
+  "preferred-exercises",
+  "disliked-exercises",
   "meal-frequency",
   "water-habits",
-  "allergy-ingredients",
+  "food-budget",
+  "allergies",
+  "diet-requirements",
+  "disliked-foods",
+  "preferred-ingredients",
   "disliked-ingredients",
-  "nutrition-preferences",
-  "diet-restrictions",
 ];
 
 export const COACH_ONBOARDING_STEPS = [
@@ -33,8 +40,11 @@ export const COACH_ONBOARDING_STEPS = [
   "coach/avatar",
 ];
 
+export const LEGACY_USER_ONBOARDING_STEPS = ["exercise-preferences"];
+
 export const ALL_ONBOARDING_STEPS = [
   ...ONBOARDING_STEPS,
+  ...LEGACY_USER_ONBOARDING_STEPS,
   ...COACH_ONBOARDING_STEPS,
 ];
 

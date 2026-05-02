@@ -42,6 +42,7 @@ export const useColumns = ({
   activeLanguages,
   currentLanguage,
   isReorderEnabled,
+  handleToggleOnboarding,
   handleToggleStatus,
   openEditDrawer,
   openTranslationsDrawer,
@@ -148,6 +149,27 @@ export const useColumns = ({
         },
       },
       {
+        accessorKey: "isOnboarding",
+        header: "Onboarding",
+        enableSorting: true,
+        size: 120,
+        meta: { skeleton: adminListSkeletons.status },
+        cell: (info) => {
+          const equipment = info.row.original;
+
+          return (
+            <div className="flex justify-center">
+              <Switch
+                checked={Boolean(equipment.isOnboarding)}
+                onCheckedChange={(checked) =>
+                  handleToggleOnboarding(equipment, checked)
+                }
+              />
+            </div>
+          );
+        },
+      },
+      {
         accessorKey: "isActive",
         header: "Status",
         enableSorting: true,
@@ -189,6 +211,7 @@ export const useColumns = ({
     [
       activeLanguages,
       currentLanguage,
+      handleToggleOnboarding,
       handleToggleStatus,
       isReorderEnabled,
       openEditDrawer,

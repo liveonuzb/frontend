@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { CheckIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +11,7 @@ const CoachOptionCard = ({
   icon,
   multi = false,
 }) => {
+  const { t } = useTranslation();
   return (
     <button
       type="button"
@@ -33,7 +35,9 @@ const CoachOptionCard = ({
           <CheckIcon className="size-4" />
         </span>
       ) : multi ? (
-        <span className="ml-auto text-xs text-muted-foreground">Tanlash</span>
+        <span className="ml-auto text-xs text-muted-foreground">
+          {t("onboarding.coach.common.select")}
+        </span>
       ) : null}
     </button>
   );

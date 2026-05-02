@@ -39,6 +39,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner.jsx";
+import { Switch } from "@/components/ui/switch";
 import OptionDrawerPicker from "@/components/option-drawer-picker";
 import MultipleDrawerPicker from "@/components/multiple-drawer-picker";
 import {
@@ -66,6 +67,7 @@ const foodSchema = z.object({
   fat: z.number().min(0),
   servingUnit: z.enum(["g", "ml", "dona", "qoshiq"]),
   servingSize: z.number().min(0),
+  isOnboarding: z.boolean().default(true),
 });
 
 const SERVING_UNITS = [
@@ -149,6 +151,7 @@ const FoodFormDrawer = ({
       fat: 0,
       servingUnit: "g",
       servingSize: 100,
+      isOnboarding: true,
     },
   });
 
@@ -176,6 +179,7 @@ const FoodFormDrawer = ({
         fat: Number(initialValues.fat) || 0,
         servingUnit: initialValues.servingUnit || "g",
         servingSize: Number(initialValues.servingSize) || 100,
+        isOnboarding: initialValues.isOnboarding !== false,
       });
     }
   }, [form, initialValues, open]);
@@ -461,6 +465,26 @@ const FoodFormDrawer = ({
                       </FormItem>
                     )}
                   />
+                  <FormField
+                    control={form.control}
+                    name="isOnboarding"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between gap-4 rounded-2xl border px-4 py-3">
+                        <div>
+                          <FormLabel>Onboardingda ustuvor ko'rsatish</FormLabel>
+                          <p className="text-xs text-muted-foreground">
+                            Yoqilgan bo'lsa ovqat onboarding comboboxida birinchi chiqadi.
+                          </p>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={Boolean(field.value)}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
                 </form>
               </Form>
             </DrawerBody>
@@ -505,6 +529,7 @@ const createFormFromFood = (food, language) => ({
       ? String(get(food, "maxIntake"))
       : "",
   translations: isObject(food?.translations) ? food.translations : {},
+  isOnboarding: get(food, "isOnboarding", true),
   removeImage: false,
 });
 
@@ -530,6 +555,7 @@ const createFoodPayload = (form, uploadedImageId, editingFood, language) => {
       ? { maxIntake: toNumber(form.maxIntake) || 0 }
       : {}),
     ...(editingFood ? { isActive: Boolean(editingFood.isActive) } : {}),
+    isOnboarding: form.isOnboarding !== false,
     ...(form.removeImage ? { removeImage: true } : {}),
     ...(!form.removeImage && uploadedImageId
       ? { imageId: uploadedImageId }
@@ -688,6 +714,7 @@ const EditFoodPage = () => {
         fat: String(data.fat),
         servingSize: String(data.servingSize),
         servingUnit: data.servingUnit,
+        isOnboarding: data.isOnboarding,
         maxIntake: data.maxIntake !== undefined ? String(data.maxIntake) : "",
         translations: editingFood?.translations ?? {},
         removeImage,

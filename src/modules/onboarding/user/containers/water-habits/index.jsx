@@ -2,6 +2,7 @@ import { map } from "lodash";
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useOnboardingStore } from "@/store";
@@ -14,46 +15,48 @@ import { getOnboardingTierIllustration } from "../../lib/illustration.js";
 import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
 import useOnboardingBase from "@/hooks/app/use-onboarding-base";
 
-const options = [
+const getOptions = (t) => [
   {
     value: "2",
-    label: "1-2 glasses",
-    title: "Needs a lift",
-    description: "Usually under 0.5L a day.",
+    label: t("onboarding.waterHabits.options.2.label"),
+    title: t("onboarding.waterHabits.options.2.title"),
+    description: t("onboarding.waterHabits.options.2.description"),
     tier: 1,
     tone: ONBOARDING_ACCENTS.amber,
   },
   {
     value: "4",
-    label: "3-4 glasses",
-    title: "Building up",
-    description: "Roughly around 1L a day.",
+    label: t("onboarding.waterHabits.options.4.label"),
+    title: t("onboarding.waterHabits.options.4.title"),
+    description: t("onboarding.waterHabits.options.4.description"),
     tier: 2,
     tone: ONBOARDING_ACCENTS.sky,
   },
   {
     value: "6",
-    label: "5-6 glasses",
-    title: "Balanced hydration",
-    description: "Around 1.5L most days.",
+    label: t("onboarding.waterHabits.options.6.label"),
+    title: t("onboarding.waterHabits.options.6.title"),
+    description: t("onboarding.waterHabits.options.6.description"),
     tier: 3,
     tone: ONBOARDING_ACCENTS.green,
     recommended: true,
   },
   {
     value: "8",
-    label: "7+ glasses",
-    title: "Strong habit",
-    description: "Two liters or more a day.",
+    label: t("onboarding.waterHabits.options.8.label"),
+    title: t("onboarding.waterHabits.options.8.title"),
+    description: t("onboarding.waterHabits.options.8.description"),
     tier: 4,
     tone: ONBOARDING_ACCENTS.blue,
   },
 ];
 
 const Index = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { waterHabits, setField, gender, age } = useOnboardingStore();
   const base = useOnboardingBase();
+  const options = React.useMemo(() => getOptions(t), [t]);
 
   useOnboardingAutoSave("user", "water-habits");
   const selectedOption =
@@ -72,7 +75,7 @@ const Index = () => {
 
   const handleContinue = () => {
     if (hasSelection) {
-      navigate("/user/onboarding/diet-restrictions");
+      navigate("/user/onboarding/food-budget");
     }
   };
 
@@ -89,7 +92,7 @@ const Index = () => {
       disabled={!hasSelection}
       onClick={handleContinue}
     >
-      Next <ChevronRight />
+      {t("onboarding.next")} <ChevronRight />
     </Button>,
   );
 
@@ -98,7 +101,7 @@ const Index = () => {
       <PageAura tone={selectedOption.tone} />
 
       <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
-        <OnboardingQuestion question="How much water do you drink?" />
+        <OnboardingQuestion question={t("onboarding.waterHabits.question")} />
 
         <div className="relative mb-3 flex min-h-[140px] flex-1 items-end justify-center overflow-hidden md:mb-4 md:min-h-[260px]">
           <AnimatePresence mode="wait">
@@ -130,7 +133,7 @@ const Index = () => {
             transition={{ duration: 0.24 }}
           >
             <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground md:text-xs">
-              Hydration habit
+              {t("onboarding.waterHabits.metaLabel")}
             </p>
             <p className="text-sm font-bold md:text-lg">
               {selectedOption.title}
@@ -172,7 +175,7 @@ const Index = () => {
                   </span>
                   {option.recommended ? (
                     <span className="hidden rounded-full border border-border/60 bg-background/75 px-2 py-1 text-[10px] font-semibold text-muted-foreground md:inline">
-                      Recommended
+                      {t("onboarding.recommended")}
                     </span>
                   ) : null}
                 </div>

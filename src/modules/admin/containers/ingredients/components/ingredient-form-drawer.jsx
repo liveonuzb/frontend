@@ -62,6 +62,7 @@ const IngredientFormDrawer = ({ mode }) => {
       fat: 0,
       servingUnit: "g",
       isAllergic: false,
+      isOnboarding: true,
     },
   });
   const postMutation = usePostQuery({ queryKey: QUERY_KEY });
@@ -81,6 +82,7 @@ const IngredientFormDrawer = ({ mode }) => {
         fat: Number(item.fat) || 0,
         servingUnit: item.servingUnit || "g",
         isAllergic: Boolean(item.isAllergic),
+        isOnboarding: item.isOnboarding !== false,
       });
       setImagePreview(item.imageUrl || null);
     }
@@ -234,6 +236,26 @@ const IngredientFormDrawer = ({ mode }) => {
                           <FormLabel>Allergen sifatida ko'rsatish</FormLabel>
                           <p className="text-xs text-muted-foreground">
                             User onboardingda allergiya tanlovida chiqadi
+                          </p>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={Boolean(field.value)}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="isOnboarding"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between gap-4 rounded-2xl border px-4 py-3">
+                        <div>
+                          <FormLabel>Onboardingda ustuvor ko'rsatish</FormLabel>
+                          <p className="text-xs text-muted-foreground">
+                            Yoqilgan bo'lsa ingredient onboarding comboboxida birinchi chiqadi
                           </p>
                         </div>
                         <FormControl>

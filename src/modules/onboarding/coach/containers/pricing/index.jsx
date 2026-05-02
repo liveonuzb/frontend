@@ -1,6 +1,7 @@
 import { map } from "lodash";
 import React from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -11,12 +12,13 @@ import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-q
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 
 const WORK_MODE_OPTIONS = [
-  { value: "online", label: "\uD83C\uDF10 Online" },
-  { value: "offline", label: "\uD83C\uDFE2 Offline" },
-  { value: "hybrid", label: "\u26A1\uFE0F Hybrid" },
+  { value: "online", i18nKey: "online", icon: "\uD83C\uDF10" },
+  { value: "offline", i18nKey: "offline", icon: "\uD83C\uDFE2" },
+  { value: "hybrid", i18nKey: "hybrid", icon: "\u26A1\uFE0F" },
 ];
 
 const Index = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const {
     coachCity,
@@ -43,18 +45,18 @@ const Index = () => {
       size="lg"
       onClick={handleNext}
     >
-      {isFormValid ? "Davom etish" : "O'tkazib yuborish"}
+      {isFormValid ? t("onboarding.coach.common.continue") : t("onboarding.skip")}
     </Button>,
   );
 
   return (
     <div className="flex-1 flex flex-col h-full pb-4">
-      <OnboardingQuestion question="Narx va ish uslubingizni belgilang" />
+      <OnboardingQuestion question={t("onboarding.coach.pricing.question")} />
 
       <div className="flex flex-col gap-5 w-full">
         {/* Work mode -- ToggleGroup */}
         <Field>
-          <FieldLabel>Ishlash formati</FieldLabel>
+          <FieldLabel>{t("onboarding.coach.pricing.workModeLabel")}</FieldLabel>
           <ToggleGroup
             type="single"
             variant="outline"
@@ -69,7 +71,7 @@ const Index = () => {
                 value={option.value}
                 className="flex-1"
               >
-                {option.label}
+                {option.icon} {t(`onboarding.coach.pricing.workModes.${option.i18nKey}`)}
               </ToggleGroupItem>
             ))}
           </ToggleGroup>
@@ -78,7 +80,7 @@ const Index = () => {
         {/* Price range inputs */}
         <div className="grid grid-cols-2 gap-4">
           <Field>
-            <FieldLabel>Minimal narx (oyiga)</FieldLabel>
+            <FieldLabel>{t("onboarding.coach.pricing.minPriceLabel")}</FieldLabel>
             <Input
               type="number"
               value={coachMinMonthlyPrice}
@@ -89,7 +91,7 @@ const Index = () => {
             />
           </Field>
           <Field>
-            <FieldLabel>Maksimal narx (oyiga)</FieldLabel>
+            <FieldLabel>{t("onboarding.coach.pricing.maxPriceLabel")}</FieldLabel>
             <Input
               type="number"
               value={coachMaxMonthlyPrice}
@@ -103,7 +105,7 @@ const Index = () => {
 
         {/* City */}
         <Field>
-          <FieldLabel>Shahar</FieldLabel>
+          <FieldLabel>{t("onboarding.coach.pricing.cityLabel")}</FieldLabel>
           <Input
             value={coachCity}
             placeholder="Toshkent"
@@ -113,7 +115,7 @@ const Index = () => {
 
         {/* Workplace */}
         <Field>
-          <FieldLabel>Ish joyi</FieldLabel>
+          <FieldLabel>{t("onboarding.coach.pricing.workplaceLabel")}</FieldLabel>
           <Input
             value={coachWorkplace}
             placeholder="FitLife Studio"

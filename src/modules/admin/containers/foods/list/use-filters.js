@@ -10,6 +10,7 @@ const FOOD_SORT_FIELDS = [
   "servingSize",
   "createdAt",
   "isActive",
+  "isOnboarding",
   "nutritionMode",
 ];
 const FOOD_SORT_DIRECTIONS = ["asc", "desc"];
@@ -76,6 +77,14 @@ export const useFoodFilters = ({
     "statusOp",
     parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
   );
+  const [onboardingFilter, setOnboardingFilter] = useQueryState(
+    "onboarding",
+    parseAsStringEnum(["all", "yes", "no"]).withDefault("all"),
+  );
+  const [onboardingOp, setOnboardingOp] = useQueryState(
+    "onboardingOp",
+    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+  );
   const [hasImageFilter, setHasImageFilter] = useQueryState(
     "hasImage",
     parseAsStringEnum(["all", "yes", "no"]).withDefault("all"),
@@ -133,6 +142,8 @@ export const useFoodFilters = ({
     cuisineOp === "is" &&
     statusFilter === "all" &&
     statusOp === "is" &&
+    onboardingFilter === "all" &&
+    onboardingOp === "is" &&
     hasImageFilter === "all" &&
     hasImageOp === "is" &&
     translationsFilter === "all" &&
@@ -198,6 +209,18 @@ export const useFoodFilters = ({
           { value: "all", label: "Barchasi" },
           { value: "active", label: "Faol" },
           { value: "inactive", label: "Nofaol" },
+        ],
+      },
+      {
+        label: "Onboarding",
+        key: "onboarding",
+        type: "select",
+        defaultOperator: "is",
+        operators: selectOperatorOptions,
+        options: [
+          { value: "all", label: "Barchasi" },
+          { value: "yes", label: "Onboarding uchun" },
+          { value: "no", label: "Qo'shimcha" },
         ],
       },
       {
@@ -278,6 +301,15 @@ export const useFoodFilters = ({
       });
     }
 
+    if (onboardingFilter !== "all" || onboardingOp !== "is") {
+      items.push({
+        id: "onboarding",
+        field: "onboarding",
+        operator: onboardingOp,
+        values: onboardingFilter !== "all" ? [onboardingFilter] : [],
+      });
+    }
+
     if (hasImageFilter !== "all" || hasImageOp !== "is") {
       items.push({
         id: "hasImage",
@@ -314,6 +346,8 @@ export const useFoodFilters = ({
     duplicatesFilter,
     hasImageFilter,
     hasImageOp,
+    onboardingFilter,
+    onboardingOp,
     search,
     searchOp,
     translationsFilter,
@@ -330,6 +364,7 @@ export const useFoodFilters = ({
       const nextCategory = byField("category")?.values?.[0] ?? "all";
       const nextCuisine = byField("cuisine")?.values?.[0] ?? "all";
       const nextStatus = byField("status")?.values?.[0] ?? "all";
+      const nextOnboarding = byField("onboarding")?.values?.[0] ?? "all";
       const nextHasImage = byField("hasImage")?.values?.[0] ?? "all";
       const nextTranslations = byField("translations")?.values?.[0] ?? "all";
       const nextDuplicates = byField("duplicates")?.values?.[0] ?? "all";
@@ -343,6 +378,8 @@ export const useFoodFilters = ({
         void setCuisineOp(byField("cuisine")?.operator ?? "is");
         void setStatusFilter(nextStatus);
         void setStatusOp(byField("status")?.operator ?? "is");
+        void setOnboardingFilter(nextOnboarding);
+        void setOnboardingOp(byField("onboarding")?.operator ?? "is");
         void setHasImageFilter(nextHasImage);
         void setHasImageOp(byField("hasImage")?.operator ?? "is");
         void setTranslationsFilter(nextTranslations);
@@ -359,6 +396,8 @@ export const useFoodFilters = ({
       setDuplicatesFilter,
       setHasImageFilter,
       setHasImageOp,
+      setOnboardingFilter,
+      setOnboardingOp,
       setPageQuery,
       setSearch,
       setSearchOp,
@@ -400,6 +439,8 @@ export const useFoodFilters = ({
     cuisineOp,
     statusFilter,
     statusOp,
+    onboardingFilter,
+    onboardingOp,
     hasImageFilter,
     hasImageOp,
     translationsFilter,

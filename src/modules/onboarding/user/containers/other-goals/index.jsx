@@ -2,6 +2,7 @@ import { filter, get, includes, isArray, map } from "lodash";
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { useGetQuery } from "@/hooks/api";
 import { cn } from "@/lib/utils";
@@ -45,6 +46,7 @@ const otherGoalTones = (base) => [
 ];
 
 const Index = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { goals: selectedGoals = [], setFields } = useOnboardingStore();
   const base = useOnboardingBase();
@@ -79,7 +81,7 @@ const Index = () => {
     goals[0] ??
     {
       value: "other-goals",
-      title: "Qo'shimcha maqsadlar",
+      title: t("onboarding.otherGoals.fallbackTitle"),
       description: "",
       ...fallbackTone(base),
     };
@@ -102,7 +104,7 @@ const Index = () => {
       size="lg"
       onClick={() => navigate("/user/onboarding/target-weight")}
     >
-      Next <ChevronRight />
+      {t("onboarding.next")} <ChevronRight />
     </Button>,
   );
 
@@ -122,7 +124,7 @@ const Index = () => {
       </div>
 
       <div className="relative z-10 flex w-full flex-1 flex-col justify-center md:mx-auto md:max-w-4xl">
-        <OnboardingQuestion question="Yana qanday maqsadlaringiz bor?" />
+        <OnboardingQuestion question={t("onboarding.otherGoals.question")} />
 
         <div className="relative mb-4 flex min-h-[170px] flex-[0.75] items-end justify-center overflow-hidden md:mb-6 md:min-h-[260px]">
           <AnimatePresence mode="wait">
