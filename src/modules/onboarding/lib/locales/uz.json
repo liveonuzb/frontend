@@ -203,7 +203,7 @@
     },
     "foodBudget": {
       "title": "Ovqatlanish budjetingiz qancha?",
-      "description": "Meal plan siz tanlagan davr va UZS budjetga mos tuziladi.",
+      "description": "Ovqatlanish rejasi siz tanlagan davr va UZS budjetga mos tuziladi.",
       "helper": "Aniq bilmasangiz, bu bosqichni o'tkazib yuborishingiz mumkin.",
       "placeholder": "Masalan: 350000",
       "error": "Budjet manfiy bo'lmagan raqam bo'lishi kerak.",
@@ -215,16 +215,21 @@
     },
     "chipSelect": {
       "selectedCount": "{{count}} ta tanlandi",
-      "addCustom": "\"{{value}}\" ni custom sifatida qo'shish",
+      "addCustom": "\"{{value}}\" ni maxsus qiymat sifatida qo'shish",
       "empty": "Mos natija topilmadi.",
       "nonOnboarding": "Qo'shimcha",
-      "selected": "Tanlangan"
+      "selected": "Tanlangan",
+      "featuredTitle": "Tavsiya qilinganlar",
+      "featuredDescription": "Tez tanlash uchun cardni bosing yoki ko'proq variant uchun pastdan qidiring.",
+      "allergicBadge": "Allergiya manbasi",
+      "recommendedBadge": "Tavsiya"
     },
     "nutritionSteps": {
       "allergies": {
         "title": "Nimalarga allergiyangiz bor?",
-        "description": "Active allergiya ingredientlarini tanlang yoki o'zingiz custom qiymat qo'shing.",
-        "placeholder": "Yong'oq, tuxum, asal..."
+        "description": "Faol allergiya ingredientlarini tanlang yoki o'zingiz maxsus qiymat qo'shing.",
+        "placeholder": "Yong'oq, tuxum, asal...",
+        "featuredTitle": "Ko'p uchraydigan allergiya ingredientlari"
       },
       "dietRequirements": {
         "title": "Ovqatlanish talablaringiz qanday?",
@@ -233,17 +238,17 @@
       },
       "dislikedFoods": {
         "title": "Qaysi ovqatlarni yoqtirmaysiz?",
-        "description": "Meal planda kamaytirish yoki chiqarib tashlash kerak bo'lgan taomlarni belgilang.",
+        "description": "Ovqatlanish rejasida kamaytirish yoki chiqarib tashlash kerak bo'lgan taomlarni belgilang.",
         "placeholder": "Sho'rva, baliq, jigar..."
       },
       "preferredIngredients": {
         "title": "Qaysi ingredientlarni yoqtirasiz?",
-        "description": "Yoqtirgan ingredientlaringiz meal planda ustuvor ko'rinadi.",
+        "description": "Yoqtirgan ingredientlaringiz ovqatlanish rejasida ustuvor ko'rinadi.",
         "placeholder": "Tovuq go'shti, guruch, bodring..."
       },
       "dislikedIngredients": {
         "title": "Qaysi ingredientlarni yoqtirmaysiz?",
-        "description": "Rejada kamroq chiqishi kerak bo'lgan ingredientlarni tanlang yoki custom qo'shing.",
+        "description": "Rejada kamroq chiqishi kerak bo'lgan ingredientlarni tanlang yoki maxsus qiymat qo'shing.",
         "placeholder": "Piyoz, kashnich, achchiq qalampir..."
       },
       "ingredients": {
@@ -253,7 +258,7 @@
     "workoutSteps": {
       "location": {
         "title": "Qayerda mashq qilasiz?",
-        "description": "Workout reja siz mashq qiladigan joyga mos tanlanadi.",
+        "description": "Mashg'ulot rejasi siz mashq qiladigan joyga mos tanlanadi.",
         "options": {
           "home": {
             "label": "Uyda",
@@ -271,12 +276,12 @@
       },
       "equipment": {
         "title": "Qaysi jihozlaringiz bor?",
-        "description": "Active jihozlarni tanlang yoki yo'q bo'lsa custom qiymat qo'shing.",
+        "description": "Faol jihozlarni tanlang yoki yo'q bo'lsa maxsus qiymat qo'shing.",
         "placeholder": "Gantel, turnik, yoga mat..."
       },
       "bodyParts": {
         "title": "Tananing qaysi qismlariga e'tibor beramiz?",
-        "description": "Workout reja shu tana qismlariga ko'proq moslanadi.",
+        "description": "Mashg'ulot rejasi shu tana qismlariga ko'proq moslanadi.",
         "placeholder": "Ko'krak, oyoq, bel, yelka..."
       },
       "exercises": {
@@ -291,18 +296,18 @@
       },
       "preferredExercises": {
         "title": "Qaysi mashqlarni yoqtirasiz?",
-        "description": "Bu mashqlar shaxsiy workout rejangizda ustuvor bo'ladi.",
+        "description": "Bu mashqlar shaxsiy mashg'ulot rejangizda ustuvor bo'ladi.",
         "placeholder": "Squat, push-up, yugurish..."
       },
       "dislikedExercises": {
         "title": "Qaysi mashqlarni yoqtirmaysiz?",
-        "description": "Bu mashqlar shaxsiy workout rejangizdan chiqariladi yoki kamaytiriladi.",
+        "description": "Bu mashqlar shaxsiy mashg'ulot rejangizdan chiqariladi yoki kamaytiriladi.",
         "placeholder": "Burpee, yugurish, plank..."
       }
     },
     "healthConstraints": {
       "question": "Jarohat yoki sog'liq cheklovingiz bormi?",
-      "summaryHint": "Workout reja xavfsiz bo'lishi uchun tanlang.",
+      "summaryHint": "Mashg'ulot rejasi xavfsiz bo'lishi uchun tanlang.",
       "metaLabel": "Sog'liq xavfsizligi",
       "none": "Cheklov yo'q",
       "noneDescription": "Mashg'ulotlar uchun alohida sog'liq cheklovi yo'q",
@@ -379,7 +384,7 @@
         }
       },
       "result": {
-        "readyBadge": "Shaxsiy targetlar tayyor",
+        "readyBadge": "Shaxsiy maqsadlar tayyor",
         "title": "Sizning rejangiz tayyor",
         "subtitle": "Siz quyidagini o'zgartirishingiz kerak:",
         "weightDifference": "Vazn farqi",
@@ -398,8 +403,8 @@
         "proteinRecommendation": "Tavsiya: {{min}}-{{max}} g (1.6-2.2 g/kg).",
         "balanceUnknown": "Makro balansni hisoblash uchun yetarli ma'lumot yo'q.",
         "balanceGood": "Makrolar kaloriyaga yaqin balansda.",
-        "balanceHigh": "Makrolar targetdan {{value}} kcal yuqori.",
-        "balanceLow": "Makrolar targetdan {{value}} kcal past.",
+        "balanceHigh": "Makrolar maqsaddan {{value}} kcal yuqori.",
+        "balanceLow": "Makrolar maqsaddan {{value}} kcal past.",
         "howCalculated": "Qanday hisoblaymiz?",
         "water": "Suv",
         "steps": "Qadam",
@@ -415,8 +420,8 @@
         },
         "quick": {
           "mealsPerDay": "Ovqatlanish soni",
-          "weeklyWorkoutDays": "Workout kunlari",
-          "workoutLocation": "Workout joyi"
+          "weeklyWorkoutDays": "Mashg'ulot kunlari",
+          "workoutLocation": "Mashg'ulot joyi"
         },
         "options": {
           "weeklyWeightChangeGoal": {
@@ -447,18 +452,18 @@
         "edit": {
           "dailyCalories": {
             "title": "Kunlik kaloriyani tahrirlash",
-            "description": "Tavsiya qiymatni ko'ring yoki o'zingizga mos xavfsiz target kiriting."
+            "description": "Tavsiya qiymatni ko'ring yoki o'zingizga mos xavfsiz maqsad kiriting."
           },
           "proteinGram": {
-            "title": "Oqsil targeti",
+            "title": "Oqsil maqsadi",
             "description": "Gramda kiriting. Tavsiya vaznga nisbatan hisoblanadi."
           },
           "carbsGram": {
-            "title": "Uglevod targeti",
+            "title": "Uglevod maqsadi",
             "description": "Uglevod kaloriyaviy balansga qanday ta'sir qilishini tekshiring."
           },
           "fatGram": {
-            "title": "Yog' targeti",
+            "title": "Yog' maqsadi",
             "description": "Gramda kiriting. Juda past yog' bo'lsa ogohlantiramiz."
           },
           "targetWeight": {
@@ -471,121 +476,121 @@
           },
           "mealsPerDay": {
             "title": "Ovqatlanish soni",
-            "description": "Bu personal meal plan generatsiyasiga ta'sir qiladi."
+            "description": "Bu shaxsiy ovqatlanish rejasi generatsiyasiga ta'sir qiladi."
           },
           "weeklyWorkoutDays": {
-            "title": "Workout kunlari",
-            "description": "Haftalik workout jadvali shu son asosida tuziladi."
+            "title": "Mashg'ulot kunlari",
+            "description": "Haftalik mashg'ulot jadvali shu son asosida tuziladi."
           },
           "workoutLocation": {
-            "title": "Workout joyi",
+            "title": "Mashg'ulot joyi",
             "description": "Mashqlar uy, zal yoki tashqi muhitga mos tanlanadi."
           },
           "equipment": {
             "title": "Jihozlarni tanlash",
-            "description": "Active jihozlardan tanlang yoki custom qiymat qo'shing."
+            "description": "Faol jihozlardan tanlang yoki maxsus qiymat qo'shing."
           }
         }
       }
     },
     "report": {
-      "generatingEyebrow": "AI wellness report",
-      "generatingTitle": "Siz uchun health report tayyorlanmoqda",
-      "generatingDescription": "Onboarding, profil va mavjud tracking ma'lumotlari yig'ilib, AI sizga mos shaxsiy hisobotni tayyorlamoqda.",
-      "generatingFooter": "Report tayyorlanmoqda...",
-      "heroTitle": "Your AI Wellness Report",
-      "heroSubtitle": "Built for your goals, body and habits",
-      "readyBadge": "AI report tayyor",
+      "generatingEyebrow": "AI sog'lomlik hisoboti",
+      "generatingTitle": "Siz uchun sog'liq hisoboti tayyorlanmoqda",
+      "generatingDescription": "Onboarding, profil va mavjud kuzatuv ma'lumotlari yig'ilib, AI sizga mos shaxsiy hisobotni tayyorlamoqda.",
+      "generatingFooter": "Hisobot tayyorlanmoqda...",
+      "heroTitle": "AI sog'lomlik hisobotingiz",
+      "heroSubtitle": "Maqsad, tana va odatlaringiz asosida",
+      "readyBadge": "AI hisobot tayyor",
       "oneTimeBadge": "Onboarding uchun bir martalik natija",
       "startMyPlan": "Rejani boshlash",
-      "generateSuccess": "Reportingiz yaratildi.",
-      "generateError": "Reportni yaratib bo'lmadi.",
-      "goDashboard": "Dashboardga o'tish",
+      "generateSuccess": "Hisobotingiz yaratildi.",
+      "generateError": "Hisobotni yaratib bo'lmadi.",
+      "goDashboard": "Boshqaruv paneliga o'tish",
       "retry": "Qayta urinish",
-      "errorTitle": "Health reportni tayyorlab bo'lmadi",
-      "errorDescription": "AI hisobot yaratishda vaqtinchalik xatolik yuz berdi. Qayta urinib ko'ring yoki dashboardga o'ting.",
+      "errorTitle": "Sog'liq hisobotini tayyorlab bo'lmadi",
+      "errorDescription": "AI hisobot yaratishda vaqtinchalik xatolik yuz berdi. Qayta urinib ko'ring yoki boshqaruv paneliga o'ting.",
       "generatedOnce": "Onboardingdan keyin bir marta yaratildi · {{date}}",
       "generatedAt": "Yaratilgan vaqt",
       "language": "Til",
       "model": "Model",
       "goalFocus": "Asosiy fokus",
       "weightStatus": "Vazn statusi",
-      "userSnapshotDescription": "Onboarding va profil ma'lumotlaridan yig'ilgan qisqa snapshot.",
+      "userSnapshotDescription": "Onboarding va profil ma'lumotlaridan yig'ilgan qisqa xulosa.",
       "actionPlanDescription": "Keyingi 7 kun uchun sodda va bajariladigan qadamlar.",
       "cautionDescription": "Ritmingizni saqlash uchun e'tibor beriladigan nuqtalar.",
       "disclaimer": "Muhim eslatma",
       "confidence": "Ishonch",
       "kcalPerDay": "kcal/kun",
-      "daysTracked": "tracking kuni",
+      "daysTracked": "kuzatuv kuni",
       "energyActive": "Faol",
       "energyBaseline": "Boshlang'ich",
       "target": "Maqsad",
       "whyThisMatters": "Nega bu muhim",
-      "needTracking": "Ko'proq tracking data kerak",
-      "trackingAvailable": "Real tracking data mavjud",
+      "needTracking": "Ko'proq kuzatuv ma'lumoti kerak",
+      "trackingAvailable": "Real kuzatuv ma'lumoti mavjud",
       "focusAreas": "Asosiy yo'nalishlar",
-      "focusAreasDescription": "Har bir odat bo'yicha qisqa tavsiya. Ko'rib chiqing va trackingni boshlang.",
+      "focusAreasDescription": "Har bir odat bo'yicha qisqa tavsiya. Ko'rib chiqing va kuzatuvni boshlang.",
       "sevenTips": "7 maslahat",
       "sevenTipsDescription": "AI reportingizdan olingan qisqa va amaliy tavsiyalar. Bugun eng osonidan boshlang.",
       "tipLabel": "Maslahat",
       "sleepSummary": "Uyqu tiklanish, ishtaha va mashg'ulot ritmini ushlab turadi.",
       "stepLabel": "Bosqich {{index}}",
       "progressTracker": {
-        "overview": "Overview",
-        "targets": "Targetlar",
-        "nutrition": "Nutrition",
-        "workout": "Workout",
-        "actionPlan": "Action Plan"
+        "overview": "Umumiy ko'rinish",
+        "targets": "Maqsadlar",
+        "nutrition": "Ovqatlanish",
+        "workout": "Mashg'ulot",
+        "actionPlan": "Harakat rejasi"
       },
       "scoreCards": {
-        "bmi": "BMI Score",
-        "metabolism": "Metabolism",
-        "energy": "Energy Level",
-        "weightOutlook": "Weight Outlook"
+        "bmi": "BMI bahosi",
+        "metabolism": "Metabolizm",
+        "energy": "Energiya darajasi",
+        "weightOutlook": "Vazn istiqboli"
       },
       "targets": {
-        "calories": "Calories",
-        "protein": "Protein",
-        "water": "Water",
-        "sleep": "Sleep"
+        "calories": "Kaloriya",
+        "protein": "Oqsil",
+        "water": "Suv",
+        "sleep": "Uyqu"
       },
       "sections": {
-        "nutrition": "Nutrition",
-        "water": "Water",
-        "workout": "Workout",
-        "sleep": "Sleep",
-        "progress": "Progress"
+        "nutrition": "Ovqatlanish",
+        "water": "Suv",
+        "workout": "Mashg'ulot",
+        "sleep": "Uyqu",
+        "progress": "Rivojlanish"
       },
       "stages": {
         "collecting": "Ma'lumotlar yig'ilmoqda",
         "analyzing": "AI tahlil qilmoqda",
         "planning": "Shaxsiy reja tuzilmoqda",
-        "finalizing": "Report yakunlanmoqda"
+        "finalizing": "Hisobot yakunlanmoqda"
       },
       "loadingSlides": {
         "collecting": {
           "step": "1-BOSQICH",
           "title": "Ma'lumotlaringiz yig'ilmoqda",
-          "description": "Profil, onboarding va tracking signallari health report uchun bir joyga jamlanmoqda.",
-          "items": ["Apple Watch data", "Yurak urishi", "Uyqu", "Nutrition", "Dashboard monitor"]
+          "description": "Profil, onboarding va kuzatuv signallari sog'liq hisoboti uchun bir joyga jamlanmoqda.",
+          "items": ["Apple Watch ma'lumotlari", "Yurak urishi", "Uyqu", "Ovqatlanish", "Boshqaruv paneli kuzatuvi"]
         },
         "analyzing": {
           "step": "2-BOSQICH",
           "title": "AI tahlil qilmoqda",
           "description": "AI sog'liq signallari, maqsad va progress ritmingizni birga tekshirmoqda.",
-          "items": ["Brain hologram", "Floating charts", "DNA spiral", "Graphlar", "AI scanning screen"]
+          "items": ["Miya gologrammasi", "Suzuvchi grafiklar", "DNA spirali", "Grafiklar", "AI skanerlash ekrani"]
         },
         "planning": {
           "step": "3-BOSQICH",
           "title": "Shaxsiy rejangiz tuzilmoqda",
-          "description": "Workout, ovqatlanish, uyqu va haftalik ritm bitta amaliy planga joylanmoqda.",
-          "items": ["Workout plan", "Food plan", "Sleep schedule", "Calendar", "Dumbbell + salad"]
+          "description": "Mashg'ulot, ovqatlanish, uyqu va haftalik ritm bitta amaliy planga joylanmoqda.",
+          "items": ["Mashg'ulot rejasi", "Ovqatlanish rejasi", "Uyqu jadvali", "Kalendar", "Gantel va salat"]
         },
         "finalizing": {
           "step": "4-BOSQICH",
-          "title": "Report yakunlanmoqda",
-          "description": "Yakuniy report view asosiy scorelar va action plan bilan yig'ilmoqda.",
-          "items": ["Report chiqmoqda", "Approved stamp", "Final report folder", "Keyingi action"]
+          "title": "Hisobot yakunlanmoqda",
+          "description": "Yakuniy hisobot ko'rinishi asosiy baholar va harakat rejasi bilan yig'ilmoqda.",
+          "items": ["Hisobot chiqmoqda", "Tasdiqlash belgisi", "Yakuniy hisobot papkasi", "Keyingi qadam"]
         }
       },
       "languages": {

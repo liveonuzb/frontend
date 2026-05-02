@@ -218,13 +218,18 @@
       "addCustom": "Add \"{{value}}\" as custom",
       "empty": "No matching result.",
       "nonOnboarding": "Additional",
-      "selected": "Selected"
+      "selected": "Selected",
+      "featuredTitle": "Recommended picks",
+      "featuredDescription": "Tap a card for quick selection, or search below for more options.",
+      "allergicBadge": "Allergy source",
+      "recommendedBadge": "Recommended"
     },
     "nutritionSteps": {
       "allergies": {
         "title": "What are you allergic to?",
         "description": "Select active allergy ingredients or add your own custom value.",
-        "placeholder": "Nuts, eggs, honey..."
+        "placeholder": "Nuts, eggs, honey...",
+        "featuredTitle": "Common allergy ingredients"
       },
       "dietRequirements": {
         "title": "Any diet requirements?",

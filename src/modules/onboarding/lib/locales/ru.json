@@ -203,7 +203,7 @@
     },
     "foodBudget": {
       "title": "Какой у вас бюджет на питание?",
-      "description": "Meal plan будет учитывать выбранный период и бюджет в UZS.",
+      "description": "План питания будет учитывать выбранный период и бюджет в UZS.",
       "helper": "Если пока не знаете, этот шаг можно пропустить.",
       "placeholder": "Например: 350000",
       "error": "Бюджет должен быть неотрицательным числом.",
@@ -218,13 +218,18 @@
       "addCustom": "Добавить \"{{value}}\" как свой вариант",
       "empty": "Подходящих результатов нет.",
       "nonOnboarding": "Дополнительно",
-      "selected": "Выбрано"
+      "selected": "Выбрано",
+      "featuredTitle": "Рекомендуемые варианты",
+      "featuredDescription": "Нажмите на карточку для быстрого выбора или ищите больше вариантов ниже.",
+      "allergicBadge": "Источник аллергии",
+      "recommendedBadge": "Рекомендовано"
     },
     "nutritionSteps": {
       "allergies": {
         "title": "На что у вас аллергия?",
         "description": "Выберите активные ингредиенты-аллергены или добавьте свой вариант.",
-        "placeholder": "Орехи, яйца, мёд..."
+        "placeholder": "Орехи, яйца, мёд...",
+        "featuredTitle": "Частые ингредиенты-аллергены"
       },
       "dietRequirements": {
         "title": "Есть требования к питанию?",
@@ -489,72 +494,72 @@
       }
     },
     "report": {
-      "generatingEyebrow": "AI wellness report",
-      "generatingTitle": "Ваш health-отчёт готовится",
-      "generatingDescription": "Мы собираем данные онбординга, профиля и трекинга, чтобы AI подготовил персональный локализованный wellness-отчёт.",
+      "generatingEyebrow": "AI-отчёт о здоровье",
+      "generatingTitle": "Ваш отчёт о здоровье готовится",
+      "generatingDescription": "Мы собираем данные онбординга, профиля и отслеживания, чтобы AI подготовил персональный отчёт.",
       "generatingFooter": "Отчёт готовится...",
-      "heroTitle": "Your AI Wellness Report",
-      "heroSubtitle": "Built for your goals, body and habits",
+      "heroTitle": "Ваш AI-отчёт о здоровье",
+      "heroSubtitle": "На основе ваших целей, тела и привычек",
       "readyBadge": "AI-отчёт готов",
       "oneTimeBadge": "Одноразовый результат онбординга",
       "startMyPlan": "Начать план",
       "generateSuccess": "Ваш отчёт создан.",
       "generateError": "Не удалось создать отчёт.",
-      "goDashboard": "Перейти в dashboard",
+      "goDashboard": "Перейти в панель управления",
       "retry": "Повторить",
-      "errorTitle": "Не удалось подготовить health-отчёт",
-      "errorDescription": "Во время генерации AI-отчёта произошла временная ошибка. Попробуйте ещё раз или перейдите в dashboard.",
+      "errorTitle": "Не удалось подготовить отчёт о здоровье",
+      "errorDescription": "Во время генерации AI-отчёта произошла временная ошибка. Попробуйте ещё раз или перейдите в панель управления.",
       "generatedOnce": "Создан один раз после онбординга · {{date}}",
       "generatedAt": "Создано",
       "language": "Язык",
       "model": "Модель",
       "goalFocus": "Главный фокус",
       "weightStatus": "Статус веса",
-      "userSnapshotDescription": "Краткий snapshot на основе данных онбординга и профиля.",
+      "userSnapshotDescription": "Краткое резюме на основе данных онбординга и профиля.",
       "actionPlanDescription": "Простые и выполнимые шаги на ближайшие 7 дней.",
       "cautionDescription": "Пункты, за которыми стоит следить, чтобы план оставался устойчивым.",
       "disclaimer": "Важное примечание",
       "confidence": "Точность",
       "kcalPerDay": "ккал/день",
-      "daysTracked": "дней трекинга",
+      "daysTracked": "дней отслеживания",
       "energyActive": "Активно",
       "energyBaseline": "База",
       "target": "Цель",
       "whyThisMatters": "Почему это важно",
-      "needTracking": "Нужно больше данных трекинга",
-      "trackingAvailable": "Есть реальные данные трекинга",
+      "needTracking": "Нужно больше данных отслеживания",
+      "trackingAvailable": "Есть реальные данные отслеживания",
       "focusAreas": "Ключевые зоны",
-      "focusAreasDescription": "Короткие рекомендации по привычкам. Просмотрите и начните трекинг.",
+      "focusAreasDescription": "Короткие рекомендации по привычкам. Просмотрите и начните отслеживание.",
       "sevenTips": "7 советов",
       "sevenTipsDescription": "Короткие практичные советы из AI-отчёта. Начните сегодня с самого простого.",
       "tipLabel": "Совет",
       "sleepSummary": "Сон поддерживает восстановление, аппетит и стабильность тренировок.",
       "stepLabel": "Шаг {{index}}",
       "progressTracker": {
-        "overview": "Overview",
-        "targets": "Targets",
-        "nutrition": "Nutrition",
-        "workout": "Workout",
-        "actionPlan": "Action Plan"
+        "overview": "Обзор",
+        "targets": "Цели",
+        "nutrition": "Питание",
+        "workout": "Тренировки",
+        "actionPlan": "План действий"
       },
       "scoreCards": {
-        "bmi": "BMI Score",
-        "metabolism": "Metabolism",
-        "energy": "Energy Level",
-        "weightOutlook": "Weight Outlook"
+        "bmi": "Оценка BMI",
+        "metabolism": "Метаболизм",
+        "energy": "Уровень энергии",
+        "weightOutlook": "Прогноз веса"
       },
       "targets": {
-        "calories": "Calories",
-        "protein": "Protein",
-        "water": "Water",
-        "sleep": "Sleep"
+        "calories": "Калории",
+        "protein": "Белок",
+        "water": "Вода",
+        "sleep": "Сон"
       },
       "sections": {
-        "nutrition": "Nutrition",
-        "water": "Water",
-        "workout": "Workout",
-        "sleep": "Sleep",
-        "progress": "Progress"
+        "nutrition": "Питание",
+        "water": "Вода",
+        "workout": "Тренировки",
+        "sleep": "Сон",
+        "progress": "Прогресс"
       },
       "stages": {
         "collecting": "Собираем данные",
@@ -566,26 +571,26 @@
         "collecting": {
           "step": "ШАГ 1",
           "title": "Собираем ваши данные",
-          "description": "Профиль, онбординг и tracking-сигналы собираются в основу health-отчёта.",
-          "items": ["Apple Watch data", "Пульс", "Сон", "Nutrition", "Dashboard monitor"]
+          "description": "Профиль, онбординг и сигналы отслеживания собираются в основу отчёта о здоровье.",
+          "items": ["Данные Apple Watch", "Пульс", "Сон", "Питание", "Мониторинг панели"]
         },
         "analyzing": {
           "step": "ШАГ 2",
           "title": "AI анализирует",
           "description": "AI сопоставляет сигналы здоровья, цель и ритм прогресса.",
-          "items": ["Brain hologram", "Floating charts", "DNA spiral", "Графики", "AI scanning screen"]
+          "items": ["Голограмма мозга", "Плавающие графики", "Спираль ДНК", "Графики", "Экран AI-сканирования"]
         },
         "planning": {
           "step": "ШАГ 3",
           "title": "Собираем ваш план",
-          "description": "Workout, питание, сон и недельный ритм превращаются в практичный план.",
-          "items": ["Workout plan", "Food plan", "Sleep schedule", "Calendar", "Dumbbell + salad"]
+          "description": "Тренировки, питание, сон и недельный ритм превращаются в практичный план.",
+          "items": ["План тренировок", "План питания", "График сна", "Календарь", "Гантель и салат"]
         },
         "finalizing": {
           "step": "ШАГ 4",
           "title": "Финализируем отчёт",
-          "description": "Финальный report view собирается с ключевыми score и action plan.",
-          "items": ["Report output", "Approved stamp", "Final report folder", "Next action"]
+          "description": "Финальный экран отчёта собирается с ключевыми оценками и планом действий.",
+          "items": ["Вывод отчёта", "Отметка подтверждения", "Папка финального отчёта", "Следующее действие"]
         }
       },
       "languages": {

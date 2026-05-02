@@ -414,60 +414,41 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
     get(report, "report.hero.highlight") ||
     "—";
   const heroSummary =
-    get(report, "report.hero.summary") ||
-    t("onboarding.report.heroSubtitle", {
-      defaultValue: "Built for your goals, body and habits",
-    });
+    get(report, "report.hero.summary") || t("onboarding.report.heroSubtitle");
   const generatedAt = formatDateTime(get(report, "createdAt"), locale);
 
   const trackerItems = [
-    t("onboarding.report.progressTracker.overview", {
-      defaultValue: "Overview",
-    }),
-    t("onboarding.report.progressTracker.targets", { defaultValue: "Targets" }),
-    t("onboarding.report.progressTracker.nutrition", {
-      defaultValue: "Nutrition",
-    }),
-    t("onboarding.report.progressTracker.workout", { defaultValue: "Workout" }),
-    t("onboarding.report.progressTracker.actionPlan", {
-      defaultValue: "Action Plan",
-    }),
+    t("onboarding.report.progressTracker.overview"),
+    t("onboarding.report.progressTracker.targets"),
+    t("onboarding.report.progressTracker.nutrition"),
+    t("onboarding.report.progressTracker.workout"),
+    t("onboarding.report.progressTracker.actionPlan"),
   ];
 
   const scoreCards = [
     {
-      label: t("onboarding.report.scoreCards.bmi", {
-        defaultValue: "BMI Score",
-      }),
+      label: t("onboarding.report.scoreCards.bmi"),
       value: bmiValue,
       detail: bmiLabel,
       Icon: GaugeIcon,
     },
     {
-      label: t("onboarding.report.scoreCards.metabolism", {
-        defaultValue: "Metabolism",
-      }),
+      label: t("onboarding.report.scoreCards.metabolism"),
       value: calories ? calories.toLocaleString() : "—",
-      detail: t("onboarding.report.kcalPerDay", { defaultValue: "kcal/day" }),
+      detail: t("onboarding.report.kcalPerDay"),
       Icon: FlameIcon,
     },
     {
-      label: t("onboarding.report.scoreCards.energy", {
-        defaultValue: "Energy Level",
-      }),
+      label: t("onboarding.report.scoreCards.energy"),
       value:
         daysTracked > 0
-          ? t("onboarding.report.energyActive", { defaultValue: "Active" })
-          : t("onboarding.report.energyBaseline", { defaultValue: "Baseline" }),
-      detail: `${daysTracked} ${t("onboarding.report.daysTracked", {
-        defaultValue: "tracked days",
-      })}`,
+          ? t("onboarding.report.energyActive")
+          : t("onboarding.report.energyBaseline"),
+      detail: `${daysTracked} ${t("onboarding.report.daysTracked")}`,
       Icon: ZapIcon,
     },
     {
-      label: t("onboarding.report.scoreCards.weightOutlook", {
-        defaultValue: "Weight Outlook",
-      }),
+      label: t("onboarding.report.scoreCards.weightOutlook"),
       value: get(report, "report.hero.highlight") || "—",
       detail: weightStatus,
       Icon: TrendingUpIcon,
@@ -482,29 +463,25 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
 
   const targetCards = [
     {
-      label: t("onboarding.report.targets.calories", {
-        defaultValue: "Calories",
-      }),
+      label: t("onboarding.report.targets.calories"),
       value: calories ? calories.toLocaleString() : "—",
       unit: "kcal",
       Icon: FlameIcon,
     },
     {
-      label: t("onboarding.report.targets.protein", {
-        defaultValue: "Protein",
-      }),
+      label: t("onboarding.report.targets.protein"),
       value: protein || "—",
       unit: "g",
       Icon: SaladIcon,
     },
     {
-      label: t("onboarding.report.targets.water", { defaultValue: "Water" }),
+      label: t("onboarding.report.targets.water"),
       value: waterMl ? Math.round(waterMl / 100) / 10 : "—",
       unit: waterMl ? "L" : "",
       Icon: DropletsIcon,
     },
     {
-      label: t("onboarding.report.targets.sleep", { defaultValue: "Sleep" }),
+      label: t("onboarding.report.targets.sleep"),
       value: sleepHours || "—",
       unit: "h",
       Icon: MoonIcon,
@@ -514,47 +491,38 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
   const sectionCards = [
     {
       key: "nutrition",
-      title: t("onboarding.report.sections.nutrition", {
-        defaultValue: "Nutrition",
-      }),
+      title: t("onboarding.report.sections.nutrition"),
       image: `${base}/report-1.webp`,
       Icon: SaladIcon,
       section: get(report, "report.nutritionGuidance"),
     },
     {
       key: "water",
-      title: t("onboarding.report.sections.water", { defaultValue: "Water" }),
+      title: t("onboarding.report.sections.water"),
       image: `${base}/report-2.webp`,
       Icon: DropletsIcon,
       section: get(report, "report.hydrationGuidance"),
     },
     {
       key: "workout",
-      title: t("onboarding.report.sections.workout", {
-        defaultValue: "Workout",
-      }),
+      title: t("onboarding.report.sections.workout"),
       image: `${base}/report-3.webp`,
       Icon: DumbbellIcon,
       section: get(report, "report.movementGuidance"),
     },
     {
       key: "sleep",
-      title: t("onboarding.report.sections.sleep", { defaultValue: "Sleep" }),
+      title: t("onboarding.report.sections.sleep"),
       image: `${base}/report-4.webp`,
       Icon: MoonIcon,
       section: {
-        summary: t("onboarding.report.sleepSummary", {
-          defaultValue:
-            "Sleep anchors recovery, appetite, and training consistency.",
-        }),
+        summary: t("onboarding.report.sleepSummary"),
         bullets: get(report, "report.cautionPoints.bullets", []),
       },
     },
     {
       key: "progress",
-      title: t("onboarding.report.sections.progress", {
-        defaultValue: "Progress",
-      }),
+      title: t("onboarding.report.sections.progress"),
       image: `${base}/report-1.webp`,
       Icon: TrendingUpIcon,
       section: get(report, "report.goalInterpretation"),
@@ -565,12 +533,8 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
     get(report, "report.bodySummary.bmiLabel"),
     get(report, "report.hydrationGuidance.bullets.0"),
     daysTracked > 0
-      ? t("onboarding.report.trackingAvailable", {
-          defaultValue: "Real tracking data is available",
-        })
-      : t("onboarding.report.needTracking", {
-          defaultValue: "Need more tracking data",
-        }),
+      ? t("onboarding.report.trackingAvailable")
+      : t("onboarding.report.needTracking"),
   ].filter(Boolean);
   const actionItems = get(report, "report.actionPlan.items", []).slice(0, 7);
 
@@ -619,9 +583,7 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
                 variant="outline"
                 className="border-[#E68A00]/20 bg-[#F8FAF7]"
               >
-                {t("onboarding.report.oneTimeBadge", {
-                  defaultValue: "One-time onboarding result",
-                })}
+                {t("onboarding.report.oneTimeBadge")}
               </Badge>
               <Badge
                 variant="outline"
@@ -633,14 +595,10 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
 
             <div className="space-y-4">
               <h1 className="max-w-3xl text-[28px] font-black leading-[0.98] tracking-[-0.035em] text-[#111827] sm:text-5xl md:text-7xl">
-                {t("onboarding.report.heroTitle", {
-                  defaultValue: "Your AI Wellness Report",
-                })}
+                {t("onboarding.report.heroTitle")}
               </h1>
               <p className="max-w-2xl text-base font-bold leading-6 text-[#334155] sm:text-lg md:text-xl md:leading-7">
-                {t("onboarding.report.heroSubtitle", {
-                  defaultValue: "Built for your goals, body and habits",
-                })}
+                {t("onboarding.report.heroSubtitle")}
               </p>
               <p className="line-clamp-2 max-w-3xl text-sm font-medium leading-6 text-[#64748B] sm:line-clamp-3">
                 {heroSummary}
@@ -677,14 +635,11 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
                 onClick={onStartPlan}
               >
                 <TargetIcon className="size-5" />
-                {t("onboarding.report.startMyPlan", {
-                  defaultValue: "Start My Plan",
-                })}
+                {t("onboarding.report.startMyPlan")}
               </Button>
               <p className="text-xs font-semibold leading-5 text-[#64748B] sm:text-sm">
                 {t("onboarding.report.generatedOnce", {
                   date: generatedAt,
-                  defaultValue: `Generated once after onboarding · ${generatedAt}`,
                 })}
               </p>
             </div>
@@ -699,9 +654,7 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
               transition={{ delay: 0.22, duration: 0.35, ease: "easeOut" }}
             >
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#94A3B8] sm:text-xs sm:tracking-[0.2em]">
-                {t("onboarding.report.confidence", {
-                  defaultValue: "Confidence",
-                })}
+                {t("onboarding.report.confidence")}
               </p>
               <div className="mt-2 flex items-end gap-1">
                 <span className="text-2xl font-black text-[#111827] sm:text-4xl">
@@ -747,7 +700,7 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
                 <div className="flex items-center justify-between">
                   <Icon className="size-4 text-[#E68A00] sm:size-5" />
                   <span className="text-[10px] font-semibold text-green-600 sm:text-xs">
-                    {t("onboarding.report.target", { defaultValue: "Target" })}
+                    {t("onboarding.report.target")}
                   </span>
                 </div>
                 <p className="mt-3 text-xs font-semibold text-[#64748B] sm:mt-5 sm:text-sm">
@@ -767,9 +720,7 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-xl font-bold text-[#111827] sm:text-2xl">
-                  {t("onboarding.report.whyThisMatters", {
-                    defaultValue: "Why this matters",
-                  })}
+                  {t("onboarding.report.whyThisMatters")}
                 </h2>
                 <p className="mt-1 text-xs font-medium text-[#64748B] sm:text-sm">
                   {formatDateTime(get(report, "createdAt"), locale)}
@@ -804,15 +755,10 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
         <section className="space-y-3 md:space-y-4">
           <div>
             <h2 className="text-2xl font-black text-[#111827] sm:text-3xl">
-              {t("onboarding.report.focusAreas", {
-                defaultValue: "Focus areas",
-              })}
+              {t("onboarding.report.focusAreas")}
             </h2>
             <p className="mt-1 text-sm font-semibold leading-5 text-[#64748B]">
-              {t("onboarding.report.focusAreasDescription", {
-                defaultValue:
-                  "Short guidance by habit area. Scan, then start tracking.",
-              })}
+              {t("onboarding.report.focusAreasDescription")}
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 md:gap-4 xl:grid-cols-5">
@@ -868,15 +814,10 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <h2 className="text-2xl font-black leading-tight sm:text-3xl">
-                {t("onboarding.report.sevenTips", {
-                  defaultValue: "7 wellness tips",
-                })}
+                {t("onboarding.report.sevenTips")}
               </h2>
               <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-white/65">
-                {t("onboarding.report.sevenTipsDescription", {
-                  defaultValue:
-                    "Short practical tips from your AI report. Start with the easiest one today.",
-                })}
+                {t("onboarding.report.sevenTipsDescription")}
               </p>
             </div>
             <Button
@@ -885,9 +826,7 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
               onClick={onStartPlan}
             >
               <TargetIcon className="size-4" />
-              {t("onboarding.report.startMyPlan", {
-                defaultValue: "Start My Plan",
-              })}
+              {t("onboarding.report.startMyPlan")}
             </Button>
           </div>
           <div className="mt-4 grid gap-2 sm:mt-5 sm:gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -901,9 +840,7 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
                 </span>
                 <div className="min-w-0">
                   <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#FBBF24] sm:text-xs sm:tracking-[0.16em]">
-                    {t("onboarding.report.tipLabel", {
-                      defaultValue: "Tip",
-                    })}
+                    {t("onboarding.report.tipLabel")}
                   </p>
                   <p className="mt-0.5 line-clamp-2 text-xs font-semibold leading-4 text-white/90 sm:mt-1 sm:text-sm sm:leading-6">
                     {item}
@@ -1188,7 +1125,7 @@ const Index = () => {
               report={report}
               onStartPlan={handleOpenDashboard}
               t={t}
-              locale={t("common.locale", { defaultValue: "uz-UZ" })}
+              locale={i18n.resolvedLanguage || i18n.language || "uz"}
             />
           </motion.div>
         ) : (
