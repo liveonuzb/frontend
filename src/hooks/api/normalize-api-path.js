@@ -2,6 +2,7 @@ const LEGACY_API_PATH_RULES = [
   [/^\/onboarding\/status\b/, "/user/onboarding/status"],
   [/^\/onboarding\/coach\b/, "/coach/onboarding/coach"],
   [/^\/onboarding\/user\b/, "/user/onboarding/user"],
+  [/^\/onboarding\b/, "/user/onboarding"],
   [/^\/users\/profile\b/, "/user/profile"],
   [/^\/users\/search\b/, "/user/search"],
   [/^\/users\b/, "/user"],

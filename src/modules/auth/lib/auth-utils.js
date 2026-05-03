@@ -36,6 +36,10 @@ export const getAuthErrorMessage = (error, fallbackMessage) => {
   return fallbackMessage;
 };
 
+export const getAuthResponseData = (response) => {
+  return get(response, "data.data") ?? get(response, "data") ?? response;
+};
+
 export const getOtpToastDescription = (responseData, t) => {
   const otpCode = get(responseData, "otpCode");
   if (!otpCode || typeof t !== "function") {

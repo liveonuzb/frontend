@@ -6,6 +6,11 @@
     "illustrationAlt": "Onboarding illustration",
     "finish": "Finish",
     "saving": "Saving...",
+    "autosave": {
+      "saving": "Saving",
+      "saved": "Saved",
+      "error": "Not saved"
+    },
     "skip": "Skip",
     "name": {
       "question": "What's your name?",
@@ -130,6 +135,68 @@
       "veryActiveTitle": "High output",
       "veryActiveDescription": "Hard exercise 6-7 days/week",
       "metaLabel": "Activity level"
+    },
+    "lifestyle": {
+      "title": "What does your daily rhythm look like?",
+      "description": "We will adapt workout volume and nutrition to your real routine.",
+      "weeklyWorkoutCount": "How many workouts can you do per week?",
+      "weeklyWorkoutCountOption": "{{count}} days",
+      "workoutExperience": "Workout experience",
+      "workoutExperiences": {
+        "beginner": "Beginner",
+        "intermediate": "Intermediate",
+        "advanced": "Advanced"
+      },
+      "sleepHours": "How many hours do you usually sleep?",
+      "sleepPlaceholder": "Example: 7.5",
+      "workType": "What is your workday like?",
+      "workTypes": {
+        "sedentary": "Mostly sitting",
+        "mixed": "Mixed",
+        "active": "Active"
+      },
+      "cookingAccess": "How do you usually handle meals?",
+      "cookingAccesses": {
+        "home-cooking": "Cook at home",
+        "mixed": "Mixed",
+        "ready-meals": "Ready meals"
+      },
+      "cookingTime": "How much time can you spend cooking?",
+      "cookingTimes": {
+        "under-15": "Under 15 minutes",
+        "15-30": "15-30 minutes",
+        "30-60": "30-60 minutes",
+        "60-plus": "60+ minutes"
+      },
+      "fastFoodFrequency": "Fast food habit",
+      "fastFoodFrequencies": {
+        "rarely": "Rarely",
+        "weekly": "Once a week",
+        "several-weekly": "Several times a week",
+        "daily": "Daily"
+      },
+      "sweetDrinkHabit": "Sweet or fizzy drink habit",
+      "sweetDrinkHabits": {
+        "rarely": "Rarely",
+        "weekly": "Several times a week",
+        "daily": "Daily"
+      },
+      "cardioLevel": "Cardio level",
+      "cardioLevels": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High"
+      },
+      "playsFootball": "Do you play football?",
+      "boolean": {
+        "yes": "Yes",
+        "no": "No"
+      },
+      "errors": {
+        "weeklyWorkoutCount": "Choose a weekly workout count from 0 to 7.",
+        "workoutExperience": "Choose your workout experience.",
+        "sleepHours": "Sleep hours must be between 0 and 16."
+      }
     },
     "mealFrequency": {
       "question": "How often do you eat?",
@@ -313,7 +380,28 @@
       "noneDescription": "No separate health constraints for workouts",
       "noneSummary": "No constraints",
       "selectedCount": "{{count}} constraints selected",
-      "defaultDescription": "This will be considered when building your plan."
+      "defaultDescription": "This will be considered when building your plan.",
+      "injurySeverity": "Injury severity",
+      "severity": {
+        "none": "None",
+        "mild": "Mild",
+        "moderate": "Moderate",
+        "severe": "Severe"
+      },
+      "forbiddenExercises": "Exercises forbidden by a doctor",
+      "forbiddenExercisesHint": "Separate each exercise with a new line or comma.",
+      "forbiddenPlaceholder": "Example: heavy squat, jumping, running",
+      "medications": "Medications",
+      "medicationsPlaceholder": "Optional: name and dosage",
+      "supplements": "Supplements",
+      "supplementsPlaceholder": "Optional: protein, creatine, vitamins...",
+      "notificationPreference": "Reminder and tracking time",
+      "notifications": {
+        "none": "No reminders",
+        "morning": "Morning",
+        "evening": "Evening",
+        "both": "Morning and evening"
+      }
     },
     "otherGoals": {
       "question": "Any other goals?",
@@ -355,6 +443,54 @@
       "title": "Great result!",
       "description": "Your personal profile has been created.",
       "redirecting": "Redirecting to dashboard..."
+    },
+    "review": {
+      "title": "Review your information",
+      "description": "Confirm your key answers before Liveon creates your personal plan.",
+      "ready": "Ready to generate",
+      "fixRequired": "Complete the required fields first",
+      "generate": "Generate plan",
+      "submitError": "Could not complete onboarding.",
+      "missing": {
+        "name": "First and last name",
+        "gender": "Gender",
+        "age": "Age",
+        "height": "Height",
+        "currentWeight": "Current weight",
+        "goal": "Main goal",
+        "targetWeight": "Target weight",
+        "activityLevel": "Activity level",
+        "weeklyWorkoutCount": "Weekly workout count",
+        "workoutExperience": "Workout experience",
+        "mealFrequency": "Meal frequency",
+        "healthConstraints": "Health constraints"
+      },
+      "sections": {
+        "profile": "Profile and body",
+        "activity": "Goal and activity",
+        "nutrition": "Nutrition",
+        "safety": "Health safety"
+      },
+      "fields": {
+        "name": "Name",
+        "gender": "Gender",
+        "age": "Age",
+        "height": "Height",
+        "currentWeight": "Current weight",
+        "goal": "Goal",
+        "targetWeight": "Target weight",
+        "activityLevel": "Activity",
+        "weeklyWorkoutCount": "Workouts/week",
+        "workoutExperience": "Experience",
+        "mealFrequency": "Meals per day",
+        "foodBudget": "Budget",
+        "allergies": "Allergies",
+        "dietRequirements": "Diet requirements",
+        "healthConstraints": "Constraints",
+        "injurySeverity": "Injury severity",
+        "forbiddenExercises": "Forbidden exercises",
+        "cardioLevel": "Cardio"
+      }
     },
     "postOnboarding": {
       "loading": {
@@ -412,6 +548,9 @@
         "equipment": "Equipment",
         "equipmentSummary": "{{count}} equipment items selected",
         "equipmentPlaceholder": "Dumbbells, pull-up bar, yoga mat...",
+        "preferencesTitle": "Plan inputs",
+        "preferencesDescription": "These values are sent into the next meal plan, workout plan, and tracking generation.",
+        "preferenceCount": "{{count}} values",
         "metrics": {
           "calories": "Calories",
           "carbs": "Carbs",
@@ -423,7 +562,25 @@
           "weeklyWorkoutDays": "Workout days",
           "workoutLocation": "Workout location"
         },
+        "preferences": {
+          "currentWeight": "Current weight",
+          "goal": "Goal",
+          "activityLevel": "Activity",
+          "foodBudget": "Budget",
+          "allergies": "Allergies",
+          "dietRequirements": "Diet requirements",
+          "dislikedFoods": "Disliked foods",
+          "workoutExperience": "Experience",
+          "sleepHours": "Sleep",
+          "injurySeverity": "Injury",
+          "forbiddenExercises": "Forbidden exercises"
+        },
         "options": {
+          "goal": {
+            "lose": "Lose weight",
+            "maintain": "Maintain",
+            "gain": "Build muscle"
+          },
           "weeklyWeightChangeGoal": {
             "0.25": "0.25 kg per week",
             "0.5": "0.5 kg per week",
@@ -443,10 +600,27 @@
             "5": "5 days",
             "6": "6 days"
           },
+          "activityLevel": {
+            "sedentary": "Sedentary",
+            "lightly-active": "Lightly active",
+            "moderately-active": "Moderately active",
+            "very-active": "Very active"
+          },
+          "workoutExperience": {
+            "beginner": "Beginner",
+            "intermediate": "Intermediate",
+            "advanced": "Advanced"
+          },
           "workoutLocation": {
             "home": "Home",
             "gym": "Gym",
             "outdoor": "Outdoor"
+          },
+          "injurySeverity": {
+            "none": "None",
+            "mild": "Mild",
+            "moderate": "Moderate",
+            "severe": "Severe"
           }
         },
         "edit": {
@@ -466,9 +640,17 @@
             "title": "Fat target",
             "description": "Enter grams. We warn you if fat is too low."
           },
+          "currentWeight": {
+            "title": "Current weight",
+            "description": "This is the core body metric for tracking and recalculation."
+          },
           "targetWeight": {
             "title": "Target weight",
             "description": "Changing target weight recalculates calories and macros."
+          },
+          "goal": {
+            "title": "Primary goal",
+            "description": "Changing the goal adapts calorie direction, workout focus, and meal planning."
           },
           "weeklyWeightChangeGoal": {
             "title": "Weekly pace",
@@ -482,6 +664,37 @@
             "title": "Workout days",
             "description": "The weekly workout schedule is built from this number."
           },
+          "activityLevel": {
+            "title": "Activity level",
+            "description": "This affects daily energy expenditure and how aggressive the plan should be."
+          },
+          "foodBudget": {
+            "title": "Food budget",
+            "description": "AI meal planning uses this budget when choosing ingredients and foods."
+          },
+          "allergies": {
+            "title": "Allergies",
+            "description": "AI meal planning excludes or treats these ingredients and custom values carefully.",
+            "placeholder": "Peanuts, eggs, honey..."
+          },
+          "dietRequirements": {
+            "title": "Diet requirements",
+            "description": "Halal, vegetarian, lactose-free, or other requirements are sent into the next meal plan generation.",
+            "placeholder": "Halal, high protein, no sugar..."
+          },
+          "dislikedFoods": {
+            "title": "Disliked foods",
+            "description": "Choose foods that should be reduced, avoided, or replaced in the plan.",
+            "placeholder": "Soup, fish, liver..."
+          },
+          "workoutExperience": {
+            "title": "Workout experience",
+            "description": "Exercise difficulty and progression are adapted to this level."
+          },
+          "sleepHours": {
+            "title": "Sleep hours",
+            "description": "Used to tune recovery and weekly training load."
+          },
           "workoutLocation": {
             "title": "Workout location",
             "description": "Exercises are selected for home, gym, or outdoor training."
@@ -489,6 +702,15 @@
           "equipment": {
             "title": "Choose equipment",
             "description": "Select active equipment or add a custom item."
+          },
+          "injurySeverity": {
+            "title": "Injury severity",
+            "description": "Workout intensity is adjusted to keep the plan safer."
+          },
+          "forbiddenExercises": {
+            "title": "Forbidden exercises",
+            "description": "Enter doctor-forbidden or self-forbidden exercises. Put each one on a new line.",
+            "placeholder": "Example: heavy squat, jumping, running"
           }
         }
       }
@@ -572,25 +794,48 @@
           "step": "STEP 1",
           "title": "Collecting your data",
           "description": "Profile, onboarding, and tracking signals are being gathered for your health report.",
-          "items": ["Apple Watch data", "Heart rate", "Sleep", "Nutrition", "Dashboard monitor"]
+          "items": [
+            "Apple Watch data",
+            "Heart rate",
+            "Sleep",
+            "Nutrition",
+            "Dashboard monitor"
+          ]
         },
         "analyzing": {
           "step": "STEP 2",
           "title": "AI is analyzing",
           "description": "AI is checking your health signals, goal, and progress rhythm together.",
-          "items": ["Brain hologram", "Floating charts", "DNA spiral", "Graphs", "AI scanning screen"]
+          "items": [
+            "Brain hologram",
+            "Floating charts",
+            "DNA spiral",
+            "Graphs",
+            "AI scanning screen"
+          ]
         },
         "planning": {
           "step": "STEP 3",
           "title": "Building your plan",
           "description": "Workout, food, sleep, and weekly rhythm are being shaped into one practical plan.",
-          "items": ["Workout plan", "Food plan", "Sleep schedule", "Calendar", "Dumbbell + salad"]
+          "items": [
+            "Workout plan",
+            "Food plan",
+            "Sleep schedule",
+            "Calendar",
+            "Dumbbell + salad"
+          ]
         },
         "finalizing": {
           "step": "STEP 4",
           "title": "Finalizing report",
           "description": "The final report view is being assembled with your key scores and action plan.",
-          "items": ["Report output", "Approved stamp", "Final report folder", "Next action"]
+          "items": [
+            "Report output",
+            "Approved stamp",
+            "Final report folder",
+            "Next action"
+          ]
         }
       },
       "languages": {

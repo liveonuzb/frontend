@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { getAuthErrorMessage, getOtpToastDescription } from "./auth-utils.js";
+import {
+  getAuthErrorMessage,
+  getAuthResponseData,
+  getOtpToastDescription,
+} from "./auth-utils.js";
 
 describe("getAuthErrorMessage", () => {
   it("reads nested backend error messages", () => {
@@ -66,5 +70,29 @@ describe("getOtpToastDescription", () => {
     expect(getOtpToastDescription({ otpCode: "123456" }, t)).toBe(
       "auth.devOtpCode:123456",
     );
+  });
+});
+
+describe("getAuthResponseData", () => {
+  it("unwraps standard API response wrappers", () => {
+    expect(
+      getAuthResponseData({
+        data: {
+          data: {
+            flow: "login",
+          },
+        },
+      }),
+    ).toEqual({ flow: "login" });
+  });
+
+  it("keeps legacy unwrapped axios data support", () => {
+    expect(
+      getAuthResponseData({
+        data: {
+          accessToken: "token",
+        },
+      }),
+    ).toEqual({ accessToken: "token" });
   });
 });

@@ -51,7 +51,14 @@ export const getNextUserOnboardingPath = (state) => {
   }
 
   if (!hasValue(state.activityLevel)) {
-    return "weekly-pace";
+    return "activity-level";
+  }
+
+  if (
+    !hasValue(state.weeklyWorkoutCount) ||
+    !hasValue(state.workoutExperience)
+  ) {
+    return "lifestyle";
   }
 
   if (!hasCompletedStep(state, "workout-location")) {
@@ -140,7 +147,15 @@ export const getNextUserOnboardingPath = (state) => {
     return "preferred-ingredients";
   }
 
-  return "disliked-ingredients";
+  if (
+    !hasValue(state.dislikedIngredientIds) &&
+    !hasValue(state.customDislikedIngredients) &&
+    !hasCompletedStep(state, "disliked-ingredients")
+  ) {
+    return "disliked-ingredients";
+  }
+
+  return "review";
 };
 
 export const getResumeOnboardingPath = (state, onboardingCompleted) => {

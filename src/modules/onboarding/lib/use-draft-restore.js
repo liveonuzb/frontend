@@ -7,6 +7,7 @@ import {
 } from "@/lib/user-onboarding";
 import { useOnboardingStore } from "@/store";
 import { mapCoachOnboardingDraftToStoreFields } from "./coach-onboarding-dto";
+import { getOnboardingDraftApiPath } from "./onboarding-api-paths";
 
 /**
  * Checks whether the user-level onboarding fields in the local store
@@ -25,6 +26,14 @@ function isUserStoreEmpty(state) {
     (!isArray(state.goals) || state.goals.length === 0) &&
     !state.targetWeight?.value &&
     !state.activityLevel &&
+    !state.weeklyWorkoutCount &&
+    !state.workoutExperience &&
+    !state.sleepHours &&
+    !state.workType &&
+    !state.fastFoodFrequency &&
+    !state.sweetDrinkHabit &&
+    !state.cookingTime &&
+    !state.cookingAccess &&
     !state.mealFrequency &&
     !state.waterHabits &&
     !state.foodBudget &&
@@ -48,14 +57,12 @@ function isUserStoreEmpty(state) {
     (!isArray(state.allergyIds) || state.allergyIds.length === 0) &&
     (!isArray(state.allergyIngredientIds) ||
       state.allergyIngredientIds.length === 0) &&
-    (!isArray(state.customAllergies) ||
-      state.customAllergies.length === 0) &&
+    (!isArray(state.customAllergies) || state.customAllergies.length === 0) &&
     (!isArray(state.dietRequirementIds) ||
       state.dietRequirementIds.length === 0) &&
     (!isArray(state.customDietRequirements) ||
       state.customDietRequirements.length === 0) &&
-    (!isArray(state.dislikedFoodIds) ||
-      state.dislikedFoodIds.length === 0) &&
+    (!isArray(state.dislikedFoodIds) || state.dislikedFoodIds.length === 0) &&
     (!isArray(state.customDislikedFoods) ||
       state.customDislikedFoods.length === 0) &&
     (!isArray(state.preferredIngredientIds) ||
@@ -71,10 +78,16 @@ function isUserStoreEmpty(state) {
     !state.allergyOtherText &&
     !state.dislikedOtherText &&
     !state.nutritionPreferenceOtherText &&
-    (!isArray(state.dietRestrictions) ||
-      state.dietRestrictions.length === 0) &&
-    (!isArray(state.healthConstraints) ||
-      state.healthConstraints.length === 0)
+    (!isArray(state.dietRestrictions) || state.dietRestrictions.length === 0) &&
+    (!isArray(state.healthConstraints) || state.healthConstraints.length === 0) &&
+    !state.injurySeverity &&
+    (!isArray(state.forbiddenExercises) ||
+      state.forbiddenExercises.length === 0) &&
+    !state.medications &&
+    !state.supplements &&
+    !state.playsFootball &&
+    !state.cardioLevel &&
+    !state.notificationPreference
   );
 }
 
@@ -86,18 +99,13 @@ function isCoachStoreEmpty(state) {
   return (
     !state.experience &&
     !state.coachCategory &&
-    (!isArray(state.coachCategories) ||
-      state.coachCategories.length === 0) &&
-    (!isArray(state.targetAudience) ||
-      state.targetAudience.length === 0) &&
-    (!isArray(state.specializations) ||
-      state.specializations.length === 0) &&
+    (!isArray(state.coachCategories) || state.coachCategories.length === 0) &&
+    (!isArray(state.targetAudience) || state.targetAudience.length === 0) &&
+    (!isArray(state.specializations) || state.specializations.length === 0) &&
     !state.certificationType &&
     !state.certificationNumber &&
-    (!isArray(state.certificateFiles) ||
-      state.certificateFiles.length === 0) &&
-    (!isArray(state.coachLanguages) ||
-      state.coachLanguages.length === 0) &&
+    (!isArray(state.certificateFiles) || state.certificateFiles.length === 0) &&
+    (!isArray(state.coachLanguages) || state.coachLanguages.length === 0) &&
     !state.coachCity &&
     !state.coachWorkMode &&
     !state.coachWorkplace &&
@@ -159,6 +167,33 @@ function mergeUserDraft(serverData, setFields) {
   }
   if (serverData.activityLevel) {
     fields.activityLevel = serverData.activityLevel;
+  }
+  if (
+    serverData.weeklyWorkoutCount !== undefined &&
+    serverData.weeklyWorkoutCount !== null
+  ) {
+    fields.weeklyWorkoutCount = String(serverData.weeklyWorkoutCount);
+  }
+  if (serverData.workoutExperience) {
+    fields.workoutExperience = serverData.workoutExperience;
+  }
+  if (serverData.sleepHours !== undefined && serverData.sleepHours !== null) {
+    fields.sleepHours = String(serverData.sleepHours);
+  }
+  if (serverData.workType) {
+    fields.workType = serverData.workType;
+  }
+  if (serverData.fastFoodFrequency) {
+    fields.fastFoodFrequency = serverData.fastFoodFrequency;
+  }
+  if (serverData.sweetDrinkHabit) {
+    fields.sweetDrinkHabit = serverData.sweetDrinkHabit;
+  }
+  if (serverData.cookingTime) {
+    fields.cookingTime = serverData.cookingTime;
+  }
+  if (serverData.cookingAccess) {
+    fields.cookingAccess = serverData.cookingAccess;
   }
   if (serverData.mealFrequency) {
     fields.mealFrequency = serverData.mealFrequency;
@@ -261,6 +296,27 @@ function mergeUserDraft(serverData, setFields) {
   if (isArray(serverData.healthConstraints)) {
     fields.healthConstraints = serverData.healthConstraints;
   }
+  if (serverData.injurySeverity) {
+    fields.injurySeverity = serverData.injurySeverity;
+  }
+  if (isArray(serverData.forbiddenExercises)) {
+    fields.forbiddenExercises = serverData.forbiddenExercises;
+  }
+  if (serverData.medications) {
+    fields.medications = serverData.medications;
+  }
+  if (serverData.supplements) {
+    fields.supplements = serverData.supplements;
+  }
+  if (serverData.playsFootball !== undefined && serverData.playsFootball !== null) {
+    fields.playsFootball = Boolean(serverData.playsFootball);
+  }
+  if (serverData.cardioLevel) {
+    fields.cardioLevel = serverData.cardioLevel;
+  }
+  if (serverData.notificationPreference) {
+    fields.notificationPreference = serverData.notificationPreference;
+  }
 
   if (
     isArray(fields.preferredExerciseIds) ||
@@ -341,7 +397,7 @@ export function useDraftRestore(type, { enabled = true } = {}) {
   const restoredRef = useRef(false);
 
   const { data: serverDraft, isLoading } = useGetQuery({
-    url: `/onboarding/${type}/draft`,
+    url: getOnboardingDraftApiPath(type),
     queryProps: {
       queryKey: ["onboarding-draft", type],
       enabled,

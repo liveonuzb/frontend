@@ -64,6 +64,14 @@ export const normalizeUserOnboarding = (onboarding) => {
     ),
     weeklyPace: onboarding.weeklyPace ?? null,
     activityLevel: onboarding.activityLevel ?? null,
+    weeklyWorkoutCount: onboarding.weeklyWorkoutCount ?? null,
+    workoutExperience: onboarding.workoutExperience ?? null,
+    sleepHours: onboarding.sleepHours ?? null,
+    workType: onboarding.workType ?? null,
+    fastFoodFrequency: onboarding.fastFoodFrequency ?? null,
+    sweetDrinkHabit: onboarding.sweetDrinkHabit ?? null,
+    cookingTime: onboarding.cookingTime ?? null,
+    cookingAccess: onboarding.cookingAccess ?? null,
     mealFrequency: onboarding.mealFrequency ?? null,
     waterHabits: onboarding.waterHabits ?? null,
     foodBudget: onboarding.foodBudget ?? null,
@@ -135,6 +143,15 @@ export const normalizeUserOnboarding = (onboarding) => {
     healthConstraints: isArray(onboarding.healthConstraints)
       ? onboarding.healthConstraints
       : [],
+    injurySeverity: onboarding.injurySeverity ?? null,
+    forbiddenExercises: isArray(onboarding.forbiddenExercises)
+      ? onboarding.forbiddenExercises
+      : [],
+    medications: onboarding.medications ?? "",
+    supplements: onboarding.supplements ?? "",
+    playsFootball: onboarding.playsFootball ?? false,
+    cardioLevel: onboarding.cardioLevel ?? null,
+    notificationPreference: onboarding.notificationPreference ?? null,
     flowStatus: onboarding.flowStatus ?? null,
     skippedSteps: isArray(onboarding.skippedSteps) ? onboarding.skippedSteps : [],
     activatedAt: onboarding.activatedAt ?? null,
@@ -295,6 +312,40 @@ export const toUserOnboardingPayload = (patch = {}) => {
   }
   if ("activityLevel" in patch) {
     payload.activityLevel = patch.activityLevel || undefined;
+  }
+  if ("weeklyWorkoutCount" in patch) {
+    payload.weeklyWorkoutCount =
+      patch.weeklyWorkoutCount === "" ||
+      patch.weeklyWorkoutCount === null ||
+      patch.weeklyWorkoutCount === undefined
+        ? undefined
+        : Number(patch.weeklyWorkoutCount);
+  }
+  if ("workoutExperience" in patch) {
+    payload.workoutExperience = patch.workoutExperience || undefined;
+  }
+  if ("sleepHours" in patch) {
+    payload.sleepHours =
+      patch.sleepHours === "" ||
+      patch.sleepHours === null ||
+      patch.sleepHours === undefined
+        ? undefined
+        : Number(patch.sleepHours);
+  }
+  if ("workType" in patch) {
+    payload.workType = patch.workType || undefined;
+  }
+  if ("fastFoodFrequency" in patch) {
+    payload.fastFoodFrequency = patch.fastFoodFrequency || undefined;
+  }
+  if ("sweetDrinkHabit" in patch) {
+    payload.sweetDrinkHabit = patch.sweetDrinkHabit || undefined;
+  }
+  if ("cookingTime" in patch) {
+    payload.cookingTime = patch.cookingTime || undefined;
+  }
+  if ("cookingAccess" in patch) {
+    payload.cookingAccess = patch.cookingAccess || undefined;
   }
   if ("mealFrequency" in patch) {
     payload.mealFrequency = patch.mealFrequency || undefined;
@@ -478,6 +529,29 @@ export const toUserOnboardingPayload = (patch = {}) => {
     payload.healthConstraints = isArray(patch.healthConstraints)
       ? patch.healthConstraints.filter((item) => item !== "none")
       : undefined;
+  }
+  if ("injurySeverity" in patch) {
+    payload.injurySeverity = patch.injurySeverity || undefined;
+  }
+  if ("forbiddenExercises" in patch) {
+    payload.forbiddenExercises = normalizeCustomTextArray(
+      patch.forbiddenExercises,
+    );
+  }
+  if ("medications" in patch) {
+    payload.medications = patch.medications || undefined;
+  }
+  if ("supplements" in patch) {
+    payload.supplements = patch.supplements || undefined;
+  }
+  if ("playsFootball" in patch) {
+    payload.playsFootball = Boolean(patch.playsFootball);
+  }
+  if ("cardioLevel" in patch) {
+    payload.cardioLevel = patch.cardioLevel || undefined;
+  }
+  if ("notificationPreference" in patch) {
+    payload.notificationPreference = patch.notificationPreference || undefined;
   }
 
   return payload;

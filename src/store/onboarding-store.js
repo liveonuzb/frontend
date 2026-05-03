@@ -1,6 +1,10 @@
 import { includes, filter } from "lodash";
 import { create } from "zustand";
-import { persist, createJSONStorage, subscribeWithSelector } from "zustand/middleware";
+import {
+  persist,
+  createJSONStorage,
+  subscribeWithSelector,
+} from "zustand/middleware";
 
 const createInitialState = () => ({
   firstName: "",
@@ -15,6 +19,14 @@ const createInitialState = () => ({
   targetWeight: { value: "", unit: "kg" },
   weeklyPace: 0.5,
   activityLevel: "",
+  weeklyWorkoutCount: "",
+  workoutExperience: "",
+  sleepHours: "",
+  workType: "",
+  fastFoodFrequency: "",
+  sweetDrinkHabit: "",
+  cookingTime: "",
+  cookingAccess: "",
   mealFrequency: "",
   waterHabits: "",
   foodBudget: "",
@@ -47,6 +59,13 @@ const createInitialState = () => ({
   nutritionPreferenceOtherText: "",
   dietRestrictions: [],
   healthConstraints: [],
+  injurySeverity: "",
+  forbiddenExercises: [],
+  medications: "",
+  supplements: "",
+  playsFootball: false,
+  cardioLevel: "",
+  notificationPreference: "",
   coachCategory: null,
   coachCategories: [],
   targetAudience: [],
@@ -75,59 +94,71 @@ const createInitialState = () => ({
   coachAvatar: "",
   wantsMarketplaceListing: false,
   lastVisitedPath: "",
+  draftSaveStatus: "idle",
+  draftLastSavedAt: null,
+  draftSaveError: null,
 });
 
 const useOnboardingStore = create()(
   subscribeWithSelector(
-  persist(
-    (set) => ({
-      ...createInitialState(),
+    persist(
+      (set) => ({
+        ...createInitialState(),
 
-      setField: (field, value) => {
-        set(() => ({ [field]: value }));
-      },
+        setField: (field, value) => {
+          set(() => ({ [field]: value }));
+        },
 
-      setFields: (fields) => {
-        set((state) => ({ ...state, ...fields }));
-      },
+        setFields: (fields) => {
+          set((state) => ({ ...state, ...fields }));
+        },
 
-      setCoachCategory: (category) => {
-        set(() => ({ coachCategory: category }));
-      },
+        setCoachCategory: (category) => {
+          set(() => ({ coachCategory: category }));
+        },
 
-      toggleCoachCategory: (category) => {
-        set((state) => {
-          const current = state.coachCategories ?? [];
-          const exists = includes(current, category);
-          return {
-            coachCategories: exists
-              ? filter(current, (c) => c !== category)
-              : [...current, category],
-          };
-        });
-      },
+        toggleCoachCategory: (category) => {
+          set((state) => {
+            const current = state.coachCategories ?? [];
+            const exists = includes(current, category);
+            return {
+              coachCategories: exists
+                ? filter(current, (c) => c !== category)
+                : [...current, category],
+            };
+          });
+        },
 
-      setTargetAudience: (audience) => {
-        set(() => ({ targetAudience: audience }));
-      },
+        setTargetAudience: (audience) => {
+          set(() => ({ targetAudience: audience }));
+        },
 
-      setAvailability: (availability) => {
-        set(() => ({ availability }));
-      },
+        setAvailability: (availability) => {
+          set(() => ({ availability }));
+        },
 
-      setLastVisitedPath: (path) => {
-        set(() => ({ lastVisitedPath: path }));
-      },
+        setLastVisitedPath: (path) => {
+          set(() => ({ lastVisitedPath: path }));
+        },
 
-      reset: () => {
-        set(() => createInitialState());
+        setDraftSaveStatus: (status, details = {}) => {
+          set(() => ({
+            draftSaveStatus: status,
+            draftLastSavedAt:
+              details.lastSavedAt !== undefined ? details.lastSavedAt : null,
+            draftSaveError: details.error !== undefined ? details.error : null,
+          }));
+        },
+
+        reset: () => {
+          set(() => createInitialState());
+        },
+      }),
+      {
+        name: "onboarding-storage",
+        storage: createJSONStorage(() => localStorage),
       },
-    }),
-    {
-      name: "onboarding-storage",
-      storage: createJSONStorage(() => localStorage),
-    },
-  ),
+    ),
   ),
 );
 

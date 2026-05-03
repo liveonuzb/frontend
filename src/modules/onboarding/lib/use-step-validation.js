@@ -1,5 +1,6 @@
 import { usePostQuery } from "@/hooks/api";
 import { normalizeOnboardingStepForApi } from "./coach-onboarding-dto";
+import { getOnboardingValidateStepApiPath } from "./onboarding-api-paths";
 
 /**
  * Hook for validating onboarding step on server.
@@ -12,7 +13,7 @@ export function useStepValidation(type) {
   const validateStep = async (step, data) => {
     try {
       const result = await validate({
-        url: `/onboarding/${type}/validate-step`,
+        url: getOnboardingValidateStepApiPath(type),
         attributes: {
           step: normalizeOnboardingStepForApi(type, step),
           data,
@@ -20,7 +21,13 @@ export function useStepValidation(type) {
       });
       return result?.data ?? { valid: true };
     } catch {
-      return { valid: true }; // Fail open -- don't block user
+      return {
+        valid: false,
+        unavailable: true,
+        errors: {
+          server: ["Server validation is temporarily unavailable."],
+        },
+      };
     }
   };
 

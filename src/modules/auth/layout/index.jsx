@@ -84,7 +84,7 @@ const Index = () => {
                 <img
                   loading="lazy"
                   src={modeTheme.assets.logo}
-                  className="size-12 object-contain"
+                  className="size-10 object-contain"
                   alt={t("auth.layout.logoAlt")}
                 />
               </Link>

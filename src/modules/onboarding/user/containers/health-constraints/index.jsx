@@ -5,6 +5,7 @@ import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { CheckIcon, ChevronRightIcon, CircleSlashIcon, HeartPulseIcon, Loader2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { useGetQuery } from "@/hooks/api";
 import { cn } from "@/lib/utils";
 import { useOnboardingStore } from "@/store";
@@ -20,11 +21,28 @@ const getTone = (selected) => {
   if (selected?.key === "none") return ONBOARDING_ACCENTS.green;
   return ONBOARDING_ACCENTS.amber;
 };
+const injurySeverityOptions = ["none", "mild", "moderate", "severe"];
+const notificationOptions = ["none", "morning", "evening", "both"];
+
+const splitLines = (value) =>
+  String(value ?? "")
+    .split(/\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean);
 
 const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { healthConstraints, setField } = useOnboardingStore();
+  const {
+    healthConstraints,
+    injurySeverity,
+    forbiddenExercises,
+    medications,
+    supplements,
+    notificationPreference,
+    setField,
+    setFields,
+  } = useOnboardingStore();
 
   useOnboardingAutoSave("user", "health-constraints");
 
@@ -171,6 +189,103 @@ const Index = () => {
               );
             })
           )}
+
+          <section className="mt-2 rounded-2xl border bg-background/90 p-3">
+            <p className="text-sm font-bold">
+              {t("onboarding.healthConstraints.injurySeverity")}
+            </p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {injurySeverityOptions.map((option) => {
+                const isActive = (injurySeverity || "none") === option;
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    aria-pressed={isActive}
+                    onClick={() => setField("injurySeverity", option)}
+                    className={cn(
+                      "min-h-11 rounded-xl border px-2 py-2 text-sm font-semibold transition-colors",
+                      isActive
+                        ? `${activeTone.border} ${activeTone.badgeTone}`
+                        : "border-border/70 bg-background hover:border-primary/30",
+                    )}
+                  >
+                    {t(`onboarding.healthConstraints.severity.${option}`)}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="rounded-2xl border bg-background/90 p-3">
+            <p className="text-sm font-bold">
+              {t("onboarding.healthConstraints.forbiddenExercises")}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t("onboarding.healthConstraints.forbiddenExercisesHint")}
+            </p>
+            <Textarea
+              value={(forbiddenExercises ?? []).join("\n")}
+              onChange={(event) =>
+                setField("forbiddenExercises", splitLines(event.target.value))
+              }
+              placeholder={t("onboarding.healthConstraints.forbiddenPlaceholder")}
+              className="mt-2 min-h-20 resize-none"
+            />
+          </section>
+
+          <section className="rounded-2xl border bg-background/90 p-3">
+            <p className="text-sm font-bold">
+              {t("onboarding.healthConstraints.medications")}
+            </p>
+            <Textarea
+              value={medications ?? ""}
+              onChange={(event) => setField("medications", event.target.value)}
+              placeholder={t("onboarding.healthConstraints.medicationsPlaceholder")}
+              className="mt-2 min-h-20 resize-none"
+            />
+          </section>
+
+          <section className="rounded-2xl border bg-background/90 p-3">
+            <p className="text-sm font-bold">
+              {t("onboarding.healthConstraints.supplements")}
+            </p>
+            <Textarea
+              value={supplements ?? ""}
+              onChange={(event) => setField("supplements", event.target.value)}
+              placeholder={t("onboarding.healthConstraints.supplementsPlaceholder")}
+              className="mt-2 min-h-20 resize-none"
+            />
+          </section>
+
+          <section className="rounded-2xl border bg-background/90 p-3">
+            <p className="text-sm font-bold">
+              {t("onboarding.healthConstraints.notificationPreference")}
+            </p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {notificationOptions.map((option) => {
+                const isActive = (notificationPreference || "none") === option;
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    aria-pressed={isActive}
+                    onClick={() =>
+                      setFields({ notificationPreference: option })
+                    }
+                    className={cn(
+                      "min-h-11 rounded-xl border px-2 py-2 text-sm font-semibold transition-colors",
+                      isActive
+                        ? `${activeTone.border} ${activeTone.badgeTone}`
+                        : "border-border/70 bg-background hover:border-primary/30",
+                    )}
+                  >
+                    {t(`onboarding.healthConstraints.notifications.${option}`)}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
         </div>
       </div>
     </div>

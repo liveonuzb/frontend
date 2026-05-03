@@ -12,6 +12,7 @@ import { usePostQuery } from "@/hooks/api";
 import { useAuthStore } from "@/store";
 import {
   getAuthErrorMessage,
+  getAuthResponseData,
   getOtpToastDescription,
 } from "@/modules/auth/lib/auth-utils.js";
 import { useAuthMobileAutoFocus } from "@/modules/auth/lib/mobile-keyboard";
@@ -46,7 +47,7 @@ const PhoneForm = () => {
       },
       {
         onSuccess: (response) => {
-          const responseData = get(response, "data");
+          const responseData = getAuthResponseData(response);
           setPendingVerification({
             channel: "phone",
             purpose: "PASSWORD_RESET",

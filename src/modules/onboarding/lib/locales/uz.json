@@ -6,6 +6,11 @@
     "illustrationAlt": "Onboarding rasmi",
     "finish": "Yakunlash",
     "saving": "Saqlanmoqda...",
+    "autosave": {
+      "saving": "Saqlanyapti",
+      "saved": "Saqlandi",
+      "error": "Saqlanmadi"
+    },
     "skip": "O'tkazib yuborish",
     "name": {
       "question": "Ismingiz nima?",
@@ -130,6 +135,68 @@
       "veryActiveTitle": "Yuqori faollik",
       "veryActiveDescription": "Haftada 6-7 kun og'ir mashq",
       "metaLabel": "Faollik darajasi"
+    },
+    "lifestyle": {
+      "title": "Kundalik ritmingiz qanday?",
+      "description": "Mashg'ulot hajmi va ovqatlanish rejasini real hayotingizga moslaymiz.",
+      "weeklyWorkoutCount": "Haftasiga nechta mashg'ulot qilasiz?",
+      "weeklyWorkoutCountOption": "{{count}} kun",
+      "workoutExperience": "Mashg'ulot tajribangiz",
+      "workoutExperiences": {
+        "beginner": "Beginner",
+        "intermediate": "Intermediate",
+        "advanced": "Advanced"
+      },
+      "sleepHours": "Odatda necha soat uxlaysiz?",
+      "sleepPlaceholder": "Masalan: 7.5",
+      "workType": "Ish kuningiz qanday?",
+      "workTypes": {
+        "sedentary": "Ko'p o'tirib",
+        "mixed": "Aralash",
+        "active": "Faol"
+      },
+      "cookingAccess": "Ovqatni qanday tayyorlaysiz?",
+      "cookingAccesses": {
+        "home-cooking": "Uyda pishiraman",
+        "mixed": "Aralash",
+        "ready-meals": "Tayyor ovqat"
+      },
+      "cookingTime": "Ovqat pishirishga qancha vaqt ajratasiz?",
+      "cookingTimes": {
+        "under-15": "15 daqiqagacha",
+        "15-30": "15-30 daqiqa",
+        "30-60": "30-60 daqiqa",
+        "60-plus": "60+ daqiqa"
+      },
+      "fastFoodFrequency": "Fast food odati",
+      "fastFoodFrequencies": {
+        "rarely": "Kamdan-kam",
+        "weekly": "Haftasiga 1 marta",
+        "several-weekly": "Haftasiga bir necha marta",
+        "daily": "Har kuni"
+      },
+      "sweetDrinkHabit": "Shirin/gazli ichimlik odati",
+      "sweetDrinkHabits": {
+        "rarely": "Kamdan-kam",
+        "weekly": "Haftasiga bir necha marta",
+        "daily": "Har kuni"
+      },
+      "cardioLevel": "Kardio darajangiz",
+      "cardioLevels": {
+        "low": "Past",
+        "medium": "O'rtacha",
+        "high": "Yuqori"
+      },
+      "playsFootball": "Futbol bilan shug'ullanasizmi?",
+      "boolean": {
+        "yes": "Ha",
+        "no": "Yo'q"
+      },
+      "errors": {
+        "weeklyWorkoutCount": "Haftalik mashg'ulot sonini 0 dan 7 gacha tanlang.",
+        "workoutExperience": "Mashg'ulot tajribangizni tanlang.",
+        "sleepHours": "Uyqu vaqti 0 dan 16 soatgacha bo'lishi kerak."
+      }
     },
     "mealFrequency": {
       "question": "Qanchalik tez-tez ovqatlanasiz?",
@@ -313,7 +380,28 @@
       "noneDescription": "Mashg'ulotlar uchun alohida sog'liq cheklovi yo'q",
       "noneSummary": "Cheklov yo'q",
       "selectedCount": "{{count}} ta cheklov tanlandi",
-      "defaultDescription": "Reja tuzishda bu holat inobatga olinadi."
+      "defaultDescription": "Reja tuzishda bu holat inobatga olinadi.",
+      "injurySeverity": "Jarohat og'irligi",
+      "severity": {
+        "none": "Yo'q",
+        "mild": "Yengil",
+        "moderate": "O'rtacha",
+        "severe": "Jiddiy"
+      },
+      "forbiddenExercises": "Shifokor taqiqlagan mashqlar",
+      "forbiddenExercisesHint": "Har bir mashqni yangi qatordan yoki vergul bilan ajrating.",
+      "forbiddenPlaceholder": "Masalan: og'ir squat, sakrash, yugurish",
+      "medications": "Qabul qilayotgan dorilar",
+      "medicationsPlaceholder": "Ixtiyoriy: nomi va dozasini yozing",
+      "supplements": "Supplementlar",
+      "supplementsPlaceholder": "Ixtiyoriy: protein, kreatin, vitaminlar...",
+      "notificationPreference": "Eslatma va tracking vaqti",
+      "notifications": {
+        "none": "Kerak emas",
+        "morning": "Ertalab",
+        "evening": "Kechqurun",
+        "both": "Ertalab va kechqurun"
+      }
     },
     "otherGoals": {
       "question": "Yana qanday maqsadlaringiz bor?",
@@ -355,6 +443,54 @@
       "title": "Ajoyib natija!",
       "description": "Sizning shaxsiy profilingiz shakllantirildi.",
       "redirecting": "Bosh sahifaga yo'naltirilmoqda..."
+    },
+    "review": {
+      "title": "Ma'lumotlarni tekshirib chiqamiz",
+      "description": "Liveon shaxsiy reja tuzishdan oldin asosiy javoblaringizni tasdiqlang.",
+      "ready": "Reja yaratishga tayyor",
+      "fixRequired": "Avval kerakli joylarni to'ldiring",
+      "generate": "Rejani yaratish",
+      "submitError": "Onboardingni yakunlab bo'lmadi.",
+      "missing": {
+        "name": "Ism va familiya",
+        "gender": "Jins",
+        "age": "Yosh",
+        "height": "Bo'y",
+        "currentWeight": "Hozirgi vazn",
+        "goal": "Asosiy maqsad",
+        "targetWeight": "Maqsad vazn",
+        "activityLevel": "Aktivlik darajasi",
+        "weeklyWorkoutCount": "Haftalik mashg'ulot soni",
+        "workoutExperience": "Mashg'ulot tajribasi",
+        "mealFrequency": "Ovqatlanish soni",
+        "healthConstraints": "Sog'liq cheklovlari"
+      },
+      "sections": {
+        "profile": "Profil va tana",
+        "activity": "Maqsad va aktivlik",
+        "nutrition": "Ovqatlanish",
+        "safety": "Sog'liq xavfsizligi"
+      },
+      "fields": {
+        "name": "Ism",
+        "gender": "Jins",
+        "age": "Yosh",
+        "height": "Bo'y",
+        "currentWeight": "Hozirgi vazn",
+        "goal": "Maqsad",
+        "targetWeight": "Maqsad vazn",
+        "activityLevel": "Aktivlik",
+        "weeklyWorkoutCount": "Mashg'ulot/hafta",
+        "workoutExperience": "Tajriba",
+        "mealFrequency": "Ovqatlanish soni",
+        "foodBudget": "Budjet",
+        "allergies": "Allergiyalar",
+        "dietRequirements": "Diet talablari",
+        "healthConstraints": "Cheklovlar",
+        "injurySeverity": "Jarohat og'irligi",
+        "forbiddenExercises": "Taqiqlangan mashqlar",
+        "cardioLevel": "Kardio"
+      }
     },
     "postOnboarding": {
       "loading": {
@@ -412,6 +548,9 @@
         "equipment": "Jihozlar",
         "equipmentSummary": "{{count}} ta jihoz tanlangan",
         "equipmentPlaceholder": "Gantel, turnik, yoga mat...",
+        "preferencesTitle": "Reja inputlari",
+        "preferencesDescription": "Bu qiymatlar keyingi meal plan, workout plan va tracking generatsiyasiga beriladi.",
+        "preferenceCount": "{{count}} ta qiymat",
         "metrics": {
           "calories": "Kaloriya",
           "carbs": "Uglevod",
@@ -423,7 +562,25 @@
           "weeklyWorkoutDays": "Mashg'ulot kunlari",
           "workoutLocation": "Mashg'ulot joyi"
         },
+        "preferences": {
+          "currentWeight": "Hozirgi vazn",
+          "goal": "Maqsad",
+          "activityLevel": "Aktivlik",
+          "foodBudget": "Budjet",
+          "allergies": "Allergiyalar",
+          "dietRequirements": "Diet talablari",
+          "dislikedFoods": "Yoqtirmaydigan ovqatlar",
+          "workoutExperience": "Tajriba",
+          "sleepHours": "Uyqu",
+          "injurySeverity": "Jarohat",
+          "forbiddenExercises": "Taqiqlangan mashqlar"
+        },
         "options": {
+          "goal": {
+            "lose": "Ozish",
+            "maintain": "Saqlash",
+            "gain": "Mushak yig'ish"
+          },
           "weeklyWeightChangeGoal": {
             "0.25": "Haftasiga 0.25 kg",
             "0.5": "Haftasiga 0.5 kg",
@@ -443,10 +600,27 @@
             "5": "5 kun",
             "6": "6 kun"
           },
+          "activityLevel": {
+            "sedentary": "Passiv",
+            "lightly-active": "Yengil faol",
+            "moderately-active": "O'rtacha faol",
+            "very-active": "Juda faol"
+          },
+          "workoutExperience": {
+            "beginner": "Beginner",
+            "intermediate": "Intermediate",
+            "advanced": "Advanced"
+          },
           "workoutLocation": {
             "home": "Uyda",
             "gym": "Zalda",
             "outdoor": "Tashqarida"
+          },
+          "injurySeverity": {
+            "none": "Yo'q",
+            "mild": "Yengil",
+            "moderate": "O'rtacha",
+            "severe": "Jiddiy"
           }
         },
         "edit": {
@@ -466,9 +640,17 @@
             "title": "Yog' maqsadi",
             "description": "Gramda kiriting. Juda past yog' bo'lsa ogohlantiramiz."
           },
+          "currentWeight": {
+            "title": "Hozirgi vazn",
+            "description": "Bu tracking va qayta hisoblash uchun asosiy tana metrikasi."
+          },
           "targetWeight": {
             "title": "Maqsad vazn",
             "description": "Maqsad vazn o'zgarsa kaloriya va makrolar qayta hisoblanadi."
+          },
+          "goal": {
+            "title": "Asosiy maqsad",
+            "description": "Maqsad o'zgarsa kaloriya, mashg'ulot va meal plan yo'nalishi qayta moslanadi."
           },
           "weeklyWeightChangeGoal": {
             "title": "Haftalik sur'at",
@@ -482,6 +664,37 @@
             "title": "Mashg'ulot kunlari",
             "description": "Haftalik mashg'ulot jadvali shu son asosida tuziladi."
           },
+          "activityLevel": {
+            "title": "Aktivlik darajasi",
+            "description": "Kunlik sarf va reja qanchalik agressiv bo'lishiga ta'sir qiladi."
+          },
+          "foodBudget": {
+            "title": "Ovqatlanish budjeti",
+            "description": "AI meal plan ingredient va taomlarni shu budjetga moslaydi."
+          },
+          "allergies": {
+            "title": "Allergiyalar",
+            "description": "AI meal plan bu ingredient va custom qiymatlarni chiqarib tashlaydi yoki ehtiyotkorlik bilan ishlatadi.",
+            "placeholder": "Yong'oq, tuxum, asal..."
+          },
+          "dietRequirements": {
+            "title": "Diet talablari",
+            "description": "Halal, vegetarian, lactose-free yoki boshqa talablar keyingi meal plan generatsiyasiga beriladi.",
+            "placeholder": "Halal, high protein, no sugar..."
+          },
+          "dislikedFoods": {
+            "title": "Yoqtirmaydigan ovqatlar",
+            "description": "Rejada kamaytirish yoki almashtirish kerak bo'lgan ovqatlarni belgilang.",
+            "placeholder": "Sho'rva, baliq, jigar..."
+          },
+          "workoutExperience": {
+            "title": "Mashg'ulot tajribasi",
+            "description": "Mashqlar qiyinligi va progressiya shu darajaga moslanadi."
+          },
+          "sleepHours": {
+            "title": "Uyqu vaqti",
+            "description": "Tiklanish va haftalik yuklama hisobida ishlatiladi."
+          },
           "workoutLocation": {
             "title": "Mashg'ulot joyi",
             "description": "Mashqlar uy, zal yoki tashqi muhitga mos tanlanadi."
@@ -489,6 +702,15 @@
           "equipment": {
             "title": "Jihozlarni tanlash",
             "description": "Faol jihozlardan tanlang yoki maxsus qiymat qo'shing."
+          },
+          "injurySeverity": {
+            "title": "Jarohat og'irligi",
+            "description": "Workout plan xavfsizroq bo'lishi uchun yuklama shu qiymatga moslanadi."
+          },
+          "forbiddenExercises": {
+            "title": "Taqiqlangan mashqlar",
+            "description": "Shifokor yoki o'zingiz taqiqlagan mashqlarni yozing. Har birini yangi qatordan kiriting.",
+            "placeholder": "Masalan: og'ir squat, sakrash, yugurish"
           }
         }
       }
@@ -572,25 +794,48 @@
           "step": "1-BOSQICH",
           "title": "Ma'lumotlaringiz yig'ilmoqda",
           "description": "Profil, onboarding va kuzatuv signallari sog'liq hisoboti uchun bir joyga jamlanmoqda.",
-          "items": ["Apple Watch ma'lumotlari", "Yurak urishi", "Uyqu", "Ovqatlanish", "Boshqaruv paneli kuzatuvi"]
+          "items": [
+            "Apple Watch ma'lumotlari",
+            "Yurak urishi",
+            "Uyqu",
+            "Ovqatlanish",
+            "Boshqaruv paneli kuzatuvi"
+          ]
         },
         "analyzing": {
           "step": "2-BOSQICH",
           "title": "AI tahlil qilmoqda",
           "description": "AI sog'liq signallari, maqsad va progress ritmingizni birga tekshirmoqda.",
-          "items": ["Miya gologrammasi", "Suzuvchi grafiklar", "DNA spirali", "Grafiklar", "AI skanerlash ekrani"]
+          "items": [
+            "Miya gologrammasi",
+            "Suzuvchi grafiklar",
+            "DNA spirali",
+            "Grafiklar",
+            "AI skanerlash ekrani"
+          ]
         },
         "planning": {
           "step": "3-BOSQICH",
           "title": "Shaxsiy rejangiz tuzilmoqda",
           "description": "Mashg'ulot, ovqatlanish, uyqu va haftalik ritm bitta amaliy planga joylanmoqda.",
-          "items": ["Mashg'ulot rejasi", "Ovqatlanish rejasi", "Uyqu jadvali", "Kalendar", "Gantel va salat"]
+          "items": [
+            "Mashg'ulot rejasi",
+            "Ovqatlanish rejasi",
+            "Uyqu jadvali",
+            "Kalendar",
+            "Gantel va salat"
+          ]
         },
         "finalizing": {
           "step": "4-BOSQICH",
           "title": "Hisobot yakunlanmoqda",
           "description": "Yakuniy hisobot ko'rinishi asosiy baholar va harakat rejasi bilan yig'ilmoqda.",
-          "items": ["Hisobot chiqmoqda", "Tasdiqlash belgisi", "Yakuniy hisobot papkasi", "Keyingi qadam"]
+          "items": [
+            "Hisobot chiqmoqda",
+            "Tasdiqlash belgisi",
+            "Yakuniy hisobot papkasi",
+            "Keyingi qadam"
+          ]
         }
       },
       "languages": {

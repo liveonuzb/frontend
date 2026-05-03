@@ -1,72 +1,72 @@
 import React from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Controller, useForm } from "react-hook-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PhoneIcon } from "lucide-react";
+import { LockKeyholeIcon } from "lucide-react";
 import { get } from "lodash";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useTranslation } from "react-i18next";
+import AuthPhoneSummary from "@/modules/auth/components/auth-phone-summary";
 import AuthSubmitButton from "@/modules/auth/components/auth-submit-button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
-import { PhoneInput } from "@/components/ui/phone-input.jsx";
+import { PasswordInput } from "@/components/ui/password-input";
 import { usePostQuery } from "@/hooks/api";
 import { useAuthStore } from "@/store";
 import {
   getAuthErrorMessage,
   getAuthResponseData,
+  getPostAuthRoute,
 } from "@/modules/auth/lib/auth-utils.js";
-import { useAuthMobileAutoFocus } from "@/modules/auth/lib/mobile-keyboard";
 import { submitOnEnter } from "@/modules/auth/lib/submit-on-enter";
 
-const PhoneForm = ({ referralCode }) => {
+const PasswordForm = ({ phone }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const phoneAutoFocus = useAuthMobileAutoFocus();
-  const setAuthPhoneFlow = useAuthStore((state) => state.setAuthPhoneFlow);
+  const queryClient = useQueryClient();
+  const { clearAuthPhoneFlow, completeAuthentication } = useAuthStore();
   const { mutateAsync, isPending } = usePostQuery();
 
   const schema = z.object({
-    phone: z
+    password: z
       .string()
-      .min(1, t("auth.validation.phoneRequired"))
-      .regex(/^\+998[0-9]{9}$/, t("auth.validation.phoneInvalid")),
+      .min(1, t("auth.validation.passwordRequired"))
+      .min(6, t("auth.validation.passwordMin")),
   });
 
   const { control, handleSubmit, formState } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { phone: "+998" },
+    defaultValues: { password: "" },
     mode: "onSubmit",
   });
+
+  const goBack = () => {
+    clearAuthPhoneFlow();
+    navigate("/auth/sign-in", { replace: true });
+  };
 
   const onSubmit = async (values) => {
     await mutateAsync(
       {
-        url: "/auth/resolve-phone",
-        attributes: { phone: get(values, "phone") },
+        url: "/auth/login/phone",
+        attributes: {
+          phone,
+          password: get(values, "password"),
+        },
       },
       {
         onSuccess: (response) => {
           const responseData = getAuthResponseData(response);
-          const flow = get(responseData, "flow");
-          const phone = get(responseData, "phone");
-
-          setAuthPhoneFlow({
-            phone,
-            flow,
-            referralCode,
-          });
-
-          if (flow === "login") {
-            navigate("/auth/sign-in/password");
-            return;
-          }
-
-          navigate(
-            `/auth/sign-up${
-              referralCode ? `?ref=${encodeURIComponent(referralCode)}` : ""
-            }`,
+          completeAuthentication(responseData);
+          clearAuthPhoneFlow();
+          queryClient.setQueryData(["me"], { data: get(responseData, "user") });
+          toast.success(
+            get(responseData, "message") || t("auth.signIn.success"),
           );
+          navigate(getPostAuthRoute(get(responseData, "user")), {
+            replace: true,
+          });
         },
         onError: (error) => {
           toast.error(getAuthErrorMessage(error, t("auth.signIn.error")));
@@ -84,31 +84,41 @@ const PhoneForm = ({ referralCode }) => {
       onSubmit={submitForm}
       onKeyDown={(event) => submitOnEnter(event, submitForm)}
     >
+      <AuthPhoneSummary
+        phone={phone}
+        label={t("auth.signIn.selectedPhone")}
+        backLabel={t("auth.signIn.backToPhone")}
+        onBack={goBack}
+      />
+
       <Field className="gap-2">
-        <FieldLabel htmlFor="phone" className="items-center gap-2 text-sm">
-          <PhoneIcon className="size-4 text-primary" />
-          {t("auth.signIn.phoneLabel")}
-        </FieldLabel>
+        <div className="flex items-center">
+          <FieldLabel
+            htmlFor="phone-password"
+            className="items-center gap-2 text-sm"
+          >
+            <LockKeyholeIcon className="size-4 text-primary" />
+            {t("auth.signIn.passwordLabel")}
+          </FieldLabel>
+          <Link
+            to="/auth/forgot-password"
+            className="ml-auto text-sm underline-offset-2 hover:underline"
+          >
+            {t("auth.signIn.forgotPassword")}
+          </Link>
+        </div>
         <Controller
-          name="phone"
+          name="password"
           control={control}
           render={({ field, fieldState }) => (
             <div className="space-y-2">
-              <PhoneInput
-                variant="xl"
-                id="phone"
-                className="[&_[data-slot=button]]:bg-background [&_[data-slot=input]]:bg-background"
-                defaultCountry="UZ"
-                type="tel"
-                autoComplete="tel"
+              <PasswordInput
+                id="phone-password"
+                autoComplete="current-password"
                 enterKeyHint="done"
+                className="h-10 px-5 !text-base md:h-11"
                 aria-invalid={!!get(fieldState, "error")}
                 {...field}
-                ref={(node) => {
-                  field.ref(node);
-                  phoneAutoFocus.ref(node);
-                }}
-                autoFocus={phoneAutoFocus.autoFocus}
               />
               <FieldError
                 errors={
@@ -126,11 +136,11 @@ const PhoneForm = ({ referralCode }) => {
         className="mt-2 h-12 text-base"
       >
         {isSubmitting || isPending
-          ? t("auth.signIn.checkingPhone")
-          : t("auth.signIn.continueButton")}
+          ? t("auth.signIn.loggingIn")
+          : t("auth.signIn.loginButton")}
       </AuthSubmitButton>
     </form>
   );
 };
 
-export default PhoneForm;
+export default PasswordForm;

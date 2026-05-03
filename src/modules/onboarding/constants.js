@@ -12,6 +12,7 @@ export const ONBOARDING_STEPS = [
   "target-weight",
   "weekly-pace",
   "activity-level",
+  "lifestyle",
   "workout-location",
   "workout-equipment",
   "workout-body-parts",
@@ -25,6 +26,7 @@ export const ONBOARDING_STEPS = [
   "disliked-foods",
   "preferred-ingredients",
   "disliked-ingredients",
+  "review",
 ];
 
 export const COACH_ONBOARDING_STEPS = [

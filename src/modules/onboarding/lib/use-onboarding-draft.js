@@ -1,7 +1,7 @@
 import { useEffect, useCallback } from "react";
 import { debounce } from "lodash";
 import { useGetQuery, usePutQuery } from "@/hooks/api";
-import { useOnboardingStore } from "@/store";
+import { getOnboardingDraftApiPath } from "./onboarding-api-paths";
 
 /**
  * Hook for auto-saving onboarding draft to server.
@@ -17,7 +17,7 @@ export function useOnboardingDraft(
 ) {
   // 1. Fetch server draft on mount
   const { data: serverDraft, isLoading } = useGetQuery({
-    url: `/onboarding/${type}/draft`,
+    url: getOnboardingDraftApiPath(type),
     queryProps: {
       queryKey: ["onboarding-draft", type],
       enabled,
@@ -36,7 +36,7 @@ export function useOnboardingDraft(
     debounce(async (draftData) => {
       try {
         await saveDraft({
-          url: `/onboarding/${type}/draft`,
+          url: getOnboardingDraftApiPath(type),
           attributes: draftData,
         });
       } catch (e) {

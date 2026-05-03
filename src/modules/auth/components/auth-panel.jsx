@@ -7,12 +7,12 @@ function AuthPanel({ className, children, footer, ...props }) {
   return (
     <div
       className={cn(
-        "flex w-full max-w-[410px] flex-col justify-center",
+        "flex w-full max-w-[430px] flex-col justify-center",
         className,
       )}
       {...props}
     >
-      <FieldGroup className="gap-7">{children}</FieldGroup>
+      <FieldGroup className="gap-6">{children}</FieldGroup>
       {footer}
     </div>
   );
@@ -49,8 +49,8 @@ function AuthKeyboardHidden({
 
 function AuthHeader({ title, children }) {
   return (
-    <div className="flex flex-col items-start gap-2 text-left">
-      <h1 className="text-xl font-bold leading-tight tracking-[-0.035em]  sm:text-2xl">
+    <div className="flex flex-col items-start gap-3 text-left">
+      <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">
         {title}
       </h1>
       {children}

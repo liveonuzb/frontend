@@ -6,6 +6,7 @@ import {
   buildCoachOnboardingPayload,
   normalizeOnboardingStepForApi,
 } from "./coach-onboarding-dto";
+import { getOnboardingDraftApiPath } from "./onboarding-api-paths";
 
 /**
  * Extracts draft data from the onboarding store based on onboarding type.
@@ -25,6 +26,14 @@ function extractDraftData(state, type) {
       targetWeight: state.targetWeight,
       weeklyPace: state.weeklyPace,
       activityLevel: state.activityLevel,
+      weeklyWorkoutCount: state.weeklyWorkoutCount,
+      workoutExperience: state.workoutExperience,
+      sleepHours: state.sleepHours,
+      workType: state.workType,
+      fastFoodFrequency: state.fastFoodFrequency,
+      sweetDrinkHabit: state.sweetDrinkHabit,
+      cookingTime: state.cookingTime,
+      cookingAccess: state.cookingAccess,
       mealFrequency: state.mealFrequency,
       waterHabits: state.waterHabits,
       foodBudget: state.foodBudget,
@@ -57,6 +66,13 @@ function extractDraftData(state, type) {
       nutritionPreferenceOtherText: state.nutritionPreferenceOtherText,
       dietRestrictions: state.dietRestrictions,
       healthConstraints: state.healthConstraints,
+      injurySeverity: state.injurySeverity,
+      forbiddenExercises: state.forbiddenExercises,
+      medications: state.medications,
+      supplements: state.supplements,
+      playsFootball: state.playsFootball,
+      cardioLevel: state.cardioLevel,
+      notificationPreference: state.notificationPreference,
     };
   }
 
@@ -88,6 +104,14 @@ function buildSelector(type) {
       targetWeight: s.targetWeight,
       weeklyPace: s.weeklyPace,
       activityLevel: s.activityLevel,
+      weeklyWorkoutCount: s.weeklyWorkoutCount,
+      workoutExperience: s.workoutExperience,
+      sleepHours: s.sleepHours,
+      workType: s.workType,
+      fastFoodFrequency: s.fastFoodFrequency,
+      sweetDrinkHabit: s.sweetDrinkHabit,
+      cookingTime: s.cookingTime,
+      cookingAccess: s.cookingAccess,
       mealFrequency: s.mealFrequency,
       waterHabits: s.waterHabits,
       foodBudget: s.foodBudget,
@@ -120,6 +144,13 @@ function buildSelector(type) {
       nutritionPreferenceOtherText: s.nutritionPreferenceOtherText,
       dietRestrictions: s.dietRestrictions,
       healthConstraints: s.healthConstraints,
+      injurySeverity: s.injurySeverity,
+      forbiddenExercises: s.forbiddenExercises,
+      medications: s.medications,
+      supplements: s.supplements,
+      playsFootball: s.playsFootball,
+      cardioLevel: s.cardioLevel,
+      notificationPreference: s.notificationPreference,
     });
   }
 
@@ -192,14 +223,23 @@ export function useOnboardingAutoSave(
         typeRef.current,
         stepRef.current,
       );
+      const setDraftSaveStatus =
+        useOnboardingStore.getState().setDraftSaveStatus;
 
       try {
-        await request.put(`/onboarding/${typeRef.current}/draft`, {
+        setDraftSaveStatus?.("saving");
+        await request.put(getOnboardingDraftApiPath(typeRef.current), {
           data,
           currentStep,
         });
-      } catch {
-        // Silent fail -- auto-save should not block UX
+        setDraftSaveStatus?.("saved", {
+          lastSavedAt: new Date().toISOString(),
+          error: null,
+        });
+      } catch (error) {
+        setDraftSaveStatus?.("error", {
+          error: error instanceof Error ? error.message : "Auto-save failed",
+        });
       }
     }, debounceMs);
 
@@ -232,14 +272,24 @@ export function useOnboardingAutoSave(
       typeRef.current,
       stepRef.current,
     );
+    const setDraftSaveStatus = useOnboardingStore.getState().setDraftSaveStatus;
 
+    setDraftSaveStatus?.("saving");
     request
-      .put(`/onboarding/${typeRef.current}/draft`, {
+      .put(getOnboardingDraftApiPath(typeRef.current), {
         data,
         currentStep,
       })
-      .catch(() => {
-        // Silent fail
+      .then(() => {
+        setDraftSaveStatus?.("saved", {
+          lastSavedAt: new Date().toISOString(),
+          error: null,
+        });
+      })
+      .catch((error) => {
+        setDraftSaveStatus?.("error", {
+          error: error instanceof Error ? error.message : "Auto-save failed",
+        });
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);

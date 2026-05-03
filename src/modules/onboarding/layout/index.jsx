@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { get } from "lodash";
 import { cn } from "@/lib/utils";
+import { normalizeUserOnboarding } from "@/lib/user-onboarding";
 import { useGetQuery } from "@/hooks/api";
 import { useAuthStore, useOnboardingStore } from "@/store";
 import { ChevronLeft } from "lucide-react";
@@ -24,6 +25,7 @@ import {
   OnboardingFooterProvider,
   FooterSlot,
 } from "../lib/onboarding-footer-context";
+import { useDraftRestore } from "../lib/use-draft-restore";
 
 const getPrevCoachStep = (step) => {
   const steps = COACH_ONBOARDING_STEPS;
@@ -37,7 +39,8 @@ const OnboardingLayoutInner = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
-  const { setFields, setLastVisitedPath } = useOnboardingStore();
+  const { setFields, setLastVisitedPath, draftSaveStatus, draftLastSavedAt } =
+    useOnboardingStore();
 
   const isCoachScope = location.pathname.startsWith("/coach/onboarding");
   const routePath = location.pathname.replace(
@@ -57,11 +60,40 @@ const OnboardingLayoutInner = () => {
 
   const showProgress = currentStepIndex >= 0;
   const progress = showProgress ? (currentStepIndex + 1) / totalSteps : 0;
-  const isPostOnboardingRoute = [
-    "personalizing",
-    "result",
-    "generating",
-  ].some((path) => currentPath === path || currentPath.startsWith(`${path}/`));
+  const isPostOnboardingRoute = ["personalizing", "result", "generating"].some(
+    (path) => currentPath === path || currentPath.startsWith(`${path}/`),
+  );
+  const { isLoading: isDraftLoading } = useDraftRestore(
+    isCoachScope ? "coach" : "user",
+    {
+      enabled: isAuthenticated && !isPostOnboardingRoute,
+    },
+  );
+  const autosaveLabel = React.useMemo(() => {
+    if (!showProgress || isPostOnboardingRoute) {
+      return null;
+    }
+
+    if (draftSaveStatus === "saving") {
+      return t("onboarding.autosave.saving");
+    }
+
+    if (draftSaveStatus === "saved" && draftLastSavedAt) {
+      return t("onboarding.autosave.saved");
+    }
+
+    if (draftSaveStatus === "error") {
+      return t("onboarding.autosave.error");
+    }
+
+    return null;
+  }, [
+    draftLastSavedAt,
+    draftSaveStatus,
+    isPostOnboardingRoute,
+    showProgress,
+    t,
+  ]);
 
   const prevStep = isCoachStep
     ? getPrevCoachStep(currentPath)
@@ -90,7 +122,12 @@ const OnboardingLayoutInner = () => {
   }, [currentPath, setLastVisitedPath]);
 
   React.useEffect(() => {
-    const userOnboarding = get(data, "data.userOnboarding");
+    const hasUserDraft = Boolean(
+      get(data, "data.userOnboardingDraft.data") && !isPostOnboardingRoute,
+    );
+    const userOnboarding = hasUserDraft
+      ? null
+      : normalizeUserOnboarding(get(data, "data.userOnboarding"));
     const coachOnboarding = get(data, "data.coachOnboarding");
 
     if (!userOnboarding && !coachOnboarding) {
@@ -107,35 +144,49 @@ const OnboardingLayoutInner = () => {
           : "",
       height: {
         value:
-          userOnboarding?.heightValue !== null &&
-          userOnboarding?.heightValue !== undefined
-            ? String(userOnboarding.heightValue)
+          userOnboarding?.height?.value !== null &&
+          userOnboarding?.height?.value !== undefined
+            ? String(userOnboarding.height.value)
             : "",
-        unit: userOnboarding?.heightUnit ?? "cm",
+        unit: userOnboarding?.height?.unit ?? "cm",
       },
       currentWeight: {
         value:
-          userOnboarding?.currentWeightValue !== null &&
-          userOnboarding?.currentWeightValue !== undefined
-            ? String(userOnboarding.currentWeightValue)
+          userOnboarding?.currentWeight?.value !== null &&
+          userOnboarding?.currentWeight?.value !== undefined
+            ? String(userOnboarding.currentWeight.value)
             : "",
-        unit: userOnboarding?.currentWeightUnit ?? "kg",
+        unit: userOnboarding?.currentWeight?.unit ?? "kg",
       },
       goal: userOnboarding?.goal ?? "",
       weightGoal: userOnboarding?.weightGoal ?? "",
-      goals: Array.isArray(userOnboarding?.goals)
-        ? userOnboarding.goals
-        : [],
+      goals: Array.isArray(userOnboarding?.goals) ? userOnboarding.goals : [],
       targetWeight: {
         value:
-          userOnboarding?.targetWeightValue !== null &&
-          userOnboarding?.targetWeightValue !== undefined
-            ? String(userOnboarding.targetWeightValue)
+          userOnboarding?.targetWeight?.value !== null &&
+          userOnboarding?.targetWeight?.value !== undefined
+            ? String(userOnboarding.targetWeight.value)
             : "",
-        unit: userOnboarding?.targetWeightUnit ?? "kg",
+        unit: userOnboarding?.targetWeight?.unit ?? "kg",
       },
       weeklyPace: userOnboarding?.weeklyPace ?? 0.5,
       activityLevel: userOnboarding?.activityLevel ?? "",
+      weeklyWorkoutCount:
+        userOnboarding?.weeklyWorkoutCount !== null &&
+        userOnboarding?.weeklyWorkoutCount !== undefined
+          ? String(userOnboarding.weeklyWorkoutCount)
+          : "",
+      workoutExperience: userOnboarding?.workoutExperience ?? "",
+      sleepHours:
+        userOnboarding?.sleepHours !== null &&
+        userOnboarding?.sleepHours !== undefined
+          ? String(userOnboarding.sleepHours)
+          : "",
+      workType: userOnboarding?.workType ?? "",
+      fastFoodFrequency: userOnboarding?.fastFoodFrequency ?? "",
+      sweetDrinkHabit: userOnboarding?.sweetDrinkHabit ?? "",
+      cookingTime: userOnboarding?.cookingTime ?? "",
+      cookingAccess: userOnboarding?.cookingAccess ?? "",
       mealFrequency: userOnboarding?.mealFrequency ?? "",
       waterHabits: userOnboarding?.waterHabits ?? "",
       foodBudget:
@@ -160,9 +211,7 @@ const OnboardingLayoutInner = () => {
       )
         ? userOnboarding.customWorkoutBodyParts
         : [],
-      preferredExerciseIds: Array.isArray(
-        userOnboarding?.preferredExerciseIds,
-      )
+      preferredExerciseIds: Array.isArray(userOnboarding?.preferredExerciseIds)
         ? userOnboarding.preferredExerciseIds
         : [],
       dislikedExerciseIds: Array.isArray(userOnboarding?.dislikedExerciseIds)
@@ -204,9 +253,7 @@ const OnboardingLayoutInner = () => {
       dislikedFoodIds: Array.isArray(userOnboarding?.dislikedFoodIds)
         ? userOnboarding.dislikedFoodIds
         : [],
-      customDislikedFoods: Array.isArray(
-        userOnboarding?.customDislikedFoods,
-      )
+      customDislikedFoods: Array.isArray(userOnboarding?.customDislikedFoods)
         ? userOnboarding.customDislikedFoods
         : [],
       preferredIngredientIds: Array.isArray(
@@ -246,6 +293,15 @@ const OnboardingLayoutInner = () => {
       healthConstraints: Array.isArray(userOnboarding?.healthConstraints)
         ? userOnboarding.healthConstraints
         : [],
+      injurySeverity: userOnboarding?.injurySeverity ?? "",
+      forbiddenExercises: Array.isArray(userOnboarding?.forbiddenExercises)
+        ? userOnboarding.forbiddenExercises
+        : [],
+      medications: userOnboarding?.medications ?? "",
+      supplements: userOnboarding?.supplements ?? "",
+      playsFootball: Boolean(userOnboarding?.playsFootball),
+      cardioLevel: userOnboarding?.cardioLevel ?? "",
+      notificationPreference: userOnboarding?.notificationPreference ?? "",
       experience: coachOnboarding?.experience ?? "",
       specializations: Array.isArray(coachOnboarding?.specializations)
         ? coachOnboarding.specializations
@@ -271,9 +327,17 @@ const OnboardingLayoutInner = () => {
       wantsMarketplaceListing:
         coachOnboarding?.wantsMarketplaceListing ?? false,
     });
-  }, [data, setFields]);
+  }, [data, isPostOnboardingRoute, setFields]);
 
   const maxWidthClass = isPostOnboardingRoute ? "max-w-5xl" : "max-w-lg";
+
+  if (isDraftLoading && !isPostOnboardingRoute) {
+    return (
+      <div className="flex h-dvh items-center justify-center bg-background text-sm text-muted-foreground">
+        {t("common.loading")}
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-background">
@@ -297,11 +361,18 @@ const OnboardingLayoutInner = () => {
             </button>
 
             <div className="flex-1 min-w-0 flex flex-col gap-2">
-              <div className="relative h-2 w-full rounded-full bg-muted overflow-hidden">
-                <div
-                  className="absolute inset-y-0 left-0 rounded-full bg-primary transition-all duration-500 ease-out"
-                  style={{ width: `${progress * 100}%` }}
-                />
+              <div className="flex items-center gap-2">
+                <div className="relative h-2 min-w-0 flex-1 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full bg-primary transition-all duration-500 ease-out"
+                    style={{ width: `${progress * 100}%` }}
+                  />
+                </div>
+                {autosaveLabel && (
+                  <span className="min-w-[72px] text-right text-[11px] leading-none text-muted-foreground">
+                    {autosaveLabel}
+                  </span>
+                )}
               </div>
             </div>
           </div>

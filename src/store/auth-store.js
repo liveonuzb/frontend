@@ -41,6 +41,7 @@ const initialState = {
   latestPersonalizationJobId: null,
   latestPlanGenerationJobId: null,
   pendingVerification: null,
+  authPhoneFlow: null,
   passwordReset: null,
   isHydrated: false,
 };
@@ -83,7 +84,9 @@ const useAuthStore = create()(
       },
 
       completeAuthentication: (authData) => {
-        const nextRoles = normalizeRoles(authData?.roles ?? authData?.user?.roles);
+        const nextRoles = normalizeRoles(
+          authData?.roles ?? authData?.user?.roles,
+        );
         const currentRole = get().activeRole;
 
         set(() => ({
@@ -101,6 +104,7 @@ const useAuthStore = create()(
           latestPlanGenerationJobId:
             authData?.user?.latestPlanGenerationJobId ?? null,
           pendingVerification: null,
+          authPhoneFlow: null,
           passwordReset: null,
         }));
       },
@@ -120,7 +124,8 @@ const useAuthStore = create()(
           onboardingNextPath: userData?.onboardingNextPath ?? null,
           latestPersonalizationJobId:
             userData?.latestPersonalizationJobId ?? null,
-          latestPlanGenerationJobId: userData?.latestPlanGenerationJobId ?? null,
+          latestPlanGenerationJobId:
+            userData?.latestPlanGenerationJobId ?? null,
         }));
       },
 
@@ -161,7 +166,9 @@ const useAuthStore = create()(
             payload.status ??
             state.onboardingFlowStatus,
           onboardingNextPath:
-            payload.onboardingNextPath ?? payload.nextPath ?? state.onboardingNextPath,
+            payload.onboardingNextPath ??
+            payload.nextPath ??
+            state.onboardingNextPath,
           latestPersonalizationJobId:
             payload.latestPersonalizationJobId ??
             payload.personalizationJobId ??
@@ -204,6 +211,24 @@ const useAuthStore = create()(
       clearPendingVerification: () => {
         set(() => ({
           pendingVerification: null,
+        }));
+      },
+
+      setAuthPhoneFlow: (payload) => {
+        set(() => ({
+          authPhoneFlow: payload
+            ? {
+                phone: payload.phone,
+                flow: payload.flow,
+                referralCode: payload.referralCode ?? null,
+              }
+            : null,
+        }));
+      },
+
+      clearAuthPhoneFlow: () => {
+        set(() => ({
+          authPhoneFlow: null,
         }));
       },
 

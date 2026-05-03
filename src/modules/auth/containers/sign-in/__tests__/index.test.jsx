@@ -17,6 +17,7 @@ vi.mock("@/modules/auth/containers/sign-in/phone-form.jsx", () => ({
 const authState = vi.hoisted(() => ({
   clearPasswordReset: vi.fn(),
   clearPendingVerification: vi.fn(),
+  setAuthPhoneFlow: vi.fn(),
 }));
 
 vi.mock("@/store", () => ({

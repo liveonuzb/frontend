@@ -17,6 +17,7 @@ import { usePostQuery } from "@/hooks/api";
 import { useAuthStore } from "@/store";
 import {
   getAuthErrorMessage,
+  getAuthResponseData,
   getOtpToastDescription,
   getPostAuthRoute,
 } from "@/modules/auth/lib/auth-utils.js";
@@ -99,7 +100,7 @@ const OtpForm = () => {
       },
       {
         onSuccess: (response) => {
-          const responseData = get(response, "data");
+          const responseData = getAuthResponseData(response);
           const verification = pendingVerification;
 
           if (get(verification, "purpose") === "VERIFY_ACCOUNT") {
@@ -166,7 +167,7 @@ const OtpForm = () => {
       },
       {
         onSuccess: (response) => {
-          const responseData = get(response, "data");
+          const responseData = getAuthResponseData(response);
           setPendingVerification({
             ...pendingVerification,
             phone: get(

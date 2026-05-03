@@ -16,6 +16,7 @@ import OtherGoalsPage from "@/modules/onboarding/user/pages/other-goals/index.js
 import TargetWeightPage from "@/modules/onboarding/user/pages/target-weight/index.jsx";
 import WeeklyPacePage from "@/modules/onboarding/user/pages/weekly-pace/index.jsx";
 import ActivityLevelPage from "@/modules/onboarding/user/pages/activity-level/index.jsx";
+import LifestylePage from "@/modules/onboarding/user/pages/lifestyle/index.jsx";
 import WorkoutLocationPage from "@/modules/onboarding/user/pages/workout-location/index.jsx";
 import WorkoutEquipmentPage from "@/modules/onboarding/user/pages/workout-equipment/index.jsx";
 import WorkoutBodyPartsPage from "@/modules/onboarding/user/pages/workout-body-parts/index.jsx";
@@ -30,6 +31,7 @@ import DietRequirementsPage from "@/modules/onboarding/user/pages/diet-requireme
 import DislikedFoodsPage from "@/modules/onboarding/user/pages/disliked-foods/index.jsx";
 import PreferredIngredientsPage from "@/modules/onboarding/user/pages/preferred-ingredients/index.jsx";
 import DislikedIngredientsPage from "@/modules/onboarding/user/pages/disliked-ingredients/index.jsx";
+import ReviewPage from "@/modules/onboarding/user/pages/review/index.jsx";
 import ReportPage from "@/modules/onboarding/user/pages/report/index.jsx";
 import PersonalizingPage from "@/modules/onboarding/user/pages/personalizing/index.jsx";
 import PersonalizationResultPage from "@/modules/onboarding/user/pages/result/index.jsx";
@@ -66,6 +68,7 @@ const Index = () => {
         <Route path="target-weight" element={<TargetWeightPage />} />
         <Route path="weekly-pace" element={<WeeklyPacePage />} />
         <Route path="activity-level" element={<ActivityLevelPage />} />
+        <Route path="lifestyle" element={<LifestylePage />} />
         <Route path="workout-location" element={<WorkoutLocationPage />} />
         <Route path="workout-equipment" element={<WorkoutEquipmentPage />} />
         <Route path="workout-body-parts" element={<WorkoutBodyPartsPage />} />
@@ -81,6 +84,7 @@ const Index = () => {
         <Route path="disliked-foods" element={<DislikedFoodsPage />} />
         <Route path="preferred-ingredients" element={<PreferredIngredientsPage />} />
         <Route path="disliked-ingredients" element={<DislikedIngredientsPage />} />
+        <Route path="review" element={<ReviewPage />} />
         <Route path="nutrition-preferences" element={<Navigate to="../diet-requirements" replace />} />
         <Route path="diet-restrictions" element={<Navigate to="../diet-requirements" replace />} />
         <Route path="report" element={<ReportPage />} />

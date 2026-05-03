@@ -23,8 +23,26 @@ vi.mock("@/hooks/api", () => ({
   useGetQuery: vi.fn(),
 }));
 
-vi.mock("@/modules/auth/containers/sign-up/phone-form.jsx", () => ({
-  default: ({ referralCode }) => <div>phone-form:{referralCode}</div>,
+vi.mock("@/modules/auth/containers/sign-up/password-form.jsx", () => ({
+  default: ({ phone, referralCode }) => (
+    <div>
+      password-form:{phone}:{referralCode}
+    </div>
+  ),
+}));
+
+const authState = vi.hoisted(() => ({
+  authPhoneFlow: {
+    phone: "+998901234567",
+    flow: "register",
+    referralCode: null,
+  },
+  setAuthPhoneFlow: vi.fn(),
+}));
+
+vi.mock("@/store", () => ({
+  useAuthStore: (selector) =>
+    typeof selector === "function" ? selector(authState) : authState,
 }));
 
 describe("SignUpContainer referral banner", () => {
@@ -49,7 +67,9 @@ describe("SignUpContainer referral banner", () => {
     );
 
     expect(screen.getByText("invited:Coach One")).toBeInTheDocument();
-    expect(screen.getByText("phone-form:coach-code")).toBeInTheDocument();
+    expect(
+      screen.getByText("password-form:+998901234567:coach-code"),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Sign up with Apple" }),
     ).not.toBeInTheDocument();
@@ -77,6 +97,8 @@ describe("SignUpContainer referral banner", () => {
     );
 
     expect(screen.queryByText("invited")).not.toBeInTheDocument();
-    expect(screen.getByText("phone-form:bad-code")).toBeInTheDocument();
+    expect(
+      screen.getByText("password-form:+998901234567:bad-code"),
+    ).toBeInTheDocument();
   });
 });

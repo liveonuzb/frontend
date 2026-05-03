@@ -34,7 +34,9 @@ const tone = ONBOARDING_ACCENTS.green;
 const getStepIndex = (progress) =>
   Math.min(
     personalizationLoadingSteps.length - 1,
-    Math.floor((clampProgress(progress) / 100) * personalizationLoadingSteps.length),
+    Math.floor(
+      (clampProgress(progress) / 100) * personalizationLoadingSteps.length,
+    ),
   );
 
 const LoadingShell = ({
@@ -113,7 +115,9 @@ const LoadingShell = ({
                   {personalizationChecklist.map((item, index) => {
                     const completed =
                       clampProgress(progress) >=
-                      Math.round(((index + 1) / personalizationChecklist.length) * 100);
+                      Math.round(
+                        ((index + 1) / personalizationChecklist.length) * 100,
+                      );
 
                     return (
                       <div
@@ -128,10 +132,14 @@ const LoadingShell = ({
                         <CheckCircle2Icon
                           className={cn(
                             "size-4 shrink-0",
-                            completed ? "text-primary" : "text-muted-foreground/50",
+                            completed
+                              ? "text-primary"
+                              : "text-muted-foreground/50",
                           )}
                         />
-                        {t(`onboarding.postOnboarding.loading.checklist.${item}`)}
+                        {t(
+                          `onboarding.postOnboarding.loading.checklist.${item}`,
+                        )}
                       </div>
                     );
                   })}
@@ -148,7 +156,8 @@ const LoadingShell = ({
                     ) : null}
                     <Button type="button" onClick={onRetry} className="w-full">
                       <RefreshCcwIcon className="size-4" />
-                      {retryLabel ?? t("onboarding.postOnboarding.loading.retry")}
+                      {retryLabel ??
+                        t("onboarding.postOnboarding.loading.retry")}
                     </Button>
                   </div>
                 ) : null}
@@ -171,8 +180,8 @@ export const PersonalizingContainer = () => {
     usePostQuery();
   const statusQuery = useGetQuery({
     url: jobId
-      ? `/onboarding/personalization-status/${jobId}`
-      : "/onboarding/personalization-result",
+      ? `/user/onboarding/personalization-status/${jobId}`
+      : "/user/onboarding/personalization-result",
     queryProps: {
       queryKey: jobId
         ? ["onboarding", "personalization-status", jobId]
@@ -186,10 +195,14 @@ export const PersonalizingContainer = () => {
     },
   });
   const job = unwrapApiData(statusQuery.data);
-  const isCompleted = jobId ? job?.status === "COMPLETED" : statusQuery.isSuccess;
+  const isCompleted = jobId
+    ? job?.status === "COMPLETED"
+    : statusQuery.isSuccess;
   const isFailed = job?.status === "FAILED" || statusQuery.isError;
   const hasServerProgress = Number.isFinite(Number(job?.progress));
-  const resolvedProgress = clampProgress(hasServerProgress ? job?.progress : progress);
+  const resolvedProgress = clampProgress(
+    hasServerProgress ? job?.progress : progress,
+  );
 
   React.useEffect(() => {
     const timer = window.setInterval(() => {
@@ -230,7 +243,7 @@ export const PersonalizingContainer = () => {
         setProgress(0);
         if (isFailed) {
           const response = await retryPersonalization({
-            url: "/onboarding/retry-personalization",
+            url: "/user/onboarding/retry-personalization",
           });
           const nextJob = unwrapApiData(response);
           setOnboardingFlow({
@@ -261,11 +274,12 @@ export const GeneratingContainer = () => {
   const [activeJobId, setActiveJobId] = React.useState(jobId ?? "");
   const [localProgress, setLocalProgress] = React.useState(0);
   const startedRef = React.useRef(false);
-  const { mutateAsync: startGeneration, isPending: isStarting } = usePostQuery();
+  const { mutateAsync: startGeneration, isPending: isStarting } =
+    usePostQuery();
   const { mutateAsync: activateOnboarding } = usePostQuery();
 
   const statusQuery = useGetQuery({
-    url: activeJobId ? `/onboarding/generation-status/${activeJobId}` : "",
+    url: activeJobId ? `/user/onboarding/generation-status/${activeJobId}` : "",
     queryProps: {
       queryKey: ["onboarding", "generation-status", activeJobId],
       enabled: Boolean(activeJobId),
@@ -278,12 +292,14 @@ export const GeneratingContainer = () => {
   const job = unwrapApiData(statusQuery.data);
   const isFailed = job?.status === "FAILED" || statusQuery.isError;
   const hasServerProgress = Number.isFinite(Number(job?.progress));
-  const progress = clampProgress(hasServerProgress ? job?.progress : localProgress);
+  const progress = clampProgress(
+    hasServerProgress ? job?.progress : localProgress,
+  );
 
   const start = React.useCallback(async () => {
     startedRef.current = true;
     const response = await startGeneration({
-      url: "/onboarding/generate-personal-plan",
+      url: "/user/onboarding/generate-personal-plan",
     });
     const nextJob = unwrapApiData(response);
     if (nextJob?.id) {
@@ -307,7 +323,7 @@ export const GeneratingContainer = () => {
     if (job?.status === "COMPLETED" && progress >= 100) {
       const timer = window.setTimeout(async () => {
         const activation = await activateOnboarding({
-          url: "/onboarding/activate",
+          url: "/user/onboarding/activate",
         });
         const activationBody = unwrapApiData(activation);
         setOnboardingFlow({

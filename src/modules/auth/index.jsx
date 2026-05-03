@@ -6,6 +6,7 @@ import Layout from "@/modules/auth/layout/index.jsx";
 import SelectLanguagePage from "@/pages/select-language/index.jsx";
 import SelectModePage from "@/pages/select-mode/index.jsx";
 import SignInPage from "@/modules/auth/pages/sign-in/index.jsx";
+import SignInPasswordPage from "@/modules/auth/pages/sign-in-password/index.jsx";
 import SignUpPage from "@/modules/auth/pages/sign-up/index.jsx";
 import ForgotPasswordPage from "@/modules/auth/pages/forgot-password/index.jsx";
 import OtpVerifyPage from "@/modules/auth/pages/otp-verify/index.jsx";
@@ -36,6 +37,7 @@ const Index = () => {
           <>
             <Route index element={<Navigate to="sign-in" replace />} />
             <Route path={"sign-in"} element={<SignInPage />} />
+            <Route path={"sign-in/password"} element={<SignInPasswordPage />} />
             <Route path={"sign-up"} element={<SignUpPage />} />
             <Route path={"forgot-password"} element={<ForgotPasswordPage />} />
             <Route path={"otp-verify"} element={<OtpVerifyPage />} />

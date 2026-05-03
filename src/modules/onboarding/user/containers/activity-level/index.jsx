@@ -67,7 +67,7 @@ const Index = () => {
 
   const handleContinue = () => {
     if (hasSelection) {
-      navigate("/user/onboarding/workout-location");
+      navigate("/user/onboarding/lifestyle");
     }
   };
 
