@@ -1,6 +1,6 @@
 import React from "react";
 import AuthSubmitButton from "@/modules/auth/components/auth-submit-button";
-import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { Field, FieldError } from "@/components/ui/field";
 import { PhoneInput } from "@/components/ui/phone-input.jsx";
 
 import { useForm, Controller } from "react-hook-form";
@@ -79,9 +79,6 @@ const PhoneForm = () => {
   return (
     <form className={"flex flex-col gap-6"} onSubmit={handleSubmit(onSubmit)}>
       <Field>
-        <FieldLabel htmlFor="forgot-phone">
-          {t("auth.forgotPassword.phoneLabel")}
-        </FieldLabel>
         <Controller
           name="phone"
           control={control}

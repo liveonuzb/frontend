@@ -2,15 +2,14 @@ import React from "react";
 import { useNavigate } from "react-router";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LockKeyholeIcon, UserPlusIcon } from "lucide-react";
 import { get, isEqual } from "lodash";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useTranslation } from "react-i18next";
-import AuthPhoneSummary from "@/modules/auth/components/auth-phone-summary";
+import { Button } from "@/components/ui/button";
 import AuthSubmitButton from "@/modules/auth/components/auth-submit-button";
 import { PasswordStrength } from "@/components/password-strength";
-import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Field, FieldError } from "@/components/ui/field";
 import { PasswordInput } from "@/components/ui/password-input";
 import { usePostQuery } from "@/hooks/api";
 import { useAuthStore } from "@/store";
@@ -111,22 +110,7 @@ const PasswordForm = ({ phone, referralCode }) => {
       onSubmit={submitForm}
       onKeyDown={(event) => submitOnEnter(event, submitForm)}
     >
-      <AuthPhoneSummary
-        phone={phone}
-        label={t("auth.signIn.selectedPhone")}
-        backLabel={t("auth.signIn.backToPhone")}
-        onBack={goBack}
-        icon={UserPlusIcon}
-      />
-
       <Field className="gap-2">
-        <FieldLabel
-          htmlFor="signup-phone-password"
-          className="items-center gap-2 text-sm"
-        >
-          <LockKeyholeIcon className="size-4 text-primary" />
-          {t("auth.signIn.newPasswordLabel")}
-        </FieldLabel>
         <Controller
           name="password"
           control={control}
@@ -137,6 +121,8 @@ const PasswordForm = ({ phone, referralCode }) => {
                 className="h-10 px-5 !text-base md:h-11"
                 autoComplete="new-password"
                 enterKeyHint="done"
+                placeholder={t("auth.signIn.newPasswordLabel")}
+                aria-label={t("auth.signIn.newPasswordLabel")}
                 aria-invalid={!!get(fieldState, "error")}
                 {...field}
               />
@@ -152,13 +138,6 @@ const PasswordForm = ({ phone, referralCode }) => {
       </Field>
 
       <Field className="gap-2">
-        <FieldLabel
-          htmlFor="signup-phone-confirm-password"
-          className="items-center gap-2 text-sm"
-        >
-          <LockKeyholeIcon className="size-4 text-primary" />
-          {t("auth.signIn.confirmPasswordLabel")}
-        </FieldLabel>
         <Controller
           name="confirmPassword"
           control={control}
@@ -169,6 +148,8 @@ const PasswordForm = ({ phone, referralCode }) => {
                 className="h-10 px-5 !text-base md:h-11"
                 autoComplete="new-password"
                 enterKeyHint="done"
+                placeholder={t("auth.signIn.confirmPasswordLabel")}
+                aria-label={t("auth.signIn.confirmPasswordLabel")}
                 aria-invalid={!!get(fieldState, "error")}
                 {...field}
               />
@@ -191,6 +172,15 @@ const PasswordForm = ({ phone, referralCode }) => {
           ? t("auth.signIn.creatingAccount")
           : t("auth.signIn.createPasswordButton")}
       </AuthSubmitButton>
+
+      <Button
+        type="button"
+        variant="link"
+        onClick={goBack}
+        className="mx-auto h-auto px-0 text-sm text-muted-foreground"
+      >
+        {t("auth.signIn.backToPhone")}
+      </Button>
     </form>
   );
 };

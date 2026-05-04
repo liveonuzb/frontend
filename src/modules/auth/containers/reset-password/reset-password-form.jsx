@@ -1,6 +1,6 @@
 import React from "react";
 import AuthSubmitButton from "@/modules/auth/components/auth-submit-button";
-import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { Field, FieldError } from "@/components/ui/field";
 import { PasswordInput } from "@/components/ui/password-input";
 import { PasswordStrength } from "@/components/password-strength";
 import { useForm, Controller } from "react-hook-form";
@@ -118,9 +118,6 @@ const ResetPasswordForm = () => {
   return (
     <form className={"flex flex-col gap-8"} onSubmit={handleSubmit(onSubmit)}>
       <Field>
-        <FieldLabel htmlFor="reset-password">
-          {t("auth.resetPassword.newPasswordLabel")}
-        </FieldLabel>
         <Controller
           name="password"
           control={control}
@@ -131,6 +128,8 @@ const ResetPasswordForm = () => {
                 autoComplete="new-password"
                 enterKeyHint="done"
                 className={"h-10 md:h-11 px-5 !text-base"}
+                placeholder={t("auth.resetPassword.newPasswordLabel")}
+                aria-label={t("auth.resetPassword.newPasswordLabel")}
                 aria-invalid={!!get(fieldState, "error")}
                 {...field}
                 ref={(node) => {
@@ -152,9 +151,6 @@ const ResetPasswordForm = () => {
       </Field>
 
       <Field>
-        <FieldLabel htmlFor="reset-confirm-password">
-          {t("auth.resetPassword.confirmPasswordLabel")}
-        </FieldLabel>
         <Controller
           name="confirmPassword"
           control={control}
@@ -165,6 +161,8 @@ const ResetPasswordForm = () => {
                 autoComplete="new-password"
                 enterKeyHint="done"
                 className={"h-10 md:h-11 px-5 !text-base"}
+                placeholder={t("auth.resetPassword.confirmPasswordLabel")}
+                aria-label={t("auth.resetPassword.confirmPasswordLabel")}
                 aria-invalid={!!get(fieldState, "error")}
                 {...field}
               />

@@ -48,11 +48,7 @@ const Index = () => {
 
   return (
     <AuthPanel className={""}>
-      <AuthHeader title={t("auth.signIn.registerPasswordTitle")}>
-        <p className="max-w-[22rem] text-sm leading-6 text-muted-foreground">
-          {t("auth.signIn.registerPasswordSubtitle", { phone })}
-        </p>
-      </AuthHeader>
+      <AuthHeader title={t("auth.signIn.registerPasswordTitle")} />
       {referralCode && referralValid && (
         <div className="rounded-[1.15rem] border border-primary/20 bg-primary/[0.06] px-4 py-3.5 text-center text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
           <span className="font-semibold text-primary">

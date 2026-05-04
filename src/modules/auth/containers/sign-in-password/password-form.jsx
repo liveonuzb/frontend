@@ -3,14 +3,13 @@ import { Link, useNavigate } from "react-router";
 import { Controller, useForm } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LockKeyholeIcon } from "lucide-react";
 import { get } from "lodash";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useTranslation } from "react-i18next";
-import AuthPhoneSummary from "@/modules/auth/components/auth-phone-summary";
+import { Button } from "@/components/ui/button";
 import AuthSubmitButton from "@/modules/auth/components/auth-submit-button";
-import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Field, FieldError } from "@/components/ui/field";
 import { PasswordInput } from "@/components/ui/password-input";
 import { usePostQuery } from "@/hooks/api";
 import { useAuthStore } from "@/store";
@@ -84,29 +83,7 @@ const PasswordForm = ({ phone }) => {
       onSubmit={submitForm}
       onKeyDown={(event) => submitOnEnter(event, submitForm)}
     >
-      <AuthPhoneSummary
-        phone={phone}
-        label={t("auth.signIn.selectedPhone")}
-        backLabel={t("auth.signIn.backToPhone")}
-        onBack={goBack}
-      />
-
       <Field className="gap-2">
-        <div className="flex items-center">
-          <FieldLabel
-            htmlFor="phone-password"
-            className="items-center gap-2 text-sm"
-          >
-            <LockKeyholeIcon className="size-4 text-primary" />
-            {t("auth.signIn.passwordLabel")}
-          </FieldLabel>
-          <Link
-            to="/auth/forgot-password"
-            className="ml-auto text-sm underline-offset-2 hover:underline"
-          >
-            {t("auth.signIn.forgotPassword")}
-          </Link>
-        </div>
         <Controller
           name="password"
           control={control}
@@ -116,6 +93,8 @@ const PasswordForm = ({ phone }) => {
                 id="phone-password"
                 autoComplete="current-password"
                 enterKeyHint="done"
+                placeholder={t("auth.signIn.passwordLabel")}
+                aria-label={t("auth.signIn.passwordLabel")}
                 className="h-10 px-5 !text-base md:h-11"
                 aria-invalid={!!get(fieldState, "error")}
                 {...field}
@@ -128,6 +107,12 @@ const PasswordForm = ({ phone }) => {
             </div>
           )}
         />
+        <Link
+          to="/auth/forgot-password"
+          className="ml-auto text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          {t("auth.signIn.forgotPassword")}
+        </Link>
       </Field>
 
       <AuthSubmitButton
@@ -139,6 +124,15 @@ const PasswordForm = ({ phone }) => {
           ? t("auth.signIn.loggingIn")
           : t("auth.signIn.loginButton")}
       </AuthSubmitButton>
+
+      <Button
+        type="button"
+        variant="link"
+        onClick={goBack}
+        className="mx-auto h-auto px-0 text-sm text-muted-foreground"
+      >
+        {t("auth.signIn.backToPhone")}
+      </Button>
     </form>
   );
 };

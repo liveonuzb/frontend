@@ -17,11 +17,7 @@ const Index = ({ className, ...props }) => {
 
   return (
     <AuthPanel className={className} {...props}>
-      <AuthHeader title={t("auth.signIn.loginPasswordTitle")}>
-        <p className="max-w-[22rem] text-sm leading-6 text-muted-foreground">
-          {t("auth.signIn.loginPasswordSubtitle", { phone })}
-        </p>
-      </AuthHeader>
+      <AuthHeader title={t("auth.signIn.loginPasswordTitle")} />
       <PasswordForm phone={phone} />
     </AuthPanel>
   );
