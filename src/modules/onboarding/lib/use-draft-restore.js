@@ -85,6 +85,8 @@ function isUserStoreEmpty(state) {
     (!isArray(state.dietRestrictions) || state.dietRestrictions.length === 0) &&
     (!isArray(state.healthConstraints) ||
       state.healthConstraints.length === 0) &&
+    (!isArray(state.customHealthConstraints) ||
+      state.customHealthConstraints.length === 0) &&
     !state.injurySeverity &&
     (!isArray(state.forbiddenExercises) ||
       state.forbiddenExercises.length === 0) &&
@@ -306,6 +308,9 @@ function mergeUserDraft(serverData, setFields) {
   }
   if (isArray(serverData.healthConstraints)) {
     fields.healthConstraints = serverData.healthConstraints;
+  }
+  if (isArray(serverData.customHealthConstraints)) {
+    fields.customHealthConstraints = serverData.customHealthConstraints;
   }
   if (serverData.injurySeverity) {
     fields.injurySeverity = serverData.injurySeverity;

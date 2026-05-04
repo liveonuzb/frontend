@@ -1,4 +1,4 @@
-import { get, includes, isArray, map } from "lodash";
+import { get, isArray, map } from "lodash";
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";
@@ -12,6 +12,7 @@ import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-
 import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-question";
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import useOnboardingBase from "@/hooks/app/use-onboarding-base";
+import PageAura from "../../components/page-aura.jsx";
 
 const getDefaultGoals = (t) => [
   {
@@ -141,38 +142,7 @@ const Index = () => {
 
   return (
     <div className="relative flex h-full flex-1 flex-col justify-center overflow-hidden pt-3 md:pt-8  px-5">
-      <div className="pointer-events-none absolute inset-0">
-        <motion.div
-          key={`goal-page-wash-${selectedGoal.value}`}
-          className={cn(
-            "absolute inset-0 bg-gradient-to-b opacity-80",
-            selectedGoal.pageTint,
-          )}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.8 }}
-          transition={{ duration: 0.32, ease: "easeOut" }}
-        />
-        <motion.div
-          key={`goal-page-aura-top-${selectedGoal.value}`}
-          className={cn(
-            "absolute left-1/2 top-[8%] h-[26%] w-[82%] -translate-x-1/2 rounded-full bg-gradient-to-br blur-3xl md:top-[12%] md:h-[32%] md:w-[62%]",
-            selectedGoal.pageTint,
-          )}
-          initial={{ opacity: 0, scale: 0.88 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.36, ease: "easeOut" }}
-        />
-        <motion.div
-          key={`goal-page-aura-bottom-${selectedGoal.value}`}
-          className={cn(
-            "absolute inset-x-[10%] bottom-[-8%] h-[20%] rounded-full bg-gradient-to-t blur-3xl md:bottom-[-4%] md:h-[24%] md:inset-x-[18%]",
-            selectedGoal.pageTint,
-          )}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4, ease: "easeOut", delay: 0.04 }}
-        />
-      </div>
+      <PageAura tone={selectedGoal} />
 
       <div className="relative z-10 flex w-full flex-1 flex-col justify-center md:mx-auto md:max-w-4xl">
         <OnboardingQuestion question={t("onboarding.goal.question")} />

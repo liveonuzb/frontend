@@ -1,18 +1,21 @@
 import React from "react";
 import { motion } from "framer-motion";
 import {
-  ArrowLeftIcon,
+  ActivityIcon,
   ChevronRightIcon,
   DumbbellIcon,
+  DropletsIcon,
   FlameIcon,
   InfoIcon,
   Loader2Icon,
   PencilIcon,
   PlusIcon,
   SaladIcon,
+  ScaleIcon,
   SearchIcon,
   TargetIcon,
   UtensilsIcon,
+  WalletCardsIcon,
   XIcon,
 } from "lucide-react";
 import { useNavigate } from "react-router";
@@ -30,7 +33,6 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import {
   useGetQuery,
@@ -65,7 +67,7 @@ import {
   normalizeChipLabel,
 } from "../../lib/chip-selection.js";
 
-const tone = ONBOARDING_ACCENTS.green;
+const tone = ONBOARDING_ACCENTS.amber;
 
 const editKeys = {
   dailyCalories: "dailyCalories",
@@ -155,44 +157,178 @@ const mergeEquipment = (...groups) => {
   });
 };
 
-const CircularMetric = ({
-  icon: Icon,
-  label,
-  value,
-  unit,
-  progress = 100,
-  onEdit,
-}) => (
+const resultFallbacks = {
+  calorie: 2100,
+  weightDiff: -10,
+  weeklyRate: 0.5,
+  carbs: 230,
+  protein: 160,
+  fat: 65,
+  waterMl: 2500,
+  currentWeight: 70,
+  goal: "Ozish",
+  activity: "O'rtacha faol",
+  budget: 250000,
+};
+
+const goalLabels = {
+  lose: "Ozish",
+  weight_loss: "Ozish",
+  weightLoss: "Ozish",
+  maintain: "Vazn saqlash",
+  gain: "Mushak yig'ish",
+  muscle_gain: "Mushak yig'ish",
+  healthy_lifestyle: "Sog'lom turmush",
+  performance: "Performance",
+};
+
+const activityLabels = {
+  sedentary: "Passiv",
+  "lightly-active": "Yengil faol",
+  lightly_active: "Yengil faol",
+  "moderately-active": "O'rtacha faol",
+  moderately_active: "O'rtacha faol",
+  "very-active": "Juda faol",
+  very_active: "Juda faol",
+};
+
+const budgetPeriodSuffixes = {
+  daily: "kuniga",
+  weekly: "haftasiga",
+  monthly: "oyiga",
+};
+
+const getNumberOrFallback = (value, fallback) => {
+  if (value === null || value === undefined || value === "") return fallback;
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : fallback;
+};
+
+const formatResultNumber = (value) => formatNumber(value, "en-US");
+
+const formatResultLiters = (value) => {
+  const liters = getNumberOrFallback(value, resultFallbacks.waterMl) / 1000;
+  const rounded = Math.round(liters * 10) / 10;
+  return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(1)} L`;
+};
+
+const resolveSummaryBudget = (onboarding = {}) => {
+  const amount = getNumberOrFallback(
+    onboarding?.foodBudget,
+    resultFallbacks.budget,
+  );
+  const currency = onboarding?.budgetCurrency || "UZS";
+  const period =
+    budgetPeriodSuffixes[onboarding?.budgetPeriod] ?? budgetPeriodSuffixes.weekly;
+
+  return `${formatResultNumber(amount)} ${currency} / ${period}`;
+};
+
+const resolveResultSnapshot = (result = {}, onboarding = {}) => {
+  const goalKey = onboarding?.goal ?? result?.goal;
+  const activityKey = onboarding?.activityLevel ?? result?.activityLevel;
+
+  return {
+    calories: getNumberOrFallback(result?.dailyCalories, resultFallbacks.calorie),
+    weightDiff: getNumberOrFallback(
+      result?.weightToChange,
+      resultFallbacks.weightDiff,
+    ),
+    weeklyRate: getNumberOrFallback(
+      result?.weeklyWeightChangeGoal ?? onboarding?.weeklyPace,
+      resultFallbacks.weeklyRate,
+    ),
+    carbs: getNumberOrFallback(result?.carbsGram, resultFallbacks.carbs),
+    protein: getNumberOrFallback(result?.proteinGram, resultFallbacks.protein),
+    fat: getNumberOrFallback(result?.fatGram, resultFallbacks.fat),
+    waterMl: getNumberOrFallback(
+      result?.recommendedWaterMl,
+      resultFallbacks.waterMl,
+    ),
+    currentWeight: getNumberOrFallback(
+      onboarding?.currentWeight?.value ?? result?.currentWeight,
+      resultFallbacks.currentWeight,
+    ),
+    goal: goalLabels[goalKey] ?? resultFallbacks.goal,
+    activity: activityLabels[activityKey] ?? resultFallbacks.activity,
+    budget: resolveSummaryBudget(onboarding),
+  };
+};
+
+const EditGlyph = () => (
+  <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border/70 bg-background/80 text-muted-foreground transition group-hover:text-primary">
+    <PencilIcon className="size-3.5" aria-hidden="true" />
+  </span>
+);
+
+const HeroInfoButton = ({ label, value, onClick }) => (
   <button
     type="button"
-    onClick={onEdit}
-    className="group flex min-h-[132px] flex-col justify-between rounded-[1.35rem] border border-border/70 bg-background/90 p-4 text-left shadow-sm transition hover:border-primary/35"
+    onClick={onClick}
+    className="group flex min-h-[88px] items-start justify-between gap-3 rounded-[1.25rem] border border-border/70 bg-muted/30 p-3 text-left transition hover:border-primary/30 hover:bg-muted/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
   >
-    <div className="flex items-start justify-between gap-3">
-      <div
-        className="flex size-14 items-center justify-center rounded-full"
-        style={{
-          background: `conic-gradient(hsl(var(--primary)) ${Math.min(100, Math.max(0, progress)) * 3.6}deg, hsl(var(--muted)) 0deg)`,
-        }}
-      >
-        <div className="flex size-10 items-center justify-center rounded-full bg-background">
-          <Icon className="size-5 text-primary" />
-        </div>
-      </div>
-      <span className="flex size-8 items-center justify-center rounded-full border border-border/70 bg-background text-muted-foreground transition group-hover:text-primary">
-        <PencilIcon className="size-4" />
+    <span>
+      <span className="block text-[11px] font-semibold leading-4 text-muted-foreground">
+        {label}
       </span>
-    </div>
-    <div>
-      <p className="text-xs font-semibold text-muted-foreground">{label}</p>
-      <p className="mt-1 text-2xl font-black tracking-tight">
+      <span className="mt-1 block text-xl font-black leading-tight text-foreground">
         {value}
-        <span className="ml-1 text-sm font-bold text-muted-foreground">
-          {unit}
-        </span>
-      </p>
-    </div>
+      </span>
+    </span>
+    <EditGlyph />
   </button>
+);
+
+const MetricCard = ({ icon: Icon, label, value, unit, water = false, onEdit }) => {
+  const interactive = typeof onEdit === "function";
+  const Component = interactive ? "button" : "div";
+
+  return (
+    <Component
+      {...(interactive ? { type: "button", onClick: onEdit } : {})}
+      className="flex min-h-[118px] flex-col justify-between rounded-[1.35rem] border border-border/70 bg-background/90 p-4 text-left shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+    >
+      <span
+        className={cn(
+          "flex size-9 items-center justify-center rounded-full",
+          water
+            ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-300"
+            : tone.badgeTone,
+        )}
+      >
+        <Icon className="size-[18px]" aria-hidden="true" />
+      </span>
+      <span>
+        <span className="block text-xs font-semibold text-muted-foreground">
+          {label}
+        </span>
+        <span className="mt-1 block text-2xl font-black tracking-tight text-foreground">
+          {value}
+          {unit ? (
+            <span className="ml-1 text-sm font-bold text-muted-foreground">
+              {unit}
+            </span>
+          ) : null}
+        </span>
+      </span>
+    </Component>
+  );
+};
+
+const SummaryItem = ({ icon: Icon, label, value }) => (
+  <div className="flex items-center gap-3 rounded-[1.1rem] border border-border/70 bg-background/80 p-3">
+    <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-full", tone.badgeTone)}>
+      <Icon className="size-4" aria-hidden="true" />
+    </span>
+    <span className="min-w-0">
+      <span className="block text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+        {label}
+      </span>
+      <span className="mt-0.5 block truncate text-sm font-black text-foreground">
+        {value}
+      </span>
+    </span>
+  </div>
 );
 
 const SegmentOptions = ({ value, options, labelPrefix, onChange, t }) => (
@@ -251,72 +387,6 @@ const getChipValue = (field, onboarding) => {
     customItems: onboarding?.[config.customKey] ?? [],
   };
 };
-
-const formatOptionValue = (field, value, t) =>
-  t(`onboarding.postOnboarding.result.options.${field}.${value}`, {
-    defaultValue: value ?? "-",
-  });
-
-const formatBudgetValue = (onboarding, t) => {
-  const value = Number(onboarding?.foodBudget);
-  if (!Number.isFinite(value) || value <= 0) return "-";
-
-  const period = t(
-    `onboarding.foodBudget.periods.${onboarding?.budgetPeriod ?? "weekly"}`,
-    { defaultValue: onboarding?.budgetPeriod ?? "weekly" },
-  );
-  return `${formatNumber(value)} ${onboarding?.budgetCurrency ?? "UZS"} / ${period}`;
-};
-
-const formatPreferenceValue = (field, result, onboarding, t) => {
-  if (field === editKeys.currentWeight) {
-    const value = onboarding?.currentWeight?.value ?? result?.currentWeight;
-    return value ? `${formatNumber(value)} kg` : "-";
-  }
-
-  if (field === editKeys.foodBudget) {
-    return formatBudgetValue(onboarding, t);
-  }
-
-  if (field === editKeys.sleepHours) {
-    return onboarding?.sleepHours ? `${onboarding.sleepHours} h` : "-";
-  }
-
-  if (field === editKeys.forbiddenExercises) {
-    const count = onboarding?.forbiddenExercises?.length ?? 0;
-    return count
-      ? t("onboarding.postOnboarding.result.preferenceCount", { count })
-      : "-";
-  }
-
-  if (chipFields.has(field)) {
-    const { ids, customItems } = getChipValue(field, onboarding);
-    const count = (ids?.length ?? 0) + (customItems?.length ?? 0);
-    return count
-      ? t("onboarding.postOnboarding.result.preferenceCount", { count })
-      : "-";
-  }
-
-  return formatOptionValue(field, onboarding?.[field], t);
-};
-
-const PreferenceButton = ({ field, result, onboarding, onEdit, t }) => (
-  <button
-    type="button"
-    onClick={() => onEdit(field)}
-    className="flex min-h-20 items-center justify-between rounded-[1.25rem] border border-border/70 bg-background/90 p-4 text-left"
-  >
-    <div className="min-w-0">
-      <p className="text-xs font-bold text-muted-foreground">
-        {t(`onboarding.postOnboarding.result.preferences.${field}`)}
-      </p>
-      <p className="mt-1 truncate text-lg font-black">
-        {formatPreferenceValue(field, result, onboarding, t)}
-      </p>
-    </div>
-    <PencilIcon className="size-4 shrink-0 text-muted-foreground" />
-  </button>
-);
 
 const CatalogChipEditor = ({ field, value, onChange, t }) => {
   const config = chipFieldConfigs[field];
@@ -670,22 +740,30 @@ const EditDrawer = ({
   });
 
   React.useEffect(() => {
-    if (!field || !result) return;
+    let cancelled = false;
 
-    if (chipFields.has(field)) {
-      setChipValue(getChipValue(field, onboarding));
-      return;
-    }
+    queueMicrotask(() => {
+      if (cancelled || !field || !result) return;
 
-    if (field === editKeys.equipment) {
-      setEquipmentValue({
-        equipmentIds: result.equipmentIds ?? [],
-        customEquipment: result.customEquipment ?? [],
-      });
-      return;
-    }
+      if (chipFields.has(field)) {
+        setChipValue(getChipValue(field, onboarding));
+        return;
+      }
 
-    setValue(getEditValue(field, result, onboarding));
+      if (field === editKeys.equipment) {
+        setEquipmentValue({
+          equipmentIds: result.equipmentIds ?? [],
+          customEquipment: result.customEquipment ?? [],
+        });
+        return;
+      }
+
+      setValue(getEditValue(field, result, onboarding));
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [field, onboarding, result]);
 
   if (!field) return null;
@@ -830,243 +908,157 @@ const EditDrawer = ({
   );
 };
 
-const ResultContent = ({ result, onboarding, onEdit }) => {
-  const { t } = useTranslation();
-  const calories = Number(result.dailyCalories) || 1;
-  const carbProgress = Math.min(
-    100,
-    ((Number(result.carbsGram) * 4) / calories) * 100,
+export const ResultContent = ({ result, onboarding, onEdit }) => {
+  const snapshot = React.useMemo(
+    () => resolveResultSnapshot(result, onboarding),
+    [onboarding, result],
   );
-  const proteinProgress = Math.min(
-    100,
-    ((Number(result.proteinGram) * 4) / calories) * 100,
-  );
-  const fatProgress = Math.min(
-    100,
-    ((Number(result.fatGram) * 9) / calories) * 100,
-  );
+  const weeklyRateLabel = `${Math.round(snapshot.weeklyRate * 100) / 100} kg haftasiga`;
 
   return (
-    <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 py-4 pb-28 sm:px-6 md:py-6">
-      <div className="flex items-center gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="size-10 shrink-0 rounded-full"
-          onClick={() => window.history.back()}
-        >
-          <ArrowLeftIcon className="size-4" />
-        </Button>
-        <div className="flex-1">
-          <Progress value={92} className="h-2" />
-        </div>
-      </div>
-
-      <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="rounded-[1.75rem] border border-border/70 bg-background/90 p-5 shadow-sm sm:p-7">
-          <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-xs font-bold text-primary">
-              <TargetIcon className="size-3.5" />
-              {t("onboarding.postOnboarding.result.readyBadge")}
-            </div>
-            <h1 className="text-3xl font-black leading-tight tracking-tight sm:text-5xl">
-              {t("onboarding.postOnboarding.result.title")}
-            </h1>
-            <p className="text-sm font-semibold leading-6 text-muted-foreground sm:text-base">
-              {t("onboarding.postOnboarding.result.subtitle")}
-            </p>
-          </div>
-
-          <div className="mt-5 flex flex-wrap items-end gap-3">
-            <button
-              type="button"
-              onClick={() => onEdit(editKeys.targetWeight)}
-              className="rounded-[1.25rem] border border-primary/20 bg-primary/10 px-4 py-3 text-left text-primary"
-            >
-              <p className="text-xs font-bold uppercase">
-                {t("onboarding.postOnboarding.result.weightDifference")}
-              </p>
-              <p className="mt-1 text-3xl font-black">
-                {formatWeightDelta(result.weightToChange)}
-              </p>
-            </button>
-            <button
-              type="button"
-              onClick={() => onEdit(editKeys.weeklyWeightChangeGoal)}
-              className="rounded-[1.25rem] border border-border/70 bg-muted/30 px-4 py-3 text-left"
-            >
-              <p className="text-xs font-bold text-muted-foreground">
-                {t("onboarding.postOnboarding.result.weeklyPace")}
-              </p>
-              <p className="mt-1 text-xl font-black">
-                {result.weeklyWeightChangeGoal ?? 0.5} kg
-              </p>
-            </button>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => onEdit(editKeys.dailyCalories)}
-          className="flex min-h-[220px] flex-col justify-between rounded-[1.75rem] border border-border/70 bg-[#101828] p-5 text-left text-white shadow-sm sm:p-6"
-        >
-          <div className="flex items-start justify-between">
-            <div className="flex size-12 items-center justify-center rounded-full bg-white/10">
-              <FlameIcon className="size-6 text-[#F59E0B]" />
-            </div>
-            <PencilIcon className="size-5 text-white/70" />
+    <div className="relative flex min-h-full w-full flex-1 flex-col gap-4 overflow-x-hidden px-5 pt-3 md:pt-8">
+      <section
+        className={cn(
+          "rounded-[1.75rem] border bg-background/90 p-5 shadow-sm backdrop-blur",
+          tone.border,
+        )}
+      >
+        <div className="space-y-3">
+          <div
+            className={cn(
+              "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-black",
+              tone.badgeTone,
+            )}
+          >
+            <TargetIcon className="size-3.5" aria-hidden="true" />
+            Shaxsiy maqsadlar tayyor
           </div>
           <div>
-            <p className="text-sm font-bold text-white/60">
-              {t("onboarding.postOnboarding.result.dailyCalories")}
+            <h1 className="text-[2rem] font-black leading-[1.05] tracking-tight text-foreground">
+              Sizning rejangiz tayyor
+            </h1>
+            <p className="mt-3 text-sm font-medium leading-6 text-muted-foreground">
+              Sizga mos, barqaror va xavfsiz natijaga erishishingiz uchun reja
+              tuzildi.
             </p>
-            <p className="mt-2 text-5xl font-black tracking-tight">
-              {formatNumber(result.dailyCalories)}
-            </p>
-            <p className="mt-1 text-sm font-semibold text-white/60">kcal</p>
           </div>
-        </button>
-      </section>
+        </div>
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <CircularMetric
-          icon={FlameIcon}
-          label={t("onboarding.postOnboarding.result.metrics.calories")}
-          value={formatNumber(result.dailyCalories)}
-          unit="kcal"
-          progress={100}
-          onEdit={() => onEdit(editKeys.dailyCalories)}
-        />
-        <CircularMetric
-          icon={UtensilsIcon}
-          label={t("onboarding.postOnboarding.result.metrics.carbs")}
-          value={formatNumber(result.carbsGram)}
-          unit="g"
-          progress={carbProgress}
-          onEdit={() => onEdit(editKeys.carbsGram)}
-        />
-        <CircularMetric
-          icon={SaladIcon}
-          label={t("onboarding.postOnboarding.result.metrics.protein")}
-          value={formatNumber(result.proteinGram)}
-          unit="g"
-          progress={proteinProgress}
-          onEdit={() => onEdit(editKeys.proteinGram)}
-        />
-        <CircularMetric
-          icon={FlameIcon}
-          label={t("onboarding.postOnboarding.result.metrics.fat")}
-          value={formatNumber(result.fatGram)}
-          unit="g"
-          progress={fatProgress}
-          onEdit={() => onEdit(editKeys.fatGram)}
-        />
-      </section>
-
-      <section className="grid gap-3 md:grid-cols-3">
-        {[
-          ["mealsPerDay", result.mealsPerDay, "x"],
-          ["weeklyWorkoutDays", result.weeklyWorkoutDays, "days"],
-          ["workoutLocation", result.workoutLocation, ""],
-        ].map(([key, value, unit]) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => onEdit(key)}
-            className="flex min-h-24 items-center justify-between rounded-[1.25rem] border border-border/70 bg-background/90 p-4 text-left"
-          >
-            <div>
-              <p className="text-xs font-bold text-muted-foreground">
-                {t(`onboarding.postOnboarding.result.quick.${key}`)}
-              </p>
-              <p className="mt-1 text-2xl font-black">
-                {t(`onboarding.postOnboarding.result.options.${key}.${value}`, {
-                  defaultValue: `${value ?? "-"} ${unit}`,
-                })}
-              </p>
-            </div>
-            <PencilIcon className="size-4 text-muted-foreground" />
-          </button>
-        ))}
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <HeroInfoButton
+            label="Vazn farqi (maqsad)"
+            value={formatWeightDelta(snapshot.weightDiff)}
+            onClick={() => onEdit(editKeys.targetWeight)}
+          />
+          <HeroInfoButton
+            label="Haftalik sur'at"
+            value={weeklyRateLabel}
+            onClick={() => onEdit(editKeys.weeklyWeightChangeGoal)}
+          />
+        </div>
       </section>
 
       <button
         type="button"
-        onClick={() => onEdit(editKeys.equipment)}
-        className="flex items-center justify-between rounded-[1.25rem] border border-border/70 bg-background/90 p-4 text-left"
+        onClick={() => onEdit(editKeys.dailyCalories)}
+        className={cn(
+          "relative min-h-[184px] overflow-hidden rounded-[1.75rem] border bg-gradient-to-br p-5 text-left shadow-sm backdrop-blur transition hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+          tone.border,
+          tone.cardTone,
+        )}
       >
-        <div className="min-w-0">
-          <p className="text-sm font-black">
-            {t("onboarding.postOnboarding.result.equipment")}
-          </p>
-          <p className="mt-1 truncate text-sm font-medium text-muted-foreground">
-            {t("onboarding.postOnboarding.result.equipmentSummary", {
-              count:
-                (result.equipmentIds?.length ?? 0) +
-                (result.customEquipment?.length ?? 0),
-            })}
-          </p>
-        </div>
-        <PencilIcon className="size-4 text-muted-foreground" />
-      </button>
-
-      <section className="rounded-[1.25rem] border border-border/70 bg-background/90 p-4">
-        <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-primary/20 to-transparent" />
+        <div className="relative flex h-full min-h-[144px] flex-col justify-between">
+          <div className="flex items-start justify-between gap-4">
+            <div className={cn("flex size-12 items-center justify-center rounded-full", tone.badgeTone)}>
+              <FlameIcon className="size-6" aria-hidden="true" />
+            </div>
+            <span className="flex size-8 items-center justify-center rounded-full border border-border/70 bg-background/75 text-muted-foreground">
+              <PencilIcon className="size-4" aria-hidden="true" />
+            </span>
+          </div>
           <div>
-            <p className="text-sm font-black">
-              {t("onboarding.postOnboarding.result.preferencesTitle")}
+            <p className="text-sm font-bold text-muted-foreground">
+              Kunlik kaloriya
             </p>
-            <p className="mt-1 text-xs font-medium text-muted-foreground">
-              {t("onboarding.postOnboarding.result.preferencesDescription")}
+            <p className="mt-2 text-5xl font-black tracking-tight text-foreground">
+              {formatResultNumber(snapshot.calories)}
+              <span className={cn("ml-2 text-xl font-black", tone.textTone)}>
+                kcal
+              </span>
             </p>
           </div>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            editKeys.currentWeight,
-            editKeys.goal,
-            editKeys.activityLevel,
-            editKeys.foodBudget,
-            editKeys.allergies,
-            editKeys.dietRequirements,
-            editKeys.dislikedFoods,
-            editKeys.workoutExperience,
-            editKeys.sleepHours,
-            editKeys.injurySeverity,
-            editKeys.forbiddenExercises,
-          ].map((field) => (
-            <PreferenceButton
-              key={field}
-              field={field}
-              result={result}
-              onboarding={onboarding}
-              onEdit={onEdit}
-              t={t}
-            />
-          ))}
+      </button>
+
+      <section className="grid grid-cols-2 gap-3">
+        <MetricCard
+          icon={UtensilsIcon}
+          label="Uglevod"
+          value={formatResultNumber(snapshot.carbs)}
+          unit="g"
+          onEdit={() => onEdit(editKeys.carbsGram)}
+        />
+        <MetricCard
+          icon={SaladIcon}
+          label="Oqsil"
+          value={formatResultNumber(snapshot.protein)}
+          unit="g"
+          onEdit={() => onEdit(editKeys.proteinGram)}
+        />
+        <MetricCard
+          icon={FlameIcon}
+          label="Yog'"
+          value={formatResultNumber(snapshot.fat)}
+          unit="g"
+          onEdit={() => onEdit(editKeys.fatGram)}
+        />
+        <MetricCard
+          icon={DropletsIcon}
+          label="Suv"
+          value={formatResultLiters(snapshot.waterMl)}
+          water
+        />
+      </section>
+
+      <section className="rounded-[1.35rem] border border-border/70 bg-background/90 p-3 shadow-sm backdrop-blur">
+        <div className="grid gap-2">
+          <SummaryItem
+            icon={ScaleIcon}
+            label="Hozirgi vazn"
+            value={`${formatResultNumber(snapshot.currentWeight)} kg`}
+          />
+          <SummaryItem icon={TargetIcon} label="Maqsad" value={snapshot.goal} />
+          <SummaryItem
+            icon={ActivityIcon}
+            label="Aktivlik"
+            value={snapshot.activity}
+          />
+          <SummaryItem
+            icon={WalletCardsIcon}
+            label="Budjet"
+            value={snapshot.budget}
+          />
         </div>
       </section>
 
-      <details className="rounded-[1.25rem] border border-border/70 bg-background/90 p-4">
-        <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-black">
-          <InfoIcon className="size-4 text-primary" />
-          {t("onboarding.postOnboarding.result.howCalculated")}
+      <details className="rounded-[1.35rem] border border-border/70 bg-background/90 p-4 shadow-sm backdrop-blur">
+        <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-black text-foreground">
+          <InfoIcon className={cn("size-4", tone.textTone)} aria-hidden="true" />
+          Qanday hisoblaymiz?
         </summary>
-        <div className="mt-3 grid gap-2 text-sm font-medium leading-6 text-muted-foreground sm:grid-cols-2">
-          <p>BMR: {formatNumber(result.bmr)} kcal</p>
-          <p>TDEE: {formatNumber(result.tdee)} kcal</p>
+        <div className="mt-3 grid gap-2 text-sm font-medium leading-6 text-muted-foreground">
+          <p>BMR: {formatResultNumber(result.bmr)} kcal</p>
+          <p>TDEE: {formatResultNumber(result.tdee)} kcal</p>
           <p>BMI: {result.bmi ?? "-"}</p>
           <p>
-            {t("onboarding.postOnboarding.result.water")}:{" "}
-            {formatNumber(result.recommendedWaterMl)} ml
+            Suv: {formatResultNumber(snapshot.waterMl)} ml
           </p>
           <p>
-            {t("onboarding.postOnboarding.result.steps")}:{" "}
-            {formatNumber(result.dailyStepsTarget)}
+            Qadam: {formatResultNumber(result.dailyStepsTarget)}
           </p>
           <p>
-            {t("onboarding.postOnboarding.result.metabolicAge")}:{" "}
+            Metabolik yosh:{" "}
             {result.metabolicAge ?? "-"}
           </p>
         </div>
@@ -1181,7 +1173,10 @@ const Index = () => {
     <Button
       type="button"
       size="lg"
-      className="h-12 w-full"
+      className={cn(
+        "h-12 w-full border-transparent bg-gradient-to-r",
+        tone.buttonTone,
+      )}
       onClick={handleNext}
       disabled={!result || isGenerating}
     >
@@ -1190,7 +1185,7 @@ const Index = () => {
       ) : (
         <ChevronRightIcon className="size-4" />
       )}
-      {t("onboarding.postOnboarding.result.next")}
+      Keyingi
     </Button>,
   );
 
@@ -1223,7 +1218,7 @@ const Index = () => {
 
   return (
     <motion.div
-      className="relative flex min-h-full flex-1 overflow-hidden bg-[#F8FAF7]"
+      className="relative flex min-h-full flex-1 overflow-hidden bg-background"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.28, ease: "easeOut" }}

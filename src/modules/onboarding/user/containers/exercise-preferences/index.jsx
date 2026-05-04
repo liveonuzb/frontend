@@ -110,7 +110,6 @@ const Index = () => {
     () => normalizeCustomChips(dislikedCustomRaw),
     [dislikedCustomRaw],
   );
-  const activeMeta = MODES.find((item) => item.key === mode) ?? MODES[0];
   const activeIds = mode === "preferred" ? preferredIds : dislikedIds;
   const activeCustom = mode === "preferred" ? preferredCustom : dislikedCustom;
   const oppositeIds = mode === "preferred" ? dislikedIds : preferredIds;
@@ -320,21 +319,34 @@ const Index = () => {
     navigate("/user/onboarding/meal-frequency");
   }, [markCompleted, navigate]);
 
-  useOnboardingFooter(
-    <div className="grid grid-cols-[0.42fr_1fr] gap-2">
-      <Button type="button" variant="outline" className="h-12" onClick={goNext}>
-        {t("onboarding.skip")}
-      </Button>
-      <Button
-        type="button"
-        className={cn("h-12 border-transparent bg-gradient-to-r", tone.buttonTone)}
-        onClick={goNext}
-      >
-        {t("onboarding.next")}
-        <ChevronRightIcon className="size-4" />
-      </Button>
-    </div>,
+  const footerContent = React.useMemo(
+    () => (
+      <div className={"space-y-2"}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-12 w-full border-transparent"
+          onClick={goNext}
+        >
+          {t("onboarding.skip")}
+        </Button>
+        <Button
+          type="button"
+          className={cn(
+            "h-12 w-full border-transparent bg-gradient-to-r",
+            tone.buttonTone,
+          )}
+          onClick={goNext}
+        >
+          {t("onboarding.next")}
+          <ChevronRightIcon className="size-4" />
+        </Button>
+      </div>
+    ),
+    [goNext, t],
   );
+  useOnboardingFooter(footerContent);
 
   const selectedCount =
     preferredIds.length +

@@ -58,13 +58,22 @@ const Index = () => {
   }, [markCompleted, navigate, setFields]);
 
   useOnboardingFooter(
-    <div className="grid grid-cols-[0.42fr_1fr] gap-2">
-      <Button type="button" variant="outline" className="h-12" onClick={handleSkip}>
+    <div className={"space-y-2"}>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="h-12 w-full border-transparent"
+        onClick={handleSkip}
+      >
         {t("onboarding.skip")}
       </Button>
       <Button
         type="button"
-        className={cn("h-12 border-transparent bg-gradient-to-r", tone.buttonTone)}
+        className={cn(
+          "h-12 w-full border-transparent bg-gradient-to-r",
+          tone.buttonTone,
+        )}
         onClick={goNext}
       >
         {t("onboarding.next")}
@@ -77,22 +86,10 @@ const Index = () => {
     <div className="relative flex h-full max-h-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8">
       <PageAura tone={tone} />
       <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
-        <OnboardingQuestion question={t("onboarding.workoutSteps.location.title")} />
-
-        <motion.div
-          className={cn(
-            "mx-auto mb-3 w-full rounded-2xl border bg-background/90 px-3 py-3 backdrop-blur",
-            tone.border,
-          )}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <p className="text-sm font-semibold">
-            {t("onboarding.workoutSteps.location.description")}
-          </p>
-        </motion.div>
-
-        <div className="grid flex-1 content-start gap-3 overflow-y-auto pb-5">
+        <OnboardingQuestion
+          question={t("onboarding.workoutSteps.location.title")}
+        />
+        <div className="flex flex-col flex-1 justify-center gap-3 overflow-y-auto pb-5">
           {LOCATION_OPTIONS.map((option) => {
             const Icon = option.icon;
             const isActive = workoutLocation === option.value;
@@ -103,7 +100,7 @@ const Index = () => {
                 type="button"
                 onClick={() => setFields({ workoutLocation: option.value })}
                 className={cn(
-                  "flex min-h-[76px] items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-all",
+                  "flex items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-all",
                   isActive
                     ? `bg-gradient-to-br ${tone.cardTone} ${tone.border}`
                     : "border-border/70 bg-background/90 hover:border-primary/30",
@@ -113,14 +110,18 @@ const Index = () => {
                 <span
                   className={cn(
                     "flex size-11 shrink-0 items-center justify-center rounded-2xl",
-                    isActive ? tone.badgeTone : "bg-muted text-muted-foreground",
+                    isActive
+                      ? tone.badgeTone
+                      : "bg-muted text-muted-foreground",
                   )}
                 >
                   <Icon className="size-5" />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-bold">
-                    {t(`onboarding.workoutSteps.location.options.${option.value}.label`)}
+                    {t(
+                      `onboarding.workoutSteps.location.options.${option.value}.label`,
+                    )}
                   </span>
                   <span className="mt-1 block text-xs font-medium text-muted-foreground">
                     {t(

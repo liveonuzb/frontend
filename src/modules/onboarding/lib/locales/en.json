@@ -142,6 +142,28 @@
       "weeklyWorkoutCount": "How many workouts can you do per week?",
       "weeklyWorkoutCountDescription": "Choose a realistic weekly rhythm so the plan fits your schedule.",
       "weeklyWorkoutCountOption": "{{count}} days",
+      "weeklyWorkoutCountOptions": {
+        "none": {
+          "title": "I won't train",
+          "description": "We won't add a workout plan for now. You can change this later."
+        },
+        "light": {
+          "title": "Light start",
+          "description": "1-2 workouts per week. A manageable rhythm for building the habit."
+        },
+        "balanced": {
+          "title": "Balanced rhythm",
+          "description": "3-4 workouts per week. A good mix of progress and recovery."
+        },
+        "active": {
+          "title": "Active rhythm",
+          "description": "5-6 workouts per week. For consistent training."
+        },
+        "daily": {
+          "title": "Every day",
+          "description": "I am ready for a short or full workout every day."
+        }
+      },
       "workoutExperience": "Workout experience",
       "workoutExperienceDescription": "Exercise difficulty will match your current training level.",
       "workoutExperiences": {
@@ -398,6 +420,7 @@
       "noneSummary": "No constraints",
       "selectedCount": "{{count}} constraints selected",
       "defaultDescription": "This will be considered when building your plan.",
+      "otherPlaceholder": "Back pain, knee, blood pressure...",
       "injurySeverity": "Injury severity",
       "injurySeverityQuestion": "How serious is the injury or limitation?",
       "injurySeverityDescription": "This helps us tune exercise safety and training intensity.",

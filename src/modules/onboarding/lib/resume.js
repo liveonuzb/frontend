@@ -26,22 +26,6 @@ export const getNextUserOnboardingPath = (state) => {
     return "gender";
   }
 
-  if (!hasValue(state.healthConstraints)) {
-    return "health-constraints";
-  }
-
-  const hasHealthDetails =
-    !isArray(state.healthConstraints) ||
-    !state.healthConstraints.includes("none");
-
-  if (
-    hasHealthDetails &&
-    !hasValue(state.injurySeverity) &&
-    !hasCompletedStep(state, "injury-severity")
-  ) {
-    return "injury-severity";
-  }
-
   if (!hasValue(state.age)) {
     return "age";
   }
@@ -72,6 +56,13 @@ export const getNextUserOnboardingPath = (state) => {
 
   if (!hasValue(state.workoutExperience)) {
     return "workout-experience";
+  }
+
+  if (
+    !hasValue(state.healthConstraints) &&
+    !hasValue(state.customHealthConstraints)
+  ) {
+    return "health-constraints";
   }
 
   if (!hasCompletedStep(state, "workout-location")) {

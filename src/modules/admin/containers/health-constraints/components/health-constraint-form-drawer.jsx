@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner.jsx";
+import { Switch } from "@/components/ui/switch";
 import { useGetQuery, usePatchQuery, usePostQuery } from "@/hooks/api";
 import { useLanguageStore } from "@/store";
 
@@ -58,6 +59,7 @@ const HealthConstraintFormDrawer = ({ mode }) => {
       key: "",
       type: "injury",
       genderScope: "all",
+      isOnboarding: true,
     },
   });
   const postMutation = usePostQuery({ queryKey: QUERY_KEY });
@@ -76,6 +78,7 @@ const HealthConstraintFormDrawer = ({ mode }) => {
       key: item.key || "",
       type: item.type || "injury",
       genderScope: item.genderScope || "all",
+      isOnboarding: item.isOnboarding !== false,
     });
   }, [currentLanguage, form, item]);
 
@@ -212,6 +215,27 @@ const HealthConstraintFormDrawer = ({ mode }) => {
                           />
                         </FormControl>
                         <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="isOnboarding"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between gap-4 rounded-2xl border bg-muted/20 px-4 py-3">
+                        <div className="min-w-0">
+                          <FormLabel>Onboardingda ko'rsatish</FormLabel>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Yoqilgan bo'lsa user onboarding sog'liq cheklovlari
+                            ro'yxatida ko'rinadi.
+                          </p>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={Boolean(field.value)}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
                       </FormItem>
                     )}
                   />

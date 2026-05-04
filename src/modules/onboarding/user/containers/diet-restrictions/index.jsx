@@ -266,7 +266,7 @@ const Index = () => {
           </p>
         </motion.div>
 
-        <div className="grid flex-1 grid-cols-1 gap-2 pb-1 md:gap-2.5 pb-5">
+        <div className="grid flex-1 grid-cols-1 gap-2 md:gap-2.5 pb-5">
           {map(restrictions, (item) => {
             const isActive = isSelected(item.value);
 

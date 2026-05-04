@@ -6,10 +6,13 @@ const PageAura = ({ tone }) => {
   if (!tone) return null;
 
   return (
-    <div className="pointer-events-none absolute inset-0">
+    <div className="pointer-events-none fixed inset-0">
       <motion.div
         key={`wash-${tone.pageTint}`}
-        className={cn("absolute inset-0 bg-gradient-to-b opacity-80", tone.pageTint)}
+        className={cn(
+          "absolute inset-0 bg-gradient-to-b opacity-80",
+          tone.pageTint,
+        )}
         initial={{ opacity: 0 }}
         animate={{ opacity: 0.8 }}
         transition={{ duration: 0.32, ease: "easeOut" }}

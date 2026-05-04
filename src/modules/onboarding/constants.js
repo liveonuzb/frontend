@@ -3,8 +3,6 @@ import { includes, indexOf } from "lodash";
 export const ONBOARDING_STEPS = [
   "name",
   "gender",
-  "health-constraints",
-  "injury-severity",
   "age",
   "height",
   "current-weight",
@@ -15,6 +13,7 @@ export const ONBOARDING_STEPS = [
   "activity-level",
   "weekly-workout-count",
   "workout-experience",
+  "health-constraints",
   "workout-location",
   "workout-equipment",
   "workout-body-parts",

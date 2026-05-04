@@ -1,5 +1,7 @@
 import React from "react";
 
+/* eslint-disable react-refresh/only-export-components */
+
 /**
  * Context stores a REF (not state) for footer content + a subscriber list.
  * This breaks the re-render cycle: updating the ref never re-renders the
@@ -34,7 +36,11 @@ export const OnboardingFooterProvider = ({ children }) => {
 
   return (
     <OnboardingFooterContext.Provider
-      value={{ contentRef, setFooter, subscribe }}
+      value={{
+        contentRef,
+        setFooter,
+        subscribe,
+      }}
     >
       {children}
     </OnboardingFooterContext.Provider>
@@ -47,15 +53,16 @@ export const OnboardingFooterProvider = ({ children }) => {
  */
 export const FooterSlot = () => {
   const { contentRef, subscribe } = React.useContext(OnboardingFooterContext);
-  const [, forceRender] = React.useReducer((c) => c + 1, 0);
+  const [content, setContent] = React.useState(null);
 
   React.useEffect(() => {
-    const unsubscribe = subscribe(forceRender);
-    forceRender();
+    const sync = () => setContent(contentRef.current);
+    const unsubscribe = subscribe(sync);
+    sync();
     return unsubscribe;
-  }, [subscribe]);
+  }, [contentRef, subscribe]);
 
-  return contentRef.current || null;
+  return content;
 };
 
 /**

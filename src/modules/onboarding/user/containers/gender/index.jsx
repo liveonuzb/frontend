@@ -17,7 +17,7 @@ import useAppModeTheme from "@/hooks/app/use-app-mode-theme";
 const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { gender, setField } = useOnboardingStore();
+  const { gender, setFields } = useOnboardingStore();
   const modeTheme = useAppModeTheme();
   const base = modeTheme.assets.onboardingBase;
 
@@ -45,15 +45,24 @@ const Index = () => {
   const heroImage = selectedGender?.image ?? modeTheme.assets.curious;
 
   const handleSelect = (value) => {
-    if (value !== gender) {
-      setField("healthConstraints", []);
+    if (value === gender) {
+      return;
     }
-    setField("gender", value);
+
+    setFields({
+      gender: value,
+      healthConstraints: [],
+      customHealthConstraints: [],
+      injurySeverity: "",
+      forbiddenExercises: [],
+      medications: "",
+      supplements: "",
+    });
   };
 
   const handleContinue = () => {
     if (gender) {
-      navigate("/user/onboarding/health-constraints");
+      navigate("/user/onboarding/age");
     }
   };
 

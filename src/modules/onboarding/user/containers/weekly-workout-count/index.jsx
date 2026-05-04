@@ -1,6 +1,13 @@
 import React from "react";
-import { motion, useReducedMotion } from "framer-motion";
-import { CalendarDaysIcon, ChevronRightIcon } from "lucide-react";
+import {
+  ActivityIcon,
+  CalendarDaysIcon,
+  CheckIcon,
+  ChevronRightIcon,
+  CircleOffIcon,
+  FlameIcon,
+  TrophyIcon,
+} from "lucide-react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -13,7 +20,13 @@ import PageAura from "../../components/page-aura.jsx";
 import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
 
 const tone = ONBOARDING_ACCENTS.green;
-const workoutCounts = [0, 1, 2, 3, 4, 5, 6, 7];
+const workoutCountOptions = [
+  { value: "0", key: "none", icon: CircleOffIcon },
+  { value: "2", key: "light", icon: CalendarDaysIcon },
+  { value: "4", key: "balanced", icon: ActivityIcon },
+  { value: "6", key: "active", icon: FlameIcon },
+  { value: "7", key: "daily", icon: TrophyIcon },
+];
 
 const Index = () => {
   const { t } = useTranslation();
@@ -25,7 +38,6 @@ const Index = () => {
     (state) => state.completedUserOnboardingSteps,
   );
   const setFields = useOnboardingStore((state) => state.setFields);
-  const shouldReduceMotion = useReducedMotion();
   const hasSelection =
     weeklyWorkoutCount !== "" &&
     weeklyWorkoutCount !== null &&
@@ -70,34 +82,19 @@ const Index = () => {
         <OnboardingQuestion
           question={t("onboarding.lifestyle.weeklyWorkoutCount")}
         />
-
-        <motion.div
-          className={cn(
-            "mx-auto mb-3 w-full rounded-2xl border bg-background/90 px-3 py-3 text-center backdrop-blur",
-            tone.border,
-          )}
-          initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
-        >
-          <p className="text-sm font-semibold">
-            {t("onboarding.lifestyle.weeklyWorkoutCountDescription")}
-          </p>
-        </motion.div>
-
         <div className="grid flex-1 content-start gap-2 overflow-y-auto pb-5">
-          {workoutCounts.map((option) => {
-            const active = String(weeklyWorkoutCount) === String(option);
+          {workoutCountOptions.map((option) => {
+            const active = String(weeklyWorkoutCount) === option.value;
+            const Icon = option.icon;
+
             return (
               <button
-                key={option}
+                key={option.value}
                 type="button"
                 aria-pressed={active}
-                onClick={() =>
-                  setFields({ weeklyWorkoutCount: String(option) })
-                }
+                onClick={() => setFields({ weeklyWorkoutCount: option.value })}
                 className={cn(
-                  "flex min-h-[72px] items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 md:min-h-[84px]",
+                  "flex min-h-[72px] w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left transition-colors hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 md:min-h-[84px] md:px-4",
                   active
                     ? `bg-gradient-to-br ${tone.cardTone} ${tone.border}`
                     : "border-border/70 bg-background/90",
@@ -105,16 +102,40 @@ const Index = () => {
               >
                 <span
                   className={cn(
-                    "flex size-10 items-center justify-center rounded-2xl",
+                    "flex size-11 shrink-0 items-center justify-center rounded-2xl",
                     active ? tone.badgeTone : "bg-muted text-muted-foreground",
                   )}
+                  aria-hidden="true"
                 >
-                  <CalendarDaysIcon className="size-5" aria-hidden="true" />
+                  <Icon className="size-5" aria-hidden="true" />
                 </span>
-                <span className="min-w-0 flex-1 text-sm font-bold">
-                  {t("onboarding.lifestyle.weeklyWorkoutCountOption", {
-                    count: option,
-                  })}
+                <span className="min-w-0 flex-1">
+                  <span className="block break-words text-sm font-bold leading-snug">
+                    {t(
+                      `onboarding.lifestyle.weeklyWorkoutCountOptions.${option.key}.title`,
+                    )}
+                  </span>
+                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                    {t(
+                      `onboarding.lifestyle.weeklyWorkoutCountOptions.${option.key}.description`,
+                    )}
+                  </span>
+                </span>
+                <span
+                  className={cn(
+                    "flex size-6 shrink-0 items-center justify-center rounded-full border",
+                    active
+                      ? `${tone.border} bg-background/70`
+                      : "border-border bg-background",
+                  )}
+                  aria-hidden="true"
+                >
+                  <CheckIcon
+                    className={cn(
+                      "size-4",
+                      active ? tone.textTone : "text-transparent",
+                    )}
+                  />
                 </span>
               </button>
             );

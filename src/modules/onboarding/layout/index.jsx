@@ -40,11 +40,8 @@ const OnboardingLayoutInner = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
   const {
-    healthConstraints,
     setFields,
     setLastVisitedPath,
-    draftSaveStatus,
-    draftLastSavedAt,
   } = useOnboardingStore();
 
   const isCoachScope = location.pathname.startsWith("/coach/onboarding");
@@ -54,6 +51,10 @@ const OnboardingLayoutInner = () => {
   );
   const currentPath =
     isCoachScope && routePath ? `coach/${routePath}` : routePath;
+  const isResultRoute = !isCoachScope && currentPath === "result";
+  const isStandalonePostOnboardingRoute = ["personalizing", "generating"].some(
+    (path) => currentPath === path || currentPath.startsWith(`${path}/`),
+  );
 
   const isCoachStep = isCoachOnboardingStep(currentPath);
   const currentStepIndex = isCoachStep
@@ -63,8 +64,12 @@ const OnboardingLayoutInner = () => {
     ? COACH_ONBOARDING_STEPS.length
     : ONBOARDING_STEPS.length;
 
-  const showProgress = currentStepIndex >= 0;
-  const progress = showProgress ? (currentStepIndex + 1) / totalSteps : 0;
+  const showProgress = currentStepIndex >= 0 || isResultRoute;
+  const progress = isResultRoute
+    ? 1
+    : showProgress
+      ? (currentStepIndex + 1) / totalSteps
+      : 0;
   const isPostOnboardingRoute = ["personalizing", "result", "generating"].some(
     (path) => currentPath === path || currentPath.startsWith(`${path}/`),
   );
@@ -74,49 +79,19 @@ const OnboardingLayoutInner = () => {
       enabled: isAuthenticated && !isPostOnboardingRoute,
     },
   );
-  const autosaveLabel = React.useMemo(() => {
-    if (!showProgress || isPostOnboardingRoute) {
-      return null;
-    }
-
-    if (draftSaveStatus === "saving") {
-      return t("onboarding.autosave.saving");
-    }
-
-    if (draftSaveStatus === "saved" && draftLastSavedAt) {
-      return t("onboarding.autosave.saved");
-    }
-
-    if (draftSaveStatus === "error") {
-      return t("onboarding.autosave.error");
-    }
-
-    return null;
-  }, [
-    draftLastSavedAt,
-    draftSaveStatus,
-    isPostOnboardingRoute,
-    showProgress,
-    t,
-  ]);
-
   const rawPrevStep = isCoachStep
     ? getPrevCoachStep(currentPath)
     : getPrevStep(currentPath);
-  const prevStep =
-    !isCoachStep &&
-    currentPath === "age" &&
-    Array.isArray(healthConstraints) &&
-    healthConstraints.includes("none")
-      ? "health-constraints"
-      : rawPrevStep;
-  const prevPath = prevStep
-    ? getOnboardingPathFromStep(prevStep)
-    : currentStepIndex === 0
-      ? isCoachScope
-        ? getCoachOnboardingPath()
-        : getUserOnboardingPath()
-      : null;
+  const prevStep = rawPrevStep;
+  const prevPath = isResultRoute
+    ? getUserOnboardingPath("review")
+    : prevStep
+      ? getOnboardingPathFromStep(prevStep)
+      : currentStepIndex === 0
+        ? isCoachScope
+          ? getCoachOnboardingPath()
+          : getUserOnboardingPath()
+        : null;
 
   const { data } = useGetQuery({
     url: "/user/onboarding/status",
@@ -313,6 +288,11 @@ const OnboardingLayoutInner = () => {
       healthConstraints: Array.isArray(userOnboarding?.healthConstraints)
         ? userOnboarding.healthConstraints
         : [],
+      customHealthConstraints: Array.isArray(
+        userOnboarding?.customHealthConstraints,
+      )
+        ? userOnboarding.customHealthConstraints
+        : [],
       injurySeverity: userOnboarding?.injurySeverity ?? "",
       forbiddenExercises: Array.isArray(userOnboarding?.forbiddenExercises)
         ? userOnboarding.forbiddenExercises
@@ -349,7 +329,10 @@ const OnboardingLayoutInner = () => {
     });
   }, [data, isPostOnboardingRoute, setFields]);
 
-  const maxWidthClass = isPostOnboardingRoute ? "max-w-5xl" : "max-w-lg";
+  const maxWidthClass = isStandalonePostOnboardingRoute
+    ? "max-w-5xl"
+    : "max-w-lg";
+  const hasFixedHeader = showProgress && !isStandalonePostOnboardingRoute;
 
   if (isDraftLoading && !isPostOnboardingRoute) {
     return (
@@ -360,10 +343,10 @@ const OnboardingLayoutInner = () => {
   }
 
   return (
-    <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-background">
-      {/* ── STICKY HEADER ── */}
-      {showProgress && !isPostOnboardingRoute && (
-        <header className="shrink-0 px-4 pt-4 pb-3 bg-background border-b border-border/40">
+    <div className="relative flex h-dvh min-h-0 flex-col overflow-hidden bg-background">
+      {/* ── FIXED HEADER ── */}
+      {hasFixedHeader && (
+        <header className="fixed inset-x-0 top-0 z-40 border-b border-border/40 bg-transparent px-4 pb-3 pt-4 backdrop-blur-2xl">
           <div className={cn("mx-auto flex items-center gap-3", maxWidthClass)}>
             <button
               type="button"
@@ -388,27 +371,26 @@ const OnboardingLayoutInner = () => {
                     style={{ width: `${progress * 100}%` }}
                   />
                 </div>
-                {autosaveLabel && (
-                  <span className="min-w-[72px] text-right text-[11px] leading-none text-muted-foreground">
-                    {autosaveLabel}
-                  </span>
-                )}
               </div>
             </div>
           </div>
         </header>
       )}
-
       {/* ── SCROLLABLE CONTENT ── */}
-      <main className="flex-1 overflow-y-auto flex flex-col">
+      <main
+        className={cn(
+          "flex flex-1 flex-col overflow-y-auto pb-28",
+          hasFixedHeader && "pt-[72px]",
+        )}
+      >
         <div
           className={cn("w-full mx-auto flex-1 flex flex-col", maxWidthClass)}
         >
           <Outlet />
         </div>
       </main>
-      <footer className="shrink-0 border-t border-border/40 bg-background px-4 py-4 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
-        <div className={cn("mx-auto", maxWidthClass)}>
+      <footer className="pointer-events-none fixed inset-x-0 bottom-0 z-40 bg-transparent px-4 pb-4 pt-3">
+        <div className={cn("pointer-events-auto mx-auto", maxWidthClass)}>
           <FooterSlot />
         </div>
       </footer>

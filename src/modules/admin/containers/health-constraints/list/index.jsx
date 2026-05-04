@@ -31,6 +31,7 @@ import {
   getErrorMessage,
   getPayload,
   ITEMS_PER_PAGE,
+  ONBOARDING_OPTIONS,
   optionLabel,
   QUERY_KEY,
   resolveLabel,
@@ -42,6 +43,15 @@ import {
   TYPE_OPTIONS,
 } from "../components/utils.jsx";
 import ActionsMenu from "./actions-menu.jsx";
+
+const SWITCH_CELL_CLASS_NAME =
+  "flex min-h-10 w-full items-center justify-center";
+
+const SWITCH_COLUMN_META = {
+  skeleton: adminListSkeletons.status,
+  headerClassName: "text-center",
+  cellClassName: "text-center",
+};
 
 const ListPage = () => {
   const navigate = useNavigate();
@@ -61,6 +71,14 @@ const ListPage = () => {
   );
   const [statusOp, setStatusOp] = useQueryState(
     "statusOp",
+    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+  );
+  const [onboarding, setOnboarding] = useQueryState(
+    "onboarding",
+    parseAsStringEnum(["all", "yes", "no"]).withDefault("all"),
+  );
+  const [onboardingOp, setOnboardingOp] = useQueryState(
+    "onboardingOp",
     parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
   );
   const [genderScope, setGenderScope] = useQueryState(
@@ -126,6 +144,8 @@ const ListPage = () => {
     nameOp === "contains" &&
     status === "all" &&
     statusOp === "is" &&
+    onboarding === "all" &&
+    onboardingOp === "is" &&
     genderScope === "all" &&
     genderScopeOp === "is" &&
     type === "all" &&
@@ -153,6 +173,10 @@ const ListPage = () => {
       ...(trim(deferredName) || nameOp !== "contains" ? { nameOp } : {}),
       ...(status !== "all" ? { status } : {}),
       ...(status !== "all" || statusOp !== "is" ? { statusOp } : {}),
+      ...(onboarding !== "all" ? { onboarding } : {}),
+      ...(onboarding !== "all" || onboardingOp !== "is"
+        ? { onboardingOp }
+        : {}),
       ...(genderScope !== "all" ? { genderScope } : {}),
       ...(genderScope !== "all" || genderScopeOp !== "is"
         ? { genderScopeOp }
@@ -170,6 +194,8 @@ const ListPage = () => {
       genderScope,
       genderScopeOp,
       nameOp,
+      onboarding,
+      onboardingOp,
       pageSize,
       sortBy,
       sortDir,
@@ -300,23 +326,47 @@ const ListPage = () => {
         ),
       },
       {
+        accessorKey: "isOnboarding",
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Onboarding" />
+        ),
+        enableSorting: true,
+        size: 120,
+        meta: SWITCH_COLUMN_META,
+        cell: (info) => (
+          <div className={SWITCH_CELL_CLASS_NAME}>
+            <Switch
+              checked={Boolean(info.getValue())}
+              onCheckedChange={(checked) =>
+                patchMutation.mutate({
+                  url: `/admin/health-constraints/${info.row.original.id}`,
+                  attributes: { isOnboarding: checked },
+                })
+              }
+            />
+          </div>
+        ),
+      },
+      {
         accessorKey: "isActive",
         header: ({ column }) => (
           <DataGridColumnHeader column={column} title="Status" />
         ),
         enableSorting: true,
         size: 90,
-        meta: { skeleton: adminListSkeletons.status },
+        meta: SWITCH_COLUMN_META,
         cell: (info) => (
-          <Switch
-            checked={Boolean(info.getValue())}
-            onCheckedChange={(checked) =>
-              patchMutation.mutate({
-                url: `/admin/health-constraints/${info.row.original.id}`,
-                attributes: { isActive: checked },
-              })
-            }
-          />
+          <div className={SWITCH_CELL_CLASS_NAME}>
+            <Switch
+              checked={Boolean(info.getValue())}
+              onCheckedChange={(checked) =>
+                patchMutation.mutate({
+                  url: `/admin/health-constraints/${info.row.original.id}`,
+                  attributes: { isActive: checked },
+                })
+              }
+            />
+          </div>
         ),
       },
       {
@@ -416,6 +466,13 @@ const ListPage = () => {
         options: STATUS_OPTIONS,
       },
       {
+        label: "Onboarding",
+        key: "onboarding",
+        type: "select",
+        defaultOperator: "is",
+        options: ONBOARDING_OPTIONS,
+      },
+      {
         label: "Jins",
         key: "genderScope",
         type: "select",
@@ -461,6 +518,14 @@ const ListPage = () => {
         values: status !== "all" ? [status] : [],
       });
     }
+    if (onboarding !== "all" || onboardingOp !== "is") {
+      list.push({
+        id: "onboarding",
+        field: "onboarding",
+        operator: onboardingOp,
+        values: onboarding !== "all" ? [onboarding] : [],
+      });
+    }
     if (genderScope !== "all" || genderScopeOp !== "is") {
       list.push({
         id: "genderScope",
@@ -491,6 +556,8 @@ const ListPage = () => {
     genderScopeOp,
     name,
     nameOp,
+    onboarding,
+    onboardingOp,
     status,
     statusOp,
     translations,
@@ -506,6 +573,8 @@ const ListPage = () => {
         void setNameOp(byField("name")?.operator ?? "contains");
         void setStatus(byField("status")?.values?.[0] ?? "all");
         void setStatusOp(byField("status")?.operator ?? "is");
+        void setOnboarding(byField("onboarding")?.values?.[0] ?? "all");
+        void setOnboardingOp(byField("onboarding")?.operator ?? "is");
         void setGenderScope(byField("genderScope")?.values?.[0] ?? "all");
         void setGenderScopeOp(byField("genderScope")?.operator ?? "is");
         void setType(byField("type")?.values?.[0] ?? "all");
@@ -520,6 +589,8 @@ const ListPage = () => {
       setGenderScopeOp,
       setName,
       setNameOp,
+      setOnboarding,
+      setOnboardingOp,
       setPageQuery,
       setStatus,
       setStatusOp,

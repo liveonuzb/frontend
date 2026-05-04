@@ -142,6 +142,28 @@
       "weeklyWorkoutCount": "Haftasiga nechta mashg'ulot qilasiz?",
       "weeklyWorkoutCountDescription": "Reja haftalik ritmingizga mos bo'lishi uchun real sonni tanlang.",
       "weeklyWorkoutCountOption": "{{count}} kun",
+      "weeklyWorkoutCountOptions": {
+        "none": {
+          "title": "Qilmayman",
+          "description": "Hozircha mashg'ulot rejasini qo'shmaymiz. Keyin o'zgartirish mumkin."
+        },
+        "light": {
+          "title": "Yengil start",
+          "description": "Haftasiga 1-2 marta. Odat shakllantirish uchun qulay."
+        },
+        "balanced": {
+          "title": "Balansli ritm",
+          "description": "Haftasiga 3-4 marta. Natija va tiklanish muvozanatda."
+        },
+        "active": {
+          "title": "Faol ritm",
+          "description": "Haftasiga 5-6 marta. Muntazam mashq qiladiganlar uchun."
+        },
+        "daily": {
+          "title": "Har kuni",
+          "description": "Har kuni qisqa yoki to'liq mashg'ulot qilishga tayyorman."
+        }
+      },
       "workoutExperience": "Mashg'ulot tajribangiz",
       "workoutExperienceDescription": "Mashqlar qiyinligi tajribangizga moslanadi.",
       "workoutExperiences": {
@@ -398,6 +420,7 @@
       "noneSummary": "Cheklov yo'q",
       "selectedCount": "{{count}} ta cheklov tanlandi",
       "defaultDescription": "Reja tuzishda bu holat inobatga olinadi.",
+      "otherPlaceholder": "Bel og'rig'i, tizza, bosim...",
       "injurySeverity": "Jarohat og'irligi",
       "injurySeverityQuestion": "Jarohat yoki cheklov qanchalik jiddiy?",
       "injurySeverityDescription": "Bu mashqlar xavfsizligi va yuklama darajasini moslashga yordam beradi.",

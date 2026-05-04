@@ -68,6 +68,7 @@ function extractDraftData(state, type) {
       nutritionPreferenceOtherText: state.nutritionPreferenceOtherText,
       dietRestrictions: state.dietRestrictions,
       healthConstraints: state.healthConstraints,
+      customHealthConstraints: state.customHealthConstraints,
       injurySeverity: state.injurySeverity,
       forbiddenExercises: state.forbiddenExercises,
       medications: state.medications,
@@ -148,6 +149,7 @@ function buildSelector(type) {
       nutritionPreferenceOtherText: s.nutritionPreferenceOtherText,
       dietRestrictions: s.dietRestrictions,
       healthConstraints: s.healthConstraints,
+      customHealthConstraints: s.customHealthConstraints,
       injurySeverity: s.injurySeverity,
       forbiddenExercises: s.forbiddenExercises,
       medications: s.medications,
@@ -207,13 +209,20 @@ export function useOnboardingAutoSave(
   const { request } = useApi();
 
   const enabledRef = useRef(enabled);
-  enabledRef.current = enabled;
-
   const stepRef = useRef(step);
-  stepRef.current = step;
-
   const typeRef = useRef(type);
-  typeRef.current = type;
+
+  useEffect(() => {
+    enabledRef.current = enabled;
+  }, [enabled]);
+
+  useEffect(() => {
+    stepRef.current = step;
+  }, [step]);
+
+  useEffect(() => {
+    typeRef.current = type;
+  }, [type]);
 
   useEffect(() => {
     if (!enabled) return;

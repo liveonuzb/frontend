@@ -4,7 +4,13 @@ import { ChevronRightIcon, WalletCardsIcon } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  NumberField,
+  NumberFieldDecrement,
+  NumberFieldGroup,
+  NumberFieldIncrement,
+  NumberFieldInput,
+} from "@/components/reui/number-field";
 import { cn } from "@/lib/utils";
 import { useOnboardingStore } from "@/store";
 import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-context";
@@ -15,6 +21,15 @@ import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
 
 const tone = ONBOARDING_ACCENTS.amber;
 const budgetPeriods = ["daily", "weekly", "monthly"];
+const DEFAULT_BUDGET_PERIOD = "weekly";
+const DEFAULT_FOOD_BUDGETS = {
+  daily: 50000,
+  weekly: 250000,
+  monthly: 1000000,
+};
+
+const getDefaultFoodBudget = (period) =>
+  DEFAULT_FOOD_BUDGETS[period] ?? DEFAULT_FOOD_BUDGETS[DEFAULT_BUDGET_PERIOD];
 
 const Index = () => {
   const { t } = useTranslation();
@@ -27,23 +42,43 @@ const Index = () => {
     setFields,
   } = useOnboardingStore();
   const [error, setError] = React.useState("");
+  const defaultAppliedRef = React.useRef(false);
 
   useOnboardingAutoSave("user", "food-budget");
 
-  const markCompleted = () => {
+  React.useEffect(() => {
+    if (defaultAppliedRef.current) {
+      return;
+    }
+
+    if (String(foodBudget ?? "").trim()) {
+      defaultAppliedRef.current = true;
+      return;
+    }
+
+    defaultAppliedRef.current = true;
+    const nextPeriod = budgetPeriod || DEFAULT_BUDGET_PERIOD;
+    setFields({
+      foodBudget: String(getDefaultFoodBudget(nextPeriod)),
+      budgetPeriod: nextPeriod,
+      budgetCurrency: budgetCurrency || "UZS",
+    });
+  }, [budgetCurrency, budgetPeriod, foodBudget, setFields]);
+
+  const markCompleted = React.useCallback(() => {
     setFields({
       completedUserOnboardingSteps: Array.from(
         new Set([...(completedUserOnboardingSteps ?? []), "food-budget"]),
       ),
     });
-  };
+  }, [completedUserOnboardingSteps, setFields]);
 
-  const goNext = () => {
+  const goNext = React.useCallback(() => {
     markCompleted();
     navigate("/user/onboarding/allergies");
-  };
+  }, [markCompleted, navigate]);
 
-  const handleNext = () => {
+  const handleNext = React.useCallback(() => {
     const value = String(foodBudget ?? "").trim();
 
     if (!value) {
@@ -59,33 +94,67 @@ const Index = () => {
 
     setError("");
     goNext();
-  };
+  }, [foodBudget, goNext, t]);
 
-  const handleSkip = () => {
+  const handleSkip = React.useCallback(() => {
     setFields({
       foodBudget: "",
-      budgetPeriod: "weekly",
+      budgetPeriod: DEFAULT_BUDGET_PERIOD,
       budgetCurrency: "UZS",
     });
     goNext();
-  };
+  }, [goNext, setFields]);
 
-  useOnboardingFooter(
-    <div className="grid grid-cols-[0.42fr_1fr] gap-2">
-      <Button type="button" variant="outline" className="h-12" onClick={handleSkip}>
-        {t("onboarding.skip")}
-      </Button>
-      <Button
-        type="button"
-        className={cn("h-12 border-transparent bg-gradient-to-r", tone.buttonTone)}
-        size="lg"
-        onClick={handleNext}
-      >
-        {t("onboarding.next")}
-        <ChevronRightIcon className="size-4" />
-      </Button>
-    </div>,
+  const handlePeriodChange = React.useCallback(
+    (period) => {
+      setError("");
+      setFields({
+        budgetPeriod: period,
+        budgetCurrency: budgetCurrency || "UZS",
+        foodBudget: String(getDefaultFoodBudget(period)),
+      });
+    },
+    [budgetCurrency, setFields],
   );
+
+  const foodBudgetValue = React.useMemo(() => {
+    if (!String(foodBudget ?? "").trim()) {
+      return getDefaultFoodBudget(budgetPeriod);
+    }
+
+    const value = Number(foodBudget);
+    return Number.isFinite(value) ? value : getDefaultFoodBudget(budgetPeriod);
+  }, [budgetPeriod, foodBudget]);
+
+  const footerContent = React.useMemo(
+    () => (
+      <div className={"space-y-2"}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-12 w-full border-transparent"
+          onClick={handleSkip}
+        >
+          {t("onboarding.skip")}
+        </Button>
+        <Button
+          type="button"
+          className={cn(
+            "h-12 w-full border-transparent bg-gradient-to-r",
+            tone.buttonTone,
+          )}
+          size="lg"
+          onClick={handleNext}
+        >
+          {t("onboarding.next")}
+          <ChevronRightIcon className="size-4" />
+        </Button>
+      </div>
+    ),
+    [handleNext, handleSkip, t],
+  );
+  useOnboardingFooter(footerContent);
 
   return (
     <div className="relative flex h-full max-h-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8">
@@ -118,12 +187,7 @@ const Index = () => {
                 <button
                   key={period}
                   type="button"
-                  onClick={() =>
-                    setFields({
-                      budgetPeriod: period,
-                      budgetCurrency: budgetCurrency || "UZS",
-                    })
-                  }
+                  onClick={() => handlePeriodChange(period)}
                   className={cn(
                     "h-11 rounded-xl border px-2 text-xs font-semibold transition-all",
                     active
@@ -138,26 +202,36 @@ const Index = () => {
           </div>
 
           <div>
-            <div className="relative">
-              <Input
-                inputMode="numeric"
-                type="number"
-                min="0"
-                value={foodBudget ?? ""}
-                onChange={(event) => {
-                  setError("");
-                  setFields({
-                    foodBudget: event.target.value,
-                    budgetCurrency: "UZS",
-                  });
-                }}
-                placeholder={t("onboarding.foodBudget.placeholder")}
-                className="h-12 pr-14 text-base"
-              />
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">
-                UZS
-              </span>
-            </div>
+            <NumberField
+              value={foodBudgetValue}
+              onValueChange={(value) => {
+                const nextValue = Number(value);
+                if (!Number.isFinite(nextValue)) {
+                  return;
+                }
+
+                setError("");
+                setFields({
+                  foodBudget: String(Math.max(0, Math.round(nextValue))),
+                  budgetCurrency: "UZS",
+                });
+              }}
+              min={0}
+              step={10000}
+            >
+              <NumberFieldGroup className="h-12 w-full items-center rounded-xl bg-background">
+                <NumberFieldDecrement className="px-3 rounded-s-xl" />
+                <NumberFieldInput
+                  inputMode="numeric"
+                  placeholder={t("onboarding.foodBudget.placeholder")}
+                  className="px-3 text-center text-base font-semibold"
+                />
+                <span className="flex h-full shrink-0 items-center px-2 text-xs font-bold text-muted-foreground">
+                  UZS
+                </span>
+                <NumberFieldIncrement className="px-3 rounded-e-xl" />
+              </NumberFieldGroup>
+            </NumberField>
             {error ? (
               <p className="mt-2 text-xs font-medium text-destructive">{error}</p>
             ) : (

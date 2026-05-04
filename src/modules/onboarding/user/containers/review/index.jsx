@@ -84,7 +84,7 @@ const buildCompletePayload = (state) => ({
     customDislikedIngredients: state.customDislikedIngredients,
     nutritionPreferenceKeys: state.nutritionPreferenceKeys,
     healthConstraints: state.healthConstraints,
-    injurySeverity: state.injurySeverity,
+    customHealthConstraints: state.customHealthConstraints,
     forbiddenExercises: state.forbiddenExercises,
     medications: state.medications,
     supplements: state.supplements,
@@ -132,7 +132,10 @@ const validateRequired = (state, t) => {
   if (!hasValue(state.mealFrequency)) {
     errors.push(t("onboarding.review.missing.mealFrequency"));
   }
-  if (!hasValue(state.healthConstraints)) {
+  if (
+    !hasValue(state.healthConstraints) &&
+    !hasValue(state.customHealthConstraints)
+  ) {
     errors.push(t("onboarding.review.missing.healthConstraints"));
   }
   return errors;
@@ -393,11 +396,12 @@ const Index = () => {
             items={[
               [
                 t("onboarding.review.fields.healthConstraints"),
-                String(onboardingState.healthConstraints?.length ?? 0),
-              ],
-              [
-                t("onboarding.review.fields.injurySeverity"),
-                onboardingState.injurySeverity || "none",
+                String(
+                  (onboardingState.healthConstraints?.filter(
+                    (item) => item !== "none",
+                  )?.length ?? 0) +
+                    (onboardingState.customHealthConstraints?.length ?? 0),
+                ),
               ],
               [
                 t("onboarding.review.fields.forbiddenExercises"),

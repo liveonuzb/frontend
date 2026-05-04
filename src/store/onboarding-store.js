@@ -61,6 +61,7 @@ const createInitialState = () => ({
   nutritionPreferenceOtherText: "",
   dietRestrictions: [],
   healthConstraints: [],
+  customHealthConstraints: [],
   injurySeverity: "",
   forbiddenExercises: [],
   medications: "",

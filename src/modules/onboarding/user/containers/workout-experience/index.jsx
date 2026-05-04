@@ -41,7 +41,7 @@ const Index = () => {
   const goNext = React.useCallback(() => {
     if (!hasSelection) return;
     markCompleted();
-    navigate("/user/onboarding/workout-location");
+    navigate("/user/onboarding/health-constraints");
   }, [hasSelection, markCompleted, navigate]);
 
   useOnboardingFooter(
@@ -68,21 +68,7 @@ const Index = () => {
           question={t("onboarding.lifestyle.workoutExperience")}
         />
 
-        <motion.div
-          className={cn(
-            "mx-auto mb-3 w-full rounded-2xl border bg-background/90 px-3 py-3 text-center backdrop-blur",
-            tone.border,
-          )}
-          initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
-        >
-          <p className="text-sm font-semibold">
-            {t("onboarding.lifestyle.workoutExperienceDescription")}
-          </p>
-        </motion.div>
-
-        <div className="grid flex-1 content-start gap-2 overflow-y-auto pb-5">
+        <div className="flex flex-col flex-1 justify-center gap-3 overflow-y-auto pb-5">
           {workoutExperiences.map((option) => {
             const active = workoutExperience === option;
             return (

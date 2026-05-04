@@ -11,6 +11,7 @@ import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-q
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import { ChevronRight } from "lucide-react";
 import useOnboardingBase from "@/hooks/app/use-onboarding-base";
+import PageAura from "../../components/page-aura.jsx";
 
 const getPaceOptions = (goal, base, t) => [
   {
@@ -109,38 +110,7 @@ const Index = () => {
 
   return (
     <div className="relative flex h-full max-h-full flex-1 flex-col overflow-hidden pt-3 md:pt-8 px-5">
-      <div className="pointer-events-none absolute inset-0">
-        <motion.div
-          key={`page-wash-${selectedPace.value}`}
-          className={cn(
-            "absolute inset-0 bg-gradient-to-b opacity-80",
-            selectedPace.pageTint,
-          )}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.8 }}
-          transition={{ duration: 0.32, ease: "easeOut" }}
-        />
-        <motion.div
-          key={`page-aura-top-${selectedPace.value}`}
-          className={cn(
-            "absolute left-1/2 top-[6%] h-[28%] w-[82%] -translate-x-1/2 rounded-full bg-gradient-to-br blur-3xl md:top-[10%] md:h-[34%] md:w-[68%]",
-            selectedPace.pageTint,
-          )}
-          initial={{ opacity: 0, scale: 0.88 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.36, ease: "easeOut" }}
-        />
-        <motion.div
-          key={`page-aura-bottom-${selectedPace.value}`}
-          className={cn(
-            "absolute inset-x-[10%] bottom-[-8%] h-[22%] rounded-full bg-gradient-to-t blur-3xl md:bottom-[-4%] md:h-[26%] md:inset-x-[18%]",
-            selectedPace.pageTint,
-          )}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4, ease: "easeOut", delay: 0.04 }}
-        />
-      </div>
+      <PageAura tone={selectedPace} />
 
       <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
         <OnboardingQuestion question={t("onboarding.weeklyPace.question")} />

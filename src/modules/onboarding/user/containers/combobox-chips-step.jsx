@@ -337,11 +337,12 @@ const OnboardingComboboxChipsStep = ({
 
   const footerContent = React.useMemo(
     () => (
-      <div className="grid grid-cols-[0.42fr_1fr] gap-2">
+      <div className={"space-y-2"}>
         <Button
           type="button"
-          variant="outline"
-          className="h-12"
+          variant="ghost"
+          size="sm"
+          className="h-12 w-full border-transparent"
           onClick={goNext}
           disabled={isPending}
         >
@@ -350,7 +351,7 @@ const OnboardingComboboxChipsStep = ({
         <Button
           type="button"
           className={cn(
-            "h-12 border-transparent bg-gradient-to-r",
+            "h-12 w-full border-transparent bg-gradient-to-r",
             tone.buttonTone,
           )}
           size="lg"

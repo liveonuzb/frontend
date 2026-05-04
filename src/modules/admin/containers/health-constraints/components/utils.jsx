@@ -20,6 +20,7 @@ export const SORT_FIELDS = [
   "genderScope",
   "createdAt",
   "isActive",
+  "isOnboarding",
 ];
 export const SORT_DIRECTIONS = ["asc", "desc"];
 
@@ -42,6 +43,12 @@ export const STATUS_OPTIONS = [
   { value: "inactive", label: "Nofaol" },
 ];
 
+export const ONBOARDING_OPTIONS = [
+  { value: "all", label: "Barchasi" },
+  { value: "yes", label: "Ko'rsatiladi" },
+  { value: "no", label: "Yashirilgan" },
+];
+
 export const healthConstraintSchema = z.object({
   name: z.string().trim().min(1, "Nom kiriting"),
   description: z.string().optional(),
@@ -53,6 +60,7 @@ export const healthConstraintSchema = z.object({
     "preference",
   ]),
   genderScope: z.enum(["all", "male", "female"]),
+  isOnboarding: z.boolean().default(true),
 });
 
 export const translateSchema = z.object({}).catchall(

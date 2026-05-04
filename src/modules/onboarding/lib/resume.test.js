@@ -5,7 +5,6 @@ const completeUntilActivity = {
   firstName: "Ali",
   lastName: "Valiyev",
   gender: "male",
-  healthConstraints: ["none"],
   age: "30",
   height: { value: "180", unit: "cm" },
   currentWeight: { value: "82", unit: "kg" },
@@ -39,25 +38,50 @@ describe("user onboarding resume", () => {
     ).toBe("workout-experience");
   });
 
-  it("resumes to injury severity when health constraints need details", () => {
-    expect(
-      getNextUserOnboardingPath({
-        ...completeUntilActivity,
-        healthConstraints: ["knee_pain"],
-      }),
-    ).toBe("injury-severity");
-  });
-
-  it("skips optional health text screens and resumes to age after injury severity", () => {
+  it("resumes to age before asking health constraints", () => {
     expect(
       getNextUserOnboardingPath({
         firstName: completeUntilActivity.firstName,
         lastName: completeUntilActivity.lastName,
         gender: completeUntilActivity.gender,
+      }),
+    ).toBe("age");
+  });
+
+  it("resumes to health constraints after workout experience", () => {
+    expect(
+      getNextUserOnboardingPath({
+        ...completeUntilActivity,
+        activityLevel: "moderately-active",
+        weeklyWorkoutCount: "4",
+        workoutExperience: "intermediate",
+      }),
+    ).toBe("health-constraints");
+  });
+
+  it("resumes to workout location after health constraints have details", () => {
+    expect(
+      getNextUserOnboardingPath({
+        ...completeUntilActivity,
+        activityLevel: "moderately-active",
+        weeklyWorkoutCount: "4",
+        workoutExperience: "intermediate",
+        healthConstraints: ["knee_pain"],
+      }),
+    ).toBe("workout-location");
+  });
+
+  it("keeps old injury severity data non-blocking for legacy drafts", () => {
+    expect(
+      getNextUserOnboardingPath({
+        ...completeUntilActivity,
+        activityLevel: "moderately-active",
+        weeklyWorkoutCount: "4",
+        workoutExperience: "intermediate",
         healthConstraints: ["knee_pain"],
         injurySeverity: "mild",
       }),
-    ).toBe("age");
+    ).toBe("workout-location");
   });
 
   it("resumes to review after optional disliked ingredients are completed", () => {
@@ -67,9 +91,11 @@ describe("user onboarding resume", () => {
         activityLevel: "moderately-active",
         weeklyWorkoutCount: "4",
         workoutExperience: "intermediate",
+        healthConstraints: ["none"],
         completedUserOnboardingSteps: [
           "weekly-workout-count",
           "workout-experience",
+          "health-constraints",
           "workout-location",
           "workout-equipment",
           "workout-body-parts",

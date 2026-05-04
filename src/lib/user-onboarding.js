@@ -149,6 +149,9 @@ export const normalizeUserOnboarding = (onboarding) => {
     healthConstraints: isArray(onboarding.healthConstraints)
       ? onboarding.healthConstraints
       : [],
+    customHealthConstraints: isArray(onboarding.customHealthConstraints)
+      ? onboarding.customHealthConstraints
+      : [],
     injurySeverity: onboarding.injurySeverity ?? null,
     forbiddenExercises: isArray(onboarding.forbiddenExercises)
       ? onboarding.forbiddenExercises
@@ -554,6 +557,11 @@ export const toUserOnboardingPayload = (patch = {}) => {
     payload.healthConstraints = isArray(patch.healthConstraints)
       ? patch.healthConstraints.filter((item) => item !== "none")
       : undefined;
+  }
+  if ("customHealthConstraints" in patch) {
+    payload.customHealthConstraints = normalizeCustomTextArray(
+      patch.customHealthConstraints,
+    );
   }
   if ("injurySeverity" in patch) {
     payload.injurySeverity = patch.injurySeverity || undefined;

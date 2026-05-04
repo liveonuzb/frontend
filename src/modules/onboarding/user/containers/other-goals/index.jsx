@@ -12,6 +12,7 @@ import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-
 import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-question";
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import useOnboardingBase from "@/hooks/app/use-onboarding-base";
+import PageAura from "../../components/page-aura.jsx";
 
 const fallbackTone = (base) => ({
   image: `${base}/maintain.webp`,
@@ -76,10 +77,10 @@ const Index = () => {
       });
   }, [apiGoals, toneList]);
 
-  const selectedGoal =
-    goals.find((item) => includes(selectedGoals, item.value)) ??
-    goals[0] ??
-    {
+  const selectedGoal = goals.find((item) =>
+    includes(selectedGoals, item.value),
+  ) ??
+    goals[0] ?? {
       value: "other-goals",
       title: t("onboarding.otherGoals.fallbackTitle"),
       description: "",
@@ -110,18 +111,7 @@ const Index = () => {
 
   return (
     <div className="relative flex h-full flex-1 flex-col justify-center overflow-hidden px-5 pt-3 md:pt-8">
-      <div className="pointer-events-none absolute inset-0">
-        <motion.div
-          key={`other-goals-page-wash-${selectedGoal.value}`}
-          className={cn(
-            "absolute inset-0 bg-gradient-to-b opacity-80",
-            selectedGoal.pageTint,
-          )}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.8 }}
-          transition={{ duration: 0.32, ease: "easeOut" }}
-        />
-      </div>
+      <PageAura tone={selectedGoal} />
 
       <div className="relative z-10 flex w-full flex-1 flex-col justify-center md:mx-auto md:max-w-4xl">
         <OnboardingQuestion question={t("onboarding.otherGoals.question")} />
@@ -143,7 +133,7 @@ const Index = () => {
         </div>
 
         <motion.div
-          className="z-10 grid w-full grid-cols-2 gap-2.5 pb-1 md:grid-cols-3 md:gap-3"
+          className="z-10 grid w-full grid-cols-1 gap-2.5 pb-1"
           initial="hidden"
           animate="show"
           variants={{
@@ -170,7 +160,7 @@ const Index = () => {
                   }}
                   transition={{ duration: 0.22, ease: "easeOut" }}
                   className={cn(
-                    "relative flex min-h-[120px] flex-col items-start gap-2 rounded-[24px] border px-3 py-3 text-left md:min-h-[150px] md:gap-4 md:rounded-3xl md:px-4",
+                    "relative flex  items-start gap-2 rounded-[24px] border px-3 py-3 text-left",
                     isActive
                       ? `bg-gradient-to-r ${item.accent} ${item.border}`
                       : "",
