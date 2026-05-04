@@ -24,11 +24,7 @@ const Index = ({ className, ...props }) => {
 
   return (
     <AuthPanel className={className} {...props}>
-      <AuthHeader title={t("auth.signIn.phoneTitle")}>
-        <p className="max-w-[22rem] text-sm leading-6 text-muted-foreground">
-          {t("auth.signIn.phoneSubtitle")}
-        </p>
-      </AuthHeader>
+      <AuthHeader title={t("auth.signIn.phoneTitle")} />
       <PhoneForm referralCode={referralCode} />
     </AuthPanel>
   );

@@ -68,7 +68,12 @@ const ImageUploadPreview = ({ file, onChange, onRemove, label = "Rasm" }) => {
       />
       {preview ? (
         <>
-          <img loading="lazy" src={preview} alt="Preview" className="size-full object-cover" />
+          <img
+            loading="lazy"
+            src={preview}
+            alt="Preview"
+            className="size-full object-cover"
+          />
           <div className="absolute inset-x-0 bottom-0 top-1/2 z-20 flex items-center justify-center bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity group-hover:opacity-100">
             <span className="mt-4 text-[10px] font-medium text-white shadow-sm">
               O'zgartirish
@@ -258,9 +263,9 @@ const CreateEquipment = () => {
             </div>
             <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-muted/15 px-4 py-3">
               <div>
-                <p className="text-sm font-medium">Onboarding</p>
+                <p className="text-sm font-medium">Onboardingda ko'rsatish</p>
                 <p className="text-xs text-muted-foreground">
-                  Yoqilgan bo'lsa onboarding jihoz ro'yxatida birinchi chiqadi.
+                  Yoqilgan bo'lsa user onboarding jihoz ro'yxatida ko'rinadi.
                 </p>
               </div>
               <Switch

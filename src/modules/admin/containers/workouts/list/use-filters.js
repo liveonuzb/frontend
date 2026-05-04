@@ -131,7 +131,7 @@ export const useWorkoutFilters = ({ categories, currentLanguage }) => {
         ],
       },
       {
-        label: "Onboarding",
+        label: "Onboardingda ko'rsatish",
         key: "onboarding",
         type: "select",
         defaultOperator: "is",

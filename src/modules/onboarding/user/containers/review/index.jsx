@@ -74,6 +74,8 @@ const buildCompletePayload = (state) => ({
     customAllergies: state.customAllergies,
     dietRequirementIds: state.dietRequirementIds,
     customDietRequirements: state.customDietRequirements,
+    preferredCuisineIds: state.preferredCuisineIds,
+    customPreferredCuisines: state.customPreferredCuisines,
     dislikedFoodIds: state.dislikedFoodIds,
     customDislikedFoods: state.customDislikedFoods,
     preferredIngredientIds: state.preferredIngredientIds,
@@ -101,8 +103,10 @@ const hasValue = (value) => {
 
 const validateRequired = (state, t) => {
   const errors = [];
-  if (!hasValue(state.firstName)) errors.push(t("onboarding.review.missing.name"));
-  if (!hasValue(state.gender)) errors.push(t("onboarding.review.missing.gender"));
+  if (!hasValue(state.firstName))
+    errors.push(t("onboarding.review.missing.name"));
+  if (!hasValue(state.gender))
+    errors.push(t("onboarding.review.missing.gender"));
   if (!hasValue(state.age)) errors.push(t("onboarding.review.missing.age"));
   if (!hasValue(state.height?.value)) {
     errors.push(t("onboarding.review.missing.height"));
@@ -137,7 +141,12 @@ const validateRequired = (state, t) => {
 const SummaryCard = ({ icon: Icon, title, items }) => (
   <section className="rounded-2xl border bg-background/90 p-4">
     <div className="mb-3 flex items-center gap-2">
-      <span className={cn("flex size-9 items-center justify-center rounded-xl", tone.badgeTone)}>
+      <span
+        className={cn(
+          "flex size-9 items-center justify-center rounded-xl",
+          tone.badgeTone,
+        )}
+      >
         <Icon className="size-4" />
       </span>
       <h2 className="text-sm font-black">{title}</h2>
@@ -236,7 +245,10 @@ const Index = () => {
   useOnboardingFooter(
     <Button
       type="button"
-      className={cn("h-12 w-full border-transparent bg-gradient-to-r", tone.buttonTone)}
+      className={cn(
+        "h-12 w-full border-transparent bg-gradient-to-r",
+        tone.buttonTone,
+      )}
       size="lg"
       disabled={isPending}
       onClick={handleComplete}
@@ -363,6 +375,13 @@ const Index = () => {
                 String(
                   (onboardingState.dietRequirementIds?.length ?? 0) +
                     (onboardingState.customDietRequirements?.length ?? 0),
+                ),
+              ],
+              [
+                t("onboarding.review.fields.preferredCuisines"),
+                String(
+                  (onboardingState.preferredCuisineIds?.length ?? 0) +
+                    (onboardingState.customPreferredCuisines?.length ?? 0),
                 ),
               ],
             ]}

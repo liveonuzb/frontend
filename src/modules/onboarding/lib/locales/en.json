@@ -1,6 +1,6 @@
 {
   "onboarding": {
-    "next": "Next >",
+    "next": "Next",
     "back": "Back",
     "recommended": "Recommended",
     "illustrationAlt": "Onboarding illustration",
@@ -140,12 +140,19 @@
       "title": "What does your daily rhythm look like?",
       "description": "We will adapt workout volume and nutrition to your real routine.",
       "weeklyWorkoutCount": "How many workouts can you do per week?",
+      "weeklyWorkoutCountDescription": "Choose a realistic weekly rhythm so the plan fits your schedule.",
       "weeklyWorkoutCountOption": "{{count}} days",
       "workoutExperience": "Workout experience",
+      "workoutExperienceDescription": "Exercise difficulty will match your current training level.",
       "workoutExperiences": {
         "beginner": "Beginner",
         "intermediate": "Intermediate",
         "advanced": "Advanced"
+      },
+      "workoutExperienceDescriptions": {
+        "beginner": "You are still building technique and consistency.",
+        "intermediate": "You know the basics and train regularly.",
+        "advanced": "You are ready for more complex exercises and load."
       },
       "sleepHours": "How many hours do you usually sleep?",
       "sleepPlaceholder": "Example: 7.5",
@@ -284,6 +291,11 @@
       "selectedCount": "{{count}} selected",
       "addCustom": "Add \"{{value}}\" as custom",
       "empty": "No matching result.",
+      "error": "Could not load options. Try again.",
+      "otherTitle": "Other",
+      "otherDescription": "Search the catalog or add your own item if it is missing.",
+      "searchLabel": "Search or add",
+      "searchHint": "Type at least 2 characters.",
       "nonOnboarding": "Additional",
       "selected": "Selected",
       "featuredTitle": "Recommended picks",
@@ -302,6 +314,11 @@
         "title": "Any diet requirements?",
         "description": "Choose halal, vegetarian, gluten-free, or any other requirements.",
         "placeholder": "Halal, high protein, no sugar..."
+      },
+      "preferredCuisines": {
+        "title": "Which cuisines do you like?",
+        "description": "Your meal plan will lean toward familiar and enjoyable food styles.",
+        "placeholder": "Uzbek, Turkish, Korean..."
       },
       "dislikedFoods": {
         "title": "Which foods do you dislike?",
@@ -382,18 +399,31 @@
       "selectedCount": "{{count}} constraints selected",
       "defaultDescription": "This will be considered when building your plan.",
       "injurySeverity": "Injury severity",
+      "injurySeverityQuestion": "How serious is the injury or limitation?",
+      "injurySeverityDescription": "This helps us tune exercise safety and training intensity.",
       "severity": {
         "none": "None",
         "mild": "Mild",
         "moderate": "Moderate",
         "severe": "Severe"
       },
+      "severityDescriptions": {
+        "none": "No serious injury, or you are not sure.",
+        "mild": "Light discomfort that usually does not block training.",
+        "moderate": "Some exercises need to be selected carefully.",
+        "severe": "The workout plan should stay very conservative."
+      },
       "forbiddenExercises": "Exercises forbidden by a doctor",
+      "forbiddenExercisesQuestion": "Any exercises forbidden by a doctor?",
       "forbiddenExercisesHint": "Separate each exercise with a new line or comma.",
       "forbiddenPlaceholder": "Example: heavy squat, jumping, running",
       "medications": "Medications",
+      "medicationsQuestion": "Which medications do you take?",
+      "medicationsDescription": "Optional. Add this so the plan can consider general safety constraints.",
       "medicationsPlaceholder": "Optional: name and dosage",
       "supplements": "Supplements",
+      "supplementsQuestion": "Which supplements do you take?",
+      "supplementsDescription": "Optional. Add protein, creatine, vitamins, or anything similar.",
       "supplementsPlaceholder": "Optional: protein, creatine, vitamins...",
       "notificationPreference": "Reminder and tracking time",
       "notifications": {
@@ -486,6 +516,7 @@
         "foodBudget": "Budget",
         "allergies": "Allergies",
         "dietRequirements": "Diet requirements",
+        "preferredCuisines": "Cuisines",
         "healthConstraints": "Constraints",
         "injurySeverity": "Injury severity",
         "forbiddenExercises": "Forbidden exercises",

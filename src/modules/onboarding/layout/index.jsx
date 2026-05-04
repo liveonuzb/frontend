@@ -39,8 +39,13 @@ const OnboardingLayoutInner = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
-  const { setFields, setLastVisitedPath, draftSaveStatus, draftLastSavedAt } =
-    useOnboardingStore();
+  const {
+    healthConstraints,
+    setFields,
+    setLastVisitedPath,
+    draftSaveStatus,
+    draftLastSavedAt,
+  } = useOnboardingStore();
 
   const isCoachScope = location.pathname.startsWith("/coach/onboarding");
   const routePath = location.pathname.replace(
@@ -95,9 +100,16 @@ const OnboardingLayoutInner = () => {
     t,
   ]);
 
-  const prevStep = isCoachStep
+  const rawPrevStep = isCoachStep
     ? getPrevCoachStep(currentPath)
     : getPrevStep(currentPath);
+  const prevStep =
+    !isCoachStep &&
+    currentPath === "age" &&
+    Array.isArray(healthConstraints) &&
+    healthConstraints.includes("none")
+      ? "health-constraints"
+      : rawPrevStep;
   const prevPath = prevStep
     ? getOnboardingPathFromStep(prevStep)
     : currentStepIndex === 0
@@ -250,6 +262,14 @@ const OnboardingLayoutInner = () => {
         : userOnboarding?.nutritionPreferenceOtherText
           ? [userOnboarding.nutritionPreferenceOtherText]
           : [],
+      preferredCuisineIds: Array.isArray(userOnboarding?.preferredCuisineIds)
+        ? userOnboarding.preferredCuisineIds
+        : [],
+      customPreferredCuisines: Array.isArray(
+        userOnboarding?.customPreferredCuisines,
+      )
+        ? userOnboarding.customPreferredCuisines
+        : [],
       dislikedFoodIds: Array.isArray(userOnboarding?.dislikedFoodIds)
         ? userOnboarding.dislikedFoodIds
         : [],

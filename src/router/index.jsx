@@ -13,6 +13,7 @@ import {
 } from "@/lib/app-paths.js";
 
 const AuthModule = lazy(() => import("@/modules/auth/index.jsx"));
+const LandingPage = lazy(() => import("@/pages/landing/index.jsx"));
 const UserOnboardingModule = lazy(
   () => import("@/modules/onboarding/user/index.jsx"),
 );
@@ -67,8 +68,9 @@ const Index = () => {
     const isReferralPath = referralPaths.some((path) =>
       location.pathname.startsWith(path),
     );
+    const isLandingPath = location.pathname === "/";
 
-    if (!isReferralPath) {
+    if (!isReferralPath && !isLandingPath) {
       if (
         !hasSelectedLanguage &&
         location.pathname !== "/auth/select-language"
@@ -97,6 +99,17 @@ const Index = () => {
         element={renderRouteElement(<ReferralRedirectPage />)}
       />
       <Route path="/join" element={renderRouteElement(<JoinReferralPage />)} />
+
+      <Route
+        path="/"
+        element={
+          isAuthenticated ? (
+            <Navigate to={getPostAuthRoute(user)} replace />
+          ) : (
+            renderRouteElement(<LandingPage />)
+          )
+        }
+      />
 
       {isAuthenticated ? (
         <Route
@@ -151,7 +164,10 @@ const Index = () => {
         path="/user/*"
         element={
           <ProtectedRoute>
-            {canAccessUserDashboard(onboardingFlowStatus, onboardingCompleted) ? (
+            {canAccessUserDashboard(
+              onboardingFlowStatus,
+              onboardingCompleted,
+            ) ? (
               renderRouteElement(<UserModule />)
             ) : (
               <Navigate to={getPostOnboardingPath(user)} replace />

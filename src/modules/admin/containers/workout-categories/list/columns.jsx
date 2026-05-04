@@ -1,19 +1,23 @@
 import React from "react";
 import { filter, find, get, map } from "lodash";
-import {
-  ChevronDownIcon,
-  ChevronUpIcon,
-} from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import {
-  DataGridTableDndRowHandle,
-} from "@/components/reui/data-grid";
+import { DataGridTableDndRowHandle } from "@/components/reui/data-grid";
 import { cn } from "@/lib/utils";
 import { getCategoryBadgeAppearance } from "@/lib/category-badge";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import ActionsMenu from "./actions-menu.jsx";
+
+const SWITCH_CELL_CLASS_NAME =
+  "flex min-h-10 w-full items-center justify-center";
+
+const SWITCH_COLUMN_META = {
+  skeleton: adminListSkeletons.status,
+  headerClassName: "text-center",
+  cellClassName: "text-center",
+};
 
 const resolveLabel = (translations, fallback, language) => {
   if (translations && typeof translations === "object") {
@@ -204,13 +208,13 @@ export const useColumns = ({
         header: "Status",
         enableSorting: true,
         size: 96,
-        meta: { skeleton: adminListSkeletons.status },
+        meta: SWITCH_COLUMN_META,
         cell: (info) => {
           const isActive = info.getValue();
           const category = info.row.original;
 
           return (
-            <div className="flex justify-center">
+            <div className={SWITCH_CELL_CLASS_NAME}>
               <Switch
                 checked={isActive}
                 disabled={isUpdating}

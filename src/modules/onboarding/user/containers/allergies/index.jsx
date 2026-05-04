@@ -1,7 +1,7 @@
-import OnboardingComboboxChipsStep from "../combobox-chips-step.jsx";
+import OnboardingCardChipStep from "../card-chip-step.jsx";
 
 const Index = () => (
-  <OnboardingComboboxChipsStep
+  <OnboardingCardChipStep
     step="allergies"
     i18nKey="onboarding.nutritionSteps.allergies"
     optionsKey="allergies"

@@ -85,10 +85,6 @@ const PhoneForm = ({ referralCode }) => {
       onKeyDown={(event) => submitOnEnter(event, submitForm)}
     >
       <Field className="gap-2">
-        <FieldLabel htmlFor="phone" className="items-center gap-2 text-sm">
-          <PhoneIcon className="size-4 text-primary" />
-          {t("auth.signIn.phoneLabel")}
-        </FieldLabel>
         <Controller
           name="phone"
           control={control}

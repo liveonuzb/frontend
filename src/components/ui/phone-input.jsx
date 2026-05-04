@@ -132,6 +132,7 @@ function CountrySelect({
             className={cn(
               "rounded-s-4xl h-12 rounded-e-none flex gap-1 border-e-0 px-4 py-0 leading-none hover:bg-transparent focus:z-10 data-pressed:bg-transparent",
               disabled && "opacity-50",
+              variant === "xl" && "!h-12",
             )}
             disabled={disabled}
           >

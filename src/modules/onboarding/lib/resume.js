@@ -30,6 +30,18 @@ export const getNextUserOnboardingPath = (state) => {
     return "health-constraints";
   }
 
+  const hasHealthDetails =
+    !isArray(state.healthConstraints) ||
+    !state.healthConstraints.includes("none");
+
+  if (
+    hasHealthDetails &&
+    !hasValue(state.injurySeverity) &&
+    !hasCompletedStep(state, "injury-severity")
+  ) {
+    return "injury-severity";
+  }
+
   if (!hasValue(state.age)) {
     return "age";
   }
@@ -54,11 +66,12 @@ export const getNextUserOnboardingPath = (state) => {
     return "activity-level";
   }
 
-  if (
-    !hasValue(state.weeklyWorkoutCount) ||
-    !hasValue(state.workoutExperience)
-  ) {
-    return "lifestyle";
+  if (!hasValue(state.weeklyWorkoutCount)) {
+    return "weekly-workout-count";
+  }
+
+  if (!hasValue(state.workoutExperience)) {
+    return "workout-experience";
   }
 
   if (!hasCompletedStep(state, "workout-location")) {
@@ -129,6 +142,14 @@ export const getNextUserOnboardingPath = (state) => {
     !hasCompletedStep(state, "diet-requirements")
   ) {
     return "diet-requirements";
+  }
+
+  if (
+    !hasValue(state.preferredCuisineIds) &&
+    !hasValue(state.customPreferredCuisines) &&
+    !hasCompletedStep(state, "preferred-cuisines")
+  ) {
+    return "preferred-cuisines";
   }
 
   if (

@@ -4,6 +4,7 @@ export const ONBOARDING_STEPS = [
   "name",
   "gender",
   "health-constraints",
+  "injury-severity",
   "age",
   "height",
   "current-weight",
@@ -12,7 +13,8 @@ export const ONBOARDING_STEPS = [
   "target-weight",
   "weekly-pace",
   "activity-level",
-  "lifestyle",
+  "weekly-workout-count",
+  "workout-experience",
   "workout-location",
   "workout-equipment",
   "workout-body-parts",
@@ -23,6 +25,7 @@ export const ONBOARDING_STEPS = [
   "food-budget",
   "allergies",
   "diet-requirements",
+  "preferred-cuisines",
   "disliked-foods",
   "preferred-ingredients",
   "disliked-ingredients",
@@ -42,7 +45,10 @@ export const COACH_ONBOARDING_STEPS = [
   "coach/avatar",
 ];
 
-export const LEGACY_USER_ONBOARDING_STEPS = ["exercise-preferences"];
+export const LEGACY_USER_ONBOARDING_STEPS = [
+  "exercise-preferences",
+  "lifestyle",
+];
 
 export const ALL_ONBOARDING_STEPS = [
   ...ONBOARDING_STEPS,

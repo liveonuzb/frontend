@@ -115,6 +115,12 @@ export const normalizeUserOnboarding = (onboarding) => {
       : onboarding.nutritionPreferenceOtherText
         ? [onboarding.nutritionPreferenceOtherText]
         : [],
+    preferredCuisineIds: isArray(onboarding.preferredCuisineIds)
+      ? onboarding.preferredCuisineIds
+      : [],
+    customPreferredCuisines: isArray(onboarding.customPreferredCuisines)
+      ? onboarding.customPreferredCuisines
+      : [],
     dislikedFoodIds: isArray(onboarding.dislikedFoodIds)
       ? onboarding.dislikedFoodIds
       : [],
@@ -153,7 +159,9 @@ export const normalizeUserOnboarding = (onboarding) => {
     cardioLevel: onboarding.cardioLevel ?? null,
     notificationPreference: onboarding.notificationPreference ?? null,
     flowStatus: onboarding.flowStatus ?? null,
-    skippedSteps: isArray(onboarding.skippedSteps) ? onboarding.skippedSteps : [],
+    skippedSteps: isArray(onboarding.skippedSteps)
+      ? onboarding.skippedSteps
+      : [],
     activatedAt: onboarding.activatedAt ?? null,
     latestPersonalizationJobId: onboarding.latestPersonalizationJobId ?? null,
     latestPlanGenerationJobId: onboarding.latestPlanGenerationJobId ?? null,
@@ -184,7 +192,9 @@ export const normalizeCustomTextArray = (values) => {
 
   const seen = new Set();
   return values.reduce((acc, value) => {
-    const label = String(value ?? "").replace(/\s+/g, " ").trim();
+    const label = String(value ?? "")
+      .replace(/\s+/g, " ")
+      .trim();
     const key = label.toLocaleLowerCase("uz-UZ");
 
     if (!label || seen.has(key)) {
@@ -208,13 +218,16 @@ export const normalizeExercisePreferencePair = ({
   const dislikedIds = (toNumberArray(dislikedExerciseIds) ?? []).filter(
     (id) => !preferredIdSet.has(id),
   );
-  const preferredCustom = normalizeCustomTextArray(customPreferredExercises) ?? [];
+  const preferredCustom =
+    normalizeCustomTextArray(customPreferredExercises) ?? [];
   const preferredCustomSet = new Set(
     preferredCustom.map((value) => value.toLocaleLowerCase("uz-UZ")),
   );
   const dislikedCustom = (
     normalizeCustomTextArray(customDislikedExercises) ?? []
-  ).filter((value) => !preferredCustomSet.has(value.toLocaleLowerCase("uz-UZ")));
+  ).filter(
+    (value) => !preferredCustomSet.has(value.toLocaleLowerCase("uz-UZ")),
+  );
 
   return {
     preferredExerciseIds: preferredIds,
@@ -242,7 +255,9 @@ export const normalizeIngredientPreferencePair = ({
   );
   const dislikedCustom = (
     normalizeCustomTextArray(customDislikedIngredients) ?? []
-  ).filter((value) => !preferredCustomSet.has(value.toLocaleLowerCase("uz-UZ")));
+  ).filter(
+    (value) => !preferredCustomSet.has(value.toLocaleLowerCase("uz-UZ")),
+  );
 
   return {
     preferredIngredientIds: preferredIds,
@@ -447,6 +462,14 @@ export const toUserOnboardingPayload = (patch = {}) => {
       patch.customDietRequirements,
     );
   }
+  if ("preferredCuisineIds" in patch) {
+    payload.preferredCuisineIds = toNumberArray(patch.preferredCuisineIds);
+  }
+  if ("customPreferredCuisines" in patch) {
+    payload.customPreferredCuisines = normalizeCustomTextArray(
+      patch.customPreferredCuisines,
+    );
+  }
   if ("dislikedFoodIds" in patch) {
     payload.dislikedFoodIds = toNumberArray(patch.dislikedFoodIds);
   }
@@ -456,7 +479,9 @@ export const toUserOnboardingPayload = (patch = {}) => {
     );
   }
   if ("preferredIngredientIds" in patch) {
-    payload.preferredIngredientIds = toNumberArray(patch.preferredIngredientIds);
+    payload.preferredIngredientIds = toNumberArray(
+      patch.preferredIngredientIds,
+    );
   }
   if ("dislikedIngredientIds" in patch) {
     payload.dislikedIngredientIds = toNumberArray(patch.dislikedIngredientIds);

@@ -21,6 +21,25 @@ import { adminListSkeletons } from "@/modules/admin/components/admin-list-skelet
 import ActionsMenu from "./actions-menu.jsx";
 import WorkoutImageCell from "./workout-image-cell.jsx";
 
+const SWITCH_CELL_CLASS_NAME =
+  "flex min-h-10 w-full items-center justify-center";
+
+const SWITCH_COLUMN_META = {
+  skeleton: adminListSkeletons.status,
+  headerClassName: "text-center",
+  cellClassName: "text-center",
+};
+
+const CenteredColumnHeader = ({ column, title }) => (
+  <div className="flex w-full justify-center">
+    <DataGridColumnHeader
+      column={column}
+      title={title}
+      className="mx-0 justify-center"
+    />
+  </div>
+);
+
 const resolveLabel = (translations, fallback, language) => {
   if (isObject(translations)) {
     const direct = trim(String(get(translations, language, "")));
@@ -186,15 +205,15 @@ export const useColumns = ({
       {
         accessorKey: "isOnboarding",
         header: ({ column }) => (
-          <DataGridColumnHeader column={column} title="Onboarding" />
+          <CenteredColumnHeader column={column} title="Onboardingda" />
         ),
         enableSorting: true,
-        meta: { skeleton: adminListSkeletons.status },
+        meta: SWITCH_COLUMN_META,
         cell: (info) => {
           const workout = info.row.original;
 
           return (
-            <div className="flex justify-center">
+            <div className={SWITCH_CELL_CLASS_NAME}>
               <Switch
                 checked={Boolean(info.getValue())}
                 onCheckedChange={() => void handleToggleOnboarding(workout)}
@@ -208,15 +227,15 @@ export const useColumns = ({
       {
         accessorKey: "isActive",
         header: ({ column }) => (
-          <DataGridColumnHeader column={column} title="Status" />
+          <CenteredColumnHeader column={column} title="Status" />
         ),
         enableSorting: true,
-        meta: { skeleton: adminListSkeletons.status },
+        meta: SWITCH_COLUMN_META,
         cell: (info) => {
           const workout = info.row.original;
 
           return (
-            <div className="flex justify-center">
+            <div className={SWITCH_CELL_CLASS_NAME}>
               <Switch
                 checked={Boolean(info.getValue())}
                 onCheckedChange={() => void handleToggleStatus(workout)}

@@ -1,6 +1,6 @@
 {
   "onboarding": {
-    "next": "Далее >",
+    "next": "Далее",
     "back": "Назад",
     "recommended": "Рекомендуется",
     "illustrationAlt": "Иллюстрация онбординга",
@@ -140,12 +140,19 @@
       "title": "Как выглядит ваш обычный день?",
       "description": "Мы подстроим объём тренировок и питание под ваш реальный режим.",
       "weeklyWorkoutCount": "Сколько тренировок в неделю вы готовы делать?",
+      "weeklyWorkoutCountDescription": "Выберите реалистичный недельный ритм, чтобы план подошёл вашему графику.",
       "weeklyWorkoutCountOption": "{{count}} дней",
       "workoutExperience": "Опыт тренировок",
+      "workoutExperienceDescription": "Сложность упражнений будет соответствовать вашему уровню.",
       "workoutExperiences": {
         "beginner": "Новичок",
         "intermediate": "Средний",
         "advanced": "Продвинутый"
+      },
+      "workoutExperienceDescriptions": {
+        "beginner": "Вы только формируете технику и регулярность.",
+        "intermediate": "Вы знаете базу и тренируетесь регулярно.",
+        "advanced": "Вы готовы к более сложным упражнениям и нагрузке."
       },
       "sleepHours": "Сколько часов вы обычно спите?",
       "sleepPlaceholder": "Например: 7.5",
@@ -284,6 +291,11 @@
       "selectedCount": "Выбрано: {{count}}",
       "addCustom": "Добавить \"{{value}}\" как свой вариант",
       "empty": "Подходящих результатов нет.",
+      "error": "Не удалось загрузить варианты. Попробуйте ещё раз.",
+      "otherTitle": "Другое",
+      "otherDescription": "Найдите в каталоге или добавьте свой вариант, если его нет.",
+      "searchLabel": "Найти или добавить",
+      "searchHint": "Введите минимум 2 символа.",
       "nonOnboarding": "Дополнительно",
       "selected": "Выбрано",
       "featuredTitle": "Рекомендуемые варианты",
@@ -302,6 +314,11 @@
         "title": "Есть требования к питанию?",
         "description": "Отметьте халяль, вегетарианство, без глютена или другие требования.",
         "placeholder": "Halal, high protein, no sugar..."
+      },
+      "preferredCuisines": {
+        "title": "Какие кухни вам нравятся?",
+        "description": "План питания будет ближе к знакомым и приятным стилям еды.",
+        "placeholder": "Узбекская, турецкая, корейская..."
       },
       "dislikedFoods": {
         "title": "Какие блюда вы не любите?",
@@ -382,18 +399,31 @@
       "selectedCount": "Выбрано ограничений: {{count}}",
       "defaultDescription": "Это будет учитываться при составлении плана.",
       "injurySeverity": "Серьёзность травмы",
+      "injurySeverityQuestion": "Насколько серьёзна травма или ограничение?",
+      "injurySeverityDescription": "Это помогает настроить безопасность упражнений и интенсивность.",
       "severity": {
         "none": "Нет",
         "mild": "Лёгкая",
         "moderate": "Средняя",
         "severe": "Серьёзная"
       },
+      "severityDescriptions": {
+        "none": "Серьёзной травмы нет или вы не уверены.",
+        "mild": "Лёгкий дискомфорт, обычно не мешает тренировкам.",
+        "moderate": "Некоторые упражнения нужно выбирать осторожно.",
+        "severe": "План тренировок должен быть очень осторожным."
+      },
       "forbiddenExercises": "Упражнения, запрещённые врачом",
+      "forbiddenExercisesQuestion": "Есть упражнения, запрещённые врачом?",
       "forbiddenExercisesHint": "Разделяйте упражнения новой строкой или запятой.",
       "forbiddenPlaceholder": "Например: тяжёлые приседания, прыжки, бег",
       "medications": "Лекарства",
+      "medicationsQuestion": "Какие лекарства вы принимаете?",
+      "medicationsDescription": "Необязательно. Это поможет учитывать общие ограничения безопасности.",
       "medicationsPlaceholder": "Необязательно: название и дозировка",
       "supplements": "Добавки",
+      "supplementsQuestion": "Какие добавки вы принимаете?",
+      "supplementsDescription": "Необязательно. Укажите протеин, креатин, витамины или похожее.",
       "supplementsPlaceholder": "Необязательно: протеин, креатин, витамины...",
       "notificationPreference": "Время напоминаний и трекинга",
       "notifications": {
@@ -486,6 +516,7 @@
         "foodBudget": "Бюджет",
         "allergies": "Аллергии",
         "dietRequirements": "Требования к питанию",
+        "preferredCuisines": "Кухни",
         "healthConstraints": "Ограничения",
         "injurySeverity": "Серьёзность травмы",
         "forbiddenExercises": "Запрещённые упражнения",

@@ -3,7 +3,13 @@ import { find, get, isEmpty, isEqual } from "lodash";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 
 const ITEMS_PER_PAGE = 10;
-const SORT_FIELDS = ["orderKey", "name", "createdAt", "isActive", "isOnboarding"];
+const SORT_FIELDS = [
+  "orderKey",
+  "name",
+  "createdAt",
+  "isActive",
+  "isOnboarding",
+];
 const SORT_DIRECTIONS = ["asc", "desc"];
 const TEXT_OPERATORS = [
   "contains",
@@ -125,7 +131,7 @@ export const useEquipmentFilters = () => {
         ],
       },
       {
-        label: "Onboarding",
+        label: "Onboardingda ko'rsatish",
         key: "onboarding",
         type: "select",
         defaultOperator: "is",
@@ -197,7 +203,13 @@ export const useEquipmentFilters = () => {
       }
     };
 
-    pushSelect("status", statusFilter, statusOperator, visibleFilters.status, "all");
+    pushSelect(
+      "status",
+      statusFilter,
+      statusOperator,
+      visibleFilters.status,
+      "all",
+    );
     pushSelect(
       "onboarding",
       onboardingFilter,
@@ -205,7 +217,13 @@ export const useEquipmentFilters = () => {
       visibleFilters.onboarding,
       "all",
     );
-    pushSelect("hasImage", imageFilter, imageOperator, visibleFilters.hasImage, "all");
+    pushSelect(
+      "hasImage",
+      imageFilter,
+      imageOperator,
+      visibleFilters.hasImage,
+      "all",
+    );
     pushSelect(
       "translations",
       translationFilter,
@@ -231,33 +249,71 @@ export const useEquipmentFilters = () => {
 
   const handleFiltersChange = React.useCallback(
     (nextFilters) => {
-      const nextSearch =
-        get(find(nextFilters, (filter) => filter.field === "q"), "values[0]", "");
-      const nextSearchOperator =
-        get(find(nextFilters, (filter) => filter.field === "q"), "operator", "contains");
-      const nextStatus =
-        get(find(nextFilters, (filter) => filter.field === "status"), "values[0]", "all");
-      const nextStatusOperator =
-        get(find(nextFilters, (filter) => filter.field === "status"), "operator", "is");
-      const nextImage =
-        get(find(nextFilters, (filter) => filter.field === "hasImage"), "values[0]", "all");
-      const nextImageOperator =
-        get(find(nextFilters, (filter) => filter.field === "hasImage"), "operator", "is");
-      const nextOnboarding =
-        get(find(nextFilters, (filter) => filter.field === "onboarding"), "values[0]", "all");
-      const nextOnboardingOperator =
-        get(find(nextFilters, (filter) => filter.field === "onboarding"), "operator", "is");
-      const nextTranslations =
-        get(find(nextFilters, (filter) => filter.field === "translations"), "values[0]", "all");
-      const nextTranslationsOperator =
-        get(find(nextFilters, (filter) => filter.field === "translations"), "operator", "is");
+      const nextSearch = get(
+        find(nextFilters, (filter) => filter.field === "q"),
+        "values[0]",
+        "",
+      );
+      const nextSearchOperator = get(
+        find(nextFilters, (filter) => filter.field === "q"),
+        "operator",
+        "contains",
+      );
+      const nextStatus = get(
+        find(nextFilters, (filter) => filter.field === "status"),
+        "values[0]",
+        "all",
+      );
+      const nextStatusOperator = get(
+        find(nextFilters, (filter) => filter.field === "status"),
+        "operator",
+        "is",
+      );
+      const nextImage = get(
+        find(nextFilters, (filter) => filter.field === "hasImage"),
+        "values[0]",
+        "all",
+      );
+      const nextImageOperator = get(
+        find(nextFilters, (filter) => filter.field === "hasImage"),
+        "operator",
+        "is",
+      );
+      const nextOnboarding = get(
+        find(nextFilters, (filter) => filter.field === "onboarding"),
+        "values[0]",
+        "all",
+      );
+      const nextOnboardingOperator = get(
+        find(nextFilters, (filter) => filter.field === "onboarding"),
+        "operator",
+        "is",
+      );
+      const nextTranslations = get(
+        find(nextFilters, (filter) => filter.field === "translations"),
+        "values[0]",
+        "all",
+      );
+      const nextTranslationsOperator = get(
+        find(nextFilters, (filter) => filter.field === "translations"),
+        "operator",
+        "is",
+      );
 
       React.startTransition(() => {
         setVisibleFilters({
-          status: Boolean(find(nextFilters, (filter) => filter.field === "status")),
-          onboarding: Boolean(find(nextFilters, (filter) => filter.field === "onboarding")),
-          hasImage: Boolean(find(nextFilters, (filter) => filter.field === "hasImage")),
-          translations: Boolean(find(nextFilters, (filter) => filter.field === "translations")),
+          status: Boolean(
+            find(nextFilters, (filter) => filter.field === "status"),
+          ),
+          onboarding: Boolean(
+            find(nextFilters, (filter) => filter.field === "onboarding"),
+          ),
+          hasImage: Boolean(
+            find(nextFilters, (filter) => filter.field === "hasImage"),
+          ),
+          translations: Boolean(
+            find(nextFilters, (filter) => filter.field === "translations"),
+          ),
         });
         void setSearch(nextSearch);
         void setSearchOperator(nextSearchOperator);

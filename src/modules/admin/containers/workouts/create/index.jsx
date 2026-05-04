@@ -15,11 +15,7 @@ import {
 } from "lodash";
 import { toast } from "sonner";
 import { useLanguageStore } from "@/store";
-import {
-  useGetQuery,
-  usePostQuery,
-  usePostFileQuery,
-} from "@/hooks/api";
+import { useGetQuery, usePostQuery, usePostFileQuery } from "@/hooks/api";
 import {
   Drawer,
   DrawerBody,
@@ -144,7 +140,8 @@ const ImageUploadPreview = ({
 
       {displayUrl ? (
         <>
-          <img loading="lazy"
+          <img
+            loading="lazy"
             src={displayUrl}
             alt="Preview"
             className="size-full object-cover"
@@ -208,7 +205,12 @@ const createWorkoutPayload = (form, language) => {
   };
 
   const cleanArray = (arr) =>
-    isArray(arr) ? chain(arr).map((s) => trim(String(s))).compact().value() : [];
+    isArray(arr)
+      ? chain(arr)
+          .map((s) => trim(String(s)))
+          .compact()
+          .value()
+      : [];
 
   return {
     name: localizedName,
@@ -236,7 +238,13 @@ const createWorkoutPayload = (form, language) => {
   };
 };
 
-const ArrayField = ({ values: fieldValues, onChange, label, placeholder, description }) => {
+const ArrayField = ({
+  values: fieldValues,
+  onChange,
+  label,
+  placeholder,
+  description,
+}) => {
   const handleAddItem = () => onChange([...fieldValues, ""]);
   const handleRemoveItem = (index) => {
     if (fieldValues.length <= 1) {
@@ -303,7 +311,9 @@ const buildCatalogOptions = (items, selectedValues, language) => {
     }
   });
 
-  return lodashSortBy(baseOptions, (option) => option.label.toLocaleLowerCase("uz"));
+  return lodashSortBy(baseOptions, (option) =>
+    option.label.toLocaleLowerCase("uz"),
+  );
 };
 
 const WORKOUTS_QUERY_KEY = ["admin-workouts"];
@@ -418,7 +428,8 @@ const CreateWorkoutPage = () => {
 
       const finalPayload = { ...payload };
       if (imageId) finalPayload.imageId = imageId;
-      if (equipmentImageIds.length > 0) finalPayload.equipmentImageIds = equipmentImageIds;
+      if (equipmentImageIds.length > 0)
+        finalPayload.equipmentImageIds = equipmentImageIds;
 
       await createMutation.mutateAsync({
         url: "/admin/workouts",
@@ -429,9 +440,7 @@ const CreateWorkoutPage = () => {
     } catch (error) {
       const message = error?.response?.data?.message;
       toast.error(
-        isArray(message)
-          ? message.join(", ")
-          : message || "Saqlab bo'lmadi",
+        isArray(message) ? message.join(", ") : message || "Saqlab bo'lmadi",
       );
     }
   };
@@ -462,9 +471,7 @@ const CreateWorkoutPage = () => {
           <div className="rounded-2xl border px-4 py-3 text-sm">
             <p className="font-medium">
               Joriy til:{" "}
-              {currentLanguageMeta?.flag
-                ? `${currentLanguageMeta.flag} `
-                : ""}
+              {currentLanguageMeta?.flag ? `${currentLanguageMeta.flag} ` : ""}
               {currentLanguageMeta?.name ?? currentLanguage.toUpperCase()}
             </p>
           </div>
@@ -503,9 +510,9 @@ const CreateWorkoutPage = () => {
             </div>
             <div className="flex items-center justify-between rounded-2xl border px-4 py-3">
               <div>
-                <Label>Onboarding</Label>
+                <Label>Onboardingda ko'rsatish</Label>
                 <p className="text-xs text-muted-foreground">
-                  Yoqilgan bo'lsa onboarding mashq ro'yxatlarida birinchi chiqadi.
+                  Yoqilgan bo'lsa user onboarding mashq ro'yxatida ko'rinadi.
                 </p>
               </div>
               <Switch
@@ -659,9 +666,7 @@ const CreateWorkoutPage = () => {
               </div>
             ) : null}
 
-            {trackingFields.some(
-              (field) => field.key === "durationSeconds",
-            ) ? (
+            {trackingFields.some((field) => field.key === "durationSeconds") ? (
               <div className="space-y-2">
                 <Label>Default vaqt (sek)</Label>
                 <InlineNumberField
@@ -678,9 +683,7 @@ const CreateWorkoutPage = () => {
               </div>
             ) : null}
 
-            {trackingFields.some(
-              (field) => field.key === "distanceMeters",
-            ) ? (
+            {trackingFields.some((field) => field.key === "distanceMeters") ? (
               <div className="space-y-2">
                 <Label>Default masofa (m)</Label>
                 <InlineNumberField

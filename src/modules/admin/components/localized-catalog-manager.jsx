@@ -69,6 +69,15 @@ const emptyForm = {
   isOnboarding: true,
 };
 
+const SWITCH_CELL_CLASS_NAME =
+  "flex min-h-10 w-full items-center justify-center";
+
+const SWITCH_COLUMN_META = {
+  skeleton: adminListSkeletons.status,
+  headerClassName: "text-center",
+  cellClassName: "text-center",
+};
+
 const DEFAULT_PAGE_SIZE = 20;
 const TEXT_OPERATORS = [
   "contains",
@@ -80,7 +89,13 @@ const TEXT_OPERATORS = [
   "not_empty",
 ];
 const SELECT_OPERATORS = ["is", "is_not", "empty", "not_empty"];
-const SORT_FIELDS = ["orderKey", "name", "createdAt", "isActive", "isOnboarding"];
+const SORT_FIELDS = [
+  "orderKey",
+  "name",
+  "createdAt",
+  "isActive",
+  "isOnboarding",
+];
 const SORT_DIRECTIONS = ["asc", "desc"];
 
 const resolveLabel = (translations, fallback, language) => {
@@ -175,7 +190,11 @@ const LocalizedCatalogManager = ({
     url: "/admin/languages",
     queryProps: { queryKey: ["admin", "languages"] },
   });
-  const languages = get(languagesData, "data.data", get(languagesData, "data", []));
+  const languages = get(
+    languagesData,
+    "data.data",
+    get(languagesData, "data", []),
+  );
 
   const [search, setSearch] = useQueryState("q", parseAsString.withDefault(""));
   const [searchOperator, setSearchOperator] = useQueryState(
@@ -364,12 +383,17 @@ const LocalizedCatalogManager = ({
   const routeItem = serverSide
     ? get(detailQuery, "data.data")
     : find(items, (item) => toString(get(item, "id")) === routeItemId);
-  const isDrawerItemLoading = Boolean(serverSide && routeItemId && detailQuery.isLoading);
+  const isDrawerItemLoading = Boolean(
+    serverSide && routeItemId && detailQuery.isLoading,
+  );
 
   React.useEffect(() => {
     if (!effectiveMeta) return;
 
-    const nextTotalPages = Math.max(1, Number(get(effectiveMeta, "totalPages")) || 1);
+    const nextTotalPages = Math.max(
+      1,
+      Number(get(effectiveMeta, "totalPages")) || 1,
+    );
     if (currentPage > nextTotalPages) {
       void setPageQuery(String(nextTotalPages));
     }
@@ -510,7 +534,7 @@ const LocalizedCatalogManager = ({
         ],
       },
       {
-        label: "Onboarding",
+        label: "Onboardingda ko'rsatish",
         key: "onboarding",
         type: "select",
         defaultOperator: "is",
@@ -580,8 +604,7 @@ const LocalizedCatalogManager = ({
         field: "onboarding",
         operator: onboardingOperator,
         values:
-          onboardingOperator === "empty" ||
-          onboardingOperator === "not_empty"
+          onboardingOperator === "empty" || onboardingOperator === "not_empty"
             ? []
             : [onboardingFilter],
       });
@@ -911,14 +934,14 @@ const LocalizedCatalogManager = ({
                 <div
                   key={get(language, "id", get(language, "code"))}
                   title={`${get(language, "name", get(language, "code"))}: ${
-                    typeof get(translations, get(language, "code")) === "string" &&
-                    trim(get(translations, get(language, "code")))
+                    typeof get(translations, get(language, "code")) ===
+                      "string" && trim(get(translations, get(language, "code")))
                       ? "Bor"
                       : "Yo'q"
                   }`}
                   className={
-                    typeof get(translations, get(language, "code")) === "string" &&
-                    trim(get(translations, get(language, "code")))
+                    typeof get(translations, get(language, "code")) ===
+                      "string" && trim(get(translations, get(language, "code")))
                       ? "flex size-5 items-center justify-center rounded border border-primary/30 bg-primary/10 text-[10px] text-primary"
                       : "flex size-5 items-center justify-center rounded border border-transparent bg-muted text-[10px] opacity-40"
                   }
@@ -935,9 +958,9 @@ const LocalizedCatalogManager = ({
         header: "Status",
         enableSorting: true,
         size: 100,
-        meta: { skeleton: adminListSkeletons.status },
+        meta: SWITCH_COLUMN_META,
         cell: (info) => (
-          <div className="flex justify-center">
+          <div className={SWITCH_CELL_CLASS_NAME}>
             <Switch
               checked={Boolean(info.getValue())}
               disabled={!canManageContent}
@@ -950,12 +973,12 @@ const LocalizedCatalogManager = ({
       },
       {
         accessorKey: "isOnboarding",
-        header: "Onboarding",
+        header: "Onboardingda",
         enableSorting: true,
         size: 132,
-        meta: { skeleton: adminListSkeletons.status },
+        meta: SWITCH_COLUMN_META,
         cell: (info) => (
-          <div className="flex justify-center">
+          <div className={SWITCH_CELL_CLASS_NAME}>
             <Switch
               checked={Boolean(info.getValue())}
               disabled={!canManageContent}
@@ -1046,7 +1069,12 @@ const LocalizedCatalogManager = ({
 
   const handleDragEnd = React.useCallback(
     async ({ active, over }) => {
-      if (!canManageContent || !over || active.id === over.id || !isReorderEnabled) {
+      if (
+        !canManageContent ||
+        !over ||
+        active.id === over.id ||
+        !isReorderEnabled
+      ) {
         return;
       }
 
@@ -1237,9 +1265,9 @@ const LocalizedCatalogManager = ({
 
                 <div className="flex items-center justify-between rounded-2xl border px-4 py-3">
                   <div>
-                    <Label>Onboarding</Label>
+                    <Label>Onboardingda ko'rsatish</Label>
                     <p className="text-xs text-muted-foreground">
-                      Yoqilgan bo'lsa onboarding ro'yxatlarida birinchi chiqadi.
+                      Yoqilgan bo'lsa user onboarding ro'yxatida ko'rinadi.
                     </p>
                   </div>
                   <Switch

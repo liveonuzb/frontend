@@ -62,6 +62,10 @@ function isUserStoreEmpty(state) {
       state.dietRequirementIds.length === 0) &&
     (!isArray(state.customDietRequirements) ||
       state.customDietRequirements.length === 0) &&
+    (!isArray(state.preferredCuisineIds) ||
+      state.preferredCuisineIds.length === 0) &&
+    (!isArray(state.customPreferredCuisines) ||
+      state.customPreferredCuisines.length === 0) &&
     (!isArray(state.dislikedFoodIds) || state.dislikedFoodIds.length === 0) &&
     (!isArray(state.customDislikedFoods) ||
       state.customDislikedFoods.length === 0) &&
@@ -79,7 +83,8 @@ function isUserStoreEmpty(state) {
     !state.dislikedOtherText &&
     !state.nutritionPreferenceOtherText &&
     (!isArray(state.dietRestrictions) || state.dietRestrictions.length === 0) &&
-    (!isArray(state.healthConstraints) || state.healthConstraints.length === 0) &&
+    (!isArray(state.healthConstraints) ||
+      state.healthConstraints.length === 0) &&
     !state.injurySeverity &&
     (!isArray(state.forbiddenExercises) ||
       state.forbiddenExercises.length === 0) &&
@@ -259,6 +264,12 @@ function mergeUserDraft(serverData, setFields) {
   if (isArray(serverData.customDietRequirements)) {
     fields.customDietRequirements = serverData.customDietRequirements;
   }
+  if (isArray(serverData.preferredCuisineIds)) {
+    fields.preferredCuisineIds = serverData.preferredCuisineIds;
+  }
+  if (isArray(serverData.customPreferredCuisines)) {
+    fields.customPreferredCuisines = serverData.customPreferredCuisines;
+  }
   if (isArray(serverData.dislikedFoodIds)) {
     fields.dislikedFoodIds = serverData.dislikedFoodIds;
   }
@@ -308,7 +319,10 @@ function mergeUserDraft(serverData, setFields) {
   if (serverData.supplements) {
     fields.supplements = serverData.supplements;
   }
-  if (serverData.playsFootball !== undefined && serverData.playsFootball !== null) {
+  if (
+    serverData.playsFootball !== undefined &&
+    serverData.playsFootball !== null
+  ) {
     fields.playsFootball = Boolean(serverData.playsFootball);
   }
   if (serverData.cardioLevel) {

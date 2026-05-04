@@ -67,6 +67,7 @@ const SelectModePage = () => {
   const returnTo = location.state?.returnTo;
 
   const handleContinue = () => {
+    setMode(selected);
     if (returnTo) {
       navigate(returnTo, { replace: true });
       return;

@@ -20,13 +20,44 @@ describe("user onboarding resume", () => {
     );
   });
 
-  it("resumes to lifestyle when activity is present but lifestyle data is missing", () => {
+  it("resumes to weekly workout count when activity is present but workout count is missing", () => {
     expect(
       getNextUserOnboardingPath({
         ...completeUntilActivity,
         activityLevel: "moderately-active",
       }),
-    ).toBe("lifestyle");
+    ).toBe("weekly-workout-count");
+  });
+
+  it("resumes to workout experience when weekly workout count is present", () => {
+    expect(
+      getNextUserOnboardingPath({
+        ...completeUntilActivity,
+        activityLevel: "moderately-active",
+        weeklyWorkoutCount: "4",
+      }),
+    ).toBe("workout-experience");
+  });
+
+  it("resumes to injury severity when health constraints need details", () => {
+    expect(
+      getNextUserOnboardingPath({
+        ...completeUntilActivity,
+        healthConstraints: ["knee_pain"],
+      }),
+    ).toBe("injury-severity");
+  });
+
+  it("skips optional health text screens and resumes to age after injury severity", () => {
+    expect(
+      getNextUserOnboardingPath({
+        firstName: completeUntilActivity.firstName,
+        lastName: completeUntilActivity.lastName,
+        gender: completeUntilActivity.gender,
+        healthConstraints: ["knee_pain"],
+        injurySeverity: "mild",
+      }),
+    ).toBe("age");
   });
 
   it("resumes to review after optional disliked ingredients are completed", () => {
@@ -37,7 +68,8 @@ describe("user onboarding resume", () => {
         weeklyWorkoutCount: "4",
         workoutExperience: "intermediate",
         completedUserOnboardingSteps: [
-          "lifestyle",
+          "weekly-workout-count",
+          "workout-experience",
           "workout-location",
           "workout-equipment",
           "workout-body-parts",
@@ -46,6 +78,7 @@ describe("user onboarding resume", () => {
           "food-budget",
           "allergies",
           "diet-requirements",
+          "preferred-cuisines",
           "disliked-foods",
           "preferred-ingredients",
           "disliked-ingredients",

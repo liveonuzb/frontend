@@ -1,6 +1,6 @@
 {
   "onboarding": {
-    "next": "Keyingisi >",
+    "next": "Keyingisi",
     "back": "Orqaga",
     "recommended": "Tavsiya qilinadi",
     "illustrationAlt": "Onboarding rasmi",
@@ -140,12 +140,19 @@
       "title": "Kundalik ritmingiz qanday?",
       "description": "Mashg'ulot hajmi va ovqatlanish rejasini real hayotingizga moslaymiz.",
       "weeklyWorkoutCount": "Haftasiga nechta mashg'ulot qilasiz?",
+      "weeklyWorkoutCountDescription": "Reja haftalik ritmingizga mos bo'lishi uchun real sonni tanlang.",
       "weeklyWorkoutCountOption": "{{count}} kun",
       "workoutExperience": "Mashg'ulot tajribangiz",
+      "workoutExperienceDescription": "Mashqlar qiyinligi tajribangizga moslanadi.",
       "workoutExperiences": {
         "beginner": "Beginner",
         "intermediate": "Intermediate",
         "advanced": "Advanced"
+      },
+      "workoutExperienceDescriptions": {
+        "beginner": "Texnika va odatni endi shakllantiryapsiz.",
+        "intermediate": "Asosiy mashqlarni bilasiz va muntazam shug'ullanasiz.",
+        "advanced": "Murakkab mashqlar va yuklamaga tayyorsiz."
       },
       "sleepHours": "Odatda necha soat uxlaysiz?",
       "sleepPlaceholder": "Masalan: 7.5",
@@ -284,6 +291,11 @@
       "selectedCount": "{{count}} ta tanlandi",
       "addCustom": "\"{{value}}\" ni maxsus qiymat sifatida qo'shish",
       "empty": "Mos natija topilmadi.",
+      "error": "Variantlarni yuklab bo'lmadi. Qayta urinib ko'ring.",
+      "otherTitle": "Boshqa",
+      "otherDescription": "Ro'yxatda bo'lmasa, qidirib toping yoki o'zingiz qo'shing.",
+      "searchLabel": "Qidirish yoki qo'shish",
+      "searchHint": "Kamida 2 ta belgi yozing.",
       "nonOnboarding": "Qo'shimcha",
       "selected": "Tanlangan",
       "featuredTitle": "Tavsiya qilinganlar",
@@ -302,6 +314,11 @@
         "title": "Ovqatlanish talablaringiz qanday?",
         "description": "Halol, vegetarian, glutensiz yoki boshqa talablarni belgilang.",
         "placeholder": "Halal, high protein, no sugar..."
+      },
+      "preferredCuisines": {
+        "title": "Qaysi oshxonalarni yoqtirasiz?",
+        "description": "Meal plan sizga tanish va yoqimli taom uslublariga yaqinroq bo'ladi.",
+        "placeholder": "O'zbek, turk, koreys..."
       },
       "dislikedFoods": {
         "title": "Qaysi ovqatlarni yoqtirmaysiz?",
@@ -382,18 +399,31 @@
       "selectedCount": "{{count}} ta cheklov tanlandi",
       "defaultDescription": "Reja tuzishda bu holat inobatga olinadi.",
       "injurySeverity": "Jarohat og'irligi",
+      "injurySeverityQuestion": "Jarohat yoki cheklov qanchalik jiddiy?",
+      "injurySeverityDescription": "Bu mashqlar xavfsizligi va yuklama darajasini moslashga yordam beradi.",
       "severity": {
         "none": "Yo'q",
         "mild": "Yengil",
         "moderate": "O'rtacha",
         "severe": "Jiddiy"
       },
+      "severityDescriptions": {
+        "none": "Jiddiy jarohat yo'q yoki noaniq.",
+        "mild": "Yengil noqulaylik, odatda mashqqa xalaqit bermaydi.",
+        "moderate": "Ayrim mashqlarni ehtiyotkorlik bilan tanlash kerak.",
+        "severe": "Mashg'ulot rejasi juda ehtiyotkor bo'lishi kerak."
+      },
       "forbiddenExercises": "Shifokor taqiqlagan mashqlar",
+      "forbiddenExercisesQuestion": "Shifokor taqiqlagan mashqlar bormi?",
       "forbiddenExercisesHint": "Har bir mashqni yangi qatordan yoki vergul bilan ajrating.",
       "forbiddenPlaceholder": "Masalan: og'ir squat, sakrash, yugurish",
       "medications": "Qabul qilayotgan dorilar",
+      "medicationsQuestion": "Qanday dorilar qabul qilasiz?",
+      "medicationsDescription": "Ixtiyoriy. Reja umumiy xavfsizlik cheklovlarini hisobga olishi uchun yozing.",
       "medicationsPlaceholder": "Ixtiyoriy: nomi va dozasini yozing",
       "supplements": "Supplementlar",
+      "supplementsQuestion": "Qanday supplementlar qabul qilasiz?",
+      "supplementsDescription": "Ixtiyoriy. Protein, kreatin yoki vitaminlar bo'lsa yozing.",
       "supplementsPlaceholder": "Ixtiyoriy: protein, kreatin, vitaminlar...",
       "notificationPreference": "Eslatma va tracking vaqti",
       "notifications": {
@@ -486,6 +516,7 @@
         "foodBudget": "Budjet",
         "allergies": "Allergiyalar",
         "dietRequirements": "Diet talablari",
+        "preferredCuisines": "Oshxonalar",
         "healthConstraints": "Cheklovlar",
         "injurySeverity": "Jarohat og'irligi",
         "forbiddenExercises": "Taqiqlangan mashqlar",

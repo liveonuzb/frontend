@@ -1,18 +1,20 @@
 import React from "react";
-import {
-  find,
-  get,
-  map,
-  trim,
-} from "lodash";
+import { find, get, map, trim } from "lodash";
 import { ImageIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import {
-  DataGridTableDndRowHandle,
-} from "@/components/reui/data-grid";
+import { DataGridTableDndRowHandle } from "@/components/reui/data-grid";
 import { cn } from "@/lib/utils";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import ActionsMenu from "./actions-menu.jsx";
+
+const SWITCH_CELL_CLASS_NAME =
+  "flex min-h-10 w-full items-center justify-center";
+
+const SWITCH_COLUMN_META = {
+  skeleton: adminListSkeletons.status,
+  headerClassName: "text-center",
+  cellClassName: "text-center",
+};
 
 const resolveLabel = (translations, fallback, language) => {
   if (translations && typeof translations === "object") {
@@ -73,7 +75,8 @@ export const useColumns = ({
 
           return equipment.imageUrl ? (
             <div className="size-12 overflow-hidden rounded-xl border bg-muted">
-              <img loading="lazy"
+              <img
+                loading="lazy"
                 src={equipment.imageUrl}
                 alt={equipment.name}
                 className="size-full object-cover"
@@ -127,7 +130,9 @@ export const useColumns = ({
             <div className="flex items-center gap-1">
               {map(activeLanguages, (language) => {
                 const code = get(language, "code");
-                const hasTranslation = Boolean(trim(get(translations, code, "")));
+                const hasTranslation = Boolean(
+                  trim(get(translations, code, "")),
+                );
 
                 return (
                   <div
@@ -150,15 +155,15 @@ export const useColumns = ({
       },
       {
         accessorKey: "isOnboarding",
-        header: "Onboarding",
+        header: "Onboardingda",
         enableSorting: true,
         size: 120,
-        meta: { skeleton: adminListSkeletons.status },
+        meta: SWITCH_COLUMN_META,
         cell: (info) => {
           const equipment = info.row.original;
 
           return (
-            <div className="flex justify-center">
+            <div className={SWITCH_CELL_CLASS_NAME}>
               <Switch
                 checked={Boolean(equipment.isOnboarding)}
                 onCheckedChange={(checked) =>
@@ -174,12 +179,12 @@ export const useColumns = ({
         header: "Status",
         enableSorting: true,
         size: 96,
-        meta: { skeleton: adminListSkeletons.status },
+        meta: SWITCH_COLUMN_META,
         cell: (info) => {
           const equipment = info.row.original;
 
           return (
-            <div className="flex justify-center">
+            <div className={SWITCH_CELL_CLASS_NAME}>
               <Switch
                 checked={equipment.isActive}
                 onCheckedChange={(checked) =>

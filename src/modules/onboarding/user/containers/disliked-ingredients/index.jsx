@@ -1,12 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import OnboardingComboboxChipsStep from "../combobox-chips-step.jsx";
+import OnboardingCardChipStep from "../card-chip-step.jsx";
 
 const Index = () => {
   const { t } = useTranslation();
 
   return (
-    <OnboardingComboboxChipsStep
+    <OnboardingCardChipStep
       step="disliked-ingredients"
       i18nKey="onboarding.nutritionSteps.dislikedIngredients"
       optionsKey="ingredients"

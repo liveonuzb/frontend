@@ -50,9 +50,7 @@ function AuthKeyboardHidden({
 function AuthHeader({ title, children }) {
   return (
     <div className="flex flex-col items-start gap-3 text-left">
-      <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">
-        {title}
-      </h1>
+      <h1 className="text-2xl font-semibold leading-tight">{title}</h1>
       {children}
     </div>
   );

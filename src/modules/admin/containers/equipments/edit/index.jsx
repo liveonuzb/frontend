@@ -83,7 +83,8 @@ const ImageUploadPreview = ({
       />
       {displayUrl ? (
         <>
-          <img loading="lazy"
+          <img
+            loading="lazy"
             src={displayUrl}
             alt="Preview"
             className="size-full object-cover"
@@ -243,104 +244,107 @@ const EditEquipment = () => {
               <Spinner className="size-8 text-muted-foreground" />
             </div>
           ) : (
-          <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-6">
-            <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-sm">
-              <p className="font-medium">
-                Joriy til:{" "}
-                {currentLanguageMeta?.flag
-                  ? `${currentLanguageMeta.flag} `
-                  : ""}
-                {currentLanguageMeta?.name ?? currentLanguage.toUpperCase()}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Shu drawer joriy tildagi nomni yangilaydi. Boshqa tillar uchun
-                tarjimalar draweridan foydalaning.
-              </p>
-            </div>
+            <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-6">
+              <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-sm">
+                <p className="font-medium">
+                  Joriy til:{" "}
+                  {currentLanguageMeta?.flag
+                    ? `${currentLanguageMeta.flag} `
+                    : ""}
+                  {currentLanguageMeta?.name ?? currentLanguage.toUpperCase()}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Shu drawer joriy tildagi nomni yangilaydi. Boshqa tillar uchun
+                  tarjimalar draweridan foydalaning.
+                </p>
+              </div>
 
-            <div className="flex flex-col gap-2">
-              <Label className="flex items-center gap-2 text-sm font-medium">
-                <WrenchIcon className="text-primary" />
-                Jihoz nomi
-              </Label>
-              <Input
-                value={form.name}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    name: event.target.value,
-                  }))
-                }
-                placeholder="Masalan: Dumbbell"
-              />
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <Label className="flex items-center gap-2 text-sm font-medium">
-                <ImageIcon className="text-primary" />
-                Preview rasm
-              </Label>
-              <div className="flex items-center gap-4 rounded-2xl border border-border/60 bg-muted/15 p-4">
-                <ImageUploadPreview
-                  file={form.image}
-                  existingUrl={currentImageUrl}
-                  onChange={(file) =>
+              <div className="flex flex-col gap-2">
+                <Label className="flex items-center gap-2 text-sm font-medium">
+                  <WrenchIcon className="text-primary" />
+                  Jihoz nomi
+                </Label>
+                <Input
+                  value={form.name}
+                  onChange={(event) =>
                     setForm((current) => ({
                       ...current,
-                      image: file,
-                      removeImage: false,
+                      name: event.target.value,
                     }))
                   }
-                  onRemove={() =>
+                  placeholder="Masalan: Dumbbell"
+                />
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <Label className="flex items-center gap-2 text-sm font-medium">
+                  <ImageIcon className="text-primary" />
+                  Preview rasm
+                </Label>
+                <div className="flex items-center gap-4 rounded-2xl border border-border/60 bg-muted/15 p-4">
+                  <ImageUploadPreview
+                    file={form.image}
+                    existingUrl={currentImageUrl}
+                    onChange={(file) =>
+                      setForm((current) => ({
+                        ...current,
+                        image: file,
+                        removeImage: false,
+                      }))
+                    }
+                    onRemove={() =>
+                      setForm((current) => ({
+                        ...current,
+                        image: null,
+                        removeImage: Boolean(get(equipment, "imageUrl")),
+                      }))
+                    }
+                  />
+                  <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                    <p className="font-medium text-foreground">
+                      JPG, PNG yoki WEBP
+                    </p>
+                    <p>
+                      Maksimal hajm 5MB. Sahifa ro'yxatida preview sifatida
+                      ishlatiladi.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-muted/15 px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium">Faol holat</p>
+                  <p className="text-xs text-muted-foreground">
+                    Nofaol jihozlar workout bilan bog'lash uchun keyin yashirin
+                    turadi.
+                  </p>
+                </div>
+                <Switch
+                  checked={form.isActive}
+                  onCheckedChange={(checked) =>
+                    setForm((current) => ({ ...current, isActive: checked }))
+                  }
+                />
+              </div>
+              <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-muted/15 px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium">Onboardingda ko'rsatish</p>
+                  <p className="text-xs text-muted-foreground">
+                    Yoqilgan bo'lsa user onboarding jihoz ro'yxatida ko'rinadi.
+                  </p>
+                </div>
+                <Switch
+                  checked={form.isOnboarding}
+                  onCheckedChange={(checked) =>
                     setForm((current) => ({
                       ...current,
-                      image: null,
-                      removeImage: Boolean(get(equipment, "imageUrl")),
+                      isOnboarding: checked,
                     }))
                   }
                 />
-                <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-                  <p className="font-medium text-foreground">
-                    JPG, PNG yoki WEBP
-                  </p>
-                  <p>
-                    Maksimal hajm 5MB. Sahifa ro'yxatida preview sifatida
-                    ishlatiladi.
-                  </p>
-                </div>
               </div>
             </div>
-
-            <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-muted/15 px-4 py-3">
-              <div>
-                <p className="text-sm font-medium">Faol holat</p>
-                <p className="text-xs text-muted-foreground">
-                  Nofaol jihozlar workout bilan bog'lash uchun keyin yashirin
-                  turadi.
-                </p>
-              </div>
-              <Switch
-                checked={form.isActive}
-                onCheckedChange={(checked) =>
-                  setForm((current) => ({ ...current, isActive: checked }))
-                }
-              />
-            </div>
-            <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-muted/15 px-4 py-3">
-              <div>
-                <p className="text-sm font-medium">Onboarding</p>
-                <p className="text-xs text-muted-foreground">
-                  Yoqilgan bo'lsa onboarding jihoz ro'yxatida birinchi chiqadi.
-                </p>
-              </div>
-              <Switch
-                checked={form.isOnboarding}
-                onCheckedChange={(checked) =>
-                  setForm((current) => ({ ...current, isOnboarding: checked }))
-                }
-              />
-            </div>
-          </div>
           )}
 
           <DrawerFooter className="px-6 pb-6 pt-2">

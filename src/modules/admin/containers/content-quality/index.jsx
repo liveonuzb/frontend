@@ -279,7 +279,10 @@ const QualityGroup = ({ section, group, isExpanded, onToggle }) => {
             ? "Kamroq ko'rsatish"
             : `Hammasini ko'rsatish (${issues.length})`}
           <ChevronDownIcon
-            className={cn("size-3.5 transition-transform", isExpanded && "rotate-180")}
+            className={cn(
+              "size-3.5 transition-transform",
+              isExpanded && "rotate-180",
+            )}
           />
         </Button>
       ) : null}
@@ -314,7 +317,9 @@ const filterQualitySections = ({
   const normalizedSearch = search.trim().toLowerCase();
 
   return sections
-    .filter((section) => sectionFilter === "all" || section.key === sectionFilter)
+    .filter(
+      (section) => sectionFilter === "all" || section.key === sectionFilter,
+    )
     .map((section) => {
       const groups = section.groups
         .map((group) => {
@@ -351,6 +356,16 @@ const filterQualitySections = ({
     .filter((section) => section.groups.length > 0);
 };
 
+const getContentQualityPayload = (response) => {
+  if (response?.summary || response?.sections) {
+    return response;
+  }
+
+  const responseBody = get(response, "data", {});
+
+  return get(responseBody, "data", responseBody) || {};
+};
+
 const downloadBlob = ({ blob, fileName }) => {
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -385,12 +400,17 @@ const Index = () => {
     ]);
   }, [setBreadcrumbs]);
 
-  const payload = get(data, "data", {});
+  const payload = getContentQualityPayload(data);
   const summary = get(payload, "summary", {});
-  const sections = get(payload, "sections", []);
-  const activeLanguages = get(payload, "activeLanguages", []);
+  const sections = Array.isArray(get(payload, "sections"))
+    ? get(payload, "sections")
+    : [];
+  const activeLanguages = Array.isArray(get(payload, "activeLanguages"))
+    ? get(payload, "activeLanguages")
+    : [];
   const visibleSections = React.useMemo(
-    () => filterQualitySections({ sections, sectionFilter, search, onlyIssues }),
+    () =>
+      filterQualitySections({ sections, sectionFilter, search, onlyIssues }),
     [sections, sectionFilter, search, onlyIssues],
   );
   const visibleIssueCount = React.useMemo(
@@ -594,34 +614,34 @@ const Index = () => {
       <div className="grid gap-4 xl:grid-cols-2">
         {visibleSections.length ? (
           visibleSections.map((section) => {
-          const Icon = sectionIcons[section.key] || ClipboardCheckIcon;
+            const Icon = sectionIcons[section.key] || ClipboardCheckIcon;
 
-          return (
-            <Card key={section.key} className="border-border/60 shadow-sm">
-              <CardHeader className="border-b bg-muted/25">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Icon className="size-5 text-primary" />
-                  {section.title}
-                </CardTitle>
-                <CardDescription>{section.description}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3 p-4">
-                {section.groups.map((group) => {
-                  const groupKey = `${section.key}:${group.key}`;
+            return (
+              <Card key={section.key} className="border-border/60 shadow-sm">
+                <CardHeader className="border-b bg-muted/25">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Icon className="size-5 text-primary" />
+                    {section.title}
+                  </CardTitle>
+                  <CardDescription>{section.description}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3 p-4">
+                  {section.groups.map((group) => {
+                    const groupKey = `${section.key}:${group.key}`;
 
-                  return (
-                    <QualityGroup
-                      key={group.key}
-                      section={section}
-                      group={group}
-                      isExpanded={Boolean(expandedGroups[groupKey])}
-                      onToggle={() => toggleGroup(groupKey)}
-                    />
-                  );
-                })}
-              </CardContent>
-            </Card>
-          );
+                    return (
+                      <QualityGroup
+                        key={group.key}
+                        section={section}
+                        group={group}
+                        isExpanded={Boolean(expandedGroups[groupKey])}
+                        onToggle={() => toggleGroup(groupKey)}
+                      />
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            );
           })
         ) : (
           <Card className="border-border/60 shadow-sm xl:col-span-2">

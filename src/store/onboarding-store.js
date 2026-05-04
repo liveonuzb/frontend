@@ -47,6 +47,8 @@ const createInitialState = () => ({
   customAllergies: [],
   dietRequirementIds: [],
   customDietRequirements: [],
+  preferredCuisineIds: [],
+  customPreferredCuisines: [],
   dislikedFoodIds: [],
   customDislikedFoods: [],
   preferredIngredientIds: [],

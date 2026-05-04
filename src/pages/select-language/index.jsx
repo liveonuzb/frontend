@@ -57,6 +57,10 @@ const SelectLanguagePage = () => {
   const handleContinue = () => {
     setCurrentLanguage(selected);
     if (returnTo) {
+      if (!mode) {
+        navigate("/auth/select-mode", { state: { returnTo } });
+        return;
+      }
       navigate(returnTo, { replace: true });
       return;
     }

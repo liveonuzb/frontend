@@ -35,6 +35,8 @@ describe("user onboarding payload", () => {
         customAllergies: [" Peanut ", "peanut", ""],
         dietRequirementIds: ["2"],
         customDietRequirements: ["No pork", " no pork "],
+        preferredCuisineIds: ["6", 6, "bad"],
+        customPreferredCuisines: [" Uzbek ", "uzbek"],
         dislikedFoodIds: ["3"],
         customDislikedFoods: [" Liver "],
         preferredIngredientIds: ["12"],
@@ -76,6 +78,8 @@ describe("user onboarding payload", () => {
         customAllergies: ["Peanut"],
         dietRequirementIds: [2],
         customDietRequirements: ["No pork"],
+        preferredCuisineIds: [6],
+        customPreferredCuisines: ["Uzbek"],
         dislikedFoodIds: [3],
         customDislikedFoods: ["Liver"],
         preferredIngredientIds: [12],
@@ -94,9 +98,10 @@ describe("user onboarding payload", () => {
   });
 
   it("dedupes custom chip labels case-insensitively", () => {
-    expect(normalizeCustomTextArray([" halal ", "Halal", "no sugar"])).toEqual(
-      ["halal", "no sugar"],
-    );
+    expect(normalizeCustomTextArray([" halal ", "Halal", "no sugar"])).toEqual([
+      "halal",
+      "no sugar",
+    ]);
   });
 
   it("removes disliked exercise conflicts when normalizing preferences", () => {
