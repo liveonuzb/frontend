@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router";
 import {
   ArrowRightIcon,
@@ -7,7 +7,6 @@ import {
   BarChart3Icon,
   CheckCircle2Icon,
   CheckIcon,
-  ChevronDownIcon,
   CrownIcon,
   DropletsIcon,
   DumbbellIcon,
@@ -31,7 +30,24 @@ import {
   useScroll,
   useTransform,
 } from "framer-motion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { getPostAuthRoute } from "@/modules/auth/lib/auth-utils.js";
 import { useAppModeStore, useAuthStore, useLanguageStore } from "@/store";
@@ -938,7 +954,7 @@ const MotionSection = ({ id, eventName, children, className }) => {
   return (
     <motion.section
       id={id}
-      className={className}
+      className={cn("scroll-mt-24", className)}
       initial={shouldReduceMotion ? false : { opacity: 0, y: 28 }}
       whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.2 }}
@@ -956,35 +972,32 @@ const CTAButton = ({ children, onClick, variant = "primary", className }) => (
   <Button
     type="button"
     size="xl"
+    variant={variant === "light" ? "secondary" : "default"}
     onClick={onClick}
     className={cn(
-      "min-h-12 px-5 text-sm font-bold transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-orange-300 md:px-6 md:text-base",
-      variant === "primary" &&
-        "bg-orange-500 text-white shadow-[0_18px_44px_rgba(249,115,22,0.28)] hover:bg-orange-500/90",
+      "min-h-11 gap-2 px-5 text-sm font-medium md:px-6",
       variant === "dark" &&
-        "bg-slate-950 text-white shadow-[0_18px_44px_rgba(15,23,42,0.18)] hover:bg-slate-900",
+        "bg-none bg-foreground text-background hover:bg-foreground/90",
       variant === "light" &&
-        "bg-white text-slate-950 shadow-none hover:bg-white/90",
+        "bg-background text-foreground hover:bg-background/90",
       className,
     )}
   >
     {children}
-    <ArrowRightIcon className="size-4" />
+    <ArrowRightIcon data-icon="inline-end" />
   </Button>
 );
 
 const SectionHeader = ({ label, title, body, align = "left" }) => (
   <div className={cn("max-w-3xl", align === "center" && "mx-auto text-center")}>
-    <p className="text-sm font-black uppercase tracking-[0.18em] text-orange-600">
+    <Badge variant="outline" className="uppercase tracking-[0.14em]">
       {label}
-    </p>
-    <h2 className="mt-3 text-3xl font-black leading-[1.05] tracking-tight text-slate-950 md:text-5xl">
+    </Badge>
+    <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-foreground md:text-4xl">
       {title}
     </h2>
     {body ? (
-      <p className="mt-4 text-base leading-7 text-slate-600 md:text-lg">
-        {body}
-      </p>
+      <p className="mt-4 text-base leading-7 text-muted-foreground">{body}</p>
     ) : null}
   </div>
 );
@@ -1092,166 +1105,199 @@ const ProgressRing = ({ value = 72, label, caption }) => (
 
 const DashboardPreview = ({ copy, compact = false }) => (
   <motion.div
-    className={cn(
-      "relative overflow-hidden rounded-lg border border-white/15 bg-slate-950 p-3 text-white shadow-[0_30px_120px_rgba(2,6,23,0.34)] md:p-4",
-      compact ? "max-w-xl" : "w-full",
-    )}
+    className={cn("relative", compact ? "max-w-xl" : "w-full")}
     initial={{ opacity: 0, y: 22 }}
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true, amount: 0.35 }}
     transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
     aria-label={copy.today}
   >
-    <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-orange-300">
-          LiveOn cockpit
-        </p>
-        <h3 className="mt-2 text-2xl font-black">{copy.today}</h3>
-        <p className="mt-2 max-w-md text-sm leading-6 text-white/60">
-          {copy.ai}
-        </p>
-      </div>
-      <div className="hidden min-h-10 items-center gap-2 rounded-md bg-emerald-400/12 px-3 text-sm font-bold text-emerald-200 sm:flex">
-        <SparklesIcon className="size-4" />
-        AI ready
-      </div>
-    </div>
-
-    <div className="mt-4 grid gap-3 md:grid-cols-[0.95fr_1.05fr]">
-      <div className="grid gap-3">
-        <div className="rounded-lg bg-white/[0.06] p-4">
-          <ProgressRing
-            value={78}
-            label={copy.calories}
-            caption={copy.protein}
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <MetricTile
-            icon={DropletsIcon}
-            value={copy.water}
-            label="Water"
-            tone="blue"
-          />
-          <MetricTile
-            icon={FlameIcon}
-            value={copy.streak}
-            label="Streak"
-            tone="orange"
-          />
-        </div>
-        <div className="rounded-lg border border-orange-400/20 bg-orange-400/10 p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-sm text-orange-100/70">{copy.level}</p>
-              <p className="mt-1 text-xl font-black">{copy.points}</p>
-            </div>
-            <TrophyIcon className="size-9 text-orange-300" />
+    <Card
+      className={cn(
+        "overflow-hidden border-white/15 bg-slate-950 text-white shadow-[0_30px_120px_rgba(2,6,23,0.34)] ring-white/10",
+        compact ? "max-w-xl" : "w-full",
+      )}
+    >
+      <CardHeader className="border-b border-white/10">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <Badge
+              variant="outline"
+              className="border-white/15 bg-white/5 text-orange-200"
+            >
+              LiveOn cockpit
+            </Badge>
+            <CardTitle className="mt-3 text-2xl font-semibold text-white">
+              {copy.today}
+            </CardTitle>
+            <CardDescription className="mt-2 max-w-md leading-6 text-white/60">
+              {copy.ai}
+            </CardDescription>
           </div>
-          <div className="mt-4 h-2 overflow-hidden rounded-sm bg-white/10">
-            <motion.div
-              className="h-full rounded-sm bg-orange-400"
-              initial={{ width: "18%" }}
-              whileInView={{ width: "68%" }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
+          <Badge className="hidden bg-emerald-400/15 text-emerald-100 sm:inline-flex">
+            <SparklesIcon data-icon="inline-start" />
+            AI ready
+          </Badge>
+        </div>
+      </CardHeader>
+
+      <CardContent className="grid gap-3 pt-4 md:grid-cols-[0.95fr_1.05fr]">
+        <div className="grid gap-3">
+          <Card className="bg-white/[0.06] text-white ring-white/10">
+            <CardContent className="pt-6">
+              <ProgressRing
+                value={78}
+                label={copy.calories}
+                caption={copy.protein}
+              />
+            </CardContent>
+          </Card>
+          <div className="grid grid-cols-2 gap-3">
+            <MetricTile
+              icon={DropletsIcon}
+              value={copy.water}
+              label="Water"
+              tone="blue"
+            />
+            <MetricTile
+              icon={FlameIcon}
+              value={copy.streak}
+              label="Streak"
+              tone="orange"
             />
           </div>
-        </div>
-      </div>
-
-      <div className="grid gap-3">
-        <div className="rounded-lg bg-white p-3 text-slate-950">
-          <div className="flex items-center justify-between gap-3">
-            <p className="font-black">{copy.mealTitle}</p>
-            <UtensilsIcon className="size-5 text-emerald-600" />
-          </div>
-          <div className="mt-3 grid gap-2">
-            {copy.meals.map(([name, meal, kcal], index) => (
-              <div
-                key={name}
-                className="grid min-h-14 grid-cols-[40px_1fr_auto] items-center gap-3 rounded-md bg-slate-50 px-3"
-              >
-                <img
-                  src={
-                    [
-                      "/madagascar/dashboard/light/breakfast.png",
-                      "/madagascar/dashboard/light/lunch.png",
-                      "/madagascar/dashboard/light/dinner.png",
-                    ][index]
-                  }
-                  alt=""
-                  className="size-9 rounded-md object-cover"
-                  loading="lazy"
-                />
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-black">
-                    {name}
-                  </span>
-                  <span className="block truncate text-xs text-slate-500">
-                    {meal}
-                  </span>
-                </span>
-                <span className="text-xs font-black text-slate-500">
-                  {kcal}
-                </span>
+          <Card className="hidden border-orange-400/20 bg-orange-400/10 text-white ring-orange-300/20 sm:flex">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm text-orange-100/70">{copy.level}</p>
+                  <p className="mt-1 text-xl font-semibold">{copy.points}</p>
+                </div>
+                <TrophyIcon className="size-9 text-orange-300" />
               </div>
-            ))}
-          </div>
+              <Progress
+                value={68}
+                className="mt-4 bg-white/10 [&>div]:bg-orange-400"
+              />
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-1 xl:grid-cols-2">
-          <div className="rounded-lg bg-white/[0.06] p-4">
-            <DumbbellIcon className="size-7 text-orange-300" />
-            <p className="mt-3 text-sm text-white/55">{copy.workoutTitle}</p>
-            <p className="mt-1 font-black">{copy.workout}</p>
-          </div>
-          <div className="rounded-lg bg-white/[0.06] p-4">
-            <BadgeCheckIcon className="size-7 text-emerald-300" />
-            <p className="mt-3 text-sm text-white/55">{copy.challenge}</p>
-            <p className="mt-1 font-black">{copy.checklistTitle}</p>
-          </div>
-        </div>
+        <div className="grid gap-3">
+          <Card className="bg-background text-foreground">
+            <CardHeader className="!flex flex-row items-center justify-between gap-3 pb-0">
+              <CardTitle className="font-semibold">{copy.mealTitle}</CardTitle>
+              <UtensilsIcon className="size-5 text-emerald-600" />
+            </CardHeader>
+            <CardContent className="grid gap-2 pt-3">
+              {copy.meals.map(([name, meal, kcal], index) => (
+                <div
+                  key={name}
+                  className="grid min-h-14 grid-cols-[40px_1fr_auto] items-center gap-3 rounded-xl bg-muted px-3"
+                >
+                  <img
+                    src={
+                      [
+                        "/madagascar/dashboard/light/breakfast.png",
+                        "/madagascar/dashboard/light/lunch.png",
+                        "/madagascar/dashboard/light/dinner.png",
+                      ][index]
+                    }
+                    alt=""
+                    className="size-9 rounded-lg object-cover"
+                    loading="lazy"
+                  />
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium">
+                      {name}
+                    </span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {meal}
+                    </span>
+                  </span>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {kcal}
+                  </span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
 
-        <div className="rounded-lg bg-emerald-400/10 p-4">
-          <div className="grid gap-2">
-            {copy.checklist.map((item) => (
-              <div key={item} className="flex items-center gap-2 text-sm">
-                <CheckCircle2Icon className="size-4 text-emerald-300" />
-                <span className="font-semibold">{item}</span>
+          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-1 xl:grid-cols-2">
+            <Card className="bg-white/[0.06] text-white ring-white/10">
+              <CardHeader>
+                <DumbbellIcon className="size-7 text-orange-300" />
+                <CardDescription className="text-white/55">
+                  {copy.workoutTitle}
+                </CardDescription>
+                <CardTitle className="font-semibold text-white">
+                  {copy.workout}
+                </CardTitle>
+              </CardHeader>
+            </Card>
+            <Card className="hidden bg-white/[0.06] text-white ring-white/10 sm:flex">
+              <CardHeader>
+                <BadgeCheckIcon className="size-7 text-emerald-300" />
+                <CardDescription className="text-white/55">
+                  {copy.challenge}
+                </CardDescription>
+                <CardTitle className="font-semibold text-white">
+                  {copy.checklistTitle}
+                </CardTitle>
+              </CardHeader>
+            </Card>
+          </div>
+
+          <Card className="hidden bg-emerald-400/10 text-white ring-emerald-300/20 md:flex">
+            <CardContent className="pt-6">
+              <div className="grid gap-2">
+                {copy.checklist.map((item) => (
+                  <div key={item} className="flex items-center gap-2 text-sm">
+                    <CheckCircle2Icon className="size-4 text-emerald-300" />
+                    <span className="font-medium">{item}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <p className="mt-4 text-sm leading-6 text-emerald-50/70">
-            {copy.recommendation}
-          </p>
+              <p className="mt-4 text-sm leading-6 text-emerald-50/70">
+                {copy.recommendation}
+              </p>
+            </CardContent>
+          </Card>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   </motion.div>
 );
 
 const MetricTile = ({ icon: Icon, value, label, tone }) => (
-  <div className="rounded-lg bg-white/[0.06] p-4">
-    <Icon
-      className={cn(
-        "size-6",
-        tone === "blue" ? "text-blue-300" : "text-orange-300",
-      )}
-    />
-    <p className="mt-3 text-sm text-white/55">{label}</p>
-    <p className="mt-1 text-lg font-black">{value}</p>
-  </div>
+  <Card className="bg-white/[0.06] text-white ring-white/10">
+    <CardHeader>
+      <Icon
+        className={cn(
+          "size-6",
+          tone === "blue" ? "text-blue-300" : "text-orange-300",
+        )}
+      />
+      <CardDescription className="text-white/55">{label}</CardDescription>
+      <CardTitle className="text-lg font-semibold text-white">
+        {value}
+      </CardTitle>
+    </CardHeader>
+  </Card>
 );
 
 const TrustBar = ({ items }) => (
-  <section className="border-y border-slate-200 bg-white">
-    <div className="mx-auto grid max-w-7xl divide-y divide-slate-200 px-5 md:grid-cols-4 md:divide-x md:divide-y-0 md:px-8">
-      {items.map(([value, label]) => (
+  <section className="border-y border-border bg-background">
+    <div className="mx-auto grid max-w-7xl px-5 md:grid-cols-4 md:px-8">
+      {items.map(([value, label], index) => (
         <div key={value} className="py-5 md:px-5">
-          <p className="text-xl font-black text-slate-950">{value}</p>
-          <p className="mt-1 text-sm leading-5 text-slate-500">{label}</p>
+          <Badge variant="secondary">{value}</Badge>
+          <p className="mt-2 text-sm leading-5 text-muted-foreground">
+            {label}
+          </p>
+          {index < items.length - 1 ? (
+            <Separator className="mt-5 md:hidden" />
+          ) : null}
         </div>
       ))}
     </div>
@@ -1259,65 +1305,69 @@ const TrustBar = ({ items }) => (
 );
 
 const StepCard = ({ index, title, body }) => (
-  <motion.div
-    className="relative border-b border-slate-200 bg-white p-6 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0"
-    whileHover={{ y: -4 }}
-    transition={{ duration: 0.18 }}
-  >
-    <span className="flex size-11 items-center justify-center rounded-md bg-slate-950 text-sm font-black text-white">
-      {index}
-    </span>
-    <div className="mt-6 h-1 rounded-sm bg-slate-100">
-      <div className="h-full w-2/3 rounded-sm bg-orange-500" />
-    </div>
-    <h3 className="mt-6 text-xl font-black text-slate-950">{title}</h3>
-    <p className="mt-3 leading-7 text-slate-600">{body}</p>
-  </motion.div>
+  <motion.article whileHover={{ y: -4 }} transition={{ duration: 0.18 }}>
+    <Card className="h-full rounded-none border-0 ring-0">
+      <CardHeader>
+        <Badge className="size-11 rounded-xl text-sm">{index}</Badge>
+        <Progress value={66} className="mt-4" />
+        <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+        <CardDescription className="leading-7">{body}</CardDescription>
+      </CardHeader>
+    </Card>
+  </motion.article>
 );
 
 const FeatureCard = ({ icon: Icon, label }) => (
-  <motion.div
-    className="flex min-h-16 items-center gap-3 rounded-lg border border-slate-200 bg-white px-4"
-    whileHover={{ y: -3 }}
-    transition={{ duration: 0.18 }}
-  >
-    <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-slate-950 text-white">
-      <Icon className="size-5" />
-    </span>
-    <span className="font-black text-slate-800">{label}</span>
+  <motion.div whileHover={{ y: -3 }} transition={{ duration: 0.18 }}>
+    <Card size="sm">
+      <CardContent className="flex min-h-16 items-center gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-foreground text-background">
+          <Icon className="size-5" />
+        </span>
+        <CardTitle className="font-semibold">{label}</CardTitle>
+      </CardContent>
+    </Card>
   </motion.div>
 );
 
 const MealPlanCard = ({ data }) => (
-  <div className="rounded-lg bg-white p-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
-    <SaladIcon className="size-8 text-emerald-600" />
-    <h3 className="mt-5 text-2xl font-black">{data.title}</h3>
-    <p className="mt-3 leading-7 text-slate-600">{data.body}</p>
-    <div className="mt-5 grid gap-3">
+  <Card>
+    <CardHeader>
+      <SaladIcon className="size-8 text-emerald-600" />
+      <CardTitle className="text-xl font-semibold">{data.title}</CardTitle>
+      <CardDescription className="leading-7">{data.body}</CardDescription>
+    </CardHeader>
+    <CardContent className="grid gap-3">
       {data.bullets.map((item) => (
-        <div key={item} className="flex items-center gap-2 text-sm font-bold">
+        <div key={item} className="flex items-center gap-2 text-sm font-medium">
           <CheckCircle2Icon className="size-4 text-emerald-600" />
           {item}
         </div>
       ))}
-    </div>
-  </div>
+    </CardContent>
+  </Card>
 );
 
 const WorkoutPlanCard = ({ data }) => (
-  <div className="rounded-lg bg-slate-950 p-5 text-white shadow-[0_24px_80px_rgba(15,23,42,0.16)]">
-    <DumbbellIcon className="size-8 text-orange-300" />
-    <h3 className="mt-5 text-2xl font-black">{data.title}</h3>
-    <p className="mt-3 leading-7 text-white/65">{data.body}</p>
-    <div className="mt-5 grid gap-3">
+  <Card className="bg-slate-950 text-white ring-white/10">
+    <CardHeader>
+      <DumbbellIcon className="size-8 text-orange-300" />
+      <CardTitle className="text-xl font-semibold text-white">
+        {data.title}
+      </CardTitle>
+      <CardDescription className="leading-7 text-white/65">
+        {data.body}
+      </CardDescription>
+    </CardHeader>
+    <CardContent className="grid gap-3">
       {data.bullets.map((item) => (
-        <div key={item} className="flex items-center gap-2 text-sm font-bold">
+        <div key={item} className="flex items-center gap-2 text-sm font-medium">
           <CheckCircle2Icon className="size-4 text-orange-300" />
           {item}
         </div>
       ))}
-    </div>
-  </div>
+    </CardContent>
+  </Card>
 );
 
 const GamificationCard = ({
@@ -1327,62 +1377,65 @@ const GamificationCard = ({
   body,
   tone = "orange",
 }) => (
-  <motion.div
-    className="rounded-lg border border-white/10 bg-white/[0.06] p-5"
-    whileHover={{ y: -4 }}
-    transition={{ duration: 0.18 }}
-  >
-    <Icon
-      className={cn(
-        "size-8",
-        tone === "emerald" && "text-emerald-300",
-        tone === "blue" && "text-blue-300",
-        tone === "orange" && "text-orange-300",
-      )}
-    />
-    <p className="mt-5 text-sm font-bold uppercase tracking-[0.16em] text-white/45">
-      {title}
-    </p>
-    <p className="mt-2 text-2xl font-black text-white">{value}</p>
-    <p className="mt-2 text-sm leading-6 text-white/60">{body}</p>
+  <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.18 }}>
+    <Card className="h-full border-white/10 bg-white/[0.06] text-white ring-white/10">
+      <CardHeader>
+        <Icon
+          className={cn(
+            "size-8",
+            tone === "emerald" && "text-emerald-300",
+            tone === "blue" && "text-blue-300",
+            tone === "orange" && "text-orange-300",
+          )}
+        />
+        <CardDescription className="uppercase tracking-[0.14em] text-white/45">
+          {title}
+        </CardDescription>
+        <CardTitle className="text-2xl font-semibold text-white">
+          {value}
+        </CardTitle>
+        <CardDescription className="leading-6 text-white/60">
+          {body}
+        </CardDescription>
+      </CardHeader>
+    </Card>
   </motion.div>
 );
 
 const LocalFoodBudgetSection = ({ copy }) => (
-  <MotionSection id="local" className="bg-white py-16 md:py-24">
+  <MotionSection id="local" className="bg-background py-16 md:py-24">
     <div className="mx-auto grid max-w-7xl gap-10 px-5 md:grid-cols-[0.9fr_1.1fr] md:items-center md:px-8">
       <SectionHeader label={copy.label} title={copy.title} body={copy.body} />
       <div className="grid gap-4">
-        <div className="rounded-lg border border-slate-200 bg-[#fbfaf7] p-5">
-          <div className="flex items-center justify-between gap-4">
+        <Card>
+          <CardHeader className="!flex flex-row items-center justify-between gap-4">
             <div>
-              <p className="text-lg font-black">{copy.slider.title}</p>
-              <p className="mt-1 text-sm text-slate-500">
+              <CardTitle className="text-lg font-semibold">
+                {copy.slider.title}
+              </CardTitle>
+              <CardDescription className="mt-1">
                 {copy.slider.low} → {copy.slider.mid} → {copy.slider.high}
-              </p>
+              </CardDescription>
             </div>
             <WalletCardsIcon className="size-8 text-orange-600" />
-          </div>
-          <div className="mt-6 h-3 rounded-sm bg-slate-200">
-            <div className="relative h-full w-[58%] rounded-sm bg-orange-500">
-              <span className="absolute right-0 top-1/2 size-5 -translate-y-1/2 translate-x-1/2 rounded-full border-4 border-white bg-orange-500 shadow-lg" />
+          </CardHeader>
+          <CardContent>
+            <Progress value={58} className="h-3" />
+            <div className="mt-5 grid grid-cols-3 text-xs font-medium text-muted-foreground">
+              <span>{copy.slider.low}</span>
+              <span className="text-center">{copy.slider.mid}</span>
+              <span className="text-right">{copy.slider.high}</span>
             </div>
-          </div>
-          <div className="mt-5 grid grid-cols-3 text-xs font-black text-slate-500">
-            <span>{copy.slider.low}</span>
-            <span className="text-center">{copy.slider.mid}</span>
-            <span className="text-right">{copy.slider.high}</span>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
         <div className="grid gap-3 sm:grid-cols-2">
           {copy.cards.map(([title, body]) => (
-            <div
-              key={title}
-              className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
-            >
-              <p className="font-black">{title}</p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">{body}</p>
-            </div>
+            <Card key={title}>
+              <CardHeader>
+                <CardTitle className="font-semibold">{title}</CardTitle>
+                <CardDescription className="leading-6">{body}</CardDescription>
+              </CardHeader>
+            </Card>
           ))}
         </div>
       </div>
@@ -1394,42 +1447,46 @@ const ComparisonTable = ({ copy }) => (
   <MotionSection
     id="comparison"
     eventName="comparison_section_viewed"
-    className="bg-[#fbfaf7] py-16 md:py-24"
+    className="bg-muted/35 py-16 md:py-24"
   >
     <div className="mx-auto max-w-7xl px-5 md:px-8">
       <SectionHeader align="center" label={copy.label} title={copy.title} />
       <div className="mt-10 grid gap-4 md:grid-cols-2">
-        <div className="rounded-lg border border-slate-200 bg-white p-5">
-          <div className="flex items-center gap-3">
+        <Card>
+          <CardHeader className="!flex flex-row items-center gap-3">
             <XIcon className="size-6 text-slate-400" />
-            <h3 className="text-2xl font-black">{copy.genericTitle}</h3>
-          </div>
-          <div className="mt-6 grid gap-3">
+            <CardTitle className="text-xl font-semibold">
+              {copy.genericTitle}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3">
             {copy.generic.map((item) => (
               <div
                 key={item}
-                className="flex items-center gap-3 text-slate-600"
+                className="flex items-center gap-3 text-muted-foreground"
               >
                 <XIcon className="size-4 text-slate-400" />
                 <span>{item}</span>
               </div>
             ))}
-          </div>
-        </div>
-        <div className="rounded-lg border border-orange-200 bg-slate-950 p-5 text-white shadow-[0_24px_80px_rgba(15,23,42,0.18)]">
-          <div className="flex items-center gap-3">
+          </CardContent>
+        </Card>
+        <Card className="border-orange-200 bg-slate-950 text-white shadow-[0_24px_80px_rgba(15,23,42,0.18)] ring-orange-300/20">
+          <CardHeader className="!flex flex-row items-center gap-3">
             <CheckCircle2Icon className="size-6 text-orange-300" />
-            <h3 className="text-2xl font-black">{copy.liveonTitle}</h3>
-          </div>
-          <div className="mt-6 grid gap-3">
+            <CardTitle className="text-xl font-semibold text-white">
+              {copy.liveonTitle}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3">
             {copy.liveon.map((item) => (
               <div key={item} className="flex items-center gap-3 text-white/78">
                 <CheckIcon className="size-4 text-orange-300" />
                 <span>{item}</span>
               </div>
             ))}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   </MotionSection>
@@ -1438,60 +1495,57 @@ const ComparisonTable = ({ copy }) => (
 const TestimonialCard = ({ item, index }) => {
   const [name, age, goal, result, quote] = item;
   return (
-    <motion.article
-      className="rounded-lg border border-slate-200 bg-white p-5"
-      whileHover={{ y: -4 }}
-      transition={{ duration: 0.18 }}
-    >
-      <div className="flex items-center gap-3">
-        <div className="grid size-12 place-items-center rounded-md bg-slate-950 text-lg font-black text-white">
-          {name[0]}
-        </div>
-        <div>
-          <h3 className="font-black">
-            {name}, {age}
-          </h3>
-          <p className="text-sm text-slate-500">{goal}</p>
-        </div>
-      </div>
-      <div className="mt-5 rounded-md bg-emerald-50 px-3 py-2 text-sm font-black text-emerald-700">
-        {result}
-      </div>
-      <p className="mt-5 leading-7 text-slate-700">“{quote}”</p>
-      <div className="mt-5 h-2 rounded-sm bg-slate-100">
-        <div
-          className="h-full rounded-sm bg-orange-500"
-          style={{ width: `${64 + index * 10}%` }}
-        />
-      </div>
+    <motion.article whileHover={{ y: -4 }} transition={{ duration: 0.18 }}>
+      <Card className="h-full">
+        <CardHeader className="!flex flex-row items-center gap-3">
+          <div className="grid size-12 place-items-center rounded-xl bg-foreground text-lg font-semibold text-background">
+            {name[0]}
+          </div>
+          <div>
+            <CardTitle className="font-semibold">
+              {name}, {age}
+            </CardTitle>
+            <CardDescription>{goal}</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Badge className="bg-emerald-100 text-emerald-800">{result}</Badge>
+          <p className="mt-5 leading-7 text-foreground/80">“{quote}”</p>
+          <Progress value={64 + index * 10} className="mt-5" />
+        </CardContent>
+      </Card>
     </motion.article>
   );
 };
 
 const PricingCard = ({ title, features, cta, highlighted, onClick }) => (
-  <div
+  <Card
     className={cn(
-      "rounded-lg border p-5",
+      "h-full",
       highlighted
-        ? "border-orange-300 bg-slate-950 text-white shadow-[0_24px_80px_rgba(15,23,42,0.18)]"
-        : "border-slate-200 bg-white text-slate-950",
+        ? "border-orange-300 bg-slate-950 text-white shadow-[0_24px_80px_rgba(15,23,42,0.18)] ring-orange-300/20"
+        : "text-foreground",
     )}
   >
-    <div className="flex items-center justify-between gap-4">
-      <h3 className="text-2xl font-black">{title}</h3>
+    <CardHeader className="!flex flex-row items-center justify-between gap-4">
+      <CardTitle
+        className={cn("text-xl font-semibold", highlighted && "text-white")}
+      >
+        {title}
+      </CardTitle>
       {highlighted ? (
         <CrownIcon className="size-8 text-orange-300" />
       ) : (
-        <LockKeyholeIcon className="size-8 text-slate-400" />
+        <LockKeyholeIcon className="size-8 text-muted-foreground" />
       )}
-    </div>
-    <div className="mt-6 grid gap-3">
+    </CardHeader>
+    <CardContent className="grid gap-3">
       {features.map((item) => (
         <div
           key={item}
           className={cn(
             "flex items-center gap-2 text-sm font-semibold",
-            highlighted ? "text-white/72" : "text-slate-600",
+            highlighted ? "text-white/72" : "text-muted-foreground",
           )}
         >
           <CheckCircle2Icon
@@ -1503,63 +1557,49 @@ const PricingCard = ({ title, features, cta, highlighted, onClick }) => (
           {item}
         </div>
       ))}
-    </div>
-    <CTAButton
-      variant={highlighted ? "primary" : "dark"}
-      onClick={onClick}
-      className="mt-7 w-full"
-    >
-      {cta}
-    </CTAButton>
-  </div>
+    </CardContent>
+    <CardFooter>
+      <CTAButton
+        variant={highlighted ? "primary" : "dark"}
+        onClick={onClick}
+        className="w-full"
+      >
+        {cta}
+      </CTAButton>
+    </CardFooter>
+  </Card>
 );
 
 const FAQAccordion = ({ items }) => {
-  const [openIndex, setOpenIndex] = useState(0);
-
   return (
-    <div className="mx-auto mt-10 max-w-4xl divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
-      {items.map(([question, answer], index) => {
-        const isOpen = openIndex === index;
-        return (
-          <div key={question}>
-            <button
-              type="button"
-              onClick={() => {
-                setOpenIndex(isOpen ? -1 : index);
-                trackLandingEvent("faq_opened", { question });
-              }}
-              className="flex min-h-16 w-full items-center justify-between gap-4 px-5 text-left font-black outline-none focus-visible:ring-2 focus-visible:ring-orange-300"
-              aria-expanded={isOpen}
-            >
-              {question}
-              <ChevronDownIcon
-                className={cn(
-                  "size-5 shrink-0 text-slate-400 transition-transform",
-                  isOpen && "rotate-180",
-                )}
-              />
-            </button>
-            <motion.div
-              initial={false}
-              animate={{ height: isOpen ? "auto" : 0, opacity: isOpen ? 1 : 0 }}
-              transition={{ duration: 0.22 }}
-              className="overflow-hidden"
-            >
-              <p className="px-5 pb-5 leading-7 text-slate-600">{answer}</p>
-            </motion.div>
-          </div>
-        );
-      })}
-    </div>
+    <Accordion
+      type="single"
+      collapsible
+      defaultValue="faq-0"
+      className="mx-auto mt-10 max-w-4xl bg-card"
+    >
+      {items.map(([question, answer], index) => (
+        <AccordionItem key={question} value={`faq-${index}`}>
+          <AccordionTrigger
+            onClick={() => trackLandingEvent("faq_opened", { question })}
+            className="min-h-16 text-base font-medium no-underline hover:no-underline"
+          >
+            {question}
+          </AccordionTrigger>
+          <AccordionContent className="leading-7 text-muted-foreground">
+            {answer}
+          </AccordionContent>
+        </AccordionItem>
+      ))}
+    </Accordion>
   );
 };
 
 const FinalCTA = ({ copy, preview, onStart }) => (
   <section className="px-5 pb-28 md:px-8">
-    <div className="mx-auto grid max-w-7xl gap-8 overflow-hidden rounded-lg bg-slate-950 p-5 text-white md:grid-cols-[0.95fr_1.05fr] md:p-8">
+    <Card className="mx-auto !grid max-w-7xl gap-8 overflow-hidden bg-slate-950 p-5 text-white ring-white/10 md:grid-cols-[0.95fr_1.05fr] md:p-8">
       <div className="flex flex-col justify-center">
-        <h2 className="text-3xl font-black leading-tight md:text-5xl">
+        <h2 className="text-3xl font-semibold leading-tight md:text-5xl">
           {copy.title}
         </h2>
         <p className="mt-4 max-w-xl leading-7 text-white/70">{copy.body}</p>
@@ -1570,25 +1610,26 @@ const FinalCTA = ({ copy, preview, onStart }) => (
         </div>
         <div className="mt-5 flex flex-wrap gap-2">
           {copy.microcopy.map((item) => (
-            <span
+            <Badge
               key={item}
-              className="rounded-md border border-white/15 bg-white/[0.06] px-3 py-2 text-sm font-semibold text-white/70"
+              variant="outline"
+              className="border-white/15 bg-white/[0.06] text-white/70"
             >
               {item}
-            </span>
+            </Badge>
           ))}
         </div>
       </div>
       <DashboardPreview copy={preview} compact />
-    </div>
+    </Card>
   </section>
 );
 
 const StickyCTA = ({ copy, onStart }) => (
-  <div className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-slate-950/88 px-4 py-3 text-white shadow-[0_-16px_48px_rgba(15,23,42,0.18)] backdrop-blur-xl md:left-auto md:right-6 md:bottom-6 md:w-[360px] md:rounded-lg md:border">
+  <Card className="fixed inset-x-0 bottom-0 z-50 rounded-none border-white/10 bg-slate-950/88 px-4 py-3 text-white shadow-[0_-16px_48px_rgba(15,23,42,0.18)] ring-white/10 backdrop-blur-xl md:left-auto md:right-6 md:bottom-6 md:w-[360px] md:rounded-2xl md:border">
     <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 md:max-w-none">
       <div>
-        <p className="text-sm font-black">{copy.text}</p>
+        <p className="text-sm font-semibold">{copy.text}</p>
         <p className="text-xs text-white/55">LiveOn daily cockpit</p>
       </div>
       <CTAButton
@@ -1598,7 +1639,7 @@ const StickyCTA = ({ copy, onStart }) => (
         {copy.cta}
       </CTAButton>
     </div>
-  </div>
+  </Card>
 );
 
 const LandingPage = () => {
@@ -1665,7 +1706,7 @@ const LandingPage = () => {
   };
 
   return (
-    <main className="min-h-screen bg-[#fbfaf7] pb-16 text-slate-950">
+    <main className="min-h-screen bg-background pb-24 text-foreground md:pb-0">
       <LandingHeader
         copy={copy}
         language={language}
@@ -1697,8 +1738,10 @@ const LandingPage = () => {
             transition={{ duration: 0.58, ease: [0.22, 1, 0.36, 1] }}
             className="max-w-3xl"
           >
-            <p className="text-2xl font-black text-white md:text-3xl">LiveOn</p>
-            <h1 className="mt-5 text-4xl font-black leading-[0.98] tracking-tight sm:text-5xl md:text-6xl xl:text-7xl">
+            <p className="text-2xl font-semibold text-white md:text-3xl">
+              LiveOn
+            </p>
+            <h1 className="mt-5 text-4xl font-semibold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
               {copy.hero.title}
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-white/75">
@@ -1717,7 +1760,7 @@ const LandingPage = () => {
                 variant="outline"
                 size="xl"
                 onClick={viewPlanExample}
-                className="min-h-12 w-full border-white/25 bg-white/10 px-6 text-base font-bold text-white hover:bg-white/15 hover:text-white sm:w-auto"
+                className="min-h-11 w-full border-white/25 bg-white/10 px-6 text-base font-medium text-white hover:bg-white/15 hover:text-white sm:w-auto"
               >
                 {copy.hero.secondaryCta}
               </Button>
@@ -1725,12 +1768,13 @@ const LandingPage = () => {
 
             <div className="mt-5 flex flex-wrap gap-2">
               {heroMicrocopy.map((item) => (
-                <span
+                <Badge
                   key={item}
-                  className="inline-flex min-h-9 items-center rounded-md border border-white/15 bg-white/[0.06] px-3 text-sm font-semibold text-white/70"
+                  variant="outline"
+                  className="border-white/15 bg-white/[0.06] text-white/70"
                 >
                   {item}
-                </span>
+                </Badge>
               ))}
             </div>
 
@@ -1740,7 +1784,7 @@ const LandingPage = () => {
                   key={value}
                   className="border-l border-white/20 pl-4 text-white"
                 >
-                  <dt className="text-2xl font-black">{value}</dt>
+                  <dt className="text-2xl font-semibold">{value}</dt>
                   <dd className="mt-1 text-sm leading-5 text-white/58">
                     {label}
                   </dd>
@@ -1778,14 +1822,14 @@ const LandingPage = () => {
             {copy.how.cta}
           </CTAButton>
         </div>
-        <div className="grid overflow-hidden rounded-lg border border-slate-200 bg-white md:grid-cols-3">
+        <div className="grid overflow-hidden rounded-2xl border border-border bg-card md:grid-cols-3">
           {copy.how.steps.map(([title, body], index) => (
             <StepCard key={title} index={index + 1} title={title} body={body} />
           ))}
         </div>
       </MotionSection>
 
-      <MotionSection id="cockpit" className="bg-white py-16 md:py-24">
+      <MotionSection id="cockpit" className="bg-background py-16 md:py-24">
         <div className="mx-auto grid max-w-7xl gap-10 px-5 md:grid-cols-[1.08fr_0.92fr] md:items-center md:px-8">
           <DashboardPreview copy={copy.preview} compact />
           <div>
@@ -1809,7 +1853,7 @@ const LandingPage = () => {
         </div>
       </MotionSection>
 
-      <MotionSection id="plan" className="bg-[#fbfaf7] py-16 md:py-24">
+      <MotionSection id="plan" className="bg-muted/35 py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <SectionHeader
             align="center"
@@ -1823,12 +1867,11 @@ const LandingPage = () => {
           </div>
           <div className="mt-5 grid gap-3 md:grid-cols-4">
             {copy.plan.cards.map((item) => (
-              <div
-                key={item}
-                className="rounded-lg border border-slate-200 bg-white p-4 text-sm font-bold leading-6 text-slate-700"
-              >
-                {item}
-              </div>
+              <Card key={item} size="sm">
+                <CardContent className="pt-4 text-sm font-medium leading-6">
+                  {item}
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
@@ -1842,13 +1885,16 @@ const LandingPage = () => {
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <div className="grid gap-10 md:grid-cols-[0.9fr_1.1fr] md:items-start">
             <div>
-              <p className="text-sm font-black uppercase tracking-[0.18em] text-orange-300">
+              <Badge
+                variant="outline"
+                className="border-white/15 bg-white/[0.06] uppercase tracking-[0.14em] text-orange-200"
+              >
                 {copy.gamification.label}
-              </p>
-              <h2 className="mt-3 text-3xl font-black leading-[1.05] tracking-tight md:text-5xl">
+              </Badge>
+              <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight md:text-4xl">
                 {copy.gamification.title}
               </h2>
-              <p className="mt-4 text-lg leading-8 text-white/65">
+              <p className="mt-4 text-base leading-7 text-white/65">
                 {copy.gamification.body}
               </p>
               <CTAButton
@@ -1893,14 +1939,20 @@ const LandingPage = () => {
                 [MedalIcon, FlameIcon, CrownIcon, TargetIcon, ZapIcon][index] ??
                 BadgeCheckIcon;
               return (
-                <div
+                <Card
                   key={title}
-                  className="rounded-lg border border-white/10 bg-white/[0.04] p-4"
+                  className="border-white/10 bg-white/[0.04] text-white ring-white/10"
                 >
-                  <Icon className="size-6 text-orange-300" />
-                  <p className="mt-4 font-black">{title}</p>
-                  <p className="mt-2 text-sm leading-6 text-white/58">{body}</p>
-                </div>
+                  <CardHeader>
+                    <Icon className="size-6 text-orange-300" />
+                    <CardTitle className="font-semibold text-white">
+                      {title}
+                    </CardTitle>
+                    <CardDescription className="leading-6 text-white/58">
+                      {body}
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
               );
             })}
           </div>
@@ -1911,7 +1963,7 @@ const LandingPage = () => {
 
       <ComparisonTable copy={copy.comparison} />
 
-      <MotionSection id="testimonials" className="bg-white py-16 md:py-24">
+      <MotionSection id="testimonials" className="bg-background py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <SectionHeader
             align="center"
@@ -1930,7 +1982,7 @@ const LandingPage = () => {
       <MotionSection
         id="premium"
         eventName="pricing_viewed"
-        className="bg-[#fbfaf7] py-16 md:py-24"
+        className="bg-muted/35 py-16 md:py-24"
       >
         <div className="mx-auto max-w-6xl px-5 md:px-8">
           <SectionHeader
@@ -1956,7 +2008,7 @@ const LandingPage = () => {
         </div>
       </MotionSection>
 
-      <MotionSection id="faq" className="bg-white py-16 md:py-24">
+      <MotionSection id="faq" className="bg-background py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <SectionHeader
             align="center"
