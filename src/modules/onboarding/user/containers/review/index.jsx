@@ -12,6 +12,7 @@ import {
   HeartPulseIcon,
   Loader2Icon,
   SaladIcon,
+  TargetIcon,
   UserIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -47,12 +48,6 @@ const buildCompletePayload = (state) => ({
     activityLevel: state.activityLevel,
     weeklyWorkoutCount: state.weeklyWorkoutCount,
     workoutExperience: state.workoutExperience,
-    sleepHours: state.sleepHours,
-    workType: state.workType,
-    fastFoodFrequency: state.fastFoodFrequency,
-    sweetDrinkHabit: state.sweetDrinkHabit,
-    cookingTime: state.cookingTime,
-    cookingAccess: state.cookingAccess,
     mealFrequency: state.mealFrequency,
     foodBudgetTier: state.foodBudgetTier,
     workoutLocation: state.workoutLocation,
@@ -78,13 +73,6 @@ const buildCompletePayload = (state) => ({
     nutritionPreferenceKeys: state.nutritionPreferenceKeys,
     healthConstraints: state.healthConstraints,
     customHealthConstraints: state.customHealthConstraints,
-    forbiddenExercises: state.forbiddenExercises,
-    medications: state.medications,
-    supplements: state.supplements,
-    playsFootball: state.playsFootball,
-    cardioLevel: state.cardioLevel,
-    notificationPreference: state.notificationPreference,
-    dietRestrictions: state.dietRestrictions,
   }),
   completed: true,
 });
@@ -113,6 +101,9 @@ const validateRequired = (state, t) => {
   if (!hasValue(state.targetWeight?.value)) {
     errors.push(t("onboarding.review.missing.targetWeight"));
   }
+  if (!hasValue(state.weeklyPace)) {
+    errors.push(t("onboarding.review.missing.weeklyPace"));
+  }
   if (!hasValue(state.activityLevel)) {
     errors.push(t("onboarding.review.missing.activityLevel"));
   }
@@ -125,9 +116,13 @@ const validateRequired = (state, t) => {
   if (!hasValue(state.mealFrequency)) {
     errors.push(t("onboarding.review.missing.mealFrequency"));
   }
+  const healthConstraintsCompleted =
+    Array.isArray(state.completedUserOnboardingSteps) &&
+    state.completedUserOnboardingSteps.includes("health-constraints");
   if (
     !hasValue(state.healthConstraints) &&
-    !hasValue(state.customHealthConstraints)
+    !hasValue(state.customHealthConstraints) &&
+    !healthConstraintsCompleted
   ) {
     errors.push(t("onboarding.review.missing.healthConstraints"));
   }
@@ -332,8 +327,8 @@ const Index = () => {
           />
 
           <SummaryCard
-            icon={DumbbellIcon}
-            title={t("onboarding.review.sections.activity")}
+            icon={TargetIcon}
+            title={t("onboarding.review.sections.goals")}
             items={[
               [t("onboarding.review.fields.goal"), onboardingState.goal],
               [
@@ -343,16 +338,14 @@ const Index = () => {
                   : "",
               ],
               [
+                t("onboarding.review.fields.weeklyPace"),
+                onboardingState.weeklyPace
+                  ? `${onboardingState.weeklyPace} kg`
+                  : "",
+              ],
+              [
                 t("onboarding.review.fields.activityLevel"),
                 onboardingState.activityLevel,
-              ],
-              [
-                t("onboarding.review.fields.weeklyWorkoutCount"),
-                onboardingState.weeklyWorkoutCount,
-              ],
-              [
-                t("onboarding.review.fields.workoutExperience"),
-                onboardingState.workoutExperience,
               ],
             ]}
           />
@@ -406,13 +399,20 @@ const Index = () => {
                     (onboardingState.customHealthConstraints?.length ?? 0),
                 ),
               ],
+            ]}
+          />
+
+          <SummaryCard
+            icon={DumbbellIcon}
+            title={t("onboarding.review.sections.workout")}
+            items={[
               [
-                t("onboarding.review.fields.forbiddenExercises"),
-                String(onboardingState.forbiddenExercises?.length ?? 0),
+                t("onboarding.review.fields.weeklyWorkoutCount"),
+                onboardingState.weeklyWorkoutCount,
               ],
               [
-                t("onboarding.review.fields.cardioLevel"),
-                onboardingState.cardioLevel,
+                t("onboarding.review.fields.workoutExperience"),
+                onboardingState.workoutExperience,
               ],
             ]}
           />

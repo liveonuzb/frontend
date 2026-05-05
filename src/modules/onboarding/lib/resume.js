@@ -46,43 +46,16 @@ export const getNextUserOnboardingPath = (state) => {
     return "target-weight";
   }
 
+  if (!hasValue(state.weeklyPace)) {
+    return "weekly-pace";
+  }
+
+  if (!hasCompletedStep(state, "other-goals")) {
+    return "other-goals";
+  }
+
   if (!hasValue(state.activityLevel)) {
     return "activity-level";
-  }
-
-  if (!hasValue(state.weeklyWorkoutCount)) {
-    return "weekly-workout-count";
-  }
-
-  if (!hasValue(state.workoutExperience)) {
-    return "workout-experience";
-  }
-
-  if (
-    !hasValue(state.healthConstraints) &&
-    !hasValue(state.customHealthConstraints)
-  ) {
-    return "health-constraints";
-  }
-
-  if (!hasCompletedStep(state, "workout-location")) {
-    return "workout-location";
-  }
-
-  if (
-    !hasValue(state.equipmentIds) &&
-    !hasValue(state.customEquipment) &&
-    !hasCompletedStep(state, "workout-equipment")
-  ) {
-    return "workout-equipment";
-  }
-
-  if (
-    !hasValue(state.workoutBodyPartIds) &&
-    !hasValue(state.customWorkoutBodyParts) &&
-    !hasCompletedStep(state, "workout-body-parts")
-  ) {
-    return "workout-body-parts";
   }
 
   if (!hasValue(state.mealFrequency)) {
@@ -147,6 +120,42 @@ export const getNextUserOnboardingPath = (state) => {
     !hasCompletedStep(state, "disliked-ingredients")
   ) {
     return "disliked-ingredients";
+  }
+
+  if (
+    !hasValue(state.healthConstraints) &&
+    !hasValue(state.customHealthConstraints) &&
+    !hasCompletedStep(state, "health-constraints")
+  ) {
+    return "health-constraints";
+  }
+
+  if (!hasValue(state.weeklyWorkoutCount)) {
+    return "weekly-workout-count";
+  }
+
+  if (!hasValue(state.workoutExperience)) {
+    return "workout-experience";
+  }
+
+  if (!hasCompletedStep(state, "workout-location")) {
+    return "workout-location";
+  }
+
+  if (
+    !hasValue(state.equipmentIds) &&
+    !hasValue(state.customEquipment) &&
+    !hasCompletedStep(state, "workout-equipment")
+  ) {
+    return "workout-equipment";
+  }
+
+  if (
+    !hasValue(state.workoutBodyPartIds) &&
+    !hasValue(state.customWorkoutBodyParts) &&
+    !hasCompletedStep(state, "workout-body-parts")
+  ) {
+    return "workout-body-parts";
   }
 
   return "review";
