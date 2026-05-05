@@ -37,7 +37,8 @@ const ActiveMealPlanBanner = ({ activePlan }) => {
 
   return (
     <Link
-      to="/user/nutrition"
+      to="/user/nutrition/home"
+      state={{ openMealPlanBuilder: true, planId: activePlan.id }}
       className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-950 transition-colors hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100 dark:hover:bg-emerald-950/50"
     >
       <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/70 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200">

@@ -59,6 +59,8 @@ import {
   formatWeightDelta,
   getMacroBalanceMessage,
   isOnboardingPreferenceField,
+  normalizeCatalogIds,
+  normalizeCustomItems,
   unwrapApiData,
 } from "../../lib/personalization.js";
 import {
@@ -138,6 +140,19 @@ const extractOptions = (response, optionsKey) => {
   return Array.isArray(values) ? values : [];
 };
 
+const mergeOptions = (...groups) => {
+  const map = new Map();
+
+  for (const group of groups) {
+    for (const item of Array.isArray(group) ? group : []) {
+      if (!item?.id) continue;
+      map.set(Number(item.id), item);
+    }
+  }
+
+  return Array.from(map.values());
+};
+
 const resultFallbacks = {
   calorie: 2100,
   weightDiff: -10,
@@ -187,7 +202,10 @@ const getNumberOrFallback = (value, fallback) => {
   return Number.isFinite(numberValue) ? numberValue : fallback;
 };
 
-const formatResultNumber = (value) => formatNumber(value, "en-US");
+const formatResultNumber = (value) =>
+  value === null || value === undefined || value === ""
+    ? "-"
+    : formatNumber(value, "en-US");
 
 const formatResultLiters = (value) => {
   const liters = getNumberOrFallback(value, resultFallbacks.waterMl) / 1000;
@@ -208,21 +226,21 @@ const formatResultDate = (value) => {
 
 const resolveSummaryBudget = (onboarding = {}) => {
   if (onboarding?.foodBudgetTier) {
-    return budgetTierLabels[onboarding.foodBudgetTier] ?? resultFallbacks.budget;
+    return (
+      budgetTierLabels[onboarding.foodBudgetTier] ?? resultFallbacks.budget
+    );
   }
 
-  const amount = getNumberOrFallback(
-    onboarding?.foodBudget,
-    null,
-  );
+  const amount = getNumberOrFallback(onboarding?.foodBudget, null);
   if (amount === null) return resultFallbacks.budget;
 
   const currency = onboarding?.budgetCurrency || "UZS";
-  const period = {
-    daily: "kuniga",
-    weekly: "haftasiga",
-    monthly: "oyiga",
-  }[onboarding?.budgetPeriod] ?? "haftasiga";
+  const period =
+    {
+      daily: "kuniga",
+      weekly: "haftasiga",
+      monthly: "oyiga",
+    }[onboarding?.budgetPeriod] ?? "haftasiga";
 
   return `${formatResultNumber(amount)} ${currency} / ${period}`;
 };
@@ -232,7 +250,10 @@ const resolveResultSnapshot = (result = {}, onboarding = {}) => {
   const activityKey = onboarding?.activityLevel ?? result?.activityLevel;
 
   return {
-    calories: getNumberOrFallback(result?.dailyCalories, resultFallbacks.calorie),
+    calories: getNumberOrFallback(
+      result?.dailyCalories,
+      resultFallbacks.calorie,
+    ),
     weightDiff: getNumberOrFallback(
       result?.weightToChange,
       resultFallbacks.weightDiff,
@@ -271,18 +292,8 @@ const resolveResultSnapshot = (result = {}, onboarding = {}) => {
   };
 };
 
-const EditGlyph = () => (
-  <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border/70 bg-background/80 text-muted-foreground transition group-hover:text-primary">
-    <PencilIcon className="size-3.5" aria-hidden="true" />
-  </span>
-);
-
-const HeroInfoButton = ({ label, value, onClick }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="group flex min-h-[88px] items-start justify-between gap-3 rounded-[1.25rem] border border-border/70 bg-muted/30 p-3 text-left transition hover:border-primary/30 hover:bg-muted/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-  >
+const HeroInfoCard = ({ label, value }) => (
+  <div className="flex min-h-[88px] items-start justify-between gap-3 rounded-[1.25rem] border border-border/70 bg-muted/30 p-3 text-left">
     <span>
       <span className="block text-[11px] font-semibold leading-4 text-muted-foreground">
         {label}
@@ -291,11 +302,17 @@ const HeroInfoButton = ({ label, value, onClick }) => (
         {value}
       </span>
     </span>
-    <EditGlyph />
-  </button>
+  </div>
 );
 
-const MetricCard = ({ icon: Icon, label, value, unit, water = false, onEdit }) => {
+const MetricCard = ({
+  icon: Icon,
+  label,
+  value,
+  unit,
+  water = false,
+  onEdit,
+}) => {
   const interactive = typeof onEdit === "function";
   const Component = interactive ? "button" : "div";
 
@@ -333,7 +350,12 @@ const MetricCard = ({ icon: Icon, label, value, unit, water = false, onEdit }) =
 
 const SummaryItem = ({ icon: Icon, label, value }) => (
   <div className="flex items-center gap-3 rounded-[1.1rem] border border-border/70 bg-background/80 p-3">
-    <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-full", tone.badgeTone)}>
+    <span
+      className={cn(
+        "flex size-9 shrink-0 items-center justify-center rounded-full",
+        tone.badgeTone,
+      )}
+    >
       <Icon className="size-4" aria-hidden="true" />
     </span>
     <span className="min-w-0">
@@ -344,6 +366,29 @@ const SummaryItem = ({ icon: Icon, label, value }) => (
         {value}
       </span>
     </span>
+  </div>
+);
+
+const InfoMetric = ({ icon: Icon, label, value, water = false }) => (
+  <div className="rounded-[1.1rem] border border-border/70 bg-background/85 p-3 shadow-sm backdrop-blur">
+    <div className="flex items-center gap-2">
+      <span
+        className={cn(
+          "flex size-8 shrink-0 items-center justify-center rounded-full",
+          water
+            ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-300"
+            : tone.badgeTone,
+        )}
+      >
+        <Icon className="size-4" aria-hidden="true" />
+      </span>
+      <span className="min-w-0 truncate text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+        {label}
+      </span>
+    </div>
+    <div className="mt-2 truncate text-lg font-black text-foreground">
+      {value}
+    </div>
   </div>
 );
 
@@ -409,8 +454,8 @@ const CatalogChipEditor = ({ field, value, onChange, t }) => {
   const [search, setSearch] = React.useState("");
   const searchLabel = normalizeChipLabel(search);
   const searchKey = normalizeChipKey(searchLabel);
-  const selectedIds = normalizeEquipmentIds(value.ids);
-  const customItems = normalizeCustomEquipment(value.customItems);
+  const selectedIds = normalizeCatalogIds(value.ids);
+  const customItems = normalizeCustomItems(value.customItems);
   const baseQuery = useGetQuery({
     url: "/user/onboarding/options",
     queryProps: {
@@ -436,7 +481,7 @@ const CatalogChipEditor = ({ field, value, onChange, t }) => {
     [config.optionsKey, searchQuery.data],
   );
   const options = React.useMemo(
-    () => mergeEquipment(baseOptions, searchOptions),
+    () => mergeOptions(baseOptions, searchOptions),
     [baseOptions, searchOptions],
   );
   const visibleOptions = searchLabel.length >= 2 ? searchOptions : baseOptions;
@@ -455,8 +500,8 @@ const CatalogChipEditor = ({ field, value, onChange, t }) => {
 
   const commit = (ids, nextCustom = customItems) => {
     onChange({
-      ids: normalizeEquipmentIds(ids),
-      customItems: normalizeCustomEquipment(nextCustom),
+      ids: normalizeCatalogIds(ids),
+      customItems: normalizeCustomItems(nextCustom),
     });
   };
 
@@ -577,164 +622,6 @@ const CatalogChipEditor = ({ field, value, onChange, t }) => {
   );
 };
 
-const EquipmentEditor = ({ value, onChange, t }) => {
-  const [search, setSearch] = React.useState("");
-  const searchLabel = normalizeChipLabel(search);
-  const searchKey = normalizeChipKey(searchLabel);
-  const selectedIds = normalizeEquipmentIds(value.equipmentIds);
-  const customEquipment = normalizeCustomEquipment(value.customEquipment);
-  const baseQuery = useGetQuery({
-    url: "/user/onboarding/personalization-options",
-    queryProps: {
-      queryKey: ["onboarding", "personalization-options", "equipment"],
-      staleTime: 60000,
-    },
-  });
-  const searchQuery = useGetQuery({
-    url: "/user/onboarding/personalization-options",
-    params: { q: searchLabel },
-    queryProps: {
-      queryKey: [
-        "onboarding",
-        "personalization-options",
-        "equipment",
-        searchLabel,
-      ],
-      enabled: searchLabel.length >= 2,
-      staleTime: 15000,
-    },
-  });
-  const baseOptions = React.useMemo(
-    () => extractEquipment(baseQuery.data),
-    [baseQuery.data],
-  );
-  const searchOptions = React.useMemo(
-    () => extractEquipment(searchQuery.data),
-    [searchQuery.data],
-  );
-  const options = React.useMemo(
-    () => mergeEquipment(baseOptions, searchOptions),
-    [baseOptions, searchOptions],
-  );
-  const visibleOptions = searchLabel.length >= 2 ? searchOptions : baseOptions;
-  const selectedSet = React.useMemo(() => new Set(selectedIds), [selectedIds]);
-  const optionMap = React.useMemo(
-    () => new Map(options.map((item) => [Number(item.id), item])),
-    [options],
-  );
-  const exactActiveMatch = options.some(
-    (item) => normalizeChipKey(item.name) === searchKey,
-  );
-  const canAddCustom =
-    searchLabel.length >= 2 &&
-    !exactActiveMatch &&
-    !hasChipLabel(customEquipment, searchLabel);
-
-  const commit = (equipmentIds, nextCustom = customEquipment) => {
-    onChange({
-      equipmentIds: normalizeEquipmentIds(equipmentIds),
-      customEquipment: normalizeCustomEquipment(nextCustom),
-    });
-  };
-
-  return (
-    <div className="space-y-3">
-      <div className="relative">
-        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder={t(
-            "onboarding.postOnboarding.result.equipmentPlaceholder",
-          )}
-          className="h-11 pl-9"
-        />
-      </div>
-
-      {selectedIds.length || customEquipment.length ? (
-        <div className="flex flex-wrap gap-2">
-          {selectedIds.map((id) => (
-            <button
-              key={`equipment-${id}`}
-              type="button"
-              onClick={() => commit(selectedIds.filter((item) => item !== id))}
-              className="inline-flex max-w-full items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary"
-            >
-              <span className="truncate">
-                {optionMap.get(id)?.name ?? `#${id}`}
-              </span>
-              <XIcon className="size-3.5" />
-            </button>
-          ))}
-          {customEquipment.map((label) => (
-            <button
-              key={`custom-equipment-${label}`}
-              type="button"
-              onClick={() => {
-                const key = normalizeChipKey(label);
-                commit(
-                  selectedIds,
-                  customEquipment.filter(
-                    (item) => normalizeChipKey(item) !== key,
-                  ),
-                );
-              }}
-              className="inline-flex max-w-full items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-700"
-            >
-              <span className="truncate">{label}</span>
-              <XIcon className="size-3.5" />
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      <div className="grid max-h-72 gap-2 overflow-y-auto pr-1">
-        {visibleOptions.map((item) => {
-          const id = Number(item.id);
-          const active = selectedSet.has(id);
-
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() =>
-                commit(
-                  active
-                    ? selectedIds.filter((selectedId) => selectedId !== id)
-                    : [...selectedIds, id],
-                )
-              }
-              className={cn(
-                "flex min-h-12 items-center gap-3 rounded-2xl border px-3 py-2 text-left text-sm font-semibold",
-                active
-                  ? "border-primary/35 bg-primary/10 text-primary"
-                  : "border-border/70 bg-background",
-              )}
-            >
-              <DumbbellIcon className="size-4 shrink-0" />
-              <span className="min-w-0 flex-1 truncate">{item.name}</span>
-            </button>
-          );
-        })}
-
-        {canAddCustom ? (
-          <button
-            type="button"
-            onClick={() => {
-              commit(selectedIds, [...customEquipment, searchLabel]);
-              setSearch("");
-            }}
-            className="flex min-h-12 items-center gap-3 rounded-2xl border border-dashed border-primary/40 bg-primary/5 px-3 py-2 text-left text-sm font-semibold text-primary"
-          >
-            <PlusIcon className="size-4" />
-            {t("onboarding.chipSelect.addCustom", { value: searchLabel })}
-          </button>
-        ) : null}
-      </div>
-    </div>
-  );
-};
-
 const EditDrawer = ({
   open,
   onOpenChange,
@@ -746,10 +633,6 @@ const EditDrawer = ({
 }) => {
   const { t } = useTranslation();
   const [value, setValue] = React.useState("");
-  const [equipmentValue, setEquipmentValue] = React.useState({
-    equipmentIds: [],
-    customEquipment: [],
-  });
   const [chipValue, setChipValue] = React.useState({
     ids: [],
     customItems: [],
@@ -766,14 +649,6 @@ const EditDrawer = ({
         return;
       }
 
-      if (field === editKeys.equipment) {
-        setEquipmentValue({
-          equipmentIds: result.equipmentIds ?? [],
-          customEquipment: result.customEquipment ?? [],
-        });
-        return;
-      }
-
       setValue(getEditValue(field, result, onboarding));
     });
 
@@ -785,7 +660,6 @@ const EditDrawer = ({
   if (!field) return null;
 
   const isOptionField = Object.prototype.hasOwnProperty.call(optionSets, field);
-  const isEquipment = field === editKeys.equipment;
   const isChipField = chipFields.has(field);
   const isTextarea = textareaFields.has(field);
   const title = t(`onboarding.postOnboarding.result.edit.${field}.title`);
@@ -816,12 +690,6 @@ const EditDrawer = ({
               field={field}
               value={chipValue}
               onChange={setChipValue}
-              t={t}
-            />
-          ) : isEquipment ? (
-            <EquipmentEditor
-              value={equipmentValue}
-              onChange={setEquipmentValue}
               t={t}
             />
           ) : isOptionField ? (
@@ -897,13 +765,11 @@ const EditDrawer = ({
                 field,
                 isChipField
                   ? chipValue
-                  : isEquipment
-                    ? equipmentValue
-                    : isOptionField
+                  : isOptionField
+                    ? value
+                    : isTextarea
                       ? value
-                      : isTextarea
-                        ? value
-                        : Number(value),
+                      : Number(value),
               )
             }
             disabled={saving}
@@ -925,11 +791,21 @@ const EditDrawer = ({
 };
 
 export const ResultContent = ({ result, onboarding, onEdit }) => {
+  const { t } = useTranslation();
   const snapshot = React.useMemo(
     () => resolveResultSnapshot(result, onboarding),
     [onboarding, result],
   );
   const weeklyRateLabel = `${Math.round(snapshot.weeklyRate * 100) / 100} kg haftasiga`;
+  const macroBalanceMessage = getMacroBalanceMessage(
+    {
+      dailyCalories: snapshot.calories,
+      proteinGram: snapshot.protein,
+      carbsGram: snapshot.carbs,
+      fatGram: snapshot.fat,
+    },
+    t,
+  );
 
   return (
     <div className="relative flex min-h-full w-full flex-1 flex-col gap-4 overflow-x-hidden px-5 pt-3 md:pt-8">
@@ -961,16 +837,54 @@ export const ResultContent = ({ result, onboarding, onEdit }) => {
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3">
-          <HeroInfoButton
+          <HeroInfoCard
+            label="Hozirgi vazn"
+            value={`${formatResultNumber(snapshot.currentWeight)} kg`}
+          />
+          <HeroInfoCard
+            label="Maqsad vazn"
+            value={
+              snapshot.targetWeight !== null
+                ? `${formatResultNumber(snapshot.targetWeight)} kg`
+                : "-"
+            }
+          />
+          <HeroInfoCard
             label="Vazn farqi (maqsad)"
             value={formatWeightDelta(snapshot.weightDiff)}
-            onClick={() => onEdit(editKeys.targetWeight)}
           />
-          <HeroInfoButton
+          <HeroInfoCard
             label="Haftalik sur'at"
             value={weeklyRateLabel}
-            onClick={() => onEdit(editKeys.weeklyWeightChangeGoal)}
           />
+        </div>
+      </section>
+
+      <section className="rounded-[1.35rem] border border-border/70 bg-background/90 p-4 shadow-sm backdrop-blur">
+        <div className="flex items-center gap-2 text-sm font-black text-foreground">
+          <span
+            className={cn(
+              "flex size-8 items-center justify-center rounded-full",
+              tone.badgeTone,
+            )}
+          >
+            <InfoIcon className="size-4" aria-hidden="true" />
+          </span>
+          AI izohi
+        </div>
+        <p className="mt-3 text-sm font-medium leading-6 text-muted-foreground">
+          {snapshot.explanation}
+        </p>
+      </section>
+
+      <section className="space-y-2">
+        <div>
+          <h2 className="text-base font-black text-foreground">
+            Reja generatsiyasidan oldin sozlang
+          </h2>
+          <p className="mt-1 text-sm font-medium leading-6 text-muted-foreground">
+            Bu qiymatlar keyingi AI reja generatsiyasida ishlatiladi.
+          </p>
         </div>
       </section>
 
@@ -986,7 +900,12 @@ export const ResultContent = ({ result, onboarding, onEdit }) => {
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-primary/20 to-transparent" />
         <div className="relative flex h-full min-h-[144px] flex-col justify-between">
           <div className="flex items-start justify-between gap-4">
-            <div className={cn("flex size-12 items-center justify-center rounded-full", tone.badgeTone)}>
+            <div
+              className={cn(
+                "flex size-12 items-center justify-center rounded-full",
+                tone.badgeTone,
+              )}
+            >
               <FlameIcon className="size-6" aria-hidden="true" />
             </div>
             <span className="flex size-8 items-center justify-center rounded-full border border-border/70 bg-background/75 text-muted-foreground">
@@ -1037,6 +956,71 @@ export const ResultContent = ({ result, onboarding, onEdit }) => {
         />
       </section>
 
+      <div className="rounded-[1.25rem] border border-primary/15 bg-primary/5 p-3 text-sm font-semibold leading-6 text-muted-foreground">
+        {macroBalanceMessage}
+      </div>
+
+      <section className="grid grid-cols-2 gap-3">
+        <InfoMetric
+          icon={DropletsIcon}
+          label="Suv maqsadi"
+          value={formatResultLiters(snapshot.waterMl)}
+          water
+        />
+        <InfoMetric
+          icon={FootprintsIcon}
+          label="Qadam"
+          value={formatResultNumber(snapshot.dailyStepsTarget)}
+        />
+        <InfoMetric
+          icon={GaugeIcon}
+          label="BMR"
+          value={`${formatResultNumber(snapshot.bmr)} kcal`}
+        />
+        <InfoMetric
+          icon={ActivityIcon}
+          label="TDEE"
+          value={`${formatResultNumber(snapshot.tdee)} kcal`}
+        />
+        <InfoMetric
+          icon={ScaleIcon}
+          label="BMI"
+          value={formatResultNumber(snapshot.bmi)}
+        />
+        <InfoMetric
+          icon={GaugeIcon}
+          label="Metabolik yosh"
+          value={
+            snapshot.metabolicAge !== null
+              ? `${formatResultNumber(snapshot.metabolicAge)} yosh`
+              : "-"
+          }
+        />
+        <InfoMetric
+          icon={CalendarDaysIcon}
+          label="Maqsad sanasi"
+          value={formatResultDate(snapshot.estimatedGoalDate)}
+        />
+        <InfoMetric
+          icon={UtensilsIcon}
+          label="Ovqatlanish"
+          value={
+            snapshot.mealsPerDay !== null
+              ? `${formatResultNumber(snapshot.mealsPerDay)} mahal`
+              : "-"
+          }
+        />
+        <InfoMetric
+          icon={ActivityIcon}
+          label="Mashg'ulot"
+          value={
+            snapshot.weeklyWorkoutDays !== null
+              ? `${formatResultNumber(snapshot.weeklyWorkoutDays)} kun/hafta`
+              : "-"
+          }
+        />
+      </section>
+
       <section className="rounded-[1.35rem] border border-border/70 bg-background/90 p-3 shadow-sm backdrop-blur">
         <div className="grid gap-2">
           <SummaryItem
@@ -1060,22 +1044,24 @@ export const ResultContent = ({ result, onboarding, onEdit }) => {
 
       <details className="rounded-[1.35rem] border border-border/70 bg-background/90 p-4 shadow-sm backdrop-blur">
         <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-black text-foreground">
-          <InfoIcon className={cn("size-4", tone.textTone)} aria-hidden="true" />
+          <InfoIcon
+            className={cn("size-4", tone.textTone)}
+            aria-hidden="true"
+          />
           Qanday hisoblaymiz?
         </summary>
         <div className="mt-3 grid gap-2 text-sm font-medium leading-6 text-muted-foreground">
-          <p>BMR: {formatResultNumber(result.bmr)} kcal</p>
-          <p>TDEE: {formatResultNumber(result.tdee)} kcal</p>
-          <p>BMI: {result.bmi ?? "-"}</p>
           <p>
-            Suv: {formatResultNumber(snapshot.waterMl)} ml
+            Energiya targeti BMR, TDEE, faollik darajasi va haftalik vazn
+            sur'ati asosida hisoblanadi.
           </p>
           <p>
-            Qadam: {formatResultNumber(result.dailyStepsTarget)}
+            Makro qiymatlar umumiy energiya maqsadiga moslanadi va keyingi AI
+            ovqatlanish rejasi promptiga aynan shu ko'rinishda yuboriladi.
           </p>
           <p>
-            Metabolik yosh:{" "}
-            {result.metabolicAge ?? "-"}
+            Suv, qadam va mashg'ulot maqsadlari kundalik tracking uchun
+            boshlang'ich tavsiya sifatida ishlatiladi.
           </p>
         </div>
       </details>

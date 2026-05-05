@@ -53,41 +53,41 @@ const LoadingShell = ({
   useOnboardingFooter(null);
 
   return (
-    <div className="relative flex min-h-full flex-1 items-center justify-center overflow-hidden px-4 py-6 sm:px-6">
+    <div className="relative flex min-h-svh flex-1 items-center justify-center overflow-hidden px-4 py-3 sm:px-6 sm:py-6">
       <PageAura tone={tone} />
       <motion.div
-        className="relative z-10 w-full max-w-3xl"
+        className="relative z-10 w-full max-w-2xl"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: "easeOut" }}
       >
-        <div className="overflow-hidden rounded-[2rem] border border-border/70 bg-background/90 shadow-[0_28px_80px_rgba(15,23,42,0.10)] backdrop-blur-xl">
-          <div className="relative px-5 py-6 sm:px-8 sm:py-8">
-            <div className="pointer-events-none absolute inset-x-8 top-4 h-36 rounded-full bg-primary/10 blur-3xl" />
+        <div className="max-h-[calc(100svh-1.5rem)] overflow-hidden rounded-[1.6rem] border border-border/70 bg-background/90 shadow-[0_28px_80px_rgba(15,23,42,0.10)] backdrop-blur-xl sm:rounded-[2rem]">
+          <div className="relative px-4 py-4 sm:px-8 sm:py-8">
+            <div className="pointer-events-none absolute inset-x-8 top-3 h-24 rounded-full bg-primary/10 blur-3xl sm:top-4 sm:h-36" />
 
-            <div className="relative grid gap-6 md:grid-cols-[220px_minmax(0,1fr)] md:items-center">
-              <div className="mx-auto flex size-44 items-center justify-center rounded-full bg-muted/60 sm:size-52">
+            <div className="relative grid gap-4 md:grid-cols-[220px_minmax(0,1fr)] md:items-center md:gap-6">
+              <div className="mx-auto flex size-28 items-center justify-center rounded-full bg-muted/60 sm:size-52">
                 <div
-                  className="relative flex size-36 items-center justify-center rounded-full bg-background shadow-inner sm:size-44"
+                  className="relative flex size-24 items-center justify-center rounded-full bg-background shadow-inner sm:size-44"
                   style={{
                     background: `conic-gradient(hsl(var(--primary)) ${clampProgress(progress) * 3.6}deg, hsl(var(--muted)) 0deg)`,
                   }}
                 >
-                  <div className="absolute inset-3 rounded-full bg-background" />
+                  <div className="absolute inset-2 rounded-full bg-background sm:inset-3" />
                   <div className="relative flex flex-col items-center">
                     {error ? (
-                      <AlertTriangleIcon className="mb-2 size-7 text-destructive" />
+                      <AlertTriangleIcon className="mb-1 size-5 text-destructive sm:mb-2 sm:size-7" />
                     ) : (
-                      <SparklesIcon className="mb-2 size-7 text-primary" />
+                      <SparklesIcon className="mb-1 size-5 text-primary sm:mb-2 sm:size-7" />
                     )}
-                    <span className="text-4xl font-black tracking-tight">
+                    <span className="text-3xl font-black tracking-tight sm:text-4xl">
                       {clampProgress(progress)}%
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="min-w-0 space-y-5">
+              <div className="min-w-0 space-y-3 sm:space-y-5">
                 <div className="space-y-2">
                   <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary">
                     {error ? (
@@ -97,10 +97,10 @@ const LoadingShell = ({
                     )}
                     {t(`onboarding.postOnboarding.loading.badges.${mode}`)}
                   </div>
-                  <h1 className="text-3xl font-black leading-tight tracking-tight sm:text-4xl">
+                  <h1 className="text-3xl font-black leading-[1.08] tracking-tight sm:text-4xl sm:leading-tight">
                     {t("onboarding.postOnboarding.loading.title")}
                   </h1>
-                  <p className="text-sm font-medium leading-6 text-muted-foreground sm:text-base">
+                  <p className="text-sm font-medium leading-5 text-muted-foreground sm:text-base sm:leading-6">
                     {error
                       ? t("onboarding.postOnboarding.loading.errorDescription")
                       : t(
@@ -109,9 +109,9 @@ const LoadingShell = ({
                   </p>
                 </div>
 
-                <Progress value={clampProgress(progress)} className="h-2.5" />
+                <Progress value={clampProgress(progress)} className="h-2 sm:h-2.5" />
 
-                <div className="grid gap-2">
+                <div className="grid gap-1.5 sm:gap-2">
                   {personalizationChecklist.map((item, index) => {
                     const completed =
                       clampProgress(progress) >=
@@ -123,7 +123,7 @@ const LoadingShell = ({
                       <div
                         key={item}
                         className={cn(
-                          "flex items-center gap-3 rounded-2xl border px-3 py-2 text-sm font-semibold transition-colors",
+                          "flex min-h-10 items-center gap-2 rounded-2xl border px-3 py-1.5 text-[13px] font-semibold leading-5 transition-colors sm:gap-3 sm:py-2 sm:text-sm",
                           completed
                             ? "border-primary/20 bg-primary/5 text-foreground"
                             : "border-border/70 bg-muted/30 text-muted-foreground",

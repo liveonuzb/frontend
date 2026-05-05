@@ -341,21 +341,49 @@ const NutritionContent = ({ entryView = "home" }) => {
   React.useEffect(() => {
     const state = location.state;
 
-    if (!state?.openMealPlansDrawer) {
+    if (!state?.openMealPlansDrawer && !state?.openMealPlanBuilder) {
       return;
     }
 
-    setIsPlansDrawerOpen(true);
+    const requestedPlan =
+      (state.planId && plans.find((plan) => plan.id === state.planId)) || null;
+    const fallbackPlan = activePlan || draftPlan || plans[0] || null;
+    const targetPlan = requestedPlan || fallbackPlan;
 
-    if (state.planId) {
-      setSelectedPlanId(state.planId);
+    if (state.openMealPlanBuilder) {
+      if (!targetPlan && (isMealPlanLoading || isMealPlanFetching)) {
+        return;
+      }
+
+      if (targetPlan?.id) {
+        setSelectedPlanId(targetPlan.id);
+      }
+      setIsPlansDrawerOpen(false);
+      setBuilderInitialData(targetPlan?.weeklyKanban || {});
+      setIsBuilderOpen(true);
+    } else {
+      setIsPlansDrawerOpen(true);
+
+      if (state.planId) {
+        setSelectedPlanId(state.planId);
+      }
     }
 
     navigate(`${location.pathname}${location.search}`, {
       replace: true,
       state: null,
     });
-  }, [location.pathname, location.search, location.state, navigate]);
+  }, [
+    activePlan,
+    draftPlan,
+    isMealPlanFetching,
+    isMealPlanLoading,
+    location.pathname,
+    location.search,
+    location.state,
+    navigate,
+    plans,
+  ]);
   const planMetaOpenTimerRef = React.useRef(null);
   const [selectedMealTypeForAdd, setSelectedMealTypeForAdd] =
     React.useState("breakfast");
