@@ -2,10 +2,12 @@ import React from "react";
 import { motion } from "framer-motion";
 import {
   ActivityIcon,
+  CalendarDaysIcon,
   ChevronRightIcon,
-  DumbbellIcon,
   DropletsIcon,
   FlameIcon,
+  FootprintsIcon,
+  GaugeIcon,
   InfoIcon,
   Loader2Icon,
   PencilIcon,
@@ -57,8 +59,6 @@ import {
   formatWeightDelta,
   getMacroBalanceMessage,
   isOnboardingPreferenceField,
-  normalizeCustomEquipment,
-  normalizeEquipmentIds,
   unwrapApiData,
 } from "../../lib/personalization.js";
 import {
@@ -87,8 +87,6 @@ const editKeys = {
   dislikedFoods: "dislikedFoods",
   workoutExperience: "workoutExperience",
   sleepHours: "sleepHours",
-  workoutLocation: "workoutLocation",
-  equipment: "equipment",
   injurySeverity: "injurySeverity",
   forbiddenExercises: "forbiddenExercises",
 };
@@ -105,7 +103,6 @@ const optionSets = {
     "very-active",
   ],
   workoutExperience: ["beginner", "intermediate", "advanced"],
-  workoutLocation: ["home", "gym", "outdoor"],
   injurySeverity: ["none", "mild", "moderate", "severe"],
 };
 
@@ -141,22 +138,6 @@ const extractOptions = (response, optionsKey) => {
   return Array.isArray(values) ? values : [];
 };
 
-const extractEquipment = (response) => {
-  const body = unwrapApiData(response) ?? {};
-  const values = body.equipment ?? body.equipments ?? [];
-  return Array.isArray(values) ? values : [];
-};
-
-const mergeEquipment = (...groups) => {
-  const seen = new Set();
-  return groups.flat().filter((item) => {
-    const id = Number(item?.id);
-    if (!Number.isInteger(id) || id <= 0 || seen.has(id)) return false;
-    seen.add(id);
-    return true;
-  });
-};
-
 const resultFallbacks = {
   calorie: 2100,
   weightDiff: -10,
@@ -168,7 +149,9 @@ const resultFallbacks = {
   currentWeight: 70,
   goal: "Ozish",
   activity: "O'rtacha faol",
-  budget: "Medium budget",
+  budget: "O'rtacha budjet",
+  explanation:
+    "AI sizning maqsadingiz, hozirgi vazningiz, faollik darajangiz va ovqatlanish ritmingiz asosida boshlang'ich targetlarni tayyorladi.",
 };
 
 const goalLabels = {
@@ -193,9 +176,9 @@ const activityLabels = {
 };
 
 const budgetTierLabels = {
-  low: "Low budget",
-  medium: "Medium budget",
-  high: "High budget",
+  low: "Past budjet",
+  medium: "O'rtacha budjet",
+  high: "Yuqori budjet",
 };
 
 const getNumberOrFallback = (value, fallback) => {
@@ -210,6 +193,17 @@ const formatResultLiters = (value) => {
   const liters = getNumberOrFallback(value, resultFallbacks.waterMl) / 1000;
   const rounded = Math.round(liters * 10) / 10;
   return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(1)} L`;
+};
+
+const formatResultDate = (value) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return new Intl.DateTimeFormat("uz-UZ", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
 };
 
 const resolveSummaryBudget = (onboarding = {}) => {
@@ -258,6 +252,19 @@ const resolveResultSnapshot = (result = {}, onboarding = {}) => {
       onboarding?.currentWeight?.value ?? result?.currentWeight,
       resultFallbacks.currentWeight,
     ),
+    targetWeight: getNumberOrFallback(
+      onboarding?.targetWeight?.value ?? result?.targetWeight,
+      null,
+    ),
+    bmr: getNumberOrFallback(result?.bmr, null),
+    tdee: getNumberOrFallback(result?.tdee, null),
+    bmi: getNumberOrFallback(result?.bmi, null),
+    metabolicAge: getNumberOrFallback(result?.metabolicAge, null),
+    dailyStepsTarget: getNumberOrFallback(result?.dailyStepsTarget, null),
+    estimatedGoalDate: result?.estimatedGoalDate ?? null,
+    mealsPerDay: getNumberOrFallback(result?.mealsPerDay, null),
+    weeklyWorkoutDays: getNumberOrFallback(result?.weeklyWorkoutDays, null),
+    explanation: result?.explanation || resultFallbacks.explanation,
     goal: goalLabels[goalKey] ?? resultFallbacks.goal,
     activity: activityLabels[activityKey] ?? resultFallbacks.activity,
     budget: resolveSummaryBudget(onboarding),
