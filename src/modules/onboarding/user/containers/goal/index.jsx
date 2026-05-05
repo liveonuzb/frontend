@@ -119,7 +119,7 @@ const Index = () => {
 
   const handleContinue = () => {
     if (hasSelection) {
-      navigate("/user/onboarding/other-goals");
+      navigate("/user/onboarding/target-weight");
     }
   };
 

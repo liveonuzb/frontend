@@ -67,7 +67,7 @@ const Index = () => {
 
   const handleContinue = () => {
     if (hasSelection) {
-      navigate("/user/onboarding/weekly-workout-count");
+      navigate("/user/onboarding/meal-frequency");
     }
   };
 

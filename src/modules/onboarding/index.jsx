@@ -60,19 +60,19 @@ const Index = () => {
         <Route path="health-constraints" element={<HealthConstraintsPage />} />
         <Route
           path="injury-severity"
-          element={<Navigate to="../workout-location" replace />}
+          element={<Navigate to="../weekly-workout-count" replace />}
         />
         <Route
           path="forbidden-exercises"
-          element={<Navigate to="../workout-location" replace />}
+          element={<Navigate to="../weekly-workout-count" replace />}
         />
         <Route
           path="medications"
-          element={<Navigate to="../workout-location" replace />}
+          element={<Navigate to="../weekly-workout-count" replace />}
         />
         <Route
           path="supplements"
-          element={<Navigate to="../workout-location" replace />}
+          element={<Navigate to="../weekly-workout-count" replace />}
         />
         <Route path="age" element={<AgePage />} />
         <Route path="height" element={<HeightPage />} />
@@ -96,15 +96,15 @@ const Index = () => {
         <Route path="workout-body-parts" element={<WorkoutBodyPartsPage />} />
         <Route
           path="exercise-preferences"
-          element={<Navigate to="../meal-frequency" replace />}
+          element={<Navigate to="../workout-location" replace />}
         />
         <Route
           path="preferred-exercises"
-          element={<Navigate to="../meal-frequency" replace />}
+          element={<Navigate to="../workout-location" replace />}
         />
         <Route
           path="disliked-exercises"
-          element={<Navigate to="../meal-frequency" replace />}
+          element={<Navigate to="../workout-location" replace />}
         />
         <Route path="meal-frequency" element={<MealFrequencyPage />} />
         <Route

@@ -88,7 +88,7 @@ const Index = () => {
 
   const handleContinue = () => {
     if (hasSelection) {
-      navigate("/user/onboarding/activity-level");
+      navigate("/user/onboarding/other-goals");
     }
   };
 

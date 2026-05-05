@@ -49,7 +49,11 @@ const otherGoalTones = (base) => [
 const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { goals: selectedGoals = [], setFields } = useOnboardingStore();
+  const {
+    completedUserOnboardingSteps,
+    goals: selectedGoals = [],
+    setFields,
+  } = useOnboardingStore();
   const base = useOnboardingBase();
 
   useOnboardingAutoSave("user", "other-goals");
@@ -95,6 +99,15 @@ const Index = () => {
     });
   };
 
+  const handleContinue = React.useCallback(() => {
+    setFields({
+      completedUserOnboardingSteps: Array.from(
+        new Set([...(completedUserOnboardingSteps ?? []), "other-goals"]),
+      ),
+    });
+    navigate("/user/onboarding/activity-level");
+  }, [completedUserOnboardingSteps, navigate, setFields]);
+
   useOnboardingFooter(
     <Button
       type="button"
@@ -103,7 +116,7 @@ const Index = () => {
         selectedGoal.buttonTone,
       )}
       size="lg"
-      onClick={() => navigate("/user/onboarding/target-weight")}
+      onClick={handleContinue}
     >
       {t("onboarding.next")} <ChevronRight />
     </Button>,

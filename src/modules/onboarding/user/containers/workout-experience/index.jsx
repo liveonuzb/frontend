@@ -41,7 +41,7 @@ const Index = () => {
   const goNext = React.useCallback(() => {
     if (!hasSelection) return;
     markCompleted();
-    navigate("/user/onboarding/health-constraints");
+    navigate("/user/onboarding/workout-location");
   }, [hasSelection, markCompleted, navigate]);
 
   useOnboardingFooter(
