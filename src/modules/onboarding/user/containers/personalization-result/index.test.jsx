@@ -163,6 +163,21 @@ describe("PersonalizationResult onboarding screen", () => {
     expect(screen.queryByText("Kaloriya")).toBeNull();
   });
 
+  it("keeps hero goal metrics read-only", () => {
+    render(<ResultContent result={{}} onboarding={{}} onEdit={vi.fn()} />);
+
+    [
+      "Hozirgi vazn",
+      "Maqsad vazn",
+      "Vazn farqi (maqsad)",
+      "Haftalik sur'at",
+    ].forEach((label) => {
+      screen.getAllByText(label).forEach((node) => {
+        expect(node.closest("button")).toBeNull();
+      });
+    });
+  });
+
   it("lets users edit macro targets before starting generation", async () => {
     renderResultPage();
 
