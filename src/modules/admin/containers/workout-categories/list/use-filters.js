@@ -3,7 +3,13 @@ import { find, get, isEmpty, isEqual } from "lodash";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 
 const ITEMS_PER_PAGE = 10;
-const SORT_FIELDS = ["orderKey", "name", "createdAt", "isActive"];
+const SORT_FIELDS = [
+  "orderKey",
+  "name",
+  "createdAt",
+  "isActive",
+  "isOnboarding",
+];
 const SORT_DIRECTIONS = ["asc", "desc"];
 const TEXT_OPERATORS = [
   "contains",
@@ -28,6 +34,14 @@ export const useCategoryFilters = () => {
   );
   const [statusOperator, setStatusOperator] = useQueryState(
     "statusOp",
+    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+  );
+  const [onboardingFilter, setOnboardingFilter] = useQueryState(
+    "onboarding",
+    parseAsStringEnum(["all", "yes", "no"]).withDefault("all"),
+  );
+  const [onboardingOperator, setOnboardingOperator] = useQueryState(
+    "onboardingOp",
     parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
   );
   const [translationFilter, setTranslationFilter] = useQueryState(
@@ -56,6 +70,7 @@ export const useCategoryFilters = () => {
   );
   const [visibleFilters, setVisibleFilters] = React.useState(() => ({
     status: statusFilter !== "all",
+    onboarding: onboardingFilter !== "all",
     translations: translationFilter !== "all",
   }));
 
@@ -76,6 +91,8 @@ export const useCategoryFilters = () => {
     searchOperator === "contains" &&
     statusFilter === "all" &&
     statusOperator === "is" &&
+    onboardingFilter === "all" &&
+    onboardingOperator === "is" &&
     translationFilter === "all" &&
     translationOperator === "is" &&
     sortBy === "orderKey" &&
@@ -100,6 +117,17 @@ export const useCategoryFilters = () => {
           { value: "all", label: "Barcha statuslar" },
           { value: "active", label: "Faqat faol" },
           { value: "inactive", label: "Faqat nofaol" },
+        ],
+      },
+      {
+        label: "Onboardingda ko'rsatish",
+        key: "onboarding",
+        type: "select",
+        defaultOperator: "is",
+        options: [
+          { value: "all", label: "Barchasi" },
+          { value: "yes", label: "Onboarding uchun" },
+          { value: "no", label: "Qo'shimcha" },
         ],
       },
       {
@@ -155,6 +183,13 @@ export const useCategoryFilters = () => {
 
     pushSelect("status", statusFilter, statusOperator, visibleFilters.status, "all");
     pushSelect(
+      "onboarding",
+      onboardingFilter,
+      onboardingOperator,
+      visibleFilters.onboarding,
+      "all",
+    );
+    pushSelect(
       "translations",
       translationFilter,
       translationOperator,
@@ -168,6 +203,8 @@ export const useCategoryFilters = () => {
     searchOperator,
     statusFilter,
     statusOperator,
+    onboardingFilter,
+    onboardingOperator,
     translationFilter,
     translationOperator,
     visibleFilters,
@@ -183,6 +220,10 @@ export const useCategoryFilters = () => {
         get(find(nextFilters, (filter) => filter.field === "status"), "values[0]", "all");
       const nextStatusOperator =
         get(find(nextFilters, (filter) => filter.field === "status"), "operator", "is");
+      const nextOnboarding =
+        get(find(nextFilters, (filter) => filter.field === "onboarding"), "values[0]", "all");
+      const nextOnboardingOperator =
+        get(find(nextFilters, (filter) => filter.field === "onboarding"), "operator", "is");
       const nextTranslations =
         get(find(nextFilters, (filter) => filter.field === "translations"), "values[0]", "all");
       const nextTranslationsOperator =
@@ -191,12 +232,15 @@ export const useCategoryFilters = () => {
       React.startTransition(() => {
         setVisibleFilters({
           status: Boolean(find(nextFilters, (filter) => filter.field === "status")),
+          onboarding: Boolean(find(nextFilters, (filter) => filter.field === "onboarding")),
           translations: Boolean(find(nextFilters, (filter) => filter.field === "translations")),
         });
         void setSearch(nextSearch);
         void setSearchOperator(nextSearchOperator);
         void setStatusFilter(nextStatus);
         void setStatusOperator(nextStatusOperator);
+        void setOnboardingFilter(nextOnboarding);
+        void setOnboardingOperator(nextOnboardingOperator);
         void setTranslationFilter(nextTranslations);
         void setTranslationOperator(nextTranslationsOperator);
         void setPageQuery("1");
@@ -208,6 +252,8 @@ export const useCategoryFilters = () => {
       setSearchOperator,
       setStatusFilter,
       setStatusOperator,
+      setOnboardingFilter,
+      setOnboardingOperator,
       setTranslationFilter,
       setTranslationOperator,
     ],
@@ -240,6 +286,8 @@ export const useCategoryFilters = () => {
     searchOperator,
     statusFilter,
     statusOperator,
+    onboardingFilter,
+    onboardingOperator,
     translationFilter,
     translationOperator,
     sortBy,

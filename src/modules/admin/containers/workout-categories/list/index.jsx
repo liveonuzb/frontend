@@ -274,6 +274,8 @@ const Index = () => {
     searchOperator,
     statusFilter,
     statusOperator,
+    onboardingFilter,
+    onboardingOperator,
     translationFilter,
     translationOperator,
     sortBy,
@@ -308,6 +310,13 @@ const Index = () => {
       statusOperator !== "is"
         ? { statusOp: statusOperator }
         : {}),
+      ...(onboardingFilter !== "all" ? { onboarding: onboardingFilter } : {}),
+      ...((onboardingFilter !== "all" ||
+        onboardingOperator === "empty" ||
+        onboardingOperator === "not_empty") &&
+      onboardingOperator !== "is"
+        ? { onboardingOp: onboardingOperator }
+        : {}),
       ...(translationFilter !== "all"
         ? { translations: translationFilter }
         : {}),
@@ -327,6 +336,8 @@ const Index = () => {
       deferredSearch,
       pageSize,
       searchOperator,
+      onboardingFilter,
+      onboardingOperator,
       sortBy,
       sortDir,
       statusFilter,
@@ -558,12 +569,32 @@ const Index = () => {
     [updateCategory],
   );
 
+  const handleToggleOnboarding = React.useCallback(
+    async (category) => {
+      try {
+        await updateCategory(category.id, {
+          isOnboarding: !category.isOnboarding,
+        });
+        toast.success("Onboarding holati yangilandi");
+      } catch (error) {
+        const message = error?.response?.data?.message;
+        toast.error(
+          isArray(message)
+            ? message.join(", ")
+            : message || "Onboarding holatini o'zgartirib bo'lmadi",
+        );
+      }
+    },
+    [updateCategory],
+  );
+
   const columns = useColumns({
     activeLanguages,
     currentLanguage,
     isReorderEnabled,
     isUpdating,
     handleToggleActive,
+    handleToggleOnboarding,
     openEditDrawer: (category) => navigate(`edit/${category.id}`),
     openTranslationsDrawer,
     setCategoryToDelete,

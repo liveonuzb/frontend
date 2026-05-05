@@ -1,12 +1,13 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router";
-import { get, map, trim } from "lodash";
+import { get, trim } from "lodash";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { AdminTranslationFields } from "@/modules/admin/components/admin-translation-fields.jsx";
 import {
   Drawer,
   DrawerBody,
@@ -18,12 +19,7 @@ import {
 } from "@/components/ui/drawer";
 import {
   Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner.jsx";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
 
@@ -44,8 +40,12 @@ const TranslationPage = () => {
     url: "/admin/languages",
     queryProps: { queryKey: ["admin", "languages"] },
   });
-  const languages = get(languagesData, "data.data", []).filter(
-    (language) => language.isActive,
+  const languages = React.useMemo(
+    () =>
+      get(languagesData, "data.data", []).filter(
+        (language) => language.isActive,
+      ),
+    [languagesData],
   );
   const form = useForm({
     resolver: zodResolver(z.object({}).catchall(z.string().optional())),
@@ -63,7 +63,7 @@ const TranslationPage = () => {
         ),
       );
     }
-  }, [form, item, languagesData]);
+  }, [form, item, languages]);
 
   const mutation = usePatchQuery({ queryKey: QUERY_KEY });
   const onSubmit = async (values) => {
@@ -104,23 +104,19 @@ const TranslationPage = () => {
                   className="flex flex-col gap-4"
                   onSubmit={form.handleSubmit(onSubmit)}
                 >
-                  {map(languages, (language) => (
-                    <FormField
-                      key={language.code}
-                      control={form.control}
-                      name={language.code}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            {language.flag} {language.name}
-                          </FormLabel>
-                          <FormControl>
-                            <Input {...field} value={field.value || ""} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  ))}
+                  <AdminTranslationFields
+                    control={form.control}
+                    languages={languages}
+                    getFieldName={(code) => code}
+                    fields={[
+                      {
+                        key: "name",
+                        label: "Nomi",
+                        placeholder: (language) =>
+                          `${get(language, "name")} tilida nom`,
+                      },
+                    ]}
+                  />
                 </form>
               </Form>
             </DrawerBody>

@@ -1,22 +1,21 @@
 import React from "react";
 import { useNavigate, Outlet } from "react-router";
-import { PlusIcon, RotateCcwIcon, UsersIcon } from "lucide-react";
+import { PlusIcon, UsersIcon } from "lucide-react";
 import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { get, includes, some, isArray, join } from "lodash";
-import PageTransition from "@/components/page-transition";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import {
-  DataGrid,
-  DataGridContainer,
-  DataGridPagination,
-  DataGridTable,
-} from "@/components/reui/data-grid";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+  AdminListDataGrid,
+  AdminListHeader,
+  AdminListPageShell,
+  AdminListRefetchButton,
+  AdminListToolbar,
+} from "@/modules/admin/components/admin-list-shell.jsx";
+import { buildAdminFilterParams } from "@/modules/admin/components/admin-filter-utils.js";
 import {
   useGetQuery,
   usePostQuery,
@@ -71,44 +70,27 @@ const Index = () => {
 
   const queryParams = React.useMemo(
     () => ({
-      ...(deferredName.trim() ? { name: deferredName.trim() } : {}),
-      ...((deferredName.trim() ||
-        nameOperator === "empty" ||
-        nameOperator === "not_empty") &&
-      nameOperator !== "contains"
-        ? { nameOp: nameOperator }
-        : {}),
+      ...buildAdminFilterParams([
+        {
+          key: "name",
+          value: deferredName,
+          operator: nameOperator,
+          defaultOperator: "contains",
+          emptyValue: "",
+          trim: true,
+        },
+      ]),
       ...(deferredSearch.trim() ? { q: deferredSearch.trim() } : {}),
-      ...(roleFilter !== "all" ? { role: roleFilter } : {}),
-      ...((roleFilter !== "all" ||
-        roleOperator === "empty" ||
-        roleOperator === "not_empty") &&
-      roleOperator !== "is"
-        ? { roleOp: roleOperator }
-        : {}),
-      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
-      ...((statusFilter !== "all" ||
-        statusOperator === "empty" ||
-        statusOperator === "not_empty") &&
-      statusOperator !== "is"
-        ? { statusOp: statusOperator }
-        : {}),
-      ...(premiumFilter !== "all" ? { premium: premiumFilter } : {}),
-      ...((premiumFilter !== "all" ||
-        premiumOperator === "empty" ||
-        premiumOperator === "not_empty") &&
-      premiumOperator !== "is"
-        ? { premiumOp: premiumOperator }
-        : {}),
-      ...(coachStatusFilter !== "all"
-        ? { coachStatus: coachStatusFilter }
-        : {}),
-      ...((coachStatusFilter !== "all" ||
-        coachStatusOperator === "empty" ||
-        coachStatusOperator === "not_empty") &&
-      coachStatusOperator !== "is"
-        ? { coachStatusOp: coachStatusOperator }
-        : {}),
+      ...buildAdminFilterParams([
+        { key: "role", value: roleFilter, operator: roleOperator },
+        { key: "status", value: statusFilter, operator: statusOperator },
+        { key: "premium", value: premiumFilter, operator: premiumOperator },
+        {
+          key: "coachStatus",
+          value: coachStatusFilter,
+          operator: coachStatusOperator,
+        },
+      ]),
       sortBy,
       sortDir,
       page: currentPage,
@@ -313,7 +295,7 @@ const Index = () => {
 
       try {
         await extendSubscription({
-          url: `/admin/subscriptions/${user.premium.id}/extend`,
+          url: `/admin/premium/subscriptions/${user.premium.id}/extend`,
           attributes: {},
         });
         toast.success("Premium uzaytirildi");
@@ -394,75 +376,61 @@ const Index = () => {
   });
 
   return (
-    <PageTransition>
-      <div className="flex w-full flex-col gap-6">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <UsersIcon className="size-6" />
-            Foydalanuvchilar
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Real user accountlar va rollarni boshqaring
-          </p>
-        </div>
+    <AdminListPageShell>
+      <AdminListHeader
+        icon={UsersIcon}
+        title="Foydalanuvchilar"
+        description="Real user accountlar va rollarni boshqaring"
+      />
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <AdminListToolbar
+        filters={
           <Filter
             filterFields={filterFields}
             activeFilters={activeFilters}
             handleFiltersChange={handleFiltersChange}
           />
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
+        }
+        actions={
+          <>
+            <AdminListRefetchButton
               onClick={() => refetch()}
-              className="hidden sm:flex"
-              disabled={isFetching}
-            >
-              <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
-            </Button>
+              isFetching={isFetching}
+            />
             {canManageSupport ? (
               <Button onClick={handleCreateOpen} className="gap-1.5">
                 <PlusIcon className="size-4" />
                 Foydalanuvchi qo'shish
               </Button>
             ) : null}
-          </div>
-        </div>
+          </>
+        }
+      />
 
-        <DataGrid
-          table={table}
-          isLoading={isLoading || isFetching}
-          recordCount={totalCount}
-        >
-          <DataGridContainer>
-            <ScrollArea className="w-full">
-              <DataGridTable />
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
-          </DataGridContainer>
-          <DataGridPagination table={table} />
-        </DataGrid>
+      <AdminListDataGrid
+        table={table}
+        isLoading={isLoading || isFetching}
+        recordCount={totalCount}
+        paginationProps={{ table }}
+      />
 
-        <DeleteAlert
-          user={deleteCandidate}
-          open={Boolean(deleteCandidate)}
-          onOpenChange={(open) => !open && setDeleteCandidate(null)}
-          onConfirm={confirmDelete}
-        />
+      <DeleteAlert
+        user={deleteCandidate}
+        open={Boolean(deleteCandidate)}
+        onOpenChange={(open) => !open && setDeleteCandidate(null)}
+        onConfirm={confirmDelete}
+      />
 
-        <GiftPremiumDrawer
-          user={giftUser}
-          open={Boolean(giftUser)}
-          onOpenChange={(open) => {
-            if (!open) setGiftUser(null);
-          }}
-        />
+      <GiftPremiumDrawer
+        user={giftUser}
+        open={Boolean(giftUser)}
+        onOpenChange={(open) => {
+          if (!open) setGiftUser(null);
+        }}
+      />
 
-        <Outlet />
-      </div>
-    </PageTransition>
+      <Outlet />
+    </AdminListPageShell>
   );
 };
 

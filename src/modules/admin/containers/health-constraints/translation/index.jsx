@@ -1,11 +1,12 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router";
-import { get, map, trim } from "lodash";
+import { get, trim } from "lodash";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { AdminTranslationFields } from "@/modules/admin/components/admin-translation-fields.jsx";
 import {
   Drawer,
   DrawerBody,
@@ -17,12 +18,7 @@ import {
 } from "@/components/ui/drawer";
 import {
   Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner.jsx";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
 
@@ -47,8 +43,12 @@ const TranslationPage = () => {
     url: "/admin/languages",
     queryProps: { queryKey: ["admin", "languages"] },
   });
-  const languages = get(languagesData, "data.data", []).filter(
-    (language) => language.isActive,
+  const languages = React.useMemo(
+    () =>
+      get(languagesData, "data.data", []).filter(
+        (language) => language.isActive,
+      ),
+    [languagesData],
   );
   const form = useForm({
     resolver: zodResolver(translateSchema),
@@ -73,7 +73,7 @@ const TranslationPage = () => {
         ]),
       ),
     );
-  }, [form, item, languagesData]);
+  }, [form, item, languages]);
 
   const onSubmit = async (values) => {
     const translations = Object.fromEntries(
@@ -133,39 +133,24 @@ const TranslationPage = () => {
                   className="flex flex-col gap-4"
                   onSubmit={form.handleSubmit(onSubmit)}
                 >
-                  {map(languages, (language) => (
-                    <div
-                      key={language.code}
-                      className="flex flex-col gap-3 rounded-2xl border p-3"
-                    >
-                      <FormField
-                        control={form.control}
-                        name={`${language.code}.name`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>
-                              {language.flag} {language.name} nomi
-                            </FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value || ""} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`${language.code}.description`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Tavsif</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value || ""} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  ))}
+                  <AdminTranslationFields
+                    control={form.control}
+                    languages={languages}
+                    fields={[
+                      {
+                        key: "name",
+                        label: "Nomi",
+                        placeholder: (language) =>
+                          `${get(language, "name")} tilida nom`,
+                      },
+                      {
+                        key: "description",
+                        label: "Tavsif",
+                        placeholder: (language) =>
+                          `${get(language, "name")} tilida tavsif`,
+                      },
+                    ]}
+                  />
                 </form>
               </Form>
             </DrawerBody>

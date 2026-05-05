@@ -1,6 +1,12 @@
 import React from "react";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
-import { get, find, isEmpty, isEqual } from "lodash";
+import {
+  clampAdminPage,
+  clampAdminPageSize,
+  getAdminFilterReader,
+  makeAdminSelectActiveFilter,
+  makeAdminTextActiveFilter,
+} from "@/modules/admin/components/admin-filter-utils.js";
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -50,34 +56,23 @@ export const useCoachFilters = () => {
   );
 
   const activeFilters = React.useMemo(() => {
-    const items = [];
-    if (!isEmpty(String(search).trim())) {
-      items.push({
-        id: "q",
+    return [
+      makeAdminTextActiveFilter({
         field: "q",
+        value: search,
         operator: "contains",
-        values: [search],
-      });
-    }
-    if (!isEqual(coachStatusFilter, "all")) {
-      items.push({
-        id: "status",
+      }),
+      makeAdminSelectActiveFilter({
         field: "status",
+        value: coachStatusFilter,
         operator: "is",
-        values: [coachStatusFilter],
-      });
-    }
-    return items;
+      }),
+    ].filter(Boolean);
   }, [coachStatusFilter, search]);
 
   const handleFiltersChange = React.useCallback(
     (nextFilters) => {
-      const getValue = (field, fallback = "") =>
-        get(
-          find(nextFilters, (item) => isEqual(get(item, "field"), field)),
-          "values[0]",
-          fallback,
-        );
+      const { getValue } = getAdminFilterReader(nextFilters);
 
       React.startTransition(() => {
         void setSearch(getValue("q", ""));
@@ -88,8 +83,8 @@ export const useCoachFilters = () => {
     [setCoachStatusFilter, setPageQuery, setSearch],
   );
 
-  const currentPage = Math.max(1, Number(pageQuery) || 1);
-  const pageSize = Math.max(1, Number(pageSizeQuery) || DEFAULT_PAGE_SIZE);
+  const currentPage = clampAdminPage(pageQuery);
+  const pageSize = clampAdminPageSize(pageSizeQuery, DEFAULT_PAGE_SIZE);
 
   return {
     search,

@@ -2,7 +2,6 @@ import React from "react";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { useLocation, useNavigate } from "react-router";
 import CatalogItemActionsMenu from "./catalog-item-actions-menu";
-import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 import {
   get,
   map,
@@ -27,17 +26,6 @@ import {
 import { Filters } from "@/components/reui/filters.jsx";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import {
-  Drawer,
-  DrawerBody,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
@@ -51,17 +39,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import {
-  CheckCircle2Icon,
-  GlobeIcon,
   LoaderCircleIcon,
-  PencilIcon,
   PlusIcon,
   RotateCcwIcon,
-  Trash2Icon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
+import { useLocalizedCatalogFilters } from "./use-localized-catalog-filters.js";
+import { LocalizedCatalogDrawers } from "./localized-catalog-drawers.jsx";
 
 const emptyForm = {
   name: "",
@@ -77,26 +63,6 @@ const SWITCH_COLUMN_META = {
   headerClassName: "text-center",
   cellClassName: "text-center",
 };
-
-const DEFAULT_PAGE_SIZE = 20;
-const TEXT_OPERATORS = [
-  "contains",
-  "not_contains",
-  "starts_with",
-  "ends_with",
-  "is",
-  "empty",
-  "not_empty",
-];
-const SELECT_OPERATORS = ["is", "is_not", "empty", "not_empty"];
-const SORT_FIELDS = [
-  "orderKey",
-  "name",
-  "createdAt",
-  "isActive",
-  "isOnboarding",
-];
-const SORT_DIRECTIONS = ["asc", "desc"];
 
 const resolveLabel = (translations, fallback, language) => {
   if (translations && typeof translations === "object") {
@@ -196,63 +162,24 @@ const LocalizedCatalogManager = ({
     get(languagesData, "data", []),
   );
 
-  const [search, setSearch] = useQueryState("q", parseAsString.withDefault(""));
-  const [searchOperator, setSearchOperator] = useQueryState(
-    "qOp",
-    parseAsStringEnum(TEXT_OPERATORS).withDefault("contains"),
-  );
-  const [statusFilter, setStatusFilter] = useQueryState(
-    "status",
-    parseAsStringEnum(["all", "active", "inactive"]).withDefault("all"),
-  );
-  const [statusOperator, setStatusOperator] = useQueryState(
-    "statusOp",
-    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
-  );
-  const [onboardingFilter, setOnboardingFilter] = useQueryState(
-    "onboarding",
-    parseAsStringEnum(["all", "yes", "no"]).withDefault("all"),
-  );
-  const [onboardingOperator, setOnboardingOperator] = useQueryState(
-    "onboardingOp",
-    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
-  );
-  const [translationFilter, setTranslationFilter] = useQueryState(
-    "translations",
-    parseAsStringEnum(["all", "complete", "missing"]).withDefault("all"),
-  );
-  const [translationOperator, setTranslationOperator] = useQueryState(
-    "translationsOp",
-    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
-  );
-  const [pageQuery, setPageQuery] = useQueryState(
-    "page",
-    parseAsString.withDefault("1"),
-  );
-  const [pageSizeQuery, setPageSizeQuery] = useQueryState(
-    "pageSize",
-    parseAsString.withDefault(String(DEFAULT_PAGE_SIZE)),
-  );
-  const [sortBy, setSortBy] = useQueryState(
-    "sortBy",
-    parseAsStringEnum(SORT_FIELDS).withDefault("orderKey"),
-  );
-  const [sortDir, setSortDir] = useQueryState(
-    "sortDir",
-    parseAsStringEnum(SORT_DIRECTIONS).withDefault("asc"),
-  );
-  const currentPage = Math.max(1, Number(pageQuery) || 1);
-  const pageSize = Math.min(
-    100,
-    Math.max(1, Number(pageSizeQuery) || DEFAULT_PAGE_SIZE),
-  );
-  const sorting = React.useMemo(
-    () =>
-      sortBy === "orderKey" && sortDir === "asc"
-        ? []
-        : [{ id: sortBy, desc: sortDir === "desc" }],
-    [sortBy, sortDir],
-  );
+  const {
+    activeFilters,
+    currentPage,
+    deferredSearch,
+    filterFields,
+    handleFiltersChange,
+    isDefaultReorderView,
+    onboardingFilter,
+    pageSize,
+    queryParams,
+    setPageQuery,
+    setPageSizeQuery,
+    setSortBy,
+    setSortDir,
+    sorting,
+    statusFilter,
+    translationFilter,
+  } = useLocalizedCatalogFilters({ pluralSearchPlaceholder });
 
   const [editingItem, setEditingItem] = React.useState(null);
   const [translatingItem, setTranslatingItem] = React.useState(null);
@@ -302,60 +229,7 @@ const LocalizedCatalogManager = ({
     [activeLanguages, currentLanguage],
   );
 
-  const deferredSearch = React.useDeferredValue(search);
   const serverSide = Boolean(endpoint);
-  const queryParams = React.useMemo(
-    () => ({
-      ...(deferredSearch.trim() ? { q: deferredSearch.trim() } : {}),
-      ...((deferredSearch.trim() ||
-        searchOperator === "empty" ||
-        searchOperator === "not_empty") &&
-      searchOperator !== "contains"
-        ? { qOp: searchOperator }
-        : {}),
-      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
-      ...((statusFilter !== "all" ||
-        statusOperator === "empty" ||
-        statusOperator === "not_empty") &&
-      statusOperator !== "is"
-        ? { statusOp: statusOperator }
-        : {}),
-      ...(onboardingFilter !== "all" ? { onboarding: onboardingFilter } : {}),
-      ...((onboardingFilter !== "all" ||
-        onboardingOperator === "empty" ||
-        onboardingOperator === "not_empty") &&
-      onboardingOperator !== "is"
-        ? { onboardingOp: onboardingOperator }
-        : {}),
-      ...(translationFilter !== "all"
-        ? { translations: translationFilter }
-        : {}),
-      ...((translationFilter !== "all" ||
-        translationOperator === "empty" ||
-        translationOperator === "not_empty") &&
-      translationOperator !== "is"
-        ? { translationsOp: translationOperator }
-        : {}),
-      sortBy,
-      sortDir,
-      page: currentPage,
-      pageSize,
-    }),
-    [
-      currentPage,
-      deferredSearch,
-      pageSize,
-      searchOperator,
-      onboardingFilter,
-      onboardingOperator,
-      sortBy,
-      sortDir,
-      statusFilter,
-      statusOperator,
-      translationFilter,
-      translationOperator,
-    ],
-  );
   const serverQuery = useGetQuery({
     url: endpoint || route,
     params: queryParams,
@@ -464,7 +338,7 @@ const LocalizedCatalogManager = ({
         get(item, "translations", {}),
       );
       const isComplete =
-        size(activeLanguages) > 0 && filledCount >= size(activeLanguages);
+        activeLanguages.length > 0 && filledCount >= activeLanguages.length;
 
       return (
         matchesSearch &&
@@ -484,19 +358,7 @@ const LocalizedCatalogManager = ({
     translationFilter,
   ]);
 
-  const isReorderEnabled =
-    canManageContent &&
-    deferredSearch.trim() === "" &&
-    searchOperator === "contains" &&
-    statusFilter === "all" &&
-    statusOperator === "is" &&
-    onboardingFilter === "all" &&
-    onboardingOperator === "is" &&
-    translationFilter === "all" &&
-    translationOperator === "is" &&
-    sortBy === "orderKey" &&
-    sortDir === "asc" &&
-    currentPage === 1;
+  const isReorderEnabled = canManageContent && isDefaultReorderView;
 
   const paginatedItems = React.useMemo(() => {
     if (serverSide) return filteredItems;
@@ -512,199 +374,6 @@ const LocalizedCatalogManager = ({
   );
   const recordCount =
     Number(get(effectiveMeta, "total")) || filteredItems.length;
-
-  const filterFields = React.useMemo(
-    () => [
-      {
-        label: "Qidiruv",
-        key: "q",
-        type: "text",
-        defaultOperator: "contains",
-        placeholder: pluralSearchPlaceholder,
-      },
-      {
-        label: "Status",
-        key: "status",
-        type: "select",
-        defaultOperator: "is",
-        options: [
-          { value: "all", label: "Barcha statuslar" },
-          { value: "active", label: "Faqat faol" },
-          { value: "inactive", label: "Faqat nofaol" },
-        ],
-      },
-      {
-        label: "Onboardingda ko'rsatish",
-        key: "onboarding",
-        type: "select",
-        defaultOperator: "is",
-        options: [
-          { value: "all", label: "Barchasi" },
-          { value: "yes", label: "Onboarding uchun" },
-          { value: "no", label: "Qo'shimcha" },
-        ],
-      },
-      {
-        label: "Tarjimalar",
-        key: "translations",
-        type: "select",
-        defaultOperator: "is",
-        options: [
-          { value: "all", label: "Barcha tarjimalar" },
-          { value: "complete", label: "Tarjimasi to'liq" },
-          { value: "missing", label: "Tarjimasi to'liq emas" },
-        ],
-      },
-    ],
-    [pluralSearchPlaceholder],
-  );
-
-  const activeFilters = React.useMemo(() => {
-    const next = [];
-
-    if (
-      search.trim() ||
-      searchOperator === "empty" ||
-      searchOperator === "not_empty"
-    ) {
-      next.push({
-        id: "q",
-        field: "q",
-        operator: searchOperator,
-        values:
-          searchOperator === "empty" || searchOperator === "not_empty"
-            ? []
-            : [search],
-      });
-    }
-
-    if (
-      statusFilter !== "all" ||
-      statusOperator === "empty" ||
-      statusOperator === "not_empty"
-    ) {
-      next.push({
-        id: "status",
-        field: "status",
-        operator: statusOperator,
-        values:
-          statusOperator === "empty" || statusOperator === "not_empty"
-            ? []
-            : [statusFilter],
-      });
-    }
-
-    if (
-      onboardingFilter !== "all" ||
-      onboardingOperator === "empty" ||
-      onboardingOperator === "not_empty"
-    ) {
-      next.push({
-        id: "onboarding",
-        field: "onboarding",
-        operator: onboardingOperator,
-        values:
-          onboardingOperator === "empty" || onboardingOperator === "not_empty"
-            ? []
-            : [onboardingFilter],
-      });
-    }
-
-    if (
-      translationFilter !== "all" ||
-      translationOperator === "empty" ||
-      translationOperator === "not_empty"
-    ) {
-      next.push({
-        id: "translations",
-        field: "translations",
-        operator: translationOperator,
-        values:
-          translationOperator === "empty" || translationOperator === "not_empty"
-            ? []
-            : [translationFilter],
-      });
-    }
-
-    return next;
-  }, [
-    search,
-    searchOperator,
-    onboardingFilter,
-    onboardingOperator,
-    statusFilter,
-    statusOperator,
-    translationFilter,
-    translationOperator,
-  ]);
-
-  const handleFiltersChange = React.useCallback(
-    (nextFilters) => {
-      const nextSearch = get(
-        find(nextFilters, (f) => get(f, "field") === "q"),
-        "values[0]",
-        "",
-      );
-      const nextSearchOperator = get(
-        find(nextFilters, (f) => get(f, "field") === "q"),
-        "operator",
-        "contains",
-      );
-      const nextStatus = get(
-        find(nextFilters, (f) => get(f, "field") === "status"),
-        "values[0]",
-        "all",
-      );
-      const nextStatusOperator = get(
-        find(nextFilters, (f) => get(f, "field") === "status"),
-        "operator",
-        "is",
-      );
-      const nextOnboarding = get(
-        find(nextFilters, (f) => get(f, "field") === "onboarding"),
-        "values[0]",
-        "all",
-      );
-      const nextOnboardingOperator = get(
-        find(nextFilters, (f) => get(f, "field") === "onboarding"),
-        "operator",
-        "is",
-      );
-      const nextTranslations = get(
-        find(nextFilters, (f) => get(f, "field") === "translations"),
-        "values[0]",
-        "all",
-      );
-      const nextTranslationsOperator = get(
-        find(nextFilters, (f) => get(f, "field") === "translations"),
-        "operator",
-        "is",
-      );
-
-      React.startTransition(() => {
-        void setSearch(nextSearch);
-        void setSearchOperator(nextSearchOperator);
-        void setStatusFilter(nextStatus);
-        void setStatusOperator(nextStatusOperator);
-        void setOnboardingFilter(nextOnboarding);
-        void setOnboardingOperator(nextOnboardingOperator);
-        void setTranslationFilter(nextTranslations);
-        void setTranslationOperator(nextTranslationsOperator);
-        void setPageQuery("1");
-      });
-    },
-    [
-      setPageQuery,
-      setSearch,
-      setSearchOperator,
-      setOnboardingFilter,
-      setOnboardingOperator,
-      setStatusFilter,
-      setStatusOperator,
-      setTranslationFilter,
-      setTranslationOperator,
-    ],
-  );
 
   const openCreateDrawer = React.useCallback(() => {
     if (!canManageContent) return;
@@ -883,6 +552,18 @@ const LocalizedCatalogManager = ({
     },
     [canManageContent, effectiveRefetch, updateItem],
   );
+
+  const closeDrawer = React.useCallback(() => {
+    navigate(route);
+    setEditingItem(null);
+    setForm(emptyForm);
+  }, [navigate, route]);
+
+  const closeTranslationsDrawer = React.useCallback(() => {
+    navigate(route);
+    setTranslatingItem(null);
+    setTranslationForm({});
+  }, [navigate, route]);
 
   const columns = React.useMemo(
     () => [
@@ -1184,187 +865,26 @@ const LocalizedCatalogManager = ({
         />
       </DataGrid>
 
-      <Drawer
-        open={drawerOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            navigate(route);
-            setEditingItem(null);
-            setForm(emptyForm);
-          }
-        }}
-        direction="bottom"
-      >
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>
-              {editingItem
-                ? `${singularLabel}ni tahrirlash`
-                : `Yangi ${singularLabel}`}
-            </DrawerTitle>
-            <DrawerDescription>
-              Joriy til uchun asosiy ma'lumotlarni kiriting.
-            </DrawerDescription>
-          </DrawerHeader>
-
-          <DrawerBody className="flex flex-col gap-4">
-            {isDrawerItemLoading ? (
-              <div className="flex min-h-48 items-center justify-center">
-                <LoaderCircleIcon className="size-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : (
-              <>
-                <div className="rounded-2xl border px-4 py-3 text-sm">
-                  <p className="font-medium">
-                    Joriy til:{" "}
-                    {get(currentLanguageMeta, "flag")
-                      ? `${get(currentLanguageMeta, "flag")} `
-                      : ""}
-                    {get(
-                      currentLanguageMeta,
-                      "name",
-                      currentLanguage.toUpperCase(),
-                    )}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Qo'shimcha tarjimalar alohida drawerda boshqariladi.
-                  </p>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <Label>Nomi ({currentLanguage.toUpperCase()})</Label>
-                  <Input
-                    value={get(form, "name")}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        name: get(event, "target.value"),
-                      }))
-                    }
-                    placeholder={`${singularLabel} nomini kiriting`}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between rounded-2xl border px-4 py-3">
-                  <div>
-                    <Label>Status</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Faol bo'lsa workout formida ko'rinadi.
-                    </p>
-                  </div>
-                  <Switch
-                    checked={get(form, "isActive")}
-                    onCheckedChange={(checked) =>
-                      setForm((current) => ({
-                        ...current,
-                        isActive: checked,
-                      }))
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center justify-between rounded-2xl border px-4 py-3">
-                  <div>
-                    <Label>Onboardingda ko'rsatish</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Yoqilgan bo'lsa user onboarding ro'yxatida ko'rinadi.
-                    </p>
-                  </div>
-                  <Switch
-                    checked={get(form, "isOnboarding")}
-                    onCheckedChange={(checked) =>
-                      setForm((current) => ({
-                        ...current,
-                        isOnboarding: checked,
-                      }))
-                    }
-                  />
-                </div>
-              </>
-            )}
-          </DrawerBody>
-
-          <DrawerFooter>
-            <Button
-              onClick={() => void submitDrawer()}
-              disabled={isCreating || isUpdating || isDrawerItemLoading}
-              className="gap-2"
-            >
-              {isCreating || isUpdating ? (
-                <LoaderCircleIcon className="animate-spin" />
-              ) : (
-                <CheckCircle2Icon />
-              )}
-              Saqlash
-            </Button>
-            <Button variant="outline" onClick={() => navigate(route)}>
-              Bekor qilish
-            </Button>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
-
-      <Drawer
-        open={translationsDrawerOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            navigate(route);
-            setTranslatingItem(null);
-            setTranslationForm({});
-          }
-        }}
-        direction="bottom"
-      >
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>Tarjimalarni boshqarish</DrawerTitle>
-            <DrawerDescription>
-              Har bir faol til uchun alohida tarjima kiriting.
-            </DrawerDescription>
-          </DrawerHeader>
-
-          <DrawerBody className="flex flex-col gap-4">
-            {isDrawerItemLoading ? (
-              <div className="flex min-h-48 items-center justify-center">
-                <LoaderCircleIcon className="size-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : (
-              map(activeLanguages, (language) => (
-                <div key={get(language, "id")} className="flex flex-col gap-2">
-                  <Label>
-                    {get(language, "flag")} {get(language, "name")}
-                  </Label>
-                  <Input
-                    value={get(translationForm, get(language, "code"), "")}
-                    onChange={(event) =>
-                      setTranslationForm((current) => ({
-                        ...current,
-                        [language.code]: event.target.value,
-                      }))
-                    }
-                    placeholder={`${language.name} tarjimasi`}
-                  />
-                </div>
-              ))
-            )}
-          </DrawerBody>
-
-          <DrawerFooter>
-            <Button
-              onClick={() => void submitTranslations()}
-              disabled={isUpdating || isDrawerItemLoading}
-              className="gap-2"
-            >
-              {isUpdating ? (
-                <LoaderCircleIcon className="animate-spin" />
-              ) : (
-                <CheckCircle2Icon />
-              )}
-              Tarjimalarni saqlash
-            </Button>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
+      <LocalizedCatalogDrawers
+        activeLanguages={activeLanguages}
+        currentLanguage={currentLanguage}
+        currentLanguageMeta={currentLanguageMeta}
+        drawerOpen={drawerOpen}
+        editingItem={editingItem}
+        form={form}
+        isCreating={isCreating}
+        isDrawerItemLoading={isDrawerItemLoading}
+        isUpdating={isUpdating}
+        onCloseDrawer={closeDrawer}
+        onCloseTranslationsDrawer={closeTranslationsDrawer}
+        onSubmitDrawer={submitDrawer}
+        onSubmitTranslations={submitTranslations}
+        setForm={setForm}
+        setTranslationForm={setTranslationForm}
+        singularLabel={singularLabel}
+        translationForm={translationForm}
+        translationsDrawerOpen={translationsDrawerOpen}
+      />
 
       <AlertDialog
         open={Boolean(itemToDelete)}

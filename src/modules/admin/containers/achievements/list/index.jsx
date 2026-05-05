@@ -3,20 +3,19 @@ import { Outlet, useNavigate } from "react-router";
 import { filter, get, isArray, join, map, toString } from "lodash";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { toast } from "sonner";
-import { AwardIcon, PlusIcon, RotateCcwIcon } from "lucide-react";
+import { AwardIcon, PlusIcon } from "lucide-react";
 import { useBreadcrumbStore, useAppModeStore, useLanguageStore } from "@/store";
 import { useDeleteQuery, useGetQuery, usePatchQuery } from "@/hooks/api";
 import {
-  DataGrid,
-  DataGridContainer,
-  DataGridTable,
-  DataGridTableDndRows,
-} from "@/components/reui/data-grid";
-import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+  AdminListDataGrid,
+  AdminListHeader,
+  AdminListPageShell,
+  AdminListRefetchButton,
+  AdminListToolbar,
+} from "@/modules/admin/components/admin-list-shell.jsx";
+import { buildAdminFilterParams } from "@/modules/admin/components/admin-filter-utils.js";
+import { buildAdminReorderPayload } from "@/modules/admin/components/admin-list-reorder.js";
 import { Button } from "@/components/ui/button";
-import PageTransition from "@/components/page-transition";
-import { cn } from "@/lib/utils";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import {
   ADMIN_ACHIEVEMENTS_QUERY_KEY,
@@ -76,51 +75,36 @@ const AchievementsListPage = () => {
   const deferredName = React.useDeferredValue(nameFilter);
   const queryParams = React.useMemo(
     () => ({
-      ...(deferredName.trim() ? { name: deferredName.trim() } : {}),
-      ...((deferredName.trim() ||
-        nameOperator === "empty" ||
-        nameOperator === "not_empty") &&
-      nameOperator !== "contains"
-        ? { nameOp: nameOperator }
-        : {}),
-      ...(categoryFilter !== "all" ? { category: categoryFilter } : {}),
-      ...((categoryFilter !== "all" ||
-        categoryOperator === "empty" ||
-        categoryOperator === "not_empty") &&
-      categoryOperator !== "is"
-        ? { categoryOp: categoryOperator }
-        : {}),
-      ...(metricFilter !== "all" ? { metric: metricFilter } : {}),
-      ...((metricFilter !== "all" ||
-        metricOperator === "empty" ||
-        metricOperator === "not_empty") &&
-      metricOperator !== "is"
-        ? { metricOp: metricOperator }
-        : {}),
-      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
-      ...((statusFilter !== "all" ||
-        statusOperator === "empty" ||
-        statusOperator === "not_empty") &&
-      statusOperator !== "is"
-        ? { statusOp: statusOperator }
-        : {}),
-      ...(hasImageFilter !== "all" ? { hasImage: hasImageFilter } : {}),
-      ...((hasImageFilter !== "all" ||
-        hasImageOperator === "empty" ||
-        hasImageOperator === "not_empty") &&
-      hasImageOperator !== "is"
-        ? { hasImageOp: hasImageOperator }
-        : {}),
+      ...buildAdminFilterParams([
+        {
+          key: "name",
+          value: deferredName,
+          operator: nameOperator,
+          defaultOperator: "contains",
+          emptyValue: "",
+          trim: true,
+        },
+        {
+          key: "category",
+          value: categoryFilter,
+          operator: categoryOperator,
+        },
+        { key: "metric", value: metricFilter, operator: metricOperator },
+        { key: "status", value: statusFilter, operator: statusOperator },
+        {
+          key: "hasImage",
+          value: hasImageFilter,
+          operator: hasImageOperator,
+        },
+      ]),
       ...(imageModeFilter !== "any" ? { imageMode: imageModeFilter } : {}),
-      ...(translationsFilter !== "all"
-        ? { translations: translationsFilter }
-        : {}),
-      ...((translationsFilter !== "all" ||
-        translationsOperator === "empty" ||
-        translationsOperator === "not_empty") &&
-      translationsOperator !== "is"
-        ? { translationsOp: translationsOperator }
-        : {}),
+      ...buildAdminFilterParams([
+        {
+          key: "translations",
+          value: translationsFilter,
+          operator: translationsOperator,
+        },
+      ]),
       sortBy,
       sortDir,
       page: currentPage,
@@ -250,37 +234,22 @@ const AchievementsListPage = () => {
       return;
     }
 
-    const currentIds = map(items, (item) => toString(get(item, "id")));
-    const oldIndex = currentIds.indexOf(active.id);
-    const newIndex = currentIds.indexOf(over.id);
+    const reorderPayload = buildAdminReorderPayload({
+      items,
+      activeId: active.id,
+      overId: over.id,
+      getId: (item) => get(item, "id"),
+    });
 
-    if (oldIndex < 0 || newIndex < 0) {
-      return;
-    }
-
-    const ordered = [...items];
-    const [movedItem] = ordered.splice(oldIndex, 1);
-    ordered.splice(newIndex, 0, movedItem);
-
-    const movedIndex = ordered.findIndex(
-      (item) => get(item, "id") === get(movedItem, "id"),
-    );
-    const prevId =
-      movedIndex > 0
-        ? toString(get(ordered, `${movedIndex - 1}.id`))
-        : undefined;
-    const nextId =
-      movedIndex < ordered.length - 1
-        ? toString(get(ordered, `${movedIndex + 1}.id`))
-        : undefined;
+    if (!reorderPayload) return;
 
     try {
       await patchReorder({
         url: "/admin/achievements/reorder",
         attributes: {
-          movedId: toString(get(movedItem, "id")),
-          prevId,
-          nextId,
+          movedId: reorderPayload.movedId,
+          prevId: reorderPayload.prevId,
+          nextId: reorderPayload.nextId,
         },
       });
       toast.success("Tartib yangilandi");
@@ -330,88 +299,62 @@ const AchievementsListPage = () => {
   });
 
   return (
-    <PageTransition>
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-2">
-          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-            <AwardIcon className="text-primary" />
-            Achievements
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Foydalanuvchi yutuqlarini qo'shing va boshqaring
-          </p>
-        </div>
+    <AdminListPageShell>
+      <AdminListHeader
+        icon={AwardIcon}
+        title="Achievements"
+        description="Foydalanuvchi yutuqlarini qo'shing va boshqaring"
+      />
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <AdminListToolbar
+        filters={
           <Filter
             filterFields={filterFields}
             activeFilters={activeFilters}
             handleFiltersChange={handleFiltersChange}
           />
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
+        }
+        actions={
+          <>
+            <AdminListRefetchButton
               onClick={() => refetch()}
-              className="hidden sm:flex"
-              disabled={isFetching}
-            >
-              <RotateCcwIcon
-                className={cn("size-4", isFetching && "animate-spin")}
-              />
-            </Button>
+              isFetching={isFetching}
+            />
             {canManageContent ? (
               <Button onClick={() => navigate("create")} className="gap-1.5">
                 <PlusIcon />
                 Achievement qo'shish
               </Button>
             ) : null}
-          </div>
-        </div>
+          </>
+        }
+      />
 
-        <DataGrid
-          table={table}
-          isLoading={isLoading}
-          recordCount={get(meta, "total", 0)}
-        >
-          <div className="flex w-full flex-col gap-2.5">
-            <DataGridContainer>
-              <ScrollArea className="w-full">
-                {canManageContent && canReorder ? (
-                  <DataGridTableDndRows
-                    dataIds={map(items, (item) => toString(get(item, "id")))}
-                    handleDragEnd={handleDragEnd}
-                  />
-                ) : (
-                  <DataGridTable />
-                )}
-                <ScrollBar orientation="horizontal" />
-              </ScrollArea>
-            </DataGridContainer>
-            {canManageContent && !canReorder ? (
-              <div className="px-2 text-xs text-muted-foreground">
-                Tartiblash faqat filterlarsiz va birinchi sahifada ishlaydi.
-              </div>
-            ) : null}
-            <DataGridPagination
-              info="{from} - {to} / {count} ta achievement"
-              rowsPerPageLabel="Sahifada:"
-              sizes={[10, 25, 50, 100]}
-            />
-          </div>
-        </DataGrid>
+      <AdminListDataGrid
+        table={table}
+        isLoading={isLoading}
+        recordCount={get(meta, "total", 0)}
+        canUseDnd={canManageContent && canReorder}
+        dataIds={map(items, (item) => toString(get(item, "id")))}
+        onDragEnd={handleDragEnd}
+        reorderHint={
+          canManageContent && !canReorder
+            ? "Tartiblash faqat filterlarsiz va birinchi sahifada ishlaydi."
+            : null
+        }
+        paginationInfo="{from} - {to} / {count} ta achievement"
+      />
 
-        <DeleteAlert
-          item={itemToDelete}
-          open={!!itemToDelete}
-          onOpenChange={(open) => !open && setItemToDelete(null)}
-          onConfirm={handleDelete}
-          isDeleting={isDeleting}
-        />
+      <DeleteAlert
+        item={itemToDelete}
+        open={!!itemToDelete}
+        onOpenChange={(open) => !open && setItemToDelete(null)}
+        onConfirm={handleDelete}
+        isDeleting={isDeleting}
+      />
 
-        <Outlet />
-      </div>
-    </PageTransition>
+      <Outlet />
+    </AdminListPageShell>
   );
 };
 

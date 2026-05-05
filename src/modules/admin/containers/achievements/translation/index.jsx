@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
-import { filter, find, get, isArray, join, map, trim } from "lodash";
+import { filter, get, isArray, join, trim } from "lodash";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
 import { useLanguageStore } from "@/store";
 import { Button } from "@/components/ui/button";
+import { AdminTranslationFields } from "@/modules/admin/components/admin-translation-fields.jsx";
 import {
   Drawer,
   DrawerContent,
@@ -19,14 +20,7 @@ import {
 } from "@/components/ui/drawer";
 import {
   Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner.jsx";
 import {
   ADMIN_ACHIEVEMENTS_QUERY_KEY,
@@ -61,15 +55,9 @@ const getActiveLanguages = (languages) => {
   return activeLanguages.length ? activeLanguages : [FALLBACK_LANGUAGE];
 };
 
-const resolveCurrentLanguage = (activeLanguages, currentLanguage) =>
-  find(
-    activeLanguages,
-    (language) => get(language, "code") === currentLanguage,
-  ) || get(activeLanguages, "0", FALLBACK_LANGUAGE);
-
 const buildDefaultValues = (item, languages) =>
   Object.fromEntries(
-    map(languages, (language) => {
+    languages.map((language) => {
       const code = get(language, "code");
       return [
         code,
@@ -117,10 +105,6 @@ const TranslateAchievement = () => {
   const activeLanguages = useMemo(
     () => getActiveLanguages(get(languagesData, "data.data", [])),
     [languagesData],
-  );
-  const activeLanguage = useMemo(
-    () => resolveCurrentLanguage(activeLanguages, currentLanguage),
-    [activeLanguages, currentLanguage],
   );
   const defaultValues = useMemo(
     () => buildDefaultValues(item, activeLanguages),
@@ -192,59 +176,26 @@ const TranslateAchievement = () => {
                   onSubmit={form.handleSubmit(onSubmit)}
                   className="no-scrollbar flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4"
                 >
-                  {map(activeLanguages, (language) => {
-                    const code = get(language, "code");
-                    const isCurrent = code === get(activeLanguage, "code");
-
-                    return (
-                      <div key={code} className="space-y-3 rounded-xl border p-3">
-                        <div className="flex items-center gap-2 text-sm font-medium">
-                          <span>{get(language, "flag", "Lang")}</span>
-                          {get(language, "name")}
-                          {isCurrent ? (
-                            <span className="text-xs text-muted-foreground">
-                              Asosiy
-                            </span>
-                          ) : null}
-                        </div>
-                        <FormField
-                          control={form.control}
-                          name={`${code}.name`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Nomi</FormLabel>
-                              <FormControl>
-                                <Input
-                                  {...field}
-                                  value={field.value || ""}
-                                  placeholder={`${get(language, "name")} tilida nom`}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`${code}.description`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Tavsif</FormLabel>
-                              <FormControl>
-                                <Textarea
-                                  {...field}
-                                  value={field.value || ""}
-                                  placeholder={`${get(language, "name")} tilida tavsif`}
-                                  className="min-h-20"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    );
-                  })}
+                  <AdminTranslationFields
+                    control={form.control}
+                    languages={activeLanguages}
+                    currentLanguage={currentLanguage}
+                    fields={[
+                      {
+                        key: "name",
+                        label: "Nomi",
+                        placeholder: (language) =>
+                          `${get(language, "name")} tilida nom`,
+                      },
+                      {
+                        key: "description",
+                        label: "Tavsif",
+                        type: "textarea",
+                        placeholder: (language) =>
+                          `${get(language, "name")} tilida tavsif`,
+                      },
+                    ]}
+                  />
                 </form>
               </Form>
 

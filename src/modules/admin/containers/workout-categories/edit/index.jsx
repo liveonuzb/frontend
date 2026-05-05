@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Spinner } from "@/components/ui/spinner.jsx";
 import {
   Drawer,
@@ -59,6 +60,7 @@ const createFormFromCategory = (category, language) => {
       colorMode: "custom",
       presetColor: DEFAULT_CATEGORY_BADGE_CLASS,
       customColor: getCustomCategoryBadgeHex(color),
+      isOnboarding: category?.isOnboarding !== false,
     };
   }
 
@@ -67,6 +69,7 @@ const createFormFromCategory = (category, language) => {
     colorMode: "preset",
     presetColor: color,
     customColor: "#64748b",
+    isOnboarding: category?.isOnboarding !== false,
   };
 };
 
@@ -75,35 +78,18 @@ const emptyForm = {
   colorMode: "preset",
   presetColor: DEFAULT_CATEGORY_BADGE_CLASS,
   customColor: "#64748b",
+  isOnboarding: true,
 };
 
-const EditWorkoutCategory = () => {
-  const navigate = useNavigate();
-  const { id } = useParams();
-  const currentLanguage = useLanguageStore((state) => state.currentLanguage);
-
-  const { data: categoryData, isLoading } = useGetQuery({
-    url: `/admin/workout-categories/${id}`,
-    queryProps: {
-      queryKey: ["admin", "workout-categories", "detail", id],
-      enabled: Boolean(id),
-    },
-  });
-  const category = get(categoryData, "data.data");
-
-  const [form, setForm] = React.useState(emptyForm);
-
-  React.useEffect(() => {
-    if (category) {
-      setForm(createFormFromCategory(category, currentLanguage));
-    }
-  }, [category, currentLanguage]);
-
-  const patchMutation = usePatchQuery({
-    queryKey: ["admin", "workout-categories"],
-  });
-  const isUpdating = patchMutation.isPending;
-
+const EditWorkoutCategoryFields = ({
+  id,
+  initialForm,
+  isLoading,
+  isUpdating,
+  navigate,
+  patchMutation,
+}) => {
+  const [form, setForm] = React.useState(initialForm);
   const previewAppearance = React.useMemo(
     () => getCategoryBadgeAppearance(getStoredColorValue(form)),
     [form],
@@ -122,6 +108,7 @@ const EditWorkoutCategory = () => {
         attributes: {
           name,
           color: getStoredColorValue(form),
+          isOnboarding: form.isOnboarding,
         },
       });
       toast.success("Kategoriya yangilandi");
@@ -135,6 +122,169 @@ const EditWorkoutCategory = () => {
       );
     }
   }, [form, id, navigate, patchMutation]);
+
+  return (
+    <>
+      <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-4 space-y-6">
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2 text-sm font-medium">
+            <TagIcon className="size-4 text-primary" />
+            Kategoriya nomi
+          </Label>
+          <Input
+            value={form.name}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                name: event.target.value,
+              }))
+            }
+            placeholder="Masalan: Oqsillar"
+          />
+        </div>
+
+        <div className="flex items-center justify-between gap-4 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3">
+          <div className="min-w-0">
+            <p className="text-sm font-medium">Onboardingda ko'rsatish</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Yoqilgan bo'lsa kategoriya user onboarding tanlovlarida chiqadi.
+            </p>
+          </div>
+          <Switch
+            checked={form.isOnboarding}
+            onCheckedChange={(checked) =>
+              setForm((current) => ({
+                ...current,
+                isOnboarding: checked,
+              }))
+            }
+          />
+        </div>
+
+        <div className="space-y-3">
+          <Label className="text-sm font-medium">Badge style</Label>
+          <div className="rounded-2xl border border-border/60 bg-muted/15 p-4">
+            <div className="flex flex-wrap gap-3">
+              {CATEGORY_BADGE_PRESETS.map((option) => {
+                const isSelected =
+                  form.colorMode === "preset" &&
+                  form.presetColor === option.value;
+
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    title={option.label}
+                    onClick={() =>
+                      setForm((current) => ({
+                        ...current,
+                        colorMode: "preset",
+                        presetColor: option.value,
+                      }))
+                    }
+                    className={cn(
+                      "relative flex size-8 items-center justify-center rounded-full border-2 transition-all",
+                      isSelected
+                        ? "scale-105 border-foreground shadow-sm"
+                        : "border-transparent hover:scale-105 hover:border-border",
+                    )}
+                  >
+                    <span
+                      className="block size-7 rounded-full border border-black/10"
+                      style={{ backgroundColor: option.swatch }}
+                    />
+                    {isSelected ? (
+                      <span className="absolute inset-0 rounded-full ring-2 ring-background" />
+                    ) : null}
+                  </button>
+                );
+              })}
+
+              <label
+                title="Custom rang"
+                className={cn(
+                  "relative flex size-8 cursor-pointer items-center justify-center rounded-full border-2 transition-all",
+                  form.colorMode === "custom"
+                    ? "scale-105 border-foreground shadow-sm"
+                    : "border-dashed border-border/80 hover:scale-105 hover:border-foreground/40",
+                )}
+              >
+                <span
+                  className="relative flex size-7 items-center justify-center rounded-full border border-black/10"
+                  style={{ backgroundColor: form.customColor }}
+                >
+                  <span className="absolute inset-0 rounded-full bg-black/10" />
+                  <PaletteIcon className="relative z-10 size-3.5 text-white drop-shadow-sm" />
+                </span>
+                <input
+                  type="color"
+                  value={form.customColor}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      colorMode: "custom",
+                      customColor: event.target.value,
+                    }))
+                  }
+                  className="absolute inset-0 cursor-pointer opacity-0"
+                  aria-label="Custom rang tanlash"
+                />
+                {form.colorMode === "custom" ? (
+                  <span className="absolute inset-0 rounded-full ring-2 ring-background" />
+                ) : null}
+              </label>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-4">
+            <p className="mb-2 text-xs text-muted-foreground">Preview</p>
+            <Badge
+              variant="outline"
+              className={cn("h-7 rounded-full px-3", previewAppearance.className)}
+              style={previewAppearance.style}
+            >
+              {trim(form.name) || "Kategoriya badge"}
+            </Badge>
+          </div>
+        </div>
+      </div>
+
+      <DrawerFooter className="gap-2 border-t bg-muted/5 px-6 py-4">
+        <Button onClick={handleSave} disabled={isUpdating || isLoading}>
+          Saqlash
+        </Button>
+      </DrawerFooter>
+    </>
+  );
+};
+
+const EditWorkoutCategory = () => {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const currentLanguage = useLanguageStore((state) => state.currentLanguage);
+
+  const { data: categoryData, isLoading } = useGetQuery({
+    url: `/admin/workout-categories/${id}`,
+    queryProps: {
+      queryKey: ["admin", "workout-categories", "detail", id],
+      enabled: Boolean(id),
+    },
+  });
+  const category = get(categoryData, "data.data");
+
+  const patchMutation = usePatchQuery({
+    queryKey: ["admin", "workout-categories"],
+  });
+  const isUpdating = patchMutation.isPending;
+  const initialForm = category
+    ? createFormFromCategory(category, currentLanguage)
+    : emptyForm;
+  const formKey = [
+    id,
+    currentLanguage,
+    category?.updatedAt ?? "",
+    category?.isOnboarding,
+  ].join(":");
 
   const handleOpenChange = (open) => {
     if (!open) navigate("/admin/workout-categories/list");
@@ -160,124 +310,16 @@ const EditWorkoutCategory = () => {
               <Spinner className="size-8 text-muted-foreground" />
             </div>
           ) : (
-          <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-4 space-y-6">
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-sm font-medium">
-                <TagIcon className="size-4 text-primary" />
-                Kategoriya nomi
-              </Label>
-              <Input
-                value={form.name}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    name: event.target.value,
-                  }))
-                }
-                placeholder="Masalan: Oqsillar"
-              />
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Badge style</Label>
-              <div className="rounded-2xl border border-border/60 bg-muted/15 p-4">
-                <div className="flex flex-wrap gap-3">
-                  {CATEGORY_BADGE_PRESETS.map((option) => {
-                    const isSelected =
-                      form.colorMode === "preset" &&
-                      form.presetColor === option.value;
-
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        title={option.label}
-                        onClick={() =>
-                          setForm((current) => ({
-                            ...current,
-                            colorMode: "preset",
-                            presetColor: option.value,
-                          }))
-                        }
-                        className={cn(
-                          "relative flex size-8 items-center justify-center rounded-full border-2 transition-all",
-                          isSelected
-                            ? "scale-105 border-foreground shadow-sm"
-                            : "border-transparent hover:scale-105 hover:border-border",
-                        )}
-                      >
-                        <span
-                          className="block size-7 rounded-full border border-black/10"
-                          style={{ backgroundColor: option.swatch }}
-                        />
-                        {isSelected ? (
-                          <span className="absolute inset-0 rounded-full ring-2 ring-background" />
-                        ) : null}
-                      </button>
-                    );
-                  })}
-
-                  <label
-                    title="Custom rang"
-                    className={cn(
-                      "relative flex size-8 cursor-pointer items-center justify-center rounded-full border-2 transition-all",
-                      form.colorMode === "custom"
-                        ? "scale-105 border-foreground shadow-sm"
-                        : "border-dashed border-border/80 hover:scale-105 hover:border-foreground/40",
-                    )}
-                  >
-                    <span
-                      className="relative flex size-7 items-center justify-center rounded-full border border-black/10"
-                      style={{ backgroundColor: form.customColor }}
-                    >
-                      <span className="absolute inset-0 rounded-full bg-black/10" />
-                      <PaletteIcon className="relative z-10 size-3.5 text-white drop-shadow-sm" />
-                    </span>
-                    <input
-                      type="color"
-                      value={form.customColor}
-                      onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          colorMode: "custom",
-                          customColor: event.target.value,
-                        }))
-                      }
-                      className="absolute inset-0 cursor-pointer opacity-0"
-                      aria-label="Custom rang tanlash"
-                    />
-                    {form.colorMode === "custom" ? (
-                      <span className="absolute inset-0 rounded-full ring-2 ring-background" />
-                    ) : null}
-                  </label>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-4">
-                <p className="mb-2 text-xs text-muted-foreground">Preview</p>
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "h-7 rounded-full px-3",
-                    previewAppearance.className,
-                  )}
-                  style={previewAppearance.style}
-                >
-                  {trim(form.name) || "Kategoriya badge"}
-                </Badge>
-              </div>
-            </div>
-          </div>
+            <EditWorkoutCategoryFields
+              key={formKey}
+              id={id}
+              initialForm={initialForm}
+              isLoading={isLoading}
+              isUpdating={isUpdating}
+              navigate={navigate}
+              patchMutation={patchMutation}
+            />
           )}
-
-          <DrawerFooter className="gap-2 border-t bg-muted/5 px-6 py-4">
-            <Button
-              onClick={handleSave}
-              disabled={isUpdating || isLoading}
-            >
-              Saqlash
-            </Button>
-          </DrawerFooter>
         </div>
       </DrawerContent>
     </Drawer>

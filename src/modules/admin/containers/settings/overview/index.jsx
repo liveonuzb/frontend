@@ -1,65 +1,129 @@
 import React from "react";
 import { get } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Spinner } from "@/components/ui/spinner.jsx";
-import { useBreadcrumbStore } from "@/store";
-import { useGetQuery, usePatchQuery } from "@/hooks/api";
 import {
-  SettingsIcon,
-  SaveIcon,
-  ShieldIcon,
   AlertTriangleIcon,
+  BrainCircuitIcon,
+  DollarSignIcon,
   GlobeIcon,
   PercentIcon,
+  SaveIcon,
+  SettingsIcon,
+  ShieldIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import PageTransition from "@/components/page-transition";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner.jsx";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { useGetQuery, usePatchQuery } from "@/hooks/api";
+import { useBreadcrumbStore } from "@/store";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
+
+const DEFAULT_SYSTEM_SETTINGS = {
+  maintenanceMode: false,
+  globalCommissionRate: 20,
+  registrationEnabled: true,
+  minPayoutAmount: 50000,
+  appName: "LiveOn",
+};
+
+const FEATURE_LABELS = {
+  personalization_result: "Personalizatsiya natijasi",
+  personal_plan: "Meal + workout reja",
+};
+
+const emptyAiPrompt = {
+  feature: "personalization_result",
+  title: "",
+  model: "gpt-4.1-mini",
+  systemPrompt: "",
+  userPromptTemplate: "",
+  temperature: "",
+  maxOutputTokens: "",
+  inputTokenCostPer1M: 0,
+  outputTokenCostPer1M: 0,
+  notes: "",
+};
+
+const numberOrNull = (value) => {
+  if (value === "" || value === null || value === undefined) return null;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+};
+
+const formatUsd = (value) =>
+  `$${Number(value ?? 0).toLocaleString("en-US", {
+    maximumFractionDigits: 6,
+  })}`;
+
+const normalizePromptForm = (setting) => ({
+  ...emptyAiPrompt,
+  feature: get(setting, "feature", emptyAiPrompt.feature),
+  title: get(setting, "title", ""),
+  model: get(setting, "model", "gpt-4.1-mini"),
+  systemPrompt: get(setting, "systemPrompt", ""),
+  userPromptTemplate: get(setting, "userPromptTemplate", "") ?? "",
+  temperature: get(setting, "temperature", "") ?? "",
+  maxOutputTokens: get(setting, "maxOutputTokens", "") ?? "",
+  inputTokenCostPer1M: get(setting, "inputTokenCostPer1M", 0),
+  outputTokenCostPer1M: get(setting, "outputTokenCostPer1M", 0),
+  notes: get(setting, "notes", "") ?? "",
+});
 
 const Index = () => {
   const { canManageSettings } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const queryClient = useQueryClient();
 
-  const { data: settingsData, isLoading } = useGetQuery({
+  const { data: settingsData, isLoading: isSettingsLoading } = useGetQuery({
     url: "/admin/settings",
-    queryProps: {
-      queryKey: ["admin", "settings"],
-    },
+    queryProps: { queryKey: ["admin", "settings"] },
+  });
+  const { data: aiData, isLoading: isAiLoading } = useGetQuery({
+    url: "/admin/ai/overview",
+    queryProps: { queryKey: ["admin", "ai", "overview"] },
   });
 
-  const settings = get(settingsData, "data.data", {
-    maintenanceMode: false,
-    globalCommissionRate: 20,
-    registrationEnabled: true,
-    minPayoutAmount: 50000,
-    appName: "LiveOn",
-  });
+  const settings = get(settingsData, "data.data", DEFAULT_SYSTEM_SETTINGS);
+  const aiOverview = get(aiData, "data.data", {});
+  const aiSettings = get(aiOverview, "settings", []);
+  const aiAnalytics = get(aiOverview, "analytics", {});
+  const recentLogs = get(aiOverview, "recentLogs", []);
 
-  const updateMutation = usePatchQuery({
+  const updateSettingsMutation = usePatchQuery({
     queryKey: ["admin", "settings"],
     mutationProps: {
       onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: ["admin", "settings"],
+        });
         await queryClient.invalidateQueries({
           queryKey: ["admin", "dashboard"],
         });
       },
     },
   });
+  const updateAiPromptMutation = usePatchQuery({
+    queryKey: ["admin", "ai", "overview"],
+    mutationProps: {
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: ["admin", "ai", "overview"],
+        });
+      },
+    },
+  });
 
-  const isUpdating = updateMutation.isPending;
-
-  const [formData, setFormData] = React.useState(settings);
-
-  React.useEffect(() => {
-    setFormData(settings);
-  }, [settings]);
+  const [formDraft, setFormDraft] = React.useState(null);
+  const [promptDrafts, setPromptDrafts] = React.useState({});
+  const formData = formDraft ?? settings;
 
   React.useEffect(() => {
     setBreadcrumbs([
@@ -68,45 +132,100 @@ const Index = () => {
     ]);
   }, [setBreadcrumbs]);
 
-  const handleSave = async () => {
+  const handleSaveSettings = async () => {
     if (!canManageSettings) return;
 
     try {
-      await updateMutation.mutateAsync({
+      await updateSettingsMutation.mutateAsync({
         url: "/admin/settings",
         attributes: formData,
       });
+      setFormDraft(null);
       toast.success("Sozlamalar saqlandi");
     } catch {
-      toast.error("Xatolik yuz berdi");
+      toast.error("Sozlamalarni saqlab bo'lmadi");
     }
   };
 
-  const handleChange = (key, value) => {
-    setFormData((prev) => ({ ...prev, [key]: value }));
+  const handleSavePrompt = async (feature) => {
+    if (!canManageSettings) return;
+    const active = get(
+      aiSettings.find((item) => get(item, "feature") === feature),
+      "active",
+      {},
+    );
+    const form = promptDrafts[feature] ?? normalizePromptForm(active);
+    if (!form?.systemPrompt?.trim()) {
+      toast.error("System prompt bo'sh bo'lmasligi kerak");
+      return;
+    }
+
+    try {
+      await updateAiPromptMutation.mutateAsync({
+        url: "/admin/ai/prompt-settings",
+        attributes: {
+          ...form,
+          feature,
+          temperature: numberOrNull(form.temperature),
+          maxOutputTokens: numberOrNull(form.maxOutputTokens),
+          inputTokenCostPer1M: Number(form.inputTokenCostPer1M ?? 0),
+          outputTokenCostPer1M: Number(form.outputTokenCostPer1M ?? 0),
+        },
+      });
+      setPromptDrafts((prev) => {
+        const next = { ...prev };
+        delete next[feature];
+        return next;
+      });
+      toast.success(`${FEATURE_LABELS[feature] ?? feature} prompt yangilandi`);
+    } catch {
+      toast.error("AI promptni saqlab bo'lmadi");
+    }
   };
+
+  const handleSystemChange = (key, value) => {
+    setFormDraft((prev) => ({ ...(prev ?? settings), [key]: value }));
+  };
+
+  const handlePromptChange = (feature, key, value) => {
+    const active = get(
+      aiSettings.find((item) => get(item, "feature") === feature),
+      "active",
+      {},
+    );
+    setPromptDrafts((prev) => ({
+      ...prev,
+      [feature]: {
+        ...(prev[feature] ?? normalizePromptForm(active)),
+        feature,
+        [key]: value,
+      },
+    }));
+  };
+
+  const isLoading = isSettingsLoading || isAiLoading;
 
   return (
     <PageTransition>
       <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex flex-col gap-1">
-            <h1 className="text-2xl font-black tracking-tight flex items-center gap-2">
-              <SettingsIcon className="h-6 w-6 text-primary" />
+            <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+              <SettingsIcon className="size-6 text-primary" />
               Tizim sozlamalari
             </h1>
-            <p className="text-sm text-muted-foreground">
-              Platformaning global parametrlari va boshqaruv bayroqlarini shu
-              yerdan o'zgartiring.
+            <p className="max-w-3xl text-sm text-muted-foreground">
+              Platforma parametrlari, AI prompt versionlari va OpenAI xarajat
+              analyticsini boshqarish.
             </p>
           </div>
           <Button
-            onClick={handleSave}
-            disabled={isUpdating || !canManageSettings}
-            className="gap-2 font-bold px-6"
+            onClick={handleSaveSettings}
+            disabled={updateSettingsMutation.isPending || !canManageSettings}
+            className="gap-2 self-start"
           >
-            <SaveIcon className="h-4 w-4" />
-            Saqlash
+            <SaveIcon className="size-4" />
+            Asosiy sozlamalarni saqlash
           </Button>
         </div>
 
@@ -115,183 +234,342 @@ const Index = () => {
             <Spinner className="size-8 text-muted-foreground" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-6">
-            {/* General Settings */}
-            <Card className="border-border/50 shadow-sm overflow-hidden group">
-              <CardHeader className="bg-muted/30 border-b pb-4">
-                <div className="flex items-center gap-2">
-                  <GlobeIcon className="h-5 w-5 text-blue-500" />
-                  <CardTitle className="text-lg">Asosiy sozlamalar</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-6 space-y-4">
-                <div className="space-y-2">
-                  <Label>Ilova nomi (App Name)</Label>
-                  <Input
-                    value={formData.appName}
-                    onChange={(e) => handleChange("appName", e.target.value)}
-                    placeholder="Masalan: LiveOn"
-                    disabled={!canManageSettings}
-                  />
-                </div>
-                <div className="flex items-center justify-between p-4 bg-muted/20 border rounded-xl">
-                  <div className="space-y-0.5">
-                    <Label className="text-base">Ro'yxatdan o'tish</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Yangi foydalanuvchilar kirishini boshqarish
-                    </p>
+          <>
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+              <Card className="xl:col-span-2">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <GlobeIcon className="size-5 text-blue-500" />
+                    <CardTitle>Asosiy sozlamalar</CardTitle>
                   </div>
-                  <Switch
-                    checked={formData.registrationEnabled}
-                    onCheckedChange={(val) =>
-                      handleChange("registrationEnabled", val)
-                    }
-                    disabled={!canManageSettings}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Financial Settings */}
-            <Card className="border-border/50 shadow-sm overflow-hidden group">
-              <CardHeader className="bg-muted/30 border-b pb-4">
-                <div className="flex items-center gap-2">
-                  <PercentIcon className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg">
-                    Moliyaviy parametrlar
-                  </CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-6 space-y-4">
-                <div className="space-y-2">
-                  <Label>Global komissiya stavkasi (%)</Label>
-                  <div className="relative">
+                </CardHeader>
+                <CardContent className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Ilova nomi</Label>
+                    <Input
+                      value={formData.appName ?? ""}
+                      onChange={(event) =>
+                        handleSystemChange("appName", event.target.value)
+                      }
+                      disabled={!canManageSettings}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Global komissiya (%)</Label>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        value={formData.globalCommissionRate ?? 0}
+                        onChange={(event) =>
+                          handleSystemChange(
+                            "globalCommissionRate",
+                            Number(event.target.value),
+                          )
+                        }
+                        className="pr-10"
+                        disabled={!canManageSettings}
+                      />
+                      <PercentIcon className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Minimal payout (UZS)</Label>
                     <Input
                       type="number"
-                      value={formData.globalCommissionRate}
-                      onChange={(e) =>
-                        handleChange(
-                          "globalCommissionRate",
-                          Number(e.target.value),
+                      value={formData.minPayoutAmount ?? 0}
+                      onChange={(event) =>
+                        handleSystemChange(
+                          "minPayoutAmount",
+                          Number(event.target.value),
                         )
                       }
-                      className="pr-10"
                       disabled={!canManageSettings}
                     />
-                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                      <span className="text-sm font-bold text-muted-foreground">
-                        %
-                      </span>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between rounded-xl border p-3">
+                      <div>
+                        <Label>Ro'yxatdan o'tish</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Yangi user signup imkoniyati.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={Boolean(formData.registrationEnabled)}
+                        onCheckedChange={(value) =>
+                          handleSystemChange("registrationEnabled", value)
+                        }
+                        disabled={!canManageSettings}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50/30 p-3 dark:bg-red-950/10">
+                      <div>
+                        <Label className="text-red-700 dark:text-red-300">
+                          Maintenance
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Ilovani vaqtincha yopish.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={Boolean(formData.maintenanceMode)}
+                        onCheckedChange={(value) =>
+                          handleSystemChange("maintenanceMode", value)
+                        }
+                        disabled={!canManageSettings}
+                      />
                     </div>
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Minimal yechib olish miqdori (UZS)</Label>
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      value={formData.minPayoutAmount}
-                      onChange={(e) =>
-                        handleChange("minPayoutAmount", Number(e.target.value))
-                      }
-                      className="pl-12"
-                      disabled={!canManageSettings}
-                    />
-                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none border-r pr-3">
-                      <span className="text-xs font-bold text-muted-foreground">
-                        SUM
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                </CardContent>
+              </Card>
 
-          <div className="space-y-6">
-            {/* Maintenance Card */}
-            <Card className="border-red-200/50 bg-red-50/10 dark:bg-red-950/5 shadow-sm overflow-hidden">
-              <CardHeader className="bg-red-500/10 border-b border-red-200/50 pb-4">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <DollarSignIcon className="size-5 text-emerald-500" />
+                    <CardTitle>AI cost analytics</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Metric
+                      label="30 kun request"
+                      value={aiAnalytics.totalRequests ?? 0}
+                    />
+                    <Metric
+                      label="Success rate"
+                      value={`${aiAnalytics.successRate ?? 100}%`}
+                    />
+                    <Metric
+                      label="Tokenlar"
+                      value={aiAnalytics.totalTokens ?? 0}
+                    />
+                    <Metric
+                      label="Taxminiy xarajat"
+                      value={formatUsd(aiAnalytics.estimatedCostUsd)}
+                    />
+                  </div>
+                  <Separator />
+                  <div className="space-y-2">
+                    {(get(aiAnalytics, "byFeature", []) ?? []).map((item) => (
+                      <div
+                        key={item.feature}
+                        className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2 text-sm"
+                      >
+                        <span>
+                          {FEATURE_LABELS[item.feature] ?? item.feature}
+                        </span>
+                        <span className="font-medium">
+                          {item.requests} / {formatUsd(item.estimatedCostUsd)}
+                        </span>
+                      </div>
+                    ))}
+                    {get(aiAnalytics, "byFeature", []).length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        Hali AI generation loglari yo'q.
+                      </p>
+                    ) : null}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+              {aiSettings.map((item) => {
+                const feature = get(item, "feature");
+                const active = get(item, "active", {});
+                const form =
+                  promptDrafts[feature] ?? normalizePromptForm(active);
+
+                return (
+                  <Card key={feature}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <BrainCircuitIcon className="size-5 text-primary" />
+                          <div>
+                            <CardTitle>
+                              {FEATURE_LABELS[feature] ?? feature}
+                            </CardTitle>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Active version: v{get(active, "version", 0)} ·{" "}
+                              {get(active, "isDefault") ? "default" : "custom"}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge variant="secondary">{form.model}</Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                        <Field
+                          label="Title"
+                          value={form.title}
+                          disabled={!canManageSettings}
+                          onChange={(value) =>
+                            handlePromptChange(feature, "title", value)
+                          }
+                        />
+                        <Field
+                          label="Model"
+                          value={form.model}
+                          disabled={!canManageSettings}
+                          onChange={(value) =>
+                            handlePromptChange(feature, "model", value)
+                          }
+                        />
+                        <Field
+                          label="Input $ / 1M tokens"
+                          type="number"
+                          value={form.inputTokenCostPer1M}
+                          disabled={!canManageSettings}
+                          onChange={(value) =>
+                            handlePromptChange(
+                              feature,
+                              "inputTokenCostPer1M",
+                              value,
+                            )
+                          }
+                        />
+                        <Field
+                          label="Output $ / 1M tokens"
+                          type="number"
+                          value={form.outputTokenCostPer1M}
+                          disabled={!canManageSettings}
+                          onChange={(value) =>
+                            handlePromptChange(
+                              feature,
+                              "outputTokenCostPer1M",
+                              value,
+                            )
+                          }
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>System prompt</Label>
+                        <Textarea
+                          value={form.systemPrompt}
+                          onChange={(event) =>
+                            handlePromptChange(
+                              feature,
+                              "systemPrompt",
+                              event.target.value,
+                            )
+                          }
+                          className="min-h-40 font-mono text-xs"
+                          disabled={!canManageSettings}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Qo'shimcha user instructions</Label>
+                        <Textarea
+                          value={form.userPromptTemplate}
+                          onChange={(event) =>
+                            handlePromptChange(
+                              feature,
+                              "userPromptTemplate",
+                              event.target.value,
+                            )
+                          }
+                          className="min-h-24"
+                          disabled={!canManageSettings}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-xs text-muted-foreground">
+                          Saqlash yangi version yaratadi va uni active qiladi.
+                        </p>
+                        <Button
+                          onClick={() => handleSavePrompt(feature)}
+                          disabled={
+                            updateAiPromptMutation.isPending ||
+                            !canManageSettings
+                          }
+                          className="gap-2"
+                        >
+                          <SaveIcon className="size-4" />
+                          Version saqlash
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </section>
+
+            <Card>
+              <CardHeader>
                 <div className="flex items-center gap-2">
-                  <AlertTriangleIcon className="h-5 w-5 text-red-500" />
-                  <CardTitle className="text-lg text-red-700 dark:text-red-400">
-                    Xavfsizlik va Texnik ishlar
-                  </CardTitle>
+                  <ShieldIcon className="size-5 text-amber-500" />
+                  <CardTitle>Recent AI logs</CardTitle>
                 </div>
               </CardHeader>
-              <CardContent className="pt-6 space-y-6">
-                <div className="flex items-center justify-between p-4 border border-red-200/50 rounded-xl bg-white dark:bg-background">
-                  <div className="space-y-0.5">
-                    <Label className="text-base text-red-600">
-                      Tekshiruv rejimi (Maintenance)
-                    </Label>
-                    <p className="text-xs text-muted-foreground">
-                      Ilovani vaqtincha yopish (faqat adminlar kiradi)
+              <CardContent className="space-y-2">
+                {recentLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="grid grid-cols-1 gap-2 rounded-xl border p-3 text-sm md:grid-cols-[1fr_auto_auto_auto]"
+                  >
+                    <div>
+                      <p className="font-medium">
+                        {FEATURE_LABELS[log.feature] ?? log.feature}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {log.model} · v{log.promptVersion ?? 0} ·{" "}
+                        {new Date(log.createdAt).toLocaleString("uz-UZ")}
+                      </p>
+                    </div>
+                    <Badge
+                      variant={
+                        log.status === "success" ? "secondary" : "destructive"
+                      }
+                      className="justify-self-start"
+                    >
+                      {log.status}
+                    </Badge>
+                    <span className="text-muted-foreground">
+                      {log.totalTokens} tokens
+                    </span>
+                    <span className="font-medium">
+                      {formatUsd(log.estimatedCostUsd)}
+                    </span>
+                  </div>
+                ))}
+                {recentLogs.length === 0 ? (
+                  <div className="flex items-start gap-3 rounded-xl border bg-muted/30 p-4">
+                    <AlertTriangleIcon className="mt-0.5 size-5 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">
+                      Hali AI generation loglari mavjud emas.
                     </p>
                   </div>
-                  <Switch
-                    checked={formData.maintenanceMode}
-                    onCheckedChange={(val) =>
-                      handleChange("maintenanceMode", val)
-                    }
-                    className="data-[state=checked]:bg-red-500"
-                    disabled={!canManageSettings}
-                  />
-                </div>
-
-                <div className="p-4 bg-amber-500/5 border border-amber-200/50 rounded-xl flex gap-3">
-                  <ShieldIcon className="h-8 w-8 text-amber-500 shrink-0" />
-                  <div className="space-y-1">
-                    <p className="text-sm font-bold text-amber-700 dark:text-amber-400">
-                      Diqqat!
-                    </p>
-                    <p className="text-xs text-amber-600/80 leading-relaxed italic">
-                      Ushbu o'zgarishlar platformaning barcha
-                      foydalanuvchilariga darhol ta'sir qiladi. Iltimos,
-                      o'zgartirishdan oldin qayta tekshiring.
-                    </p>
-                  </div>
-                </div>
+                ) : null}
               </CardContent>
             </Card>
-
-            <Card className="border-border/50 shadow-sm">
-              <CardHeader className="bg-muted/30 pb-4 border-b">
-                <CardTitle className="text-base">Tizim ma'lumotlari</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6 space-y-3">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground">
-                    Frontend versiya:
-                  </span>
-                  <span className="font-mono bg-muted px-2 py-0.5 rounded text-xs">
-                    v1.2.4-stable
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground">
-                    Oxirgi yangilanish:
-                  </span>
-                  <span className="text-xs">
-                    {new Date().toLocaleDateString("uz-UZ")}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground">Server status:</span>
-                  <Badge className="bg-green-500 hover:bg-green-500 h-2 w-2 rounded-full p-0" />
-                  <span className="text-green-600 font-bold text-xs uppercase ml-1">
-                    Normal
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          </div>
+          </>
         )}
       </div>
     </PageTransition>
   );
 };
+
+const Metric = ({ label, value }) => (
+  <div className="rounded-xl border bg-muted/20 p-3">
+    <p className="text-xs text-muted-foreground">{label}</p>
+    <p className="mt-1 text-lg font-semibold">{value}</p>
+  </div>
+);
+
+const Field = ({ label, value, onChange, disabled, type = "text" }) => (
+  <div className="space-y-2">
+    <Label>{label}</Label>
+    <Input
+      type={type}
+      value={value ?? ""}
+      onChange={(event) => onChange(event.target.value)}
+      disabled={disabled}
+    />
+  </div>
+);
 
 export default Index;

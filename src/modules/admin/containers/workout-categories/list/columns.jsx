@@ -55,6 +55,7 @@ export const useColumns = ({
   isReorderEnabled,
   isUpdating,
   handleToggleActive,
+  handleToggleOnboarding,
   openEditDrawer,
   openTranslationsDrawer,
   setCategoryToDelete,
@@ -225,6 +226,26 @@ export const useColumns = ({
         },
       },
       {
+        accessorKey: "isOnboarding",
+        header: "Onboardingda",
+        enableSorting: true,
+        size: 132,
+        meta: SWITCH_COLUMN_META,
+        cell: (info) => {
+          const category = info.row.original;
+
+          return (
+            <div className={SWITCH_CELL_CLASS_NAME}>
+              <Switch
+                checked={Boolean(info.getValue())}
+                disabled={isUpdating}
+                onCheckedChange={() => handleToggleOnboarding(category)}
+              />
+            </div>
+          );
+        },
+      },
+      {
         id: "actions",
         header: "",
         enableSorting: false,
@@ -246,6 +267,7 @@ export const useColumns = ({
       activeLanguages,
       currentLanguage,
       handleToggleActive,
+      handleToggleOnboarding,
       isReorderEnabled,
       isUpdating,
       openEditDrawer,

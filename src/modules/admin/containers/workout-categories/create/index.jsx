@@ -1,14 +1,14 @@
 import React from "react";
 import { useNavigate } from "react-router";
-import { get, isArray, map, trim } from "lodash";
+import { isArray, trim } from "lodash";
 import { toast } from "sonner";
 import { PaletteIcon, PlusIcon, TagIcon } from "lucide-react";
 import { usePostQuery } from "@/hooks/api";
-import { useLanguageStore } from "@/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   Drawer,
   DrawerContent,
@@ -30,6 +30,7 @@ const emptyForm = {
   colorMode: "preset",
   presetColor: DEFAULT_CATEGORY_BADGE_CLASS,
   customColor: "#64748b",
+  isOnboarding: true,
 };
 
 const getStoredColorValue = (form) =>
@@ -64,6 +65,7 @@ const CreateWorkoutCategory = () => {
         attributes: {
           name,
           color: getStoredColorValue(form),
+          isOnboarding: form.isOnboarding,
         },
       });
       toast.success("Kategoriya yaratildi");
@@ -112,6 +114,27 @@ const CreateWorkoutCategory = () => {
                   }))
                 }
                 placeholder="Masalan: Oqsillar"
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-4 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium">
+                  Onboardingda ko'rsatish
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Yoqilgan bo'lsa kategoriya user onboarding tanlovlarida
+                  chiqadi.
+                </p>
+              </div>
+              <Switch
+                checked={form.isOnboarding}
+                onCheckedChange={(checked) =>
+                  setForm((current) => ({
+                    ...current,
+                    isOnboarding: checked,
+                  }))
+                }
               />
             </div>
 

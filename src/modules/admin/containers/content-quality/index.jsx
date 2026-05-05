@@ -76,6 +76,13 @@ const sectionFilterOptions = [
   { label: "Budget", value: "prices" },
 ];
 
+const summarySectionByKey = {
+  missingTranslations: "translations",
+  missingImages: "images",
+  nutrition: "nutrition",
+  prices: "prices",
+};
+
 const QualitySkeleton = () => (
   <div className="space-y-6">
     <div className="flex items-center justify-between gap-3">
@@ -357,13 +364,31 @@ const filterQualitySections = ({
 };
 
 const getContentQualityPayload = (response) => {
-  if (response?.summary || response?.sections) {
-    return response;
-  }
+  const candidates = [
+    response,
+    get(response, "data"),
+    get(response, "data.data"),
+    get(response, "data.data.data"),
+  ];
+  const payload = candidates.find(
+    (candidate) => candidate?.summary || candidate?.sections,
+  );
 
-  const responseBody = get(response, "data", {});
+  return payload || {};
+};
 
-  return get(responseBody, "data", responseBody) || {};
+const getSummaryValue = (summary, key, sections) => {
+  const directValue = Number(summary?.[key]);
+  if (Number.isFinite(directValue) && directValue > 0) return directValue;
+
+  const sectionKey = summarySectionByKey[key] || key;
+  const section = sections.find((item) => item.key === sectionKey);
+  if (!section) return Number.isFinite(directValue) ? directValue : 0;
+
+  return section.groups.reduce(
+    (total, group) => total + Number(group.issueCount || 0),
+    0,
+  );
 };
 
 const downloadBlob = ({ blob, fileName }) => {
@@ -400,14 +425,16 @@ const Index = () => {
     ]);
   }, [setBreadcrumbs]);
 
-  const payload = getContentQualityPayload(data);
-  const summary = get(payload, "summary", {});
-  const sections = Array.isArray(get(payload, "sections"))
-    ? get(payload, "sections")
-    : [];
-  const activeLanguages = Array.isArray(get(payload, "activeLanguages"))
-    ? get(payload, "activeLanguages")
-    : [];
+  const payload = React.useMemo(() => getContentQualityPayload(data), [data]);
+  const summary = React.useMemo(() => get(payload, "summary", {}), [payload]);
+  const sections = React.useMemo(() => {
+    const value = get(payload, "sections");
+    return Array.isArray(value) ? value : [];
+  }, [payload]);
+  const activeLanguages = React.useMemo(() => {
+    const value = get(payload, "activeLanguages");
+    return Array.isArray(value) ? value : [];
+  }, [payload]);
   const visibleSections = React.useMemo(
     () =>
       filterQualitySections({ sections, sectionFilter, search, onlyIssues }),
@@ -516,7 +543,7 @@ const Index = () => {
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {summaryCards.map((card) => {
-          const value = Number(summary[card.key] || 0);
+          const value = getSummaryValue(summary, card.key, sections);
 
           return (
             <Card key={card.key} className="border-border/60 shadow-sm">
@@ -549,7 +576,18 @@ const Index = () => {
           <AlertTriangleIcon className="mt-0.5 size-5 shrink-0" />
           <div>
             <p className="font-medium">
-              Jami muammo: {Number(summary.totalIssues || 0)}
+              Jami muammo:{" "}
+              {Number(summary.totalIssues || 0) ||
+                sections.reduce(
+                  (total, section) =>
+                    total +
+                    section.groups.reduce(
+                      (groupTotal, group) =>
+                        groupTotal + Number(group.issueCount || 0),
+                      0,
+                    ),
+                  0,
+                )}
             </p>
             <p className="text-sm text-amber-800">
               Bu sahifa data sifatini ko'rsatadi; tuzatishlar tegishli katalog

@@ -1,6 +1,16 @@
 import React from "react";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
-import { find, get, isEmpty, isEqual } from "lodash";
+import {
+  ADMIN_SELECT_OPERATORS,
+  ADMIN_SORT_DIRECTIONS,
+  ADMIN_TEXT_OPERATORS,
+  buildAdminSortingState,
+  clampAdminPage,
+  clampAdminPageSize,
+  getAdminFilterReader,
+  makeAdminSelectActiveFilter,
+  makeAdminTextActiveFilter,
+} from "@/modules/admin/components/admin-filter-utils.js";
 import {
   ACHIEVEMENT_CATEGORY_OPTIONS,
   ACHIEVEMENT_METRIC_OPTIONS,
@@ -18,18 +28,6 @@ const SORT_FIELDS = [
   "createdAt",
   "isActive",
 ];
-const SORT_DIRECTIONS = ["asc", "desc"];
-const TEXT_OPERATORS = [
-  "contains",
-  "not_contains",
-  "starts_with",
-  "ends_with",
-  "is",
-  "empty",
-  "not_empty",
-];
-const SELECT_OPERATORS = ["is", "is_not", "empty", "not_empty"];
-
 const withAll = (label, options) => [{ value: "all", label }, ...options];
 
 const STATUS_OPTIONS = [
@@ -51,7 +49,7 @@ export const useAchievementFilters = () => {
   );
   const [nameOperator, setNameOperator] = useQueryState(
     "nameOp",
-    parseAsStringEnum(TEXT_OPERATORS).withDefault("contains"),
+    parseAsStringEnum(ADMIN_TEXT_OPERATORS).withDefault("contains"),
   );
   const [isNameFilterVisible, setIsNameFilterVisible] = React.useState(
     () => nameFilter.trim() !== "",
@@ -65,7 +63,7 @@ export const useAchievementFilters = () => {
   );
   const [categoryOperator, setCategoryOperator] = useQueryState(
     "categoryOp",
-    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+    parseAsStringEnum(ADMIN_SELECT_OPERATORS).withDefault("is"),
   );
   const [metricFilter, setMetricFilter] = useQueryState(
     "metric",
@@ -76,7 +74,7 @@ export const useAchievementFilters = () => {
   );
   const [metricOperator, setMetricOperator] = useQueryState(
     "metricOp",
-    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+    parseAsStringEnum(ADMIN_SELECT_OPERATORS).withDefault("is"),
   );
   const [statusFilter, setStatusFilter] = useQueryState(
     "status",
@@ -84,7 +82,7 @@ export const useAchievementFilters = () => {
   );
   const [statusOperator, setStatusOperator] = useQueryState(
     "statusOp",
-    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+    parseAsStringEnum(ADMIN_SELECT_OPERATORS).withDefault("is"),
   );
   const [hasImageFilter, setHasImageFilter] = useQueryState(
     "hasImage",
@@ -92,7 +90,7 @@ export const useAchievementFilters = () => {
   );
   const [hasImageOperator, setHasImageOperator] = useQueryState(
     "hasImageOp",
-    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+    parseAsStringEnum(ADMIN_SELECT_OPERATORS).withDefault("is"),
   );
   const [imageModeFilter, setImageModeFilter] = useQueryState(
     "imageMode",
@@ -104,7 +102,7 @@ export const useAchievementFilters = () => {
   );
   const [translationsOperator, setTranslationsOperator] = useQueryState(
     "translationsOp",
-    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+    parseAsStringEnum(ADMIN_SELECT_OPERATORS).withDefault("is"),
   );
   const [visibleFilters, setVisibleFilters] = React.useState(() => ({
     category: categoryFilter !== "all",
@@ -128,19 +126,19 @@ export const useAchievementFilters = () => {
   );
   const [sortDir, setSortDir] = useQueryState(
     "sortDir",
-    parseAsStringEnum(SORT_DIRECTIONS).withDefault("asc"),
+    parseAsStringEnum(ADMIN_SORT_DIRECTIONS).withDefault("asc"),
   );
 
-  const currentPage = Math.max(1, Number(pageQuery) || 1);
-  const pageSize = Math.min(
-    100,
-    Math.max(1, Number(pageSizeQuery) || ITEMS_PER_PAGE),
-  );
+  const currentPage = clampAdminPage(pageQuery);
+  const pageSize = clampAdminPageSize(pageSizeQuery, ITEMS_PER_PAGE);
   const sorting = React.useMemo(
     () =>
-      sortBy === "orderKey" && sortDir === "asc"
-        ? []
-        : [{ id: sortBy, desc: sortDir === "desc" }],
+      buildAdminSortingState({
+        sortBy,
+        sortDir,
+        defaultSortBy: "orderKey",
+        defaultSortDir: "asc",
+      }),
     [sortBy, sortDir],
   );
   const canReorder =
@@ -221,71 +219,51 @@ export const useAchievementFilters = () => {
   );
 
   const activeFilters = React.useMemo(() => {
-    const items = [];
-    if (
-      isNameFilterVisible ||
-      !isEmpty(String(nameFilter).trim()) ||
-      nameOperator === "empty" ||
-      nameOperator === "not_empty"
-    ) {
-      items.push({
-        id: "name",
+    return [
+      makeAdminTextActiveFilter({
         field: "name",
+        value: nameFilter,
         operator: nameOperator,
-        values:
-          nameOperator === "empty" || nameOperator === "not_empty"
-            ? []
-            : [nameFilter],
-      });
-    }
-    const pushSelect = (field, value, operator, visible, emptyValue) => {
-      if (
-        visible ||
-        !isEqual(value, emptyValue) ||
-        operator === "empty" ||
-        operator === "not_empty"
-      ) {
-        items.push({
-          id: field,
-          field,
-          operator,
-          values:
-            operator === "empty" || operator === "not_empty" ? [] : [value],
-        });
-      }
-    };
-
-    pushSelect(
-      "category",
-      categoryFilter,
-      categoryOperator,
-      visibleFilters.category,
-      "all",
-    );
-    pushSelect("metric", metricFilter, metricOperator, visibleFilters.metric, "all");
-    pushSelect("status", statusFilter, statusOperator, visibleFilters.status, "all");
-    pushSelect(
-      "hasImage",
-      hasImageFilter,
-      hasImageOperator,
-      visibleFilters.hasImage,
-      "all",
-    );
-    pushSelect(
-      "imageMode",
-      imageModeFilter,
-      "is",
-      visibleFilters.imageMode,
-      "any",
-    );
-    pushSelect(
-      "translations",
-      translationsFilter,
-      translationsOperator,
-      visibleFilters.translations,
-      "all",
-    );
-    return items;
+        visible: isNameFilterVisible,
+      }),
+      makeAdminSelectActiveFilter({
+        field: "category",
+        value: categoryFilter,
+        operator: categoryOperator,
+        visible: visibleFilters.category,
+      }),
+      makeAdminSelectActiveFilter({
+        field: "metric",
+        value: metricFilter,
+        operator: metricOperator,
+        visible: visibleFilters.metric,
+      }),
+      makeAdminSelectActiveFilter({
+        field: "status",
+        value: statusFilter,
+        operator: statusOperator,
+        visible: visibleFilters.status,
+      }),
+      makeAdminSelectActiveFilter({
+        field: "hasImage",
+        value: hasImageFilter,
+        operator: hasImageOperator,
+        visible: visibleFilters.hasImage,
+      }),
+      makeAdminSelectActiveFilter({
+        field: "imageMode",
+        value: imageModeFilter,
+        operator: "is",
+        visible: visibleFilters.imageMode,
+        emptyValue: "any",
+      }),
+      makeAdminSelectActiveFilter({
+        field: "translations",
+        value: translationsFilter,
+        operator: translationsOperator,
+        visible: visibleFilters.translations,
+      }),
+    ].filter(Boolean);
   }, [
     categoryFilter,
     categoryOperator,
@@ -306,22 +284,18 @@ export const useAchievementFilters = () => {
 
   const handleFiltersChange = React.useCallback(
     (nextFilters) => {
-      const getFilter = (field) =>
-        find(nextFilters, (item) => isEqual(get(item, "field"), field));
-      const getValue = (field, fallback = "") =>
-        get(getFilter(field), "values[0]", fallback);
-      const getOperator = (field, fallback = "is") =>
-        get(getFilter(field), "operator", fallback);
+      const { getValue, getOperator, isVisible } =
+        getAdminFilterReader(nextFilters);
 
       React.startTransition(() => {
-        setIsNameFilterVisible(Boolean(getFilter("name")));
+        setIsNameFilterVisible(isVisible("name"));
         setVisibleFilters({
-          category: Boolean(getFilter("category")),
-          metric: Boolean(getFilter("metric")),
-          status: Boolean(getFilter("status")),
-          hasImage: Boolean(getFilter("hasImage")),
-          imageMode: Boolean(getFilter("imageMode")),
-          translations: Boolean(getFilter("translations")),
+          category: isVisible("category"),
+          metric: isVisible("metric"),
+          status: isVisible("status"),
+          hasImage: isVisible("hasImage"),
+          imageMode: isVisible("imageMode"),
+          translations: isVisible("translations"),
         });
         void setNameFilter(getValue("name", ""));
         void setNameOperator(getOperator("name", "contains"));

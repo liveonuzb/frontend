@@ -1,15 +1,6 @@
 import React from "react";
 import { get } from "lodash";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AdminConfirmDialog } from "@/modules/admin/components/admin-confirm-dialog.jsx";
 
 export const DeleteAlert = ({
   item,
@@ -19,29 +10,15 @@ export const DeleteAlert = ({
   isDeleting,
 }) => {
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Achievementni o'chirish</AlertDialogTitle>
-          <AlertDialogDescription>
-            Haqiqatan ham &quot;{get(item, "name") || get(item, "key")}&quot;
-            achievementini o&apos;chirmoqchimisiz? Bu amalni qaytarib
-            bo&apos;lmaydi.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => onOpenChange(false)}>
-            Bekor qilish
-          </AlertDialogCancel>
-          <AlertDialogAction
-            variant="destructive"
-            onClick={onConfirm}
-            disabled={isDeleting}
-          >
-            O&apos;chirish
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <AdminConfirmDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Achievementni o'chirish"
+      description={`Haqiqatan ham "${get(item, "name") || get(item, "key")}" achievementini o'chirmoqchimisiz? Bu amalni qaytarib bo'lmaydi.`}
+      confirmText="O'chirish"
+      variant="destructive"
+      isPending={isDeleting}
+      onConfirm={onConfirm}
+    />
   );
 };

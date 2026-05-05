@@ -1,18 +1,18 @@
 import React from "react";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
-import { find, get, isEmpty, isEqual } from "lodash";
+import {
+  ADMIN_SELECT_OPERATORS,
+  ADMIN_SORT_DIRECTIONS,
+  ADMIN_TEXT_OPERATORS,
+  buildAdminSortingState,
+  clampAdminPage,
+  clampAdminPageSize,
+  getAdminFilterReader,
+  makeAdminSelectActiveFilter,
+  makeAdminTextActiveFilter,
+} from "@/modules/admin/components/admin-filter-utils.js";
 
 const DEFAULT_PAGE_SIZE = 10;
-const TEXT_OPERATORS = [
-  "contains",
-  "not_contains",
-  "starts_with",
-  "ends_with",
-  "is",
-  "empty",
-  "not_empty",
-];
-const SELECT_OPERATORS = ["is", "is_not", "empty", "not_empty"];
 
 const ROLE_OPTIONS = [
   { value: "all", label: "Barcha rollar" },
@@ -56,7 +56,7 @@ export const useUserFilters = () => {
   );
   const [nameOperator, setNameOperator] = useQueryState(
     "nameOp",
-    parseAsStringEnum(TEXT_OPERATORS).withDefault("contains"),
+    parseAsStringEnum(ADMIN_TEXT_OPERATORS).withDefault("contains"),
   );
   const [isNameFilterVisible, setIsNameFilterVisible] = React.useState(
     () => nameFilter.trim() !== "",
@@ -86,7 +86,7 @@ export const useUserFilters = () => {
   );
   const [roleOperator, setRoleOperator] = useQueryState(
     "roleOp",
-    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+    parseAsStringEnum(ADMIN_SELECT_OPERATORS).withDefault("is"),
   );
 
   const [statusFilter, setStatusFilter] = useQueryState(
@@ -97,7 +97,7 @@ export const useUserFilters = () => {
   );
   const [statusOperator, setStatusOperator] = useQueryState(
     "statusOp",
-    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+    parseAsStringEnum(ADMIN_SELECT_OPERATORS).withDefault("is"),
   );
 
   const [premiumFilter, setPremiumFilter] = useQueryState(
@@ -112,7 +112,7 @@ export const useUserFilters = () => {
   );
   const [premiumOperator, setPremiumOperator] = useQueryState(
     "premiumOp",
-    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+    parseAsStringEnum(ADMIN_SELECT_OPERATORS).withDefault("is"),
   );
 
   const [coachStatusFilter, setCoachStatusFilter] = useQueryState(
@@ -127,7 +127,7 @@ export const useUserFilters = () => {
   );
   const [coachStatusOperator, setCoachStatusOperator] = useQueryState(
     "coachStatusOp",
-    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+    parseAsStringEnum(ADMIN_SELECT_OPERATORS).withDefault("is"),
   );
 
   const [visibleFilters, setVisibleFilters] = React.useState(() => ({
@@ -157,19 +157,19 @@ export const useUserFilters = () => {
   );
   const [sortDir, setSortDir] = useQueryState(
     "sortDir",
-    parseAsStringEnum(["asc", "desc"]).withDefault("desc"),
+    parseAsStringEnum(ADMIN_SORT_DIRECTIONS).withDefault("desc"),
   );
 
-  const currentPage = Math.max(1, Number(pageQuery) || 1);
-  const pageSize = Math.min(
-    100,
-    Math.max(1, Number(pageSizeQuery) || DEFAULT_PAGE_SIZE),
-  );
+  const currentPage = clampAdminPage(pageQuery);
+  const pageSize = clampAdminPageSize(pageSizeQuery, DEFAULT_PAGE_SIZE);
   const sorting = React.useMemo(
     () =>
-      sortBy === "createdAt" && sortDir === "desc"
-        ? []
-        : [{ id: sortBy, desc: sortDir === "desc" }],
+      buildAdminSortingState({
+        sortBy,
+        sortDir,
+        defaultSortBy: "createdAt",
+        defaultSortDir: "desc",
+      }),
     [sortBy, sortDir],
   );
 
@@ -222,75 +222,44 @@ export const useUserFilters = () => {
   );
 
   const activeFilters = React.useMemo(() => {
-    const items = [];
-
-    if (
-      isNameFilterVisible ||
-      !isEmpty(String(nameFilter).trim()) ||
-      nameOperator === "empty" ||
-      nameOperator === "not_empty"
-    ) {
-      items.push({
-        id: "name",
+    return [
+      makeAdminTextActiveFilter({
         field: "name",
+        value: nameFilter,
         operator: nameOperator,
-        values:
-          nameOperator === "empty" || nameOperator === "not_empty"
-            ? []
-            : [nameFilter],
-      });
-    }
-
-    if (isSearchVisible || !isEmpty(String(search).trim())) {
-      items.push({
-        id: "q",
+        visible: isNameFilterVisible,
+      }),
+      makeAdminTextActiveFilter({
         field: "q",
+        value: search,
         operator: "contains",
-        values: [search],
-      });
-    }
-
-    const pushSelect = (field, value, operator, visible, emptyValue) => {
-      if (
-        visible ||
-        !isEqual(value, emptyValue) ||
-        operator === "empty" ||
-        operator === "not_empty"
-      ) {
-        items.push({
-          id: field,
-          field,
-          operator,
-          values:
-            operator === "empty" || operator === "not_empty" ? [] : [value],
-        });
-      }
-    };
-
-    pushSelect("role", roleFilter, roleOperator, visibleFilters.role, "all");
-    pushSelect(
-      "status",
-      statusFilter,
-      statusOperator,
-      visibleFilters.status,
-      "all",
-    );
-    pushSelect(
-      "premium",
-      premiumFilter,
-      premiumOperator,
-      visibleFilters.premium,
-      "all",
-    );
-    pushSelect(
-      "coachStatus",
-      coachStatusFilter,
-      coachStatusOperator,
-      visibleFilters.coachStatus,
-      "all",
-    );
-
-    return items;
+        visible: isSearchVisible,
+      }),
+      makeAdminSelectActiveFilter({
+        field: "role",
+        value: roleFilter,
+        operator: roleOperator,
+        visible: visibleFilters.role,
+      }),
+      makeAdminSelectActiveFilter({
+        field: "status",
+        value: statusFilter,
+        operator: statusOperator,
+        visible: visibleFilters.status,
+      }),
+      makeAdminSelectActiveFilter({
+        field: "premium",
+        value: premiumFilter,
+        operator: premiumOperator,
+        visible: visibleFilters.premium,
+      }),
+      makeAdminSelectActiveFilter({
+        field: "coachStatus",
+        value: coachStatusFilter,
+        operator: coachStatusOperator,
+        visible: visibleFilters.coachStatus,
+      }),
+    ].filter(Boolean);
   }, [
     coachStatusFilter,
     coachStatusOperator,
@@ -310,21 +279,17 @@ export const useUserFilters = () => {
 
   const handleFiltersChange = React.useCallback(
     (nextFilters) => {
-      const getFilter = (field) =>
-        find(nextFilters, (item) => isEqual(get(item, "field"), field));
-      const getValue = (field, fallback = "") =>
-        get(getFilter(field), "values[0]", fallback);
-      const getOperator = (field, fallback = "is") =>
-        get(getFilter(field), "operator", fallback);
+      const { getValue, getOperator, isVisible } =
+        getAdminFilterReader(nextFilters);
 
       React.startTransition(() => {
-        setIsNameFilterVisible(Boolean(getFilter("name")));
-        setIsSearchVisible(Boolean(getFilter("q")));
+        setIsNameFilterVisible(isVisible("name"));
+        setIsSearchVisible(isVisible("q"));
         setVisibleFilters({
-          role: Boolean(getFilter("role")),
-          status: Boolean(getFilter("status")),
-          premium: Boolean(getFilter("premium")),
-          coachStatus: Boolean(getFilter("coachStatus")),
+          role: isVisible("role"),
+          status: isVisible("status"),
+          premium: isVisible("premium"),
+          coachStatus: isVisible("coachStatus"),
         });
 
         void setNameFilter(getValue("name", ""));

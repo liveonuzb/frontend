@@ -11,6 +11,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   DataGrid,
   DataGridContainer,
+  DataGridPagination,
   DataGridTable,
 } from "@/components/reui/data-grid";
 import { useBreadcrumbStore } from "@/store";
@@ -32,6 +33,8 @@ const Index = () => {
     handleFiltersChange,
     search,
     coachStatusFilter,
+    setPageQuery,
+    setPageSizeQuery,
   } = useCoachFilters();
 
   const queryParams = React.useMemo(
@@ -60,6 +63,12 @@ const Index = () => {
     },
   });
   const coaches = get(usersData, "data.data", []);
+  const meta = get(usersData, "data.meta", {
+    total: 0,
+    page: currentPage,
+    pageSize,
+    totalPages: 1,
+  });
 
   const { mutateAsync: patchCoachStatus } = usePatchQuery({
     queryKey: ["admin", "users"],
@@ -190,6 +199,25 @@ const Index = () => {
     data: coaches || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
+    manualPagination: true,
+    pageCount: Math.max(1, Number(get(meta, "totalPages", 1))),
+    onPaginationChange: (updater) => {
+      const next =
+        typeof updater === "function"
+          ? updater({ pageIndex: currentPage - 1, pageSize })
+          : updater;
+
+      React.startTransition(() => {
+        void setPageQuery(String(get(next, "pageIndex", 0) + 1));
+        void setPageSizeQuery(String(get(next, "pageSize", pageSize)));
+      });
+    },
+    state: {
+      pagination: {
+        pageIndex: currentPage - 1,
+        pageSize,
+      },
+    },
   });
 
   return (
@@ -225,14 +253,22 @@ const Index = () => {
           </Button>
         </div>
 
-        <DataGridContainer>
-          <ScrollArea className="w-full">
-            <DataGrid table={table} isLoading={isLoading}>
+        <DataGrid
+          table={table}
+          isLoading={isLoading}
+          recordCount={get(meta, "total", 0)}
+        >
+          <DataGridContainer>
+            <ScrollArea className="w-full">
               <DataGridTable />
-            </DataGrid>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-        </DataGridContainer>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          </DataGridContainer>
+          <DataGridPagination
+            info="{from} - {to} / {count} ta murabbiy"
+            sizes={[10, 20, 50, 100]}
+          />
+        </DataGrid>
 
         <Outlet />
       </div>

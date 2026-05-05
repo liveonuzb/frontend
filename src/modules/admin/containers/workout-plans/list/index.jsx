@@ -2,15 +2,9 @@ import React from "react";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { get } from "lodash";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
 import { useMatch, useNavigate } from "react-router";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
-import {
-  useGetQuery,
-  usePostQuery,
-  usePatchQuery,
-  useDeleteQuery,
-} from "@/hooks/api";
+import { useGetQuery } from "@/hooks/api";
 import PageTransition from "@/components/page-transition";
 import WorkoutPlanBuilder from "@/components/workout-plan-builder";
 import {
@@ -33,6 +27,10 @@ import { usePlanFilters } from "./use-filters.js";
 import { DeleteAlert } from "./delete-alert.jsx";
 import { WorkoutPlanFormDrawer } from "./workout-plan-form-drawer.jsx";
 import { WorkoutPlanTranslationsDrawer } from "./workout-plan-translations-drawer.jsx";
+import {
+  useWorkoutPlanTemplateMutations,
+  WORKOUT_PLAN_TEMPLATES_QUERY_KEY,
+} from "./use-workout-plan-template-mutations.js";
 import {
   cleanTranslations,
   createFormFromTemplate,
@@ -59,18 +57,6 @@ const Index = () => {
   });
   const languages = get(languagesData, "data.data", []);
 
-  const queryClient = useQueryClient();
-  const TEMPLATES_QUERY_KEY = ["admin", "workout-plan-templates"];
-
-  const mutationProps = {
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: TEMPLATES_QUERY_KEY }),
-        queryClient.invalidateQueries({ queryKey: ["workout-plan"] }),
-      ]);
-    },
-  };
-
   const {
     sorting,
     currentPage,
@@ -92,7 +78,9 @@ const Index = () => {
   } = useGetQuery({
     url: "/admin/workout-plans",
     params: queryParams,
-    queryProps: { queryKey: [...TEMPLATES_QUERY_KEY, queryParams] },
+    queryProps: {
+      queryKey: [...WORKOUT_PLAN_TEMPLATES_QUERY_KEY, queryParams],
+    },
   });
   const templates = get(templatesData, "data.data", []);
   const meta = get(templatesData, "data.meta", {
@@ -105,7 +93,11 @@ const Index = () => {
     useGetQuery({
       url: `/admin/workout-plans/${editingTemplateId || ""}`,
       queryProps: {
-        queryKey: [...TEMPLATES_QUERY_KEY, "detail", editingTemplateId],
+        queryKey: [
+          ...WORKOUT_PLAN_TEMPLATES_QUERY_KEY,
+          "detail",
+          editingTemplateId,
+        ],
         enabled: Boolean(editingTemplateId),
       },
     });
@@ -113,52 +105,22 @@ const Index = () => {
     useGetQuery({
       url: `/admin/workout-plans/${translatingTemplateId || ""}`,
       queryProps: {
-        queryKey: [...TEMPLATES_QUERY_KEY, "detail", translatingTemplateId],
+        queryKey: [
+          ...WORKOUT_PLAN_TEMPLATES_QUERY_KEY,
+          "detail",
+          translatingTemplateId,
+        ],
         enabled: Boolean(translatingTemplateId),
       },
     });
 
-  const createMutation = usePostQuery({
-    queryKey: TEMPLATES_QUERY_KEY,
-    mutationProps,
-  });
-  const updateMutation = usePatchQuery({
-    queryKey: TEMPLATES_QUERY_KEY,
-    mutationProps,
-  });
-  const deleteMutation = useDeleteQuery({
-    queryKey: TEMPLATES_QUERY_KEY,
-    mutationProps,
-  });
-
-  const isSaving = createMutation.isPending || updateMutation.isPending;
-  const isDeleting = deleteMutation.isPending;
-
-  const createTemplate = React.useCallback(
-    async (payload) =>
-      createMutation.mutateAsync({
-        url: "/admin/workout-plans",
-        attributes: payload,
-      }),
-    [createMutation],
-  );
-
-  const updateTemplate = React.useCallback(
-    async (id, payload) =>
-      updateMutation.mutateAsync({
-        url: `/admin/workout-plans/${id}`,
-        attributes: payload,
-      }),
-    [updateMutation],
-  );
-
-  const deleteTemplate = React.useCallback(
-    async (id) =>
-      deleteMutation.mutateAsync({
-        url: `/admin/workout-plans/${id}`,
-      }),
-    [deleteMutation],
-  );
+  const {
+    createTemplate,
+    deleteTemplate,
+    isDeleting,
+    isSaving,
+    updateTemplate,
+  } = useWorkoutPlanTemplateMutations();
 
   const safeLanguages = React.useMemo(
     () => (Array.isArray(languages) ? languages : []),
