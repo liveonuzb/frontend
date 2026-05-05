@@ -75,7 +75,7 @@ const Index = () => {
 
   const handleContinue = () => {
     if (hasSelection) {
-      navigate("/user/onboarding/water-habits");
+      navigate("/user/onboarding/food-budget");
     }
   };
 

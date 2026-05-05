@@ -175,12 +175,12 @@ const OnboardingLayoutInner = () => {
       cookingTime: userOnboarding?.cookingTime ?? "",
       cookingAccess: userOnboarding?.cookingAccess ?? "",
       mealFrequency: userOnboarding?.mealFrequency ?? "",
-      waterHabits: userOnboarding?.waterHabits ?? "",
       foodBudget:
         userOnboarding?.foodBudget !== null &&
         userOnboarding?.foodBudget !== undefined
           ? String(userOnboarding.foodBudget)
           : "",
+      foodBudgetTier: userOnboarding?.foodBudgetTier ?? null,
       budgetPeriod: userOnboarding?.budgetPeriod ?? "weekly",
       budgetCurrency: userOnboarding?.budgetCurrency ?? "UZS",
       workoutLocation: userOnboarding?.workoutLocation ?? "home",
@@ -197,22 +197,6 @@ const OnboardingLayoutInner = () => {
         userOnboarding?.customWorkoutBodyParts,
       )
         ? userOnboarding.customWorkoutBodyParts
-        : [],
-      preferredExerciseIds: Array.isArray(userOnboarding?.preferredExerciseIds)
-        ? userOnboarding.preferredExerciseIds
-        : [],
-      dislikedExerciseIds: Array.isArray(userOnboarding?.dislikedExerciseIds)
-        ? userOnboarding.dislikedExerciseIds
-        : [],
-      customPreferredExercises: Array.isArray(
-        userOnboarding?.customPreferredExercises,
-      )
-        ? userOnboarding.customPreferredExercises
-        : [],
-      customDislikedExercises: Array.isArray(
-        userOnboarding?.customDislikedExercises,
-      )
-        ? userOnboarding.customDislikedExercises
         : [],
       allergyIds: Array.isArray(userOnboarding?.allergyIds)
         ? userOnboarding.allergyIds

@@ -1,5 +1,6 @@
 import React, { Suspense, lazy } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router";
+import { AlertTriangleIcon, RefreshCwIcon } from "lucide-react";
 import PageLoader from "@/components/page-loader/index.jsx";
 import { useAuthStore, useLanguageStore, useAppModeStore } from "@/store";
 import ProtectedRoute from "@/components/protected-route";
@@ -7,6 +8,7 @@ import { getPostAuthRoute } from "@/modules/auth/lib/auth-utils.js";
 import { useTelegram } from "@/hooks/use-telegram";
 import { useTelegramAuth } from "@/hooks/use-telegram-auth";
 import { useTelegramBackButton } from "@/hooks/use-telegram-back-button";
+import { Button } from "@/components/ui/button";
 import {
   canAccessUserDashboard,
   getPostOnboardingPath,
@@ -33,6 +35,29 @@ const renderRouteElement = (element) => (
   <Suspense fallback={<PageLoader />}>{element}</Suspense>
 );
 
+const TelegramAuthError = ({ onRetry }) => (
+  <div className="flex min-h-svh items-center justify-center bg-background px-6">
+    <div className="flex w-full max-w-sm flex-col items-center gap-4 text-center">
+      <div className="flex size-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+        <AlertTriangleIcon className="size-6" />
+      </div>
+      <div className="space-y-1">
+        <h1 className="text-lg font-semibold">
+          Telegram orqali kirib bo'lmadi
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Sessiya muddati tugagan bo'lishi mumkin. Telegramdan qayta oching yoki
+          yana urinib ko'ring.
+        </p>
+      </div>
+      <Button type="button" onClick={onRetry}>
+        <RefreshCwIcon data-icon="inline-start" />
+        Qayta urinish
+      </Button>
+    </div>
+  </div>
+);
+
 const ADMIN_ROLES = [
   "SUPER_ADMIN",
   "CONTENT_MANAGER",
@@ -52,10 +77,14 @@ const Index = () => {
   );
   const appMode = useAppModeStore((state) => state.mode);
   const location = useLocation();
-  useTelegramAuth();
+  const { telegramAuthError, retryTelegramAuth } = useTelegramAuth();
   useTelegramBackButton();
 
   if (isTelegramWebApp && !isAuthenticated) {
+    if (telegramAuthError) {
+      return <TelegramAuthError onRetry={retryTelegramAuth} />;
+    }
+
     return <PageLoader />;
   }
 

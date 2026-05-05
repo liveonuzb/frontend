@@ -299,14 +299,24 @@
     },
     "foodBudget": {
       "title": "Ovqatlanish budjetingiz qancha?",
-      "description": "Ovqatlanish rejasi siz tanlagan davr va UZS budjetga mos tuziladi.",
+      "description": "Summa kiritmaysiz. LiveOn ovqatlanish rejasida ingredient narx toifalarini shu tanlovga moslaydi.",
       "helper": "Aniq bilmasangiz, bu bosqichni o'tkazib yuborishingiz mumkin.",
-      "placeholder": "Masalan: 350000",
-      "error": "Budjet manfiy bo'lmagan raqam bo'lishi kerak.",
-      "periods": {
-        "daily": "Kunlik",
-        "weekly": "Haftalik",
-        "monthly": "Oylik"
+      "tiers": {
+        "low": {
+          "label": "Low",
+          "description": "Arzon va oddiy mahsulotlar ustuvor bo'ladi.",
+          "summary": "Low budget"
+        },
+        "medium": {
+          "label": "Medium",
+          "description": "Arzon va o'rtacha narxdagi mahsulotlar balansda ishlatiladi.",
+          "summary": "Medium budget"
+        },
+        "high": {
+          "label": "High",
+          "description": "Premiumroq mahsulotlar ham reja ichida ishlatilishi mumkin.",
+          "summary": "High budget"
+        }
       }
     },
     "chipSelect": {

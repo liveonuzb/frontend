@@ -168,7 +168,7 @@ const resultFallbacks = {
   currentWeight: 70,
   goal: "Ozish",
   activity: "O'rtacha faol",
-  budget: 250000,
+  budget: "Medium budget",
 };
 
 const goalLabels = {
@@ -192,10 +192,10 @@ const activityLabels = {
   very_active: "Juda faol",
 };
 
-const budgetPeriodSuffixes = {
-  daily: "kuniga",
-  weekly: "haftasiga",
-  monthly: "oyiga",
+const budgetTierLabels = {
+  low: "Low budget",
+  medium: "Medium budget",
+  high: "High budget",
 };
 
 const getNumberOrFallback = (value, fallback) => {
@@ -213,13 +213,22 @@ const formatResultLiters = (value) => {
 };
 
 const resolveSummaryBudget = (onboarding = {}) => {
+  if (onboarding?.foodBudgetTier) {
+    return budgetTierLabels[onboarding.foodBudgetTier] ?? resultFallbacks.budget;
+  }
+
   const amount = getNumberOrFallback(
     onboarding?.foodBudget,
-    resultFallbacks.budget,
+    null,
   );
+  if (amount === null) return resultFallbacks.budget;
+
   const currency = onboarding?.budgetCurrency || "UZS";
-  const period =
-    budgetPeriodSuffixes[onboarding?.budgetPeriod] ?? budgetPeriodSuffixes.weekly;
+  const period = {
+    daily: "kuniga",
+    weekly: "haftasiga",
+    monthly: "oyiga",
+  }[onboarding?.budgetPeriod] ?? "haftasiga";
 
   return `${formatResultNumber(amount)} ${currency} / ${period}`;
 };

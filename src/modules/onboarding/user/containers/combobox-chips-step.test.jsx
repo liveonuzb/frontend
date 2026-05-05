@@ -4,11 +4,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useOnboardingStore } from "@/store";
 import Allergies from "./allergies";
 import DietRequirements from "./diet-requirements";
-import DislikedExercises from "./disliked-exercises";
 import DislikedFoods from "./disliked-foods";
 import DislikedIngredients from "./disliked-ingredients";
 import PreferredCuisines from "./preferred-cuisines";
-import PreferredExercises from "./preferred-exercises";
 import PreferredIngredients from "./preferred-ingredients";
 import WorkoutBodyParts from "./workout-body-parts";
 import WorkoutEquipment from "./workout-equipment";
@@ -98,11 +96,6 @@ describe("onboarding catalog card containers", () => {
     const cases = [
       [WorkoutEquipment, "onboarding.workoutSteps.equipment.title"],
       [WorkoutBodyParts, "onboarding.workoutSteps.bodyParts.title"],
-      [
-        PreferredExercises,
-        "onboarding.workoutSteps.preferredExercises.title",
-      ],
-      [DislikedExercises, "onboarding.workoutSteps.dislikedExercises.title"],
       [Allergies, "onboarding.nutritionSteps.allergies.title"],
       [
         DietRequirements,
@@ -129,28 +122,6 @@ describe("onboarding catalog card containers", () => {
 
       unmount();
     });
-  });
-
-  it("hides opposite-list catalog items and labels non-onboarding search suggestions", () => {
-    useOnboardingStore.getState().setFields({
-      preferredExerciseIds: [1],
-    });
-
-    render(<DislikedExercises />);
-
-    expect(screen.queryByText("Push up")).toBeNull();
-    fireEvent.click(screen.getByText("onboarding.chipSelect.otherTitle"));
-    fireEvent.change(
-      screen.getByLabelText("onboarding.chipSelect.searchLabel"),
-      {
-        target: { value: "Squat" },
-      },
-    );
-
-    expect(screen.getByText("Squat")).toBeTruthy();
-    expect(
-      screen.getByText("onboarding.chipSelect.nonOnboarding"),
-    ).toBeTruthy();
   });
 
   it("shows allergy ingredients as cards and mirrors the legacy allergy field", () => {
@@ -242,25 +213,6 @@ describe("onboarding catalog card containers", () => {
     ).toHaveLength(1);
     expect(screen.getAllByText("Halal").length).toBeGreaterThan(1);
     expect(screen.getAllByText("No pork").length).toBeGreaterThan(1);
-  });
-
-  it("blocks custom add rows that conflict with the opposite list", () => {
-    useOnboardingStore.getState().setFields({
-      customPreferredExercises: ["Burpee"],
-    });
-
-    render(<DislikedExercises />);
-
-    fireEvent.click(screen.getByText("onboarding.chipSelect.otherTitle"));
-    const input = screen.getByLabelText("onboarding.chipSelect.searchLabel");
-    fireEvent.change(input, { target: { value: "burpee" } });
-
-    expect(
-      screen.queryByText("onboarding.chipSelect.addCustom:burpee"),
-    ).toBeNull();
-    expect(
-      screen.getByText("onboarding.workoutSteps.exercises.conflict"),
-    ).toBeTruthy();
   });
 
   it("blocks custom ingredient rows that conflict with the opposite list", () => {

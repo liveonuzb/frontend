@@ -4,12 +4,15 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangleIcon,
   BrainCircuitIcon,
+  CheckCircleIcon,
   DollarSignIcon,
   GlobeIcon,
   PercentIcon,
+  RotateCcwIcon,
   SaveIcon,
   SettingsIcon,
   ShieldIcon,
+  XCircleIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import PageTransition from "@/components/page-transition";
@@ -32,6 +35,16 @@ const DEFAULT_SYSTEM_SETTINGS = {
   registrationEnabled: true,
   minPayoutAmount: 50000,
   appName: "LiveOn",
+  mealPlanBudgetRules: {
+    enabled: true,
+    maxDailyCostMultiplier: 1.05,
+    maxWeeklyCostMultiplier: 1.05,
+    unknownMealCostFallback: 20000,
+    unknownIngredientPriceFallbackPer100g: 5000,
+    maxUnknownCostMealSlotsPerWeek: 2,
+    preferCheapIngredients: true,
+    cheapIngredientMaxPricePer100g: 6000,
+  },
 };
 
 const FEATURE_LABELS = {
@@ -96,6 +109,7 @@ const Index = () => {
   const aiSettings = get(aiOverview, "settings", []);
   const aiAnalytics = get(aiOverview, "analytics", {});
   const recentLogs = get(aiOverview, "recentLogs", []);
+  const reviewQueue = get(aiOverview, "reviewQueue", []);
 
   const updateSettingsMutation = usePatchQuery({
     queryKey: ["admin", "settings"],
@@ -111,6 +125,16 @@ const Index = () => {
     },
   });
   const updateAiPromptMutation = usePatchQuery({
+    queryKey: ["admin", "ai", "overview"],
+    mutationProps: {
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: ["admin", "ai", "overview"],
+        });
+      },
+    },
+  });
+  const reviewAiLogMutation = usePatchQuery({
     queryKey: ["admin", "ai", "overview"],
     mutationProps: {
       onSuccess: async () => {
@@ -183,8 +207,58 @@ const Index = () => {
     }
   };
 
+  const handleActivatePrompt = async (version) => {
+    if (!canManageSettings || !version?.id) return;
+
+    try {
+      await updateAiPromptMutation.mutateAsync({
+        url: `/admin/ai/prompt-settings/${version.id}/activate`,
+        attributes: {},
+      });
+      toast.success(
+        `${FEATURE_LABELS[version.feature] ?? version.feature} v${
+          version.version
+        } active qilindi`,
+      );
+    } catch {
+      toast.error("Prompt versionni active qilib bo'lmadi");
+    }
+  };
+
+  const handleReviewLog = async (log, reviewStatus) => {
+    if (!canManageSettings || !log?.id) return;
+
+    try {
+      await reviewAiLogMutation.mutateAsync({
+        url: `/admin/ai/generation-logs/${log.id}/review`,
+        attributes: { reviewStatus },
+      });
+      toast.success(
+        reviewStatus === "approved"
+          ? "AI log tasdiqlandi"
+          : "AI log rad qilindi",
+      );
+    } catch {
+      toast.error("AI review holatini yangilab bo'lmadi");
+    }
+  };
+
   const handleSystemChange = (key, value) => {
     setFormDraft((prev) => ({ ...(prev ?? settings), [key]: value }));
+  };
+
+  const handleBudgetRuleChange = (key, value) => {
+    setFormDraft((prev) => {
+      const base = prev ?? settings;
+      return {
+        ...base,
+        mealPlanBudgetRules: {
+          ...DEFAULT_SYSTEM_SETTINGS.mealPlanBudgetRules,
+          ...(base.mealPlanBudgetRules ?? {}),
+          [key]: value,
+        },
+      };
+    });
   };
 
   const handlePromptChange = (feature, key, value) => {
@@ -348,6 +422,10 @@ const Index = () => {
                       label="Taxminiy xarajat"
                       value={formatUsd(aiAnalytics.estimatedCostUsd)}
                     />
+                    <Metric
+                      label="Review queue"
+                      value={aiAnalytics.pendingReviewRequests ?? 0}
+                    />
                   </div>
                   <Separator />
                   <div className="space-y-2">
@@ -373,6 +451,129 @@ const Index = () => {
                 </CardContent>
               </Card>
             </div>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <DollarSignIcon className="size-5 text-orange-500" />
+                  <CardTitle>Meal plan budget rules</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div className="flex items-center justify-between rounded-xl border p-3 md:col-span-2 xl:col-span-1">
+                  <div>
+                    <Label>Budget rules active</Label>
+                    <p className="text-xs text-muted-foreground">
+                      AI meal plan budget limitlarini majburiy qiladi.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={Boolean(formData.mealPlanBudgetRules?.enabled)}
+                    onCheckedChange={(value) =>
+                      handleBudgetRuleChange("enabled", value)
+                    }
+                    disabled={!canManageSettings}
+                  />
+                </div>
+                <Field
+                  label="Daily max multiplier"
+                  type="number"
+                  value={formData.mealPlanBudgetRules?.maxDailyCostMultiplier}
+                  disabled={!canManageSettings}
+                  onChange={(value) =>
+                    handleBudgetRuleChange(
+                      "maxDailyCostMultiplier",
+                      Number(value),
+                    )
+                  }
+                />
+                <Field
+                  label="Weekly max multiplier"
+                  type="number"
+                  value={formData.mealPlanBudgetRules?.maxWeeklyCostMultiplier}
+                  disabled={!canManageSettings}
+                  onChange={(value) =>
+                    handleBudgetRuleChange(
+                      "maxWeeklyCostMultiplier",
+                      Number(value),
+                    )
+                  }
+                />
+                <Field
+                  label="Unknown meal fallback"
+                  type="number"
+                  value={formData.mealPlanBudgetRules?.unknownMealCostFallback}
+                  disabled={!canManageSettings}
+                  onChange={(value) =>
+                    handleBudgetRuleChange(
+                      "unknownMealCostFallback",
+                      Number(value),
+                    )
+                  }
+                />
+                <Field
+                  label="Unknown ingredient / 100g"
+                  type="number"
+                  value={
+                    formData.mealPlanBudgetRules
+                      ?.unknownIngredientPriceFallbackPer100g
+                  }
+                  disabled={!canManageSettings}
+                  onChange={(value) =>
+                    handleBudgetRuleChange(
+                      "unknownIngredientPriceFallbackPer100g",
+                      Number(value),
+                    )
+                  }
+                />
+                <Field
+                  label="Max unknown meal slots"
+                  type="number"
+                  value={
+                    formData.mealPlanBudgetRules
+                      ?.maxUnknownCostMealSlotsPerWeek
+                  }
+                  disabled={!canManageSettings}
+                  onChange={(value) =>
+                    handleBudgetRuleChange(
+                      "maxUnknownCostMealSlotsPerWeek",
+                      Number(value),
+                    )
+                  }
+                />
+                <div className="flex items-center justify-between rounded-xl border p-3">
+                  <div>
+                    <Label>Cheap ingredients</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Arzon ingredientlarni ustunroq tanlash.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={Boolean(
+                      formData.mealPlanBudgetRules?.preferCheapIngredients,
+                    )}
+                    onCheckedChange={(value) =>
+                      handleBudgetRuleChange("preferCheapIngredients", value)
+                    }
+                    disabled={!canManageSettings}
+                  />
+                </div>
+                <Field
+                  label="Cheap max / 100g"
+                  type="number"
+                  value={
+                    formData.mealPlanBudgetRules?.cheapIngredientMaxPricePer100g
+                  }
+                  disabled={!canManageSettings}
+                  onChange={(value) =>
+                    handleBudgetRuleChange(
+                      "cheapIngredientMaxPricePer100g",
+                      Number(value),
+                    )
+                  }
+                />
+              </CardContent>
+            </Card>
 
             <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               {aiSettings.map((item) => {
@@ -492,11 +693,138 @@ const Index = () => {
                           Version saqlash
                         </Button>
                       </div>
+                      <Separator />
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">Version history</p>
+                        <div className="max-h-52 space-y-2 overflow-y-auto pr-1">
+                          {(get(item, "versions", []) ?? []).map((version) => (
+                            <div
+                              key={version.id}
+                              className="flex flex-col gap-2 rounded-xl border bg-muted/20 p-3 text-sm md:flex-row md:items-center md:justify-between"
+                            >
+                              <div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="font-medium">
+                                    v{version.version}
+                                  </span>
+                                  <Badge
+                                    variant={
+                                      version.isActive
+                                        ? "secondary"
+                                        : "outline"
+                                    }
+                                  >
+                                    {version.isActive ? "Active" : "Inactive"}
+                                  </Badge>
+                                  <span className="text-xs text-muted-foreground">
+                                    {version.model}
+                                  </span>
+                                </div>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  {version.title}
+                                </p>
+                              </div>
+                              {!version.isActive ? (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-2"
+                                  disabled={
+                                    updateAiPromptMutation.isPending ||
+                                    !canManageSettings
+                                  }
+                                  onClick={() => handleActivatePrompt(version)}
+                                >
+                                  <RotateCcwIcon className="size-4" />
+                                  Rollback
+                                </Button>
+                              ) : null}
+                            </div>
+                          ))}
+                          {get(item, "versions", []).length === 0 ? (
+                            <p className="rounded-xl border bg-muted/20 p-3 text-sm text-muted-foreground">
+                              Hali custom version yo'q. Default prompt
+                              ishlayapti.
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
                 );
               })}
             </section>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <AlertTriangleIcon className="size-5 text-amber-500" />
+                  <CardTitle>AI review queue</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {reviewQueue.map((log) => (
+                  <div
+                    key={log.id}
+                    className="grid grid-cols-1 gap-3 rounded-xl border p-3 text-sm lg:grid-cols-[1fr_auto]"
+                  >
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-medium">
+                          {FEATURE_LABELS[log.feature] ?? log.feature}
+                        </p>
+                        <Badge variant="outline">v{log.promptVersion ?? 0}</Badge>
+                        <Badge variant="secondary">{log.reviewStatus}</Badge>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {log.model} ·{" "}
+                        {new Date(log.createdAt).toLocaleString("uz-UZ")}
+                      </p>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Sabab: {log.reviewReason || log.error || "Tekshiruv kerak"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                        disabled={
+                          reviewAiLogMutation.isPending || !canManageSettings
+                        }
+                        onClick={() => handleReviewLog(log, "approved")}
+                      >
+                        <CheckCircleIcon className="size-4 text-emerald-500" />
+                        Approve
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                        disabled={
+                          reviewAiLogMutation.isPending || !canManageSettings
+                        }
+                        onClick={() => handleReviewLog(log, "rejected")}
+                      >
+                        <XCircleIcon className="size-4 text-red-500" />
+                        Reject
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {reviewQueue.length === 0 ? (
+                  <div className="flex items-start gap-3 rounded-xl border bg-muted/30 p-4">
+                    <CheckCircleIcon className="mt-0.5 size-5 text-emerald-500" />
+                    <p className="text-sm text-muted-foreground">
+                      Review kutayotgan AI loglar yo'q.
+                    </p>
+                  </div>
+                ) : null}
+              </CardContent>
+            </Card>
 
             <Card>
               <CardHeader>
@@ -509,7 +837,7 @@ const Index = () => {
                 {recentLogs.map((log) => (
                   <div
                     key={log.id}
-                    className="grid grid-cols-1 gap-2 rounded-xl border p-3 text-sm md:grid-cols-[1fr_auto_auto_auto]"
+                    className="grid grid-cols-1 gap-2 rounded-xl border p-3 text-sm md:grid-cols-[1fr_auto_auto_auto_auto]"
                   >
                     <div>
                       <p className="font-medium">
@@ -527,6 +855,9 @@ const Index = () => {
                       className="justify-self-start"
                     >
                       {log.status}
+                    </Badge>
+                    <Badge variant="outline" className="justify-self-start">
+                      {log.reviewStatus ?? "not_required"}
                     </Badge>
                     <span className="text-muted-foreground">
                       {log.totalTokens} tokens

@@ -63,9 +63,7 @@ vi.mock("@/hooks/api", () => ({
             currentWeight: { value: 70, unit: "kg" },
             goal: "lose",
             activityLevel: "moderately-active",
-            foodBudget: 250000,
-            budgetPeriod: "weekly",
-            budgetCurrency: "UZS",
+            foodBudgetTier: "medium",
           },
         },
       },
@@ -129,7 +127,7 @@ describe("PersonalizationResult onboarding screen", () => {
     expect(screen.getByText("Aktivlik")).toBeTruthy();
     expect(screen.getByText("O'rtacha faol")).toBeTruthy();
     expect(screen.getByText("Budjet")).toBeTruthy();
-    expect(screen.getByText("250,000 UZS / haftasiga")).toBeTruthy();
+    expect(screen.getByText("Medium budget")).toBeTruthy();
     expect(screen.getByText("Qanday hisoblaymiz?")).toBeTruthy();
 
     expect(screen.queryByText("Reja inputlari")).toBeNull();

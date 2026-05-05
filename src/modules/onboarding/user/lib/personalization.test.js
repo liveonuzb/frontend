@@ -48,9 +48,10 @@ describe("post-onboarding personalization helpers", () => {
         currentWeight: { unit: "kg" },
       }),
     ).toEqual({ currentWeight: { value: 82, unit: "kg" } });
-    expect(buildOnboardingPreferencePatch("foodBudget", "350000")).toEqual({
-      foodBudget: 350000,
-      budgetPeriod: "weekly",
+    expect(buildOnboardingPreferencePatch("foodBudget", "medium")).toEqual({
+      foodBudgetTier: "medium",
+      foodBudget: null,
+      budgetPeriod: null,
       budgetCurrency: "UZS",
     });
     expect(

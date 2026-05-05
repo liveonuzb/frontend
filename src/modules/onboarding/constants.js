@@ -17,10 +17,7 @@ export const ONBOARDING_STEPS = [
   "workout-location",
   "workout-equipment",
   "workout-body-parts",
-  "preferred-exercises",
-  "disliked-exercises",
   "meal-frequency",
-  "water-habits",
   "food-budget",
   "allergies",
   "diet-requirements",
@@ -45,7 +42,6 @@ export const COACH_ONBOARDING_STEPS = [
 ];
 
 export const LEGACY_USER_ONBOARDING_STEPS = [
-  "exercise-preferences",
   "lifestyle",
 ];
 

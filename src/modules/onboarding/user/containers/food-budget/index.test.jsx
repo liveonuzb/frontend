@@ -1,8 +1,14 @@
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  FooterSlot,
+  OnboardingFooterProvider,
+} from "@/modules/onboarding/lib/onboarding-footer-context";
 import { useOnboardingStore } from "@/store";
 import FoodBudget from "./index.jsx";
+
+const navigate = vi.fn();
 
 vi.mock("react-i18next", () => ({
   initReactI18next: {
@@ -15,60 +21,77 @@ vi.mock("react-i18next", () => ({
 }));
 
 vi.mock("react-router", () => ({
-  useNavigate: () => vi.fn(),
+  useNavigate: () => navigate,
 }));
 
 vi.mock("@/modules/onboarding/lib/use-auto-save", () => ({
   useOnboardingAutoSave: vi.fn(),
 }));
 
+const renderFoodBudget = () =>
+  render(
+    <OnboardingFooterProvider>
+      <FoodBudget />
+      <FooterSlot />
+    </OnboardingFooterProvider>,
+  );
+
 describe("FoodBudget onboarding step", () => {
   beforeEach(() => {
+    navigate.mockClear();
     useOnboardingStore.getState().reset();
   });
 
-  it("uses the number field with a default weekly UZS budget", async () => {
-    render(<FoodBudget />);
+  it("renders budget tiers instead of numeric UZS inputs", () => {
+    renderFoodBudget();
 
-    await waitFor(() => {
-      expect(useOnboardingStore.getState().foodBudget).toBe("250000");
-    });
-
-    expect(screen.getByRole("textbox")).toHaveValue("250,000");
-    expect(useOnboardingStore.getState().budgetPeriod).toBe("weekly");
-    expect(useOnboardingStore.getState().budgetCurrency).toBe("UZS");
-    expect(screen.getByText("UZS")).toBeInTheDocument();
+    expect(
+      screen.getByText("onboarding.foodBudget.tiers.low.label"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("onboarding.foodBudget.tiers.medium.label"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("onboarding.foodBudget.tiers.high.label"),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(screen.queryByText("UZS")).not.toBeInTheDocument();
   });
 
-  it("updates the default budget when period changes", async () => {
-    render(<FoodBudget />);
-
-    await waitFor(() => {
-      expect(useOnboardingStore.getState().foodBudget).toBe("250000");
-    });
+  it("stores the selected tier and clears legacy amount fields", async () => {
+    renderFoodBudget();
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: "onboarding.foodBudget.periods.daily",
+        name: /onboarding\.foodBudget\.tiers\.medium\.label/i,
       }),
     );
 
     await waitFor(() => {
-      expect(useOnboardingStore.getState().budgetPeriod).toBe("daily");
-      expect(useOnboardingStore.getState().foodBudget).toBe("50000");
+      expect(useOnboardingStore.getState()).toEqual(
+        expect.objectContaining({
+          foodBudgetTier: "medium",
+          foodBudget: "",
+          budgetPeriod: null,
+          budgetCurrency: "UZS",
+        }),
+      );
     });
-    expect(screen.getByRole("textbox")).toHaveValue("50,000");
+  });
 
+  it("skip clears tier and continues to allergies", async () => {
+    useOnboardingStore.getState().setFields({ foodBudgetTier: "high" });
+
+    renderFoodBudget();
     fireEvent.click(
       screen.getByRole("button", {
-        name: "onboarding.foodBudget.periods.monthly",
+        name: "onboarding.skip",
       }),
     );
 
     await waitFor(() => {
-      expect(useOnboardingStore.getState().budgetPeriod).toBe("monthly");
-      expect(useOnboardingStore.getState().foodBudget).toBe("1000000");
+      expect(useOnboardingStore.getState().foodBudgetTier).toBeNull();
+      expect(navigate).toHaveBeenCalledWith("/user/onboarding/allergies");
     });
-    expect(screen.getByRole("textbox")).toHaveValue("1,000,000");
   });
 });

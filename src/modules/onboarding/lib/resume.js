@@ -85,33 +85,15 @@ export const getNextUserOnboardingPath = (state) => {
     return "workout-body-parts";
   }
 
-  if (
-    !hasValue(state.preferredExerciseIds) &&
-    !hasValue(state.customPreferredExercises) &&
-    !hasCompletedStep(state, "preferred-exercises") &&
-    !hasCompletedStep(state, "exercise-preferences")
-  ) {
-    return "preferred-exercises";
-  }
-
-  if (
-    !hasValue(state.dislikedExerciseIds) &&
-    !hasValue(state.customDislikedExercises) &&
-    !hasCompletedStep(state, "disliked-exercises") &&
-    !hasCompletedStep(state, "exercise-preferences")
-  ) {
-    return "disliked-exercises";
-  }
-
   if (!hasValue(state.mealFrequency)) {
     return "meal-frequency";
   }
 
-  if (!hasValue(state.waterHabits)) {
-    return "water-habits";
-  }
-
-  if (!hasValue(state.foodBudget) && !hasCompletedStep(state, "food-budget")) {
+  if (
+    !hasValue(state.foodBudgetTier) &&
+    !hasValue(state.foodBudget) &&
+    !hasCompletedStep(state, "food-budget")
+  ) {
     return "food-budget";
   }
 

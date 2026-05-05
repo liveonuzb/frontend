@@ -9,7 +9,22 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
   DataGrid,
@@ -21,7 +36,12 @@ import {
 import { DataGridColumnHeader } from "@/components/reui/data-grid/data-grid-column-header";
 import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
 import { Filters } from "@/components/reui/filters.jsx";
-import { useDeleteQuery, useGetQuery, usePatchQuery } from "@/hooks/api";
+import {
+  useDeleteQuery,
+  useGetQuery,
+  usePatchQuery,
+  usePostQuery,
+} from "@/hooks/api";
 import { cn } from "@/lib/utils";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
@@ -57,10 +77,7 @@ const ListPage = () => {
   const navigate = useNavigate();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
-  const [name, setName] = useQueryState(
-    "name",
-    parseAsString.withDefault(""),
-  );
+  const [name, setName] = useQueryState("name", parseAsString.withDefault(""));
   const [nameOp, setNameOp] = useQueryState(
     "nameOp",
     parseAsStringEnum(TEXT_OPERATORS).withDefault("contains"),
@@ -139,6 +156,13 @@ const ListPage = () => {
         : [{ id: sortBy, desc: sortDir === "desc" }],
     [sortBy, sortDir],
   );
+  const [safetyForm, setSafetyForm] = React.useState({
+    healthConstraintId: "",
+    workoutId: "",
+    severity: "blocked",
+    reason: "",
+    replacementGuidance: "",
+  });
   const canReorder =
     trim(name) === "" &&
     nameOp === "contains" &&
@@ -216,8 +240,28 @@ const ListPage = () => {
     url: "/admin/languages",
     queryProps: { queryKey: ["admin", "languages"] },
   });
+  const { data: safetyConstraintsData } = useGetQuery({
+    url: "/admin/health-constraints",
+    params: { pageSize: 100, status: "active", sortBy: "orderKey" },
+    queryProps: {
+      queryKey: ["admin", "health-constraints", "safety-options"],
+    },
+  });
+  const { data: safetyWorkoutsData } = useGetQuery({
+    url: "/admin/workouts",
+    params: { pageSize: 100, status: "active", sortBy: "name" },
+    queryProps: { queryKey: ["admin", "workouts", "safety-options"] },
+  });
+  const { data: safetyRulesData, refetch: refetchSafetyRules } = useGetQuery({
+    url: "/admin/workout-safety-rules",
+    params: { pageSize: 50 },
+    queryProps: { queryKey: ["admin", "workout-safety-rules"] },
+  });
   const items = get(data, "data.data", []);
   const meta = get(data, "data.meta", { total: 0, totalPages: 1 });
+  const safetyConstraints = get(safetyConstraintsData, "data.data", []);
+  const safetyWorkouts = get(safetyWorkoutsData, "data.data", []);
+  const safetyRules = get(safetyRulesData, "data.data", []);
   const activeLanguages = React.useMemo(() => {
     const languages = getPayload(languagesData);
     return isArray(languages)
@@ -226,6 +270,44 @@ const ListPage = () => {
   }, [languagesData]);
   const patchMutation = usePatchQuery({ queryKey: QUERY_KEY });
   const deleteMutation = useDeleteQuery({ queryKey: QUERY_KEY });
+  const createSafetyRuleMutation = usePostQuery({
+    queryKey: ["admin", "workout-safety-rules"],
+  });
+  const deleteSafetyRuleMutation = useDeleteQuery({
+    queryKey: ["admin", "workout-safety-rules"],
+  });
+  const patchSafetyRuleMutation = usePatchQuery({
+    queryKey: ["admin", "workout-safety-rules"],
+  });
+
+  const handleCreateSafetyRule = React.useCallback(async () => {
+    if (!safetyForm.healthConstraintId || !safetyForm.workoutId) return;
+
+    try {
+      await createSafetyRuleMutation.mutateAsync({
+        url: "/admin/workout-safety-rules",
+        attributes: {
+          healthConstraintId: Number(safetyForm.healthConstraintId),
+          workoutId: Number(safetyForm.workoutId),
+          severity: safetyForm.severity,
+          reason: trim(safetyForm.reason) || undefined,
+          replacementGuidance:
+            trim(safetyForm.replacementGuidance) || undefined,
+          isActive: true,
+        },
+      });
+      setSafetyForm((current) => ({
+        ...current,
+        workoutId: "",
+        reason: "",
+        replacementGuidance: "",
+      }));
+      toast.success("Workout safety rule saqlandi");
+      void refetchSafetyRules();
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Safety rule saqlanmadi"));
+    }
+  }, [createSafetyRuleMutation, refetchSafetyRules, safetyForm]);
 
   const columns = React.useMemo(
     () => [
@@ -410,7 +492,14 @@ const ListPage = () => {
         ),
       },
     ],
-    [activeLanguages, canReorder, currentLanguage, deleteMutation, navigate, patchMutation],
+    [
+      activeLanguages,
+      canReorder,
+      currentLanguage,
+      deleteMutation,
+      navigate,
+      patchMutation,
+    ],
   );
   const table = useReactTable({
     data: items,
@@ -681,6 +770,187 @@ const ListPage = () => {
           />
         </div>
       </DataGrid>
+      <Card className="border-border/60 shadow-sm">
+        <CardHeader>
+          <CardTitle>Workout safety rules</CardTitle>
+          <CardDescription>
+            Health constraint tanlanganda qaysi mashqlar bloklanishi yoki
+            ehtiyotkorlik bilan ishlatilishini belgilang.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 lg:grid-cols-[1fr_1fr_160px]">
+            <Select
+              value={safetyForm.healthConstraintId}
+              onValueChange={(value) =>
+                setSafetyForm((current) => ({
+                  ...current,
+                  healthConstraintId: value,
+                }))
+              }
+            >
+              <SelectTrigger className="h-10 w-full">
+                <SelectValue placeholder="Health constraint" />
+              </SelectTrigger>
+              <SelectContent>
+                {safetyConstraints.map((constraint) => (
+                  <SelectItem key={constraint.id} value={String(constraint.id)}>
+                    {resolveLabel(
+                      constraint.translations,
+                      constraint.name,
+                      currentLanguage,
+                    )}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={safetyForm.workoutId}
+              onValueChange={(value) =>
+                setSafetyForm((current) => ({ ...current, workoutId: value }))
+              }
+            >
+              <SelectTrigger className="h-10 w-full">
+                <SelectValue placeholder="Workout" />
+              </SelectTrigger>
+              <SelectContent>
+                {safetyWorkouts.map((workout) => (
+                  <SelectItem key={workout.id} value={String(workout.id)}>
+                    {resolveLabel(
+                      workout.translations,
+                      workout.name,
+                      currentLanguage,
+                    )}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={safetyForm.severity}
+              onValueChange={(value) =>
+                setSafetyForm((current) => ({ ...current, severity: value }))
+              }
+            >
+              <SelectTrigger className="h-10 w-full">
+                <SelectValue placeholder="Severity" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="blocked">Blocked</SelectItem>
+                <SelectItem value="caution">Caution</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-3 lg:grid-cols-2">
+            <Input
+              value={safetyForm.reason}
+              placeholder="Sabab: masalan, tizza zo'riqishi mumkin"
+              onChange={(event) =>
+                setSafetyForm((current) => ({
+                  ...current,
+                  reason: event.target.value,
+                }))
+              }
+            />
+            <Input
+              value={safetyForm.replacementGuidance}
+              placeholder="Alternativa: masalan, low-impact variant tanlash"
+              onChange={(event) =>
+                setSafetyForm((current) => ({
+                  ...current,
+                  replacementGuidance: event.target.value,
+                }))
+              }
+            />
+          </div>
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              disabled={
+                !safetyForm.healthConstraintId ||
+                !safetyForm.workoutId ||
+                createSafetyRuleMutation.isPending
+              }
+              onClick={() => void handleCreateSafetyRule()}
+            >
+              Safety rule qo'shish
+            </Button>
+          </div>
+          <div className="space-y-2">
+            {safetyRules.length ? (
+              safetyRules.map((rule) => (
+                <div
+                  key={rule.id}
+                  className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3 md:flex-row md:items-center md:justify-between"
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge
+                        variant={
+                          rule.severity === "blocked"
+                            ? "destructive"
+                            : "secondary"
+                        }
+                      >
+                        {rule.severity === "blocked" ? "Blocked" : "Caution"}
+                      </Badge>
+                      <p className="font-medium">
+                        {get(rule, "healthConstraint.name")} {"->"}{" "}
+                        {get(rule, "target.name")}
+                      </p>
+                    </div>
+                    {rule.reason ? (
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {rule.reason}
+                      </p>
+                    ) : null}
+                    {rule.replacementGuidance ? (
+                      <p className="text-xs text-muted-foreground">
+                        Alternativa: {rule.replacementGuidance}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="flex shrink-0 items-center justify-end gap-2">
+                    <Switch
+                      checked={Boolean(rule.isActive)}
+                      onCheckedChange={(checked) =>
+                        patchSafetyRuleMutation.mutate({
+                          url: `/admin/workout-safety-rules/${rule.id}`,
+                          attributes: { isActive: checked },
+                        })
+                      }
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={deleteSafetyRuleMutation.isPending}
+                      onClick={async () => {
+                        try {
+                          await deleteSafetyRuleMutation.mutateAsync({
+                            url: `/admin/workout-safety-rules/${rule.id}`,
+                          });
+                          toast.success("Safety rule o'chirildi");
+                          void refetchSafetyRules();
+                        } catch (error) {
+                          toast.error(
+                            getErrorMessage(error, "Safety rule o'chmadi"),
+                          );
+                        }
+                      }}
+                    >
+                      O'chirish
+                    </Button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
+                Hali workout safety rule qo'shilmagan.
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
       <Outlet />
     </div>
   );

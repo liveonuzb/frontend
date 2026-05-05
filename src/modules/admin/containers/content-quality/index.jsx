@@ -11,6 +11,7 @@ import {
   LanguagesIcon,
   RefreshCwIcon,
   SearchIcon,
+  ShieldCheckIcon,
   SoupIcon,
   WalletCardsIcon,
   XIcon,
@@ -39,6 +40,7 @@ const sectionIcons = {
   images: ImageIcon,
   nutrition: SoupIcon,
   prices: WalletCardsIcon,
+  safety: ShieldCheckIcon,
 };
 
 const summaryCards = [
@@ -66,6 +68,12 @@ const summaryCards = [
     description: "Ingredient narxi to'ldirilmagan joylar",
     icon: WalletCardsIcon,
   },
+  {
+    key: "safety",
+    title: "Safety",
+    description: "Workout safety rule yetishmayotgan joylar",
+    icon: ShieldCheckIcon,
+  },
 ];
 
 const sectionFilterOptions = [
@@ -74,6 +82,7 @@ const sectionFilterOptions = [
   { label: "Rasmlar", value: "images" },
   { label: "Nutrition", value: "nutrition" },
   { label: "Budget", value: "prices" },
+  { label: "Safety", value: "safety" },
 ];
 
 const summarySectionByKey = {
@@ -81,6 +90,7 @@ const summarySectionByKey = {
   missingImages: "images",
   nutrition: "nutrition",
   prices: "prices",
+  safety: "safety",
 };
 
 const QualitySkeleton = () => (
@@ -95,8 +105,8 @@ const QualitySkeleton = () => (
       </div>
       <Skeleton className="h-10 w-28 rounded-full" />
     </div>
-    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-      {Array.from({ length: 4 }).map((_, index) => (
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+      {Array.from({ length: 5 }).map((_, index) => (
         <Skeleton key={index} className="h-32 rounded-lg" />
       ))}
     </div>
@@ -127,6 +137,12 @@ const catalogListRoutes = {
 };
 
 const getIssueActionPath = ({ sectionKey, groupKey, issueId }) => {
+  if (sectionKey === "safety") {
+    return issueId
+      ? `${catalogListRoutes.workouts}/edit/${issueId}`
+      : catalogListRoutes.workouts;
+  }
+
   const listPath = catalogListRoutes[groupKey];
 
   if (!listPath || !issueId) {
@@ -505,7 +521,8 @@ const Index = () => {
               Content Quality
             </h1>
             <p className="text-muted-foreground">
-              Tarjima, rasm, nutrition va budget datalaridagi kamchiliklar.
+              Tarjima, rasm, nutrition, budget va safety datalaridagi
+              kamchiliklar.
             </p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {activeLanguages.map((language) => (
@@ -541,7 +558,7 @@ const Index = () => {
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         {summaryCards.map((card) => {
           const value = getSummaryValue(summary, card.key, sections);
 
@@ -591,8 +608,8 @@ const Index = () => {
             </p>
             <p className="text-sm text-amber-800">
               Bu sahifa data sifatini ko'rsatadi; tuzatishlar tegishli katalog
-              sahifalaridagi edit, translation, image yoki price actionlaridan
-              qilinadi.
+              sahifalaridagi edit, translation, image, price yoki safety
+              actionlaridan qilinadi.
             </p>
           </div>
         </CardContent>

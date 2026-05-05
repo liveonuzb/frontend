@@ -299,14 +299,24 @@
     },
     "foodBudget": {
       "title": "What's your food budget?",
-      "description": "Your meal plan will use this UZS budget and selected period.",
+      "description": "No amount entry. LiveOn adapts ingredient price tiers to this choice.",
       "helper": "Not sure yet? You can skip this step.",
-      "placeholder": "Example: 350000",
-      "error": "Budget must be a non-negative number.",
-      "periods": {
-        "daily": "Daily",
-        "weekly": "Weekly",
-        "monthly": "Monthly"
+      "tiers": {
+        "low": {
+          "label": "Low",
+          "description": "Lower-cost, simple ingredients are prioritized.",
+          "summary": "Low budget"
+        },
+        "medium": {
+          "label": "Medium",
+          "description": "Low and medium price ingredients are balanced.",
+          "summary": "Medium budget"
+        },
+        "high": {
+          "label": "High",
+          "description": "Premium ingredients may be included when useful.",
+          "summary": "High budget"
+        }
       }
     },
     "chipSelect": {

@@ -4,6 +4,9 @@ import { toast } from "sonner";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { parseAsString, useQueryState } from "nuqs";
 import {
+  CheckCircle2Icon,
+  ClockIcon,
+  EyeIcon,
   BotIcon,
   MegaphoneIcon,
   RefreshCwIcon,
@@ -14,7 +17,21 @@ import { useGetQuery, usePostQuery } from "@/hooks/api";
 import PageTransition from "@/components/page-transition";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   Card,
   CardAction,
@@ -55,6 +72,14 @@ import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 const ADMIN_PLATFORM_BOT_QUERY_KEY = ["admin", "platform-bot"];
 const ADMIN_PLATFORM_BOT_USERS_QUERY_KEY = ["admin", "platform-bot", "users"];
 const DEFAULT_PAGE_SIZE = 25;
+const DEFAULT_BROADCAST_OPTIONS = {
+  languageCode: "all",
+  linkedOnly: false,
+  includeMuted: false,
+  dryRun: false,
+  activeWithinDays: "",
+  scheduledAt: "",
+};
 
 const formatDateTime = (value) => {
   if (!value) {
@@ -78,6 +103,30 @@ const formatTelegramUnixDate = (value) => {
   }
 
   return formatDateTime(Number(value) * 1000);
+};
+
+const formatBroadcastStatus = (status) => {
+  const labels = {
+    QUEUED: "Navbatda",
+    RUNNING: "Yuborilmoqda",
+    COMPLETED: "Yakunlangan",
+    FAILED: "Xato",
+  };
+
+  return labels[status] || status || "-";
+};
+
+const getBroadcastProgress = (job) => {
+  const total = Number(job?.totalCount) || 0;
+  if (!total) return 0;
+
+  const done =
+    (Number(job?.sentCount) || 0) +
+    (Number(job?.failedCount) || 0) +
+    (Number(job?.skippedCount) || 0) +
+    (Number(job?.suppressedCount) || 0);
+
+  return Math.min(100, Math.round((done / total) * 100));
 };
 
 const resolveUserName = (chat) => {
@@ -123,6 +172,10 @@ const PlatformBotPage = () => {
   );
   const [broadcastOpen, setBroadcastOpen] = React.useState(false);
   const [broadcastText, setBroadcastText] = React.useState("");
+  const [broadcastOptions, setBroadcastOptions] = React.useState(
+    DEFAULT_BROADCAST_OPTIONS,
+  );
+  const [broadcastPreview, setBroadcastPreview] = React.useState(null);
   const deferredSearch = React.useDeferredValue(search);
   const currentPage = Math.max(1, Number(pageQuery) || 1);
   const pageSize = Math.max(1, Number(pageSizeQuery) || DEFAULT_PAGE_SIZE);
@@ -168,6 +221,8 @@ const PlatformBotPage = () => {
     listKey: ADMIN_PLATFORM_BOT_USERS_QUERY_KEY,
   });
 
+  const previewMutation = usePostQuery();
+
   const broadcastMutation = usePostQuery({
     queryKey: ADMIN_PLATFORM_BOT_QUERY_KEY,
     listKey: ADMIN_PLATFORM_BOT_USERS_QUERY_KEY,
@@ -182,7 +237,16 @@ const PlatformBotPage = () => {
     [usersQuery.data],
   );
   const webhookInfo = get(statusPayload, "webhookInfo", null);
+  const health = get(statusPayload, "health", {});
   const stats = get(statusPayload, "stats", {});
+  const recentBroadcastJobsPayload = get(
+    statusPayload,
+    "recentBroadcastJobs",
+    [],
+  );
+  const recentBroadcastJobs = Array.isArray(recentBroadcastJobsPayload)
+    ? recentBroadcastJobsPayload
+    : [];
   const users = Array.isArray(usersPayload) ? usersPayload : [];
   const totalUsers = get(usersQuery.data, "data.meta.total", 0);
   const totalPages = get(usersQuery.data, "data.meta.totalPages", 1);
@@ -200,6 +264,64 @@ const PlatformBotPage = () => {
     }
   };
 
+  const updateBroadcastOption = React.useCallback((key, value) => {
+    setBroadcastPreview(null);
+    setBroadcastOptions((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  }, []);
+
+  const buildBroadcastPayload = React.useCallback(
+    (includeText = true) => {
+      const activeWithinDays = Number(broadcastOptions.activeWithinDays);
+      const scheduledAtDate = broadcastOptions.scheduledAt
+        ? new Date(broadcastOptions.scheduledAt)
+        : null;
+      const scheduledAt =
+        scheduledAtDate && !Number.isNaN(scheduledAtDate.getTime())
+          ? scheduledAtDate.toISOString()
+          : undefined;
+
+      return {
+        ...(includeText ? { text: broadcastText.trim() } : {}),
+        dryRun: Boolean(broadcastOptions.dryRun),
+        includeMuted: Boolean(broadcastOptions.includeMuted),
+        linkedOnly: Boolean(broadcastOptions.linkedOnly),
+        ...(broadcastOptions.languageCode !== "all"
+          ? { languageCode: broadcastOptions.languageCode }
+          : {}),
+        ...(Number.isFinite(activeWithinDays) && activeWithinDays > 0
+          ? { activeWithinDays }
+          : {}),
+        ...(scheduledAt ? { scheduledAt } : {}),
+      };
+    },
+    [broadcastOptions, broadcastText],
+  );
+
+  const resetBroadcastForm = React.useCallback(() => {
+    setBroadcastText("");
+    setBroadcastPreview(null);
+    setBroadcastOptions(DEFAULT_BROADCAST_OPTIONS);
+  }, []);
+
+  const handlePreviewBroadcast = async () => {
+    if (!canManageGrowth) return;
+
+    try {
+      const response = await previewMutation.mutateAsync({
+        url: "/admin/platform-bot/broadcast/preview",
+        attributes: buildBroadcastPayload(false),
+      });
+      const result = getApiResponseData(response, {});
+      setBroadcastPreview(result);
+      toast.success(`${result.total ?? 0} ta recipient topildi.`);
+    } catch {
+      toast.error("Broadcast preview olinmadi.");
+    }
+  };
+
   const handleBroadcast = async () => {
     if (!canManageGrowth) return;
 
@@ -210,19 +332,19 @@ const PlatformBotPage = () => {
 
     try {
       const response = await broadcastMutation.mutateAsync({
-        url: "/admin/platform-bot/broadcast",
-        attributes: { text: broadcastText.trim() },
+        url: "/admin/platform-bot/broadcast-jobs",
+        attributes: buildBroadcastPayload(true),
       });
       const result = getApiResponseData(response, {});
       toast.success(
-        `Broadcast yakunlandi: ${result.sent ?? 0} yuborildi, ${
-          result.failed ?? 0
-        } xato.`,
+        result.dryRun
+          ? `Dry-run yakunlandi: ${result.totalCount ?? 0} recipient.`
+          : `Broadcast job yaratildi: ${result.totalCount ?? 0} recipient.`,
       );
-      setBroadcastText("");
+      resetBroadcastForm();
       setBroadcastOpen(false);
     } catch {
-      toast.error("Broadcast yuborilmadi.");
+      toast.error("Broadcast job yaratilmadi.");
     }
   };
 
@@ -326,7 +448,11 @@ const PlatformBotPage = () => {
 
       React.startTransition(() => {
         void setPageQuery(
-          String(nextPageSize === pageSize ? Number(get(next, "pageIndex", 0)) + 1 : 1),
+          String(
+            nextPageSize === pageSize
+              ? Number(get(next, "pageIndex", 0)) + 1
+              : 1,
+          ),
         );
         void setPageSizeQuery(String(nextPageSize));
       });
@@ -358,7 +484,15 @@ const PlatformBotPage = () => {
                 <RefreshCwIcon data-icon="inline-start" />
                 Webhookni yangilash
               </Button>
-              <Sheet open={broadcastOpen} onOpenChange={setBroadcastOpen}>
+              <Sheet
+                open={broadcastOpen}
+                onOpenChange={(open) => {
+                  setBroadcastOpen(open);
+                  if (!open) {
+                    resetBroadcastForm();
+                  }
+                }}
+              >
                 <SheetTrigger asChild>
                   <Button type="button">
                     <MegaphoneIcon data-icon="inline-start" />
@@ -369,31 +503,181 @@ const PlatformBotPage = () => {
                   <SheetHeader>
                     <SheetTitle>Broadcast xabar yuborish</SheetTitle>
                     <SheetDescription>
-                      Xabar muted bo'lmagan barcha platform bot chatlariga
-                      yuboriladi.
+                      Preview va segmentlar tekshirilgandan keyin job navbatga
+                      qo'shiladi.
                     </SheetDescription>
                   </SheetHeader>
-                  <div className="flex flex-col gap-3 px-6">
+                  <div className="flex flex-col gap-4 px-6">
                     <Textarea
                       value={broadcastText}
-                      onChange={(event) => setBroadcastText(event.target.value)}
+                      onChange={(event) => {
+                        setBroadcastText(event.target.value);
+                        setBroadcastPreview(null);
+                      }}
                       placeholder="Xabar matni"
                       rows={8}
                       maxLength={1000}
                     />
-                    <p className="text-xs text-muted-foreground">
-                      {broadcastText.length}/1000 belgi
-                    </p>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{broadcastText.length}/1000 belgi</span>
+                      <span>{broadcastPreview?.total ?? "-"} recipient</span>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="flex flex-col gap-2">
+                        <Label>Til</Label>
+                        <Select
+                          value={broadcastOptions.languageCode}
+                          onValueChange={(value) =>
+                            updateBroadcastOption("languageCode", value)
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Til" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Barcha tillar</SelectItem>
+                            <SelectItem value="uz">Uzbek</SelectItem>
+                            <SelectItem value="ru">Russian</SelectItem>
+                            <SelectItem value="en">English</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="broadcast-active-days">
+                          Faol kunlar
+                        </Label>
+                        <Input
+                          id="broadcast-active-days"
+                          type="number"
+                          min="1"
+                          max="365"
+                          value={broadcastOptions.activeWithinDays}
+                          onChange={(event) =>
+                            updateBroadcastOption(
+                              "activeWithinDays",
+                              event.target.value,
+                            )
+                          }
+                          placeholder="Masalan: 30"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="broadcast-scheduled-at">Schedule</Label>
+                      <Input
+                        id="broadcast-scheduled-at"
+                        type="datetime-local"
+                        value={broadcastOptions.scheduledAt}
+                        onChange={(event) =>
+                          updateBroadcastOption(
+                            "scheduledAt",
+                            event.target.value,
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-3 text-sm">
+                      <label className="flex items-center gap-3">
+                        <Checkbox
+                          checked={broadcastOptions.linkedOnly}
+                          onCheckedChange={(checked) =>
+                            updateBroadcastOption(
+                              "linkedOnly",
+                              Boolean(checked),
+                            )
+                          }
+                        />
+                        Faqat linked userlar
+                      </label>
+                      <label className="flex items-center gap-3">
+                        <Checkbox
+                          checked={broadcastOptions.includeMuted}
+                          onCheckedChange={(checked) =>
+                            updateBroadcastOption(
+                              "includeMuted",
+                              Boolean(checked),
+                            )
+                          }
+                        />
+                        Muted chatlarni ham qo'shish
+                      </label>
+                      <label className="flex items-center gap-3">
+                        <Checkbox
+                          checked={broadcastOptions.dryRun}
+                          onCheckedChange={(checked) =>
+                            updateBroadcastOption("dryRun", Boolean(checked))
+                          }
+                        />
+                        Dry-run
+                      </label>
+                    </div>
+                    {broadcastPreview ? (
+                      <div className="rounded-md border p-3 text-sm">
+                        <div className="mb-2 flex items-center justify-between">
+                          <span className="font-medium">Preview</span>
+                          <Badge variant="secondary">
+                            {broadcastPreview.total ?? 0} recipient
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+                          <span>
+                            Linked: {broadcastPreview.segments?.linked ?? 0}
+                          </span>
+                          <span>
+                            Unlinked: {broadcastPreview.segments?.unlinked ?? 0}
+                          </span>
+                          <span>
+                            Muted: {broadcastPreview.segments?.muted ?? 0}
+                          </span>
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
-                  <SheetFooter>
+                  <SheetFooter className="gap-2 sm:justify-between">
                     <Button
                       type="button"
-                      onClick={handleBroadcast}
-                      disabled={broadcastMutation.isPending || !canManageGrowth}
+                      variant="outline"
+                      onClick={handlePreviewBroadcast}
+                      disabled={previewMutation.isPending || !canManageGrowth}
                     >
-                      <SendIcon data-icon="inline-start" />
-                      Yuborish
+                      <EyeIcon data-icon="inline-start" />
+                      Preview
                     </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          type="button"
+                          disabled={
+                            broadcastMutation.isPending ||
+                            !canManageGrowth ||
+                            !broadcastText.trim() ||
+                            !broadcastPreview ||
+                            Number(broadcastPreview.total ?? 0) === 0
+                          }
+                        >
+                          <SendIcon data-icon="inline-start" />
+                          {broadcastOptions.dryRun ? "Dry-run job" : "Yuborish"}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Broadcastni tasdiqlash
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            {broadcastPreview?.total ?? 0} ta recipient uchun
+                            job yaratiladi. Dry-run bo'lmasa xabar Telegramga
+                            yuboriladi.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleBroadcast}>
+                            Tasdiqlash
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </SheetFooter>
                 </SheetContent>
               </Sheet>
@@ -418,8 +702,14 @@ const PlatformBotPage = () => {
               </CardDescription>
             </div>
             <CardAction>
-              <Badge variant={webhookInfo?.url ? "default" : "destructive"}>
-                {webhookInfo?.url ? "Configured" : "Not initialized"}
+              <Badge
+                variant={
+                  health?.webhookMatches || webhookInfo?.url
+                    ? "default"
+                    : "destructive"
+                }
+              >
+                {health?.webhookMatches ? "Matched" : "Check webhook"}
               </Badge>
             </CardAction>
           </CardHeader>
@@ -457,7 +747,95 @@ const PlatformBotPage = () => {
                   {webhookInfo?.last_error_message || "-"}
                 </span>
               </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-medium uppercase text-muted-foreground">
+                  Expected URL
+                </span>
+                <span className="break-all text-sm">
+                  {health?.expectedWebhookUrl || "-"}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-medium uppercase text-muted-foreground">
+                  Secret
+                </span>
+                <span className="text-sm">
+                  {health?.secretConfigured ? "Configured" : "Not configured"}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-medium uppercase text-muted-foreground">
+                  Last recovery
+                </span>
+                <span className="text-sm">
+                  {formatDateTime(health?.lastRecoveryAt)}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-medium uppercase text-muted-foreground">
+                  Last reminder run
+                </span>
+                <span className="text-sm">
+                  {health?.lastReminderRun
+                    ? `${formatDateTime(health.lastReminderRun.at)} · ${
+                        health.lastReminderRun.sent ?? 0
+                      } sent / ${health.lastReminderRun.failed ?? 0} failed`
+                    : "-"}
+                </span>
+              </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>Broadcast joblar</CardTitle>
+              <CardDescription>
+                Oxirgi broadcast runlari va delivery progress.
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            {recentBroadcastJobs.length ? (
+              recentBroadcastJobs.map((job) => (
+                <div key={job.id} className="rounded-md border p-3">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      {job.status === "COMPLETED" ? (
+                        <CheckCircle2Icon className="size-4 text-emerald-600" />
+                      ) : (
+                        <ClockIcon className="size-4 text-muted-foreground" />
+                      )}
+                      <span className="font-medium">
+                        {formatBroadcastStatus(job.status)}
+                      </span>
+                      {job.dryRun ? (
+                        <Badge variant="outline">Dry-run</Badge>
+                      ) : null}
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDateTime(job.createdAt)}
+                    </span>
+                  </div>
+                  <Progress value={getBroadcastProgress(job)} />
+                  <div className="mt-2 grid gap-2 text-xs text-muted-foreground sm:grid-cols-5">
+                    <span>Total: {job.totalCount ?? 0}</span>
+                    <span>Sent: {job.sentCount ?? 0}</span>
+                    <span>Failed: {job.failedCount ?? 0}</span>
+                    <span>Suppressed: {job.suppressedCount ?? 0}</span>
+                    <span>Skipped: {job.skippedCount ?? 0}</span>
+                  </div>
+                  {job.error ? (
+                    <p className="mt-2 text-xs text-destructive">{job.error}</p>
+                  ) : null}
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Broadcast joblar hali yaratilmagan.
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -504,7 +882,10 @@ const PlatformBotPage = () => {
                 disabled={usersQuery.isFetching}
               >
                 <RefreshCwIcon
-                  className={cn("size-4", usersQuery.isFetching && "animate-spin")}
+                  className={cn(
+                    "size-4",
+                    usersQuery.isFetching && "animate-spin",
+                  )}
                 />
               </Button>
             </div>

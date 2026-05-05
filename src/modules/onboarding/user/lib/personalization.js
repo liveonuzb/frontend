@@ -156,6 +156,15 @@ export const buildOnboardingPreferencePatch = (key, value, onboarding = {}) => {
   }
 
   if (key === "foodBudget") {
+    if (["low", "medium", "high"].includes(value)) {
+      return {
+        foodBudgetTier: value,
+        foodBudget: null,
+        budgetPeriod: null,
+        budgetCurrency: "UZS",
+      };
+    }
+
     const numberValue = Number(value);
     return Number.isFinite(numberValue) && numberValue >= 0
       ? {

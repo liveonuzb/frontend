@@ -26,12 +26,6 @@ export const normalizeUserOnboarding = (onboarding) => {
   if (!onboarding) {
     return null;
   }
-  const exercisePreferences = normalizeExercisePreferencePair({
-    preferredExerciseIds: onboarding.preferredExerciseIds,
-    dislikedExerciseIds: onboarding.dislikedExerciseIds,
-    customPreferredExercises: onboarding.customPreferredExercises,
-    customDislikedExercises: onboarding.customDislikedExercises,
-  });
   const ingredientPreferences = normalizeIngredientPreferencePair({
     preferredIngredientIds: onboarding.preferredIngredientIds,
     dislikedIngredientIds: onboarding.dislikedIngredientIds,
@@ -73,8 +67,8 @@ export const normalizeUserOnboarding = (onboarding) => {
     cookingTime: onboarding.cookingTime ?? null,
     cookingAccess: onboarding.cookingAccess ?? null,
     mealFrequency: onboarding.mealFrequency ?? null,
-    waterHabits: onboarding.waterHabits ?? null,
     foodBudget: onboarding.foodBudget ?? null,
+    foodBudgetTier: onboarding.foodBudgetTier ?? null,
     budgetPeriod: onboarding.budgetPeriod ?? null,
     budgetCurrency: onboarding.budgetCurrency ?? "UZS",
     workoutLocation: onboarding.workoutLocation ?? "home",
@@ -90,10 +84,6 @@ export const normalizeUserOnboarding = (onboarding) => {
     customWorkoutBodyParts: isArray(onboarding.customWorkoutBodyParts)
       ? onboarding.customWorkoutBodyParts
       : [],
-    preferredExerciseIds: exercisePreferences.preferredExerciseIds,
-    dislikedExerciseIds: exercisePreferences.dislikedExerciseIds,
-    customPreferredExercises: exercisePreferences.customPreferredExercises,
-    customDislikedExercises: exercisePreferences.customDislikedExercises,
     allergyIds: isArray(onboarding.allergyIds)
       ? onboarding.allergyIds
       : isArray(onboarding.allergyIngredientIds)
@@ -208,36 +198,6 @@ export const normalizeCustomTextArray = (values) => {
     acc.push(label);
     return acc;
   }, []);
-};
-
-export const normalizeExercisePreferencePair = ({
-  preferredExerciseIds,
-  dislikedExerciseIds,
-  customPreferredExercises,
-  customDislikedExercises,
-} = {}) => {
-  const preferredIds = toNumberArray(preferredExerciseIds) ?? [];
-  const preferredIdSet = new Set(preferredIds);
-  const dislikedIds = (toNumberArray(dislikedExerciseIds) ?? []).filter(
-    (id) => !preferredIdSet.has(id),
-  );
-  const preferredCustom =
-    normalizeCustomTextArray(customPreferredExercises) ?? [];
-  const preferredCustomSet = new Set(
-    preferredCustom.map((value) => value.toLocaleLowerCase("uz-UZ")),
-  );
-  const dislikedCustom = (
-    normalizeCustomTextArray(customDislikedExercises) ?? []
-  ).filter(
-    (value) => !preferredCustomSet.has(value.toLocaleLowerCase("uz-UZ")),
-  );
-
-  return {
-    preferredExerciseIds: preferredIds,
-    dislikedExerciseIds: dislikedIds,
-    customPreferredExercises: preferredCustom,
-    customDislikedExercises: dislikedCustom,
-  };
 };
 
 export const normalizeIngredientPreferencePair = ({
@@ -368,11 +328,11 @@ export const toUserOnboardingPayload = (patch = {}) => {
   if ("mealFrequency" in patch) {
     payload.mealFrequency = patch.mealFrequency || undefined;
   }
-  if ("waterHabits" in patch) {
-    payload.waterHabits = patch.waterHabits || undefined;
-  }
   if ("foodBudget" in patch) {
     payload.foodBudget = toNullableBudget(patch.foodBudget);
+  }
+  if ("foodBudgetTier" in patch) {
+    payload.foodBudgetTier = patch.foodBudgetTier || null;
   }
   if ("budgetPeriod" in patch) {
     payload.budgetPeriod = patch.budgetPeriod || null;
@@ -396,56 +356,6 @@ export const toUserOnboardingPayload = (patch = {}) => {
     payload.customWorkoutBodyParts = normalizeCustomTextArray(
       patch.customWorkoutBodyParts,
     );
-  }
-  if ("preferredExerciseIds" in patch) {
-    payload.preferredExerciseIds = toNumberArray(patch.preferredExerciseIds);
-  }
-  if ("dislikedExerciseIds" in patch) {
-    payload.dislikedExerciseIds = toNumberArray(patch.dislikedExerciseIds);
-  }
-  if ("customPreferredExercises" in patch) {
-    payload.customPreferredExercises = normalizeCustomTextArray(
-      patch.customPreferredExercises,
-    );
-  }
-  if ("customDislikedExercises" in patch) {
-    payload.customDislikedExercises = normalizeCustomTextArray(
-      patch.customDislikedExercises,
-    );
-  }
-  if (
-    "preferredExerciseIds" in patch ||
-    "dislikedExerciseIds" in patch ||
-    "customPreferredExercises" in patch ||
-    "customDislikedExercises" in patch
-  ) {
-    const normalizedExercisePreferences = normalizeExercisePreferencePair({
-      preferredExerciseIds:
-        payload.preferredExerciseIds ?? patch.preferredExerciseIds,
-      dislikedExerciseIds:
-        payload.dislikedExerciseIds ?? patch.dislikedExerciseIds,
-      customPreferredExercises:
-        payload.customPreferredExercises ?? patch.customPreferredExercises,
-      customDislikedExercises:
-        payload.customDislikedExercises ?? patch.customDislikedExercises,
-    });
-
-    if ("preferredExerciseIds" in patch) {
-      payload.preferredExerciseIds =
-        normalizedExercisePreferences.preferredExerciseIds;
-    }
-    if ("dislikedExerciseIds" in patch) {
-      payload.dislikedExerciseIds =
-        normalizedExercisePreferences.dislikedExerciseIds;
-    }
-    if ("customPreferredExercises" in patch) {
-      payload.customPreferredExercises =
-        normalizedExercisePreferences.customPreferredExercises;
-    }
-    if ("customDislikedExercises" in patch) {
-      payload.customDislikedExercises =
-        normalizedExercisePreferences.customDislikedExercises;
-    }
   }
   if ("allergyIds" in patch || "allergyIngredientIds" in patch) {
     const allergyIds = toNumberArray(

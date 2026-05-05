@@ -99,8 +99,6 @@ describe("user onboarding resume", () => {
           "workout-location",
           "workout-equipment",
           "workout-body-parts",
-          "preferred-exercises",
-          "disliked-exercises",
           "food-budget",
           "allergies",
           "diet-requirements",
@@ -110,7 +108,6 @@ describe("user onboarding resume", () => {
           "disliked-ingredients",
         ],
         mealFrequency: "3",
-        waterHabits: "6",
       }),
     ).toBe("review");
   });

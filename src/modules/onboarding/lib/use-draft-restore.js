@@ -1,10 +1,7 @@
 import { isArray, keys } from "lodash";
 import { useEffect, useRef } from "react";
 import { useGetQuery } from "@/hooks/api";
-import {
-  normalizeExercisePreferencePair,
-  normalizeIngredientPreferencePair,
-} from "@/lib/user-onboarding";
+import { normalizeIngredientPreferencePair } from "@/lib/user-onboarding";
 import { useOnboardingStore } from "@/store";
 import { mapCoachOnboardingDraftToStoreFields } from "./coach-onboarding-dto";
 import { getOnboardingDraftApiPath } from "./onboarding-api-paths";
@@ -35,8 +32,8 @@ function isUserStoreEmpty(state) {
     !state.cookingTime &&
     !state.cookingAccess &&
     !state.mealFrequency &&
-    !state.waterHabits &&
     !state.foodBudget &&
+    !state.foodBudgetTier &&
     !(state.workoutLocation && state.workoutLocation !== "home") &&
     (!isArray(state.equipmentIds) || state.equipmentIds.length === 0) &&
     (!isArray(state.customEquipment) || state.customEquipment.length === 0) &&
@@ -44,14 +41,6 @@ function isUserStoreEmpty(state) {
       state.workoutBodyPartIds.length === 0) &&
     (!isArray(state.customWorkoutBodyParts) ||
       state.customWorkoutBodyParts.length === 0) &&
-    (!isArray(state.preferredExerciseIds) ||
-      state.preferredExerciseIds.length === 0) &&
-    (!isArray(state.dislikedExerciseIds) ||
-      state.dislikedExerciseIds.length === 0) &&
-    (!isArray(state.customPreferredExercises) ||
-      state.customPreferredExercises.length === 0) &&
-    (!isArray(state.customDislikedExercises) ||
-      state.customDislikedExercises.length === 0) &&
     (!isArray(state.completedUserOnboardingSteps) ||
       state.completedUserOnboardingSteps.length === 0) &&
     (!isArray(state.allergyIds) || state.allergyIds.length === 0) &&
@@ -205,11 +194,11 @@ function mergeUserDraft(serverData, setFields) {
   if (serverData.mealFrequency) {
     fields.mealFrequency = serverData.mealFrequency;
   }
-  if (serverData.waterHabits) {
-    fields.waterHabits = serverData.waterHabits;
-  }
   if (serverData.foodBudget !== undefined && serverData.foodBudget !== null) {
     fields.foodBudget = String(serverData.foodBudget);
+  }
+  if (serverData.foodBudgetTier) {
+    fields.foodBudgetTier = serverData.foodBudgetTier;
   }
   if (serverData.budgetPeriod) {
     fields.budgetPeriod = serverData.budgetPeriod;
@@ -231,18 +220,6 @@ function mergeUserDraft(serverData, setFields) {
   }
   if (isArray(serverData.customWorkoutBodyParts)) {
     fields.customWorkoutBodyParts = serverData.customWorkoutBodyParts;
-  }
-  if (isArray(serverData.preferredExerciseIds)) {
-    fields.preferredExerciseIds = serverData.preferredExerciseIds;
-  }
-  if (isArray(serverData.dislikedExerciseIds)) {
-    fields.dislikedExerciseIds = serverData.dislikedExerciseIds;
-  }
-  if (isArray(serverData.customPreferredExercises)) {
-    fields.customPreferredExercises = serverData.customPreferredExercises;
-  }
-  if (isArray(serverData.customDislikedExercises)) {
-    fields.customDislikedExercises = serverData.customDislikedExercises;
   }
   if (isArray(serverData.completedUserOnboardingSteps)) {
     fields.completedUserOnboardingSteps =
@@ -335,15 +312,6 @@ function mergeUserDraft(serverData, setFields) {
   }
   if (serverData.notificationPreference) {
     fields.notificationPreference = serverData.notificationPreference;
-  }
-
-  if (
-    isArray(fields.preferredExerciseIds) ||
-    isArray(fields.dislikedExerciseIds) ||
-    isArray(fields.customPreferredExercises) ||
-    isArray(fields.customDislikedExercises)
-  ) {
-    Object.assign(fields, normalizeExercisePreferencePair(fields));
   }
 
   if (

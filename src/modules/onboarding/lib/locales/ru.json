@@ -299,14 +299,24 @@
     },
     "foodBudget": {
       "title": "Какой у вас бюджет на питание?",
-      "description": "План питания будет учитывать выбранный период и бюджет в UZS.",
+      "description": "Сумму вводить не нужно. LiveOn подстроит ценовые категории ингредиентов под этот выбор.",
       "helper": "Если пока не знаете, этот шаг можно пропустить.",
-      "placeholder": "Например: 350000",
-      "error": "Бюджет должен быть неотрицательным числом.",
-      "periods": {
-        "daily": "День",
-        "weekly": "Неделя",
-        "monthly": "Месяц"
+      "tiers": {
+        "low": {
+          "label": "Low",
+          "description": "В приоритете простые и более доступные продукты.",
+          "summary": "Low budget"
+        },
+        "medium": {
+          "label": "Medium",
+          "description": "Баланс доступных и средних по цене продуктов.",
+          "summary": "Medium budget"
+        },
+        "high": {
+          "label": "High",
+          "description": "Можно включать более premium продукты, когда это уместно.",
+          "summary": "High budget"
+        }
       }
     },
     "chipSelect": {

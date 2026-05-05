@@ -19,11 +19,7 @@ import WorkoutExperiencePage from "@/modules/onboarding/user/pages/workout-exper
 import WorkoutLocationPage from "@/modules/onboarding/user/pages/workout-location/index.jsx";
 import WorkoutEquipmentPage from "@/modules/onboarding/user/pages/workout-equipment/index.jsx";
 import WorkoutBodyPartsPage from "@/modules/onboarding/user/pages/workout-body-parts/index.jsx";
-import ExercisePreferencesPage from "@/modules/onboarding/user/pages/exercise-preferences/index.jsx";
-import PreferredExercisesPage from "@/modules/onboarding/user/pages/preferred-exercises/index.jsx";
-import DislikedExercisesPage from "@/modules/onboarding/user/pages/disliked-exercises/index.jsx";
 import MealFrequencyPage from "@/modules/onboarding/user/pages/meal-frequency/index.jsx";
-import WaterHabitsPage from "@/modules/onboarding/user/pages/water-habits/index.jsx";
 import FoodBudgetPage from "@/modules/onboarding/user/pages/food-budget/index.jsx";
 import AllergiesPage from "@/modules/onboarding/user/pages/allergies/index.jsx";
 import DietRequirementsPage from "@/modules/onboarding/user/pages/diet-requirements/index.jsx";
@@ -83,15 +79,21 @@ const UserOnboardingModule = () => {
         <Route path="workout-body-parts" element={<WorkoutBodyPartsPage />} />
         <Route
           path="exercise-preferences"
-          element={<ExercisePreferencesPage />}
+          element={<Navigate to="../meal-frequency" replace />}
         />
         <Route
           path="preferred-exercises"
-          element={<PreferredExercisesPage />}
+          element={<Navigate to="../meal-frequency" replace />}
         />
-        <Route path="disliked-exercises" element={<DislikedExercisesPage />} />
+        <Route
+          path="disliked-exercises"
+          element={<Navigate to="../meal-frequency" replace />}
+        />
         <Route path="meal-frequency" element={<MealFrequencyPage />} />
-        <Route path="water-habits" element={<WaterHabitsPage />} />
+        <Route
+          path="water-habits"
+          element={<Navigate to="../food-budget" replace />}
+        />
         <Route path="food-budget" element={<FoodBudgetPage />} />
         <Route path="allergies" element={<AllergiesPage />} />
         <Route

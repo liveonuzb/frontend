@@ -54,19 +54,12 @@ const buildCompletePayload = (state) => ({
     cookingTime: state.cookingTime,
     cookingAccess: state.cookingAccess,
     mealFrequency: state.mealFrequency,
-    waterHabits: state.waterHabits,
-    foodBudget: state.foodBudget,
-    budgetPeriod: state.budgetPeriod,
-    budgetCurrency: state.budgetCurrency,
+    foodBudgetTier: state.foodBudgetTier,
     workoutLocation: state.workoutLocation,
     equipmentIds: state.equipmentIds,
     customEquipment: state.customEquipment,
     workoutBodyPartIds: state.workoutBodyPartIds,
     customWorkoutBodyParts: state.customWorkoutBodyParts,
-    preferredExerciseIds: state.preferredExerciseIds,
-    dislikedExerciseIds: state.dislikedExerciseIds,
-    customPreferredExercises: state.customPreferredExercises,
-    customDislikedExercises: state.customDislikedExercises,
     allergyIds: state.allergyIds?.length
       ? state.allergyIds
       : state.allergyIngredientIds,
@@ -166,6 +159,18 @@ const SummaryCard = ({ icon: Icon, title, items }) => (
     </div>
   </section>
 );
+
+const resolveBudgetLabel = (state, t) => {
+  if (state.foodBudgetTier) {
+    return t(`onboarding.foodBudget.tiers.${state.foodBudgetTier}.summary`);
+  }
+
+  if (state.foodBudget) {
+    return `${state.foodBudget} ${state.budgetCurrency || "UZS"}`;
+  }
+
+  return "";
+};
 
 const Index = () => {
   const { t } = useTranslation();
@@ -362,9 +367,7 @@ const Index = () => {
               ],
               [
                 t("onboarding.review.fields.foodBudget"),
-                onboardingState.foodBudget
-                  ? `${onboardingState.foodBudget} ${onboardingState.budgetCurrency}`
-                  : "",
+                resolveBudgetLabel(onboardingState, t),
               ],
               [
                 t("onboarding.review.fields.allergies"),
