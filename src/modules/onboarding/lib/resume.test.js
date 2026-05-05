@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getNextUserOnboardingPath } from "./resume";
 
-const completeUntilActivity = {
+const completeProfile = {
   firstName: "Ali",
   lastName: "Valiyev",
   gender: "male",
@@ -12,18 +12,71 @@ const completeUntilActivity = {
   targetWeight: { value: "76", unit: "kg" },
 };
 
+const completeGoals = {
+  ...completeProfile,
+  weeklyPace: 0.5,
+  completedUserOnboardingSteps: ["other-goals"],
+  activityLevel: "moderately-active",
+};
+
+const completeNutrition = {
+  ...completeGoals,
+  mealFrequency: "3",
+  completedUserOnboardingSteps: [
+    "other-goals",
+    "food-budget",
+    "allergies",
+    "diet-requirements",
+    "preferred-cuisines",
+    "disliked-foods",
+    "preferred-ingredients",
+    "disliked-ingredients",
+  ],
+};
+
 describe("user onboarding resume", () => {
-  it("resumes to activity-level when activity level is missing", () => {
-    expect(getNextUserOnboardingPath(completeUntilActivity)).toBe(
-      "activity-level",
+  it("resumes to weekly pace after target weight", () => {
+    expect(getNextUserOnboardingPath(completeProfile)).toBe("weekly-pace");
+  });
+
+  it("resumes to other goals after weekly pace until the optional step is completed", () => {
+    expect(
+      getNextUserOnboardingPath({
+        ...completeProfile,
+        weeklyPace: 0.5,
+      }),
+    ).toBe("other-goals");
+  });
+
+  it("resumes to meal frequency after activity level because nutrition comes before workout", () => {
+    expect(getNextUserOnboardingPath(completeGoals)).toBe("meal-frequency");
+  });
+
+  it("resumes through the nutrition preference block before health constraints", () => {
+    expect(
+      getNextUserOnboardingPath({
+        ...completeGoals,
+        mealFrequency: "3",
+        completedUserOnboardingSteps: ["other-goals", "food-budget"],
+      }),
+    ).toBe("allergies");
+  });
+
+  it("resumes to health constraints after disliked ingredients are completed", () => {
+    expect(getNextUserOnboardingPath(completeNutrition)).toBe(
+      "health-constraints",
     );
   });
 
-  it("resumes to weekly workout count when activity is present but workout count is missing", () => {
+  it("resumes to weekly workout count after health constraints are skipped", () => {
     expect(
       getNextUserOnboardingPath({
-        ...completeUntilActivity,
-        activityLevel: "moderately-active",
+        ...completeNutrition,
+        healthConstraints: ["none"],
+        completedUserOnboardingSteps: [
+          ...completeNutrition.completedUserOnboardingSteps,
+          "health-constraints",
+        ],
       }),
     ).toBe("weekly-workout-count");
   });
@@ -31,83 +84,50 @@ describe("user onboarding resume", () => {
   it("resumes to workout experience when weekly workout count is present", () => {
     expect(
       getNextUserOnboardingPath({
-        ...completeUntilActivity,
-        activityLevel: "moderately-active",
+        ...completeNutrition,
+        healthConstraints: ["none"],
+        completedUserOnboardingSteps: [
+          ...completeNutrition.completedUserOnboardingSteps,
+          "health-constraints",
+        ],
         weeklyWorkoutCount: "4",
       }),
     ).toBe("workout-experience");
   });
 
-  it("resumes to age before asking health constraints", () => {
+  it("resumes to workout location after workout experience", () => {
     expect(
       getNextUserOnboardingPath({
-        firstName: completeUntilActivity.firstName,
-        lastName: completeUntilActivity.lastName,
-        gender: completeUntilActivity.gender,
-      }),
-    ).toBe("age");
-  });
-
-  it("resumes to health constraints after workout experience", () => {
-    expect(
-      getNextUserOnboardingPath({
-        ...completeUntilActivity,
-        activityLevel: "moderately-active",
-        weeklyWorkoutCount: "4",
-        workoutExperience: "intermediate",
-      }),
-    ).toBe("health-constraints");
-  });
-
-  it("resumes to workout location after health constraints have details", () => {
-    expect(
-      getNextUserOnboardingPath({
-        ...completeUntilActivity,
-        activityLevel: "moderately-active",
-        weeklyWorkoutCount: "4",
-        workoutExperience: "intermediate",
-        healthConstraints: ["knee_pain"],
-      }),
-    ).toBe("workout-location");
-  });
-
-  it("keeps old injury severity data non-blocking for legacy drafts", () => {
-    expect(
-      getNextUserOnboardingPath({
-        ...completeUntilActivity,
-        activityLevel: "moderately-active",
-        weeklyWorkoutCount: "4",
-        workoutExperience: "intermediate",
-        healthConstraints: ["knee_pain"],
-        injurySeverity: "mild",
-      }),
-    ).toBe("workout-location");
-  });
-
-  it("resumes to review after optional disliked ingredients are completed", () => {
-    expect(
-      getNextUserOnboardingPath({
-        ...completeUntilActivity,
-        activityLevel: "moderately-active",
-        weeklyWorkoutCount: "4",
-        workoutExperience: "intermediate",
+        ...completeNutrition,
         healthConstraints: ["none"],
         completedUserOnboardingSteps: [
+          ...completeNutrition.completedUserOnboardingSteps,
+          "health-constraints",
           "weekly-workout-count",
           "workout-experience",
+        ],
+        weeklyWorkoutCount: "4",
+        workoutExperience: "intermediate",
+      }),
+    ).toBe("workout-location");
+  });
+
+  it("resumes to review after workout body parts are completed", () => {
+    expect(
+      getNextUserOnboardingPath({
+        ...completeNutrition,
+        healthConstraints: ["none"],
+        completedUserOnboardingSteps: [
+          ...completeNutrition.completedUserOnboardingSteps,
           "health-constraints",
+          "weekly-workout-count",
+          "workout-experience",
           "workout-location",
           "workout-equipment",
           "workout-body-parts",
-          "food-budget",
-          "allergies",
-          "diet-requirements",
-          "preferred-cuisines",
-          "disliked-foods",
-          "preferred-ingredients",
-          "disliked-ingredients",
         ],
-        mealFrequency: "3",
+        weeklyWorkoutCount: "4",
+        workoutExperience: "intermediate",
       }),
     ).toBe("review");
   });

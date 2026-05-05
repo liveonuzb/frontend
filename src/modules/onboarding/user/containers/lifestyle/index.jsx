@@ -125,7 +125,7 @@ const Index = () => {
     }
 
     markCompleted();
-    navigate("/user/onboarding/workout-location");
+    navigate("/user/onboarding/meal-frequency");
   }, [
     markCompleted,
     navigate,

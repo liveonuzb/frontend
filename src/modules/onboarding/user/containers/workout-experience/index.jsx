@@ -1,5 +1,4 @@
 import React from "react";
-import { motion, useReducedMotion } from "framer-motion";
 import { ChevronRightIcon, DumbbellIcon } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
@@ -25,7 +24,6 @@ const Index = () => {
     (state) => state.completedUserOnboardingSteps,
   );
   const setFields = useOnboardingStore((state) => state.setFields);
-  const shouldReduceMotion = useReducedMotion();
   const hasSelection = Boolean(workoutExperience);
 
   useOnboardingAutoSave("user", "workout-experience");

@@ -522,6 +522,7 @@
         "currentWeight": "Hozirgi vazn",
         "goal": "Asosiy maqsad",
         "targetWeight": "Maqsad vazn",
+        "weeklyPace": "Haftalik sur'at",
         "activityLevel": "Aktivlik darajasi",
         "weeklyWorkoutCount": "Haftalik mashg'ulot soni",
         "workoutExperience": "Mashg'ulot tajribasi",
@@ -531,8 +532,10 @@
       "sections": {
         "profile": "Profil va tana",
         "activity": "Maqsad va aktivlik",
+        "goals": "Maqsadlar",
         "nutrition": "Ovqatlanish",
-        "safety": "Sog'liq xavfsizligi"
+        "safety": "Sog'liq xavfsizligi",
+        "workout": "Mashg'ulot"
       },
       "fields": {
         "name": "Ism",
@@ -542,6 +545,7 @@
         "currentWeight": "Hozirgi vazn",
         "goal": "Maqsad",
         "targetWeight": "Maqsad vazn",
+        "weeklyPace": "Haftalik sur'at",
         "activityLevel": "Aktivlik",
         "weeklyWorkoutCount": "Mashg'ulot/hafta",
         "workoutExperience": "Tajriba",

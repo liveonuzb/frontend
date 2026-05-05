@@ -522,6 +522,7 @@
         "currentWeight": "Current weight",
         "goal": "Main goal",
         "targetWeight": "Target weight",
+        "weeklyPace": "Weekly pace",
         "activityLevel": "Activity level",
         "weeklyWorkoutCount": "Weekly workout count",
         "workoutExperience": "Workout experience",
@@ -531,8 +532,10 @@
       "sections": {
         "profile": "Profile and body",
         "activity": "Goal and activity",
+        "goals": "Goals",
         "nutrition": "Nutrition",
-        "safety": "Health safety"
+        "safety": "Health safety",
+        "workout": "Workout"
       },
       "fields": {
         "name": "Name",
@@ -542,6 +545,7 @@
         "currentWeight": "Current weight",
         "goal": "Goal",
         "targetWeight": "Target weight",
+        "weeklyPace": "Weekly pace",
         "activityLevel": "Activity",
         "weeklyWorkoutCount": "Workouts/week",
         "workoutExperience": "Experience",

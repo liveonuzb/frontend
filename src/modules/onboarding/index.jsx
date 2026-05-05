@@ -89,7 +89,7 @@ const Index = () => {
         <Route path="workout-experience" element={<WorkoutExperiencePage />} />
         <Route
           path="lifestyle"
-          element={<Navigate to="../weekly-workout-count" replace />}
+          element={<Navigate to="../meal-frequency" replace />}
         />
         <Route path="workout-location" element={<WorkoutLocationPage />} />
         <Route path="workout-equipment" element={<WorkoutEquipmentPage />} />

@@ -522,6 +522,7 @@
         "currentWeight": "Текущий вес",
         "goal": "Главная цель",
         "targetWeight": "Целевой вес",
+        "weeklyPace": "Темп в неделю",
         "activityLevel": "Уровень активности",
         "weeklyWorkoutCount": "Тренировок в неделю",
         "workoutExperience": "Опыт тренировок",
@@ -531,8 +532,10 @@
       "sections": {
         "profile": "Профиль и тело",
         "activity": "Цель и активность",
+        "goals": "Цели",
         "nutrition": "Питание",
-        "safety": "Безопасность здоровья"
+        "safety": "Безопасность здоровья",
+        "workout": "Тренировки"
       },
       "fields": {
         "name": "Имя",
@@ -542,6 +545,7 @@
         "currentWeight": "Текущий вес",
         "goal": "Цель",
         "targetWeight": "Целевой вес",
+        "weeklyPace": "Темп в неделю",
         "activityLevel": "Активность",
         "weeklyWorkoutCount": "Тренировок/неделя",
         "workoutExperience": "Опыт",
