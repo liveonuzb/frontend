@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { DataGridColumnHeader } from "@/components/reui/data-grid";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import ActionsMenu from "./actions-menu.jsx";
+import { APPROVAL_STATUS_OPTIONS } from "./workout-plan-utils.js";
 
 function resolveText(translations, fallback, language) {
   if (translations && typeof translations === "object") {
@@ -41,6 +42,22 @@ function formatDate(value) {
 }
 
 const ITEMS_PER_PAGE = 10;
+const APPROVAL_STATUS_LABELS = Object.fromEntries(
+  APPROVAL_STATUS_OPTIONS.map((option) => [option.value, option.label]),
+);
+
+function getApprovalBadgeClass(status) {
+  switch (status) {
+    case "approved":
+      return "border-emerald-200 bg-emerald-50 text-emerald-700";
+    case "pending_review":
+      return "border-blue-200 bg-blue-50 text-blue-700";
+    case "rejected":
+      return "border-red-200 bg-red-50 text-red-700";
+    default:
+      return "border-muted bg-muted/40 text-muted-foreground";
+  }
+}
 
 export const useColumns = ({
   currentLanguage,
@@ -122,6 +139,30 @@ export const useColumns = ({
           );
         },
         size: 220,
+      },
+      {
+        accessorKey: "approvalStatus",
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Approval" />
+        ),
+        enableSorting: true,
+        meta: { skeleton: adminListSkeletons.badge },
+        cell: (info) => {
+          const status = info.getValue() || "draft";
+
+          return (
+            <div className="flex flex-wrap gap-1.5">
+              <Badge
+                variant="outline"
+                className={getApprovalBadgeClass(status)}
+              >
+                {APPROVAL_STATUS_LABELS[status] || status}
+              </Badge>
+              <Badge variant="outline">v{info.row.original.version || 1}</Badge>
+            </div>
+          );
+        },
+        size: 180,
       },
       {
         accessorKey: "translations",

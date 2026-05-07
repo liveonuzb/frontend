@@ -22,6 +22,8 @@ export const useColumns = ({
   isUserActionPending,
   canManageSupport,
   canManageGrowth,
+  canBlockUsers,
+  canDeleteUsers,
   canManageUser,
   canGiftPremium,
   onView,
@@ -48,7 +50,10 @@ export const useColumns = ({
           <DataGridColumnHeader column={column} title="Foydalanuvchi" />
         ),
         enableSorting: true,
-        meta: { skeleton: adminListSkeletons.avatarText, cellClassName: "min-w-[220px]" },
+        meta: {
+          skeleton: adminListSkeletons.avatarText,
+          cellClassName: "min-w-[220px]",
+        },
         cell: ({ row }) => {
           const user = row.original;
           return (
@@ -80,7 +85,10 @@ export const useColumns = ({
           <DataGridColumnHeader column={column} title="Email" />
         ),
         enableSorting: true,
-        meta: { skeleton: adminListSkeletons.text, cellClassName: "min-w-[180px]" },
+        meta: {
+          skeleton: adminListSkeletons.text,
+          cellClassName: "min-w-[180px]",
+        },
         cell: ({ row }) => {
           const email = row.original.email;
           return (
@@ -93,7 +101,10 @@ export const useColumns = ({
       {
         accessorKey: "phone",
         header: "Telefon",
-        meta: { skeleton: adminListSkeletons.text, cellClassName: "min-w-[140px]" },
+        meta: {
+          skeleton: adminListSkeletons.text,
+          cellClassName: "min-w-[140px]",
+        },
         cell: (info) => (
           <span className="text-sm text-muted-foreground">
             {info.getValue() || "—"}
@@ -103,7 +114,10 @@ export const useColumns = ({
       {
         id: "roles",
         header: "Rollar",
-        meta: { skeleton: adminListSkeletons.badge, cellClassName: "min-w-[160px]" },
+        meta: {
+          skeleton: adminListSkeletons.badge,
+          cellClassName: "min-w-[160px]",
+        },
         cell: ({ row }) => {
           const user = row.original;
           return (
@@ -120,9 +134,16 @@ export const useColumns = ({
               {user.coachStatus ? (
                 <Badge
                   variant="outline"
-                  className={get(coachStatusConfig[user.coachStatus], "className")}
+                  className={get(
+                    coachStatusConfig[user.coachStatus],
+                    "className",
+                  )}
                 >
-                  {get(coachStatusConfig[user.coachStatus], "label", user.coachStatus)}
+                  {get(
+                    coachStatusConfig[user.coachStatus],
+                    "label",
+                    user.coachStatus,
+                  )}
                 </Badge>
               ) : null}
             </div>
@@ -151,22 +172,20 @@ export const useColumns = ({
       {
         id: "premium",
         header: "Premium",
-        meta: { skeleton: adminListSkeletons.badge, cellClassName: "min-w-[140px]" },
+        meta: {
+          skeleton: adminListSkeletons.badge,
+          cellClassName: "min-w-[140px]",
+        },
         cell: ({ row }) => {
           const premium = row.original.premium;
           const status = get(premium, "status", "free");
           if (status === "free") {
-            return (
-              <span className="text-xs text-muted-foreground">Tekin</span>
-            );
+            return <span className="text-xs text-muted-foreground">Tekin</span>;
           }
           const config = premiumStatusConfig[status];
           return (
             <div className="flex flex-col gap-0.5">
-              <Badge
-                variant="outline"
-                className={get(config, "className")}
-              >
+              <Badge variant="outline" className={get(config, "className")}>
                 {get(config, "label", status)}
               </Badge>
               {get(premium, "planName") ? (
@@ -185,7 +204,10 @@ export const useColumns = ({
           <DataGridColumnHeader column={column} title="Qo'shilgan" />
         ),
         enableSorting: true,
-        meta: { skeleton: adminListSkeletons.text, cellClassName: "min-w-[120px]" },
+        meta: {
+          skeleton: adminListSkeletons.text,
+          cellClassName: "min-w-[120px]",
+        },
         cell: (info) => (
           <span className="text-sm text-muted-foreground">
             {info.getValue() || "—"}
@@ -204,6 +226,8 @@ export const useColumns = ({
               isUserActionPending={isUserActionPending}
               canManageSupport={canManageSupport}
               canManageGrowth={canManageGrowth}
+              canBlockUsers={canBlockUsers}
+              canDeleteUsers={canDeleteUsers}
               canManageUser={canManageUser}
               canGiftPremium={canGiftPremium}
               onView={onView}
@@ -225,6 +249,8 @@ export const useColumns = ({
       isUserActionPending,
       canManageSupport,
       canManageGrowth,
+      canBlockUsers,
+      canDeleteUsers,
       canManageUser,
       canGiftPremium,
       onView,

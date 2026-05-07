@@ -106,6 +106,10 @@ const Index = () => {
     statusOperator,
     onboardingFilter,
     onboardingOperator,
+    homeFilter,
+    homeOperator,
+    streetFilter,
+    streetOperator,
     imageFilter,
     imageOperator,
     translationFilter,
@@ -149,6 +153,20 @@ const Index = () => {
       onboardingOperator !== "is"
         ? { onboardingOp: onboardingOperator }
         : {}),
+      ...(homeFilter !== "all" ? { home: homeFilter } : {}),
+      ...((homeFilter !== "all" ||
+        homeOperator === "empty" ||
+        homeOperator === "not_empty") &&
+      homeOperator !== "is"
+        ? { homeOp: homeOperator }
+        : {}),
+      ...(streetFilter !== "all" ? { street: streetFilter } : {}),
+      ...((streetFilter !== "all" ||
+        streetOperator === "empty" ||
+        streetOperator === "not_empty") &&
+      streetOperator !== "is"
+        ? { streetOp: streetOperator }
+        : {}),
       ...(imageFilter !== "all" ? { hasImage: imageFilter } : {}),
       ...((imageFilter !== "all" ||
         imageOperator === "empty" ||
@@ -173,6 +191,8 @@ const Index = () => {
     [
       currentPage,
       deferredSearch,
+      homeFilter,
+      homeOperator,
       imageFilter,
       imageOperator,
       onboardingFilter,
@@ -183,6 +203,8 @@ const Index = () => {
       sortDir,
       statusFilter,
       statusOperator,
+      streetFilter,
+      streetOperator,
       translationFilter,
       translationOperator,
     ],
@@ -383,11 +405,41 @@ const Index = () => {
     [updateEquipment],
   );
 
+  const handleToggleHome = React.useCallback(
+    async (equipment, checked) => {
+      try {
+        await updateEquipment(equipment.id, { isHome: checked });
+        toast.success("Uy jihozi holati yangilandi");
+      } catch (error) {
+        toast.error(
+          getErrorMessage(error, "Uy jihozi holatini saqlab bo'lmadi"),
+        );
+      }
+    },
+    [updateEquipment],
+  );
+
+  const handleToggleStreet = React.useCallback(
+    async (equipment, checked) => {
+      try {
+        await updateEquipment(equipment.id, { isStreet: checked });
+        toast.success("Street jihozi holati yangilandi");
+      } catch (error) {
+        toast.error(
+          getErrorMessage(error, "Street jihozi holatini saqlab bo'lmadi"),
+        );
+      }
+    },
+    [updateEquipment],
+  );
+
   const columns = useColumns({
     activeLanguages,
     currentLanguage,
     isReorderEnabled,
     handleToggleOnboarding,
+    handleToggleHome,
+    handleToggleStreet,
     handleToggleStatus,
     openEditDrawer: (equipment) => navigate(`edit/${equipment.id}`),
     openTranslationsDrawer,

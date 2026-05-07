@@ -9,6 +9,11 @@ const roleColors = {
   FINANCE: "outline",
   GROWTH: "outline",
   READONLY_ADMIN: "outline",
+  ADMIN: "outline",
+  MODERATOR: "outline",
+  COACH_MANAGER: "outline",
+  NUTRITION_MANAGER: "outline",
+  WORKOUT_MANAGER: "outline",
 };
 
 const roleBgColors = {
@@ -27,6 +32,16 @@ const roleBgColors = {
     "bg-pink-500/10 text-pink-700 dark:text-pink-400 border-pink-200 dark:border-pink-800",
   READONLY_ADMIN:
     "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700",
+  ADMIN:
+    "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800",
+  MODERATOR:
+    "bg-fuchsia-500/10 text-fuchsia-700 dark:text-fuchsia-400 border-fuchsia-200 dark:border-fuchsia-800",
+  COACH_MANAGER:
+    "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-200 dark:border-sky-800",
+  NUTRITION_MANAGER:
+    "bg-lime-500/10 text-lime-700 dark:text-lime-400 border-lime-200 dark:border-lime-800",
+  WORKOUT_MANAGER:
+    "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800",
 };
 
 const roleLabels = {
@@ -38,6 +53,11 @@ const roleLabels = {
   FINANCE: "Finance",
   GROWTH: "Growth",
   READONLY_ADMIN: "Readonly admin",
+  ADMIN: "Admin",
+  MODERATOR: "Moderator",
+  COACH_MANAGER: "Coach manager",
+  NUTRITION_MANAGER: "Nutrition manager",
+  WORKOUT_MANAGER: "Workout manager",
 };
 
 const PRIVILEGED_ROLES = [
@@ -47,6 +67,11 @@ const PRIVILEGED_ROLES = [
   "FINANCE",
   "GROWTH",
   "READONLY_ADMIN",
+  "ADMIN",
+  "MODERATOR",
+  "COACH_MANAGER",
+  "NUTRITION_MANAGER",
+  "WORKOUT_MANAGER",
 ];
 
 const statusConfig = {

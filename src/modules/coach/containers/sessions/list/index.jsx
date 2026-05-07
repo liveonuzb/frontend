@@ -15,6 +15,7 @@ import {
   useCoachSessionsMutations,
 } from "@/modules/coach/lib/hooks";
 import CompleteSessionDrawer from "../components/CompleteSessionDrawer.jsx";
+import CancelSessionDrawer from "../components/CancelSessionDrawer.jsx";
 import SessionBookingDrawer from "../components/SessionBookingDrawer.jsx";
 import SessionCalendarPanel from "../components/SessionCalendarPanel.jsx";
 import SessionFilters from "../components/SessionFilters.jsx";
@@ -50,6 +51,7 @@ const CoachSessionsListPage = () => {
     session: null,
   });
   const [completeSession, setCompleteSession] = React.useState(null);
+  const [cancelSession, setCancelSession] = React.useState(null);
 
   React.useEffect(() => {
     setBreadcrumbs([
@@ -121,10 +123,12 @@ const CoachSessionsListPage = () => {
     }
   };
 
-  const handleCancel = async (session) => {
+  const handleCancel = async (payload) => {
+    if (!cancelSession) return;
     try {
-      await mutations.cancelSession(session.id, { reason: "Coach cancelled" });
+      await mutations.cancelSession(cancelSession.id, payload);
       toast.success("Sessiya bekor qilindi");
+      setCancelSession(null);
     } catch (error) {
       toast.error(get(error, "response.data.message") || "Bekor qilib bo'lmadi");
     }
@@ -197,7 +201,7 @@ const CoachSessionsListPage = () => {
               role="coach"
               isBusy={mutations.isMutating}
               onOpenChat={() => navigate(`/coach/chat/${session.roomId}`)}
-              onCancel={() => handleCancel(session)}
+              onCancel={() => setCancelSession(session)}
               onComplete={() => setCompleteSession(session)}
               onReschedule={() => openReschedule(session)}
             />
@@ -245,6 +249,14 @@ const CoachSessionsListPage = () => {
         session={completeSession}
         onOpenChange={(open) => !open && setCompleteSession(null)}
         onSubmit={handleComplete}
+        isSubmitting={mutations.isMutating}
+      />
+      <CancelSessionDrawer
+        key={cancelSession?.id || "cancel-session"}
+        open={Boolean(cancelSession)}
+        session={cancelSession}
+        onOpenChange={(open) => !open && setCancelSession(null)}
+        onSubmit={handleCancel}
         isSubmitting={mutations.isMutating}
       />
     </PageTransition>

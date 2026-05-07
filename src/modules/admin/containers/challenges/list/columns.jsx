@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
+import SafeAdminText from "@/modules/admin/components/safe-admin-text.jsx";
 import ActionsMenu from "./actions-menu.jsx";
 
 const STATUS_META = {
@@ -210,12 +211,19 @@ export const useColumns = ({
                 )}
               </div>
               <div className="min-w-0">
-                <p className="truncate font-medium">
-                  {localizedTitle || "Nomsiz"}
-                </p>
-                <p className="line-clamp-2 text-xs text-muted-foreground">
-                  {localizedDescription || "Ta'rif kiritilmagan"}
-                </p>
+                <SafeAdminText
+                  as="p"
+                  className="truncate font-medium"
+                  value={localizedTitle}
+                  fallback="Nomsiz"
+                  title
+                />
+                <SafeAdminText
+                  as="p"
+                  className="line-clamp-2 text-xs text-muted-foreground"
+                  value={localizedDescription}
+                  fallback="Ta'rif kiritilmagan"
+                />
               </div>
             </div>
           );

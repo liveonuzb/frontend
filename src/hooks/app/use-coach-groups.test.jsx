@@ -66,11 +66,11 @@ describe("useCoachGroups", () => {
     });
   });
 
-  it("uses telegram-groups endpoints for listing and mutations", async () => {
+  it("uses generic coach groups endpoints for listing and mutations", async () => {
     const { result } = renderHook(() => useCoachGroups(), { wrapper });
 
     expect(mockUseGetQuery).toHaveBeenCalledWith({
-      url: "/coach/telegram-groups",
+      url: "/coach/groups",
       queryProps: {
         queryKey: ["coach", "groups"],
       },
@@ -86,26 +86,26 @@ describe("useCoachGroups", () => {
     });
 
     expect(createMutateAsync).toHaveBeenCalledWith({
-      url: "/coach/telegram-groups",
+      url: "/coach/groups",
       attributes: { name: "VIP" },
     });
     expect(updateMutateAsync).toHaveBeenCalledWith({
-      url: "/coach/telegram-groups/group-1",
+      url: "/coach/groups/group-1",
       attributes: { name: "Updated" },
     });
     expect(deleteMutateAsync).toHaveBeenCalledWith({
-      url: "/coach/telegram-groups/group-1",
+      url: "/coach/groups/group-1",
     });
     expect(addClientsMutateAsync).toHaveBeenCalledWith({
-      url: "/coach/telegram-groups/group-1/clients",
+      url: "/coach/groups/group-1/clients",
       attributes: { clientIds: ["client-1"] },
     });
     expect(assignMealMutateAsync).toHaveBeenCalledWith({
-      url: "/coach/telegram-groups/group-1/assign-meal-plan",
+      url: "/coach/groups/group-1/assign-meal-plan",
       attributes: { planId: "meal-1" },
     });
     expect(assignWorkoutMutateAsync).toHaveBeenCalledWith({
-      url: "/coach/telegram-groups/group-1/assign-workout-plan",
+      url: "/coach/groups/group-1/assign-workout-plan",
       attributes: { planId: "workout-1" },
     });
   });

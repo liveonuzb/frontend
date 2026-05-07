@@ -141,7 +141,7 @@ const resolveUserName = (chat) => {
 };
 
 const StatCard = ({ label, value, description }) => (
-  <Card>
+  <Card className="py-6">
     <CardHeader>
       <CardDescription>{label}</CardDescription>
       <CardTitle className="text-2xl font-bold">{value ?? 0}</CardTitle>
@@ -693,7 +693,7 @@ const PlatformBotPage = () => {
           <StatCard label="Bugungi reminderlar" value={stats.remindersToday} />
         </div>
 
-        <Card>
+        <Card className="py-6">
           <CardHeader>
             <div>
               <CardTitle>Webhook diagnostika</CardTitle>
@@ -787,7 +787,7 @@ const PlatformBotPage = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="py-6">
           <CardHeader>
             <div>
               <CardTitle>Broadcast joblar</CardTitle>
@@ -839,7 +839,7 @@ const PlatformBotPage = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="py-6">
           <CardHeader>
             <div>
               <CardTitle>Telegram chatlar</CardTitle>

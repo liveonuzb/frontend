@@ -13,6 +13,10 @@ export default function AnimatedWaterWidget({
   onClick,
   className,
   hideAdd = false,
+  title = "Suv ichish",
+  hideHeaderActions = false,
+  ariaLabel,
+  amountClassName,
 }) {
   const pct = clamp(round((currentMl / maxMl) * 100), 0, 100);
   const displayCurrent = currentMl;
@@ -25,34 +29,42 @@ export default function AnimatedWaterWidget({
         onClick ? "cursor-pointer" : null,
         className,
       )}
+      aria-label={ariaLabel}
       style={{ backgroundColor: "#202a37" }}
     >
       <div className="flex justify-between items-center relative z-10">
         <div className="flex items-center gap-3">
           <div className={"icon size-8"} />
           <span className="font-bold text-white text-lg tracking-wide">
-            Suv ichish
+            {title}
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <QuickCupDrawer>
-            <button
-              onClick={(e) => e.stopPropagation()}
-              className="cursor-pointer size-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors border border-white/10 font-medium text-xs text-white"
-            >
-              <GlassWaterIcon className="size-4 hover:text-blue-300" />
-            </button>
-          </QuickCupDrawer>
-          <ChevronRightIcon
-            className="size-6 text-slate-300 transition-colors"
-            onClick={onClick}
-          />
-        </div>
+        {!hideHeaderActions ? (
+          <div className="flex items-center gap-2">
+            <QuickCupDrawer>
+              <button
+                onClick={(e) => e.stopPropagation()}
+                className="cursor-pointer size-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors border border-white/10 font-medium text-xs text-white"
+              >
+                <GlassWaterIcon className="size-4 hover:text-blue-300" />
+              </button>
+            </QuickCupDrawer>
+            <ChevronRightIcon
+              className="size-6 text-slate-300 transition-colors"
+              onClick={onClick}
+            />
+          </div>
+        ) : null}
       </div>
 
       {/* Amount */}
       <div className="mb-6 flex items-baseline gap-2 relative z-10 pointer-events-none">
-        <span className="text-[2.2rem] font-black text-white leading-none tracking-tight">
+        <span
+          className={cn(
+            "text-[2.2rem] font-black text-white leading-none tracking-tight",
+            amountClassName,
+          )}
+        >
           {displayCurrent}
         </span>
         <span className="text-slate-400 font-medium text-sm">

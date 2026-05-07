@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { filter, map, take, includes } from "lodash";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router";
 import { useChatStore } from "@/store";
+import { isChatFeatureEnabled } from "@/modules/chat/lib/chat-feature-flags.js";
 
 // DnD Kit imports
 import {
@@ -48,7 +49,6 @@ const ChatSidebar = ({
     isCoach,
     searchQuery,
     setSearchQuery,
-    contacts,
     filteredChats,
     activeChat,
     handleChatSelect,
@@ -56,10 +56,18 @@ const ChatSidebar = ({
     getLastMessagePreview,
     getLastMessageTime,
     bookmarks = [],
+    triageItems = [],
+    activeTriageFilter = "all",
+    onTriageFilterChange,
 }) => {
     const navigate = useNavigate();
+    const canUseBookmarks = isChatFeatureEnabled("bookmarks");
+    const canUseLocalChatPinning = isChatFeatureEnabled("localChatPinning");
+    const canCustomizeChatList = isChatFeatureEnabled("chatListCustomization");
     const {
         searchGlobalMessages,
+        messageSearchResults,
+        isSearchingMessages,
         pinnedChats,
         togglePinChat,
         chatOrder,
@@ -76,16 +84,26 @@ const ChatSidebar = ({
         })
     );
 
-    const messageSearchResults = useMemo(() => {
-        return searchQuery.length > 1 ? searchGlobalMessages(searchQuery) : [];
-    }, [searchQuery, searchGlobalMessages]);
+    useEffect(() => {
+        const normalizedQuery = searchQuery.trim();
+        if (normalizedQuery.length <= 1) {
+            searchGlobalMessages("");
+            return undefined;
+        }
+
+        const timeoutId = window.setTimeout(() => {
+            searchGlobalMessages(normalizedQuery);
+        }, 250);
+
+        return () => window.clearTimeout(timeoutId);
+    }, [searchGlobalMessages, searchQuery]);
 
     // Sorting and Filtering logic
     const tabFilteredChats = useMemo(() => {
         const list = filter(filteredChats, (chat) => !chat.isGroup);
 
         // 2. Apply Custom Order if exists
-        if (chatOrder) {
+        if (canCustomizeChatList && chatOrder) {
             list.sort((a, b) => {
                 const idxA = chatOrder.indexOf(a.chatId);
                 const idxB = chatOrder.indexOf(b.chatId);
@@ -98,15 +116,21 @@ const ChatSidebar = ({
 
         // 3. Pinned Chats always on top (if not in custom order or override)
         list.sort((a, b) => {
-            const isPinnedA = pinnedChats.includes(a.chatId);
-            const isPinnedB = pinnedChats.includes(b.chatId);
+            const isPinnedA = canUseLocalChatPinning && pinnedChats.includes(a.chatId);
+            const isPinnedB = canUseLocalChatPinning && pinnedChats.includes(b.chatId);
             if (isPinnedA && !isPinnedB) return -1;
             if (!isPinnedA && isPinnedB) return 1;
             return 0;
         });
 
         return list;
-    }, [filteredChats, pinnedChats, chatOrder]);
+    }, [
+        filteredChats,
+        pinnedChats,
+        chatOrder,
+        canCustomizeChatList,
+        canUseLocalChatPinning,
+    ]);
 
     const handleDragEnd = (event) => {
         const { active, over } = event;
@@ -120,14 +144,14 @@ const ChatSidebar = ({
 
     return (
         <div className={cn(
-            "w-full md:w-80 border-0 md:border-r flex flex-col bg-muted/30 shrink-0 h-full", 
+            "w-full md:w-80 border-0 md:border-r flex flex-col bg-muted/30 shrink-0 h-full",
             showMobileChat ? "hidden md:flex" : "flex"
         )}>
             {/* Header & Search */}
             <div className="sticky top-0 z-20 p-3 md:p-4 border-b bg-background/95 backdrop-blur-sm space-y-3 md:space-y-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 md:gap-3">
-                        <Button 
+                        <Button
                             variant="ghost" size="icon" className="size-8 rounded-full"
                             onClick={() => navigate(isCoach ? "/coach" : "/user")}
                         >
@@ -136,24 +160,59 @@ const ChatSidebar = ({
                         <h2 className="text-lg md:text-xl font-bold">Chatlar</h2>
                     </div>
                     <div className="flex gap-1">
-                        <Button
-                            variant="ghost" size="icon" 
-                            className={cn("size-8 rounded-full transition-all", isEditMode ? "bg-primary text-primary-foreground" : "bg-primary/5 text-primary")}
-                            onClick={() => setIsEditMode(!isEditMode)}
-                        >
-                            {isEditMode ? <CheckIcon className="size-4" /> : <PencilLineIcon className="size-4" />}
-                        </Button>
+                        {canCustomizeChatList && (
+                            <Button
+                                variant="ghost" size="icon"
+                                className={cn("size-8 rounded-full transition-all", isEditMode ? "bg-primary text-primary-foreground" : "bg-primary/5 text-primary")}
+                                onClick={() => setIsEditMode(!isEditMode)}
+                            >
+                                {isEditMode ? <CheckIcon className="size-4" /> : <PencilLineIcon className="size-4" />}
+                            </Button>
+                        )}
                     </div>
                 </div>
 
                 <div className="relative">
                     <SearchIcon className="size-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input 
-                        value={searchQuery} onChange={e => setSearchQuery(e.target.value)} 
-                        className="w-full h-9 md:h-10 pl-9 pr-4 rounded-xl border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
+                    <input
+                        value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                        className="w-full h-9 md:h-10 pl-9 pr-4 rounded-xl border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                         placeholder="Qidirish..." 
                     />
                 </div>
+
+                {isCoach && triageItems.length > 0 && (
+                    <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+                        {triageItems.map((item) => {
+                            const active = activeTriageFilter === item.key;
+                            return (
+                                <button
+                                    key={item.key}
+                                    type="button"
+                                    onClick={() => onTriageFilterChange?.(item.key)}
+                                    className={cn(
+                                        "h-7 shrink-0 rounded-full border px-2.5 text-[10px] font-bold transition-colors flex items-center gap-1.5",
+                                        active
+                                            ? "bg-primary text-primary-foreground border-primary"
+                                            : "bg-background hover:bg-muted text-muted-foreground",
+                                    )}
+                                >
+                                    <span>{item.label}</span>
+                                    <span
+                                        className={cn(
+                                            "min-w-4 rounded-full px-1 text-[9px] leading-4 text-center",
+                                            active
+                                                ? "bg-primary-foreground/20"
+                                                : "bg-muted text-foreground",
+                                        )}
+                                    >
+                                        {item.count}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
 
             <div className="flex-1 overflow-y-auto custom-scrollbar">
@@ -168,18 +227,23 @@ const ChatSidebar = ({
                             <div className="px-4 py-2 text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Kontaktlar</div>
                         )}
                         {tabFilteredChats.map((chat) => (
-                            <ContactItem 
-                                key={chat.chatId} chat={chat} activeChat={activeChat} 
+                            <ContactItem
+                                key={chat.chatId} chat={chat} activeChat={activeChat}
                                 handleChatSelect={handleChatSelect} getUnreadCount={getUnreadCount}
                                 getLastMessageTime={getLastMessageTime} getLastMessagePreview={getLastMessagePreview}
-                                isPinned={includes(pinnedChats, chat.chatId)}
-                                onPin={() => togglePinChat(chat.chatId)}
-                                isEditMode={isEditMode}
+                                isPinned={canUseLocalChatPinning && includes(pinnedChats, chat.chatId)}
+                                onPin={canUseLocalChatPinning ? () => togglePinChat(chat.chatId) : null}
+                                isEditMode={canCustomizeChatList && isEditMode}
                             />
                         ))}
 
                         {messageSearchResults.length > 0 && (
                             <div className="px-4 py-2 mt-4 text-[9px] font-bold text-muted-foreground uppercase tracking-wider border-t">Xabarlar</div>
+                        )}
+                        {isSearchingMessages && (
+                            <div className="px-4 py-3 text-xs text-muted-foreground">
+                                Xabarlar qidirilmoqda...
+                            </div>
                         )}
                         {messageSearchResults.map((res, i) => (
                             <button
@@ -209,78 +273,97 @@ const ChatSidebar = ({
                         )}
                     </div>
                 ) : (
-                    <DndContext 
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragEnd={handleDragEnd}
-                    >
-                        <SortableContext 
-                            items={map(tabFilteredChats, c => c.chatId)}
-                            strategy={verticalListSortingStrategy}
-                        >
-                            {bookmarks.length > 0 && (
-                                <div className="p-3 md:p-4 border-b bg-primary/5">
-                                    <div className="flex items-center gap-2 mb-2 text-primary">
-                                        <BookmarkIcon className="size-3" />
-                                        <span className="text-[9px] font-bold uppercase tracking-wider">Xatcho'plar</span>
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        {take(bookmarks, 2).map((b, i) => (
-                                            <div key={i} className="text-[10px] p-2 rounded-lg bg-background border border-primary/10 truncate">
-                                                <span className="font-bold mr-1">{b.senderName}:</span>
-                                                <span className="opacity-70">{b.text}</span>
-                                            </div>
-                                        ))}
-                                    </div>
+                    <>
+                        {canUseBookmarks && bookmarks.length > 0 && (
+                            <div className="p-3 md:p-4 border-b bg-primary/5">
+                                <div className="flex items-center gap-2 mb-2 text-primary">
+                                    <BookmarkIcon className="size-3" />
+                                    <span className="text-[9px] font-bold uppercase tracking-wider">Xatcho'plar</span>
                                 </div>
-                            )}
+                                <div className="space-y-1.5">
+                                    {take(bookmarks, 2).map((b, i) => (
+                                        <div key={i} className="text-[10px] p-2 rounded-lg bg-background border border-primary/10 truncate">
+                                            <span className="font-bold mr-1">{b.senderName}:</span>
+                                            <span className="opacity-70">{b.text}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
-                            {tabFilteredChats.map((chat) => (
-                                <SortableContactItem 
-                                    key={chat.chatId} 
-                                    chat={chat} 
-                                    activeChat={activeChat} 
-                                    handleChatSelect={handleChatSelect} 
+                        {canCustomizeChatList ? (
+                            <DndContext
+                                sensors={sensors}
+                                collisionDetection={closestCenter}
+                                onDragEnd={handleDragEnd}
+                            >
+                                <SortableContext
+                                    items={map(tabFilteredChats, c => c.chatId)}
+                                    strategy={verticalListSortingStrategy}
+                                >
+                                    {tabFilteredChats.map((chat) => (
+                                        <SortableContactItem
+                                            key={chat.chatId}
+                                            chat={chat}
+                                            activeChat={activeChat}
+                                            handleChatSelect={handleChatSelect}
+                                            getUnreadCount={getUnreadCount}
+                                            getLastMessageTime={getLastMessageTime}
+                                            getLastMessagePreview={getLastMessagePreview}
+                                            isPinned={canUseLocalChatPinning && includes(pinnedChats, chat.chatId)}
+                                            onPin={canUseLocalChatPinning ? () => togglePinChat(chat.chatId) : null}
+                                            isEditMode={isEditMode}
+                                        />
+                                    ))}
+                                </SortableContext>
+                            </DndContext>
+                        ) : (
+                            tabFilteredChats.map((chat) => (
+                                <ContactItem
+                                    key={chat.chatId}
+                                    chat={chat}
+                                    activeChat={activeChat}
+                                    handleChatSelect={handleChatSelect}
                                     getUnreadCount={getUnreadCount}
-                                    getLastMessageTime={getLastMessageTime} 
+                                    getLastMessageTime={getLastMessageTime}
                                     getLastMessagePreview={getLastMessagePreview}
-                                    isPinned={includes(pinnedChats, chat.chatId)}
-                                    onPin={() => togglePinChat(chat.chatId)}
-                                    isEditMode={isEditMode}
+                                    isPinned={canUseLocalChatPinning && includes(pinnedChats, chat.chatId)}
+                                    onPin={canUseLocalChatPinning ? () => togglePinChat(chat.chatId) : null}
+                                    isEditMode={false}
                                 />
-                            ))}
-                            
-                            {tabFilteredChats.length === 0 && (
-                                <div className="p-10 text-center space-y-4">
-                                    <div className="size-16 rounded-full bg-primary/5 flex items-center justify-center mx-auto">
-                                        <UserPlusIcon className="size-8 text-primary opacity-20" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-muted-foreground font-medium text-sm">Chatlar hali yo'q</p>
-                                        <p className="text-[10px] text-muted-foreground/60">Muloqotni boshlash uchun kontakt qidiring</p>
-                                    </div>
-                                    <Button 
-                                        variant="outline" 
-                                        size="sm" 
-                                        className="rounded-xl font-bold"
-                                        onClick={() => navigate(isCoach ? "/coach/clients" : "/user/friends")}
-                                    >
-                                        Kontakt qidirish
-                                    </Button>
+                            ))
+                        )}
+
+                        {tabFilteredChats.length === 0 && (
+                            <div className="p-10 text-center space-y-4">
+                                <div className="size-16 rounded-full bg-primary/5 flex items-center justify-center mx-auto">
+                                    <UserPlusIcon className="size-8 text-primary opacity-20" />
                                 </div>
-                            )}
-                        </SortableContext>
-                    </DndContext>
+                                <div className="space-y-1">
+                                    <p className="text-muted-foreground font-medium text-sm">Chatlar hali yo'q</p>
+                                    <p className="text-[10px] text-muted-foreground/60">Muloqotni boshlash uchun kontakt qidiring</p>
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="rounded-xl font-bold"
+                                    onClick={() => navigate(isCoach ? "/coach/clients" : "/user/friends")}
+                                >
+                                    Kontakt qidirish
+                                </Button>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         </div>
     );
 };
 
-const ContactItem = ({ 
-    chat, activeChat, handleChatSelect, getUnreadCount, 
-    getLastMessageTime, getLastMessagePreview, isPinned, onPin, 
-    sortableProps = {}, style = {}, isEditMode 
+const ContactItem = ({
+    chat, activeChat, handleChatSelect, getUnreadCount,
+    getLastMessageTime, getLastMessagePreview, isPinned, onPin,
+    sortableProps = {}, style = {}, isEditMode
 }) => (
     <div
         style={style}
@@ -297,7 +380,7 @@ const ContactItem = ({
                 <GripVerticalIcon className="size-4" />
             </div>
         )}
-        
+
         <div className="relative shrink-0">
             <Avatar className="size-10 md:size-12 border-2 border-background shadow-sm">
                 <AvatarImage src={chat.avatar} />
@@ -305,7 +388,7 @@ const ContactItem = ({
             </Avatar>
             {chat.online && <div className="absolute -bottom-0.5 -right-0.5 size-2.5 md:size-3 rounded-full bg-green-500 border-2 border-background" />}
         </div>
-        
+
         <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 truncate">
@@ -318,26 +401,28 @@ const ContactItem = ({
                 {getLastMessagePreview(chat.chatId) || chat.role}
             </p>
         </div>
-        
+
         <div className="flex flex-col items-end gap-2 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
             {getUnreadCount(chat.chatId) > 0 && (
                 <Badge className="size-4 md:size-5 rounded-full p-0 flex items-center justify-center text-[8px] md:text-[10px] animate-pulse">
                     {getUnreadCount(chat.chatId)}
                 </Badge>
             )}
-            
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="size-6 md:size-7 opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
-                        <MoreVerticalIcon className="size-3 md:size-4" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={onPin} className="text-xs">
-                        <PinIcon className="size-3 mr-2" /> {isPinned ? "Unpin" : "Pin qilish"}
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+
+            {onPin && (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="size-6 md:size-7 opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+                            <MoreVerticalIcon className="size-3 md:size-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={onPin} className="text-xs">
+                            <PinIcon className="size-3 mr-2" /> {isPinned ? "Unpin" : "Pin qilish"}
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )}
         </div>
     </div>
 );
@@ -360,10 +445,10 @@ const SortableContactItem = (props) => {
     };
 
     return (
-        <ContactItem 
-            {...props} 
-            sortableProps={{ ref: setNodeRef, ...attributes, ...listeners }} 
-            style={style} 
+        <ContactItem
+            {...props}
+            sortableProps={{ ref: setNodeRef, ...attributes, ...listeners }}
+            style={style}
         />
     );
 };

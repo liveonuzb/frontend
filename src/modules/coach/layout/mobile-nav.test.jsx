@@ -12,15 +12,16 @@ describe("CoachMobileNav", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByTitle("Dashboard")).toBeInTheDocument();
+    expect(screen.getByTitle("Boshqaruv")).toBeInTheDocument();
     expect(screen.getByTitle("Mijozlar")).toBeInTheDocument();
-    expect(screen.getByTitle("Ovqatlanish")).toBeInTheDocument();
-    expect(screen.getByTitle("Workout")).toBeInTheDocument();
     expect(screen.getByTitle("Chat")).toBeInTheDocument();
+    expect(screen.getByTitle("To'lovlar")).toBeInTheDocument();
+    expect(screen.getByTitle("Telegram")).toBeInTheDocument();
 
     expect(screen.queryByTitle("Kurslar")).not.toBeInTheDocument();
-    expect(screen.queryByTitle("To'lovlar")).not.toBeInTheDocument();
-    expect(screen.queryByTitle("TG bot")).not.toBeInTheDocument();
+    expect(screen.queryByTitle("Ovqatlanish")).not.toBeInTheDocument();
+    expect(screen.queryByTitle("Workout")).not.toBeInTheDocument();
+    expect(screen.queryByTitle("Telegram bot")).not.toBeInTheDocument();
     expect(screen.queryByTitle("Guruhlar")).not.toBeInTheDocument();
   });
 });

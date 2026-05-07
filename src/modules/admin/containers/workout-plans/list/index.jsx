@@ -1,6 +1,6 @@
 import React from "react";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { get } from "lodash";
+import { get, isEqual } from "lodash";
 import { toast } from "sonner";
 import { useMatch, useNavigate } from "react-router";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
@@ -16,11 +16,12 @@ import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagina
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import {
-  PlusIcon,
-  RotateCcwIcon,
-} from "lucide-react";
+import { PlusIcon, RotateCcwIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  UnsavedChangesAlert,
+  useUnsavedChangesGuard,
+} from "@/modules/admin/components/unsaved-changes-guard.jsx";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
 import { usePlanFilters } from "./use-filters.js";
@@ -101,18 +102,20 @@ const Index = () => {
         enabled: Boolean(editingTemplateId),
       },
     });
-  const { data: translatingTemplateData, isLoading: isTranslatingTemplateLoading } =
-    useGetQuery({
-      url: `/admin/workout-plans/${translatingTemplateId || ""}`,
-      queryProps: {
-        queryKey: [
-          ...WORKOUT_PLAN_TEMPLATES_QUERY_KEY,
-          "detail",
-          translatingTemplateId,
-        ],
-        enabled: Boolean(translatingTemplateId),
-      },
-    });
+  const {
+    data: translatingTemplateData,
+    isLoading: isTranslatingTemplateLoading,
+  } = useGetQuery({
+    url: `/admin/workout-plans/${translatingTemplateId || ""}`,
+    queryProps: {
+      queryKey: [
+        ...WORKOUT_PLAN_TEMPLATES_QUERY_KEY,
+        "detail",
+        translatingTemplateId,
+      ],
+      enabled: Boolean(translatingTemplateId),
+    },
+  });
 
   const {
     createTemplate,
@@ -192,6 +195,24 @@ const Index = () => {
     setBuilderInitialData(null);
     setForm(emptyForm);
   }, []);
+  const formBaseline = React.useMemo(
+    () =>
+      editingTemplate
+        ? createFormFromTemplate(editingTemplate, currentLanguage)
+        : emptyForm,
+    [currentLanguage, editingTemplate],
+  );
+  const formUnsavedChanges = useUnsavedChangesGuard({
+    when:
+      formDrawerOpen &&
+      !isSaving &&
+      !isEditingTemplateLoading &&
+      !isEqual(form, formBaseline),
+  });
+  const closeFormDrawer = React.useCallback(() => {
+    navigate("/admin/workout-plans");
+    resetDraftState();
+  }, [navigate, resetDraftState]);
 
   const openCreateDrawer = React.useCallback(() => {
     setEditingTemplate(null);
@@ -237,9 +258,11 @@ const Index = () => {
       source: "admin",
       schedule: editingTemplate?.schedule ?? [],
     });
-    navigate("/admin/workout-plans");
-    setBuilderOpen(true);
-  }, [editingTemplate, form, navigate]);
+    formUnsavedChanges.runWithoutGuard(() => {
+      navigate("/admin/workout-plans");
+      setBuilderOpen(true);
+    });
+  }, [editingTemplate, form, formUnsavedChanges, navigate]);
 
   const handleBuilderSave = React.useCallback(
     async (plan) => {
@@ -252,6 +275,8 @@ const Index = () => {
         schedule: plan.schedule,
         source: "admin",
         isActive: form.isActive,
+        approvalStatus: form.approvalStatus,
+        approvalReason: String(form.approvalReason ?? "").trim() || undefined,
       };
 
       try {
@@ -280,6 +305,8 @@ const Index = () => {
       editingTemplate?.id,
       form.difficulty,
       form.isActive,
+      form.approvalReason,
+      form.approvalStatus,
       navigate,
       resetDraftState,
       updateTemplate,
@@ -486,8 +513,7 @@ const Index = () => {
         open={formDrawerOpen}
         onOpenChange={(open) => {
           if (!open) {
-            navigate("/admin/workout-plans");
-            resetDraftState();
+            formUnsavedChanges.requestLeave(closeFormDrawer);
           }
         }}
         editingTemplate={editingTemplate}
@@ -496,10 +522,7 @@ const Index = () => {
         isSaving={isSaving}
         isLoading={Boolean(editingTemplateId) && isEditingTemplateLoading}
         onContinue={handleContinueToBuilder}
-        onCancel={() => {
-          navigate("/admin/workout-plans");
-          resetDraftState();
-        }}
+        onCancel={() => formUnsavedChanges.requestLeave(closeFormDrawer)}
       />
 
       <WorkoutPlanTranslationsDrawer
@@ -550,6 +573,11 @@ const Index = () => {
         }}
         onConfirm={handleDelete}
         isDeleting={isDeleting}
+      />
+      <UnsavedChangesAlert
+        open={formUnsavedChanges.confirmOpen}
+        onCancel={formUnsavedChanges.cancelLeave}
+        onConfirm={formUnsavedChanges.confirmLeave}
       />
     </PageTransition>
   );

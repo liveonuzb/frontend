@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
   find,
   get,
@@ -13,7 +14,7 @@ import { Filters } from "@/components/reui/filters.jsx";
 const STATUS_VALUES = ["all", "active", "paused", "inactive", "pending", "declined"];
 const DEFAULT_PAGE_SIZE = 10;
 
-export const useClientFilters = () => {
+export const useClientFilters = (tagOptions = []) => {
   const { t } = useTranslation();
 
   const [search, setSearch] = useQueryState("q", parseAsString.withDefault(""));
@@ -21,6 +22,7 @@ export const useClientFilters = () => {
     "status",
     parseAsStringEnum(STATUS_VALUES).withDefault("all"),
   );
+  const [tagId, setTagId] = useQueryState("tagId", parseAsString.withDefault(""));
   const [pageQuery, setPageQuery] = useQueryState(
     "page",
     parseAsString.withDefault("1"),
@@ -57,8 +59,25 @@ export const useClientFilters = () => {
           { value: "declined", label: t("common.status.declined") },
         ],
       },
+      ...(tagOptions.length
+        ? [
+            {
+              label: "Teg",
+              key: "tagId",
+              type: "select",
+              defaultOperator: "is",
+              options: [
+                { value: "", label: "Barcha teglar" },
+                ...tagOptions.map((tag) => ({
+                  value: tag.id || tag.slug,
+                  label: tag.label,
+                })),
+              ],
+            },
+          ]
+        : []),
     ],
-    [t],
+    [t, tagOptions],
   );
 
   const activeFilters = React.useMemo(() => {
@@ -79,8 +98,16 @@ export const useClientFilters = () => {
         values: [statusFilter],
       });
     }
+    if (!isEmpty(trim(String(tagId)))) {
+      items.push({
+        id: "tagId",
+        field: "tagId",
+        operator: "is",
+        values: [tagId],
+      });
+    }
     return items;
-  }, [search, statusFilter]);
+  }, [search, statusFilter, tagId]);
 
   const handleFiltersChange = React.useCallback(
     (nextFilters) => {
@@ -94,10 +121,11 @@ export const useClientFilters = () => {
       React.startTransition(() => {
         void setSearch(getValue("q", ""));
         void setStatusFilter(getValue("status", "all"));
+        void setTagId(getValue("tagId", ""));
         void setPageQuery("1");
       });
     },
-    [setSearch, setStatusFilter, setPageQuery],
+    [setSearch, setStatusFilter, setTagId, setPageQuery],
   );
 
   const currentPage = Math.max(1, Number(pageQuery) || 1);
@@ -106,6 +134,7 @@ export const useClientFilters = () => {
   return {
     search,
     statusFilter,
+    tagId,
     pageQuery,
     setPageQuery,
     pageSizeQuery,

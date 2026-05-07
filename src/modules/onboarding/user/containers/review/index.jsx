@@ -51,8 +51,9 @@ const buildCompletePayload = (state) => ({
     mealFrequency: state.mealFrequency,
     foodBudgetTier: state.foodBudgetTier,
     workoutLocation: state.workoutLocation,
-    equipmentIds: state.equipmentIds,
-    customEquipment: state.customEquipment,
+    equipmentIds: state.workoutLocation === "gym" ? [] : state.equipmentIds,
+    customEquipment:
+      state.workoutLocation === "gym" ? [] : state.customEquipment,
     workoutBodyPartIds: state.workoutBodyPartIds,
     customWorkoutBodyParts: state.customWorkoutBodyParts,
     allergyIds: state.allergyIds?.length
@@ -166,6 +167,14 @@ const resolveBudgetLabel = (state, t) => {
 
   return "";
 };
+
+const resolveWorkoutLocationLabel = (state, t) =>
+  state.workoutLocation
+    ? t(
+        `onboarding.workoutSteps.location.options.${state.workoutLocation}.label`,
+        { defaultValue: state.workoutLocation },
+      )
+    : "";
 
 const Index = () => {
   const { t } = useTranslation();
@@ -413,6 +422,19 @@ const Index = () => {
               [
                 t("onboarding.review.fields.workoutExperience"),
                 onboardingState.workoutExperience,
+              ],
+              [
+                t("onboarding.review.fields.workoutLocation"),
+                resolveWorkoutLocationLabel(onboardingState, t),
+              ],
+              [
+                t("onboarding.review.fields.equipment"),
+                onboardingState.workoutLocation === "gym"
+                  ? "-"
+                  : String(
+                      (onboardingState.equipmentIds?.length ?? 0) +
+                        (onboardingState.customEquipment?.length ?? 0),
+                    ),
               ],
             ]}
           />

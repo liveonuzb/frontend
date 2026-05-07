@@ -1,13 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router";
-import {
-  find,
-  get,
-  isArray,
-  startsWith,
-  toNumber,
-  trim,
-} from "lodash";
+import { find, get, isArray, startsWith, toNumber, trim } from "lodash";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -41,6 +34,10 @@ import {
   useUnsavedChangesGuard,
 } from "@/modules/admin/components/unsaved-changes-guard";
 import {
+  ALLERGEN_TAG_OPTIONS,
+  DIETARY_TAG_OPTIONS,
+} from "@/modules/admin/lib/nutrition-tags.js";
+import {
   NumberField,
   NumberFieldDecrement,
   NumberFieldGroup,
@@ -61,6 +58,8 @@ const foodSchema = z.object({
   fat: z.number().min(0),
   servingUnit: z.enum(["g", "ml", "dona", "qoshiq"]),
   servingSize: z.number().min(0),
+  dietaryTags: z.array(z.string()).default([]),
+  allergenTags: z.array(z.string()).default([]),
   isOnboarding: z.boolean().default(true),
 });
 
@@ -141,6 +140,8 @@ const FoodFormDrawer = ({
       fat: 0,
       servingUnit: "g",
       servingSize: 100,
+      dietaryTags: [],
+      allergenTags: [],
       isOnboarding: true,
     },
   });
@@ -154,8 +155,7 @@ const FoodFormDrawer = ({
 
   const isPending = isCreating || isUploadingImage || isDeletingImage;
   const unsavedChanges = useUnsavedChangesGuard({
-    when:
-      (form.formState.isDirty || Boolean(uploadedImageId)) && !isPending,
+    when: (form.formState.isDirty || Boolean(uploadedImageId)) && !isPending,
   });
 
   const handleSubmit = form.handleSubmit(async (data) => {
@@ -282,9 +282,7 @@ const FoodFormDrawer = ({
                             currentLanguage,
                           )
                         }
-                        getOptionDescription={(cuisine) =>
-                          `ID: ${cuisine.id}`
-                        }
+                        getOptionDescription={(cuisine) => `ID: ${cuisine.id}`}
                       />
                     </FormControl>
                     <FormMessage />
@@ -322,7 +320,10 @@ const FoodFormDrawer = ({
                       Kaloriya <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <RHFNumberField value={field.value} onChange={field.onChange} />
+                      <RHFNumberField
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -336,7 +337,10 @@ const FoodFormDrawer = ({
                   <FormItem>
                     <FormLabel>Maks. kunlik miqdor</FormLabel>
                     <FormControl>
-                      <RHFNumberField value={field.value} onChange={field.onChange} />
+                      <RHFNumberField
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -420,13 +424,54 @@ const FoodFormDrawer = ({
               />
               <FormField
                 control={form.control}
+                name="dietaryTags"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Dietary taglar</FormLabel>
+                    <FormControl>
+                      <MultipleDrawerPicker
+                        value={field.value}
+                        onChange={field.onChange}
+                        options={DIETARY_TAG_OPTIONS}
+                        title="Dietary taglar"
+                        placeholder="Tag tanlang"
+                        doneLabel="Tayyor"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="allergenTags"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Allergen taglar</FormLabel>
+                    <FormControl>
+                      <MultipleDrawerPicker
+                        value={field.value}
+                        onChange={field.onChange}
+                        options={ALLERGEN_TAG_OPTIONS}
+                        title="Allergen taglar"
+                        placeholder="Allergen tanlang"
+                        doneLabel="Tayyor"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name="isOnboarding"
                 render={({ field }) => (
                   <FormItem className="flex items-center justify-between gap-4 rounded-2xl border px-4 py-3">
                     <div>
                       <FormLabel>Onboardingda ustuvor ko'rsatish</FormLabel>
                       <p className="text-xs text-muted-foreground">
-                        Yoqilgan bo'lsa ovqat onboarding comboboxida birinchi chiqadi.
+                        Yoqilgan bo'lsa ovqat onboarding comboboxida birinchi
+                        chiqadi.
                       </p>
                     </div>
                     <FormControl>
@@ -478,6 +523,8 @@ const createFoodPayload = (form, uploadedImageId, language) => {
     fat: toNumber(form.fat) || 0,
     servingSize: toNumber(form.servingSize) || 0,
     servingUnit: form.servingUnit,
+    dietaryTags: form.dietaryTags ?? [],
+    allergenTags: form.allergenTags ?? [],
     isOnboarding: form.isOnboarding !== false,
     translations: {
       [language]: localizedName,
@@ -613,6 +660,8 @@ const CreateFoodPage = () => {
         fat: String(data.fat),
         servingSize: String(data.servingSize),
         servingUnit: data.servingUnit,
+        dietaryTags: data.dietaryTags,
+        allergenTags: data.allergenTags,
         isOnboarding: data.isOnboarding,
         maxIntake: data.maxIntake !== undefined ? String(data.maxIntake) : "",
         translations: {},

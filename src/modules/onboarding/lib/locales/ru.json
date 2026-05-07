@@ -549,6 +549,8 @@
         "activityLevel": "Активность",
         "weeklyWorkoutCount": "Тренировок/неделя",
         "workoutExperience": "Опыт",
+        "workoutLocation": "Место тренировок",
+        "equipment": "Оборудование",
         "mealFrequency": "Приёмов пищи",
         "foodBudget": "Бюджет",
         "allergies": "Аллергии",

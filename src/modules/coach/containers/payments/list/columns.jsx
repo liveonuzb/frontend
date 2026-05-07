@@ -7,10 +7,19 @@ import {
   DataGridTableRowSelect,
   DataGridTableRowSelectAll,
 } from "@/components/reui/data-grid";
+import { getCoachPaymentMethodLabel } from "@/modules/coach/lib/payment-methods";
 import ActionsMenu from "./actions-menu.jsx";
 
 const getInitials = (value = "") =>
-  toUpper(join(take(map(split(String(value), " "), (part) => get(part, "[0]", "")), 2), ""));
+  toUpper(
+    join(
+      take(
+        map(split(String(value), " "), (part) => get(part, "[0]", "")),
+        2,
+      ),
+      "",
+    ),
+  );
 
 const formatMoney = (value) => {
   const normalized = Number(value);
@@ -32,15 +41,18 @@ const formatDate = (value) => {
 const STATUS_MAP = {
   cancelled: {
     label: "Bekor qilingan",
-    className: "rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight text-destructive",
+    className:
+      "rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight text-destructive",
   },
   refunded: {
     label: "Qaytarilgan",
-    className: "rounded-full bg-orange-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight text-orange-600",
+    className:
+      "rounded-full bg-orange-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight text-orange-600",
   },
   completed: {
     label: "Muvaffaqiyatli",
-    className: "rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight text-green-600",
+    className:
+      "rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight text-green-600",
   },
 };
 
@@ -115,7 +127,7 @@ export const useColumns = ({
         header: "Usul",
         cell: ({ getValue }) => (
           <span className="rounded-full bg-muted px-2 py-1 text-[10px] font-bold uppercase tracking-tight text-muted-foreground">
-            {getValue() || "Boshqa"}
+            {getCoachPaymentMethodLabel(getValue())}
           </span>
         ),
         meta: {
@@ -133,6 +145,26 @@ export const useColumns = ({
           const status = row.original.status;
           const cfg = STATUS_MAP[status] ?? STATUS_MAP.completed;
           return <span className={cfg.className}>{cfg.label}</span>;
+        },
+      },
+      {
+        accessorKey: "paymentDue",
+        header: "Invoice",
+        cell: ({ getValue }) => {
+          const due = getValue();
+          if (!due) return <span className="text-muted-foreground">—</span>;
+          return (
+            <div className="min-w-[120px] text-xs">
+              <p className="font-semibold">{formatDate(get(due, "dueDate"))}</p>
+              <p className="text-muted-foreground">
+                {get(due, "status", "open")}
+              </p>
+            </div>
+          );
+        },
+        meta: {
+          headerClassName: "hidden lg:table-cell",
+          cellClassName: "hidden lg:table-cell",
         },
       },
       {
@@ -194,5 +226,14 @@ export const useColumns = ({
         meta: { noPinnedBorder: true },
       },
     ],
-    [currentPage, pageSize, onEdit, onCancel, onRefund, onSoftDelete, onRestore, onHardDelete],
+    [
+      currentPage,
+      pageSize,
+      onEdit,
+      onCancel,
+      onRefund,
+      onSoftDelete,
+      onRestore,
+      onHardDelete,
+    ],
   );

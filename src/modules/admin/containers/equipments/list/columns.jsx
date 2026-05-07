@@ -45,6 +45,8 @@ export const useColumns = ({
   currentLanguage,
   isReorderEnabled,
   handleToggleOnboarding,
+  handleToggleHome,
+  handleToggleStreet,
   handleToggleStatus,
   openEditDrawer,
   openTranslationsDrawer,
@@ -175,6 +177,48 @@ export const useColumns = ({
         },
       },
       {
+        accessorKey: "isHome",
+        header: "Uyda",
+        enableSorting: true,
+        size: 96,
+        meta: SWITCH_COLUMN_META,
+        cell: (info) => {
+          const equipment = info.row.original;
+
+          return (
+            <div className={SWITCH_CELL_CLASS_NAME}>
+              <Switch
+                checked={Boolean(equipment.isHome)}
+                onCheckedChange={(checked) =>
+                  handleToggleHome(equipment, checked)
+                }
+              />
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "isStreet",
+        header: "Street",
+        enableSorting: true,
+        size: 96,
+        meta: SWITCH_COLUMN_META,
+        cell: (info) => {
+          const equipment = info.row.original;
+
+          return (
+            <div className={SWITCH_CELL_CLASS_NAME}>
+              <Switch
+                checked={Boolean(equipment.isStreet)}
+                onCheckedChange={(checked) =>
+                  handleToggleStreet(equipment, checked)
+                }
+              />
+            </div>
+          );
+        },
+      },
+      {
         accessorKey: "isActive",
         header: "Status",
         enableSorting: true,
@@ -216,7 +260,9 @@ export const useColumns = ({
     [
       activeLanguages,
       currentLanguage,
+      handleToggleHome,
       handleToggleOnboarding,
+      handleToggleStreet,
       handleToggleStatus,
       isReorderEnabled,
       openEditDrawer,

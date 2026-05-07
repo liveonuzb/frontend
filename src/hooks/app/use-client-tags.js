@@ -1,12 +1,14 @@
 import React from "react";
-import { filter, get, includes, map } from "lodash";
+import { filter, get, includes, map, uniqBy } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
-import { usePatchQuery } from "@/hooks/api";
+import { useGetQuery, usePatchQuery, usePostQuery } from "@/hooks/api";
 import {
   COACH_CLIENTS_QUERY_KEY,
   COACH_CLIENT_DETAIL_QUERY_KEY,
   COACH_CLIENT_SUMMARY_QUERY_KEY,
 } from "./use-coach-query-keys";
+
+const COACH_CLIENT_TAGS_QUERY_KEY = ["coach", "client-tags"];
 
 const PREDEFINED_TAGS = [
   { id: "beginner", label: "Boshlang'ich", color: "bg-blue-500/10 text-blue-700 border-blue-500/20" },
@@ -30,8 +32,30 @@ const normalizeTagIds = (client) => {
   return map(tags, (tag) => get(tag, "id") || get(tag, "slug")).filter(Boolean);
 };
 
+const resolveAvailableTags = (tagsData) => {
+  const serverTags = get(tagsData, "data.data.items", get(tagsData, "data.items", []));
+  return uniqBy(
+    [
+      ...(Array.isArray(serverTags) ? serverTags : []),
+      ...PREDEFINED_TAGS.map((tag) => ({ ...tag, slug: tag.id, isDefault: true })),
+    ],
+    (tag) => get(tag, "id") || get(tag, "slug"),
+  );
+};
+
+export const useClientTagCatalog = () => {
+  const { data: tagsData } = useGetQuery({
+    url: "/coach/clients/tags",
+    queryProps: {
+      queryKey: COACH_CLIENT_TAGS_QUERY_KEY,
+    },
+  });
+  return React.useMemo(() => resolveAvailableTags(tagsData), [tagsData]);
+};
+
 export const useClientTags = (clients = []) => {
   const queryClient = useQueryClient();
+  const availableTags = useClientTagCatalog();
   const updateTagsMutation = usePatchQuery({
     queryKey: COACH_CLIENTS_QUERY_KEY,
     mutationProps: {
@@ -50,6 +74,16 @@ export const useClientTags = (clients = []) => {
               })
             : Promise.resolve(),
         ]);
+      },
+    },
+  });
+  const createTagMutation = usePostQuery({
+    queryKey: COACH_CLIENT_TAGS_QUERY_KEY,
+    mutationProps: {
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: COACH_CLIENT_TAGS_QUERY_KEY,
+        });
       },
     },
   });
@@ -111,14 +145,26 @@ export const useClientTags = (clients = []) => {
     [saveClientTags],
   );
 
+  const createTag = React.useCallback(
+    async (payload) =>
+      createTagMutation.mutateAsync({
+        url: "/coach/clients/tags",
+        attributes: payload,
+      }),
+    [createTagMutation],
+  );
+
   return {
     getClientTags,
     addTag,
     removeTag,
     toggleTag,
     clearClientTags,
-    predefinedTags: PREDEFINED_TAGS,
+    createTag,
+    predefinedTags: availableTags,
+    availableTags,
     isUpdatingTags: updateTagsMutation.isPending,
+    isCreatingTag: createTagMutation.isPending,
   };
 };
 

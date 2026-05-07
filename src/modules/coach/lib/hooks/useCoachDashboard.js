@@ -23,6 +23,12 @@ const DEFAULT_DASHBOARD = {
   recentCheckIns: [],
   templates: [],
   alerts: [],
+  operationalKpis: {
+    clients: {},
+    plans: {},
+    sessions: {},
+    revenue: {},
+  },
   paymentChart: {
     week: [],
     month: [],

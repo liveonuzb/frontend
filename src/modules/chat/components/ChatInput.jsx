@@ -23,10 +23,12 @@ import {
     LibraryIcon,
 } from "lucide-react";
 import StickerPicker from "@/components/chat/sticker-picker";
-import VoiceRecorder from "@/components/chat/voice-recorder";
 import { cn } from "@/lib/utils";
 import { useChatStore } from "@/store";
 import { useCoachSnippets, useCoachAvailability } from "@/hooks/app/use-coach";
+import { CHAT_ATTACHMENT_ACCEPT } from "@/modules/chat/lib/chat-attachment-policy.js";
+import { buildGroundedCoachReplySuggestions } from "@/modules/chat/lib/coach-reply-assist.js";
+import { isChatFeatureEnabled } from "@/modules/chat/lib/chat-feature-flags.js";
 
 const TIMER_OPTIONS = [
     { label: "O'chirilgan", value: null },
@@ -38,16 +40,11 @@ const TIMER_OPTIONS = [
 const ChatInput = ({
     input,
     setInput,
-    isRecording,
     setIsRecording,
     handleSendMessage,
-    handleVoiceSend,
     handleFileSelect,
     fileInputRef,
     isCoach,
-    shareContent,
-    workoutPlans,
-    mealPlans,
     stickerOpen,
     setStickerOpen,
     handleStickerSelect,
@@ -57,18 +54,16 @@ const ChatInput = ({
     replyingTo,
     setReplyingTo,
     editingMsg,
-    setEditingMsg,
-    multiSelectMode,
-    exitMultiSelect,
-    selectedMsgIds,
-    handleMultiDelete,
-    handleMultiForward,
     sendBooking,
     getAISuggestions,
     chatMessages = [],
+    coachReplyContext = null,
     disabled = false,
+    disabledReason = "Bu chat bloklangan",
+    connectionState = "online",
 }) => {
     const inputRef = React.useRef(null);
+    const canUseSelfDestructMessages = isChatFeatureEnabled("selfDestructMessages");
     const { snippets } = useCoachSnippets();
     const [showBookingDialog, setShowBookingDialog] = useState(false);
     const [showLibraryDialog, setShowLibraryDialog] = useState(false);
@@ -97,22 +92,34 @@ const ChatInput = ({
 
     const onSend = (text = null) => {
         if (disabled) return;
-        handleSendMessage(text, null, "text", ttl);
+        handleSendMessage(
+            text,
+            null,
+            "text",
+            canUseSelfDestructMessages ? ttl : null,
+        );
         setTtl(null);
-    };
-
-    const simulateVideoNote = () => {
-        toast.promise(new Promise(r => setTimeout(r, 2000)), {
-            loading: 'Video...',
-            success: () => { handleSendMessage(null, null, "video_note", ttl); return 'Yuborildi!'; },
-            error: 'Xato',
-        });
     };
 
     const aiSuggestions = React.useMemo(() => {
         const lastOtherMsg = findLast(chatMessages, m => m.from !== "me");
-        return getAISuggestions(lastOtherMsg?.text);
-    }, [chatMessages, getAISuggestions]);
+        if (isCoach && coachReplyContext) {
+            return buildGroundedCoachReplySuggestions({
+                lastMessage: lastOtherMsg,
+                clientContext: coachReplyContext,
+            });
+        }
+
+        return getAISuggestions(lastOtherMsg?.text).map((text) => ({
+            text,
+            reason: "Oxirgi xabar matniga asoslangan tezkor draft",
+        }));
+    }, [chatMessages, coachReplyContext, getAISuggestions, isCoach]);
+
+    const applySuggestion = (suggestion) => {
+        if (disabled) return;
+        setInput(suggestion.text || suggestion);
+    };
 
     const typingTimeoutRef = React.useRef(null);
 
@@ -130,11 +137,13 @@ const ChatInput = ({
         }
     };
 
+    const isOffline = connectionState === "offline";
+
     return (
-        <div className="sticky bottom-0 z-20 shrink-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/90">
+        <div className="sticky bottom-0 z-20 shrink-0 border-t bg-background/95 pb-[max(env(safe-area-inset-bottom),0px)] backdrop-blur supports-[backdrop-filter]:bg-background/90">
             {/* Dialogs scaled for mobile */}
             {(showBookingDialog || showLibraryDialog) && (
-                <div className="absolute inset-x-4 bottom-full mb-3 bg-background border rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-bottom-2 max-h-[60vh] overflow-y-auto">
+                <div className="fixed inset-x-3 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-50 max-h-[min(70svh,26rem)] overflow-y-auto overscroll-contain rounded-2xl border bg-background p-3 shadow-2xl animate-in fade-in slide-in-from-bottom-2 md:absolute md:inset-x-4 md:bottom-full md:mb-3 md:max-h-[60vh] md:p-4">
                     <div className="flex items-center justify-between mb-3 border-b pb-2">
                         <h3 className="font-bold text-xs uppercase tracking-wider">
                             {showBookingDialog ? "Uchrashuv" : "Kutubxona"}
@@ -158,16 +167,16 @@ const ChatInput = ({
 
                     {showBookingDialog && (
                         <div className="space-y-3">
-                            <input value={bookingTitle} onChange={e => setBookingTitle(e.target.value)} className="w-full h-9 px-3 rounded-lg border bg-muted/30 text-sm" placeholder="Mavzu..." />
-                            <div className="flex gap-2">
-                                <input type="date" value={bookingDate} onChange={e => setBookingDate(e.target.value)} className="flex-1 h-8 px-2 rounded-md border text-xs bg-background" />
-                                <Button size="xs" variant="outline" className="h-8 gap-1.5" onClick={handleSmartScan}>
+                            <input value={bookingTitle} onChange={e => setBookingTitle(e.target.value)} className="h-10 w-full rounded-lg border bg-muted/30 px-3 text-sm" placeholder="Mavzu..." />
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+                                <input type="date" value={bookingDate} onChange={e => setBookingDate(e.target.value)} className="h-9 min-w-0 rounded-md border bg-background px-2 text-xs" />
+                                <Button size="sm" variant="outline" className="h-9 gap-1.5" onClick={handleSmartScan}>
                                     <SparklesIcon className="size-3 text-primary" /> Smart Scan
                                 </Button>
                             </div>
                             <div className="flex flex-wrap gap-1.5 min-h-[32px]">
                                 {bookingSlots.map(t => (
-                                    <button key={t} onClick={() => setBookingSlots(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])} className={cn("px-2.5 py-1 rounded-md border text-[10px]", bookingSlots.includes(t) ? "bg-primary text-primary-foreground border-primary" : "bg-muted/20")}>{t}</button>
+                                    <button key={t} onClick={() => setBookingSlots(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])} className={cn("min-h-8 rounded-md border px-2.5 py-1 text-[10px]", bookingSlots.includes(t) ? "bg-primary text-primary-foreground border-primary" : "bg-muted/20")}>{t}</button>
                                 ))}
                             </div>
                             <Button
@@ -212,23 +221,45 @@ const ChatInput = ({
 
             {/* AI Suggestions Bar */}
             {!input.trim() && !replyingTo && !editingMsg && (
-                <div className="px-3 py-1.5 flex gap-1.5 overflow-x-auto no-scrollbar bg-background/50 items-center">
+                <div className="flex max-h-24 items-center gap-1.5 overflow-x-auto bg-background/50 px-3 py-1.5 no-scrollbar">
                     {aiSuggestions.map((text, i) => (
-                        <button key={`ai-${i}`} onClick={() => onSend(text)} className="whitespace-nowrap px-3 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-[10px] md:text-xs hover:bg-primary/20 transition-all flex items-center gap-1.5 shadow-sm">
-                            <SparklesIcon className="size-3" />{text}
+                        <button
+                            key={`ai-${i}`}
+                            onClick={() => applySuggestion(text)}
+                            title={text.reason}
+                            className="min-w-[180px] max-w-[min(78vw,320px)] rounded-xl border border-primary/20 bg-primary/10 px-3 py-2 text-left text-[10px] text-primary shadow-sm transition-all hover:bg-primary/20 md:min-w-[220px] md:text-xs"
+                        >
+                            <span className="flex items-center gap-1.5 font-medium">
+                                <SparklesIcon className="size-3 shrink-0" />
+                                <span className="line-clamp-2">{text.text}</span>
+                            </span>
+                            {text.reason ? (
+                                <span className="mt-1 block truncate text-[9px] opacity-70">
+                                    {text.reason}
+                                </span>
+                            ) : null}
                         </button>
                     ))}
                     {isCoach && snippets.map((snippet) => (
-                        <button key={snippet.id} onClick={() => setInput(snippet.text)} className="whitespace-nowrap px-3 py-1.5 rounded-full border bg-background text-[10px] md:text-xs hover:bg-muted transition-colors font-medium">{snippet.title}</button>
+                        <button key={snippet.id} onClick={() => setInput(snippet.text)} className="max-w-[72vw] truncate whitespace-nowrap rounded-full border bg-background px-3 py-1.5 text-[10px] font-medium transition-colors hover:bg-muted md:text-xs">{snippet.title}</button>
                     ))}
                 </div>
             )}
 
-            <div className="p-2 md:p-4 shadow-lg shadow-black/5">
-                <div className="flex items-center gap-1.5 max-w-6xl mx-auto">
+            {(disabled || isOffline) && (
+                <div className={cn(
+                    "mx-2 mt-2 rounded-xl border px-3 py-2 text-[11px] font-medium md:mx-4 md:text-xs",
+                    disabled ? "border-destructive/20 bg-destructive/5 text-destructive" : "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+                )}>
+                    {disabled ? disabledReason : "Internet aloqasi yo'q. Yuborilmagan xabarlar retry tugmasi bilan ko'rinadi."}
+                </div>
+            )}
+
+            <div className="p-2 shadow-lg shadow-black/5 md:p-4">
+                <div className="mx-auto flex max-w-6xl items-end gap-1.5">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="size-9 rounded-full hover:bg-primary/10 shrink-0"><PaperclipIcon className="size-4 md:size-5" /></Button>
+                            <Button variant="ghost" size="icon" className="size-9 shrink-0 rounded-full hover:bg-primary/10" disabled={disabled}><PaperclipIcon className="size-4 md:size-5" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" className="w-48 rounded-xl shadow-2xl">
                             {isCoach && (
@@ -238,42 +269,45 @@ const ChatInput = ({
                                     <DropdownMenuSeparator />
                                 </>
                             )}
-                            <DropdownMenuItem onClick={() => fileInputRef.current.click()} className="text-xs p-2.5 cursor-pointer"><ImageIcon className="mr-2 size-4 text-primary" />Media</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => fileInputRef.current?.click()} className="text-xs p-2.5 cursor-pointer"><ImageIcon className="mr-2 size-4 text-primary" />Media</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
-                        <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelect} />
+                        <input ref={fileInputRef} type="file" accept={CHAT_ATTACHMENT_ACCEPT} className="hidden" onChange={handleFileSelect} />
                     
                     <div className={cn(
-                        "relative flex-1 flex items-center gap-1 bg-muted/50 rounded-2xl px-3 pr-1 border focus-within:ring-2 focus-within:ring-primary/50 transition-all",
+                        "relative flex min-w-0 flex-1 items-end gap-1 rounded-2xl border bg-muted/50 px-2 py-1 pr-1 transition-all focus-within:ring-2 focus-within:ring-primary/50 md:px-3",
                         disabled && "opacity-60",
                     )}>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <button
-                                    disabled={disabled}
-                                    className={cn("size-7 rounded-full flex items-center justify-center transition-colors", ttl ? "bg-orange-500 text-white" : "hover:bg-background/50 text-muted-foreground")}
-                                >
-                                    <TimerIcon className="size-4" />
-                                </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start" className="w-32">
-                                {TIMER_OPTIONS.map(opt => (
-                                    <DropdownMenuItem key={opt.label} onClick={() => setTtl(opt.value)} className="text-xs">{opt.label}</DropdownMenuItem>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                        {canUseSelfDestructMessages && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <button
+                                        disabled={disabled}
+                                        className={cn("mb-1 size-7 shrink-0 rounded-full flex items-center justify-center transition-colors", ttl ? "bg-orange-500 text-white" : "hover:bg-background/50 text-muted-foreground")}
+                                    >
+                                        <TimerIcon className="size-4" />
+                                    </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="w-32">
+                                    {TIMER_OPTIONS.map(opt => (
+                                        <DropdownMenuItem key={opt.label} onClick={() => setTtl(opt.value)} className="text-xs">{opt.label}</DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
 
-                        <input
+                        <textarea
                             ref={inputRef}
                             value={input}
                             disabled={disabled}
                             onChange={handleInputChange}
                             onKeyDown={handleKeyDown}
-                            className="flex-1 h-10 md:h-12 bg-transparent border-0 focus:ring-0 text-sm outline-none"
-                            placeholder={disabled ? "Bu chat bloklangan" : ttl ? `Self-destruct: ${find(TIMER_OPTIONS, o => o.value === ttl).label}` : "Xabar..."}
+                            rows={1}
+                            className="field-sizing-content max-h-32 min-h-10 flex-1 resize-none overflow-y-auto bg-transparent py-2.5 text-sm outline-none focus:ring-0 md:min-h-12"
+                            placeholder={disabled ? disabledReason : canUseSelfDestructMessages && ttl ? `Self-destruct: ${find(TIMER_OPTIONS, o => o.value === ttl).label}` : "Xabar..."}
                         />
                         
-                        <Button variant="ghost" size="icon" className="size-8" onClick={() => setStickerOpen(!stickerOpen)} disabled={disabled}><SmileIcon className="size-4 text-muted-foreground" /></Button>
+                        <Button variant="ghost" size="icon" className="mb-1 size-8 shrink-0" onClick={() => setStickerOpen(!stickerOpen)} disabled={disabled}><SmileIcon className="size-4 text-muted-foreground" /></Button>
                         <StickerPicker open={stickerOpen} onClose={() => setStickerOpen(false)} onSelect={handleStickerSelect} />
                     </div>
 

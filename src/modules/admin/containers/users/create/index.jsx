@@ -33,6 +33,11 @@ const ROLE_OPTIONS = [
   { value: "FINANCE", label: "Finance" },
   { value: "GROWTH", label: "Growth" },
   { value: "READONLY_ADMIN", label: "Readonly admin" },
+  { value: "ADMIN", label: "Admin" },
+  { value: "MODERATOR", label: "Moderator" },
+  { value: "COACH_MANAGER", label: "Coach manager" },
+  { value: "NUTRITION_MANAGER", label: "Nutrition manager" },
+  { value: "WORKOUT_MANAGER", label: "Workout manager" },
 ];
 
 const CreateUser = () => {
@@ -141,9 +146,7 @@ const CreateUser = () => {
               <Label className="text-xs font-bold">Telefon</Label>
               <PhoneInput
                 value={form.phone}
-                onChange={(value) =>
-                  setForm((c) => ({ ...c, phone: value }))
-                }
+                onChange={(value) => setForm((c) => ({ ...c, phone: value }))}
                 placeholder="+998 90 123 45 67"
               />
             </div>

@@ -16,6 +16,7 @@ import {
 } from "@/components/reui/data-grid";
 import { useBreadcrumbStore } from "@/store";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
+import { UserBlockAlert } from "@/modules/admin/components/user-block-alert.jsx";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
@@ -78,6 +79,10 @@ const Index = () => {
     queryKey: ["admin", "users"],
     listKey: ["admin", "dashboard"],
   });
+  const { mutateAsync: patchUserBlockStatus } = usePatchQuery({
+    queryKey: ["admin", "users"],
+    listKey: ["admin", "dashboard"],
+  });
 
   const updateCoachStatus = React.useCallback(
     async (userId, status) =>
@@ -100,6 +105,7 @@ const Index = () => {
     [patchMarketplaceStatus],
   );
   const [pendingCoachIds, setPendingCoachIds] = React.useState({});
+  const [blockCandidate, setBlockCandidate] = React.useState(null);
 
   const setCoachPendingState = React.useCallback((coachId, isPending) => {
     if (!coachId) return;
@@ -187,12 +193,56 @@ const Index = () => {
     [navigate],
   );
 
+  const handleBlockToggle = React.useCallback((coach) => {
+    setBlockCandidate(coach);
+  }, []);
+
+  const confirmBlockToggle = React.useCallback(async () => {
+    if (!canManageSupport || !blockCandidate) return;
+
+    const coachId = get(blockCandidate, "id");
+    if (!coachId) return;
+
+    const isBlocked = get(blockCandidate, "status") === "banned";
+
+    setCoachPendingState(coachId, true);
+    try {
+      await patchUserBlockStatus({
+        url: `/admin/users/${coachId}/${isBlocked ? "unblock" : "block"}`,
+        attributes: {},
+      });
+      toast.success(
+        isBlocked
+          ? "Murabbiy blokdan chiqarildi"
+          : "Murabbiy bloklandi",
+      );
+      setBlockCandidate(null);
+      refetch();
+    } catch (error) {
+      const message = get(error, "response.data.message");
+      toast.error(
+        isArray(message)
+          ? join(message, ", ")
+          : message || "Murabbiy holatini yangilab bo'lmadi",
+      );
+    } finally {
+      setCoachPendingState(coachId, false);
+    }
+  }, [
+    blockCandidate,
+    canManageSupport,
+    patchUserBlockStatus,
+    refetch,
+    setCoachPendingState,
+  ]);
+
   const columns = useColumns({
     canManageSupport,
     isCoachActionPending,
     onView: handleViewCoach,
     onStatusUpdate: handleStatusUpdate,
     onMarketplaceUpdate: handleMarketplaceStatusUpdate,
+    onBlockToggle: handleBlockToggle,
   });
 
   const table = useReactTable({
@@ -269,6 +319,16 @@ const Index = () => {
             sizes={[10, 20, 50, 100]}
           />
         </DataGrid>
+
+        <UserBlockAlert
+          user={blockCandidate}
+          open={Boolean(blockCandidate)}
+          onOpenChange={(open) => !open && setBlockCandidate(null)}
+          onConfirm={confirmBlockToggle}
+          isPending={Boolean(
+            blockCandidate && isCoachActionPending(get(blockCandidate, "id")),
+          )}
+        />
 
         <Outlet />
       </div>

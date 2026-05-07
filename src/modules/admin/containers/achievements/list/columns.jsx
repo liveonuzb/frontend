@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 import React from "react";
 import { get, map as lodashMap } from "lodash";
 import dayjs from "dayjs";
@@ -11,6 +10,7 @@ import {
   DataGridTableDndRowHandle,
 } from "@/components/reui/data-grid";
 import { cn } from "@/lib/utils";
+import SafeAdminText from "@/modules/admin/components/safe-admin-text.jsx";
 import {
   ACHIEVEMENT_CATEGORY_LABELS,
   ACHIEVEMENT_METRIC_LABELS,
@@ -130,10 +130,18 @@ export const useColumns = ({
             get(item, "description");
           return (
             <div className="min-w-0">
-              <div className="truncate font-medium">{name}</div>
-              <div className="line-clamp-1 text-xs text-muted-foreground">
-                {description}
-              </div>
+              <SafeAdminText
+                as="div"
+                className="truncate font-medium"
+                value={name}
+                fallback="Nomsiz"
+                title
+              />
+              <SafeAdminText
+                as="div"
+                className="line-clamp-1 text-xs text-muted-foreground"
+                value={description}
+              />
             </div>
           );
         },

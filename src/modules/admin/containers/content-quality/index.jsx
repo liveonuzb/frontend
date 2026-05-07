@@ -71,7 +71,7 @@ const summaryCards = [
   {
     key: "safety",
     title: "Safety",
-    description: "Workout safety rule yetishmayotgan joylar",
+    description: "Workout safety va kaloriya estimate muammolari",
     icon: ShieldCheckIcon,
   },
 ];
@@ -188,7 +188,10 @@ const getIssueActionPath = ({ sectionKey, groupKey, issueId }) => {
       return `${catalogListRoutes.foods}/recipe/${issueId}`;
     }
 
-    if (groupKey === "ingredientsWithoutNutrition") {
+    if (
+      groupKey === "ingredientsWithoutNutrition" ||
+      groupKey === "ingredientsWithImpossibleCalories"
+    ) {
       return `${catalogListRoutes.ingredients}/edit/${issueId}`;
     }
 
@@ -245,6 +248,12 @@ const IssueList = ({ items = [], sectionKey, groupKey }) => {
                       </Badge>
                     ))
                   : null}
+                {example.trackingType ? (
+                  <Badge variant="outline">{example.trackingType}</Badge>
+                ) : null}
+                {example.issue ? (
+                  <Badge variant="secondary">{example.issue}</Badge>
+                ) : null}
                 <Button
                   asChild
                   size="sm"
@@ -323,6 +332,8 @@ const matchesIssueSearch = (issue, search) => {
     ...(Array.isArray(issue.missingLanguages) ? issue.missingLanguages : []),
     ...(Array.isArray(issue.missingModes) ? issue.missingModes : []),
     issue.budgetTier,
+    issue.trackingType,
+    issue.issue,
   ]
     .filter((item) => item !== null && item !== undefined)
     .join(" ")

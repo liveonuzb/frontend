@@ -73,6 +73,51 @@ const SWITCH_COLUMN_META = {
   cellClassName: "text-center",
 };
 
+const SAFETY_TARGET_OPTIONS = [
+  {
+    value: "workoutId",
+    label: "Workout",
+    placeholder: "Workout tanlang",
+  },
+  {
+    value: "workoutCategoryId",
+    label: "Kategoriya",
+    placeholder: "Kategoriya tanlang",
+  },
+  {
+    value: "workoutBodyPartId",
+    label: "Tana qismi",
+    placeholder: "Tana qismini tanlang",
+  },
+  {
+    value: "workoutMuscleId",
+    label: "Mushak",
+    placeholder: "Mushak tanlang",
+  },
+  {
+    value: "workoutEquipmentId",
+    label: "Jihoz",
+    placeholder: "Jihoz tanlang",
+  },
+];
+
+const SAFETY_TARGET_TYPE_LABELS = {
+  workout: "Workout",
+  workoutCategory: "Kategoriya",
+  workoutBodyPart: "Tana qismi",
+  workoutMuscle: "Mushak",
+  workoutEquipment: "Jihoz",
+};
+
+const getSafetyTargetOption = (value) =>
+  SAFETY_TARGET_OPTIONS.find((option) => option.value === value) ??
+  SAFETY_TARGET_OPTIONS[0];
+
+const getSafetyEntityLabel = (entity, language) =>
+  resolveLabel(get(entity, "translations"), get(entity, "name"), language) ||
+  get(entity, "key") ||
+  "-";
+
 const ListPage = () => {
   const navigate = useNavigate();
   const { setBreadcrumbs } = useBreadcrumbStore();
@@ -158,7 +203,8 @@ const ListPage = () => {
   );
   const [safetyForm, setSafetyForm] = React.useState({
     healthConstraintId: "",
-    workoutId: "",
+    targetType: "workoutId",
+    targetId: "",
     severity: "blocked",
     reason: "",
     replacementGuidance: "",
@@ -252,6 +298,32 @@ const ListPage = () => {
     params: { pageSize: 100, status: "active", sortBy: "name" },
     queryProps: { queryKey: ["admin", "workouts", "safety-options"] },
   });
+  const { data: safetyWorkoutCategoriesData } = useGetQuery({
+    url: "/admin/workout-categories",
+    params: { pageSize: 100, status: "active", sortBy: "orderKey" },
+    queryProps: {
+      queryKey: ["admin", "workout-categories", "safety-options"],
+    },
+  });
+  const { data: safetyWorkoutBodyPartsData } = useGetQuery({
+    url: "/admin/workout-body-parts",
+    params: { pageSize: 100, status: "active", sortBy: "orderKey" },
+    queryProps: {
+      queryKey: ["admin", "workout-body-parts", "safety-options"],
+    },
+  });
+  const { data: safetyWorkoutMusclesData } = useGetQuery({
+    url: "/admin/workout-muscles",
+    params: { pageSize: 100, status: "active", sortBy: "orderKey" },
+    queryProps: { queryKey: ["admin", "workout-muscles", "safety-options"] },
+  });
+  const { data: safetyWorkoutEquipmentsData } = useGetQuery({
+    url: "/admin/workout-equipments",
+    params: { pageSize: 100, status: "active", sortBy: "orderKey" },
+    queryProps: {
+      queryKey: ["admin", "workout-equipments", "safety-options"],
+    },
+  });
   const { data: safetyRulesData, refetch: refetchSafetyRules } = useGetQuery({
     url: "/admin/workout-safety-rules",
     params: { pageSize: 50 },
@@ -261,7 +333,44 @@ const ListPage = () => {
   const meta = get(data, "data.meta", { total: 0, totalPages: 1 });
   const safetyConstraints = get(safetyConstraintsData, "data.data", []);
   const safetyWorkouts = get(safetyWorkoutsData, "data.data", []);
+  const safetyWorkoutCategories = get(
+    safetyWorkoutCategoriesData,
+    "data.data",
+    [],
+  );
+  const safetyWorkoutBodyParts = get(
+    safetyWorkoutBodyPartsData,
+    "data.data",
+    [],
+  );
+  const safetyWorkoutMuscles = get(safetyWorkoutMusclesData, "data.data", []);
+  const safetyWorkoutEquipments = get(
+    safetyWorkoutEquipmentsData,
+    "data.data",
+    [],
+  );
   const safetyRules = get(safetyRulesData, "data.data", []);
+  const safetyTargetItems = React.useMemo(
+    () => ({
+      workoutId: safetyWorkouts,
+      workoutCategoryId: safetyWorkoutCategories,
+      workoutBodyPartId: safetyWorkoutBodyParts,
+      workoutMuscleId: safetyWorkoutMuscles,
+      workoutEquipmentId: safetyWorkoutEquipments,
+    }),
+    [
+      safetyWorkoutBodyParts,
+      safetyWorkoutCategories,
+      safetyWorkoutEquipments,
+      safetyWorkoutMuscles,
+      safetyWorkouts,
+    ],
+  );
+  const selectedSafetyTargetItems =
+    safetyTargetItems[safetyForm.targetType] ?? [];
+  const selectedSafetyTargetOption = getSafetyTargetOption(
+    safetyForm.targetType,
+  );
   const activeLanguages = React.useMemo(() => {
     const languages = getPayload(languagesData);
     return isArray(languages)
@@ -281,14 +390,16 @@ const ListPage = () => {
   });
 
   const handleCreateSafetyRule = React.useCallback(async () => {
-    if (!safetyForm.healthConstraintId || !safetyForm.workoutId) return;
+    if (!safetyForm.healthConstraintId || !safetyForm.targetId) return;
 
     try {
+      const targetField = safetyForm.targetType || "workoutId";
+
       await createSafetyRuleMutation.mutateAsync({
         url: "/admin/workout-safety-rules",
         attributes: {
           healthConstraintId: Number(safetyForm.healthConstraintId),
-          workoutId: Number(safetyForm.workoutId),
+          [targetField]: Number(safetyForm.targetId),
           severity: safetyForm.severity,
           reason: trim(safetyForm.reason) || undefined,
           replacementGuidance:
@@ -298,7 +409,7 @@ const ListPage = () => {
       });
       setSafetyForm((current) => ({
         ...current,
-        workoutId: "",
+        targetId: "",
         reason: "",
         replacementGuidance: "",
       }));
@@ -779,7 +890,7 @@ const ListPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-3 lg:grid-cols-[1fr_1fr_160px]">
+          <div className="grid gap-3 lg:grid-cols-[1fr_160px_1fr_160px]">
             <Select
               value={safetyForm.healthConstraintId}
               onValueChange={(value) =>
@@ -805,22 +916,41 @@ const ListPage = () => {
               </SelectContent>
             </Select>
             <Select
-              value={safetyForm.workoutId}
+              value={safetyForm.targetType}
               onValueChange={(value) =>
-                setSafetyForm((current) => ({ ...current, workoutId: value }))
+                setSafetyForm((current) => ({
+                  ...current,
+                  targetType: value,
+                  targetId: "",
+                }))
               }
             >
               <SelectTrigger className="h-10 w-full">
-                <SelectValue placeholder="Workout" />
+                <SelectValue placeholder="Target turi" />
               </SelectTrigger>
               <SelectContent>
-                {safetyWorkouts.map((workout) => (
-                  <SelectItem key={workout.id} value={String(workout.id)}>
-                    {resolveLabel(
-                      workout.translations,
-                      workout.name,
-                      currentLanguage,
-                    )}
+                {SAFETY_TARGET_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={safetyForm.targetId}
+              onValueChange={(value) =>
+                setSafetyForm((current) => ({ ...current, targetId: value }))
+              }
+            >
+              <SelectTrigger className="h-10 w-full">
+                <SelectValue
+                  placeholder={selectedSafetyTargetOption.placeholder}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {selectedSafetyTargetItems.map((item) => (
+                  <SelectItem key={item.id} value={String(item.id)}>
+                    {getSafetyEntityLabel(item, currentLanguage)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -867,7 +997,7 @@ const ListPage = () => {
               type="button"
               disabled={
                 !safetyForm.healthConstraintId ||
-                !safetyForm.workoutId ||
+                !safetyForm.targetId ||
                 createSafetyRuleMutation.isPending
               }
               onClick={() => void handleCreateSafetyRule()}
@@ -893,9 +1023,20 @@ const ListPage = () => {
                       >
                         {rule.severity === "blocked" ? "Blocked" : "Caution"}
                       </Badge>
+                      <Badge variant="outline">
+                        {SAFETY_TARGET_TYPE_LABELS[get(rule, "target.type")] ||
+                          "Target"}
+                      </Badge>
                       <p className="font-medium">
-                        {get(rule, "healthConstraint.name")} {"->"}{" "}
-                        {get(rule, "target.name")}
+                        {getSafetyEntityLabel(
+                          get(rule, "healthConstraint"),
+                          currentLanguage,
+                        )}{" "}
+                        {"->"}{" "}
+                        {getSafetyEntityLabel(
+                          get(rule, "target"),
+                          currentLanguage,
+                        )}
                       </p>
                     </div>
                     {rule.reason ? (

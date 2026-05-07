@@ -7,13 +7,14 @@ import {
   CheckCircle2Icon,
   CopyIcon,
   ExternalLinkIcon,
+  FileTextIcon,
   Loader2Icon,
   LinkIcon,
   MessageSquareIcon,
   PowerIcon,
+  RefreshCwIcon,
   SendIcon,
   SettingsIcon,
-  TrashIcon,
   UsersIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -34,9 +35,14 @@ import {
   useCoachTelegramBot,
   useCoachTelegramConnect,
   useCoachTelegramDisconnect,
+  useCoachTelegramHealth,
   useCoachTelegramMessages,
   useCoachTelegramSendMessage,
   useCoachTelegramSettings,
+  useCoachTelegramTemplateDelete,
+  useCoachTelegramTemplatePreview,
+  useCoachTelegramTemplates,
+  useCoachTelegramTemplateSave,
   useCoachTelegramToggle,
   useCoachTelegramUsers,
 } from "@/modules/coach/lib/hooks/useCoachTelegram";
@@ -69,6 +75,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   DataGrid,
   DataGridContainer,
@@ -77,6 +84,7 @@ import {
 } from "@/components/reui/data-grid";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { TelegramWorkbenchTab } from "./telegram-workbench.jsx";
 
 const revealUp = {
   hidden: { opacity: 0, y: 14 },
@@ -282,8 +290,11 @@ function BotAvatar({ username }) {
 }
 
 function BotManagementPanel({ bot, apiBase, queryKey }) {
+  const [activeTab, setActiveTab] = useState("inbox");
   const [sendDrawerOpen, setSendDrawerOpen] = useState(false);
   const [sendDrawerUser, setSendDrawerUser] = useState(null);
+  const [sendDrawerInitialMode, setSendDrawerInitialMode] =
+    useState("broadcast");
   const stats = get(bot, "stats", {});
   const promo = get(bot, "promo", {});
   const promoLink = get(promo, "liveonAppBotLink", "");
@@ -350,7 +361,10 @@ function BotManagementPanel({ bot, apiBase, queryKey }) {
               <Button
                 size="sm"
                 className="gap-2 rounded-2xl"
-                onClick={() => setSendDrawerOpen(true)}
+                onClick={() => {
+                  setSendDrawerInitialMode("broadcast");
+                  setSendDrawerOpen(true);
+                }}
               >
                 <SendIcon className="h-4 w-4" />
                 Xabar yuborish
@@ -479,8 +493,12 @@ function BotManagementPanel({ bot, apiBase, queryKey }) {
         />
       </div>
 
-      <Tabs defaultValue="settings">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full flex-wrap rounded-2xl bg-muted/50 p-1.5">
+          <TabsTrigger value="inbox" className="rounded-xl px-3 py-2">
+            <MessageSquareIcon className="mr-1 h-4 w-4" />
+            Inbox
+          </TabsTrigger>
           <TabsTrigger value="settings" className="rounded-xl px-3 py-2">
             <SettingsIcon className="mr-1 h-4 w-4" />
             Sozlamalar
@@ -493,8 +511,19 @@ function BotManagementPanel({ bot, apiBase, queryKey }) {
             <MessageSquareIcon className="mr-1 h-4 w-4" />
             Xabarlar
           </TabsTrigger>
+          <TabsTrigger value="templates" className="rounded-xl px-3 py-2">
+            <FileTextIcon className="mr-1 h-4 w-4" />
+            Template
+          </TabsTrigger>
+          <TabsTrigger value="diagnostics" className="rounded-xl px-3 py-2">
+            <ActivityIcon className="mr-1 h-4 w-4" />
+            Diagnostika
+          </TabsTrigger>
         </TabsList>
 
+        <TabsContent value="inbox">
+          <TelegramWorkbenchTab apiBase={apiBase} />
+        </TabsContent>
         <TabsContent value="settings">
           <SettingsTab bot={bot} apiBase={apiBase} queryKey={queryKey} />
         </TabsContent>
@@ -510,36 +539,254 @@ function BotManagementPanel({ bot, apiBase, queryKey }) {
         <TabsContent value="messages">
           <MessagesTab apiBase={apiBase} />
         </TabsContent>
+        <TabsContent value="templates">
+          <TemplatesTab apiBase={apiBase} />
+        </TabsContent>
+        <TabsContent value="diagnostics">
+          <DiagnosticsTab
+            apiBase={apiBase}
+            enabled={activeTab === "diagnostics"}
+            onOpenSend={() => {
+              setSendDrawerInitialMode("individual");
+              setSendDrawerOpen(true);
+            }}
+          />
+        </TabsContent>
       </Tabs>
 
       <SendMessageDrawer
         open={sendDrawerOpen}
         onOpenChange={(v) => {
           setSendDrawerOpen(v);
-          if (!v) setSendDrawerUser(null);
+          if (!v) {
+            setSendDrawerUser(null);
+            setSendDrawerInitialMode("broadcast");
+          }
         }}
         initialUser={sendDrawerUser}
+        initialMode={sendDrawerInitialMode}
         apiBase={apiBase}
       />
     </div>
   );
 }
 
-function SendMessageDrawer({ open, onOpenChange, initialUser, apiBase }) {
+const resolveTelegramHealthPayload = (response) =>
+  get(response, "data.data") || get(response, "data") || {};
+
+const formatHealthTime = (value) => {
+  if (!value) return "Yo'q";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Yo'q";
+
+  return new Intl.DateTimeFormat("uz-UZ", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+};
+
+export function DiagnosticsTab({ apiBase, enabled, onOpenSend }) {
+  const {
+    data,
+    isLoading,
+    isFetching,
+    refetch,
+  } = useCoachTelegramHealth(apiBase, {
+    queryKey: [apiBase, "health"],
+    enabled,
+    refetchOnWindowFocus: false,
+  });
+  const health = resolveTelegramHealthPayload(data);
+  const webhookInfo = get(health, "webhookInfo", {});
+  const hasWebhookInfo = Boolean(webhookInfo && Object.keys(webhookInfo).length);
+
+  if (isLoading) {
+    return (
+      <Card className="mt-4 border-border/60 bg-background/80 shadow-sm">
+        <CardContent className="flex items-center gap-2 pt-5 text-sm text-muted-foreground">
+          <Loader2Icon className="size-4 animate-spin" />
+          Diagnostika yuklanmoqda
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="mt-4 space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-lg font-semibold tracking-tight">
+            Bot diagnostikasi
+          </h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Oxirgi tekshiruv: {formatHealthTime(get(health, "checkedAt"))}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            className="rounded-2xl"
+            onClick={() => refetch()}
+            disabled={isFetching}
+          >
+            {isFetching ? (
+              <Loader2Icon className="mr-2 size-4 animate-spin" />
+            ) : (
+              <RefreshCwIcon className="mr-2 size-4" />
+            )}
+            Yangilash
+          </Button>
+          <Button className="rounded-2xl" onClick={onOpenSend}>
+            <SendIcon className="mr-2 size-4" />
+            Test xabar
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-4">
+        <QuickMeta
+          label="Runtime"
+          value={get(health, "managerRegistered") ? "Registered" : "Offline"}
+          tone={get(health, "managerRegistered") ? "success" : "danger"}
+        />
+        <QuickMeta
+          label="Telegram API"
+          value={get(health, "telegramReachable") ? "Ulandi" : "Xatolik"}
+          tone={get(health, "telegramReachable") ? "success" : "danger"}
+        />
+        <QuickMeta
+          label="Webhook queue"
+          value={String(get(webhookInfo, "pendingUpdateCount", 0))}
+          tone={
+            get(webhookInfo, "pendingUpdateCount", 0) > 0
+              ? "primary"
+              : "neutral"
+          }
+        />
+        <QuickMeta
+          label="Token storage"
+          value={get(health, "tokenEncrypted") ? "Encrypted" : "Plaintext"}
+          tone={get(health, "tokenEncrypted") ? "success" : "danger"}
+        />
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <Card className="border-border/60 bg-background/80 shadow-sm">
+          <CardHeader>
+            <CardTitle>Webhook</CardTitle>
+            <CardDescription>Telegram webhook holati</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <DiagnosticRow
+              label="Local URL"
+              value={get(health, "webhookUrl") || "O'rnatilmagan"}
+              tone={get(health, "webhookUrl") ? "primary" : "danger"}
+            />
+            <DiagnosticRow
+              label="Telegram URL"
+              value={get(webhookInfo, "url") || "O'qib bo'lmadi"}
+              tone={get(webhookInfo, "url") ? "primary" : "danger"}
+            />
+            <DiagnosticRow
+              label="Last webhook error"
+              value={
+                get(webhookInfo, "lastErrorMessage") ||
+                get(health, "webhookInfoError") ||
+                "Xatolik kuzatilmadi"
+              }
+              tone={
+                get(webhookInfo, "lastErrorMessage") ||
+                get(health, "webhookInfoError")
+                  ? "danger"
+                  : "neutral"
+              }
+            />
+            {hasWebhookInfo && (
+              <p className="text-xs text-muted-foreground">
+                Allowed updates:{" "}
+                {get(webhookInfo, "allowedUpdates", []).join(", ") || "default"}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60 bg-background/80 shadow-sm">
+          <CardHeader>
+            <CardTitle>Activity</CardTitle>
+            <CardDescription>Bot xabar va xatolik signallari</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <DiagnosticRow
+              label="Oxirgi xabar"
+              value={formatHealthTime(get(health, "lastMessageAt"))}
+              tone="neutral"
+            />
+            <DiagnosticRow
+              label="Oxirgi outgoing"
+              value={formatHealthTime(get(health, "lastOutgoingMessageAt"))}
+              tone="neutral"
+            />
+            <DiagnosticRow
+              label="Service error"
+              value={get(health, "lastError") || "Xatolik kuzatilmadi"}
+              tone={get(health, "lastError") ? "danger" : "neutral"}
+            />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function DiagnosticRow({ label, value, tone = "neutral" }) {
+  return (
+    <div className="border-b border-border/60 pb-3 last:border-b-0 last:pb-0">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+        {label}
+      </p>
+      <p
+        className={cn(
+          "mt-1 break-words text-sm font-medium leading-6",
+          tone === "primary" && "text-primary",
+          tone === "success" && "text-emerald-700",
+          tone === "danger" && "text-destructive",
+          tone === "neutral" && "text-foreground",
+        )}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+export function SendMessageDrawer({
+  open,
+  onOpenChange,
+  initialUser,
+  initialMode = "broadcast",
+  apiBase,
+}) {
   const [mode, setMode] = useState("broadcast");
   const [text, setText] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
+  const { data: templatesData } = useCoachTelegramTemplates(apiBase, {
+    queryKey: [`${apiBase}-templates-send`],
+    enabled: open,
+  });
+  const templates = get(resolveTemplatesPayload(templatesData), "items", []);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (initialUser) {
       setMode("individual");
       setSelectedUser(initialUser);
     } else {
-      setMode("broadcast");
+      setMode(initialMode);
       setSelectedUser(null);
     }
     setText("");
-  }, [initialUser, open]);
+  }, [initialMode, initialUser, open]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const { data: usersData } = useCoachTelegramUsers(
     apiBase,
@@ -549,7 +796,7 @@ function SendMessageDrawer({ open, onOpenChange, initialUser, apiBase }) {
       enabled: open && mode === "individual" && !initialUser,
     },
   );
-  const usersList = get(usersData, "data.data", []);
+  const usersList = resolveTelegramItems(usersData);
 
   const sendMutation = useCoachTelegramSendMessage();
 
@@ -672,6 +919,34 @@ function SendMessageDrawer({ open, onOpenChange, initialUser, apiBase }) {
           {/* Message textarea */}
           <div className="space-y-2">
             <p className="text-sm font-medium">Xabar</p>
+            {templates.length ? (
+              <select
+                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                value=""
+                onChange={(event) => {
+                  const template = templates.find(
+                    (item) => item.key === event.target.value,
+                  );
+                  if (!template) return;
+
+                  setText(
+                    get(template, "translations.uz") ||
+                      get(template, "translations.en") ||
+                      get(template, "translations.ru") ||
+                      "",
+                  );
+                }}
+              >
+                <option value="" disabled>
+                  Template tanlash...
+                </option>
+                {templates.map((template) => (
+                  <option key={template.key} value={template.key}>
+                    {template.label}
+                  </option>
+                ))}
+              </select>
+            ) : null}
             <Textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -817,17 +1092,19 @@ function DisconnectButton({ apiBase, queryKey }) {
         <Button
           variant="outline"
           size="sm"
-          className="rounded-2xl"
+          className="gap-2 rounded-2xl"
           disabled={disconnectMutation.isPending}
         >
-          <TrashIcon className="h-4 w-4 text-destructive" />
+          <PowerIcon className="h-4 w-4 text-destructive" />
+          Uzish
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Botni uzib olish</AlertDialogTitle>
           <AlertDialogDescription>
-            Bu bot va uning barcha ma'lumotlari o'chiriladi. Davom etasizmi?
+            Bot Telegram webhookidan uziladi va inactive holatga o'tadi.
+            Foydalanuvchi va xabarlar tarixi saqlanadi.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -838,7 +1115,7 @@ function DisconnectButton({ apiBase, queryKey }) {
               disconnectMutation.mutate({ url: `${apiBase}/disconnect` })
             }
           >
-            O'chirish
+            Uzish
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -932,6 +1209,347 @@ function SettingsTab({ bot, apiBase, queryKey }) {
   );
 }
 
+function resolveTemplatesPayload(response) {
+  return get(response, "data.data") || get(response, "data") || {};
+}
+
+function resolveTelegramItems(response) {
+  const candidates = [
+    get(response, "data.data.items"),
+    get(response, "data.items"),
+    get(response, "data.data"),
+    get(response, "data"),
+    get(response, "items"),
+  ];
+
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) return candidate;
+  }
+
+  return [];
+}
+
+function TemplatesTab({ apiBase }) {
+  const queryKey = [`${apiBase}-templates`];
+  const { data, isLoading } = useCoachTelegramTemplates(apiBase, { queryKey });
+  const saveMutation = useCoachTelegramTemplateSave(queryKey);
+  const previewMutation = useCoachTelegramTemplatePreview();
+  const deleteMutation = useCoachTelegramTemplateDelete(queryKey);
+  const payload = resolveTemplatesPayload(data);
+  const templates = get(payload, "items", []);
+  const variableOptions = get(payload, "variables", []);
+  const [selectedKey, setSelectedKey] = useState("");
+  const [activeLang, setActiveLang] = useState("uz");
+  const [draftKey, setDraftKey] = useState("");
+  const [label, setLabel] = useState("");
+  const [translations, setTranslations] = useState({ uz: "", ru: "", en: "" });
+  const [selectedVariables, setSelectedVariables] = useState([]);
+  const [sampleVariables, setSampleVariables] = useState({});
+  const [previewText, setPreviewText] = useState("");
+
+  const selectedTemplate = useMemo(
+    () => templates.find((item) => item.key === selectedKey) || null,
+    [selectedKey, templates],
+  );
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  React.useEffect(() => {
+    if (!selectedKey && templates.length) {
+      setSelectedKey(templates[0].key);
+    }
+  }, [selectedKey, templates]);
+
+  React.useEffect(() => {
+    const samples = {};
+    variableOptions.forEach((item) => {
+      samples[item.key] = item.sample || "";
+    });
+    setSampleVariables(samples);
+  }, [variableOptions]);
+
+  React.useEffect(() => {
+    if (selectedKey === "__new") {
+      setDraftKey("custom_template");
+      setLabel("Custom template");
+      setTranslations({ uz: "", ru: "", en: "" });
+      setSelectedVariables([]);
+      setPreviewText("");
+      return;
+    }
+
+    if (!selectedTemplate) return;
+
+    setDraftKey(selectedTemplate.key);
+    setLabel(selectedTemplate.label || "");
+    setTranslations({
+      uz: get(selectedTemplate, "translations.uz", ""),
+      ru: get(selectedTemplate, "translations.ru", ""),
+      en: get(selectedTemplate, "translations.en", ""),
+    });
+    setSelectedVariables(get(selectedTemplate, "variables", []));
+    setPreviewText("");
+  }, [selectedKey, selectedTemplate]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  const toggleVariable = (key) => {
+    setSelectedVariables((prev) =>
+      prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key],
+    );
+  };
+
+  const insertVariable = (key) => {
+    setTranslations((prev) => ({
+      ...prev,
+      [activeLang]: `${prev[activeLang] || ""} {{${key}}}`,
+    }));
+  };
+
+  const handleSave = () => {
+    const key = trim(draftKey);
+    if (!key) return toast.error("Template key kiriting");
+
+    saveMutation.mutate(
+      {
+        url: `${apiBase}/templates/${encodeURIComponent(key)}`,
+        attributes: {
+          label: trim(label) || key,
+          translations,
+          variables: selectedVariables,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success("Template saqlandi");
+          setSelectedKey(key.toLowerCase().replace(/[^a-z0-9_-]+/g, "_"));
+        },
+        onError: () => toast.error("Template saqlanmadi"),
+      },
+    );
+  };
+
+  const handlePreview = () => {
+    if (!trim(draftKey)) return;
+
+    previewMutation.mutate(
+      {
+        url: `${apiBase}/templates/${encodeURIComponent(trim(draftKey))}/preview`,
+        attributes: {
+          languageCode: activeLang,
+          variables: sampleVariables,
+        },
+      },
+      {
+        onSuccess: (response) => {
+          setPreviewText(
+            get(response, "data.data.text") || get(response, "data.text") || "",
+          );
+        },
+        onError: () => toast.error("Preview yaratilmadi"),
+      },
+    );
+  };
+
+  const handleDelete = () => {
+    if (!selectedTemplate || selectedTemplate.builtIn) return;
+
+    deleteMutation.mutate(
+      {
+        url: `${apiBase}/templates/${encodeURIComponent(selectedTemplate.key)}`,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Template ochirildi");
+          setSelectedKey("");
+        },
+        onError: () => toast.error("Template ochirilmadi"),
+      },
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <Card className="mt-4 border-border/60 bg-background/80 shadow-sm">
+        <CardContent className="flex items-center gap-2 pt-5 text-sm text-muted-foreground">
+          <Loader2Icon className="size-4 animate-spin" />
+          Template yuklanmoqda
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="mt-4 border-border/60 bg-background/80 shadow-sm">
+      <CardHeader>
+        <CardTitle>Telegram xabar templatelari</CardTitle>
+        <CardDescription>
+          Uzbek, Rus va Ingliz reusable matnlar hamda variable preview.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <div className="space-y-3">
+          <select
+            className="border-input bg-background w-full rounded-xl border px-3 py-2 text-sm"
+            value={selectedKey}
+            onChange={(event) => setSelectedKey(event.target.value)}
+          >
+            {templates.map((template) => (
+              <option key={template.key} value={template.key}>
+                {template.label}
+              </option>
+            ))}
+            <option value="__new">+ Yangi template</option>
+          </select>
+
+          <div className="rounded-2xl border border-border/60 bg-muted/20 p-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              Variablelar
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {variableOptions.map((variable) => (
+                <Button
+                  key={variable.key}
+                  type="button"
+                  variant={
+                    selectedVariables.includes(variable.key)
+                      ? "default"
+                      : "outline"
+                  }
+                  size="sm"
+                  className="rounded-xl"
+                  onClick={() => toggleVariable(variable.key)}
+                >
+                  {variable.key}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            <Field>
+              <FieldLabel>Template key</FieldLabel>
+              <Input
+                value={draftKey}
+                disabled={selectedTemplate?.builtIn}
+                onChange={(event) => setDraftKey(event.target.value)}
+                className="mt-2 rounded-xl font-mono"
+              />
+            </Field>
+            <Field>
+              <FieldLabel>Nomi</FieldLabel>
+              <Input
+                value={label}
+                onChange={(event) => setLabel(event.target.value)}
+                className="mt-2 rounded-xl"
+              />
+            </Field>
+          </div>
+
+          <div className="flex w-fit gap-1 rounded-2xl border border-border/60 bg-muted/20 p-1">
+            {LANG_TABS.map((lang) => (
+              <button
+                key={lang.key}
+                type="button"
+                onClick={() => setActiveLang(lang.key)}
+                className={`rounded-xl px-3 py-1.5 text-sm font-medium transition-colors ${
+                  activeLang === lang.key
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {lang.label}
+              </button>
+            ))}
+          </div>
+
+          <Textarea
+            value={translations[activeLang]}
+            onChange={(event) =>
+              setTranslations((prev) => ({
+                ...prev,
+                [activeLang]: event.target.value,
+              }))
+            }
+            rows={5}
+            className="rounded-2xl"
+          />
+
+          <div className="flex flex-wrap gap-2">
+            {variableOptions.map((variable) => (
+              <Button
+                key={variable.key}
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-xl"
+                onClick={() => insertVariable(variable.key)}
+              >
+                + {variable.key}
+              </Button>
+            ))}
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            {selectedVariables.map((variable) => (
+              <Field key={variable}>
+                <FieldLabel>{variable}</FieldLabel>
+                <Input
+                  value={sampleVariables[variable] || ""}
+                  onChange={(event) =>
+                    setSampleVariables((prev) => ({
+                      ...prev,
+                      [variable]: event.target.value,
+                    }))
+                  }
+                  className="mt-2 rounded-xl"
+                />
+              </Field>
+            ))}
+          </div>
+
+          {previewText ? (
+            <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 text-sm leading-6">
+              {previewText}
+            </div>
+          ) : null}
+
+          <div className="flex flex-wrap justify-end gap-2">
+            {selectedTemplate && !selectedTemplate.builtIn ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-2xl"
+                onClick={handleDelete}
+                disabled={deleteMutation.isPending}
+              >
+                O'chirish
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-2xl"
+              onClick={handlePreview}
+              disabled={previewMutation.isPending}
+            >
+              Preview
+            </Button>
+            <Button
+              type="button"
+              className="rounded-2xl"
+              onClick={handleSave}
+              disabled={saveMutation.isPending}
+            >
+              Saqlash
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Users tab
 // ---------------------------------------------------------------------------
@@ -949,7 +1567,7 @@ function UsersTab({ apiBase, onSendMessage }) {
     { queryKey: [`${apiBase}-users`] },
   );
 
-  const allUsers = get(data, "data.data", []);
+  const allUsers = resolveTelegramItems(data);
   const [globalFilter, setGlobalFilter] = useState("");
 
   const columns = useMemo(
@@ -1088,13 +1706,16 @@ function UsersTab({ apiBase, onSendMessage }) {
 // ---------------------------------------------------------------------------
 
 function MessagesTab({ apiBase }) {
+  const queryClient = useQueryClient();
+  const messagesQueryKey = [`${apiBase}-messages`];
   const { data, isLoading } = useCoachTelegramMessages(
     apiBase,
     { page: 1, limit: 100 },
-    { queryKey: [`${apiBase}-messages`] },
+    { queryKey: messagesQueryKey },
   );
+  const retryMutation = useCoachTelegramSendMessage();
 
-  const messages = get(data, "data.data", []);
+  const messages = resolveTelegramItems(data);
   const [userFilter, setUserFilter] = useState("all");
 
   const uniqueUsers = useMemo(() => {
@@ -1116,6 +1737,21 @@ function MessagesTab({ apiBase }) {
       (m) => (m.telegramUserId || m.userId) === userFilter,
     );
   }, [messages, userFilter]);
+
+  const handleRetryDelivery = (messageId) => {
+    retryMutation.mutate(
+      {
+        url: `${apiBase}/messages/${messageId}/retry`,
+        attributes: {},
+      },
+      {
+        onSuccess: async () => {
+          toast.success("Telegram delivery qayta yuborildi");
+          await queryClient.invalidateQueries({ queryKey: messagesQueryKey });
+        },
+      },
+    );
+  };
 
   if (isLoading)
     return (
@@ -1149,36 +1785,69 @@ function MessagesTab({ apiBase }) {
         ) : (
           <ScrollArea className="h-[480px]">
             <div className="space-y-3 pr-3">
-              {filtered.map((m) => (
-                <div
-                  key={m.id}
-                  className={`flex flex-col ${m.direction === "OUTGOING" ? "items-end" : "items-start"}`}
-                >
-                  {m.direction === "INCOMING" && (
-                    <span className="text-muted-foreground mb-0.5 ml-1 text-xs">
-                      {m.senderName || m.userName || "Foydalanuvchi"}
-                    </span>
-                  )}
+              {filtered.map((m) => {
+                const direction = String(m.direction || "").toUpperCase();
+                const isOutgoing = direction === "OUTGOING";
+                return (
                   <div
-                    className={`max-w-[70%] rounded-2xl px-4 py-2.5 text-sm ${
-                      m.direction === "OUTGOING"
-                        ? "bg-primary text-primary-foreground rounded-br-sm shadow-sm"
-                        : "bg-muted/70 ring-1 ring-border/50 rounded-bl-sm"
-                    }`}
+                    key={m.id}
+                    className={`flex flex-col ${isOutgoing ? "items-end" : "items-start"}`}
                   >
+                    {!isOutgoing && (
+                      <span className="text-muted-foreground mb-0.5 ml-1 text-xs">
+                        {m.senderName || m.userName || "Foydalanuvchi"}
+                      </span>
+                    )}
+                    <div
+                      className={`max-w-[70%] rounded-2xl px-4 py-2.5 text-sm ${
+                        isOutgoing
+                          ? "bg-primary text-primary-foreground rounded-br-sm shadow-sm"
+                          : "bg-muted/70 ring-1 ring-border/50 rounded-bl-sm"
+                      }`}
+                    >
                     <p>{m.content || `[${m.messageType}]`}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                      {m.deliveryStatus && (
+                        <Badge variant={m.deliveryStatus === "FAILED" ? "destructive" : "secondary"} className="h-5 text-[10px]">
+                          {m.deliveryStatus}
+                        </Badge>
+                      )}
+                      {m.telegramMessageId ? (
+                        <span className="text-[10px] opacity-60">
+                          TG #{m.telegramMessageId}
+                        </span>
+                      ) : null}
+                      {m.chatMessageId ? (
+                        <span className="text-[10px] opacity-60">
+                          Chat mapped
+                        </span>
+                      ) : null}
+                    </div>
+                    {m.deliveryStatus === "FAILED" && m.source === "chat_bridge" ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="mt-2 h-7 px-2 text-[10px]"
+                        disabled={retryMutation.isPending}
+                        onClick={() => handleRetryDelivery(m.id)}
+                      >
+                        <RefreshCwIcon className="mr-1 size-3" />
+                        Retry
+                      </Button>
+                    ) : null}
                     <p
                       className={`mt-1 text-right text-[10px] ${
-                        m.direction === "OUTGOING"
+                        isOutgoing
                           ? "text-primary-foreground/60"
                           : "text-muted-foreground"
                       }`}
                     >
                       {new Date(m.createdAt).toLocaleString()}
                     </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </ScrollArea>
         )}

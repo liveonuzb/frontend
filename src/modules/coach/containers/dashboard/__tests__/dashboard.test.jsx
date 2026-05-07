@@ -11,9 +11,61 @@ import {
 } from "@/modules/coach/lib/hooks";
 import CoachDashboardContainer from "../index.jsx";
 
+const { localStorageMock } = vi.hoisted(() => {
+  const storage = {
+    data: new Map(),
+    getItem: vi.fn((key) => storage.data.get(key) ?? null),
+    setItem: vi.fn((key, value) => {
+      storage.data.set(key, String(value));
+    }),
+    removeItem: vi.fn((key) => {
+      storage.data.delete(key);
+    }),
+    clear: vi.fn(() => {
+      storage.data.clear();
+    }),
+  };
+
+  Object.defineProperty(globalThis, "localStorage", {
+    value: storage,
+    configurable: true,
+  });
+
+  return { localStorageMock: storage };
+});
+
 vi.mock("@/components/page-transition", () => ({
   default: ({ children }) => <>{children}</>,
 }));
+
+vi.mock("framer-motion", async () => {
+  const React = await import("react");
+
+  return {
+    motion: new Proxy(
+      {},
+      {
+        get: (_target, element) => {
+          const MotionComponent = React.forwardRef((props, ref) => {
+            const { children, ...motionProps } = props;
+            delete motionProps.animate;
+            delete motionProps.initial;
+            delete motionProps.transition;
+
+            return React.createElement(
+              element,
+              { ...motionProps, ref },
+              children,
+            );
+          });
+          MotionComponent.displayName = `motion.${String(element)}`;
+
+          return MotionComponent;
+        },
+      },
+    ),
+  };
+});
 
 vi.mock("@/components/charts/line-chart", () => ({
   default: ({ data }) => (
@@ -43,6 +95,19 @@ const dashboardFixture = {
     monthlyPaymentCount: 4,
     overduePayments: 0,
     duePayments: 1,
+    overdueClients: 2,
+    noReplyClients: 1,
+    churnRiskClients: 1,
+    mrr: 1500000,
+    expectedRevenue: 1500000,
+    collectedRevenue: 1200000,
+    refundRate: 4,
+    planAdherenceRate: 83,
+    mealPlanCoverageRate: 90,
+    workoutPlanCoverageRate: 75,
+    sessionCompletionRate: 67,
+    completedSessions: 2,
+    cancelledSessions: 1,
   },
   recentClients: [
     {
@@ -76,6 +141,7 @@ const dashboardFixture = {
   alerts: [
     {
       id: "alert-1",
+      type: "payment_overdue",
       title: "Payment overdue",
       message: "Client needs attention",
       severity: "medium",
@@ -99,6 +165,7 @@ const renderDashboard = () =>
 describe("CoachDashboardContainer", () => {
   afterEach(() => {
     vi.clearAllMocks();
+    localStorageMock.clear();
     useAuthStore.setState({ user: null });
     useCoachDashboardStore.setState({
       timeRange: "30d",
@@ -155,8 +222,15 @@ describe("CoachDashboardContainer", () => {
 
     renderDashboard();
 
-    expect(screen.getByText("Ali Valiyev")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: /Ali Valiyev/ }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Bugungi action queue")).toBeInTheDocument();
+    expect(screen.getByText("Bugungi snapshot")).toBeInTheDocument();
+    expect(screen.getByText("Kechikkan to'lov")).toBeInTheDocument();
     expect(screen.getByText("Jami mijozlar")).toBeInTheDocument();
+    expect(screen.getAllByText("MRR").length).toBeGreaterThan(0);
+    expect(screen.getByText("Plan adherence")).toBeInTheDocument();
     expect(screen.getByText("Jasur Karimov")).toBeInTheDocument();
     expect(screen.getByTestId("payment-chart")).toHaveTextContent("Du:10");
     expect(useCoachDashboard).toHaveBeenLastCalledWith({

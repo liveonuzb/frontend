@@ -20,24 +20,37 @@ const typeLabelMap = {
   FAMILY: "Oilaviy",
 };
 
-const GiftPremiumDrawer = ({ user, open, onOpenChange }) => {
+const GiftPremiumDrawer = ({
+  user,
+  open,
+  onOpenChange,
+  queryKey = ["admin-users"],
+  listKey,
+  onGifted,
+}) => {
   const [selectedSlug, setSelectedSlug] = React.useState("");
   const [selectedPlan, setSelectedPlan] = React.useState(null);
   const [daysOverride, setDaysOverride] = React.useState("");
   const [note, setNote] = React.useState("");
 
-  const giftMutation = usePostQuery({
-    queryKey: ["admin-users"],
-  });
+  const giftMutation = usePostQuery({ queryKey, listKey });
 
-  React.useEffect(() => {
-    if (open) {
-      setSelectedSlug("");
-      setSelectedPlan(null);
-      setDaysOverride("");
-      setNote("");
-    }
-  }, [open]);
+  const resetForm = React.useCallback(() => {
+    setSelectedSlug("");
+    setSelectedPlan(null);
+    setDaysOverride("");
+    setNote("");
+  }, []);
+
+  const handleOpenChange = React.useCallback(
+    (nextOpen) => {
+      if (!nextOpen) {
+        resetForm();
+      }
+      onOpenChange(nextOpen);
+    },
+    [onOpenChange, resetForm],
+  );
 
   const displayName =
     `${get(user, "firstName", "")} ${get(user, "lastName", "")}`.trim() ||
@@ -62,7 +75,8 @@ const GiftPremiumDrawer = ({ user, open, onOpenChange }) => {
       toast.success(
         `${user.firstName || user.email || "Foydalanuvchi"}ga premium sovg'a qilindi`,
       );
-      onOpenChange(false);
+      await onGifted?.();
+      handleOpenChange(false);
     } catch (error) {
       const message = get(error, "response.data.message");
       toast.error(
@@ -71,12 +85,20 @@ const GiftPremiumDrawer = ({ user, open, onOpenChange }) => {
           : message || "Premium sovg'a qilib bo'lmadi",
       );
     }
-  }, [selectedSlug, daysOverride, note, user, giftMutation, onOpenChange]);
+  }, [
+    selectedSlug,
+    daysOverride,
+    note,
+    user,
+    giftMutation,
+    onGifted,
+    handleOpenChange,
+  ]);
 
   return (
     <FormDrawerShell
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={handleOpenChange}
       title={
         <span className="flex items-center gap-2">
           <GiftIcon className="size-5 text-amber-500" />
@@ -89,7 +111,7 @@ const GiftPremiumDrawer = ({ user, open, onOpenChange }) => {
           <Button
             variant="outline"
             className="flex-1"
-            onClick={() => onOpenChange(false)}
+            onClick={() => handleOpenChange(false)}
           >
             Bekor qilish
           </Button>

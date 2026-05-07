@@ -35,6 +35,12 @@ const DEFAULT_PAYMENT_STATS = {
     pending: 0,
     overdue: 0,
   },
+  analytics: {
+    methodBreakdown: {},
+    monthlySeries: [],
+    dailySeries: [],
+    outstandingByStatus: {},
+  },
 };
 
 export const useCoachPaymentStats = () => {
@@ -47,7 +53,42 @@ export const useCoachPaymentStats = () => {
 
   return {
     ...query,
-    stats: defaultsDeep({}, get(data, "data", {}), DEFAULT_PAYMENT_STATS),
+    stats: defaultsDeep(
+      {},
+      get(data, "data.data", get(data, "data", {})),
+      DEFAULT_PAYMENT_STATS,
+    ),
+  };
+};
+
+export const useCoachPaymentDues = (params = {}, queryProps = {}) => {
+  const { data, ...query } = useGetQuery({
+    url: "/coach/payments/dues",
+    params,
+    queryProps: {
+      queryKey: [...LIST_QUERY_KEY, "dues", params],
+      ...queryProps,
+    },
+  });
+
+  return {
+    ...query,
+    dues: get(data, "data.data.items", get(data, "data.items", [])),
+    meta: get(data, "data.data.meta", get(data, "data.meta", {})),
+  };
+};
+
+export const useCoachPayoutSummary = () => {
+  const { data, ...query } = useGetQuery({
+    url: "/coach/payments/payouts/summary",
+    queryProps: {
+      queryKey: [...LIST_QUERY_KEY, "payout-summary"],
+    },
+  });
+
+  return {
+    ...query,
+    summary: get(data, "data.data", get(data, "data", {})),
   };
 };
 

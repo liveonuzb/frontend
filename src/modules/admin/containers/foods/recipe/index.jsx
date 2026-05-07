@@ -43,7 +43,7 @@ const GramInput = ({ value, onChange }) => (
   <NumberField
     value={value ?? 0}
     onValueChange={(nextValue) => onChange(nextValue ?? 0)}
-    minValue={0}
+    minValue={1}
     step={5}
   >
     <NumberFieldGroup className="h-10 rounded-xl bg-background w-full">
@@ -76,6 +76,7 @@ const FoodRecipeDrawer = () => {
       map(get(food, "recipeItems", []), (item) => ({
         ingredientId: get(item, "ingredientId"),
         grams: toNumber(get(item, "grams")) || 0,
+        orderKey: toNumber(get(item, "orderKey")) || undefined,
       })),
     );
   }, [food]);
@@ -92,6 +93,7 @@ const FoodRecipeDrawer = () => {
             .map((row) => ({
               ingredientId: Number(row.ingredientId),
               grams: Number(row.grams),
+              orderKey: row.orderKey ? Number(row.orderKey) : undefined,
             })),
         },
       });
@@ -199,7 +201,9 @@ const FoodRecipeDrawer = () => {
                         size="icon"
                         onClick={() =>
                           setRows((current) =>
-                            current.filter((_, itemIndex) => itemIndex !== index),
+                            current.filter(
+                              (_, itemIndex) => itemIndex !== index,
+                            ),
                           )
                         }
                       >
@@ -218,7 +222,11 @@ const FoodRecipeDrawer = () => {
                   onClick={() =>
                     setRows((current) => [
                       ...current,
-                      { ingredientId: null, grams: 100 },
+                      {
+                        ingredientId: null,
+                        grams: 100,
+                        orderKey: (current.length + 1) * 1024,
+                      },
                     ])
                   }
                 >

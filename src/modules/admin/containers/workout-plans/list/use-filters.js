@@ -1,6 +1,7 @@
 import React from "react";
 import { find, get, map } from "lodash";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
+import { APPROVAL_STATUS_OPTIONS } from "./workout-plan-utils.js";
 
 const DIFFICULTY_OPTIONS = ["Boshlang'ich", "O'rta", "Yuqori"];
 const SORT_FIELDS = [
@@ -8,6 +9,8 @@ const SORT_FIELDS = [
   "difficulty",
   "daysPerWeek",
   "days",
+  "approvalStatus",
+  "version",
   "updatedAt",
   "isActive",
 ];
@@ -27,6 +30,13 @@ export const usePlanFilters = () => {
   const [difficultyFilter, setDifficultyFilter] = useQueryState(
     "difficulty",
     parseAsStringEnum(["all", ...DIFFICULTY_OPTIONS]).withDefault("all"),
+  );
+  const [approvalStatusFilter, setApprovalStatusFilter] = useQueryState(
+    "approvalStatus",
+    parseAsStringEnum([
+      "all",
+      ...APPROVAL_STATUS_OPTIONS.map((option) => option.value),
+    ]).withDefault("all"),
   );
   const [sortBy, setSortBy] = useQueryState(
     "sortBy",
@@ -76,6 +86,16 @@ export const usePlanFilters = () => {
             value: option,
             label: option,
           })),
+        ],
+      },
+      {
+        label: "Approval",
+        key: "approvalStatus",
+        type: "select",
+        defaultOperator: "is",
+        options: [
+          { value: "all", label: "Barchasi" },
+          ...APPROVAL_STATUS_OPTIONS,
         ],
       },
       {
@@ -132,29 +152,63 @@ export const usePlanFilters = () => {
       });
     }
 
+    if (approvalStatusFilter !== "all") {
+      items.push({
+        id: "approvalStatus",
+        field: "approvalStatus",
+        operator: "is",
+        values: [approvalStatusFilter],
+      });
+    }
+
     return items;
-  }, [difficultyFilter, search, statusFilter, translationsFilter]);
+  }, [
+    approvalStatusFilter,
+    difficultyFilter,
+    search,
+    statusFilter,
+    translationsFilter,
+  ]);
 
   const handleFiltersChange = React.useCallback(
     (nextFilters) => {
-      const nextSearch =
-        get(find(nextFilters, (filter) => filter.field === "q"), "values[0]", "");
-      const nextStatus =
-        get(find(nextFilters, (filter) => filter.field === "status"), "values[0]", "all");
-      const nextDifficulty =
-        get(find(nextFilters, (filter) => filter.field === "difficulty"), "values[0]", "all");
-      const nextTranslations =
-        get(find(nextFilters, (filter) => filter.field === "translations"), "values[0]", "all");
+      const nextSearch = get(
+        find(nextFilters, (filter) => filter.field === "q"),
+        "values[0]",
+        "",
+      );
+      const nextStatus = get(
+        find(nextFilters, (filter) => filter.field === "status"),
+        "values[0]",
+        "all",
+      );
+      const nextDifficulty = get(
+        find(nextFilters, (filter) => filter.field === "difficulty"),
+        "values[0]",
+        "all",
+      );
+      const nextTranslations = get(
+        find(nextFilters, (filter) => filter.field === "translations"),
+        "values[0]",
+        "all",
+      );
+      const nextApprovalStatus = get(
+        find(nextFilters, (filter) => filter.field === "approvalStatus"),
+        "values[0]",
+        "all",
+      );
 
       React.startTransition(() => {
         void setSearch(nextSearch);
         void setStatusFilter(nextStatus);
         void setDifficultyFilter(nextDifficulty);
         void setTranslationsFilter(nextTranslations);
+        void setApprovalStatusFilter(nextApprovalStatus);
         void setPageQuery("1");
       });
     },
     [
+      setApprovalStatusFilter,
       setDifficultyFilter,
       setPageQuery,
       setSearch,
@@ -201,6 +255,9 @@ export const usePlanFilters = () => {
       ...(search.trim() ? { q: search.trim() } : {}),
       ...(statusFilter !== "all" ? { status: statusFilter } : {}),
       ...(difficultyFilter !== "all" ? { difficulty: difficultyFilter } : {}),
+      ...(approvalStatusFilter !== "all"
+        ? { approvalStatus: approvalStatusFilter }
+        : {}),
       ...(translationsFilter !== "all"
         ? { translations: translationsFilter }
         : {}),
@@ -210,6 +267,7 @@ export const usePlanFilters = () => {
       pageSize,
     }),
     [
+      approvalStatusFilter,
       currentPage,
       difficultyFilter,
       pageSize,
@@ -226,6 +284,7 @@ export const usePlanFilters = () => {
     statusFilter,
     translationsFilter,
     difficultyFilter,
+    approvalStatusFilter,
     sortBy,
     sortDir,
     sorting,

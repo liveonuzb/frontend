@@ -2,10 +2,16 @@ import React from "react";
 import { get, map as lodashMap } from "lodash";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { DataGridColumnHeader, DataGridTableRowSelect, DataGridTableRowSelectAll, DataGridTableDndRowHandle } from "@/components/reui/data-grid";
+import {
+  DataGridColumnHeader,
+  DataGridTableRowSelect,
+  DataGridTableRowSelectAll,
+  DataGridTableDndRowHandle,
+} from "@/components/reui/data-grid";
 import { cn } from "@/lib/utils";
 import { getCategoryBadgeAppearance } from "@/lib/category-badge";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
+import { tagLabel } from "@/modules/admin/lib/nutrition-tags.js";
 import ActionsMenu from "./actions-menu.jsx";
 import FoodImageCell from "./food-image-cell.jsx";
 
@@ -155,6 +161,34 @@ export const useColumns = ({
             {info.getValue() === "recipe" ? "Recipe" : "Manual"}
           </Badge>
         ),
+      },
+      {
+        id: "nutritionTags",
+        header: "Taglar",
+        meta: { skeleton: adminListSkeletons.badge },
+        size: 180,
+        cell: (info) => {
+          const tags = [
+            ...(info.row.original.dietaryTags ?? []),
+            ...(info.row.original.allergenTags ?? []),
+          ];
+
+          return tags.length ? (
+            <div className="flex flex-wrap gap-1">
+              {tags.map((tag) => (
+                <Badge
+                  key={tag}
+                  variant="outline"
+                  className="h-5 px-1.5 text-[10px]"
+                >
+                  {tagLabel(tag)}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <span className="text-muted-foreground">-</span>
+          );
+        },
       },
       {
         id: "translations",

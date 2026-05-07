@@ -4,7 +4,12 @@ import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 import { get, isArray, map, trim } from "lodash";
 import dayjs from "dayjs";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { DownloadIcon, PlusIcon, RotateCcwIcon, UploadIcon } from "lucide-react";
+import {
+  DownloadIcon,
+  PlusIcon,
+  RotateCcwIcon,
+  UploadIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -27,6 +32,11 @@ import useApi from "@/hooks/api/use-api.js";
 import { cn } from "@/lib/utils";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
+import {
+  ALLERGEN_TAG_OPTIONS,
+  DIETARY_TAG_OPTIONS,
+  tagLabel,
+} from "@/modules/admin/lib/nutrition-tags.js";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
 
 import {
@@ -67,10 +77,7 @@ const ListPage = () => {
   const importFileInputRef = React.useRef(null);
   const [isExporting, setIsExporting] = React.useState(false);
   const [isImporting, setIsImporting] = React.useState(false);
-  const [name, setName] = useQueryState(
-    "name",
-    parseAsString.withDefault(""),
-  );
+  const [name, setName] = useQueryState("name", parseAsString.withDefault(""));
   const [nameOp, setNameOp] = useQueryState(
     "nameOp",
     parseAsStringEnum(TEXT_OPERATORS).withDefault("contains"),
@@ -89,6 +96,28 @@ const ListPage = () => {
   );
   const [isAllergicOp, setIsAllergicOp] = useQueryState(
     "isAllergicOp",
+    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+  );
+  const [dietaryTag, setDietaryTag] = useQueryState(
+    "dietaryTag",
+    parseAsStringEnum([
+      "all",
+      ...DIETARY_TAG_OPTIONS.map((item) => item.value),
+    ]).withDefault("all"),
+  );
+  const [dietaryTagOp, setDietaryTagOp] = useQueryState(
+    "dietaryTagOp",
+    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+  );
+  const [allergenTag, setAllergenTag] = useQueryState(
+    "allergenTag",
+    parseAsStringEnum([
+      "all",
+      ...ALLERGEN_TAG_OPTIONS.map((item) => item.value),
+    ]).withDefault("all"),
+  );
+  const [allergenTagOp, setAllergenTagOp] = useQueryState(
+    "allergenTagOp",
     parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
   );
   const [onboarding, setOnboarding] = useQueryState(
@@ -150,6 +179,10 @@ const ListPage = () => {
     statusOp === "is" &&
     isAllergic === "all" &&
     isAllergicOp === "is" &&
+    dietaryTag === "all" &&
+    dietaryTagOp === "is" &&
+    allergenTag === "all" &&
+    allergenTagOp === "is" &&
     onboarding === "all" &&
     onboardingOp === "is" &&
     hasImage === "all" &&
@@ -177,6 +210,14 @@ const ListPage = () => {
       ...(isAllergic !== "all" || isAllergicOp !== "is"
         ? { isAllergicOp }
         : {}),
+      ...(dietaryTag !== "all" ? { dietaryTag } : {}),
+      ...(dietaryTag !== "all" || dietaryTagOp !== "is"
+        ? { dietaryTagOp }
+        : {}),
+      ...(allergenTag !== "all" ? { allergenTag } : {}),
+      ...(allergenTag !== "all" || allergenTagOp !== "is"
+        ? { allergenTagOp }
+        : {}),
       ...(onboarding !== "all" ? { onboarding } : {}),
       ...(onboarding !== "all" || onboardingOp !== "is"
         ? { onboardingOp }
@@ -195,6 +236,10 @@ const ListPage = () => {
     [
       currentPage,
       deferredName,
+      allergenTag,
+      allergenTagOp,
+      dietaryTag,
+      dietaryTagOp,
       hasImage,
       hasImageOp,
       isAllergic,
@@ -256,7 +301,11 @@ const ListPage = () => {
         buildFormData(),
         { headers: { "Content-Type": "multipart/form-data" } },
       );
-      const preview = get(previewResponse, "data.data", get(previewResponse, "data"));
+      const preview = get(
+        previewResponse,
+        "data.data",
+        get(previewResponse, "data"),
+      );
 
       if (get(preview, "invalidCount", 0) > 0) {
         return { preview, job: null };
@@ -449,6 +498,34 @@ const ListPage = () => {
           ),
       },
       {
+        id: "nutritionTags",
+        header: "Taglar",
+        meta: { skeleton: adminListSkeletons.badge },
+        size: 180,
+        cell: (info) => {
+          const tags = [
+            ...(info.row.original.dietaryTags ?? []),
+            ...(info.row.original.allergenTags ?? []),
+          ];
+
+          return tags.length ? (
+            <div className="flex flex-wrap gap-1">
+              {tags.map((tag) => (
+                <Badge
+                  key={tag}
+                  variant="outline"
+                  className="h-5 px-1.5 text-[10px]"
+                >
+                  {tagLabel(tag)}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <span className="text-muted-foreground">-</span>
+          );
+        },
+      },
+      {
         accessorKey: "pricePer100g",
         header: ({ column }) => (
           <DataGridColumnHeader column={column} title="Narx / 100g" />
@@ -576,10 +653,7 @@ const ListPage = () => {
                   toast.success("Ingredient o'chirildi");
                 } catch (error) {
                   toast.error(
-                    getErrorMessage(
-                      error,
-                      "Ingredientni o'chirib bo'lmadi",
-                    ),
+                    getErrorMessage(error, "Ingredientni o'chirib bo'lmadi"),
                   );
                 }
               }}
@@ -627,6 +701,20 @@ const ListPage = () => {
           { value: "yes", label: "Allergen" },
           { value: "no", label: "Allergen emas" },
         ],
+      },
+      {
+        label: "Dietary tag",
+        key: "dietaryTag",
+        type: "select",
+        defaultOperator: "is",
+        options: [{ value: "all", label: "Barchasi" }, ...DIETARY_TAG_OPTIONS],
+      },
+      {
+        label: "Allergen tag",
+        key: "allergenTag",
+        type: "select",
+        defaultOperator: "is",
+        options: [{ value: "all", label: "Barchasi" }, ...ALLERGEN_TAG_OPTIONS],
       },
       {
         label: "Onboarding",
@@ -690,6 +778,22 @@ const ListPage = () => {
         values: isAllergic !== "all" ? [isAllergic] : [],
       });
     }
+    if (dietaryTag !== "all" || dietaryTagOp !== "is") {
+      list.push({
+        id: "dietaryTag",
+        field: "dietaryTag",
+        operator: dietaryTagOp,
+        values: dietaryTag !== "all" ? [dietaryTag] : [],
+      });
+    }
+    if (allergenTag !== "all" || allergenTagOp !== "is") {
+      list.push({
+        id: "allergenTag",
+        field: "allergenTag",
+        operator: allergenTagOp,
+        values: allergenTag !== "all" ? [allergenTag] : [],
+      });
+    }
     if (onboarding !== "all" || onboardingOp !== "is") {
       list.push({
         id: "onboarding",
@@ -718,6 +822,10 @@ const ListPage = () => {
   }, [
     hasImage,
     hasImageOp,
+    allergenTag,
+    allergenTagOp,
+    dietaryTag,
+    dietaryTagOp,
     isAllergic,
     isAllergicOp,
     name,
@@ -739,6 +847,10 @@ const ListPage = () => {
         void setStatusOp(byField("status")?.operator ?? "is");
         void setIsAllergic(byField("isAllergic")?.values?.[0] ?? "all");
         void setIsAllergicOp(byField("isAllergic")?.operator ?? "is");
+        void setDietaryTag(byField("dietaryTag")?.values?.[0] ?? "all");
+        void setDietaryTagOp(byField("dietaryTag")?.operator ?? "is");
+        void setAllergenTag(byField("allergenTag")?.values?.[0] ?? "all");
+        void setAllergenTagOp(byField("allergenTag")?.operator ?? "is");
         void setOnboarding(byField("onboarding")?.values?.[0] ?? "all");
         void setOnboardingOp(byField("onboarding")?.operator ?? "is");
         void setHasImage(byField("hasImage")?.values?.[0] ?? "all");
@@ -751,6 +863,10 @@ const ListPage = () => {
     [
       setHasImage,
       setHasImageOp,
+      setAllergenTag,
+      setAllergenTagOp,
+      setDietaryTag,
+      setDietaryTagOp,
       setIsAllergic,
       setIsAllergicOp,
       setName,

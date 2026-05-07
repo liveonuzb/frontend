@@ -14,10 +14,12 @@ import {
   COACH_WORKOUT_PLANS_QUERY_KEY,
 } from "./use-coach-query-keys";
 
+const COACH_GROUPS_URL = "/coach/groups";
+
 export const useCoachGroups = () => {
   const queryClient = useQueryClient();
   const { data, ...query } = useGetQuery({
-    url: "/coach/telegram-groups",
+    url: COACH_GROUPS_URL,
     queryProps: {
       queryKey: COACH_GROUPS_QUERY_KEY,
     },
@@ -64,7 +66,7 @@ export const useCoachGroups = () => {
   const addGroup = React.useCallback(
     async (payload) =>
       createMutation.mutateAsync({
-        url: "/coach/telegram-groups",
+        url: COACH_GROUPS_URL,
         attributes: payload,
       }),
     [createMutation],
@@ -73,7 +75,7 @@ export const useCoachGroups = () => {
   const updateGroup = React.useCallback(
     async (groupId, payload) =>
       updateMutation.mutateAsync({
-        url: `/coach/telegram-groups/${groupId}`,
+        url: `${COACH_GROUPS_URL}/${groupId}`,
         attributes: payload,
       }),
     [updateMutation],
@@ -82,7 +84,7 @@ export const useCoachGroups = () => {
   const removeGroup = React.useCallback(
     async (groupId) =>
       deleteMutation.mutateAsync({
-        url: `/coach/telegram-groups/${groupId}`,
+        url: `${COACH_GROUPS_URL}/${groupId}`,
       }),
     [deleteMutation],
   );
@@ -90,7 +92,7 @@ export const useCoachGroups = () => {
   const addClientsToGroup = React.useCallback(
     async (groupId, clientIds) =>
       addClientsMutation.mutateAsync({
-        url: `/coach/telegram-groups/${groupId}/clients`,
+        url: `${COACH_GROUPS_URL}/${groupId}/clients`,
         attributes: { clientIds },
       }),
     [addClientsMutation],
@@ -99,7 +101,7 @@ export const useCoachGroups = () => {
   const createGroupWithClients = React.useCallback(
     async (name, description, clientIds) =>
       createMutation.mutateAsync({
-        url: "/coach/telegram-groups",
+        url: COACH_GROUPS_URL,
         attributes: { name, description, clientIds },
       }),
     [createMutation],
@@ -108,7 +110,7 @@ export const useCoachGroups = () => {
   const assignMealPlanToGroup = React.useCallback(
     async (groupId, planId) =>
       assignMealPlanMutation.mutateAsync({
-        url: `/coach/telegram-groups/${groupId}/assign-meal-plan`,
+        url: `${COACH_GROUPS_URL}/${groupId}/assign-meal-plan`,
         attributes: { planId },
       }),
     [assignMealPlanMutation],
@@ -117,7 +119,7 @@ export const useCoachGroups = () => {
   const assignWorkoutPlanToGroup = React.useCallback(
     async (groupId, planId) =>
       assignWorkoutPlanMutation.mutateAsync({
-        url: `/coach/telegram-groups/${groupId}/assign-workout-plan`,
+        url: `${COACH_GROUPS_URL}/${groupId}/assign-workout-plan`,
         attributes: { planId },
       }),
     [assignWorkoutPlanMutation],

@@ -8,8 +8,10 @@ export {
   COACH_CLIENTS_QUERY_KEY,
   COACH_CLIENT_DETAIL_QUERY_KEY,
   COACH_CLIENT_SUMMARY_QUERY_KEY,
+  COACH_CLIENT_SEGMENTS_QUERY_KEY,
   COACH_CLIENT_REMINDERS_QUERY_KEY,
   COACH_CLIENT_NOTES_QUERY_KEY,
+  COACH_PACKAGES_QUERY_KEY,
   COACH_MEAL_PLANS_QUERY_KEY,
   COACH_WORKOUT_PLANS_QUERY_KEY,
   COACH_PROGRAMS_QUERY_KEY,
@@ -26,7 +28,9 @@ export {
   useCoachClientDetail,
   useCoachClientNotes,
   useCoachClientReminders,
+  useCoachClientSegments,
   useCoachClientSummary,
+  useCoachPackages,
 } from "./use-coach-clients";
 export {
   useCoachPaymentActions,

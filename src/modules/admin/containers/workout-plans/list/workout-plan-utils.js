@@ -1,10 +1,18 @@
 export const ITEMS_PER_PAGE = 10;
 export const DIFFICULTY_OPTIONS = ["Boshlang'ich", "O'rta", "Yuqori"];
+export const APPROVAL_STATUS_OPTIONS = [
+  { value: "draft", label: "Draft" },
+  { value: "pending_review", label: "Review" },
+  { value: "approved", label: "Tasdiqlangan" },
+  { value: "rejected", label: "Rad etilgan" },
+];
 
 export const emptyForm = {
   name: "",
   description: "",
   difficulty: "O'rta",
+  approvalStatus: "approved",
+  approvalReason: "",
   isActive: true,
 };
 
@@ -60,6 +68,9 @@ export function createFormFromTemplate(template, language) {
       language,
     ),
     difficulty: template?.difficulty || "O'rta",
+    approvalStatus:
+      template?.approvalStatus || (template?.isActive ? "approved" : "draft"),
+    approvalReason: template?.approvalReason || "",
     isActive: template?.isActive ?? true,
   };
 }
@@ -127,6 +138,15 @@ export function sortTemplates(templates, sortBy, sortDir, currentLanguage) {
         break;
       case "days":
         result = Number(left.days ?? 0) - Number(right.days ?? 0);
+        break;
+      case "approvalStatus":
+        result = collator.compare(
+          String(left.approvalStatus ?? ""),
+          String(right.approvalStatus ?? ""),
+        );
+        break;
+      case "version":
+        result = Number(left.version ?? 0) - Number(right.version ?? 0);
         break;
       case "totalExercises":
         result =

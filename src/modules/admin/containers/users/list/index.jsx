@@ -1,10 +1,7 @@
 import React from "react";
 import { useNavigate, Outlet } from "react-router";
 import { PlusIcon, UsersIcon } from "lucide-react";
-import {
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { get, includes, some, isArray, join } from "lodash";
 import { Button } from "@/components/ui/button";
@@ -16,14 +13,10 @@ import {
   AdminListToolbar,
 } from "@/modules/admin/components/admin-list-shell.jsx";
 import { buildAdminFilterParams } from "@/modules/admin/components/admin-filter-utils.js";
-import {
-  useGetQuery,
-  usePostQuery,
-  usePatchQuery,
-  useDeleteQuery,
-} from "@/hooks/api";
+import { useGetQuery, usePatchQuery, useDeleteQuery } from "@/hooks/api";
 import { useAuthStore } from "@/store";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
+import { UserBlockAlert } from "@/modules/admin/components/user-block-alert.jsx";
 import { PRIVILEGED_ROLES } from "../config";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
@@ -36,7 +29,13 @@ const EMPTY_ROLES = [];
 
 const Index = () => {
   const navigate = useNavigate();
-  const { canManageSupport, canManageGrowth } = useAdminPermissions();
+  const {
+    canManageSupport,
+    canManageGrowth,
+    canBlockUsers,
+    canDeleteUsers,
+    canGiftPremium: canGiftPremiumAction,
+  } = useAdminPermissions();
   const currentUserRoles = useAuthStore((state) => state.roles ?? EMPTY_ROLES);
   const isSuperAdmin = includes(currentUserRoles, "SUPER_ADMIN");
 
@@ -142,19 +141,10 @@ const Index = () => {
       queryKey: ["admin-users"],
     });
 
-  const { mutateAsync: giftPremium, isPending: isGiftingPremium } =
-    usePostQuery({
-      queryKey: ["admin-users"],
-    });
-
   const { mutateAsync: extendSubscription, isPending: isExtending } =
     usePatchQuery({
       queryKey: ["admin-users"],
     });
-
-  const { mutateAsync: cancelSubscription } = usePatchQuery({
-    queryKey: ["admin-users"],
-  });
 
   const { mutateAsync: updateCoachStatus, isPending: isUpdatingCoachStatus } =
     usePatchQuery({
@@ -164,11 +154,7 @@ const Index = () => {
   const totalCount = get(meta, "total", 0);
 
   const isUserActionPending =
-    isUpdating ||
-    isDeleting ||
-    isGiftingPremium ||
-    isExtending ||
-    isUpdatingCoachStatus;
+    isUpdating || isDeleting || isExtending || isUpdatingCoachStatus;
 
   // --- Delete ---
   const [deleteCandidate, setDeleteCandidate] = React.useState(null);
@@ -185,16 +171,16 @@ const Index = () => {
 
   const canGiftPremium = React.useCallback(
     (user) =>
-      canManageGrowth &&
+      canGiftPremiumAction &&
       canManageUser(user) &&
       !some(user?.roles ?? [user?.role], (role) =>
         includes(PRIVILEGED_ROLES, role),
       ),
-    [canManageGrowth, canManageUser],
+    [canGiftPremiumAction, canManageUser],
   );
 
   const confirmDelete = React.useCallback(async () => {
-    if (!canManageSupport || !deleteCandidate) return;
+    if (!canDeleteUsers || !deleteCandidate) return;
 
     if (!canManageUser(deleteCandidate)) {
       toast.error("Admin accountlarni faqat super admin o'chira oladi");
@@ -211,21 +197,27 @@ const Index = () => {
     } catch (error) {
       const message = get(error, "response.data.message");
       toast.error(
-        isArray(message)
-          ? join(message, ", ")
-          : message || "O'chirib bo'lmadi",
+        isArray(message) ? join(message, ", ") : message || "O'chirib bo'lmadi",
       );
     }
-  }, [canManageSupport, canManageUser, deleteCandidate, deleteUserMutation, refetch]);
+  }, [
+    canDeleteUsers,
+    canManageUser,
+    deleteCandidate,
+    deleteUserMutation,
+    refetch,
+  ]);
 
   // --- View / Edit / Gift / Ban / CoachStatus / CancelPremium ---
-  const [viewUser, setViewUser] = React.useState(null);
   const [giftUser, setGiftUser] = React.useState(null);
-  const [cancelPremiumUser, setCancelPremiumUser] = React.useState(null);
+  const [blockCandidate, setBlockCandidate] = React.useState(null);
 
-  const handleView = React.useCallback((user) => {
-    setViewUser(user);
-  }, []);
+  const handleView = React.useCallback(
+    (user) => {
+      navigate(`detail/${user.id}`);
+    },
+    [navigate],
+  );
 
   const handleEditOpen = React.useCallback(
     (user) => {
@@ -255,34 +247,48 @@ const Index = () => {
   );
 
   const handleBanToggle = React.useCallback(
-    async (user) => {
-      if (!canManageUser(user)) {
+    (user) => {
+      if (!canBlockUsers || !canManageUser(user)) {
         toast.error("Admin accountlarni faqat super admin boshqara oladi");
         return;
       }
 
-      try {
-        const nextStatus = user.status === "banned" ? "active" : "banned";
-        await updateUser({
-          url: `/admin/users/${user.id}`,
-          attributes: { status: nextStatus },
-        });
-        toast.success(
-          nextStatus === "banned"
-            ? `${user.firstName ?? "User"} bloklandi`
-            : `${user.firstName ?? "User"} blokdan chiqarildi`,
-        );
-      } catch (error) {
-        const message = get(error, "response.data.message");
-        toast.error(
-          Array.isArray(message)
-            ? message.join(", ")
-            : message || "Statusni yangilab bo'lmadi",
-        );
-      }
+      setBlockCandidate(user);
     },
-    [canManageUser, updateUser],
+    [canBlockUsers, canManageUser],
   );
+
+  const confirmBlockToggle = React.useCallback(async () => {
+    if (!canBlockUsers || !blockCandidate) return;
+
+    if (!canManageUser(blockCandidate)) {
+      toast.error("Admin accountlarni faqat super admin boshqara oladi");
+      return;
+    }
+
+    const isBlocked = blockCandidate.status === "banned";
+
+    try {
+      await updateUser({
+        url: `/admin/users/${blockCandidate.id}/${isBlocked ? "unblock" : "block"}`,
+        attributes: {},
+      });
+      toast.success(
+        isBlocked
+          ? `${blockCandidate.firstName ?? "User"} blokdan chiqarildi`
+          : `${blockCandidate.firstName ?? "User"} bloklandi`,
+      );
+      setBlockCandidate(null);
+      refetch();
+    } catch (error) {
+      const message = get(error, "response.data.message");
+      toast.error(
+        Array.isArray(message)
+          ? message.join(", ")
+          : message || "Statusni yangilab bo'lmadi",
+      );
+    }
+  }, [blockCandidate, canBlockUsers, canManageUser, refetch, updateUser]);
 
   const handleExtendPremium = React.useCallback(
     async (user) => {
@@ -310,6 +316,10 @@ const Index = () => {
     },
     [canManageGrowth, extendSubscription],
   );
+
+  const handleCancelPremium = React.useCallback(() => {
+    toast.info("Premium bekor qilish flowi hali tayyor emas");
+  }, []);
 
   const handleCoachStatusUpdate = React.useCallback(
     async (user, nextStatus) => {
@@ -343,13 +353,15 @@ const Index = () => {
     isUserActionPending,
     canManageSupport,
     canManageGrowth,
+    canBlockUsers,
+    canDeleteUsers,
     canManageUser,
     canGiftPremium,
     onView: handleView,
     onEdit: handleEditOpen,
     onGift: handleGiftOpen,
     onExtendPremium: handleExtendPremium,
-    onCancelPremium: setCancelPremiumUser,
+    onCancelPremium: handleCancelPremium,
     onBanToggle: handleBanToggle,
     onDelete: setDeleteCandidate,
     onCoachStatusUpdate: handleCoachStatusUpdate,
@@ -419,6 +431,14 @@ const Index = () => {
         open={Boolean(deleteCandidate)}
         onOpenChange={(open) => !open && setDeleteCandidate(null)}
         onConfirm={confirmDelete}
+      />
+
+      <UserBlockAlert
+        user={blockCandidate}
+        open={Boolean(blockCandidate)}
+        onOpenChange={(open) => !open && setBlockCandidate(null)}
+        onConfirm={confirmBlockToggle}
+        isPending={isUpdating}
       />
 
       <GiftPremiumDrawer

@@ -19,7 +19,10 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner.jsx";
-import { DIFFICULTY_OPTIONS } from "./workout-plan-utils.js";
+import {
+  APPROVAL_STATUS_OPTIONS,
+  DIFFICULTY_OPTIONS,
+} from "./workout-plan-utils.js";
 
 export function WorkoutPlanFormDrawer({
   open,
@@ -115,7 +118,7 @@ export function WorkoutPlanFormDrawer({
                 <div>
                   <p className="font-medium">Userga ko'rsatish</p>
                   <p className="text-sm text-muted-foreground">
-                    Faol bo'lsa ready template sifatida chiqadi.
+                    Faqat tasdiqlangan va faol shablonlar userga chiqadi.
                   </p>
                 </div>
                 <Switch
@@ -127,6 +130,49 @@ export function WorkoutPlanFormDrawer({
                     }))
                   }
                 />
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-[220px_1fr]">
+                <div className="space-y-2">
+                  <Label>Approval</Label>
+                  <Select
+                    value={form.approvalStatus}
+                    onValueChange={(value) =>
+                      setForm((current) => ({
+                        ...current,
+                        approvalStatus: value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Approval status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {APPROVAL_STATUS_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="workout-plan-approval-reason">
+                    Review izohi
+                  </Label>
+                  <Input
+                    id="workout-plan-approval-reason"
+                    value={form.approvalReason}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        approvalReason: event.target.value,
+                      }))
+                    }
+                    placeholder="Masalan: AI va coach uchun tasdiqlandi"
+                  />
+                </div>
               </div>
 
               <div className="rounded-2xl border bg-background p-4">

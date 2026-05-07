@@ -1,250 +1,152 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
-import { Link, Outlet, useLocation, useNavigate } from "react-router";
-import {
-  DumbbellIcon,
-  MessageCircleIcon,
-  PaletteIcon,
-  SparklesIcon,
-  UtensilsIcon,
-} from "lucide-react";
-import LanguageSwitcher from "@/components/language-switcher";
-import ThemeToggle from "@/components/theme-toggle";
-import ModeDrawer from "@/components/mode-drawer";
+import { Link, Outlet } from "react-router";
+import { first } from "lodash";
+import LanguageDrawerPicker from "@/components/language-drawer-picker";
+import ProductPreviewSlider, {
+  buildLiveOnProductPreviewCopy,
+} from "@/components/liveon-product-preview";
+import useAppLanguages from "@/hooks/app/use-app-languages";
 import {
   AuthMobileKeyboardProvider,
   useMobileKeyboardOpen,
 } from "@/modules/auth/lib/mobile-keyboard";
-import useAppModeTheme from "@/hooks/app/use-app-mode-theme";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button.jsx";
+import { useLanguageStore } from "@/store";
+
+const LOGO_SRC = "/madagascar/logo-main.webp";
 
 const Index = () => {
   const { t } = useTranslation();
   const keyboardOpen = useMobileKeyboardOpen();
-  const modeTheme = useAppModeTheme();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [modeDrawerOpen, setModeDrawerOpen] = useState(false);
 
-  const openSelectLanguage = () => {
-    navigate("/auth/select-language", {
-      state: { returnTo: location.pathname + location.search },
-    });
-  };
-
-  const panelCopy = {
-    panel: {
-      badge: t("auth.layout.panelPill"),
-      live: t("auth.layout.live"),
-      heroStrong: t("auth.layout.heroStrong"),
-      heroEmphasis: t("auth.layout.heroEmphasis"),
-      sub: t("auth.layout.heroDescription"),
-      foot: t("auth.layout.panelCopyright"),
-      feat: [
-        {
-          Icon: UtensilsIcon,
-          t: t("auth.layout.caloriesLabel"),
-          v: t("auth.layout.caloriesValue"),
-          d: t("auth.layout.caloriesMeta"),
-        },
-        {
-          Icon: DumbbellIcon,
-          t: t("auth.layout.workoutLabel"),
-          v: t("auth.layout.workoutValue"),
-          d: t("auth.layout.workoutMeta"),
-        },
-        {
-          Icon: MessageCircleIcon,
-          t: t("auth.layout.coachLabel"),
-          v: t("auth.layout.coachValue"),
-          d: t("auth.layout.coachMeta"),
-        },
-      ],
-    },
+  const copy = {
+    logoAlt: t("auth.layout.logoAlt"),
+    languageTitle: t("auth.layout.languageTitle"),
+    languageDescription: t("auth.layout.languageDescription"),
+    languageAriaLabel: t("auth.layout.languageAriaLabel"),
+    panelBadge: t("auth.layout.panelBadge"),
+    heroTitle: t("auth.layout.heroTitle"),
+    heroDescription: t("auth.layout.heroDescription"),
+    panelCopyright: t("auth.layout.panelCopyright"),
+    preview: buildLiveOnProductPreviewCopy(t, "auth.layout"),
   };
 
   return (
     <AuthMobileKeyboardProvider value={keyboardOpen}>
-      <div className="relative h-svh min-h-svh overflow-hidden">
+      <div className="relative min-h-svh overflow-x-hidden bg-[#f8f3ea] text-slate-950 xl:h-svh xl:overflow-hidden">
         <div
-          className={cn(
-            "pointer-events-none absolute inset-0 bg-gradient-to-b opacity-80 md:hidden",
-            modeTheme.pageTint,
-          )}
+          className="pointer-events-none absolute inset-0 bg-[linear-gradient(145deg,rgba(248,243,234,0.98)_0%,rgba(255,255,255,0.94)_46%,rgba(255,237,213,0.76)_100%)]"
+          aria-hidden="true"
         />
-        <div className="relative grid h-full min-h-0 md:grid-cols-[minmax(390px,26vw)_1fr]">
-          <section className="relative z-10 flex min-h-0 flex-col">
-            <header className="flex shrink-0 items-center justify-between px-5 py-3">
-              <Link
-                to="/"
-                className="inline-flex items-center transition-opacity hover:opacity-80"
-                aria-label={t("auth.layout.logoAlt")}
-              >
-                <img
-                  loading="lazy"
-                  src={modeTheme.assets.logo}
-                  className="size-10 object-contain"
-                  alt={t("auth.layout.logoAlt")}
-                />
-              </Link>
-              <div className="flex items-center gap-1.5">
-                <Button
-                  onClick={() => setModeDrawerOpen(true)}
-                  variant="ghost"
-                  size="icon-sm"
-                  className={"size-11"}
-                  aria-label="Change mode"
-                >
-                  <PaletteIcon className="size-4" />
-                </Button>
-                <ThemeToggle />
-                <LanguageSwitcher compact />
-              </div>
-            </header>
-            <main className="flex min-h-0 flex-1 items-center justify-center md:items-center md:pt-0 p-5">
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[linear-gradient(180deg,rgba(2,6,23,0.08),rgba(2,6,23,0))] lg:hidden"
+          aria-hidden="true"
+        />
+
+        <div className="relative grid min-h-svh xl:h-svh xl:grid-cols-[minmax(380px,420px)_1fr]">
+          <section className="relative z-10 flex min-h-svh flex-col xl:h-svh">
+            <AuthBrandHeader copy={copy} />
+            <main className="flex min-h-0 flex-1 items-center justify-center px-5 pb-8 pt-2 sm:px-7 xl:px-6">
               <Outlet />
             </main>
           </section>
-          <div className="hidden h-svh min-h-0 items-stretch overflow-hidden md:flex">
-            <MarketingPanel
-              copy={panelCopy}
-              vibe={modeTheme.key}
-              theme={modeTheme}
-            />
-          </div>
+
+          <AuthProductPanel copy={copy} />
         </div>
       </div>
-      <ModeDrawer open={modeDrawerOpen} onOpenChange={setModeDrawerOpen} />
     </AuthMobileKeyboardProvider>
   );
 };
 
-function MarketingPanel({ copy, vibe, theme }) {
+function AuthBrandHeader({ copy }) {
   return (
-    <aside
-      className="relative isolate flex h-full min-h-0 w-full flex-col overflow-hidden p-10 text-white"
-      style={{
-        background: theme.heroGradient,
-        boxShadow: `0 30px 80px -36px ${
-          theme.key === "madagascar"
-            ? "rgba(86,26,19,0.72)"
-            : theme.key === "zen"
-              ? "rgba(18,68,56,0.72)"
-              : "rgba(30,44,60,0.72)"
-        }`,
-      }}
-      key={vibe}
-    >
-      <div className="pointer-events-none absolute inset-0 overflow-hidden mix-blend-overlay">
-        <span className="absolute inset-0 bg-[radial-gradient(circle_at_18%_10%,rgba(255,255,255,0.28),transparent_33%),linear-gradient(180deg,rgba(255,255,255,0.08),transparent_42%,rgba(60,0,0,0.22))]" />
-        <span className="absolute -top-64 left-[43%] h-[680px] w-[680px] rounded-full bg-white/25" />
-        <span className="absolute -right-52 bottom-40 h-[480px] w-[480px] rounded-full bg-white/15" />
-        <span className="absolute -bottom-48 -left-40 h-[440px] w-[440px] rounded-full bg-black/10" />
-        <WavePlot vibe={vibe} waveColor={theme.waveColor} />
-      </div>
-
-      <header className="relative z-10 flex items-center justify-between gap-4">
-        <div className="inline-flex items-center gap-2.5 rounded-full border border-white/25 bg-white/13 px-4 py-2.5 text-sm font-medium tracking-wide text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.22)] backdrop-blur-md xl:text-base">
-          <span
-            className="grid size-8 place-items-center rounded-full bg-white"
-            style={{
-              color:
-                theme.key === "zen"
-                  ? "#1a7a64"
-                  : theme.key === "focus"
-                    ? "#3d5a73"
-                    : "#ef7345",
-            }}
-          >
-            <SparklesIcon className="size-3.5" />
-          </span>
-          {copy.panel.badge}
-        </div>
-      </header>
-
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col p-5">
-        <div className="max-w-[620px]">
-          <h2 className="whitespace-pre-line text-[clamp(3.35rem,5.7vw,6rem)] font-semibold leading-[0.9] tracking-[-0.068em] text-white">
-            {copy.panel.heroStrong}
-            <br />
-            <em className="font-serif text-[0.9em] font-normal italic tracking-[-0.052em] text-white/95">
-              {copy.panel.heroEmphasis}
-            </em>
-            <span className="tracking-[-0.075em]">.</span>
-          </h2>
-
-          <p className="mt-7 max-w-[30rem] text-[clamp(1.05rem,1.42vw,1.42rem)] font-normal leading-[1.55] tracking-[-0.015em] text-white/90">
-            {copy.panel.sub}
-          </p>
-        </div>
+    <header className="flex shrink-0 items-center justify-between px-5 py-4 sm:px-7 xl:px-6 xl:py-6">
+      <Link
+        to="/"
+        className="inline-flex items-center gap-3 rounded-full outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-4 focus-visible:ring-offset-[#f8f3ea]"
+        aria-label={copy.logoAlt}
+      >
         <img
           loading="lazy"
-          src={theme.assets.background}
-          alt=""
-          className={"absolute bottom-0"}
+          src={LOGO_SRC}
+          className="size-11 object-contain"
+          alt={copy.logoAlt}
         />
-      </div>
-    </aside>
+        <span className="text-lg font-black text-slate-950">LiveOn</span>
+      </Link>
+
+      <AuthLanguagePicker copy={copy} />
+    </header>
   );
 }
 
-function WavePlot({ vibe, waveColor = "#fff" }) {
-  const [tick, setTick] = useState(0);
+function AuthLanguagePicker({ copy }) {
+  const currentLanguage = useLanguageStore((state) => state.currentLanguage);
+  const setCurrentLanguage = useLanguageStore(
+    (state) => state.setCurrentLanguage,
+  );
+  const { languages } = useAppLanguages();
 
-  useEffect(() => {
-    let frameId;
+  const activeLanguages = React.useMemo(
+    () => languages.filter((language) => language.isActive !== false),
+    [languages],
+  );
 
-    const loop = () => {
-      setTick((value) => value + 0.008);
-      frameId = requestAnimationFrame(loop);
-    };
-
-    frameId = requestAnimationFrame(loop);
-
-    return () => cancelAnimationFrame(frameId);
-  }, []);
-
-  const width = 600;
-  const height = 200;
-  const points = [];
-
-  for (let x = 0; x <= width; x += 6) {
-    const base = Math.sin(x * 0.03 + tick * 2) * 6;
-    const spikeX = (x + tick * 120) % 180;
-    let spike = 0;
-
-    if (spikeX > 70 && spikeX < 90) {
-      spike = -40 * Math.exp(-Math.pow((spikeX - 78) / 3, 2));
-      spike += 28 * Math.exp(-Math.pow((spikeX - 84) / 2.5, 2));
+  React.useEffect(() => {
+    if (!activeLanguages.length) {
+      return;
     }
 
-    points.push([x, height / 2 + base + spike]);
-  }
+    const hasCurrentLanguage = activeLanguages.some(
+      (language) => language.code === currentLanguage,
+    );
 
-  const path = points
-    .map((point, index) => `${index === 0 ? "M" : "L"}${point[0]} ${point[1]}`)
-    .join(" ");
+    if (!hasCurrentLanguage) {
+      setCurrentLanguage(first(activeLanguages).code);
+    }
+  }, [activeLanguages, currentLanguage, setCurrentLanguage]);
+
+  const resolvedLanguage =
+    activeLanguages.find((language) => language.code === currentLanguage) ||
+    first(activeLanguages);
 
   return (
-    <svg
-      aria-hidden="true"
-      className="absolute bottom-[18%] left-0 right-0 h-[32%] w-full"
-      preserveAspectRatio="none"
-      style={{
-        opacity: vibe === "madagascar" ? 0.25 : 0.35,
-      }}
-      viewBox={`0 0 ${width} ${height}`}
-    >
-      <path
-        d={path}
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="2"
-        style={{ color: waveColor }}
+    <LanguageDrawerPicker
+      ariaLabel={copy.languageAriaLabel}
+      className="size-11 rounded-2xl border border-slate-200/80 bg-white/80 text-base shadow-sm hover:bg-white hover:text-slate-950 focus-visible:ring-orange-400"
+      compact
+      denseOptions
+      description={copy.languageDescription}
+      languages={activeLanguages}
+      onValueChange={setCurrentLanguage}
+      title={copy.languageTitle}
+      value={resolvedLanguage?.code || currentLanguage}
+    />
+  );
+}
+
+function AuthProductPanel({ copy }) {
+  return (
+    <aside className="relative isolate hidden h-full min-h-0 overflow-hidden bg-slate-950 text-white xl:flex">
+      <img
+        src="/madagascar/background.webp"
+        alt=""
+        loading="lazy"
+        className="absolute inset-0 size-full object-cover opacity-20"
       />
-    </svg>
+      <div
+        className="absolute inset-0 bg-[linear-gradient(120deg,rgba(2,6,23,0.98)_0%,rgba(2,6,23,0.92)_48%,rgba(15,23,42,0.72)_100%)]"
+        aria-hidden="true"
+      />
+      <div
+        className="absolute inset-0 bg-[linear-gradient(180deg,rgba(249,115,22,0.14)_0%,rgba(20,184,166,0.08)_42%,rgba(2,6,23,0.18)_100%)]"
+        aria-hidden="true"
+      />
+
+      <div className="relative z-10 flex h-full w-full min-h-0 items-center justify-center px-8 py-8 xl:px-10 2xl:px-14">
+        <ProductPreviewSlider preview={copy.preview} variant="auth" />
+      </div>
+    </aside>
   );
 }
 

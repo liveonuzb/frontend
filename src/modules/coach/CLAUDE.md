@@ -45,8 +45,8 @@
 
 - `/coach/dashboard` renders dashboard aggregate widgets through `useCoachDashboard`.
 - `/coach/courses/*` and `/coach/course-purchases/*` are the commerce entry points for coach courses and receipt review.
-- `/coach/payments/*`, `/coach/meal-plans/*`, `/coach/workout-plans/*`, `/coach/programs/*`, `/coach/challenges/*`, `/coach/telegram-groups/*`, `/coach/snippets/*`, `/coach/notifications/*`, `/coach/sessions/*`, `/coach/reports/*`, `/coach/ai/*`, `/coach/referrals/*`, and `/coach/audit-logs/*` follow the list/create/edit container pattern.
-- `/coach/groups` is a legacy redirect to `/coach/telegram-groups`.
+- `/coach/payments/*`, `/coach/meal-plans/*`, `/coach/workout-plans/*`, `/coach/programs/*`, `/coach/challenges/*`, `/coach/groups/*`, `/coach/snippets/*`, `/coach/notifications/*`, `/coach/sessions/*`, `/coach/reports/*`, `/coach/ai/*`, `/coach/referrals/*`, and `/coach/audit-logs/*` follow the list/create/edit container pattern.
+- `/coach/telegram-groups` is a legacy redirect to `/coach/groups`; real Telegram course groups are managed from `/coach/courses`.
 - `/coach/purchase-queue` is a legacy redirect to `/coach/course-purchases`.
 - `/coach/clients` is still the high-risk migration surface. Do not delete legacy client detail code until the clients list/detail/invite route split has equivalent behavior and test coverage.
 

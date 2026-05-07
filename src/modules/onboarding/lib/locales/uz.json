@@ -549,6 +549,8 @@
         "activityLevel": "Aktivlik",
         "weeklyWorkoutCount": "Mashg'ulot/hafta",
         "workoutExperience": "Tajriba",
+        "workoutLocation": "Mashg'ulot joyi",
+        "equipment": "Jihozlar",
         "mealFrequency": "Ovqatlanish soni",
         "foodBudget": "Budjet",
         "allergies": "Allergiyalar",

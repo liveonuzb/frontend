@@ -41,7 +41,9 @@ vi.mock("@/hooks/api", () => {
     foods: [{ id: 30, name: "Rice", isOnboarding: true }],
     ingredients: [{ id: 40, name: "Salt", isOnboarding: true }],
     bodyParts: [{ id: 50, name: "Chest", isOnboarding: true }],
-    equipment: [{ id: 60, name: "Dumbbell", isOnboarding: true }],
+    equipment: [
+      { id: 60, name: "Dumbbell", isOnboarding: true, isHome: true },
+    ],
   };
   const searchOptions = {
     exercises: [{ id: 2, name: "Squat", isOnboarding: false }],
@@ -53,7 +55,7 @@ vi.mock("@/hooks/api", () => {
     foods: [],
     ingredients: [],
     bodyParts: [],
-    equipment: [],
+    equipment: [{ id: 62, name: "Agility ladder", isStreet: true }],
   };
   const otherOptions = {
     exercises: [{ id: 2, name: "Squat", isOnboarding: false }],
@@ -71,7 +73,10 @@ vi.mock("@/hooks/api", () => {
   return {
     useGetQuery: ({ params } = {}) => ({
       data: {
-        data: params?.isOnboarding === false
+        data: params?.equipmentBucket === "primary" &&
+          params?.workoutLocation === "outdoor"
+          ? searchOptions
+          : params?.equipmentBucket === "other" || params?.isOnboarding === false
           ? params?.q
             ? searchOptions
             : otherOptions
@@ -195,6 +200,24 @@ describe("onboarding catalog card containers", () => {
 
     expect(screen.getByText("Kosher")).toBeTruthy();
     expect(screen.getAllByText("Halal")).toHaveLength(1);
+  });
+
+  it("shows home equipment as primary cards and remaining equipment in the drawer", () => {
+    useOnboardingStore.getState().setFields({ workoutLocation: "home" });
+    render(<WorkoutEquipment />);
+
+    expect(screen.getByText("Dumbbell")).toBeTruthy();
+
+    fireEvent.click(screen.getByText("onboarding.chipSelect.otherTitle"));
+    expect(screen.getByText("Kettlebell")).toBeTruthy();
+  });
+
+  it("uses street equipment as primary cards for outdoor workout location", () => {
+    useOnboardingStore.getState().setFields({ workoutLocation: "outdoor" });
+    render(<WorkoutEquipment />);
+
+    expect(screen.getByText("Agility ladder")).toBeTruthy();
+    expect(screen.queryByText("Dumbbell")).toBeNull();
   });
 
   it("shows selected catalog and custom values inside the Other drawer", () => {

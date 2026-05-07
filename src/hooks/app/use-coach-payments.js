@@ -36,7 +36,11 @@ export const useCoachPaymentStats = () => {
 
   return {
     ...query,
-    stats: _.defaultsDeep({}, _.get(data, "data", {}), DEFAULT_PAYMENT_STATS),
+    stats: _.defaultsDeep(
+      {},
+      _.get(data, "data.data", _.get(data, "data", {})),
+      DEFAULT_PAYMENT_STATS,
+    ),
   };
 };
 

@@ -9,6 +9,8 @@ const SORT_FIELDS = [
   "createdAt",
   "isActive",
   "isOnboarding",
+  "isHome",
+  "isStreet",
 ];
 const SORT_DIRECTIONS = ["asc", "desc"];
 const TEXT_OPERATORS = [
@@ -42,6 +44,22 @@ export const useEquipmentFilters = () => {
   );
   const [onboardingOperator, setOnboardingOperator] = useQueryState(
     "onboardingOp",
+    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+  );
+  const [homeFilter, setHomeFilter] = useQueryState(
+    "home",
+    parseAsStringEnum(["all", "yes", "no"]).withDefault("all"),
+  );
+  const [homeOperator, setHomeOperator] = useQueryState(
+    "homeOp",
+    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+  );
+  const [streetFilter, setStreetFilter] = useQueryState(
+    "street",
+    parseAsStringEnum(["all", "yes", "no"]).withDefault("all"),
+  );
+  const [streetOperator, setStreetOperator] = useQueryState(
+    "streetOp",
     parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
   );
   const [imageFilter, setImageFilter] = useQueryState(
@@ -79,6 +97,8 @@ export const useEquipmentFilters = () => {
   const [visibleFilters, setVisibleFilters] = React.useState(() => ({
     status: statusFilter !== "all",
     onboarding: onboardingFilter !== "all",
+    home: homeFilter !== "all",
+    street: streetFilter !== "all",
     hasImage: imageFilter !== "all",
     translations: translationFilter !== "all",
   }));
@@ -102,6 +122,10 @@ export const useEquipmentFilters = () => {
     statusOperator === "is" &&
     onboardingFilter === "all" &&
     onboardingOperator === "is" &&
+    homeFilter === "all" &&
+    homeOperator === "is" &&
+    streetFilter === "all" &&
+    streetOperator === "is" &&
     imageFilter === "all" &&
     imageOperator === "is" &&
     translationFilter === "all" &&
@@ -139,6 +163,28 @@ export const useEquipmentFilters = () => {
           { value: "all", label: "Barchasi" },
           { value: "yes", label: "Onboarding uchun" },
           { value: "no", label: "Qo'shimcha" },
+        ],
+      },
+      {
+        label: "Uy jihozi",
+        key: "home",
+        type: "select",
+        defaultOperator: "is",
+        options: [
+          { value: "all", label: "Barchasi" },
+          { value: "yes", label: "Uy uchun" },
+          { value: "no", label: "Uy uchun emas" },
+        ],
+      },
+      {
+        label: "Street jihozi",
+        key: "street",
+        type: "select",
+        defaultOperator: "is",
+        options: [
+          { value: "all", label: "Barchasi" },
+          { value: "yes", label: "Street uchun" },
+          { value: "no", label: "Street uchun emas" },
         ],
       },
       {
@@ -218,6 +264,20 @@ export const useEquipmentFilters = () => {
       "all",
     );
     pushSelect(
+      "home",
+      homeFilter,
+      homeOperator,
+      visibleFilters.home,
+      "all",
+    );
+    pushSelect(
+      "street",
+      streetFilter,
+      streetOperator,
+      visibleFilters.street,
+      "all",
+    );
+    pushSelect(
       "hasImage",
       imageFilter,
       imageOperator,
@@ -236,12 +296,16 @@ export const useEquipmentFilters = () => {
   }, [
     imageFilter,
     imageOperator,
+    homeFilter,
+    homeOperator,
     onboardingFilter,
     onboardingOperator,
     search,
     searchOperator,
     statusFilter,
     statusOperator,
+    streetFilter,
+    streetOperator,
     translationFilter,
     translationOperator,
     visibleFilters,
@@ -289,6 +353,26 @@ export const useEquipmentFilters = () => {
         "operator",
         "is",
       );
+      const nextHome = get(
+        find(nextFilters, (filter) => filter.field === "home"),
+        "values[0]",
+        "all",
+      );
+      const nextHomeOperator = get(
+        find(nextFilters, (filter) => filter.field === "home"),
+        "operator",
+        "is",
+      );
+      const nextStreet = get(
+        find(nextFilters, (filter) => filter.field === "street"),
+        "values[0]",
+        "all",
+      );
+      const nextStreetOperator = get(
+        find(nextFilters, (filter) => filter.field === "street"),
+        "operator",
+        "is",
+      );
       const nextTranslations = get(
         find(nextFilters, (filter) => filter.field === "translations"),
         "values[0]",
@@ -308,6 +392,12 @@ export const useEquipmentFilters = () => {
           onboarding: Boolean(
             find(nextFilters, (filter) => filter.field === "onboarding"),
           ),
+          home: Boolean(
+            find(nextFilters, (filter) => filter.field === "home"),
+          ),
+          street: Boolean(
+            find(nextFilters, (filter) => filter.field === "street"),
+          ),
           hasImage: Boolean(
             find(nextFilters, (filter) => filter.field === "hasImage"),
           ),
@@ -321,6 +411,10 @@ export const useEquipmentFilters = () => {
         void setStatusOperator(nextStatusOperator);
         void setOnboardingFilter(nextOnboarding);
         void setOnboardingOperator(nextOnboardingOperator);
+        void setHomeFilter(nextHome);
+        void setHomeOperator(nextHomeOperator);
+        void setStreetFilter(nextStreet);
+        void setStreetOperator(nextStreetOperator);
         void setImageFilter(nextImage);
         void setImageOperator(nextImageOperator);
         void setTranslationFilter(nextTranslations);
@@ -331,6 +425,8 @@ export const useEquipmentFilters = () => {
     [
       setImageFilter,
       setImageOperator,
+      setHomeFilter,
+      setHomeOperator,
       setOnboardingFilter,
       setOnboardingOperator,
       setPageQuery,
@@ -338,6 +434,8 @@ export const useEquipmentFilters = () => {
       setSearchOperator,
       setStatusFilter,
       setStatusOperator,
+      setStreetFilter,
+      setStreetOperator,
       setTranslationFilter,
       setTranslationOperator,
     ],
@@ -372,6 +470,10 @@ export const useEquipmentFilters = () => {
     statusOperator,
     onboardingFilter,
     onboardingOperator,
+    homeFilter,
+    homeOperator,
+    streetFilter,
+    streetOperator,
     imageFilter,
     imageOperator,
     translationFilter,

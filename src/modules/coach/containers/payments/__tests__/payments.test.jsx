@@ -5,8 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   useCoachPayments,
   useCoachPaymentsMutations,
+  useCoachPaymentDues,
   useCoachPaymentStats,
+  useCoachPayoutSummary,
 } from "@/modules/coach/lib/hooks/useCoachPayments";
+import { useCoachClients } from "@/modules/coach/lib/hooks/useCoachClients";
 import coachPaymentsApi from "@/modules/coach/lib/api/coach-payments-api";
 import { usePaymentFilters } from "../list/use-filters.js";
 import PaymentsListPage from "../list/index.jsx";
@@ -16,6 +19,7 @@ vi.mock("@/store", () => ({
 }));
 
 vi.mock("@/hooks/api/use-api", () => ({
+  default: () => ({ request: { get: vi.fn(), post: vi.fn() } }),
   api: { post: vi.fn() },
 }));
 
@@ -27,8 +31,17 @@ vi.mock("sonner", () => ({
 }));
 
 vi.mock("@/components/reui/data-grid", () => ({
-  DataGrid: ({ children, recordCount }) => (
+  DataGrid: ({ children, recordCount, table }) => (
     <div data-record-count={recordCount} data-testid="payments-data-grid">
+      <button
+        type="button"
+        onClick={() => {
+          const firstRowId = table.getRowModel().rows[0]?.id;
+          if (firstRowId) table.setRowSelection({ [firstRowId]: true });
+        }}
+      >
+        Select first payment
+      </button>
       {children}
     </div>
   ),
@@ -44,8 +57,20 @@ vi.mock("@/components/reui/data-grid/data-grid-pagination", () => ({
 }));
 
 vi.mock("@/modules/coach/components/data-grid-helpers", () => ({
-  BulkActionsBar: ({ selectedCount }) => (
-    <div data-testid="bulk-actions">{selectedCount}</div>
+  BulkActionsBar: ({ selectedCount, actions = [] }) => (
+    <div data-testid="bulk-actions">
+      <span>{selectedCount}</span>
+      {actions.map((action) => (
+        <button
+          key={action.key}
+          type="button"
+          disabled={action.disabled}
+          onClick={action.onClick}
+        >
+          {action.label}
+        </button>
+      ))}
+    </div>
   ),
   LifecycleTabs: ({ onValueChange }) => (
     <button type="button" onClick={() => onValueChange("trash")}>
@@ -91,6 +116,13 @@ vi.mock("../components/payment-refund-drawer", () => ({
   default: () => null,
 }));
 
+vi.mock(
+  "@/modules/coach/containers/payments/components/global-payment-details-card.jsx",
+  () => ({
+    default: () => null,
+  }),
+);
+
 vi.mock("../list/filter.jsx", () => ({
   Filter: ({ activeFilters }) => (
     <div data-testid="payments-filter">{activeFilters.length}</div>
@@ -113,7 +145,13 @@ vi.mock("../list/use-filters.js", () => ({
 vi.mock("@/modules/coach/lib/hooks/useCoachPayments", () => ({
   useCoachPayments: vi.fn(),
   useCoachPaymentsMutations: vi.fn(),
+  useCoachPaymentDues: vi.fn(),
   useCoachPaymentStats: vi.fn(),
+  useCoachPayoutSummary: vi.fn(),
+}));
+
+vi.mock("@/modules/coach/lib/hooks/useCoachClients", () => ({
+  useCoachClients: vi.fn(),
 }));
 
 vi.mock("@/modules/coach/lib/api/coach-payments-api", () => ({
@@ -152,13 +190,13 @@ const setupFilters = () => {
   });
 };
 
-const setupHooks = () => {
+const setupHooks = ({ mutationOverrides = {} } = {}) => {
   vi.mocked(useCoachPayments).mockReturnValue({
     data: {
       data: {
         data: [
           {
-            id: 41,
+            id: "ckpay_41",
             amount: 250000,
             client: { name: "Ali Valiyev" },
             method: "CASH",
@@ -173,7 +211,11 @@ const setupHooks = () => {
     isFetching: false,
     refetch,
   });
-  vi.mocked(useCoachPaymentsMutations).mockReturnValue({
+  vi.mocked(useCoachClients).mockReturnValue({
+    data: { data: { data: [] } },
+    isLoading: false,
+  });
+  const mutations = {
     createMutation: { isPending: false },
     updateMutation: { isPending: false },
     removeMutation: { isPending: false },
@@ -188,11 +230,26 @@ const setupHooks = () => {
     restoreResource: vi.fn(),
     updateResource: vi.fn(),
     updateResourceStatus: vi.fn(),
+    ...mutationOverrides,
+  };
+  vi.mocked(useCoachPaymentsMutations).mockReturnValue({
+    ...mutations,
   });
   vi.mocked(useCoachPaymentStats).mockReturnValue({
     stats: { paid: 250000 },
     isLoading: false,
   });
+  vi.mocked(useCoachPaymentDues).mockReturnValue({
+    dues: [],
+    meta: {},
+    isLoading: false,
+  });
+  vi.mocked(useCoachPayoutSummary).mockReturnValue({
+    summary: { availableAmount: 0 },
+    isLoading: false,
+    refetch: vi.fn(),
+  });
+  return mutations;
 };
 
 describe("PaymentsListPage", () => {
@@ -272,5 +329,29 @@ describe("PaymentsListPage", () => {
 
     expect(setLifecycle).toHaveBeenCalledWith("trash");
     expect(setPageQuery).toHaveBeenCalledWith("1");
+  });
+
+  it("keeps CUID payment ids when running bulk trash", async () => {
+    setupFilters();
+    const mutations = setupHooks();
+
+    render(
+      <MemoryRouter initialEntries={["/coach/payments/list"]}>
+        <PaymentsListPage />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Select first payment" }),
+    );
+    expect(screen.getByTestId("bulk-actions")).toHaveTextContent("1");
+
+    fireEvent.click(screen.getByRole("button", { name: "Trashga yuborish" }));
+
+    await waitFor(() => {
+      expect(mutations.bulkTrashResources).toHaveBeenCalledWith({
+        ids: ["ckpay_41"],
+      });
+    });
   });
 });

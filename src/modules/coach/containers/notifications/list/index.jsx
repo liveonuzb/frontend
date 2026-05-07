@@ -95,8 +95,8 @@ const NotificationsListPage = () => {
       chain(rowSelection)
         .entries()
         .filter(([, selected]) => Boolean(selected))
-        .map(([id]) => Number(id))
-        .filter((id) => Number.isInteger(id))
+        .map(([id]) => String(id))
+        .filter(Boolean)
         .value(),
     [rowSelection],
   );

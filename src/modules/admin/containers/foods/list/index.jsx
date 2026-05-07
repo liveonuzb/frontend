@@ -24,11 +24,7 @@ import {
   UploadIcon,
 } from "lucide-react";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
-import {
-  useGetQuery,
-  usePatchQuery,
-  useDeleteQuery,
-} from "@/hooks/api";
+import { useGetQuery, usePatchQuery, useDeleteQuery } from "@/hooks/api";
 import useApi from "@/hooks/api/use-api.js";
 import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -113,6 +109,10 @@ const Index = () => {
     onboardingOp,
     hasImageFilter,
     hasImageOp,
+    dietaryTag,
+    dietaryTagOp,
+    allergenTag,
+    allergenTagOp,
     translationsFilter,
     translationsOp,
     duplicatesFilter,
@@ -154,6 +154,14 @@ const Index = () => {
       ...(hasImageFilter !== "all" || hasImageOp !== "is"
         ? { hasImageOp }
         : {}),
+      ...(dietaryTag !== "all" ? { dietaryTag } : {}),
+      ...(dietaryTag !== "all" || dietaryTagOp !== "is"
+        ? { dietaryTagOp }
+        : {}),
+      ...(allergenTag !== "all" ? { allergenTag } : {}),
+      ...(allergenTag !== "all" || allergenTagOp !== "is"
+        ? { allergenTagOp }
+        : {}),
       ...(translationsFilter !== "all"
         ? { translations: translationsFilter }
         : {}),
@@ -169,8 +177,12 @@ const Index = () => {
     [
       categoryFilter,
       categoryOp,
+      allergenTag,
+      allergenTagOp,
       cuisineFilter,
       cuisineOp,
+      dietaryTag,
+      dietaryTagOp,
       currentPage,
       deferredSearch,
       duplicatesFilter,
@@ -195,7 +207,12 @@ const Index = () => {
   const FOOD_CATEGORIES_QUERY_KEY = ["admin", "food-categories"];
   const FOOD_CATEGORY_FOODS_QUERY_KEY = ["admin", "food-category-foods"];
 
-  const { data: foodsData, isLoading, isFetching, refetch } = useGetQuery({
+  const {
+    data: foodsData,
+    isLoading,
+    isFetching,
+    refetch,
+  } = useGetQuery({
     url: "/admin/foods",
     params: queryParams,
     queryProps: {
@@ -212,11 +229,17 @@ const Index = () => {
   });
 
   const invalidateFoodRelated = React.useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: FOOD_CATEGORY_FOODS_QUERY_KEY });
+    await queryClient.invalidateQueries({
+      queryKey: FOOD_CATEGORY_FOODS_QUERY_KEY,
+    });
   }, [queryClient]);
   const invalidateFoodAndCategories = React.useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: FOOD_CATEGORY_FOODS_QUERY_KEY });
-    await queryClient.invalidateQueries({ queryKey: FOOD_CATEGORIES_QUERY_KEY });
+    await queryClient.invalidateQueries({
+      queryKey: FOOD_CATEGORY_FOODS_QUERY_KEY,
+    });
+    await queryClient.invalidateQueries({
+      queryKey: FOOD_CATEGORIES_QUERY_KEY,
+    });
   }, [queryClient]);
 
   const deleteMutation = useDeleteQuery({
@@ -257,7 +280,8 @@ const Index = () => {
   const isBulkTrashing = bulkTrashMutation.isPending;
   const isAssigningCategories = bulkAssignCategoriesMutation.isPending;
   const isHardDeleting = hardDeleteMutation.isPending;
-  const isRestoring = restoreMutation.isPending || bulkRestoreMutation.isPending;
+  const isRestoring =
+    restoreMutation.isPending || bulkRestoreMutation.isPending;
   const [isImporting, setIsImporting] = React.useState(false);
 
   const deleteFood = React.useCallback(
@@ -266,42 +290,66 @@ const Index = () => {
   );
   const updateFoodStatus = React.useCallback(
     async (id, isActive) =>
-      statusMutation.mutateAsync({ url: `/admin/foods/${id}/status`, attributes: { isActive } }),
+      statusMutation.mutateAsync({
+        url: `/admin/foods/${id}/status`,
+        attributes: { isActive },
+      }),
     [statusMutation],
   );
   const reorderFoods = React.useCallback(
     async (payload) =>
-      reorderMutation.mutateAsync({ url: "/admin/foods/reorder", attributes: payload }),
+      reorderMutation.mutateAsync({
+        url: "/admin/foods/reorder",
+        attributes: payload,
+      }),
     [reorderMutation],
   );
   const updateFoodsStatus = React.useCallback(
     async (payload) =>
-      bulkStatusMutation.mutateAsync({ url: "/admin/foods/status", attributes: payload }),
+      bulkStatusMutation.mutateAsync({
+        url: "/admin/foods/status",
+        attributes: payload,
+      }),
     [bulkStatusMutation],
   );
   const trashFoods = React.useCallback(
     async (payload) =>
-      bulkTrashMutation.mutateAsync({ url: "/admin/foods/trash", attributes: payload }),
+      bulkTrashMutation.mutateAsync({
+        url: "/admin/foods/trash",
+        attributes: payload,
+      }),
     [bulkTrashMutation],
   );
   const restoreFood = React.useCallback(
     async (id) =>
-      restoreMutation.mutateAsync({ url: `/admin/foods/${id}/restore`, attributes: {} }),
+      restoreMutation.mutateAsync({
+        url: `/admin/foods/${id}/restore`,
+        attributes: {},
+      }),
     [restoreMutation],
   );
   const restoreFoods = React.useCallback(
     async (payload) =>
-      bulkRestoreMutation.mutateAsync({ url: "/admin/foods/restore", attributes: payload }),
+      bulkRestoreMutation.mutateAsync({
+        url: "/admin/foods/restore",
+        attributes: payload,
+      }),
     [bulkRestoreMutation],
   );
   const assignFoodCategories = React.useCallback(
     async (payload) =>
-      bulkAssignCategoriesMutation.mutateAsync({ url: "/admin/foods/categories", attributes: payload }),
+      bulkAssignCategoriesMutation.mutateAsync({
+        url: "/admin/foods/categories",
+        attributes: payload,
+      }),
     [bulkAssignCategoriesMutation],
   );
   const hardDeleteFoods = React.useCallback(
     async (payload) =>
-      hardDeleteMutation.mutateAsync({ url: "/admin/foods/hard-delete", attributes: payload }),
+      hardDeleteMutation.mutateAsync({
+        url: "/admin/foods/hard-delete",
+        attributes: payload,
+      }),
     [hardDeleteMutation],
   );
   const exportFoods = React.useCallback(async () => {
@@ -320,7 +368,11 @@ const Index = () => {
         formData,
         { headers: { "Content-Type": "multipart/form-data" } },
       );
-      const preview = get(previewResponse, "data.data", get(previewResponse, "data"));
+      const preview = get(
+        previewResponse,
+        "data.data",
+        get(previewResponse, "data"),
+      );
 
       if (get(preview, "invalidCount", 0) > 0) {
         return {
@@ -329,9 +381,13 @@ const Index = () => {
         };
       }
 
-      const jobResponse = await request.post("/admin/foods/import/jobs", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const jobResponse = await request.post(
+        "/admin/foods/import/jobs",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      );
 
       return {
         preview,
@@ -444,9 +500,7 @@ const Index = () => {
     } catch (error) {
       const message = error?.response?.data?.message;
       toast.error(
-        isArray(message)
-          ? message.join(", ")
-          : message || "O'chirib bo'lmadi",
+        isArray(message) ? message.join(", ") : message || "O'chirib bo'lmadi",
       );
     }
   };
@@ -662,10 +716,7 @@ const Index = () => {
       setRowSelection({});
     } catch (error) {
       toast.error(
-        getMutationErrorMessage(
-          error,
-          "Ovqatlarni butunlay o'chirib bo'lmadi",
-        ),
+        getMutationErrorMessage(error, "Ovqatlarni butunlay o'chirib bo'lmadi"),
       );
     }
   };
@@ -815,7 +866,9 @@ const Index = () => {
             onClick={() => refetch()}
             disabled={isFetching}
           >
-            <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
+            <RotateCcwIcon
+              className={cn("size-4", isFetching && "animate-spin")}
+            />
           </Button>
           {canManageContent ? (
             <Button onClick={openCreateDrawer} className="gap-1.5">

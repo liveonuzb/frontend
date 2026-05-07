@@ -19,13 +19,11 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { useNavigate } from "react-router";
 import { useChatStore } from "@/store";
 import { useProfileOverlay } from "@/modules/profile/hooks/use-profile-overlay";
+import { isChatFeatureEnabled } from "@/modules/chat/lib/chat-feature-flags.js";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -44,25 +42,22 @@ const ChatHeader = ({
     chatSearchQuery,
     setChatSearchQuery,
     setChatSearchIndex,
-    chatSearchMatches,
-    chatSearchIndex,
     handleChatSearchPrev,
     handleChatSearchNext,
     isCoach,
     onToggleInfo,
-    onAudioCall,
-    onVideoCall,
     isMuted,
     isBlocked,
     onToggleMute,
     onToggleBlock,
     onStartLive, // New prop
 }) => {
-    const navigate = useNavigate();
+    const canUseLiveActivity = isChatFeatureEnabled("liveActivity");
+    const canUseMuteBlock = isChatFeatureEnabled("muteBlockControls");
     const { getLiveActivity, activeLive } = useChatStore();
     const { openProfile } = useProfileOverlay();
-    const liveActivity = getLiveActivity(activeChat);
-    const isLive = activeLive && activeLive.chatId === activeChat;
+    const liveActivity = canUseLiveActivity ? getLiveActivity(activeChat) : null;
+    const isLive = canUseLiveActivity && activeLive && activeLive.chatId === activeChat;
 
     return (
         <div className="sticky top-0 z-20 shrink-0 bg-background/95 backdrop-blur-xl">
@@ -120,7 +115,7 @@ const ChatHeader = ({
                 </div>
                 <div className="flex items-center gap-0.5 md:gap-1 shrink-0">
                     {/* Live indicator for others */}
-                    {isLive && !isCoach && (
+                    {canUseLiveActivity && isLive && !isCoach && (
                         <Button variant="destructive" size="sm" className="h-8 text-[10px] font-black rounded-full animate-bounce px-3 mr-2" onClick={onStartLive}>
                             QO'SHILISH
                         </Button>
@@ -152,7 +147,7 @@ const ChatHeader = ({
                             <Button variant="ghost" size="icon" className="size-8 md:size-10 rounded-full"><MoreVerticalIcon className="size-4 md:size-5 opacity-70" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-2xl">
-                            {isCoach && (
+                            {canUseLiveActivity && isCoach && (
                                 <DropdownMenuItem disabled className="text-xs p-2.5 cursor-not-allowed opacity-40">
                                     <VideoIcon className="mr-2 size-4" /> Jonli efirni boshlash (Tez kunda...)
                                 </DropdownMenuItem>
@@ -163,18 +158,22 @@ const ChatHeader = ({
                             <DropdownMenuItem onClick={() => openProfile("profile")} className="text-xs p-2.5 cursor-pointer">
                                 <MoreVerticalIcon className="mr-2 size-4" /> Mening sozlamalarim
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={onToggleMute} className="text-xs p-2.5 cursor-pointer">
-                                <BellOffIcon className="mr-2 size-4" /> {isMuted ? "Ovozini yoqish" : "Jim qilish"}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onClick={onToggleBlock}
-                                className={cn(
-                                    "text-xs p-2.5 cursor-pointer",
-                                    isBlocked && "text-destructive",
-                                )}
-                            >
-                                <BanIcon className="mr-2 size-4" /> {isBlocked ? "Blokdan chiqarish" : "Bloklash"}
-                            </DropdownMenuItem>
+                            {canUseMuteBlock && (
+                                <>
+                                    <DropdownMenuItem onClick={onToggleMute} className="text-xs p-2.5 cursor-pointer">
+                                        <BellOffIcon className="mr-2 size-4" /> {isMuted ? "Ovozini yoqish" : "Jim qilish"}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        onClick={onToggleBlock}
+                                        className={cn(
+                                            "text-xs p-2.5 cursor-pointer",
+                                            isBlocked && "text-destructive",
+                                        )}
+                                    >
+                                        <BanIcon className="mr-2 size-4" /> {isBlocked ? "Blokdan chiqarish" : "Bloklash"}
+                                    </DropdownMenuItem>
+                                </>
+                            )}
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>

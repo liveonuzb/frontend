@@ -143,6 +143,7 @@ export const getNextUserOnboardingPath = (state) => {
   }
 
   if (
+    state.workoutLocation !== "gym" &&
     !hasValue(state.equipmentIds) &&
     !hasValue(state.customEquipment) &&
     !hasCompletedStep(state, "workout-equipment")

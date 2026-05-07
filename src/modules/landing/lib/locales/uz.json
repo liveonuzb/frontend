@@ -1,0 +1,723 @@
+{
+  "landing": {
+    "meta": {
+      "title": "LiveOn - 60 soniyada AI ovqatlanish va mashg'ulot rejasi",
+      "description": "LiveOn maqsad, budjet, odatlar va cheklovlarga qarab ovqatlanish, mashg'ulot, suv va progress uchun personal AI reja tuzadi."
+    },
+    "nav": {
+      "logoAlt": "LiveOn logotipi",
+      "signIn": "Kirish",
+      "cta": "Bepul boshlash",
+      "mobileCta": "Reja olish",
+      "language": "Til",
+      "languageTitle": "Tilni tanlang",
+      "languageDescription": "LiveOn interfeysi tilini o'zgartiring.",
+      "menuOpen": "Menyuni ochish",
+      "menuClose": "Menyuni yopish",
+      "links": [
+        [
+          "features",
+          "Imkoniyatlar"
+        ],
+        [
+          "how",
+          "Qanday ishlaydi"
+        ],
+        [
+          "nutrition",
+          "Ovqatlanish"
+        ],
+        [
+          "workouts",
+          "Mashg'ulot"
+        ],
+        [
+          "progress",
+          "Progress"
+        ],
+        [
+          "coach-mode",
+          "Trenerlar uchun"
+        ],
+        [
+          "testimonials",
+          "Ssenariylar"
+        ],
+        [
+          "pricing",
+          "Tariflar"
+        ],
+        [
+          "faq",
+          "FAQ"
+        ]
+      ]
+    },
+    "hero": {
+      "badge": "AI reja 60 soniyada",
+      "title": "Personal AI ovqatlanish va mashg'ulot rejasi 60 soniyada",
+      "body": "Bir nechta savolga javob bering - LiveOn maqsad, budjet va odatlaringizga qarab ovqatlanish, mashg'ulot, suv va progress rejasini tuzadi.",
+      "primaryCta": "Rejamni bepul olish",
+      "secondaryCta": "Reja namunasini ko'rish",
+      "metrics": [
+        [
+          "60 soniya",
+          "birinchi reja uchun"
+        ],
+        [
+          "20+ parametr",
+          "personalizatsiya uchun"
+        ],
+        [
+          "Ovqat + mashg'ulot",
+          "bitta servisda"
+        ]
+      ]
+    },
+    "dashboard": {
+      "badge": "LiveOn AI",
+      "title": "Bugungi reja",
+      "progressLabel": "Bajarildi",
+      "calories": "2160 kkal / 2760 kkal",
+      "meals": [
+        [
+          "Nonushta",
+          "Suli, banan, yogurt",
+          "520 kkal"
+        ],
+        [
+          "Tushlik",
+          "Tovuq, guruch, salat",
+          "720 kkal"
+        ],
+        [
+          "Kechki",
+          "Baliq, sabzavot",
+          "610 kkal"
+        ]
+      ],
+      "macros": [
+        [
+          "Protein",
+          "140 g",
+          "green"
+        ],
+        [
+          "Yog'",
+          "72 g",
+          "blue"
+        ],
+        [
+          "Uglevod",
+          "230 g",
+          "orange"
+        ],
+        [
+          "Suv",
+          "2.1 l",
+          "teal"
+        ]
+      ],
+      "workoutTitle": "Bugungi mashg'ulot",
+      "workoutBody": "Full Body - 42 daq",
+      "workoutKcal": "+240 kkal",
+      "focusTitle": "Bugungi fokus",
+      "checklist": [
+        "10 000 qadam",
+        "2.1 l suv",
+        "Shakarsiz",
+        "7-8 soat uyqu"
+      ],
+      "mealsTitle": "Ovqatlar"
+    },
+    "values": [
+      [
+        "Sizga mos",
+        "Maqsad, grafik, ovqatlanish, cheklov va yuklama bir profilda.",
+        "TargetIcon"
+      ],
+      [
+        "Tizimli yondashuv",
+        "Kaloriya, BJU, suv va progress bitta tizimda hisoblanadi.",
+        "BrainIcon"
+      ],
+      [
+        "Mahalliy mahsulotlar",
+        "Reja odatiy taomlar va topish oson mahsulotlar atrofida quriladi.",
+        "ShoppingBasketIcon"
+      ],
+      [
+        "Vaqt tejaladi",
+        "Har kuni menyu va mashg'ulotni qo'lda yig'ish shart emas.",
+        "Clock3Icon"
+      ]
+    ],
+    "how": {
+      "eyebrow": "Qanday ishlaydi",
+      "title": "Yaxshi formaga uch oddiy qadam",
+      "body": "LiveOn kontekstni tez yig'adi, reja yaratadi va har kuni yo'nalishni ushlab turishga yordam beradi.",
+      "steps": [
+        [
+          "O'zingiz haqida ayting",
+          "Maqsad, vazn, aktivlik, budjet, allergiya va xohishlarni kiriting.",
+          "ClipboardListIcon"
+        ],
+        [
+          "AI reja tuzadi",
+          "LiveOn ma'lumotlarni tahlil qilib ovqatlanish, mashg'ulot va suv rejasini beradi.",
+          "SparklesIcon"
+        ],
+        [
+          "Amal qiling",
+          "Rejani bajaring, natijani kuzating va yaxshilash tavsiyalarini oling.",
+          "CalendarCheckIcon"
+        ]
+      ]
+    },
+    "daily": {
+      "eyebrow": "Imkoniyatlar",
+      "title": "Kunlik rejangiz nimalardan iborat",
+      "body": "Bitta ekran bugun nima qilish kerakligini aniq ko'rsatadi.",
+      "features": [
+        [
+          "Ovqatlanish",
+          "3-5 mahal retsept va KBJU bilan",
+          "UtensilsIcon"
+        ],
+        [
+          "Mashg'ulotlar",
+          "Maqsadga mos individual yuklama",
+          "DumbbellIcon"
+        ],
+        [
+          "Suv",
+          "Kunlik norma va eslatmalar",
+          "DropletsIcon"
+        ],
+        [
+          "Kaloriya va BJU",
+          "Kaloriya va makrolar nazorati",
+          "BarChart3Icon"
+        ],
+        [
+          "Progress",
+          "Vazn, odatlar, hisobot va tavsiyalar",
+          "LineChartIcon"
+        ]
+      ]
+    },
+    "showcase": {
+      "eyebrow": "Ovqatlanish va mashg'ulot",
+      "title": "Siz uchun yaratilgan ovqatlanish va mashg'ulotlar",
+      "body": "Namunalar reja qanday ko'rinishini ko'rsatadi: qisqa, tushunarli va amaliy.",
+      "meal": {
+        "badge": "Namuna",
+        "title": "Ovqatlanish rejasi",
+        "body": "Maqsad, budjet, allergiya va xohishlarga mos balansli menyu.",
+        "example": [
+          "Nonushta: suli + banan + yogurt",
+          "Tushlik: tovuq + guruch + salat",
+          "Kechki: baliq + sabzavot",
+          "Jami: 2160 kkal - 140 g protein"
+        ],
+        "checklist": [
+          "Retsept va KBJU",
+          "Mahsulot almashtirish",
+          "Xarid ro'yxati",
+          "Allergiya hisobga olinadi",
+          "Budjet hisobga olinadi"
+        ],
+        "cta": "Reja namunasini ko'rish"
+      },
+      "workout": {
+        "badge": "Namuna",
+        "title": "Mashg'ulot rejasi",
+        "body": "Uyda yoki zalda, daraja, maqsad va grafik bo'yicha mashqlar.",
+        "example": [
+          "1-kun: Full Body",
+          "Squat - 3x12",
+          "Push-up - 3x10",
+          "Planka - 3x40 sek",
+          "Kardio - 15 daq"
+        ],
+        "checklist": [
+          "Video va instruktsiya",
+          "Set va takrorlar",
+          "Yuklama moslashuvi",
+          "Progressiya",
+          "Uy yoki zal"
+        ],
+        "cta": "Mashg'ulot namunasini ko'rish"
+      }
+    },
+    "progress": {
+      "eyebrow": "Progress",
+      "title": "Davom ettirish yoqimli bo'lgan progress",
+      "body": "Vazn, suv, kaloriya, mashg'ulot va odatlarni bitta joyda kuzating.",
+      "metrics": [
+        [
+          "7 kun ketma-ket",
+          "bajarish seriyasi",
+          "FlameIcon",
+          "orange"
+        ],
+        [
+          "+240 kkal bugun",
+          "mashg'ulot",
+          "ActivityIcon",
+          "blue"
+        ],
+        [
+          "-1.2 kg haftada",
+          "vazn dinamikasi",
+          "TrendingDownIcon",
+          "green"
+        ],
+        [
+          "2.1 l suv",
+          "kunlik norma",
+          "DropletsIcon",
+          "teal"
+        ],
+        [
+          "10 842 qadam",
+          "aktivlik",
+          "ZapIcon",
+          "blue"
+        ],
+        [
+          "2160 kkal",
+          "ovqatlanish",
+          "BarChart3Icon",
+          "orange"
+        ],
+        [
+          "7-8 soat uyqu",
+          "tiklanish",
+          "HeartPulseIcon",
+          "green"
+        ]
+      ],
+      "chartTitle": "Haftalik kaloriya",
+      "weightTitle": "Vazn",
+      "chartRange": "7 kun",
+      "weightValue": "78.4 kg",
+      "weightChange": "Haftada -1.2 kg"
+    },
+    "coachMode": {
+      "eyebrow": "Coach mode",
+      "title": "Trenerlar, guruhlar va mijozlar uchun instrumentlar",
+      "body": "LiveOn trenerga mijozlar, guruhlar, rejalar, to'lovlar va progressni bitta ish maydonida boshqarishga yordam beradi.",
+      "features": [
+        [
+          "Coach dashboard",
+          "Mijozlar, progress, to'lovlar va muhim signallar bitta ekranda.",
+          "UsersIcon"
+        ],
+        [
+          "Telegram guruhlar",
+          "Guruh va mijoz segmentlarini reja hamda hisobotlar bilan birga yuriting.",
+          "MessageCircleIcon"
+        ],
+        [
+          "Bot management",
+          "Xabarlar, broadcast, webhook status va trener botlarini boshqarish.",
+          "BotIcon"
+        ],
+        [
+          "Trener-mijoz bog'lanishi",
+          "Takliflar, mijozni trenerga biriktirish va individual rejalar.",
+          "UserCheckIcon"
+        ],
+        [
+          "Gamification",
+          "Streak, challenge, achievement va invite flow muntazamlikni oshiradi.",
+          "TrophyIcon"
+        ]
+      ],
+      "tabs": [
+        [
+          "dashboard",
+          "Dashboard"
+        ],
+        [
+          "telegram",
+          "Telegram + bot"
+        ],
+        [
+          "clients",
+          "Clients + gamification"
+        ]
+      ],
+      "preview": {
+        "badge": "LiveOn Coach",
+        "dashboardTitle": "Trener ish kuni",
+        "dashboardDescription": "Mijozlar, progress, to'lovlar va ogohlantirishlar bitta joyda.",
+        "dashboardMetrics": [
+          [
+            "24",
+            "mijoz",
+            "blue"
+          ],
+          [
+            "82%",
+            "o'rtacha progress",
+            "green"
+          ],
+          [
+            "4",
+            "ogohlantirish",
+            "orange"
+          ],
+          [
+            "12",
+            "haftalik reja",
+            "teal"
+          ]
+        ],
+        "clientsTitle": "Bugungi mijozlar",
+        "clients": [
+          [
+            "Alina",
+            "Vazn tashlash",
+            82,
+            "Reja bajarildi"
+          ],
+          [
+            "Maksim",
+            "Mushak yig'ish",
+            64,
+            "Kechki mashg'ulot"
+          ],
+          [
+            "Yevgeniy",
+            "Sog'lom rejim",
+            91,
+            "7 kun ketma-ket"
+          ]
+        ],
+        "telegramTitle": "Telegram guruhlar va bot",
+        "telegramDescription": "Mijozlarni segmentlang, xabar yuboring va bot statusini kuzating.",
+        "telegramGroupsTitle": "Trener guruhlari",
+        "telegramGroups": [
+          [
+            "Bahor 2026",
+            "38 ishtirokchi",
+            "Aktiv"
+          ],
+          [
+            "Sushka",
+            "21 ishtirokchi",
+            "Aktiv"
+          ],
+          [
+            "Uy mashg'ulotlari",
+            "17 ishtirokchi",
+            "Reja tayyor"
+          ]
+        ],
+        "botTitle": "Bot management",
+        "botStats": [
+          [
+            "Webhook",
+            "OK"
+          ],
+          [
+            "Broadcast",
+            "Bugun 18:00"
+          ],
+          [
+            "Segmentlar",
+            "3 guruh"
+          ]
+        ],
+        "broadcastTitle": "Guruhga xabar",
+        "broadcastBody": "Suv va mashg'ulot eslatmasi \"Vazn tashlash\" segmentiga yuboriladi.",
+        "clientsLinkTitle": "Trener-mijoz bog'lanishi",
+        "clientsLinkDescription": "Takliflar, personal rejalar va o'yin mexanikalari mijozni jarayonda ushlab turadi.",
+        "linksTitle": "Bog'lamlar va takliflar",
+        "clientLinks": [
+          [
+            "Link orqali taklif",
+            "Mijoz ro'yxatdan keyin profil, maqsad va rejani oladi.",
+            "Tayyor"
+          ],
+          [
+            "Individual reja",
+            "Trener ovqatlanish va yuklamani mijozga moslab tuzatadi.",
+            "Jarayonda"
+          ],
+          [
+            "Mijoz hisoboti",
+            "Progress, odatlar va tavsiyalar tushunarli formatda chiqadi.",
+            "Haftalik"
+          ]
+        ],
+        "gamificationTitle": "Challenge va achievementlar",
+        "gamification": [
+          [
+            "Streak",
+            "7 kun",
+            "orange"
+          ],
+          [
+            "Challenge",
+            "10 000 qadam",
+            "teal"
+          ],
+          [
+            "Achievement",
+            "Suvsiz tanaffus yo'q",
+            "green"
+          ]
+        ]
+      }
+    },
+    "local": {
+      "eyebrow": "Asosiy farq",
+      "title": "Budjet va odatiy mahsulotlarga mos reja",
+      "body": "LiveOn budjet, allergiya, cheklov va topish oson mahsulotlarni hisobga oladi - reja hayotingizga mos bo'lishi uchun.",
+      "cards": [
+        [
+          "Mahalliy bozorni tushunadi",
+          "Yaqinda topish oson mahsulot va taomlar hisobga olinadi.",
+          "ShoppingBasketIcon"
+        ],
+        [
+          "Budjetga moslaydi",
+          "Haftalik yoki oylik budjetga qarab variantlar tanlanadi.",
+          "WalletCardsIcon"
+        ],
+        [
+          "Allergiyalarni hisobga oladi",
+          "Sizga mumkin bo'lmagan yoki yemaydigan mahsulotlarni chiqaradi.",
+          "ShieldCheckIcon"
+        ],
+        [
+          "Almashtirishlar",
+          "Mahsulot uyda bo'lmasa yoki mos kelmasa, alternativalar beradi.",
+          "Repeat2Icon"
+        ],
+        [
+          "Xarid ro'yxati",
+          "Hafta uchun tushunarli mahsulotlar ro'yxatini beradi.",
+          "ShoppingBasketIcon"
+        ]
+      ]
+    },
+    "comparison": {
+      "eyebrow": "Taqqoslash",
+      "title": "Nega LiveOn oddiy fitness ilovalardan yaxshiroq",
+      "columns": [
+        "Imkoniyat",
+        "LiveOn",
+        "Oddiy ilovalar",
+        "Generic ilovalar"
+      ],
+      "yes": "Ha",
+      "partial": "Qisman",
+      "no": "Yo'q",
+      "rows": [
+        [
+          "60 soniyada AI reja",
+          "yes",
+          "partial",
+          "no"
+        ],
+        [
+          "Ovqat + mashg'ulot bir joyda",
+          "yes",
+          "partial",
+          "no"
+        ],
+        [
+          "Budjet hisobga olinadi",
+          "yes",
+          "no",
+          "no"
+        ],
+        [
+          "Mahalliy mahsulotlar",
+          "yes",
+          "no",
+          "no"
+        ],
+        [
+          "Allergiya va cheklovlar",
+          "yes",
+          "partial",
+          "no"
+        ],
+        [
+          "Mahsulot almashtirish",
+          "yes",
+          "partial",
+          "no"
+        ],
+        [
+          "Progress va tavsiyalar",
+          "yes",
+          "partial",
+          "no"
+        ],
+        [
+          "Haftalik hisobotlar",
+          "yes",
+          "partial",
+          "no"
+        ],
+        [
+          "Coach mode va mijozlar",
+          "yes",
+          "partial",
+          "no"
+        ],
+        [
+          "Challenge, streak va achievementlar",
+          "yes",
+          "partial",
+          "no"
+        ]
+      ]
+    },
+    "scenarios": {
+      "eyebrow": "Foydalanuvchi hikoyalari",
+      "title": "Foydalanuvchi ssenariylari",
+      "body": "Hozircha tasdiqlangan public reviewlar yo'q, shuning uchun uydirma iqtiboslar ishlatilmadi.",
+      "items": [
+        [
+          "Vazn tashlash",
+          "Qattiq dietasiz menyu, kaloriya, suv va qadam normasi bitta joyda.",
+          "Kunlik reja"
+        ],
+        [
+          "Mushak yig'ish",
+          "Protein, kaloriya, progressiya va uy yoki zal mashg'ulotlari birlashadi.",
+          "Ovqat + yuklama"
+        ],
+        [
+          "Sog'lom rejim",
+          "Suv, uyqu, muntazam ovqatlanish va oddiy odatlarga fokus.",
+          "Barqarorlik"
+        ]
+      ]
+    },
+    "pricing": {
+      "eyebrow": "Tariflar",
+      "title": "Bepul boshlang. Kerak bo'lsa rejangizni kuchaytiring.",
+      "free": {
+        "title": "Free",
+        "price": "0 ₽ / doimiy",
+        "features": [
+          "Birinchi AI reja",
+          "Basic suv tracking",
+          "Basic ovqatlanish rejasi",
+          "Cheklangan statistika"
+        ],
+        "cta": "Bepul boshlash"
+      },
+      "premium": {
+        "title": "Premium",
+        "badge": "Mashhur",
+        "price": "Tez kunda",
+        "features": [
+          "Cheksiz AI rejalar",
+          "Kengaytirilgan analytics",
+          "Budjet hisobi",
+          "Mahsulot almashtirish",
+          "Ovqatni foto orqali tahlil",
+          "Haftalik hisobotlar",
+          "Coach mode va gamification",
+          "PDF eksport",
+          "Reklamasiz"
+        ],
+        "cta": "Premiumni sinab ko'rish"
+      }
+    },
+    "faq": {
+      "eyebrow": "FAQ",
+      "title": "Ko'p beriladigan savollar",
+      "items": [
+        [
+          "AI reja qanday ishlaydi?",
+          "LiveOn profil ma'lumotlari asosida ovqatlanish, mashg'ulot, suv va kunlik actionlarni taklif qiladi."
+        ],
+        [
+          "Reja qancha vaqtda tuziladi?",
+          "Birinchi profil tez start uchun mo'ljallangan: taxminan 60 soniyada basic reja olinadi."
+        ],
+        [
+          "LiveOnni bepul ishlatsa bo'ladimi?",
+          "Ha. Free tarif birinchi reja va basic trackingni sinab ko'rishga yordam beradi."
+        ],
+        [
+          "Vazn tashlashga mosmi?",
+          "Ha, maqsad profilda tanlansa, kaloriya, aktivlik va progress hisobga olinadi."
+        ],
+        [
+          "Massa yig'ish mumkinmi?",
+          "Ha, kaloriya profisiti, protein va mashg'ulot progressiyasi hisobga olinadi."
+        ],
+        [
+          "Zalsiz ishlaydimi?",
+          "Ha. Uy mashg'ulotlari va mavjud jihozlarni tanlash mumkin."
+        ],
+        [
+          "Budjetim hisobga olinadimi?",
+          "Ha. Menyu va xarid ro'yxatida budjet hisobga olinadi."
+        ],
+        [
+          "Yemaydigan mahsulotlarni chiqarish mumkinmi?",
+          "Ha. Allergiya, cheklov va yoqmaydigan mahsulotlarni kiritish mumkin."
+        ],
+        [
+          "Foto tahlil qanday ishlaydi?",
+          "Foto tahlil taomni tezroq baholash va trackingga qo'shishga yordam beradi."
+        ],
+        [
+          "Ma'lumotlarim xavfsizmi?",
+          "Profil ma'lumotlari personalizatsiya uchun ishlatiladi va servis ichida boshqariladi."
+        ]
+      ]
+    },
+    "final": {
+      "title": "Profildan boshlang - reja 60 soniyada tayyor",
+      "body": "Bir nechta savolga javob bering - LiveOn bugungi ovqatlanish, mashg'ulot va suv rejasini tuzadi.",
+      "cta": "Rejamni bepul olish",
+      "secondary": "Namuna ko'rish"
+    },
+    "footer": {
+      "tagline": "Maqsadingizga mos AI ovqatlanish va mashg'ulot rejalari.",
+      "columns": [
+        [
+          "Mahsulot",
+          [
+            "Imkoniyatlar",
+            "Ovqatlanish",
+            "Mashg'ulot",
+            "Progress",
+            "Tariflar"
+          ]
+        ],
+        [
+          "Kompaniya",
+          [
+            "Biz haqimizda",
+            "Blog",
+            "Kontaktlar"
+          ]
+        ],
+        [
+          "Yordam",
+          [
+            "FAQ",
+            "Yordam",
+            "Foydalanish shartlari",
+            "Maxfiylik siyosati"
+          ]
+        ]
+      ],
+      "copyright": "© 2026 LiveOn. Barcha huquqlar himoyalangan."
+    }
+  }
+}

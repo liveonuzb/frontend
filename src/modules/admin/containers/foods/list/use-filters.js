@@ -1,6 +1,10 @@
 import React from "react";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 import { map as lodashMap } from "lodash";
+import {
+  ALLERGEN_TAG_OPTIONS,
+  DIETARY_TAG_OPTIONS,
+} from "@/modules/admin/lib/nutrition-tags.js";
 
 const ITEMS_PER_PAGE = 10;
 const FOOD_SORT_FIELDS = [
@@ -105,6 +109,28 @@ export const useFoodFilters = ({
     "duplicates",
     parseAsStringEnum(["all", "only"]).withDefault("all"),
   );
+  const [dietaryTag, setDietaryTag] = useQueryState(
+    "dietaryTag",
+    parseAsStringEnum([
+      "all",
+      ...DIETARY_TAG_OPTIONS.map((item) => item.value),
+    ]).withDefault("all"),
+  );
+  const [dietaryTagOp, setDietaryTagOp] = useQueryState(
+    "dietaryTagOp",
+    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+  );
+  const [allergenTag, setAllergenTag] = useQueryState(
+    "allergenTag",
+    parseAsStringEnum([
+      "all",
+      ...ALLERGEN_TAG_OPTIONS.map((item) => item.value),
+    ]).withDefault("all"),
+  );
+  const [allergenTagOp, setAllergenTagOp] = useQueryState(
+    "allergenTagOp",
+    parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+  );
   const [pageQuery, setPageQuery] = useQueryState(
     "page",
     parseAsString.withDefault("1"),
@@ -146,6 +172,10 @@ export const useFoodFilters = ({
     onboardingOp === "is" &&
     hasImageFilter === "all" &&
     hasImageOp === "is" &&
+    dietaryTag === "all" &&
+    dietaryTagOp === "is" &&
+    allergenTag === "all" &&
+    allergenTagOp === "is" &&
     translationsFilter === "all" &&
     translationsOp === "is" &&
     duplicatesFilter === "all" &&
@@ -248,6 +278,22 @@ export const useFoodFilters = ({
         ],
       },
       {
+        label: "Dietary tag",
+        key: "dietaryTag",
+        type: "select",
+        defaultOperator: "is",
+        operators: selectOperatorOptions,
+        options: [{ value: "all", label: "Barchasi" }, ...DIETARY_TAG_OPTIONS],
+      },
+      {
+        label: "Allergen tag",
+        key: "allergenTag",
+        type: "select",
+        defaultOperator: "is",
+        operators: selectOperatorOptions,
+        options: [{ value: "all", label: "Barchasi" }, ...ALLERGEN_TAG_OPTIONS],
+      },
+      {
         label: "Dublikatlar",
         key: "duplicates",
         type: "select",
@@ -328,6 +374,24 @@ export const useFoodFilters = ({
       });
     }
 
+    if (dietaryTag !== "all" || dietaryTagOp !== "is") {
+      items.push({
+        id: "dietaryTag",
+        field: "dietaryTag",
+        operator: dietaryTagOp,
+        values: dietaryTag !== "all" ? [dietaryTag] : [],
+      });
+    }
+
+    if (allergenTag !== "all" || allergenTagOp !== "is") {
+      items.push({
+        id: "allergenTag",
+        field: "allergenTag",
+        operator: allergenTagOp,
+        values: allergenTag !== "all" ? [allergenTag] : [],
+      });
+    }
+
     if (duplicatesFilter !== "all") {
       items.push({
         id: "duplicates",
@@ -341,8 +405,12 @@ export const useFoodFilters = ({
   }, [
     categoryFilter,
     categoryOp,
+    allergenTag,
+    allergenTagOp,
     cuisineFilter,
     cuisineOp,
+    dietaryTag,
+    dietaryTagOp,
     duplicatesFilter,
     hasImageFilter,
     hasImageOp,
@@ -367,6 +435,8 @@ export const useFoodFilters = ({
       const nextOnboarding = byField("onboarding")?.values?.[0] ?? "all";
       const nextHasImage = byField("hasImage")?.values?.[0] ?? "all";
       const nextTranslations = byField("translations")?.values?.[0] ?? "all";
+      const nextDietaryTag = byField("dietaryTag")?.values?.[0] ?? "all";
+      const nextAllergenTag = byField("allergenTag")?.values?.[0] ?? "all";
       const nextDuplicates = byField("duplicates")?.values?.[0] ?? "all";
 
       React.startTransition(() => {
@@ -384,6 +454,10 @@ export const useFoodFilters = ({
         void setHasImageOp(byField("hasImage")?.operator ?? "is");
         void setTranslationsFilter(nextTranslations);
         void setTranslationsOp(byField("translations")?.operator ?? "is");
+        void setDietaryTag(nextDietaryTag);
+        void setDietaryTagOp(byField("dietaryTag")?.operator ?? "is");
+        void setAllergenTag(nextAllergenTag);
+        void setAllergenTagOp(byField("allergenTag")?.operator ?? "is");
         void setDuplicatesFilter(nextDuplicates);
         void setPageQuery("1");
       });
@@ -391,8 +465,12 @@ export const useFoodFilters = ({
     [
       setCategoryFilter,
       setCategoryOp,
+      setAllergenTag,
+      setAllergenTagOp,
       setCuisineFilter,
       setCuisineOp,
+      setDietaryTag,
+      setDietaryTagOp,
       setDuplicatesFilter,
       setHasImageFilter,
       setHasImageOp,
@@ -443,6 +521,10 @@ export const useFoodFilters = ({
     onboardingOp,
     hasImageFilter,
     hasImageOp,
+    dietaryTag,
+    dietaryTagOp,
+    allergenTag,
+    allergenTagOp,
     translationsFilter,
     translationsOp,
     duplicatesFilter,

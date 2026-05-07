@@ -1,18 +1,10 @@
 import React from "react";
 import {
+  AlertTriangleIcon,
+  CalendarClockIcon,
   CheckCircle2Icon,
-  ImageIcon,
-  PlusIcon,
-  RotateCcwIcon,
   SearchIcon,
 } from "lucide-react";
-import {
-  NumberField,
-  NumberFieldDecrement,
-  NumberFieldGroup,
-  NumberFieldIncrement,
-  NumberFieldInput,
-} from "@/components/reui/number-field";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,14 +20,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-
-const formatMoney = (value) => {
-  const normalized = Number(value);
-  if (!Number.isFinite(normalized) || normalized <= 0) {
-    return "Kelishiladi";
-  }
-  return `${new Intl.NumberFormat("uz-UZ").format(normalized)} so'm`;
-};
+import {
+  CurrencyAmountField,
+  PaymentConfirmDialog,
+  PaymentMethodPicker,
+  PaymentSafetyNotice,
+  ReceiptPreview,
+} from "./payment-form-controls";
+import {
+  formatDate,
+  formatDuePeriod,
+  formatMoney,
+  getDueRemainingAmount,
+  toPositiveAmount,
+} from "./payment-form-utils";
 
 const getInitials = (value = "") =>
   String(value)
@@ -61,12 +59,50 @@ const PaymentAddDrawer = ({
   receiptUrl,
   onClearReceipt,
   isUploading,
+  selectedClient,
+  paymentDues = [],
+  selectedPaymentDueId,
+  setSelectedPaymentDueId,
+  isPaymentDuesLoading,
+  duplicatePaymentWarning,
+  amountRisk,
   addPaymentSearch,
   setAddPaymentSearch,
   onMarkPaid,
   isMarkingClientPayment,
   onFileUpload,
 }) => {
+  const [isConfirmOpen, setIsConfirmOpen] = React.useState(false);
+  const selectedDue = React.useMemo(
+    () =>
+      paymentDues.find((due) => String(due.id) === String(selectedPaymentDueId)),
+    [paymentDues, selectedPaymentDueId],
+  );
+  const amount = toPositiveAmount(paymentAmount);
+  const isSubmitDisabled =
+    isMarkingClientPayment || !selectedClientId || amount <= 0;
+  const balanceSummary = selectedClient?.paymentSummary;
+  const expectedAmount = selectedDue
+    ? getDueRemainingAmount(selectedDue)
+    : Math.max(
+        Number(
+          balanceSummary?.remainingAmount ??
+            balanceSummary?.price ??
+            balanceSummary?.agreedAmount ??
+            0,
+        ),
+        0,
+      );
+
+  const handleSubmit = () => {
+    if (amountRisk?.requiresConfirmation) {
+      setIsConfirmOpen(true);
+      return;
+    }
+
+    onMarkPaid();
+  };
+
   return (
     <Drawer
       open={open}
@@ -105,13 +141,23 @@ const PaymentAddDrawer = ({
             <div className="space-y-2 max-h-[240px] overflow-y-auto pr-1">
               {filteredAddClients.map((client) => {
                 const isSelected = selectedClientId === client.id;
+                const expectedClientAmount = Math.max(
+                  Number(
+                    client.paymentSummary?.remainingAmount ??
+                      client.paymentSummary?.price ??
+                      client.paymentSummary?.agreedAmount ??
+                      0,
+                  ),
+                  0,
+                );
                 return (
                   <div
                     key={client.id}
                     onClick={() => {
                       setSelectedClientId(client.id);
-                      if (client.paymentSummary?.price) {
-                        setPaymentAmount(String(client.paymentSummary.price));
+                      setSelectedPaymentDueId("");
+                      if (expectedClientAmount > 0) {
+                        setPaymentAmount(String(expectedClientAmount));
                       }
                     }}
                     className={cn(
@@ -133,8 +179,8 @@ const PaymentAddDrawer = ({
                           {client.name}
                         </p>
                         <p className="text-[10px] text-muted-foreground">
-                          {client.paymentSummary?.price > 0
-                            ? `${formatMoney(client.paymentSummary.price)} kutilmoqda`
+                          {expectedClientAmount > 0
+                            ? `${formatMoney(expectedClientAmount)} qoldiq`
                             : "Narx kelishilmagan"}
                         </p>
                       </div>
@@ -160,66 +206,143 @@ const PaymentAddDrawer = ({
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="space-y-3">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1">
-                To&apos;lov usuli
-              </Label>
-              <div className="flex bg-muted p-1 rounded-lg gap-1 h-11">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("CASH")}
-                  className={cn(
-                    "flex-1 rounded-md text-xs font-medium transition-all",
-                    paymentMethod === "CASH"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground",
+          {selectedClient ? (
+            <div className="grid gap-3 rounded-2xl border border-border/60 bg-muted/20 p-3 sm:grid-cols-3">
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                  Kutilgan summa
+                </p>
+                <p className="mt-1 text-sm font-semibold">
+                  {formatMoney(
+                    balanceSummary?.agreedAmount ?? balanceSummary?.price,
                   )}
-                >
-                  Naqd
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("CLICK")}
-                  className={cn(
-                    "flex-1 rounded-md text-xs font-medium transition-all",
-                    paymentMethod !== "CASH"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  Karta
-                </button>
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                  Shu periodda to'langan
+                </p>
+                <p className="mt-1 text-sm font-semibold">
+                  {formatMoney(balanceSummary?.paidThisPeriod)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                  Qoldiq
+                </p>
+                <p className="mt-1 text-sm font-semibold">
+                  {formatMoney(expectedAmount)}
+                </p>
+              </div>
+              <div className="sm:col-span-3">
+                <p className="text-xs text-muted-foreground">
+                  To&apos;lov muddati: {formatDate(balanceSummary?.dueDate)} ·{" "}
+                  {balanceSummary?.label || "Status belgilanmagan"}
+                </p>
               </div>
             </div>
+          ) : null}
 
+          {selectedClient ? (
             <div className="space-y-3">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1">
-                Summa (so&apos;mda)
+              <Label className="ml-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                To&apos;lov periodi
               </Label>
-              <NumberField
-                value={paymentAmount ? Number(paymentAmount) : undefined}
-                min={0}
-                step={10000}
-                onValueChange={(value) =>
-                  setPaymentAmount(
-                    value === null || Number.isNaN(value)
-                      ? ""
-                      : String(value),
-                  )
-                }
-              >
-                <NumberFieldGroup>
-                  <NumberFieldDecrement />
-                  <NumberFieldInput
-                    placeholder="Masalan: 500000"
-                    className="h-11"
-                  />
-                  <NumberFieldIncrement />
-                </NumberFieldGroup>
-              </NumberField>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPaymentDueId("")}
+                  className={cn(
+                    "flex w-full items-center justify-between rounded-2xl border p-3 text-left transition-all",
+                    !selectedPaymentDueId
+                      ? "border-primary bg-primary/5"
+                      : "border-border/50 hover:bg-muted/30",
+                  )}
+                >
+                  <div>
+                    <p className="text-sm font-semibold">
+                      Avtomatik joriy period
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Tizim to&apos;lov sanasi bo&apos;yicha mos periodni
+                      tanlaydi.
+                    </p>
+                  </div>
+                  <CalendarClockIcon className="size-4 text-muted-foreground" />
+                </button>
+
+                {paymentDues.map((due) => {
+                  const isSelected =
+                    String(selectedPaymentDueId) === String(due.id);
+                  const remainingAmount = getDueRemainingAmount(due);
+
+                  return (
+                    <button
+                      key={due.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedPaymentDueId(due.id);
+                        if (remainingAmount > 0) {
+                          setPaymentAmount(String(remainingAmount));
+                        }
+                      }}
+                      className={cn(
+                        "flex w-full items-center justify-between rounded-2xl border p-3 text-left transition-all",
+                        isSelected
+                          ? "border-primary bg-primary/5"
+                          : "border-border/50 hover:bg-muted/30",
+                      )}
+                    >
+                      <div>
+                        <p className="text-sm font-semibold">
+                          {formatDuePeriod(due)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Muddat: {formatDate(due.dueDate)} · qoldiq{" "}
+                          {formatMoney(remainingAmount)}
+                        </p>
+                      </div>
+                      {isSelected ? (
+                        <CheckCircle2Icon className="size-4 text-primary" />
+                      ) : null}
+                    </button>
+                  );
+                })}
+
+                {!isPaymentDuesLoading && paymentDues.length === 0 ? (
+                  <div className="flex gap-2 rounded-2xl border border-dashed border-border/70 p-3 text-xs text-muted-foreground">
+                    <AlertTriangleIcon className="size-4 shrink-0" />
+                    Ochiq to&apos;lov periodi topilmadi. To&apos;lov avtomatik
+                    joriy periodga bog&apos;lanadi.
+                  </div>
+                ) : null}
+              </div>
             </div>
+          ) : null}
+
+          <div className="space-y-6">
+            <PaymentMethodPicker
+              value={paymentMethod}
+              onChange={setPaymentMethod}
+            />
+
+            <CurrencyAmountField
+              id="payment-amount"
+              label="Summa"
+              value={paymentAmount}
+              onChange={setPaymentAmount}
+              description={
+                expectedAmount > 0
+                  ? `Kutilgan qoldiq: ${formatMoney(expectedAmount)}`
+                  : "Summa so'mda saqlanadi."
+              }
+            />
           </div>
+
+          <PaymentSafetyNotice
+            risk={amountRisk}
+            duplicateWarning={duplicatePaymentWarning}
+          />
 
           <div className="space-y-3">
             <Label
@@ -237,63 +360,17 @@ const PaymentAddDrawer = ({
             />
           </div>
 
-          <div className="space-y-3">
-            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1">
-              Kvitansiya (rasm)
-            </Label>
-            <div className="flex flex-col gap-2">
-              {receiptUrl ? (
-                <div className="flex items-center justify-between p-3 rounded-xl border border-primary/20 bg-primary/5">
-                  <div className="flex items-center gap-2 overflow-hidden">
-                    <ImageIcon className="size-4 text-primary shrink-0" />
-                    <span className="text-xs text-primary font-medium truncate">
-                      {receiptUrl.split("/").pop()}
-                    </span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-8"
-                    onClick={onClearReceipt}
-                  >
-                    <RotateCcwIcon className="size-4 text-muted-foreground" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="relative">
-                  <input
-                    type="file"
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    onChange={(e) => onFileUpload(e, false)}
-                    disabled={isUploading}
-                    accept="image/*"
-                  />
-                  <div
-                    className={cn(
-                      "flex flex-col items-center justify-center p-6 border border-dashed rounded-xl transition-all",
-                      isUploading
-                        ? "bg-muted"
-                        : "bg-muted/10 hover:bg-muted/20 border-border/50",
-                    )}
-                  >
-                    {isUploading ? (
-                      <RotateCcwIcon className="size-6 text-primary animate-spin mb-2" />
-                    ) : (
-                      <PlusIcon className="size-6 text-muted-foreground mb-2" />
-                    )}
-                    <p className="text-xs font-semibold text-muted-foreground">
-                      {isUploading ? "Yuklanmoqda..." : "Kvitansiya yuklash"}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          <ReceiptPreview
+            receiptUrl={receiptUrl}
+            onClearReceipt={onClearReceipt}
+            isUploading={isUploading}
+            onFileUpload={(event) => onFileUpload(event, false)}
+          />
         </DrawerBody>
         <DrawerFooter>
           <Button
-            onClick={onMarkPaid}
-            disabled={isMarkingClientPayment || !selectedClientId}
+            onClick={handleSubmit}
+            disabled={isSubmitDisabled}
             size="lg"
           >
             {isMarkingClientPayment ? "Saqlanmoqda..." : "To'lovni saqlash"}
@@ -303,6 +380,21 @@ const PaymentAddDrawer = ({
           </Button>
         </DrawerFooter>
       </DrawerContent>
+      <PaymentConfirmDialog
+        open={isConfirmOpen}
+        onOpenChange={setIsConfirmOpen}
+        title={amountRisk?.title || "To'lovni tasdiqlash"}
+        description={
+          amountRisk?.description ||
+          "To'lov summasi va mijoz ma'lumotlarini tekshirib tasdiqlang."
+        }
+        confirmLabel="Baribir saqlash"
+        onConfirm={() => {
+          setIsConfirmOpen(false);
+          onMarkPaid();
+        }}
+        isSubmitting={isMarkingClientPayment}
+      />
     </Drawer>
   );
 };

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React from "react";
 import { get, isArray, join, trim } from "lodash";
 import { z } from "zod";
@@ -86,6 +87,8 @@ export const ingredientSchema = z.object({
   carbs: z.number().min(0),
   fat: z.number().min(0),
   servingUnit: z.enum(["g", "ml", "dona", "qoshiq"]),
+  dietaryTags: z.array(z.string()).default([]),
+  allergenTags: z.array(z.string()).default([]),
   isAllergic: z.boolean().default(false),
   isOnboarding: z.boolean().default(true),
 });

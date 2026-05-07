@@ -149,6 +149,8 @@ const EditEquipment = () => {
     name: "",
     isActive: true,
     isOnboarding: true,
+    isHome: false,
+    isStreet: false,
     image: null,
     removeImage: false,
   });
@@ -163,6 +165,8 @@ const EditEquipment = () => {
         ),
         isActive: get(equipment, "isActive", true),
         isOnboarding: get(equipment, "isOnboarding", true),
+        isHome: get(equipment, "isHome", false),
+        isStreet: get(equipment, "isStreet", false),
         image: null,
         removeImage: false,
       });
@@ -189,6 +193,8 @@ const EditEquipment = () => {
         formData.append("name", trimmedName);
         formData.append("isActive", String(form.isActive));
         formData.append("isOnboarding", String(form.isOnboarding));
+        formData.append("isHome", String(form.isHome));
+        formData.append("isStreet", String(form.isStreet));
         formData.append("translations", JSON.stringify(translations));
         if (form.image) formData.append("image", form.image);
         if (form.removeImage) formData.append("removeImage", "true");
@@ -205,6 +211,8 @@ const EditEquipment = () => {
             name: trimmedName,
             isActive: form.isActive,
             isOnboarding: form.isOnboarding,
+            isHome: form.isHome,
+            isStreet: form.isStreet,
             translations,
           },
         });
@@ -340,6 +348,39 @@ const EditEquipment = () => {
                     setForm((current) => ({
                       ...current,
                       isOnboarding: checked,
+                    }))
+                  }
+                />
+              </div>
+              <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-muted/15 px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium">Uy jihozi</p>
+                  <p className="text-xs text-muted-foreground">
+                    Yoqilgan bo'lsa uyda mashq qiladigan userlarga asosiy
+                    ro'yxatda ko'rinadi.
+                  </p>
+                </div>
+                <Switch
+                  checked={form.isHome}
+                  onCheckedChange={(checked) =>
+                    setForm((current) => ({ ...current, isHome: checked }))
+                  }
+                />
+              </div>
+              <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-muted/15 px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium">Street jihozi</p>
+                  <p className="text-xs text-muted-foreground">
+                    Yoqilgan bo'lsa tashqarida mashq qiladigan userlarga asosiy
+                    ro'yxatda ko'rinadi.
+                  </p>
+                </div>
+                <Switch
+                  checked={form.isStreet}
+                  onCheckedChange={(checked) =>
+                    setForm((current) => ({
+                      ...current,
+                      isStreet: checked,
                     }))
                   }
                 />

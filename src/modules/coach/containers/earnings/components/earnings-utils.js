@@ -49,9 +49,13 @@ export const formatDate = (value, locale = "uz-UZ") => {
 export const resolveListPayload = (data) => {
   const nestedList = get(data, "data.data");
   if (Array.isArray(nestedList)) return nestedList;
+  const nestedPayments = get(nestedList, "payments");
+  if (Array.isArray(nestedPayments)) return nestedPayments;
 
   const directList = get(data, "data");
   if (Array.isArray(directList)) return directList;
+  const directPayments = get(directList, "payments");
+  if (Array.isArray(directPayments)) return directPayments;
 
   return [];
 };

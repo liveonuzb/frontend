@@ -8,7 +8,9 @@ import CoachErrorBoundary from "@/modules/coach/components/coach-error-boundary.
 const DashboardPage = lazy(
   () => import("@/modules/coach/pages/dashboard/index.jsx"),
 );
-const ClientsPage = lazy(() => import("@/modules/coach/pages/clients/index.jsx"));
+const ClientsPage = lazy(
+  () => import("@/modules/coach/pages/clients/index.jsx"),
+);
 const MealPlansPage = lazy(
   () => import("@/modules/coach/pages/meal-plans/index.jsx"),
 );
@@ -17,6 +19,9 @@ const WorkoutPlansPage = lazy(
 );
 const PaymentsPage = lazy(
   () => import("@/modules/coach/pages/payments/index.jsx"),
+);
+const PackagesPage = lazy(
+  () => import("@/modules/coach/pages/packages/index.jsx"),
 );
 const CoursesPage = lazy(
   () => import("@/modules/coach/pages/courses/index.jsx"),
@@ -27,9 +32,7 @@ const CoursePurchasesPage = lazy(
 const EarningsPage = lazy(
   () => import("@/modules/coach/pages/earnings/index.jsx"),
 );
-const TelegramGroupsPage = lazy(
-  () => import("@/modules/coach/pages/groups/index.jsx"),
-);
+const GroupsPage = lazy(() => import("@/modules/coach/pages/groups/index.jsx"));
 const TelegramBotPage = lazy(
   () => import("@/modules/coach/pages/telegram-bot/index.jsx"),
 );
@@ -55,18 +58,14 @@ const NotificationsPage = lazy(
 const ReferralsPage = lazy(
   () => import("@/modules/coach/pages/referrals/index.jsx"),
 );
-const AuditPage = lazy(
-  () => import("@/modules/coach/pages/audit/index.jsx"),
-);
+const AuditPage = lazy(() => import("@/modules/coach/pages/audit/index.jsx"));
 const SessionsPage = lazy(
   () => import("@/modules/coach/pages/sessions/index.jsx"),
 );
 const ReportsPage = lazy(
   () => import("@/modules/coach/pages/reports/index.jsx"),
 );
-const AiPage = lazy(
-  () => import("@/modules/coach/pages/ai/index.jsx"),
-);
+const AiPage = lazy(() => import("@/modules/coach/pages/ai/index.jsx"));
 const ChatModule = lazy(() => import("@/modules/chat/index.jsx"));
 
 const renderPage = (Component) => (
@@ -114,14 +113,12 @@ const Index = () => {
           element={<LegacyCoachRedirect to="/coach/course-purchases" />}
         />
         <Route path="payments/*" element={renderPage(PaymentsPage)} />
+        <Route path="packages/*" element={renderPage(PackagesPage)} />
         <Route path="earnings/*" element={renderPage(EarningsPage)} />
+        <Route path="groups/*" element={renderPage(GroupsPage)} />
         <Route
           path="telegram-groups/*"
-          element={renderPage(TelegramGroupsPage)}
-        />
-        <Route
-          path="groups"
-          element={<LegacyCoachRedirect to="/coach/telegram-groups" />}
+          element={<LegacyCoachRedirect to="/coach/groups" />}
         />
         <Route path="telegram-bot/*" element={renderPage(TelegramBotPage)} />
         <Route path="programs/*" element={renderPage(ProgramsPage)} />

@@ -9,17 +9,19 @@ export function useClientsViewState() {
   const [paymentDayClient, setPaymentDayClient] = React.useState(null);
   const [cancelPaymentTarget, setCancelPaymentTarget] = React.useState(null);
   const [removeCandidate, setRemoveCandidate] = React.useState(null);
-  
+
   // Group States
   const [isGroupDrawerOpen, setIsGroupDrawerOpen] = React.useState(false);
-  const [isCreateGroupDrawerOpen, setIsCreateGroupDrawerOpen] = React.useState(false);
-  const [isMemberSelectionDrawerOpen, setIsMemberSelectionDrawerOpen] = React.useState(false);
+  const [isCreateGroupDrawerOpen, setIsCreateGroupDrawerOpen] =
+    React.useState(false);
+  const [isMemberSelectionDrawerOpen, setIsMemberSelectionDrawerOpen] =
+    React.useState(false);
   const [selectedGroupId, setSelectedGroupId] = React.useState("");
   const [newGroupName, setNewGroupName] = React.useState("");
   const [newGroupDesc, setNewGroupDesc] = React.useState("");
   const [memberSearch, setMemberSearch] = React.useState("");
   const [memberSelectionIds, setMemberSelectionIds] = React.useState([]);
-  
+
   // Plan States
   const [isPlanDrawerOpen, setIsPlanDrawerOpen] = React.useState(false);
   const [planType, setPlanType] = React.useState(null);
@@ -33,7 +35,12 @@ export function useClientsViewState() {
   const [paymentNote, setPaymentNote] = React.useState("");
   const [paymentPaidAt, setPaymentPaidAt] = React.useState("");
   const [paymentDay, setPaymentDay] = React.useState("");
-  const [paymentBillingCycle, setPaymentBillingCycle] = React.useState("MONTHLY");
+  const [paymentBillingCycle, setPaymentBillingCycle] =
+    React.useState("MONTHLY");
+  const [paymentPackageId, setPaymentPackageId] = React.useState("");
+  const [paymentRequiresApproval, setPaymentRequiresApproval] =
+    React.useState(true);
+  const [paymentContractNote, setPaymentContractNote] = React.useState("");
 
   const closeAll = React.useCallback(() => {
     setClientId(null);
@@ -100,8 +107,14 @@ export function useClientsViewState() {
     setPaymentDay,
     paymentBillingCycle,
     setPaymentBillingCycle,
+    paymentPackageId,
+    setPaymentPackageId,
+    paymentRequiresApproval,
+    setPaymentRequiresApproval,
+    paymentContractNote,
+    setPaymentContractNote,
 
     // Actions
-    closeAll
+    closeAll,
   };
 }

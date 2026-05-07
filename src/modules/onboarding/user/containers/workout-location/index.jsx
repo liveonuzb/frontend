@@ -38,24 +38,56 @@ const Index = () => {
 
   useOnboardingAutoSave("user", "workout-location");
 
-  const markCompleted = React.useCallback(() => {
-    setFields({
-      completedUserOnboardingSteps: Array.from(
-        new Set([...(completedSteps ?? []), "workout-location"]),
-      ),
-    });
-  }, [completedSteps, setFields]);
+  const getCompletedSteps = React.useCallback(
+    (...steps) => Array.from(new Set([...(completedSteps ?? []), ...steps])),
+    [completedSteps],
+  );
+
+  const handleSelectLocation = React.useCallback(
+    (value) => {
+      const fields = { workoutLocation: value };
+
+      if (value === "gym") {
+        fields.equipmentIds = [];
+        fields.customEquipment = [];
+      } else {
+        fields.completedUserOnboardingSteps = (completedSteps ?? []).filter(
+          (step) => step !== "workout-equipment",
+        );
+      }
+
+      setFields(fields);
+    },
+    [completedSteps, setFields],
+  );
 
   const goNext = React.useCallback(() => {
-    markCompleted();
+    if (workoutLocation === "gym") {
+      setFields({
+        equipmentIds: [],
+        customEquipment: [],
+        completedUserOnboardingSteps: getCompletedSteps(
+          "workout-location",
+          "workout-equipment",
+        ),
+      });
+      navigate("/user/onboarding/workout-body-parts");
+      return;
+    }
+
+    setFields({
+      completedUserOnboardingSteps: getCompletedSteps("workout-location"),
+    });
     navigate("/user/onboarding/workout-equipment");
-  }, [markCompleted, navigate]);
+  }, [getCompletedSteps, navigate, setFields, workoutLocation]);
 
   const handleSkip = React.useCallback(() => {
-    setFields({ workoutLocation: "home" });
-    markCompleted();
+    setFields({
+      workoutLocation: "home",
+      completedUserOnboardingSteps: getCompletedSteps("workout-location"),
+    });
     navigate("/user/onboarding/workout-equipment");
-  }, [markCompleted, navigate, setFields]);
+  }, [getCompletedSteps, navigate, setFields]);
 
   useOnboardingFooter(
     <div className={"space-y-2"}>
@@ -98,7 +130,7 @@ const Index = () => {
               <motion.button
                 key={option.value}
                 type="button"
-                onClick={() => setFields({ workoutLocation: option.value })}
+                onClick={() => handleSelectLocation(option.value)}
                 className={cn(
                   "flex items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-all",
                   isActive

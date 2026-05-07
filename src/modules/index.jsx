@@ -5,6 +5,7 @@ import AdminModule from "@/modules/admin/index.jsx";
 import UserModule from "@/modules/user/index.jsx";
 import CoachModule from "@/modules/coach/index.jsx";
 import ChatModule from "@/modules/chat/index.jsx";
+import LandingModule from "@/modules/landing/index.jsx";
 
 export {
   AuthModule,
@@ -14,4 +15,5 @@ export {
   UserModule,
   CoachModule,
   ChatModule,
+  LandingModule,
 };

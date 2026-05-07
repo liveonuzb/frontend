@@ -3,6 +3,7 @@ import { chain, get, isArray, trim } from "lodash";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { toast } from "sonner";
 import {
+  BanknoteIcon,
   DownloadIcon,
   PlusIcon,
   RotateCcwIcon,
@@ -25,8 +26,11 @@ import {
 import {
   useCoachPayments,
   useCoachPaymentsMutations,
+  useCoachPaymentDues,
   useCoachPaymentStats,
+  useCoachPayoutSummary,
 } from "@/modules/coach/lib/hooks/useCoachPayments";
+import { useCoachClients } from "@/modules/coach/lib/hooks/useCoachClients";
 import coachPaymentsApi from "@/modules/coach/lib/api/coach-payments-api";
 import PaymentStatsBar from "../components/payment-stats-bar";
 import PaymentAddDrawer from "../components/payment-add-drawer";
@@ -38,6 +42,66 @@ import { Filter } from "./filter.jsx";
 import { usePaymentFilters } from "./use-filters.js";
 import { SoftDeleteAlert, HardDeleteAlert } from "./delete-alert.jsx";
 import GlobalPaymentDetailsCard from "@/modules/coach/containers/payments/components/global-payment-details-card.jsx";
+import { normalizeCoachPaymentMethod } from "@/modules/coach/lib/payment-methods";
+import {
+  buildAmountRisk,
+  buildDuplicatePaymentWarning,
+  getClientExpectedAmount,
+  getDueRemainingAmount,
+  toPositiveAmount,
+  unwrapMutationPayload,
+} from "../components/payment-form-utils";
+
+const DEFAULT_PAYMENT_META = {
+  total: 0,
+  page: 1,
+  pageSize: 10,
+  totalPages: 1,
+};
+
+const resolvePaymentsPayload = (response) => {
+  const nested = get(response, "data.data");
+  if (isArray(nested)) return nested;
+
+  const nestedPayments = get(nested, "payments");
+  if (isArray(nestedPayments)) return nestedPayments;
+
+  const direct = get(response, "data");
+  if (isArray(direct)) return direct;
+
+  const directPayments = get(direct, "payments");
+  return isArray(directPayments) ? directPayments : [];
+};
+
+const resolvePaymentsMeta = (response) => {
+  const legacyMeta = get(response, "data.data.meta");
+  if (legacyMeta) return legacyMeta;
+
+  return get(response, "data.meta", DEFAULT_PAYMENT_META);
+};
+
+const resolveClientsPayload = (response) => {
+  const nested = get(response, "data.data");
+  if (isArray(nested)) return nested;
+
+  const nestedItems = get(nested, "items");
+  if (isArray(nestedItems)) return nestedItems;
+
+  const direct = get(response, "data");
+  if (isArray(direct)) return direct;
+
+  const directItems = get(direct, "items");
+  return isArray(directItems) ? directItems : [];
+};
+
+const createPaymentIdempotencyKey = () => {
+  const cryptoApi = typeof window !== "undefined" ? window.crypto : null;
+  if (cryptoApi?.randomUUID) {
+    return cryptoApi.randomUUID();
+  }
+
+  return `coach-payment-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
 
 const PaymentsListPage = () => {
   const { setBreadcrumbs } = useBreadcrumbStore();
@@ -92,16 +156,17 @@ const PaymentsListPage = () => {
 
   const { data, isLoading, isFetching, refetch } =
     useCoachPayments(queryParams);
-  const payments = get(data, "data.data", []);
-  const meta = get(data, "data.meta", {
-    total: 0,
-    page: 1,
-    pageSize: 10,
-    totalPages: 1,
-  });
+  const payments = resolvePaymentsPayload(data);
+  const meta = resolvePaymentsMeta(data);
 
   const mutations = useCoachPaymentsMutations();
-  const { stats, isLoading: isStatsLoading } = useCoachPaymentStats();
+  const {
+    stats,
+    isLoading: isStatsLoading,
+    refetch: refetchStats,
+  } = useCoachPaymentStats();
+  const { summary: payoutSummary, refetch: refetchPayoutSummary } =
+    useCoachPayoutSummary();
 
   const [rowSelection, setRowSelection] = React.useState({});
   const [paymentToSoftDelete, setPaymentToSoftDelete] = React.useState(null);
@@ -114,9 +179,84 @@ const PaymentsListPage = () => {
   const [paymentAmount, setPaymentAmount] = React.useState("");
   const [paymentNote, setPaymentNote] = React.useState("");
   const [paymentMethod, setPaymentMethod] = React.useState("CASH");
+  const [selectedPaymentDueId, setSelectedPaymentDueId] = React.useState("");
+  const [paymentIdempotencyKey, setPaymentIdempotencyKey] = React.useState(() =>
+    createPaymentIdempotencyKey(),
+  );
   const [receiptUrl, setReceiptUrl] = React.useState("");
   const [receiptAccessUrl, setReceiptAccessUrl] = React.useState("");
   const [isUploading, setIsUploading] = React.useState(false);
+  const deferredAddPaymentSearch = React.useDeferredValue(addPaymentSearch);
+
+  const addClientsQueryParams = React.useMemo(
+    () => ({
+      status: "active",
+      lifecycle: "active",
+      pageSize: 50,
+      ...(deferredAddPaymentSearch.trim()
+        ? { q: deferredAddPaymentSearch.trim() }
+        : {}),
+    }),
+    [deferredAddPaymentSearch],
+  );
+
+  const { data: addClientsData, isLoading: isAddClientsLoading } =
+    useCoachClients(addClientsQueryParams, {
+      enabled: isAddDrawerOpen,
+      staleTime: 30000,
+    });
+  const filteredAddClients = React.useMemo(
+    () => resolveClientsPayload(addClientsData),
+    [addClientsData],
+  );
+  const selectedAddClient = React.useMemo(
+    () =>
+      filteredAddClients.find(
+        (client) => String(client.id) === String(selectedClientId),
+      ) || null,
+    [filteredAddClients, selectedClientId],
+  );
+  const selectedAddClientName =
+    selectedAddClient?.name ||
+    trim(
+      [
+        get(selectedAddClient, "profile.firstName"),
+        get(selectedAddClient, "profile.lastName"),
+      ]
+        .filter(Boolean)
+        .join(" "),
+    );
+  const {
+    dues: selectedClientPaymentDues,
+    isLoading: isPaymentDuesLoading,
+  } = useCoachPaymentDues(
+    {
+      pageSize: 50,
+      ...(selectedAddClientName ? { q: selectedAddClientName } : {}),
+    },
+    {
+      enabled: isAddDrawerOpen && Boolean(selectedClientId),
+      staleTime: 30000,
+    },
+  );
+  const paymentDueOptions = React.useMemo(
+    () =>
+      (selectedClientPaymentDues || []).filter(
+        (due) =>
+          String(due.clientId) === String(selectedClientId) &&
+          ["open", "partially_paid", "overdue"].includes(
+            String(due.status || "").toLowerCase(),
+          ),
+      ),
+    [selectedClientPaymentDues, selectedClientId],
+  );
+  const selectedPaymentDue = React.useMemo(
+    () =>
+      paymentDueOptions.find(
+        (due) => String(due.id) === String(selectedPaymentDueId),
+      ) || null,
+    [paymentDueOptions, selectedPaymentDueId],
+  );
 
   // Edit drawer state
   const [editingPayment, setEditingPayment] = React.useState(null);
@@ -136,6 +276,7 @@ const PaymentsListPage = () => {
   const [refundReason, setRefundReason] = React.useState("");
   const [refundAmount, setRefundAmount] = React.useState("");
   const [isExporting, setIsExporting] = React.useState(false);
+  const [isRequestingPayout, setIsRequestingPayout] = React.useState(false);
 
   React.useEffect(() => {
     setBreadcrumbs([
@@ -164,18 +305,77 @@ const PaymentsListPage = () => {
     currentPage,
   ]);
 
+  React.useEffect(() => {
+    setSelectedPaymentDueId("");
+  }, [selectedClientId]);
+
+  React.useEffect(() => {
+    if (
+      selectedPaymentDueId &&
+      !paymentDueOptions.some(
+        (due) => String(due.id) === String(selectedPaymentDueId),
+      )
+    ) {
+      setSelectedPaymentDueId("");
+    }
+  }, [paymentDueOptions, selectedPaymentDueId]);
+
   const selectedPaymentIds = React.useMemo(
     () =>
       chain(rowSelection)
         .entries()
         .filter(([, selected]) => Boolean(selected))
-        .map(([id]) => Number(id))
-        .filter((id) => Number.isInteger(id))
+        .map(([id]) => String(id))
+        .filter(Boolean)
         .value(),
     [rowSelection],
   );
 
   const selectedPaymentCount = selectedPaymentIds.length;
+  const duplicatePaymentWarning = React.useMemo(
+    () =>
+      buildDuplicatePaymentWarning({
+        payments,
+        selectedClientId,
+        selectedClientName: selectedAddClientName,
+        paymentAmount,
+        paymentMethod,
+        selectedPaymentDueId,
+      }),
+    [
+      payments,
+      paymentAmount,
+      paymentMethod,
+      selectedAddClientName,
+      selectedClientId,
+      selectedPaymentDueId,
+    ],
+  );
+  const addAmountRisk = React.useMemo(
+    () =>
+      buildAmountRisk({
+        amount: toPositiveAmount(paymentAmount),
+        expectedAmount: selectedPaymentDue
+          ? getDueRemainingAmount(selectedPaymentDue)
+          : getClientExpectedAmount(selectedAddClient),
+        duplicateWarning: duplicatePaymentWarning,
+      }),
+    [
+      duplicatePaymentWarning,
+      paymentAmount,
+      selectedAddClient,
+      selectedPaymentDue,
+    ],
+  );
+  const editAmountRisk = React.useMemo(
+    () =>
+      buildAmountRisk({
+        amount: toPositiveAmount(editAmount),
+        previousAmount: Number(editingPayment?.amount || 0),
+        type: "edit",
+      }),
+    [editAmount, editingPayment],
+  );
 
   const handleFileUpload = async (event, isEdit = false) => {
     const file = get(event, "target.files[0]");
@@ -217,25 +417,41 @@ const PaymentsListPage = () => {
       toast.error("Mijozni tanlang");
       return;
     }
-    const amount = Number(paymentAmount);
+    const amount = toPositiveAmount(paymentAmount);
     if (!amount || amount <= 0) {
       toast.error("To'lov summasini kiriting");
       return;
     }
     try {
-      await mutations.createResource({
+      const normalizedMethod =
+        normalizeCoachPaymentMethod(paymentMethod) || "OTHER";
+      const response = await mutations.createResource({
         clientId: selectedClientId,
         amount,
         note: paymentNote,
-        method: paymentMethod,
+        method: normalizedMethod,
         receiptUrl: receiptUrl || undefined,
+        paymentDueId: selectedPaymentDueId || undefined,
+        idempotencyKey: paymentIdempotencyKey,
       });
-      toast.success("To'lov muvaffaqiyatli qayd etildi");
+      const payload = unwrapMutationPayload(response);
+      if (payload?.duplicate || payload?.idempotent) {
+        const notifyWarning = toast.warning || toast.error;
+        notifyWarning(
+          payload?.duplicate
+            ? "Dublikat to'lov topildi, mavjud yozuv qaytarildi"
+            : "Bu to'lov avval qayd etilgan",
+        );
+      } else {
+        toast.success("To'lov muvaffaqiyatli qayd etildi");
+      }
       setIsAddDrawerOpen(false);
       setSelectedClientId("");
+      setSelectedPaymentDueId("");
       setPaymentAmount("");
       setPaymentNote("");
       setPaymentMethod("CASH");
+      setPaymentIdempotencyKey(createPaymentIdempotencyKey());
       setReceiptUrl("");
       setReceiptAccessUrl("");
       setAddPaymentSearch("");
@@ -251,11 +467,16 @@ const PaymentsListPage = () => {
 
   const handleUpdatePayment = async () => {
     if (!editingPayment) return;
+    const amount = toPositiveAmount(editAmount);
+    if (!amount || amount <= 0) {
+      toast.error("To'lov summasini kiriting");
+      return;
+    }
     try {
       await mutations.updateResource(editingPayment.id, {
-        amount: Number(editAmount) || undefined,
+        amount,
         note: editNote,
-        method: editMethod,
+        method: normalizeCoachPaymentMethod(editMethod) || "OTHER",
         receiptUrl: editReceiptUrl || undefined,
       });
       toast.success("To'lov yangilandi");
@@ -294,10 +515,20 @@ const PaymentsListPage = () => {
 
   const handleRefundPayment = async () => {
     if (!refundingPayment) return;
+    const amount = toPositiveAmount(refundAmount);
+    const maxAmount = Number(refundingPayment.amount || 0);
+    if (!amount || amount <= 0) {
+      toast.error("Refund summasini kiriting");
+      return;
+    }
+    if (maxAmount > 0 && amount > maxAmount) {
+      toast.error("Refund summasi to'lov summasidan oshmasligi kerak");
+      return;
+    }
     try {
       await mutations.updateResourceStatus(refundingPayment.id, {
         status: "refunded",
-        amount: Number(refundAmount) || undefined,
+        amount,
         reason: trim(refundReason) || undefined,
       });
       toast.success("To'lov qaytarildi");
@@ -431,11 +662,30 @@ const PaymentsListPage = () => {
     }
   }, [queryParams, selectedMonth]);
 
+  const handleRequestPayout = React.useCallback(async () => {
+    setIsRequestingPayout(true);
+
+    try {
+      await coachPaymentsApi.requestPayout();
+      toast.success("Payout so'rovi yaratildi");
+      await Promise.all([refetch(), refetchStats(), refetchPayoutSummary()]);
+    } catch (error) {
+      const message = error?.response?.data?.message;
+      toast.error(
+        isArray(message)
+          ? message.join(", ")
+          : message || "Payout so'rovini yaratib bo'lmadi",
+      );
+    } finally {
+      setIsRequestingPayout(false);
+    }
+  }, [refetch, refetchPayoutSummary, refetchStats]);
+
   const openEditDrawer = React.useCallback((payment) => {
     setEditingPayment(payment);
     setEditAmount(String(payment.amount || ""));
     setEditNote(payment.note || "");
-    setEditMethod(payment.method || "CASH");
+    setEditMethod(normalizeCoachPaymentMethod(payment.method) || "CASH");
     setEditReceiptUrl(payment.receiptRef || payment.receiptUrl || "");
     setEditReceiptAccessUrl(payment.receiptUrl || "");
   }, []);
@@ -502,6 +752,16 @@ const PaymentsListPage = () => {
             variant: "outline",
             onClick: () => void handleExportCsv(),
             disabled: isExporting,
+          },
+          {
+            key: "payout",
+            label: isRequestingPayout ? "So'ralmoqda..." : "Payout so'rash",
+            icon: BanknoteIcon,
+            variant: "outline",
+            onClick: () => void handleRequestPayout(),
+            disabled:
+              isRequestingPayout ||
+              Number(get(payoutSummary, "availableAmount", 0)) <= 0,
           },
           {
             key: "create",
@@ -607,17 +867,24 @@ const PaymentsListPage = () => {
           if (!open) {
             setAddPaymentSearch("");
             setSelectedClientId("");
+            setSelectedPaymentDueId("");
             setPaymentAmount("");
             setPaymentNote("");
             setPaymentMethod("CASH");
+            setPaymentIdempotencyKey(createPaymentIdempotencyKey());
             setReceiptUrl("");
             setReceiptAccessUrl("");
           }
         }}
-        filteredAddClients={[]}
-        isClientsLoading={false}
+        filteredAddClients={filteredAddClients}
+        isClientsLoading={isAddClientsLoading}
         selectedClientId={selectedClientId}
         setSelectedClientId={setSelectedClientId}
+        selectedClient={selectedAddClient}
+        paymentDues={paymentDueOptions}
+        selectedPaymentDueId={selectedPaymentDueId}
+        setSelectedPaymentDueId={setSelectedPaymentDueId}
+        isPaymentDuesLoading={isPaymentDuesLoading}
         paymentAmount={paymentAmount}
         setPaymentAmount={setPaymentAmount}
         paymentNote={paymentNote}
@@ -625,6 +892,8 @@ const PaymentsListPage = () => {
         paymentMethod={paymentMethod}
         setPaymentMethod={setPaymentMethod}
         receiptUrl={receiptAccessUrl}
+        duplicatePaymentWarning={duplicatePaymentWarning}
+        amountRisk={addAmountRisk}
         onClearReceipt={() => {
           setReceiptUrl("");
           setReceiptAccessUrl("");
@@ -651,6 +920,7 @@ const PaymentsListPage = () => {
         editMethod={editMethod}
         setEditMethod={setEditMethod}
         editReceiptUrl={editReceiptAccessUrl}
+        amountRisk={editAmountRisk}
         onClearReceipt={() => {
           setEditReceiptUrl("");
           setEditReceiptAccessUrl("");

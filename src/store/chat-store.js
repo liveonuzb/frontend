@@ -55,6 +55,22 @@ const upsertRoomMessage = (currentMessages, nextMessage, currentUserId) => {
     return [...currentMessages, formattedMessage];
 };
 
+const replaceRoomMessageById = (currentMessages, messageId, nextMessage, currentUserId) => {
+    const formattedMessage = formatChatMessage(nextMessage, currentUserId);
+    const existingIdx = findIndex(
+        currentMessages,
+        (message) => message.id === messageId || message.id === formattedMessage.id,
+    );
+
+    if (existingIdx === -1) {
+        return upsertRoomMessage(currentMessages, nextMessage, currentUserId);
+    }
+
+    const nextMessages = [...currentMessages];
+    nextMessages[existingIdx] = formattedMessage;
+    return nextMessages;
+};
+
 const syncRoomLastMessage = (contacts, roomId, message, incrementUnread = false) =>
     map(contacts, (contact) =>
         contact.id === roomId
@@ -70,6 +86,22 @@ const syncRoomLastMessage = (contacts, roomId, message, incrementUnread = false)
               }
             : contact,
     );
+
+const syncBookingResponseMessage = (set, chatId, message, currentUserId) => {
+    if (!message?.id) return;
+
+    set((state) => ({
+        messages: {
+            ...state.messages,
+            [chatId]: upsertRoomMessage(
+                state.messages[chatId] || [],
+                message,
+                currentUserId,
+            ),
+        },
+        contacts: syncRoomLastMessage(state.contacts, chatId, message, false),
+    }));
+};
 
 export const getChatSocketConnectionConfig = (baseURL) => {
     const normalizedBaseURL = String(baseURL || "").replace(/\/+$/, "");
@@ -103,6 +135,11 @@ const useChatStore = create(
             chatOrder: null,
             mutedChats: [],
             blockedChats: [],
+            messageSearchResults: [],
+            messageSearchCursor: null,
+            messageSearchQuery: "",
+            isSearchingMessages: false,
+            messageSearchError: null,
             isLoading: false,
             library: [], // Added missing library
             activeRoomId: null,
@@ -131,7 +168,7 @@ const useChatStore = create(
                 });
 
                 socket.on("newMessage", (message) => {
-                    const { roomId, text, sender } = message;
+                    const { roomId, sender } = message;
                     if (!roomId) {
                         console.warn("Received message without roomId", message);
                         return;
@@ -375,8 +412,9 @@ const useChatStore = create(
                         set((state) => ({
                             messages: {
                                 ...state.messages,
-                                [roomId]: upsertRoomMessage(
+                                [roomId]: replaceRoomMessageById(
                                     state.messages[roomId] || [],
+                                    optimisticMsg.id,
                                     message,
                                     myId,
                                 ),
@@ -388,16 +426,140 @@ const useChatStore = create(
                                 false,
                             ),
                         }));
+                        return message;
                     }
+                    return null;
                 } catch (error) {
-                    toast.error("Xabar yuborishda xatolik");
-                    // Remove optimistic message on error
+                    const message =
+                        error?.response?.data?.message || "Xabar yuborishda xatolik";
+                    const errorMessage = Array.isArray(message) ? join(message, ", ") : message;
+                    toast.error(errorMessage);
                     set((state) => ({
                         messages: {
                             ...state.messages,
-                            [roomId]: filter(state.messages[roomId] || [], m => m.id !== optimisticMsg.id),
+                            [roomId]: map(state.messages[roomId] || [], (m) =>
+                                m.id === optimisticMsg.id
+                                    ? { ...m, status: "failed", errorMessage }
+                                    : m,
+                            ),
                         },
                     }));
+                    return null;
+                }
+            },
+
+            retryMessage: async (roomId, messageId) => {
+                const myId = useAuthStore.getState().user?.id;
+                const failedMessage = find(
+                    get().messages[roomId] || [],
+                    (message) => message.id === messageId && message.status === "failed",
+                );
+
+                if (!failedMessage) return null;
+
+                set((state) => ({
+                    messages: {
+                        ...state.messages,
+                        [roomId]: map(state.messages[roomId] || [], (message) =>
+                            message.id === messageId
+                                ? { ...message, status: "sending", errorMessage: null }
+                                : message,
+                        ),
+                    },
+                }));
+
+                try {
+                    const response = await api.post(`/chat/rooms/${roomId}/messages`, {
+                        text: failedMessage.text,
+                        type: failedMessage.type || "text",
+                        metadata: failedMessage.metadata || null,
+                        mediaUrl: failedMessage.mediaUrl || null,
+                        replyToId: failedMessage.replyToId || failedMessage.replyTo?.id || null,
+                    });
+                    const message = getApiResponseData(response, null);
+
+                    if (message?.id) {
+                        set((state) => ({
+                            messages: {
+                                ...state.messages,
+                                [roomId]: replaceRoomMessageById(
+                                    state.messages[roomId] || [],
+                                    messageId,
+                                    message,
+                                    myId,
+                                ),
+                            },
+                            contacts: syncRoomLastMessage(
+                                state.contacts,
+                                roomId,
+                                message,
+                                false,
+                            ),
+                        }));
+                        return message;
+                    }
+
+                    return null;
+                } catch (error) {
+                    const message =
+                        error?.response?.data?.message || "Xabar yuborishda xatolik";
+                    const errorMessage = Array.isArray(message) ? join(message, ", ") : message;
+                    toast.error(errorMessage);
+                    set((state) => ({
+                        messages: {
+                            ...state.messages,
+                            [roomId]: map(state.messages[roomId] || [], (m) =>
+                                m.id === messageId
+                                    ? { ...m, status: "failed", errorMessage }
+                                    : m,
+                            ),
+                        },
+                    }));
+                    return null;
+                }
+            },
+
+            refreshAttachmentUrl: async (chatId, messageId) => {
+                try {
+                    const response = await api.get(
+                        `/chat/rooms/${chatId}/messages/${messageId}/attachment-url`,
+                    );
+                    const payload = getApiResponseData(response, response?.data);
+
+                    if (!payload?.url) {
+                        throw new Error("Attachment URL response invalid");
+                    }
+
+                    set((state) => ({
+                        messages: {
+                            ...state.messages,
+                            [chatId]: map(state.messages[chatId] || [], (message) =>
+                                message.id === messageId
+                                    ? {
+                                          ...message,
+                                          mediaUrl: payload.url,
+                                          metadata: {
+                                              ...(message.metadata || {}),
+                                              attachment: {
+                                                  ...(message.metadata?.attachment || {}),
+                                                  objectKey:
+                                                      payload.objectKey ||
+                                                      message.metadata?.attachment?.objectKey,
+                                                  signedUrlExpiresAt: payload.expiresAt,
+                                              },
+                                          },
+                                      }
+                                    : message,
+                            ),
+                        },
+                    }));
+
+                    return payload;
+                } catch (error) {
+                    const message =
+                        error?.response?.data?.message || "Fayl linkini yangilab bo'lmadi";
+                    toast.error(Array.isArray(message) ? join(message, ", ") : message);
+                    throw error;
                 }
             },
 
@@ -427,56 +589,68 @@ const useChatStore = create(
                 });
             },
 
-            deleteMessage: (chatId, msgId, forEveryone = false) => {
-                set((state) => {
-                    const chatMsgs = [...(state.messages[chatId] || [])];
-                    if (forEveryone) {
-                        const idx = findIndex(chatMsgs, (m) => m.id === msgId);
-                        if (idx === -1) return state;
-                        chatMsgs[idx] = {
-                            ...chatMsgs[idx],
-                            deleted: true,
-                            deletedForEveryone: true,
-                            text: "",
-                        };
-                        return {
-                            messages: { ...state.messages, [chatId]: chatMsgs },
-                        };
-                    }
-                    return {
+            deleteMessage: async (chatId, msgId) => {
+                const previousMessages = get().messages[chatId] || [];
+
+                set((state) => ({
+                    messages: {
+                        ...state.messages,
+                        [chatId]: filter(state.messages[chatId] || [], (m) => m.id !== msgId),
+                    },
+                }));
+
+                try {
+                    await api.delete(`/chat/rooms/${chatId}/messages/${msgId}`);
+                } catch (error) {
+                    set((state) => ({
                         messages: {
                             ...state.messages,
-                            [chatId]: filter(chatMsgs, (m) => m.id !== msgId),
+                            [chatId]: previousMessages,
                         },
-                    };
-                });
+                    }));
+                    const message =
+                        error?.response?.data?.message || "Xabarni o'chirishda xatolik";
+                    toast.error(Array.isArray(message) ? join(message, ", ") : message);
+                    throw error;
+                }
             },
 
-            forwardMessage: (fromChatId, msgId, toChatId) => {
+            forwardMessage: async (fromChatId, msgId, toChatId) => {
                 const state = get();
                 const chatMsgs = state.messages[fromChatId] || [];
                 const original = find(chatMsgs, (m) => m.id === msgId);
                 if (!original) return;
 
                 const senderName = original.from === "me" ? "Siz" : (original.sender?.name || "Noma'lum");
+                const fallbackText =
+                    original.type === "image"
+                        ? "📷 Rasm"
+                        : original.type === "file"
+                          ? "📎 Fayl"
+                          : original.type === "voice" || original.type === "audio"
+                            ? "🎙️ Ovozli xabar"
+                            : "Forward qilingan xabar";
 
-                const forwarded = {
-                    ...original,
-                    id: `fwd-${Date.now()}`,
-                    time: new Date().toLocaleTimeString("uz", { hour: "2-digit", minute: "2-digit" }),
-                    forwardedFrom: senderName,
-                    reactions: [],
-                };
-
-                set((s) => ({
-                    messages: {
-                        ...s.messages,
-                        [toChatId]: [...(s.messages[toChatId] || []), forwarded],
+                const sentMessage = await get().sendMessage(
+                    toChatId,
+                    original.text || fallbackText,
+                    original.mediaUrl || null,
+                    original.type || "text",
+                    {
+                        ...(original.metadata || {}),
+                        forwardedFrom: senderName,
+                        originalMessageId: msgId,
+                        originalRoomId: fromChatId,
                     },
-                }));
+                );
+                if (!sentMessage) {
+                    throw new Error("Forward message failed");
+                }
             },
 
-            editMessage: (chatId, msgId, newText) => {
+            editMessage: async (chatId, msgId, newText) => {
+                const previousMessages = get().messages[chatId] || [];
+
                 set((state) => {
                     const chatMsgs = [...(state.messages[chatId] || [])];
                     const idx = findIndex(chatMsgs, (m) => m.id === msgId);
@@ -490,6 +664,45 @@ const useChatStore = create(
                         messages: { ...state.messages, [chatId]: chatMsgs },
                     };
                 });
+
+                try {
+                    const response = await api.patch(
+                        `/chat/rooms/${chatId}/messages/${msgId}`,
+                        { text: newText },
+                    );
+                    const myId = useAuthStore.getState().user?.id;
+                    const message = getApiResponseData(response, null);
+
+                    if (message?.id) {
+                        set((state) => ({
+                            messages: {
+                                ...state.messages,
+                                [chatId]: upsertRoomMessage(
+                                    state.messages[chatId] || [],
+                                    message,
+                                    myId,
+                                ),
+                            },
+                            contacts: syncRoomLastMessage(
+                                state.contacts,
+                                chatId,
+                                message,
+                                false,
+                            ),
+                        }));
+                    }
+                } catch (error) {
+                    set((state) => ({
+                        messages: {
+                            ...state.messages,
+                            [chatId]: previousMessages,
+                        },
+                    }));
+                    const message =
+                        error?.response?.data?.message || "Xabarni tahrirlashda xatolik";
+                    toast.error(Array.isArray(message) ? join(message, ", ") : message);
+                    throw error;
+                }
             },
 
             replyToMessage: (chatId, text, replyToMsg, mediaUrl = null) => {
@@ -691,26 +904,10 @@ const useChatStore = create(
                         durationMinutes,
                         note,
                     });
-                    const message = response?.data?.message;
-                    if (!get().socket && message?.id) {
-                        set((state) => ({
-                            messages: {
-                                ...state.messages,
-                                [chatId]: upsertRoomMessage(
-                                    state.messages[chatId] || [],
-                                    message,
-                                    myId,
-                                ),
-                            },
-                            contacts: syncRoomLastMessage(
-                                state.contacts,
-                                chatId,
-                                message,
-                                false,
-                            ),
-                        }));
-                    }
-                    return response?.data;
+                    const payload = getApiResponseData(response, response?.data);
+                    const message = payload?.message;
+                    syncBookingResponseMessage(set, chatId, message, myId);
+                    return payload;
                 } catch (error) {
                     const message =
                         error?.response?.data?.message || "Booking yuborishda xatolik";
@@ -726,29 +923,48 @@ const useChatStore = create(
                         `/chat/rooms/${chatId}/bookings/${bookingId}/select`,
                         { slotTime },
                     );
-                    const message = response?.data?.message;
-                    if ((!get().socket || !message?.id) && message?.id) {
-                        set((state) => ({
-                            messages: {
-                                ...state.messages,
-                                [chatId]: upsertRoomMessage(
-                                    state.messages[chatId] || [],
-                                    message,
-                                    myId,
-                                ),
-                            },
-                            contacts: syncRoomLastMessage(
-                                state.contacts,
-                                chatId,
-                                message,
-                                false,
-                            ),
-                        }));
-                    }
-                    return response?.data;
+                    const payload = getApiResponseData(response, response?.data);
+                    const message = payload?.message;
+                    syncBookingResponseMessage(set, chatId, message, myId);
+                    return payload;
                 } catch (error) {
                     const message =
                         error?.response?.data?.message || "Slotni band qilishda xatolik";
+                    toast.error(Array.isArray(message) ? join(message, ", ") : message);
+                    throw error;
+                }
+            },
+
+            cancelBooking: async (chatId, bookingId, reason = "") => {
+                const myId = useAuthStore.getState().user?.id;
+                try {
+                    const response = await api.post(
+                        `/chat/rooms/${chatId}/bookings/${bookingId}/cancel`,
+                        { reason },
+                    );
+                    const payload = getApiResponseData(response, response?.data);
+                    syncBookingResponseMessage(set, chatId, payload?.message, myId);
+                    return payload;
+                } catch (error) {
+                    const message =
+                        error?.response?.data?.message || "Bookingni bekor qilishda xatolik";
+                    toast.error(Array.isArray(message) ? join(message, ", ") : message);
+                    throw error;
+                }
+            },
+
+            completeBooking: async (chatId, bookingId) => {
+                const myId = useAuthStore.getState().user?.id;
+                try {
+                    const response = await api.post(
+                        `/chat/rooms/${chatId}/bookings/${bookingId}/complete`,
+                    );
+                    const payload = getApiResponseData(response, response?.data);
+                    syncBookingResponseMessage(set, chatId, payload?.message, myId);
+                    return payload;
+                } catch (error) {
+                    const message =
+                        error?.response?.data?.message || "Bookingni tugatishda xatolik";
                     toast.error(Array.isArray(message) ? join(message, ", ") : message);
                     throw error;
                 }
@@ -769,18 +985,14 @@ const useChatStore = create(
             },
 
             payInvoice: (chatId, msgId) => {
-                set((state) => {
-                    const chatMsgs = [...(state.messages[chatId] || [])];
-                    const idx = findIndex(chatMsgs, m => m.id === msgId);
-                    if (idx === -1 || chatMsgs[idx].type !== "invoice") return state;
+                const invoice = find(
+                    get().messages[chatId] || [],
+                    (message) => message.id === msgId && message.type === "invoice",
+                );
+                if (!invoice) return false;
 
-                    const msg = { ...chatMsgs[idx], metadata: { ...chatMsgs[idx].metadata } };
-                    msg.metadata.status = "paid";
-
-                    chatMsgs[idx] = msg;
-                    return { messages: { ...state.messages, [chatId]: chatMsgs } };
-                });
-                toast.success("To'lov muvaffaqiyatli amalga oshirildi!");
+                toast.error("Invoice to'lovi hali real payment providerga ulanmagan");
+                return false;
             },
 
             sendHabitTracker: (chatId, title, habits) => {
@@ -836,17 +1048,28 @@ const useChatStore = create(
                 }
             },
 
-            searchGlobalMessages: (query) => {
-                if (!query.trim()) return [];
+            searchGlobalMessages: async (query, options = {}) => {
+                const normalizedQuery = query.trim();
+                if (!normalizedQuery) {
+                    set({
+                        messageSearchResults: [],
+                        messageSearchCursor: null,
+                        messageSearchQuery: "",
+                        messageSearchError: null,
+                        isSearchingMessages: false,
+                    });
+                    return [];
+                }
+
                 const state = get();
-                const results = [];
-                const q = query.toLowerCase();
+                const fallbackResults = [];
+                const q = normalizedQuery.toLowerCase();
 
                 toPairs(state.messages).forEach(([chatId, msgs]) => {
                     msgs.forEach(m => {
                         if (m.text && m.text.toLowerCase().includes(q)) {
                             const entity = find(state.contacts, c => c.id == chatId);
-                            results.push({
+                            fallbackResults.push({
                                 chatId,
                                 msgId: m.id,
                                 text: m.text,
@@ -857,7 +1080,72 @@ const useChatStore = create(
                         }
                     });
                 });
-                return results;
+
+                set({
+                    isSearchingMessages: true,
+                    messageSearchQuery: normalizedQuery,
+                    messageSearchError: null,
+                });
+
+                try {
+                    const response = await api.get("/chat/messages/search", {
+                        params: {
+                            q: normalizedQuery,
+                            limit: options.limit ?? 20,
+                            ...(options.cursor ? { cursor: options.cursor } : {}),
+                            ...(options.roomId ? { roomId: options.roomId } : {}),
+                            ...(options.participantUserId
+                                ? { participantUserId: options.participantUserId }
+                                : {}),
+                            ...(options.senderId ? { senderId: options.senderId } : {}),
+                            ...(options.type ? { type: options.type } : {}),
+                            ...(options.pinnedOnly ? { pinnedOnly: true } : {}),
+                            ...(options.mediaOnly ? { mediaOnly: true } : {}),
+                            ...(options.dateFrom ? { dateFrom: options.dateFrom } : {}),
+                            ...(options.dateTo ? { dateTo: options.dateTo } : {}),
+                        },
+                    });
+                    const payload = getApiResponseData(response, {});
+                    const serverResults = Array.isArray(payload)
+                        ? payload
+                        : payload.data || payload.items || [];
+                    const formattedResults = map(serverResults, (result) => ({
+                        chatId: result.chatId,
+                        msgId: result.msgId,
+                        text: result.text,
+                        type: result.type,
+                        createdAt: result.createdAt,
+                        time: result.createdAt
+                            ? new Date(result.createdAt).toLocaleTimeString("uz", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                              })
+                            : "",
+                        senderName:
+                            result.roomName || result.senderName || "Noma'lum",
+                        avatar: result.avatar || "👤",
+                        isPinned: Boolean(result.isPinned),
+                    }));
+
+                    set((current) => ({
+                        messageSearchResults: options.cursor
+                            ? [...current.messageSearchResults, ...formattedResults]
+                            : formattedResults,
+                        messageSearchCursor: payload.nextCursor || null,
+                        isSearchingMessages: false,
+                    }));
+
+                    return formattedResults;
+                } catch (error) {
+                    console.error("Failed to search messages", error);
+                    set({
+                        messageSearchResults: fallbackResults,
+                        messageSearchCursor: null,
+                        messageSearchError: "Server qidiruv vaqtincha ishlamadi",
+                        isSearchingMessages: false,
+                    });
+                    return fallbackResults;
+                }
             },
 
             // --- Simplified compatibility methods ---
@@ -913,8 +1201,8 @@ const useChatStore = create(
             },
 
             // AI Features (keeping them as mock for now but could be connected)
-            getChatSummary: (chatId) => "Ushbu suhbat tahlili hali tayyor emas.",
-            getLiveActivity: (chatId) => null,
+            getChatSummary: () => "Ushbu suhbat tahlili hali tayyor emas.",
+            getLiveActivity: () => null,
 
             markAsRead: (chatId) => {
                 const { socket } = get();

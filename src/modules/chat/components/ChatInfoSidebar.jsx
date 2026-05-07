@@ -25,28 +25,135 @@ import {
     ChevronRightIcon,
     CalendarIcon as LucideCalendar,
     ArrowLeftIcon,
-    SparklesIcon,
     StickyNoteIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDailyTrackingDay, getTodayKey } from "@/hooks/app/use-daily-tracking";
 import { useChatStore } from "@/store";
-import { useCoachClients, COACH_CLIENTS_QUERY_KEY } from "@/hooks/app/use-coach";
+import {
+    useCoachClientDetail,
+    useCoachClients,
+    useCoachClientSummary,
+    COACH_CLIENTS_QUERY_KEY,
+} from "@/hooks/app/use-coach";
 import { usePatchQuery } from "@/hooks/api";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useProfileOverlay } from "@/modules/profile/hooks/use-profile-overlay";
+import { isChatFeatureEnabled } from "@/modules/chat/lib/chat-feature-flags.js";
+
+const RISK_LABELS = {
+    high: "Yuqori",
+    medium: "O'rta",
+    low: "Past",
+};
+
+const PAYMENT_LABELS = {
+    overdue: "Kechikkan",
+    due: "Kutilmoqda",
+    paid: "To'langan",
+    current: "Joyida",
+};
+
+const parseDate = (value) => {
+    if (!value) return null;
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const formatContextDate = (value) => {
+    const parsed = parseDate(value);
+    if (!parsed) return value || "-";
+
+    return new Intl.DateTimeFormat("uz-UZ", {
+        day: "2-digit",
+        month: "short",
+    }).format(parsed);
+};
+
+const countByStatus = (items = [], status) =>
+    filter(items, item => String(item.status || "").toLowerCase() === status).length;
+
+const resolveLastCoachAction = (detail) => {
+    const feedback = detail?.feedback?.[0];
+    if (feedback) {
+        return {
+            label: feedback.title || feedback.message || "Feedback",
+            date: feedback.createdAt,
+        };
+    }
+
+    const task = detail?.tasks?.[0];
+    if (task) return { label: task.title, date: task.createdAt };
+
+    const checkIn = detail?.weeklyCheckIns?.[0];
+    if (checkIn) return { label: checkIn.title, date: checkIn.createdAt };
+
+    return null;
+};
+
+const resolveLatestMeasurement = (measurements = []) =>
+    measurements.length > 0 ? measurements[measurements.length - 1] : null;
+
+const buildClientContext = (detail, summary, client) => {
+    const weeklyCheckIns = detail?.weeklyCheckIns ?? [];
+    const tasks = detail?.tasks ?? [];
+    const payment =
+        summary?.payment ??
+        detail?.overview?.paymentSummary ??
+        client?.paymentSummary ??
+        null;
+    const risk = summary?.risk ?? client?.risk ?? null;
+    const taskSummary = summary?.tasks ?? {
+        open: countByStatus(tasks, "open"),
+        overdue: countByStatus(tasks, "overdue"),
+    };
+    const checkInSummary = summary?.checkIns ?? {
+        missed: countByStatus(weeklyCheckIns, "overdue"),
+        pending: countByStatus(weeklyCheckIns, "pending"),
+        submittedLast30Days: countByStatus(weeklyCheckIns, "submitted"),
+    };
+    const activeMealPlan =
+        summary?.adherence?.nutrition?.activePlan?.name ??
+        detail?.overview?.activeMealPlan?.name ??
+        detail?.overview?.activeMealPlan?.title ??
+        detail?.assignedTemplates?.find(item => item.type === "MEAL")?.title ??
+        null;
+    const activeWorkoutPlan =
+        summary?.adherence?.workout?.activePlan?.name ??
+        detail?.overview?.activeWorkoutPlan?.name ??
+        detail?.overview?.activeWorkoutPlan?.title ??
+        detail?.assignedTemplates?.find(item => item.type === "WORKOUT")?.title ??
+        null;
+    const latestMeasurement = resolveLatestMeasurement(detail?.measurements ?? []);
+    const latestLog = detail?.dailyLogs?.[0] ?? null;
+
+    return {
+        payment,
+        risk,
+        taskSummary,
+        checkInSummary,
+        activeMealPlan,
+        activeWorkoutPlan,
+        latestMeasurement,
+        latestLog,
+        nextAction: summary?.nextAction ?? null,
+        lastCoachAction: resolveLastCoachAction(detail),
+    };
+};
 
 const ChatInfoSidebar = ({
     activeEntity,
     onClose,
     chatMessages = [],
     lastSeenText,
+    isCoach = false,
 }) => {
+    const canUseMuteBlock = isChatFeatureEnabled("muteBlockControls");
+    const canUseChatMaintenance = isChatFeatureEnabled("chatMaintenance");
     const {
-        getChatSummary,
         activeChat,
         toggleMuteChat,
         toggleBlockChat,
@@ -60,14 +167,32 @@ const ChatInfoSidebar = ({
     const { openProfile } = useProfileOverlay();
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [selectedMeal, setSelectedMeal] = useState(null);
-    const [summary, setSummary] = useState(null);
-    const [loadingSummary, setLoadingSummary] = useState(false);
-    const isMuted = isChatMuted(activeChat);
-    const isBlocked = isChatBlocked(activeChat);
+    const isMuted = canUseMuteBlock && isChatMuted(activeChat);
+    const isBlocked = canUseMuteBlock && isChatBlocked(activeChat);
+
+    const clientId =
+        activeEntity?.otherParticipant?.id ?? activeEntity?.clientId ?? null;
+    const { detail, isLoading: isClientDetailLoading } = useCoachClientDetail(
+        clientId,
+        isCoach && Boolean(clientId),
+    );
+    const { summary: rawClientSummary } = useCoachClientSummary(
+        clientId,
+        isCoach && Boolean(clientId),
+    );
+    const clientSummary = rawClientSummary?.data ?? rawClientSummary;
 
     // Notepad state
-    const client = find(clients, c => c.id === activeChat || `g${c.id}` === activeChat);
+    const client = find(
+        clients,
+        c => c.id === clientId || c.id === activeChat || `g${c.id}` === activeChat,
+    );
     const [localNotes, setLocalNotes] = useState(client?.notes || "");
+
+    const context = React.useMemo(
+        () => buildClientContext(detail, clientSummary, client),
+        [client, clientSummary, detail],
+    );
 
     const handleSaveNotes = async () => {
         if (client) {
@@ -81,14 +206,6 @@ const ChatInfoSidebar = ({
                 toast.error("Xatolik yuz berdi");
             }
         }
-    };
-
-    const handleGetSummary = () => {
-        setLoadingSummary(true);
-        setTimeout(() => {
-            setSummary(getChatSummary(activeChat));
-            setLoadingSummary(false);
-        }, 1500);
     };
 
     const dateKey = selectedDate.toISOString().split("T")[0];
@@ -188,14 +305,16 @@ const ChatInfoSidebar = ({
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="size-9 rounded-full hover:bg-primary/10 transition-colors"
-                            onClick={() => toggleMuteChat(activeChat)}
-                        >
-                            {isMuted ? <BellOffIcon className="size-4" /> : <BellIcon className="size-4" />}
-                        </Button>
+                        {canUseMuteBlock && (
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="size-9 rounded-full hover:bg-primary/10 transition-colors"
+                                onClick={() => toggleMuteChat(activeChat)}
+                            >
+                                {isMuted ? <BellOffIcon className="size-4" /> : <BellIcon className="size-4" />}
+                            </Button>
+                        )}
                         <Button
                             variant="outline"
                             size="icon"
@@ -204,18 +323,20 @@ const ChatInfoSidebar = ({
                         >
                             <UserIcon className="size-4" />
                         </Button>
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="size-9 rounded-full text-destructive hover:bg-destructive/10 transition-colors"
-                            onClick={() => toggleBlockChat(activeChat)}
-                        >
-                            <BanIcon className="size-4" />
-                        </Button>
+                        {canUseMuteBlock && (
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="size-9 rounded-full text-destructive hover:bg-destructive/10 transition-colors"
+                                onClick={() => toggleBlockChat(activeChat)}
+                            >
+                                <BanIcon className="size-4" />
+                            </Button>
+                        )}
                     </div>
                 </div>
 
-                <div className="px-4 pt-3 pb-4 border-b">
+                {canUseMuteBlock && <div className="px-4 pt-3 pb-4 border-b">
                     <div className="grid grid-cols-2 gap-2">
                         <div className="rounded-xl border px-3 py-2">
                             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Bildirishnoma</p>
@@ -226,7 +347,94 @@ const ChatInfoSidebar = ({
                             <p className="mt-1 text-sm font-medium">{isBlocked ? "Bloklangan" : "Faol"}</p>
                         </div>
                     </div>
-                </div>
+                </div>}
+
+                {isCoach && clientId && (
+                    <div className="p-4 border-b space-y-3">
+                        <div className="flex items-center justify-between">
+                            <h5 className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">
+                                Client context
+                            </h5>
+                            {context.nextAction?.priority && (
+                                <Badge variant="outline" className="h-5 text-[9px] capitalize">
+                                    {context.nextAction.priority}
+                                </Badge>
+                            )}
+                        </div>
+
+                        {isClientDetailLoading ? (
+                            <div className="space-y-2">
+                                <div className="h-10 rounded-xl bg-muted animate-pulse" />
+                                <div className="h-10 rounded-xl bg-muted animate-pulse" />
+                            </div>
+                        ) : (
+                            <>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <ContextMetric
+                                        label="Risk"
+                                        value={
+                                            context.risk
+                                                ? `${RISK_LABELS[context.risk.level] || context.risk.level} · ${context.risk.score ?? 0}`
+                                                : "-"
+                                        }
+                                        tone={context.risk?.level === "high" ? "danger" : context.risk?.level === "medium" ? "warning" : "neutral"}
+                                    />
+                                    <ContextMetric
+                                        label="To'lov"
+                                        value={
+                                            context.payment
+                                                ? PAYMENT_LABELS[context.payment.status] || context.payment.label || context.payment.status
+                                                : "-"
+                                        }
+                                        hint={formatContextDate(context.payment?.dueDate)}
+                                        tone={context.payment?.status === "overdue" ? "danger" : "neutral"}
+                                    />
+                                    <ContextMetric
+                                        label="Check-in"
+                                        value={`${context.checkInSummary.pending ?? 0} pending`}
+                                        hint={`${context.checkInSummary.missed ?? 0} missed`}
+                                        tone={context.checkInSummary.missed > 0 ? "danger" : "neutral"}
+                                    />
+                                    <ContextMetric
+                                        label="Task"
+                                        value={`${context.taskSummary.open ?? 0} open`}
+                                        hint={`${context.taskSummary.overdue ?? 0} overdue`}
+                                        tone={context.taskSummary.overdue > 0 ? "danger" : "neutral"}
+                                    />
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <ContextLine label="Meal plan" value={context.activeMealPlan || "-"} />
+                                    <ContextLine label="Workout" value={context.activeWorkoutPlan || "-"} />
+                                    <ContextLine
+                                        label="Measurement"
+                                        value={
+                                            context.latestMeasurement
+                                                ? `${context.latestMeasurement.weight || "-"} kg · ${formatContextDate(context.latestMeasurement.date)}`
+                                                : "-"
+                                        }
+                                    />
+                                    <ContextLine
+                                        label="Recent log"
+                                        value={
+                                            context.latestLog
+                                                ? `${context.latestLog.calories || 0} kcal · ${context.latestLog.workoutMinutes || 0} min`
+                                                : "-"
+                                        }
+                                    />
+                                    <ContextLine
+                                        label="Last action"
+                                        value={
+                                            context.lastCoachAction
+                                                ? `${context.lastCoachAction.label} · ${formatContextDate(context.lastCoachAction.date)}`
+                                                : "-"
+                                        }
+                                    />
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
 
                 {/* AI Summary Section */}
                 <div className="p-4 border-b bg-primary/5 space-y-3">
@@ -397,23 +605,45 @@ const ChatInfoSidebar = ({
                 </div>
             </div>
 
-            {/* Footer - Fixed at bottom */}
-            <div className="p-4 border-t bg-background shrink-0 z-10 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
-                <Button
-                    variant="ghost"
-                    className="w-full justify-start text-xs text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all h-10 font-bold"
-                    onClick={() => {
-                        if (window.confirm("Chatdagi barcha xabarlarni o'chirib tashlamoqchimisiz?")) {
-                            toast.success("Chat tozalandi");
-                        }
-                    }}
-                >
-                    <Trash2Icon className="size-4 mr-2" /> Chatni tozalash
-                </Button>
-            </div>
+            {canUseChatMaintenance && (
+                <div className="p-4 border-t bg-background shrink-0 z-10 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
+                    <Button
+                        variant="ghost"
+                        className="w-full justify-start text-xs text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all h-10 font-bold"
+                        onClick={() => {
+                            if (window.confirm("Chatdagi barcha xabarlarni o'chirib tashlamoqchimisiz?")) {
+                                toast.success("Chat tozalandi");
+                            }
+                        }}
+                    >
+                        <Trash2Icon className="size-4 mr-2" /> Chatni tozalash
+                    </Button>
+                </div>
+            )}
         </div>
     );
 };
+
+const CONTEXT_TONES = {
+    danger: "border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300",
+    warning: "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    neutral: "border-border bg-muted/20 text-foreground",
+};
+
+const ContextMetric = ({ label, value, hint, tone = "neutral" }) => (
+    <div className={cn("rounded-xl border px-3 py-2", CONTEXT_TONES[tone])}>
+        <p className="text-[9px] uppercase tracking-wider opacity-60">{label}</p>
+        <p className="mt-1 text-xs font-black truncate">{value}</p>
+        {hint && <p className="mt-0.5 text-[9px] opacity-60 truncate">{hint}</p>}
+    </div>
+);
+
+const ContextLine = ({ label, value }) => (
+    <div className="flex items-center justify-between gap-3 rounded-lg bg-muted/20 px-2.5 py-2">
+        <span className="text-[10px] font-bold text-muted-foreground shrink-0">{label}</span>
+        <span className="text-[10px] font-semibold text-right truncate">{value}</span>
+    </div>
+);
 
 const MacroCard = ({ label, value, unit, color }) => (
     <div className="bg-muted/30 p-3 rounded-2xl border flex flex-col items-center text-center space-y-1">

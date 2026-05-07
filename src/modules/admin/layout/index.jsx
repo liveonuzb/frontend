@@ -27,6 +27,10 @@ import {
   ClipboardCheckIcon,
   TargetIcon,
   LeafIcon,
+  CalendarDaysIcon,
+  BrainCircuitIcon,
+  BellRingIcon,
+  BarChart3Icon,
 } from "lucide-react";
 import {
   Sidebar,
@@ -76,6 +80,12 @@ const mainNav = [
     to: "/admin/coaches",
     label: "Murabbiylar",
     icon: ShieldCheckIcon,
+    capability: "support.read",
+  },
+  {
+    to: "/admin/tracking",
+    label: "Tracking overview",
+    icon: BarChart3Icon,
     capability: "support.read",
   },
   {
@@ -151,6 +161,12 @@ const contentNav = [
     to: "/admin/nutrition-preferences/list",
     label: "Ovqatlanish talablari",
     icon: LeafIcon,
+    capability: "content.read",
+  },
+  {
+    to: "/admin/meal-plans/list",
+    label: "Meal plan shablonlari",
+    icon: CalendarDaysIcon,
     capability: "content.read",
   },
 
@@ -237,6 +253,18 @@ const systemNav = [
     label: "Platform Bot",
     icon: BotIcon,
     capability: "growth.read",
+  },
+  {
+    to: "/admin/ai",
+    label: "AI Admin",
+    icon: BrainCircuitIcon,
+    capability: "settings.manage",
+  },
+  {
+    to: "/admin/notifications",
+    label: "Notifications",
+    icon: BellRingIcon,
+    capability: "support.read",
   },
   {
     to: "/admin/languages",

@@ -1,12 +1,5 @@
 import React from "react";
 import { RotateCcwIcon } from "lucide-react";
-import {
-  NumberField,
-  NumberFieldDecrement,
-  NumberFieldGroup,
-  NumberFieldIncrement,
-  NumberFieldInput,
-} from "@/components/reui/number-field";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -19,14 +12,12 @@ import {
 } from "@/components/ui/drawer";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-
-const formatMoney = (value) => {
-  const normalized = Number(value);
-  if (!Number.isFinite(normalized) || normalized <= 0) {
-    return "Kelishiladi";
-  }
-  return `${new Intl.NumberFormat("uz-UZ").format(normalized)} so'm`;
-};
+import {
+  CurrencyAmountField,
+  PaymentConfirmDialog,
+  PaymentSafetyNotice,
+} from "./payment-form-controls";
+import { buildAmountRisk, formatMoney, toPositiveAmount } from "./payment-form-utils";
 
 const PaymentRefundDrawer = ({
   refundingPayment,
@@ -38,6 +29,37 @@ const PaymentRefundDrawer = ({
   onRefundPayment,
   isRefundingClientPayment,
 }) => {
+  const [isConfirmOpen, setIsConfirmOpen] = React.useState(false);
+  const paymentAmount = Number(refundingPayment?.amount || 0);
+  const amount = toPositiveAmount(refundAmount);
+  const amountRisk = buildAmountRisk({
+    amount,
+    expectedAmount: paymentAmount,
+    type: "refund",
+  });
+  const isFullRefund = paymentAmount > 0 && amount >= paymentAmount;
+  const risk = isFullRefund
+    ? {
+        severity: "warning",
+        title: "To'liq refund",
+        description: `${formatMoney(amount)} to'liq qaytariladi. Balans va payout holatini tekshiring.`,
+        requiresConfirmation: true,
+      }
+    : amountRisk;
+  const isSubmitDisabled =
+    isRefundingClientPayment ||
+    amount <= 0 ||
+    (paymentAmount > 0 && amount > paymentAmount);
+
+  const handleSubmit = () => {
+    if (risk?.requiresConfirmation) {
+      setIsConfirmOpen(true);
+      return;
+    }
+
+    onRefundPayment();
+  };
+
   return (
     <Drawer
       open={Boolean(refundingPayment)}
@@ -57,34 +79,16 @@ const PaymentRefundDrawer = ({
           </DrawerDescription>
         </DrawerHeader>
         <DrawerBody className="space-y-6">
-          <div className="space-y-3">
-            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1">
-              Summa (so&apos;mda)
-            </Label>
-            <NumberField
-              value={refundAmount ? Number(refundAmount) : undefined}
-              min={0}
-              max={Number(refundingPayment?.amount || 0)}
-              step={10000}
-              onValueChange={(value) =>
-                setRefundAmount(
-                  value === null || Number.isNaN(value) ? "" : String(value),
-                )
-              }
-            >
-              <NumberFieldGroup>
-                <NumberFieldDecrement />
-                <NumberFieldInput
-                  placeholder="Qaytarish summasi"
-                  className="h-11"
-                />
-                <NumberFieldIncrement />
-              </NumberFieldGroup>
-            </NumberField>
-            <p className="text-[10px] text-muted-foreground ml-1 italic">
-              Maksimal summa: {formatMoney(refundingPayment?.amount)}
-            </p>
-          </div>
+          <CurrencyAmountField
+            id="refund-payment-amount"
+            label="Qaytarish summasi"
+            value={refundAmount}
+            onChange={setRefundAmount}
+            max={paymentAmount}
+            description={`Maksimal summa: ${formatMoney(paymentAmount)}`}
+          />
+
+          <PaymentSafetyNotice risk={risk} />
 
           <div className="space-y-3">
             <Label
@@ -105,8 +109,8 @@ const PaymentRefundDrawer = ({
         <DrawerFooter>
           <Button
             className="bg-orange-600 hover:bg-orange-700 text-white"
-            onClick={onRefundPayment}
-            disabled={isRefundingClientPayment}
+            onClick={handleSubmit}
+            disabled={isSubmitDisabled}
           >
             {isRefundingClientPayment ? "Qaytarilmoqda..." : "Ha, qaytarish"}
           </Button>
@@ -115,6 +119,21 @@ const PaymentRefundDrawer = ({
           </Button>
         </DrawerFooter>
       </DrawerContent>
+      <PaymentConfirmDialog
+        open={isConfirmOpen}
+        onOpenChange={setIsConfirmOpen}
+        title={risk?.title || "Refundni tasdiqlash"}
+        description={
+          risk?.description ||
+          "Refund summasini tekshirib, davom etishni tasdiqlang."
+        }
+        confirmLabel="Baribir qaytarish"
+        onConfirm={() => {
+          setIsConfirmOpen(false);
+          onRefundPayment();
+        }}
+        isSubmitting={isRefundingClientPayment}
+      />
     </Drawer>
   );
 };

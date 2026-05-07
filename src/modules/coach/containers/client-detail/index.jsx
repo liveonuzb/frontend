@@ -38,7 +38,10 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { useAuthStore, useBreadcrumbStore } from "@/store";
-import { useCoachClientDetail } from "@/hooks/app/use-coach.js";
+import {
+  useCoachClientDetail,
+  useCoachClientSummary,
+} from "@/hooks/app/use-coach.js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -74,6 +77,7 @@ import {
 } from "@/components/reui/number-field";
 import { toast } from "sonner";
 import ClientAISummaryWidget from "./components/ai-summary-widget";
+import Client360SummaryWidget from "./components/client-360-summary-widget";
 import { cn } from "@/lib/utils";
 import SectionCard from "@/components/reui/section-card";
 
@@ -120,6 +124,8 @@ export default function CoachClientDetailContainer() {
     isRemovingClient,
     cancelPayment,
   } = useCoachClientDetail(id);
+  const { summary: clientSummary, isLoading: isClientSummaryLoading } =
+    useCoachClientSummary(id, Boolean(id));
   const [isPricingOpen, setIsPricingOpen] = React.useState(false);
   const [isRemoveOpen, setIsRemoveOpen] = React.useState(false);
   const [pricingAmount, setPricingAmount] = React.useState("");
@@ -407,6 +413,11 @@ export default function CoachClientDetailContainer() {
           </motion.div>
         ))}
       </div>
+
+      <Client360SummaryWidget
+        summary={clientSummary}
+        isLoading={isLoading || isClientSummaryLoading}
+      />
 
       {!isLoading && client && (
         <ClientAISummaryWidget clientName={client.name} clientId={client.id} />

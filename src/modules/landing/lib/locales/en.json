@@ -1,0 +1,723 @@
+{
+  "landing": {
+    "meta": {
+      "title": "LiveOn - AI meal and workout plan in 60 seconds",
+      "description": "LiveOn creates a personal AI plan for meals, workouts, water and progress around your goal, budget, habits and constraints."
+    },
+    "nav": {
+      "logoAlt": "LiveOn logo",
+      "signIn": "Sign in",
+      "cta": "Start free",
+      "mobileCta": "Get plan",
+      "language": "Language",
+      "languageTitle": "Choose language",
+      "languageDescription": "Change the LiveOn interface language.",
+      "menuOpen": "Open menu",
+      "menuClose": "Close menu",
+      "links": [
+        [
+          "features",
+          "Features"
+        ],
+        [
+          "how",
+          "How it works"
+        ],
+        [
+          "nutrition",
+          "Nutrition"
+        ],
+        [
+          "workouts",
+          "Workouts"
+        ],
+        [
+          "progress",
+          "Progress"
+        ],
+        [
+          "coach-mode",
+          "For coaches"
+        ],
+        [
+          "testimonials",
+          "Stories"
+        ],
+        [
+          "pricing",
+          "Pricing"
+        ],
+        [
+          "faq",
+          "FAQ"
+        ]
+      ]
+    },
+    "hero": {
+      "badge": "AI plan in 60 seconds",
+      "title": "Personal AI meal and workout plan in 60 seconds",
+      "body": "Answer a few questions and LiveOn creates a clear daily plan for meals, workouts, water and progress around your goal, budget and habits.",
+      "primaryCta": "Get my plan free",
+      "secondaryCta": "See plan example",
+      "metrics": [
+        [
+          "60 sec",
+          "to get the first plan"
+        ],
+        [
+          "20+ parameters",
+          "for personalization"
+        ],
+        [
+          "Meals + workouts",
+          "in one service"
+        ]
+      ]
+    },
+    "dashboard": {
+      "badge": "LiveOn AI",
+      "title": "Today plan",
+      "progressLabel": "Completed",
+      "calories": "2160 kcal of 2760 kcal",
+      "meals": [
+        [
+          "Breakfast",
+          "Oats, banana, yogurt",
+          "520 kcal"
+        ],
+        [
+          "Lunch",
+          "Chicken, rice, salad",
+          "720 kcal"
+        ],
+        [
+          "Dinner",
+          "Fish, vegetables",
+          "610 kcal"
+        ]
+      ],
+      "macros": [
+        [
+          "Protein",
+          "140 g",
+          "green"
+        ],
+        [
+          "Fat",
+          "72 g",
+          "blue"
+        ],
+        [
+          "Carbs",
+          "230 g",
+          "orange"
+        ],
+        [
+          "Water",
+          "2.1 L",
+          "teal"
+        ]
+      ],
+      "workoutTitle": "Workout today",
+      "workoutBody": "Full Body - 42 min",
+      "workoutKcal": "+240 kcal",
+      "focusTitle": "Focus today",
+      "checklist": [
+        "10,000 steps",
+        "2.1 L water",
+        "No sugar",
+        "7-8 h sleep"
+      ],
+      "mealsTitle": "Meals"
+    },
+    "values": [
+      [
+        "Personal to you",
+        "Goal, schedule, food, constraints and training level in one profile.",
+        "TargetIcon"
+      ],
+      [
+        "Structured method",
+        "Calories, macros, water and progress work as one system.",
+        "BrainIcon"
+      ],
+      [
+        "Local products",
+        "The plan is built around familiar meals and accessible products.",
+        "ShoppingBasketIcon"
+      ],
+      [
+        "Saves time",
+        "No manual meal and workout planning every day.",
+        "Clock3Icon"
+      ]
+    ],
+    "how": {
+      "eyebrow": "How it works",
+      "title": "Three simple steps to a better shape",
+      "body": "LiveOn collects context, creates a plan and helps you stay on track every day.",
+      "steps": [
+        [
+          "Tell us about you",
+          "Add goal, weight, activity, budget, allergies and preferences.",
+          "ClipboardListIcon"
+        ],
+        [
+          "AI creates a plan",
+          "LiveOn analyzes the data and builds a personal meal, workout and water plan.",
+          "SparklesIcon"
+        ],
+        [
+          "Follow and progress",
+          "Complete the plan, track results and get recommendations to improve.",
+          "CalendarCheckIcon"
+        ]
+      ]
+    },
+    "daily": {
+      "eyebrow": "Features",
+      "title": "What your daily plan includes",
+      "body": "One screen answers the main question: what should I do today?",
+      "features": [
+        [
+          "Meals",
+          "3-5 meals with recipes and macros",
+          "UtensilsIcon"
+        ],
+        [
+          "Workouts",
+          "Individual workouts for your goal",
+          "DumbbellIcon"
+        ],
+        [
+          "Water",
+          "Water target and reminders",
+          "DropletsIcon"
+        ],
+        [
+          "Calories and macros",
+          "Calorie and macronutrient control",
+          "BarChart3Icon"
+        ],
+        [
+          "Progress",
+          "Weight, habits, reports and recommendations",
+          "LineChartIcon"
+        ]
+      ]
+    },
+    "showcase": {
+      "eyebrow": "Meals and workouts",
+      "title": "Meals and workouts created for you",
+      "body": "Examples show the plan format: short, clear and useful on a normal day.",
+      "meal": {
+        "badge": "Example",
+        "title": "Meal plan",
+        "body": "Balanced menu around your goal, budget, allergies and preferences.",
+        "example": [
+          "Breakfast: oats + banana + yogurt",
+          "Lunch: chicken + rice + salad",
+          "Dinner: fish + vegetables",
+          "Total: 2160 kcal - 140 g protein"
+        ],
+        "checklist": [
+          "Recipes and macros",
+          "Product replacements",
+          "Shopping list",
+          "Allergies considered",
+          "Budget considered"
+        ],
+        "cta": "See meal plan example"
+      },
+      "workout": {
+        "badge": "Example",
+        "title": "Workout plan",
+        "body": "Home or gym workouts for your level, goal and schedule.",
+        "example": [
+          "Day 1: Full Body",
+          "Squats - 3x12",
+          "Push-ups - 3x10",
+          "Plank - 3x40 sec",
+          "Cardio - 15 min"
+        ],
+        "checklist": [
+          "Video and instructions",
+          "Sets and reps",
+          "Load adaptation",
+          "Progression",
+          "Home or gym"
+        ],
+        "cta": "See workout example"
+      }
+    },
+    "progress": {
+      "eyebrow": "Progress",
+      "title": "Progress you want to keep going",
+      "body": "Track weight, water, calories, workouts and habits in one place.",
+      "metrics": [
+        [
+          "7 days in a row",
+          "completion streak",
+          "FlameIcon",
+          "orange"
+        ],
+        [
+          "+240 kcal today",
+          "workout",
+          "ActivityIcon",
+          "blue"
+        ],
+        [
+          "-1.2 kg weekly",
+          "weight trend",
+          "TrendingDownIcon",
+          "green"
+        ],
+        [
+          "2.1 L water",
+          "daily target",
+          "DropletsIcon",
+          "teal"
+        ],
+        [
+          "10,842 steps",
+          "activity",
+          "ZapIcon",
+          "blue"
+        ],
+        [
+          "2160 kcal",
+          "nutrition",
+          "BarChart3Icon",
+          "orange"
+        ],
+        [
+          "7-8 h sleep",
+          "recovery",
+          "HeartPulseIcon",
+          "green"
+        ]
+      ],
+      "chartTitle": "Weekly calories",
+      "weightTitle": "Weight",
+      "chartRange": "7 days",
+      "weightValue": "78.4 kg",
+      "weightChange": "-1.2 kg this week"
+    },
+    "coachMode": {
+      "eyebrow": "Coach mode",
+      "title": "Tools for coaches, groups and clients",
+      "body": "LiveOn helps coaches manage clients, groups, plans, payments and progress in one workspace.",
+      "features": [
+        [
+          "Coach dashboard",
+          "Clients, progress, payments and important signals on one working screen.",
+          "UsersIcon"
+        ],
+        [
+          "Telegram groups",
+          "Manage groups and client segments next to plans and reports.",
+          "MessageCircleIcon"
+        ],
+        [
+          "Bot management",
+          "Manage messages, broadcasts, webhook status and coach bots.",
+          "BotIcon"
+        ],
+        [
+          "Coach-client links",
+          "Invites, client assignment and individual plans for each person.",
+          "UserCheckIcon"
+        ],
+        [
+          "Gamification",
+          "Streaks, challenges, achievements and invite flow support consistency.",
+          "TrophyIcon"
+        ]
+      ],
+      "tabs": [
+        [
+          "dashboard",
+          "Dashboard"
+        ],
+        [
+          "telegram",
+          "Telegram + bot"
+        ],
+        [
+          "clients",
+          "Clients + gamification"
+        ]
+      ],
+      "preview": {
+        "badge": "LiveOn Coach",
+        "dashboardTitle": "Coach workday",
+        "dashboardDescription": "Clients, progress, payments and alerts in one place.",
+        "dashboardMetrics": [
+          [
+            "24",
+            "clients",
+            "blue"
+          ],
+          [
+            "82%",
+            "average progress",
+            "green"
+          ],
+          [
+            "4",
+            "alerts",
+            "orange"
+          ],
+          [
+            "12",
+            "plans this week",
+            "teal"
+          ]
+        ],
+        "clientsTitle": "Clients today",
+        "clients": [
+          [
+            "Alina",
+            "Weight loss",
+            82,
+            "Plan done"
+          ],
+          [
+            "Maxim",
+            "Muscle gain",
+            64,
+            "Workout evening"
+          ],
+          [
+            "Eugene",
+            "Healthy routine",
+            91,
+            "7-day streak"
+          ]
+        ],
+        "telegramTitle": "Telegram groups and bot",
+        "telegramDescription": "Segment clients, send messages and monitor bot status.",
+        "telegramGroupsTitle": "Coach groups",
+        "telegramGroups": [
+          [
+            "Spring 2026",
+            "38 members",
+            "Active"
+          ],
+          [
+            "Cutting",
+            "21 members",
+            "Active"
+          ],
+          [
+            "Home workouts",
+            "17 members",
+            "Plan ready"
+          ]
+        ],
+        "botTitle": "Bot management",
+        "botStats": [
+          [
+            "Webhook",
+            "OK"
+          ],
+          [
+            "Broadcast",
+            "Today 18:00"
+          ],
+          [
+            "Segments",
+            "3 groups"
+          ]
+        ],
+        "broadcastTitle": "Group message",
+        "broadcastBody": "Water and workout reminder will be sent to the \"Weight loss\" segment.",
+        "clientsLinkTitle": "Coach-client links",
+        "clientsLinkDescription": "Invites, personal plans and game mechanics help clients stay in the process.",
+        "linksTitle": "Links and invites",
+        "clientLinks": [
+          [
+            "Invite by link",
+            "The client gets a profile, goal and plan after registration.",
+            "Ready"
+          ],
+          [
+            "Individual plan",
+            "The coach adjusts meals and load around the client.",
+            "In progress"
+          ],
+          [
+            "Client report",
+            "Progress, habits and recommendations go out in a clear format.",
+            "Weekly"
+          ]
+        ],
+        "gamificationTitle": "Challenges and achievements",
+        "gamification": [
+          [
+            "Streak",
+            "7 days",
+            "orange"
+          ],
+          [
+            "Challenge",
+            "10,000 steps",
+            "teal"
+          ],
+          [
+            "Achievement",
+            "Water without misses",
+            "green"
+          ]
+        ]
+      }
+    },
+    "local": {
+      "eyebrow": "Key difference",
+      "title": "A plan for your budget and familiar products",
+      "body": "LiveOn considers budget, allergies, constraints and accessible products so the plan is healthy and realistic for your life.",
+      "cards": [
+        [
+          "Understands local market",
+          "Considers familiar products and meals that are easy to find nearby.",
+          "ShoppingBasketIcon"
+        ],
+        [
+          "Plans on budget",
+          "Suggests meal options for your weekly or monthly budget.",
+          "WalletCardsIcon"
+        ],
+        [
+          "Considers allergies",
+          "Excludes food you cannot or do not want to eat.",
+          "ShieldCheckIcon"
+        ],
+        [
+          "Product replacements",
+          "Suggests alternatives when a product is unavailable or unsuitable.",
+          "Repeat2Icon"
+        ],
+        [
+          "Shopping list",
+          "Creates a clear weekly shopping list.",
+          "ShoppingBasketIcon"
+        ]
+      ]
+    },
+    "comparison": {
+      "eyebrow": "Comparison",
+      "title": "Why LiveOn is better than ordinary fitness apps",
+      "columns": [
+        "Feature",
+        "LiveOn",
+        "Ordinary apps",
+        "Generic apps"
+      ],
+      "yes": "Yes",
+      "partial": "Partial",
+      "no": "No",
+      "rows": [
+        [
+          "AI plan in 60 seconds",
+          "yes",
+          "partial",
+          "no"
+        ],
+        [
+          "Meals + workouts in one",
+          "yes",
+          "partial",
+          "no"
+        ],
+        [
+          "Budget awareness",
+          "yes",
+          "no",
+          "no"
+        ],
+        [
+          "Local products",
+          "yes",
+          "no",
+          "no"
+        ],
+        [
+          "Allergies and constraints",
+          "yes",
+          "partial",
+          "no"
+        ],
+        [
+          "Product replacements",
+          "yes",
+          "partial",
+          "no"
+        ],
+        [
+          "Progress and recommendations",
+          "yes",
+          "partial",
+          "no"
+        ],
+        [
+          "Weekly reports",
+          "yes",
+          "partial",
+          "no"
+        ],
+        [
+          "Coach mode and clients",
+          "yes",
+          "partial",
+          "no"
+        ],
+        [
+          "Challenges, streak and achievements",
+          "yes",
+          "partial",
+          "no"
+        ]
+      ]
+    },
+    "scenarios": {
+      "eyebrow": "User stories",
+      "title": "User scenario examples",
+      "body": "There are no confirmed public testimonials yet, so this section avoids fictional quotes.",
+      "items": [
+        [
+          "Weight loss",
+          "A user wants a clear menu without strict diets and sees daily calories, water and steps.",
+          "Daily plan"
+        ],
+        [
+          "Muscle gain",
+          "The plan connects protein, calories, load progression and home or gym workouts.",
+          "Meals + load"
+        ],
+        [
+          "Healthy routine",
+          "Focus on water, sleep, regular meals and simple habits without overload.",
+          "Consistency"
+        ]
+      ]
+    },
+    "pricing": {
+      "eyebrow": "Pricing",
+      "title": "Start free. Upgrade your plan when you want.",
+      "free": {
+        "title": "Free",
+        "price": "0 ₽ / forever",
+        "features": [
+          "First AI plan",
+          "Basic water tracking",
+          "Basic meal plan",
+          "Limited statistics"
+        ],
+        "cta": "Start free"
+      },
+      "premium": {
+        "title": "Premium",
+        "badge": "Popular",
+        "price": "Soon",
+        "features": [
+          "Unlimited AI plans",
+          "Advanced analytics",
+          "Budget awareness",
+          "Product replacements",
+          "Food photo analysis",
+          "Weekly reports",
+          "Coach mode and gamification",
+          "PDF export",
+          "No ads"
+        ],
+        "cta": "Try Premium"
+      }
+    },
+    "faq": {
+      "eyebrow": "FAQ",
+      "title": "Frequently asked questions",
+      "items": [
+        [
+          "How does the AI plan work?",
+          "LiveOn uses profile data to suggest meals, workouts, water and daily actions. The plan can be refined as you progress."
+        ],
+        [
+          "How long does plan creation take?",
+          "The first profile is designed for a fast start: you can get a basic plan in about 60 seconds."
+        ],
+        [
+          "Can I use LiveOn free?",
+          "Yes. The Free plan helps you get the first plan and try basic tracking."
+        ],
+        [
+          "Is LiveOn good for weight loss?",
+          "Yes, when selected as a goal. LiveOn considers calories, activity, meals and progress."
+        ],
+        [
+          "Can I gain muscle with LiveOn?",
+          "Yes. The plan can consider calorie surplus, protein and workout progression."
+        ],
+        [
+          "Can I use it without a gym?",
+          "Yes. You can choose home workouts and available equipment."
+        ],
+        [
+          "Does LiveOn consider my budget?",
+          "Yes. Budget is used when building the menu and shopping list."
+        ],
+        [
+          "Can I exclude food I do not eat?",
+          "Yes. Add allergies, constraints and disliked products."
+        ],
+        [
+          "How does food photo analysis work?",
+          "Photo analysis helps estimate a meal faster and add it to tracking."
+        ],
+        [
+          "Is my data safe?",
+          "Profile data is used for personalization and managed inside the service."
+        ]
+      ]
+    },
+    "final": {
+      "title": "Start with your profile - get a plan in 60 seconds",
+      "body": "Answer a few questions and LiveOn will build your first meal, workout and water plan for today.",
+      "cta": "Get my plan free",
+      "secondary": "See example"
+    },
+    "footer": {
+      "tagline": "AI meal and workout plans for your goal.",
+      "columns": [
+        [
+          "Product",
+          [
+            "Features",
+            "Nutrition",
+            "Workouts",
+            "Progress",
+            "Pricing"
+          ]
+        ],
+        [
+          "Company",
+          [
+            "About",
+            "Blog",
+            "Contacts"
+          ]
+        ],
+        [
+          "Support",
+          [
+            "FAQ",
+            "Help",
+            "Terms of use",
+            "Privacy policy"
+          ]
+        ]
+      ],
+      "copyright": "© 2026 LiveOn. All rights reserved."
+    }
+  }
+}

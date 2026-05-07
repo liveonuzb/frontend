@@ -1,21 +1,7 @@
 import { NavLink, useLocation } from "react-router";
 import { cn } from "@/lib/utils";
 import { isNavItemActive } from "@/lib/navigation";
-import {
-  LayoutDashboardIcon,
-  UsersIcon,
-  UtensilsIcon,
-  DumbbellIcon,
-  MessageSquareIcon,
-} from "lucide-react";
-
-const navItems = [
-  { to: "/coach/dashboard", icon: LayoutDashboardIcon, label: "Dashboard" },
-  { to: "/coach/clients", icon: UsersIcon, label: "Mijozlar" },
-  { to: "/coach/meal-plans", icon: UtensilsIcon, label: "Ovqatlanish" },
-  { to: "/coach/workout-plans", icon: DumbbellIcon, label: "Workout" },
-  { to: "/coach/chat", icon: MessageSquareIcon, label: "Chat" },
-];
+import { COACH_MOBILE_NAV_ITEMS } from "./navigation.js";
 
 export default function CoachMobileNav({ hidden = false }) {
   const { pathname } = useLocation();
@@ -28,18 +14,20 @@ export default function CoachMobileNav({ hidden = false }) {
       )}
     >
       <div className="flex items-center justify-between bg-secondary/70 backdrop-blur-md border border-border/40 shadow-2xl rounded-full px-2 py-1.5 gap-0.5">
-        {navItems.map((item) => (
+        {COACH_MOBILE_NAV_ITEMS.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             title={item.label}
             aria-current={
-              isNavItemActive(pathname, item, navItems) ? "page" : undefined
+              isNavItemActive(pathname, item, COACH_MOBILE_NAV_ITEMS)
+                ? "page"
+                : undefined
             }
             className={() =>
               cn(
                 "flex items-center justify-center rounded-full p-[15px] transition-all duration-200",
-                isNavItemActive(pathname, item, navItems)
+                isNavItemActive(pathname, item, COACH_MOBILE_NAV_ITEMS)
                   ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                   : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
               )

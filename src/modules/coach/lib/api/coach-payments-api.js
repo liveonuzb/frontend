@@ -1,3 +1,4 @@
+import { api } from "@/hooks/api/use-api";
 import { createCoachResourceApi } from "./create-coach-resource-api";
 
 const coachPaymentsApi = createCoachResourceApi({
@@ -19,7 +20,29 @@ export const bulkTrash = coachPaymentsApi.bulkTrash;
 export const bulkRestore = coachPaymentsApi.bulkRestore;
 export const bulkHardDelete = coachPaymentsApi.bulkHardDelete;
 export const reorder = coachPaymentsApi.reorder;
-export const exportData = coachPaymentsApi.exportData;
+export const exportData = (params = {}, config = {}) =>
+  api.get("/coach/payments/export.csv", { params, ...config });
 export const importData = coachPaymentsApi.importData;
+export const getPaymentDues = (params = {}, config = {}) =>
+  api.get("/coach/payments/dues", { params, ...config });
+export const syncPaymentDues = (attributes = {}, config = {}) =>
+  api.post("/coach/payments/dues/sync", attributes, config);
+export const createPaymentDueCheckout = (dueId, attributes = {}, config = {}) =>
+  api.post(`/coach/payments/dues/${dueId}/checkout`, attributes, config);
+export const getPayoutSummary = (config = {}) =>
+  api.get("/coach/payments/payouts/summary", config);
+export const getPayoutRequests = (config = {}) =>
+  api.get("/coach/payments/payouts", config);
+export const requestPayout = (attributes = {}, config = {}) =>
+  api.post("/coach/payments/payouts", attributes, config);
 
-export default coachPaymentsApi;
+export default {
+  ...coachPaymentsApi,
+  exportData,
+  getPaymentDues,
+  syncPaymentDues,
+  createPaymentDueCheckout,
+  getPayoutSummary,
+  getPayoutRequests,
+  requestPayout,
+};

@@ -4,6 +4,8 @@ import {
   EyeIcon,
   GlobeIcon,
   MoreVerticalIcon,
+  ShieldBanIcon,
+  ShieldCheckIcon,
   XCircleIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +13,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -21,10 +24,12 @@ const CoachActionsMenu = ({
   onView,
   onStatusUpdate,
   onMarketplaceUpdate,
+  onBlockToggle,
 }) => {
   const coachId = coach.id;
   const coachStatus = coach.coachStatus;
   const mpStatus = coach.coachMarketplaceStatus;
+  const isBlocked = coach.status === "banned";
 
   return (
     <DropdownMenu>
@@ -120,6 +125,20 @@ const CoachActionsMenu = ({
             )}
           </>
         )}
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+          disabled={isPending || !canManage}
+          onClick={() => onBlockToggle(coach)}
+        >
+          {isBlocked ? (
+            <ShieldCheckIcon className="size-4 text-green-500" />
+          ) : (
+            <ShieldBanIcon className="size-4 text-orange-500" />
+          )}
+          {isBlocked ? "Blokdan chiqarish" : "Bloklash"}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

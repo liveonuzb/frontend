@@ -82,6 +82,7 @@ export const useColumns = ({
   onView,
   onStatusUpdate,
   onMarketplaceUpdate,
+  onBlockToggle,
 }) => {
   return React.useMemo(
     () => [
@@ -180,11 +181,19 @@ export const useColumns = ({
               onView={onView}
               onStatusUpdate={onStatusUpdate}
               onMarketplaceUpdate={onMarketplaceUpdate}
+              onBlockToggle={onBlockToggle}
             />
           </div>
         ),
       },
     ],
-    [canManageSupport, isCoachActionPending, onMarketplaceUpdate, onStatusUpdate, onView],
+    [
+      canManageSupport,
+      isCoachActionPending,
+      onBlockToggle,
+      onMarketplaceUpdate,
+      onStatusUpdate,
+      onView,
+    ],
   );
 };

@@ -22,6 +22,7 @@ import {
   useDeleteQuery,
 } from "@/hooks/api";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
+import useApi from "@/hooks/api/use-api.js";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -57,7 +58,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner.jsx";
-import { useColumns } from "./columns.jsx";
+import useColumns from "./columns.jsx";
 import { Filter } from "./filter.jsx";
 import { useWorkoutFilters } from "./use-filters.js";
 import { DeleteAlert, HardDeleteAlert } from "./delete-alert.jsx";
@@ -70,6 +71,8 @@ const getMutationErrorMessage = (error, fallback) => {
 
   return [baseMessage || fallback, dependencySummary].filter(Boolean).join(" ");
 };
+
+const WORKOUTS_QUERY_KEY = ["admin-workouts"];
 
 const resolveLabel = (translations, fallback, language) => {
   if (isObject(translations)) {
@@ -88,6 +91,7 @@ const resolveLabel = (translations, fallback, language) => {
 
 const Index = () => {
   const navigate = useNavigate();
+  const { request } = useApi();
   const queryClient = useQueryClient();
   const { isSuperAdmin } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
@@ -154,8 +158,6 @@ const Index = () => {
     return p;
   }, [queryParams]);
 
-  const WORKOUTS_QUERY_KEY = ["admin-workouts"];
-
   const { data: workoutsData, isLoading, isFetching } = useGetQuery({
     url: "/admin/workouts",
     params: apiParams,
@@ -210,11 +212,53 @@ const Index = () => {
     queryKey: WORKOUTS_QUERY_KEY,
   });
 
-  const exportWorkouts = async () => ({
-    blob: new Blob(),
-    fileName: "workouts.xlsx",
-  });
-  const importWorkouts = async () => ({ importedCount: 0 });
+  const exportWorkouts = React.useCallback(async () => {
+    const response = await request.get("/admin/workouts/export", {
+      params: apiParams,
+      responseType: "blob",
+    });
+
+    return {
+      blob: get(response, "data"),
+      fileName:
+        response.headers?.["content-disposition"]?.match(
+          /filename="?([^"]+)"?/,
+        )?.[1] || "workouts.xlsx",
+    };
+  }, [apiParams, request]);
+  const importWorkouts = React.useCallback(
+    async (file) => {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const previewResponse = await request.post(
+        "/admin/workouts/import/preview",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } },
+      );
+      const preview = get(
+        previewResponse,
+        "data.data",
+        get(previewResponse, "data"),
+      );
+
+      if (get(preview, "invalidCount", 0) > 0) {
+        return { preview, result: null };
+      }
+
+      const importResponse = await request.post(
+        "/admin/workouts/import",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } },
+      );
+
+      return {
+        preview,
+        result: get(importResponse, "data.data", get(importResponse, "data")),
+      };
+    },
+    [request],
+  );
 
   const isUpdating = updateMutation.isPending;
   const isDeleting = deleteMutation.isPending;
@@ -223,7 +267,6 @@ const Index = () => {
   const isAssigningCategories = assignCategoriesMutation.isPending;
   const isHardDeleting = hardDeleteMutation.isPending;
   const isRestoring = restoreMutation.isPending || bulkRestoreMutation.isPending;
-  const isImporting = false;
 
   const activeLanguages = React.useMemo(
     () => lodashFilter(languages, (language) => language.isActive),
@@ -254,6 +297,8 @@ const Index = () => {
   const [hardDeleteTarget, setHardDeleteTarget] = React.useState(null);
   const importFileInputRef = React.useRef(null);
   const [isExporting, setIsExporting] = React.useState(false);
+  const [isImporting, setIsImporting] = React.useState(false);
+  const [importPreview, setImportPreview] = React.useState(null);
 
   React.useEffect(() => {
     setBreadcrumbs([
@@ -444,10 +489,24 @@ const Index = () => {
       if (!file) return;
 
       try {
+        setIsImporting(true);
         const result = await importWorkouts(file);
+        const invalidCount = get(result, "preview.invalidCount", 0);
+
+        if (invalidCount > 0) {
+          setImportPreview(get(result, "preview"));
+          const firstError = get(result, "preview.errors.0.error");
+          toast.error(
+            `${invalidCount} ta qatorda xato bor. ${firstError || "Import boshlanmadi."}`,
+          );
+          return;
+        }
+
+        const importedCount = get(result, "result.importedCount", 0);
         toast.success(
-          `${get(result, "importedCount", 0)} ta mashg'ulot Excel orqali import qilindi`,
+          `${importedCount} ta mashg'ulot Excel orqali import qilindi`,
         );
+        void queryClient.invalidateQueries({ queryKey: WORKOUTS_QUERY_KEY });
       } catch (error) {
         const message = error?.response?.data?.message;
         toast.error(
@@ -456,10 +515,11 @@ const Index = () => {
             : message || "Excel import qilib bo'lmadi",
         );
       } finally {
+        setIsImporting(false);
         event.target.value = "";
       }
     },
-    [importWorkouts],
+    [importWorkouts, queryClient],
   );
 
   const handleToggleStatus = async (workout) => {
@@ -485,7 +545,7 @@ const Index = () => {
 
   const handleToggleOnboarding = async (workout) => {
     try {
-      await patchMutation.mutateAsync({
+      await updateMutation.mutateAsync({
         url: `/admin/workouts/${workout.id}`,
         attributes: { isOnboarding: !workout.isOnboarding },
       });
@@ -919,6 +979,51 @@ const Index = () => {
       ) : null}
 
       <Outlet />
+
+      <Drawer
+        open={Boolean(importPreview)}
+        onOpenChange={(open) => {
+          if (!open) setImportPreview(null);
+        }}
+        direction="bottom"
+      >
+        <DrawerContent className="mx-auto max-h-[85vh] max-w-3xl overflow-hidden">
+          <DrawerHeader>
+            <DrawerTitle>Excel import validation preview</DrawerTitle>
+            <DrawerDescription>
+              {get(importPreview, "totalRows", 0)} qatordan{" "}
+              {get(importPreview, "invalidCount", 0)} tasida xato bor. Xatolarni
+              tuzatib faylni qayta yuklang.
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="space-y-3 overflow-y-auto px-4 pb-4">
+            {(get(importPreview, "errors", []) ?? []).slice(0, 20).map(
+              (error, index) => (
+                <div
+                  key={`${error.rowNumber}-${index}`}
+                  className="rounded-xl border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm"
+                >
+                  <p className="font-medium">
+                    Row {error.rowNumber}: {error.name || error.id || "-"}
+                  </p>
+                  <p className="text-muted-foreground">{error.error}</p>
+                </div>
+              ),
+            )}
+            {get(importPreview, "errors", []).length > 20 ? (
+              <p className="text-xs text-muted-foreground">
+                Yana {get(importPreview, "errors", []).length - 20} ta xato
+                yashirildi.
+              </p>
+            ) : null}
+          </div>
+          <DrawerFooter>
+            <Button variant="outline" onClick={() => setImportPreview(null)}>
+              Yopish
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
 
       <Drawer
         open={translationsDrawerOpen}

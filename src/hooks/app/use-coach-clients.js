@@ -13,8 +13,10 @@ import {
   COACH_CLIENT_DETAIL_QUERY_KEY,
   COACH_CLIENT_NOTES_QUERY_KEY,
   COACH_CLIENT_REMINDERS_QUERY_KEY,
+  COACH_CLIENT_SEGMENTS_QUERY_KEY,
   COACH_CLIENT_SUMMARY_QUERY_KEY,
   COACH_DASHBOARD_QUERY_KEY,
+  COACH_PACKAGES_QUERY_KEY,
   COACH_PAYMENTS_QUERY_KEY,
 } from "./use-coach-query-keys";
 
@@ -30,10 +32,29 @@ const DEFAULT_COACH_CLIENT_DETAIL = {
   payments: [],
 };
 
+const createCoachPaymentIdempotencyKey = () => {
+  const cryptoApi = typeof window !== "undefined" ? window.crypto : null;
+  if (cryptoApi?.randomUUID) {
+    return cryptoApi.randomUUID();
+  }
+
+  return `coach-payment-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
+
 export const resolveCoachClientDetailPayload = (response) => ({
   ...DEFAULT_COACH_CLIENT_DETAIL,
   ...(getApiResponseData(response, DEFAULT_COACH_CLIENT_DETAIL) ?? {}),
 });
+
+export const resolveCoachClientSummaryPayload = (response) =>
+  getApiResponseData(response, null);
+
+export const resolveCoachPackagesPayload = (response) =>
+  get(
+    getApiResponseData(response, response),
+    "items",
+    get(response, "data.items", []),
+  );
 
 export const useCoachClients = (params = {}) => {
   const queryClient = useQueryClient();
@@ -124,6 +145,30 @@ export const useCoachClients = (params = {}) => {
       onSuccess: async () => {
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: COACH_CLIENTS_QUERY_KEY }),
+          queryClient.invalidateQueries({
+            queryKey: COACH_DASHBOARD_QUERY_KEY,
+          }),
+          queryClient.invalidateQueries({
+            queryKey: COACH_CLIENT_DETAIL_QUERY_KEY,
+          }),
+          queryClient.invalidateQueries({
+            queryKey: COACH_CLIENT_SUMMARY_QUERY_KEY,
+          }),
+          queryClient.invalidateQueries({ queryKey: ["me"] }),
+        ]);
+      },
+    },
+  });
+  const assignPackageMutation = usePostQuery({
+    queryKey: COACH_CLIENTS_QUERY_KEY,
+    mutationProps: {
+      onSuccess: async () => {
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: COACH_CLIENTS_QUERY_KEY }),
+          queryClient.invalidateQueries({
+            queryKey: COACH_PACKAGES_QUERY_KEY,
+          }),
+          queryClient.invalidateQueries({ queryKey: COACH_PAYMENTS_QUERY_KEY }),
           queryClient.invalidateQueries({
             queryKey: COACH_DASHBOARD_QUERY_KEY,
           }),
@@ -230,7 +275,11 @@ export const useCoachClients = (params = {}) => {
     async (clientId, payload) =>
       markPaymentMutation.mutateAsync({
         url: `/coach/clients/${clientId}/payments/mark-paid`,
-        attributes: payload,
+        attributes: {
+          ...payload,
+          idempotencyKey:
+            payload?.idempotencyKey || createCoachPaymentIdempotencyKey(),
+        },
       }),
     [markPaymentMutation],
   );
@@ -242,6 +291,15 @@ export const useCoachClients = (params = {}) => {
         attributes: payload,
       }),
     [updatePricingMutation],
+  );
+
+  const assignClientPackage = React.useCallback(
+    async (clientId, payload) =>
+      assignPackageMutation.mutateAsync({
+        url: `/coach/clients/${clientId}/package-contract`,
+        attributes: payload,
+      }),
+    [assignPackageMutation],
   );
 
   const updateClientPayment = React.useCallback(
@@ -280,6 +338,7 @@ export const useCoachClients = (params = {}) => {
     cancelInvitation,
     markClientPayment,
     updateClientPricing,
+    assignClientPackage,
     updateClientPayment,
     cancelClientPayment,
     refundClientPayment,
@@ -288,9 +347,92 @@ export const useCoachClients = (params = {}) => {
     isCancellingInvitation: cancelInvitationMutation.isPending,
     isMarkingClientPayment: markPaymentMutation.isPending,
     isUpdatingClientPricing: updatePricingMutation.isPending,
+    isAssigningClientPackage: assignPackageMutation.isPending,
     isUpdatingClientPayment: updatePaymentMutation.isPending,
     isCancellingClientPayment: cancelPaymentMutation.isPending,
     isRefundingClientPayment: refundPaymentMutation.isPending,
+  };
+};
+
+export const useCoachPackages = (params = {}) => {
+  const queryClient = useQueryClient();
+  const { data, ...query } = useGetQuery({
+    url: "/coach/packages",
+    params,
+    queryProps: {
+      queryKey: [...COACH_PACKAGES_QUERY_KEY, params],
+    },
+  });
+
+  const invalidatePackageScope = React.useCallback(
+    async () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: COACH_PACKAGES_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: COACH_CLIENTS_QUERY_KEY }),
+        queryClient.invalidateQueries({
+          queryKey: COACH_CLIENT_DETAIL_QUERY_KEY,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: COACH_CLIENT_SUMMARY_QUERY_KEY,
+        }),
+        queryClient.invalidateQueries({ queryKey: COACH_DASHBOARD_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: COACH_PAYMENTS_QUERY_KEY }),
+      ]),
+    [queryClient],
+  );
+
+  const createMutation = usePostQuery({
+    queryKey: COACH_PACKAGES_QUERY_KEY,
+    mutationProps: {
+      onSuccess: invalidatePackageScope,
+    },
+  });
+  const updateMutation = usePatchQuery({
+    queryKey: COACH_PACKAGES_QUERY_KEY,
+    mutationProps: {
+      onSuccess: invalidatePackageScope,
+    },
+  });
+  const deleteMutation = useDeleteQuery({
+    queryKey: COACH_PACKAGES_QUERY_KEY,
+    mutationProps: {
+      onSuccess: invalidatePackageScope,
+    },
+  });
+
+  const createPackage = React.useCallback(
+    async (payload) =>
+      createMutation.mutateAsync({
+        url: "/coach/packages",
+        attributes: payload,
+      }),
+    [createMutation],
+  );
+  const updatePackage = React.useCallback(
+    async (packageId, payload) =>
+      updateMutation.mutateAsync({
+        url: `/coach/packages/${packageId}`,
+        attributes: payload,
+      }),
+    [updateMutation],
+  );
+  const deletePackage = React.useCallback(
+    async (packageId) =>
+      deleteMutation.mutateAsync({
+        url: `/coach/packages/${packageId}`,
+      }),
+    [deleteMutation],
+  );
+
+  return {
+    ...query,
+    packages: resolveCoachPackagesPayload(data),
+    createPackage,
+    updatePackage,
+    deletePackage,
+    isCreatingPackage: createMutation.isPending,
+    isUpdatingPackage: updateMutation.isPending,
+    isDeletingPackage: deleteMutation.isPending,
   };
 };
 
@@ -305,7 +447,139 @@ export const useCoachClientSummary = (clientId, enabled = true) => {
 
   return {
     ...query,
-    summary: get(data, "data", null),
+    summary: resolveCoachClientSummaryPayload(data),
+  };
+};
+
+export const useCoachClientSegments = () => {
+  const queryClient = useQueryClient();
+  const { data, ...query } = useGetQuery({
+    url: "/coach/clients/segments",
+    queryProps: {
+      queryKey: COACH_CLIENT_SEGMENTS_QUERY_KEY,
+    },
+  });
+  const createMutation = usePostQuery({
+    queryKey: COACH_CLIENT_SEGMENTS_QUERY_KEY,
+    mutationProps: {
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: COACH_CLIENT_SEGMENTS_QUERY_KEY,
+        });
+      },
+    },
+  });
+  const updateMutation = usePatchQuery({
+    queryKey: COACH_CLIENT_SEGMENTS_QUERY_KEY,
+    mutationProps: {
+      onSuccess: async () => {
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: COACH_CLIENT_SEGMENTS_QUERY_KEY,
+          }),
+          queryClient.invalidateQueries({ queryKey: COACH_CLIENTS_QUERY_KEY }),
+        ]);
+      },
+    },
+  });
+  const deleteMutation = useDeleteQuery({
+    queryKey: COACH_CLIENT_SEGMENTS_QUERY_KEY,
+    mutationProps: {
+      onSuccess: async () => {
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: COACH_CLIENT_SEGMENTS_QUERY_KEY,
+          }),
+          queryClient.invalidateQueries({ queryKey: COACH_CLIENTS_QUERY_KEY }),
+        ]);
+      },
+    },
+  });
+  const reminderMutation = usePostQuery({
+    queryKey: COACH_CLIENT_SEGMENTS_QUERY_KEY,
+    mutationProps: {
+      onSuccess: async () => {
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: COACH_CLIENTS_QUERY_KEY }),
+          queryClient.invalidateQueries({
+            queryKey: COACH_CLIENT_REMINDERS_QUERY_KEY,
+          }),
+          queryClient.invalidateQueries({
+            queryKey: COACH_DASHBOARD_QUERY_KEY,
+          }),
+        ]);
+      },
+    },
+  });
+  const broadcastMutation = usePostQuery({ queryKey: [] });
+
+  const createSegment = React.useCallback(
+    async (payload) =>
+      createMutation.mutateAsync({
+        url: "/coach/clients/segments",
+        attributes: payload,
+      }),
+    [createMutation],
+  );
+  const updateSegment = React.useCallback(
+    async (segmentId, payload) =>
+      updateMutation.mutateAsync({
+        url: `/coach/clients/segments/${segmentId}`,
+        attributes: payload,
+      }),
+    [updateMutation],
+  );
+  const deleteSegment = React.useCallback(
+    async (segmentId) =>
+      deleteMutation.mutateAsync({
+        url: `/coach/clients/segments/${segmentId}`,
+      }),
+    [deleteMutation],
+  );
+  const createSegmentReminder = React.useCallback(
+    async (segmentId, payload) =>
+      reminderMutation.mutateAsync({
+        url: `/coach/clients/segments/${segmentId}/reminders`,
+        attributes: payload,
+      }),
+    [reminderMutation],
+  );
+  const broadcastSegment = React.useCallback(
+    async (segmentId, message) =>
+      broadcastMutation.mutateAsync({
+        url: "/coach/telegram/send-message",
+        attributes: {
+          message,
+          broadcast: {
+            clientSegmentId: segmentId,
+          },
+        },
+      }),
+    [broadcastMutation],
+  );
+  const downloadSegmentClientsCsv = React.useCallback((segmentId) => {
+    const base = import.meta.env.VITE_API_BASE_URL ?? "";
+    const params = new URLSearchParams({
+      type: "clients_csv",
+      segmentId,
+    });
+    window.open(`${base}/coach/reports?${params.toString()}`, "_blank");
+  }, []);
+
+  return {
+    ...query,
+    segments: get(data, "data.data.items", get(data, "data.items", [])),
+    createSegment,
+    updateSegment,
+    deleteSegment,
+    createSegmentReminder,
+    broadcastSegment,
+    downloadSegmentClientsCsv,
+    isCreatingSegment: createMutation.isPending,
+    isUpdatingSegment: updateMutation.isPending,
+    isDeletingSegment: deleteMutation.isPending,
+    isCreatingSegmentReminder: reminderMutation.isPending,
+    isBroadcastingSegment: broadcastMutation.isPending,
   };
 };
 
@@ -483,16 +757,20 @@ export const useCoachClientNotes = (clientId, enabled = true) => {
 };
 
 export function useExportClientReport(clientId) {
-  const downloadReport = (period = 'weekly') => {
-    const base = import.meta.env.VITE_API_BASE_URL ?? '';
-    window.open(`${base}/coach/clients/${clientId}/report/pdf?period=${period}`, '_blank');
+  const downloadReport = (period = "weekly") => {
+    const base = import.meta.env.VITE_API_BASE_URL ?? "";
+    window.open(
+      `${base}/coach/clients/${clientId}/report/pdf?period=${period}`,
+      "_blank",
+    );
   };
   return { downloadReport };
 }
 
 export function useExportClientsCsv() {
-  const base = import.meta.env.VITE_API_BASE_URL ?? '';
-  const download = () => window.open(`${base}/coach/reports/clients.csv`, '_blank');
+  const base = import.meta.env.VITE_API_BASE_URL ?? "";
+  const download = () =>
+    window.open(`${base}/coach/reports/clients.csv`, "_blank");
   return { download };
 }
 

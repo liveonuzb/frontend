@@ -18,6 +18,7 @@ const LanguageDrawerPicker = ({
   languages = [],
   className,
   compact = false,
+  denseOptions = false,
   title = "Til tanlash",
   description = "Ilova uchun faol tilni tanlang.",
   ariaLabel = "Til tanlash",
@@ -74,7 +75,7 @@ const LanguageDrawerPicker = ({
           <DrawerTitle>{title}</DrawerTitle>
           <DrawerDescription>{description}</DrawerDescription>
         </DrawerHeader>
-        <div className="space-y-2 px-4 pb-4">
+        <div className={cn(denseOptions ? "space-y-1.5 px-4 pb-3" : "space-y-2 px-4 pb-4")}>
           {map(languages, (language) => {
             const isSelected = language.code === resolvedLanguage?.code;
 
@@ -85,28 +86,38 @@ const LanguageDrawerPicker = ({
                 onClick={() => handleSelect(language.code)}
                 whileTap={{ scale: 0.98 }}
                 className={cn(
-                  "relative flex w-full items-center gap-4 rounded-[24px] border bg-background/90 px-4 py-4 text-left transition-all md:gap-5 md:rounded-3xl md:px-5 md:py-5",
+                  denseOptions
+                    ? "relative flex w-full items-center gap-3 rounded-2xl border bg-background/90 px-3 py-3 text-left transition-all md:px-4 md:py-3.5"
+                    : "relative flex w-full items-center gap-4 rounded-[24px] border bg-background/90 px-4 py-4 text-left transition-all md:gap-5 md:rounded-3xl md:px-5 md:py-5",
                   isSelected
                     ? `bg-gradient-to-br ${modes[mode]}`
                     : "border-border/70 hover:border-primary/30",
                 )}
               >
-                <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-background/80 text-3xl shadow-sm md:size-14 md:text-4xl">
+                <span
+                  className={cn(
+                    "flex shrink-0 items-center justify-center bg-background/80 shadow-sm",
+                    denseOptions
+                      ? "size-10 rounded-xl text-2xl"
+                      : "size-12 rounded-2xl text-3xl md:size-14 md:text-4xl",
+                  )}
+                >
                   {language.flag || "🌐"}
                 </span>
 
                 <div className="min-w-0 flex-1">
-                  <p className="text-base font-bold md:text-lg">
+                  <p className={cn("font-bold", denseOptions ? "text-sm md:text-base" : "text-base md:text-lg")}>
                     {language.label || language.name}
                   </p>
-                  <p className="text-xs text-muted-foreground md:text-sm">
+                  <p className={cn("text-muted-foreground", denseOptions ? "text-xs" : "text-xs md:text-sm")}>
                     {language.native || language.code.toUpperCase()}
                   </p>
                 </div>
 
                 <div
                   className={cn(
-                    "flex size-6 shrink-0 items-center justify-center rounded-full border-2 md:size-7",
+                    "flex shrink-0 items-center justify-center rounded-full border-2",
+                    denseOptions ? "size-5" : "size-6 md:size-7",
                     isSelected
                       ? `${language.border} bg-background/70`
                       : "border-muted-foreground/25",
@@ -115,11 +126,12 @@ const LanguageDrawerPicker = ({
                   {isSelected ? (
                     <div
                       className={cn(
-                        "flex size-4 items-center justify-center rounded-full md:size-5",
+                        "flex items-center justify-center rounded-full",
+                        denseOptions ? "size-3.5" : "size-4 md:size-5",
                         language.dotTone,
                       )}
                     >
-                      <CheckIcon className="size-3 text-white md:size-3.5" />
+                      <CheckIcon className={cn("text-white", denseOptions ? "size-2.5" : "size-3 md:size-3.5")} />
                     </div>
                   ) : null}
                 </div>

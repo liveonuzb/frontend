@@ -19,6 +19,7 @@ const LEGACY_API_PATH_RULES = [
   [/^\/gamification\b/, "/user/gamification"],
   [/^\/referral\b/, "/user/referral"],
   [/^\/storage\/upload-media\b/, "/user/media/upload-media"],
+  [/^\/storage\/chat-upload\b/, "/user/media/chat-attachments"],
   [/^\/storage\/upload\b/, "/user/media/upload"],
 ];
 

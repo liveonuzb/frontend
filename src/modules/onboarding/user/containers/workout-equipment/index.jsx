@@ -84,6 +84,9 @@ const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const selected = useOnboardingStore((state) => state[FIELD]);
+  const workoutLocation = useOnboardingStore(
+    (state) => state.workoutLocation || "home",
+  );
   const legacySelected = useOnboardingStore((state) =>
     LEGACY_FIELD ? state[LEGACY_FIELD] : EMPTY_ARRAY,
   );
@@ -103,6 +106,13 @@ const Index = () => {
   const deferredSearch = React.useDeferredValue(search);
 
   useOnboardingAutoSave("user", STEP);
+
+  React.useEffect(() => {
+    if (workoutLocation === "gym") {
+      setFields({ [FIELD]: [], [CUSTOM_FIELD]: [] });
+      navigate(NEXT_PATH, { replace: true });
+    }
+  }, [navigate, setFields, workoutLocation]);
 
   const selectedIds = React.useMemo(
     () => normalizeSelectedIds(selected?.length ? selected : legacySelected),
@@ -125,17 +135,30 @@ const Index = () => {
 
   const { data, isLoading, isError } = useGetQuery({
     url: "/user/onboarding/options",
+    params: {
+      workoutLocation,
+      equipmentBucket: "primary",
+    },
     queryProps: {
-      queryKey: ["onboarding", "options", STEP, OPTIONS_KEY],
+      queryKey: [
+        "onboarding",
+        "options",
+        STEP,
+        OPTIONS_KEY,
+        workoutLocation,
+        "primary",
+      ],
+      enabled: workoutLocation !== "gym",
       staleTime: 60000,
     },
   });
   const otherQueryParams = React.useMemo(
     () => ({
-      isOnboarding: false,
+      workoutLocation,
+      equipmentBucket: "other",
       ...(searchLabel.length >= 2 ? { q: searchLabel } : {}),
     }),
-    [searchLabel],
+    [searchLabel, workoutLocation],
   );
   const { data: otherData, isFetching } = useGetQuery({
     url: "/user/onboarding/options",
@@ -147,9 +170,10 @@ const Index = () => {
         STEP,
         OPTIONS_KEY,
         "other",
+        workoutLocation,
         searchLabel.length >= 2 ? searchLabel : "",
       ],
-      enabled: otherOpen,
+      enabled: otherOpen && workoutLocation !== "gym",
       staleTime: 15000,
     },
   });

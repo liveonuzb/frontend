@@ -15,7 +15,7 @@ import {
 } from "@/lib/app-paths.js";
 
 const AuthModule = lazy(() => import("@/modules/auth/index.jsx"));
-const LandingPage = lazy(() => import("@/pages/landing/index.jsx"));
+const LandingModule = lazy(() => import("@/modules/landing/index.jsx"));
 const UserOnboardingModule = lazy(
   () => import("@/modules/onboarding/user/index.jsx"),
 );
@@ -135,7 +135,7 @@ const Index = () => {
           isAuthenticated ? (
             <Navigate to={getPostAuthRoute(user)} replace />
           ) : (
-            renderRouteElement(<LandingPage />)
+            renderRouteElement(<LandingModule />)
           )
         }
       />

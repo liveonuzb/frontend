@@ -26,6 +26,8 @@ const UserActionsMenu = ({
   isUserActionPending,
   canManageSupport,
   canManageGrowth,
+  canBlockUsers,
+  canDeleteUsers,
   canManageUser,
   canGiftPremium,
   onView,
@@ -69,28 +71,36 @@ const UserActionsMenu = ({
       ) : null}
 
       <DropdownMenuItem
-        disabled={isUserActionPending || !canManageSupport || !canManageUser(user)}
+        disabled={
+          isUserActionPending || !canManageSupport || !canManageUser(user)
+        }
         onClick={() => onEdit(user)}
       >
         <PencilIcon className="size-4" />
         Tahrirlash
       </DropdownMenuItem>
       <DropdownMenuItem
-        disabled={isUserActionPending || !canManageGrowth || !canGiftPremium(user)}
+        disabled={isUserActionPending || !canGiftPremium(user)}
         onClick={() => onGift(user)}
       >
         <GiftIcon className="size-4 text-amber-500" />
         Premium sovg'a qilish
       </DropdownMenuItem>
       <DropdownMenuItem
-        disabled={isUserActionPending || !canManageGrowth || !get(user, "premium.id")}
+        disabled={
+          isUserActionPending || !canManageGrowth || !get(user, "premium.id")
+        }
         onClick={() => onExtendPremium(user)}
       >
         <CalendarIcon className="size-4 text-blue-500" />
         Premium uzaytirish
       </DropdownMenuItem>
       <DropdownMenuItem
-        disabled={isUserActionPending || !canManageGrowth || get(user, "premium.status") !== "active"}
+        disabled={
+          isUserActionPending ||
+          !canManageGrowth ||
+          get(user, "premium.status") !== "active"
+        }
         onClick={() => onCancelPremium(user)}
       >
         <ShieldBanIcon className="size-4 text-red-500" />
@@ -100,7 +110,7 @@ const UserActionsMenu = ({
       <DropdownMenuSeparator />
 
       <DropdownMenuItem
-        disabled={isUserActionPending || !canManageSupport || !canManageUser(user)}
+        disabled={isUserActionPending || !canBlockUsers || !canManageUser(user)}
         onClick={() => onBanToggle(user)}
       >
         {get(user, "status") === "banned" ? (
@@ -112,7 +122,9 @@ const UserActionsMenu = ({
       </DropdownMenuItem>
       <DropdownMenuItem
         variant="destructive"
-        disabled={isUserActionPending || !canManageSupport || !canManageUser(user)}
+        disabled={
+          isUserActionPending || !canDeleteUsers || !canManageUser(user)
+        }
         onClick={() => onDelete(user)}
       >
         <TrashIcon className="size-4" />

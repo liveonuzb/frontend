@@ -131,4 +131,23 @@ describe("user onboarding resume", () => {
       }),
     ).toBe("review");
   });
+
+  it("skips equipment when workout location is gym", () => {
+    expect(
+      getNextUserOnboardingPath({
+        ...completeNutrition,
+        healthConstraints: ["none"],
+        completedUserOnboardingSteps: [
+          ...completeNutrition.completedUserOnboardingSteps,
+          "health-constraints",
+          "weekly-workout-count",
+          "workout-experience",
+          "workout-location",
+        ],
+        weeklyWorkoutCount: "4",
+        workoutExperience: "intermediate",
+        workoutLocation: "gym",
+      }),
+    ).toBe("workout-body-parts");
+  });
 });

@@ -549,6 +549,8 @@
         "activityLevel": "Activity",
         "weeklyWorkoutCount": "Workouts/week",
         "workoutExperience": "Experience",
+        "workoutLocation": "Workout location",
+        "equipment": "Equipment",
         "mealFrequency": "Meals per day",
         "foodBudget": "Budget",
         "allergies": "Allergies",

@@ -28,6 +28,9 @@ export const useColumns = ({
   isRemoving,
   getClientTags,
   toggleTag,
+  availableTags,
+  createTag,
+  isCreatingTag,
 }) => {
   const { t, i18n } = useTranslation();
 
@@ -199,12 +202,19 @@ export const useColumns = ({
           return (
             <div className="flex flex-wrap items-center gap-1" onClick={(e) => e.stopPropagation()}>
               {map(tags, (tagId) => (
-                <ClientTagBadge key={tagId} tagId={tagId} />
+                <ClientTagBadge
+                  key={tagId}
+                  tagId={tagId}
+                  tagsCatalog={availableTags}
+                />
               ))}
               <ClientTagsEditor
                 clientId={clientId}
                 clientTags={tags}
                 onToggle={toggleTag}
+                tagsCatalog={availableTags}
+                onCreateTag={createTag}
+                isCreatingTag={isCreatingTag}
               />
             </div>
           );
@@ -248,6 +258,9 @@ export const useColumns = ({
       isRemoving,
       getClientTags,
       toggleTag,
+      availableTags,
+      createTag,
+      isCreatingTag,
       t,
       i18n.language,
     ],

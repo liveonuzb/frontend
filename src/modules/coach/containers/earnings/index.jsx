@@ -60,16 +60,26 @@ const CoachEarningsContainer = () => {
   const revenue = get(stats, "revenue", {});
   const balance = get(stats, "balance", {});
   const counts = get(stats, "counts", {});
+  const analytics = get(stats, "analytics", {});
   const isLoading = isStatsLoading || isPaymentsLoading;
 
-  const growthTrend = React.useMemo(
-    () => getGrowthTrend(revenue),
-    [revenue],
-  );
-  const monthlyRevenueTrend = React.useMemo(
-    () => buildMonthlyRevenueTrend(payments),
-    [payments],
-  );
+  const growthTrend = React.useMemo(() => getGrowthTrend(revenue), [revenue]);
+  const monthlyRevenueTrend = React.useMemo(() => {
+    const series = get(analytics, "monthlySeries", []);
+    if (Array.isArray(series) && series.length) {
+      return series.map((item) => {
+        const [year, month] = String(item.month || "").split("-");
+        const date = new Date(Number(year), Number(month) - 1);
+        return {
+          name: new Intl.DateTimeFormat("uz-UZ", {
+            month: "short",
+          }).format(date),
+          revenue: Number(item.revenue) || 0,
+        };
+      });
+    }
+    return buildMonthlyRevenueTrend(payments);
+  }, [analytics, payments]);
   const statusDistribution = React.useMemo(
     () => buildStatusDistribution(counts),
     [counts],
@@ -78,10 +88,12 @@ const CoachEarningsContainer = () => {
     () => buildRecentPayments(payments),
     [payments],
   );
-  const currentMonthDailyRevenue = React.useMemo(
-    () => buildCurrentMonthDailyRevenue(payments),
-    [payments],
-  );
+  const currentMonthDailyRevenue = React.useMemo(() => {
+    const series = get(analytics, "dailySeries", []);
+    return Array.isArray(series) && series.length
+      ? series
+      : buildCurrentMonthDailyRevenue(payments);
+  }, [analytics, payments]);
   const avgPaymentPerClient = React.useMemo(
     () => calculateAvgPaymentPerClient(payments),
     [payments],
@@ -111,7 +123,9 @@ const CoachEarningsContainer = () => {
           disabled={isLoading}
           aria-label="Daromad statistikalarini yangilash"
         >
-          <RotateCcwIcon className={cn("size-4", isLoading && "animate-spin")} />
+          <RotateCcwIcon
+            className={cn("size-4", isLoading && "animate-spin")}
+          />
         </Button>
       </div>
 

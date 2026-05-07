@@ -1,9 +1,6 @@
 import React from "react";
-import { motion } from "framer-motion";
 import { get } from "lodash";
-import { useNavigate } from "react-router";
 import PageTransition from "@/components/page-transition";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuthStore, useBreadcrumbStore } from "@/store";
 import { useCoachDashboardStore } from "@/modules/coach/store";
 import {
@@ -21,10 +17,10 @@ import {
 } from "@/modules/coach/lib/hooks";
 import DashboardStatsCards from "./components/DashboardStatsCards.jsx";
 import NotificationsPanel from "./components/NotificationsPanel.jsx";
+import OperationsWorkspace from "./components/OperationsWorkspace.jsx";
 import QuickActionsPanel from "./components/QuickActionsPanel.jsx";
 import RecentActivityPanel from "./components/RecentActivityPanel.jsx";
 import ReferralCard from "./components/ReferralCard.jsx";
-import { greeting } from "./components/dashboard-ui.jsx";
 
 const DASHBOARD_RANGE_OPTIONS = [
   { value: "7d", label: "7 kun" },
@@ -44,14 +40,15 @@ const resolveListPayload = (data) => {
 };
 
 export default function CoachDashboardContainer() {
-  const navigate = useNavigate();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const user = useAuthStore((state) => state.user);
   const timeRange = useCoachDashboardStore((state) => state.timeRange);
   const timezone = useCoachDashboardStore((state) => state.timezone);
   const chartPeriod = useCoachDashboardStore((state) => state.chartPeriod);
   const setTimeRange = useCoachDashboardStore((state) => state.setTimeRange);
-  const setChartPeriod = useCoachDashboardStore((state) => state.setChartPeriod);
+  const setChartPeriod = useCoachDashboardStore(
+    (state) => state.setChartPeriod,
+  );
 
   const dashboardParams = React.useMemo(
     () => ({
@@ -61,13 +58,8 @@ export default function CoachDashboardContainer() {
     [timeRange, timezone],
   );
 
-  const {
-    dashboard,
-    isLoading,
-    isError,
-    refetch,
-    respondToInvitation,
-  } = useCoachDashboard(dashboardParams);
+  const { dashboard, isLoading, isError, refetch, respondToInvitation } =
+    useCoachDashboard(dashboardParams);
 
   const { data: workoutPlansData, isLoading: isWorkoutPlansLoading } =
     useCoachWorkoutPlans({ pageSize: 3 }, { staleTime: 30000 });
@@ -81,7 +73,9 @@ export default function CoachDashboardContainer() {
   const overdueClients = dashboard.overdueClients;
   const templates = dashboard.templates;
   const pendingInvitations = dashboard.pendingInvitations;
+  const recentCheckIns = dashboard.recentCheckIns;
   const alerts = dashboard.alerts;
+  const operationalKpis = dashboard.operationalKpis;
   const paymentCharts = dashboard.paymentChart;
   const paymentChartData = paymentCharts[chartPeriod] || [];
   const workoutPlans = resolveListPayload(workoutPlansData);
@@ -130,53 +124,19 @@ export default function CoachDashboardContainer() {
 
   return (
     <PageTransition mode="slide-up">
-      <div className="flex flex-col gap-8 pb-24">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-[32px] border-none shadow-2xl"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-orange-500/10" />
-          <div className="absolute -right-24 -top-24 size-96 rounded-full bg-primary/10 blur-[100px]" />
-          <div className="absolute -left-20 bottom-10 size-64 rounded-full bg-orange-400/5 blur-[80px]" />
-
-          <div className="relative flex flex-col gap-6 p-8 lg:flex-row lg:items-center lg:justify-between">
-            <div className="min-w-0">
-              <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
-                {greeting()},{" "}
-                <span className="animate-gradient bg-gradient-to-r from-primary via-orange-500 to-primary/80 bg-clip-text text-transparent">
-                  {coachName}
-                </span>
-              </h1>
-              <p className="mt-2 text-base font-medium text-muted-foreground">
-                Mijozlar, to&apos;lovlar va operatsion ogohlantirishlar.
-              </p>
-            </div>
-            <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center">
-              {(metrics.pendingInvitations ?? 0) > 0 ? (
-                <Badge className="h-7 border-orange-500/20 bg-amber-500/10 px-3 font-bold text-amber-600">
-                  {metrics.pendingInvitations} ta so&apos;rov
-                </Badge>
-              ) : null}
-              <Tabs value={timeRange} onValueChange={handleTimeRangeChange}>
-                <TabsList className="grid w-full grid-cols-4 sm:w-[292px]">
-                  {DASHBOARD_RANGE_OPTIONS.map((item) => (
-                    <TabsTrigger
-                      key={item.value}
-                      value={item.value}
-                      className="text-xs"
-                    >
-                      {item.label}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
-              <Button onClick={() => navigate("/coach/clients")}>
-                Mijozlar ro&apos;yxati
-              </Button>
-            </div>
-          </div>
-        </motion.div>
+      <div className="flex flex-col gap-6 pb-24">
+        <OperationsWorkspace
+          coachName={coachName}
+          metrics={metrics}
+          operationalKpis={operationalKpis}
+          alerts={alerts}
+          pendingInvitations={pendingInvitations}
+          recentCheckIns={recentCheckIns}
+          isLoading={isLoading}
+          timeRange={timeRange}
+          rangeOptions={DASHBOARD_RANGE_OPTIONS}
+          onTimeRangeChange={handleTimeRangeChange}
+        />
 
         <NotificationsPanel
           alerts={alerts}

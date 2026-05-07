@@ -3,10 +3,12 @@ import { motion } from "framer-motion";
 import {
   ActivityIcon,
   BanknoteIcon,
+  CalendarCheckIcon,
   CircleDollarSignIcon,
   ClockIcon,
-  SaladIcon,
-  TargetIcon,
+  GaugeIcon,
+  MessageSquareWarningIcon,
+  ShieldAlertIcon,
   TrendingDownIcon,
   TrendingUpIcon,
   UsersIcon,
@@ -40,19 +42,18 @@ const STAT_CARDS = [
     color: "emerald",
   },
   {
-    key: "totalTemplates",
-    label: "Template'lar",
-    icon: SaladIcon,
-    color: "blue",
-    hint: "Faol template soni",
+    key: "overdueClients",
+    label: "Kechikkan mijozlar",
+    icon: ShieldAlertIcon,
+    color: "red",
+    hint: "To'lov, check-in yoki reminder",
   },
   {
-    key: "averageProgress",
-    label: "O'rtacha progress",
-    icon: TargetIcon,
-    color: "amber",
-    suffix: "%",
-    hint: "Barcha mijozlar bo'yicha",
+    key: "noReplyClients",
+    label: "Javobsiz chatlar",
+    icon: MessageSquareWarningIcon,
+    color: "purple",
+    hint: "7 kun ichidagi unread xabarlar",
   },
 ];
 
@@ -61,7 +62,58 @@ const STAT_COLORS = {
   emerald: "border-emerald-500/20 bg-emerald-500/20 text-emerald-600",
   blue: "border-blue-500/20 bg-blue-500/20 text-blue-600",
   amber: "border-amber-500/20 bg-amber-500/20 text-amber-600",
+  purple: "border-purple-500/20 bg-purple-500/20 text-purple-600",
+  red: "border-red-500/20 bg-red-500/20 text-red-600",
 };
+
+const OPERATIONAL_KPI_CARDS = [
+  {
+    key: "mrr",
+    label: "MRR",
+    icon: WalletIcon,
+    color: "emerald",
+    value: (metrics) => formatMoney(metrics.mrr ?? 0),
+    hint: (metrics) => `Expected: ${formatMoney(metrics.expectedRevenue ?? 0)}`,
+  },
+  {
+    key: "collectedRevenue",
+    label: "Collected",
+    icon: BanknoteIcon,
+    color: "blue",
+    value: (metrics) => formatMoney(metrics.collectedRevenue ?? 0),
+    hint: (metrics) => `Refund rate: ${metrics.refundRate ?? 0}%`,
+  },
+  {
+    key: "planAdherenceRate",
+    label: "Plan adherence",
+    icon: GaugeIcon,
+    color: "amber",
+    value: (metrics) => `${metrics.planAdherenceRate ?? 0}%`,
+    hint: (metrics) =>
+      `Meal ${metrics.mealPlanCoverageRate ?? 0}% / Workout ${
+        metrics.workoutPlanCoverageRate ?? 0
+      }%`,
+  },
+  {
+    key: "sessionCompletionRate",
+    label: "Session completion",
+    icon: CalendarCheckIcon,
+    color: "primary",
+    value: (metrics) => `${metrics.sessionCompletionRate ?? 0}%`,
+    hint: (metrics) =>
+      `${metrics.completedSessions ?? 0} completed / ${
+        metrics.cancelledSessions ?? 0
+      } cancelled`,
+  },
+  {
+    key: "churnRiskClients",
+    label: "Churn risk",
+    icon: ShieldAlertIcon,
+    color: "red",
+    value: (metrics) => metrics.churnRiskClients ?? 0,
+    hint: (metrics) => `${metrics.noReplyClients ?? 0} no-reply`,
+  },
+];
 
 const StatCard = ({
   icon: Icon,
@@ -104,7 +156,9 @@ const StatCard = ({
               {label}
             </p>
             <div className="mt-1 flex items-baseline gap-1">
-              <div className="text-3xl font-black tracking-tighter">{value}</div>
+              <div className="text-3xl font-black tracking-tighter">
+                {value}
+              </div>
             </div>
             {hint ? (
               <p className="mt-1.5 flex items-center gap-1 text-[10px] font-medium text-muted-foreground/60">
@@ -140,6 +194,37 @@ const RevenueTrendBadge = ({ current = 0, previous = 0 }) => {
       )}
       {Math.abs(change.pct)}%
     </div>
+  );
+};
+
+const OperationalKpiCard = ({ item, metrics }) => {
+  const Icon = item.icon;
+  const colorClass = STAT_COLORS[item.color] ?? STAT_COLORS.primary;
+
+  return (
+    <Card className="border-none bg-card/60 backdrop-blur-md">
+      <CardContent className="flex items-start gap-3 p-4">
+        <div
+          className={cn(
+            "flex size-9 shrink-0 items-center justify-center rounded-xl border",
+            colorClass,
+          )}
+        >
+          <Icon className="size-4" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
+            {item.label}
+          </p>
+          <div className="mt-1 text-lg font-black tracking-tight">
+            {item.value(metrics)}
+          </div>
+          <p className="mt-1 truncate text-[10px] font-medium text-muted-foreground/60">
+            {item.hint(metrics)}
+          </p>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -248,6 +333,12 @@ export const DashboardStatsCards = ({
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          {OPERATIONAL_KPI_CARDS.map((item) => (
+            <OperationalKpiCard key={item.key} item={item} metrics={metrics} />
+          ))}
         </div>
 
         <Card className="overflow-hidden p-0">

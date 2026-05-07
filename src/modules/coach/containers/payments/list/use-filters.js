@@ -1,6 +1,7 @@
 import React from "react";
 import { find, get, times, trim } from "lodash";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
+import { COACH_PAYMENT_METHOD_OPTIONS } from "@/modules/coach/lib/payment-methods";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -94,11 +95,10 @@ export const usePaymentFilters = () => {
         type: "select",
         options: [
           { value: "", label: "Barchasi" },
-          { value: "CASH", label: "Naqd" },
-          { value: "CLICK", label: "Click" },
-          { value: "PAYME", label: "Payme" },
-          { value: "TRANSFER", label: "O'tkazma" },
-          { value: "OTHER", label: "Boshqa" },
+          ...COACH_PAYMENT_METHOD_OPTIONS.map((method) => ({
+            value: method.value,
+            label: method.label,
+          })),
         ],
       },
     ],

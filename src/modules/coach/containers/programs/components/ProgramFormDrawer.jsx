@@ -92,6 +92,19 @@ const buildEmptyWeek = (weekNumber, source = {}) => {
       source.checkInDayOffset !== undefined && source.checkInDayOffset !== null
         ? String(source.checkInDayOffset)
         : "6",
+    reminderTitle: source.reminderTitle || "",
+    reminderNote: source.reminderNote || "",
+    reminderDayOffset:
+      source.reminderDayOffset !== undefined &&
+      source.reminderDayOffset !== null
+        ? String(source.reminderDayOffset)
+        : "1",
+    progressReportTitle: source.progressReportTitle || "",
+    progressReportDayOffset:
+      source.progressReportDayOffset !== undefined &&
+      source.progressReportDayOffset !== null
+        ? String(source.progressReportDayOffset)
+        : "6",
     notes: source.notes || "",
   };
 };
@@ -112,13 +125,18 @@ const normalizeProgramPayload = (data) => {
     description: trim(data.description),
     durationWeeks,
     status: data.status,
-    tags: filter(map(split(data.tags, ","), (tag) => trim(tag)), Boolean),
+    tags: filter(
+      map(split(data.tags, ","), (tag) => trim(tag)),
+      Boolean,
+    ),
     weeks: map(slice(weeks, 0, durationWeeks), (week, index) => {
       const targetValue = Number(week.taskTargetValue);
       const hasTargetValue =
         week.taskTargetValue !== "" && Number.isInteger(targetValue);
       const dueDayOffset = Number(week.taskDueDayOffset);
       const checkInDayOffset = Number(week.checkInDayOffset);
+      const reminderDayOffset = Number(week.reminderDayOffset);
+      const progressReportDayOffset = Number(week.progressReportDayOffset);
 
       return {
         weekNumber: index + 1,
@@ -144,6 +162,15 @@ const normalizeProgramPayload = (data) => {
         checkInDayOffset: Number.isInteger(checkInDayOffset)
           ? Math.max(0, Math.min(6, checkInDayOffset))
           : 6,
+        reminderTitle: trim(week.reminderTitle),
+        reminderNote: trim(week.reminderNote),
+        reminderDayOffset: Number.isInteger(reminderDayOffset)
+          ? Math.max(0, Math.min(6, reminderDayOffset))
+          : 1,
+        progressReportTitle: trim(week.progressReportTitle),
+        progressReportDayOffset: Number.isInteger(progressReportDayOffset)
+          ? Math.max(0, Math.min(6, progressReportDayOffset))
+          : 6,
         notes: trim(week.notes),
       };
     }),
@@ -164,6 +191,11 @@ const weekSchema = z.object({
   checkInTitle: z.string(),
   checkInNote: z.string(),
   checkInDayOffset: z.string(),
+  reminderTitle: z.string(),
+  reminderNote: z.string(),
+  reminderDayOffset: z.string(),
+  progressReportTitle: z.string(),
+  progressReportDayOffset: z.string(),
   notes: z.string(),
 });
 
@@ -176,228 +208,336 @@ const programSchema = z.object({
   weeks: z.array(weekSchema),
 });
 
-const WeekCard = React.memo(({ week, index, mealPlans, workoutPlans, onUpdate }) => (
-  <Card>
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <Badge variant="secondary" className="rounded-full">
-          Week {week.weekNumber}
-        </Badge>
-        {week.title || `Week ${week.weekNumber}`}
-      </CardTitle>
-      <CardDescription>
-        Shablonlarni, bitta asosiy topshiriqni va haftalik tekshiruvni tanlang.
-      </CardDescription>
-    </CardHeader>
-    <CardContent>
-      <div className="flex flex-col gap-4">
-        <div>
-          <label
-            htmlFor={`week-${index}-title`}
-            className="mb-1.5 block text-sm font-medium"
-          >
-            Hafta sarlavhasi
-          </label>
-          <Input
-            id={`week-${index}-title`}
-            value={week.title}
-            onChange={(e) => onUpdate(index, "title", e.target.value)}
-          />
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
+const WeekCard = React.memo(
+  ({ week, index, mealPlans, workoutPlans, onUpdate }) => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Badge variant="secondary" className="rounded-full">
+            Week {week.weekNumber}
+          </Badge>
+          {week.title || `Week ${week.weekNumber}`}
+        </CardTitle>
+        <CardDescription>
+          Shablonlarni, bitta asosiy topshiriqni va haftalik tekshiruvni
+          tanlang.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col gap-4">
           <div>
-            <label className="mb-1.5 block text-sm font-medium">
-              Ovqatlanish shabloni
-            </label>
-            <Select
-              value={week.mealPlanTemplateId || EMPTY_OPTION}
-              onValueChange={(value) =>
-                onUpdate(
-                  index,
-                  "mealPlanTemplateId",
-                  value === EMPTY_OPTION ? "" : value,
-                )
-              }
+            <label
+              htmlFor={`week-${index}-title`}
+              className="mb-1.5 block text-sm font-medium"
             >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Shablon yo'q" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem value={EMPTY_OPTION}>Shablon yo&apos;q</SelectItem>
-                  {map(mealPlans, (plan) => (
-                    <SelectItem key={plan.id} value={plan.id}>
-                      {plan.title}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+              Hafta sarlavhasi
+            </label>
+            <Input
+              id={`week-${index}-title`}
+              value={week.title}
+              onChange={(e) => onUpdate(index, "title", e.target.value)}
+            />
           </div>
 
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">
-              Mashq shabloni
-            </label>
-            <Select
-              value={week.workoutPlanTemplateId || EMPTY_OPTION}
-              onValueChange={(value) =>
-                onUpdate(
-                  index,
-                  "workoutPlanTemplateId",
-                  value === EMPTY_OPTION ? "" : value,
-                )
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Shablon yo'q" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem value={EMPTY_OPTION}>Shablon yo&apos;q</SelectItem>
-                  {map(workoutPlans, (plan) => (
-                    <SelectItem key={plan.id} value={plan.id}>
-                      {plan.name ?? plan.title}
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">
+                Ovqatlanish shabloni
+              </label>
+              <Select
+                value={week.mealPlanTemplateId || EMPTY_OPTION}
+                onValueChange={(value) =>
+                  onUpdate(
+                    index,
+                    "mealPlanTemplateId",
+                    value === EMPTY_OPTION ? "" : value,
+                  )
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Shablon yo'q" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value={EMPTY_OPTION}>
+                      Shablon yo&apos;q
                     </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+                    {map(mealPlans, (plan) => (
+                      <SelectItem key={plan.id} value={plan.id}>
+                        {plan.title}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
 
-        <div className="rounded-2xl border bg-muted/20 p-4">
-          <div className="flex flex-col gap-4">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">
+                Mashq shabloni
+              </label>
+              <Select
+                value={week.workoutPlanTemplateId || EMPTY_OPTION}
+                onValueChange={(value) =>
+                  onUpdate(
+                    index,
+                    "workoutPlanTemplateId",
+                    value === EMPTY_OPTION ? "" : value,
+                  )
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Shablon yo'q" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value={EMPTY_OPTION}>
+                      Shablon yo&apos;q
+                    </SelectItem>
+                    {map(workoutPlans, (plan) => (
+                      <SelectItem key={plan.id} value={plan.id}>
+                        {plan.name ?? plan.title}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border bg-muted/20 p-4">
+            <div className="flex flex-col gap-4">
+              <div>
+                <label
+                  htmlFor={`week-${index}-task`}
+                  className="mb-1.5 block text-sm font-medium"
+                >
+                  Asosiy topshiriq
+                </label>
+                <Input
+                  id={`week-${index}-task`}
+                  value={week.taskTitle}
+                  onChange={(e) => onUpdate(index, "taskTitle", e.target.value)}
+                  placeholder="Kunlik qadamlar, suv, ovqat logi..."
+                />
+              </div>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium">
+                    Topshiriq turi
+                  </label>
+                  <Select
+                    value={week.taskType}
+                    onValueChange={(value) =>
+                      onUpdate(index, "taskType", value)
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {map(TASK_TYPE_OPTIONS, (type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label
+                    htmlFor={`week-${index}-target`}
+                    className="mb-1.5 block text-sm font-medium"
+                  >
+                    Maqsad
+                  </label>
+                  <Input
+                    id={`week-${index}-target`}
+                    inputMode="numeric"
+                    value={week.taskTargetValue}
+                    onChange={(e) =>
+                      onUpdate(index, "taskTargetValue", e.target.value)
+                    }
+                    placeholder="8000"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor={`week-${index}-unit`}
+                    className="mb-1.5 block text-sm font-medium"
+                  >
+                    Birlik
+                  </label>
+                  <Input
+                    id={`week-${index}-unit`}
+                    value={week.taskTargetUnit}
+                    onChange={(e) =>
+                      onUpdate(index, "taskTargetUnit", e.target.value)
+                    }
+                    placeholder="qadam"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
             <div>
               <label
-                htmlFor={`week-${index}-task`}
+                htmlFor={`week-${index}-checkin-title`}
                 className="mb-1.5 block text-sm font-medium"
               >
-                Asosiy topshiriq
+                Tekshiruv sarlavhasi
               </label>
               <Input
-                id={`week-${index}-task`}
-                value={week.taskTitle}
-                onChange={(e) => onUpdate(index, "taskTitle", e.target.value)}
-                placeholder="Kunlik qadamlar, suv, ovqat logi..."
+                id={`week-${index}-checkin-title`}
+                value={week.checkInTitle}
+                onChange={(e) =>
+                  onUpdate(index, "checkInTitle", e.target.value)
+                }
+                placeholder="Haftalik tekshiruv"
               />
             </div>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium">
-                  Topshiriq turi
-                </label>
-                <Select
-                  value={week.taskType}
-                  onValueChange={(value) =>
-                    onUpdate(index, "taskType", value)
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {map(TASK_TYPE_OPTIONS, (type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <label
+                htmlFor={`week-${index}-checkin-day`}
+                className="mb-1.5 block text-sm font-medium"
+              >
+                Tekshiruv kuni (0-6)
+              </label>
+              <Input
+                id={`week-${index}-checkin-day`}
+                inputMode="numeric"
+                value={week.checkInDayOffset}
+                onChange={(e) =>
+                  onUpdate(index, "checkInDayOffset", e.target.value)
+                }
+              />
+            </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor={`week-${index}-checkin-note`}
+              className="mb-1.5 block text-sm font-medium"
+            >
+              Tekshiruv izohi
+            </label>
+            <Textarea
+              id={`week-${index}-checkin-note`}
+              value={week.checkInNote}
+              onChange={(e) => onUpdate(index, "checkInNote", e.target.value)}
+              className="min-h-20 resize-none"
+              placeholder="Vazn, o'lchov, energiya va rejaga amal qilish holati"
+            />
+          </div>
+
+          <div className="rounded-2xl border bg-muted/20 p-4">
+            <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label
-                  htmlFor={`week-${index}-target`}
+                  htmlFor={`week-${index}-reminder-title`}
                   className="mb-1.5 block text-sm font-medium"
                 >
-                  Maqsad
+                  Eslatma sarlavhasi
                 </label>
                 <Input
-                  id={`week-${index}-target`}
-                  inputMode="numeric"
-                  value={week.taskTargetValue}
+                  id={`week-${index}-reminder-title`}
+                  value={week.reminderTitle}
                   onChange={(e) =>
-                    onUpdate(index, "taskTargetValue", e.target.value)
+                    onUpdate(index, "reminderTitle", e.target.value)
                   }
-                  placeholder="8000"
+                  placeholder="Rejani boshlash eslatmasi"
                 />
               </div>
               <div>
                 <label
-                  htmlFor={`week-${index}-unit`}
+                  htmlFor={`week-${index}-reminder-day`}
                   className="mb-1.5 block text-sm font-medium"
                 >
-                  Birlik
+                  Eslatma kuni (0-6)
                 </label>
                 <Input
-                  id={`week-${index}-unit`}
-                  value={week.taskTargetUnit}
+                  id={`week-${index}-reminder-day`}
+                  inputMode="numeric"
+                  value={week.reminderDayOffset}
                   onChange={(e) =>
-                    onUpdate(index, "taskTargetUnit", e.target.value)
+                    onUpdate(index, "reminderDayOffset", e.target.value)
                   }
-                  placeholder="qadam"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label
+                  htmlFor={`week-${index}-reminder-note`}
+                  className="mb-1.5 block text-sm font-medium"
+                >
+                  Eslatma matni
+                </label>
+                <Textarea
+                  id={`week-${index}-reminder-note`}
+                  value={week.reminderNote}
+                  onChange={(e) =>
+                    onUpdate(index, "reminderNote", e.target.value)
+                  }
+                  className="min-h-20 resize-none"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor={`week-${index}-report-title`}
+                  className="mb-1.5 block text-sm font-medium"
+                >
+                  Progress report sarlavhasi
+                </label>
+                <Input
+                  id={`week-${index}-report-title`}
+                  value={week.progressReportTitle}
+                  onChange={(e) =>
+                    onUpdate(index, "progressReportTitle", e.target.value)
+                  }
+                  placeholder="Haftalik progress report"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor={`week-${index}-report-day`}
+                  className="mb-1.5 block text-sm font-medium"
+                >
+                  Progress report kuni (0-6)
+                </label>
+                <Input
+                  id={`week-${index}-report-day`}
+                  inputMode="numeric"
+                  value={week.progressReportDayOffset}
+                  onChange={(e) =>
+                    onUpdate(index, "progressReportDayOffset", e.target.value)
+                  }
                 />
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
           <div>
             <label
-              htmlFor={`week-${index}-checkin-title`}
+              htmlFor={`week-${index}-notes`}
               className="mb-1.5 block text-sm font-medium"
             >
-              Tekshiruv sarlavhasi
+              Trener izohlar
             </label>
-            <Input
-              id={`week-${index}-checkin-title`}
-              value={week.checkInTitle}
-              onChange={(e) =>
-                onUpdate(index, "checkInTitle", e.target.value)
-              }
-              placeholder="Haftalik tekshiruv"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor={`week-${index}-checkin-day`}
-              className="mb-1.5 block text-sm font-medium"
-            >
-              Tekshiruv kuni (0-6)
-            </label>
-            <Input
-              id={`week-${index}-checkin-day`}
-              inputMode="numeric"
-              value={week.checkInDayOffset}
-              onChange={(e) =>
-                onUpdate(index, "checkInDayOffset", e.target.value)
-              }
+            <Textarea
+              id={`week-${index}-notes`}
+              value={week.notes}
+              onChange={(e) => onUpdate(index, "notes", e.target.value)}
+              className="min-h-20 resize-none"
             />
           </div>
         </div>
-
-        <div>
-          <label
-            htmlFor={`week-${index}-notes`}
-            className="mb-1.5 block text-sm font-medium"
-          >
-            Trener izohlar
-          </label>
-          <Textarea
-            id={`week-${index}-notes`}
-            value={week.notes}
-            onChange={(e) => onUpdate(index, "notes", e.target.value)}
-            className="min-h-20 resize-none"
-          />
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-));
+      </CardContent>
+    </Card>
+  ),
+);
 
 WeekCard.displayName = "WeekCard";
 
@@ -442,9 +582,7 @@ const ProgramFormDrawer = ({ mode, programId, open, onOpenChange }) => {
         description: get(program, "description") || "",
         durationWeeks,
         status: toUpper(get(program, "status") || "DRAFT"),
-        tags: isArray(get(program, "tags"))
-          ? join(program.tags, ", ")
-          : "",
+        tags: isArray(get(program, "tags")) ? join(program.tags, ", ") : "",
         weeks: buildWeeks(durationWeeks, get(program, "weeks") || []),
       });
     } else if (!isEdit) {
@@ -453,7 +591,6 @@ const ProgramFormDrawer = ({ mode, programId, open, onOpenChange }) => {
   }, [isEdit, program, form, defaultValues]);
 
   const watchedWeeks = form.watch("weeks");
-  const watchedDuration = form.watch("durationWeeks");
 
   const updateWeek = React.useCallback(
     (weekIndex, field, value) => {
@@ -498,7 +635,8 @@ const ProgramFormDrawer = ({ mode, programId, open, onOpenChange }) => {
     }
   });
 
-  const isSaving = mutations.createMutation.isPending || mutations.updateMutation.isPending;
+  const isSaving =
+    mutations.createMutation.isPending || mutations.updateMutation.isPending;
   const isLoadingContent = isEdit && isProgramLoading;
 
   return (
@@ -530,8 +668,8 @@ const ProgramFormDrawer = ({ mode, programId, open, onOpenChange }) => {
                   <CardHeader>
                     <CardTitle>Asosiy ma&apos;lumotlar</CardTitle>
                     <CardDescription>
-                      Dasturni qayta ishlatish mumkin bo&apos;lishi uchun
-                      umumiy ma&apos;lumotlarni kiriting.
+                      Dasturni qayta ishlatish mumkin bo&apos;lishi uchun umumiy
+                      ma&apos;lumotlarni kiriting.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -542,7 +680,8 @@ const ProgramFormDrawer = ({ mode, programId, open, onOpenChange }) => {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>
-                              Sarlavha <span className="text-destructive">*</span>
+                              Sarlavha{" "}
+                              <span className="text-destructive">*</span>
                             </FormLabel>
                             <FormControl>
                               <Input
@@ -605,7 +744,9 @@ const ProgramFormDrawer = ({ mode, programId, open, onOpenChange }) => {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectGroup>
-                                    <SelectItem value="DRAFT">Qoralama</SelectItem>
+                                    <SelectItem value="DRAFT">
+                                      Qoralama
+                                    </SelectItem>
                                     <SelectItem value="ACTIVE">Faol</SelectItem>
                                   </SelectGroup>
                                 </SelectContent>
@@ -696,11 +837,7 @@ const ProgramFormDrawer = ({ mode, programId, open, onOpenChange }) => {
               form="program-form"
               disabled={isSaving || isLoadingContent}
             >
-              {isSaving
-                ? "Saqlanmoqda..."
-                : isEdit
-                  ? "Saqlash"
-                  : "Yaratish"}
+              {isSaving ? "Saqlanmoqda..." : isEdit ? "Saqlash" : "Yaratish"}
             </Button>
           </div>
         </DrawerFooter>

@@ -1,5 +1,6 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React from "react";
-import { find, map, head } from "lodash";
+import { find, map } from "lodash";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,39 +8,39 @@ import {
     XIcon,
 } from "lucide-react";
 import { useChatStore, useAuthStore } from "@/store";
-import { useCoachMealPlans, useCoachWorkoutPlans } from "@/hooks/app/use-coach";
 import { toast } from "sonner";
 import { api } from "@/hooks/api/use-api.js";
+import { getApiResponseData } from "@/lib/api-response.js";
 import MessageContextMenu from "@/components/chat/message-context-menu";
 import MediaUploadDialog from "@/components/chat/media-upload-dialog";
 import ForwardDialog from "@/components/chat/forward-dialog";
 import { cn } from "@/lib/utils";
-import { getChatBasePath } from "@/lib/app-paths.js";
+import { getChatBasePath, getChatPath } from "@/lib/app-paths.js";
 
 // New Components
 import ChatHeader from "../../components/ChatHeader";
 import MessageList from "../../components/MessageList";
 import ChatInput from "../../components/ChatInput";
 import ChatInfoSidebar from "../../components/ChatInfoSidebar";
-import ChatCallOverlay from "../../components/ChatCallOverlay";
+import ChatActionShortcutDialog from "../../components/ChatActionShortcutDialog";
 import LiveStreamOverlay from "../../components/LiveStreamOverlay";
+import {
+    buildChatAttachmentMetadata,
+    validateChatAttachment,
+} from "../../lib/chat-attachment-policy.js";
+import { isChatFeatureEnabled } from "../../lib/chat-feature-flags.js";
+import {
+    useCoachClientDetail,
+    useCoachClientNotes,
+} from "@/hooks/app/use-coach";
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-const SIMULATED_REPLIES = [
-    "Ajoyib! Davom eting!",
-    "Yaxshi natija, men sizdan mamnunman!",
-    "Suv ichishni unutmang -- kamida 2.5L",
-    "Ertaga stretching ham qiling, mushaklar dam olishi kerak",
-    "Oziq-ovqat rejasini kuzatib boring, makrolar muhim!",
-    "Mashg'ulotdan keyin dam olish ham muhim",
-    "Progressni kuzatib boring, har hafta yangilik bo'lishi kerak",
-    "Motivatsiyani yo'qotmang, maqsadga yaqinlashyapsiz!",
-];
-
-const TYPING_DELAY = 1500;
 const URL_REGEX = /(https?:\/\/[^\s<]+)/g;
+const COACH_SHORTCUT_PREFIX = "coach:";
+const CHAT_MESSAGE_SHORTCUT_ACTIONS = new Set([
+    "invoice",
+    "payment_reminder",
+    "session_booking",
+]);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -47,7 +48,23 @@ const URL_REGEX = /(https?:\/\/[^\s<]+)/g;
 
 function dateLabelForMsg(msg) {
     if (msg._date) return msg._date;
-    return "today";
+    const parsed = new Date(msg.createdAt || msg.timestamp || msg.time);
+    if (Number.isNaN(parsed.getTime())) return "today";
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const messageDay = new Date(parsed);
+    messageDay.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((today.getTime() - messageDay.getTime()) / 86400000);
+
+    if (diffDays === 0) return "today";
+    if (diffDays === 1) return "yesterday";
+
+    return new Intl.DateTimeFormat("uz-UZ", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+    }).format(parsed);
 }
 
 function renderTextWithLinks(text, isMe) {
@@ -75,6 +92,15 @@ function renderTextWithLinks(text, isMe) {
     });
 }
 
+const getActiveClientId = (activeEntity) =>
+    activeEntity?.otherParticipant?.id ?? activeEntity?.clientId ?? null;
+
+const getErrorMessage = (error, fallback) => {
+    const message = error?.response?.data?.message;
+    if (Array.isArray(message)) return message.join(", ");
+    return message || fallback;
+};
+
 // ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
@@ -86,32 +112,29 @@ const ChatView = () => {
     const highlightMessageId = searchParams.get("msgId");
     const { activeRole } = useAuthStore();
     const isCoach = activeRole === "COACH";
-    const { workoutPlans } = useCoachWorkoutPlans();
-    const { mealPlans } = useCoachMealPlans();
+    const canUseReactions = isChatFeatureEnabled("reactions");
+    const canUseBookmarks = isChatFeatureEnabled("bookmarks");
+    const canUseMuteBlock = isChatFeatureEnabled("muteBlockControls");
+    const canUseLiveActivity = isChatFeatureEnabled("liveActivity");
 
     const {
         contacts,
         messages,
         typingUsers,
-        readReceipts,
         pinnedMessages,
         fetchMessages,
         sendMessage,
         addReaction,
         deleteMessage,
         forwardMessage,
+        retryMessage,
         editMessage,
-        replyToMessage,
         setTyping,
         markAsRead,
         unpinMessage,
         pinMessage,
         toggleBookmark,
-        sendSharedContent,
-        sendPoll,
-        sendTask,
         sendBooking,
-        sendInvoice,
         getAISuggestions,
         activeLive,
         startLive,
@@ -133,25 +156,28 @@ const ChatView = () => {
     const [deletingMsgId, setDeletingMsgId] = React.useState(null);
     const [forwardDialogOpen, setForwardDialogOpen] = React.useState(false);
     const [forwardingMsg, setForwardingMsg] = React.useState(null);
+    const [shortcutDialog, setShortcutDialog] = React.useState({
+        open: false,
+        action: null,
+        message: null,
+    });
 
     const [chatSearchOpen, setChatSearchOpen] = React.useState(false);
     const [chatSearchQuery, setChatSearchQuery] = React.useState("");
     const [chatSearchIndex, setChatSearchIndex] = React.useState(0);
 
     const [showScrollBtn, setShowScrollBtn] = React.useState(false);
-    const [newMsgCount, setNewMsgCount] = React.useState(0);
     const [isRecording, setIsRecording] = React.useState(false);
     const [stickerOpen, setStickerOpen] = React.useState(false);
     const [mediaFile, setMediaFile] = React.useState(null);
     const [mediaDialogOpen, setMediaDialogOpen] = React.useState(false);
 
-    const [multiSelectMode, setMultiSelectMode] = React.useState(false);
-    const [selectedMsgIds, setSelectedMsgIds] = React.useState(new Set());
     const [showInfoSidebar, setShowInfoSidebar] = React.useState(false);
-    const [activeCall, setActiveCall] = React.useState(null);
+    const [isBrowserOnline, setIsBrowserOnline] = React.useState(() =>
+        typeof navigator === "undefined" ? true : navigator.onLine,
+    );
 
     const messagesEndRef = React.useRef(null);
-    const messagesContainerRef = React.useRef(null);
     const fileInputRef = React.useRef(null);
     const typingTimeoutRef = React.useRef(null);
     const reactionTimeoutRef = React.useRef(null);
@@ -168,22 +194,30 @@ const ChatView = () => {
         }
     }, [activeChat, fetchMessages, markAsRead]);
 
+    React.useEffect(() => {
+        const handleOnline = () => setIsBrowserOnline(true);
+        const handleOffline = () => setIsBrowserOnline(false);
+
+        window.addEventListener("online", handleOnline);
+        window.addEventListener("offline", handleOffline);
+        return () => {
+            window.removeEventListener("online", handleOnline);
+            window.removeEventListener("offline", handleOffline);
+        };
+    }, []);
+
     const scrollToBottom = React.useCallback((behavior = "smooth") => {
         messagesEndRef.current?.scrollIntoView({ behavior });
-        setNewMsgCount(0);
     }, []);
 
     React.useEffect(() => {
         if (!showScrollBtn) {
             scrollToBottom("smooth");
-        } else {
-            setNewMsgCount((prev) => prev + 1);
         }
     }, [messages, activeChat, typingUsers, showScrollBtn, scrollToBottom]);
 
     React.useEffect(() => {
         scrollToBottom("instant");
-        setNewMsgCount(0);
     }, [activeChat, scrollToBottom]);
 
     React.useEffect(() => {
@@ -193,9 +227,6 @@ const ChatView = () => {
         const observer = new IntersectionObserver(
             ([entry]) => {
                 setShowScrollBtn(!entry.isIntersecting);
-                if (entry.isIntersecting) {
-                    setNewMsgCount(0);
-                }
             },
             { threshold: 0.1 }
         );
@@ -231,8 +262,7 @@ const ChatView = () => {
         setEditingMsg(null);
         setDeletingMsgId(null);
         setContextMenu(null);
-        setMultiSelectMode(false);
-        setSelectedMsgIds(new Set());
+        setShortcutDialog({ open: false, action: null, message: null });
         setChatSearchOpen(false);
         setChatSearchQuery("");
         setStickerOpen(false);
@@ -271,13 +301,46 @@ const ChatView = () => {
     const activeEntity = React.useMemo(() => {
         return find(allChats, (c) => c.chatId === activeChat);
     }, [allChats, activeChat]);
+    const activeClientId = React.useMemo(
+        () => getActiveClientId(activeEntity),
+        [activeEntity],
+    );
+    const canUseCoachActions = isCoach && Boolean(activeChat) && Boolean(activeClientId);
+    const {
+        detail: coachClientDetail,
+        createWeeklyCheckIn,
+        createFeedback,
+        createTask,
+        isCreatingWeeklyCheckIn,
+        isCreatingFeedback,
+        isCreatingTask,
+    } = useCoachClientDetail(activeClientId, canUseCoachActions);
+    const { createNote, isCreatingNote } = useCoachClientNotes(
+        activeClientId,
+        canUseCoachActions,
+    );
+    const isShortcutSubmitting =
+        isCreatingNote ||
+        isCreatingWeeklyCheckIn ||
+        isCreatingFeedback ||
+        isCreatingTask;
+    const coachClientPaymentSummary =
+        coachClientDetail?.overview?.paymentSummary ??
+        activeEntity?.paymentSummary ??
+        activeEntity?.payment ??
+        null;
+    const coachClientName =
+        coachClientDetail?.client?.name ??
+        activeEntity?.name ??
+        activeEntity?.otherParticipant?.name ??
+        "";
     const isActiveChatMuted = React.useMemo(
-        () => (activeChat ? isChatMuted(activeChat) : false),
-        [activeChat, isChatMuted],
+        () => (canUseMuteBlock && activeChat ? isChatMuted(activeChat) : false),
+        [activeChat, canUseMuteBlock, isChatMuted],
     );
     const isActiveChatBlocked = React.useMemo(
-        () => (activeChat ? isChatBlocked(activeChat) : false),
-        [activeChat, isChatBlocked],
+        () => (canUseMuteBlock && activeChat ? isChatBlocked(activeChat) : false),
+        [activeChat, canUseMuteBlock, isChatBlocked],
     );
 
     const chatMessages = React.useMemo(() => {
@@ -311,8 +374,8 @@ const ChatView = () => {
         []
     );
 
-    const handleSendMessage = React.useCallback((textArg = null, mediaUrl = null, type = "text", ttl = null) => {
-        if (activeChat && isChatBlocked(activeChat)) {
+    const handleSendMessage = React.useCallback(async (textArg = null, mediaUrl = null, type = "text") => {
+        if (canUseMuteBlock && activeChat && isChatBlocked(activeChat)) {
             toast.error("Bu chat bloklangan. Xabar yuborish uchun blokni olib tashlang.");
             return;
         }
@@ -320,19 +383,31 @@ const ChatView = () => {
         const msgText = (typeof textArg === 'string' ? textArg : input).trim();
         if (!msgText && !mediaUrl) return;
 
-        sendMessage(activeChat, msgText, mediaUrl, type, null, replyingTo?.id);
-        setInput("");
-        setReplyingTo(null);
-    }, [input, activeChat, sendMessage, isChatBlocked, replyingTo]);
+        try {
+            if (editingMsg) {
+                await editMessage(activeChat, editingMsg.id, msgText);
+                setInput("");
+                setEditingMsg(null);
+                return;
+            }
 
-    const shareContent = (type, item) => {
-        sendSharedContent(activeChat, type, item.id, item.title, item.description || item.title);
-        toast.success("Ulashildi");
-    };
+            await sendMessage(activeChat, msgText, mediaUrl, type, null, replyingTo?.id);
+            setInput("");
+            setReplyingTo(null);
+        } catch {
+            // Store actions already show the user-facing error.
+        }
+    }, [input, activeChat, sendMessage, editMessage, canUseMuteBlock, isChatBlocked, replyingTo, editingMsg]);
 
     const handleFileSelect = React.useCallback((e) => {
         const file = e.target.files?.[0];
         if (!file) return;
+        const validation = validateChatAttachment(file);
+        if (!validation.ok) {
+            toast.error(validation.message);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+            return;
+        }
         setMediaFile(file);
         setMediaDialogOpen(true);
         if (fileInputRef.current) fileInputRef.current.value = "";
@@ -340,7 +415,7 @@ const ChatView = () => {
 
     const handleMediaSend = React.useCallback(
         async (file, comment, fileType) => {
-            if (activeChat && isChatBlocked(activeChat)) {
+            if (canUseMuteBlock && activeChat && isChatBlocked(activeChat)) {
                 toast.error("Bu chat bloklangan. Media yuborib bo'lmaydi.");
                 return;
             }
@@ -348,18 +423,40 @@ const ChatView = () => {
             const toastId = toast.loading("Media yuklanmoqda...");
             
             try {
+                const validation = validateChatAttachment(file);
+                if (!validation.ok) {
+                    toast.error(validation.message, { id: toastId });
+                    return;
+                }
+
                 // 1. Upload file to storage
                 const formData = new FormData();
                 formData.append("file", file);
                 
-                const response = await api.post("/storage/upload", formData, {
+                const response = await api.post("/storage/chat-upload", formData, {
                     headers: { "Content-Type": "multipart/form-data" }
                 });
-                
-                const mediaUrl = response.data?.data?.url ?? response.data?.url;
+                const uploaded = getApiResponseData(response, response?.data);
+                const mediaUrl = uploaded?.url;
+                const mediaType = uploaded?.mediaType || fileType;
+
+                if (!mediaUrl || !uploaded?.objectKey) {
+                    throw new Error("Secure upload response invalid");
+                }
 
                 // 2. Send message with the returned URL
-                sendMessage(activeChat, comment || (fileType === "image" ? "📷 Rasm" : "📎 Fayl"), mediaUrl, fileType);
+                const sentMessage = await sendMessage(
+                    activeChat,
+                    comment || (mediaType === "image" ? "📷 Rasm" : mediaType === "video" ? "🎥 Video" : mediaType === "audio" ? "🎙️ Audio" : "📎 Fayl"),
+                    mediaUrl,
+                    mediaType,
+                    {
+                        attachment: buildChatAttachmentMetadata(uploaded, file),
+                    },
+                );
+                if (!sentMessage) {
+                    throw new Error("Secure media message could not be sent");
+                }
                 
                 toast.success("Yuborildi", { id: toastId });
                 setMediaDialogOpen(false);
@@ -369,24 +466,48 @@ const ChatView = () => {
                 toast.error("Media yuklashda xatolik", { id: toastId });
             }
         },
-        [activeChat, sendMessage, isChatBlocked]
+        [activeChat, sendMessage, canUseMuteBlock, isChatBlocked]
     );
 
     const handleVoiceSend = React.useCallback(
         async (blob, duration) => {
+            if (canUseMuteBlock && activeChat && isChatBlocked(activeChat)) {
+                toast.error("Bu chat bloklangan. Ovozli xabar yuborib bo'lmaydi.");
+                return;
+            }
+
             const toastId = toast.loading("Ovozli xabar yuklanmoqda...");
             
             try {
+                const voiceFile = new File([blob], "voice-note.webm", {
+                    type: blob.type || "audio/webm",
+                });
+                const validation = validateChatAttachment(voiceFile);
+                if (!validation.ok) {
+                    toast.error(validation.message, { id: toastId });
+                    return;
+                }
+
                 const formData = new FormData();
-                formData.append("file", blob, "voice-note.webm");
+                formData.append("file", voiceFile);
                 
-                const response = await api.post("/storage/upload", formData, {
+                const response = await api.post("/storage/chat-upload", formData, {
                     headers: { "Content-Type": "multipart/form-data" }
                 });
-                
-                const mediaUrl = response.data?.data?.url ?? response.data?.url;
+                const uploaded = getApiResponseData(response, response?.data);
+                const mediaUrl = uploaded?.url;
 
-                sendMessage(activeChat, "🎙️ Ovozli xabar", mediaUrl, "voice", { duration });
+                if (!mediaUrl || !uploaded?.objectKey) {
+                    throw new Error("Secure voice upload response invalid");
+                }
+
+                const sentMessage = await sendMessage(activeChat, "🎙️ Ovozli xabar", mediaUrl, "audio", {
+                    duration,
+                    attachment: buildChatAttachmentMetadata(uploaded, voiceFile),
+                });
+                if (!sentMessage) {
+                    throw new Error("Secure voice message could not be sent");
+                }
                 setIsRecording(false);
                 toast.success("Yuborildi", { id: toastId });
             } catch (error) {
@@ -394,7 +515,7 @@ const ChatView = () => {
                 toast.error("Ovozli xabarni yuklashda xatolik", { id: toastId });
             }
         },
-        [activeChat, sendMessage]
+        [activeChat, sendMessage, canUseMuteBlock, isChatBlocked]
     );
 
     const handleStickerSelect = React.useCallback(
@@ -407,33 +528,62 @@ const ChatView = () => {
 
     const handleBackToList = React.useCallback(() => {
         navigate(getChatBasePath(activeRole));
-    }, [navigate]);
+    }, [activeRole, navigate]);
 
     const handleDoubleClick = React.useCallback((msgId) => {
+        if (!canUseReactions) return;
         setReactionMsgId((prev) => (prev === msgId ? null : msgId));
-    }, []);
+    }, [canUseReactions]);
 
     const handleReaction = React.useCallback(
         (msgId, emoji) => {
+            if (!canUseReactions) return;
             addReaction(activeChat, msgId, emoji);
             setReactionMsgId(null);
         },
-        [activeChat, addReaction]
+        [activeChat, addReaction, canUseReactions]
     );
 
     const handleContextMenu = React.useCallback((e, msg) => {
         e.preventDefault();
+        const isSmallScreen = window.innerWidth < 640;
+        const menuWidth = isSmallScreen ? window.innerWidth - 24 : 240;
+        const menuHeight = isSmallScreen ? window.innerHeight * 0.7 : 360;
         setContextMenu({
-            x: Math.min(e.clientX, window.innerWidth - 200),
-            y: Math.min(e.clientY, window.innerHeight - 300),
+            x: Math.max(12, Math.min(e.clientX, window.innerWidth - menuWidth - 12)),
+            y: Math.max(12, Math.min(e.clientY, window.innerHeight - menuHeight - 12)),
             message: msg,
         });
     }, []);
+
+    const handleRetryMessage = React.useCallback(
+        (messageId) => {
+            if (!activeChat || !messageId) return;
+            retryMessage(activeChat, messageId);
+        },
+        [activeChat, retryMessage],
+    );
 
     const handleContextMenuAction = React.useCallback(
         (action) => {
             if (!contextMenu?.message) return;
             const msg = contextMenu.message;
+            if (action.startsWith(COACH_SHORTCUT_PREFIX)) {
+                if (!canUseCoachActions) {
+                    toast.error("Bu chat client action shortcutlari uchun ulanmagan.");
+                    setContextMenu(null);
+                    return;
+                }
+
+                setShortcutDialog({
+                    open: true,
+                    action: action.slice(COACH_SHORTCUT_PREFIX.length),
+                    message: msg,
+                });
+                setContextMenu(null);
+                return;
+            }
+
             switch (action) {
                 case "copy":
                     navigator.clipboard.writeText(msg.text || "").then(() => toast.success("Nusxalandi"));
@@ -464,30 +614,144 @@ const ChatView = () => {
                     }
                     break;
                 }
-                case "select":
-                    setMultiSelectMode(true);
-                    setSelectedMsgIds(new Set([msg.id]));
-                    break;
                 case "bookmark":
-                    toggleBookmark(activeChat, msg.id);
+                    if (canUseBookmarks) toggleBookmark(activeChat, msg.id);
                     break;
                 default: break;
             }
             setContextMenu(null);
         },
-        [contextMenu, activeChat, pinnedMessages, pinMessage, unpinMessage, editMessage, toggleBookmark]
+        [
+            contextMenu,
+            activeChat,
+            pinnedMessages,
+            pinMessage,
+            unpinMessage,
+            toggleBookmark,
+            canUseBookmarks,
+            canUseCoachActions,
+        ]
     );
 
-    const handleDeleteForMe = React.useCallback(() => {
-        if (deletingMsgId != null) {
-            deleteMessage(activeChat, deletingMsgId, false);
-            setDeletingMsgId(null);
-        }
-    }, [activeChat, deletingMsgId, deleteMessage]);
+    const handleShortcutDialogOpenChange = React.useCallback((open) => {
+        setShortcutDialog((current) => ({
+            ...current,
+            open,
+            action: open ? current.action : null,
+            message: open ? current.message : null,
+        }));
+    }, []);
 
-    const handleDeleteForAll = React.useCallback(() => {
+    const handleShortcutSubmit = React.useCallback(
+        async (action, payload) => {
+            if (!activeClientId) {
+                toast.error("Client topilmadi.");
+                return;
+            }
+
+            if (
+                CHAT_MESSAGE_SHORTCUT_ACTIONS.has(action) &&
+                canUseMuteBlock &&
+                activeChat &&
+                isChatBlocked(activeChat)
+            ) {
+                toast.error("Bu chat bloklangan. Chatga shortcut yuborib bo'lmaydi.");
+                return;
+            }
+
+            const sourceMessageId = shortcutDialog.message?.id;
+            const metadata = {
+                source: "coach_chat_shortcut",
+                sourceMessageId,
+                clientId: activeClientId,
+            };
+
+            try {
+                if (action === "note") {
+                    await createNote({
+                        ...payload,
+                        tags: [...(payload.tags ?? []), "chat-shortcut"].filter(Boolean),
+                    });
+                    toast.success("Note saqlandi");
+                } else if (action === "task") {
+                    await createTask({
+                        ...payload,
+                        description: [
+                            payload.description,
+                            sourceMessageId ? `Message: ${sourceMessageId}` : null,
+                        ]
+                            .filter(Boolean)
+                            .join("\n\n"),
+                    });
+                    toast.success("Task yaratildi");
+                } else if (action === "check_in") {
+                    await createWeeklyCheckIn({
+                        ...payload,
+                        note: [
+                            payload.note,
+                            sourceMessageId ? `Message: ${sourceMessageId}` : null,
+                        ]
+                            .filter(Boolean)
+                            .join("\n\n"),
+                    });
+                    toast.success("Check-in request yaratildi");
+                } else if (action === "invoice") {
+                    await sendMessage(activeChat, payload.text, null, "invoice", {
+                        ...payload.metadata,
+                        ...metadata,
+                    });
+                    toast.success("Invoice chatga yuborildi");
+                } else if (action === "payment_reminder") {
+                    await sendMessage(activeChat, payload.text, null, "text", {
+                        type: "payment_reminder",
+                        ...metadata,
+                    });
+                    toast.success("Payment reminder yuborildi");
+                } else if (action === "meal_feedback" || action === "workout_feedback") {
+                    await createFeedback({
+                        ...payload,
+                        title:
+                            payload.title ||
+                            (action === "meal_feedback"
+                                ? "Nutrition feedback"
+                                : "Workout feedback"),
+                    });
+                    toast.success("Feedback yaratildi");
+                } else if (action === "session_booking") {
+                    await sendBooking(
+                        activeChat,
+                        payload.title,
+                        payload.date,
+                        payload.slots,
+                        payload.durationMinutes,
+                        payload.note,
+                    );
+                    toast.success("Session booking yuborildi");
+                }
+
+                setShortcutDialog({ open: false, action: null, message: null });
+            } catch (error) {
+                toast.error(getErrorMessage(error, "Shortcut action bajarilmadi"));
+            }
+        },
+        [
+            activeChat,
+            activeClientId,
+            canUseMuteBlock,
+            createFeedback,
+            createNote,
+            createTask,
+            createWeeklyCheckIn,
+            isChatBlocked,
+            sendBooking,
+            sendMessage,
+            shortcutDialog.message,
+        ],
+    );
+
+    const handleDelete = React.useCallback(async () => {
         if (deletingMsgId != null) {
-            deleteMessage(activeChat, deletingMsgId, true);
+            await deleteMessage(activeChat, deletingMsgId);
             setDeletingMsgId(null);
         }
     }, [activeChat, deletingMsgId, deleteMessage]);
@@ -497,13 +761,17 @@ const ChatView = () => {
     }, []);
 
     const handleForward = React.useCallback(
-        (targetChatId) => {
+        async (targetChatId) => {
             if (!forwardingMsg) return;
-            forwardMessage(activeChat, forwardingMsg.id, targetChatId);
-            toast.success("Xabar yuborildi");
-            setForwardDialogOpen(false);
-            setForwardingMsg(null);
-            navigate(getChatPath(activeRole, targetChatId));
+            try {
+                await forwardMessage(activeChat, forwardingMsg.id, targetChatId);
+                toast.success("Xabar yuborildi");
+                setForwardDialogOpen(false);
+                setForwardingMsg(null);
+                navigate(getChatPath(activeRole, targetChatId));
+            } catch {
+                toast.error("Xabarni forward qilib bo'lmadi");
+            }
         },
         [activeChat, activeRole, forwardingMsg, forwardMessage, navigate]
     );
@@ -519,39 +787,6 @@ const ChatView = () => {
             prev > 0 ? prev - 1 : chatSearchMatches.length - 1
         );
     }, [chatSearchMatches.length]);
-
-    const toggleMsgSelection = React.useCallback((msgId) => {
-        setSelectedMsgIds((prev) => {
-            const next = new Set(prev);
-            if (next.has(msgId)) next.delete(msgId);
-            else next.add(msgId);
-            return next;
-        });
-    }, []);
-
-    const handleMultiDelete = React.useCallback(() => {
-        selectedMsgIds.forEach((id) => deleteMessage(activeChat, id, false));
-        setMultiSelectMode(false);
-        setSelectedMsgIds(new Set());
-        toast.success(`${selectedMsgIds.size} ta xabar o'chirildi`);
-    }, [activeChat, selectedMsgIds, deleteMessage]);
-
-    const handleMultiForward = React.useCallback(() => {
-        if (selectedMsgIds.size === 0) return;
-        const firstId = head([...selectedMsgIds]);
-        const msg = find(chatMessages, (m) => m.id === firstId);
-        if (msg) {
-            setForwardingMsg(msg);
-            setForwardDialogOpen(true);
-        }
-        setMultiSelectMode(false);
-        setSelectedMsgIds(new Set());
-    }, [selectedMsgIds, chatMessages]);
-
-    const exitMultiSelect = React.useCallback(() => {
-        setMultiSelectMode(false);
-        setSelectedMsgIds(new Set());
-    }, []);
 
     const handleKeyDown = React.useCallback(
         (e) => {
@@ -615,12 +850,12 @@ const ChatView = () => {
         <>
             <div
                 className={cn(
-                    "flex-1 flex flex-col bg-background relative transition-all duration-300 w-full h-full overflow-hidden md:border-l",
-                    showMobileChat ? "fixed inset-0 z-50 flex md:relative md:inset-auto md:z-auto" : "hidden md:flex",
+                    "flex-1 flex min-h-0 flex-col bg-background relative transition-all duration-300 w-full h-full overflow-hidden md:border-l",
+                    showMobileChat ? "fixed inset-0 z-50 flex h-dvh md:relative md:inset-auto md:z-auto md:h-full" : "hidden md:flex",
                 )}
             >
                 {activeEntity ? (
-                    <div className="flex flex-col h-full w-full relative">
+                    <div className="relative flex h-full min-h-0 w-full flex-col">
                         <ChatHeader
                             activeEntity={activeEntity}
                             typingUsers={typingUsers}
@@ -640,17 +875,22 @@ const ChatView = () => {
                             onToggleInfo={() => setShowInfoSidebar(!showInfoSidebar)}
                             isMuted={isActiveChatMuted}
                             isBlocked={isActiveChatBlocked}
-                            onToggleMute={() => toggleMuteChat(activeChat)}
-                            onToggleBlock={() => toggleBlockChat(activeChat)}
-                            onAudioCall={() => setActiveCall({ type: "audio" })}
-                            onVideoCall={() => setActiveCall({ type: "video" })}
-                            onStartLive={() =>
-                                activeLive
-                                    ? endLive()
-                                    : startLive(
-                                          activeChat,
-                                          isCoach ? "Siz (Coach)" : activeEntity.name,
-                                      )
+                            onToggleMute={
+                                canUseMuteBlock ? () => toggleMuteChat(activeChat) : undefined
+                            }
+                            onToggleBlock={
+                                canUseMuteBlock ? () => toggleBlockChat(activeChat) : undefined
+                            }
+                            onStartLive={
+                                canUseLiveActivity
+                                    ? () =>
+                                          activeLive
+                                              ? endLive()
+                                              : startLive(
+                                                    activeChat,
+                                                    isCoach ? "Siz (Coach)" : activeEntity.name,
+                                                )
+                                    : undefined
                             }
                         />
 
@@ -729,25 +969,21 @@ const ChatView = () => {
                             handleDoubleClick={handleDoubleClick}
                             handleContextMenu={handleContextMenu}
                             handleReaction={handleReaction}
-                            handleDeleteForMe={handleDeleteForMe}
-                            handleDeleteForAll={handleDeleteForAll}
+                            handleDelete={handleDelete}
                             handleDeleteCancel={handleDeleteCancel}
                             renderTextWithLinks={renderTextWithLinks}
-                            isCoach={isCoach}
                             activeChat={activeChat}
-                            readReceipts={readReceipts}
                             reactionMsgId={reactionMsgId}
                             deletingMsgId={deletingMsgId}
-                            multiSelectMode={multiSelectMode}
-                            selectedMsgIds={selectedMsgIds}
-                            toggleMsgSelection={toggleMsgSelection}
+                            multiSelectMode={false}
                             messageRefs={messageRefs}
                             messagesEndRef={messagesEndRef}
                             bottomSentinelRef={bottomSentinelRef}
+                            handleRetryMessage={handleRetryMessage}
                         />
 
-                        {isActiveChatBlocked && (
-                            <div className="border-b px-6 py-3 bg-destructive/5 text-sm text-muted-foreground">
+                        {canUseMuteBlock && isActiveChatBlocked && (
+                            <div className="border-t bg-destructive/5 px-3 py-2 text-xs text-muted-foreground md:px-6 md:py-3 md:text-sm">
                                 Bu suhbat bloklangan. Xabar yuborish, media jo'natish va yangi
                                 harakatlar vaqtincha o'chirilgan.
                             </div>
@@ -763,9 +999,6 @@ const ChatView = () => {
                             handleFileSelect={handleFileSelect}
                             fileInputRef={fileInputRef}
                             isCoach={isCoach}
-                            shareContent={shareContent}
-                            workoutPlans={workoutPlans}
-                            mealPlans={mealPlans}
                             stickerOpen={stickerOpen}
                             setStickerOpen={setStickerOpen}
                             handleStickerSelect={handleStickerSelect}
@@ -776,18 +1009,16 @@ const ChatView = () => {
                             setReplyingTo={setReplyingTo}
                             editingMsg={editingMsg}
                             setEditingMsg={setEditingMsg}
-                            multiSelectMode={multiSelectMode}
-                            exitMultiSelect={exitMultiSelect}
-                            selectedMsgIds={selectedMsgIds}
-                            handleMultiDelete={handleMultiDelete}
-                            handleMultiForward={handleMultiForward}
-                            sendPoll={sendPoll}
-                            sendTask={sendTask}
                             sendBooking={sendBooking}
-                            sendInvoice={sendInvoice}
                             getAISuggestions={getAISuggestions}
                             chatMessages={chatMessages}
-                            disabled={isActiveChatBlocked}
+                            coachReplyContext={{
+                                detail: coachClientDetail,
+                                activeEntity,
+                            }}
+                            disabled={canUseMuteBlock && isActiveChatBlocked}
+                            disabledReason="Bu suhbat bloklangan. Xabar yuborish vaqtincha o'chirilgan."
+                            connectionState={isBrowserOnline ? "online" : "offline"}
                         />
                     </div>
                 ) : (
@@ -818,19 +1049,12 @@ const ChatView = () => {
                         onClose={() => setShowInfoSidebar(false)}
                         chatMessages={chatMessages}
                         lastSeenText={getLastSeenText(activeEntity)}
+                        isCoach={isCoach}
                     />
                 </div>
             )}
 
-            {activeCall && activeEntity && (
-                <ChatCallOverlay
-                    activeEntity={activeEntity}
-                    callType={activeCall.type}
-                    onEnd={() => setActiveCall(null)}
-                />
-            )}
-
-            {activeLive && (
+            {canUseLiveActivity && activeLive && (
                 <LiveStreamOverlay
                     activeLive={activeLive}
                     isHost={isCoach && activeLive.chatId === activeChat}
@@ -843,10 +1067,22 @@ const ChatView = () => {
                     position={{ x: contextMenu.x, y: contextMenu.y }}
                     message={contextMenu.message}
                     isMe={contextMenu.message.from === "me"}
+                    canUseCoachActions={canUseCoachActions}
                     onAction={handleContextMenuAction}
                     onClose={() => setContextMenu(null)}
                 />
             )}
+            <ChatActionShortcutDialog
+                key={`${shortcutDialog.action || "empty"}-${shortcutDialog.message?.id || "none"}`}
+                open={shortcutDialog.open}
+                action={shortcutDialog.action}
+                sourceMessage={shortcutDialog.message}
+                clientName={coachClientName}
+                paymentSummary={coachClientPaymentSummary}
+                isSubmitting={isShortcutSubmitting}
+                onOpenChange={handleShortcutDialogOpenChange}
+                onSubmit={handleShortcutSubmit}
+            />
             <ForwardDialog
                 open={forwardDialogOpen}
                 onClose={() => setForwardDialogOpen(false)}

@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import OptionDrawerPicker from "@/components/option-drawer-picker";
+import MultipleDrawerPicker from "@/components/multiple-drawer-picker";
 import {
   Drawer,
   DrawerBody,
@@ -26,8 +27,21 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Spinner } from "@/components/ui/spinner.jsx";
 import { Button } from "@/components/ui/button";
-import { useDeleteQuery, useGetQuery, usePatchQuery, usePostQuery } from "@/hooks/api";
+import {
+  useDeleteQuery,
+  useGetQuery,
+  usePatchQuery,
+  usePostQuery,
+} from "@/hooks/api";
 import { useLanguageStore } from "@/store";
+import {
+  UnsavedChangesAlert,
+  useUnsavedChangesGuard,
+} from "@/modules/admin/components/unsaved-changes-guard.jsx";
+import {
+  ALLERGEN_TAG_OPTIONS,
+  DIETARY_TAG_OPTIONS,
+} from "@/modules/admin/lib/nutrition-tags.js";
 
 import IngredientImagePicker from "./ingredient-image-picker.jsx";
 import {
@@ -61,6 +75,8 @@ const IngredientFormDrawer = ({ mode }) => {
       carbs: 0,
       fat: 0,
       servingUnit: "g",
+      dietaryTags: [],
+      allergenTags: [],
       isAllergic: false,
       isOnboarding: true,
     },
@@ -71,6 +87,12 @@ const IngredientFormDrawer = ({ mode }) => {
   const [uploadedImageId, setUploadedImageId] = React.useState(null);
   const [imagePreview, setImagePreview] = React.useState(null);
   const [removeImage, setRemoveImage] = React.useState(false);
+  const isSaving = postMutation.isPending || patchMutation.isPending;
+  const unsavedChanges = useUnsavedChangesGuard({
+    when:
+      (form.formState.isDirty || Boolean(uploadedImageId) || removeImage) &&
+      !isSaving,
+  });
 
   React.useEffect(() => {
     if (item) {
@@ -81,12 +103,16 @@ const IngredientFormDrawer = ({ mode }) => {
         carbs: Number(item.carbs) || 0,
         fat: Number(item.fat) || 0,
         servingUnit: item.servingUnit || "g",
+        dietaryTags: Array.isArray(item.dietaryTags) ? item.dietaryTags : [],
+        allergenTags: Array.isArray(item.allergenTags) ? item.allergenTags : [],
         isAllergic: Boolean(item.isAllergic),
         isOnboarding: item.isOnboarding !== false,
       });
-      setImagePreview(item.imageUrl || null);
     }
   }, [currentLanguage, form, item]);
+  const currentImagePreview = removeImage
+    ? null
+    : imagePreview || item?.imageUrl || null;
 
   const cleanupImage = React.useCallback(
     async (imageId) => {
@@ -115,174 +141,229 @@ const IngredientFormDrawer = ({ mode }) => {
       attributes: payload,
     });
     toast.success(isEdit ? "Ingredient yangilandi" : "Ingredient yaratildi");
-    navigate("/admin/ingredients/list");
+    form.reset(values);
+    unsavedChanges.runWithoutGuard(() => navigate("/admin/ingredients/list"));
   };
 
+  const handleClose = React.useCallback(() => {
+    void cleanupImage(uploadedImageId);
+    navigate("/admin/ingredients/list");
+  }, [cleanupImage, navigate, uploadedImageId]);
+
   return (
-    <Drawer
-      open
-      onOpenChange={(open) => {
-        if (!open) {
-          void cleanupImage(uploadedImageId);
-          navigate("/admin/ingredients/list");
-        }
-      }}
-      direction="bottom"
-    >
-      <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-md">
-        <DrawerHeader className="items-center text-center">
-          <DrawerTitle>
-            {isEdit ? "Ingredientni tahrirlash" : "Yangi ingredient"}
-          </DrawerTitle>
-          <DrawerDescription>
-            Nutrition qiymatlari 100g uchun kiritiladi
-          </DrawerDescription>
-        </DrawerHeader>
-        {isEdit && isLoading ? (
-          <div className="flex min-h-72 items-center justify-center">
-            <Spinner />
-          </div>
-        ) : (
-          <>
-            <DrawerBody>
-              <Form {...form}>
-                <form
-                  id="ingredient-form"
-                  className="flex flex-col gap-4"
-                  onSubmit={form.handleSubmit(onSubmit)}
-                >
-                  <IngredientImagePicker
-                    value={imagePreview}
-                    uploadedImageId={uploadedImageId}
-                    onChange={({
-                      imageId,
-                      imageUrl,
-                      previousUploadedImageId,
-                    }) => {
-                      setUploadedImageId(imageId);
-                      setImagePreview(imageUrl);
-                      setRemoveImage(false);
-                      if (previousUploadedImageId) {
-                        void cleanupImage(previousUploadedImageId);
-                      }
-                    }}
-                    onRemove={() => {
-                      setImagePreview(null);
-                      setRemoveImage(Boolean(item?.imageUrl));
-                      if (uploadedImageId) void cleanupImage(uploadedImageId);
-                      setUploadedImageId(null);
-                    }}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          Nomi ({currentLanguage.toUpperCase()})
-                        </FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  {["calories", "protein", "carbs", "fat"].map((name) => (
+    <>
+      <Drawer
+        open
+        onOpenChange={(open) => {
+          if (!open) {
+            unsavedChanges.requestLeave(handleClose);
+          }
+        }}
+        direction="bottom"
+      >
+        <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-md">
+          <DrawerHeader className="items-center text-center">
+            <DrawerTitle>
+              {isEdit ? "Ingredientni tahrirlash" : "Yangi ingredient"}
+            </DrawerTitle>
+            <DrawerDescription>
+              Nutrition qiymatlari 100g uchun kiritiladi
+            </DrawerDescription>
+          </DrawerHeader>
+          {isEdit && isLoading ? (
+            <div className="flex min-h-72 items-center justify-center">
+              <Spinner />
+            </div>
+          ) : (
+            <>
+              <DrawerBody>
+                <Form {...form}>
+                  <form
+                    id="ingredient-form"
+                    className="flex flex-col gap-4"
+                    onSubmit={form.handleSubmit(onSubmit)}
+                  >
+                    <IngredientImagePicker
+                      value={currentImagePreview}
+                      uploadedImageId={uploadedImageId}
+                      onChange={({
+                        imageId,
+                        imageUrl,
+                        previousUploadedImageId,
+                      }) => {
+                        setUploadedImageId(imageId);
+                        setImagePreview(imageUrl);
+                        setRemoveImage(false);
+                        if (previousUploadedImageId) {
+                          void cleanupImage(previousUploadedImageId);
+                        }
+                      }}
+                      onRemove={() => {
+                        setImagePreview(null);
+                        setRemoveImage(Boolean(item?.imageUrl));
+                        if (uploadedImageId) void cleanupImage(uploadedImageId);
+                        setUploadedImageId(null);
+                      }}
+                    />
                     <FormField
-                      key={name}
                       control={form.control}
-                      name={name}
+                      name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{name}</FormLabel>
+                          <FormLabel>
+                            Nomi ({currentLanguage.toUpperCase()})
+                          </FormLabel>
                           <FormControl>
-                            <NumberInput
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {["calories", "protein", "carbs", "fat"].map((name) => (
+                      <FormField
+                        key={name}
+                        control={form.control}
+                        name={name}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{name}</FormLabel>
+                            <FormControl>
+                              <NumberInput
+                                value={field.value}
+                                onChange={field.onChange}
+                                step={name === "calories" ? 1 : 0.1}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    ))}
+                    <FormField
+                      control={form.control}
+                      name="servingUnit"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>O'lchov birligi</FormLabel>
+                          <FormControl>
+                            <OptionDrawerPicker
                               value={field.value}
                               onChange={field.onChange}
-                              step={name === "calories" ? 1 : 0.1}
+                              options={SERVING_UNITS}
+                              title="O'lchov birligi"
+                              placeholder="Tanlang"
                             />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                  ))}
-                  <FormField
-                    control={form.control}
-                    name="servingUnit"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>O'lchov birligi</FormLabel>
-                        <FormControl>
-                          <OptionDrawerPicker
-                            value={field.value}
-                            onChange={field.onChange}
-                            options={SERVING_UNITS}
-                            title="O'lchov birligi"
-                            placeholder="Tanlang"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="isAllergic"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center justify-between gap-4 rounded-2xl border px-4 py-3">
-                        <div>
-                          <FormLabel>Allergen sifatida ko'rsatish</FormLabel>
-                          <p className="text-xs text-muted-foreground">
-                            User onboardingda allergiya tanlovida chiqadi
-                          </p>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={Boolean(field.value)}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="isOnboarding"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center justify-between gap-4 rounded-2xl border px-4 py-3">
-                        <div>
-                          <FormLabel>Onboardingda ustuvor ko'rsatish</FormLabel>
-                          <p className="text-xs text-muted-foreground">
-                            Yoqilgan bo'lsa ingredient onboarding comboboxida birinchi chiqadi
-                          </p>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={Boolean(field.value)}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </form>
-              </Form>
-            </DrawerBody>
-            <DrawerFooter>
-              <Button
-                form="ingredient-form"
-                type="submit"
-                disabled={postMutation.isPending || patchMutation.isPending}
-              >
-                Saqlash
-              </Button>
-            </DrawerFooter>
-          </>
-        )}
-      </DrawerContent>
-    </Drawer>
+                    <FormField
+                      control={form.control}
+                      name="dietaryTags"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Dietary taglar</FormLabel>
+                          <FormControl>
+                            <MultipleDrawerPicker
+                              value={field.value}
+                              onChange={field.onChange}
+                              options={DIETARY_TAG_OPTIONS}
+                              title="Dietary taglar"
+                              placeholder="Tag tanlang"
+                              doneLabel="Tayyor"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="allergenTags"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Allergen taglar</FormLabel>
+                          <FormControl>
+                            <MultipleDrawerPicker
+                              value={field.value}
+                              onChange={field.onChange}
+                              options={ALLERGEN_TAG_OPTIONS}
+                              title="Allergen taglar"
+                              placeholder="Allergen tanlang"
+                              doneLabel="Tayyor"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="isAllergic"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between gap-4 rounded-2xl border px-4 py-3">
+                          <div>
+                            <FormLabel>Allergen sifatida ko'rsatish</FormLabel>
+                            <p className="text-xs text-muted-foreground">
+                              User onboardingda allergiya tanlovida chiqadi
+                            </p>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={Boolean(field.value)}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="isOnboarding"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between gap-4 rounded-2xl border px-4 py-3">
+                          <div>
+                            <FormLabel>
+                              Onboardingda ustuvor ko'rsatish
+                            </FormLabel>
+                            <p className="text-xs text-muted-foreground">
+                              Yoqilgan bo'lsa ingredient onboarding comboboxida
+                              birinchi chiqadi
+                            </p>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={Boolean(field.value)}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </form>
+                </Form>
+              </DrawerBody>
+              <DrawerFooter>
+                <Button
+                  form="ingredient-form"
+                  type="submit"
+                  disabled={isSaving}
+                >
+                  Saqlash
+                </Button>
+              </DrawerFooter>
+            </>
+          )}
+        </DrawerContent>
+      </Drawer>
+      <UnsavedChangesAlert
+        open={unsavedChanges.confirmOpen}
+        onCancel={unsavedChanges.cancelLeave}
+        onConfirm={unsavedChanges.confirmLeave}
+      />
+    </>
   );
 };
 

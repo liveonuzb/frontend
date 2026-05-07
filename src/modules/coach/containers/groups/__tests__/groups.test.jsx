@@ -150,7 +150,7 @@ describe("GroupsListPage", () => {
     setupHooks();
 
     render(
-      <MemoryRouter initialEntries={["/coach/telegram-groups/list"]}>
+      <MemoryRouter initialEntries={["/coach/groups/list"]}>
         <GroupsListPage />
       </MemoryRouter>,
     );
@@ -185,7 +185,7 @@ describe("GroupsListPage", () => {
     setupHooks();
 
     render(
-      <MemoryRouter initialEntries={["/coach/telegram-groups/list"]}>
+      <MemoryRouter initialEntries={["/coach/groups/list"]}>
         <GroupsListPage />
       </MemoryRouter>,
     );

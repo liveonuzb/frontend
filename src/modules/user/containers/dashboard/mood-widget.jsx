@@ -12,31 +12,29 @@ import {
   getDayDataFromResponse,
 } from "./query-helpers.js";
 import { motion } from "framer-motion";
-export default function MoodWidget({ dateKey, readOnly = false }) {
-  const queryClient = useQueryClient();
-  const { data } = useGetQuery({
-    url: `/daily-tracking/${dateKey}`,
-    queryProps: {
-      queryKey: getDashboardDayQueryKey(dateKey),
-      enabled: Boolean(dateKey),
-    },
-  });
-  const dayData = React.useMemo(
-    () => getDayDataFromResponse(data, dateKey),
-    [data, dateKey],
-  );
-  const setMoodMutation = usePutQuery({
-    mutationProps: {
-      onSuccess: async (response) => {
-        queryClient.setQueryData(getDashboardDayQueryKey(dateKey), response);
-      },
-    },
-  });
-  const selectedMood = get(dayData, "mood", null);
-  const selectedMoodMeta = getMoodMeta(selectedMood);
+
+const getMoodLabel = (value, labels = {}) => {
+  if (!value) return null;
+
+  return labels.moods?.[value] ?? getMoodMeta(value)?.label ?? null;
+};
+
+export function MoodWidgetView({
+  selectedMood,
+  onMoodSelect,
+  readOnly = false,
+  isPending = false,
+  className,
+  labels = {},
+}) {
+  const title = labels.title ?? "Kayfiyat";
+  const pendingLabel = labels.pending ?? "Saqlanmoqda...";
+  const emptyLabel = labels.empty ?? "Kayfiyat kiritilmagan";
+  const questionLabel = labels.question ?? "Bugungi kayfiyat?";
+  const selectedMoodLabel = getMoodLabel(selectedMood, labels);
 
   return (
-    <Card className="py-6 mood-widget">
+    <Card className={cn("py-6 mood-widget", className)}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-xl">
           <motion.div
@@ -46,7 +44,7 @@ export default function MoodWidget({ dateKey, readOnly = false }) {
             transition={{ type: "spring", stiffness: 300, damping: 18 }}
             className={`size-7 ${selectedMood || "good"}`}
           />
-          Kayfiyat
+          {title}
         </CardTitle>
       </CardHeader>
 
@@ -60,7 +58,7 @@ export default function MoodWidget({ dateKey, readOnly = false }) {
               <motion.button
                 key={value}
                 type="button"
-                disabled={setMoodMutation.isPending || readOnly}
+                disabled={isPending || readOnly}
                 whileHover={!readOnly ? { scale: 1.08, y: -3 } : undefined}
                 whileTap={!readOnly ? { scale: 0.92 } : undefined}
                 animate={{
@@ -72,27 +70,13 @@ export default function MoodWidget({ dateKey, readOnly = false }) {
                   stiffness: 380,
                   damping: 18,
                 }}
-                onClick={async () => {
-                  if (setMoodMutation.isPending || readOnly) return;
-
-                  try {
-                    await setMoodMutation.mutateAsync({
-                      url: `/daily-tracking/${dateKey}`,
-                      attributes: {
-                        steps: dayData.steps,
-                        workoutMinutes: dayData.workoutMinutes,
-                        burnedCalories: dayData.burnedCalories,
-                        sleepHours: dayData.sleepHours,
-                        mood: value,
-                      },
-                    });
-                    toast.success("Kayfiyat saqlandi");
-                  } catch {
-                    toast.error("Kayfiyatni saqlab bo'lmadi");
-                  }
+                onClick={() => {
+                  if (isPending || readOnly) return;
+                  onMoodSelect?.(value);
                 }}
                 className={cn(
-                  "flex flex-1 items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-60 py-1 cursor-pointer",
+                  "flex flex-1 items-center justify-center rounded-lg py-1 transition-colors disabled:cursor-not-allowed disabled:opacity-60",
+                  !readOnly && "cursor-pointer",
                   isSelected
                     ? "bg-primary/15 ring-1 ring-primary"
                     : "bg-muted/30 hover:bg-muted/60",
@@ -120,13 +104,61 @@ export default function MoodWidget({ dateKey, readOnly = false }) {
           })}
         </div>
         <p className="text-center text-sm text-muted-foreground">
-          {setMoodMutation.isPending
-            ? "Saqlanmoqda..."
+          {isPending
+            ? pendingLabel
             : readOnly
-              ? (selectedMoodMeta?.label ?? "Kayfiyat kiritilmagan")
-              : (selectedMoodMeta?.label ?? "Bugungi kayfiyat?")}
+              ? (selectedMoodLabel ?? emptyLabel)
+              : (selectedMoodLabel ?? questionLabel)}
         </p>
       </CardContent>
     </Card>
+  );
+}
+
+export default function MoodWidget({ dateKey, readOnly = false }) {
+  const queryClient = useQueryClient();
+  const { data } = useGetQuery({
+    url: `/daily-tracking/${dateKey}`,
+    queryProps: {
+      queryKey: getDashboardDayQueryKey(dateKey),
+      enabled: Boolean(dateKey),
+    },
+  });
+  const dayData = React.useMemo(
+    () => getDayDataFromResponse(data, dateKey),
+    [data, dateKey],
+  );
+  const setMoodMutation = usePutQuery({
+    mutationProps: {
+      onSuccess: async (response) => {
+        queryClient.setQueryData(getDashboardDayQueryKey(dateKey), response);
+      },
+    },
+  });
+  const selectedMood = get(dayData, "mood", null);
+
+  return (
+    <MoodWidgetView
+      isPending={setMoodMutation.isPending}
+      readOnly={readOnly}
+      selectedMood={selectedMood}
+      onMoodSelect={async (value) => {
+        try {
+          await setMoodMutation.mutateAsync({
+            url: `/daily-tracking/${dateKey}`,
+            attributes: {
+              steps: dayData.steps,
+              workoutMinutes: dayData.workoutMinutes,
+              burnedCalories: dayData.burnedCalories,
+              sleepHours: dayData.sleepHours,
+              mood: value,
+            },
+          });
+          toast.success("Kayfiyat saqlandi");
+        } catch {
+          toast.error("Kayfiyatni saqlab bo'lmadi");
+        }
+      }}
+    />
   );
 }

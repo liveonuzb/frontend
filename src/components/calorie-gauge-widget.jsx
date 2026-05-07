@@ -10,7 +10,7 @@ import {
 import { Separator } from "@/components/ui/separator.jsx";
 import { cn } from "@/lib/utils";
 
-const getGoalAlerts = ({ consumed, goal, macroItems }) => {
+const getGoalAlerts = ({ consumed, goal, macroItems, labels }) => {
   const alerts = [];
   const protein = macroItems.find((item) => item.key === "protein");
   const fat = macroItems.find((item) => item.key === "fat");
@@ -18,7 +18,7 @@ const getGoalAlerts = ({ consumed, goal, macroItems }) => {
   if (protein?.target > 0 && protein.current / protein.target < 0.7) {
     alerts.push({
       key: "protein-low",
-      label: "Oqsil kam",
+      label: labels.proteinLowAlert,
       className: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-200",
     });
   }
@@ -26,7 +26,7 @@ const getGoalAlerts = ({ consumed, goal, macroItems }) => {
   if (fat?.target > 0 && fat.current / fat.target > 1.3) {
     alerts.push({
       key: "fat-high",
-      label: "Yog' oshib ketdi",
+      label: labels.fatHighAlert,
       className: "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-200",
     });
   }
@@ -34,7 +34,7 @@ const getGoalAlerts = ({ consumed, goal, macroItems }) => {
   if (goal > 0 && consumed >= goal * 0.9 && consumed <= goal) {
     alerts.push({
       key: "calorie-close",
-      label: "Maqsadga yaqin",
+      label: labels.calorieCloseAlert,
       className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200",
     });
   }
@@ -57,7 +57,26 @@ export default function CalorieGaugeWidget({
   defaultCalorieMode = "remaining",
   calorieMode,
   onCalorieModeChange,
+  labels = {},
 }) {
+  const resolvedLabels = {
+    title: labels.title ?? "Bugungi Kaloriya",
+    eaten: labels.eaten ?? "Yeyilgan",
+    remaining: labels.remaining ?? "Qolgan",
+    over: labels.over ?? "Oshdi",
+    kcal: labels.kcal ?? "kcal",
+    toggleAria:
+      labels.toggleAria ?? "Kaloriya ko'rsatkichini almashtirish",
+    goalLoading:
+      labels.goalLoading ?? "Maqsad profilingizga moslanmoqda",
+    protein: labels.protein ?? "Oqsil",
+    carbs: labels.carbs ?? "Uglevod",
+    fat: labels.fat ?? "Yog'",
+    proteinLowAlert: labels.proteinLowAlert ?? "Oqsil kam",
+    fatHighAlert: labels.fatHighAlert ?? "Yog' oshib ketdi",
+    calorieCloseAlert: labels.calorieCloseAlert ?? "Maqsadga yaqin",
+    ariaLabel: labels.ariaLabel,
+  };
   const isOver = consumed > goal;
   const excess = consumed - goal;
   const remaining = clamp(goal - consumed, 0, Infinity);
@@ -65,7 +84,9 @@ export default function CalorieGaugeWidget({
   const consumedLabel = round(consumed).toLocaleString();
   const goalLabel = round(goal).toLocaleString();
   const pctLabel = goal > 0 ? round((consumed / goal) * 100) : 0;
-  const gaugeAriaLabel = `Bugun ${consumedLabel}/${goalLabel} kaloriya iste'mol qilindi (${pctLabel}%)`;
+  const gaugeAriaLabel =
+    resolvedLabels.ariaLabel ||
+    `Bugun ${consumedLabel}/${goalLabel} kaloriya iste'mol qilindi (${pctLabel}%)`;
   const [internalCalorieMode, setInternalCalorieMode] = React.useState(
     defaultCalorieMode === "eaten" ? "eaten" : "remaining",
   );
@@ -75,7 +96,11 @@ export default function CalorieGaugeWidget({
       : internalCalorieMode;
   const isEatenMode = resolvedCalorieMode === "eaten";
   const centerIsOver = !isEatenMode && isOver;
-  const centerLabel = isEatenMode ? "Yeyilgan" : isOver ? "Oshdi" : "Qolgan";
+  const centerLabel = isEatenMode
+    ? resolvedLabels.eaten
+    : isOver
+      ? resolvedLabels.over
+      : resolvedLabels.remaining;
   const centerValue = isEatenMode ? consumed : isOver ? excess : remaining;
   const centerValueLabel =
     !isEatenMode && isOver
@@ -143,7 +168,7 @@ export default function CalorieGaugeWidget({
   const macroItems = [
     {
       key: "protein",
-      label: "Oqsil",
+      label: resolvedLabels.protein,
       current: round(macros.protein?.current || 0),
       target: macros.protein?.target || 150,
       emoji: "🍗",
@@ -151,7 +176,7 @@ export default function CalorieGaugeWidget({
     },
     {
       key: "carbs",
-      label: "Uglevod",
+      label: resolvedLabels.carbs,
       current: round(macros.carbs?.current || 0),
       target: macros.carbs?.target || 250,
       emoji: "🍴",
@@ -159,14 +184,19 @@ export default function CalorieGaugeWidget({
     },
     {
       key: "fat",
-      label: "Yog'",
+      label: resolvedLabels.fat,
       current: round(macros.fat?.current || 0),
       target: macros.fat?.target || 70,
       emoji: "🥑",
       color: "#22c55e",
     },
   ];
-  const goalAlerts = getGoalAlerts({ consumed, goal, macroItems });
+  const goalAlerts = getGoalAlerts({
+    consumed,
+    goal,
+    macroItems,
+    labels: resolvedLabels,
+  });
 
   return (
     <Card
@@ -181,7 +211,7 @@ export default function CalorieGaugeWidget({
       <CardHeader className="mb-4 flex items-start justify-between gap-4">
         <div className="space-y-2">
           <h3 className="flex items-center gap-1.5 text-base font-bold">
-            Bugungi Kaloriya <span className="text-lg">🔥</span>
+            {resolvedLabels.title} <span className="text-lg">🔥</span>
           </h3>
         </div>
         <div className="flex flex-col items-end gap-1 text-right">
@@ -190,16 +220,18 @@ export default function CalorieGaugeWidget({
               type="button"
               onClick={toggleCalorieMode}
               className="inline-flex h-8 items-center gap-1 rounded-full border border-border/60 bg-background/70 px-3 text-xs font-bold text-foreground shadow-sm transition-colors hover:bg-muted"
-              aria-label="Kaloriya ko'rsatkichini almashtirish"
+              aria-label={resolvedLabels.toggleAria}
             >
-              <span>{isEatenMode ? "Yeyilgan" : "Qolgan"}</span>
+              <span>
+                {isEatenMode ? resolvedLabels.eaten : resolvedLabels.remaining}
+              </span>
               <ChevronsUpDown className="size-3.5 text-muted-foreground" />
             </button>
           ) : null}
 
           {isGoalLoading ? (
             <p className="mt-1 text-[11px] text-muted-foreground">
-              Maqsad profilingizga moslanmoqda
+              {resolvedLabels.goalLoading}
             </p>
           ) : null}
         </div>
@@ -213,13 +245,17 @@ export default function CalorieGaugeWidget({
               </p>
               <p className={cn("mt-1 text-3xl font-black", centerIsOver && "text-red-500")}>
                 {centerValueLabel}
-                <span className="ml-1 text-sm text-muted-foreground">kcal</span>
+                <span className="ml-1 text-sm text-muted-foreground">
+                  {resolvedLabels.kcal}
+                </span>
               </p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-muted-foreground">Yeyilgan</p>
+              <p className="text-xs text-muted-foreground">
+                {resolvedLabels.eaten}
+              </p>
               <p className="text-sm font-bold">
-                {consumedLabel}/{goalLabel} kcal
+                {consumedLabel}/{goalLabel} {resolvedLabels.kcal}
               </p>
             </div>
           </div>
@@ -401,7 +437,7 @@ export default function CalorieGaugeWidget({
                 fontWeight: 500,
               }}
             >
-              kcal
+              {resolvedLabels.kcal}
             </text>
           </svg>
         </div>

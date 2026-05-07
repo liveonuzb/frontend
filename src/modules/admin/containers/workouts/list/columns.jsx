@@ -1,6 +1,6 @@
+/* eslint-disable react-refresh/only-export-components */
 import React from "react";
 import {
-  filter as lodashFilter,
   get,
   isObject,
   map as lodashMap,
@@ -59,7 +59,7 @@ const resolveLabel = (translations, fallback, language) => {
 
 const ITEMS_PER_PAGE = 10;
 
-export const useColumns = ({
+const useColumns = ({
   activeLanguages,
   canHardDelete,
   canReorder,
@@ -108,6 +108,47 @@ export const useColumns = ({
         cell: (info) => <WorkoutImageCell workout={info.row.original} />,
         meta: { skeleton: adminListSkeletons.image },
         size: 72,
+      },
+      {
+        id: "mediaReview",
+        header: "Media status",
+        meta: { skeleton: adminListSkeletons.badge },
+        cell: (info) => {
+          const media = get(info.row.original, "mediaReview", {});
+          const imageStatus = get(media, "imageStatus", "missing");
+          const videoStatus = get(media, "videoStatus", "missing");
+          const moderationStatus = get(
+            media,
+            "moderationStatus",
+            "needs_review",
+          );
+
+          return (
+            <div className="flex max-w-[190px] flex-wrap gap-1">
+              <Badge
+                variant={imageStatus === "ready" ? "secondary" : "outline"}
+                className="h-5 px-1.5 text-[10px]"
+              >
+                Image: {imageStatus}
+              </Badge>
+              <Badge
+                variant={videoStatus === "review" ? "destructive" : "outline"}
+                className="h-5 px-1.5 text-[10px]"
+              >
+                Video: {videoStatus}
+              </Badge>
+              <Badge
+                variant={
+                  moderationStatus === "approved" ? "secondary" : "outline"
+                }
+                className="h-5 px-1.5 text-[10px]"
+              >
+                {moderationStatus}
+              </Badge>
+            </div>
+          );
+        },
+        size: 200,
       },
       {
         accessorKey: "name",
@@ -283,3 +324,5 @@ export const useColumns = ({
     ],
   );
 };
+
+export default useColumns;

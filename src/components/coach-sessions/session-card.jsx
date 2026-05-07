@@ -6,6 +6,7 @@ import {
   TimerIcon,
   XCircleIcon,
   CalendarPlusIcon,
+  DownloadIcon,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,8 @@ import {
   formatSessionSchedule,
   getInitials,
   getSessionCounterparty,
+  canExportSessionCalendar,
+  downloadSessionCalendarInvite,
 } from "./session-utils.js";
 
 const SessionCard = ({
@@ -30,6 +33,7 @@ const SessionCard = ({
   const canCancel =
     session?.status === "proposed" || session?.status === "scheduled";
   const canComplete = role === "coach" && session?.status === "scheduled";
+  const canExportCalendar = canExportSessionCalendar(session);
 
   return (
     <div className="rounded-3xl border bg-background/95 p-5 shadow-sm transition-shadow hover:shadow-md">
@@ -95,6 +99,16 @@ const SessionCard = ({
             <Button type="button" onClick={onComplete} disabled={isBusy}>
               <CheckCircle2Icon className="mr-2 size-4" />
               Tugatish
+            </Button>
+          ) : null}
+          {canExportCalendar ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => downloadSessionCalendarInvite(session)}
+            >
+              <DownloadIcon className="mr-2 size-4" />
+              Calendar
             </Button>
           ) : null}
           {onReschedule && canCancel ? (

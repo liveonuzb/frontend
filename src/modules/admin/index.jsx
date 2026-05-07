@@ -13,6 +13,13 @@ const UsersPage = lazy(() => import("@/modules/admin/pages/users/index.jsx"));
 const CoachesPage = lazy(
   () => import("@/modules/admin/pages/coaches/index.jsx"),
 );
+const AiPage = lazy(() => import("@/modules/admin/pages/ai/index.jsx"));
+const TrackingPage = lazy(
+  () => import("@/modules/admin/pages/tracking/index.jsx"),
+);
+const NotificationsPage = lazy(
+  () => import("@/modules/admin/pages/notifications/index.jsx"),
+);
 const FoodsPage = lazy(() => import("@/modules/admin/pages/foods/index.jsx"));
 const LocationsPage = lazy(
   () => import("@/modules/admin/pages/locations/index.jsx"),
@@ -93,6 +100,9 @@ const UserGoalsPage = lazy(
 const NutritionPreferencesPage = lazy(
   () => import("@/modules/admin/pages/nutrition-preferences/index.jsx"),
 );
+const MealPlansPage = lazy(
+  () => import("@/modules/admin/pages/meal-plans/index.jsx"),
+);
 const NotFound = lazy(() => import("@/pages/not-found/index.jsx"));
 
 const renderAdminRoute = (
@@ -121,6 +131,12 @@ const Index = () => {
         <Route
           path="coaches/*"
           element={renderAdminRoute(CoachesPage, {
+            capability: "support.read",
+          })}
+        />
+        <Route
+          path="tracking"
+          element={renderAdminRoute(TrackingPage, {
             capability: "support.read",
           })}
         />
@@ -244,6 +260,18 @@ const Index = () => {
           })}
         />
         <Route
+          path="ai"
+          element={renderAdminRoute(AiPage, {
+            capability: "settings.manage",
+          })}
+        />
+        <Route
+          path="notifications"
+          element={renderAdminRoute(NotificationsPage, {
+            capability: "support.read",
+          })}
+        />
+        <Route
           path="platform-bot"
           element={renderAdminRoute(PlatformBotPage, {
             capability: "growth.read",
@@ -276,6 +304,12 @@ const Index = () => {
         <Route
           path="nutrition-preferences/*"
           element={renderAdminRoute(NutritionPreferencesPage, {
+            capability: "content.read",
+          })}
+        />
+        <Route
+          path="meal-plans/*"
+          element={renderAdminRoute(MealPlansPage, {
             capability: "content.read",
           })}
         />

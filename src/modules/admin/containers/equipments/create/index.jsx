@@ -30,6 +30,8 @@ const emptyForm = {
   name: "",
   isActive: true,
   isOnboarding: true,
+  isHome: false,
+  isStreet: false,
   image: null,
 };
 
@@ -141,6 +143,8 @@ const CreateEquipment = () => {
         formData.append("name", trimmedName);
         formData.append("isActive", String(form.isActive));
         formData.append("isOnboarding", String(form.isOnboarding));
+        formData.append("isHome", String(form.isHome));
+        formData.append("isStreet", String(form.isStreet));
         formData.append("translations", JSON.stringify(translations));
         formData.append("image", form.image);
 
@@ -156,6 +160,8 @@ const CreateEquipment = () => {
             name: trimmedName,
             isActive: form.isActive,
             isOnboarding: form.isOnboarding,
+            isHome: form.isHome,
+            isStreet: form.isStreet,
             translations,
           },
         });
@@ -272,6 +278,36 @@ const CreateEquipment = () => {
                 checked={form.isOnboarding}
                 onCheckedChange={(checked) =>
                   setForm((current) => ({ ...current, isOnboarding: checked }))
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-muted/15 px-4 py-3">
+              <div>
+                <p className="text-sm font-medium">Uy jihozi</p>
+                <p className="text-xs text-muted-foreground">
+                  Yoqilgan bo'lsa uyda mashq qiladigan userlarga asosiy
+                  ro'yxatda ko'rinadi.
+                </p>
+              </div>
+              <Switch
+                checked={form.isHome}
+                onCheckedChange={(checked) =>
+                  setForm((current) => ({ ...current, isHome: checked }))
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-muted/15 px-4 py-3">
+              <div>
+                <p className="text-sm font-medium">Street jihozi</p>
+                <p className="text-xs text-muted-foreground">
+                  Yoqilgan bo'lsa tashqarida mashq qiladigan userlarga asosiy
+                  ro'yxatda ko'rinadi.
+                </p>
+              </div>
+              <Switch
+                checked={form.isStreet}
+                onCheckedChange={(checked) =>
+                  setForm((current) => ({ ...current, isStreet: checked }))
                 }
               />
             </div>

@@ -14,11 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { useLanguageStore } from "@/store";
-import {
-  useGetQuery,
-  usePatchQuery,
-  useDeleteQuery,
-} from "@/hooks/api";
+import { useGetQuery, usePatchQuery, useDeleteQuery } from "@/hooks/api";
 import {
   Drawer,
   DrawerBody,
@@ -47,6 +43,10 @@ import {
   useUnsavedChangesGuard,
 } from "@/modules/admin/components/unsaved-changes-guard";
 import {
+  ALLERGEN_TAG_OPTIONS,
+  DIETARY_TAG_OPTIONS,
+} from "@/modules/admin/lib/nutrition-tags.js";
+import {
   NumberField,
   NumberFieldDecrement,
   NumberFieldGroup,
@@ -67,6 +67,8 @@ const foodSchema = z.object({
   fat: z.number().min(0),
   servingUnit: z.enum(["g", "ml", "dona", "qoshiq"]),
   servingSize: z.number().min(0),
+  dietaryTags: z.array(z.string()).default([]),
+  allergenTags: z.array(z.string()).default([]),
   isOnboarding: z.boolean().default(true),
 });
 
@@ -151,6 +153,8 @@ const FoodFormDrawer = ({
       fat: 0,
       servingUnit: "g",
       servingSize: 100,
+      dietaryTags: [],
+      allergenTags: [],
       isOnboarding: true,
     },
   });
@@ -179,6 +183,12 @@ const FoodFormDrawer = ({
         fat: Number(initialValues.fat) || 0,
         servingUnit: initialValues.servingUnit || "g",
         servingSize: Number(initialValues.servingSize) || 100,
+        dietaryTags: Array.isArray(initialValues.dietaryTags)
+          ? initialValues.dietaryTags
+          : [],
+        allergenTags: Array.isArray(initialValues.allergenTags)
+          ? initialValues.allergenTags
+          : [],
         isOnboarding: initialValues.isOnboarding !== false,
       });
     }
@@ -186,8 +196,7 @@ const FoodFormDrawer = ({
 
   const isPending = isUpdating || isUploadingImage || isDeletingImage;
   const unsavedChanges = useUnsavedChangesGuard({
-    when:
-      (form.formState.isDirty || Boolean(uploadedImageId)) && !isPending,
+    when: (form.formState.isDirty || Boolean(uploadedImageId)) && !isPending,
   });
 
   const handleSubmit = form.handleSubmit(async (data) => {
@@ -467,13 +476,54 @@ const FoodFormDrawer = ({
                   />
                   <FormField
                     control={form.control}
+                    name="dietaryTags"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Dietary taglar</FormLabel>
+                        <FormControl>
+                          <MultipleDrawerPicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            options={DIETARY_TAG_OPTIONS}
+                            title="Dietary taglar"
+                            placeholder="Tag tanlang"
+                            doneLabel="Tayyor"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="allergenTags"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Allergen taglar</FormLabel>
+                        <FormControl>
+                          <MultipleDrawerPicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            options={ALLERGEN_TAG_OPTIONS}
+                            title="Allergen taglar"
+                            placeholder="Allergen tanlang"
+                            doneLabel="Tayyor"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
                     name="isOnboarding"
                     render={({ field }) => (
                       <FormItem className="flex items-center justify-between gap-4 rounded-2xl border px-4 py-3">
                         <div>
                           <FormLabel>Onboardingda ustuvor ko'rsatish</FormLabel>
                           <p className="text-xs text-muted-foreground">
-                            Yoqilgan bo'lsa ovqat onboarding comboboxida birinchi chiqadi.
+                            Yoqilgan bo'lsa ovqat onboarding comboboxida
+                            birinchi chiqadi.
                           </p>
                         </div>
                         <FormControl>
@@ -524,6 +574,12 @@ const createFormFromFood = (food, language) => ({
   fat: String(get(food, "fat", "")),
   servingSize: String(get(food, "servingSize", "")),
   servingUnit: get(food, "servingUnit", "g"),
+  dietaryTags: isArray(get(food, "dietaryTags"))
+    ? get(food, "dietaryTags")
+    : [],
+  allergenTags: isArray(get(food, "allergenTags"))
+    ? get(food, "allergenTags")
+    : [],
   maxIntake:
     get(food, "maxIntake") !== null && get(food, "maxIntake") !== undefined
       ? String(get(food, "maxIntake"))
@@ -547,6 +603,8 @@ const createFoodPayload = (form, uploadedImageId, editingFood, language) => {
     fat: toNumber(form.fat) || 0,
     servingSize: toNumber(form.servingSize) || 0,
     servingUnit: form.servingUnit,
+    dietaryTags: form.dietaryTags ?? [],
+    allergenTags: form.allergenTags ?? [],
     translations: {
       ...form.translations,
       [language]: localizedName,
@@ -580,7 +638,8 @@ const EditFoodPage = () => {
       enabled: Boolean(id),
     },
   });
-  const editingFood = get(foodData, "data.data", null) || get(foodData, "data", null);
+  const editingFood =
+    get(foodData, "data.data", null) || get(foodData, "data", null);
 
   const { data: languagesData } = useGetQuery({
     url: "/admin/languages",
@@ -659,9 +718,7 @@ const EditFoodPage = () => {
       } catch {
         // Silent cleanup
       } finally {
-        setUploadedImageId((current) =>
-          current === imageId ? null : current,
-        );
+        setUploadedImageId((current) => (current === imageId ? null : current));
       }
     },
     [deleteFoodImage],
@@ -697,7 +754,8 @@ const EditFoodPage = () => {
   };
 
   const initialValues = React.useMemo(
-    () => (editingFood ? createFormFromFood(editingFood, currentLanguage) : null),
+    () =>
+      editingFood ? createFormFromFood(editingFood, currentLanguage) : null,
     [editingFood, currentLanguage],
   );
 
@@ -714,6 +772,8 @@ const EditFoodPage = () => {
         fat: String(data.fat),
         servingSize: String(data.servingSize),
         servingUnit: data.servingUnit,
+        dietaryTags: data.dietaryTags,
+        allergenTags: data.allergenTags,
         isOnboarding: data.isOnboarding,
         maxIntake: data.maxIntake !== undefined ? String(data.maxIntake) : "",
         translations: editingFood?.translations ?? {},
@@ -739,9 +799,7 @@ const EditFoodPage = () => {
     } catch (error) {
       const message = error?.response?.data?.message;
       toast.error(
-        isArray(message)
-          ? message.join(", ")
-          : message || "Saqlab bo'lmadi",
+        isArray(message) ? message.join(", ") : message || "Saqlab bo'lmadi",
       );
       throw error;
     }

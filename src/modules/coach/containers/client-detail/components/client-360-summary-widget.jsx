@@ -4,12 +4,19 @@ import { useTranslation } from "react-i18next";
 import {
   ActivityIcon,
   AlertTriangleIcon,
+  BotIcon,
+  CalendarClockIcon,
   ClipboardCheckIcon,
+  FileTextIcon,
   FlameIcon,
+  MessageSquareIcon,
+  NotebookTabsIcon,
+  RouteIcon,
+  SaladIcon,
+  StickyNoteIcon,
   TargetIcon,
   WalletCardsIcon,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,30 +40,172 @@ const RISK_STYLES = {
   },
 };
 
+const LIFECYCLE_LABELS = {
+  lead: "Lead",
+  active: "Active",
+  paused: "Paused",
+  at_risk: "At risk",
+  churned: "Churned",
+};
+
 const formatPercent = (value, fallback) =>
   value === null || value === undefined ? fallback : `${value}%`;
+
+const formatDateTime = (value) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString("uz-UZ", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const formatDate = (value) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString("uz-UZ", {
+    day: "2-digit",
+    month: "short",
+  });
+};
+
+const getPlanLabel = (plan, emptyLabel) => plan?.name || plan?.title || emptyLabel;
+
+const buildClient360CommandItems = (summary) => {
+  const commandCenter = get(summary, "commandCenter", {});
+  const lifecycleStage =
+    get(commandCenter, "lifecycle.stage") || get(summary, "client.status");
+  const paymentStatus =
+    get(commandCenter, "payment.label") ||
+    get(commandCenter, "payment.status") ||
+    "Belgilanmagan";
+  const missedCheckIns = get(commandCenter, "checkIns.missed", 0);
+  const pendingCheckIns = get(commandCenter, "checkIns.pending", 0);
+  const openTasks = get(commandCenter, "tasks.open", 0);
+  const overdueTasks = get(commandCenter, "tasks.overdue", 0);
+  const notesTotal = get(commandCenter, "notes.total", 0);
+  const mealPlan = get(commandCenter, "plans.meal");
+  const workoutPlan = get(commandCenter, "plans.workout");
+  const nextSession = get(commandCenter, "sessions.next");
+  const reportsTotal = get(commandCenter, "reports.totalGenerated", 0);
+  const latestReportAt = get(commandCenter, "reports.latest.generatedAt");
+  const telegram = get(commandCenter, "telegram", {});
+  const lastContact = get(commandCenter, "lastContact");
+
+  return [
+    {
+      key: "lifecycle",
+      label: "Lifecycle",
+      value: LIFECYCLE_LABELS[lifecycleStage] || lifecycleStage || "-",
+      hint: get(commandCenter, "lifecycle.contactMethod") || "CRM status",
+      icon: RouteIcon,
+    },
+    {
+      key: "payment",
+      label: "Payment",
+      value: paymentStatus,
+      hint: get(commandCenter, "payment.dueDate")
+        ? `Due ${formatDate(get(commandCenter, "payment.dueDate"))}`
+        : "Billing state",
+      icon: WalletCardsIcon,
+      alert: get(commandCenter, "payment.status") === "overdue",
+    },
+    {
+      key: "checkins",
+      label: "Check-ins",
+      value: `${pendingCheckIns} pending`,
+      hint: missedCheckIns ? `${missedCheckIns} missed` : "No missed check-ins",
+      icon: ClipboardCheckIcon,
+      alert: missedCheckIns > 0,
+    },
+    {
+      key: "tasks",
+      label: "Tasks",
+      value: `${openTasks} open`,
+      hint: overdueTasks ? `${overdueTasks} overdue` : "No overdue tasks",
+      icon: StickyNoteIcon,
+      alert: overdueTasks > 0,
+    },
+    {
+      key: "notes",
+      label: "Notes",
+      value: `${notesTotal} note`,
+      hint:
+        get(commandCenter, "notes.latest.title") ||
+        get(commandCenter, "notes.latest.preview") ||
+        "Private coach context",
+      icon: NotebookTabsIcon,
+    },
+    {
+      key: "plans",
+      label: "Plans",
+      value: getPlanLabel(mealPlan, "Meal yo'q"),
+      hint: getPlanLabel(workoutPlan, "Workout yo'q"),
+      icon: SaladIcon,
+      alert: !mealPlan || !workoutPlan,
+    },
+    {
+      key: "sessions",
+      label: "Sessions",
+      value: nextSession ? formatDate(nextSession.date) : "No upcoming",
+      hint: nextSession?.selectedSlot || nextSession?.title || "Booking queue",
+      icon: CalendarClockIcon,
+    },
+    {
+      key: "reports",
+      label: "Reports",
+      value: `${reportsTotal} generated`,
+      hint: latestReportAt ? formatDateTime(latestReportAt) : "No report yet",
+      icon: FileTextIcon,
+    },
+    {
+      key: "telegram",
+      label: "Telegram",
+      value: telegram.connected ? "Connected" : "Not linked",
+      hint: telegram.username
+        ? `@${telegram.username}`
+        : telegram.lastActiveAt
+          ? formatDateTime(telegram.lastActiveAt)
+          : "Bot status",
+      icon: BotIcon,
+      alert: telegram.isBlocked || telegram.isMuted || !telegram.connected,
+    },
+    {
+      key: "last-contact",
+      label: "Last contact",
+      value: lastContact ? formatDateTime(lastContact.at) : "-",
+      hint: lastContact?.channel || "No chat activity",
+      icon: MessageSquareIcon,
+      alert: !lastContact,
+    },
+  ];
+};
 
 export default function Client360SummaryWidget({ summary, isLoading }) {
   const { t } = useTranslation();
 
   if (isLoading) {
     return (
-      <Card className="overflow-hidden border-none bg-card/70 shadow-xl">
-        <CardContent className="space-y-5 p-6">
+      <section className="rounded-lg border bg-card p-6 shadow-sm">
+        <div className="space-y-5">
           <div className="flex items-center justify-between">
-            <Skeleton className="h-7 w-56 rounded-xl" />
+            <Skeleton className="h-7 w-56 rounded-md" />
             <Skeleton className="h-7 w-24 rounded-full" />
           </div>
           <div className="grid gap-3 md:grid-cols-4">
             {map(times(4), (index) => (
               <Skeleton
                 key={`summary-skeleton-${index}`}
-                className="h-28 rounded-2xl"
+                className="h-28 rounded-lg"
               />
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     );
   }
 
@@ -64,15 +213,16 @@ export default function Client360SummaryWidget({ summary, isLoading }) {
     return null;
   }
 
-  const riskLevel = summary.get(risk, "level") || "low";
+  const riskLevel = get(summary, "risk.level") || "low";
   const risk = RISK_STYLES[riskLevel] || RISK_STYLES.low;
   const noData = t("coach.clients.clientDetail.summary.noData", {
     defaultValue: "No data",
   });
-  const nutritionPercent = summary.get(adherence, "nutrition.percent");
-  const workoutPercent = summary.get(adherence, "workout.percent");
-  const loggedDays = summary.get(tracking, "loggedDays") ?? 0;
-  const paymentStatus = summary.get(payment, "status") || "not_set";
+  const nutritionPercent = get(summary, "adherence.nutrition.percent");
+  const workoutPercent = get(summary, "adherence.workout.percent");
+  const loggedDays = get(summary, "tracking.loggedDays") ?? 0;
+  const paymentStatus = get(summary, "payment.status") || "not_set";
+  const commandItems = buildClient360CommandItems(summary);
   const metrics = [
     {
       label: t("coach.clients.clientDetail.summary.nutrition", {
@@ -80,8 +230,8 @@ export default function Client360SummaryWidget({ summary, isLoading }) {
       }),
       value: formatPercent(nutritionPercent, noData),
       hint:
-        summary.get(adherence, "nutrition.averageCalories") != null
-          ? `${summary.adherence.nutrition.averageCalories} kcal avg`
+        get(summary, "adherence.nutrition.averageCalories") != null
+          ? `${get(summary, "adherence.nutrition.averageCalories")} kcal avg`
           : t("coach.clients.clientDetail.summary.noCalorieLogs", {
               defaultValue: "No calorie logs",
             }),
@@ -95,8 +245,8 @@ export default function Client360SummaryWidget({ summary, isLoading }) {
       }),
       value: formatPercent(workoutPercent, noData),
       hint:
-        summary.get(adherence, "workout.totalMinutes") != null
-          ? `${summary.adherence.workout.totalMinutes} min / week`
+        get(summary, "adherence.workout.totalMinutes") != null
+          ? `${get(summary, "adherence.workout.totalMinutes")} min / week`
           : t("coach.clients.clientDetail.summary.noWorkoutLogs", {
               defaultValue: "No workout logs",
             }),
@@ -121,7 +271,7 @@ export default function Client360SummaryWidget({ summary, isLoading }) {
         defaultValue: "Payment status",
       }),
       value:
-        summary.get(payment, "label") ||
+        get(summary, "payment.label") ||
         t("coach.clients.clientDetail.summary.paymentNotSet", {
           defaultValue: "Not set",
         }),
@@ -143,33 +293,31 @@ export default function Client360SummaryWidget({ summary, isLoading }) {
   ];
 
   return (
-    <Card className="overflow-hidden border-none bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.14),transparent_36%),linear-gradient(135deg,hsl(var(--card)),hsl(var(--muted))/0.45)] shadow-xl">
-      <CardContent className="space-y-6 p-6">
+    <section className="rounded-lg border bg-card p-6 shadow-sm">
+      <div className="space-y-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <div className="flex size-10 items-center justify-center rounded-2xl border bg-background/70 shadow-sm">
-                <TargetIcon className="size-5 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-xl font-black tracking-tight">
-                  {t("coach.clients.clientDetail.summary.title", {
-                    defaultValue: "Client 360 summary",
-                  })}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {t("coach.clients.clientDetail.summary.description", {
-                    defaultValue:
-                      "Risk, adherence and next action from the latest client data.",
-                  })}
-                </p>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-lg border bg-background">
+              <TargetIcon className="size-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-xl font-black tracking-tight">
+                {t("coach.clients.clientDetail.summary.title", {
+                  defaultValue: "Client 360 command center",
+                })}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {t("coach.clients.clientDetail.summary.description", {
+                  defaultValue:
+                    "Risk, adherence, commerce and communication state from the latest client data.",
+                })}
+              </p>
             </div>
           </div>
 
-          <div className="min-w-[180px] rounded-2xl border bg-background/70 p-4 shadow-sm">
+          <div className="min-w-[180px] rounded-lg border bg-background p-4">
             <div className="mb-3 flex items-center justify-between gap-2">
-              <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              <span className="text-xs font-bold uppercase text-muted-foreground">
                 {t("coach.clients.clientDetail.summary.risk", {
                   defaultValue: "Risk score",
                 })}
@@ -182,7 +330,7 @@ export default function Client360SummaryWidget({ summary, isLoading }) {
             </div>
             <div className="flex items-end gap-2">
               <span className="text-4xl font-black tabular-nums">
-                {summary.get(risk, "score") ?? 0}
+                {get(summary, "risk.score") ?? 0}
               </span>
               <span className="pb-1 text-sm font-semibold text-muted-foreground">
                 /100
@@ -191,7 +339,7 @@ export default function Client360SummaryWidget({ summary, isLoading }) {
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
               <div
                 className={cn("h-full rounded-full", risk.bar)}
-                style={{ width: `${summary.get(risk, "score") ?? 0}%` }}
+                style={{ width: `${get(summary, "risk.score") ?? 0}%` }}
               />
             </div>
           </div>
@@ -201,12 +349,12 @@ export default function Client360SummaryWidget({ summary, isLoading }) {
           {map(metrics, (metric) => (
             <div
               key={metric.label}
-              className="rounded-2xl border bg-background/70 p-4 shadow-sm"
+              className="rounded-lg border bg-background p-4"
             >
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div
                   className={cn(
-                    "flex size-10 items-center justify-center rounded-xl border",
+                    "flex size-10 items-center justify-center rounded-lg border",
                     metric.tone,
                   )}
                 >
@@ -216,7 +364,7 @@ export default function Client360SummaryWidget({ summary, isLoading }) {
                   <AlertTriangleIcon className="size-4 text-amber-500" />
                 )}
               </div>
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              <p className="text-xs font-bold uppercase text-muted-foreground">
                 {metric.label}
               </p>
               <p className="mt-1 text-2xl font-black tabular-nums">
@@ -230,8 +378,38 @@ export default function Client360SummaryWidget({ summary, isLoading }) {
           ))}
         </div>
 
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+          {map(commandItems, (item) => (
+            <div
+              key={item.key}
+              className={cn(
+                "min-h-28 rounded-lg border bg-background p-4",
+                item.alert && "border-amber-500/40 bg-amber-500/5",
+              )}
+            >
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <div className="flex size-8 items-center justify-center rounded-md border bg-card">
+                  <item.icon className="size-4" />
+                </div>
+                {item.alert ? (
+                  <AlertTriangleIcon className="size-4 text-amber-500" />
+                ) : null}
+              </div>
+              <p className="text-xs font-bold uppercase text-muted-foreground">
+                {item.label}
+              </p>
+              <p className="mt-1 truncate text-sm font-black">
+                {item.value}
+              </p>
+              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                {item.hint || "-"}
+              </p>
+            </div>
+          ))}
+        </div>
+
         {summary.nextAction && (
-          <div className="rounded-2xl border bg-background/75 p-4 shadow-sm">
+          <div className="rounded-lg border bg-background p-4">
             <div className="mb-1 flex items-center justify-between gap-3">
               <p className="text-sm font-black">
                 {summary.nextAction.title}
@@ -245,7 +423,7 @@ export default function Client360SummaryWidget({ summary, isLoading }) {
             </p>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

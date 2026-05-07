@@ -1,20 +1,8 @@
 import React from "react";
 import { Outlet, NavLink, useLocation, useNavigate } from "react-router";
-import {
-  LayoutDashboardIcon,
-  UsersIcon,
-  UtensilsIcon,
-  UserIcon,
-  DumbbellIcon,
-  BookOpenIcon,
-  WalletCardsIcon,
-  BotIcon,
-  SendIcon,
-  ReceiptTextIcon,
-  Share2Icon,
-  MessageSquareIcon,
-} from "lucide-react";
+import { UserIcon } from "lucide-react";
 import CoachMobileNav from "./mobile-nav.jsx";
+import { COACH_NAV_GROUPS } from "./navigation.js";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,36 +34,6 @@ import { useMobileChromeHidden } from "@/hooks/app/use-mobile-chrome-hidden";
 import { get, map } from "lodash";
 import { cn } from "@/lib/utils";
 import { isNavItemActive } from "@/lib/navigation";
-
-const mainNav = [
-  { to: "/coach/dashboard", label: "Dashboard", icon: LayoutDashboardIcon },
-  { to: "/coach/clients", label: "Mijozlar", icon: UsersIcon },
-  {
-    to: "/coach/meal-plans",
-    label: "Ovqatlanish rejalari",
-    icon: UtensilsIcon,
-  },
-  {
-    to: "/coach/workout-plans",
-    label: "Workout rejalari",
-    icon: DumbbellIcon,
-  },
-  { to: "/coach/courses", label: "Kurslar", icon: BookOpenIcon },
-  {
-    to: "/coach/course-purchases",
-    label: "Kurs xaridlari",
-    icon: ReceiptTextIcon,
-  },
-  { to: "/coach/payments", label: "To'lovlar", icon: WalletCardsIcon },
-  { to: "/coach/chat", label: "Chat", icon: MessageSquareIcon },
-  { to: "/coach/referrals", label: "Referral", icon: Share2Icon },
-  { to: "/coach/telegram-bot", label: "Telegram bot", icon: SendIcon },
-  {
-    to: "/coach/telegram-groups",
-    label: "Telegram guruhlar",
-    icon: BotIcon,
-  },
-];
 
 const NavGroup = ({ label, items }) => {
   const { pathname } = useLocation();
@@ -127,7 +85,9 @@ const Index = () => {
           <RoleSwitcher />
         </SidebarHeader>
         <SidebarContent>
-          <NavGroup label="Asosiy" items={mainNav} />
+          {map(COACH_NAV_GROUPS, (group) => (
+            <NavGroup key={group.key} label={group.label} items={group.items} />
+          ))}
         </SidebarContent>
         <SidebarFooter>
           <NavUser />

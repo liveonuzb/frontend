@@ -28,6 +28,10 @@ vi.mock("@/modules/coach/pages/payments/index.jsx", () => ({
   default: () => <div data-testid="payments-page">payments</div>,
 }));
 
+vi.mock("@/modules/coach/pages/packages/index.jsx", () => ({
+  default: () => <div data-testid="packages-page">packages</div>,
+}));
+
 vi.mock("@/modules/coach/pages/courses/index.jsx", () => ({
   default: () => <div data-testid="courses-page">courses</div>,
 }));
@@ -43,13 +47,13 @@ vi.mock("@/modules/coach/pages/earnings/index.jsx", () => ({
 }));
 
 vi.mock("@/modules/coach/pages/groups/index.jsx", () => ({
-  default: () => (
-    <div data-testid="telegram-groups-page">telegram groups workspace</div>
-  ),
+  default: () => <div data-testid="groups-page">groups workspace</div>,
 }));
 
 vi.mock("@/modules/coach/pages/telegram-bot/index.jsx", () => ({
-  default: () => <div data-testid="telegram-bot-page">telegram bot workspace</div>,
+  default: () => (
+    <div data-testid="telegram-bot-page">telegram bot workspace</div>
+  ),
 }));
 
 vi.mock("@/modules/coach/pages/snippets/index.jsx", () => ({
@@ -130,17 +134,15 @@ describe("CoachIndex", () => {
     expect(await screen.findByTestId("dashboard-page")).toBeInTheDocument();
   });
 
-  it("keeps the legacy groups redirect for old Telegram group links", async () => {
-    renderCoachIndex("/coach/groups?q=vip");
+  it("keeps the legacy telegram-groups redirect for old links", async () => {
+    renderCoachIndex("/coach/telegram-groups?q=vip");
 
     await waitFor(() => {
       expect(screen.getByTestId("location")).toHaveTextContent(
-        "/coach/telegram-groups?q=vip",
+        "/coach/groups?q=vip",
       );
     });
-    expect(
-      await screen.findByTestId("telegram-groups-page"),
-    ).toBeInTheDocument();
+    expect(await screen.findByTestId("groups-page")).toBeInTheDocument();
   });
 
   it("keeps the legacy purchase queue redirect", async () => {
@@ -169,21 +171,25 @@ describe("CoachIndex", () => {
     ["/coach/ai", "ai-page"],
     ["/coach/chat", "chat-page"],
     ["/coach/chat/thread-1", "chat-page"],
+    ["/coach/packages", "packages-page"],
+    ["/coach/earnings", "earnings-page"],
+    ["/coach/groups", "groups-page"],
     ["/coach/referrals", "referrals-page"],
     ["/coach/audit-logs", "audit-page"],
+    ["/coach/profile", "profile-page"],
+    ["/coach/settings", "profile-page"],
   ])("routes %s to the mounted workspace", async (path, testId) => {
     renderCoachIndex(path);
 
     expect(await screen.findByTestId(testId)).toBeInTheDocument();
   });
 
-  it.each([
-    "/coach/marketplace?tab=legacy",
-    "/coach/packages",
-    "/coach/messages",
-  ])("does not keep removed legacy route %s", async (path) => {
-    renderCoachIndex(path);
+  it.each(["/coach/marketplace?tab=legacy", "/coach/messages"])(
+    "does not keep removed legacy route %s",
+    async (path) => {
+      renderCoachIndex(path);
 
-    expect(await screen.findByTestId("not-found-page")).toBeInTheDocument();
-  });
+      expect(await screen.findByTestId("not-found-page")).toBeInTheDocument();
+    },
+  );
 });

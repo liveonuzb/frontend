@@ -7,6 +7,8 @@ import {
   BookOpenIcon,
   CalendarDaysIcon,
   CheckCircleIcon,
+  LinkIcon,
+  PercentIcon,
   ShieldCheckIcon,
   StarIcon,
   UsersIcon,
@@ -48,6 +50,27 @@ const formatMoney = (value) => {
   if (!Number.isFinite(amount) || amount <= 0) return "Kelishiladi";
   return `${new Intl.NumberFormat("uz-UZ").format(amount)} so'm`;
 };
+
+const formatMoneyMetric = (value) => {
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount <= 0) return "0 so'm";
+  return `${new Intl.NumberFormat("uz-UZ").format(amount)} so'm`;
+};
+
+const formatNumber = (value) =>
+  new Intl.NumberFormat("uz-UZ").format(Number(value) || 0);
+
+const formatRate = (value) => {
+  const rate = Number(value);
+  if (!Number.isFinite(rate)) return "-";
+  const percent = rate <= 1 ? rate * 100 : rate;
+  return `${Number.isInteger(percent) ? percent : percent.toFixed(1)}%`;
+};
+
+const formatStatusMetric = (metric, amountKey = "amount") =>
+  `${formatNumber(get(metric, "count", 0))} ta - ${formatMoneyMetric(
+    get(metric, amountKey, 0),
+  )}`;
 
 const getMessage = (error, fallback) => {
   const message = get(error, "response.data.message");
@@ -102,6 +125,29 @@ const EmptyState = ({ children }) => (
   </div>
 );
 
+const contentTypeLabels = {
+  meal_plan: "Meal plan",
+  workout_plan: "Workout plan",
+  program: "Program",
+  course: "Course",
+  challenge: "Challenge",
+};
+
+const ContentMetric = ({ label, value, tone = "default" }) => (
+  <div
+    className={cn(
+      "rounded-lg border bg-muted/20 p-3",
+      tone === "warning" && "border-amber-200 bg-amber-500/10",
+      tone === "danger" && "border-red-200 bg-red-500/10",
+    )}
+  >
+    <p className="text-xs font-semibold text-muted-foreground">{label}</p>
+    <p className="mt-1 text-lg font-semibold tracking-tight">
+      {formatNumber(value)}
+    </p>
+  </div>
+);
+
 const CoachDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -118,6 +164,8 @@ const CoachDetail = () => {
   const detail = get(data, "data.data") ?? get(data, "data") ?? null;
   const coach = get(detail, "coach", {});
   const stats = get(detail, "stats", {});
+  const contentModeration = get(detail, "contentModeration", {});
+  const contentSummary = get(contentModeration, "summary", {});
   const application = get(coach, "application", {});
   const coachStatus = get(coach, "status", "pending");
   const marketplaceStatus = get(coach, "marketplaceStatus", "none");
@@ -261,7 +309,7 @@ const CoachDetail = () => {
             </div>
           ) : (
             <div className="no-scrollbar flex-1 space-y-5 overflow-y-auto px-4 py-5 md:px-6">
-              <div className="grid gap-3 md:grid-cols-4">
+              <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
                 <StatCard
                   icon={UsersIcon}
                   label="Aktiv mijozlar"
@@ -271,8 +319,24 @@ const CoachDetail = () => {
                 <StatCard
                   icon={WalletCardsIcon}
                   label="Daromad"
-                  value={formatMoney(get(stats, "totalRevenue", 0))}
+                  value={formatMoneyMetric(get(stats, "totalRevenue", 0))}
                   hint={`${get(stats, "paymentCount", 0)} to'lov`}
+                />
+                <StatCard
+                  icon={PercentIcon}
+                  label="Komissiya"
+                  value={formatNumber(get(stats, "referrals.rewardAmount", 0))}
+                  hint={`${formatRate(
+                    get(stats, "referrals.averageCommissionRate"),
+                  )} o'rtacha stavka`}
+                />
+                <StatCard
+                  icon={LinkIcon}
+                  label="Referral"
+                  value={formatNumber(get(stats, "referrals.signups", 0))}
+                  hint={`${formatNumber(
+                    get(stats, "referrals.paidConversions", 0),
+                  )} paid conversion`}
                 />
                 <StatCard
                   icon={StarIcon}
@@ -422,6 +486,82 @@ const CoachDetail = () => {
                     )}
                   </Section>
 
+                  <Section
+                    title="Earnings va to'lovlar"
+                    description="Coach bo'yicha so'nggi client paymentlari va withdrawal statuslari."
+                  >
+                    <div className="grid gap-3 md:grid-cols-3">
+                      <div className="rounded-lg border bg-muted/20 p-3">
+                        <p className="text-xs font-semibold text-muted-foreground">
+                          Pending
+                        </p>
+                        <p className="mt-1 text-sm font-semibold">
+                          {formatStatusMetric(
+                            get(stats, "paymentWithdrawals.pending"),
+                          )}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border bg-muted/20 p-3">
+                        <p className="text-xs font-semibold text-muted-foreground">
+                          Available
+                        </p>
+                        <p className="mt-1 text-sm font-semibold">
+                          {formatStatusMetric(
+                            get(stats, "paymentWithdrawals.available"),
+                          )}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border bg-muted/20 p-3">
+                        <p className="text-xs font-semibold text-muted-foreground">
+                          Withdrawn
+                        </p>
+                        <p className="mt-1 text-sm font-semibold">
+                          {formatStatusMetric(
+                            get(stats, "paymentWithdrawals.withdrawn"),
+                          )}
+                        </p>
+                      </div>
+                    </div>
+
+                    {size(get(detail, "payments", [])) ? (
+                      <div className="divide-y rounded-lg border">
+                        {map(get(detail, "payments", []), (payment) => (
+                          <div
+                            key={get(payment, "id")}
+                            className="flex items-start justify-between gap-3 p-3"
+                          >
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium">
+                                {get(payment, "client.displayName")}
+                              </p>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                {formatDate(get(payment, "paidAt"))} -{" "}
+                                {get(payment, "method") || "manual"}
+                              </p>
+                              {get(payment, "refundedAt") ? (
+                                <p className="mt-1 text-xs text-red-600">
+                                  Refund:{" "}
+                                  {formatMoney(get(payment, "refundAmount"))} -{" "}
+                                  {formatDate(get(payment, "refundedAt"))}
+                                </p>
+                              ) : null}
+                            </div>
+                            <div className="shrink-0 text-right">
+                              <p className="text-sm font-semibold">
+                                {formatMoneyMetric(get(payment, "amount"))}
+                              </p>
+                              <Badge variant="outline" className="mt-2">
+                                {get(payment, "withdrawalStatus") || "pending"}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <EmptyState>Coach paymentlari hali yo'q.</EmptyState>
+                    )}
+                  </Section>
+
                   <Section title="Reviewlar">
                     {size(get(detail, "reviews", [])) ? (
                       <div className="space-y-3">
@@ -542,6 +682,156 @@ const CoachDetail = () => {
                     <InfoRow
                       label="Izoh"
                       value={get(application, "marketplaceReviewNote")}
+                    />
+                  </Section>
+
+                  <Section
+                    title="Coach content moderation"
+                    description="Coach yaratgan plan, kurs va challenge statuslari."
+                  >
+                    <div className="grid grid-cols-2 gap-3">
+                      <ContentMetric
+                        label="Meal active"
+                        value={get(contentSummary, "mealTemplates.active", 0)}
+                      />
+                      <ContentMetric
+                        label="Meal archived"
+                        value={get(contentSummary, "mealTemplates.archived", 0)}
+                      />
+                      <ContentMetric
+                        label="Workout active"
+                        value={get(
+                          contentSummary,
+                          "workoutTemplates.active",
+                          0,
+                        )}
+                      />
+                      <ContentMetric
+                        label="Workout inactive"
+                        value={get(
+                          contentSummary,
+                          "workoutTemplates.inactive",
+                          0,
+                        )}
+                        tone="warning"
+                      />
+                      <ContentMetric
+                        label="Program draft"
+                        value={get(contentSummary, "programs.draft", 0)}
+                        tone="warning"
+                      />
+                      <ContentMetric
+                        label="Course draft"
+                        value={get(contentSummary, "courses.draft", 0)}
+                        tone="warning"
+                      />
+                      <ContentMetric
+                        label="Challenge active"
+                        value={get(contentSummary, "challenges.active", 0)}
+                      />
+                      <ContentMetric
+                        label="Integrity flags"
+                        value={get(
+                          contentSummary,
+                          "challenges.unresolvedIntegrityFlags",
+                          0,
+                        )}
+                        tone={
+                          get(
+                            contentSummary,
+                            "challenges.unresolvedIntegrityFlags",
+                            0,
+                          ) > 0
+                            ? "danger"
+                            : "default"
+                        }
+                      />
+                    </div>
+
+                    {size(get(contentModeration, "recent", [])) ? (
+                      <div className="divide-y rounded-lg border">
+                        {map(get(contentModeration, "recent", []), (item) => (
+                          <div
+                            key={`${get(item, "type")}-${get(item, "id")}`}
+                            className="flex items-start justify-between gap-3 p-3"
+                          >
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium">
+                                {get(item, "title")}
+                              </p>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                {get(
+                                  contentTypeLabels,
+                                  get(item, "type"),
+                                  get(item, "type"),
+                                )}{" "}
+                                - {formatDate(get(item, "updatedAt"))}
+                              </p>
+                            </div>
+                            <Badge variant="outline">
+                              {get(item, "status")}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <EmptyState>Coach contentlari hali yo'q.</EmptyState>
+                    )}
+                  </Section>
+
+                  <Section
+                    title="Referral va komissiya"
+                    description="Coach referral linki, conversion va XP withdrawal ko'rsatkichlari."
+                  >
+                    <InfoRow
+                      label="Referral code"
+                      value={get(stats, "referrals.code")}
+                    />
+                    <InfoRow
+                      label="Kliklar"
+                      value={formatNumber(get(stats, "referrals.clicks", 0))}
+                    />
+                    <InfoRow
+                      label="Signup"
+                      value={formatNumber(get(stats, "referrals.signups", 0))}
+                    />
+                    <InfoRow
+                      label="Paid conversion"
+                      value={formatNumber(
+                        get(stats, "referrals.paidConversions", 0),
+                      )}
+                    />
+                    <InfoRow
+                      label="Reward XP"
+                      value={formatNumber(
+                        get(stats, "referrals.rewardAmount", 0),
+                      )}
+                    />
+                    <InfoRow
+                      label="Komissiya bazasi"
+                      value={formatMoneyMetric(
+                        get(stats, "referrals.commissionBaseAmount", 0),
+                      )}
+                    />
+                    <InfoRow
+                      label="O'rtacha stavka"
+                      value={formatRate(
+                        get(stats, "referrals.averageCommissionRate"),
+                      )}
+                    />
+                    <InfoRow
+                      label="XP withdrawal pending"
+                      value={formatStatusMetric(
+                        get(stats, "xpWithdrawals.pending"),
+                        "amountUzs",
+                      )}
+                    />
+                    <InfoRow
+                      label="XP withdrawal completed"
+                      value={formatStatusMetric(
+                        get(stats, "xpWithdrawals.completed"),
+                        "amountUzs",
+                      )}
                     />
                   </Section>
 

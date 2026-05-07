@@ -26,6 +26,12 @@ export const useCoachTelegramBot = (apiBase, queryKey) =>
     queryProps: { queryKey },
   });
 
+export const useCoachTelegramHealth = (apiBase, queryProps = {}) =>
+  useGetQuery({
+    url: `${apiBase}/health`,
+    queryProps,
+  });
+
 export const useCoachTelegramUsers = (
   apiBase,
   params = { page: 1, limit: 200 },
@@ -48,18 +54,42 @@ export const useCoachTelegramMessages = (
     queryProps,
   });
 
+export const useCoachTelegramTemplates = (apiBase, queryProps = {}) =>
+  useGetQuery({
+    url: `${apiBase}/templates`,
+    queryProps,
+  });
+
+export const useCoachTelegramBroadcasts = (apiBase, queryProps = {}) =>
+  useGetQuery({
+    url: `${apiBase}/broadcasts`,
+    queryProps,
+  });
+
 export const useCoachTelegramConnect = (queryKey) =>
-  usePostQuery({ listKey: queryKey });
+  usePostQuery({ queryKey });
 
 export const useCoachTelegramSendMessage = () => usePostQuery({ listKey: [] });
 
+export const useCoachTelegramUserUpdate = (queryKey) =>
+  usePatchQuery({ queryKey });
+
 export const useCoachTelegramToggle = (queryKey) =>
-  usePostQuery({ listKey: queryKey });
+  usePostQuery({ queryKey });
 
 export const useCoachTelegramDisconnect = (queryKey) =>
-  useDeleteQuery({ listKey: queryKey });
+  useDeleteQuery({ queryKey });
 
 export const useCoachTelegramSettings = (queryKey) =>
-  usePatchQuery({ listKey: queryKey });
+  usePatchQuery({ queryKey });
+
+export const useCoachTelegramTemplateSave = (queryKey) =>
+  usePatchQuery({ queryKey });
+
+export const useCoachTelegramTemplatePreview = () =>
+  usePostQuery({ listKey: [] });
+
+export const useCoachTelegramTemplateDelete = (queryKey) =>
+  useDeleteQuery({ queryKey });
 
 export default coachTelegramHooks;
