@@ -1,5 +1,6 @@
+/* eslint-disable react-refresh/only-export-components */
 import React from "react";
-import { useBlocker } from "react-router";
+import * as ReactRouter from "react-router";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,6 +15,96 @@ import {
 const DEFAULT_TITLE = "O'zgarishlar saqlanmagan";
 const DEFAULT_DESCRIPTION =
   "Sahifadan chiqsangiz, kiritilgan o'zgarishlar yo'qoladi.";
+const NULL_CONTEXT = React.createContext(null);
+const IDLE_BLOCKER = {
+  state: "unblocked",
+  proceed: undefined,
+  reset: undefined,
+  location: undefined,
+};
+
+const getReactRouterExport = (name) => {
+  try {
+    return ReactRouter[name];
+  } catch {
+    return undefined;
+  }
+};
+
+const stripBasename = (pathname, basename) => {
+  if (!basename || basename === "/") return pathname;
+
+  const normalizedBasename = basename.endsWith("/")
+    ? basename.slice(0, -1)
+    : basename;
+
+  if (!pathname.toLowerCase().startsWith(normalizedBasename.toLowerCase())) {
+    return null;
+  }
+
+  const nextChar = pathname.charAt(normalizedBasename.length);
+  if (nextChar && nextChar !== "/") return null;
+
+  return pathname.slice(normalizedBasename.length) || "/";
+};
+
+const useOptionalDataRouterBlocker = (shouldBlock) => {
+  const DataRouterContext =
+    getReactRouterExport("UNSAFE_DataRouterContext") ?? NULL_CONTEXT;
+  const DataRouterStateContext =
+    getReactRouterExport("UNSAFE_DataRouterStateContext") ?? NULL_CONTEXT;
+  const dataRouterContext = React.useContext(DataRouterContext);
+  const dataRouterState = React.useContext(DataRouterStateContext);
+  const router = dataRouterContext?.router;
+  const basename = dataRouterContext?.basename ?? "/";
+  const blockerKey = React.useId();
+  const blockerFunction = React.useCallback(
+    (arg) => {
+      if (typeof shouldBlock !== "function") return Boolean(shouldBlock);
+      if (basename === "/") return shouldBlock(arg);
+
+      const { currentLocation, nextLocation, historyAction } = arg;
+      return shouldBlock({
+        currentLocation: {
+          ...currentLocation,
+          pathname:
+            stripBasename(currentLocation.pathname, basename) ||
+            currentLocation.pathname,
+        },
+        nextLocation: {
+          ...nextLocation,
+          pathname:
+            stripBasename(nextLocation.pathname, basename) ||
+            nextLocation.pathname,
+        },
+        historyAction,
+      });
+    },
+    [basename, shouldBlock],
+  );
+
+  React.useEffect(() => {
+    if (!router) return undefined;
+    return () => {
+      router.deleteBlocker?.(blockerKey);
+    };
+  }, [router, blockerKey]);
+
+  React.useEffect(() => {
+    if (!router) return;
+    router.getBlocker?.(blockerKey, blockerFunction);
+  }, [router, blockerKey, blockerFunction]);
+
+  if (!router || !dataRouterState) {
+    return getReactRouterExport("IDLE_BLOCKER") ?? IDLE_BLOCKER;
+  }
+
+  return (
+    dataRouterState.blockers?.get(blockerKey) ??
+    getReactRouterExport("IDLE_BLOCKER") ??
+    IDLE_BLOCKER
+  );
+};
 
 export const useUnsavedChangesGuard = ({ when }) => {
   const [confirmOpen, setConfirmOpen] = React.useState(false);
@@ -23,7 +114,8 @@ export const useUnsavedChangesGuard = ({ when }) => {
     () => Boolean(when) && !bypassRef.current,
     [when],
   );
-  const blocker = useBlocker(shouldBlock);
+  const blocker = useOptionalDataRouterBlocker(shouldBlock);
+  const isRouterBlocked = blocker.state === "blocked";
 
   React.useEffect(() => {
     if (!when) return undefined;
@@ -38,12 +130,6 @@ export const useUnsavedChangesGuard = ({ when }) => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [when]);
-
-  React.useEffect(() => {
-    if (blocker.state === "blocked") {
-      setConfirmOpen(true);
-    }
-  }, [blocker.state]);
 
   const requestLeave = React.useCallback(
     (action) => {
@@ -90,7 +176,7 @@ export const useUnsavedChangesGuard = ({ when }) => {
   }, [blocker]);
 
   return {
-    confirmOpen,
+    confirmOpen: confirmOpen || isRouterBlocked,
     requestLeave,
     confirmLeave,
     cancelLeave,
@@ -113,9 +199,7 @@ export const UnsavedChangesAlert = ({
       </AlertDialogHeader>
       <AlertDialogFooter>
         <AlertDialogCancel onClick={onCancel}>Qolish</AlertDialogCancel>
-        <AlertDialogAction onClick={onConfirm}>
-          Chiqib ketish
-        </AlertDialogAction>
+        <AlertDialogAction onClick={onConfirm}>Chiqib ketish</AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>
