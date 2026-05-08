@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router";
 import { get, isArray, join, trim } from "lodash";
 import { usePostQuery } from "@/hooks/api";
 import { Button } from "@/components/ui/button";
@@ -22,6 +21,7 @@ import {
   normalizeFormRoles,
   toggleFormRole,
 } from "../config";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 
 const ROLE_OPTIONS = [
@@ -39,9 +39,10 @@ const ROLE_OPTIONS = [
   { value: "NUTRITION_MANAGER", label: "Nutrition manager" },
   { value: "WORKOUT_MANAGER", label: "Workout manager" },
 ];
+const USERS_LIST_PATH = "/admin/users/list";
 
 const CreateUser = () => {
-  const navigate = useNavigate();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(USERS_LIST_PATH);
   const { canManageSupport } = useAdminPermissions();
   const [form, setForm] = useState(createInitialUserForm());
 
@@ -74,7 +75,7 @@ const CreateUser = () => {
         },
       });
       toast.success("Foydalanuvchi yaratildi");
-      navigate("/admin/users/list");
+      closeAdminDrawer();
     } catch (error) {
       const message = get(error, "response.data.message");
       toast.error(
@@ -86,7 +87,7 @@ const CreateUser = () => {
   };
 
   const handleOpenChange = (open) => {
-    if (!open) navigate("/admin/users/list");
+    if (!open) closeAdminDrawer();
   };
 
   return (
@@ -204,7 +205,7 @@ const CreateUser = () => {
             </Button>
             <Button
               variant="outline"
-              onClick={() => navigate("/admin/users/list")}
+              onClick={closeAdminDrawer}
             >
               Bekor qilish
             </Button>

@@ -56,6 +56,7 @@ import {
   UploadIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAdminDrawerListNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner.jsx";
 import useColumns from "./columns.jsx";
@@ -91,6 +92,7 @@ const resolveLabel = (translations, fallback, language) => {
 
 const Index = () => {
   const navigate = useNavigate();
+  const navigateAdminDrawer = useAdminDrawerListNavigation();
   const { request } = useApi();
   const queryClient = useQueryClient();
   const { isSuperAdmin } = useAdminPermissions();
@@ -361,11 +363,11 @@ const Index = () => {
   const selectedWorkoutCount = selectedWorkoutIds.length;
 
   const openCreateDrawer = () => {
-    navigate("create");
+    navigateAdminDrawer("create");
   };
 
   const openEditDrawer = (workout) => {
-    navigate(`edit/${workout.id}`);
+    navigateAdminDrawer(`edit/${workout.id}`);
   };
 
   React.useEffect(() => {

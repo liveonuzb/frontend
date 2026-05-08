@@ -45,6 +45,10 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
+import {
+  useAdminDrawerCloseNavigation,
+  useAdminDrawerListNavigation,
+} from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import { useLocalizedCatalogFilters } from "./use-localized-catalog-filters.js";
 import { LocalizedCatalogDrawers } from "./localized-catalog-drawers.jsx";
@@ -149,6 +153,8 @@ const LocalizedCatalogManager = ({
 }) => {
   const { canManageContent } = useAdminPermissions();
   const navigate = useNavigate();
+  const navigateAdminDrawer = useAdminDrawerListNavigation();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(route);
   const location = useLocation();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
@@ -379,17 +385,17 @@ const LocalizedCatalogManager = ({
     if (!canManageContent) return;
     setEditingItem(null);
     setForm(emptyForm);
-    navigate(`${route}/create`);
-  }, [canManageContent, navigate, route]);
+    navigateAdminDrawer(`${route}/create`);
+  }, [canManageContent, navigateAdminDrawer, route]);
 
   const openEditDrawer = React.useCallback(
     (item) => {
       if (!canManageContent) return;
       setEditingItem(item);
       setForm(createFormFromItem(item, currentLanguage));
-      navigate(`${route}/edit/${get(item, "id")}`);
+      navigateAdminDrawer(`${route}/edit/${get(item, "id")}`);
     },
-    [canManageContent, currentLanguage, navigate, route],
+    [canManageContent, currentLanguage, navigateAdminDrawer, route],
   );
 
   const openTranslationsDrawer = React.useCallback(
@@ -444,7 +450,7 @@ const LocalizedCatalogManager = ({
       if (effectiveRefetch) {
         void effectiveRefetch();
       }
-      navigate(route);
+      closeAdminDrawer();
       setEditingItem(null);
       setForm(emptyForm);
     } catch (error) {
@@ -457,8 +463,7 @@ const LocalizedCatalogManager = ({
     editingItem,
     effectiveRefetch,
     form,
-    navigate,
-    route,
+    closeAdminDrawer,
     singularLabel,
     updateItem,
   ]);
@@ -554,10 +559,10 @@ const LocalizedCatalogManager = ({
   );
 
   const closeDrawer = React.useCallback(() => {
-    navigate(route);
+    closeAdminDrawer();
     setEditingItem(null);
     setForm(emptyForm);
-  }, [navigate, route]);
+  }, [closeAdminDrawer]);
 
   const closeTranslationsDrawer = React.useCallback(() => {
     navigate(route);

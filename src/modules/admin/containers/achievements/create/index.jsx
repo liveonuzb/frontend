@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router";
 import { get, isArray, join } from "lodash";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,6 +34,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import AchievementImagePicker from "../components/AchievementImagePicker";
 import {
   ACHIEVEMENT_CATEGORY_OPTIONS,
@@ -51,6 +51,7 @@ const getErrorMessage = (error, fallback) => {
   const message = get(error, "response.data.message");
   return isArray(message) ? join(message, ", ") : message || fallback;
 };
+const ACHIEVEMENTS_LIST_PATH = "/admin/achievements/list";
 
 const buildSchema = (imageField) =>
   z
@@ -77,7 +78,9 @@ const buildSchema = (imageField) =>
     });
 
 const CreateAchievementPage = () => {
-  const navigate = useNavigate();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(
+    ACHIEVEMENTS_LIST_PATH,
+  );
   const currentMode = useAppModeStore((state) => state.mode) || "madagascar";
   const currentLanguage = useLanguageStore((state) => state.currentLanguage) || "uz";
   const imageField = IMAGE_FIELD_BY_MODE[currentMode] || IMAGE_FIELD_BY_MODE.madagascar;
@@ -115,7 +118,7 @@ const CreateAchievementPage = () => {
         onSuccess: () => {
           toast.success("Achievement yaratildi.");
           form.reset(createEmptyAchievementForm());
-          navigate("/admin/achievements/list", { replace: true });
+          closeAdminDrawer();
         },
         onError: (error) => {
           toast.error(
@@ -131,9 +134,7 @@ const CreateAchievementPage = () => {
 
   const handleOpenChange = (open) => {
     if (!open) {
-      unsavedChanges.requestLeave(() =>
-        navigate("/admin/achievements/list", { replace: true }),
-      );
+      unsavedChanges.requestLeave(closeAdminDrawer);
     }
   };
 

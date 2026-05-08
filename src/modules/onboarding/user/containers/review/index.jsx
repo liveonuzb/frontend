@@ -27,6 +27,7 @@ import { useAuthStore, useOnboardingStore } from "@/store";
 import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-question";
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-context";
+import { isMeaningfulUserDraftData } from "@/modules/onboarding/lib/user-draft-data";
 import PageAura from "../../components/page-aura.jsx";
 import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
 
@@ -185,8 +186,9 @@ const Index = () => {
   const { initializeUser, setOnboardingCompleted, setOnboardingFlow, user } =
     useAuthStore();
   const [errors, setErrors] = React.useState([]);
+  const canAutoSaveReview = isMeaningfulUserDraftData(onboardingState);
 
-  useOnboardingAutoSave("user", "review");
+  useOnboardingAutoSave("user", "review", { enabled: canAutoSaveReview });
 
   const { mutateAsync: completeOnboarding, isPending } = usePostQuery({
     mutationProps: {

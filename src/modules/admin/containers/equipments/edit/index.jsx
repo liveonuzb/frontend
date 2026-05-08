@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { get, find, trim } from "lodash";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
 import { useLanguageStore } from "@/store";
@@ -26,6 +26,9 @@ import {
   WrenchIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
+
+const EQUIPMENTS_LIST_PATH = "/admin/equipments/list";
 
 const resolveLabel = (translations, fallback, language) => {
   if (translations && typeof translations === "object") {
@@ -118,8 +121,8 @@ const ImageUploadPreview = ({
 };
 
 const EditEquipment = () => {
-  const navigate = useNavigate();
   const { id } = useParams();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(EQUIPMENTS_LIST_PATH);
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
 
   const { data: equipmentData, isLoading } = useGetQuery({
@@ -219,14 +222,14 @@ const EditEquipment = () => {
       }
 
       toast.success("Jihoz yangilandi");
-      navigate("/admin/equipments/list");
+      closeAdminDrawer();
     } catch (error) {
       toast.error(getErrorMessage(error, "Jihozni saqlab bo'lmadi"));
     }
-  }, [currentLanguage, form, id, navigate, patchMutation]);
+  }, [closeAdminDrawer, currentLanguage, form, id, patchMutation]);
 
   const handleOpenChange = (open) => {
-    if (!open) navigate("/admin/equipments/list");
+    if (!open) closeAdminDrawer();
   };
 
   const currentImageUrl =
@@ -404,7 +407,7 @@ const EditEquipment = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate("/admin/equipments/list")}
+              onClick={closeAdminDrawer}
             >
               Bekor qilish
             </Button>

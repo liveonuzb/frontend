@@ -15,6 +15,7 @@ import {
 import { buildAdminFilterParams } from "@/modules/admin/components/admin-filter-utils.js";
 import { useGetQuery, usePatchQuery, useDeleteQuery } from "@/hooks/api";
 import { useAuthStore } from "@/store";
+import { useAdminDrawerListNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import { UserBlockAlert } from "@/modules/admin/components/user-block-alert.jsx";
 import { PRIVILEGED_ROLES } from "../config";
@@ -29,6 +30,7 @@ const EMPTY_ROLES = [];
 
 const Index = () => {
   const navigate = useNavigate();
+  const navigateAdminDrawer = useAdminDrawerListNavigation();
   const {
     canManageSupport,
     canManageGrowth,
@@ -225,15 +227,15 @@ const Index = () => {
         toast.error("Admin accountlarni faqat super admin boshqara oladi");
         return;
       }
-      navigate(`edit/${user.id}`);
+      navigateAdminDrawer(`edit/${user.id}`);
     },
-    [canManageUser, navigate],
+    [canManageUser, navigateAdminDrawer],
   );
 
   const handleCreateOpen = React.useCallback(() => {
     if (!canManageSupport) return;
-    navigate("create");
-  }, [canManageSupport, navigate]);
+    navigateAdminDrawer("create");
+  }, [canManageSupport, navigateAdminDrawer]);
 
   const handleGiftOpen = React.useCallback(
     (user) => {

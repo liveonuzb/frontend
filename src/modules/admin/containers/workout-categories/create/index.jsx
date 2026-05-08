@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router";
 import { isArray, trim } from "lodash";
 import { toast } from "sonner";
 import { PaletteIcon, PlusIcon, TagIcon } from "lucide-react";
@@ -18,6 +17,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import {
   CATEGORY_BADGE_PRESETS,
   DEFAULT_CATEGORY_BADGE_CLASS,
@@ -32,6 +32,7 @@ const emptyForm = {
   customColor: "#64748b",
   isOnboarding: true,
 };
+const WORKOUT_CATEGORIES_LIST_PATH = "/admin/workout-categories/list";
 
 const getStoredColorValue = (form) =>
   form.colorMode === "custom"
@@ -39,7 +40,9 @@ const getStoredColorValue = (form) =>
     : form.presetColor || DEFAULT_CATEGORY_BADGE_CLASS;
 
 const CreateWorkoutCategory = () => {
-  const navigate = useNavigate();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(
+    WORKOUT_CATEGORIES_LIST_PATH,
+  );
   const [form, setForm] = React.useState(emptyForm);
 
   const createMutation = usePostQuery({
@@ -69,7 +72,7 @@ const CreateWorkoutCategory = () => {
         },
       });
       toast.success("Kategoriya yaratildi");
-      navigate("/admin/workout-categories/list");
+      closeAdminDrawer();
     } catch (error) {
       const message = error?.response?.data?.message;
       toast.error(
@@ -78,10 +81,10 @@ const CreateWorkoutCategory = () => {
           : message || "Kategoriyani saqlab bo'lmadi",
       );
     }
-  }, [createMutation, form, navigate]);
+  }, [closeAdminDrawer, createMutation, form]);
 
   const handleOpenChange = (open) => {
-    if (!open) navigate("/admin/workout-categories/list");
+    if (!open) closeAdminDrawer();
   };
 
   return (

@@ -5,6 +5,7 @@ import { normalizeIngredientPreferencePair } from "@/lib/user-onboarding";
 import { useOnboardingStore } from "@/store";
 import { mapCoachOnboardingDraftToStoreFields } from "./coach-onboarding-dto";
 import { getOnboardingDraftApiPath } from "./onboarding-api-paths";
+import { isMeaningfulUserDraftData } from "./user-draft-data";
 
 /**
  * Checks whether the user-level onboarding fields in the local store
@@ -401,7 +402,7 @@ export function useDraftRestore(type, { enabled = true } = {}) {
     const state = useOnboardingStore.getState();
     const draftData = serverDraft.data;
     if (type === "user") {
-      if (isUserStoreEmpty(state)) {
+      if (isUserStoreEmpty(state) && isMeaningfulUserDraftData(draftData)) {
         mergeUserDraft(draftData, setFields);
       }
     } else if (type === "coach") {

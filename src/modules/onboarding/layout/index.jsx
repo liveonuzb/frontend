@@ -26,6 +26,7 @@ import {
   FooterSlot,
 } from "../lib/onboarding-footer-context";
 import { useDraftRestore } from "../lib/use-draft-restore";
+import { isMeaningfulUserDraftData } from "../lib/user-draft-data";
 
 const getPrevCoachStep = (step) => {
   const steps = COACH_ONBOARDING_STEPS;
@@ -110,7 +111,8 @@ const OnboardingLayoutInner = () => {
 
   React.useEffect(() => {
     const hasUserDraft = Boolean(
-      get(data, "data.userOnboardingDraft.data") && !isPostOnboardingRoute,
+      !isPostOnboardingRoute &&
+        isMeaningfulUserDraftData(get(data, "data.userOnboardingDraft.data")),
     );
     const userOnboarding = hasUserDraft
       ? null

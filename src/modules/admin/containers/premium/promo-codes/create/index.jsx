@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router";
 import { get, isArray, join } from "lodash";
 import { toast } from "sonner";
 import { PlusIcon } from "lucide-react";
@@ -16,10 +15,15 @@ import {
 import PromoCodeForm, {
   emptyPromoCodeForm,
 } from "../components/promo-code-form.jsx";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 
+const PREMIUM_PROMO_CODES_PATH = "/admin/premium/promo-codes";
+
 const CreatePromoCode = () => {
-  const navigate = useNavigate();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(
+    PREMIUM_PROMO_CODES_PATH,
+  );
   const { canManageGrowth } = useAdminPermissions();
   const [form, setForm] = React.useState(emptyPromoCodeForm);
 
@@ -64,7 +68,7 @@ const CreatePromoCode = () => {
         attributes,
       });
       toast.success("Promo kod yaratildi");
-      navigate("/admin/premium/promo-codes");
+      closeAdminDrawer();
     } catch (error) {
       const message = get(error, "response.data.message");
       toast.error(
@@ -73,10 +77,10 @@ const CreatePromoCode = () => {
           : message || "Promo kodni saqlab bo'lmadi",
       );
     }
-  }, [canManageGrowth, createMutation, form, navigate]);
+  }, [canManageGrowth, closeAdminDrawer, createMutation, form]);
 
   const handleOpenChange = (open) => {
-    if (!open) navigate("/admin/premium/promo-codes");
+    if (!open) closeAdminDrawer();
   };
 
   return (

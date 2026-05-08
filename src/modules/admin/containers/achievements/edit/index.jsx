@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { get, isArray, join } from "lodash";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -36,6 +36,7 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner.jsx";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import {
   ACHIEVEMENT_CATEGORY_OPTIONS,
   ACHIEVEMENT_METRIC_OPTIONS,
@@ -63,10 +64,13 @@ const getErrorMessage = (error, fallback) => {
   const message = get(error, "response.data.message");
   return isArray(message) ? join(message, ", ") : message || fallback;
 };
+const ACHIEVEMENTS_LIST_PATH = "/admin/achievements/list";
 
 const EditAchievementPage = () => {
-  const navigate = useNavigate();
   const { id } = useParams();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(
+    ACHIEVEMENTS_LIST_PATH,
+  );
   const currentLanguage = useLanguageStore((state) => state.currentLanguage) || "uz";
   const form = useForm({
     resolver: zodResolver(editSchema),
@@ -108,7 +112,7 @@ const EditAchievementPage = () => {
         onSuccess: () => {
           toast.success("Achievement yangilandi.");
           form.reset(values);
-          navigate("/admin/achievements/list", { replace: true });
+          closeAdminDrawer();
         },
         onError: (error) => {
           toast.error(
@@ -124,9 +128,7 @@ const EditAchievementPage = () => {
 
   const handleOpenChange = (open) => {
     if (!open) {
-      unsavedChanges.requestLeave(() =>
-        navigate("/admin/achievements/list", { replace: true }),
-      );
+      unsavedChanges.requestLeave(closeAdminDrawer);
     }
   };
 

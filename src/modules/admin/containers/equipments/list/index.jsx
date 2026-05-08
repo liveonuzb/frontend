@@ -43,6 +43,7 @@ import {
   WrenchIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAdminDrawerListNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
 import { useEquipmentFilters } from "./use-filters.js";
@@ -97,6 +98,7 @@ const cleanTranslations = (translations = {}) =>
 
 const Index = () => {
   const navigate = useNavigate();
+  const navigateAdminDrawer = useAdminDrawerListNavigation();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const {
@@ -441,7 +443,7 @@ const Index = () => {
     handleToggleHome,
     handleToggleStreet,
     handleToggleStatus,
-    openEditDrawer: (equipment) => navigate(`edit/${equipment.id}`),
+    openEditDrawer: (equipment) => navigateAdminDrawer(`edit/${equipment.id}`),
     openTranslationsDrawer,
     setEquipmentToDelete,
   });
@@ -523,7 +525,7 @@ const Index = () => {
           <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching}>
             <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
           </Button>
-          <Button onClick={() => navigate("create")} className="gap-1.5">
+          <Button onClick={() => navigateAdminDrawer("create")} className="gap-1.5">
             <PlusIcon />
             Jihoz qo'shish
           </Button>

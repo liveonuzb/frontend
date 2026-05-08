@@ -1,11 +1,12 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import Layout from "./index.jsx";
 
 const setFieldsMock = vi.hoisted(() => vi.fn());
 const setLastVisitedPathMock = vi.hoisted(() => vi.fn());
+const getQueryResultMock = vi.hoisted(() => vi.fn());
 
 vi.mock("react-i18next", () => ({
   initReactI18next: {
@@ -18,9 +19,7 @@ vi.mock("react-i18next", () => ({
 }));
 
 vi.mock("@/hooks/api", () => ({
-  useGetQuery: () => ({
-    data: undefined,
-  }),
+  useGetQuery: (...args) => getQueryResultMock(...args),
 }));
 
 vi.mock("@/store", () => ({
@@ -75,6 +74,12 @@ const renderOnboardingLayout = (initialPath) =>
   );
 
 describe("Onboarding layout post-result behavior", () => {
+  beforeEach(() => {
+    setFieldsMock.mockClear();
+    setLastVisitedPathMock.mockClear();
+    getQueryResultMock.mockReturnValue({ data: undefined });
+  });
+
   it("renders result with fixed onboarding header, 100% progress, and review back path", () => {
     const { container } = renderOnboardingLayout("/user/onboarding/result");
     const header = container.querySelector("header");
@@ -100,5 +105,51 @@ describe("Onboarding layout post-result behavior", () => {
     const generating = renderOnboardingLayout("/user/onboarding/generating");
 
     expect(generating.container.querySelector("header")).toBeNull();
+  });
+
+  it("hydrates persisted user onboarding when server draft is empty", async () => {
+    getQueryResultMock.mockReturnValue({
+      data: {
+        data: {
+          userOnboardingDraft: {
+            data: {
+              firstName: "",
+              gender: "",
+              weeklyPace: 0.5,
+              workoutLocation: "home",
+              height: { value: "", unit: "cm" },
+            },
+          },
+          userOnboarding: {
+            firstName: "Berlin",
+            lastName: "Germany",
+            gender: "male",
+            age: 33,
+            height: { value: 173, unit: "cm" },
+            currentWeight: { value: 67, unit: "kg" },
+            goal: "maintain",
+            mealFrequency: "3",
+          },
+          coachOnboarding: null,
+        },
+      },
+    });
+
+    renderOnboardingLayout("/user/onboarding/review");
+
+    await waitFor(() => {
+      expect(setFieldsMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          firstName: "Berlin",
+          lastName: "Germany",
+          gender: "male",
+          age: "33",
+          height: { value: "173", unit: "cm" },
+          currentWeight: { value: "67", unit: "kg" },
+          goal: "maintain",
+          mealFrequency: "3",
+        }),
+      );
+    });
   });
 });

@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner.jsx";
 import { Switch } from "@/components/ui/switch";
 import { useGetQuery, usePatchQuery, usePostQuery } from "@/hooks/api";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useLanguageStore } from "@/store";
 
 import {
@@ -39,8 +40,10 @@ import {
 } from "./utils.jsx";
 
 const HealthConstraintFormDrawer = ({ mode }) => {
-  const navigate = useNavigate();
   const { id } = useParams();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(
+    "/admin/health-constraints/list",
+  );
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const isEdit = mode === "edit";
   const { data, isLoading } = useGetQuery({
@@ -102,15 +105,13 @@ const HealthConstraintFormDrawer = ({ mode }) => {
     toast.success(
       isEdit ? "Health constraint yangilandi" : "Health constraint yaratildi",
     );
-    navigate("/admin/health-constraints/list");
+    closeAdminDrawer();
   };
 
   return (
     <Drawer
       open
-      onOpenChange={(open) =>
-        !open && navigate("/admin/health-constraints/list")
-      }
+      onOpenChange={(open) => !open && closeAdminDrawer()}
       direction="bottom"
     >
       <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-md">

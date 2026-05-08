@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { find, get, isArray, trim } from "lodash";
 import { toast } from "sonner";
 import { PaletteIcon, PencilIcon, TagIcon } from "lucide-react";
@@ -20,6 +20,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import {
   CATEGORY_BADGE_PRESETS,
   DEFAULT_CATEGORY_BADGE_CLASS,
@@ -80,13 +81,14 @@ const emptyForm = {
   customColor: "#64748b",
   isOnboarding: true,
 };
+const WORKOUT_CATEGORIES_LIST_PATH = "/admin/workout-categories/list";
 
 const EditWorkoutCategoryFields = ({
   id,
   initialForm,
   isLoading,
   isUpdating,
-  navigate,
+  closeAdminDrawer,
   patchMutation,
 }) => {
   const [form, setForm] = React.useState(initialForm);
@@ -112,7 +114,7 @@ const EditWorkoutCategoryFields = ({
         },
       });
       toast.success("Kategoriya yangilandi");
-      navigate("/admin/workout-categories/list");
+      closeAdminDrawer();
     } catch (error) {
       const message = error?.response?.data?.message;
       toast.error(
@@ -121,7 +123,7 @@ const EditWorkoutCategoryFields = ({
           : message || "Kategoriyani saqlab bo'lmadi",
       );
     }
-  }, [form, id, navigate, patchMutation]);
+  }, [closeAdminDrawer, form, id, patchMutation]);
 
   return (
     <>
@@ -259,8 +261,10 @@ const EditWorkoutCategoryFields = ({
 };
 
 const EditWorkoutCategory = () => {
-  const navigate = useNavigate();
   const { id } = useParams();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(
+    WORKOUT_CATEGORIES_LIST_PATH,
+  );
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
 
   const { data: categoryData, isLoading } = useGetQuery({
@@ -287,7 +291,7 @@ const EditWorkoutCategory = () => {
   ].join(":");
 
   const handleOpenChange = (open) => {
-    if (!open) navigate("/admin/workout-categories/list");
+    if (!open) closeAdminDrawer();
   };
 
   return (
@@ -316,7 +320,7 @@ const EditWorkoutCategory = () => {
               initialForm={initialForm}
               isLoading={isLoading}
               isUpdating={isUpdating}
-              navigate={navigate}
+              closeAdminDrawer={closeAdminDrawer}
               patchMutation={patchMutation}
             />
           )}

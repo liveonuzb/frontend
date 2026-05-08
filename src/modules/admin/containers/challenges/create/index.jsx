@@ -1,6 +1,5 @@
 import React from "react";
 import { addDays, format } from "date-fns";
-import { useNavigate } from "react-router";
 import { get } from "lodash";
 import { toast } from "sonner";
 import { ArrowLeftIcon, CheckCircle2Icon, LoaderCircleIcon } from "lucide-react";
@@ -19,6 +18,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { usePostQuery } from "@/hooks/api";
 import { useLanguageStore } from "@/store";
 import { cn } from "@/lib/utils";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import ChallengeCoverPicker from "@/modules/user/containers/challenges/create/challenge-cover-picker.jsx";
 import StepDuration from "@/modules/user/containers/challenges/create/step-duration.jsx";
 import StepMetric from "@/modules/user/containers/challenges/create/step-metric.jsx";
@@ -231,7 +231,9 @@ const ChallengeBasicStep = ({ form, setForm, onImageChange, onImageRemove }) => 
 );
 
 const CreateChallengePage = () => {
-  const navigate = useNavigate();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(
+    "/admin/challenges/list",
+  );
   const currentLanguage = useLanguageStore((state) => state.currentLanguage) || "uz";
   const [form, setForm] = React.useState(createInitialForm);
   const [stepIndex, setStepIndex] = React.useState(0);
@@ -240,8 +242,8 @@ const CreateChallengePage = () => {
   const { mutateAsync, isPending } = usePostQuery({ queryKey: CHALLENGES_QUERY_KEY });
 
   const closeDrawer = React.useCallback(() => {
-    navigate("/admin/challenges/list");
-  }, [navigate]);
+    closeAdminDrawer();
+  }, [closeAdminDrawer]);
 
   const handleImageChange = React.useCallback(async (file) => {
     if (!file.type?.startsWith("image/")) {

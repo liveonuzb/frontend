@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import {
   chain,
   filter as lodashFilter,
@@ -50,6 +50,7 @@ import {
   WORKOUT_TRACKING_OPTIONS,
   WORKOUT_TRACKING_TYPES,
 } from "@/lib/workout-tracking";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 
 const resolveLabel = (translations, fallback, language) => {
   if (isObject(translations)) {
@@ -342,10 +343,11 @@ const buildCatalogOptions = (items, selectedValues, language) => {
 };
 
 const WORKOUTS_QUERY_KEY = ["admin-workouts"];
+const WORKOUTS_LIST_PATH = "/admin/workouts/list";
 
 const EditWorkoutPage = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(WORKOUTS_LIST_PATH);
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
 
   const { data: workoutData, isLoading: isWorkoutLoading } = useGetQuery({
@@ -496,7 +498,7 @@ const EditWorkoutPage = () => {
         attributes: finalPayload,
       });
       toast.success("Mashg'ulot yangilandi");
-      navigate("../list");
+      closeAdminDrawer();
     } catch (error) {
       const message = error?.response?.data?.message;
       toast.error(
@@ -507,7 +509,7 @@ const EditWorkoutPage = () => {
 
   const handleOpenChange = (open) => {
     if (!open) {
-      navigate("../list");
+      closeAdminDrawer();
     }
   };
 

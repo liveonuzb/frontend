@@ -41,6 +41,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { useAdminDrawerListNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import {
   getCategoryBadgeAppearance,
@@ -295,6 +296,7 @@ const CategoryFoodsGrid = ({ canManage, categoryId, currentLanguage }) => {
 
 const Index = () => {
   const navigate = useNavigate();
+  const navigateAdminDrawer = useAdminDrawerListNavigation();
   const { canManageContent } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
@@ -499,7 +501,7 @@ const Index = () => {
     handleToggleActive,
     openEditDrawer: (category) => {
       if (!canManageContent) return;
-      navigate(`edit/${get(category, "id")}`);
+      navigateAdminDrawer(`edit/${get(category, "id")}`);
     },
     openTranslationsDrawer,
     setCategoryToDelete,
@@ -593,7 +595,7 @@ const Index = () => {
             <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
           </Button>
           {canManageContent ? (
-            <Button onClick={() => navigate("create")} className="gap-1.5">
+            <Button onClick={() => navigateAdminDrawer("create")} className="gap-1.5">
               <PlusIcon />
               Kategoriya qo'shish
             </Button>

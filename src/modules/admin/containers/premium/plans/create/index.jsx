@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router";
 import { get, isArray, join } from "lodash";
 import { toast } from "sonner";
 import { PlusIcon } from "lucide-react";
@@ -11,11 +10,14 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import { PlanForm } from "../components/plan-form.jsx";
 
+const PREMIUM_PLANS_PATH = "/admin/premium/plans";
+
 const CreatePlan = () => {
-  const navigate = useNavigate();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(PREMIUM_PLANS_PATH);
   const { canManageGrowth } = useAdminPermissions();
 
   const createMutation = usePostQuery({
@@ -38,7 +40,7 @@ const CreatePlan = () => {
           attributes: payload,
         });
         toast.success("Plan yaratildi");
-        navigate("/admin/premium/plans");
+        closeAdminDrawer();
       } catch (error) {
         const message = get(error, "response.data.message");
         toast.error(
@@ -48,11 +50,11 @@ const CreatePlan = () => {
         );
       }
     },
-    [canManageGrowth, createMutation, navigate],
+    [canManageGrowth, closeAdminDrawer, createMutation],
   );
 
   const handleOpenChange = (open) => {
-    if (!open) navigate("/admin/premium/plans");
+    if (!open) closeAdminDrawer();
   };
 
   return (

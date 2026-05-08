@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router";
 import { get, trim, isArray, join } from "lodash";
 import { usePostQuery } from "@/hooks/api";
 import { Button } from "@/components/ui/button";
@@ -16,6 +15,7 @@ import {
 } from "@/components/ui/drawer";
 import { PlusIcon, TagIcon } from "lucide-react";
 import { toast } from "sonner";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 
 const emptyForm = {
   name: "",
@@ -23,9 +23,10 @@ const emptyForm = {
   flag: "",
   isActive: true,
 };
+const LANGUAGES_LIST_PATH = "/admin/languages/list";
 
 const CreateLanguage = () => {
-  const navigate = useNavigate();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(LANGUAGES_LIST_PATH);
   const [form, setForm] = useState(emptyForm);
 
   const { mutateAsync: postLanguage, isPending: isCreating } = usePostQuery({
@@ -48,7 +49,7 @@ const CreateLanguage = () => {
         attributes: form,
       });
       toast.success("Yangi til qo'shildi");
-      navigate("/admin/languages/list");
+      closeAdminDrawer();
     } catch (error) {
       const message = get(error, "response.data.message");
       toast.error(
@@ -60,7 +61,7 @@ const CreateLanguage = () => {
   };
 
   const handleOpenChange = (open) => {
-    if (!open) navigate("/admin/languages/list");
+    if (!open) closeAdminDrawer();
   };
 
   return (

@@ -38,6 +38,7 @@ import {
 } from "@/components/reui/data-grid";
 import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
 import { cn } from "@/lib/utils";
+import { useAdminDrawerListNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import FoodBulkCategoryDrawer from "../components/FoodBulkCategoryDrawer";
 import { useColumns } from "./columns.jsx";
@@ -71,6 +72,7 @@ const getMutationErrorMessage = (error, fallback) => {
 
 const Index = () => {
   const navigate = useNavigate();
+  const navigateAdminDrawer = useAdminDrawerListNavigation();
   const { canManageContent, isSuperAdmin } = useAdminPermissions();
   const canHardDelete = canManageContent && isSuperAdmin;
   const { setBreadcrumbs } = useBreadcrumbStore();
@@ -473,12 +475,12 @@ const Index = () => {
 
   const openCreateDrawer = () => {
     if (!canManageContent) return;
-    navigate("create");
+    navigateAdminDrawer("create");
   };
 
   const openEditDrawer = (food) => {
     if (!canManageContent) return;
-    navigate(`edit/${food.id}`);
+    navigateAdminDrawer(`edit/${food.id}`);
   };
 
   const openTranslationsDrawer = (food) => {

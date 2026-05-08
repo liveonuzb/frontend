@@ -51,6 +51,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
+import { useAdminDrawerListNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
 import { useCategoryFilters } from "./use-filters.js";
@@ -267,6 +268,7 @@ const CategoryWorkoutsGrid = ({ categoryId, currentLanguage }) => {
 
 const Index = () => {
   const navigate = useNavigate();
+  const navigateAdminDrawer = useAdminDrawerListNavigation();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const {
@@ -595,7 +597,7 @@ const Index = () => {
     isUpdating,
     handleToggleActive,
     handleToggleOnboarding,
-    openEditDrawer: (category) => navigate(`edit/${category.id}`),
+    openEditDrawer: (category) => navigateAdminDrawer(`edit/${category.id}`),
     openTranslationsDrawer,
     setCategoryToDelete,
     CategoryWorkoutsGrid,
@@ -681,7 +683,7 @@ const Index = () => {
           <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching}>
             <RotateCcwIcon className={cn("size-4", isFetching && "animate-spin")} />
           </Button>
-          <Button onClick={() => navigate("create")} className="gap-1.5">
+          <Button onClick={() => navigateAdminDrawer("create")} className="gap-1.5">
             <PlusIcon className="size-4" />
             Kategoriya qo'shish
           </Button>

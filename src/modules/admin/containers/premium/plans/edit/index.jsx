@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { find, get, isArray, join } from "lodash";
 import { toast } from "sonner";
 import { PencilIcon } from "lucide-react";
@@ -12,12 +12,15 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Spinner } from "@/components/ui/spinner.jsx";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import { PlanForm } from "../components/plan-form.jsx";
 
+const PREMIUM_PLANS_PATH = "/admin/premium/plans";
+
 const EditPlan = () => {
-  const navigate = useNavigate();
   const { id } = useParams();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(PREMIUM_PLANS_PATH);
   const { canManageGrowth } = useAdminPermissions();
 
   const { data: plansData, isLoading } = useGetQuery({
@@ -47,7 +50,7 @@ const EditPlan = () => {
           attributes: payload,
         });
         toast.success("Plan yangilandi");
-        navigate("/admin/premium/plans");
+        closeAdminDrawer();
       } catch (error) {
         const message = get(error, "response.data.message");
         toast.error(
@@ -57,11 +60,11 @@ const EditPlan = () => {
         );
       }
     },
-    [canManageGrowth, id, navigate, patchMutation],
+    [canManageGrowth, closeAdminDrawer, id, patchMutation],
   );
 
   const handleOpenChange = (open) => {
-    if (!open) navigate("/admin/premium/plans");
+    if (!open) closeAdminDrawer();
   };
 
   return (

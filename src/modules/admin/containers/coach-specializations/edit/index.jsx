@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { filter, find, get, isArray, join, trim } from "lodash";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,6 +31,7 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner.jsx";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import SpecializationImagePicker from "../components/SpecializationImagePicker";
 import {
   CATEGORY_OPTIONS,
@@ -59,6 +60,7 @@ const getErrorMessage = (error, fallback) => {
   const message = get(error, "response.data.message");
   return isArray(message) ? join(message, ", ") : message || fallback;
 };
+const COACH_SPECIALIZATIONS_LIST_PATH = "/admin/coach-specializations/list";
 
 const getSupportedActiveLanguages = (languages) => {
   const activeLanguages = filter(
@@ -98,8 +100,10 @@ const buildEditPayload = (values, activeLanguage) => {
 };
 
 const EditSpecialization = () => {
-  const navigate = useNavigate();
   const { id } = useParams();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(
+    COACH_SPECIALIZATIONS_LIST_PATH,
+  );
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
@@ -174,7 +178,7 @@ const EditSpecialization = () => {
           toast.success(
             get(responseData, "message") || "Yo'nalish yangilandi",
           );
-          navigate("/admin/coach-specializations/list");
+          closeAdminDrawer();
         },
         onError: (error) => {
           toast.error(getErrorMessage(error, "Yo'nalishni saqlab bo'lmadi"));
@@ -184,7 +188,7 @@ const EditSpecialization = () => {
   };
 
   const handleOpenChange = (open) => {
-    if (!open) navigate("/admin/coach-specializations/list");
+    if (!open) closeAdminDrawer();
   };
 
   const isSubmitting = isPending || isUploadingImage;

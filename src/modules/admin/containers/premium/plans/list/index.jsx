@@ -27,6 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { useAdminDrawerListNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
@@ -37,6 +38,7 @@ const PLANS_QUERY_KEY = ["admin", "premium-plans"];
 
 const Index = () => {
   const navigate = useNavigate();
+  const navigateAdminDrawer = useAdminDrawerListNavigation();
   const { canManageGrowth } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
 
@@ -141,7 +143,7 @@ const Index = () => {
     handleToggleActive,
     onEdit: (plan) => {
       if (!canManageGrowth) return;
-      navigate(`edit/${get(plan, "id")}`);
+      navigateAdminDrawer(`edit/${get(plan, "id")}`);
     },
     onDelete: setPlanToDelete,
   });
@@ -196,7 +198,7 @@ const Index = () => {
             />
           </Button>
           {canManageGrowth ? (
-            <Button onClick={() => navigate("create")} className="gap-1.5">
+            <Button onClick={() => navigateAdminDrawer("create")} className="gap-1.5">
               <PlusIcon />
               Plan qo'shish
             </Button>

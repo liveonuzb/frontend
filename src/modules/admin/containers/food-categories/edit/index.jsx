@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { find, get, isArray, join, map, trim } from "lodash";
 import { toast } from "sonner";
 import { PaletteIcon, PencilIcon, TagIcon } from "lucide-react";
@@ -19,6 +19,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import {
   CATEGORY_BADGE_PRESETS,
   DEFAULT_CATEGORY_BADGE_CLASS,
@@ -79,10 +80,13 @@ const emptyForm = {
   presetColor: DEFAULT_CATEGORY_BADGE_CLASS,
   customColor: "#64748b",
 };
+const FOOD_CATEGORIES_LIST_PATH = "/admin/food-categories/list";
 
 const EditFoodCategory = () => {
-  const navigate = useNavigate();
   const { id } = useParams();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(
+    FOOD_CATEGORIES_LIST_PATH,
+  );
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
 
   const { data: categoryData, isLoading } = useGetQuery({
@@ -133,7 +137,7 @@ const EditFoodCategory = () => {
         },
       });
       toast.success("Kategoriya yangilandi");
-      navigate("/admin/food-categories/list");
+      closeAdminDrawer();
     } catch (error) {
       const message = get(error, "response.data.message");
       toast.error(
@@ -142,10 +146,10 @@ const EditFoodCategory = () => {
           : message || "Kategoriyani saqlab bo'lmadi",
       );
     }
-  }, [category, currentLanguage, form, id, navigate, patchMutation]);
+  }, [category, closeAdminDrawer, currentLanguage, form, id, patchMutation]);
 
   const handleOpenChange = (open) => {
-    if (!open) navigate("/admin/food-categories/list");
+    if (!open) closeAdminDrawer();
   };
 
   return (

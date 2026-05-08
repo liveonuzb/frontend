@@ -1,6 +1,6 @@
 import React from "react";
 import { addDays, differenceInCalendarDays, format } from "date-fns";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { find, get, values } from "lodash";
 import { toast } from "sonner";
 import { ArrowLeftIcon, CheckCircle2Icon, LoaderCircleIcon } from "lucide-react";
@@ -19,6 +19,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
 import { useLanguageStore } from "@/store";
 import { cn } from "@/lib/utils";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import ChallengeCoverPicker from "@/modules/user/containers/challenges/create/challenge-cover-picker.jsx";
 import StepDuration from "@/modules/user/containers/challenges/create/step-duration.jsx";
 import StepMetric from "@/modules/user/containers/challenges/create/step-metric.jsx";
@@ -305,8 +306,10 @@ const ChallengeBasicStep = ({ form, setForm, onImageChange, onImageRemove }) => 
 );
 
 const EditChallengePage = () => {
-  const navigate = useNavigate();
   const { id } = useParams();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(
+    "/admin/challenges/list",
+  );
   const currentLanguage = useLanguageStore((state) => state.currentLanguage) || "uz";
   const [form, setForm] = React.useState(createInitialForm);
   const [stepIndex, setStepIndex] = React.useState(0);
@@ -335,8 +338,8 @@ const EditChallengePage = () => {
   }, [challengeData, currentLanguage]);
 
   const closeDrawer = React.useCallback(() => {
-    navigate("/admin/challenges/list");
-  }, [navigate]);
+    closeAdminDrawer();
+  }, [closeAdminDrawer]);
 
   const handleImageChange = React.useCallback(async (file) => {
     if (!file.type?.startsWith("image/")) {

@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -26,6 +26,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner.jsx";
 import { useGetQuery, usePatchQuery, usePostQuery } from "@/hooks/api";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useLanguageStore } from "@/store";
 
 import {
@@ -39,8 +40,8 @@ import {
 import UserGoalImagePicker from "./user-goal-image-picker.jsx";
 
 const UserGoalFormDrawer = ({ mode }) => {
-  const navigate = useNavigate();
   const { id } = useParams();
+  const close = useAdminDrawerCloseNavigation("/admin/user-goals/list");
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const isEdit = mode === "edit";
   const { data, isLoading } = useGetQuery({
@@ -82,8 +83,6 @@ const UserGoalFormDrawer = ({ mode }) => {
       key: item.key || "",
     });
   }, [currentLanguage, form, item]);
-
-  const close = () => navigate("/admin/user-goals/list");
 
   const onSubmit = async (values) => {
     await mutation.mutateAsync({

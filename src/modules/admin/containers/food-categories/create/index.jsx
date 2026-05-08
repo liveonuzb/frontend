@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router";
 import { get, isArray, join, trim, map } from "lodash";
 import { toast } from "sonner";
 import { PaletteIcon, PlusIcon, TagIcon } from "lucide-react";
@@ -18,6 +17,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import {
   CATEGORY_BADGE_PRESETS,
   DEFAULT_CATEGORY_BADGE_CLASS,
@@ -31,6 +31,7 @@ const emptyForm = {
   presetColor: DEFAULT_CATEGORY_BADGE_CLASS,
   customColor: "#64748b",
 };
+const FOOD_CATEGORIES_LIST_PATH = "/admin/food-categories/list";
 
 const getStoredColorValue = (form) =>
   get(form, "colorMode") === "custom"
@@ -38,7 +39,9 @@ const getStoredColorValue = (form) =>
     : get(form, "presetColor") || DEFAULT_CATEGORY_BADGE_CLASS;
 
 const CreateFoodCategory = () => {
-  const navigate = useNavigate();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(
+    FOOD_CATEGORIES_LIST_PATH,
+  );
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const [form, setForm] = React.useState(emptyForm);
 
@@ -71,7 +74,7 @@ const CreateFoodCategory = () => {
         },
       });
       toast.success("Kategoriya yaratildi");
-      navigate("/admin/food-categories/list");
+      closeAdminDrawer();
     } catch (error) {
       const message = get(error, "response.data.message");
       toast.error(
@@ -80,10 +83,10 @@ const CreateFoodCategory = () => {
           : message || "Kategoriyani saqlab bo'lmadi",
       );
     }
-  }, [createMutation, form, navigate]);
+  }, [closeAdminDrawer, createMutation, currentLanguage, form]);
 
   const handleOpenChange = (open) => {
-    if (!open) navigate("/admin/food-categories/list");
+    if (!open) closeAdminDrawer();
   };
 
   return (

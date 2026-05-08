@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { get, trim, isArray, join, find } from "lodash";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/drawer";
 import { PencilIcon, TagIcon } from "lucide-react";
 import { toast } from "sonner";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 
 const emptyForm = {
   name: "",
@@ -24,10 +25,11 @@ const emptyForm = {
   flag: "",
   isActive: true,
 };
+const LANGUAGES_LIST_PATH = "/admin/languages/list";
 
 const EditLanguage = () => {
-  const navigate = useNavigate();
   const { id } = useParams();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(LANGUAGES_LIST_PATH);
   const [form, setForm] = useState(emptyForm);
 
   const { data: languagesData, isLoading } = useGetQuery({
@@ -70,7 +72,7 @@ const EditLanguage = () => {
         attributes: form,
       });
       toast.success("Til yangilandi");
-      navigate("/admin/languages/list");
+      closeAdminDrawer();
     } catch (error) {
       const message = get(error, "response.data.message");
       toast.error(
@@ -82,7 +84,7 @@ const EditLanguage = () => {
   };
 
   const handleOpenChange = (open) => {
-    if (!open) navigate("/admin/languages/list");
+    if (!open) closeAdminDrawer();
   };
 
   return (

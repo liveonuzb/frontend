@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -38,6 +38,7 @@ import {
   UnsavedChangesAlert,
   useUnsavedChangesGuard,
 } from "@/modules/admin/components/unsaved-changes-guard.jsx";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import {
   ALLERGEN_TAG_OPTIONS,
   DIETARY_TAG_OPTIONS,
@@ -54,8 +55,10 @@ import {
 } from "./utils.jsx";
 
 const IngredientFormDrawer = ({ mode }) => {
-  const navigate = useNavigate();
   const { id } = useParams();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(
+    "/admin/ingredients/list",
+  );
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const isEdit = mode === "edit";
   const { data, isLoading } = useGetQuery({
@@ -142,13 +145,13 @@ const IngredientFormDrawer = ({ mode }) => {
     });
     toast.success(isEdit ? "Ingredient yangilandi" : "Ingredient yaratildi");
     form.reset(values);
-    unsavedChanges.runWithoutGuard(() => navigate("/admin/ingredients/list"));
+    unsavedChanges.runWithoutGuard(closeAdminDrawer);
   };
 
   const handleClose = React.useCallback(() => {
     void cleanupImage(uploadedImageId);
-    navigate("/admin/ingredients/list");
-  }, [cleanupImage, navigate, uploadedImageId]);
+    closeAdminDrawer();
+  }, [cleanupImage, closeAdminDrawer, uploadedImageId]);
 
   return (
     <>

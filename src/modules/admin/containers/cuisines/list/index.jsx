@@ -32,6 +32,7 @@ import { Filters } from "@/components/reui/filters.jsx";
 import { useDeleteQuery, useGetQuery, usePatchQuery } from "@/hooks/api";
 import { cn } from "@/lib/utils";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
+import { useAdminDrawerListNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
 
@@ -51,6 +52,7 @@ import ActionsMenu from "./actions-menu.jsx";
 
 const ListPage = () => {
   const navigate = useNavigate();
+  const navigateAdminDrawer = useAdminDrawerListNavigation();
   const { canManageContent } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
@@ -323,7 +325,7 @@ const ListPage = () => {
             <ActionsMenu
               row={info.row.original}
               canManage={canManageContent}
-              onEdit={(row) => navigate(`edit/${row.id}`)}
+              onEdit={(row) => navigateAdminDrawer(`edit/${row.id}`)}
               onTranslate={(row) => navigate(`translate/${row.id}`)}
               onDelete={async (row) => {
                 try {
@@ -350,6 +352,7 @@ const ListPage = () => {
       currentLanguage,
       deleteMutation,
       navigate,
+      navigateAdminDrawer,
       patchMutation,
     ],
   );
@@ -533,7 +536,7 @@ const ListPage = () => {
             />
           </Button>
           {canManageContent ? (
-            <Button onClick={() => navigate("create")}>
+            <Button onClick={() => navigateAdminDrawer("create")}>
               <PlusIcon data-icon="inline-start" />
               Yangi oshxona
             </Button>

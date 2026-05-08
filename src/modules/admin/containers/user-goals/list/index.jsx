@@ -23,6 +23,7 @@ import { Filters } from "@/components/reui/filters.jsx";
 import { useDeleteQuery, useGetQuery, usePatchQuery } from "@/hooks/api";
 import { cn } from "@/lib/utils";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
+import { useAdminDrawerListNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
 
 import {
@@ -43,6 +44,7 @@ import ActionsMenu from "./actions-menu.jsx";
 
 const ListPage = () => {
   const navigate = useNavigate();
+  const navigateAdminDrawer = useAdminDrawerListNavigation();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const [name, setName] = useQueryState(
@@ -333,7 +335,7 @@ const ListPage = () => {
           <div className="flex justify-end">
             <ActionsMenu
               row={info.row.original}
-              onEdit={(row) => navigate(`edit/${row.id}`)}
+              onEdit={(row) => navigateAdminDrawer(`edit/${row.id}`)}
               onTranslate={(row) => navigate(`translate/${row.id}`)}
               onDelete={async (row) => {
                 try {
@@ -543,7 +545,7 @@ const ListPage = () => {
               className={cn("size-4", isFetching && "animate-spin")}
             />
           </Button>
-          <Button onClick={() => navigate("create")}>
+          <Button onClick={() => navigateAdminDrawer("create")}>
             <PlusIcon data-icon="inline-start" />
             Maqsad qo'shish
           </Button>

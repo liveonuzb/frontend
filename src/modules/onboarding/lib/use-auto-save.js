@@ -297,5 +297,5 @@ export function useOnboardingAutoSave(
         });
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step]);
+  }, [step, enabled]);
 }

@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { useAdminDrawerListNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
 import { useChallengeFilters } from "./use-filters.js";
@@ -44,6 +45,7 @@ const resolveLocalizedText = (translations, fallback, language) => {
 
 const Index = () => {
   const navigate = useNavigate();
+  const navigateAdminDrawer = useAdminDrawerListNavigation();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const { data: languagesData } = useGetQuery({
@@ -112,14 +114,14 @@ const Index = () => {
   }, [setBreadcrumbs]);
 
   const openCreateDrawer = React.useCallback(() => {
-    navigate("/admin/challenges/list/create");
-  }, [navigate]);
+    navigateAdminDrawer("/admin/challenges/list/create");
+  }, [navigateAdminDrawer]);
 
   const openEditDrawer = React.useCallback(
     (challenge) => {
-      navigate(`/admin/challenges/list/edit/${challenge.id}`);
+      navigateAdminDrawer(`/admin/challenges/list/edit/${challenge.id}`);
     },
-    [navigate],
+    [navigateAdminDrawer],
   );
 
   const openTranslationsDrawer = React.useCallback(

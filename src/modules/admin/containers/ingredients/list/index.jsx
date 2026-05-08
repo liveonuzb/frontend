@@ -31,6 +31,7 @@ import { useDeleteQuery, useGetQuery, usePatchQuery } from "@/hooks/api";
 import useApi from "@/hooks/api/use-api.js";
 import { cn } from "@/lib/utils";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
+import { useAdminDrawerListNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import {
   ALLERGEN_TAG_OPTIONS,
@@ -69,6 +70,7 @@ const downloadBlob = ({ blob, fileName }) => {
 
 const ListPage = () => {
   const navigate = useNavigate();
+  const navigateAdminDrawer = useAdminDrawerListNavigation();
   const { canReadContent, canManageContent } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
@@ -642,7 +644,7 @@ const ListPage = () => {
           <div className="flex justify-end">
             <ActionsMenu
               row={info.row.original}
-              onEdit={(row) => navigate(`edit/${row.id}`)}
+              onEdit={(row) => navigateAdminDrawer(`edit/${row.id}`)}
               onTranslate={(row) => navigate(`translate/${row.id}`)}
               onPrice={(row) => navigate(`price/${row.id}`)}
               onDelete={async (row) => {
@@ -668,6 +670,7 @@ const ListPage = () => {
       currentLanguage,
       deleteMutation,
       navigate,
+      navigateAdminDrawer,
       patchMutation,
     ],
   );
@@ -994,7 +997,7 @@ const ListPage = () => {
               className={cn("size-4", isFetching && "animate-spin")}
             />
           </Button>
-          <Button onClick={() => navigate("create")}>
+          <Button onClick={() => navigateAdminDrawer("create")}>
             <PlusIcon data-icon="inline-start" />
             Yangi ingredient
           </Button>

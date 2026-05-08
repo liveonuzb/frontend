@@ -16,6 +16,7 @@ import {
 import { buildAdminFilterParams } from "@/modules/admin/components/admin-filter-utils.js";
 import { buildAdminReorderPayload } from "@/modules/admin/components/admin-list-reorder.js";
 import { Button } from "@/components/ui/button";
+import { useAdminDrawerListNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import {
   ADMIN_ACHIEVEMENTS_QUERY_KEY,
@@ -33,6 +34,7 @@ const getErrorMessage = (error, fallback) => {
 
 const AchievementsListPage = () => {
   const navigate = useNavigate();
+  const navigateAdminDrawer = useAdminDrawerListNavigation();
   const { canManageContent } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentMode = useAppModeStore((state) => state.mode) || "madagascar";
@@ -268,7 +270,7 @@ const AchievementsListPage = () => {
     onToggleActive: handleToggleActive,
     onImages: (item) => navigate(`images/${get(item, "id")}`),
     onTranslate: (item) => navigate(`translate/${get(item, "id")}`),
-    onEdit: (item) => navigate(`edit/${get(item, "id")}`),
+    onEdit: (item) => navigateAdminDrawer(`edit/${get(item, "id")}`),
     onDelete: setItemToDelete,
   });
 
@@ -321,7 +323,7 @@ const AchievementsListPage = () => {
               isFetching={isFetching}
             />
             {canManageContent ? (
-              <Button onClick={() => navigate("create")} className="gap-1.5">
+              <Button onClick={() => navigateAdminDrawer("create")} className="gap-1.5">
                 <PlusIcon />
                 Achievement qo'shish
               </Button>

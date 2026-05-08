@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router";
 import { get, find, trim } from "lodash";
 import { useGetQuery, usePostQuery } from "@/hooks/api";
 import { useLanguageStore } from "@/store";
@@ -25,6 +24,7 @@ import {
   WrenchIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 
 const emptyForm = {
   name: "",
@@ -34,6 +34,7 @@ const emptyForm = {
   isStreet: false,
   image: null,
 };
+const EQUIPMENTS_LIST_PATH = "/admin/equipments/list";
 
 const getErrorMessage = (error, fallback) => {
   const message = get(error, "response.data.message");
@@ -105,7 +106,7 @@ const ImageUploadPreview = ({ file, onChange, onRemove, label = "Rasm" }) => {
 };
 
 const CreateEquipment = () => {
-  const navigate = useNavigate();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(EQUIPMENTS_LIST_PATH);
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const [form, setForm] = React.useState(emptyForm);
 
@@ -168,14 +169,14 @@ const CreateEquipment = () => {
       }
 
       toast.success("Jihoz yaratildi");
-      navigate("/admin/equipments/list");
+      closeAdminDrawer();
     } catch (error) {
       toast.error(getErrorMessage(error, "Jihozni saqlab bo'lmadi"));
     }
-  }, [createMutation, currentLanguage, form, navigate]);
+  }, [closeAdminDrawer, createMutation, currentLanguage, form]);
 
   const handleOpenChange = (open) => {
-    if (!open) navigate("/admin/equipments/list");
+    if (!open) closeAdminDrawer();
   };
 
   return (
@@ -329,7 +330,7 @@ const CreateEquipment = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate("/admin/equipments/list")}
+              onClick={closeAdminDrawer}
             >
               Bekor qilish
             </Button>

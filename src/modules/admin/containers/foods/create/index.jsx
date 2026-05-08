@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router";
 import { find, get, isArray, startsWith, toNumber, trim } from "lodash";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,6 +36,7 @@ import {
   ALLERGEN_TAG_OPTIONS,
   DIETARY_TAG_OPTIONS,
 } from "@/modules/admin/lib/nutrition-tags.js";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import {
   NumberField,
   NumberFieldDecrement,
@@ -543,9 +543,10 @@ const FOODS_QUERY_KEY = ["admin", "foods"];
 const FOOD_CATEGORIES_QUERY_KEY = ["admin", "food-categories"];
 const FOOD_CATEGORY_FOODS_QUERY_KEY = ["admin", "food-category-foods"];
 const CUISINES_QUERY_KEY = ["admin", "cuisines"];
+const FOODS_LIST_PATH = "/admin/foods/list";
 
 const CreateFoodPage = () => {
-  const navigate = useNavigate();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(FOODS_LIST_PATH);
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
 
   const { data: languagesData } = useGetQuery({
@@ -681,7 +682,7 @@ const CreateFoodPage = () => {
       setUploadedImageId(null);
       uploadedImageIdRef.current = null;
       return {
-        afterReset: () => navigate(-1),
+        afterReset: closeAdminDrawer,
       };
     } catch (error) {
       const message = error?.response?.data?.message;
@@ -695,7 +696,7 @@ const CreateFoodPage = () => {
   const handleOpenChange = (open) => {
     if (!open) {
       void cleanupUploadedImage();
-      navigate("../list");
+      closeAdminDrawer();
     }
   };
 

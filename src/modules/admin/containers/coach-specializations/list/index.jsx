@@ -25,6 +25,7 @@ import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagina
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import PageTransition from "@/components/page-transition";
+import { useAdminDrawerListNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
@@ -72,6 +73,7 @@ const getSupportedActiveLanguages = (languages) => {
 
 const Index = () => {
   const navigate = useNavigate();
+  const navigateAdminDrawer = useAdminDrawerListNavigation();
   const { canManageContent } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
@@ -328,7 +330,7 @@ const Index = () => {
     onToggleActive: handleToggleActive,
     resolveLabel,
     onTranslate: (item) => navigate(`translate/${get(item, "id")}`),
-    onEdit: (item) => navigate(`edit/${get(item, "id")}`),
+    onEdit: (item) => navigateAdminDrawer(`edit/${get(item, "id")}`),
     onDelete: setItemToDelete,
   });
 
@@ -390,7 +392,7 @@ const Index = () => {
               />
             </Button>
             {canManageContent ? (
-              <Button onClick={() => navigate("create")} className="gap-1.5">
+              <Button onClick={() => navigateAdminDrawer("create")} className="gap-1.5">
                 <PlusIcon />
                 Yo'nalish qo'shish
               </Button>

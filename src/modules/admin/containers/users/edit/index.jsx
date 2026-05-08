@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { get, isArray, isEqual, join, trim } from "lodash";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { CheckCircle2Icon, LoaderCircleIcon, PencilIcon } from "lucide-react";
 import { PhoneInput } from "@/components/ui/phone-input.jsx";
 import { toast } from "sonner";
 import { normalizeFormRoles, toggleFormRole } from "../config";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import {
   UnsavedChangesAlert,
@@ -40,10 +41,11 @@ const ROLE_OPTIONS = [
   { value: "NUTRITION_MANAGER", label: "Nutrition manager" },
   { value: "WORKOUT_MANAGER", label: "Workout manager" },
 ];
+const USERS_LIST_PATH = "/admin/users/list";
 
 const EditUser = () => {
-  const navigate = useNavigate();
   const { id } = useParams();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(USERS_LIST_PATH);
   const { canManageSupport } = useAdminPermissions();
 
   const { data: userData, isLoading } = useGetQuery({
@@ -111,7 +113,7 @@ const EditUser = () => {
       });
       toast.success("Foydalanuvchi yangilandi");
       setInitialForm(form);
-      unsavedChanges.runWithoutGuard(() => navigate("/admin/users/list"));
+      unsavedChanges.runWithoutGuard(closeAdminDrawer);
     } catch (error) {
       const message = get(error, "response.data.message");
       toast.error(
@@ -124,7 +126,7 @@ const EditUser = () => {
 
   const handleOpenChange = (open) => {
     if (!open) {
-      unsavedChanges.requestLeave(() => navigate("/admin/users/list"));
+      unsavedChanges.requestLeave(closeAdminDrawer);
     }
   };
 
@@ -243,9 +245,7 @@ const EditUser = () => {
             </Button>
             <Button
               variant="outline"
-              onClick={() =>
-                unsavedChanges.requestLeave(() => navigate("/admin/users/list"))
-              }
+              onClick={() => unsavedChanges.requestLeave(closeAdminDrawer)}
             >
               Bekor qilish
             </Button>

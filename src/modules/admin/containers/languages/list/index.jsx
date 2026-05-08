@@ -17,11 +17,13 @@ import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { GlobeIcon, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
+import { useAdminDrawerListNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useColumns } from "./columns.jsx";
 import { DeleteAlert } from "./delete-alert.jsx";
 
 const Index = () => {
   const navigate = useNavigate();
+  const navigateAdminDrawer = useAdminDrawerListNavigation();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const LANGUAGES_QUERY_KEY = ["admin", "languages"];
 
@@ -113,7 +115,7 @@ const Index = () => {
   const columns = useColumns({
     isUpdating,
     onToggleActive: handleToggleActive,
-    onEdit: (language) => navigate(`edit/${get(language, "id")}`),
+    onEdit: (language) => navigateAdminDrawer(`edit/${get(language, "id")}`),
     onDelete: setLanguageToDelete,
   });
 
@@ -178,7 +180,7 @@ const Index = () => {
             Ilovadagi tillarni qo'shing, tahrirlang va tartibini o'zgartiring
           </p>
         </div>
-        <Button onClick={() => navigate("create")} className="gap-1.5">
+        <Button onClick={() => navigateAdminDrawer("create")} className="gap-1.5">
           <PlusIcon />
           Til qo'shish
         </Button>

@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { find, get, isArray, join } from "lodash";
 import { toast } from "sonner";
 import { PencilIcon } from "lucide-react";
@@ -17,7 +17,10 @@ import {
 import PromoCodeForm, {
   emptyPromoCodeForm,
 } from "../components/promo-code-form.jsx";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
+
+const PREMIUM_PROMO_CODES_PATH = "/admin/premium/promo-codes";
 
 const formatDateValue = (dateStr) => {
   if (!dateStr) return "";
@@ -43,8 +46,10 @@ const createFormFromData = (data) => ({
 });
 
 const EditPromoCode = () => {
-  const navigate = useNavigate();
   const { id } = useParams();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation(
+    PREMIUM_PROMO_CODES_PATH,
+  );
   const { canManageGrowth } = useAdminPermissions();
 
   const { data: promoData, isLoading } = useGetQuery({
@@ -103,7 +108,7 @@ const EditPromoCode = () => {
         attributes,
       });
       toast.success("Promo kod yangilandi");
-      navigate("/admin/premium/promo-codes");
+      closeAdminDrawer();
     } catch (error) {
       const message = get(error, "response.data.message");
       toast.error(
@@ -112,10 +117,10 @@ const EditPromoCode = () => {
           : message || "Promo kodni saqlab bo'lmadi",
       );
     }
-  }, [canManageGrowth, form, id, navigate, patchMutation]);
+  }, [canManageGrowth, closeAdminDrawer, form, id, patchMutation]);
 
   const handleOpenChange = (open) => {
-    if (!open) navigate("/admin/premium/promo-codes");
+    if (!open) closeAdminDrawer();
   };
 
   return (
