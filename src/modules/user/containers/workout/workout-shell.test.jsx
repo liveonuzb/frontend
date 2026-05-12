@@ -16,6 +16,7 @@ const renderShell = (initialEntry) => {
             element={<div>Workout Session</div>}
           />
           <Route path="report" element={<div>Workout Report</div>} />
+          <Route path="running" element={<div>Workout Running</div>} />
           <Route path="exercises" element={<div>Workout Exercises</div>} />
         </Route>
       </Routes>
@@ -29,9 +30,17 @@ describe("WorkoutShell", () => {
 
     expect(screen.getAllByText("Home").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Plans").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Running").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Exercises").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Report").length).toBeGreaterThan(0);
     expect(screen.getByText("Workout Home")).toBeInTheDocument();
+  });
+
+  it("shows top tabs on the running workout tab", () => {
+    renderShell("/user/workout/running");
+
+    expect(screen.getAllByText("Running").length).toBeGreaterThan(0);
+    expect(screen.getByText("Workout Running")).toBeInTheDocument();
   });
 
   it("hides top tabs on deep workout session route", () => {

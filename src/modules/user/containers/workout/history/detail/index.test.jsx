@@ -31,7 +31,7 @@ vi.mock("@/hooks/app/use-workout-sessions", async (importOriginal) => {
   };
 });
 
-const renderPage = () => {
+const renderPage = (initialEntry = "/user/workout/history/session-1") => {
   const router = createMemoryRouter(
     [
       {
@@ -46,8 +46,12 @@ const renderPage = () => {
         path: "/user/workout/plans/:planId/days/:dayIndex",
         element: <div data-testid="plan-day-route">Plan day route</div>,
       },
+      {
+        path: "/user/workout/running/:sessionId",
+        element: <div data-testid="running-detail-route">Running detail route</div>,
+      },
     ],
-    { initialEntries: ["/user/workout/history/session-1"] },
+    { initialEntries: [initialEntry] },
   );
 
   render(<RouterProvider router={router} />);
@@ -142,5 +146,47 @@ describe("SessionHistoryDetailPage", () => {
     fireEvent.click(screen.getByText("Plan kuni"));
 
     expect(router.state.location.pathname).toBe("/user/workout/plans/plan-1/days/0");
+  });
+
+  it("renders outdoor run metrics and links to the running detail page", () => {
+    useWorkoutSessionHistoryItem.mockReturnValue({
+      session: {
+        id: "run-session-1",
+        activityType: "OUTDOOR_RUN",
+        focus: "Outdoor run",
+        endedAt: new Date().toISOString(),
+        durationSeconds: 1800,
+        estimatedCalories: 320,
+        distanceMeters: 5000,
+        averagePaceSecondsPerKm: 360,
+        exerciseSummaries: [
+          {
+            exerciseKey: "outdoor-run",
+            exerciseName: "Outdoor run",
+            distanceMeters: 5000,
+            durationSeconds: 1800,
+            averagePaceSecondsPerKm: 360,
+          },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    useWorkoutSessionHistory.mockReturnValue({
+      sessions: [{ id: "run-session-1" }],
+    });
+
+    const router = renderPage("/user/workout/history/run-session-1");
+
+    expect(screen.getByText("Outdoor run")).toBeInTheDocument();
+    expect(screen.getByText("5.0 km")).toBeInTheDocument();
+    expect(screen.getByText("6:00 /km")).toBeInTheDocument();
+    expect(screen.queryByText("Bajarilgan mashqlar")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("Running detail"));
+
+    expect(router.state.location.pathname).toBe("/user/workout/running/run-session-1");
+    expect(screen.getByTestId("running-detail-route")).toBeInTheDocument();
   });
 });

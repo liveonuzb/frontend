@@ -8,6 +8,7 @@ import {
   DumbbellIcon,
   FlameIcon,
   HistoryIcon,
+  RouteIcon,
   TimerIcon,
 } from "lucide-react";
 import PageLoader from "@/components/page-loader/index.jsx";
@@ -18,6 +19,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useWorkoutPlans } from "@/hooks/app/use-workout-plans";
 import { useWorkoutSessionHistory } from "@/hooks/app/use-workout-sessions";
+import { formatRunningDistance, formatRunningPace } from "@/lib/running-metrics";
+import {
+  getWorkoutSessionDistanceMeters,
+  getWorkoutSessionPaceSecondsPerKm,
+  isOutdoorRunningSession,
+} from "@/lib/workout-session-metrics";
 import { useBreadcrumbStore } from "@/store";
 
 const formatDateTime = (value) => {
@@ -439,69 +446,119 @@ const SessionHistoryPage = () => {
             </div>
 
             <div className="space-y-3">
-              {map(filteredSessions, (session) => (
-                <button
-                  key={get(session, "id")}
-                  type="button"
-                  onClick={() =>
-                    navigate(`/user/workout/history/${get(session, "id")}`)
-                  }
-                  className="w-full rounded-3xl border bg-card text-left shadow-sm transition hover:border-primary/40 hover:bg-primary/5"
-                >
-                  <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="text-lg font-black">
-                          {get(session, "focus") || get(session, "planName") || "Workout"}
-                        </h2>
-                        <Badge variant="outline">
-                          Day {(Number(get(session, "planDayIndex")) || 0) + 1}
-                        </Badge>
-                        <Badge variant="secondary">
-                          <CheckCircle2Icon />
-                          Yakunlandi
-                        </Badge>
-                      </div>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {get(session, "planName") || "Workout plan"}
-                      </p>
-                      <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                        <span className="inline-flex items-center gap-1.5">
-                          <CalendarDaysIcon className="size-4" />
-                          {formatDateTime(get(session, "endedAt"))}
-                        </span>
-                        <span className="inline-flex items-center gap-1.5">
-                          <TimerIcon className="size-4" />
-                          {formatDuration(get(session, "durationSeconds"))}
-                        </span>
-                        <span className="inline-flex items-center gap-1.5">
-                          <FlameIcon className="size-4" />
-                          {get(session, "estimatedCalories", 0)} kcal
-                        </span>
-                      </div>
-                    </div>
+              {map(filteredSessions, (session) => {
+                const isRunning = isOutdoorRunningSession(session);
+                const sessionId = get(session, "id");
+                const distanceMeters = getWorkoutSessionDistanceMeters(session);
+                const paceSecondsPerKm = getWorkoutSessionPaceSecondsPerKm(session);
 
-                    <div className="grid grid-cols-3 gap-3 sm:min-w-60">
-                      <div className="rounded-2xl bg-muted/30 px-3 py-3 text-center">
-                        <p className="text-xs text-muted-foreground">Set</p>
-                        <p className="mt-1 font-black">
-                          {get(session, "completedSets", 0)}/{get(session, "totalSets", 0)}
+                return (
+                  <button
+                    key={sessionId}
+                    type="button"
+                    onClick={() =>
+                      navigate(
+                        isRunning
+                          ? `/user/workout/running/${sessionId}`
+                          : `/user/workout/history/${sessionId}`,
+                      )
+                    }
+                    className="w-full rounded-3xl border bg-card text-left shadow-sm transition hover:border-primary/40 hover:bg-primary/5"
+                  >
+                    <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h2 className="text-lg font-black">
+                            {get(session, "focus") ||
+                              get(session, "planName") ||
+                              (isRunning ? "Outdoor run" : "Workout")}
+                          </h2>
+                          {isRunning ? (
+                            <Badge variant="outline">
+                              <RouteIcon />
+                              Running
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline">
+                              <DumbbellIcon />
+                              Day {(Number(get(session, "planDayIndex")) || 0) + 1}
+                            </Badge>
+                          )}
+                          <Badge variant="secondary">
+                            <CheckCircle2Icon />
+                            Yakunlandi
+                          </Badge>
+                        </div>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {isRunning
+                            ? "GPS running session"
+                            : get(session, "planName") || "Workout plan"}
                         </p>
+                        <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                          <span className="inline-flex items-center gap-1.5">
+                            <CalendarDaysIcon className="size-4" />
+                            {formatDateTime(get(session, "endedAt"))}
+                          </span>
+                          <span className="inline-flex items-center gap-1.5">
+                            <TimerIcon className="size-4" />
+                            {formatDuration(get(session, "durationSeconds"))}
+                          </span>
+                          <span className="inline-flex items-center gap-1.5">
+                            <FlameIcon className="size-4" />
+                            {get(session, "estimatedCalories", 0)} kcal
+                          </span>
+                        </div>
                       </div>
-                      <div className="rounded-2xl bg-muted/30 px-3 py-3 text-center">
-                        <p className="text-xs text-muted-foreground">Mashq</p>
-                        <p className="mt-1 font-black">
-                          {get(session, "completedExerciseCount", 0)}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl bg-muted/30 px-3 py-3 text-center">
-                        <p className="text-xs text-muted-foreground">Volume</p>
-                        <p className="mt-1 font-black">{get(session, "totalVolumeKg", 0)} kg</p>
+
+                      <div className="grid grid-cols-3 gap-3 sm:min-w-60">
+                        {isRunning ? (
+                          <>
+                            <div className="rounded-2xl bg-muted/30 px-3 py-3 text-center">
+                              <p className="text-xs text-muted-foreground">Masofa</p>
+                              <p className="mt-1 font-black">
+                                {formatRunningDistance(distanceMeters)}
+                              </p>
+                            </div>
+                            <div className="rounded-2xl bg-muted/30 px-3 py-3 text-center">
+                              <p className="text-xs text-muted-foreground">Vaqt</p>
+                              <p className="mt-1 font-black">
+                                {formatDuration(get(session, "durationSeconds"))}
+                              </p>
+                            </div>
+                            <div className="rounded-2xl bg-muted/30 px-3 py-3 text-center">
+                              <p className="text-xs text-muted-foreground">Pace</p>
+                              <p className="mt-1 font-black">
+                                {formatRunningPace(paceSecondsPerKm)}
+                              </p>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="rounded-2xl bg-muted/30 px-3 py-3 text-center">
+                              <p className="text-xs text-muted-foreground">Set</p>
+                              <p className="mt-1 font-black">
+                                {get(session, "completedSets", 0)}/{get(session, "totalSets", 0)}
+                              </p>
+                            </div>
+                            <div className="rounded-2xl bg-muted/30 px-3 py-3 text-center">
+                              <p className="text-xs text-muted-foreground">Mashq</p>
+                              <p className="mt-1 font-black">
+                                {get(session, "completedExerciseCount", 0)}
+                              </p>
+                            </div>
+                            <div className="rounded-2xl bg-muted/30 px-3 py-3 text-center">
+                              <p className="text-xs text-muted-foreground">Volume</p>
+                              <p className="mt-1 font-black">
+                                {get(session, "totalVolumeKg", 0)} kg
+                              </p>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           </>
         )}
