@@ -104,14 +104,14 @@ const FoodLogDrawer = ({
           useCORS: true,
         });
         const blob = await new Promise((resolve) =>
-          canvas.toBlob(resolve, "image/png"),
+          canvas.toBlob(resolve, "image/webp", 0.84),
         );
 
         if (blob) {
           const file = new File(
             [blob],
-            `meal-${food.id || Date.now()}.png`,
-            { type: "image/png" },
+            `meal-${food.id || Date.now()}.webp`,
+            { type: "image/webp" },
           );
 
           if (navigator.canShare({ files: [file] })) {
