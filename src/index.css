@@ -822,38 +822,38 @@ html {
 html[data-app-mode="madagascar"] {
   .meals-widget {
     .breakfast {
-      background: url("/public/madagascar/dashboard/light/breakfast.png")
+      background: url("/madagascar/dashboard/light/breakfast.webp")
         no-repeat center center;
       background-size: contain;
     }
     .lunch {
-      background: url("/public/madagascar/dashboard/light/lunch.png") no-repeat
+      background: url("/madagascar/dashboard/light/lunch.webp") no-repeat
         center center;
       background-size: contain;
     }
     .dinner {
-      background: url("/public/madagascar/dashboard/light/dinner.png") no-repeat
+      background: url("/madagascar/dashboard/light/dinner.webp") no-repeat
         center center;
       background-size: contain;
     }
     .snack {
-      background: url("/public/madagascar/dashboard/light/snack.png") no-repeat
+      background: url("/madagascar/dashboard/light/snack.webp") no-repeat
         center center;
       background-size: contain;
     }
   }
   .water-widget {
-    background: url("/public/madagascar/dashboard/light/water-widget.png")
+    background: url("/madagascar/dashboard/light/water-widget.webp")
       no-repeat center center;
     background-size: cover;
 
     .indicator {
-      background: url("/public/madagascar/dashboard/light/water-indicator.png")
+      background: url("/madagascar/dashboard/light/water-indicator.webp")
         no-repeat center center;
       background-size: cover;
     }
     .add {
-      background: url("/public/madagascar/dashboard/light/water-add.png")
+      background: url("/madagascar/dashboard/light/water-add.webp")
         no-repeat center center;
       background-size: cover;
       transition:
@@ -871,43 +871,43 @@ html[data-app-mode="madagascar"] {
       }
     }
     .icon {
-      background: url("/public/madagascar/dashboard/light/water-icon.png")
+      background: url("/madagascar/dashboard/light/water-icon.webp")
         no-repeat center center;
       background-size: cover;
     }
   }
   .mood-widget {
     .how {
-      background: url("/public/madagascar/mood/male/how.png") no-repeat center
+      background: url("/madagascar/mood/male/how.webp") no-repeat center
         center;
       background-size: contain;
     }
     .bad {
-      background: url("/public/madagascar/mood/male/bad.png") no-repeat center
+      background: url("/madagascar/mood/male/bad.webp") no-repeat center
         center;
       background-size: contain;
     }
 
     .tired {
-      background: url("/public/madagascar/mood/male/tired.png") no-repeat center
+      background: url("/madagascar/mood/male/tired.webp") no-repeat center
         center;
       background-size: contain;
     }
 
     .neutral {
-      background: url("/public/madagascar/mood/male/neutral.png") no-repeat
+      background: url("/madagascar/mood/male/neutral.webp") no-repeat
         center center;
       background-size: contain;
     }
 
     .good {
-      background: url("/public/madagascar/mood/male/good.png") no-repeat center
+      background: url("/madagascar/mood/male/good.webp") no-repeat center
         center;
       background-size: contain;
     }
 
     .amazing {
-      background: url("/public/madagascar/mood/male/amazing.png") no-repeat
+      background: url("/madagascar/mood/male/amazing.webp") no-repeat
         center center;
       background-size: contain;
     }
@@ -915,37 +915,37 @@ html[data-app-mode="madagascar"] {
   .water-cup {
     .cup_50 {
       background:
-        url("/public/madagascar/cups/50.png") no-repeat center,
+        url("/madagascar/cups/50.webp") no-repeat center,
         no-repeat center center;
       background-size: contain;
     }
     .cup_150 {
       background:
-        url("/public/madagascar/cups/150.png") no-repeat center,
+        url("/madagascar/cups/150.webp") no-repeat center,
         no-repeat center center;
       background-size: contain;
     }
     .cup_250 {
       background:
-        url("/public/madagascar/cups/250.png") no-repeat center,
+        url("/madagascar/cups/250.webp") no-repeat center,
         no-repeat center center;
       background-size: contain;
     }
     .cup_400 {
       background:
-        url("/public/madagascar/cups/400.png") no-repeat center,
+        url("/madagascar/cups/400.webp") no-repeat center,
         no-repeat center center;
       background-size: contain;
     }
     .cup_500 {
       background:
-        url("/public/madagascar/cups/500.png") no-repeat center,
+        url("/madagascar/cups/500.webp") no-repeat center,
         no-repeat center center;
       background-size: contain;
     }
     .cup_custom {
       background:
-        url("/public/madagascar/cups/custom.png") no-repeat center,
+        url("/madagascar/cups/custom.webp") no-repeat center,
         no-repeat center center;
       background-size: contain;
     }
@@ -955,22 +955,22 @@ html[data-app-mode="madagascar"] {
 html[data-app-mode="madagascar"].dark {
   .meals-widget {
     .breakfast {
-      background: url("/public/madagascar/dashboard/light/breakfast.png")
+      background: url("/madagascar/dashboard/light/breakfast.webp")
         no-repeat center center;
       background-size: contain;
     }
     .lunch {
-      background: url("/public/madagascar/dashboard/light/lunch.png") no-repeat
+      background: url("/madagascar/dashboard/light/lunch.webp") no-repeat
         center center;
       background-size: contain;
     }
     .dinner {
-      background: url("/public/madagascar/dashboard/light/dinner.png") no-repeat
+      background: url("/madagascar/dashboard/light/dinner.webp") no-repeat
         center center;
       background-size: contain;
     }
     .snack {
-      background: url("/public/madagascar/dashboard/light/snack.png") no-repeat
+      background: url("/madagascar/dashboard/light/snack.webp") no-repeat
         center center;
       background-size: contain;
     }
