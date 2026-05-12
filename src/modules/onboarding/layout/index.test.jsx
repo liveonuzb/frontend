@@ -141,7 +141,10 @@ const renderOnboardingLayout = (initialPath) =>
               </>
             }
           />
-          <Route path="personalizing" element={<div>Personalizing child</div>} />
+          <Route
+            path="personalizing"
+            element={<div>Personalizing child</div>}
+          />
           <Route
             path="metabolism-calculating"
             element={<div>Metabolism child</div>}
@@ -155,7 +158,10 @@ const renderOnboardingLayout = (initialPath) =>
               </>
             }
           />
-          <Route path="plan-generating" element={<div>Plan generating child</div>} />
+          <Route
+            path="plan-generating"
+            element={<div>Plan generating child</div>}
+          />
           <Route path="plan-ready" element={<div>Plan ready child</div>} />
           <Route path="generating" element={<div>Generating child</div>} />
         </Route>
@@ -302,6 +308,10 @@ describe("Onboarding layout post-result behavior", () => {
     );
 
     expect(generating.container.querySelector("header")).toBeNull();
+    expect(generating.container.querySelector("main")).toHaveClass("pb-0");
+    expect(generating.container.querySelector("footer")).toHaveClass("px-0");
+    expect(generating.container.querySelector("footer")).toHaveClass("pb-0");
+    expect(generating.container.querySelector("footer")).toHaveClass("pt-0");
   });
 
   it("hydrates persisted user onboarding when server draft is empty", async () => {

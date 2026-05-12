@@ -419,7 +419,9 @@ const OnboardingLayoutInner = () => {
     ? "max-w-[430px]"
     : maxWidthClass;
   const hasFixedHeader =
-    showProgress && !isStandalonePostOnboardingRoute && !isMetabolismResultRoute;
+    showProgress &&
+    !isStandalonePostOnboardingRoute &&
+    !isMetabolismResultRoute;
   const hasCompactFooterReserve =
     !isCoachStep && COMPACT_FOOTER_RESERVE_STEPS.has(userCurrentStep);
   const hasDenseFooterReserve =
@@ -473,7 +475,9 @@ const OnboardingLayoutInner = () => {
               )}
               aria-label={t("onboarding.back")}
             >
-              <ChevronLeft className={cn(isMetabolismResultRoute ? "h-5 w-5" : "h-4 w-4")} />
+              <ChevronLeft
+                className={cn(isMetabolismResultRoute ? "h-5 w-5" : "h-4 w-4")}
+              />
             </button>
 
             {isMetabolismResultRoute ? (
@@ -520,22 +524,22 @@ const OnboardingLayoutInner = () => {
                   ) : null}
                 </div>
                 <div className="flex items-center gap-2">
-                <div
-                  className="relative h-2 min-w-0 flex-1 rounded-full bg-muted overflow-hidden"
-                  role="progressbar"
-                  aria-label={progressLabel}
-                  aria-valuemin={0}
-                  aria-valuemax={totalSteps}
-                  aria-valuenow={
-                    isResultRoute ? totalSteps : currentStepIndex + 1
-                  }
-                >
                   <div
-                    className="absolute inset-y-0 left-0 rounded-full bg-primary transition-all duration-500 ease-out"
-                    style={{ width: `${progress * 100}%` }}
-                  />
+                    className="relative h-2 min-w-0 flex-1 rounded-full bg-muted overflow-hidden"
+                    role="progressbar"
+                    aria-label={progressLabel}
+                    aria-valuemin={0}
+                    aria-valuemax={totalSteps}
+                    aria-valuenow={
+                      isResultRoute ? totalSteps : currentStepIndex + 1
+                    }
+                  >
+                    <div
+                      className="absolute inset-y-0 left-0 rounded-full bg-primary transition-all duration-500 ease-out"
+                      style={{ width: `${progress * 100}%` }}
+                    />
+                  </div>
                 </div>
-              </div>
               </div>
             )}
           </div>
@@ -545,13 +549,13 @@ const OnboardingLayoutInner = () => {
       <main
         className={cn(
           "flex min-h-0 flex-1 flex-col",
-          isMetabolismResultRoute
+          isMetabolismResultRoute || isStandalonePostOnboardingRoute
             ? "pb-0"
             : hasDenseFooterReserve
-            ? "pb-[calc(5.25rem+env(safe-area-inset-bottom))] sm:pb-[calc(5.75rem+env(safe-area-inset-bottom))]"
-            : hasCompactFooterReserve
-              ? "pb-[calc(6rem+env(safe-area-inset-bottom))] sm:pb-[calc(6.5rem+env(safe-area-inset-bottom))]"
-              : "pb-[calc(8rem+env(safe-area-inset-bottom))] sm:pb-[calc(8.5rem+env(safe-area-inset-bottom))]",
+              ? "pb-[calc(5.25rem+env(safe-area-inset-bottom))] sm:pb-[calc(5.75rem+env(safe-area-inset-bottom))]"
+              : hasCompactFooterReserve
+                ? "pb-[calc(6rem+env(safe-area-inset-bottom))] sm:pb-[calc(6.5rem+env(safe-area-inset-bottom))]"
+                : "pb-[calc(8rem+env(safe-area-inset-bottom))] sm:pb-[calc(8.5rem+env(safe-area-inset-bottom))]",
           isCoachStep ? "overflow-y-auto" : "overflow-x-hidden",
           hasFixedHeader && "pt-[88px]",
           isMetabolismResultRoute &&
@@ -572,7 +576,9 @@ const OnboardingLayoutInner = () => {
           "pointer-events-none fixed inset-x-0 bottom-0 z-40 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3",
           isMetabolismResultRoute
             ? "px-0 pb-0 pt-0 bg-gradient-to-t from-[#070503] via-[#070503]/86 to-transparent backdrop-blur-sm"
-            : "bg-transparent backdrop-blur-sm",
+            : isStandalonePostOnboardingRoute
+              ? "px-0 pb-0 pt-0"
+              : "bg-transparent backdrop-blur-sm",
         )}
       >
         <div className={cn("pointer-events-auto mx-auto", shellMaxWidthClass)}>

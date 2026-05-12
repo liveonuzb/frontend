@@ -266,6 +266,10 @@ describe("PersonalizingContainer", () => {
 
     render(<GeneratingContainer />);
 
+    expect(screen.getByTestId("ai-plan-generation")).toHaveClass(
+      "ai-plan-generation--error",
+      "ai-plan-generation--complete",
+    );
     expect(
       screen.getByText(
         "- Weekly average calories are outside the target tolerance.",

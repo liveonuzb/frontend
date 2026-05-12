@@ -8,7 +8,7 @@ import {
   RefreshCcwIcon,
   SparklesIcon,
 } from "lucide-react";
-import { filter, find, get, map, size } from "lodash";
+import { filter, find, get, gte, map, size } from "lodash";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -161,9 +161,10 @@ const AiPlanGeneration = ({
 }) => {
   const { t } = useTranslation();
   const progressValue = clampProgress(progress);
-  const stepStates = React.useMemo(
-    () => buildLoadingStepStates(progressValue, planGenerationChecklist),
-    [progressValue],
+  const isComplete = gte(progressValue, 100);
+  const stepStates = buildLoadingStepStates(
+    progressValue,
+    planGenerationChecklist,
   );
   const activeStep =
     find(stepStates, { status: "active" }) ??
@@ -181,7 +182,14 @@ const AiPlanGeneration = ({
   useOnboardingFooter(null);
 
   return (
-    <section className="ai-plan-generation" data-testid="ai-plan-generation">
+    <section
+      className={cn(
+        "ai-plan-generation",
+        error && "ai-plan-generation--error",
+        isComplete && "ai-plan-generation--complete",
+      )}
+      data-testid="ai-plan-generation"
+    >
       <div className="ai-plan-generation__background" aria-hidden="true" />
       <article className="ai-plan-generation__card">
         <div className="ai-plan-generation__decor" aria-hidden="true" />

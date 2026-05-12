@@ -1663,6 +1663,215 @@ html[data-app-mode="madagascar"] .ai-plan-generation__decor {
   }
 }
 
+@media (max-width: 420px), (max-height: 760px) {
+  .ai-plan-generation--error.ai-plan-generation--complete {
+    align-items: center;
+    padding: max(0.2rem, env(safe-area-inset-top)) 0.4rem
+      max(0.2rem, env(safe-area-inset-bottom));
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__card {
+    width: min(100%, 35rem);
+    border-radius: 1rem;
+    padding: 0.58rem 0.72rem;
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__ring {
+    width: clamp(5.4rem, 22svh, 5.8rem);
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__ring::before {
+    inset: -0.28rem;
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__ring::after {
+    inset: 0.34rem;
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__ring-icon {
+    width: 0.9rem;
+    height: 0.9rem;
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__percent {
+    font-size: clamp(1.65rem, 8.4vw, 1.9rem);
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__copy {
+    margin-top: 0.42rem;
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__badge {
+    min-height: 1.45rem;
+    gap: 0.3rem;
+    padding: 0.18rem 0.48rem;
+    font-size: 0.62rem;
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__badge
+    svg {
+    width: 0.78rem;
+    height: 0.78rem;
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__title {
+    margin-top: 0.42rem;
+    font-size: clamp(1.2rem, 5.2vw, 1.36rem);
+    line-height: 1.02;
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__subtitle {
+    margin-top: 0.34rem;
+    gap: 0.35rem;
+    font-size: clamp(0.7rem, 3.05vw, 0.8rem);
+    line-height: 1.2;
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__status-dot {
+    width: 0.36rem;
+    height: 0.36rem;
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__linear {
+    height: 0.38rem;
+    margin-top: 0.46rem;
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__steps {
+    gap: 0.28rem;
+    margin-top: 0.48rem;
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__steps::before {
+    top: 0.88rem;
+    bottom: 0.88rem;
+    left: 0.79rem;
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__step {
+    min-height: 2.05rem;
+    grid-template-columns: 1.5rem minmax(0, 1fr);
+    gap: 0.38rem;
+    border-radius: 0.74rem;
+    padding: 0.28rem 0.44rem;
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__step-marker {
+    width: 1.38rem;
+    height: 1.38rem;
+    border-width: 1px;
+    font-size: 0.62rem;
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__step-icon {
+    width: 0.74rem;
+    height: 0.74rem;
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__step-title {
+    font-size: clamp(0.66rem, 2.75vw, 0.72rem);
+    line-height: 1.13;
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__error {
+    margin-top: 0.46rem;
+    gap: 0.38rem;
+    border-radius: 0.78rem;
+    padding: 0.48rem;
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__error-heading {
+    gap: 0.32rem;
+    font-size: 0.68rem;
+    line-height: 1.18;
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__error-heading
+    svg {
+    width: 0.78rem;
+    height: 0.78rem;
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__issues {
+    gap: 0.2rem;
+    font-size: 0.66rem;
+    line-height: 1.25;
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__actions {
+    gap: 0.34rem;
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__actions
+    [data-slot="button"] {
+    min-height: 2rem;
+    height: 2rem;
+    font-size: 0.76rem;
+  }
+
+  .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__actions
+    svg {
+    width: 0.86rem;
+    height: 0.86rem;
+  }
+
+  html[data-app-mode="focus"]
+    .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__decor,
+  html.dark[data-app-mode="focus"]
+    .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__decor {
+    top: 0.45rem;
+    right: 0.45rem;
+    width: 3rem;
+    opacity: 0.22;
+  }
+
+  html[data-app-mode="zen"]
+    .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__decor {
+    top: 0.42rem;
+    right: 0.42rem;
+    width: 3.25rem;
+    opacity: 0.36;
+  }
+
+  html[data-app-mode="madagascar"]
+    .ai-plan-generation--error.ai-plan-generation--complete
+    .ai-plan-generation__decor {
+    top: -1.2rem;
+    right: -1.1rem;
+    width: 6.1rem;
+    opacity: 0.22;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ai-plan-generation *,
   .ai-plan-generation *::before,
