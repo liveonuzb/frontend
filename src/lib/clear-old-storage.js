@@ -1,5 +1,5 @@
 export const clearOldClientStorage = () => {
-  const STORAGE_VERSION = "v1";
+  const STORAGE_VERSION = "v2";
 
   const currentVersion = localStorage.getItem("storage_version");
 
