@@ -41,6 +41,10 @@ const renderPage = () => {
         path: "/user/workout/history/:sessionId",
         element: <div data-testid="history-detail-route">History detail route</div>,
       },
+      {
+        path: "/user/workout/running/:sessionId",
+        element: <div data-testid="running-detail-route">Running detail route</div>,
+      },
     ],
     { initialEntries: ["/user/workout/history"] },
   );
@@ -110,6 +114,25 @@ describe("SessionHistoryPage", () => {
           completedExerciseCount: 1,
           exerciseSummaries: [],
         },
+        {
+          id: "run-session-1",
+          activityType: "OUTDOOR_RUN",
+          focus: "Outdoor run",
+          endedAt: todayIso,
+          durationSeconds: 1800,
+          estimatedCalories: 320,
+          distanceMeters: 5000,
+          averagePaceSecondsPerKm: 360,
+          exerciseSummaries: [
+            {
+              exerciseKey: "outdoor-run",
+              exerciseName: "Outdoor run",
+              distanceMeters: 5000,
+              durationSeconds: 1800,
+              averagePaceSecondsPerKm: 360,
+            },
+          ],
+        },
       ],
       isLoading: false,
       isError: false,
@@ -120,8 +143,8 @@ describe("SessionHistoryPage", () => {
         {
           id: "plan-1",
           status: "ACTIVE",
-          startDate: new Date(now.getFullYear(), now.getMonth(), 26).toISOString(),
-          createdAt: new Date(now.getFullYear(), now.getMonth(), 26).toISOString(),
+          startDate: new Date(now.getFullYear(), now.getMonth(), 1).toISOString(),
+          createdAt: new Date(now.getFullYear(), now.getMonth(), 1).toISOString(),
           schedule: [
             { exercises: [{ name: "Squat" }] },
             { exercises: [{ name: "Bench" }] },
@@ -152,6 +175,19 @@ describe("SessionHistoryPage", () => {
 
     expect(router.state.location.pathname).toBe("/user/workout/history/session-1");
     expect(screen.getByTestId("history-detail-route")).toBeInTheDocument();
+  });
+
+  it("routes outdoor runs to the running detail page with run metrics", () => {
+    const router = renderPage();
+
+    expect(screen.getByText("Outdoor run")).toBeInTheDocument();
+    expect(screen.getByText("5.0 km")).toBeInTheDocument();
+    expect(screen.getByText("6:00 /km")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("Outdoor run"));
+
+    expect(router.state.location.pathname).toBe("/user/workout/running/run-session-1");
+    expect(screen.getByTestId("running-detail-route")).toBeInTheDocument();
   });
 
   it("filters sessions by selected period and shows streak", () => {

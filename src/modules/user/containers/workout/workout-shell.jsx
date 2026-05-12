@@ -6,6 +6,7 @@ import { WORKOUT_NAV_ITEMS } from "./workout-nav-items.js";
 const PRIMARY_TAB_PATHS = [
   "/user/workout/home",
   "/user/workout/plans",
+  "/user/workout/running",
   "/user/workout/exercises",
   "/user/workout/report",
 ];

@@ -3,6 +3,7 @@ import {
   ClipboardListIcon,
   DumbbellIcon,
   HouseIcon,
+  RouteIcon,
 } from "lucide-react";
 
 export const WORKOUT_NAV_ITEMS = [
@@ -10,13 +11,20 @@ export const WORKOUT_NAV_ITEMS = [
     to: "/user/workout/home",
     label: "Home",
     icon: HouseIcon,
-    match: (pathname) => pathname === "/user/workout" || pathname.startsWith("/user/workout/home"),
+    match: (pathname) =>
+      pathname === "/user/workout" || pathname.startsWith("/user/workout/home"),
   },
   {
     to: "/user/workout/plans",
     label: "Plans",
     icon: ClipboardListIcon,
     match: (pathname) => pathname.startsWith("/user/workout/plans"),
+  },
+  {
+    to: "/user/workout/running",
+    label: "Running",
+    icon: RouteIcon,
+    match: (pathname) => pathname.startsWith("/user/workout/running"),
   },
   {
     to: "/user/workout/exercises",
