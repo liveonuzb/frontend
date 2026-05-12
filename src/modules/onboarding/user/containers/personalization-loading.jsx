@@ -100,7 +100,7 @@ const LoadingShell = ({
                     ) : (
                       <SparklesIcon className="mb-1 size-5 text-primary sm:mb-2 sm:size-7" />
                     )}
-                    <span className="text-3xl font-black tracking-tight sm:text-4xl">
+                    <span className="text-2xl font-black tracking-tight sm:text-3xl">
                       {clampProgress(progress)}%
                     </span>
                   </div>
