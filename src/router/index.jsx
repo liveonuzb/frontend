@@ -4,7 +4,10 @@ import { AlertTriangleIcon, RefreshCwIcon } from "lucide-react";
 import PageLoader from "@/components/page-loader/index.jsx";
 import { useAuthStore, useLanguageStore, useAppModeStore } from "@/store";
 import ProtectedRoute from "@/components/protected-route";
-import { getPostAuthRoute } from "@/modules/auth/lib/auth-utils.js";
+import {
+  getAuthErrorMessage,
+  getPostAuthRoute,
+} from "@/modules/auth/lib/auth-utils.js";
 import { useTelegram } from "@/hooks/use-telegram";
 import { useTelegramAuth } from "@/hooks/use-telegram-auth";
 import { useTelegramBackButton } from "@/hooks/use-telegram-back-button";
@@ -35,7 +38,7 @@ const renderRouteElement = (element) => (
   <Suspense fallback={<PageLoader />}>{element}</Suspense>
 );
 
-const TelegramAuthError = ({ onRetry }) => (
+const TelegramAuthError = ({ error, onRetry }) => (
   <div className="flex min-h-svh items-center justify-center bg-background px-6">
     <div className="flex w-full max-w-sm flex-col items-center gap-4 text-center">
       <div className="flex size-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
@@ -46,8 +49,10 @@ const TelegramAuthError = ({ onRetry }) => (
           Telegram orqali kirib bo'lmadi
         </h1>
         <p className="text-sm text-muted-foreground">
-          Sessiya muddati tugagan bo'lishi mumkin. Telegramdan qayta oching yoki
-          yana urinib ko'ring.
+          {getAuthErrorMessage(
+            error,
+            "Sessiya muddati tugagan bo'lishi mumkin. Telegramdan qayta oching yoki yana urinib ko'ring.",
+          )}
         </p>
       </div>
       <Button type="button" onClick={onRetry}>
@@ -82,17 +87,21 @@ const Index = () => {
 
   if (isTelegramWebApp && !isAuthenticated) {
     if (telegramAuthError) {
-      return <TelegramAuthError onRetry={retryTelegramAuth} />;
+      return (
+        <TelegramAuthError
+          error={telegramAuthError}
+          onRetry={retryTelegramAuth}
+        />
+      );
     }
 
     return <PageLoader />;
   }
 
-  // Pre-auth onboarding flow: language -> mode -> auth -> onboarding
-  // Telegram web app skips these since it has its own auth flow,
-  // EXCEPT for new auto-registered users who still need to pick language/mode
-  // before set-password (passwordSetupRequired = true).
-  if (!isTelegramWebApp || passwordSetupRequired) {
+  // Pre-auth onboarding flow: language -> mode -> auth -> onboarding.
+  // Authenticated Telegram WebApp users must be allowed to finish password setup
+  // before any public language/mode redirect can run.
+  if (!isAuthenticated && !isTelegramWebApp) {
     const referralPaths = ["/r/", "/ref/", "/join"];
     const isReferralPath = referralPaths.some((path) =>
       location.pathname.startsWith(path),

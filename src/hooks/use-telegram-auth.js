@@ -33,7 +33,6 @@ export function useTelegramAuth() {
         completeAuthentication(data);
       })
       .catch((error) => {
-        console.error("Telegram auth failed:", error);
         setError(error);
       })
       .finally(() => {
