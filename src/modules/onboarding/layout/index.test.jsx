@@ -7,6 +7,7 @@ import Layout from "./index.jsx";
 const setFieldsMock = vi.hoisted(() => vi.fn());
 const setLastVisitedPathMock = vi.hoisted(() => vi.fn());
 const getQueryResultMock = vi.hoisted(() => vi.fn());
+const onboardingStoreStateMock = vi.hoisted(() => ({ value: {} }));
 
 vi.mock("react-i18next", () => ({
   initReactI18next: {
@@ -14,7 +15,17 @@ vi.mock("react-i18next", () => ({
     init: vi.fn(),
   },
   useTranslation: () => ({
-    t: (key) => key,
+    t: (key, values) => {
+      if (key === "onboarding.progress.label") {
+        return `${values.current}/${values.total} - ${values.section}`;
+      }
+
+      if (key.startsWith("onboarding.progress.sections.")) {
+        return key.replace("onboarding.progress.sections.", "");
+      }
+
+      return key;
+    },
   }),
 }));
 
@@ -29,6 +40,7 @@ vi.mock("@/store", () => ({
   useOnboardingStore: () => ({
     setFields: setFieldsMock,
     setLastVisitedPath: setLastVisitedPathMock,
+    ...onboardingStoreStateMock.value,
   }),
 }));
 
@@ -49,6 +61,60 @@ const renderOnboardingLayout = (initialPath) =>
       <Routes>
         <Route path="/user/onboarding" element={<Layout />}>
           <Route
+            path="gender"
+            element={
+              <>
+                <div>Gender child</div>
+                <PathProbe />
+              </>
+            }
+          />
+          <Route
+            path="age"
+            element={
+              <>
+                <div>Age child</div>
+                <PathProbe />
+              </>
+            }
+          />
+          <Route
+            path="height"
+            element={
+              <>
+                <div>Height child</div>
+                <PathProbe />
+              </>
+            }
+          />
+          <Route
+            path="current-weight"
+            element={
+              <>
+                <div>Current weight child</div>
+                <PathProbe />
+              </>
+            }
+          />
+          <Route
+            path="target-weight"
+            element={
+              <>
+                <div>Target weight child</div>
+                <PathProbe />
+              </>
+            }
+          />
+          <Route
+            path="goal"
+            element={
+              <>
+                <div>Goal child</div>
+                <PathProbe />
+              </>
+            }
+          />
+          <Route
             path="result"
             element={
               <>
@@ -66,7 +132,31 @@ const renderOnboardingLayout = (initialPath) =>
               </>
             }
           />
+          <Route
+            path="nutrition-preferences"
+            element={
+              <>
+                <div>Legacy nutrition child</div>
+                <PathProbe />
+              </>
+            }
+          />
           <Route path="personalizing" element={<div>Personalizing child</div>} />
+          <Route
+            path="metabolism-calculating"
+            element={<div>Metabolism child</div>}
+          />
+          <Route
+            path="metabolism-result"
+            element={
+              <>
+                <div>Metabolism result child</div>
+                <PathProbe />
+              </>
+            }
+          />
+          <Route path="plan-generating" element={<div>Plan generating child</div>} />
+          <Route path="plan-ready" element={<div>Plan ready child</div>} />
           <Route path="generating" element={<div>Generating child</div>} />
         </Route>
       </Routes>
@@ -78,6 +168,7 @@ describe("Onboarding layout post-result behavior", () => {
     setFieldsMock.mockClear();
     setLastVisitedPathMock.mockClear();
     getQueryResultMock.mockReturnValue({ data: undefined });
+    onboardingStoreStateMock.value = {};
   });
 
   it("renders result with fixed onboarding header, 100% progress, and review back path", () => {
@@ -95,14 +186,120 @@ describe("Onboarding layout post-result behavior", () => {
     );
   });
 
-  it("keeps personalizing and generating screens without fixed onboarding header", () => {
-    const personalizing = renderOnboardingLayout("/user/onboarding/personalizing");
+  it("renders metabolism result without the shared onboarding header", () => {
+    const { container } = renderOnboardingLayout(
+      "/user/onboarding/metabolism-result",
+    );
+
+    expect(container.querySelector("header")).toBeNull();
+    expect(screen.queryByText("Onboarding yakuniy bosqichi")).toBeNull();
+    expect(screen.queryByText("Yakuniy")).toBeNull();
+    expect(container.querySelector("main")).toHaveClass("pb-0");
+    expect(container.querySelector("main")).not.toHaveClass("pt-[88px]");
+    expect(container.querySelector("footer")).toHaveClass("px-0");
+    expect(container.querySelector("footer")).toHaveClass("pb-0");
+    expect(container.querySelector("footer")).toHaveClass("pt-0");
+  });
+
+  it("uses the review return path when editing a step from review", () => {
+    renderOnboardingLayout({
+      pathname: "/user/onboarding/goal",
+      state: { returnTo: "/user/onboarding/review" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "onboarding.back" }));
+
+    expect(screen.getByText("Review child")).toBeTruthy();
+    expect(screen.getByTestId("path")).toHaveTextContent(
+      "/user/onboarding/review",
+    );
+  });
+
+  it("maps legacy user routes to their canonical step progress", () => {
+    renderOnboardingLayout("/user/onboarding/nutrition-preferences");
+
+    expect(
+      screen.getByRole("progressbar", {
+        name: "14/25 - nutrition",
+      }),
+    ).toHaveAttribute("aria-valuenow", "14");
+  });
+
+  it("shows retry guidance when draft auto-save fails", () => {
+    onboardingStoreStateMock.value = {
+      draftSaveStatus: "error",
+      draftSaveError: "Network failed",
+    };
+
+    renderOnboardingLayout("/user/onboarding/review");
+
+    expect(screen.getByText("onboarding.autosave.errorRetry")).toBeTruthy();
+  });
+
+  it("allows user onboarding pages to use natural vertical scroll at the shell level", () => {
+    const { container } = renderOnboardingLayout("/user/onboarding/goal");
+    const main = container.querySelector("main");
+
+    expect(main).toHaveClass("overflow-x-hidden");
+    expect(main).not.toHaveClass("overflow-hidden");
+  });
+
+  it("uses compact footer reserve only for single-button hero steps", () => {
+    ["gender"].forEach((step) => {
+      const compact = renderOnboardingLayout(`/user/onboarding/${step}`);
+      const compactMain = compact.container.querySelector("main");
+
+      expect(compactMain).toHaveClass(
+        "pb-[calc(6rem+env(safe-area-inset-bottom))]",
+      );
+      expect(compactMain).not.toHaveClass(
+        "pb-[calc(8rem+env(safe-area-inset-bottom))]",
+      );
+
+      compact.unmount();
+    });
+  });
+
+  it("uses dense footer reserve for numeric picker steps", () => {
+    ["age", "height", "current-weight", "target-weight"].forEach((step) => {
+      const dense = renderOnboardingLayout(`/user/onboarding/${step}`);
+      const denseMain = dense.container.querySelector("main");
+
+      expect(denseMain).toHaveClass(
+        "pb-[calc(5.25rem+env(safe-area-inset-bottom))]",
+      );
+      expect(denseMain).not.toHaveClass(
+        "pb-[calc(6rem+env(safe-area-inset-bottom))]",
+      );
+
+      dense.unmount();
+    });
+  });
+
+  it("keeps the default footer reserve on multi-content steps", () => {
+    const defaultReserve = renderOnboardingLayout("/user/onboarding/review");
+    const defaultMain = defaultReserve.container.querySelector("main");
+
+    expect(defaultMain).toHaveClass(
+      "pb-[calc(8rem+env(safe-area-inset-bottom))]",
+    );
+    expect(defaultMain).not.toHaveClass(
+      "pb-[calc(6rem+env(safe-area-inset-bottom))]",
+    );
+  });
+
+  it("keeps calculating and generating screens without fixed onboarding header", () => {
+    const personalizing = renderOnboardingLayout(
+      "/user/onboarding/metabolism-calculating",
+    );
 
     expect(personalizing.container.querySelector("header")).toBeNull();
 
     personalizing.unmount();
 
-    const generating = renderOnboardingLayout("/user/onboarding/generating");
+    const generating = renderOnboardingLayout(
+      "/user/onboarding/plan-generating",
+    );
 
     expect(generating.container.querySelector("header")).toBeNull();
   });

@@ -18,7 +18,7 @@ const hasCompletedStep = (state, step) =>
   state.completedUserOnboardingSteps.includes(step);
 
 export const getNextUserOnboardingPath = (state) => {
-  if (!hasValue(state.firstName) || !hasValue(state.lastName)) {
+  if (!hasValue(state.firstName)) {
     return "name";
   }
 

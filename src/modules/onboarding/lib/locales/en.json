@@ -9,9 +9,24 @@
     "autosave": {
       "saving": "Saving",
       "saved": "Saved",
-      "error": "Not saved"
+      "error": "Not saved",
+      "errorRetry": "Not saved, will retry on the next change"
+    },
+    "progress": {
+      "label": "{{current}}/{{total}} - {{section}}",
+      "complete": "Final onboarding step",
+      "sections": {
+        "profile": "Profile",
+        "goal": "Goal",
+        "nutrition": "Nutrition",
+        "health": "Health",
+        "workout": "Workout",
+        "review": "Review",
+        "coach": "Coach profile"
+      }
     },
     "skip": "Skip",
+    "skipForNow": "Skip for now",
     "name": {
       "question": "What's your name?",
       "firstName": "First name",
@@ -93,6 +108,10 @@
         "lose": "Losing {{value}} kg is your next milestone.",
         "gain": "Gaining {{value}} kg is your next build phase.",
         "maintain": "You are aiming to stay close to your current form."
+      },
+      "errors": {
+        "loseDirection": "If your goal is weight loss, target weight must be lower than current weight.",
+        "gainDirection": "If your goal is weight gain, target weight must be higher than current weight."
       }
     },
     "weeklyPace": {
@@ -330,9 +349,13 @@
       "searchHint": "Type at least 2 characters.",
       "nonOnboarding": "Additional",
       "selected": "Selected",
+      "showMore": "Show {{count}} more options",
+      "showLess": "Show fewer",
       "featuredTitle": "Recommended picks",
       "featuredDescription": "Tap a card for quick selection, or search below for more options.",
       "allergicBadge": "Allergy source",
+      "commonBadge": "Common",
+      "avoidBadge": "Avoid",
       "recommendedBadge": "Recommended"
     },
     "nutritionSteps": {
@@ -340,12 +363,26 @@
         "title": "What are you allergic to?",
         "description": "Select active allergy ingredients or add your own custom value.",
         "placeholder": "Nuts, eggs, honey...",
-        "featuredTitle": "Common allergy ingredients"
+        "featuredTitle": "Common allergy ingredients",
+        "noneAction": "I have no allergies",
+        "noneDescription": "Choose this if your plan does not need allergy restrictions."
       },
       "dietRequirements": {
         "title": "Any diet requirements?",
         "description": "Choose halal, vegetarian, gluten-free, or any other requirements.",
-        "placeholder": "Halal, high protein, no sugar..."
+        "placeholder": "Halal, high protein, no sugar...",
+        "options": {
+          "halal": "Halal",
+          "vegetarian": "Vegetarian",
+          "vegan": "Vegan",
+          "keto": "Keto",
+          "glutenFree": "Gluten-free",
+          "sugarFree": "Sugar-free",
+          "lactoseFree": "Lactose-free",
+          "diabeticFriendly": "Diabetes-friendly",
+          "lowSalt": "Low salt",
+          "highProtein": "High protein"
+        }
       },
       "preferredCuisines": {
         "title": "Which cuisines do you like?",
@@ -355,7 +392,9 @@
       "dislikedFoods": {
         "title": "Which foods do you dislike?",
         "description": "Choose meals that should be reduced or excluded from your plan.",
-        "placeholder": "Soup, fish, liver..."
+        "placeholder": "Soup, fish, liver...",
+        "noneAction": "No disliked foods",
+        "noneDescription": "Choose this if no meals need to be excluded."
       },
       "preferredIngredients": {
         "title": "Which ingredients do you like?",
@@ -365,7 +404,9 @@
       "dislikedIngredients": {
         "title": "Which ingredients do you dislike?",
         "description": "Select ingredients to reduce in the plan or add a custom value.",
-        "placeholder": "Onion, cilantro, hot pepper..."
+        "placeholder": "Onion, cilantro, hot pepper...",
+        "noneAction": "No disliked ingredients",
+        "noneDescription": "Choose this if no ingredients need to be reduced."
       },
       "ingredients": {
         "conflict": "This ingredient is selected in the other list. Remove it there first."
@@ -468,7 +509,8 @@
     },
     "otherGoals": {
       "question": "Any other goals?",
-      "fallbackTitle": "Additional goals"
+      "fallbackTitle": "Additional goals",
+      "none": "No extra goals"
     },
     "dietRestrictions": {
       "question": "Any diet restrictions?",
@@ -514,6 +556,18 @@
       "fixRequired": "Complete the required fields first",
       "generate": "Generate plan",
       "submitError": "Could not complete onboarding.",
+      "edit": "Edit",
+      "emptyValue": "Not selected",
+      "none": "None",
+      "noWorkout": "No planned workouts",
+      "countValue": "{{count}} selected",
+      "recommendations": {
+        "title": "Suggestions to improve your plan",
+        "foodBudget": "Choose a budget so the plan can better match your spending range.",
+        "allergies": "If you have no allergies, mark that explicitly on the allergy screen.",
+        "preferredCuisines": "Choose preferred cuisines so meals feel closer to your taste.",
+        "equipment": "Add available equipment for home or outdoor workouts."
+      },
       "missing": {
         "name": "First and last name",
         "gender": "Gender",
@@ -565,18 +619,34 @@
     "postOnboarding": {
       "loading": {
         "title": "Setting everything up for you",
+        "titles": {
+          "metabolism": "Calculating your metabolism",
+          "personalization": "Calculating your metabolism",
+          "generation": "Generating your AI plan"
+        },
+        "nextSteps": {
+          "metabolism": "Next, you will review and confirm calorie and macro targets.",
+          "personalization": "Next, you will review and confirm calorie and macro targets.",
+          "generation": "When it is ready, you will see the first actions before opening the dashboard."
+        },
         "retry": "Try again",
         "errorDescription": "We could not prepare your personal plan. Try again.",
         "badges": {
           "personalization": "Personalization",
+          "metabolism": "Metabolism",
           "generation": "AI plan generation"
         },
         "subtitles": {
           "bmr": "Calculating your BMR...",
           "metabolicAge": "Calculating your metabolic age...",
           "calories": "Finding your calorie target...",
+          "macros": "Balancing protein, fat, and carbs...",
+          "targets": "Preparing water, steps, and workout targets...",
+          "mealContext": "Checking meal catalog and constraints...",
+          "workoutContext": "Checking equipment and safety rules...",
           "mealPlan": "Adapting your meal plan...",
           "workoutPlan": "Building your workout plan...",
+          "validation": "Validating plan safety and macro balance...",
           "finalizing": "Finalizing your results..."
         },
         "checklist": {
@@ -584,9 +654,81 @@
           "bmrFormula": "Applying the BMR formula",
           "metabolicAge": "Calculating your metabolic age",
           "calorieMacros": "Finding calorie and macro targets",
+          "waterSteps": "Preparing water and step targets",
+          "formulaWarnings": "Adding estimated-calculation warnings",
+          "mealContext": "Collecting meal inputs",
+          "workoutContext": "Collecting workout inputs",
           "mealPlan": "Preparing your meal plan",
           "workoutPlan": "Preparing your workout plan",
+          "validation": "Validating the AI plan",
           "finalizing": "Finalizing results"
+        }
+      },
+      "planPreview": {
+        "cta": "Start AI plan",
+        "badge": "Plan quality checked",
+        "title": "Final check before creating your AI plan",
+        "subtitle": "Nutrition, workout, safety, and catalog fit have been checked. If there are no blocking issues, meal and workout plans will be generated separately in the next step.",
+        "readinessScore": "Plan readiness score",
+        "qualityScore": "Plan quality score",
+        "fixFirstTitle": "Fix these first",
+        "attentionTitle": "Worth checking",
+        "ready": "Plan generation can start.",
+        "nutritionTitle": "Nutrition inputs",
+        "workoutTitle": "Workout inputs",
+        "recommendationsTitle": "Recommendations",
+        "noRecommendations": "Inputs are enough. You can start plan generation.",
+        "blockingLocked": "Plan generation is locked until blocking issues are fixed.",
+        "rows": {
+          "calories": "Calories",
+          "macros": "Macros",
+          "meals": "Meals",
+          "cuisines": "Cuisine choices",
+          "allergies": "Allergies",
+          "budget": "Budget",
+          "weeklyWorkouts": "Weekly workouts",
+          "location": "Location",
+          "equipment": "Equipment",
+          "bodyParts": "Target body parts"
+        },
+        "values": {
+          "kcal": "{{value}} kcal",
+          "macros": "{{protein}}g P / {{carbs}}g C / {{fat}}g F",
+          "meals": "{{count}} meals",
+          "count": "{{count}} selected",
+          "days": "{{count}} days"
+        }
+      },
+      "planReady": {
+        "badge": "Plan ready",
+        "title": "Your plan is ready",
+        "subtitle": "Your meal and workout plans are generated. Review the first steps before opening your dashboard.",
+        "cta": "Start dashboard",
+        "qualityTitle": "Plan quality",
+        "qualityScore": "Quality score",
+        "qualityPassed": "Quality gate passed",
+        "qualityNeedsReview": "Quality gate needs review",
+        "qualityLevel": {
+          "excellent": "Excellent",
+          "good": "Good",
+          "needs_review": "Needs review",
+          "blocked": "Blocked"
+        },
+        "retentionTitle": "Keep it going",
+        "retentionDescription": "Turn on Telegram or notification reminders so water, meal, and workout logs stay connected to your plan. After 7 days, LiveOn can suggest adjustments based on weight, hunger, and adherence.",
+        "steps": {
+          "water": {
+            "title": "Start today's water",
+            "description": "Log the first 250 ml to start today's streak."
+          },
+          "meal": {
+            "title": "Log the first meal",
+            "description": "This connects tracking to your meal plan and makes the dashboard more accurate."
+          },
+          "workout": {
+            "title": "Choose workout time",
+            "description": "Weekly plan is easier to keep when reminders are set."
+          }
         }
       },
       "result": {
@@ -602,6 +744,7 @@
         "saved": "Result updated.",
         "saveError": "Could not save the result.",
         "generateError": "Could not start personal plan generation.",
+        "confirmError": "Could not confirm metabolism results.",
         "empty": "Personalization result was not found.",
         "recommended": "Recommended",
         "lowCalorieWarning": "This calorie target may be too low. Choose a safer range.",
@@ -709,6 +852,10 @@
           "fatGram": {
             "title": "Fat target",
             "description": "Enter grams. We warn you if fat is too low."
+          },
+          "recommendedWaterMl": {
+            "title": "Water target",
+            "description": "Enter the daily water goal in liters."
           },
           "currentWeight": {
             "title": "Current weight",

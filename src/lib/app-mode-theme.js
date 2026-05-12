@@ -13,7 +13,9 @@ export const APP_MODE_THEMES = {
     key: APP_MODES.FOCUS,
     label: "Focus",
     assets: {
-      logo: "/focus/logo-main.png",
+      logo: "/focus/logo-main.webp",
+      authBackgroundLight: "/focus/auth/light/background.png",
+      authBackgroundDark: "/focus/auth/dark/background.png",
       background: "/madagascar/background.webp",
       curious: "/madagascar/curious.webp",
       notFound: "/madagascar/not-found-crop-male.webp",
@@ -37,7 +39,9 @@ export const APP_MODE_THEMES = {
     key: APP_MODES.ZEN,
     label: "Zen",
     assets: {
-      logo: "/zen/logo-main.png",
+      logo: "/zen/logo-main.webp",
+      authBackgroundLight: "/zen/auth/light/background.png",
+      authBackgroundDark: "/zen/auth/dark/background.png",
       background: "/madagascar/background.webp",
       curious: "/madagascar/curious.webp",
       notFound: "/madagascar/not-found-crop-male.webp",
@@ -62,6 +66,8 @@ export const APP_MODE_THEMES = {
     label: "Madagascar",
     assets: {
       logo: "/madagascar/logo-main.webp",
+      authBackgroundLight: "/madagascar/auth/light/background.png",
+      authBackgroundDark: "/madagascar/auth/dark/background.png",
       background: "/madagascar/background.webp",
       curious: "/madagascar/curious.webp",
       notFound: "/madagascar/not-found-crop-male.webp",

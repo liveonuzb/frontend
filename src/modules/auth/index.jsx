@@ -1,6 +1,7 @@
 import React from "react";
 import { Navigate, Route, Routes } from "react-router";
 import { useAuthStore } from "@/store";
+import { applyTheme } from "@/lib/user-preferences";
 
 import Layout from "@/modules/auth/layout/index.jsx";
 import SelectLanguagePage from "@/pages/select-language/index.jsx";
@@ -16,6 +17,29 @@ import SetPasswordPage from "@/modules/auth/pages/set-password/index.jsx";
 const Index = () => {
   const { user } = useAuthStore();
   const passwordSetupRequired = Boolean(user?.passwordSetupRequired);
+
+  React.useLayoutEffect(() => {
+    const root = document.documentElement;
+    const hadDarkClass = root.classList.contains("dark");
+    const storedTheme = window.localStorage.getItem("theme");
+
+    if (storedTheme === "light" || storedTheme === "dark") {
+      root.classList.toggle("dark", storedTheme === "dark");
+    } else {
+      root.classList.add("dark");
+    }
+
+    return () => {
+      const persistedTheme = window.localStorage.getItem("theme");
+
+      if (persistedTheme === "light" || persistedTheme === "dark") {
+        applyTheme(persistedTheme);
+        return;
+      }
+
+      root.classList.toggle("dark", hadDarkClass);
+    };
+  }, []);
 
   return (
     <Routes>

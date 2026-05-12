@@ -6,6 +6,18 @@ import { normalizeApiPath } from "./normalize-api-path.js";
 
 let refreshPromise = null;
 
+const AUTH_RETRY_BYPASS_PATHS = [
+  "/auth/refresh",
+  "/auth/login",
+  "/auth/verify-otp",
+  "/auth/resend-otp",
+];
+
+export const shouldSkipAuthRetry = (url) => {
+  const path = String(url || "");
+  return AUTH_RETRY_BYPASS_PATHS.some((authPath) => path.includes(authPath));
+};
+
 /* ================= AXIOS INSTANCE ================= */
 const api = axios.create({
   baseURL: config.baseURL,
@@ -45,8 +57,7 @@ api.interceptors.response.use(
       status === 401 &&
       originalRequest &&
       !originalRequest._retry &&
-      !String(originalRequest.url || "").includes("/auth/refresh") &&
-      !String(originalRequest.url || "").includes("/auth/login")
+      !shouldSkipAuthRetry(originalRequest.url)
     ) {
       originalRequest._retry = true;
 

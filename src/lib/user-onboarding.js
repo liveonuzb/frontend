@@ -341,7 +341,10 @@ export const toUserOnboardingPayload = (patch = {}) => {
     payload.budgetCurrency = patch.budgetCurrency || "UZS";
   }
   if ("workoutLocation" in patch) {
-    payload.workoutLocation = patch.workoutLocation || "home";
+    payload.workoutLocation =
+      String(patch.weeklyWorkoutCount) === "0"
+        ? null
+        : patch.workoutLocation || "home";
   }
   if ("equipmentIds" in patch) {
     payload.equipmentIds = toNumberArray(patch.equipmentIds);

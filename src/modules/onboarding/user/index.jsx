@@ -31,7 +31,9 @@ import ReviewPage from "@/modules/onboarding/user/pages/review/index.jsx";
 import ReportPage from "@/modules/onboarding/user/pages/report/index.jsx";
 import PersonalizingPage from "@/modules/onboarding/user/pages/personalizing/index.jsx";
 import PersonalizationResultPage from "@/modules/onboarding/user/pages/result/index.jsx";
+import PlanPreviewPage from "@/modules/onboarding/user/pages/plan-preview/index.jsx";
 import GeneratingPage from "@/modules/onboarding/user/pages/generating/index.jsx";
+import PlanReadyPage from "@/modules/onboarding/user/pages/plan-ready/index.jsx";
 
 const UserOnboardingModule = () => {
   return (
@@ -121,11 +123,33 @@ const UserOnboardingModule = () => {
           element={<Navigate to="../diet-requirements" replace />}
         />
         <Route path="report" element={<ReportPage />} />
-        <Route path="personalizing" element={<PersonalizingPage />} />
+        <Route
+          path="personalizing"
+          element={<Navigate to="../metabolism-calculating" replace />}
+        />
         <Route path="personalizing/:jobId" element={<PersonalizingPage />} />
-        <Route path="result" element={<PersonalizationResultPage />} />
-        <Route path="generating" element={<GeneratingPage />} />
+        <Route
+          path="metabolism-calculating"
+          element={<PersonalizingPage />}
+        />
+        <Route
+          path="metabolism-calculating/:jobId"
+          element={<PersonalizingPage />}
+        />
+        <Route
+          path="result"
+          element={<Navigate to="../metabolism-result" replace />}
+        />
+        <Route path="metabolism-result" element={<PersonalizationResultPage />} />
+        <Route path="plan-preview" element={<PlanPreviewPage />} />
+        <Route
+          path="generating"
+          element={<Navigate to="../plan-generating" replace />}
+        />
         <Route path="generating/:jobId" element={<GeneratingPage />} />
+        <Route path="plan-generating" element={<GeneratingPage />} />
+        <Route path="plan-generating/:jobId" element={<GeneratingPage />} />
+        <Route path="plan-ready" element={<PlanReadyPage />} />
       </Route>
     </Routes>
   );

@@ -9,6 +9,7 @@ import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-
 import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-question";
 import { WeightTicker } from "@/modules/onboarding/components/weight-ticker";
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
+import { getTargetWeightValidationError } from "@/modules/onboarding/lib/onboarding-validation";
 import { ChevronRight } from "lucide-react";
 import BmiIdentifier from "../../components/bmi-identifier.jsx";
 import {
@@ -43,6 +44,12 @@ const Index = () => {
     height?.value,
   );
   const illustrationHeight = getOnboardingIllustrationHeight(height?.value);
+  const validationError = getTargetWeightValidationError({
+    goal,
+    currentWeight,
+    targetWeight: { value: currentVal, unit: "kg" },
+    t,
+  });
 
   const diff = currentWeight?.value
     ? Math.abs(Number(currentVal) - Number(currentWeight.value)).toFixed(1)
@@ -65,6 +72,9 @@ const Index = () => {
   };
 
   const handleContinue = () => {
+    if (validationError) {
+      return;
+    }
     setField("targetWeight", { value: currentVal, unit: "kg" });
     navigate("/user/onboarding/weekly-pace");
   };
@@ -77,6 +87,7 @@ const Index = () => {
         bmiMeta ? `bg-gradient-to-r ${bmiMeta.buttonTone}` : "",
       )}
       size="lg"
+      disabled={Boolean(validationError)}
       onClick={handleContinue}
     >
       {t("onboarding.next")} <ChevronRight />
@@ -86,10 +97,10 @@ const Index = () => {
   const motivationalMessage = getMessage();
 
   return (
-    <div className="relative flex h-full max-h-full w-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8 pr-0">
+    <div className="relative flex h-full min-h-0 max-h-full w-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8 pr-0">
       <PageAura tone={bmiMeta} />
 
-      <div className="relative z-10 flex h-full w-full flex-1 flex-col">
+      <div className="relative z-10 flex h-full min-h-0 w-full flex-1 flex-col pb-1">
         <OnboardingQuestion
           question={
             firstName
@@ -105,12 +116,12 @@ const Index = () => {
             meta={bmiMeta}
             heightValue={height?.value}
             title={t("onboarding.targetWeight.bmiTitle")}
-            note={motivationalMessage}
+            note={validationError || motivationalMessage}
             heightUnitLabel={t("onboarding.height.unit")}
           />
         </div>
 
-        <div className="relative mt-2 flex flex-1 items-end justify-center overflow-hidden">
+        <div className="relative mt-4 -mb-6 flex min-h-0 flex-1 items-end justify-center overflow-hidden md:mt-5">
           <AnimatePresence mode="wait">
             <motion.div
               key={illustration.src}
@@ -130,12 +141,13 @@ const Index = () => {
             </motion.div>
           </AnimatePresence>
 
-          <div className="absolute right-0 top-1/2 z-20 -translate-y-1/2">
+          <div className="absolute right-0 top-[58%] z-20 -translate-y-1/2">
             <WeightTicker
               value={currentVal}
               onChange={(val) =>
                 setField("targetWeight", { value: val, unit: "kg" })
               }
+              ariaLabel={t("onboarding.targetWeight.bmiTitle")}
               accentColor={bmiMeta ? "var(--color-primary)" : undefined}
               orientation="vertical"
               verticalHeight={240}

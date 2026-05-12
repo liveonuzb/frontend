@@ -1,4 +1,3 @@
-import { map } from "lodash";
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";
@@ -13,6 +12,7 @@ import { ChevronRight } from "lucide-react";
 import PageAura from "../../components/page-aura.jsx";
 import { getGenderTone, ONBOARDING_TONES } from "../../lib/tones.js";
 import useAppModeTheme from "@/hooks/app/use-app-mode-theme";
+import OnboardingSelectCard from "../../components/onboarding-select-card.jsx";
 
 const Index = () => {
   const { t } = useTranslation();
@@ -82,13 +82,13 @@ const Index = () => {
   );
 
   return (
-    <div className="relative flex h-full flex-1 flex-col justify-center overflow-hidden pt-3 md:pt-8  px-5">
+    <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8">
       <PageAura tone={tone} />
 
-      <div className="relative z-10 flex w-full flex-1 flex-col justify-center md:mx-auto md:max-w-4xl">
+      <div className="relative z-10 flex h-full min-h-0 w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
         <OnboardingQuestion question={t("onboarding.gender.question")} />
 
-        <div className="relative mb-4 flex min-h-[220px] items-end justify-center overflow-hidden md:min-h-[320px]">
+        <div className="relative mb-4 flex min-h-[190px] flex-1 items-end justify-center overflow-hidden md:min-h-[320px]">
           <AnimatePresence mode="wait">
             <motion.div
               key={heroImage}
@@ -129,51 +129,24 @@ const Index = () => {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          {map(genders, (item) => {
+          {genders.map((item) => {
             const isActive = gender === item.value;
             const itemTone = getGenderTone(item.value);
 
             return (
-              <motion.button
+              <OnboardingSelectCard
                 key={item.value}
-                type="button"
+                active={isActive}
+                description={item.description}
+                imageAlt={item.label}
+                imageClassName="h-14 w-full max-w-[104px] self-center rounded-none object-contain md:h-20 md:max-w-[136px]"
+                imageFit="contain"
+                imageUrl={item.image}
                 onClick={() => handleSelect(item.value)}
-                className={cn(
-                  "relative flex flex-col items-center rounded-[28px] border px-4 py-4 transition-all",
-                  isActive
-                    ? `bg-gradient-to-br ${itemTone.cardTone} ${itemTone.border}`
-                    : "border-border/70 bg-background/90 hover:border-primary/30",
-                )}
-                whileTap={{ scale: 0.98 }}
-              >
-                <img
-                  loading="lazy"
-                  src={item.image}
-                  alt={item.label}
-                  className="h-24 object-contain md:h-40"
-                />
-                <div className="text-center">
-                  <span className="text-base font-bold">{item.label}</span>
-                  <p className="mt-1 text-xs text-muted-foreground md:text-sm">
-                    {item.description}
-                  </p>
-                </div>
-                <div
-                  className={cn(
-                    "absolute right-3 top-3 flex size-5 items-center justify-center rounded-full border-2 md:size-6",
-                    isActive
-                      ? `${itemTone.border} bg-background/70`
-                      : "border-muted-foreground/25",
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "size-3 rounded-full transition-all",
-                      isActive ? itemTone.dotTone : "scale-0 opacity-0",
-                    )}
-                  />
-                </div>
-              </motion.button>
+                title={item.label}
+                tone={itemTone}
+                variant="image"
+              />
             );
           })}
         </div>

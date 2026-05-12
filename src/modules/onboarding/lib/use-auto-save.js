@@ -180,6 +180,149 @@ function buildSelector(type) {
   return (s) => s.vendorDrafts?.[type];
 }
 
+const autoSaveQueues = new Map();
+const defaultRateLimitRetryDelayMs = 10000;
+
+function getAutoSaveQueue(type) {
+  const key = type || "unknown";
+  if (!autoSaveQueues.has(key)) {
+    autoSaveQueues.set(key, {
+      type: key,
+      step: null,
+      request: null,
+      debounceMs: null,
+      debouncedSave: null,
+      pending: false,
+      inFlight: false,
+      needsFlush: false,
+      retryTimer: null,
+    });
+  }
+
+  return autoSaveQueues.get(key);
+}
+
+function getResponseStatus(error) {
+  return error?.response?.status ?? error?.status ?? null;
+}
+
+function getResponseHeader(error, name) {
+  const headers = error?.response?.headers;
+  if (!headers) return null;
+  if (typeof headers.get === "function") {
+    return headers.get(name) ?? headers.get(name.toLowerCase());
+  }
+  return headers[name] ?? headers[name.toLowerCase()] ?? null;
+}
+
+function getRateLimitRetryDelayMs(error) {
+  if (getResponseStatus(error) !== 429) return null;
+
+  const retryAfter = getResponseHeader(error, "Retry-After");
+  const retryAfterSeconds = Number(retryAfter);
+  if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
+    return Math.min(60000, Math.round(retryAfterSeconds * 1000));
+  }
+
+  return defaultRateLimitRetryDelayMs;
+}
+
+function getAutoSaveErrorMessage(error) {
+  return error instanceof Error ? error.message : "Auto-save failed";
+}
+
+async function flushDraftSaveQueue(type, allowRetry = true) {
+  const queue = getAutoSaveQueue(type);
+
+  if (!queue.pending || !queue.request) return;
+  if (queue.inFlight) {
+    queue.needsFlush = true;
+    return;
+  }
+
+  queue.pending = false;
+  queue.inFlight = true;
+
+  const state = useOnboardingStore.getState();
+  const data = extractDraftData(state, queue.type);
+  const currentStep = normalizeOnboardingStepForApi(queue.type, queue.step);
+  const setDraftSaveStatus = state.setDraftSaveStatus;
+
+  try {
+    setDraftSaveStatus?.("saving");
+    await queue.request.put(getOnboardingDraftApiPath(queue.type), {
+      data,
+      currentStep,
+    });
+    setDraftSaveStatus?.("saved", {
+      lastSavedAt: new Date().toISOString(),
+      error: null,
+    });
+  } catch (error) {
+    const retryDelayMs = allowRetry ? getRateLimitRetryDelayMs(error) : null;
+
+    if (retryDelayMs !== null) {
+      queue.pending = true;
+      setDraftSaveStatus?.("error", {
+        error: "Auto-save rate limit reached; retrying shortly.",
+      });
+      queue.retryTimer = setTimeout(() => {
+        queue.retryTimer = null;
+        void flushDraftSaveQueue(queue.type, false);
+      }, retryDelayMs);
+    } else {
+      setDraftSaveStatus?.("error", {
+        error: getAutoSaveErrorMessage(error),
+      });
+    }
+  } finally {
+    queue.inFlight = false;
+
+    if ((queue.needsFlush || queue.pending) && !queue.retryTimer) {
+      queue.needsFlush = false;
+      queue.debouncedSave?.();
+    }
+  }
+}
+
+function scheduleDraftSave({ type, step, request, debounceMs }) {
+  const queue = getAutoSaveQueue(type);
+  queue.type = type;
+  queue.step = step;
+  queue.request = request;
+  queue.pending = true;
+
+  if (queue.retryTimer) {
+    clearTimeout(queue.retryTimer);
+    queue.retryTimer = null;
+  }
+
+  if (!queue.debouncedSave || queue.debounceMs !== debounceMs) {
+    queue.debouncedSave?.cancel?.();
+    queue.debounceMs = debounceMs;
+    queue.debouncedSave = debounce(
+      () => void flushDraftSaveQueue(type),
+      debounceMs,
+      { maxWait: Math.max(debounceMs * 2, 10000) },
+    );
+  }
+
+  if (queue.inFlight) {
+    queue.needsFlush = true;
+    return;
+  }
+
+  queue.debouncedSave();
+}
+
+export function __resetOnboardingAutoSaveQueuesForTest() {
+  for (const queue of autoSaveQueues.values()) {
+    queue.debouncedSave?.cancel?.();
+    if (queue.retryTimer) clearTimeout(queue.retryTimer);
+  }
+  autoSaveQueues.clear();
+}
+
 /**
  * Hook that subscribes to the Zustand onboarding store and auto-saves
  * draft data to the server when relevant state changes.
@@ -219,42 +362,19 @@ export function useOnboardingAutoSave(
   useEffect(() => {
     if (!enabled) return;
 
-    const save = debounce(async () => {
-      if (!enabledRef.current) return;
-
-      const state = useOnboardingStore.getState();
-      const data = extractDraftData(state, typeRef.current);
-      const currentStep = normalizeOnboardingStepForApi(
-        typeRef.current,
-        stepRef.current,
-      );
-      const setDraftSaveStatus =
-        useOnboardingStore.getState().setDraftSaveStatus;
-
-      try {
-        setDraftSaveStatus?.("saving");
-        await request.put(getOnboardingDraftApiPath(typeRef.current), {
-          data,
-          currentStep,
-        });
-        setDraftSaveStatus?.("saved", {
-          lastSavedAt: new Date().toISOString(),
-          error: null,
-        });
-      } catch (error) {
-        setDraftSaveStatus?.("error", {
-          error: error instanceof Error ? error.message : "Auto-save failed",
-        });
-      }
-    }, debounceMs);
-
     // Subscribe only to the relevant slice using subscribeWithSelector
     const selector = buildSelector(type);
 
     const unsubscribe = useOnboardingStore.subscribe(
       selector,
       () => {
-        save();
+        if (!enabledRef.current) return;
+        scheduleDraftSave({
+          type: typeRef.current,
+          step: stepRef.current,
+          request,
+          debounceMs,
+        });
       },
       {
         equalityFn: (a, b) => JSON.stringify(a) === JSON.stringify(b),
@@ -263,39 +383,17 @@ export function useOnboardingAutoSave(
 
     return () => {
       unsubscribe();
-      save.cancel();
     };
   }, [enabled, type, debounceMs, request]);
 
   // Also save when the step changes (user navigated forward/back)
   useEffect(() => {
     if (!enabled) return;
-
-    const state = useOnboardingStore.getState();
-    const data = extractDraftData(state, typeRef.current);
-    const currentStep = normalizeOnboardingStepForApi(
-      typeRef.current,
-      stepRef.current,
-    );
-    const setDraftSaveStatus = useOnboardingStore.getState().setDraftSaveStatus;
-
-    setDraftSaveStatus?.("saving");
-    request
-      .put(getOnboardingDraftApiPath(typeRef.current), {
-        data,
-        currentStep,
-      })
-      .then(() => {
-        setDraftSaveStatus?.("saved", {
-          lastSavedAt: new Date().toISOString(),
-          error: null,
-        });
-      })
-      .catch((error) => {
-        setDraftSaveStatus?.("error", {
-          error: error instanceof Error ? error.message : "Auto-save failed",
-        });
-      });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, enabled]);
+    scheduleDraftSave({
+      type: typeRef.current,
+      step: stepRef.current,
+      request,
+      debounceMs,
+    });
+  }, [step, enabled, debounceMs, request]);
 }

@@ -2,7 +2,6 @@ import React from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import {
-  CheckIcon,
   ChevronRightIcon,
   CircleSlashIcon,
   HeartPulseIcon,
@@ -17,6 +16,11 @@ import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-
 import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-question";
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import {
+  getOnboardingOptionsPath,
+  getOnboardingOptionsQueryKey,
+  normalizeOnboardingOptionsResponse,
+} from "@/modules/onboarding/lib/onboarding-options";
+import {
   OtherSelectionCard,
   OtherSelectionDrawer,
   OtherSelectionSelectedItems,
@@ -28,6 +32,7 @@ import {
   normalizeCustomChips,
 } from "../../lib/chip-selection.js";
 import PageAura from "../../components/page-aura.jsx";
+import OnboardingSelectCard from "../../components/onboarding-select-card.jsx";
 import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
 
 const getTone = (selected) => {
@@ -37,10 +42,8 @@ const getTone = (selected) => {
   return ONBOARDING_ACCENTS.amber;
 };
 
-const extractConstraints = (response) => {
-  const body = response?.data?.data ?? response?.data ?? [];
-  return Array.isArray(body) ? body : [];
-};
+const extractConstraints = (response) =>
+  normalizeOnboardingOptionsResponse(response, "health-constraints");
 
 const ensureEllipsis = (value) => {
   const label = String(value ?? "").trim();
@@ -75,9 +78,9 @@ const Index = () => {
   useOnboardingAutoSave("user", "health-constraints");
 
   const { data, isLoading, isError } = useGetQuery({
-    url: "/user/onboarding/health-constraints",
+    url: getOnboardingOptionsPath("health-constraints"),
     queryProps: {
-      queryKey: ["user", "onboarding", "health-constraints"],
+      queryKey: getOnboardingOptionsQueryKey("health-constraints"),
       staleTime: 60000,
     },
   });
@@ -91,16 +94,14 @@ const Index = () => {
     [searchLabel],
   );
   const { data: otherData, isFetching } = useGetQuery({
-    url: "/user/onboarding/health-constraints",
+    url: getOnboardingOptionsPath("health-constraints"),
     params: otherQueryParams,
     queryProps: {
-      queryKey: [
-        "user",
-        "onboarding",
+      queryKey: getOnboardingOptionsQueryKey(
         "health-constraints",
         "other",
         searchLabel.length >= 2 ? searchLabel : "",
-      ],
+      ),
       enabled: otherOpen,
       staleTime: 15000,
     },
@@ -316,7 +317,7 @@ const Index = () => {
           className="h-12 w-full border-transparent"
           onClick={handleSkip}
         >
-          {t("onboarding.skip")}
+          {t("onboarding.skipForNow")}
         </Button>
         <Button
           type="button"
@@ -338,9 +339,9 @@ const Index = () => {
   useOnboardingFooter(footerContent);
 
   return (
-    <div className="relative flex h-full max-h-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8">
+    <div className="relative flex h-full min-h-0 max-h-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8">
       <PageAura tone={activeTone} />
-      <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
+      <div className="relative z-10 flex h-full min-h-0 w-full flex-1 flex-col md:mx-auto md:max-w-2xl">
         <OnboardingQuestion
           question={t("onboarding.healthConstraints.question")}
         />
@@ -365,57 +366,19 @@ const Index = () => {
                 item.key === "none" ? CircleSlashIcon : HeartPulseIcon;
 
               return (
-                <button
+                <OnboardingSelectCard
                   key={item.key}
-                  type="button"
+                  active={isActive}
+                  description={
+                    item.description ||
+                    t("onboarding.healthConstraints.defaultDescription")
+                  }
+                  icon={Icon}
                   onClick={() => toggleOption(item)}
-                  aria-pressed={isActive}
-                  className={cn(
-                    "flex min-h-[72px] w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left transition-colors hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 md:min-h-[84px] md:px-4",
-                    isActive
-                      ? `bg-gradient-to-br ${itemTone.cardTone} ${itemTone.border}`
-                      : "border-border/70 bg-background/90",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "flex size-11 shrink-0 items-center justify-center rounded-2xl",
-                      isActive
-                        ? itemTone.badgeTone
-                        : "bg-muted text-muted-foreground",
-                    )}
-                    aria-hidden="true"
-                  >
-                    <Icon className="size-5" />
-                  </span>
-
-                  <span className="min-w-0 flex-1">
-                    <span className="block break-words text-sm font-bold leading-snug text-foreground">
-                      {item.name}
-                    </span>
-                    <span className="mt-1 block text-xs leading-snug text-muted-foreground">
-                      {item.description ||
-                        t("onboarding.healthConstraints.defaultDescription")}
-                    </span>
-                  </span>
-
-                  <span
-                    className={cn(
-                      "flex size-6 shrink-0 items-center justify-center rounded-full border",
-                      isActive
-                        ? `${itemTone.border} bg-background/70`
-                        : "border-border bg-background",
-                    )}
-                    aria-hidden="true"
-                  >
-                    <CheckIcon
-                      className={cn(
-                        "size-4",
-                        isActive ? itemTone.textTone : "text-transparent",
-                      )}
-                    />
-                  </span>
-                </button>
+                  selectionMode="multi"
+                  title={item.name}
+                  tone={itemTone}
+                />
               );
             })
           )}
@@ -461,27 +424,20 @@ const Index = () => {
           drawerOptions.map((item) => {
             const isActive = selectedKeySet.has(item.key);
             return (
-              <button
+              <OnboardingSelectCard
                 key={`search-${item.key}`}
-                type="button"
+                active={isActive}
+                metaBadge={
+                  item.isOnboarding === false
+                    ? t("onboarding.chipSelect.nonOnboarding")
+                    : null
+                }
                 onClick={() => toggleOption(item)}
-                aria-pressed={isActive}
-                className={cn(
-                  "flex min-h-[52px] items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
-                  isActive
-                    ? `${activeTone.border} ${activeTone.badgeTone}`
-                    : "border-border/70 bg-background",
-                )}
-              >
-                <span className="min-w-0 flex-1 truncate text-sm font-semibold">
-                  {optionLabel(item, item.key)}
-                </span>
-                {item.isOnboarding === false ? (
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                    {t("onboarding.chipSelect.nonOnboarding")}
-                  </span>
-                ) : null}
-              </button>
+                selectionMode="multi"
+                title={optionLabel(item, item.key)}
+                tone={activeTone}
+                variant="drawer"
+              />
             );
           })
         ) : (
@@ -491,18 +447,15 @@ const Index = () => {
         )}
 
         {canAddCustom ? (
-          <button
-            type="button"
+          <OnboardingSelectCard
+            icon={PlusIcon}
             onClick={addCustom}
-            className="flex min-h-[52px] items-center gap-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-3 py-2 text-left text-sm font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          >
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
-              <PlusIcon className="size-4" aria-hidden="true" />
-            </span>
-            {t("onboarding.chipSelect.addCustom", {
+            title={t("onboarding.chipSelect.addCustom", {
               value: searchLabel,
             })}
-          </button>
+            tone={activeTone}
+            variant="drawer"
+          />
         ) : null}
       </OtherSelectionDrawer>
     </div>

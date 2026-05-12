@@ -97,6 +97,39 @@ describe("WeeklyWorkoutCount onboarding step", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Keyingi" }));
 
+    expect(navigateMock).toHaveBeenCalledWith("/user/onboarding/review", {
+      state: { returnTo: "/user/onboarding/weekly-workout-count" },
+    });
+    expect(useOnboardingStore.getState()).toEqual(
+      expect.objectContaining({
+        workoutExperience: "",
+        workoutLocation: "",
+        equipmentIds: [],
+        customEquipment: [],
+        workoutBodyPartIds: [],
+        customWorkoutBodyParts: [],
+      }),
+    );
+  });
+
+  it("returns to workout setup when the user changes from no workouts to an active rhythm", async () => {
+    renderWeeklyWorkoutCount();
+
+    fireEvent.click(screen.getByRole("button", { name: /Qilmayman/ }));
+    expect(useOnboardingStore.getState().weeklyWorkoutCount).toBe("0");
+    expect(useOnboardingStore.getState().workoutLocation).toBe("");
+
+    fireEvent.click(screen.getByRole("button", { name: /Yengil start/ }));
+
+    expect(useOnboardingStore.getState().weeklyWorkoutCount).toBe("2");
+    expect(useOnboardingStore.getState().workoutLocation).toBe("home");
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Keyingi" })).toBeEnabled();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Keyingi" }));
+
     expect(navigateMock).toHaveBeenCalledWith(
       "/user/onboarding/workout-experience",
     );

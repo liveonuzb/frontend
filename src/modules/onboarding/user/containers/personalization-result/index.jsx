@@ -2,7 +2,9 @@ import React from "react";
 import { motion } from "framer-motion";
 import {
   ActivityIcon,
+  BrainIcon,
   CalendarDaysIcon,
+  CheckIcon,
   ChevronRightIcon,
   DropletsIcon,
   FlameIcon,
@@ -13,8 +15,10 @@ import {
   PencilIcon,
   PlusIcon,
   SaladIcon,
+  SaveIcon,
   ScaleIcon,
   SearchIcon,
+  SparklesIcon,
   TargetIcon,
   UtensilsIcon,
   WalletCardsIcon,
@@ -35,6 +39,13 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
+import {
+  NumberField,
+  NumberFieldDecrement,
+  NumberFieldGroup,
+  NumberFieldIncrement,
+  NumberFieldInput,
+} from "@/components/reui/number-field";
 import { Textarea } from "@/components/ui/textarea";
 import {
   useGetQuery,
@@ -43,20 +54,25 @@ import {
   usePutQuery,
 } from "@/hooks/api";
 import {
-  getUserOnboardingGeneratingPath,
+  getUserOnboardingPlanPreviewPath,
   getUserOnboardingPersonalizingPath,
 } from "@/lib/app-paths";
 import { cn } from "@/lib/utils";
 import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-context";
+import {
+  getOnboardingOptionsPath,
+  getOnboardingOptionsQueryKey,
+  normalizeOnboardingOptionsResponse,
+} from "@/modules/onboarding/lib/onboarding-options";
 import { useAuthStore } from "@/store";
 import PageAura from "../../components/page-aura.jsx";
 import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
+import { buildMetabolismResultViewModel } from "./result-view-model.js";
 import {
   buildOnboardingPreferencePatch,
   buildOnboardingSyncPatch,
   buildPersonalizationPatch,
   formatNumber,
-  formatWeightDelta,
   getMacroBalanceMessage,
   isOnboardingPreferenceField,
   normalizeCatalogIds,
@@ -76,6 +92,7 @@ const editKeys = {
   proteinGram: "proteinGram",
   carbsGram: "carbsGram",
   fatGram: "fatGram",
+  recommendedWaterMl: "recommendedWaterMl",
   currentWeight: "currentWeight",
   targetWeight: "targetWeight",
   goal: "goal",
@@ -134,11 +151,8 @@ const onboardingRecalculationFields = new Set([
   editKeys.activityLevel,
 ]);
 
-const extractOptions = (response, optionsKey) => {
-  const body = unwrapApiData(response) ?? {};
-  const values = body?.[optionsKey];
-  return Array.isArray(values) ? values : [];
-};
+const extractOptions = (response, optionsKey) =>
+  normalizeOnboardingOptionsResponse(response, optionsKey);
 
 const mergeOptions = (...groups) => {
   const map = new Map();
@@ -153,241 +167,391 @@ const mergeOptions = (...groups) => {
   return Array.from(map.values());
 };
 
-const resultFallbacks = {
-  calorie: 2100,
-  weightDiff: -10,
-  weeklyRate: 0.5,
-  carbs: 230,
-  protein: 160,
-  fat: 65,
-  waterMl: 2500,
-  currentWeight: 70,
-  goal: "Ozish",
-  activity: "O'rtacha faol",
-  budget: "O'rtacha budjet",
-  explanation:
-    "AI sizning maqsadingiz, hozirgi vazningiz, faollik darajangiz va ovqatlanish ritmingiz asosida boshlang'ich targetlarni tayyorladi.",
-};
-
-const goalLabels = {
-  lose: "Ozish",
-  weight_loss: "Ozish",
-  weightLoss: "Ozish",
-  maintain: "Vazn saqlash",
-  gain: "Mushak yig'ish",
-  muscle_gain: "Mushak yig'ish",
-  healthy_lifestyle: "Sog'lom turmush",
-  performance: "Performance",
-};
-
-const activityLabels = {
-  sedentary: "Passiv",
-  "lightly-active": "Yengil faol",
-  lightly_active: "Yengil faol",
-  "moderately-active": "O'rtacha faol",
-  moderately_active: "O'rtacha faol",
-  "very-active": "Juda faol",
-  very_active: "Juda faol",
-};
-
-const budgetTierLabels = {
-  low: "Past budjet",
-  medium: "O'rtacha budjet",
-  high: "Yuqori budjet",
-};
-
-const getNumberOrFallback = (value, fallback) => {
-  if (value === null || value === undefined || value === "") return fallback;
+const formatResultNumber = (value) => {
   const numberValue = Number(value);
-  return Number.isFinite(numberValue) ? numberValue : fallback;
+  if (!Number.isFinite(numberValue)) return "-";
+  return new Intl.NumberFormat("en-US").format(Math.round(numberValue));
 };
 
-const formatResultNumber = (value) =>
-  value === null || value === undefined || value === ""
-    ? "-"
-    : formatNumber(value, "en-US");
+const premiumSurface =
+  "border-[#ff990038] bg-[rgba(18,12,7,0.92)] shadow-[0_20px_70px_rgba(0,0,0,0.45)] backdrop-blur-xl";
+const premiumTile =
+  "border-[#ff99002e] bg-[rgba(30,20,11,0.72)] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]";
+const premiumTextMuted = "text-white/55";
+const premiumTextSecondary = "text-white/72";
 
-const formatResultLiters = (value) => {
-  const liters = getNumberOrFallback(value, resultFallbacks.waterMl) / 1000;
-  const rounded = Math.round(liters * 10) / 10;
-  return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(1)} L`;
+const editableFieldMeta = {
+  [editKeys.dailyCalories]: {
+    icon: FlameIcon,
+    label: "Kunlik kaloriya",
+    unit: "kcal",
+    step: 25,
+    min: 800,
+    formatOptions: { maximumFractionDigits: 0 },
+    helper: "AI reja shu kunlik limitdan boshlanadi.",
+  },
+  [editKeys.proteinGram]: {
+    icon: SaladIcon,
+    label: "Oqsil",
+    unit: "g",
+    step: 5,
+    min: 0,
+    formatOptions: { maximumFractionDigits: 0 },
+    helper: "Oqsil miqdori to'yimlilik va mushak saqlashga ta'sir qiladi.",
+  },
+  [editKeys.carbsGram]: {
+    icon: UtensilsIcon,
+    label: "Uglevod",
+    unit: "g",
+    step: 5,
+    min: 0,
+    formatOptions: { maximumFractionDigits: 0 },
+    helper: "Uglevod energiya va mashg'ulot ritmini balanslaydi.",
+  },
+  [editKeys.fatGram]: {
+    icon: FlameIcon,
+    label: "Yog'",
+    unit: "g",
+    step: 1,
+    min: 0,
+    formatOptions: { maximumFractionDigits: 0 },
+    helper: "Yog' miqdorini juda past tushirmaslik tavsiya qilinadi.",
+  },
+  [editKeys.recommendedWaterMl]: {
+    icon: DropletsIcon,
+    label: "Suv",
+    unit: "L",
+    step: 0.1,
+    min: 0.5,
+    formatOptions: { maximumFractionDigits: 1 },
+    helper: "Kunlik suv maqsadi tracking ekranlarida ishlatiladi.",
+    water: true,
+  },
 };
 
-const formatResultDate = (value) => {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return new Intl.DateTimeFormat("uz-UZ", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(date);
+const metricIconMap = {
+  currentWeight: ScaleIcon,
+  targetWeight: TargetIcon,
+  weightDiff: ActivityIcon,
+  weeklyPace: GaugeIcon,
+  protein: SaladIcon,
+  carbs: UtensilsIcon,
+  fat: FlameIcon,
+  water: DropletsIcon,
+  steps: FootprintsIcon,
+  bmr: GaugeIcon,
+  tdee: ActivityIcon,
+  bmi: ScaleIcon,
+  age: GaugeIcon,
+  date: CalendarDaysIcon,
+  meals: UtensilsIcon,
+  workouts: ActivityIcon,
+  activity: ActivityIcon,
+  adjustment: TargetIcon,
+  final: CheckIcon,
+  budget: WalletCardsIcon,
 };
 
-const resolveSummaryBudget = (onboarding = {}) => {
-  if (onboarding?.foodBudgetTier) {
-    return (
-      budgetTierLabels[onboarding.foodBudgetTier] ?? resultFallbacks.budget
-    );
-  }
-
-  const amount = getNumberOrFallback(onboarding?.foodBudget, null);
-  if (amount === null) return resultFallbacks.budget;
-
-  const currency = onboarding?.budgetCurrency || "UZS";
-  const period =
-    {
-      daily: "kuniga",
-      weekly: "haftasiga",
-      monthly: "oyiga",
-    }[onboarding?.budgetPeriod] ?? "haftasiga";
-
-  return `${formatResultNumber(amount)} ${currency} / ${period}`;
-};
-
-const resolveResultSnapshot = (result = {}, onboarding = {}) => {
-  const goalKey = onboarding?.goal ?? result?.goal;
-  const activityKey = onboarding?.activityLevel ?? result?.activityLevel;
-
-  return {
-    calories: getNumberOrFallback(
-      result?.dailyCalories,
-      resultFallbacks.calorie,
-    ),
-    weightDiff: getNumberOrFallback(
-      result?.weightToChange,
-      resultFallbacks.weightDiff,
-    ),
-    weeklyRate: getNumberOrFallback(
-      result?.weeklyWeightChangeGoal ?? onboarding?.weeklyPace,
-      resultFallbacks.weeklyRate,
-    ),
-    carbs: getNumberOrFallback(result?.carbsGram, resultFallbacks.carbs),
-    protein: getNumberOrFallback(result?.proteinGram, resultFallbacks.protein),
-    fat: getNumberOrFallback(result?.fatGram, resultFallbacks.fat),
-    waterMl: getNumberOrFallback(
-      result?.recommendedWaterMl,
-      resultFallbacks.waterMl,
-    ),
-    currentWeight: getNumberOrFallback(
-      onboarding?.currentWeight?.value ?? result?.currentWeight,
-      resultFallbacks.currentWeight,
-    ),
-    targetWeight: getNumberOrFallback(
-      onboarding?.targetWeight?.value ?? result?.targetWeight,
-      null,
-    ),
-    bmr: getNumberOrFallback(result?.bmr, null),
-    tdee: getNumberOrFallback(result?.tdee, null),
-    bmi: getNumberOrFallback(result?.bmi, null),
-    metabolicAge: getNumberOrFallback(result?.metabolicAge, null),
-    dailyStepsTarget: getNumberOrFallback(result?.dailyStepsTarget, null),
-    estimatedGoalDate: result?.estimatedGoalDate ?? null,
-    mealsPerDay: getNumberOrFallback(result?.mealsPerDay, null),
-    weeklyWorkoutDays: getNumberOrFallback(result?.weeklyWorkoutDays, null),
-    explanation: result?.explanation || resultFallbacks.explanation,
-    goal: goalLabels[goalKey] ?? resultFallbacks.goal,
-    activity: activityLabels[activityKey] ?? resultFallbacks.activity,
-    budget: resolveSummaryBudget(onboarding),
-  };
-};
-
-const HeroInfoCard = ({ label, value }) => (
-  <div className="flex min-h-[88px] items-start justify-between gap-3 rounded-[1.25rem] border border-border/70 bg-muted/30 p-3 text-left">
-    <span>
-      <span className="block text-[11px] font-semibold leading-4 text-muted-foreground">
-        {label}
-      </span>
-      <span className="mt-1 block text-xl font-black leading-tight text-foreground">
-        {value}
-      </span>
-    </span>
-  </div>
+const IconBubble = ({
+  icon: Icon,
+  water = false,
+  className,
+  iconClassName,
+  glow = false,
+}) => (
+  <span
+    className={cn(
+      "flex shrink-0 items-center justify-center rounded-full border",
+      water
+        ? "border-cyan-300/20 bg-cyan-400/10 text-cyan-300"
+        : "border-[#ff990030] bg-[#ff9800]/12 text-[#ffb000]",
+      glow && "shadow-[0_0_28px_rgba(255,152,0,0.28)]",
+      className,
+    )}
+  >
+    <Icon className={cn("size-4", iconClassName)} aria-hidden="true" />
+  </span>
 );
 
-const MetricCard = ({
-  icon: Icon,
-  label,
-  value,
-  unit,
-  water = false,
-  onEdit,
-}) => {
-  const interactive = typeof onEdit === "function";
-  const Component = interactive ? "button" : "div";
+const EditBadgeButton = ({ label, onClick, className }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    aria-label={`${label}ni tahrirlash`}
+    className={cn(
+      "inline-flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-full border border-[#ff990038] bg-[#ff9800]/12 text-[#ffb000] transition hover:border-[#ff990078] hover:bg-[#ff9800]/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff9800]/50",
+      className,
+    )}
+  >
+    <PencilIcon className="size-4" aria-hidden="true" />
+  </button>
+);
+
+const SectionCard = ({ title, badge, children, className }) => (
+  <section
+    className={cn(
+      "shrink-0 rounded-[1.45rem] border p-4 text-white",
+      premiumSurface,
+      className,
+    )}
+  >
+    {title ? (
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="text-base font-black leading-tight text-white">
+          {title}
+        </h2>
+        {badge ? (
+          <span className="shrink-0 rounded-full bg-white/8 px-2.5 py-1 text-[11px] font-bold text-white/70">
+            {badge}
+          </span>
+        ) : null}
+      </div>
+    ) : null}
+    {children}
+  </section>
+);
+
+const StatChip = ({ item }) => {
+  const Icon = metricIconMap[item.key] ?? TargetIcon;
 
   return (
-    <Component
-      {...(interactive ? { type: "button", onClick: onEdit } : {})}
-      className="flex min-h-[118px] flex-col justify-between rounded-[1.35rem] border border-border/70 bg-background/90 p-4 text-left shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+    <div
+      className={cn(
+        "flex min-h-16 items-center gap-3 rounded-[1rem] border p-3",
+        premiumTile,
+      )}
     >
-      <span
-        className={cn(
-          "flex size-9 items-center justify-center rounded-full",
-          water
-            ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-300"
-            : tone.badgeTone,
-        )}
-      >
-        <Icon className="size-[18px]" aria-hidden="true" />
-      </span>
-      <span>
-        <span className="block text-xs font-semibold text-muted-foreground">
-          {label}
+      <IconBubble icon={Icon} className="size-10" />
+      <span className="min-w-0">
+        <span className={cn("block text-[11px] font-medium leading-tight", premiumTextSecondary)}>
+          {item.label}
         </span>
-        <span className="mt-1 block text-2xl font-black tracking-tight text-foreground">
-          {value}
-          {unit ? (
-            <span className="ml-1 text-sm font-bold text-muted-foreground">
-              {unit}
-            </span>
-          ) : null}
+        <span
+          className={cn(
+            "mt-0.5 block text-[15px] font-black leading-tight text-white min-[390px]:text-base",
+            item.positive && "text-[#52E37B]",
+          )}
+        >
+          {item.value}
         </span>
       </span>
-    </Component>
+    </div>
   );
 };
 
-const SummaryItem = ({ icon: Icon, label, value }) => (
-  <div className="flex items-center gap-3 rounded-[1.1rem] border border-border/70 bg-background/80 p-3">
-    <span
+const MetricTile = ({ item, compact = false }) => {
+  const Icon = metricIconMap[item.key] ?? TargetIcon;
+  const water = item.key === "water";
+
+  return (
+    <div
       className={cn(
-        "flex size-9 shrink-0 items-center justify-center rounded-full",
-        tone.badgeTone,
+        "flex min-h-[64px] items-center gap-3 rounded-[1rem] border p-3",
+        premiumTile,
+        compact && "min-h-[58px]",
       )}
     >
-      <Icon className="size-4" aria-hidden="true" />
-    </span>
-    <span className="min-w-0">
-      <span className="block text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
-        {label}
+      <IconBubble icon={Icon} water={water} className="size-9" />
+      <span className="min-w-0">
+        <span className={cn("block text-[11px] font-medium leading-tight", premiumTextSecondary)}>
+          {item.label}
+        </span>
+        <span className="mt-0.5 block text-[15px] font-black leading-tight text-white">
+          {item.value}
+        </span>
       </span>
-      <span className="mt-0.5 block truncate text-sm font-black text-foreground">
-        {value}
+    </div>
+  );
+};
+
+const MacroCard = ({ item, onEdit, water = false }) => {
+  const Icon =
+    item.label === "Oqsil"
+      ? SaladIcon
+      : item.label === "Uglevod"
+        ? UtensilsIcon
+        : item.label === "Yog'"
+          ? FlameIcon
+          : DropletsIcon;
+
+  return (
+    <div
+      className={cn(
+        "relative flex min-h-[92px] items-center gap-3 rounded-[1rem] border p-3 pr-12 text-left transition",
+        premiumTile,
+        onEdit && "hover:border-[#ff990078] hover:bg-[#ff9800]/10",
+      )}
+    >
+      {onEdit ? (
+        <EditBadgeButton
+          label={item.label}
+          onClick={onEdit}
+          className="absolute right-2.5 top-2.5 min-h-8 min-w-8"
+        />
+      ) : null}
+      <IconBubble icon={Icon} water={water} className="size-10 shrink-0" />
+      <span className="min-w-0 flex-1">
+        <span className={cn("block text-[11px] font-medium leading-tight", premiumTextSecondary)}>
+          {item.label}
+        </span>
+        <span className="mt-1 block whitespace-nowrap text-base font-black leading-none text-white min-[390px]:text-lg">
+          {item.grams}
+        </span>
       </span>
-    </span>
+      <span className="shrink-0 rounded-lg bg-white/8 px-2 py-1 text-[11px] font-black text-white/78">
+        {item.percent}
+      </span>
+    </div>
+  );
+};
+
+const ProgressBar = ({ value }) => (
+  <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-white/10">
+    <div
+      className="h-full rounded-full bg-gradient-to-r from-[#ffb000] to-[#ff6a00] shadow-[0_0_18px_rgba(255,152,0,0.38)]"
+      style={{ width: `${Math.max(4, Math.min(100, Number(value) || 0))}%` }}
+    />
   </div>
 );
 
-const InfoMetric = ({ icon: Icon, label, value, water = false }) => (
-  <div className="rounded-[1.1rem] border border-border/70 bg-background/85 p-3 shadow-sm backdrop-blur">
-    <div className="flex items-center gap-2">
-      <span
+const calculationSummaryKeys = ["bmr", "tdee", "final"];
+
+const getCalculationBadge = (item) => {
+  if (item.key === "bmr") return "asos";
+  if (item.key === "activity") return "x";
+  if (item.key === "tdee") return "=";
+  if (item.key === "adjustment") {
+    if (String(item.value).startsWith("-")) return "defitsit";
+    if (String(item.value).startsWith("+")) return "profitsit";
+    return "0";
+  }
+  if (item.key === "final") return "target";
+  return item.operator;
+};
+
+const CalculationSummary = ({ steps }) => {
+  const summarySteps = calculationSummaryKeys
+    .map((key) => steps.find((step) => step.key === key))
+    .filter(Boolean);
+
+  return (
+    <div className="rounded-[1.15rem] border border-[#ff99002a] bg-[rgba(30,20,11,0.58)] p-3">
+      <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
+        {summarySteps.map((item, index) => (
+          <React.Fragment key={item.key}>
+            <div
+              className={cn(
+                "min-w-0 rounded-[0.9rem] border px-2.5 py-2 text-center",
+                item.highlighted
+                  ? "border-[#ff990066] bg-[#ff9800]/14 shadow-[0_0_24px_rgba(255,152,0,0.2)]"
+                  : "border-[#ff990020] bg-black/18",
+              )}
+            >
+              <span className={cn("block text-[10px] font-black uppercase", premiumTextMuted)}>
+                {item.key === "final" ? "Target" : item.label}
+              </span>
+              <span className="mt-1 block truncate text-[12px] font-black leading-tight text-white">
+                {item.value}
+              </span>
+            </div>
+            {index < summarySteps.length - 1 ? (
+              <ChevronRightIcon className="size-4 shrink-0 text-[#ffb000]" aria-hidden="true" />
+            ) : null}
+          </React.Fragment>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const CalculationStep = ({ item, index, isLast }) => {
+  const Icon = metricIconMap[item.key] ?? TargetIcon;
+  const badge = getCalculationBadge(item);
+
+  return (
+    <div className="grid grid-cols-[2.25rem_minmax(0,1fr)] gap-3">
+      <div className="flex flex-col items-center">
+        <IconBubble
+          icon={Icon}
+          className={cn(
+            "size-9",
+            item.highlighted && "border-[#ff99006c] bg-[#ff9800]/20",
+          )}
+          iconClassName="size-4"
+          glow={item.highlighted}
+        />
+        {!isLast ? (
+          <div className="mt-1 h-8 w-px rounded-full bg-gradient-to-b from-[#ff9800]/42 to-[#ff9800]/8" />
+        ) : null}
+      </div>
+      <div
         className={cn(
-          "flex size-8 shrink-0 items-center justify-center rounded-full",
-          water
-            ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-300"
-            : tone.badgeTone,
+          "rounded-[1rem] border p-3",
+          item.highlighted
+            ? "border-[#ff99007a] bg-gradient-to-br from-[#ff9800]/18 to-[#1e140b]/80 shadow-[0_0_28px_rgba(255,152,0,0.22)]"
+            : premiumTile,
         )}
       >
-        <Icon className="size-4" aria-hidden="true" />
-      </span>
-      <span className="min-w-0 truncate text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
-        {label}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <span className={cn("block text-[11px] font-bold leading-tight", premiumTextSecondary)}>
+              {index + 1}. {item.label}
+            </span>
+            <span className="mt-1 block text-[17px] font-black leading-tight text-white">
+              {item.value}
+            </span>
+          </div>
+          {badge ? (
+            <span
+              className={cn(
+                "shrink-0 rounded-full border px-2 py-1 text-[11px] font-black",
+                item.highlighted
+                  ? "border-[#ff990066] bg-[#ff9800]/20 text-[#ffcf70]"
+                  : "border-[#ff99002e] bg-black/20 text-white/70",
+              )}
+            >
+              {badge}
+            </span>
+          ) : null}
+        </div>
+        <p className={cn("mt-1.5 text-[11px] font-medium leading-4", premiumTextMuted)}>
+          {item.caption}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+const MacroEnergyRow = ({ item }) => (
+  <div className="grid grid-cols-[minmax(76px,0.8fr)_auto] items-center gap-x-3 gap-y-2 rounded-[1rem]">
+    <div className="flex min-w-0 items-center gap-3">
+      <IconBubble
+        icon={
+          item.label === "Oqsil"
+            ? SaladIcon
+            : item.label === "Uglevod"
+              ? UtensilsIcon
+              : FlameIcon
+        }
+        className="size-9"
+      />
+      <span className="min-w-0">
+        <span className="block truncate text-[13px] font-black text-white">
+          {item.label}
+        </span>
+        <span className={cn("block text-[11px] font-bold", premiumTextSecondary)}>
+          {item.grams}
+        </span>
       </span>
     </div>
-    <div className="mt-2 truncate text-lg font-black text-foreground">
-      {value}
+    <div className="text-right">
+      <span className="block text-[13px] font-black text-white">{item.kcal}</span>
+      <span className="mt-1 inline-flex rounded-full bg-white/8 px-2 py-1 text-[11px] font-black text-white/72">
+        {item.percent}
+      </span>
+    </div>
+    <div className="col-span-2">
+      <ProgressBar value={item.progress} />
     </div>
   </div>
 );
@@ -423,6 +587,11 @@ const getEditValue = (field, result, onboarding) => {
     return onboarding?.currentWeight?.value ?? result?.currentWeight ?? "";
   }
 
+  if (field === editKeys.recommendedWaterMl) {
+    const waterMl = Number(result?.recommendedWaterMl);
+    return Number.isFinite(waterMl) && waterMl > 0 ? waterMl / 1000 : "";
+  }
+
   if (field === editKeys.forbiddenExercises) {
     return (onboarding?.forbiddenExercises ?? []).join("\n");
   }
@@ -432,6 +601,21 @@ const getEditValue = (field, result, onboarding) => {
   }
 
   return result?.[field] ?? "";
+};
+
+const formatEditDisplayValue = (field, result, onboarding) => {
+  const meta = editableFieldMeta[field];
+  if (!meta) return "-";
+  const rawValue = getEditValue(field, result, onboarding);
+  const numberValue = Number(rawValue);
+  if (!Number.isFinite(numberValue)) return "-";
+
+  const maximumFractionDigits =
+    meta.formatOptions?.maximumFractionDigits ?? (field === editKeys.recommendedWaterMl ? 1 : 0);
+
+  return `${new Intl.NumberFormat("en-US", {
+    maximumFractionDigits,
+  }).format(numberValue)} ${meta.unit}`;
 };
 
 const getChipValue = (field, onboarding) => {
@@ -457,17 +641,26 @@ const CatalogChipEditor = ({ field, value, onChange, t }) => {
   const selectedIds = normalizeCatalogIds(value.ids);
   const customItems = normalizeCustomItems(value.customItems);
   const baseQuery = useGetQuery({
-    url: "/user/onboarding/options",
+    url: getOnboardingOptionsPath(config.optionsKey),
     queryProps: {
-      queryKey: ["onboarding", "options", "post-result", field],
+      queryKey: getOnboardingOptionsQueryKey(
+        config.optionsKey,
+        "post-result",
+        field,
+      ),
       staleTime: 60000,
     },
   });
   const searchQuery = useGetQuery({
-    url: "/user/onboarding/options",
+    url: getOnboardingOptionsPath(config.optionsKey),
     params: { q: searchLabel },
     queryProps: {
-      queryKey: ["onboarding", "options", "post-result", field, searchLabel],
+      queryKey: getOnboardingOptionsQueryKey(
+        config.optionsKey,
+        "post-result",
+        field,
+        searchLabel,
+      ),
       enabled: searchLabel.length >= 2,
       staleTime: 15000,
     },
@@ -638,23 +831,15 @@ const EditDrawer = ({
     customItems: [],
   });
 
-  React.useEffect(() => {
-    let cancelled = false;
+  React.useLayoutEffect(() => {
+    if (!field || !result) return;
 
-    queueMicrotask(() => {
-      if (cancelled || !field || !result) return;
+    if (chipFields.has(field)) {
+      setChipValue(getChipValue(field, onboarding));
+      return;
+    }
 
-      if (chipFields.has(field)) {
-        setChipValue(getChipValue(field, onboarding));
-        return;
-      }
-
-      setValue(getEditValue(field, result, onboarding));
-    });
-
-    return () => {
-      cancelled = true;
-    };
+    setValue(getEditValue(field, result, onboarding));
   }, [field, onboarding, result]);
 
   if (!field) return null;
@@ -662,29 +847,86 @@ const EditDrawer = ({
   const isOptionField = Object.prototype.hasOwnProperty.call(optionSets, field);
   const isChipField = chipFields.has(field);
   const isTextarea = textareaFields.has(field);
+  const editMeta = editableFieldMeta[field];
+  const EditIcon = editMeta?.icon ?? TargetIcon;
   const title = t(`onboarding.postOnboarding.result.edit.${field}.title`);
   const description = t(
     `onboarding.postOnboarding.result.edit.${field}.description`,
   );
+  const rawValue = String(value ?? "").trim();
   const numberValue = Number(value);
+  const hasNumberValue = rawValue !== "" && Number.isFinite(numberValue);
+  const isNumberField = !isChipField && !isOptionField && !isTextarea;
+  const currentDisplayValue = formatEditDisplayValue(field, result, onboarding);
+  const saveDisabled =
+    saving ||
+    (isNumberField && !hasNumberValue) ||
+    (isOptionField && rawValue === "");
   const showLowCalorieWarning =
     field === editKeys.dailyCalories &&
-    Number.isFinite(numberValue) &&
+    hasNumberValue &&
     numberValue < 1200;
   const showLowFatWarning =
     field === editKeys.fatGram &&
-    Number.isFinite(numberValue) &&
-    Number(result?.currentWeight) > 0 &&
-    numberValue < Number(result.currentWeight) * 0.5;
+    hasNumberValue &&
+    Number(onboarding?.currentWeight?.value ?? result?.currentWeight) > 0 &&
+    numberValue <
+      Number(onboarding?.currentWeight?.value ?? result.currentWeight) * 0.5;
+  const macroEnergyPreview =
+    [
+      editKeys.proteinGram,
+      editKeys.carbsGram,
+      editKeys.fatGram,
+    ].includes(field) && hasNumberValue
+      ? Math.round(numberValue * (field === editKeys.fatGram ? 9 : 4))
+      : null;
+  const saveValue = isNumberField
+    ? field === editKeys.recommendedWaterMl
+      ? Math.round(numberValue * 1000)
+      : Number(value)
+    : value;
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>{title}</DrawerTitle>
-          <DrawerDescription>{description}</DrawerDescription>
+      <DrawerContent className="text-white before:border-[#ff990038] before:bg-[#120c07] before:shadow-[0_-24px_80px_rgba(255,106,0,0.18)] data-[vaul-drawer-direction=bottom]:h-[560px] data-[vaul-drawer-direction=bottom]:max-h-[88vh] data-[vaul-drawer-direction=bottom]:max-w-[430px]">
+        <DrawerHeader className="px-5 pb-3 pt-4 text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+          <div className="flex items-start gap-3">
+            <IconBubble
+              icon={EditIcon}
+              water={editMeta?.water}
+              className="size-12"
+              glow
+            />
+            <div className="min-w-0 flex-1">
+              <DrawerTitle className="text-lg font-black text-white">
+                {title}
+              </DrawerTitle>
+              <DrawerDescription className="mt-1 text-[13px] font-medium leading-5 text-white/62">
+                {description}
+              </DrawerDescription>
+            </div>
+          </div>
         </DrawerHeader>
-        <DrawerBody className="space-y-4">
+        <DrawerBody className="space-y-4 px-5 pb-3">
+          {editMeta ? (
+            <div className="rounded-[1.25rem] border border-[#ff99002e] bg-[rgba(30,20,11,0.72)] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[11px] font-black uppercase tracking-[0.14em] text-white/45">
+                  Hozirgi qiymat
+                </span>
+                <span className="rounded-full bg-[#ff9800]/12 px-2.5 py-1 text-[11px] font-black text-[#ffcf70]">
+                  {editMeta.unit}
+                </span>
+              </div>
+              <div className="mt-2 text-2xl font-black leading-none text-white">
+                {currentDisplayValue}
+              </div>
+              <p className="mt-3 text-[13px] font-medium leading-5 text-white/62">
+                {editMeta.helper}
+              </p>
+            </div>
+          ) : null}
+
           {isChipField ? (
             <CatalogChipEditor
               field={field}
@@ -709,6 +951,38 @@ const EditDrawer = ({
                 "onboarding.postOnboarding.result.edit.forbiddenExercises.placeholder",
               )}
             />
+          ) : editMeta ? (
+            <div className="space-y-2">
+              <label className="text-[13px] font-black text-white">
+                Yangi qiymat
+              </label>
+              <NumberField
+                value={hasNumberValue ? numberValue : undefined}
+                onValueChange={(nextValue) =>
+                  setValue(
+                    nextValue === null || nextValue === undefined
+                      ? ""
+                      : String(nextValue),
+                  )
+                }
+                min={editMeta.min}
+                step={editMeta.step}
+                format={{ useGrouping: false, ...editMeta.formatOptions }}
+              >
+                <NumberFieldGroup className="h-14 rounded-[1.15rem] border-[#ff990038] bg-black/28 text-white shadow-none focus-within:border-[#ff990078] focus-within:ring-[#ff9800]/30">
+                  <NumberFieldDecrement className="w-12 border-r border-[#ff99001f] text-[#ffb000] hover:bg-[#ff9800]/10" />
+                  <NumberFieldInput
+                    aria-label={title}
+                    inputMode="decimal"
+                    onFocus={(event) => {
+                      event.currentTarget.select();
+                    }}
+                    className="text-center text-xl font-black"
+                  />
+                  <NumberFieldIncrement className="w-12 border-l border-[#ff99001f] text-[#ffb000] hover:bg-[#ff9800]/10" />
+                </NumberFieldGroup>
+              </NumberField>
+            </div>
           ) : (
             <Input
               type="number"
@@ -720,47 +994,61 @@ const EditDrawer = ({
           )}
 
           {field === editKeys.dailyCalories ? (
-            <div className="rounded-2xl bg-muted/50 p-3 text-sm font-medium text-muted-foreground">
+            <div className="rounded-[1.15rem] border border-[#ff990024] bg-[#ff9800]/8 p-3 text-[13px] font-medium text-white/66">
               {t("onboarding.postOnboarding.result.recommended")}:{" "}
               {formatNumber(result.dailyCalories)} kcal
             </div>
           ) : null}
 
-          {field === editKeys.proteinGram && result?.currentWeight ? (
-            <div className="rounded-2xl bg-muted/50 p-3 text-sm font-medium text-muted-foreground">
+          {field === editKeys.proteinGram &&
+          Number(onboarding?.currentWeight?.value ?? result?.currentWeight) > 0 ? (
+            <div className="rounded-[1.15rem] border border-[#ff990024] bg-[#ff9800]/8 p-3 text-[13px] font-medium text-white/66">
               {t("onboarding.postOnboarding.result.proteinRecommendation", {
-                min: Math.round(result.currentWeight * 1.6),
-                max: Math.round(result.currentWeight * 2.2),
+                min: Math.round(
+                  Number(onboarding?.currentWeight?.value ?? result.currentWeight) *
+                    1.6,
+                ),
+                max: Math.round(
+                  Number(onboarding?.currentWeight?.value ?? result.currentWeight) *
+                    2.2,
+                ),
               })}
             </div>
           ) : null}
 
           {field === editKeys.carbsGram || field === editKeys.fatGram ? (
-            <div className="rounded-2xl bg-muted/50 p-3 text-sm font-medium text-muted-foreground">
+            <div className="rounded-[1.15rem] border border-[#ff990024] bg-[#ff9800]/8 p-3 text-[13px] font-medium text-white/66">
               {getMacroBalanceMessage(
                 {
                   ...result,
-                  [field]: Number.isFinite(numberValue)
-                    ? numberValue
-                    : result[field],
+                  [field]: hasNumberValue ? numberValue : result[field],
                 },
                 t,
               )}
             </div>
           ) : null}
 
+          {macroEnergyPreview !== null ? (
+            <div className="rounded-[1.15rem] border border-[#ff990024] bg-[#ff9800]/8 p-3 text-[13px] font-medium text-white/66">
+              Makro energiya: {formatResultNumber(macroEnergyPreview)} kcal
+            </div>
+          ) : null}
+
           {showLowCalorieWarning || showLowFatWarning ? (
-            <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-3 text-sm font-semibold text-destructive">
+            <div className="rounded-[1.15rem] border border-red-400/25 bg-red-500/10 p-3 text-[13px] font-semibold text-red-200">
               {showLowCalorieWarning
                 ? t("onboarding.postOnboarding.result.lowCalorieWarning")
                 : t("onboarding.postOnboarding.result.lowFatWarning")}
             </div>
           ) : null}
         </DrawerBody>
-        <DrawerFooter>
+        <DrawerFooter className="p-0">
           <Button
             type="button"
-            onClick={() =>
+            className="h-14 w-full rounded-none border-0 bg-gradient-to-r from-[#ffb000] to-[#ff6a00] text-[15px] font-black text-white shadow-[0_-10px_40px_rgba(255,106,0,0.24)] hover:from-[#ffc13a] hover:to-[#ff7a1a]"
+            onClick={() => {
+              if (saveDisabled) return;
+
               onSave(
                 field,
                 isChipField
@@ -768,21 +1056,18 @@ const EditDrawer = ({
                   : isOptionField
                     ? value
                     : isTextarea
-                      ? value
-                      : Number(value),
-              )
-            }
-            disabled={saving}
+                    ? value
+                    : saveValue,
+              );
+            }}
+            disabled={saveDisabled}
           >
-            {saving ? <Loader2Icon className="size-4 animate-spin" /> : null}
+            {saving ? (
+              <Loader2Icon className="size-4 animate-spin" />
+            ) : (
+              <SaveIcon className="size-4" />
+            )}
             {t("onboarding.postOnboarding.result.save")}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
-            {t("onboarding.postOnboarding.result.cancel")}
           </Button>
         </DrawerFooter>
       </DrawerContent>
@@ -791,282 +1076,185 @@ const EditDrawer = ({
 };
 
 export const ResultContent = ({ result, onboarding, onEdit }) => {
-  const { t } = useTranslation();
   const snapshot = React.useMemo(
-    () => resolveResultSnapshot(result, onboarding),
+    () => buildMetabolismResultViewModel(result, onboarding),
     [onboarding, result],
   );
-  const weeklyRateLabel = `${Math.round(snapshot.weeklyRate * 100) / 100} kg haftasiga`;
-  const macroBalanceMessage = getMacroBalanceMessage(
+  const macroItems = [
     {
-      dailyCalories: snapshot.calories,
-      proteinGram: snapshot.protein,
-      carbsGram: snapshot.carbs,
-      fatGram: snapshot.fat,
+      key: "protein",
+      ...snapshot.macros.protein,
+      onEdit: () => onEdit(editKeys.proteinGram),
     },
-    t,
-  );
+    {
+      key: "carbs",
+      ...snapshot.macros.carbs,
+      onEdit: () => onEdit(editKeys.carbsGram),
+    },
+    {
+      key: "fat",
+      ...snapshot.macros.fat,
+      onEdit: () => onEdit(editKeys.fatGram),
+    },
+    {
+      key: "water",
+      label: "Suv",
+      grams: snapshot.waterLiters,
+      percent: "-",
+      onEdit: () => onEdit(editKeys.recommendedWaterMl),
+    },
+  ];
 
   return (
-    <div className="relative flex min-h-full w-full flex-1 flex-col gap-4 overflow-x-hidden px-5 pt-3 md:pt-8">
+    <div className="relative mx-auto flex h-full min-h-0 w-full max-w-[430px] flex-1 flex-col gap-4 overflow-y-auto overflow-x-hidden bg-[#070503] px-3 pb-20 pt-3 text-white min-[390px]:px-4">
       <section
         className={cn(
-          "rounded-[1.75rem] border bg-background/90 p-5 shadow-sm backdrop-blur",
-          tone.border,
+          "relative shrink-0 overflow-hidden rounded-[1.65rem] border p-5",
+          premiumSurface,
+          "shadow-[0_0_0_1px_rgba(255,153,0,0.08),0_28px_90px_rgba(255,106,0,0.12)]",
         )}
       >
-        <div className="space-y-3">
-          <div
-            className={cn(
-              "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-black",
-              tone.badgeTone,
-            )}
-          >
-            <TargetIcon className="size-3.5" aria-hidden="true" />
-            Shaxsiy maqsadlar tayyor
-          </div>
-          <div>
-            <h1 className="text-[2rem] font-black leading-[1.05] tracking-tight text-foreground">
-              Sizning rejangiz tayyor
-            </h1>
-            <p className="mt-3 text-sm font-medium leading-6 text-muted-foreground">
-              Sizga mos, barqaror va xavfsiz natijaga erishishingiz uchun reja
-              tuzildi.
-            </p>
+        <div className="pointer-events-none absolute -right-10 top-6 hidden size-44 rotate-12 rounded-[2rem] border border-[#ff990030] bg-[#ff9800]/10 shadow-[0_0_80px_rgba(255,152,0,0.25)] min-[420px]:block" />
+        <div className="pointer-events-none absolute right-8 top-14 hidden min-[420px]:block">
+          <div className="flex size-16 rotate-[-18deg] items-center justify-center rounded-[1.4rem] bg-[#ff9800]/12 text-[#ffb000] shadow-[0_0_55px_rgba(255,152,0,0.45)]">
+            <CheckIcon className="size-10 stroke-[4]" aria-hidden="true" />
           </div>
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          <HeroInfoCard
-            label="Hozirgi vazn"
-            value={`${formatResultNumber(snapshot.currentWeight)} kg`}
-          />
-          <HeroInfoCard
-            label="Maqsad vazn"
-            value={
-              snapshot.targetWeight !== null
-                ? `${formatResultNumber(snapshot.targetWeight)} kg`
-                : "-"
-            }
-          />
-          <HeroInfoCard
-            label="Vazn farqi (maqsad)"
-            value={formatWeightDelta(snapshot.weightDiff)}
-          />
-          <HeroInfoCard
-            label="Haftalik sur'at"
-            value={weeklyRateLabel}
-          />
-        </div>
-      </section>
-
-      <section className="rounded-[1.35rem] border border-border/70 bg-background/90 p-4 shadow-sm backdrop-blur">
-        <div className="flex items-center gap-2 text-sm font-black text-foreground">
-          <span
-            className={cn(
-              "flex size-8 items-center justify-center rounded-full",
-              tone.badgeTone,
-            )}
-          >
-            <InfoIcon className="size-4" aria-hidden="true" />
-          </span>
-          AI izohi
-        </div>
-        <p className="mt-3 text-sm font-medium leading-6 text-muted-foreground">
-          {snapshot.explanation}
-        </p>
-      </section>
-
-      <section className="space-y-2">
-        <div>
-          <h2 className="text-base font-black text-foreground">
-            Reja generatsiyasidan oldin sozlang
-          </h2>
-          <p className="mt-1 text-sm font-medium leading-6 text-muted-foreground">
-            Bu qiymatlar keyingi AI reja generatsiyasida ishlatiladi.
+        <div className="relative max-w-[520px]">
+          <IconBubble icon={SparklesIcon} className="size-11" glow />
+          <h1 className="mt-4 max-w-[240px] text-[1.7rem] font-black leading-[1.06] tracking-tight text-white min-[390px]:text-[1.85rem]">
+            <span className="sr-only">Metabolizm hisobingiz tayyor</span>
+            <span aria-hidden="true">
+              Metabolizm
+              <br />
+              hisobingiz tayyor
+            </span>
+          </h1>
+          <p className={cn("mt-3 max-w-[480px] text-[13px] font-medium leading-5", premiumTextSecondary)}>
+            {snapshot.description}
           </p>
+        </div>
+
+        <div className="relative mt-5 grid grid-cols-2 gap-3">
+          {snapshot.heroStats.map((item) => (
+            <StatChip key={item.key} item={item} />
+          ))}
         </div>
       </section>
 
       <button
         type="button"
-        onClick={() => onEdit(editKeys.dailyCalories)}
         className={cn(
-          "relative min-h-[184px] overflow-hidden rounded-[1.75rem] border bg-gradient-to-br p-5 text-left shadow-sm backdrop-blur transition hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
-          tone.border,
-          tone.cardTone,
+          "flex min-h-[86px] w-full shrink-0 items-center gap-4 rounded-[1.35rem] border p-4 text-left transition hover:border-[#ff99006e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff9800]/50",
+          premiumSurface,
         )}
       >
-        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-primary/20 to-transparent" />
-        <div className="relative flex h-full min-h-[144px] flex-col justify-between">
-          <div className="flex items-start justify-between gap-4">
-            <div
-              className={cn(
-                "flex size-12 items-center justify-center rounded-full",
-                tone.badgeTone,
-              )}
-            >
-              <FlameIcon className="size-6" aria-hidden="true" />
-            </div>
-            <span className="flex size-8 items-center justify-center rounded-full border border-border/70 bg-background/75 text-muted-foreground">
-              <PencilIcon className="size-4" aria-hidden="true" />
-            </span>
-          </div>
-          <div>
-            <p className="text-sm font-bold text-muted-foreground">
-              Kunlik kaloriya
-            </p>
-            <p className="mt-2 text-5xl font-black tracking-tight text-foreground">
-              {formatResultNumber(snapshot.calories)}
-              <span className={cn("ml-2 text-xl font-black", tone.textTone)}>
-                kcal
-              </span>
-            </p>
-          </div>
-        </div>
+        <IconBubble icon={BrainIcon} className="size-12" glow />
+        <span className="min-w-0 flex-1">
+          <span className="block text-[15px] font-black text-[#ffb000]">
+            AI tahlili
+          </span>
+          <span className={cn("mt-1 block text-[13px] font-medium leading-5", premiumTextSecondary)}>
+            {snapshot.aiAnalysis}
+          </span>
+        </span>
+        <ChevronRightIcon className="size-5 shrink-0 text-white/70" aria-hidden="true" />
       </button>
 
-      <section className="grid grid-cols-2 gap-3">
-        <MetricCard
-          icon={UtensilsIcon}
-          label="Uglevod"
-          value={formatResultNumber(snapshot.carbs)}
-          unit="g"
-          onEdit={() => onEdit(editKeys.carbsGram)}
-        />
-        <MetricCard
-          icon={SaladIcon}
-          label="Oqsil"
-          value={formatResultNumber(snapshot.protein)}
-          unit="g"
-          onEdit={() => onEdit(editKeys.proteinGram)}
-        />
-        <MetricCard
-          icon={FlameIcon}
-          label="Yog'"
-          value={formatResultNumber(snapshot.fat)}
-          unit="g"
-          onEdit={() => onEdit(editKeys.fatGram)}
-        />
-        <MetricCard
-          icon={DropletsIcon}
-          label="Suv"
-          value={formatResultLiters(snapshot.waterMl)}
-          water
-        />
-      </section>
+      <SectionCard title="Kunlik kaloriya maqsadi" className="p-4">
+        <div className="grid gap-4">
+          <div className="relative flex min-h-[168px] flex-col justify-center rounded-[1.2rem] pr-10 text-left">
+            <EditBadgeButton
+              label="Kunlik kaloriya maqsadi"
+              onClick={() => onEdit(editKeys.dailyCalories)}
+              className="absolute right-0 top-0"
+            />
+            <div className="flex items-center gap-4">
+              <IconBubble icon={FlameIcon} className="size-16" iconClassName="size-8" glow />
+              <div>
+                <span className={cn("block text-[11px] font-black", premiumTextSecondary)}>
+                  Kunlik target
+                </span>
+                <div className="mt-2 flex flex-wrap items-end gap-x-2">
+                  <span className="text-[2.55rem] font-black leading-none tracking-tight text-white drop-shadow-[0_10px_26px_rgba(0,0,0,0.55)] min-[390px]:text-[2.8rem]">
+                    {snapshot.dailyCalories}
+                  </span>
+                  <span className="pb-1 text-lg font-black text-[#ffb000]">
+                    kcal
+                  </span>
+                </div>
+              </div>
+            </div>
+          <span className="mt-4 inline-flex w-fit rounded-full bg-[#ff9800]/10 px-3 py-1.5 text-[11px] font-bold text-white/72">
+              Kunlik target
+            </span>
+          </div>
 
-      <div className="rounded-[1.25rem] border border-primary/15 bg-primary/5 p-3 text-sm font-semibold leading-6 text-muted-foreground">
-        {macroBalanceMessage}
-      </div>
-
-      <section className="grid grid-cols-2 gap-3">
-        <InfoMetric
-          icon={DropletsIcon}
-          label="Suv maqsadi"
-          value={formatResultLiters(snapshot.waterMl)}
-          water
-        />
-        <InfoMetric
-          icon={FootprintsIcon}
-          label="Qadam"
-          value={formatResultNumber(snapshot.dailyStepsTarget)}
-        />
-        <InfoMetric
-          icon={GaugeIcon}
-          label="BMR"
-          value={`${formatResultNumber(snapshot.bmr)} kcal`}
-        />
-        <InfoMetric
-          icon={ActivityIcon}
-          label="TDEE"
-          value={`${formatResultNumber(snapshot.tdee)} kcal`}
-        />
-        <InfoMetric
-          icon={ScaleIcon}
-          label="BMI"
-          value={formatResultNumber(snapshot.bmi)}
-        />
-        <InfoMetric
-          icon={GaugeIcon}
-          label="Metabolik yosh"
-          value={
-            snapshot.metabolicAge !== null
-              ? `${formatResultNumber(snapshot.metabolicAge)} yosh`
-              : "-"
-          }
-        />
-        <InfoMetric
-          icon={CalendarDaysIcon}
-          label="Maqsad sanasi"
-          value={formatResultDate(snapshot.estimatedGoalDate)}
-        />
-        <InfoMetric
-          icon={UtensilsIcon}
-          label="Ovqatlanish"
-          value={
-            snapshot.mealsPerDay !== null
-              ? `${formatResultNumber(snapshot.mealsPerDay)} mahal`
-              : "-"
-          }
-        />
-        <InfoMetric
-          icon={ActivityIcon}
-          label="Mashg'ulot"
-          value={
-            snapshot.weeklyWorkoutDays !== null
-              ? `${formatResultNumber(snapshot.weeklyWorkoutDays)} kun/hafta`
-              : "-"
-          }
-        />
-      </section>
-
-      <section className="rounded-[1.35rem] border border-border/70 bg-background/90 p-3 shadow-sm backdrop-blur">
-        <div className="grid gap-2">
-          <SummaryItem
-            icon={ScaleIcon}
-            label="Hozirgi vazn"
-            value={`${formatResultNumber(snapshot.currentWeight)} kg`}
-          />
-          <SummaryItem icon={TargetIcon} label="Maqsad" value={snapshot.goal} />
-          <SummaryItem
-            icon={ActivityIcon}
-            label="Aktivlik"
-            value={snapshot.activity}
-          />
-          <SummaryItem
-            icon={WalletCardsIcon}
-            label="Budjet"
-            value={snapshot.budget}
-          />
+          <div className="grid grid-cols-2 gap-2.5">
+            {macroItems.map((item) => (
+              <MacroCard
+                key={item.key}
+                item={item}
+                onEdit={item.onEdit}
+                water={item.key === "water"}
+              />
+            ))}
+          </div>
         </div>
-      </section>
+      </SectionCard>
 
-      <details className="rounded-[1.35rem] border border-border/70 bg-background/90 p-4 shadow-sm backdrop-blur">
-        <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-black text-foreground">
-          <InfoIcon
-            className={cn("size-4", tone.textTone)}
-            aria-hidden="true"
-          />
-          Qanday hisoblaymiz?
-        </summary>
-        <div className="mt-3 grid gap-2 text-sm font-medium leading-6 text-muted-foreground">
-          <p>
-            Energiya targeti BMR, TDEE, faollik darajasi va haftalik vazn
-            sur'ati asosida hisoblanadi.
-          </p>
-          <p>
-            Makro qiymatlar umumiy energiya maqsadiga moslanadi va keyingi AI
-            ovqatlanish rejasi promptiga aynan shu ko'rinishda yuboriladi.
-          </p>
-          <p>
-            Suv, qadam va mashg'ulot maqsadlari kundalik tracking uchun
-            boshlang'ich tavsiya sifatida ishlatiladi.
-          </p>
+      <SectionCard title="Hisoblash zanjiri">
+        <p className={cn("-mt-1 mb-3 text-[12px] font-medium leading-5", premiumTextSecondary)}>
+          BMRdan boshlanib, faollik va maqsad sozlamasi orqali yakuniy kunlik
+          target hisoblanadi.
+        </p>
+        <CalculationSummary steps={snapshot.calculationSteps} />
+        <div className="mt-4 grid gap-1">
+          {snapshot.calculationSteps.map((item, index) => (
+            <CalculationStep
+              key={item.key}
+              item={item}
+              index={index}
+              isLast={index === snapshot.calculationSteps.length - 1}
+            />
+          ))}
         </div>
-      </details>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-black text-[#ffb000]">
+            <InfoIcon className="size-3.5" aria-hidden="true" />
+            Formula: {snapshot.formulaName}
+          </span>
+          {snapshot.warningPills.map((warning) => (
+            <span
+              key={warning}
+              className="rounded-full border border-[#ff990030] bg-[#ff9800]/10 px-2.5 py-1 text-[11px] font-bold text-[#ffcf70]"
+            >
+              {warning}
+            </span>
+          ))}
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Makro energiya" badge={snapshot.macroDelta}>
+        <div className="grid gap-4">
+          <MacroEnergyRow item={snapshot.macros.protein} />
+          <MacroEnergyRow item={snapshot.macros.carbs} />
+          <MacroEnergyRow item={snapshot.macros.fat} />
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Kunlik maqsad va ko'rsatkichlar">
+        <div className="grid grid-cols-2 gap-2.5">
+          {snapshot.dailyIndicators.map((item) => (
+            <MetricTile key={item.key} item={item} compact />
+          ))}
+        </div>
+      </SectionCard>
     </div>
   );
+
+
 };
 
 const Index = () => {
@@ -1076,23 +1264,27 @@ const Index = () => {
   const setOnboardingFlow = useAuthStore((state) => state.setOnboardingFlow);
   const [editing, setEditing] = React.useState(null);
   const resultQuery = useGetQuery({
-    url: "/user/onboarding/personalization-result",
+    url: "/user/onboarding/metabolism-result",
     queryProps: {
-      queryKey: ["onboarding", "personalization-result"],
+      queryKey: ["onboarding", "metabolism-result"],
       staleTime: 15000,
     },
   });
   const resultBody = unwrapApiData(resultQuery.data);
-  const result = resultBody?.result ?? resultBody;
+  const hasWrappedResult =
+    resultBody &&
+    typeof resultBody === "object" &&
+    Object.prototype.hasOwnProperty.call(resultBody, "result");
+  const result = hasWrappedResult ? resultBody.result : resultBody;
   const onboarding = resultBody?.onboarding ?? null;
   const { mutateAsync: patchResult, isPending: isSaving } = usePatchQuery({
-    queryKey: ["onboarding", "personalization-result"],
+    queryKey: ["onboarding", "metabolism-result"],
   });
   const { mutateAsync: updateOnboarding, isPending: isSavingOnboarding } =
     usePutQuery({
-      queryKey: ["onboarding", "personalization-result"],
+      queryKey: ["onboarding", "metabolism-result"],
     });
-  const { mutateAsync: startGeneration, isPending: isGenerating } =
+  const { mutateAsync: confirmMetabolism, isPending: isConfirming } =
     usePostQuery();
 
   const handleSave = async (field, value) => {
@@ -1106,14 +1298,14 @@ const Index = () => {
 
         if (onboardingRecalculationFields.has(field)) {
           await patchResult({
-            url: "/user/onboarding/personalization-result",
+            url: "/user/onboarding/metabolism-result",
             attributes: {},
           });
         }
       } else {
         const patch = buildPersonalizationPatch(field, value);
         await patchResult({
-          url: "/user/onboarding/personalization-result",
+          url: "/user/onboarding/metabolism-result",
           attributes: patch,
         });
 
@@ -1148,25 +1340,25 @@ const Index = () => {
 
   const handleNext = async () => {
     try {
-      const response = await startGeneration({
-        url: "/user/onboarding/generate-personal-plan",
+      const response = await confirmMetabolism({
+        url: "/user/onboarding/confirm-metabolism",
       });
-      const job = unwrapApiData(response);
+      const body = unwrapApiData(response);
       setOnboardingFlow({
-        onboardingFlowStatus: job?.flowStatus,
-        onboardingNextPath: job?.nextPath,
-        latestPlanGenerationJobId: job?.id,
+        onboardingFlowStatus: body?.onboardingFlowStatus ?? body?.status,
+        onboardingNextPath:
+          body?.onboardingNextPath ?? getUserOnboardingPlanPreviewPath(),
       });
       await queryClient.invalidateQueries({
-        queryKey: ["onboarding", "generation-status", job?.id],
+        queryKey: ["onboarding", "plan-preflight"],
       });
-      navigate(getUserOnboardingGeneratingPath(job?.id), { replace: true });
+      navigate(getUserOnboardingPlanPreviewPath(), { replace: true });
     } catch (error) {
       const message = error?.response?.data?.message;
       toast.error(
         Array.isArray(message)
           ? message.join(", ")
-          : message || t("onboarding.postOnboarding.result.generateError"),
+          : message || t("onboarding.postOnboarding.result.confirmError"),
       );
     }
   };
@@ -1176,18 +1368,18 @@ const Index = () => {
       type="button"
       size="lg"
       className={cn(
-        "h-12 w-full border-transparent bg-gradient-to-r",
+        "h-14 w-full rounded-full border-transparent bg-gradient-to-r text-[15px] font-black shadow-[0_18px_48px_rgba(255,106,0,0.34)]",
         tone.buttonTone,
       )}
       onClick={handleNext}
-      disabled={!result || isGenerating}
+      disabled={!result || isConfirming}
     >
-      {isGenerating ? (
+      {isConfirming ? (
         <Loader2Icon className="size-4 animate-spin" />
       ) : (
         <ChevronRightIcon className="size-4" />
       )}
-      Keyingi
+      Rejani yaratish
     </Button>,
   );
 
@@ -1220,7 +1412,7 @@ const Index = () => {
 
   return (
     <motion.div
-      className="relative flex min-h-full flex-1 overflow-hidden bg-background"
+      className="relative flex h-full min-h-0 flex-1 overflow-hidden bg-[#070503]"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.28, ease: "easeOut" }}

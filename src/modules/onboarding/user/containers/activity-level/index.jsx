@@ -13,6 +13,7 @@ import { ChevronRight } from "lucide-react";
 import PageAura from "../../components/page-aura.jsx";
 import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
 import useOnboardingBase from "@/hooks/app/use-onboarding-base";
+import OnboardingSelectCard from "../../components/onboarding-select-card.jsx";
 
 const Index = () => {
   const { t } = useTranslation();
@@ -89,10 +90,10 @@ const Index = () => {
   );
 
   return (
-    <div className="relative flex h-full max-h-full flex-1 flex-col overflow-hidden pt-3 md:pt-8  px-5">
+    <div className="relative flex h-full min-h-0 max-h-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8">
       <PageAura tone={selectedLevel.tone} />
 
-      <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
+      <div className="relative z-10 flex h-full min-h-0 w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
         <OnboardingQuestion question={t("onboarding.activityLevel.question")} />
 
         <div className="relative mb-3 flex min-h-[140px] flex-1 items-end justify-center overflow-hidden md:mb-4 md:min-h-[260px]">
@@ -136,67 +137,25 @@ const Index = () => {
           </motion.div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 md:gap-2.5 pb-5">
+        <div className="grid grid-cols-2 gap-2 pb-2 md:gap-2.5">
           {map(levels, (level) => {
             const isActive = activityLevel === level.value;
 
             return (
-              <motion.button
+              <OnboardingSelectCard
                 key={level.value}
-                type="button"
+                active={isActive}
+                description={level.description}
+                imageAlt={level.label}
+                imageUrl={level.image}
                 onClick={() => handleSelect(level.value)}
-                className={cn(
-                  "relative flex min-h-[78px] flex-col items-start gap-1.5 rounded-[20px] border px-2.5 py-2 text-left transition-all md:min-h-[158px] md:gap-4 md:rounded-3xl md:px-4 md:py-3",
-                  isActive
-                    ? `bg-gradient-to-br ${level.tone.cardTone} ${level.tone.border}`
-                    : "border-border/70 bg-background/90 hover:border-primary/30",
-                )}
-                whileTap={{ scale: 0.98 }}
-              >
-                <img
-                  loading="lazy"
-                  src={level.image}
-                  alt={level.label}
-                  className="size-8 rounded-xl object-cover md:size-16"
-                />
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <p className="text-xs font-bold leading-tight md:text-base">
-                      {level.label}
-                    </p>
-                    {level.recommended ? (
-                      <span
-                        className={cn(
-                          "hidden rounded-full px-1.5 py-0.5 text-[10px] font-semibold md:inline md:px-2 md:text-[11px]",
-                          level.tone.badgeTone,
-                        )}
-                      >
-                        {t("onboarding.recommended")}
-                      </span>
-                    ) : null}
-                  </div>
-                  <p className="mt-0.5 hidden text-xs text-muted-foreground md:block md:text-sm">
-                    {level.description}
-                  </p>
-                </div>
-
-                <div
-                  className={cn(
-                    "absolute right-2 top-2 flex size-4 items-center justify-center rounded-full border-2 md:right-3 md:top-3 md:size-6",
-                    isActive
-                      ? `${level.tone.border} bg-background/70`
-                      : "border-muted-foreground/25",
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "size-2.5 rounded-full transition-all md:size-3",
-                      isActive ? level.tone.dotTone : "scale-0 opacity-0",
-                    )}
-                  />
-                </div>
-              </motion.button>
+                recommendedLabel={
+                  level.recommended ? t("onboarding.recommended") : null
+                }
+                title={level.label}
+                tone={level.tone}
+                variant="image"
+              />
             );
           })}
         </div>

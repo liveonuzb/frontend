@@ -87,21 +87,31 @@ export const calculateGoals = (data = {}) => {
   const tdee = bmr * multiplier;
 
   let targetCalories = tdee;
+  const requestedDailyDelta = ((weeklyPace || 0.5) * 7700) / 7;
+  const cappedDailyDelta = Math.min(
+    requestedDailyDelta,
+    Math.max(350, tdee * 0.25),
+  );
+
   if (normalizedGoal === "lose") {
-    const dailyDeficit = ((weeklyPace || 0.5) * 7700) / 7;
-    targetCalories = tdee - dailyDeficit;
+    targetCalories = tdee - cappedDailyDelta;
   } else if (normalizedGoal === "gain") {
-    const dailySurplus = ((weeklyPace || 0.5) * 7700) / 7;
-    targetCalories = tdee + dailySurplus;
+    targetCalories = tdee + cappedDailyDelta;
   }
 
   const minCalories = gender === "female" ? 1200 : 1500;
-  targetCalories = Math.max(Math.round(targetCalories), minCalories);
+  const maxCalories = Math.max(tdee + 1000, 7000);
+  targetCalories = Math.round(clamp(targetCalories, minCalories, maxCalories));
 
-  const proteinGrams = Math.round((currentWeightValue || 70) * 2);
+  const proteinPerKg =
+    normalizedGoal === "lose" ? 2 : normalizedGoal === "gain" ? 1.8 : 1.6;
+  const proteinGrams = Math.round((currentWeightValue || 70) * proteinPerKg);
   const proteinCalories = proteinGrams * 4;
-  const fatCalories = targetCalories * 0.25;
-  const fatGrams = Math.round(fatCalories / 9);
+  const fatGrams = Math.max(
+    Math.round((currentWeightValue || 70) * 0.5),
+    Math.round((targetCalories * 0.25) / 9),
+  );
+  const fatCalories = fatGrams * 9;
   const remainingCalories = targetCalories - proteinCalories - fatCalories;
   const carbGrams = Math.round(Math.max(remainingCalories, 0) / 4);
 

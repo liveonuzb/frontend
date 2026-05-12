@@ -41,9 +41,24 @@ export const COACH_ONBOARDING_STEPS = [
   "coach/avatar",
 ];
 
-export const LEGACY_USER_ONBOARDING_STEPS = [
-  "lifestyle",
-];
+export const LEGACY_USER_ONBOARDING_STEP_REDIRECTS = {
+  "injury-severity": "weekly-workout-count",
+  "forbidden-exercises": "weekly-workout-count",
+  medications: "weekly-workout-count",
+  supplements: "weekly-workout-count",
+  lifestyle: "meal-frequency",
+  "exercise-preferences": "workout-location",
+  "preferred-exercises": "workout-location",
+  "disliked-exercises": "workout-location",
+  "water-habits": "food-budget",
+  "allergy-ingredients": "allergies",
+  "nutrition-preferences": "diet-requirements",
+  "diet-restrictions": "diet-requirements",
+};
+
+export const LEGACY_USER_ONBOARDING_STEPS = Object.keys(
+  LEGACY_USER_ONBOARDING_STEP_REDIRECTS,
+);
 
 export const ALL_ONBOARDING_STEPS = [
   ...ONBOARDING_STEPS,
@@ -57,7 +72,11 @@ export const isKnownOnboardingStep = (step) =>
 export const isCoachOnboardingStep = (step) =>
   includes(COACH_ONBOARDING_STEPS, step);
 
-export const getStepIndex = (step) => indexOf(ONBOARDING_STEPS, step);
+export const normalizeUserOnboardingStep = (step) =>
+  LEGACY_USER_ONBOARDING_STEP_REDIRECTS[step] ?? step;
+
+export const getStepIndex = (step) =>
+  indexOf(ONBOARDING_STEPS, normalizeUserOnboardingStep(step));
 
 export const getNextStep = (step) => {
   const index = getStepIndex(step);

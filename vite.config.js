@@ -3,17 +3,17 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import compression from "vite-plugin-compression";
-import viteImagemin from "vite-plugin-imagemin";
+import { ViteImageOptimizer } from "vite-plugin-image-optimizer";
 
 export default defineConfig({
   base: "/",
   plugins: [
     react(),
     tailwindcss(),
-    viteImagemin({
-      jpgtran: { progressive: true },
-      pngquant: { quality: [0.6, 0.8] },
-      mozjpeg: { quality: 75 },
+    ViteImageOptimizer({
+      jpeg: { quality: 75, progressive: true },
+      jpg: { quality: 75, progressive: true },
+      png: { quality: 80, compressionLevel: 9 },
       webp: { quality: 75 },
     }),
 

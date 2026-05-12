@@ -30,19 +30,25 @@ export const getUserOnboardingReportPath = () =>
 export const getUserOnboardingPersonalizingPath = (jobId = "") => {
   const normalizedJobId = trimSlashes(jobId);
   return normalizedJobId
-    ? `${USER_ONBOARDING_BASE_PATH}/personalizing/${encodeURIComponent(normalizedJobId)}`
-    : `${USER_ONBOARDING_BASE_PATH}/personalizing`;
+    ? `${USER_ONBOARDING_BASE_PATH}/metabolism-calculating/${encodeURIComponent(normalizedJobId)}`
+    : `${USER_ONBOARDING_BASE_PATH}/metabolism-calculating`;
 };
 
 export const getUserOnboardingResultPath = () =>
-  `${USER_ONBOARDING_BASE_PATH}/result`;
+  `${USER_ONBOARDING_BASE_PATH}/metabolism-result`;
+
+export const getUserOnboardingPlanPreviewPath = () =>
+  `${USER_ONBOARDING_BASE_PATH}/plan-preview`;
 
 export const getUserOnboardingGeneratingPath = (jobId = "") => {
   const normalizedJobId = trimSlashes(jobId);
   return normalizedJobId
-    ? `${USER_ONBOARDING_BASE_PATH}/generating/${encodeURIComponent(normalizedJobId)}`
-    : `${USER_ONBOARDING_BASE_PATH}/generating`;
+    ? `${USER_ONBOARDING_BASE_PATH}/plan-generating/${encodeURIComponent(normalizedJobId)}`
+    : `${USER_ONBOARDING_BASE_PATH}/plan-generating`;
 };
+
+export const getUserOnboardingPlanReadyPath = () =>
+  `${USER_ONBOARDING_BASE_PATH}/plan-ready`;
 
 export const canAccessUserDashboard = (status, onboardingCompleted = false) => {
   if (!status) {
@@ -69,12 +75,14 @@ export const getPostOnboardingPath = (user = {}) => {
     case ONBOARDING_FLOW_STATUS.personalizationFailed:
       return getUserOnboardingPersonalizingPath(personalizationJobId);
     case ONBOARDING_FLOW_STATUS.personalizationReady:
-    case ONBOARDING_FLOW_STATUS.resultConfirmed:
       return getUserOnboardingResultPath();
+    case ONBOARDING_FLOW_STATUS.resultConfirmed:
+      return getUserOnboardingPlanPreviewPath();
     case ONBOARDING_FLOW_STATUS.planGenerating:
     case ONBOARDING_FLOW_STATUS.planFailed:
       return getUserOnboardingGeneratingPath(planJobId);
     case ONBOARDING_FLOW_STATUS.planReady:
+      return getUserOnboardingPlanReadyPath();
     case ONBOARDING_FLOW_STATUS.activated:
       return "/user";
     case ONBOARDING_FLOW_STATUS.draft:

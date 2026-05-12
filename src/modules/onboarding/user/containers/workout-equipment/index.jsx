@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  CheckIcon,
-  ChevronRightIcon,
-  Loader2Icon,
-  PlusIcon,
-  XIcon,
-} from "lucide-react";
+import { ChevronRightIcon, Loader2Icon, PlusIcon, XIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
@@ -14,8 +8,14 @@ import { cn } from "@/lib/utils";
 import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-question";
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-context";
+import {
+  getOnboardingOptionsPath,
+  getOnboardingOptionsQueryKey,
+  normalizeOnboardingOptionsResponse,
+} from "@/modules/onboarding/lib/onboarding-options";
 import { useOnboardingStore } from "@/store";
 import PageAura from "../../components/page-aura.jsx";
+import OnboardingSelectCard from "../../components/onboarding-select-card.jsx";
 import {
   hasChipLabel,
   normalizeChipKey,
@@ -29,6 +29,8 @@ import {
   OtherSelectionDrawer,
   OtherSelectionSelectedItems,
 } from "../other-selection-drawer.jsx";
+import { CatalogOptionList } from "../catalog-option-list.jsx";
+import { ONBOARDING_GRID_SCROLL_AREA_CLASS } from "../onboarding-scroll-area.js";
 
 const STEP = "workout-equipment";
 const I18N_KEY = "onboarding.workoutSteps.equipment";
@@ -43,11 +45,8 @@ const CONFLICT_I18N_KEY = null;
 const tone = ONBOARDING_ACCENTS.green;
 const EMPTY_ARRAY = Object.freeze([]);
 
-const extractOptions = (response) => {
-  const body = response?.data?.data ?? response?.data ?? {};
-  const values = body?.[OPTIONS_KEY];
-  return Array.isArray(values) ? values : [];
-};
+const extractOptions = (response) =>
+  normalizeOnboardingOptionsResponse(response, OPTIONS_KEY);
 
 const mergeOptions = (...groups) => {
   const seen = new Set();
@@ -134,20 +133,18 @@ const Index = () => {
   const searchKey = normalizeChipKey(searchLabel);
 
   const { data, isLoading, isError } = useGetQuery({
-    url: "/user/onboarding/options",
+    url: getOnboardingOptionsPath(OPTIONS_KEY),
     params: {
       workoutLocation,
       equipmentBucket: "primary",
     },
     queryProps: {
-      queryKey: [
-        "onboarding",
-        "options",
-        STEP,
+      queryKey: getOnboardingOptionsQueryKey(
         OPTIONS_KEY,
+        STEP,
         workoutLocation,
         "primary",
-      ],
+      ),
       enabled: workoutLocation !== "gym",
       staleTime: 60000,
     },
@@ -161,18 +158,16 @@ const Index = () => {
     [searchLabel, workoutLocation],
   );
   const { data: otherData, isFetching } = useGetQuery({
-    url: "/user/onboarding/options",
+    url: getOnboardingOptionsPath(OPTIONS_KEY),
     params: otherQueryParams,
     queryProps: {
-      queryKey: [
-        "onboarding",
-        "options",
-        STEP,
+      queryKey: getOnboardingOptionsQueryKey(
         OPTIONS_KEY,
+        STEP,
         "other",
         workoutLocation,
         searchLabel.length >= 2 ? searchLabel : "",
-      ],
+      ),
       enabled: otherOpen && workoutLocation !== "gym",
       staleTime: 15000,
     },
@@ -336,7 +331,7 @@ const Index = () => {
           className="h-12 w-full border-transparent"
           onClick={goNext}
         >
-          {t("onboarding.skip")}
+          {t("onboarding.skipForNow")}
         </Button>
         <Button
           type="button"
@@ -357,9 +352,9 @@ const Index = () => {
   useOnboardingFooter(footerContent);
 
   return (
-    <div className="relative flex h-full max-h-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8">
+    <div className="relative flex h-full min-h-0 max-h-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8">
       <PageAura tone={tone} />
-      <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
+      <div className="relative z-10 flex h-full min-h-0 w-full flex-1 flex-col md:mx-auto md:max-w-2xl">
         <OnboardingQuestion question={t(`${I18N_KEY}.title`)} />
         {selectedCount > 0 ? (
           <div className="mb-3 flex flex-wrap gap-2">
@@ -395,7 +390,15 @@ const Index = () => {
           </div>
         ) : null}
 
-        <div className="grid flex-1 content-start gap-2 overflow-y-auto pb-5">
+        <div className={cn(ONBOARDING_GRID_SCROLL_AREA_CLASS, "gap-2")}>
+          <OtherSelectionCard
+            open={otherOpen}
+            tone={tone}
+            title={t("onboarding.chipSelect.otherTitle")}
+            description={t("onboarding.chipSelect.otherDescription")}
+            onClick={() => handleOtherOpenChange(true)}
+          />
+
           {isLoading ? (
             <div className="flex min-h-40 items-center justify-center">
               <Loader2Icon
@@ -408,86 +411,31 @@ const Index = () => {
               {t("onboarding.chipSelect.error")}
             </div>
           ) : (
-            cardOptions.map((item) => {
-              const id = Number(item.id);
-              const isActive = selectedIdSet.has(id);
+            <CatalogOptionList
+              options={cardOptions}
+              selectedIdSet={selectedIdSet}
+            >
+              {(item) => {
+                const id = Number(item.id);
+                const isActive = selectedIdSet.has(id);
 
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => toggleOption(item)}
-                  aria-pressed={isActive}
-                  className={cn(
-                    "flex min-h-[72px] w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left transition-colors hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 md:min-h-[84px] md:px-4",
-                    isActive
-                      ? `bg-gradient-to-br ${tone.cardTone} ${tone.border}`
-                      : "border-border/70 bg-background/90",
-                  )}
-                >
-                  {item.imageUrl ? (
-                    <img
-                      src={item.imageUrl}
-                      alt=""
-                      loading="lazy"
-                      width="44"
-                      height="44"
-                      className="size-11 shrink-0 rounded-2xl object-cover"
-                    />
-                  ) : (
-                    <span
-                      className={cn(
-                        "flex size-11 shrink-0 items-center justify-center rounded-2xl",
-                        isActive
-                          ? tone.badgeTone
-                          : "bg-muted text-muted-foreground",
-                      )}
-                      aria-hidden="true"
-                    >
-                      <CheckIcon
-                        className={cn(
-                          "size-5",
-                          isActive ? tone.textTone : "text-transparent",
-                        )}
-                      />
-                    </span>
-                  )}
-                  <span className="min-w-0 flex-1">
-                    <span className="block break-words text-sm font-bold leading-snug">
-                      {optionLabel(item, `#${id}`)}
-                    </span>
-                    <span className="mt-1 inline-flex rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                      {t(getOptionBadgeKey(item))}
-                    </span>
-                  </span>
-                  <span
-                    className={cn(
-                      "flex size-6 shrink-0 items-center justify-center rounded-full border",
-                      isActive
-                        ? `${tone.border} bg-background/70`
-                        : "border-border bg-background",
-                    )}
-                    aria-hidden="true"
-                  >
-                    <CheckIcon
-                      className={cn(
-                        "size-4",
-                        isActive ? tone.textTone : "text-transparent",
-                      )}
-                    />
-                  </span>
-                </button>
-              );
-            })
+                return (
+                  <OnboardingSelectCard
+                    key={id}
+                    active={isActive}
+                    badge={optionLabel(item, `#${id}`).slice(0, 1)}
+                    imageAlt=""
+                    imageUrl={item.imageUrl}
+                    metaBadge={t(getOptionBadgeKey(item))}
+                    onClick={() => toggleOption(item)}
+                    selectionMode="multi"
+                    title={optionLabel(item, `#${id}`)}
+                    tone={tone}
+                  />
+                );
+              }}
+            </CatalogOptionList>
           )}
-
-          <OtherSelectionCard
-            open={otherOpen}
-            tone={tone}
-            title={t("onboarding.chipSelect.otherTitle")}
-            description={t("onboarding.chipSelect.otherDescription")}
-            onClick={() => handleOtherOpenChange(true)}
-          />
         </div>
       </div>
       <OtherSelectionDrawer
@@ -522,27 +470,20 @@ const Index = () => {
             const isActive = selectedIdSet.has(id);
 
             return (
-              <button
+              <OnboardingSelectCard
                 key={`search-${id}`}
-                type="button"
+                active={isActive}
+                metaBadge={
+                  item.isOnboarding === false
+                    ? t("onboarding.chipSelect.nonOnboarding")
+                    : null
+                }
                 onClick={() => toggleOption(item)}
-                aria-pressed={isActive}
-                className={cn(
-                  "flex min-h-[52px] items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
-                  isActive
-                    ? `${tone.border} ${tone.badgeTone}`
-                    : "border-border/70 bg-background",
-                )}
-              >
-                <span className="min-w-0 flex-1 truncate text-sm font-semibold">
-                  {optionLabel(item, `#${id}`)}
-                </span>
-                {item.isOnboarding === false ? (
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                    {t("onboarding.chipSelect.nonOnboarding")}
-                  </span>
-                ) : null}
-              </button>
+                selectionMode="multi"
+                title={optionLabel(item, `#${id}`)}
+                tone={tone}
+                variant="drawer"
+              />
             );
           })
         ) : (
@@ -552,18 +493,15 @@ const Index = () => {
         )}
 
         {canAddCustom ? (
-          <button
-            type="button"
+          <OnboardingSelectCard
+            icon={PlusIcon}
             onClick={addCustom}
-            className="flex min-h-[52px] items-center gap-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-3 py-2 text-left text-sm font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          >
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
-              <PlusIcon className="size-4" aria-hidden="true" />
-            </span>
-            {t("onboarding.chipSelect.addCustom", {
+            title={t("onboarding.chipSelect.addCustom", {
               value: searchLabel,
             })}
-          </button>
+            tone={tone}
+            variant="drawer"
+          />
         ) : null}
 
         {hasOppositeConflict && CONFLICT_I18N_KEY ? (

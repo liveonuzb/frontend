@@ -9,9 +9,24 @@
     "autosave": {
       "saving": "Saqlanyapti",
       "saved": "Saqlandi",
-      "error": "Saqlanmadi"
+      "error": "Saqlanmadi",
+      "errorRetry": "Saqlanmadi, keyingi o'zgarishda qayta urinadi"
+    },
+    "progress": {
+      "label": "{{current}}/{{total}} - {{section}}",
+      "complete": "Onboarding yakuniy bosqichi",
+      "sections": {
+        "profile": "Profil",
+        "goal": "Maqsad",
+        "nutrition": "Ovqatlanish",
+        "health": "Sog'liq",
+        "workout": "Mashg'ulot",
+        "review": "Tekshiruv",
+        "coach": "Coach profil"
+      }
     },
     "skip": "O'tkazib yuborish",
+    "skipForNow": "Hozircha o'tkazib yuborish",
     "name": {
       "question": "Ismingiz nima?",
       "firstName": "Ism",
@@ -93,6 +108,10 @@
         "lose": "{{value}} kg tashlash keyingi bosqichingiz.",
         "gain": "{{value}} kg qo'shish keyingi rivojlanish bosqichingiz.",
         "maintain": "Siz hozirgi formangizga yaqin qolishni maqsad qilyapsiz."
+      },
+      "errors": {
+        "loseDirection": "Maqsadingiz ozish bo'lsa, maqsad vazn hozirgi vazndan past bo'lishi kerak.",
+        "gainDirection": "Maqsadingiz vazn olish bo'lsa, maqsad vazn hozirgi vazndan yuqori bo'lishi kerak."
       }
     },
     "weeklyPace": {
@@ -167,9 +186,9 @@
       "workoutExperience": "Mashg'ulot tajribangiz",
       "workoutExperienceDescription": "Mashqlar qiyinligi tajribangizga moslanadi.",
       "workoutExperiences": {
-        "beginner": "Beginner",
-        "intermediate": "Intermediate",
-        "advanced": "Advanced"
+        "beginner": "Boshlovchi",
+        "intermediate": "O'rtacha tajriba",
+        "advanced": "Tajribali"
       },
       "workoutExperienceDescriptions": {
         "beginner": "Texnika va odatni endi shakllantiryapsiz.",
@@ -303,19 +322,19 @@
       "helper": "Aniq bilmasangiz, bu bosqichni o'tkazib yuborishingiz mumkin.",
       "tiers": {
         "low": {
-          "label": "Low",
+          "label": "Tejamkor",
           "description": "Arzon va oddiy mahsulotlar ustuvor bo'ladi.",
-          "summary": "Low budget"
+          "summary": "Tejamkor budjet"
         },
         "medium": {
-          "label": "Medium",
+          "label": "O'rtacha",
           "description": "Arzon va o'rtacha narxdagi mahsulotlar balansda ishlatiladi.",
-          "summary": "Medium budget"
+          "summary": "O'rtacha budjet"
         },
         "high": {
-          "label": "High",
+          "label": "Kengroq",
           "description": "Premiumroq mahsulotlar ham reja ichida ishlatilishi mumkin.",
-          "summary": "High budget"
+          "summary": "Kengroq budjet"
         }
       }
     },
@@ -330,9 +349,13 @@
       "searchHint": "Kamida 2 ta belgi yozing.",
       "nonOnboarding": "Qo'shimcha",
       "selected": "Tanlangan",
+      "showMore": "Yana {{count}} ta variantni ko'rsatish",
+      "showLess": "Kamroq ko'rsatish",
       "featuredTitle": "Tavsiya qilinganlar",
       "featuredDescription": "Tez tanlash uchun cardni bosing yoki ko'proq variant uchun pastdan qidiring.",
       "allergicBadge": "Allergiya manbasi",
+      "commonBadge": "Ko'p uchraydi",
+      "avoidBadge": "Cheklash",
       "recommendedBadge": "Tavsiya"
     },
     "nutritionSteps": {
@@ -340,12 +363,26 @@
         "title": "Nimalarga allergiyangiz bor?",
         "description": "Faol allergiya ingredientlarini tanlang yoki o'zingiz maxsus qiymat qo'shing.",
         "placeholder": "Yong'oq, tuxum, asal...",
-        "featuredTitle": "Ko'p uchraydigan allergiya ingredientlari"
+        "featuredTitle": "Ko'p uchraydigan allergiya ingredientlari",
+        "noneAction": "Allergiyam yo'q",
+        "noneDescription": "Allergiya bo'lmasa, reja cheklovsiz tuziladi."
       },
       "dietRequirements": {
         "title": "Ovqatlanish talablaringiz qanday?",
         "description": "Halol, vegetarian, glutensiz yoki boshqa talablarni belgilang.",
-        "placeholder": "Halal, high protein, no sugar..."
+        "placeholder": "Halol, proteinli, shakarsiz...",
+        "options": {
+          "halal": "Halol",
+          "vegetarian": "Vegetarian",
+          "vegan": "Vegan",
+          "keto": "Keto",
+          "glutenFree": "Glutensiz",
+          "sugarFree": "Shakarsiz",
+          "lactoseFree": "Laktozasiz",
+          "diabeticFriendly": "Diabet uchun mos",
+          "lowSalt": "Kam tuz",
+          "highProtein": "Proteinli"
+        }
       },
       "preferredCuisines": {
         "title": "Qaysi oshxonalarni yoqtirasiz?",
@@ -355,7 +392,9 @@
       "dislikedFoods": {
         "title": "Qaysi ovqatlarni yoqtirmaysiz?",
         "description": "Ovqatlanish rejasida kamaytirish yoki chiqarib tashlash kerak bo'lgan taomlarni belgilang.",
-        "placeholder": "Sho'rva, baliq, jigar..."
+        "placeholder": "Sho'rva, baliq, jigar...",
+        "noneAction": "Yoqtirmaydigan ovqatim yo'q",
+        "noneDescription": "Agar hammasi mos bo'lsa, ovqatlar maxsus cheklanmaydi."
       },
       "preferredIngredients": {
         "title": "Qaysi ingredientlarni yoqtirasiz?",
@@ -365,7 +404,9 @@
       "dislikedIngredients": {
         "title": "Qaysi ingredientlarni yoqtirmaysiz?",
         "description": "Rejada kamroq chiqishi kerak bo'lgan ingredientlarni tanlang yoki maxsus qiymat qo'shing.",
-        "placeholder": "Piyoz, kashnich, achchiq qalampir..."
+        "placeholder": "Piyoz, kashnich, achchiq qalampir...",
+        "noneAction": "Yoqtirmaydigan ingredientim yo'q",
+        "noneDescription": "Ingredientlar bo'yicha alohida cheklov qo'yilmaydi."
       },
       "ingredients": {
         "conflict": "Bu ingredient boshqa ro'yxatda tanlangan. Avval o'sha ro'yxatdan olib tashlang."
@@ -468,7 +509,8 @@
     },
     "otherGoals": {
       "question": "Yana qanday maqsadlaringiz bor?",
-      "fallbackTitle": "Qo'shimcha maqsadlar"
+      "fallbackTitle": "Qo'shimcha maqsadlar",
+      "none": "Qo'shimcha maqsadim yo'q"
     },
     "dietRestrictions": {
       "question": "Parhez cheklovlaringiz bormi?",
@@ -514,6 +556,18 @@
       "fixRequired": "Avval kerakli joylarni to'ldiring",
       "generate": "Rejani yaratish",
       "submitError": "Onboardingni yakunlab bo'lmadi.",
+      "edit": "Tahrirlash",
+      "emptyValue": "Tanlanmagan",
+      "none": "Yo'q",
+      "noWorkout": "Mashg'ulot rejalashtirilmagan",
+      "countValue": "{{count}} ta",
+      "recommendations": {
+        "title": "Rejani aniqroq qilish uchun tavsiyalar",
+        "foodBudget": "Budjetni tanlasangiz, reja xarajatga mosroq bo'ladi.",
+        "allergies": "Allergiya bo'lmasa, allergiya ekranida buni alohida belgilang.",
+        "preferredCuisines": "Yoqtirgan oshxonalarni tanlasangiz, taomlar didingizga yaqinroq bo'ladi.",
+        "equipment": "Uy yoki tashqi mashg'ulot uchun bor jihozlarni belgilang."
+      },
       "missing": {
         "name": "Ism va familiya",
         "gender": "Jins",
@@ -565,18 +619,34 @@
     "postOnboarding": {
       "loading": {
         "title": "Siz uchun hammasini sozlamoqdamiz",
+        "titles": {
+          "metabolism": "Metabolizm hisoblanmoqda",
+          "personalization": "Metabolizm hisoblanmoqda",
+          "generation": "AI reja yaratilmoqda"
+        },
+        "nextSteps": {
+          "metabolism": "Keyingi bosqichda natijani ko'rib, kaloriya va makro targetlarni tasdiqlaysiz.",
+          "personalization": "Keyingi bosqichda natijani ko'rib, kaloriya va makro targetlarni tasdiqlaysiz.",
+          "generation": "Tayyor bo'lgach, dashboardga o'tishdan oldin birinchi amallarni ko'rasiz."
+        },
         "retry": "Qayta urinish",
         "errorDescription": "Shaxsiy reja tayyorlashda xatolik yuz berdi. Qayta urinib ko'ring.",
         "badges": {
           "personalization": "Personalizatsiya",
+          "metabolism": "Metabolizm",
           "generation": "AI reja generatsiyasi"
         },
         "subtitles": {
           "bmr": "BMR hisoblanmoqda...",
           "metabolicAge": "Metabolik yoshingiz hisoblanmoqda...",
           "calories": "Kaloriya normangiz aniqlanmoqda...",
+          "macros": "Oqsil, yog' va uglevod balanslanmoqda...",
+          "targets": "Suv, qadam va workout targetlari tayyorlanmoqda...",
+          "mealContext": "Ovqat katalogi va cheklovlar tekshirilmoqda...",
+          "workoutContext": "Mashg'ulot jihozlari va xavfsizlik tekshirilmoqda...",
           "mealPlan": "Ovqatlanish rejasi moslanmoqda...",
           "workoutPlan": "Mashg'ulot rejasi tuzilmoqda...",
+          "validation": "Reja xavfsizlik va makro balans bo'yicha tekshirilmoqda...",
           "finalizing": "Natijalar yakunlanmoqda..."
         },
         "checklist": {
@@ -584,9 +654,81 @@
           "bmrFormula": "BMR formulasi qo'llanmoqda",
           "metabolicAge": "Metabolik yoshingiz hisoblanmoqda",
           "calorieMacros": "Kaloriya va makro normangiz aniqlanmoqda",
+          "waterSteps": "Suv va qadam targetlari tayyorlanmoqda",
+          "formulaWarnings": "Taxminiy hisob-kitob ogohlantirishlari qo'shilmoqda",
+          "mealContext": "Ovqatlanish inputlari yig'ilmoqda",
+          "workoutContext": "Workout inputlari yig'ilmoqda",
           "mealPlan": "Ovqatlanish rejasi tayyorlanmoqda",
           "workoutPlan": "Mashg'ulot rejasi tayyorlanmoqda",
+          "validation": "AI reja validatsiya qilinmoqda",
           "finalizing": "Natijalar yakunlanmoqda"
+        }
+      },
+      "planPreview": {
+        "cta": "AI rejani boshlash",
+        "badge": "Reja sifati tekshirildi",
+        "title": "AI reja yaratishdan oldin oxirgi tekshiruv",
+        "subtitle": "Ovqatlanish, mashg'ulot, xavfsizlik va katalog mosligi tekshirildi. Bloklovchi muammo bo'lmasa, keyingi bosqichda meal va workout plan alohida generatsiya qilinadi.",
+        "readinessScore": "Reja tayyorgarlik balli",
+        "qualityScore": "Plan quality score",
+        "fixFirstTitle": "Avval tuzatish kerak",
+        "attentionTitle": "E'tibor berish kerak",
+        "ready": "Reja generatsiyasini boshlash mumkin.",
+        "nutritionTitle": "Ovqatlanish inputlari",
+        "workoutTitle": "Workout inputlari",
+        "recommendationsTitle": "Tavsiyalar",
+        "noRecommendations": "Inputlar yetarli. Reja generatsiyasini boshlashingiz mumkin.",
+        "blockingLocked": "Bloklovchi muammolar tuzatilmaguncha reja generatsiyasi yopiq.",
+        "rows": {
+          "calories": "Kaloriya",
+          "macros": "Makro",
+          "meals": "Ovqatlanish",
+          "cuisines": "Oshxona tanlovi",
+          "allergies": "Allergiya",
+          "budget": "Budjet",
+          "weeklyWorkouts": "Haftalik mashg'ulot",
+          "location": "Joy",
+          "equipment": "Jihozlar",
+          "bodyParts": "Target tana qismlari"
+        },
+        "values": {
+          "kcal": "{{value}} kcal",
+          "macros": "{{protein}}g P / {{carbs}}g C / {{fat}}g F",
+          "meals": "{{count}} mahal",
+          "count": "{{count}} ta",
+          "days": "{{count}} kun"
+        }
+      },
+      "planReady": {
+        "badge": "Plan tayyor",
+        "title": "Shaxsiy rejangiz tayyor",
+        "subtitle": "Meal plan va workout plan yaratildi. Dashboardga o'tishdan oldin bugungi birinchi qadamlarni ko'rib chiqing.",
+        "cta": "Dashboardni boshlash",
+        "qualityTitle": "Reja sifati",
+        "qualityScore": "Sifat balli",
+        "qualityPassed": "Quality gate muvaffaqiyatli o'tdi",
+        "qualityNeedsReview": "Quality gate qayta ko'rishni talab qiladi",
+        "qualityLevel": {
+          "excellent": "A'lo",
+          "good": "Yaxshi",
+          "needs_review": "Qayta ko'rish kerak",
+          "blocked": "Bloklangan"
+        },
+        "retentionTitle": "Davomiylik uchun",
+        "retentionDescription": "Telegram yoki notification eslatmalarini yoqsangiz, suv, ovqat va mashg'ulot loglari rejangizga bog'lanadi. 7 kundan keyin LiveOn vazn, ochlik va adherence bo'yicha rejangizni qayta sozlashni taklif qiladi.",
+        "steps": {
+          "water": {
+            "title": "Bugungi suvni boshlang",
+            "description": "Birinchi 250 ml log qilsangiz, streak bugundan boshlanadi."
+          },
+          "meal": {
+            "title": "Birinchi ovqatni belgilang",
+            "description": "Meal plan trackingga ulanadi va dashboard aniqroq bo'ladi."
+          },
+          "workout": {
+            "title": "Workout vaqtini tanlang",
+            "description": "Haftalik reja reminder bilan ushlab turiladi."
+          }
         }
       },
       "result": {
@@ -602,6 +744,7 @@
         "saved": "Natija yangilandi.",
         "saveError": "Natijani saqlab bo'lmadi.",
         "generateError": "Shaxsiy reja generatsiyasini boshlashda xatolik yuz berdi.",
+        "confirmError": "Metabolizm hisobini tasdiqlab bo'lmadi.",
         "empty": "Personalizatsiya natijasi topilmadi.",
         "recommended": "Tavsiya",
         "lowCalorieWarning": "Bu kaloriya juda past bo'lishi mumkin. Sog'liq uchun xavfsiz diapazonni tanlang.",
@@ -709,6 +852,10 @@
           "fatGram": {
             "title": "Yog' maqsadi",
             "description": "Gramda kiriting. Juda past yog' bo'lsa ogohlantiramiz."
+          },
+          "recommendedWaterMl": {
+            "title": "Suv maqsadi",
+            "description": "Kunlik suv maqsadini litrda kiriting."
           },
           "currentWeight": {
             "title": "Hozirgi vazn",

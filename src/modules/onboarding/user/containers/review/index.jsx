@@ -10,7 +10,9 @@ import {
   ChevronRightIcon,
   DumbbellIcon,
   HeartPulseIcon,
+  InfoIcon,
   Loader2Icon,
+  PencilIcon,
   SaladIcon,
   TargetIcon,
   UserIcon,
@@ -28,13 +30,27 @@ import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-q
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-context";
 import { isMeaningfulUserDraftData } from "@/modules/onboarding/lib/user-draft-data";
+import { isNoWorkoutPlan } from "@/modules/onboarding/lib/onboarding-validation";
+import {
+  getCountSummary,
+  getOnboardingValueLabel,
+} from "@/modules/onboarding/lib/onboarding-labels";
 import PageAura from "../../components/page-aura.jsx";
 import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
+import {
+  getHealthConstraintsSummary,
+  getReviewBlockingErrors,
+  getReviewRecommendations,
+} from "./review-issues.js";
+import { ONBOARDING_GRID_SCROLL_AREA_CLASS } from "../onboarding-scroll-area.js";
 
 const tone = ONBOARDING_ACCENTS.green;
 
-const buildCompletePayload = (state) => ({
-  ...toUserOnboardingPayload({
+const buildCompletePayload = (state) => {
+  const noWorkout = isNoWorkoutPlan(state.weeklyWorkoutCount);
+
+  return {
+    ...toUserOnboardingPayload({
     firstName: state.firstName,
     lastName: state.lastName,
     gender: state.gender,
@@ -48,15 +64,16 @@ const buildCompletePayload = (state) => ({
     weeklyPace: state.weeklyPace,
     activityLevel: state.activityLevel,
     weeklyWorkoutCount: state.weeklyWorkoutCount,
-    workoutExperience: state.workoutExperience,
+    workoutExperience: noWorkout ? "" : state.workoutExperience,
     mealFrequency: state.mealFrequency,
     foodBudgetTier: state.foodBudgetTier,
-    workoutLocation: state.workoutLocation,
-    equipmentIds: state.workoutLocation === "gym" ? [] : state.equipmentIds,
+    workoutLocation: noWorkout ? null : state.workoutLocation,
+    equipmentIds:
+      noWorkout || state.workoutLocation === "gym" ? [] : state.equipmentIds,
     customEquipment:
-      state.workoutLocation === "gym" ? [] : state.customEquipment,
-    workoutBodyPartIds: state.workoutBodyPartIds,
-    customWorkoutBodyParts: state.customWorkoutBodyParts,
+      noWorkout || state.workoutLocation === "gym" ? [] : state.customEquipment,
+    workoutBodyPartIds: noWorkout ? [] : state.workoutBodyPartIds,
+    customWorkoutBodyParts: noWorkout ? [] : state.customWorkoutBodyParts,
     allergyIds: state.allergyIds?.length
       ? state.allergyIds
       : state.allergyIngredientIds,
@@ -75,74 +92,37 @@ const buildCompletePayload = (state) => ({
     nutritionPreferenceKeys: state.nutritionPreferenceKeys,
     healthConstraints: state.healthConstraints,
     customHealthConstraints: state.customHealthConstraints,
-  }),
-  completed: true,
-});
-
-const hasValue = (value) => {
-  if (Array.isArray(value)) return value.length > 0;
-  return value !== null && value !== undefined && String(value).trim() !== "";
+    }),
+    completed: true,
+  };
 };
 
-const validateRequired = (state, t) => {
-  const errors = [];
-  if (!hasValue(state.firstName))
-    errors.push(t("onboarding.review.missing.name"));
-  if (!hasValue(state.gender))
-    errors.push(t("onboarding.review.missing.gender"));
-  if (!hasValue(state.age)) errors.push(t("onboarding.review.missing.age"));
-  if (!hasValue(state.height?.value)) {
-    errors.push(t("onboarding.review.missing.height"));
-  }
-  if (!hasValue(state.currentWeight?.value)) {
-    errors.push(t("onboarding.review.missing.currentWeight"));
-  }
-  if (!hasValue(state.goal) && !hasValue(state.weightGoal)) {
-    errors.push(t("onboarding.review.missing.goal"));
-  }
-  if (!hasValue(state.targetWeight?.value)) {
-    errors.push(t("onboarding.review.missing.targetWeight"));
-  }
-  if (!hasValue(state.weeklyPace)) {
-    errors.push(t("onboarding.review.missing.weeklyPace"));
-  }
-  if (!hasValue(state.activityLevel)) {
-    errors.push(t("onboarding.review.missing.activityLevel"));
-  }
-  if (!hasValue(state.weeklyWorkoutCount)) {
-    errors.push(t("onboarding.review.missing.weeklyWorkoutCount"));
-  }
-  if (!hasValue(state.workoutExperience)) {
-    errors.push(t("onboarding.review.missing.workoutExperience"));
-  }
-  if (!hasValue(state.mealFrequency)) {
-    errors.push(t("onboarding.review.missing.mealFrequency"));
-  }
-  const healthConstraintsCompleted =
-    Array.isArray(state.completedUserOnboardingSteps) &&
-    state.completedUserOnboardingSteps.includes("health-constraints");
-  if (
-    !hasValue(state.healthConstraints) &&
-    !hasValue(state.customHealthConstraints) &&
-    !healthConstraintsCompleted
-  ) {
-    errors.push(t("onboarding.review.missing.healthConstraints"));
-  }
-  return errors;
-};
-
-const SummaryCard = ({ icon: Icon, title, items }) => (
+const SummaryCard = ({ editLabel, icon: Icon, title, items, onEdit }) => (
   <section className="rounded-2xl border bg-background/90 p-4">
-    <div className="mb-3 flex items-center gap-2">
-      <span
-        className={cn(
-          "flex size-9 items-center justify-center rounded-xl",
-          tone.badgeTone,
-        )}
-      >
-        <Icon className="size-4" />
-      </span>
-      <h2 className="text-sm font-black">{title}</h2>
+    <div className="mb-3 flex items-center justify-between gap-2">
+      <div className="flex min-w-0 items-center gap-2">
+        <span
+          className={cn(
+            "flex size-9 items-center justify-center rounded-xl",
+            tone.badgeTone,
+          )}
+        >
+          <Icon className="size-4" />
+        </span>
+        <h2 className="text-sm font-black">{title}</h2>
+      </div>
+      {onEdit ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 shrink-0 px-2 text-xs"
+          onClick={onEdit}
+        >
+          <PencilIcon className="size-3.5" aria-hidden="true" />
+          {editLabel}
+        </Button>
+      ) : null}
     </div>
     <div className="grid gap-2 text-sm">
       {items.map(([label, value]) => (
@@ -159,7 +139,7 @@ const SummaryCard = ({ icon: Icon, title, items }) => (
 
 const resolveBudgetLabel = (state, t) => {
   if (state.foodBudgetTier) {
-    return t(`onboarding.foodBudget.tiers.${state.foodBudgetTier}.summary`);
+    return getOnboardingValueLabel("foodBudgetTier", state.foodBudgetTier, t);
   }
 
   if (state.foodBudget) {
@@ -170,12 +150,11 @@ const resolveBudgetLabel = (state, t) => {
 };
 
 const resolveWorkoutLocationLabel = (state, t) =>
-  state.workoutLocation
-    ? t(
-        `onboarding.workoutSteps.location.options.${state.workoutLocation}.label`,
-        { defaultValue: state.workoutLocation },
-      )
-    : "";
+  isNoWorkoutPlan(state.weeklyWorkoutCount)
+    ? t("onboarding.review.noWorkout")
+    : getOnboardingValueLabel("workoutLocation", state.workoutLocation, t);
+
+const reviewReturnState = { returnTo: "/user/onboarding/review" };
 
 const Index = () => {
   const { t } = useTranslation();
@@ -185,8 +164,16 @@ const Index = () => {
   const resetOnboardingStore = useOnboardingStore((state) => state.reset);
   const { initializeUser, setOnboardingCompleted, setOnboardingFlow, user } =
     useAuthStore();
-  const [errors, setErrors] = React.useState([]);
   const canAutoSaveReview = isMeaningfulUserDraftData(onboardingState);
+  const blockingErrors = React.useMemo(
+    () => getReviewBlockingErrors(onboardingState, t),
+    [onboardingState, t],
+  );
+  const recommendations = React.useMemo(
+    () => getReviewRecommendations(onboardingState, t),
+    [onboardingState, t],
+  );
+  const hasBlockingErrors = blockingErrors.length > 0;
 
   useOnboardingAutoSave("user", "review", { enabled: canAutoSaveReview });
 
@@ -244,8 +231,7 @@ const Index = () => {
 
   const handleComplete = React.useCallback(async () => {
     const state = useOnboardingStore.getState();
-    const nextErrors = validateRequired(state, t);
-    setErrors(nextErrors);
+    const nextErrors = getReviewBlockingErrors(state, t);
     if (nextErrors.length > 0) {
       return;
     }
@@ -264,7 +250,7 @@ const Index = () => {
         tone.buttonTone,
       )}
       size="lg"
-      disabled={isPending}
+      disabled={isPending || hasBlockingErrors}
       onClick={handleComplete}
     >
       {isPending ? (
@@ -277,31 +263,31 @@ const Index = () => {
   );
 
   return (
-    <div className="relative flex h-full max-h-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8">
+    <div className="relative flex h-full min-h-0 max-h-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8">
       <PageAura tone={tone} />
-      <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
+      <div className="relative z-10 flex h-full min-h-0 w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
         <OnboardingQuestion question={t("onboarding.review.title")} />
 
-        <div className="grid flex-1 content-start gap-3 overflow-y-auto pb-5">
+        <div className={cn(ONBOARDING_GRID_SCROLL_AREA_CLASS, "gap-3")}>
           <div className="rounded-2xl border bg-background/90 p-4">
             <div className="flex items-start gap-3">
-              {errors.length > 0 ? (
+              {hasBlockingErrors ? (
                 <AlertTriangleIcon className="mt-0.5 size-5 shrink-0 text-destructive" />
               ) : (
                 <CheckCircle2Icon className="mt-0.5 size-5 shrink-0 text-primary" />
               )}
               <div>
                 <p className="text-sm font-bold">
-                  {errors.length > 0
+                  {hasBlockingErrors
                     ? t("onboarding.review.fixRequired")
                     : t("onboarding.review.ready")}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {t("onboarding.review.description")}
                 </p>
-                {errors.length > 0 ? (
+                {hasBlockingErrors ? (
                   <ul className="mt-2 grid gap-1 text-xs font-semibold text-destructive">
-                    {errors.map((error) => (
+                    {blockingErrors.map((error) => (
                       <li key={error}>{error}</li>
                     ))}
                   </ul>
@@ -310,9 +296,34 @@ const Index = () => {
             </div>
           </div>
 
+          {recommendations.length > 0 ? (
+            <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-amber-900 dark:text-amber-200">
+              <div className="flex items-start gap-3">
+                <InfoIcon
+                  className="mt-0.5 size-5 shrink-0"
+                  aria-hidden="true"
+                />
+                <div>
+                  <p className="text-sm font-bold">
+                    {t("onboarding.review.recommendations.title")}
+                  </p>
+                  <ul className="mt-2 grid gap-1 text-xs font-semibold">
+                    {recommendations.map((recommendation) => (
+                      <li key={recommendation}>{recommendation}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           <SummaryCard
             icon={UserIcon}
             title={t("onboarding.review.sections.profile")}
+            editLabel={t("onboarding.review.edit")}
+            onEdit={() =>
+              navigate("/user/onboarding/name", { state: reviewReturnState })
+            }
             items={[
               [
                 t("onboarding.review.fields.name"),
@@ -320,7 +331,10 @@ const Index = () => {
                   .filter(Boolean)
                   .join(" "),
               ],
-              [t("onboarding.review.fields.gender"), onboardingState.gender],
+              [
+                t("onboarding.review.fields.gender"),
+                getOnboardingValueLabel("gender", onboardingState.gender, t),
+              ],
               [t("onboarding.review.fields.age"), onboardingState.age],
               [
                 t("onboarding.review.fields.height"),
@@ -340,8 +354,15 @@ const Index = () => {
           <SummaryCard
             icon={TargetIcon}
             title={t("onboarding.review.sections.goals")}
+            editLabel={t("onboarding.review.edit")}
+            onEdit={() =>
+              navigate("/user/onboarding/goal", { state: reviewReturnState })
+            }
             items={[
-              [t("onboarding.review.fields.goal"), onboardingState.goal],
+              [
+                t("onboarding.review.fields.goal"),
+                getOnboardingValueLabel("goal", onboardingState.goal, t),
+              ],
               [
                 t("onboarding.review.fields.targetWeight"),
                 onboardingState.targetWeight?.value
@@ -356,7 +377,11 @@ const Index = () => {
               ],
               [
                 t("onboarding.review.fields.activityLevel"),
-                onboardingState.activityLevel,
+                getOnboardingValueLabel(
+                  "activityLevel",
+                  onboardingState.activityLevel,
+                  t,
+                ),
               ],
             ]}
           />
@@ -364,6 +389,12 @@ const Index = () => {
           <SummaryCard
             icon={SaladIcon}
             title={t("onboarding.review.sections.nutrition")}
+            editLabel={t("onboarding.review.edit")}
+            onEdit={() =>
+              navigate("/user/onboarding/meal-frequency", {
+                state: reviewReturnState,
+              })
+            }
             items={[
               [
                 t("onboarding.review.fields.mealFrequency"),
@@ -375,23 +406,26 @@ const Index = () => {
               ],
               [
                 t("onboarding.review.fields.allergies"),
-                String(
+                getCountSummary(
                   (onboardingState.allergyIds?.length ?? 0) +
                     (onboardingState.customAllergies?.length ?? 0),
+                  t,
                 ),
               ],
               [
                 t("onboarding.review.fields.dietRequirements"),
-                String(
+                getCountSummary(
                   (onboardingState.dietRequirementIds?.length ?? 0) +
                     (onboardingState.customDietRequirements?.length ?? 0),
+                  t,
                 ),
               ],
               [
                 t("onboarding.review.fields.preferredCuisines"),
-                String(
+                getCountSummary(
                   (onboardingState.preferredCuisineIds?.length ?? 0) +
                     (onboardingState.customPreferredCuisines?.length ?? 0),
+                  t,
                 ),
               ],
             ]}
@@ -400,15 +434,16 @@ const Index = () => {
           <SummaryCard
             icon={HeartPulseIcon}
             title={t("onboarding.review.sections.safety")}
+            editLabel={t("onboarding.review.edit")}
+            onEdit={() =>
+              navigate("/user/onboarding/health-constraints", {
+                state: reviewReturnState,
+              })
+            }
             items={[
               [
                 t("onboarding.review.fields.healthConstraints"),
-                String(
-                  (onboardingState.healthConstraints?.filter(
-                    (item) => item !== "none",
-                  )?.length ?? 0) +
-                    (onboardingState.customHealthConstraints?.length ?? 0),
-                ),
+                getHealthConstraintsSummary(onboardingState, t),
               ],
             ]}
           />
@@ -416,14 +451,30 @@ const Index = () => {
           <SummaryCard
             icon={DumbbellIcon}
             title={t("onboarding.review.sections.workout")}
+            editLabel={t("onboarding.review.edit")}
+            onEdit={() =>
+              navigate("/user/onboarding/weekly-workout-count", {
+                state: reviewReturnState,
+              })
+            }
             items={[
               [
                 t("onboarding.review.fields.weeklyWorkoutCount"),
-                onboardingState.weeklyWorkoutCount,
+                getOnboardingValueLabel(
+                  "weeklyWorkoutCount",
+                  onboardingState.weeklyWorkoutCount,
+                  t,
+                ),
               ],
               [
                 t("onboarding.review.fields.workoutExperience"),
-                onboardingState.workoutExperience,
+                isNoWorkoutPlan(onboardingState.weeklyWorkoutCount)
+                  ? t("onboarding.review.noWorkout")
+                  : getOnboardingValueLabel(
+                      "workoutExperience",
+                      onboardingState.workoutExperience,
+                      t,
+                    ),
               ],
               [
                 t("onboarding.review.fields.workoutLocation"),
@@ -431,11 +482,14 @@ const Index = () => {
               ],
               [
                 t("onboarding.review.fields.equipment"),
-                onboardingState.workoutLocation === "gym"
+                isNoWorkoutPlan(onboardingState.weeklyWorkoutCount)
+                  ? t("onboarding.review.none")
+                  : onboardingState.workoutLocation === "gym"
                   ? "-"
-                  : String(
+                  : getCountSummary(
                       (onboardingState.equipmentIds?.length ?? 0) +
                         (onboardingState.customEquipment?.length ?? 0),
+                      t,
                     ),
               ],
             ]}
