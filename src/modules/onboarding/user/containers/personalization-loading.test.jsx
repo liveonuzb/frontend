@@ -266,15 +266,78 @@ describe("PersonalizingContainer", () => {
 
     render(<GeneratingContainer />);
 
-    expect(screen.getByTestId("ai-plan-generation")).toHaveClass(
-      "ai-plan-generation--error",
-      "ai-plan-generation--complete",
+    const shell = screen.getByTestId("ai-plan-generation");
+    expect(shell).toHaveClass("ai-plan-generation--error");
+    expect(shell).not.toHaveClass("ai-plan-generation--complete");
+    expect(screen.getByRole("progressbar")).toHaveAttribute(
+      "aria-valuenow",
+      "92",
     );
+    expect(
+      screen
+        .getByText("onboarding.postOnboarding.loading.checklist.finalizing")
+        .closest("li"),
+    ).not.toHaveClass("ai-plan-generation__step--completed");
     expect(
       screen.getByText(
         "- Weekly average calories are outside the target tolerance.",
       ),
     ).toBeInTheDocument();
+  });
+
+  it("retries a failed generation job by starting a new plan job", async () => {
+    paramsMock.mockReturnValue({ jobId: "generation-1" });
+    const mutateAsync = vi.fn().mockResolvedValue({
+      data: {
+        data: {
+          id: "generation-2",
+          flowStatus: "GENERATING_PLAN",
+          nextPath: "/user/onboarding/plan-generating/generation-2",
+        },
+      },
+    });
+    getQueryResultMock.mockReturnValue({
+      data: {
+        data: {
+          id: "generation-1",
+          status: "FAILED",
+          progress: 100,
+          missingData: [],
+        },
+      },
+      isError: false,
+      isSuccess: false,
+      refetch: vi.fn(),
+    });
+    postQueryResultMock.mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    });
+
+    render(<GeneratingContainer />);
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /onboarding\.postOnboarding\.loading\.retry/,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(mutateAsync).toHaveBeenCalledWith({
+        url: "/user/onboarding/generate-personal-plan",
+      });
+    });
+    expect(setOnboardingFlowMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        onboardingFlowStatus: "GENERATING_PLAN",
+        onboardingNextPath: "/user/onboarding/plan-generating/generation-2",
+        latestPlanGenerationJobId: "generation-2",
+      }),
+    );
+    expect(navigateMock).toHaveBeenCalledWith(
+      "/user/onboarding/plan-generating/generation-2",
+      { replace: true },
+    );
   });
 
   it("shows a visible recovery path when a metabolism job fails", async () => {

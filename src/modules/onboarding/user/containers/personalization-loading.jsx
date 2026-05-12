@@ -326,6 +326,9 @@ export const GeneratingContainer = () => {
   const progress = clampProgress(
     hasServerProgress ? get(job, "progress") : localProgress,
   );
+  const displayProgress = isFailed
+    ? clampProgress(Math.min(progress, 92))
+    : progress;
   const qualityIssues = getPlanGenerationQualityIssues(job);
   const isGenerationCompleted = jobStatus === "COMPLETED" && progress >= 100;
   const completedJobId = String(get(job, "id", "completed"));
@@ -406,7 +409,7 @@ export const GeneratingContainer = () => {
 
   return (
     <AiPlanGeneration
-      progress={isFailed ? 100 : isStarting ? Math.max(progress, 12) : progress}
+      progress={isStarting ? Math.max(displayProgress, 12) : displayProgress}
       error={isFailed}
       missingData={get(job, "missingData", [])}
       qualityIssues={qualityIssues}
