@@ -119,7 +119,7 @@ const GenerationErrorCard = ({
     <div className="ai-plan-generation__error">
       <div className="ai-plan-generation__error-heading">
         <AlertTriangleIcon className="size-4" />
-        {t(`${LOADING_KEY}.errorDescription`)}
+        <span>{t(`${LOADING_KEY}.errorDescription`)}</span>
       </div>
       {size(issues) > 0 ? (
         <div className="ai-plan-generation__issues">
@@ -170,6 +170,9 @@ const AiPlanGeneration = ({
     stepStates[Math.max(0, size(stepStates) - 1)];
   const activeStepKey = get(activeStep, "key", "finalizing");
   const completedSteps = filter(stepStates, { status: "completed" });
+  const subtitle = error
+    ? t(`${LOADING_KEY}.errorDescription`)
+    : t(`${LOADING_KEY}.subtitles.${activeStepKey}`);
   const visibleIssues = React.useMemo(
     () => buildVisibleLoadingIssues({ missingData, qualityIssues }),
     [missingData, qualityIssues],
@@ -209,14 +212,16 @@ const AiPlanGeneration = ({
 
           <p className="ai-plan-generation__subtitle">
             <span className="ai-plan-generation__status-dot" />
-            {error
-              ? t(`${LOADING_KEY}.errorDescription`)
-              : t(`${LOADING_KEY}.subtitles.${activeStepKey}`)}
+            <span className="ai-plan-generation__subtitle-text">
+              {subtitle}
+            </span>
           </p>
 
-          <p className="ai-plan-generation__description">
-            {t(`${LOADING_KEY}.description`)}
-          </p>
+          {!error ? (
+            <p className="ai-plan-generation__description">
+              {t(`${LOADING_KEY}.description`)}
+            </p>
+          ) : null}
         </div>
 
         <div

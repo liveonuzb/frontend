@@ -778,8 +778,8 @@ html.dark[data-app-mode="madagascar"] {
   justify-content: center;
   overflow-x: hidden;
   overflow-y: auto;
-  padding: max(1rem, env(safe-area-inset-top)) 1rem
-    max(1rem, env(safe-area-inset-bottom));
+  padding: max(0.45rem, env(safe-area-inset-top)) 0.55rem
+    max(0.45rem, env(safe-area-inset-bottom));
   background: var(--ai-plan-page-bg);
   color: var(--ai-plan-text);
 }
@@ -833,14 +833,15 @@ html.dark[data-app-mode="madagascar"] {
 .ai-plan-generation__card {
   position: relative;
   z-index: 1;
-  width: min(100%, 38.75rem);
+  width: min(100%, 36rem);
+  margin-block: auto;
   border: 1px solid var(--ai-plan-card-border);
-  border-radius: clamp(1.35rem, 5vw, 2rem);
+  border-radius: clamp(1rem, 4vw, 1.65rem);
   background: var(--ai-plan-card-bg);
   box-shadow:
     0 30px 90px rgb(0 0 0 / 0.32),
     inset 0 1px 0 rgb(255 255 255 / 0.1);
-  padding: clamp(1.2rem, 4.5vw, 2rem);
+  padding: clamp(0.85rem, 3.2vw, 1.6rem);
   backdrop-filter: blur(24px);
 }
 
@@ -857,7 +858,7 @@ html.dark[data-app-mode="madagascar"] {
 .ai-plan-generation__ring {
   position: relative;
   display: grid;
-  width: clamp(8.75rem, 38vw, 11.5rem);
+  width: clamp(6.4rem, 28vw, 9.4rem);
   aspect-ratio: 1;
   place-items: center;
   border-radius: 999px;
@@ -873,7 +874,7 @@ html.dark[data-app-mode="madagascar"] {
 
 .ai-plan-generation__ring::before {
   position: absolute;
-  inset: -0.7rem;
+  inset: -0.42rem;
   content: "";
   border: 1px solid color-mix(in srgb, var(--ai-plan-accent) 26%, transparent);
   border-radius: inherit;
@@ -882,7 +883,7 @@ html.dark[data-app-mode="madagascar"] {
 
 .ai-plan-generation__ring::after {
   position: absolute;
-  inset: 0.6rem;
+  inset: 0.42rem;
   content: "";
   border-radius: inherit;
   background: var(--ai-plan-ring-core);
@@ -899,13 +900,13 @@ html.dark[data-app-mode="madagascar"] {
   z-index: 1;
   display: grid;
   place-items: center;
-  gap: 0.45rem;
+  gap: 0.22rem;
   text-align: center;
 }
 
 .ai-plan-generation__ring-icon {
-  width: 1.8rem;
-  height: 1.8rem;
+  width: 1.2rem;
+  height: 1.2rem;
   color: var(--ai-plan-accent);
   filter: drop-shadow(
     0 0 14px color-mix(in srgb, var(--ai-plan-accent) 70%, transparent)
@@ -913,7 +914,7 @@ html.dark[data-app-mode="madagascar"] {
 }
 
 .ai-plan-generation__percent {
-  font-size: clamp(2.6rem, 11vw, 4rem);
+  font-size: clamp(2rem, 8vw, 3.15rem);
   font-weight: 900;
   line-height: 1;
   color: var(--ai-plan-text);
@@ -921,45 +922,46 @@ html.dark[data-app-mode="madagascar"] {
 }
 
 .ai-plan-generation__copy {
-  margin-top: clamp(1.5rem, 5vw, 2.2rem);
+  margin-top: clamp(0.85rem, 3vw, 1.45rem);
 }
 
 .ai-plan-generation__badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
-  min-height: 2.35rem;
+  gap: 0.45rem;
+  min-height: 1.9rem;
   border: 1px solid color-mix(in srgb, var(--ai-plan-accent) 48%, transparent);
   border-radius: 999px;
   background: color-mix(in srgb, var(--ai-plan-accent) 13%, transparent);
-  padding: 0.45rem 0.9rem;
+  padding: 0.32rem 0.7rem;
   color: var(--ai-plan-accent-strong);
-  font-size: 0.83rem;
+  font-size: 0.72rem;
   font-weight: 800;
 }
 
 .ai-plan-generation__title {
-  margin-top: 1rem;
+  margin-top: 0.7rem;
   color: var(--ai-plan-text);
-  font-size: clamp(2.15rem, 9vw, 4rem);
+  font-size: clamp(1.75rem, 7.2vw, 3.25rem);
   font-weight: 900;
   line-height: 1.04;
+  overflow-wrap: anywhere;
 }
 
 .ai-plan-generation__subtitle {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
-  margin-top: 1rem;
+  gap: 0.5rem;
+  margin-top: 0.62rem;
   color: var(--ai-plan-muted);
-  font-size: clamp(1rem, 3.8vw, 1.35rem);
+  font-size: clamp(0.86rem, 3.2vw, 1.08rem);
   font-weight: 750;
   line-height: 1.35;
 }
 
 .ai-plan-generation__status-dot {
-  width: 0.65rem;
-  height: 0.65rem;
+  width: 0.48rem;
+  height: 0.48rem;
   flex: 0 0 auto;
   border-radius: 999px;
   background: var(--ai-plan-accent);
@@ -967,17 +969,22 @@ html.dark[data-app-mode="madagascar"] {
     color-mix(in srgb, var(--ai-plan-accent) 76%, transparent);
 }
 
+.ai-plan-generation__subtitle-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .ai-plan-generation__description {
-  margin-top: 0.8rem;
+  margin-top: 0.48rem;
   color: var(--ai-plan-muted);
-  font-size: clamp(0.94rem, 3.4vw, 1.1rem);
+  font-size: clamp(0.78rem, 2.75vw, 0.95rem);
   font-weight: 650;
-  line-height: 1.65;
+  line-height: 1.45;
 }
 
 .ai-plan-generation__linear {
-  height: 0.8rem;
-  margin-top: 1.55rem;
+  height: 0.55rem;
+  margin-top: 0.9rem;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--ai-plan-accent) 16%, transparent);
   border-radius: 999px;
@@ -1016,15 +1023,15 @@ html.dark[data-app-mode="madagascar"] {
 .ai-plan-generation__steps {
   position: relative;
   display: grid;
-  gap: 0.7rem;
-  margin-top: 1.4rem;
+  gap: 0.42rem;
+  margin-top: 0.85rem;
 }
 
 .ai-plan-generation__steps::before {
   position: absolute;
-  top: 1.65rem;
-  bottom: 1.65rem;
-  left: 1.35rem;
+  top: 1.2rem;
+  bottom: 1.2rem;
+  left: 1.05rem;
   width: 2px;
   content: "";
   background: var(--ai-plan-step-line);
@@ -1034,14 +1041,14 @@ html.dark[data-app-mode="madagascar"] {
   position: relative;
   z-index: 1;
   display: grid;
-  min-height: 3.55rem;
-  grid-template-columns: 2.7rem minmax(0, 1fr);
+  min-height: 2.65rem;
+  grid-template-columns: 2.05rem minmax(0, 1fr);
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   border: 1px solid var(--ai-plan-step-border);
-  border-radius: 1.1rem;
+  border-radius: 0.82rem;
   background: var(--ai-plan-step-bg);
-  padding: 0.65rem 0.85rem;
+  padding: 0.42rem 0.6rem;
   color: var(--ai-plan-muted);
   transition:
     border-color 220ms ease,
@@ -1072,14 +1079,14 @@ html.dark[data-app-mode="madagascar"] {
 
 .ai-plan-generation__step-marker {
   display: inline-grid;
-  width: 2.35rem;
-  height: 2.35rem;
+  width: 1.8rem;
+  height: 1.8rem;
   place-items: center;
-  border: 2px solid color-mix(in srgb, var(--ai-plan-accent) 36%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--ai-plan-accent) 36%, transparent);
   border-radius: 999px;
   background: color-mix(in srgb, var(--ai-plan-ring-core) 88%, transparent);
   color: var(--ai-plan-accent-strong);
-  font-size: 1rem;
+  font-size: 0.78rem;
   font-weight: 900;
 }
 
@@ -1091,55 +1098,55 @@ html.dark[data-app-mode="madagascar"] {
 }
 
 .ai-plan-generation__step-icon {
-  width: 1.2rem;
-  height: 1.2rem;
+  width: 0.95rem;
+  height: 0.95rem;
 }
 
 .ai-plan-generation__step-title {
   min-width: 0;
-  font-size: clamp(0.95rem, 3.8vw, 1.08rem);
+  font-size: clamp(0.78rem, 3.05vw, 0.93rem);
   font-weight: 800;
-  line-height: 1.35;
+  line-height: 1.23;
 }
 
 .ai-plan-generation__hint,
 .ai-plan-generation__error {
-  margin-top: 1.1rem;
+  margin-top: 0.7rem;
   border: 1px solid var(--ai-plan-step-border);
-  border-radius: 1.15rem;
-  padding: 0.95rem;
+  border-radius: 0.9rem;
+  padding: 0.68rem;
 }
 
 .ai-plan-generation__hint {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.55rem;
   background: var(--ai-plan-hint-bg);
   color: var(--ai-plan-muted);
 }
 
 .ai-plan-generation__hint-icon {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 1rem;
+  height: 1rem;
   flex: 0 0 auto;
   color: var(--ai-plan-accent);
 }
 
 .ai-plan-generation__hint-title {
   color: var(--ai-plan-text);
-  font-size: 0.95rem;
+  font-size: 0.82rem;
   font-weight: 850;
 }
 
 .ai-plan-generation__hint-description {
   margin-top: 0.25rem;
-  font-size: 0.86rem;
+  font-size: 0.74rem;
   font-weight: 650;
   line-height: 1.45;
 }
 
 .ai-plan-generation__error {
   display: grid;
-  gap: 0.85rem;
+  gap: 0.58rem;
   border-color: var(--ai-plan-error-border);
   background: var(--ai-plan-error-bg);
   color: var(--ai-plan-text);
@@ -1148,24 +1155,34 @@ html.dark[data-app-mode="madagascar"] {
 .ai-plan-generation__error-heading {
   display: flex;
   align-items: flex-start;
-  gap: 0.55rem;
-  font-size: 0.92rem;
+  gap: 0.45rem;
+  font-size: 0.78rem;
   font-weight: 850;
-  line-height: 1.45;
+  line-height: 1.32;
+}
+
+.ai-plan-generation__error-heading span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .ai-plan-generation__issues {
   display: grid;
   gap: 0.3rem;
   color: color-mix(in srgb, var(--ai-plan-text) 78%, var(--ai-plan-accent));
-  font-size: 0.8rem;
+  font-size: 0.74rem;
   font-weight: 650;
   line-height: 1.45;
 }
 
 .ai-plan-generation__actions {
   display: grid;
-  gap: 0.6rem;
+  gap: 0.45rem;
+}
+
+.ai-plan-generation__actions [data-slot="button"] {
+  min-height: 2.45rem;
+  font-size: 0.86rem;
 }
 
 html[data-app-mode="focus"] .ai-plan-generation,
@@ -1307,11 +1324,34 @@ html[data-app-mode="madagascar"] .ai-plan-generation__decor {
 
 @media (min-width: 640px) {
   .ai-plan-generation {
-    padding: 2rem;
+    padding: 1.5rem;
   }
 
   .ai-plan-generation__card {
-    padding: 2.35rem;
+    padding: 2rem;
+  }
+
+  .ai-plan-generation__ring {
+    width: clamp(8rem, 24vw, 11.25rem);
+  }
+
+  .ai-plan-generation__percent {
+    font-size: clamp(3rem, 7vw, 4rem);
+  }
+
+  .ai-plan-generation__title {
+    font-size: clamp(2.7rem, 6vw, 4rem);
+  }
+
+  .ai-plan-generation__step {
+    min-height: 3.3rem;
+    grid-template-columns: 2.55rem minmax(0, 1fr);
+    padding: 0.62rem 0.8rem;
+  }
+
+  .ai-plan-generation__step-marker {
+    width: 2.25rem;
+    height: 2.25rem;
   }
 }
 
@@ -1324,18 +1364,26 @@ html[data-app-mode="madagascar"] .ai-plan-generation__decor {
 @media (max-width: 420px) {
   .ai-plan-generation__card {
     border-radius: 1.3rem;
-    padding-inline: 1rem;
+    padding-inline: 0.85rem;
   }
 
   .ai-plan-generation__step {
-    grid-template-columns: 2.45rem minmax(0, 1fr);
-    gap: 0.55rem;
-    padding-inline: 0.7rem;
+    grid-template-columns: 1.9rem minmax(0, 1fr);
+    gap: 0.45rem;
+    padding-inline: 0.55rem;
   }
 
   .ai-plan-generation__step-marker {
-    width: 2.1rem;
-    height: 2.1rem;
+    width: 1.7rem;
+    height: 1.7rem;
+  }
+
+  .ai-plan-generation__step-title {
+    font-size: 0.75rem;
+  }
+
+  .ai-plan-generation__title {
+    font-size: clamp(1.35rem, 5.5vw, 1.45rem);
   }
 
   html[data-app-mode="madagascar"] .ai-plan-generation__decor {
