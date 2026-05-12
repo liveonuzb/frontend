@@ -1188,46 +1188,196 @@ html.dark[data-app-mode="madagascar"] {
 html[data-app-mode="focus"] .ai-plan-generation,
 html.dark[data-app-mode="focus"] .ai-plan-generation {
   --ai-plan-page-bg:
-    radial-gradient(circle at 52% -14%, rgb(20 83 45 / 0.52), transparent 38%),
-    radial-gradient(circle at 84% 28%, rgb(245 158 11 / 0.18), transparent 34%),
-    linear-gradient(155deg, #050806 0%, #08110d 46%, #020302 100%);
+    radial-gradient(circle at 50% -10%, rgb(20 83 45 / 0.55), transparent 34%),
+    radial-gradient(circle at 82% 24%, rgb(245 158 11 / 0.22), transparent 30%),
+    linear-gradient(155deg, #030605 0%, #07110d 48%, #010201 100%);
+  --ai-plan-card-bg:
+    linear-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.03) 1px, transparent 1px),
+    linear-gradient(155deg, rgb(18 18 12 / 0.92), rgb(3 6 5 / 0.96));
+  --ai-plan-card-border: rgb(248 182 45 / 0.34);
+  --ai-plan-text: #fffaf0;
+  --ai-plan-muted: rgb(255 246 232 / 0.64);
+  --ai-plan-accent: #f7b733;
+  --ai-plan-accent-strong: #ffe08a;
+  --ai-plan-ring-track: rgb(255 255 255 / 0.1);
+  --ai-plan-ring-core: rgb(2 5 4 / 0.98);
+  --ai-plan-ring-shadow:
+    0 0 42px rgb(248 182 45 / 0.34), 0 24px 80px rgb(0 0 0 / 0.42);
+  --ai-plan-bar-track: rgb(248 182 45 / 0.1);
+  --ai-plan-step-bg: rgb(8 15 12 / 0.72);
+  --ai-plan-step-border: rgb(255 255 255 / 0.1);
+  --ai-plan-step-active-bg: linear-gradient(
+    90deg,
+    rgb(248 182 45 / 0.18),
+    rgb(255 255 255 / 0.055)
+  );
+  --ai-plan-step-active-border: rgb(248 182 45 / 0.72);
+  --ai-plan-step-completed-bg: rgb(248 182 45 / 0.075);
+  --ai-plan-step-completed-border: rgb(248 182 45 / 0.3);
+  --ai-plan-step-line: rgb(248 182 45 / 0.24);
+  --ai-plan-hint-bg: rgb(255 255 255 / 0.055);
+}
+
+html[data-app-mode="focus"] .ai-plan-generation__background,
+html.dark[data-app-mode="focus"] .ai-plan-generation__background {
+  background:
+    linear-gradient(rgb(248 182 45 / 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(248 182 45 / 0.045) 1px, transparent 1px),
+    radial-gradient(circle at 50% 18%, rgb(22 101 52 / 0.3), transparent 18rem),
+    radial-gradient(
+      circle at 78% 82%,
+      rgb(248 182 45 / 0.16),
+      transparent 15rem
+    );
+  background-size:
+    4rem 4rem,
+    4rem 4rem,
+    auto,
+    auto;
+  mask-image: linear-gradient(180deg, black, rgb(0 0 0 / 0.75));
+}
+
+html[data-app-mode="focus"] .ai-plan-generation__background::before,
+html.dark[data-app-mode="focus"] .ai-plan-generation__background::before {
+  inset-inline: 28%;
+  bottom: 6%;
+  height: 0.8rem;
+  background: #f7b733;
+  filter: blur(34px);
+  opacity: 0.28;
+}
+
+html[data-app-mode="focus"] .ai-plan-generation__background::after,
+html.dark[data-app-mode="focus"] .ai-plan-generation__background::after {
+  top: 10%;
+  right: 8%;
+  width: 10rem;
+  height: 10rem;
+  border-color: rgb(248 182 45 / 0.22);
+  border-radius: 1.25rem;
+  transform: rotate(45deg);
+}
+
+html[data-app-mode="focus"] .ai-plan-generation__card,
+html.dark[data-app-mode="focus"] .ai-plan-generation__card {
+  overflow: hidden;
+  border-radius: clamp(0.85rem, 3vw, 1.35rem);
+  background-size:
+    2.2rem 2.2rem,
+    2.2rem 2.2rem,
+    auto;
+  box-shadow:
+    0 30px 96px rgb(0 0 0 / 0.52),
+    0 0 0 1px rgb(248 182 45 / 0.08),
+    inset 0 1px 0 rgb(255 255 255 / 0.08);
+}
+
+html[data-app-mode="focus"] .ai-plan-generation__decor,
+html.dark[data-app-mode="focus"] .ai-plan-generation__decor {
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 4.75rem;
+  aspect-ratio: 1;
+  border: 1px solid rgb(248 182 45 / 0.22);
+  border-radius: 0.75rem;
+  background:
+    linear-gradient(
+      90deg,
+      transparent 48%,
+      rgb(248 182 45 / 0.18) 50%,
+      transparent 52%
+    ),
+    linear-gradient(
+      transparent 48%,
+      rgb(248 182 45 / 0.18) 50%,
+      transparent 52%
+    );
+  opacity: 0.34;
+  transform: rotate(45deg);
+}
+
+html[data-app-mode="focus"] .ai-plan-generation__badge,
+html.dark[data-app-mode="focus"] .ai-plan-generation__badge {
+  border-radius: 0.72rem;
+  background: linear-gradient(
+    90deg,
+    rgb(248 182 45 / 0.16),
+    rgb(8 15 12 / 0.72)
+  );
+}
+
+html[data-app-mode="focus"] .ai-plan-generation__ring,
+html.dark[data-app-mode="focus"] .ai-plan-generation__ring {
+  border: 1px solid rgb(248 182 45 / 0.18);
+}
+
+html[data-app-mode="focus"] .ai-plan-generation__percent,
+html.dark[data-app-mode="focus"] .ai-plan-generation__percent {
+  text-shadow:
+    0 0 22px rgb(248 182 45 / 0.16),
+    0 12px 28px rgb(0 0 0 / 0.42);
+}
+
+html[data-app-mode="focus"] .ai-plan-generation__linear,
+html.dark[data-app-mode="focus"] .ai-plan-generation__linear {
+  height: 0.48rem;
+}
+
+html[data-app-mode="focus"] .ai-plan-generation__step,
+html.dark[data-app-mode="focus"] .ai-plan-generation__step {
+  border-radius: 0.68rem;
+}
+
+html[data-app-mode="focus"] .ai-plan-generation__step-marker,
+html.dark[data-app-mode="focus"] .ai-plan-generation__step-marker {
+  border-radius: 0.52rem;
+  background: rgb(2 5 4 / 0.9);
+}
+
+html[data-app-mode="focus"] .ai-plan-generation__step--active,
+html.dark[data-app-mode="focus"] .ai-plan-generation__step--active {
+  box-shadow:
+    inset 3px 0 0 var(--ai-plan-accent),
+    0 0 0 1px rgb(248 182 45 / 0.18),
+    0 0 30px rgb(248 182 45 / 0.18);
 }
 
 html[data-app-mode="zen"] .ai-plan-generation {
   --ai-plan-page-bg:
     radial-gradient(
-      circle at 18% 12%,
-      rgb(187 247 208 / 0.68),
-      transparent 24rem
+      ellipse at 16% 8%,
+      rgb(220 252 231 / 0.9),
+      transparent 22rem
     ),
     radial-gradient(
-      circle at 86% 80%,
-      rgb(254 240 138 / 0.38),
-      transparent 20rem
+      ellipse at 86% 82%,
+      rgb(187 247 208 / 0.64),
+      transparent 22rem
     ),
-    linear-gradient(145deg, #f7f8ee 0%, #e8f4e5 52%, #d6ecdf 100%);
+    linear-gradient(145deg, #fbfbf0 0%, #edf8e9 52%, #d8efe1 100%);
   --ai-plan-card-bg: linear-gradient(
     155deg,
-    rgb(255 255 248 / 0.92),
-    rgb(238 248 236 / 0.9)
+    rgb(255 255 248 / 0.94),
+    rgb(241 250 237 / 0.92)
   );
-  --ai-plan-card-border: rgb(77 124 15 / 0.18);
-  --ai-plan-text: #153327;
-  --ai-plan-muted: rgb(21 51 39 / 0.68);
-  --ai-plan-accent: #4f9f6e;
-  --ai-plan-accent-strong: #2f7d55;
-  --ai-plan-ring-track: rgb(47 125 85 / 0.14);
-  --ai-plan-ring-core: rgb(252 255 246 / 0.96);
-  --ai-plan-ring-shadow: 0 20px 54px rgb(79 159 110 / 0.25);
-  --ai-plan-bar-track: rgb(79 159 110 / 0.12);
-  --ai-plan-step-bg: rgb(255 255 248 / 0.58);
-  --ai-plan-step-border: rgb(47 125 85 / 0.13);
-  --ai-plan-step-active-bg: rgb(187 247 208 / 0.36);
-  --ai-plan-step-active-border: rgb(47 125 85 / 0.36);
-  --ai-plan-step-completed-bg: rgb(220 252 231 / 0.42);
-  --ai-plan-step-completed-border: rgb(47 125 85 / 0.25);
-  --ai-plan-step-line: rgb(47 125 85 / 0.16);
-  --ai-plan-hint-bg: rgb(255 255 248 / 0.54);
+  --ai-plan-card-border: rgb(72 126 95 / 0.16);
+  --ai-plan-text: #17362a;
+  --ai-plan-muted: rgb(23 54 42 / 0.66);
+  --ai-plan-accent: #4f9f7a;
+  --ai-plan-accent-strong: #2f7d58;
+  --ai-plan-ring-track: rgb(47 125 88 / 0.12);
+  --ai-plan-ring-core: rgb(254 255 246 / 0.98);
+  --ai-plan-ring-shadow: 0 24px 64px rgb(79 159 122 / 0.24);
+  --ai-plan-bar-track: rgb(79 159 122 / 0.12);
+  --ai-plan-step-bg: rgb(255 255 248 / 0.72);
+  --ai-plan-step-border: rgb(47 125 88 / 0.12);
+  --ai-plan-step-active-bg: rgb(220 252 231 / 0.58);
+  --ai-plan-step-active-border: rgb(47 125 88 / 0.34);
+  --ai-plan-step-completed-bg: rgb(236 253 245 / 0.72);
+  --ai-plan-step-completed-border: rgb(47 125 88 / 0.22);
+  --ai-plan-step-line: rgb(47 125 88 / 0.15);
+  --ai-plan-hint-bg: rgb(255 255 248 / 0.66);
 }
 
 html.dark[data-app-mode="zen"] .ai-plan-generation {
@@ -1256,6 +1406,35 @@ html.dark[data-app-mode="zen"] .ai-plan-generation {
   --ai-plan-hint-bg: rgb(255 255 255 / 0.06);
 }
 
+html[data-app-mode="zen"] .ai-plan-generation__background {
+  background:
+    radial-gradient(
+      circle at 22% 20%,
+      rgb(255 255 248 / 0.78),
+      transparent 12rem
+    ),
+    radial-gradient(
+      circle at 80% 82%,
+      rgb(134 239 172 / 0.28),
+      transparent 16rem
+    );
+}
+
+html[data-app-mode="zen"] .ai-plan-generation__background::before {
+  inset-inline: 8%;
+  bottom: 7%;
+  height: 2.4rem;
+  border-radius: 999px 999px 0 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(74 141 100 / 0.22),
+    transparent
+  );
+  filter: blur(20px);
+  opacity: 0.42;
+}
+
 html[data-app-mode="zen"] .ai-plan-generation__background::after {
   top: 10%;
   right: 8%;
@@ -1264,6 +1443,98 @@ html[data-app-mode="zen"] .ai-plan-generation__background::after {
   border-radius: 64% 36% 64% 36%;
   background: linear-gradient(145deg, rgb(134 239 172 / 0.34), transparent);
   transform: rotate(18deg);
+}
+
+html[data-app-mode="zen"] .ai-plan-generation__card {
+  border-radius: clamp(1.35rem, 5vw, 2rem);
+  box-shadow:
+    0 24px 72px rgb(47 125 88 / 0.18),
+    0 3px 18px rgb(47 125 88 / 0.08),
+    inset 0 1px 0 rgb(255 255 255 / 0.72);
+}
+
+html[data-app-mode="zen"] .ai-plan-generation__decor {
+  top: 1rem;
+  right: 1rem;
+  width: 4.8rem;
+  aspect-ratio: 1;
+  border-radius: 68% 32% 68% 32%;
+  background: linear-gradient(
+    135deg,
+    rgb(134 239 172 / 0.48),
+    rgb(255 255 248 / 0.12)
+  );
+  opacity: 0.68;
+  transform: rotate(22deg);
+}
+
+html[data-app-mode="zen"] .ai-plan-generation__decor::before {
+  position: absolute;
+  inset: 28% 16%;
+  content: "";
+  border-left: 1px solid rgb(47 125 88 / 0.26);
+  border-radius: inherit;
+  transform: rotate(-22deg);
+}
+
+html[data-app-mode="zen"] .ai-plan-generation__badge {
+  border-color: rgb(47 125 88 / 0.2);
+  background: rgb(236 253 245 / 0.58);
+  color: var(--ai-plan-accent-strong);
+}
+
+html[data-app-mode="zen"] .ai-plan-generation__ring {
+  background:
+    conic-gradient(
+      var(--ai-plan-accent) 0deg var(--ai-plan-progress),
+      var(--ai-plan-ring-track) var(--ai-plan-progress) 360deg
+    ),
+    radial-gradient(circle, rgb(255 255 255 / 0.65), transparent 62%);
+}
+
+html[data-app-mode="zen"] .ai-plan-generation__ring::before {
+  border-style: dashed;
+  opacity: 0.44;
+}
+
+html[data-app-mode="zen"] .ai-plan-generation__percent {
+  color: var(--ai-plan-text);
+  text-shadow: none;
+}
+
+html[data-app-mode="zen"] .ai-plan-generation__title {
+  font-weight: 850;
+}
+
+html[data-app-mode="zen"] .ai-plan-generation__subtitle {
+  font-weight: 680;
+}
+
+html[data-app-mode="zen"] .ai-plan-generation__step {
+  border-radius: 1.15rem;
+  box-shadow: 0 8px 22px rgb(47 125 88 / 0.055);
+}
+
+html[data-app-mode="zen"] .ai-plan-generation__step--active {
+  box-shadow:
+    0 0 0 1px rgb(47 125 88 / 0.1),
+    0 14px 30px rgb(47 125 88 / 0.13);
+  animation: ai-plan-zen-breathe 3.4s ease-in-out infinite;
+}
+
+html[data-app-mode="zen"] .ai-plan-generation__step-marker {
+  border-color: rgb(47 125 88 / 0.22);
+  background: rgb(255 255 248 / 0.86);
+}
+
+html.dark[data-app-mode="zen"] .ai-plan-generation__card {
+  box-shadow:
+    0 26px 80px rgb(0 0 0 / 0.38),
+    inset 0 1px 0 rgb(255 255 255 / 0.08);
+}
+
+html.dark[data-app-mode="zen"] .ai-plan-generation__badge {
+  background: rgb(187 247 208 / 0.1);
 }
 
 html[data-app-mode="madagascar"] .ai-plan-generation {
@@ -1424,6 +1695,22 @@ html[data-app-mode="madagascar"] .ai-plan-generation__decor {
     box-shadow:
       0 0 0 1px color-mix(in srgb, var(--ai-plan-accent) 32%, transparent),
       0 0 36px color-mix(in srgb, var(--ai-plan-accent) 32%, transparent);
+  }
+}
+
+@keyframes ai-plan-zen-breathe {
+  0%,
+  100% {
+    transform: translateY(0);
+    box-shadow:
+      0 0 0 1px rgb(47 125 88 / 0.08),
+      0 12px 26px rgb(47 125 88 / 0.1);
+  }
+  50% {
+    transform: translateY(-1px);
+    box-shadow:
+      0 0 0 1px rgb(47 125 88 / 0.16),
+      0 16px 34px rgb(47 125 88 / 0.16);
   }
 }
 
