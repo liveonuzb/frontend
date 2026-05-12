@@ -1,4 +1,19 @@
-import { get, keys, reduce, sumBy, take } from "lodash";
+import {
+  filter,
+  find,
+  get,
+  gte,
+  gt,
+  isArray,
+  keys,
+  map,
+  orderBy,
+  reduce,
+  size,
+  some,
+  sumBy,
+  take,
+} from "lodash";
 import { getApiResponseData } from "@/lib/api-response";
 import { normalizeUserOnboarding } from "@/lib/user-onboarding";
 import {
@@ -101,72 +116,110 @@ export const createEmptyDayData = (dateKey = "") => ({
 });
 
 const normalizeMealItem = (item = {}) => ({
-  id: item.id,
-  savedMealId: item.savedMealId ?? null,
-  source: item.source ?? null,
-  name: item.name ?? "",
-  barcode: item.barcode ?? null,
-  cal: item.cal ?? item.calories ?? 0,
-  protein: item.protein ?? 0,
-  carbs: item.carbs ?? 0,
-  fat: item.fat ?? 0,
-  fiber: item.fiber ?? 0,
-  qty: item.qty ?? item.quantity ?? 1,
-  image: item.image ?? item.imageUrl ?? null,
-  grams: item.grams ?? null,
-  ingredients: Array.isArray(item.ingredients) ? item.ingredients : [],
-  addedAt: item.addedAt ?? null,
+  id: get(item, "id"),
+  savedMealId: get(item, "savedMealId", null),
+  source: get(item, "source", null),
+  name: get(item, "name", ""),
+  barcode: get(item, "barcode", null),
+  cal: get(item, "cal", get(item, "calories", 0)),
+  protein: get(item, "protein", 0),
+  carbs: get(item, "carbs", 0),
+  fat: get(item, "fat", 0),
+  fiber: get(item, "fiber", 0),
+  qty: get(item, "qty", get(item, "quantity", 1)),
+  image: get(item, "image", get(item, "imageUrl", null)),
+  grams: get(item, "grams", null),
+  ingredients: isArray(get(item, "ingredients"))
+    ? get(item, "ingredients")
+    : [],
+  addedAt: get(item, "addedAt", null),
 });
 
+const normalizeMealItems = (payload, mealKey, empty) => {
+  const foods = get(payload, ["meals", mealKey], []);
+  return isArray(foods)
+    ? map(foods, normalizeMealItem)
+    : get(empty, ["meals", mealKey], []);
+};
+
 export const normalizeDayData = (payload = {}, fallbackDateKey = "") => {
-  const dateKey = normalizeDateKey(payload.date || fallbackDateKey);
+  const dateKey = normalizeDateKey(get(payload, "date") || fallbackDateKey);
   const empty = createEmptyDayData(dateKey);
+  const waterLog = get(payload, "waterLog", []);
 
   return {
     ...empty,
     date: dateKey,
-    waterCups: payload.waterCups ?? payload.waterLog?.length ?? empty.waterCups,
-    waterLog: Array.isArray(payload.waterLog)
-      ? payload.waterLog.map((entry) => ({
-          id: entry.id,
-          time: entry.time ?? new Date().toISOString(),
-          amountMl: entry.amountMl ?? 0,
+    waterCups: get(
+      payload,
+      "waterCups",
+      isArray(waterLog) ? size(waterLog) : empty.waterCups,
+    ),
+    waterLog: isArray(waterLog)
+      ? map(waterLog, (entry) => ({
+          id: get(entry, "id"),
+          time: get(entry, "time", new Date().toISOString()),
+          amountMl: get(entry, "amountMl", 0),
         }))
       : empty.waterLog,
     meals: {
-      breakfast: Array.isArray(payload.meals?.breakfast)
-        ? payload.meals.breakfast.map(normalizeMealItem)
-        : empty.meals.breakfast,
-      lunch: Array.isArray(payload.meals?.lunch)
-        ? payload.meals.lunch.map(normalizeMealItem)
-        : empty.meals.lunch,
-      dinner: Array.isArray(payload.meals?.dinner)
-        ? payload.meals.dinner.map(normalizeMealItem)
-        : empty.meals.dinner,
-      snack: Array.isArray(payload.meals?.snack)
-        ? payload.meals.snack.map(normalizeMealItem)
-        : empty.meals.snack,
+      breakfast: normalizeMealItems(payload, "breakfast", empty),
+      lunch: normalizeMealItems(payload, "lunch", empty),
+      dinner: normalizeMealItems(payload, "dinner", empty),
+      snack: normalizeMealItems(payload, "snack", empty),
     },
-    workoutLogs: Array.isArray(payload.workoutLogs) ? payload.workoutLogs : [],
-    steps: payload.steps ?? empty.steps,
-    workoutMinutes: payload.workoutMinutes ?? empty.workoutMinutes,
-    burnedCalories: payload.burnedCalories ?? empty.burnedCalories,
-    sleepHours: payload.sleepHours ?? empty.sleepHours,
-    mood: payload.mood ?? empty.mood,
+    workoutLogs: isArray(get(payload, "workoutLogs"))
+      ? get(payload, "workoutLogs")
+      : [],
+    steps: get(payload, "steps", empty.steps),
+    workoutMinutes: get(payload, "workoutMinutes", empty.workoutMinutes),
+    burnedCalories: get(payload, "burnedCalories", empty.burnedCalories),
+    sleepHours: get(payload, "sleepHours", empty.sleepHours),
+    mood: get(payload, "mood", empty.mood),
   };
 };
 
 export const getDayDataFromResponse = (response, dateKey) =>
   normalizeDayData(getApiResponseData(response, {}), dateKey);
 
-export const getUserFromResponse = (response) => getApiResponseData(response, null);
+export const getUserFromResponse = (response) =>
+  getApiResponseData(response, null);
+
+export const toFiniteNumber = (value, fallback = 0) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+};
+
+export const toNonNegativeNumber = (value, fallback = 0) => {
+  const number = toFiniteNumber(value, fallback);
+  return gte(number, 0) ? number : fallback;
+};
+
+export const toPositiveNumber = (value, fallback = 1) => {
+  const number = toFiniteNumber(value, fallback);
+  return gt(number, 0) ? number : fallback;
+};
+
+export const firstFiniteNumber = (values = [], fallback = 0) =>
+  reduce(
+    values,
+    (result, value) => {
+      if (result.found) {
+        return result;
+      }
+
+      const number = Number(value);
+      return Number.isFinite(number) ? { found: true, value: number } : result;
+    },
+    { found: false, value: fallback },
+  ).value;
 
 export const getGoalsStateFromResponses = ({ goalsResponse, user }) => {
   const payload = getApiResponseData(goalsResponse, null);
   const onboarding = normalizeUserOnboarding(get(user, "onboarding"));
   const resolvedGoalIntent = resolveHealthGoalIntent({
-    healthGoalGoal: payload?.goal,
-    onboardingGoal: onboarding?.goal,
+    healthGoalGoal: get(payload, "goal"),
+    onboardingGoal: get(onboarding, "goal"),
     goals: payload ?? {},
   });
   const serverGoals = payload
@@ -198,7 +251,7 @@ export const getCalorieGoalMeta = ({
   hasServerGoals,
   isGoalLoading,
 }) => {
-  if (user?.onboardingCompleted && !hasServerGoals && isGoalLoading) {
+  if (get(user, "onboardingCompleted") && !hasServerGoals && isGoalLoading) {
     return {
       label: "Profil maqsadi",
       description: "Onboarding ma'lumotlari asosida yangilanmoqda",
@@ -206,7 +259,7 @@ export const getCalorieGoalMeta = ({
     };
   }
 
-  if (user?.onboardingCompleted && goalSource !== "fallback") {
+  if (get(user, "onboardingCompleted") && goalSource !== "fallback") {
     return {
       label: "Shaxsiy maqsad",
       description: "Yosh, vazn, bo'y va faollik bo'yicha hisoblangan",
@@ -228,7 +281,9 @@ export const calculateMealCalories = (meals = {}) =>
       total +
       sumBy(
         get(meals, type, []),
-        (food) => get(food, "cal", 0) * get(food, "qty", 1),
+        (food) =>
+          toNonNegativeNumber(get(food, "cal"), 0) *
+          toPositiveNumber(get(food, "qty"), 1),
       ),
     0,
   );
@@ -242,11 +297,11 @@ export const calculateMealMacros = (meals = {}) =>
       return reduce(
         foods,
         (result, food) => {
-          const qty = get(food, "qty", 1);
-          result.protein += get(food, "protein", 0) * qty;
-          result.fat += get(food, "fat", 0) * qty;
-          result.carbs += get(food, "carbs", 0) * qty;
-          result.fiber += get(food, "fiber", 0) * qty;
+          const qty = toPositiveNumber(get(food, "qty"), 1);
+          result.protein += toNonNegativeNumber(get(food, "protein"), 0) * qty;
+          result.fat += toNonNegativeNumber(get(food, "fat"), 0) * qty;
+          result.carbs += toNonNegativeNumber(get(food, "carbs"), 0) * qty;
+          result.fiber += toNonNegativeNumber(get(food, "fiber"), 0) * qty;
           return result;
         },
         acc,
@@ -256,17 +311,97 @@ export const calculateMealMacros = (meals = {}) =>
   );
 
 export const calculateWaterConsumedMl = (dayData, cupSize = 250) => {
-  const waterLog = Array.isArray(dayData?.waterLog) ? dayData.waterLog : [];
+  const safeCupSize = toPositiveNumber(cupSize, 250);
+  const waterLog = isArray(get(dayData, "waterLog"))
+    ? get(dayData, "waterLog")
+    : [];
 
-  if (waterLog.length > 0) {
+  if (size(waterLog) > 0) {
     return reduce(
       waterLog,
-      (total, entry) => total + Number(entry?.amountMl ?? cupSize),
+      (total, entry) =>
+        total + toPositiveNumber(get(entry, "amountMl"), safeCupSize),
       0,
     );
   }
 
-  return Number(dayData?.waterCups ?? 0) * Number(cupSize || 250);
+  return toNonNegativeNumber(get(dayData, "waterCups"), 0) * safeCupSize;
+};
+
+export const normalizeMeasurementHistory = (entries = []) =>
+  orderBy(
+    isArray(entries) ? entries : [],
+    [
+      (entry) => {
+        const time = new Date(get(entry, "date", 0)).getTime();
+        return Number.isFinite(time) ? time : 0;
+      },
+    ],
+    ["desc"],
+  );
+
+export const getMeasurementSnapshot = ({
+  history,
+  onboarding = {},
+  currentWeightValue,
+  targetWeightValue,
+  startWeightValue,
+  heightCmValue,
+} = {}) => {
+  const normalizedHistory = normalizeMeasurementHistory(history);
+  const latest = get(normalizedHistory, 0, {});
+  const previous = get(normalizedHistory, 1, {});
+  const historySize = size(normalizedHistory);
+  const currentWeight = firstFiniteNumber(
+    [
+      currentWeightValue,
+      get(latest, "weight"),
+      get(onboarding, "currentWeight.value"),
+    ],
+    0,
+  );
+  const previousWeight =
+    historySize >= 2
+      ? firstFiniteNumber([get(previous, "weight")], null)
+      : null;
+  const targetWeight = firstFiniteNumber(
+    [targetWeightValue, get(onboarding, "targetWeight.value")],
+    70,
+  );
+  const lastHistoryWeight = get(normalizedHistory, [historySize - 1, "weight"]);
+  const startWeight =
+    firstFiniteNumber(
+      [
+        startWeightValue,
+        historySize >= 2 ? lastHistoryWeight : undefined,
+        currentWeight ? currentWeight + 5 : undefined,
+      ],
+      currentWeight,
+    ) || currentWeight;
+  const heightCm = firstFiniteNumber(
+    [heightCmValue, get(onboarding, "height.value")],
+    0,
+  );
+  const heightM = heightCm / 100;
+  const bmi =
+    gt(heightM, 0) && gt(currentWeight, 0)
+      ? currentWeight / (heightM * heightM)
+      : null;
+  const weightChange =
+    previousWeight !== null ? currentWeight - previousWeight : 0;
+
+  return {
+    history: normalizedHistory,
+    latest,
+    previous,
+    currentWeight,
+    previousWeight,
+    targetWeight,
+    startWeight,
+    heightCm,
+    bmi,
+    weightChange,
+  };
 };
 
 const getChallengeStatusWeight = (status) => {
@@ -302,85 +437,97 @@ export const buildCommunityChallenge = ({
   friends = [],
   userId,
 }) => {
-  const sortedChallenges = challenges
-    .filter((challenge) => {
-      const isJoined = Boolean(challenge?.isJoined);
-      const hasParticipant = Array.isArray(challenge?.participants)
-        ? challenge.participants.some((participant) => participant.userId === userId)
-        : false;
+  const sortedChallenges = orderBy(
+    filter(challenges, (challenge) => {
+      const participants = isArray(get(challenge, "participants"))
+        ? get(challenge, "participants")
+        : [];
+      const isJoined = Boolean(get(challenge, "isJoined"));
+      const hasParticipant = some(
+        participants,
+        (participant) => get(participant, "userId") === userId,
+      );
 
       return isJoined || hasParticipant;
-    })
-    .slice()
-    .sort((left, right) => {
-      const statusDiff =
-        getChallengeStatusWeight(left?.status) -
-        getChallengeStatusWeight(right?.status);
+    }),
+    [
+      (challenge) => getChallengeStatusWeight(get(challenge, "status")),
+      (challenge) => {
+        const dateValue =
+          get(challenge, "status") === "ACTIVE"
+            ? get(challenge, "endDate")
+            : get(challenge, "startDate");
+        const time = new Date(dateValue).getTime();
+        return Number.isFinite(time) ? time : Number.MAX_SAFE_INTEGER;
+      },
+    ],
+    ["asc", "asc"],
+  );
 
-      if (statusDiff !== 0) {
-        return statusDiff;
-      }
-
-      const leftDate = new Date(
-        left?.status === "ACTIVE" ? left?.endDate : left?.startDate,
-      ).getTime();
-      const rightDate = new Date(
-        right?.status === "ACTIVE" ? right?.endDate : right?.startDate,
-      ).getTime();
-
-      return leftDate - rightDate;
-    });
-
-  const challenge = sortedChallenges[0];
+  const challenge = get(sortedChallenges, 0);
 
   if (!challenge) {
     return null;
   }
 
   const friendNameById = new Map(
-    friends.map((friend) => [friend.id, friend.name || "Do'st"]),
+    map(friends, (friend) => [
+      get(friend, "id"),
+      get(friend, "name") || "Do'st",
+    ]),
   );
-  const participants = Array.isArray(challenge?.participants)
-    ? [...challenge.participants]
+  const participants = isArray(get(challenge, "participants"))
+    ? get(challenge, "participants")
     : [];
-  const ranking = participants
-    .sort((left, right) => {
-      const metricDiff =
-        Number(right?.metricValue ?? 0) - Number(left?.metricValue ?? 0);
-
-      if (metricDiff !== 0) {
-        return metricDiff;
-      }
-
-      return Number(right?.progress ?? 0) - Number(left?.progress ?? 0);
-    })
-    .map((participant, index) => ({
+  const ranking = map(
+    orderBy(
+      participants,
+      [
+        (participant) => Number(get(participant, "metricValue", 0)),
+        (participant) => Number(get(participant, "progress", 0)),
+      ],
+      ["desc", "desc"],
+    ),
+    (participant, index) => ({
       ...participant,
       rank: index + 1,
-    }));
+    }),
+  );
 
-  const myEntry = ranking.find((participant) => participant.userId === userId);
-  const sharedFriendEntry = ranking.find(
+  const myEntry = find(
+    ranking,
+    (participant) => get(participant, "userId") === userId,
+  );
+  const sharedFriendEntry = find(
+    ranking,
     (participant) =>
-      participant?.userId &&
-      participant.userId !== userId &&
-      friendNameById.has(participant.userId),
+      get(participant, "userId") &&
+      get(participant, "userId") !== userId &&
+      friendNameById.has(get(participant, "userId")),
   );
   const metricType =
-    challenge?.metricDetails?.type ?? challenge?.metricType ?? "STEPS";
+    get(challenge, "metricDetails.type") ??
+    get(challenge, "metricType") ??
+    "STEPS";
   const metricUnit = challengeMetricUnits[metricType] ?? "birlik";
   const metricTarget = Number(
-    challenge?.metricDetails?.target ?? challenge?.metricTarget ?? 0,
+    get(challenge, "metricDetails.target") ??
+      get(challenge, "metricTarget") ??
+      0,
   );
   const progress = clampProgress(
-    challenge?.myProgress ?? myEntry?.progress ?? 0,
+    get(challenge, "myProgress", get(myEntry, "progress", 0)),
   );
   const myMetricValue = Number(
-    challenge?.myMetricValue ?? myEntry?.metricValue ?? 0,
+    get(challenge, "myMetricValue", get(myEntry, "metricValue", 0)),
   );
 
-  const startDate = challenge?.startDate ? new Date(challenge.startDate) : null;
-  const endDate = challenge?.endDate ? new Date(challenge.endDate) : null;
+  const startDate = get(challenge, "startDate")
+    ? new Date(get(challenge, "startDate"))
+    : null;
+  const endDate = get(challenge, "endDate")
+    ? new Date(get(challenge, "endDate"))
+    : null;
   const hasValidDates =
     startDate &&
     endDate &&
@@ -401,27 +548,27 @@ export const buildCommunityChallenge = ({
       : null;
 
   return {
-    id: challenge.id,
-    title: challenge.title || "Challenge",
+    id: get(challenge, "id"),
+    title: get(challenge, "title") || "Challenge",
     progress,
     dayLabel:
-      challenge?.status === "UPCOMING"
-        ? `Boshlanishi ${formatShortDate(challenge?.startDate)}`
+      get(challenge, "status") === "UPCOMING"
+        ? `Boshlanishi ${formatShortDate(get(challenge, "startDate"))}`
         : totalDays && currentDay
           ? `Day ${currentDay} / ${totalDays}`
           : "Muddati belgilanmagan",
-    rankLabel: myEntry?.rank ? `Rank #${myEntry.rank}` : null,
+    rankLabel: get(myEntry, "rank") ? `Rank #${get(myEntry, "rank")}` : null,
     metricSummary:
       metricTarget > 0
         ? `${new Intl.NumberFormat("uz-UZ").format(myMetricValue)} / ${new Intl.NumberFormat("uz-UZ").format(metricTarget)} ${metricUnit}`
         : `${new Intl.NumberFormat("uz-UZ").format(myMetricValue)} ${metricUnit}`,
     contextLabel: sharedFriendEntry
-      ? `${friendNameById.get(sharedFriendEntry.userId)} ham shu challenge ichida faol`
+      ? `${friendNameById.get(get(sharedFriendEntry, "userId"))} ham shu challenge ichida faol`
       : `${challengeMetricLabels[metricType] || "Progress"} bo'yicha ishlayapsiz`,
     friendParticipant: sharedFriendEntry
       ? {
-          name: friendNameById.get(sharedFriendEntry.userId),
-          metricValue: Number(sharedFriendEntry.metricValue ?? 0),
+          name: friendNameById.get(get(sharedFriendEntry, "userId")),
+          metricValue: Number(get(sharedFriendEntry, "metricValue", 0)),
           metricUnit,
         }
       : null,
@@ -433,27 +580,34 @@ export const buildFriendActivities = ({
   challenges = [],
   currentUserId,
 }) => {
-  const friendIds = new Set(friends.map((friend) => friend.id));
+  const friendIds = new Set(map(friends, (friend) => get(friend, "id")));
   const friendNameById = new Map(
-    friends.map((friend) => [friend.id, friend.name || "Do'st"]),
+    map(friends, (friend) => [
+      get(friend, "id"),
+      get(friend, "name") || "Do'st",
+    ]),
   );
   const friendAvatarById = new Map(
-    friends.map((friend) => [friend.id, friend.avatarUrl || null]),
+    map(friends, (friend) => [
+      get(friend, "id"),
+      get(friend, "avatarUrl", null),
+    ]),
   );
   const activities = [];
 
   for (const challenge of challenges) {
-    const participants = Array.isArray(challenge?.participants)
-      ? challenge.participants
+    const participants = isArray(get(challenge, "participants"))
+      ? get(challenge, "participants")
       : [];
 
-    if (participants.length === 0) {
+    if (size(participants) === 0) {
       continue;
     }
 
-    const sorted = [...participants].sort(
-      (left, right) =>
-        Number(right?.metricValue ?? 0) - Number(left?.metricValue ?? 0),
+    const sorted = orderBy(
+      participants,
+      [(participant) => Number(get(participant, "metricValue", 0))],
+      ["desc"],
     );
     const metricType =
       get(challenge, "metricDetails.type") ??
@@ -461,8 +615,8 @@ export const buildFriendActivities = ({
       "STEPS";
     const metricUnit = challengeMetricUnits[metricType] || "birlik";
 
-    for (let index = 0; index < sorted.length; index += 1) {
-      const participant = sorted[index];
+    for (let index = 0; index < size(sorted); index += 1) {
+      const participant = get(sorted, index);
       const userId = get(participant, "userId");
 
       if (!userId || userId === currentUserId || !friendIds.has(userId)) {
@@ -470,23 +624,30 @@ export const buildFriendActivities = ({
       }
 
       activities.push({
-        key: `${challenge.id}-${userId}`,
+        key: `${get(challenge, "id")}-${userId}`,
         uid: userId,
         name: friendNameById.get(userId) || "Do'st",
         avatarUrl: friendAvatarById.get(userId),
         challengeTitle: get(challenge, "title", "Challenge"),
-        challengeId: challenge.id,
+        challengeId: get(challenge, "id"),
         rank: index + 1,
         metricValue: Number(get(participant, "metricValue", 0)),
         metricUnit,
-        progress: Math.min(100, Math.round(Number(get(participant, "progress", 0)))),
+        progress: Math.min(
+          100,
+          Math.round(Number(get(participant, "progress", 0))),
+        ),
         status: get(challenge, "status", "ACTIVE"),
       });
     }
   }
 
   return take(
-    activities.sort((left, right) => right.metricValue - left.metricValue),
+    orderBy(
+      activities,
+      [(activity) => get(activity, "metricValue", 0)],
+      ["desc"],
+    ),
     6,
   );
 };

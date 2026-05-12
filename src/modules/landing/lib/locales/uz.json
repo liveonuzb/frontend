@@ -581,9 +581,9 @@
       ]
     },
     "scenarios": {
-      "eyebrow": "Foydalanuvchi hikoyalari",
-      "title": "Foydalanuvchi ssenariylari",
-      "body": "Hozircha tasdiqlangan public reviewlar yo'q, shuning uchun uydirma iqtiboslar ishlatilmadi.",
+      "eyebrow": "Foydalanish holatlari",
+      "title": "LiveOn qaysi holatlarda yordam beradi",
+      "body": "Haqiqiy public reviewlar qo'shilmaguncha bu bo'lim real foydalanish ssenariylarini ko'rsatadi.",
       "items": [
         [
           "Vazn tashlash",
@@ -607,7 +607,7 @@
       "title": "Bepul boshlang. Kerak bo'lsa rejangizni kuchaytiring.",
       "free": {
         "title": "Free",
-        "price": "0 ₽ / doimiy",
+        "price": "Bepul / doimiy",
         "features": [
           "Birinchi AI reja",
           "Basic suv tracking",
@@ -631,7 +631,7 @@
           "PDF eksport",
           "Reklamasiz"
         ],
-        "cta": "Premiumni sinab ko'rish"
+        "cta": "Mavjud bo'lganda xabar bering"
       }
     },
     "faq": {
@@ -692,28 +692,27 @@
         [
           "Mahsulot",
           [
-            "Imkoniyatlar",
-            "Ovqatlanish",
-            "Mashg'ulot",
-            "Progress",
-            "Tariflar"
+            ["Imkoniyatlar", "#features"],
+            ["Ovqatlanish", "#nutrition"],
+            ["Mashg'ulot", "#workouts"],
+            ["Progress", "#progress"],
+            ["Tariflar", "#pricing"]
           ]
         ],
         [
           "Kompaniya",
           [
-            "Biz haqimizda",
-            "Blog",
-            "Kontaktlar"
+            ["Biz haqimizda", "#local-market"],
+            ["Kontaktlar", "mailto:support@liveon.uz"]
           ]
         ],
         [
           "Yordam",
           [
-            "FAQ",
-            "Yordam",
-            "Foydalanish shartlari",
-            "Maxfiylik siyosati"
+            ["FAQ", "#faq"],
+            ["Yordam", "mailto:support@liveon.uz"],
+            ["Foydalanish shartlari", "/terms"],
+            ["Maxfiylik siyosati", "/privacy"]
           ]
         ]
       ],

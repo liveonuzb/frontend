@@ -581,9 +581,9 @@
       ]
     },
     "scenarios": {
-      "eyebrow": "User stories",
-      "title": "User scenario examples",
-      "body": "There are no confirmed public testimonials yet, so this section avoids fictional quotes.",
+      "eyebrow": "Use cases",
+      "title": "Where LiveOn helps",
+      "body": "Until public customer reviews are available, this section shows practical use cases instead of fictional testimonials.",
       "items": [
         [
           "Weight loss",
@@ -607,7 +607,7 @@
       "title": "Start free. Upgrade your plan when you want.",
       "free": {
         "title": "Free",
-        "price": "0 ₽ / forever",
+        "price": "Free / forever",
         "features": [
           "First AI plan",
           "Basic water tracking",
@@ -631,7 +631,7 @@
           "PDF export",
           "No ads"
         ],
-        "cta": "Try Premium"
+        "cta": "Notify me when ready"
       }
     },
     "faq": {
@@ -692,28 +692,27 @@
         [
           "Product",
           [
-            "Features",
-            "Nutrition",
-            "Workouts",
-            "Progress",
-            "Pricing"
+            ["Features", "#features"],
+            ["Nutrition", "#nutrition"],
+            ["Workouts", "#workouts"],
+            ["Progress", "#progress"],
+            ["Pricing", "#pricing"]
           ]
         ],
         [
           "Company",
           [
-            "About",
-            "Blog",
-            "Contacts"
+            ["About", "#local-market"],
+            ["Contacts", "mailto:support@liveon.uz"]
           ]
         ],
         [
           "Support",
           [
-            "FAQ",
-            "Help",
-            "Terms of use",
-            "Privacy policy"
+            ["FAQ", "#faq"],
+            ["Help", "mailto:support@liveon.uz"],
+            ["Terms of use", "/terms"],
+            ["Privacy policy", "/privacy"]
           ]
         ]
       ],

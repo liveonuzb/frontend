@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { find, get, isArray } from "lodash";
 import { Link } from "react-router";
 import { ArrowRightIcon, DumbbellIcon } from "lucide-react";
 import useGetQuery from "@/hooks/api/use-get-query";
@@ -33,8 +33,8 @@ export default function WorkoutWidget({
   });
   const payload = React.useMemo(() => getApiResponseData(data, {}), [data]);
   const plans = React.useMemo(
-    () => (Array.isArray(payload.items) ? payload.items : []),
-    [payload.items],
+    () => (isArray(get(payload, "items")) ? get(payload, "items") : []),
+    [payload],
   );
   const activePlan = React.useMemo(() => {
     if (activePlanOverride !== undefined) {
@@ -43,7 +43,7 @@ export default function WorkoutWidget({
 
     const activePlanId = get(payload, "activePlanId", null);
     return deriveWorkoutPlanMetrics(
-      plans.find((plan) => plan.id === activePlanId) || null,
+      find(plans, (plan) => get(plan, "id") === activePlanId) || null,
     );
   }, [activePlanOverride, payload, plans]);
 
@@ -64,7 +64,10 @@ export default function WorkoutWidget({
           <div className="flex flex-col gap-2">
             <p className="truncate text-xs font-semibold">{activePlan.name}</p>
             <div className="flex items-center gap-2">
-              <Progress value={activePlan.progress ?? 0} className="h-1.5 flex-1" />
+              <Progress
+                value={activePlan.progress ?? 0}
+                className="h-1.5 flex-1"
+              />
               <span className="shrink-0 text-[10px] text-muted-foreground">
                 {activePlan.progress ?? 0}%
               </span>

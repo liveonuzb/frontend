@@ -1,5 +1,15 @@
 import React from "react";
-import { entries, get, map, reduce } from "lodash";
+import {
+  compact,
+  entries,
+  find,
+  get,
+  keyBy,
+  map,
+  reduce,
+  size,
+  some,
+} from "lodash";
 import { useNavigate } from "react-router";
 import useGetQuery from "@/hooks/api/use-get-query";
 import { useDailyTrackingActions } from "@/hooks/app/use-daily-tracking";
@@ -22,6 +32,8 @@ import {
   getDashboardDayQueryKey,
   getDayDataFromResponse,
   getGoalsStateFromResponses,
+  toNonNegativeNumber,
+  toPositiveNumber,
 } from "./query-helpers.js";
 import { Button } from "@/components/ui/button.jsx";
 import { cn } from "@/lib/utils.js";
@@ -43,6 +55,8 @@ const mealPctGoal = {
 
 export default function MealsWidget({
   dateKey,
+  dayData: dayDataOverride,
+  goalsState: goalsStateOverride,
   onOpen,
   onAddMeal,
   showQuickAdd = true,
@@ -58,45 +72,47 @@ export default function MealsWidget({
     url: `/daily-tracking/${dateKey}`,
     queryProps: {
       queryKey: getDashboardDayQueryKey(dateKey),
-      enabled: Boolean(dateKey),
+      enabled: dayDataOverride === undefined && Boolean(dateKey),
     },
   });
   const { data: goalsData } = useGetQuery({
     url: "/health-goals",
     queryProps: {
       queryKey: DASHBOARD_HEALTH_GOALS_QUERY_KEY,
+      enabled: goalsStateOverride === undefined,
     },
   });
   const dayData = React.useMemo(
-    () => getDayDataFromResponse(trackingData, dateKey),
-    [dateKey, trackingData],
+    () => dayDataOverride ?? getDayDataFromResponse(trackingData, dateKey),
+    [dateKey, dayDataOverride, trackingData],
   );
   const { goals } = React.useMemo(
-    () => getGoalsStateFromResponses({ goalsResponse: goalsData, user: null }),
-    [goalsData],
+    () =>
+      goalsStateOverride ??
+      getGoalsStateFromResponses({ goalsResponse: goalsData, user: null }),
+    [goalsData, goalsStateOverride],
   );
-  const savedMealsById = React.useMemo(() => {
-    return savedMeals.reduce((acc, item) => {
-      acc[item.id] = item;
-      return acc;
-    }, {});
-  }, [savedMeals]);
-  const templatesById = React.useMemo(() => {
-    return templates.reduce((acc, template) => {
-      acc[template.id] = template;
-      return acc;
-    }, {});
-  }, [templates]);
+  const savedMealsById = React.useMemo(
+    () => keyBy(savedMeals, "id"),
+    [savedMeals],
+  );
+  const templatesById = React.useMemo(
+    () => keyBy(templates, "id"),
+    [templates],
+  );
   const suggestedPattern = React.useMemo(() => {
     const weekday = getWeekdayNameFromDate(dateKey);
     return (
-      recurringPatterns.find((pattern) => {
+      find(recurringPatterns, (pattern) => {
         if (pattern.weekday !== weekday) return false;
         const template = templatesById[pattern.templateId];
         if (!template) return false;
         const foods = get(dayData, ["meals", pattern.mealKey], []);
-        if (foods.length > 0) return false;
-        return template.mealIds.some((mealId) => savedMealsById[mealId]);
+        if (size(foods) > 0) return false;
+        return some(
+          get(template, "mealIds", []),
+          (mealId) => savedMealsById[mealId],
+        );
       }) || null
     );
   }, [dateKey, dayData, recurringPatterns, savedMealsById, templatesById]);
@@ -107,11 +123,14 @@ export default function MealsWidget({
   const handleApplySuggestedPattern = React.useCallback(async () => {
     if (!suggestedPattern || !suggestedTemplate) return;
 
-    const mealsToLog = suggestedTemplate.mealIds
-      .map((mealId) => savedMealsById[mealId])
-      .filter(Boolean);
+    const mealsToLog = compact(
+      map(
+        get(suggestedTemplate, "mealIds", []),
+        (mealId) => savedMealsById[mealId],
+      ),
+    );
 
-    if (mealsToLog.length === 0) {
+    if (size(mealsToLog) === 0) {
       toast.error("Shablondagi taomlar topilmadi");
       return;
     }
@@ -139,7 +158,7 @@ export default function MealsWidget({
             Ovqatlar
           </CardTitle>
           <Button
-            variant={"outlined"}
+            variant="outline"
             type="button"
             className="flex size-9 w-11 items-center justify-center rounded-md bg-muted transition-colors hover:bg-muted/80"
             onClick={() => (onOpen ? onOpen() : navigate("/user/nutrition"))}
@@ -159,7 +178,7 @@ export default function MealsWidget({
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {suggestedPattern.mealType} uchun{" "}
-                  {suggestedTemplate.mealIds.length} ta taom
+                  {size(get(suggestedTemplate, "mealIds", []))} ta taom
                 </p>
               </div>
               <Button
@@ -178,7 +197,10 @@ export default function MealsWidget({
 
           const calories = reduce(
             foods,
-            (sum, food) => sum + get(food, "cal", 0) * get(food, "qty", 1),
+            (sum, food) =>
+              sum +
+              toNonNegativeNumber(get(food, "cal"), 0) *
+                toPositiveNumber(get(food, "qty"), 1),
             0,
           );
 

@@ -7,6 +7,20 @@
       "coachInvitation": "Приглашение от тренера",
       "accept": "Принять",
       "decline": "Отклонить",
+      "breadcrumbs": {
+        "home": "Главная",
+        "dashboard": "Dashboard"
+      },
+      "mealPlan": {
+        "active": "План питания активен"
+      },
+      "status": {
+        "errorTitle": "Не удалось загрузить Dashboard",
+        "errorDescription": "Основные дневные данные сейчас недоступны. Повторите запрос dashboard.",
+        "supportingWarningTitle": "Некоторые карточки dashboard могут быть неполными",
+        "supportingWarning": "Не удалось обновить измерения, тренировки, план питания, друзей или challenge.",
+        "retry": "Повторить"
+      },
       "healthReport": {
         "title": "AI health report",
         "description": "Откройте одноразовый wellness-отчёт на основе данных онбординга.",

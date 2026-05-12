@@ -631,6 +631,17 @@
         },
         "retry": "Qayta urinish",
         "errorDescription": "Shaxsiy reja tayyorlashda xatolik yuz berdi. Qayta urinib ko'ring.",
+        "description": "Tayyor bo'lgach, dashboardga o'tishdan oldin birinchi amallarni ko'rasiz.",
+        "hintTitle": "Bu 1 daqiqagacha vaqt olishi mumkin.",
+        "hintDescription": "Rejangiz tayyorlanayotganda ilovadan foydalanishda davom etishingiz mumkin.",
+        "currentStep": "Joriy bosqich: {{step}}",
+        "progressAria": "AI reja generatsiyasi progressi: {{value}}%",
+        "manualContinue": "Davom etish",
+        "stepStatus": {
+          "completed": "Bajarildi",
+          "active": "Jarayonda",
+          "pending": "Kutilmoqda"
+        },
         "badges": {
           "personalization": "Personalizatsiya",
           "metabolism": "Metabolizm",

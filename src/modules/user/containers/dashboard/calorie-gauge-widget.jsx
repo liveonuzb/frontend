@@ -17,39 +17,56 @@ import {
 
 export default function CalorieGaugeWidget({
   dateKey,
+  dayData: dayDataOverride,
+  goalsState: goalsStateOverride,
+  user: userOverride,
   onOpen,
   showCalorieModeToggle = false,
   defaultCalorieMode,
 }) {
   const navigate = useNavigate();
+  const shouldFetchUser = userOverride === undefined;
+  const shouldFetchGoals = goalsStateOverride === undefined;
+  const shouldFetchDay = dayDataOverride === undefined;
   const { data: userData } = useGetQuery({
     url: "/users/me",
     queryProps: {
       queryKey: DASHBOARD_ME_QUERY_KEY,
+      enabled: shouldFetchUser,
     },
   });
-  const { data: goalsData, isLoading, isFetching } = useGetQuery({
+  const {
+    data: goalsData,
+    isLoading,
+    isFetching,
+  } = useGetQuery({
     url: "/health-goals",
     queryProps: {
       queryKey: DASHBOARD_HEALTH_GOALS_QUERY_KEY,
+      enabled: shouldFetchGoals,
     },
   });
   const { data: trackingData } = useGetQuery({
     url: `/daily-tracking/${dateKey}`,
     queryProps: {
       queryKey: getDashboardDayQueryKey(dateKey),
-      enabled: Boolean(dateKey),
+      enabled: shouldFetchDay && Boolean(dateKey),
     },
   });
 
-  const user = React.useMemo(() => getUserFromResponse(userData), [userData]);
+  const user = React.useMemo(
+    () => userOverride ?? getUserFromResponse(userData),
+    [userData, userOverride],
+  );
   const dayData = React.useMemo(
-    () => getDayDataFromResponse(trackingData, dateKey),
-    [dateKey, trackingData],
+    () => dayDataOverride ?? getDayDataFromResponse(trackingData, dateKey),
+    [dateKey, dayDataOverride, trackingData],
   );
   const { goals, goalSource, hasServerGoals } = React.useMemo(
-    () => getGoalsStateFromResponses({ goalsResponse: goalsData, user }),
-    [goalsData, user],
+    () =>
+      goalsStateOverride ??
+      getGoalsStateFromResponses({ goalsResponse: goalsData, user }),
+    [goalsData, goalsStateOverride, user],
   );
   const totalCalories = React.useMemo(
     () => calculateMealCalories(dayData.meals),
@@ -60,9 +77,7 @@ export default function CalorieGaugeWidget({
     [dayData.meals],
   );
   const isGoalLoading =
-    user?.onboardingCompleted &&
-    !hasServerGoals &&
-    (isLoading || isFetching);
+    user?.onboardingCompleted && !hasServerGoals && (isLoading || isFetching);
   const goalMeta = React.useMemo(
     () =>
       getCalorieGoalMeta({

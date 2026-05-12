@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, map, size, take } from "lodash";
 import { useNavigate } from "react-router";
 import { MessageSquareIcon } from "lucide-react";
 import useGetQuery from "@/hooks/api/use-get-query";
@@ -11,7 +11,7 @@ import {
   getUserFromResponse,
 } from "./query-helpers.js";
 
-const ConnectedCoachBanner = () => {
+const ConnectedCoachBanner = ({ user: userOverride }) => {
   const navigate = useNavigate();
   const [dismissedCoachConnectionId, setDismissedCoachConnectionId] =
     React.useState(null);
@@ -20,14 +20,22 @@ const ConnectedCoachBanner = () => {
     url: "/users/me",
     queryProps: {
       queryKey: DASHBOARD_ME_QUERY_KEY,
+      enabled: userOverride === undefined,
     },
   });
-  const user = React.useMemo(() => getUserFromResponse(data), [data]);
+  const user = React.useMemo(
+    () => userOverride ?? getUserFromResponse(data),
+    [data, userOverride],
+  );
   const connectedCoach = React.useMemo(() => {
     const assignmentId = get(user, "coachConnection.assignmentId", null);
     const coach = get(user, "coachConnection.coach", null);
 
-    if (!assignmentId || !coach || dismissedCoachConnectionId === assignmentId) {
+    if (
+      !assignmentId ||
+      !coach ||
+      dismissedCoachConnectionId === assignmentId
+    ) {
       return null;
     }
 
@@ -49,13 +57,16 @@ const ConnectedCoachBanner = () => {
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center">
           <div className="flex min-w-0 flex-1 items-center gap-4">
             <Avatar className="size-12 border shadow-sm">
-              <AvatarImage src={connectedCoach.avatar} alt={connectedCoach.name} />
+              <AvatarImage
+                src={connectedCoach.avatar}
+                alt={connectedCoach.name}
+              />
               <AvatarFallback>
-                {String(connectedCoach.name || "C")
-                  .split(" ")
-                  .map((part) => part[0])
+                {map(
+                  take(String(connectedCoach.name || "C").split(" "), 2),
+                  (part) => part[0],
+                )
                   .join("")
-                  .slice(0, 2)
                   .toUpperCase()}
               </AvatarFallback>
             </Avatar>
@@ -68,7 +79,9 @@ const ConnectedCoachBanner = () => {
                 {connectedCoach.connectedAt ? (
                   <div className="rounded-full border bg-background px-2.5 py-1 text-xs text-muted-foreground">
                     Bog&apos;lanish:{" "}
-                    {new Date(connectedCoach.connectedAt).toLocaleDateString("uz-UZ")}
+                    {new Date(connectedCoach.connectedAt).toLocaleDateString(
+                      "uz-UZ",
+                    )}
                   </div>
                 ) : null}
               </div>
@@ -77,12 +90,13 @@ const ConnectedCoachBanner = () => {
                 {connectedCoach.name} bilan ishlayapsiz
               </h2>
               <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                Meal plan, progress va murabbiy bilan aloqa shu yerda boshqariladi.
+                Meal plan, progress va murabbiy bilan aloqa shu yerda
+                boshqariladi.
               </p>
 
-              {connectedCoach.specializations?.length > 0 ? (
+              {size(connectedCoach.specializations) > 0 ? (
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {connectedCoach.specializations.slice(0, 3).map((item) => (
+                  {map(take(connectedCoach.specializations, 3), (item) => (
                     <div
                       key={item}
                       className="rounded-full border bg-background px-2.5 py-1 text-[11px] text-muted-foreground"
@@ -110,7 +124,9 @@ const ConnectedCoachBanner = () => {
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => setDismissedCoachConnectionId(connectedCoach.assignmentId)}
+              onClick={() =>
+                setDismissedCoachConnectionId(connectedCoach.assignmentId)
+              }
             >
               Yopish
             </Button>

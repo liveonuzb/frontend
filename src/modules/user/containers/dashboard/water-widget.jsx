@@ -1,4 +1,5 @@
 import React from "react";
+import { get } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -16,6 +17,8 @@ import {
 
 export default function WaterWidget({
   dateKey,
+  dayData: dayDataOverride,
+  goalsState: goalsStateOverride,
   onOpen,
   onAddOverride,
   interactive = true,
@@ -27,25 +30,28 @@ export default function WaterWidget({
     url: `/daily-tracking/${dateKey}`,
     queryProps: {
       queryKey: getDashboardDayQueryKey(dateKey),
-      enabled: Boolean(dateKey),
+      enabled: dayDataOverride === undefined && Boolean(dateKey),
     },
   });
   const { data: goalsData } = useGetQuery({
     url: "/health-goals",
     queryProps: {
       queryKey: DASHBOARD_HEALTH_GOALS_QUERY_KEY,
+      enabled: goalsStateOverride === undefined,
     },
   });
   const dayData = React.useMemo(
-    () => getDayDataFromResponse(trackingData, dateKey),
-    [dateKey, trackingData],
+    () => dayDataOverride ?? getDayDataFromResponse(trackingData, dateKey),
+    [dateKey, dayDataOverride, trackingData],
   );
   const { goals } = React.useMemo(
-    () => getGoalsStateFromResponses({ goalsResponse: goalsData, user: null }),
-    [goalsData],
+    () =>
+      goalsStateOverride ??
+      getGoalsStateFromResponses({ goalsResponse: goalsData, user: null }),
+    [goalsData, goalsStateOverride],
   );
-  const cupSize = Number(goals?.cupSize || 250);
-  const waterGoalMl = Number(goals?.waterMl || 2500);
+  const cupSize = Number(get(goals, "cupSize", 250) || 250);
+  const waterGoalMl = Number(get(goals, "waterMl", 2500) || 2500);
   const waterConsumedMl = React.useMemo(
     () => calculateWaterConsumedMl(dayData, cupSize),
     [cupSize, dayData],
@@ -80,7 +86,9 @@ export default function WaterWidget({
           toast.error("Suvni saqlab bo'lmadi");
         }
       }}
-      onClick={interactive ? onOpen ?? (() => navigate("/user/water")) : undefined}
+      onClick={
+        interactive ? (onOpen ?? (() => navigate("/user/water"))) : undefined
+      }
       hideAdd={hideAdd || !interactive}
       className="h-full"
     />

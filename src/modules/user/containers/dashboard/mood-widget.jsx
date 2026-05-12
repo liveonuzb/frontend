@@ -115,18 +115,22 @@ export function MoodWidgetView({
   );
 }
 
-export default function MoodWidget({ dateKey, readOnly = false }) {
+export default function MoodWidget({
+  dateKey,
+  dayData: dayDataOverride,
+  readOnly = false,
+}) {
   const queryClient = useQueryClient();
   const { data } = useGetQuery({
     url: `/daily-tracking/${dateKey}`,
     queryProps: {
       queryKey: getDashboardDayQueryKey(dateKey),
-      enabled: Boolean(dateKey),
+      enabled: dayDataOverride === undefined && Boolean(dateKey),
     },
   });
   const dayData = React.useMemo(
-    () => getDayDataFromResponse(data, dateKey),
-    [data, dateKey],
+    () => dayDataOverride ?? getDayDataFromResponse(data, dateKey),
+    [data, dateKey, dayDataOverride],
   );
   const setMoodMutation = usePutQuery({
     mutationProps: {

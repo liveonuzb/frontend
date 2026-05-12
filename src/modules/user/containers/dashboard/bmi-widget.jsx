@@ -9,26 +9,9 @@ import { cn } from "@/lib/utils";
 import {
   DASHBOARD_MEASUREMENTS_QUERY_KEY,
   DASHBOARD_ME_QUERY_KEY,
+  getMeasurementSnapshot,
   getUserFromResponse,
 } from "./query-helpers.js";
-
-const firstFinite = (...values) => {
-  for (const value of values) {
-    const number = Number(value);
-    if (Number.isFinite(number)) {
-      return number;
-    }
-  }
-
-  return 0;
-};
-
-const normalizeMeasurementHistory = (entries = []) =>
-  [...(Array.isArray(entries) ? entries : [])].sort((left, right) => {
-    const leftTime = new Date(left?.date ?? 0).getTime();
-    const rightTime = new Date(right?.date ?? 0).getTime();
-    return rightTime - leftTime;
-  });
 
 const BMI_SCALE_MIN = 10;
 const BMI_SCALE_RANGE = 30;
@@ -100,13 +83,17 @@ const SCALE_LABELS = [
 export default function BmiWidget({
   currentWeightValue,
   heightCmValue,
+  measurementSnapshot: measurementSnapshotOverride,
   onOpen,
   interactive = true,
 }) {
   const navigate = useNavigate();
   const shouldFetchUser =
-    currentWeightValue === undefined || heightCmValue === undefined;
-  const shouldFetchMeasurements = currentWeightValue === undefined;
+    measurementSnapshotOverride === undefined &&
+    (currentWeightValue === undefined || heightCmValue === undefined);
+  const shouldFetchMeasurements =
+    measurementSnapshotOverride === undefined &&
+    currentWeightValue === undefined;
   const { data: userData } = useGetQuery({
     url: "/users/me",
     queryProps: {
@@ -127,22 +114,29 @@ export default function BmiWidget({
     [user],
   );
   const measurementHistory = React.useMemo(
-    () => normalizeMeasurementHistory(getApiResponseData(measurementsData, [])),
+    () => getApiResponseData(measurementsData, []),
     [measurementsData],
   );
-  const latest = measurementHistory[0] ?? {};
-  const currentW = firstFinite(
-    currentWeightValue,
-    get(latest, "weight"),
-    parseFloat(get(onboarding, "currentWeight.value")),
+  const measurementSnapshot = React.useMemo(
+    () =>
+      measurementSnapshotOverride ??
+      getMeasurementSnapshot({
+        history: measurementHistory,
+        onboarding,
+        currentWeightValue,
+        heightCmValue,
+      }),
+    [
+      currentWeightValue,
+      heightCmValue,
+      measurementHistory,
+      measurementSnapshotOverride,
+      onboarding,
+    ],
   );
-  const heightCm = firstFinite(
-    heightCmValue,
-    parseFloat(get(onboarding, "height.value")),
-  );
-  const heightM = heightCm / 100;
-  const bmi =
-    heightM > 0 && currentW > 0 ? currentW / (heightM * heightM) : null;
+  const currentW = get(measurementSnapshot, "currentWeight", 0);
+  const heightCm = get(measurementSnapshot, "heightCm", 0);
+  const bmi = get(measurementSnapshot, "bmi", null);
   const meta = getBmiMeta(bmi);
   const pct = bmi !== null ? clampPct(bmi) : 0;
   const handleClick = interactive

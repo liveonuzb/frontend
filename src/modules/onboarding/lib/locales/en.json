@@ -631,6 +631,17 @@
         },
         "retry": "Try again",
         "errorDescription": "We could not prepare your personal plan. Try again.",
+        "description": "When the plan is ready, you will see the first actions before opening the dashboard.",
+        "hintTitle": "This can take up to 1 minute.",
+        "hintDescription": "You can continue using the app while we prepare your plan.",
+        "currentStep": "Current step: {{step}}",
+        "progressAria": "AI plan generation progress: {{value}}%",
+        "manualContinue": "Continue",
+        "stepStatus": {
+          "completed": "Completed",
+          "active": "In progress",
+          "pending": "Pending"
+        },
         "badges": {
           "personalization": "Personalization",
           "metabolism": "Metabolism",

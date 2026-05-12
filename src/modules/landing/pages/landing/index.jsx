@@ -14,10 +14,8 @@ import {
   BotIcon,
   BrainIcon,
   CalendarCheckIcon,
-  CameraIcon,
   CheckCircle2Icon,
   CheckIcon,
-  CirclePlayIcon,
   ClipboardListIcon,
   Clock3Icon,
   DropletsIcon,
@@ -29,6 +27,7 @@ import {
   LineChartIcon,
   MenuIcon,
   MessageCircleIcon,
+  MoonIcon,
   Repeat2Icon,
   SaladIcon,
   ScaleIcon,
@@ -37,6 +36,7 @@ import {
   ShoppingBasketIcon,
   SparklesIcon,
   StarIcon,
+  SunIcon,
   TargetIcon,
   TrendingDownIcon,
   TrophyIcon,
@@ -78,6 +78,7 @@ import ProductPreviewSlider, {
   buildLiveOnProductPreviewCopy
 } from "@/components/liveon-product-preview";
 import { cn } from "@/lib/utils";
+import { applyTheme, resolveTheme } from "@/lib/user-preferences";
 import { getPostAuthRoute } from "@/modules/auth/lib/auth-utils.js";
 import { useAppModeStore, useAuthStore, useLanguageStore } from "@/store";
 const LANGUAGES = [
@@ -236,9 +237,79 @@ const darkMetricTone = {
 };
 const landingCardPaddingY = "py-6 md:py-7";
 const compactCardPaddingY = "py-5 md:py-6";
+const LANDING_ORIGIN = "https://liveon.uz";
+const LANDING_CANONICAL_URL = `${LANDING_ORIGIN}/`;
+const LANDING_OG_IMAGE = `${LANDING_ORIGIN}/madagascar/background.webp`;
+const plainSectionClass = "bg-white dark:bg-[#070503]";
+const warmSectionClass = "border-orange-900/10 bg-[#fff8ee] dark:border-white/10 dark:bg-[#120b05]";
+const cardSurfaceClass = "border-slate-200/70 bg-white text-slate-950 shadow-[0_18px_54px_rgba(15,23,42,0.06)] ring-slate-950/8 dark:border-white/10 dark:bg-white/[0.055] dark:text-white dark:shadow-[0_24px_80px_rgba(0,0,0,0.28)] dark:ring-white/10";
+const warmCardSurfaceClass = "border-orange-900/8 bg-white text-slate-950 shadow-[0_16px_48px_rgba(15,23,42,0.05)] dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:shadow-[0_22px_70px_rgba(0,0,0,0.28)]";
+const strongTextClass = "text-slate-950 dark:text-white";
+const bodyTextClass = "text-slate-700 dark:text-white/72";
+const mutedTextClass = "text-slate-600 dark:text-white/62";
+const iconSurfaceClass = "bg-orange-500/10 text-orange-700 dark:bg-orange-300/12 dark:text-orange-100 dark:ring-1 dark:ring-orange-300/20";
+const SOCIAL_LINKS = [
+  {
+    label: "Telegram",
+    href: "https://t.me/liveonappbot",
+    icon: SendIcon
+  }
+];
+const resolveFooterLink = (item) => {
+  if (Array.isArray(item)) {
+    return {
+      label: item[0],
+      href: item[1] || "/"
+    };
+  }
+
+  const normalized = String(item).toLowerCase();
+  const fallbackLinks = {
+    faq: "#faq",
+    help: "mailto:support@liveon.uz",
+    yordam: "mailto:support@liveon.uz",
+    помощь: "mailto:support@liveon.uz",
+    pricing: "#pricing",
+    тарифы: "#pricing",
+    tariflar: "#pricing"
+  };
+
+  return {
+    label: item,
+    href: fallbackLinks[normalized] || "/"
+  };
+};
 const setMetaTag = (selector, value) => {
-  const tag = document.head.querySelector(selector);
-  tag?.setAttribute("content", value);
+  let tag = document.head.querySelector(selector);
+  if (!tag) {
+    tag = document.createElement("meta");
+    const nameMatch = selector.match(/name="([^"]+)"/);
+    const propertyMatch = selector.match(/property="([^"]+)"/);
+    if (nameMatch?.[1]) tag.setAttribute("name", nameMatch[1]);
+    if (propertyMatch?.[1]) tag.setAttribute("property", propertyMatch[1]);
+    document.head.appendChild(tag);
+  }
+  tag.setAttribute("content", value);
+};
+const setLinkTag = (rel, href) => {
+  let tag = document.head.querySelector(`link[rel="${rel}"]`);
+  if (!tag) {
+    tag = document.createElement("link");
+    tag.setAttribute("rel", rel);
+    document.head.appendChild(tag);
+  }
+  tag.setAttribute("href", href);
+};
+const setJsonLdScript = (id, value) => {
+  const scriptId = `landing-jsonld-${id}`;
+  let script = document.getElementById(scriptId);
+  if (!script) {
+    script = document.createElement("script");
+    script.id = scriptId;
+    script.type = "application/ld+json";
+    document.head.appendChild(script);
+  }
+  script.textContent = JSON.stringify(value);
 };
 const MotionSection = ({
   id,
@@ -248,7 +319,7 @@ const MotionSection = ({
   const shouldReduceMotion = useReducedMotion();
   return <motion.section
     id={id}
-    className={cn("scroll-mt-24", className)}
+    className={cn("scroll-mt-32 md:scroll-mt-36", className)}
     initial={shouldReduceMotion ? false : { opacity: 0, y: 24 }}
     whileInView={shouldReduceMotion ? void 0 : { opacity: 1, y: 0 }}
     viewport={{ once: true, amount: 0.18 }}
@@ -261,17 +332,20 @@ const CTAButton = ({
   children,
   onClick,
   variant = "primary",
-  className
+  className,
+  disabled = false
 }) => <Button
   type="button"
   size="xl"
   variant={variant === "outline" ? "outline" : variant === "light" ? "secondary" : "default"}
   onClick={onClick}
+  disabled={disabled}
   className={cn(
     "min-h-11 gap-2 px-5 text-sm font-semibold md:px-6",
     variant === "dark" && "bg-slate-950 text-white shadow-[0_18px_44px_rgba(15,23,42,0.18)] hover:bg-slate-900",
     variant === "light" && "bg-white text-slate-950 shadow-[0_18px_44px_rgba(255,255,255,0.08)] hover:bg-orange-50",
     variant === "outline" && "border-white/24 bg-white/8 text-white hover:bg-white/14 hover:text-white",
+    disabled && "cursor-not-allowed opacity-70",
     className
   )}
 >
@@ -296,7 +370,8 @@ const SectionHeader = ({
     </Badge>
     <h2
   className={cn(
-    "mt-4 text-3xl font-semibold leading-tight text-slate-950 md:text-5xl",
+    "mt-4 text-3xl font-semibold leading-tight md:text-5xl",
+    strongTextClass,
     inverse && "text-white"
   )}
 >
@@ -304,13 +379,59 @@ const SectionHeader = ({
     </h2>
     {body ? <p
   className={cn(
-    "mt-4 text-base leading-7 text-slate-600 md:text-lg",
+    "mt-4 text-base leading-7 md:text-lg",
+    mutedTextClass,
     inverse && "text-white/68"
   )}
 >
         {body}
       </p> : null}
   </div>;
+const useLandingTheme = () => {
+  const [theme, setTheme] = useState(() => {
+    if (typeof window === "undefined") return "light";
+    return resolveTheme(window.localStorage.getItem("theme") || "light");
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    setTheme(resolveTheme(window.localStorage.getItem("theme") || "light"));
+    const handleThemeChange = (event) => {
+      setTheme(resolveTheme(event.detail));
+    };
+    window.addEventListener("app-theme-change", handleThemeChange);
+    return () => window.removeEventListener("app-theme-change", handleThemeChange);
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    applyTheme(nextTheme);
+    setTheme(nextTheme);
+    trackLandingEvent("theme_changed", { theme: nextTheme });
+  };
+
+  return { theme, toggleTheme };
+};
+const LandingThemeToggle = ({ className }) => {
+  const { theme, toggleTheme } = useLandingTheme();
+  const isDark = theme === "dark";
+  const Icon = isDark ? SunIcon : MoonIcon;
+
+  return <Button
+    type="button"
+    variant="outline"
+    size="icon"
+    aria-label={isDark ? "Light theme" : "Dark theme"}
+    onClick={toggleTheme}
+    className={cn(
+      "border-slate-200 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-950 dark:border-white/14 dark:bg-white/8 dark:text-white dark:hover:bg-white/14",
+      className
+    )}
+  >
+      <Icon className="size-4" />
+    </Button>;
+};
 const Header = ({
   copy,
   language,
@@ -323,34 +444,35 @@ const Header = ({
     setMenuOpen(false);
     onAnchor(id);
   };
-  return <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-slate-950/82 px-4 py-3 text-white backdrop-blur-xl md:px-8">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+  return <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/70 bg-white/88 px-4 py-2 text-slate-950 shadow-[0_10px_34px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/82 dark:text-white dark:shadow-none md:px-6">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
         <Link
     to="/"
-    className="inline-flex min-h-11 items-center gap-3 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-orange-300"
+    className="inline-flex min-h-9 items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-orange-300"
     aria-label="LiveOn"
   >
           <img
     src="/madagascar/logo-main.webp"
     alt={copy.nav.logoAlt}
-    className="size-9 object-contain"
+    className="size-8 object-contain"
     loading="eager"
   />
-          <span className="text-lg font-black">LiveOn</span>
+          <span className="text-base font-black">LiveOn</span>
         </Link>
 
-        <nav className="hidden items-center gap-1 xl:flex" aria-label="Landing navigation">
+        <nav className="hidden items-center gap-0.5 xl:flex" aria-label="Landing navigation">
           {copy.nav.links.map(([id, label]) => <button
     key={id}
     type="button"
     onClick={() => onAnchor(id)}
-    className="min-h-10 rounded-md px-3 text-sm font-semibold text-white/68 outline-none transition-colors hover:bg-white/8 hover:text-white focus-visible:ring-2 focus-visible:ring-orange-300"
+    className="min-h-8 whitespace-nowrap rounded-lg px-2.5 text-[13px] font-semibold leading-4 text-slate-600 outline-none transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-orange-300 dark:text-white/68 dark:hover:bg-white/8 dark:hover:text-white"
   >
               {label}
             </button>)}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <LandingThemeToggle className="hidden size-9 lg:inline-flex" />
           <LanguageSwitcher
     label={copy.nav.language}
     language={language}
@@ -359,9 +481,8 @@ const Header = ({
     description={copy.nav.languageDescription}
   />
           <CTAButton
-    variant="light"
     onClick={() => onStart("header_cta_clicked")}
-    className="hidden lg:inline-flex"
+    className="hidden min-h-9 rounded-xl px-4 text-[13px] lg:inline-flex [&_[data-icon='inline-end']]:size-4"
   >
             {copy.nav.cta}
           </CTAButton>
@@ -369,7 +490,7 @@ const Header = ({
     type="button"
     variant="outline"
     size="icon"
-    className="border-white/18 bg-white/8 text-white hover:bg-white/14 hover:text-white xl:hidden"
+    className="size-9 border-slate-200 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-950 dark:border-white/18 dark:bg-white/8 dark:text-white dark:hover:bg-white/14 dark:hover:text-white xl:hidden"
     aria-label={menuOpen ? copy.nav.menuClose : copy.nav.menuOpen}
     aria-expanded={menuOpen}
     onClick={() => setMenuOpen((value) => !value)}
@@ -379,18 +500,19 @@ const Header = ({
         </div>
       </div>
 
-      {menuOpen ? <div className="mx-auto mt-3 max-w-7xl rounded-2xl border border-white/10 bg-slate-900/96 p-3 shadow-[0_24px_80px_rgba(2,6,23,0.38)] xl:hidden">
+      {menuOpen ? <div className="mx-auto mt-3 max-w-7xl rounded-2xl border border-slate-200 bg-white/96 p-3 text-slate-950 shadow-[0_24px_80px_rgba(2,6,23,0.18)] dark:border-white/10 dark:bg-slate-900/96 dark:text-white dark:shadow-[0_24px_80px_rgba(2,6,23,0.38)] xl:hidden">
           <nav className="grid gap-1" aria-label="Mobile landing navigation">
             {copy.nav.links.map(([id, label]) => <button
     key={id}
     type="button"
     onClick={() => navigateTo(id)}
-    className="min-h-11 rounded-xl px-3 text-left text-sm font-semibold text-white/76 outline-none transition-colors hover:bg-white/8 hover:text-white focus-visible:ring-2 focus-visible:ring-orange-300"
+    className="min-h-11 rounded-xl px-3 text-left text-sm font-semibold text-slate-700 outline-none transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-orange-300 dark:text-white/76 dark:hover:bg-white/8 dark:hover:text-white"
   >
                 {label}
               </button>)}
           </nav>
-          <div className="mt-3">
+          <div className="mt-3 grid gap-2">
+            <LandingThemeToggle className="h-9 w-full justify-center" />
             <CTAButton onClick={() => onStart("mobile_menu_cta_clicked")} className="w-full">
               {copy.nav.cta}
             </CTAButton>
@@ -407,7 +529,7 @@ const LanguageSwitcher = ({
 }) => <div className="flex items-center">
     <LanguageDrawerPicker
   ariaLabel={label}
-  className="text-white hover:bg-white/14 hover:text-white"
+  className="size-9 text-slate-700 hover:bg-slate-100 hover:text-slate-950 dark:text-white dark:hover:bg-white/14 dark:hover:text-white"
   compact
   denseOptions
   description={description}
@@ -479,20 +601,20 @@ const HeroSection = ({
       </div>
     </section>;
 };
-const ValueStrip = ({ items }) => <section className="border-y border-orange-900/10 bg-[#fff8ee]">
+const ValueStrip = ({ items }) => <section className={cn("border-y", warmSectionClass)}>
     <div className="mx-auto grid max-w-7xl gap-3 px-5 py-5 md:grid-cols-2 md:px-8 lg:grid-cols-4">
       {items.map(([title, body, Icon]) => <div key={title} className="flex gap-3 rounded-2xl px-1 py-2">
-          <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-white text-orange-700 ring-1 ring-orange-500/12">
+          <span className={cn("grid size-10 shrink-0 place-items-center rounded-2xl ring-1 ring-orange-500/12", iconSurfaceClass)}>
             <Icon className="size-5" />
           </span>
           <span>
-            <span className="block font-semibold text-slate-950">{title}</span>
-            <span className="mt-1 block text-sm leading-5 text-slate-600">{body}</span>
+            <span className={cn("block font-semibold", strongTextClass)}>{title}</span>
+            <span className={cn("mt-1 block text-sm leading-5", mutedTextClass)}>{body}</span>
           </span>
         </div>)}
     </div>
   </section>;
-const HowItWorks = ({ copy }) => <MotionSection id="how" className="bg-white py-16 md:py-24">
+const HowItWorks = ({ copy }) => <MotionSection id="how" className={cn(plainSectionClass, "py-16 md:py-24")}>
     <div className="mx-auto max-w-7xl px-5 md:px-8">
       <SectionHeader eyebrow={copy.eyebrow} title={copy.title} body={copy.body} align="center" />
       <div className="mt-10 grid gap-5 md:grid-cols-3">
@@ -506,20 +628,20 @@ const StepCard = ({
   body,
   icon: Icon
 }) => <motion.article whileHover={{ y: -4 }} transition={{ duration: 0.18 }}>
-    <Card className={cn(landingCardPaddingY, "h-full border-slate-200/70 bg-white shadow-[0_18px_54px_rgba(15,23,42,0.06)] ring-slate-950/8")}>
+    <Card className={cn(landingCardPaddingY, "h-full", cardSurfaceClass)}>
       <CardHeader>
         <div className="flex items-center justify-between gap-4">
-          <Badge className="size-11 rounded-2xl bg-slate-950 text-sm text-white">0{index}</Badge>
-          <span className="grid size-11 place-items-center rounded-2xl bg-orange-500/10 text-orange-700">
+          <Badge className="size-11 rounded-2xl bg-slate-950 text-sm text-white dark:bg-white dark:text-slate-950">0{index}</Badge>
+          <span className={cn("grid size-11 place-items-center rounded-2xl", iconSurfaceClass)}>
             <Icon className="size-5" />
           </span>
         </div>
-        <CardTitle className="text-xl font-semibold text-slate-950">{title}</CardTitle>
-        <CardDescription className="text-base leading-7 text-slate-600">{body}</CardDescription>
+        <CardTitle className={cn("text-xl font-semibold", strongTextClass)}>{title}</CardTitle>
+        <CardDescription className={cn("text-base leading-7", mutedTextClass)}>{body}</CardDescription>
       </CardHeader>
     </Card>
   </motion.article>;
-const DailyPlanFeatures = ({ copy }) => <MotionSection id="features" className="bg-[#fff8ee] py-16 md:py-24">
+const DailyPlanFeatures = ({ copy }) => <MotionSection id="features" className={cn(warmSectionClass, "py-16 md:py-24")}>
     <div className="mx-auto max-w-7xl px-5 md:px-8">
       <SectionHeader eyebrow={copy.eyebrow} title={copy.title} body={copy.body} />
       <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -532,13 +654,13 @@ const FeatureCard = ({
   body,
   icon: Icon
 }) => <motion.article whileHover={{ y: -4 }} transition={{ duration: 0.18 }}>
-    <Card className={cn(compactCardPaddingY, "h-full border-orange-900/8 bg-white shadow-[0_14px_42px_rgba(15,23,42,0.05)]")}>
+    <Card className={cn(compactCardPaddingY, "h-full", warmCardSurfaceClass)}>
       <CardHeader>
-        <span className="grid size-11 place-items-center rounded-2xl bg-slate-950 text-white">
+        <span className="grid size-11 place-items-center rounded-2xl bg-slate-950 text-white dark:bg-white dark:text-slate-950">
           <Icon className="size-5" />
         </span>
-        <CardTitle className="text-lg font-semibold text-slate-950">{title}</CardTitle>
-        <CardDescription className="leading-6 text-slate-600">{body}</CardDescription>
+        <CardTitle className={cn("text-lg font-semibold", strongTextClass)}>{title}</CardTitle>
+        <CardDescription className={cn("leading-6", mutedTextClass)}>{body}</CardDescription>
       </CardHeader>
     </Card>
   </motion.article>;
@@ -546,7 +668,7 @@ const PlanShowcase = ({
   copy,
   onMeal,
   onWorkout
-}) => <MotionSection id="nutrition" className="bg-white py-16 md:py-24">
+}) => <MotionSection id="nutrition" className={cn(plainSectionClass, "py-16 md:py-24")}>
     <div className="mx-auto max-w-7xl px-5 md:px-8">
       <SectionHeader eyebrow={copy.eyebrow} title={copy.title} body={copy.body} align="center" />
       <div className="mt-10 grid gap-6 lg:grid-cols-2">
@@ -565,8 +687,9 @@ const PlanExampleCard = ({
     id={type === "workout" ? "workouts" : void 0}
     className={cn(
       landingCardPaddingY,
-      "h-full border-slate-200/70 shadow-[0_22px_70px_rgba(15,23,42,0.07)]",
-      type === "workout" && "bg-slate-950 text-white ring-white/10"
+      "h-full",
+      cardSurfaceClass,
+      type === "workout" && "bg-slate-950 text-white ring-white/10 dark:bg-slate-950"
     )}
   >
       <CardHeader>
@@ -580,10 +703,10 @@ const PlanExampleCard = ({
   >
               {data.badge}
             </Badge>
-            <CardTitle className={cn("mt-4 text-2xl font-semibold text-slate-950", type === "workout" && "text-white")}>
+            <CardTitle className={cn("mt-4 text-2xl font-semibold", strongTextClass, type === "workout" && "text-white")}>
               {data.title}
             </CardTitle>
-            <CardDescription className={cn("mt-2 text-base leading-7 text-slate-600", type === "workout" && "text-white/66")}>
+            <CardDescription className={cn("mt-2 text-base leading-7", mutedTextClass, type === "workout" && "text-white/66")}>
               {data.body}
             </CardDescription>
           </div>
@@ -601,6 +724,7 @@ const PlanExampleCard = ({
         <div
     className={cn(
       "rounded-3xl bg-[#fff8ee] p-4 text-sm leading-7 text-slate-800",
+      "dark:bg-white/[0.07] dark:text-white/78 dark:ring-1 dark:ring-white/10",
       type === "workout" && "bg-white/[0.06] text-white/82 ring-1 ring-white/10"
     )}
   >
@@ -609,7 +733,7 @@ const PlanExampleCard = ({
         <div className="grid gap-2 sm:grid-cols-2">
           {data.checklist.map((item) => <div
     key={item}
-    className={cn("flex items-center gap-2 text-sm font-medium text-slate-700", type === "workout" && "text-white/72")}
+    className={cn("flex items-center gap-2 text-sm font-medium", bodyTextClass, type === "workout" && "text-white/72")}
   >
               <CheckIcon className={cn("size-4 text-emerald-600", type === "workout" && "text-emerald-300")} />
               {item}
@@ -911,7 +1035,7 @@ const CoachClientsPreview = ({ copy }) => <div>
       </div>
     </div>
   </div>;
-const LocalMarketSection = ({ copy }) => <MotionSection className="bg-[#fff8ee] py-16 md:py-24">
+const LocalMarketSection = ({ copy }) => <MotionSection id="local-market" className={cn(warmSectionClass, "py-16 md:py-24")}>
     <div className="mx-auto grid max-w-7xl gap-10 px-5 md:px-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-start">
       <SectionHeader eyebrow={copy.eyebrow} title={copy.title} body={copy.body} />
       <div className="grid gap-4 sm:grid-cols-2">
@@ -919,25 +1043,25 @@ const LocalMarketSection = ({ copy }) => <MotionSection className="bg-[#fff8ee] 
   key={title}
   className={cn(
     landingCardPaddingY,
-    "border-orange-900/8 bg-white shadow-[0_18px_54px_rgba(15,23,42,0.05)]",
+    warmCardSurfaceClass,
     index === 0 && "sm:col-span-2"
   )}
 >
             <CardHeader>
-              <span className="grid size-11 place-items-center rounded-2xl bg-orange-500/10 text-orange-700">
+              <span className={cn("grid size-11 place-items-center rounded-2xl", iconSurfaceClass)}>
                 <Icon className="size-5" />
               </span>
-              <CardTitle className="text-xl font-semibold text-slate-950">{title}</CardTitle>
-              <CardDescription className="text-base leading-7 text-slate-600">{body}</CardDescription>
+              <CardTitle className={cn("text-xl font-semibold", strongTextClass)}>{title}</CardTitle>
+              <CardDescription className={cn("text-base leading-7", mutedTextClass)}>{body}</CardDescription>
             </CardHeader>
           </Card>)}
       </div>
     </div>
   </MotionSection>;
-const ComparisonSection = ({ copy }) => <MotionSection className="bg-white py-16 md:py-24">
+const ComparisonSection = ({ copy }) => <MotionSection className={cn(plainSectionClass, "py-16 md:py-24")}>
     <div className="mx-auto max-w-7xl px-5 md:px-8">
       <SectionHeader eyebrow={copy.eyebrow} title={copy.title} align="center" />
-      <Card className="mt-10 hidden border-slate-200/70 shadow-[0_18px_60px_rgba(15,23,42,0.06)] lg:block">
+      <Card className={cn("mt-10 hidden lg:block", cardSurfaceClass)}>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -945,7 +1069,7 @@ const ComparisonSection = ({ copy }) => <MotionSection className="bg-white py-16
                 {copy.columns.map((column, index) => <TableHead
   key={column}
   className={cn(
-    "h-14 text-sm font-semibold text-slate-600",
+    "h-14 text-sm font-semibold text-slate-600 dark:text-white/64",
     index === 1 && "bg-slate-950 text-white"
   )}
 >
@@ -954,8 +1078,8 @@ const ComparisonSection = ({ copy }) => <MotionSection className="bg-white py-16
               </TableRow>
             </TableHeader>
             <TableBody>
-              {copy.rows.map(([feature, liveon, ordinary, generic]) => <TableRow key={feature} className="hover:bg-orange-50/45">
-                  <TableCell className="font-medium text-slate-950">{feature}</TableCell>
+              {copy.rows.map(([feature, liveon, ordinary, generic]) => <TableRow key={feature} className="hover:bg-orange-50/45 dark:hover:bg-white/[0.04]">
+                  <TableCell className={cn("font-medium", strongTextClass)}>{feature}</TableCell>
                   <TableCell className="bg-slate-950">
                     <StatusBadge value={liveon} copy={copy} highlighted />
                   </TableCell>
@@ -972,9 +1096,9 @@ const ComparisonSection = ({ copy }) => <MotionSection className="bg-white py-16
       </Card>
 
       <div className="mt-10 grid gap-4 lg:hidden">
-        {copy.rows.map(([feature, liveon, ordinary, generic]) => <Card key={feature} className={cn(compactCardPaddingY, "border-slate-200/70")}>
+        {copy.rows.map(([feature, liveon, ordinary, generic]) => <Card key={feature} className={cn(compactCardPaddingY, cardSurfaceClass)}>
             <CardHeader>
-              <CardTitle className="font-semibold text-slate-950">{feature}</CardTitle>
+              <CardTitle className={cn("font-semibold", strongTextClass)}>{feature}</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3">
               <MobileStatus label={copy.columns[1]} value={liveon} copy={copy} highlighted />
@@ -1013,21 +1137,21 @@ const MobileStatus = ({
   value,
   copy,
   highlighted = false
-}) => <div className={cn("flex items-center justify-between gap-3 rounded-2xl bg-slate-50 p-3", highlighted && "bg-slate-950")}>
-    <span className={cn("text-sm font-semibold text-slate-600", highlighted && "text-white")}>{label}</span>
+}) => <div className={cn("flex items-center justify-between gap-3 rounded-2xl bg-slate-50 p-3 dark:bg-white/[0.06]", highlighted && "bg-slate-950 dark:bg-slate-950")}>
+    <span className={cn("text-sm font-semibold", mutedTextClass, highlighted && "text-white")}>{label}</span>
     <StatusBadge value={value} copy={copy} highlighted={highlighted} />
   </div>;
-const TestimonialsSection = ({ copy }) => <MotionSection id="testimonials" className="bg-[#fff8ee] py-16 md:py-24">
+const TestimonialsSection = ({ copy }) => <MotionSection id="testimonials" className={cn(warmSectionClass, "py-16 md:py-24")}>
     <div className="mx-auto max-w-7xl px-5 md:px-8">
       <SectionHeader eyebrow={copy.eyebrow} title={copy.title} body={copy.body} align="center" />
       <div className="mt-10 grid gap-5 md:grid-cols-3">
-        {copy.items.map(([title, body, tag]) => <Card key={title} className={cn(landingCardPaddingY, "h-full border-orange-900/8 bg-white shadow-[0_16px_48px_rgba(15,23,42,0.05)]")}>
+        {copy.items.map(([title, body, tag]) => <Card key={title} className={cn(landingCardPaddingY, "h-full", warmCardSurfaceClass)}>
             <CardHeader>
               <Badge className="bg-emerald-500/12 text-emerald-700 ring-1 ring-emerald-500/16">
                 {tag}
               </Badge>
-              <CardTitle className="text-xl font-semibold text-slate-950">{title}</CardTitle>
-              <CardDescription className="text-base leading-7 text-slate-600">{body}</CardDescription>
+              <CardTitle className={cn("text-xl font-semibold", strongTextClass)}>{title}</CardTitle>
+              <CardDescription className={cn("text-base leading-7", mutedTextClass)}>{body}</CardDescription>
             </CardHeader>
           </Card>)}
       </div>
@@ -1036,7 +1160,7 @@ const TestimonialsSection = ({ copy }) => <MotionSection id="testimonials" class
 const PricingSection = ({
   copy,
   onStart
-}) => <MotionSection id="pricing" className="bg-white py-16 md:py-24">
+}) => <MotionSection id="pricing" className={cn(plainSectionClass, "py-16 md:py-24")}>
     <div className="mx-auto max-w-6xl px-5 md:px-8">
       <SectionHeader eyebrow={copy.eyebrow} title={copy.title} align="center" />
       <div className="mt-10 grid gap-5 md:grid-cols-2">
@@ -1052,41 +1176,42 @@ const PricingCard = ({
 }) => <Card
   className={cn(
     landingCardPaddingY,
-    "h-full border-slate-200/70 shadow-[0_20px_64px_rgba(15,23,42,0.06)]",
-    highlighted && "border-orange-300/40 bg-slate-950 text-white ring-orange-300/20"
+    "h-full",
+    cardSurfaceClass,
+    highlighted && "border-orange-300/40 bg-slate-950 text-white ring-orange-300/20 dark:bg-slate-950"
   )}
 >
     <CardHeader>
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <CardTitle className={cn("text-2xl font-semibold text-slate-950", highlighted && "text-white")}>
+            <CardTitle className={cn("text-2xl font-semibold", strongTextClass, highlighted && "text-white")}>
               {data.title}
             </CardTitle>
             {data.badge ? <Badge className="bg-orange-300 text-slate-950">{data.badge}</Badge> : null}
           </div>
-          <p className={cn("mt-4 text-3xl font-semibold text-slate-950", highlighted && "text-white")}>{data.price}</p>
+          <p className={cn("mt-4 text-3xl font-semibold", strongTextClass, highlighted && "text-white")}>{data.price}</p>
         </div>
         {highlighted ? <StarIcon className="size-8 text-orange-300" /> : <FileTextIcon className="size-8 text-slate-400" />}
       </div>
     </CardHeader>
     <CardContent className="grid gap-3">
-      {data.features.map((item) => <div key={item} className={cn("flex items-center gap-2 text-sm font-medium text-slate-600", highlighted && "text-white/70")}>
+      {data.features.map((item) => <div key={item} className={cn("flex items-center gap-2 text-sm font-medium", mutedTextClass, highlighted && "text-white/70")}>
           <CheckCircle2Icon className={cn("size-4 text-emerald-600", highlighted && "text-orange-300")} />
           {item}
         </div>)}
     </CardContent>
     <CardFooter>
-      <CTAButton variant={highlighted ? "light" : "dark"} onClick={onClick} className="w-full">
+      <CTAButton variant={highlighted ? "light" : "dark"} onClick={onClick} className="w-full" disabled={highlighted}>
         {data.cta}
       </CTAButton>
     </CardFooter>
   </Card>;
-const FAQSection = ({ copy }) => <MotionSection id="faq" className="bg-[#fff8ee] py-16 md:py-24">
+const FAQSection = ({ copy }) => <MotionSection id="faq" className={cn(warmSectionClass, "py-16 md:py-24")}>
     <div className="mx-auto max-w-4xl px-5 md:px-8">
       <SectionHeader eyebrow={copy.eyebrow} title={copy.title} align="center" />
       <div className="mt-10">
-        <Accordion type="single" collapsible defaultValue="faq-0" className="border-orange-900/10 bg-white">
+        <Accordion type="single" collapsible defaultValue="faq-0" className="border-orange-900/10 bg-white dark:border-white/10 dark:bg-white/[0.06]">
           {copy.items.map(([question, answer], index) => <FAQItem key={question} question={question} answer={answer} value={`faq-${index}`} />)}
         </Accordion>
       </div>
@@ -1098,12 +1223,12 @@ const FAQItem = ({
   value
 }) => <AccordionItem value={value}>
     <AccordionTrigger
-  className="min-h-16 text-base font-semibold text-slate-950 no-underline hover:no-underline"
+  className={cn("min-h-16 text-base font-semibold no-underline hover:no-underline", strongTextClass)}
   onClick={() => trackLandingEvent("faq_opened", { question })}
 >
       {question}
     </AccordionTrigger>
-    <AccordionContent className="leading-7 text-slate-600">{answer}</AccordionContent>
+    <AccordionContent className={cn("leading-7", mutedTextClass)}>{answer}</AccordionContent>
   </AccordionItem>;
 const FinalCTA = ({
   copy,
@@ -1136,27 +1261,21 @@ const Footer = ({ copy }) => <footer className="border-t border-white/10 bg-slat
         </div>
         <p className="mt-4 max-w-sm leading-7 text-white/62">{copy.tagline}</p>
         <div className="mt-6 flex gap-2">
-          <SocialButton label="Telegram" icon={SendIcon} />
-          <SocialButton label="Instagram" icon={CameraIcon} />
-          <SocialButton label="YouTube" icon={CirclePlayIcon} />
-          <a
-  href="#"
-  aria-label="VK"
-  className="grid size-10 place-items-center rounded-full border border-white/12 bg-white/6 text-sm font-black text-white/72 transition-colors hover:bg-white/12 hover:text-white"
->
-            VK
-          </a>
+          {SOCIAL_LINKS.map(({ label, href, icon }) => <SocialButton key={label} label={label} href={href} icon={icon} />)}
         </div>
       </div>
       <div className="grid gap-8 sm:grid-cols-3">
         {copy.columns.map(([title, links]) => <div key={title}>
             <h3 className="font-semibold">{title}</h3>
             <ul className="mt-4 flex flex-col gap-3">
-              {links.map((item) => <li key={item}>
-                  <a href="#" className="text-sm text-white/58 transition-colors hover:text-white">
-                    {item}
+              {links.map((item) => {
+                const { label, href } = resolveFooterLink(item);
+                return <li key={label}>
+                  <a href={href} className="text-sm text-white/58 transition-colors hover:text-white">
+                    {label}
                   </a>
-                </li>)}
+                </li>;
+              })}
             </ul>
           </div>)}
       </div>
@@ -1165,9 +1284,11 @@ const Footer = ({ copy }) => <footer className="border-t border-white/10 bg-slat
       {copy.copyright}
     </div>
   </footer>;
-const SocialButton = ({ label, icon: Icon }) => <a
-  href="#"
+const SocialButton = ({ label, href, icon: Icon }) => <a
+  href={href}
   aria-label={label}
+  rel="noreferrer"
+  target="_blank"
   className="grid size-10 place-items-center rounded-full border border-white/12 bg-white/6 text-white/72 transition-colors hover:bg-white/12 hover:text-white"
 >
     <Icon className="size-4" />
@@ -1181,18 +1302,49 @@ const StickyMobileCTA = ({
       <ArrowRightIcon data-icon="inline-end" />
     </Button>
   </div>;
-const createFaqSchema = (copy = {}, language) => ({
+const createLandingSchemas = (copy = {}, language) => ({
   "@context": "https://schema.org",
-  "@type": "FAQPage",
-  inLanguage: language,
-  mainEntity: (copy.items ?? []).map(([question, answer]) => ({
-    "@type": "Question",
-    name: question,
-    acceptedAnswer: {
-      "@type": "Answer",
-      text: answer
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${LANDING_ORIGIN}/#organization`,
+      name: "LiveOn",
+      url: LANDING_ORIGIN,
+      logo: `${LANDING_ORIGIN}/madagascar/logo-main.webp`,
+      sameAs: SOCIAL_LINKS.map((item) => item.href)
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": `${LANDING_ORIGIN}/#software`,
+      name: "LiveOn",
+      applicationCategory: "HealthApplication",
+      operatingSystem: "Web, Telegram Web App",
+      inLanguage: language,
+      url: LANDING_CANONICAL_URL,
+      image: LANDING_OG_IMAGE,
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: language === "ru" ? "RUB" : "UZS"
+      },
+      publisher: {
+        "@id": `${LANDING_ORIGIN}/#organization`
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${LANDING_ORIGIN}/#faq`,
+      inLanguage: language,
+      mainEntity: (copy.faq?.items ?? []).map(([question, answer]) => ({
+        "@type": "Question",
+        name: question,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: answer
+        }
+      }))
     }
-  }))
+  ]
 });
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -1202,7 +1354,7 @@ const LandingPage = () => {
   const { isAuthenticated, user } = useAuthStore();
   const language = hasSelectedLanguage ? normalizeLanguage(currentLanguage) : "ru";
   const { copy, meta } = useLandingContent(language);
-  const faqSchema = useMemo(() => createFaqSchema(copy.faq, language), [copy.faq, language]);
+  const structuredData = useMemo(() => createLandingSchemas(copy, language), [copy, language]);
   useEffect(() => {
     if (!hasSelectedLanguage) setCurrentLanguage("ru");
   }, [hasSelectedLanguage, setCurrentLanguage]);
@@ -1212,12 +1364,21 @@ const LandingPage = () => {
 
     document.documentElement.lang = language;
     document.title = title;
+    setLinkTag("canonical", LANDING_CANONICAL_URL);
     setMetaTag('meta[name="description"]', description);
+    setMetaTag('meta[property="og:type"]', "website");
+    setMetaTag('meta[property="og:url"]', LANDING_CANONICAL_URL);
     setMetaTag('meta[property="og:title"]', title);
     setMetaTag('meta[property="og:description"]', description);
+    setMetaTag('meta[property="og:image"]', LANDING_OG_IMAGE);
+    setMetaTag('meta[name="twitter:card"]', "summary_large_image");
     setMetaTag('meta[name="twitter:title"]', title);
     setMetaTag('meta[name="twitter:description"]', description);
+    setMetaTag('meta[name="twitter:image"]', LANDING_OG_IMAGE);
   }, [language, meta.description, meta.title]);
+  useEffect(() => {
+    setJsonLdScript("main", structuredData);
+  }, [structuredData]);
   const setLandingLanguage = (nextLanguage) => {
     setCurrentLanguage(nextLanguage);
     trackLandingEvent("language_changed", { language: nextLanguage });
@@ -1248,10 +1409,6 @@ const LandingPage = () => {
     scrollToSection("nutrition");
   };
   return <>
-      <script
-    type="application/ld+json"
-    dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-  />
       <Header
     copy={copy}
     language={language}

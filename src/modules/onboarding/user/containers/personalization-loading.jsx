@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { get } from "lodash";
 import {
   AlertTriangleIcon,
   CheckCircle2Icon,
@@ -22,14 +23,16 @@ import {
 import { cn } from "@/lib/utils";
 import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-context";
 import { useAuthStore } from "@/store";
+import AiPlanGeneration from "../components/ai-plan-generation.jsx";
 import PageAura from "../components/page-aura.jsx";
 import { ONBOARDING_ACCENTS } from "../lib/tones.js";
 import {
+  buildVisibleLoadingIssues,
   clampProgress,
+  getLoadingStepIndex,
+  getPlanGenerationQualityIssues,
   metabolismChecklist,
   metabolismLoadingSteps,
-  planGenerationChecklist,
-  planGenerationLoadingSteps,
   unwrapApiData,
 } from "../lib/personalization.js";
 
@@ -48,24 +51,7 @@ const modeConfig = {
     steps: metabolismLoadingSteps,
     checklist: metabolismChecklist,
   },
-  generation: {
-    badge: "generation",
-    title: "AI reja yaratilmoqda",
-    steps: planGenerationLoadingSteps,
-    checklist: planGenerationChecklist,
-  },
 };
-
-const getStepIndex = (progress, steps) =>
-  Math.min(
-    steps.length - 1,
-    Math.floor((clampProgress(progress) / 100) * steps.length),
-  );
-
-const formatQualityIssue = (issue) =>
-  typeof issue === "string"
-    ? issue
-    : issue?.message || issue?.code || "";
 
 const LoadingShell = ({
   progress,
@@ -78,11 +64,11 @@ const LoadingShell = ({
 }) => {
   const { t } = useTranslation();
   const config = modeConfig[mode] ?? modeConfig.metabolism;
-  const activeIndex = getStepIndex(progress, config.steps);
-  const visibleIssues = [
-    ...missingData.map((item) => String(item ?? "")),
-    ...qualityIssues.map(formatQualityIssue),
-  ].filter(Boolean);
+  const activeIndex = getLoadingStepIndex(progress, config.steps);
+  const visibleIssues = buildVisibleLoadingIssues({
+    missingData,
+    qualityIssues,
+  });
 
   useOnboardingFooter(null);
 
@@ -147,22 +133,21 @@ const LoadingShell = ({
                   </p>
                   {!error ? (
                     <p className="text-xs font-semibold leading-5 text-muted-foreground sm:text-sm">
-                      {t(
-                        `onboarding.postOnboarding.loading.nextSteps.${mode}`,
-                      )}
+                      {t(`onboarding.postOnboarding.loading.nextSteps.${mode}`)}
                     </p>
                   ) : null}
                 </div>
 
-                <Progress value={clampProgress(progress)} className="h-2 sm:h-2.5" />
+                <Progress
+                  value={clampProgress(progress)}
+                  className="h-2 sm:h-2.5"
+                />
 
                 <div className="grid gap-1.5 sm:gap-2">
                   {config.checklist.map((item, index) => {
                     const completed =
                       clampProgress(progress) >=
-                      Math.round(
-                        ((index + 1) / config.checklist.length) * 100,
-                      );
+                      Math.round(((index + 1) / config.checklist.length) * 100);
 
                     return (
                       <div
@@ -318,6 +303,7 @@ export const GeneratingContainer = () => {
   const setOnboardingFlow = useAuthStore((state) => state.setOnboardingFlow);
   const [activeJobId, setActiveJobId] = React.useState(jobId ?? "");
   const [localProgress, setLocalProgress] = React.useState(0);
+  const [manualContinueJobId, setManualContinueJobId] = React.useState("");
   const startedRef = React.useRef(false);
   const { mutateAsync: startGeneration, isPending: isStarting } =
     usePostQuery();
@@ -334,15 +320,27 @@ export const GeneratingContainer = () => {
     },
   });
   const job = unwrapApiData(statusQuery.data);
-  const isFailed = job?.status === "FAILED" || statusQuery.isError;
-  const hasServerProgress = Number.isFinite(Number(job?.progress));
+  const jobStatus = get(job, "status");
+  const isFailed = jobStatus === "FAILED" || statusQuery.isError;
+  const hasServerProgress = Number.isFinite(Number(get(job, "progress")));
   const progress = clampProgress(
-    hasServerProgress ? job?.progress : localProgress,
+    hasServerProgress ? get(job, "progress") : localProgress,
   );
-  const qualityIssues =
-    job?.qualityReport?.blockingIssues?.length > 0
-      ? job.qualityReport.blockingIssues
-      : (job?.qualityReport?.warnings ?? []);
+  const qualityIssues = getPlanGenerationQualityIssues(job);
+  const isGenerationCompleted = jobStatus === "COMPLETED" && progress >= 100;
+  const completedJobId = String(get(job, "id", "completed"));
+  const showManualContinue =
+    isGenerationCompleted && manualContinueJobId === completedJobId;
+
+  const continueToPlanReady = React.useCallback(() => {
+    setOnboardingFlow({
+      onboardingFlowStatus: get(job, "flowStatus"),
+      onboardingNextPath: getUserOnboardingPlanReadyPath(),
+      latestPlanGenerationJobId: get(job, "id"),
+    });
+    void queryClient.invalidateQueries({ queryKey: ["me"] });
+    navigate(getUserOnboardingPlanReadyPath(), { replace: true });
+  }, [job, navigate, queryClient, setOnboardingFlow]);
 
   const start = React.useCallback(async () => {
     startedRef.current = true;
@@ -368,37 +366,30 @@ export const GeneratingContainer = () => {
   }, [activeJobId, start]);
 
   React.useEffect(() => {
-    if (job?.status === "COMPLETED" && progress >= 100) {
-      const timer = window.setTimeout(() => {
-        setOnboardingFlow({
-          onboardingFlowStatus: job.flowStatus,
-          onboardingNextPath: getUserOnboardingPlanReadyPath(),
-          latestPlanGenerationJobId: job.id,
-        });
-        void queryClient.invalidateQueries({ queryKey: ["me"] });
-        navigate(getUserOnboardingPlanReadyPath(), { replace: true });
-      }, 650);
+    if (isGenerationCompleted) {
+      const redirectTimer = window.setTimeout(continueToPlanReady, 650);
+      const fallbackTimer = window.setTimeout(() => {
+        setManualContinueJobId(completedJobId);
+      }, 2200);
 
-      return () => window.clearTimeout(timer);
+      return () => {
+        window.clearTimeout(redirectTimer);
+        window.clearTimeout(fallbackTimer);
+      };
     }
 
     return undefined;
-  }, [
-    job?.status,
-    job?.flowStatus,
-    job?.id,
-    navigate,
-    progress,
-    queryClient,
-    setOnboardingFlow,
-  ]);
+  }, [completedJobId, continueToPlanReady, isGenerationCompleted]);
 
   React.useEffect(() => {
-    if (job?.flowStatus || job?.nextPath) {
+    const flowStatus = get(job, "flowStatus");
+    const nextPath = get(job, "nextPath");
+
+    if (flowStatus || nextPath) {
       setOnboardingFlow({
-        onboardingFlowStatus: job.flowStatus,
-        onboardingNextPath: job.nextPath,
-        latestPlanGenerationJobId: job.id,
+        onboardingFlowStatus: flowStatus,
+        onboardingNextPath: nextPath,
+        latestPlanGenerationJobId: get(job, "id"),
       });
     }
   }, [job, setOnboardingFlow]);
@@ -414,18 +405,20 @@ export const GeneratingContainer = () => {
   }, [activeJobId]);
 
   return (
-    <LoadingShell
+    <AiPlanGeneration
       progress={isFailed ? 100 : isStarting ? Math.max(progress, 12) : progress}
       error={isFailed}
-      missingData={job?.missingData ?? []}
+      missingData={get(job, "missingData", [])}
       qualityIssues={qualityIssues}
       onRetry={() => {
         startedRef.current = false;
+        setManualContinueJobId("");
         setActiveJobId("");
         setLocalProgress(0);
         void start();
       }}
-      mode="generation"
+      canContinue={showManualContinue}
+      onContinue={continueToPlanReady}
     />
   );
 };

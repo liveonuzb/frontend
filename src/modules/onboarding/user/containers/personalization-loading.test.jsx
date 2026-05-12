@@ -5,6 +5,10 @@ import {
   GeneratingContainer,
   PersonalizingContainer,
 } from "./personalization-loading.jsx";
+import {
+  buildLoadingStepStates,
+  planGenerationChecklist,
+} from "../lib/personalization.js";
 
 const getQueryResultMock = vi.hoisted(() => vi.fn());
 const postQueryResultMock = vi.hoisted(() => vi.fn());
@@ -23,7 +27,9 @@ vi.mock("react-i18next", () => ({
         ? values.defaultValue
         : values?.value
           ? `${key}:${values.value}`
-          : key,
+          : values?.step
+            ? `${key}:${values.step}`
+            : key,
   }),
 }));
 
@@ -60,6 +66,31 @@ describe("PersonalizingContainer", () => {
     setOnboardingFlowMock.mockReset();
     paramsMock.mockReset();
     paramsMock.mockReturnValue({ jobId: "job-1" });
+    document.documentElement.removeAttribute("data-app-mode");
+    vi.useRealTimers();
+  });
+
+  it("maps AI plan generation progress into completed, active, and pending states", () => {
+    const stepStates = buildLoadingStepStates(50, planGenerationChecklist);
+    const completedKeys = stepStates
+      .filter((step) => step.status === "completed")
+      .map((step) => step.key);
+
+    expect(completedKeys).toEqual(["mealContext", "workoutContext"]);
+    expect(stepStates[2]).toMatchObject({
+      key: "mealPlan",
+      status: "active",
+    });
+    expect(stepStates[3]).toMatchObject({
+      key: "workoutPlan",
+      status: "pending",
+    });
+
+    expect(
+      buildLoadingStepStates(100, planGenerationChecklist).every(
+        (step) => step.status === "completed",
+      ),
+    ).toBe(true);
   });
 
   it("uses the active metabolism job route after refresh", () => {
@@ -125,6 +156,78 @@ describe("PersonalizingContainer", () => {
     );
     expect(mutateAsync).not.toHaveBeenCalled();
     expect(navigateMock).not.toHaveBeenCalled();
+  });
+
+  it("renders the mode-aware AI plan generation shell with the current step", () => {
+    document.documentElement.dataset.appMode = "focus";
+    paramsMock.mockReturnValue({ jobId: "generation-1" });
+    getQueryResultMock.mockReturnValue({
+      data: {
+        data: {
+          id: "generation-1",
+          status: "PROCESSING",
+          progress: 50,
+          flowStatus: "GENERATING_PLAN",
+          nextPath: "/user/onboarding/plan-generating/generation-1",
+        },
+      },
+      isError: false,
+      isSuccess: false,
+      refetch: vi.fn(),
+    });
+    postQueryResultMock.mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    });
+
+    render(<GeneratingContainer />);
+
+    expect(screen.getByTestId("ai-plan-generation")).toHaveClass(
+      "ai-plan-generation",
+    );
+    expect(screen.getByRole("progressbar")).toHaveAttribute(
+      "aria-valuenow",
+      "50",
+    );
+    const activeStep = screen
+      .getByText("onboarding.postOnboarding.loading.checklist.mealPlan")
+      .closest("li");
+    expect(activeStep).toHaveAttribute("aria-current", "step");
+    expect(activeStep).toHaveClass("ai-plan-generation__step--active");
+    expect(
+      screen.getByText("onboarding.postOnboarding.loading.hintTitle"),
+    ).toBeInTheDocument();
+  });
+
+  it("navigates to plan ready when plan generation completes", async () => {
+    vi.useFakeTimers();
+    paramsMock.mockReturnValue({ jobId: "generation-1" });
+    getQueryResultMock.mockReturnValue({
+      data: {
+        data: {
+          id: "generation-1",
+          status: "COMPLETED",
+          progress: 100,
+          flowStatus: "PLAN_READY",
+          nextPath: "/user/onboarding/plan-ready",
+        },
+      },
+      isError: false,
+      isSuccess: true,
+      refetch: vi.fn(),
+    });
+    postQueryResultMock.mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    });
+
+    render(<GeneratingContainer />);
+
+    await vi.advanceTimersByTimeAsync(650);
+
+    expect(navigateMock).toHaveBeenCalledWith("/user/onboarding/plan-ready", {
+      replace: true,
+    });
   });
 
   it("shows quality-gate issues when plan generation fails validation", () => {

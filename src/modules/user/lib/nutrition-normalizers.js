@@ -6,7 +6,21 @@ import {
   toNumber,
 } from "@/modules/user/containers/nutrition/meal-ingredients.js";
 
-const getTodayKey = () => new Date().toISOString().split("T")[0];
+const formatLocalDateKey = (date) => {
+  const value = date instanceof Date ? date : new Date(date);
+
+  if (Number.isNaN(value.getTime())) {
+    return formatLocalDateKey(new Date());
+  }
+
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
+
+const getTodayKey = () => formatLocalDateKey(new Date());
 
 export const createEmptyDayData = () => ({
   date: "",
@@ -29,9 +43,13 @@ export const createEmptyDayData = () => ({
 export const normalizeDateKey = (date) => {
   if (!date) return getTodayKey();
   if (typeof date === "string") {
-    return date.includes("T") ? date.split("T")[0] : date;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return date;
+    }
+
+    return formatLocalDateKey(date);
   }
-  return date.toISOString().split("T")[0];
+  return formatLocalDateKey(date);
 };
 
 export const normalizeMealItem = (item = {}) => ({

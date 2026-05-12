@@ -10,44 +10,30 @@ import { cn } from "@/lib/utils";
 import {
   DASHBOARD_MEASUREMENTS_QUERY_KEY,
   DASHBOARD_ME_QUERY_KEY,
+  getMeasurementSnapshot,
   getUserFromResponse,
 } from "./query-helpers.js";
-
-const firstFinite = (...values) => {
-  for (const value of values) {
-    const number = Number(value);
-    if (Number.isFinite(number)) {
-      return number;
-    }
-  }
-
-  return 0;
-};
-
-const normalizeMeasurementHistory = (entries = []) =>
-  [...(Array.isArray(entries) ? entries : [])].sort((left, right) => {
-    const leftTime = new Date(left?.date ?? 0).getTime();
-    const rightTime = new Date(right?.date ?? 0).getTime();
-    return rightTime - leftTime;
-  });
 
 export default function WeightWidget({
   currentWeightValue,
   targetWeightValue,
   startWeightValue,
   history,
+  measurementSnapshot: measurementSnapshotOverride,
   onOpen,
   interactive = true,
 }) {
   const navigate = useNavigate();
   const shouldFetchUser =
-    currentWeightValue === undefined ||
-    targetWeightValue === undefined ||
-    startWeightValue === undefined;
+    measurementSnapshotOverride === undefined &&
+    (currentWeightValue === undefined ||
+      targetWeightValue === undefined ||
+      startWeightValue === undefined);
   const shouldFetchMeasurements =
-    history === undefined ||
-    currentWeightValue === undefined ||
-    startWeightValue === undefined;
+    measurementSnapshotOverride === undefined &&
+    (history === undefined ||
+      currentWeightValue === undefined ||
+      startWeightValue === undefined);
   const { data: userData } = useGetQuery({
     url: "/users/me",
     queryProps: {
@@ -68,39 +54,32 @@ export default function WeightWidget({
     [user],
   );
   const measurementHistory = React.useMemo(
-    () =>
-      normalizeMeasurementHistory(
-        history ?? getApiResponseData(measurementsData, []),
-      ),
+    () => history ?? getApiResponseData(measurementsData, []),
     [history, measurementsData],
   );
-  const latest = measurementHistory[0] ?? {};
-  const onboardingWeight = get(onboarding, "currentWeight");
-  const onboardingTarget = get(onboarding, "targetWeight");
-  const weightChange =
-    history !== undefined || measurementHistory.length < 2
-      ? 0
-      : Number(get(measurementHistory, "[0].weight", 0)) -
-        Number(get(measurementHistory, "[1].weight", 0));
-  const currentW = firstFinite(
-    currentWeightValue,
-    get(latest, "weight"),
-    parseFloat(get(onboardingWeight, "value")),
-  );
-  const targetW =
-    firstFinite(targetWeightValue, parseFloat(get(onboardingTarget, "value"))) ||
-    70;
-  const lastHistoryWeight = get(
-    measurementHistory,
-    [measurementHistory.length - 1, "weight"],
-  );
-  const startW =
-    firstFinite(
+  const measurementSnapshot = React.useMemo(
+    () =>
+      measurementSnapshotOverride ??
+      getMeasurementSnapshot({
+        history: measurementHistory,
+        onboarding,
+        currentWeightValue,
+        targetWeightValue,
+        startWeightValue,
+      }),
+    [
+      currentWeightValue,
+      measurementHistory,
+      measurementSnapshotOverride,
+      onboarding,
       startWeightValue,
-      measurementHistory.length >= 2 ? lastHistoryWeight : undefined,
-      parseFloat(get(onboardingWeight, "value")) + 5,
-      currentW + 5,
-    ) || currentW + 5;
+      targetWeightValue,
+    ],
+  );
+  const weightChange = get(measurementSnapshot, "weightChange", 0);
+  const currentW = get(measurementSnapshot, "currentWeight", 0);
+  const targetW = get(measurementSnapshot, "targetWeight", 70);
+  const startW = get(measurementSnapshot, "startWeight", currentW + 5);
   const progressRange = Math.abs(startW - targetW);
   const progressDone =
     progressRange > 0
@@ -112,7 +91,11 @@ export default function WeightWidget({
   return (
     <Card
       className="h-full py-6"
-      onClick={interactive ? onOpen ?? (() => navigate("/user/measurements")) : undefined}
+      onClick={
+        interactive
+          ? (onOpen ?? (() => navigate("/user/measurements")))
+          : undefined
+      }
     >
       <CardHeader>
         <div className="flex items-center justify-between">
@@ -132,7 +115,9 @@ export default function WeightWidget({
             {currentW > 0 ? currentW.toFixed(1) : "—"}
           </span>
           {currentW > 0 ? (
-            <span className="text-sm font-semibold text-muted-foreground">kg</span>
+            <span className="text-sm font-semibold text-muted-foreground">
+              kg
+            </span>
           ) : null}
           {currentW > 0 && weightChange !== 0 ? (
             <span

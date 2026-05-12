@@ -1,4 +1,4 @@
-import { get, map, take } from "lodash";
+import { eq, filter, find, get, map, size, take } from "lodash";
 import React from "react";
 import { useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -6,6 +6,17 @@ import useGetQuery from "@/hooks/api/use-get-query";
 import usePatchQuery from "@/hooks/api/use-patch-query";
 import usePostQuery from "@/hooks/api/use-post-query";
 import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { getApiResponseData } from "@/lib/api-response";
 import {
   DASHBOARD_ME_QUERY_KEY,
@@ -14,18 +25,27 @@ import {
   DASHBOARD_WEEKLY_CHECK_INS_QUERY_KEY,
 } from "./query-helpers.js";
 
-export default function CoachActivitySection() {
+const CHECK_IN_SCORE_FIELDS = [
+  { key: "moodScore", label: "Kayfiyat" },
+  { key: "energyScore", label: "Energiya" },
+  { key: "adherenceScore", label: "Rejaga amal qilish" },
+];
+
+const CHECK_IN_SCORE_VALUES = [1, 2, 3, 4, 5];
+
+export default function CoachActivitySection({ user: userOverride }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { data: userData } = useGetQuery({
     url: "/users/me",
     queryProps: {
       queryKey: DASHBOARD_ME_QUERY_KEY,
+      enabled: userOverride === undefined,
     },
   });
   const user = React.useMemo(
-    () => getApiResponseData(userData, null),
-    [userData],
+    () => userOverride ?? getApiResponseData(userData, null),
+    [userData, userOverride],
   );
   const hasCoachConnection = Boolean(get(user, "coachConnection.assignmentId"));
   const { data: checkInsData } = useGetQuery({
@@ -65,13 +85,14 @@ export default function CoachActivitySection() {
     responseNotes: "",
   });
   const checkIns = get(checkInsData, "data.data.items", []);
-  const pendingCheckIns = checkIns.filter(
+  const pendingCheckIns = filter(
+    checkIns,
     (item) => item.status === "pending" || item.status === "overdue",
   );
   const feedbackItems = get(feedbackData, "data.data.items", []);
-  const latestFeedback = feedbackItems[0] ?? null;
+  const latestFeedback = get(feedbackItems, 0, null);
   const tasks = get(tasksData, "data.data.items", []);
-  const openTasks = tasks.filter((item) => item.status === "open");
+  const openTasks = filter(tasks, (item) => item.status === "open");
   const isCompletingTask = completeMutation.isPending;
 
   const openCheckIn = React.useCallback((checkIn) => {
@@ -85,14 +106,26 @@ export default function CoachActivitySection() {
     });
   }, []);
 
+  const closeCheckIn = React.useCallback(() => {
+    setActiveCheckIn(null);
+  }, []);
+
+  const updateCheckInForm = React.useCallback((field, value) => {
+    setCheckInForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }, []);
+
   React.useEffect(() => {
     const checkInId = location.state?.openWeeklyCheckInId;
 
-    if (!checkInId || pendingCheckIns.length === 0) {
+    if (!checkInId || size(pendingCheckIns) === 0) {
       return;
     }
 
-    const matchedCheckIn = pendingCheckIns.find(
+    const matchedCheckIn = find(
+      pendingCheckIns,
       (item) => item.id === checkInId,
     );
 
@@ -114,7 +147,9 @@ export default function CoachActivitySection() {
     pendingCheckIns,
   ]);
 
-  const handleSubmitCheckIn = async () => {
+  const handleSubmitCheckIn = async (event) => {
+    event?.preventDefault();
+
     if (!activeCheckIn) {
       return;
     }
@@ -133,7 +168,7 @@ export default function CoachActivitySection() {
         },
       });
       toast.success("Weekly check-in yuborildi");
-      setActiveCheckIn(null);
+      closeCheckIn();
     } catch (error) {
       toast.error(
         error?.response?.data?.message || "Weekly check-in yuborib bo'lmadi",
@@ -157,15 +192,15 @@ export default function CoachActivitySection() {
   };
 
   const hasContent =
-    pendingCheckIns.length > 0 || latestFeedback || openTasks.length > 0;
+    size(pendingCheckIns) > 0 || latestFeedback || size(openTasks) > 0;
 
   if (!hasCoachConnection || !hasContent) return null;
 
   return (
     <>
-      {pendingCheckIns.length > 0 || latestFeedback ? (
+      {size(pendingCheckIns) > 0 || latestFeedback ? (
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-          {pendingCheckIns.length > 0 ? (
+          {size(pendingCheckIns) > 0 ? (
             <div className="rounded-2xl border px-4 py-4">
               <div className="flex flex-col gap-2">
                 <h2 className="text-lg font-semibold">Weekly check-in</h2>
@@ -237,7 +272,7 @@ export default function CoachActivitySection() {
         </div>
       ) : null}
 
-      {openTasks.length > 0 ? (
+      {size(openTasks) > 0 ? (
         <div className="rounded-3xl border px-5 py-5">
           <div className="flex flex-col gap-4">
             <div>
@@ -283,6 +318,97 @@ export default function CoachActivitySection() {
           </div>
         </div>
       ) : null}
+
+      <Drawer
+        open={Boolean(activeCheckIn)}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeCheckIn();
+          }
+        }}
+        direction="bottom"
+      >
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>
+              {get(activeCheckIn, "title", "Weekly check-in")}
+            </DrawerTitle>
+            <DrawerDescription>
+              {get(activeCheckIn, "coach.name", "Murabbiy")} uchun qisqa
+              haftalik hisobot.
+            </DrawerDescription>
+          </DrawerHeader>
+          <DrawerBody>
+            <form
+              id="weekly-check-in-form"
+              className="space-y-4"
+              onSubmit={handleSubmitCheckIn}
+            >
+              <label className="block space-y-2">
+                <span className="text-sm font-medium">Vazn (kg)</span>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  inputMode="decimal"
+                  value={checkInForm.weightKg}
+                  onChange={(event) =>
+                    updateCheckInForm("weightKg", event.target.value)
+                  }
+                  placeholder="Masalan, 72.5"
+                />
+              </label>
+
+              {map(CHECK_IN_SCORE_FIELDS, (field) => (
+                <div key={field.key} className="space-y-2">
+                  <div className="text-sm font-medium">{field.label}</div>
+                  <div className="grid grid-cols-5 gap-2">
+                    {map(CHECK_IN_SCORE_VALUES, (value) => (
+                      <Button
+                        key={value}
+                        type="button"
+                        variant={
+                          eq(get(checkInForm, field.key), value)
+                            ? "default"
+                            : "outline"
+                        }
+                        size="sm"
+                        className="rounded-xl"
+                        onClick={() => updateCheckInForm(field.key, value)}
+                      >
+                        {value}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              <label className="block space-y-2">
+                <span className="text-sm font-medium">Izoh</span>
+                <Textarea
+                  value={checkInForm.responseNotes}
+                  onChange={(event) =>
+                    updateCheckInForm("responseNotes", event.target.value)
+                  }
+                  placeholder="Haftangiz qanday o'tdi?"
+                />
+              </label>
+            </form>
+          </DrawerBody>
+          <DrawerFooter>
+            <Button
+              type="submit"
+              form="weekly-check-in-form"
+              disabled={submitMutation.isPending}
+            >
+              {submitMutation.isPending ? "Yuborilmoqda..." : "Yuborish"}
+            </Button>
+            <Button type="button" variant="outline" onClick={closeCheckIn}>
+              Bekor qilish
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </>
   );
 }

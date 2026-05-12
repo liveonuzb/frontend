@@ -7,6 +7,20 @@
       "coachInvitation": "Murabbiy taklifi",
       "accept": "Qabul qilish",
       "decline": "Rad etish",
+      "breadcrumbs": {
+        "home": "Bosh sahifa",
+        "dashboard": "Dashboard"
+      },
+      "mealPlan": {
+        "active": "Dieta rejasi faol"
+      },
+      "status": {
+        "errorTitle": "Dashboard yuklanmadi",
+        "errorDescription": "Kunlik asosiy ma'lumotlar hozircha olinmadi. Dashboard so'rovini qayta yuboring.",
+        "supportingWarningTitle": "Ayrim dashboard kartalari to'liq bo'lmasligi mumkin",
+        "supportingWarning": "O'lchamlar, mashg'ulot, dieta rejasi, do'stlar yoki challenge ma'lumotlari yangilanmadi.",
+        "retry": "Qayta urinish"
+      },
       "healthReport": {
         "title": "AI health report",
         "description": "Onboarding ma'lumotlaringiz asosida bir marta yaratilgan wellness hisobotini oching.",

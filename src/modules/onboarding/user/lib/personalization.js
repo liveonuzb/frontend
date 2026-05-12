@@ -1,5 +1,7 @@
+import { clamp, compact, find, get, gt, gte, map, size } from "lodash";
+
 export const unwrapApiData = (response) =>
-  response?.data?.data ?? response?.data ?? null;
+  get(response, "data.data", get(response, "data", null));
 
 export const metabolismLoadingSteps = [
   "bmr",
@@ -41,7 +43,74 @@ export const personalizationLoadingSteps = metabolismLoadingSteps;
 export const personalizationChecklist = metabolismChecklist;
 
 export const clampProgress = (value) =>
-  Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+  clamp(Math.round(Number(value) || 0), 0, 100);
+
+export const getLoadingStepIndex = (progress, steps = []) => {
+  const stepCount = size(steps);
+
+  if (!gt(stepCount, 0)) return 0;
+
+  const progressValue = clampProgress(progress);
+  if (gte(progressValue, 100)) return stepCount - 1;
+
+  const bucketSize = 100 / stepCount;
+  return clamp(Math.ceil(progressValue / bucketSize) - 1, 0, stepCount - 1);
+};
+
+export const buildLoadingStepStates = (progress, steps = []) => {
+  const progressValue = clampProgress(progress);
+  const activeIndex = getLoadingStepIndex(progressValue, steps);
+  const completedAll = gte(progressValue, 100);
+
+  return map(steps, (key, index) => {
+    const status =
+      completedAll || index < activeIndex
+        ? "completed"
+        : index === activeIndex
+          ? "active"
+          : "pending";
+
+    return {
+      key,
+      index,
+      status,
+      isCompleted: status === "completed",
+      isActive: status === "active",
+      isPending: status === "pending",
+    };
+  });
+};
+
+export const getActiveLoadingStep = (progress, steps = []) => {
+  const stepStates = buildLoadingStepStates(progress, steps);
+  return (
+    find(stepStates, { status: "active" }) ??
+    stepStates[Math.max(0, size(stepStates) - 1)] ??
+    null
+  );
+};
+
+export const formatQualityIssue = (issue) =>
+  typeof issue === "string"
+    ? issue
+    : get(issue, "message") || get(issue, "code") || "";
+
+export const buildVisibleLoadingIssues = ({
+  missingData = [],
+  qualityIssues = [],
+} = {}) =>
+  compact([
+    ...map(missingData, (item) => String(item ?? "")),
+    ...map(qualityIssues, formatQualityIssue),
+  ]);
+
+export const getPlanGenerationQualityIssues = (job) => {
+  const blockingIssues = get(job, "qualityReport.blockingIssues", []);
+
+  return gt(size(blockingIssues), 0)
+    ? blockingIssues
+    : get(job, "qualityReport.warnings", []);
+};
 
 export const formatNumber = (value, locale = "uz-UZ") => {
   const numberValue = Number(value);

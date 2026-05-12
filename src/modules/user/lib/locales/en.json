@@ -7,6 +7,20 @@
       "coachInvitation": "Coach invitation",
       "accept": "Accept",
       "decline": "Decline",
+      "breadcrumbs": {
+        "home": "Home",
+        "dashboard": "Dashboard"
+      },
+      "mealPlan": {
+        "active": "Meal plan active"
+      },
+      "status": {
+        "errorTitle": "Dashboard could not be loaded",
+        "errorDescription": "Your core daily data is unavailable right now. Retry the dashboard request.",
+        "supportingWarningTitle": "Some dashboard cards may be incomplete",
+        "supportingWarning": "Measurements, workout, meal plan, friends, or challenge data could not be refreshed.",
+        "retry": "Retry"
+      },
       "healthReport": {
         "title": "AI health report",
         "description": "Open the one-time wellness report built from your onboarding data.",
