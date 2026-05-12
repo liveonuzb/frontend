@@ -1,6 +1,4 @@
-import { map } from "lodash";
 import React from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -11,9 +9,8 @@ import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-q
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import { ChevronRight } from "lucide-react";
 import PageAura from "../../components/page-aura.jsx";
-import { getOnboardingTierIllustration } from "../../lib/illustration.js";
 import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
-import useOnboardingBase from "@/hooks/app/use-onboarding-base";
+import OnboardingSelectCard from "../../components/onboarding-select-card.jsx";
 
 const getOptions = (t) => [
   {
@@ -21,7 +18,6 @@ const getOptions = (t) => [
     label: t("onboarding.mealFrequency.options.2.label"),
     title: t("onboarding.mealFrequency.options.2.title"),
     description: t("onboarding.mealFrequency.options.2.description"),
-    tier: 1,
     tone: ONBOARDING_ACCENTS.amber,
   },
   {
@@ -29,7 +25,6 @@ const getOptions = (t) => [
     label: t("onboarding.mealFrequency.options.3.label"),
     title: t("onboarding.mealFrequency.options.3.title"),
     description: t("onboarding.mealFrequency.options.3.description"),
-    tier: 2,
     tone: ONBOARDING_ACCENTS.green,
     recommended: true,
   },
@@ -38,7 +33,6 @@ const getOptions = (t) => [
     label: t("onboarding.mealFrequency.options.4.label"),
     title: t("onboarding.mealFrequency.options.4.title"),
     description: t("onboarding.mealFrequency.options.4.description"),
-    tier: 3,
     tone: ONBOARDING_ACCENTS.sky,
   },
   {
@@ -46,7 +40,6 @@ const getOptions = (t) => [
     label: t("onboarding.mealFrequency.options.5.label"),
     title: t("onboarding.mealFrequency.options.5.title"),
     description: t("onboarding.mealFrequency.options.5.description"),
-    tier: 4,
     tone: ONBOARDING_ACCENTS.blue,
   },
 ];
@@ -54,19 +47,12 @@ const getOptions = (t) => [
 const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { mealFrequency, setField, gender, age } = useOnboardingStore();
-  const base = useOnboardingBase();
+  const { mealFrequency, setField } = useOnboardingStore();
   const options = React.useMemo(() => getOptions(t), [t]);
 
   useOnboardingAutoSave("user", "meal-frequency");
   const selectedOption =
     options.find((option) => option.value === mealFrequency) ?? options[1];
-  const illustration = getOnboardingTierIllustration(
-    gender,
-    age,
-    selectedOption.tier,
-    base,
-  );
   const hasSelection = Boolean(mealFrequency);
 
   const handleSelect = (value) => {
@@ -97,113 +83,34 @@ const Index = () => {
   );
 
   return (
-    <div className="relative flex h-full max-h-full flex-1 flex-col overflow-hidden pt-3 md:pt-8  px-5">
+    <div className="relative flex h-full min-h-0 max-h-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8">
       <PageAura tone={selectedOption.tone} />
 
-      <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
+      <div className="relative z-10 flex h-full min-h-0 w-full flex-1 flex-col">
         <OnboardingQuestion question={t("onboarding.mealFrequency.question")} />
 
-        <div className="relative mb-3 flex min-h-[140px] flex-1 items-end justify-center overflow-hidden md:mb-4 md:min-h-[260px]">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={illustration.src}
-              className="flex h-full w-full items-end justify-center"
-              initial={{ opacity: 0, y: 24, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -12, scale: 0.98 }}
-              transition={{ duration: 0.28, ease: "easeOut" }}
-            >
-              <img
-                loading="lazy"
-                src={illustration.src}
-                alt={selectedOption.label}
-                className="max-h-[170px] w-full max-w-[200px] object-contain md:max-h-[260px] md:max-w-[300px]"
-              />
-            </motion.div>
-          </AnimatePresence>
+        <div className="min-h-0 flex-1 overflow-y-auto py-4">
+          <div className="flex min-h-full flex-col justify-center gap-3 md:mx-auto md:max-w-2xl md:gap-4">
+            {options.map((option, index) => {
+              const isActive = mealFrequency === option.value;
 
-          <motion.div
-            key={`meal-meta-${selectedOption.value}`}
-            className={cn(
-              "absolute bottom-0 rounded-[20px] border bg-background/85 px-3 py-1.5 text-center backdrop-blur md:rounded-[28px] md:px-4 md:py-3",
-              selectedOption.tone.border,
-            )}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.24 }}
-          >
-            <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground md:text-xs">
-              {t("onboarding.mealFrequency.metaLabel")}
-            </p>
-            <p className="text-sm font-bold md:text-lg">
-              {selectedOption.title}
-            </p>
-            <p className="hidden text-xs text-muted-foreground md:block md:text-sm">
-              {selectedOption.description}
-            </p>
-          </motion.div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 md:gap-2.5 pb-5">
-          {map(options, (option) => {
-            const isActive = mealFrequency === option.value;
-
-            return (
-              <motion.button
-                key={option.value}
-                type="button"
-                onClick={() => handleSelect(option.value)}
-                className={cn(
-                  "relative flex min-h-[72px] flex-col items-start gap-1.5 rounded-[20px] border px-2.5 py-2 text-left transition-all md:min-h-[148px] md:gap-4 md:rounded-3xl md:px-4 md:py-3",
-                  isActive
-                    ? `bg-gradient-to-br ${option.tone.cardTone} ${option.tone.border}`
-                    : "border-border/70 bg-background/90 hover:border-primary/30",
-                )}
-                whileTap={{ scale: 0.98 }}
-              >
-                <div className="flex items-center gap-1.5 md:gap-2">
-                  <span
-                    className={cn(
-                      "rounded-full px-2 py-0.5 text-[11px] font-semibold md:px-2.5 md:py-1 md:text-sm",
-                      option.tone.badgeTone,
-                    )}
-                  >
-                    {option.label}
-                  </span>
-                  {option.recommended ? (
-                    <span className="hidden rounded-full border border-border/60 bg-background/75 px-2 py-1 text-[10px] font-semibold text-muted-foreground md:inline">
-                      {t("onboarding.recommended")}
-                    </span>
-                  ) : null}
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold leading-tight md:text-base">
-                    {option.title}
-                  </p>
-                  <p className="mt-0.5 hidden text-xs text-muted-foreground md:block md:text-sm">
-                    {option.description}
-                  </p>
-                </div>
-
-                <div
-                  className={cn(
-                    "absolute right-2 top-2 flex size-4 items-center justify-center rounded-full border-2 md:right-3 md:top-3 md:size-6",
-                    isActive
-                      ? `${option.tone.border} bg-background/70`
-                      : "border-muted-foreground/25",
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "size-2.5 rounded-full transition-all md:size-3",
-                      isActive ? option.tone.dotTone : "scale-0 opacity-0",
-                    )}
-                  />
-                </div>
-              </motion.button>
-            );
-          })}
+              return (
+                <OnboardingSelectCard
+                  key={option.value}
+                  active={isActive}
+                  badge={option.label}
+                  description={option.description}
+                  onClick={() => handleSelect(option.value)}
+                  recommendedLabel={
+                    option.recommended ? t("onboarding.recommended") : null
+                  }
+                  title={option.title}
+                  tone={option.tone}
+                  transitionDelay={index * 0.04}
+                />
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

@@ -12,8 +12,8 @@ import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-q
 import { ChevronRight } from "lucide-react";
 import PageAura from "../../components/page-aura.jsx";
 import {
-  getOnboardingHeightIllustration,
   getOnboardingIllustrationHeight,
+  getOnboardingPersonIllustration,
 } from "../../lib/illustration.js";
 import { getHeightTone } from "../../lib/tones.js";
 
@@ -48,11 +48,7 @@ const Index = () => {
   useOnboardingAutoSave("user", "height");
 
   const currentHeight = height?.value || "170";
-  const illustration = getOnboardingHeightIllustration(
-    gender,
-    age,
-    currentHeight,
-  );
+  const illustration = getOnboardingPersonIllustration(gender, age);
   const tone = getHeightTone(currentHeight);
   const profile = getHeightProfile(currentHeight, t);
   const illustrationHeight = getOnboardingIllustrationHeight(currentHeight);
@@ -76,10 +72,10 @@ const Index = () => {
   );
 
   return (
-    <div className="relative flex h-full max-h-full w-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8 pr-0">
+    <div className="relative flex h-full min-h-0 max-h-full w-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8 pr-0">
       <PageAura tone={tone} />
 
-      <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto">
+      <div className="relative z-10 flex h-full min-h-0 w-full flex-1 flex-col pb-1 md:mx-auto">
         <OnboardingQuestion
           question={
             firstName
@@ -105,10 +101,10 @@ const Index = () => {
           </p>
         </motion.div>
 
-        <div className="relative my-3 flex flex-1 items-end justify-center overflow-hidden">
+        <div className="relative mt-2 -mb-6 flex min-h-0 flex-1 items-end justify-center overflow-hidden md:mt-3">
           <AnimatePresence mode="wait">
             <motion.div
-              key={`${illustration.src}-${currentHeight}`}
+              key={illustration.src}
               className="flex h-full items-end justify-center"
               initial={{ opacity: 0, y: 20, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -126,7 +122,7 @@ const Index = () => {
           </AnimatePresence>
 
           {/* Vertical ticker anchored to the right edge */}
-          <div className="absolute right-0 top-1/2 z-20 -translate-y-1/2">
+          <div className="absolute right-0 top-[58%] z-20 -translate-y-1/2">
             <WeightTicker
               value={currentHeight}
               onChange={(val) => setField("height", { value: val, unit: "cm" })}
@@ -136,6 +132,7 @@ const Index = () => {
               majorStep={10}
               labelStep={10}
               unit="cm"
+              ariaLabel={t("onboarding.height.metaLabel")}
               orientation="vertical"
               verticalHeight={240}
             />

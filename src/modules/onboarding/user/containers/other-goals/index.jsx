@@ -11,8 +11,13 @@ import { ChevronRight } from "lucide-react";
 import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-context";
 import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-question";
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
+import {
+  getOnboardingOptionsPath,
+  getOnboardingOptionsQueryKey,
+} from "@/modules/onboarding/lib/onboarding-options";
 import useOnboardingBase from "@/hooks/app/use-onboarding-base";
 import PageAura from "../../components/page-aura.jsx";
+import OnboardingSelectCard from "../../components/onboarding-select-card.jsx";
 
 const fallbackTone = (base) => ({
   image: `${base}/maintain.webp`,
@@ -59,8 +64,8 @@ const Index = () => {
   useOnboardingAutoSave("user", "other-goals");
 
   const { data } = useGetQuery({
-    url: "/user/onboarding/goals",
-    queryProps: { queryKey: ["user", "onboarding", "goals"] },
+    url: getOnboardingOptionsPath("goals"),
+    queryProps: { queryKey: getOnboardingOptionsQueryKey("goals") },
   });
   const apiGoals = get(data, "data.data", get(data, "data", []));
   const toneList = React.useMemo(() => otherGoalTones(base), [base]);
@@ -109,21 +114,34 @@ const Index = () => {
   }, [completedUserOnboardingSteps, navigate, setFields]);
 
   useOnboardingFooter(
-    <Button
-      type="button"
-      className={cn(
-        "h-12 w-full border-transparent bg-gradient-to-r transition-all",
-        selectedGoal.buttonTone,
-      )}
-      size="lg"
-      onClick={handleContinue}
-    >
-      {t("onboarding.next")} <ChevronRight />
-    </Button>,
+    <div className="flex flex-col gap-2">
+      <Button
+        type="button"
+        variant="ghost"
+        className="h-12 w-full border-transparent"
+        onClick={() => {
+          setFields({ goals: [] });
+          handleContinue();
+        }}
+      >
+        {t("onboarding.otherGoals.none")}
+      </Button>
+      <Button
+        type="button"
+        className={cn(
+          "h-12 w-full border-transparent bg-gradient-to-r transition-all",
+          selectedGoal.buttonTone,
+        )}
+        size="lg"
+        onClick={handleContinue}
+      >
+        {t("onboarding.next")} <ChevronRight />
+      </Button>
+    </div>,
   );
 
   return (
-    <div className="relative flex h-full flex-1 flex-col justify-center overflow-hidden px-5 pt-3 md:pt-8">
+    <div className="relative flex h-full min-h-0 flex-1 flex-col justify-center overflow-hidden px-5 pt-3 md:pt-8">
       <PageAura tone={selectedGoal} />
 
       <div className="relative z-10 flex w-full flex-1 flex-col justify-center md:mx-auto md:max-w-4xl">
@@ -163,51 +181,18 @@ const Index = () => {
               const isActive = includes(selectedGoals, item.value);
 
               return (
-                <motion.button
+                <OnboardingSelectCard
                   key={item.value}
-                  type="button"
+                  active={isActive}
+                  description={item.description}
+                  imageAlt={`${item.label} illustration`}
+                  imageUrl={item.image}
                   onClick={() => handleSelect(item.value)}
-                  variants={{
-                    hidden: { opacity: 0, y: 18 },
-                    show: { opacity: 1, y: 0 },
-                  }}
-                  transition={{ duration: 0.22, ease: "easeOut" }}
-                  className={cn(
-                    "relative flex  items-start gap-2 rounded-[24px] border px-3 py-3 text-left",
-                    isActive
-                      ? `bg-gradient-to-r ${item.accent} ${item.border}`
-                      : "",
-                  )}
-                >
-                  <img
-                    src={item.image}
-                    className="size-11 rounded-2xl object-cover md:size-16"
-                    alt={`${item.label} illustration`}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold leading-tight md:text-base">
-                      {item.label}
-                    </p>
-                    <p className="mt-1 hidden text-sm text-muted-foreground md:block">
-                      {item.description}
-                    </p>
-                  </div>
-                  <span
-                    className={cn(
-                      "absolute right-3 top-3 flex size-5 items-center justify-center rounded-full border-2 md:size-6",
-                      isActive
-                        ? `${item.border} bg-background/70`
-                        : "border-muted-foreground/25",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "size-3 rounded-full transition-all",
-                        isActive ? item.dotTone : "bg-background",
-                      )}
-                    />
-                  </span>
-                </motion.button>
+                  selectionMode="multi"
+                  title={item.label}
+                  tone={item}
+                  variant="row"
+                />
               );
             })
           )}

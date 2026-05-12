@@ -1,5 +1,4 @@
 import React from "react";
-import { motion } from "framer-motion";
 import {
   ChevronRightIcon,
   DumbbellIcon,
@@ -16,6 +15,7 @@ import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-context";
 import PageAura from "../../components/page-aura.jsx";
 import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
+import OnboardingSelectCard from "../../components/onboarding-select-card.jsx";
 
 const tone = ONBOARDING_ACCENTS.sky;
 
@@ -115,55 +115,34 @@ const Index = () => {
   );
 
   return (
-    <div className="relative flex h-full max-h-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8">
+    <div className="relative flex h-full min-h-0 max-h-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8">
       <PageAura tone={tone} />
-      <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
+      <div className="relative z-10 flex h-full min-h-0 w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
         <OnboardingQuestion
           question={t("onboarding.workoutSteps.location.title")}
         />
-        <div className="flex flex-col flex-1 justify-center gap-3 overflow-y-auto pb-5">
-          {LOCATION_OPTIONS.map((option) => {
-            const Icon = option.icon;
-            const isActive = workoutLocation === option.value;
+        <div className="min-h-0 flex-1 overflow-y-auto py-4">
+          <div className="flex min-h-full flex-col justify-center gap-3 md:mx-auto md:max-w-2xl md:gap-4">
+            {LOCATION_OPTIONS.map((option) => {
+              const isActive = workoutLocation === option.value;
 
-            return (
-              <motion.button
-                key={option.value}
-                type="button"
-                onClick={() => handleSelectLocation(option.value)}
-                className={cn(
-                  "flex items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-all",
-                  isActive
-                    ? `bg-gradient-to-br ${tone.cardTone} ${tone.border}`
-                    : "border-border/70 bg-background/90 hover:border-primary/30",
-                )}
-                whileTap={{ scale: 0.98 }}
-              >
-                <span
-                  className={cn(
-                    "flex size-11 shrink-0 items-center justify-center rounded-2xl",
-                    isActive
-                      ? tone.badgeTone
-                      : "bg-muted text-muted-foreground",
+              return (
+                <OnboardingSelectCard
+                  key={option.value}
+                  active={isActive}
+                  description={t(
+                    `onboarding.workoutSteps.location.options.${option.value}.description`,
                   )}
-                >
-                  <Icon className="size-5" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-bold">
-                    {t(
-                      `onboarding.workoutSteps.location.options.${option.value}.label`,
-                    )}
-                  </span>
-                  <span className="mt-1 block text-xs font-medium text-muted-foreground">
-                    {t(
-                      `onboarding.workoutSteps.location.options.${option.value}.description`,
-                    )}
-                  </span>
-                </span>
-              </motion.button>
-            );
-          })}
+                  icon={option.icon}
+                  onClick={() => handleSelectLocation(option.value)}
+                  title={t(
+                    `onboarding.workoutSteps.location.options.${option.value}.label`,
+                  )}
+                  tone={tone}
+                />
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

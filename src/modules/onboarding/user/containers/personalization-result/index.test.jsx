@@ -10,8 +10,9 @@ import ResultPage, { ResultContent } from "./index.jsx";
 const navigateMock = vi.hoisted(() => vi.fn());
 const invalidateQueriesMock = vi.hoisted(() => vi.fn());
 const setOnboardingFlowMock = vi.hoisted(() => vi.fn());
-const startGenerationMock = vi.hoisted(() => vi.fn());
+const confirmMetabolismMock = vi.hoisted(() => vi.fn());
 const patchResultMock = vi.hoisted(() => vi.fn());
+const getQueryResultMock = vi.hoisted(() => vi.fn());
 
 vi.mock("react-i18next", () => ({
   initReactI18next: {
@@ -41,42 +42,7 @@ vi.mock("@/store", () => ({
 }));
 
 vi.mock("@/hooks/api", () => ({
-  useGetQuery: () => ({
-    isLoading: false,
-    data: {
-      data: {
-        data: {
-          result: {
-            dailyCalories: 2100,
-            carbsGram: 230,
-            proteinGram: 160,
-            fatGram: 65,
-            recommendedWaterMl: 2500,
-            weightToChange: -10,
-            weeklyWeightChangeGoal: 0.5,
-            targetWeight: 60,
-            bmr: 1700,
-            tdee: 2400,
-            bmi: 23.4,
-            dailyStepsTarget: 8000,
-            metabolicAge: 28,
-            estimatedGoalDate: "2026-09-01T00:00:00.000Z",
-            mealsPerDay: 3,
-            weeklyWorkoutDays: 4,
-            explanation:
-              "AI sizning maqsadingiz va ritmingiz asosida targetlarni mosladi.",
-          },
-          onboarding: {
-            currentWeight: { value: 70, unit: "kg" },
-            targetWeight: { value: 60, unit: "kg" },
-            goal: "lose",
-            activityLevel: "moderately-active",
-            foodBudgetTier: "medium",
-          },
-        },
-      },
-    },
-  }),
+  useGetQuery: () => getQueryResultMock(),
   usePatchQuery: () => ({
     mutateAsync: patchResultMock,
     isPending: false,
@@ -86,7 +52,7 @@ vi.mock("@/hooks/api", () => ({
     isPending: false,
   }),
   usePostQuery: () => ({
-    mutateAsync: startGenerationMock,
+    mutateAsync: confirmMetabolismMock,
     isPending: false,
   }),
 }));
@@ -106,53 +72,100 @@ describe("PersonalizationResult onboarding screen", () => {
     setOnboardingFlowMock.mockClear();
     patchResultMock.mockReset();
     patchResultMock.mockResolvedValue({ data: { data: {} } });
-    startGenerationMock.mockReset();
-    startGenerationMock.mockResolvedValue({
+    getQueryResultMock.mockReset();
+    getQueryResultMock.mockReturnValue({
+      isLoading: false,
       data: {
         data: {
-          id: "job-1",
-          flowStatus: "PLAN_GENERATING",
-          nextPath: "/user/onboarding/generating/job-1",
+          data: {
+            result: {
+              dailyCalories: 2100,
+              carbsGram: 230,
+              proteinGram: 160,
+              fatGram: 65,
+              recommendedWaterMl: 2500,
+              weightToChange: -10,
+              weeklyWeightChangeGoal: 0.5,
+              targetWeight: 60,
+              bmr: 1700,
+              tdee: 2400,
+              bmi: 23.4,
+              dailyStepsTarget: 8000,
+              metabolicAge: 28,
+              estimatedGoalDate: "2026-09-01T00:00:00.000Z",
+              mealsPerDay: 3,
+              weeklyWorkoutDays: 4,
+              explanation:
+                "AI sizning maqsadingiz va ritmingiz asosida targetlarni mosladi.",
+            },
+            onboarding: {
+              currentWeight: { value: 70, unit: "kg" },
+              targetWeight: { value: 60, unit: "kg" },
+              goal: "lose",
+              activityLevel: "moderately-active",
+              foodBudgetTier: "medium",
+            },
+          },
+        },
+      },
+    });
+    confirmMetabolismMock.mockReset();
+    confirmMetabolismMock.mockResolvedValue({
+      data: {
+        data: {
+          status: "RESULT_CONFIRMED",
+          onboardingFlowStatus: "RESULT_CONFIRMED",
+          onboardingNextPath: "/user/onboarding/plan-preview",
         },
       },
     });
   });
 
-  it("renders the mobile-first result summary with one daily calorie block and no removed sections", () => {
+  it("renders the premium mobile result summary with all required sections", () => {
     render(<ResultContent result={{}} onboarding={{}} onEdit={vi.fn()} />);
 
-    expect(screen.getByText("Shaxsiy maqsadlar tayyor")).toBeTruthy();
-    expect(screen.getByText("Sizning rejangiz tayyor")).toBeTruthy();
-    expect(screen.getAllByText("Kunlik kaloriya")).toHaveLength(1);
+    expect(screen.getByText("Metabolizm hisobingiz tayyor")).toBeTruthy();
+    expect(screen.getByText("AI tahlili")).toBeTruthy();
+    expect(screen.getAllByText("Kunlik kaloriya maqsadi")).toHaveLength(1);
     expect(screen.getByText("2,100")).toBeTruthy();
-    expect(screen.getByText("AI izohi")).toBeTruthy();
     expect(
       screen.getByText(
         "AI sizning maqsadingiz, hozirgi vazningiz, faollik darajangiz va ovqatlanish ritmingiz asosida boshlang'ich targetlarni tayyorladi.",
       ),
     ).toBeTruthy();
-    expect(screen.getByText("Uglevod")).toBeTruthy();
-    expect(screen.getByText("Oqsil")).toBeTruthy();
-    expect(screen.getByText("Yog'")).toBeTruthy();
+    expect(screen.getAllByText("Uglevod").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Oqsil").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Yog'").length).toBeGreaterThan(0);
     expect(screen.getByText("Suv")).toBeTruthy();
     expect(screen.getAllByText("2.5 L").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Hozirgi vazn").length).toBeGreaterThan(0);
     expect(screen.getAllByText("70 kg").length).toBeGreaterThan(0);
-    expect(screen.getByText("Maqsad")).toBeTruthy();
-    expect(screen.getByText("Ozish")).toBeTruthy();
-    expect(screen.getByText("Aktivlik")).toBeTruthy();
-    expect(screen.getByText("O'rtacha faol")).toBeTruthy();
-    expect(screen.getByText("Budjet")).toBeTruthy();
-    expect(screen.getByText("O'rtacha budjet")).toBeTruthy();
+    expect(screen.getAllByText("Maqsad vazn").length).toBeGreaterThan(0);
+    expect(screen.getByText("Hisoblash zanjiri")).toBeTruthy();
+    expect(screen.getByText("Makro energiya")).toBeTruthy();
+    expect(
+      screen.getByText("Kunlik maqsad va ko'rsatkichlar"),
+    ).toBeTruthy();
+    expect(screen.queryByText("Profil va sozlamalar")).toBeNull();
+    expect(
+      screen.getByRole("button", {
+        name: "Kunlik kaloriya maqsadini tahrirlash",
+      }),
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Oqsilni tahrirlash" })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Uglevodni tahrirlash" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Yog'ni tahrirlash" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Suvni tahrirlash" })).toBeTruthy();
     expect(screen.getByText("Suv maqsadi")).toBeTruthy();
     expect(screen.getByText("Qadam")).toBeTruthy();
-    expect(screen.getByText("BMR")).toBeTruthy();
-    expect(screen.getByText("TDEE")).toBeTruthy();
+    expect(screen.getAllByText("BMR").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("TDEE").length).toBeGreaterThan(0);
     expect(screen.getByText("BMI")).toBeTruthy();
     expect(screen.getByText("Metabolik yosh")).toBeTruthy();
     expect(screen.getByText("Maqsad sanasi")).toBeTruthy();
     expect(screen.getByText("Ovqatlanish")).toBeTruthy();
-    expect(screen.getByText("Qanday hisoblaymiz?")).toBeTruthy();
 
     expect(screen.queryByText("Reja inputlari")).toBeNull();
     expect(screen.queryByText("Jihozlar")).toBeNull();
@@ -169,7 +182,7 @@ describe("PersonalizationResult onboarding screen", () => {
     [
       "Hozirgi vazn",
       "Maqsad vazn",
-      "Vazn farqi (maqsad)",
+      "Vazn farqi",
       "Haftalik sur'at",
     ].forEach((label) => {
       screen.getAllByText(label).forEach((node) => {
@@ -178,12 +191,167 @@ describe("PersonalizationResult onboarding screen", () => {
     });
   });
 
+  it("renders an empty state instead of fallback metrics when API result is null", () => {
+    getQueryResultMock.mockReturnValueOnce({
+      isLoading: false,
+      data: {
+        data: {
+          data: {
+            result: null,
+            onboarding: {
+              currentWeight: { value: 70, unit: "kg" },
+              goal: "lose",
+            },
+          },
+        },
+      },
+    });
+
+    renderResultPage();
+
+    expect(
+      screen.getByText("onboarding.postOnboarding.result.empty"),
+    ).toBeTruthy();
+    expect(screen.queryByText("2,100")).toBeNull();
+  });
+
+  it("prefills the calorie drawer and disables save for empty input without warning", () => {
+    renderResultPage();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Kunlik kaloriya maqsadini tahrirlash",
+      }),
+    );
+
+    const calorieInput = screen.getByRole("textbox", {
+      name: "onboarding.postOnboarding.result.edit.dailyCalories.title",
+    });
+    expect(calorieInput.value.replace(/,/g, "")).toBe("2100");
+    expect(
+      screen.queryByRole("button", {
+        name: "onboarding.postOnboarding.result.cancel",
+      }),
+    ).toBeNull();
+
+    fireEvent.change(calorieInput, {
+      target: { value: "" },
+    });
+
+    expect(
+      screen.queryByText("onboarding.postOnboarding.result.lowCalorieWarning"),
+    ).toBeNull();
+    expect(
+      screen.getByRole("button", {
+        name: "onboarding.postOnboarding.result.save",
+      }),
+    ).toBeDisabled();
+  });
+
+  it("renders the calculation report chain and macro kcal breakdown", () => {
+    render(
+      <ResultContent
+        result={{
+          dailyCalories: 2364,
+          carbsGram: 263,
+          proteinGram: 180,
+          fatGram: 66,
+          bmr: 1880,
+          tdee: 2914,
+          calculationReport: {
+            formula: { bmr: "mifflin_st_jeor", version: "v1" },
+            activity: { multiplier: 1.55, bmr: 1880, tdee: 2914 },
+            calories: {
+              goalAdjustment: -550,
+              final: 2364,
+              floorApplied: false,
+              capApplied: false,
+            },
+            macros: {
+              protein: { grams: 180, calories: 720, percent: 30.5 },
+              carbs: { grams: 263, calories: 1052, percent: 44.5 },
+              fat: { grams: 66, calories: 594, percent: 25.1 },
+              totalCalories: 2366,
+              calorieDelta: 2,
+            },
+            confidence: { level: "standard", reasons: [] },
+            warnings: [],
+          },
+        }}
+        onboarding={{
+          currentWeight: { value: 90, unit: "kg" },
+          targetWeight: { value: 80, unit: "kg" },
+          goal: "lose",
+          activityLevel: "moderately-active",
+        }}
+        onEdit={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Hisoblash zanjiri")).toBeTruthy();
+    expect(screen.getByText("Mifflin-St Jeor")).toBeTruthy();
+    expect(screen.getByText("x1.55")).toBeTruthy();
+    expect(screen.getAllByText("1,880 kcal").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("2,914 kcal").length).toBeGreaterThan(0);
+    expect(screen.getByText("-550 kcal")).toBeTruthy();
+    expect(screen.getAllByText("2,364 kcal").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("720 kcal").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("30.5%").length).toBeGreaterThan(0);
+  });
+
+  it("uses goal-specific explanation copy when the API has no explanation", () => {
+    render(
+      <ResultContent
+        result={{ explanation: "" }}
+        onboarding={{ goal: "maintain" }}
+        onEdit={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        "Vazn saqlash maqsadi uchun kaloriyalar TDEE atrofida ushlab turildi, makrolar esa hozirgi vazn va faollik darajasiga moslandi.",
+      ),
+    ).toBeTruthy();
+  });
+
   it("lets users edit macro targets before starting generation", async () => {
     renderResultPage();
 
-    fireEvent.click(screen.getByText("Oqsil").closest("button"));
-    fireEvent.change(screen.getByRole("spinbutton"), {
+    fireEvent.click(screen.getByRole("button", { name: "Oqsilni tahrirlash" }));
+    fireEvent.change(
+      screen.getByRole("textbox", {
+        name: "onboarding.postOnboarding.result.edit.proteinGram.title",
+      }),
+      {
       target: { value: "170" },
+      },
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "onboarding.postOnboarding.result.save",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(patchResultMock).toHaveBeenCalledWith({
+        url: "/user/onboarding/metabolism-result",
+        attributes: { proteinGram: 170 },
+      });
+    });
+  });
+
+  it("lets users edit water target in liters and saves milliliters", async () => {
+    renderResultPage();
+
+    fireEvent.click(screen.getByRole("button", { name: "Suvni tahrirlash" }));
+    const waterInput = screen.getByRole("textbox", {
+      name: "onboarding.postOnboarding.result.edit.recommendedWaterMl.title",
+    });
+    expect(waterInput).toHaveValue("2.5");
+
+    fireEvent.change(waterInput, {
+      target: { value: "3.2" },
     });
     fireEvent.click(
       screen.getByRole("button", {
@@ -193,29 +361,28 @@ describe("PersonalizationResult onboarding screen", () => {
 
     await waitFor(() => {
       expect(patchResultMock).toHaveBeenCalledWith({
-        url: "/user/onboarding/personalization-result",
-        attributes: { proteinGram: 170 },
+        url: "/user/onboarding/metabolism-result",
+        attributes: { recommendedWaterMl: 3200 },
       });
     });
   });
 
-  it("keeps the next CTA wired to personal plan generation", async () => {
+  it("confirms metabolism before opening the plan preview", async () => {
     renderResultPage();
 
-    fireEvent.click(screen.getByRole("button", { name: "Keyingi" }));
+    fireEvent.click(screen.getByRole("button", { name: "Rejani yaratish" }));
 
     await waitFor(() => {
-      expect(startGenerationMock).toHaveBeenCalledWith({
-        url: "/user/onboarding/generate-personal-plan",
+      expect(confirmMetabolismMock).toHaveBeenCalledWith({
+        url: "/user/onboarding/confirm-metabolism",
       });
     });
     expect(setOnboardingFlowMock).toHaveBeenCalledWith({
-      onboardingFlowStatus: "PLAN_GENERATING",
-      onboardingNextPath: "/user/onboarding/generating/job-1",
-      latestPlanGenerationJobId: "job-1",
+      onboardingFlowStatus: "RESULT_CONFIRMED",
+      onboardingNextPath: "/user/onboarding/plan-preview",
     });
     expect(navigateMock).toHaveBeenCalledWith(
-      "/user/onboarding/generating/job-1",
+      "/user/onboarding/plan-preview",
       { replace: true },
     );
   });

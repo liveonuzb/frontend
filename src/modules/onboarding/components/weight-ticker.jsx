@@ -48,6 +48,7 @@ export const WeightTicker = ({
   labelStep = 5,
   valueDecimals,
   accentColor = DEFAULT_ACCENT,
+  ariaLabel,
   className,
   orientation = "horizontal",
   showValue = true,
@@ -96,6 +97,58 @@ export const WeightTicker = ({
       onChange?.(String(next));
     },
     [decimals, min, onChange, step, stepsCount],
+  );
+
+  const setValueFromKeyboard = React.useCallback(
+    (nextValue) => {
+      const next = toStepValue(nextValue, min, max, step);
+      const nextIndex = Math.round((next - min) / step);
+      rawOffset.set(-nextIndex * NOTCH_SIZE);
+      onChange?.(String(next));
+    },
+    [max, min, onChange, rawOffset, step],
+  );
+
+  const handleKeyDown = React.useCallback(
+    (event) => {
+      const incrementKeys = isVertical
+        ? ["ArrowUp", "ArrowRight"]
+        : ["ArrowRight", "ArrowUp"];
+      const decrementKeys = isVertical
+        ? ["ArrowDown", "ArrowLeft"]
+        : ["ArrowLeft", "ArrowDown"];
+      let nextValue = null;
+
+      if (incrementKeys.includes(event.key)) {
+        nextValue = resolvedValue + step;
+      } else if (decrementKeys.includes(event.key)) {
+        nextValue = resolvedValue - step;
+      } else if (event.key === "PageUp") {
+        nextValue = resolvedValue + majorStep;
+      } else if (event.key === "PageDown") {
+        nextValue = resolvedValue - majorStep;
+      } else if (event.key === "Home") {
+        nextValue = min;
+      } else if (event.key === "End") {
+        nextValue = max;
+      }
+
+      if (nextValue === null) {
+        return;
+      }
+
+      event.preventDefault();
+      setValueFromKeyboard(nextValue);
+    },
+    [
+      isVertical,
+      majorStep,
+      max,
+      min,
+      resolvedValue,
+      setValueFromKeyboard,
+      step,
+    ],
   );
 
   const snapToNearest = React.useCallback(() => {
@@ -237,6 +290,15 @@ export const WeightTicker = ({
             <div
               ref={containerRef}
               onPointerDown={handlePointerDown}
+              onKeyDown={handleKeyDown}
+              role="slider"
+              tabIndex={0}
+              aria-label={ariaLabel || unit}
+              aria-orientation="vertical"
+              aria-valuemin={min}
+              aria-valuemax={max}
+              aria-valuenow={resolvedValue}
+              aria-valuetext={`${resolvedValue} ${unit}`}
               className="relative h-full w-full cursor-grab select-none touch-none active:cursor-grabbing"
               style={{
                 padding: `calc(50% - ${NOTCH_SIZE / 2}px) 0`,
@@ -319,6 +381,15 @@ export const WeightTicker = ({
           <div
             ref={containerRef}
             onPointerDown={handlePointerDown}
+            onKeyDown={handleKeyDown}
+            role="slider"
+            tabIndex={0}
+            aria-label={ariaLabel || unit}
+            aria-orientation="horizontal"
+            aria-valuemin={min}
+            aria-valuemax={max}
+            aria-valuenow={resolvedValue}
+            aria-valuetext={`${resolvedValue} ${unit}`}
             className="relative h-full w-full cursor-grab select-none touch-none active:cursor-grabbing"
             style={{
               padding: `0 calc(50% - ${NOTCH_SIZE / 2}px)`,

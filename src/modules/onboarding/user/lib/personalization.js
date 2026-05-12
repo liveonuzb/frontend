@@ -1,24 +1,44 @@
 export const unwrapApiData = (response) =>
   response?.data?.data ?? response?.data ?? null;
 
-export const personalizationLoadingSteps = [
+export const metabolismLoadingSteps = [
   "bmr",
   "metabolicAge",
   "calories",
-  "mealPlan",
-  "workoutPlan",
+  "macros",
+  "targets",
   "finalizing",
 ];
 
-export const personalizationChecklist = [
-  "wellnessPlan",
+export const planGenerationLoadingSteps = [
+  "mealContext",
+  "workoutContext",
+  "mealPlan",
+  "workoutPlan",
+  "validation",
+  "finalizing",
+];
+
+export const metabolismChecklist = [
   "bmrFormula",
   "metabolicAge",
   "calorieMacros",
-  "mealPlan",
-  "workoutPlan",
+  "waterSteps",
+  "formulaWarnings",
   "finalizing",
 ];
+
+export const planGenerationChecklist = [
+  "mealContext",
+  "workoutContext",
+  "mealPlan",
+  "workoutPlan",
+  "validation",
+  "finalizing",
+];
+
+export const personalizationLoadingSteps = metabolismLoadingSteps;
+export const personalizationChecklist = metabolismChecklist;
 
 export const clampProgress = (value) =>
   Math.max(0, Math.min(100, Math.round(Number(value) || 0)));

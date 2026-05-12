@@ -269,12 +269,21 @@ export const buildLiveOnProductPreviewCopy = (t, prefix = "auth.layout") => ({
 });
 
 const previewFrame = {
-  auth: "border-white/14 bg-white/[0.08] shadow-[0_32px_100px_rgba(0,0,0,0.34)]",
+  auth: "border-orange-200/70 bg-white/55 shadow-[0_30px_90px_rgba(124,45,18,0.16)] dark:border-white/14 dark:bg-white/[0.08] dark:shadow-[0_32px_100px_rgba(0,0,0,0.34)]",
   landing:
-    "border-white/14 bg-white/[0.08] shadow-[0_34px_120px_rgba(2,6,23,0.44)]",
+    "border-orange-200/70 bg-white/55 shadow-[0_34px_120px_rgba(124,45,18,0.14)] dark:border-white/14 dark:bg-white/[0.08] dark:shadow-[0_34px_120px_rgba(2,6,23,0.44)]",
   final:
-    "border-white/12 bg-white/[0.07] shadow-[0_28px_90px_rgba(0,0,0,0.30)]",
+    "border-orange-200/60 bg-white/50 shadow-[0_28px_90px_rgba(124,45,18,0.14)] dark:border-white/12 dark:bg-white/[0.07] dark:shadow-[0_28px_90px_rgba(0,0,0,0.30)]",
 };
+
+const previewSurface =
+  "border-slate-200/75 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.06] dark:shadow-none";
+const previewSubtleSurface =
+  "bg-slate-50 dark:bg-white/[0.045]";
+const previewPillSurface =
+  "border-slate-200 bg-white text-slate-600 dark:border-white/10 dark:bg-white/[0.06] dark:text-white/72";
+const previewTextStrong = "text-slate-950 dark:text-white";
+const previewTextMuted = "text-slate-500 dark:text-white/62";
 
 function ProductPreviewSlider({
   className,
@@ -330,7 +339,7 @@ function ProductPreviewSlider({
       >
         <div
           className={cn(
-            "overflow-hidden rounded-[24px] bg-[#fbfaf7] p-4 text-slate-950 shadow-[0_28px_70px_rgba(2,6,23,0.30)] 2xl:p-5",
+            "overflow-hidden rounded-[24px] bg-[#fbfaf7] p-4 text-slate-950 shadow-[0_28px_70px_rgba(124,45,18,0.18)] 2xl:p-5 dark:bg-slate-950/86 dark:text-white dark:shadow-[0_28px_70px_rgba(0,0,0,0.34)]",
             compact && "rounded-[22px] p-3.5 2xl:p-4",
           )}
         >
@@ -356,10 +365,10 @@ function ProductPreviewSlider({
                   aria-pressed={isActive}
                   onClick={() => setActiveIndex(index)}
                   className={cn(
-                    "h-2.5 rounded-full outline-none transition-all focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fbfaf7]",
+                    "h-2.5 rounded-full outline-none transition-all focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fbfaf7] dark:focus-visible:ring-offset-slate-950",
                     isActive
                       ? "w-8 bg-orange-400"
-                      : "w-2.5 bg-slate-200 hover:bg-slate-300",
+                      : "w-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-white/14 dark:hover:bg-white/25",
                   )}
                 />
               );
@@ -398,20 +407,21 @@ function PreviewHeader({ compact, slide }) {
         </p>
         <h3
           className={cn(
-            "mt-1 text-xl font-black leading-tight text-slate-950 2xl:text-2xl",
+            "mt-1 text-xl font-black leading-tight text-slate-950 2xl:text-2xl dark:text-white",
             compact && "text-lg 2xl:text-xl",
           )}
         >
           {slide.title}
         </h3>
-        <p className="mt-2 max-w-[21rem] text-sm leading-5 text-slate-500">
+        <p className="mt-2 max-w-[21rem] text-sm leading-5 text-slate-500 dark:text-white/62">
           {slide.description}
         </p>
       </div>
       <span
         className={cn(
-          "grid size-12 shrink-0 place-items-center rounded-2xl",
+          "grid size-12 shrink-0 place-items-center rounded-2xl dark:ring-1 dark:ring-white/10",
           slide.iconBg,
+          "dark:bg-white/[0.08]",
           compact && "size-10 rounded-xl",
         )}
       >
@@ -429,7 +439,7 @@ function DashboardPreviewSlide({ compact, preview, slide }) {
       <div className={cn("grid gap-3 xl:grid-cols-[1fr_0.95fr]", compact && "xl:grid-cols-1")}>
         <CalorieGaugeWidget
           className={cn(
-            "rounded-[22px] border-slate-200/80 bg-white py-4 shadow-sm [&_[data-slot=card-content]]:px-4 [&_[data-slot=card-header]]:mb-2 [&_[data-slot=card-header]]:px-4",
+            "rounded-[22px] border-slate-200/80 bg-white py-4 shadow-sm dark:border-white/10 dark:bg-white/[0.06] dark:shadow-none [&_[data-slot=card-content]]:px-4 [&_[data-slot=card-header]]:mb-2 [&_[data-slot=card-header]]:px-4",
             compact ? "min-h-[285px]" : "min-h-[330px]",
           )}
           consumed={2160}
@@ -452,7 +462,7 @@ function DashboardPreviewSlide({ compact, preview, slide }) {
               name: preview.workoutActivePlanName,
               progress: 68,
             }}
-            className="min-h-[132px] rounded-[22px] border-slate-200/80 bg-white shadow-sm"
+            className="min-h-[132px] rounded-[22px] border-slate-200/80 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.06] dark:shadow-none"
             interactive={false}
             labels={preview.workoutWidgetLabels}
           />
@@ -472,22 +482,31 @@ function PlanBuilderPreviewSlide({ compact, preview, slide }) {
         <WorkoutPlanBuilderPreview preview={preview} />
       </div>
 
-      <div className="mt-3 rounded-2xl border border-slate-200/75 bg-white p-3 shadow-sm">
+      <div className={cn("mt-3 rounded-2xl border p-3", previewSurface)}>
         <div className="mb-3 flex items-center gap-2">
           <ShoppingBasketIcon className="size-4 text-teal-600" />
-          <p className="text-sm font-black text-slate-950">
+          <p className={cn("text-sm font-black", previewTextStrong)}>
             {preview.builderLibraryTitle}
           </p>
         </div>
-        <div className="mb-3 flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500">
-          <SearchIcon className="size-4 text-slate-400" />
+        <div
+          className={cn(
+            "mb-3 flex items-center gap-2 rounded-2xl px-3 py-2 text-xs font-semibold",
+            previewSubtleSurface,
+            previewTextMuted,
+          )}
+        >
+          <SearchIcon className="size-4 text-slate-400 dark:text-white/45" />
           {preview.builderSearchPlaceholder}
         </div>
         <div className="flex flex-wrap gap-2">
           {preview.builderLibraryItems.map((item) => (
             <span
               key={item}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600"
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold",
+                previewPillSurface,
+              )}
             >
               <PlusIcon className="size-3.5 text-orange-500" />
               {item}
@@ -519,7 +538,7 @@ function WellnessPreviewSlide({ compact, preview, slide }) {
           title={preview.waterWidgetTitle}
         />
         <MoodWidgetView
-          className="rounded-[22px] border-slate-200/80 bg-white py-4 shadow-sm [&_.size-14]:size-9 [&_[data-slot=card-content]]:gap-3 [&_[data-slot=card-content]]:px-4 [&_[data-slot=card-header]]:px-4 [&_[data-slot=card-title]]:text-base"
+          className="rounded-[22px] border-slate-200/80 bg-white py-4 shadow-sm dark:border-white/10 dark:bg-white/[0.06] dark:shadow-none [&_.size-14]:size-9 [&_[data-slot=card-content]]:gap-3 [&_[data-slot=card-content]]:px-4 [&_[data-slot=card-header]]:px-4 [&_[data-slot=card-title]]:text-base"
           labels={preview.moodLabels}
           readOnly
           selectedMood="good"
@@ -563,7 +582,7 @@ function ProgressPreviewSlide({ compact, preview, slide }) {
             name: preview.workoutActivePlanName,
             progress: 72,
           }}
-          className="min-h-[180px] rounded-[22px] border-slate-200/80 bg-white shadow-sm"
+          className="min-h-[180px] rounded-[22px] border-slate-200/80 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.06] dark:shadow-none"
           interactive={false}
           labels={preview.workoutWidgetLabels}
         />
@@ -593,12 +612,17 @@ function ProgressPreviewSlide({ compact, preview, slide }) {
         </div>
       </div>
 
-      <div className="mt-3 rounded-2xl border border-slate-200/75 bg-white p-3.5 shadow-sm 2xl:mt-4 2xl:p-4">
+      <div
+        className={cn(
+          "mt-3 rounded-2xl border p-3.5 2xl:mt-4 2xl:p-4",
+          previewSurface,
+        )}
+      >
         <div className="space-y-2.5">
           {preview.progressInsights.map((item) => (
             <div key={item} className="flex items-center gap-2">
               <CheckCircle2Icon className="size-4 shrink-0 text-teal-600" />
-              <span className="text-sm font-medium text-slate-600">
+              <span className="text-sm font-medium text-slate-600 dark:text-white/70">
                 {item}
               </span>
             </div>
@@ -611,17 +635,17 @@ function ProgressPreviewSlide({ compact, preview, slide }) {
 
 export function MealPlanBuilderPreview({ compact = false, preview }) {
   return (
-    <div className="rounded-2xl border border-slate-200/75 bg-white p-3.5 shadow-sm">
+    <div className={cn("rounded-2xl border p-3.5", previewSurface)}>
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <span className="grid size-8 place-items-center rounded-xl bg-teal-50 text-teal-600">
+          <span className="grid size-8 place-items-center rounded-xl bg-teal-50 text-teal-600 dark:bg-teal-400/10 dark:text-teal-300">
             <UtensilsIcon className="size-4" />
           </span>
-          <p className="text-sm font-black text-slate-950">
+          <p className={cn("text-sm font-black", previewTextStrong)}>
             {preview.builderMealTitle}
           </p>
         </div>
-        <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[10px] font-black uppercase text-teal-700">
+        <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[10px] font-black uppercase text-teal-700 dark:bg-teal-400/10 dark:text-teal-200">
           {preview.builderReadyLabel}
         </span>
       </div>
@@ -644,17 +668,17 @@ export function MealPlanBuilderPreview({ compact = false, preview }) {
 
 export function WorkoutPlanBuilderPreview({ preview }) {
   return (
-    <div className="rounded-2xl border border-slate-200/75 bg-white p-3.5 shadow-sm">
+    <div className={cn("rounded-2xl border p-3.5", previewSurface)}>
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <span className="grid size-8 place-items-center rounded-xl bg-orange-50 text-orange-500">
+          <span className="grid size-8 place-items-center rounded-xl bg-orange-50 text-orange-500 dark:bg-orange-400/10 dark:text-orange-300">
             <DumbbellIcon className="size-4" />
           </span>
-          <p className="text-sm font-black text-slate-950">
+          <p className={cn("text-sm font-black", previewTextStrong)}>
             {preview.builderWorkoutTitle}
           </p>
         </div>
-        <RepeatIcon className="size-4 text-slate-400" />
+        <RepeatIcon className="size-4 text-slate-400 dark:text-white/45" />
       </div>
 
       <div className="space-y-2">
@@ -686,21 +710,23 @@ function BuilderColumnPreview({
     : item.items || [item.description].filter(Boolean);
 
   return (
-    <div className="rounded-2xl bg-slate-50 px-3 py-2.5">
+    <div className={cn("rounded-2xl px-3 py-2.5", previewSubtleSurface)}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <Icon className={cn("size-3.5 shrink-0", tone)} />
-            <p className="truncate text-sm font-black text-slate-950">
+            <p className={cn("truncate text-sm font-black", previewTextStrong)}>
               {title}
             </p>
           </div>
           {meta ? (
-            <p className="mt-1 text-xs font-semibold text-slate-500">{meta}</p>
+            <p className={cn("mt-1 text-xs font-semibold", previewTextMuted)}>
+              {meta}
+            </p>
           ) : null}
         </div>
         {!compact ? (
-          <span className="grid size-7 shrink-0 place-items-center rounded-full bg-white text-slate-500 shadow-sm">
+          <span className="grid size-7 shrink-0 place-items-center rounded-full bg-white text-slate-500 shadow-sm dark:bg-white/10 dark:text-white/70 dark:shadow-none">
             <PlusIcon className="size-3.5" aria-label={actionLabel} />
           </span>
         ) : null}
@@ -708,7 +734,7 @@ function BuilderColumnPreview({
       <div className="mt-2 space-y-1.5">
         {rows.map((row) => (
           <p
-            className="truncate rounded-xl bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600"
+            className="truncate rounded-xl bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 dark:bg-white/[0.07] dark:text-white/70"
             key={row}
           >
             {row}
@@ -731,16 +757,21 @@ function MiniProgressChart({ preview }) {
   ];
 
   return (
-    <div className="rounded-2xl border border-slate-200/75 bg-white p-3.5 shadow-sm">
+    <div className={cn("rounded-2xl border p-3.5", previewSurface)}>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <p className="text-sm font-black text-slate-950">
+        <p className={cn("text-sm font-black", previewTextStrong)}>
           {preview.progressReportTitle}
         </p>
         <p className="text-xs font-black text-orange-500">
           {preview.progressValue}
         </p>
       </div>
-      <div className="flex h-28 items-end gap-2 rounded-2xl bg-slate-50 px-3 py-3">
+      <div
+        className={cn(
+          "flex h-28 items-end gap-2 rounded-2xl px-3 py-3",
+          previewSubtleSurface,
+        )}
+      >
         {bars.map((bar, index) => (
           <div
             key={`${bar}-${index}`}
@@ -757,12 +788,16 @@ function MiniProgressChart({ preview }) {
 
 function MiniInfoCard({ icon: Icon, label, tone, value }) {
   return (
-    <div className="rounded-2xl border border-slate-200/75 bg-white px-3.5 py-3.5 shadow-sm">
+    <div className={cn("rounded-2xl border px-3.5 py-3.5", previewSurface)}>
       <div className="flex items-center gap-2">
         <Icon className={cn("size-4", tone)} />
-        <span className="text-xs font-semibold text-slate-500">{label}</span>
+        <span className={cn("text-xs font-semibold", previewTextMuted)}>
+          {label}
+        </span>
       </div>
-      <p className="mt-2 text-base font-black text-slate-950">{value}</p>
+      <p className={cn("mt-2 text-base font-black", previewTextStrong)}>
+        {value}
+      </p>
     </div>
   );
 }

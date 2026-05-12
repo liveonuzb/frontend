@@ -21,14 +21,16 @@ import useAppModeTheme from "@/hooks/app/use-app-mode-theme";
 const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { firstName, lastName, setFields } = useOnboardingStore();
+  const { firstName, setFields } = useOnboardingStore();
   const tone = ONBOARDING_TONES.neutral;
   const modeTheme = useAppModeTheme();
   const schema = React.useMemo(
     () =>
       z.object({
-        firstName: z.string().min(1, t("onboarding.name.firstNameRequired")),
-        lastName: z.string().min(1, t("onboarding.name.lastNameRequired")),
+        firstName: z
+          .string()
+          .trim()
+          .min(1, t("onboarding.name.firstNameRequired")),
       }),
     [t],
   );
@@ -37,12 +39,12 @@ const Index = () => {
 
   const { control, handleSubmit } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { firstName, lastName },
+    defaultValues: { firstName: firstName ?? "" },
     mode: "onSubmit",
   });
 
   const onSubmit = (values) => {
-    setFields(values);
+    setFields({ firstName: values.firstName.trim(), lastName: "" });
     navigate("/user/onboarding/gender");
   };
 
@@ -60,7 +62,7 @@ const Index = () => {
   );
 
   return (
-    <div className="relative flex h-full flex-1 flex-col justify-center overflow-hidden pt-3 md:pt-8  px-5">
+    <div className="relative flex h-full min-h-0 flex-1 flex-col justify-center overflow-hidden px-5 pt-3 md:pt-8">
       <PageAura tone={tone} />
 
       <div className="relative z-10 flex w-full flex-1 flex-col justify-center md:mx-auto md:max-w-4xl">
@@ -73,12 +75,12 @@ const Index = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.28, ease: "easeOut" }}
           >
-              <img
-                loading="lazy"
-                src={modeTheme.assets.curious}
-                alt={t("onboarding.illustrationAlt")}
-                className="max-h-[240px] w-full max-w-[240px] object-contain md:max-h-[340px] md:max-w-[340px]"
-              />
+            <img
+              loading="lazy"
+              src={modeTheme.assets.curious}
+              alt={t("onboarding.illustrationAlt")}
+              className="max-h-[240px] w-full max-w-[240px] object-contain md:max-h-[340px] md:max-w-[340px]"
+            />
           </motion.div>
 
           <form
@@ -97,29 +99,6 @@ const Index = () => {
                         type="text"
                         placeholder={t("onboarding.name.firstNamePlaceholder")}
                         autoComplete="given-name"
-                        className="h-14 rounded-2xl border-border/70 bg-background/80 px-4 text-lg font-semibold"
-                        aria-invalid={!!fieldState.error}
-                        {...field}
-                      />
-                      <FieldError
-                        errors={fieldState.error ? [fieldState.error] : []}
-                      />
-                    </>
-                  )}
-                />
-              </Field>
-
-              <Field>
-                <Controller
-                  name="lastName"
-                  control={control}
-                  render={({ field, fieldState }) => (
-                    <>
-                      <Input
-                        id="onboarding-last-name"
-                        type="text"
-                        placeholder={t("onboarding.name.lastNamePlaceholder")}
-                        autoComplete="family-name"
                         className="h-14 rounded-2xl border-border/70 bg-background/80 px-4 text-lg font-semibold"
                         aria-invalid={!!fieldState.error}
                         {...field}

@@ -12,6 +12,7 @@ import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import { ChevronRight } from "lucide-react";
 import useOnboardingBase from "@/hooks/app/use-onboarding-base";
 import PageAura from "../../components/page-aura.jsx";
+import OnboardingSelectCard from "../../components/onboarding-select-card.jsx";
 
 const getPaceOptions = (goal, base, t) => [
   {
@@ -109,10 +110,10 @@ const Index = () => {
   );
 
   return (
-    <div className="relative flex h-full max-h-full flex-1 flex-col overflow-hidden pt-3 md:pt-8 px-5">
+    <div className="relative flex h-full min-h-0 max-h-full flex-1 flex-col overflow-hidden pt-3 md:pt-8 px-5">
       <PageAura tone={selectedPace} />
 
-      <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
+      <div className="relative z-10 flex h-full min-h-0 w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
         <OnboardingQuestion question={t("onboarding.weeklyPace.question")} />
         <div className="relative mb-3 flex min-h-[140px] flex-1 items-end justify-center overflow-hidden sm:min-h-[170px] md:mb-5 md:min-h-[280px]">
           <AnimatePresence mode="wait">
@@ -158,7 +159,7 @@ const Index = () => {
         </div>
 
         <motion.div
-          className="z-10 grid w-full grid-cols-2 gap-2.5 pb-5"
+          className="z-10 grid w-full grid-cols-2 gap-2.5 pb-2"
           initial="hidden"
           animate="show"
           variants={{
@@ -174,89 +175,24 @@ const Index = () => {
             const isActive = selectedPace.value === pace.value;
 
             return (
-              <motion.button
+              <OnboardingSelectCard
                 key={pace.value}
-                type="button"
+                active={isActive}
+                description={pace.description}
+                imageAlt={t("onboarding.weeklyPace.imageAlt", {
+                  value: pace.label,
+                })}
+                imageUrl={pace.image}
                 onClick={() => handleSelect(pace.value)}
-                variants={{
-                  hidden: { opacity: 0, y: 18 },
-                  show: { opacity: 1, y: 0 },
-                }}
-                animate={{
-                  scale: 1,
-                }}
-                transition={{ duration: 0.22, ease: "easeOut" }}
-                className={cn(
-                  "relative flex min-h-[72px] flex-col items-start gap-1.5 rounded-[20px] border px-2.5 py-2 text-left md:min-h-0 md:gap-4 md:rounded-3xl md:px-4 md:py-3",
-                  isActive
-                    ? `bg-gradient-to-r ${pace.accent} ${pace.border}`
-                    : "",
-                )}
-              >
-                <motion.img
-                  src={pace.image}
-                  className="size-8 rounded-xl object-cover md:size-16"
-                  alt={t("onboarding.weeklyPace.imageAlt", {
-                    value: pace.label,
-                  })}
-                  animate={
-                    isActive
-                      ? { scale: 1.06, rotate: -2 }
-                      : { scale: 1, rotate: 0 }
-                  }
-                  transition={{ duration: 0.24 }}
-                />
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
-                    <p className="text-sm font-bold md:text-base">
-                      {pace.label} kg
-                    </p>
-                    {pace.value === 0.5 && (
-                      <span
-                        className={cn(
-                          "rounded-full px-1.5 py-0.5 text-[10px] font-semibold md:px-2 md:text-[11px]",
-                          pace.badgeTone,
-                        )}
-                      >
-                        {t("onboarding.recommended")}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs font-medium text-foreground md:hidden">
-                    {pace.title}
-                  </p>
-                  <p className="hidden text-sm text-muted-foreground md:block">
-                    {pace.description}
-                  </p>
-                </div>
-
-                <motion.div
-                  className={cn(
-                    "absolute right-2 top-2 flex size-4 shrink-0 items-center justify-center rounded-full border-2 md:right-3 md:top-3 md:size-6",
-                    isActive
-                      ? `${pace.border} bg-background/70`
-                      : "border-muted-foreground/25",
-                  )}
-                  animate={isActive ? { scale: 1 } : { scale: 0.92 }}
-                  transition={{ duration: 0.18 }}
-                >
-                  <motion.div
-                    className={cn(
-                      "size-2.5 rounded-full transition-all md:size-3",
-                      isActive
-                        ? `bg-gradient-to-br ${pace.buttonTone}`
-                        : "bg-background",
-                    )}
-                    animate={
-                      isActive
-                        ? { scale: 0.9, opacity: 1 }
-                        : { scale: 0.6, opacity: 0 }
-                    }
-                    transition={{ duration: 0.18 }}
-                  />
-                </motion.div>
-              </motion.button>
+                recommendedLabel={
+                  pace.value === 0.5 ? t("onboarding.recommended") : null
+                }
+                title={t("onboarding.weeklyPace.rate", {
+                  value: pace.label,
+                })}
+                tone={pace}
+                variant="image"
+              />
             );
           })}
         </motion.div>

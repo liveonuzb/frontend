@@ -1,5 +1,6 @@
 {
   "common": {
+    "loading": "Yuklanmoqda...",
     "actions": {
       "save": "Saqlash",
       "saving": "Saqlanmoqda...",

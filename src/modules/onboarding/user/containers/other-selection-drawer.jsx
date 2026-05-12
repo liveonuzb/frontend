@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import OnboardingSelectCard from "../components/onboarding-select-card.jsx";
 
 const OtherSelectionCard = ({
   open,
@@ -20,31 +21,16 @@ const OtherSelectionCard = ({
   description,
   onClick,
 }) => (
-  <button
-    type="button"
+  <OnboardingSelectCard
+    active={open}
+    className="border-dashed"
+    description={description}
+    icon={PlusIcon}
     onClick={onClick}
-    aria-expanded={open}
-    className={cn(
-      "flex min-h-[72px] w-full items-center gap-3 rounded-2xl border border-dashed bg-background/90 px-3 py-3 text-left transition-colors hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 md:min-h-[84px] md:px-4",
-      open ? tone.border : "border-border/70",
-    )}
-  >
-    <span
-      className={cn(
-        "flex size-11 shrink-0 items-center justify-center rounded-2xl",
-        tone.badgeTone,
-      )}
-      aria-hidden="true"
-    >
-      <PlusIcon className="size-5" />
-    </span>
-    <span className="min-w-0 flex-1">
-      <span className="block text-sm font-bold">{title}</span>
-      <span className="mt-1 block text-xs leading-snug text-muted-foreground">
-        {description}
-      </span>
-    </span>
-  </button>
+    title={title}
+    tone={tone}
+    variant="row"
+  />
 );
 
 const OtherSelectionSelectedItems = ({ items, title }) => {

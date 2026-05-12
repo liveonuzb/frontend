@@ -27,4 +27,25 @@ describe("goal-calculator", () => {
     expect(lose.steps).toBeGreaterThan(maintain.steps);
     expect(gain.steps).toBeLessThan(maintain.steps);
   });
+
+  it("matches backend formula-first calorie and macro targets", () => {
+    const result = calculateGoals({ ...baseInput, goal: "lose" });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        calories: 2364,
+        protein: 180,
+        carbs: 263,
+        fat: 66,
+      }),
+    );
+  });
+
+  it("uses backend goal-specific protein multipliers", () => {
+    const maintain = calculateGoals({ ...baseInput, goal: "maintain" });
+    const gain = calculateGoals({ ...baseInput, goal: "gain" });
+
+    expect(maintain.protein).toBe(144);
+    expect(gain.protein).toBe(162);
+  });
 });

@@ -2,6 +2,10 @@ import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useOnboardingStore } from "@/store";
+import {
+  FooterSlot,
+  OnboardingFooterProvider,
+} from "@/modules/onboarding/lib/onboarding-footer-context";
 import Allergies from "./allergies";
 import DietRequirements from "./diet-requirements";
 import DislikedFoods from "./disliked-foods";
@@ -10,6 +14,8 @@ import PreferredCuisines from "./preferred-cuisines";
 import PreferredIngredients from "./preferred-ingredients";
 import WorkoutBodyParts from "./workout-body-parts";
 import WorkoutEquipment from "./workout-equipment";
+
+const mockUseGetQuery = vi.hoisted(() => vi.fn());
 
 vi.mock("react-i18next", () => ({
   initReactI18next: {
@@ -22,6 +28,8 @@ vi.mock("react-i18next", () => ({
         ? `${key}:${values.count}`
         : values?.value
           ? `${key}:${values.value}`
+          : values?.defaultValue
+            ? values.defaultValue
           : key,
   }),
 }));
@@ -30,71 +38,98 @@ vi.mock("react-router", () => ({
   useNavigate: () => vi.fn(),
 }));
 
-vi.mock("@/hooks/api", () => {
-  const baseOptions = {
-    exercises: [{ id: 1, name: "Push up", isOnboarding: true }],
-    allergies: [
-      { id: 10, name: "Peanut", isAllergic: true, isOnboarding: true },
-    ],
-    dietRequirements: [{ id: 20, name: "Halal", isOnboarding: true }],
-    cuisines: [{ id: 25, name: "Uzbek cuisine", isOnboarding: true }],
-    foods: [{ id: 30, name: "Rice", isOnboarding: true }],
-    ingredients: [{ id: 40, name: "Salt", isOnboarding: true }],
-    bodyParts: [{ id: 50, name: "Chest", isOnboarding: true }],
-    equipment: [
-      { id: 60, name: "Dumbbell", isOnboarding: true, isHome: true },
-    ],
-  };
-  const searchOptions = {
-    exercises: [{ id: 2, name: "Squat", isOnboarding: false }],
-    allergies: [
-      { id: 11, name: "Milk", isAllergic: false, isOnboarding: false },
-    ],
-    dietRequirements: [],
-    cuisines: [],
-    foods: [],
-    ingredients: [],
-    bodyParts: [],
-    equipment: [{ id: 62, name: "Agility ladder", isStreet: true }],
-  };
-  const otherOptions = {
-    exercises: [{ id: 2, name: "Squat", isOnboarding: false }],
-    allergies: [
-      { id: 11, name: "Milk", isAllergic: false, isOnboarding: false },
-    ],
-    dietRequirements: [{ id: 21, name: "Kosher", isOnboarding: false }],
-    cuisines: [],
-    foods: [{ id: 31, name: "Burger", isOnboarding: false }],
-    ingredients: [{ id: 41, name: "Pepper", isOnboarding: false }],
-    bodyParts: [{ id: 51, name: "Back", isOnboarding: false }],
-    equipment: [{ id: 61, name: "Kettlebell", isOnboarding: false }],
-  };
+vi.mock("@/hooks/api", () => ({
+  useGetQuery: (...args) => mockUseGetQuery(...args),
+}));
 
-  return {
-    useGetQuery: ({ params } = {}) => ({
-      data: {
-        data: params?.equipmentBucket === "primary" &&
-          params?.workoutLocation === "outdoor"
-          ? searchOptions
-          : params?.equipmentBucket === "other" || params?.isOnboarding === false
+const baseOptions = {
+  exercises: [{ id: 1, name: "Push up", isOnboarding: true }],
+  allergies: [{ id: 10, name: "Peanut", isAllergic: true, isOnboarding: true }],
+  "diet-requirements": [{ id: 20, name: "Halal", isOnboarding: true }],
+  cuisines: [{ id: 25, name: "Uzbek cuisine", isOnboarding: true }],
+  foods: [
+    { id: 30, name: "Rice", isOnboarding: true },
+    { id: 32, name: "Chicken", isOnboarding: true },
+    { id: 33, name: "Beef", isOnboarding: true },
+    { id: 34, name: "Fish", isOnboarding: true },
+    { id: 35, name: "Eggs", isOnboarding: true },
+    { id: 36, name: "Milk", isOnboarding: true },
+    { id: 37, name: "Bread", isOnboarding: true },
+    { id: 38, name: "Potato", isOnboarding: true },
+    { id: 39, name: "Tomato", isOnboarding: true },
+    { id: 42, name: "Cucumber", isOnboarding: true },
+  ],
+  ingredients: [{ id: 40, name: "Salt", isOnboarding: true }],
+  "body-parts": [{ id: 50, name: "Chest", isOnboarding: true }],
+  equipment: [{ id: 60, name: "Dumbbell", isOnboarding: true, isHome: true }],
+};
+const searchOptions = {
+  exercises: [{ id: 2, name: "Squat", isOnboarding: false }],
+  allergies: [{ id: 11, name: "Milk", isAllergic: false, isOnboarding: false }],
+  "diet-requirements": [],
+  cuisines: [],
+  foods: [],
+  ingredients: [],
+  "body-parts": [],
+  equipment: [{ id: 62, name: "Agility ladder", isStreet: true }],
+};
+const otherOptions = {
+  exercises: [{ id: 2, name: "Squat", isOnboarding: false }],
+  allergies: [{ id: 11, name: "Milk", isAllergic: false, isOnboarding: false }],
+  "diet-requirements": [{ id: 21, name: "Kosher", isOnboarding: false }],
+  cuisines: [],
+  foods: [{ id: 31, name: "Burger", isOnboarding: false }],
+  ingredients: [{ id: 41, name: "Pepper", isOnboarding: false }],
+  "body-parts": [{ id: 51, name: "Back", isOnboarding: false }],
+  equipment: [{ id: 61, name: "Kettlebell", isOnboarding: false }],
+};
+
+const resourceFromUrl = (url) => String(url).split("/").pop();
+
+const setupOnboardingOptionsMock = () => {
+  mockUseGetQuery.mockImplementation(({ url, params } = {}) => {
+    const resource = resourceFromUrl(url);
+    const options =
+      params?.equipmentBucket === "primary" &&
+      params?.workoutLocation === "outdoor"
+        ? searchOptions[resource]
+        : params?.equipmentBucket === "other" || params?.isOnboarding === false
           ? params?.q
-            ? searchOptions
-            : otherOptions
-          : baseOptions,
+            ? searchOptions[resource]
+            : otherOptions[resource]
+          : baseOptions[resource];
+
+    return {
+      data: {
+        data: options ?? [],
+        meta: {
+          resource,
+          count: options?.length ?? 0,
+        },
       },
       isLoading: false,
       isFetching: false,
-    }),
-  };
-});
+    };
+  });
+};
 
 vi.mock("@/modules/onboarding/lib/use-auto-save", () => ({
   useOnboardingAutoSave: vi.fn(),
 }));
 
+const renderWithFooter = (ui) =>
+  render(
+    <OnboardingFooterProvider>
+      {ui}
+      <FooterSlot />
+    </OnboardingFooterProvider>,
+  );
+
 describe("onboarding catalog card containers", () => {
   beforeEach(() => {
     useOnboardingStore.getState().reset();
+    mockUseGetQuery.mockReset();
+    setupOnboardingOptionsMock();
   });
 
   it("renders every migrated catalog step container", () => {
@@ -129,6 +164,19 @@ describe("onboarding catalog card containers", () => {
     });
   });
 
+  it("loads catalog cards from resource-specific onboarding option endpoints", () => {
+    render(<Allergies />);
+    render(<DietRequirements />);
+    render(<WorkoutBodyParts />);
+
+    const requestedUrls = mockUseGetQuery.mock.calls.map(([config]) => config.url);
+
+    expect(requestedUrls).toContain("/user/onboarding/options/allergies");
+    expect(requestedUrls).toContain("/user/onboarding/options/diet-requirements");
+    expect(requestedUrls).toContain("/user/onboarding/options/body-parts");
+    expect(requestedUrls).not.toContain("/user/onboarding/options");
+  });
+
   it("shows allergy ingredients as cards and mirrors the legacy allergy field", () => {
     render(<Allergies />);
 
@@ -142,6 +190,55 @@ describe("onboarding catalog card containers", () => {
     ).toBeTruthy();
   });
 
+  it("offers explicit none actions for allergy and disliked preference steps", () => {
+    useOnboardingStore.getState().setFields({
+      allergyIds: [10],
+      allergyIngredientIds: [10],
+      customAllergies: ["Shellfish"],
+    });
+
+    const { unmount } = render(<Allergies />);
+
+    fireEvent.click(
+      screen.getByText("onboarding.nutritionSteps.allergies.noneAction"),
+    );
+
+    expect(useOnboardingStore.getState().allergyIds).toEqual([]);
+    expect(useOnboardingStore.getState().allergyIngredientIds).toEqual([]);
+    expect(useOnboardingStore.getState().customAllergies).toEqual([]);
+    expect(
+      useOnboardingStore
+        .getState()
+        .completedUserOnboardingSteps.includes("allergies"),
+    ).toBe(true);
+
+    unmount();
+    useOnboardingStore.getState().reset();
+    useOnboardingStore.getState().setFields({
+      dislikedFoodIds: [30],
+      customDislikedFoods: ["Burger"],
+      dislikedIngredientIds: [40],
+      customDislikedIngredients: ["Pepper"],
+    });
+
+    const dislikedFoods = render(<DislikedFoods />);
+    fireEvent.click(
+      screen.getByText("onboarding.nutritionSteps.dislikedFoods.noneAction"),
+    );
+    expect(useOnboardingStore.getState().dislikedFoodIds).toEqual([]);
+    expect(useOnboardingStore.getState().customDislikedFoods).toEqual([]);
+    dislikedFoods.unmount();
+
+    render(<DislikedIngredients />);
+    fireEvent.click(
+      screen.getByText(
+        "onboarding.nutritionSteps.dislikedIngredients.noneAction",
+      ),
+    );
+    expect(useOnboardingStore.getState().dislikedIngredientIds).toEqual([]);
+    expect(useOnboardingStore.getState().customDislikedIngredients).toEqual([]);
+  });
+
   it("renders card catalog steps as a single row-list layout", () => {
     render(<DislikedFoods />);
 
@@ -149,6 +246,76 @@ describe("onboarding catalog card containers", () => {
     expect(row?.parentElement?.className).toContain("grid");
     expect(row?.parentElement?.className).not.toContain("md:grid-cols");
     expect(row?.parentElement?.className).not.toContain("sm:grid-cols");
+  });
+
+  it("adds footer-safe scroll padding to long catalog lists", () => {
+    render(<DislikedFoods />);
+
+    const scrollArea = screen.getByText("Rice").closest("div.grid");
+
+    expect(scrollArea).toHaveClass(
+      "scroll-pb-[calc(9rem+env(safe-area-inset-bottom))]",
+    );
+    expect(scrollArea).toHaveClass(
+      "pb-[calc(1.25rem+env(safe-area-inset-bottom))]",
+    );
+  });
+
+  it("exposes the Other search entry before long catalog options", () => {
+    render(<DislikedFoods />);
+
+    const buttons = screen.getAllByRole("button");
+    const otherIndex = buttons.findIndex((button) =>
+      button.textContent?.includes("onboarding.chipSelect.otherTitle"),
+    );
+    const firstOptionIndex = buttons.findIndex((button) =>
+      button.textContent?.includes("Rice"),
+    );
+
+    expect(otherIndex).toBeGreaterThanOrEqual(0);
+    expect(firstOptionIndex).toBeGreaterThanOrEqual(0);
+    expect(otherIndex).toBeLessThan(firstOptionIndex);
+  });
+
+  it("starts long catalog screens with a short common list that can be expanded", () => {
+    render(<DislikedFoods />);
+
+    expect(screen.getByText("Rice")).toBeTruthy();
+    expect(screen.getByText("Potato")).toBeTruthy();
+    expect(screen.queryByText("Tomato")).toBeNull();
+    expect(screen.queryByText("Cucumber")).toBeNull();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "onboarding.chipSelect.showMore:2",
+      }),
+    );
+
+    expect(screen.getByText("Tomato")).toBeTruthy();
+    expect(screen.getByText("Cucumber")).toBeTruthy();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "onboarding.chipSelect.showLess",
+      }),
+    );
+
+    expect(screen.queryByText("Tomato")).toBeNull();
+    expect(screen.queryByText("Cucumber")).toBeNull();
+  });
+
+  it("keeps selected hidden catalog options visible and counts only remaining hidden options", () => {
+    useOnboardingStore.getState().setFields({ dislikedFoodIds: [39] });
+
+    render(<DislikedFoods />);
+
+    expect(screen.getAllByText("Tomato").length).toBeGreaterThan(1);
+    expect(screen.queryByText("Cucumber")).toBeNull();
+    expect(
+      screen.getByRole("button", {
+        name: "onboarding.chipSelect.showMore:1",
+      }),
+    ).toBeTruthy();
   });
 
   it("renders preferred cuisines as card chips and stores custom cuisines", () => {
@@ -165,6 +332,33 @@ describe("onboarding catalog card containers", () => {
     expect(useOnboardingStore.getState().customPreferredCuisines).toEqual([
       "Korean",
     ]);
+  });
+
+  it("labels preference skip actions as skip for now so they differ from explicit none", async () => {
+    const cases = [
+      Allergies,
+      DietRequirements,
+      PreferredCuisines,
+      DislikedFoods,
+      PreferredIngredients,
+      DislikedIngredients,
+      WorkoutEquipment,
+      WorkoutBodyParts,
+    ];
+
+    for (const Component of cases) {
+      useOnboardingStore.getState().reset();
+      const { unmount } = renderWithFooter(<Component />);
+
+      expect(
+        await screen.findByRole("button", { name: "onboarding.skipForNow" }),
+      ).toBeTruthy();
+      expect(
+        screen.queryByRole("button", { name: "onboarding.skip" }),
+      ).toBeNull();
+
+      unmount();
+    }
   });
 
   it("renders preferred and disliked ingredients with the card chip UI", () => {

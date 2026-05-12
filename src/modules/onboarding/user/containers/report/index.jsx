@@ -1082,7 +1082,7 @@ const Index = () => {
   return (
     <PageTransition
       mode="fade"
-      className="relative flex h-full flex-1 overflow-hidden"
+      className="relative flex h-full min-h-0 flex-1 overflow-hidden"
     >
       <PageAura tone={tone} />
 

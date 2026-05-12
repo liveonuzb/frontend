@@ -56,10 +56,10 @@ const Index = () => {
   );
 
   return (
-    <div className="relative flex h-full max-h-full w-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8 pr-0">
+    <div className="relative flex h-full min-h-0 max-h-full w-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8 pr-0">
       <PageAura tone={bmiMeta} />
 
-      <div className="relative z-10 flex h-full w-full flex-1 flex-col">
+      <div className="relative z-10 flex h-full min-h-0 w-full flex-1 flex-col pb-1">
         <OnboardingQuestion
           question={
             firstName
@@ -79,7 +79,7 @@ const Index = () => {
         </div>
 
         {/* Illustration fills the middle; vertical ticker pinned to the right */}
-        <div className="relative mt-2 flex flex-1 items-end justify-center overflow-hidden">
+        <div className="relative mt-4 -mb-6 flex min-h-0 flex-1 items-end justify-center overflow-hidden md:mt-5">
           <AnimatePresence mode="wait">
             <motion.div
               key={illustration.src}
@@ -98,12 +98,13 @@ const Index = () => {
               />
             </motion.div>
           </AnimatePresence>
-          <div className="absolute right-0 top-1/2 z-20 -translate-y-1/2">
+          <div className="absolute right-0 top-[58%] z-20 -translate-y-1/2">
             <WeightTicker
               value={currentVal}
               onChange={(val) =>
                 setField("currentWeight", { value: val, unit: "kg" })
               }
+              ariaLabel={t("onboarding.currentWeight.bmiTitle")}
               accentColor={bmiMeta ? "var(--color-primary)" : undefined}
               orientation="vertical"
               verticalHeight={240}

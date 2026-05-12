@@ -35,6 +35,15 @@ const completeNutrition = {
 };
 
 describe("user onboarding resume", () => {
+  it("does not require last name before resuming past the name step", () => {
+    expect(
+      getNextUserOnboardingPath({
+        ...completeProfile,
+        lastName: "",
+      }),
+    ).toBe("weekly-pace");
+  });
+
   it("resumes to weekly pace after target weight", () => {
     expect(getNextUserOnboardingPath(completeProfile)).toBe("weekly-pace");
   });

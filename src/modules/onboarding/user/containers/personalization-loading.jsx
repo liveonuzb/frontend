@@ -15,6 +15,8 @@ import { Progress } from "@/components/ui/progress";
 import { useGetQuery, usePostQuery } from "@/hooks/api";
 import {
   getUserOnboardingGeneratingPath,
+  getUserOnboardingPlanReadyPath,
+  getUserOnboardingPersonalizingPath,
   getUserOnboardingResultPath,
 } from "@/lib/app-paths";
 import { cn } from "@/lib/utils";
@@ -24,36 +26,68 @@ import PageAura from "../components/page-aura.jsx";
 import { ONBOARDING_ACCENTS } from "../lib/tones.js";
 import {
   clampProgress,
-  personalizationChecklist,
-  personalizationLoadingSteps,
+  metabolismChecklist,
+  metabolismLoadingSteps,
+  planGenerationChecklist,
+  planGenerationLoadingSteps,
   unwrapApiData,
 } from "../lib/personalization.js";
 
 const tone = ONBOARDING_ACCENTS.green;
 
-const getStepIndex = (progress) =>
+const modeConfig = {
+  metabolism: {
+    badge: "metabolism",
+    title: "Metabolizm hisoblanmoqda",
+    steps: metabolismLoadingSteps,
+    checklist: metabolismChecklist,
+  },
+  personalization: {
+    badge: "metabolism",
+    title: "Metabolizm hisoblanmoqda",
+    steps: metabolismLoadingSteps,
+    checklist: metabolismChecklist,
+  },
+  generation: {
+    badge: "generation",
+    title: "AI reja yaratilmoqda",
+    steps: planGenerationLoadingSteps,
+    checklist: planGenerationChecklist,
+  },
+};
+
+const getStepIndex = (progress, steps) =>
   Math.min(
-    personalizationLoadingSteps.length - 1,
-    Math.floor(
-      (clampProgress(progress) / 100) * personalizationLoadingSteps.length,
-    ),
+    steps.length - 1,
+    Math.floor((clampProgress(progress) / 100) * steps.length),
   );
+
+const formatQualityIssue = (issue) =>
+  typeof issue === "string"
+    ? issue
+    : issue?.message || issue?.code || "";
 
 const LoadingShell = ({
   progress,
   error,
   missingData = [],
+  qualityIssues = [],
   onRetry,
   retryLabel,
   mode = "personalization",
 }) => {
   const { t } = useTranslation();
-  const activeIndex = getStepIndex(progress);
+  const config = modeConfig[mode] ?? modeConfig.metabolism;
+  const activeIndex = getStepIndex(progress, config.steps);
+  const visibleIssues = [
+    ...missingData.map((item) => String(item ?? "")),
+    ...qualityIssues.map(formatQualityIssue),
+  ].filter(Boolean);
 
   useOnboardingFooter(null);
 
   return (
-    <div className="relative flex min-h-svh flex-1 items-center justify-center overflow-hidden px-4 py-3 sm:px-6 sm:py-6">
+    <div className="relative flex h-full min-h-0 flex-1 items-center justify-center overflow-hidden px-4 py-3 sm:px-6 sm:py-6">
       <PageAura tone={tone} />
       <motion.div
         className="relative z-10 w-full max-w-2xl"
@@ -95,28 +129,39 @@ const LoadingShell = ({
                     ) : (
                       <Loader2Icon className="size-3.5 animate-spin" />
                     )}
-                    {t(`onboarding.postOnboarding.loading.badges.${mode}`)}
+                    {t(
+                      `onboarding.postOnboarding.loading.badges.${config.badge}`,
+                    )}
                   </div>
                   <h1 className="text-3xl font-black leading-[1.08] tracking-tight sm:text-4xl sm:leading-tight">
-                    {t("onboarding.postOnboarding.loading.title")}
+                    {t(`onboarding.postOnboarding.loading.titles.${mode}`, {
+                      defaultValue: config.title,
+                    })}
                   </h1>
                   <p className="text-sm font-medium leading-5 text-muted-foreground sm:text-base sm:leading-6">
                     {error
                       ? t("onboarding.postOnboarding.loading.errorDescription")
                       : t(
-                          `onboarding.postOnboarding.loading.subtitles.${personalizationLoadingSteps[activeIndex]}`,
+                          `onboarding.postOnboarding.loading.subtitles.${config.steps[activeIndex]}`,
                         )}
                   </p>
+                  {!error ? (
+                    <p className="text-xs font-semibold leading-5 text-muted-foreground sm:text-sm">
+                      {t(
+                        `onboarding.postOnboarding.loading.nextSteps.${mode}`,
+                      )}
+                    </p>
+                  ) : null}
                 </div>
 
                 <Progress value={clampProgress(progress)} className="h-2 sm:h-2.5" />
 
                 <div className="grid gap-1.5 sm:gap-2">
-                  {personalizationChecklist.map((item, index) => {
+                  {config.checklist.map((item, index) => {
                     const completed =
                       clampProgress(progress) >=
                       Math.round(
-                        ((index + 1) / personalizationChecklist.length) * 100,
+                        ((index + 1) / config.checklist.length) * 100,
                       );
 
                     return (
@@ -147,9 +192,9 @@ const LoadingShell = ({
 
                 {error ? (
                   <div className="space-y-3 rounded-2xl border border-destructive/20 bg-destructive/5 p-3">
-                    {missingData.length > 0 ? (
+                    {visibleIssues.length > 0 ? (
                       <div className="space-y-1 text-xs font-medium text-destructive">
-                        {missingData.map((item) => (
+                        {visibleIssues.map((item) => (
                           <p key={item}>- {item}</p>
                         ))}
                       </div>
@@ -180,12 +225,12 @@ export const PersonalizingContainer = () => {
     usePostQuery();
   const statusQuery = useGetQuery({
     url: jobId
-      ? `/user/onboarding/personalization-status/${jobId}`
-      : "/user/onboarding/personalization-result",
+      ? `/user/onboarding/metabolism-status/${jobId}`
+      : "/user/onboarding/metabolism-result",
     queryProps: {
       queryKey: jobId
-        ? ["onboarding", "personalization-status", jobId]
-        : ["onboarding", "personalization-result"],
+        ? ["onboarding", "metabolism-status", jobId]
+        : ["onboarding", "metabolism-result"],
       retry: 1,
       refetchInterval: (query) => {
         if (!jobId) return false;
@@ -252,7 +297,7 @@ export const PersonalizingContainer = () => {
             latestPersonalizationJobId: nextJob?.id,
           });
           if (nextJob?.id && nextJob.id !== jobId) {
-            navigate(`/user/onboarding/personalizing/${nextJob.id}`, {
+            navigate(getUserOnboardingPersonalizingPath(nextJob.id), {
               replace: true,
             });
             return;
@@ -261,7 +306,7 @@ export const PersonalizingContainer = () => {
         void statusQuery.refetch();
       }}
       retryLabel={isRetrying ? t("common.loading") : undefined}
-      mode="personalization"
+      mode="metabolism"
     />
   );
 };
@@ -276,7 +321,6 @@ export const GeneratingContainer = () => {
   const startedRef = React.useRef(false);
   const { mutateAsync: startGeneration, isPending: isStarting } =
     usePostQuery();
-  const { mutateAsync: activateOnboarding } = usePostQuery();
 
   const statusQuery = useGetQuery({
     url: activeJobId ? `/user/onboarding/generation-status/${activeJobId}` : "",
@@ -295,6 +339,10 @@ export const GeneratingContainer = () => {
   const progress = clampProgress(
     hasServerProgress ? job?.progress : localProgress,
   );
+  const qualityIssues =
+    job?.qualityReport?.blockingIssues?.length > 0
+      ? job.qualityReport.blockingIssues
+      : (job?.qualityReport?.warnings ?? []);
 
   const start = React.useCallback(async () => {
     startedRef.current = true;
@@ -321,22 +369,14 @@ export const GeneratingContainer = () => {
 
   React.useEffect(() => {
     if (job?.status === "COMPLETED" && progress >= 100) {
-      const timer = window.setTimeout(async () => {
-        const activation = await activateOnboarding({
-          url: "/user/onboarding/activate",
-        });
-        const activationBody = unwrapApiData(activation);
+      const timer = window.setTimeout(() => {
         setOnboardingFlow({
-          onboardingFlowStatus:
-            activationBody?.onboardingFlowStatus ?? activationBody?.status,
-          onboardingNextPath: activationBody?.onboardingNextPath,
+          onboardingFlowStatus: job.flowStatus,
+          onboardingNextPath: getUserOnboardingPlanReadyPath(),
+          latestPlanGenerationJobId: job.id,
         });
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ["me"] }),
-          queryClient.invalidateQueries({ queryKey: ["meal-plans"] }),
-          queryClient.invalidateQueries({ queryKey: ["workout-plans"] }),
-        ]);
-        navigate("/user/dashboard", { replace: true });
+        void queryClient.invalidateQueries({ queryKey: ["me"] });
+        navigate(getUserOnboardingPlanReadyPath(), { replace: true });
       }, 650);
 
       return () => window.clearTimeout(timer);
@@ -344,8 +384,9 @@ export const GeneratingContainer = () => {
 
     return undefined;
   }, [
-    activateOnboarding,
     job?.status,
+    job?.flowStatus,
+    job?.id,
     navigate,
     progress,
     queryClient,
@@ -377,6 +418,7 @@ export const GeneratingContainer = () => {
       progress={isFailed ? 100 : isStarting ? Math.max(progress, 12) : progress}
       error={isFailed}
       missingData={job?.missingData ?? []}
+      qualityIssues={qualityIssues}
       onRetry={() => {
         startedRef.current = false;
         setActiveJobId("");

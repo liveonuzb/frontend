@@ -75,9 +75,9 @@ const Index = () => {
   );
 
   return (
-    <div className="relative flex h-full max-h-full w-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8 pr-0">
+    <div className="relative flex h-full min-h-0 max-h-full w-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8 pr-0">
       <PageAura tone={tone} />
-      <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
+      <div className="relative z-10 flex h-full min-h-0 w-full flex-1 flex-col pb-1 md:mx-auto md:max-w-4xl">
         <OnboardingQuestion
           question={
             firstName
@@ -103,7 +103,7 @@ const Index = () => {
           </p>
         </motion.div>
 
-        <div className="relative my-3 flex flex-1 items-end justify-center overflow-hidden">
+        <div className="relative mt-2 -mb-6 flex min-h-0 flex-1 items-end justify-center overflow-hidden md:mt-3">
           <AnimatePresence mode="wait">
             <motion.div
               key={illustration.src}
@@ -121,7 +121,7 @@ const Index = () => {
               />
             </motion.div>
           </AnimatePresence>
-          <div className="absolute right-0 top-1/2 z-20 -translate-y-1/2">
+          <div className="absolute right-0 top-[58%] z-20 -translate-y-1/2">
             <WeightTicker
               value={currentAge}
               onChange={(val) => setField("age", val)}
@@ -131,6 +131,7 @@ const Index = () => {
               majorStep={5}
               labelStep={10}
               unit={t("onboarding.age.unit")}
+              ariaLabel={t("onboarding.age.metaLabel")}
               orientation="vertical"
               verticalHeight={240}
             />

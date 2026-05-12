@@ -23,6 +23,11 @@ import { cn } from "@/lib/utils";
 import { useOnboardingStore } from "@/store";
 import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-context";
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
+import {
+  getOnboardingOptionsPath,
+  getOnboardingOptionsQueryKey,
+  normalizeOnboardingOptionsResponse,
+} from "@/modules/onboarding/lib/onboarding-options";
 import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-question";
 import PageAura from "../components/page-aura.jsx";
 import { ONBOARDING_ACCENTS } from "../lib/tones.js";
@@ -47,11 +52,8 @@ const fromCatalogValue = (value) =>
   Number(String(value).slice(CATALOG_PREFIX.length));
 const fromCustomValue = (value) => String(value).slice(CUSTOM_PREFIX.length);
 
-const extractOptions = (response, optionsKey) => {
-  const body = response?.data?.data ?? response?.data ?? {};
-  const values = body?.[optionsKey];
-  return Array.isArray(values) ? values : [];
-};
+const extractOptions = (response, optionsKey) =>
+  normalizeOnboardingOptionsResponse(response, optionsKey);
 
 const mergeOptions = (...groups) => {
   const seen = new Set();
@@ -64,6 +66,24 @@ const mergeOptions = (...groups) => {
 };
 
 const optionLabel = (option, fallback) => option?.name ?? fallback;
+
+const getFeaturedBadgeLabel = (option, optionsKey, t) => {
+  if (option?.isOnboarding === false) {
+    return t("onboarding.chipSelect.nonOnboarding");
+  }
+
+  if (optionsKey === "allergies") {
+    return option?.isAllergic
+      ? t("onboarding.chipSelect.allergicBadge")
+      : t("onboarding.chipSelect.commonBadge");
+  }
+
+  if (optionsKey === "foods" || optionsKey === "ingredients") {
+    return t("onboarding.chipSelect.commonBadge");
+  }
+
+  return t("onboarding.chipSelect.recommendedBadge");
+};
 
 const OnboardingComboboxChipsStep = ({
   step,
@@ -125,17 +145,17 @@ const OnboardingComboboxChipsStep = ({
   const searchKey = normalizeChipKey(searchLabel);
 
   const { data, isLoading } = useGetQuery({
-    url: "/user/onboarding/options",
+    url: getOnboardingOptionsPath(optionsKey),
     queryProps: {
-      queryKey: ["onboarding", "options", step, optionsKey],
+      queryKey: getOnboardingOptionsQueryKey(optionsKey, step),
       staleTime: 60000,
     },
   });
   const { data: searchData, isFetching } = useGetQuery({
-    url: "/user/onboarding/options",
+    url: getOnboardingOptionsPath(optionsKey),
     params: { q: searchLabel },
     queryProps: {
-      queryKey: ["onboarding", "options", step, optionsKey, searchLabel],
+      queryKey: getOnboardingOptionsQueryKey(optionsKey, step, searchLabel),
       enabled: searchLabel.length >= 2,
       staleTime: 15000,
     },
@@ -346,7 +366,7 @@ const OnboardingComboboxChipsStep = ({
           onClick={goNext}
           disabled={isPending}
         >
-          {t("onboarding.skip")}
+          {t("onboarding.skipForNow")}
         </Button>
         <Button
           type="button"
@@ -394,9 +414,9 @@ const OnboardingComboboxChipsStep = ({
   );
 
   return (
-    <div className="relative flex h-full max-h-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8">
+    <div className="relative flex h-full min-h-0 max-h-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8">
       <PageAura tone={tone} />
-      <div className="relative z-10 flex h-full w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
+      <div className="relative z-10 flex h-full min-h-0 w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
         <OnboardingQuestion question={t(`${i18nKey}.title`)} />
 
         <motion.div
@@ -457,9 +477,7 @@ const OnboardingComboboxChipsStep = ({
                       ) : null}
                     </div>
                     <span className="mt-2 inline-flex rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                      {option?.isAllergic
-                        ? t("onboarding.chipSelect.allergicBadge")
-                        : t("onboarding.chipSelect.recommendedBadge")}
+                      {getFeaturedBadgeLabel(option, optionsKey, t)}
                     </span>
                   </button>
                 );
