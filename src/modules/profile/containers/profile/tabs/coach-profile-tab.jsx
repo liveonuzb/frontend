@@ -41,8 +41,8 @@ const getWorkModeOptions = (t) => [
 ];
 
 const PRICE_MIN = 0;
-const PRICE_MAX = 5_000_000;
-const PRICE_STEP = 50_000;
+const PRICE_MAX = 5000000;
+const PRICE_STEP = 50000;
 
 const formatPrice = (val, t) =>
   val === 0 || val === "" || val === null
@@ -126,6 +126,7 @@ export const CoachProfileTab = () => {
 
   // Sync form when real data arrives (runs once after loading finishes)
   const hasData = coachData !== null;
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (!hasData) return;
     setSpecializations(initial.specializations);
@@ -137,6 +138,7 @@ export const CoachProfileTab = () => {
     setCoachWorkplace(initial.coachWorkplace);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasData]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const sliderValue =
     coachMonthlyPrice !== "" && !isNaN(Number(coachMonthlyPrice))

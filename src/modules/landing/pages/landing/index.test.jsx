@@ -15,11 +15,16 @@ vi.mock("framer-motion", async () => {
   const React = await import("react");
   const createMotionComponent =
     (Tag) =>
-    React.forwardRef(({ children, whileHover, whileInView, initial, animate, transition, viewport, ...props }, ref) => (
-      <Tag ref={ref} {...props}>
-        {children}
-      </Tag>
-    ));
+    React.forwardRef(function MotionComponent(
+      { children, whileHover, whileInView, initial, animate, transition, viewport, ...props },
+      ref,
+    ) {
+      return (
+        <Tag ref={ref} {...props}>
+          {children}
+        </Tag>
+      );
+    });
 
   return {
     motion: {

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React from "react";
 import { addDays, differenceInCalendarDays, format } from "date-fns";
 import { useParams } from "react-router";

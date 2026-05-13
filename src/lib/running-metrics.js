@@ -40,7 +40,7 @@ export const calculateLiveRunningDuration = (startedAt) => {
   return Math.max(0, Math.round((Date.now() - started.getTime()) / 1000));
 };
 
-const EARTH_RADIUS_METERS = 6_371_000;
+const EARTH_RADIUS_METERS = 6371000;
 
 const toRadians = (degrees) => (degrees * Math.PI) / 180;
 

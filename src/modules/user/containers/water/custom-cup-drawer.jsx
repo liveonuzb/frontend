@@ -40,11 +40,13 @@ export default function CustomCupDrawer({ children }) {
     }
   };
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (open) {
       setTempVal(customCupSize || "");
     }
   }, [open, customCupSize]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <Drawer open={open} onOpenChange={setOpen} direction="bottom">

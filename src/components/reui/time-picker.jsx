@@ -33,6 +33,7 @@ export const TimePicker = ({ value, onChange, className }) => {
   const [tempHour, setTempHour] = React.useState(hour);
   const [tempMinute, setTempMinute] = React.useState(minute);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (open) {
       const [h, m] = (value || "18:00").split(":");
@@ -40,6 +41,7 @@ export const TimePicker = ({ value, onChange, className }) => {
       setTempMinute(m);
     }
   }, [open, value]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleConfirm = () => {
     onChange(`${tempHour}:${tempMinute}`);

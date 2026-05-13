@@ -42,11 +42,13 @@ export default function IntervalDrawer({ children }) {
     }
   };
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (open) {
       setTempVal(defaultTo(waterNotifInterval, "1 hour"));
     }
   }, [open, waterNotifInterval]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <Drawer open={open} onOpenChange={setOpen} direction="bottom">

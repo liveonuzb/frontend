@@ -24,6 +24,7 @@ const DatePicker = ({ value, onChange, placeholder = "DD.MM.YYYY", className }) 
   const [inputValue, setInputValue] = React.useState("");
 
   // Sync inputValue with external value
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (value) {
       const date = new Date(value);
@@ -34,6 +35,7 @@ const DatePicker = ({ value, onChange, placeholder = "DD.MM.YYYY", className }) 
       setInputValue("");
     }
   }, [value]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const inputRef = useMask({
     mask: "__.__.____",

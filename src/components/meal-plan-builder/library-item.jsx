@@ -64,4 +64,6 @@ const LibraryItem = memo(({ food, onAdd }) => {
   );
 });
 
+LibraryItem.displayName = "LibraryItem";
+
 export default LibraryItem;

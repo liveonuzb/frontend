@@ -267,4 +267,6 @@ const BuilderMobileView = memo(({
   );
 });
 
+BuilderMobileView.displayName = "BuilderMobileView";
+
 export default BuilderMobileView;

@@ -29,12 +29,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import PremiumPlanOption, {
+import PremiumPlanOption from "@/components/premium/plan-option.jsx";
+import {
   formatPremiumPrice,
   getPlanMonthlyEquivalent,
   getPlanSavings,
   getShortestPremiumPlan,
-} from "@/components/premium/plan-option.jsx";
+} from "@/components/premium/plan-option-utils.js";
 import { useGetQuery } from "@/hooks/api";
 import useApi from "@/hooks/api/use-api";
 import usePremium from "@/hooks/app/use-premium";
@@ -371,11 +372,13 @@ export const PremiumTab = () => {
   const [checkoutOpen, setCheckoutOpen] = React.useState(false);
   const [giftDrawerOpen, setGiftDrawerOpen] = React.useState(false);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (!selectedPlan && plans.length > 0) {
       setSelectedPlan(plans[0]?.code ?? null);
     }
   }, [plans, selectedPlan]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const activePlan = React.useMemo(
     () => plans.find((plan) => plan.code === selectedPlan) ?? plans[0] ?? null,
@@ -420,7 +423,7 @@ export const PremiumTab = () => {
         getRequestErrorMessage(error, t("profile.premium.activationError")),
       );
     }
-  }, [activePlan, selectedPaymentMethod, startPremiumCheckout, t]);
+  }, [activePlan, selectedPaymentMethod, setCheckoutOpen, startPremiumCheckout, t]);
 
   const handleCancel = React.useCallback(async () => {
     try {

@@ -238,6 +238,7 @@ export default function WorkoutLogDrawer({
     [exercisesData],
   );
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!open) {
       return;
@@ -262,6 +263,7 @@ export default function WorkoutLogDrawer({
     setSearch("");
     setSets([]);
   }, [initialExercise, initialLog, open]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const filteredExercises = useMemo(
     () =>

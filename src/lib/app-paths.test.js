@@ -30,7 +30,7 @@ describe("post-onboarding route resolution", () => {
       getPostOnboardingPath({
         onboardingFlowStatus: ONBOARDING_FLOW_STATUS.resultConfirmed,
       }),
-    ).toBe("/user/onboarding/plan-preview");
+    ).toBe("/user/onboarding/plan-generating");
 
     expect(
       getPostOnboardingPath({

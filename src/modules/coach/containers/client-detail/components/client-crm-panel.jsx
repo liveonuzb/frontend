@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import {
   find,
   get,
@@ -116,7 +117,7 @@ export default function ClientCrmPanel({
     } catch (error) {
       setStage(previous);
       toast.error(
-        get(error, "response.get")(data, "message") ||
+        get(error, "response.data.message") ||
           t("coach.clients.clientDetail.crm.stageError", {
             defaultValue: "Could not update lifecycle stage.",
           }),
@@ -152,7 +153,7 @@ export default function ClientCrmPanel({
       );
     } catch (error) {
       toast.error(
-        get(error, "response.get")(data, "message") ||
+        get(error, "response.data.message") ||
           t("coach.clients.clientDetail.crm.reminderCreateError", {
             defaultValue: "Could not create reminder.",
           }),
@@ -167,7 +168,7 @@ export default function ClientCrmPanel({
       await onUpdateReminder(reminder.id, { status: nextStatus });
     } catch (error) {
       toast.error(
-        get(error, "response.get")(data, "message") ||
+        get(error, "response.data.message") ||
           t("coach.clients.clientDetail.crm.reminderUpdateError", {
             defaultValue: "Could not update reminder.",
           }),
@@ -180,7 +181,7 @@ export default function ClientCrmPanel({
       await onDeleteReminder(reminderId);
     } catch (error) {
       toast.error(
-        get(error, "response.get")(data, "message") ||
+        get(error, "response.data.message") ||
           t("coach.clients.clientDetail.crm.reminderDeleteError", {
             defaultValue: "Could not delete reminder.",
           }),

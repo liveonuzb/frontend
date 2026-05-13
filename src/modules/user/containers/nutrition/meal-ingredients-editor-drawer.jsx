@@ -124,12 +124,14 @@ const MealIngredientsEditorDrawer = ({
   );
   const [ingredientEditor, setIngredientEditor] = React.useState(null);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (open) {
       setIngredients(normalizeMealIngredients(initialIngredients));
       setIngredientEditor(null);
     }
   }, [initialIngredients, open]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const normalizedIngredients = React.useMemo(
     () => normalizeMealIngredients(ingredients),

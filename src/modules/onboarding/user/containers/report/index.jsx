@@ -952,6 +952,11 @@ const Index = () => {
     [t],
   );
 
+  /*
+   * Report generation UI resets local animation/auto-request state when the
+   * language or loading lifecycle changes.
+   */
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     setAutoRequested(false);
   }, [currentLanguage]);
@@ -1036,6 +1041,7 @@ const Index = () => {
     onboardingCompleted,
     report,
   ]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleRetry = React.useCallback(() => {
     setAutoRequested(false);

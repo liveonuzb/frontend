@@ -32,7 +32,8 @@ import TextAddDrawer from "./text-add-drawer.jsx";
 import ManualAddDrawer from "./manual-add-drawer.jsx";
 import AiMealDraftDrawer from "./ai-meal-draft-drawer.jsx";
 import { useFoodAudioTranscriptHistory } from "@/hooks/app/use-food-catalog";
-import MealDateTimeDrawer, {
+import MealDateTimeDrawer from "./meal-date-time-drawer.jsx";
+import {
   clampMealDateKey,
   formatMealTime,
   getDateKey,
@@ -40,7 +41,7 @@ import MealDateTimeDrawer, {
   getTimePartsFromDate,
   resolveDayjsLocale,
   toMealDateTimeIso,
-} from "./meal-date-time-drawer.jsx";
+} from "./meal-date-time-utils.js";
 import useLanguageStore from "@/store/language-store";
 import { useAuthStore } from "@/store";
 
@@ -126,6 +127,8 @@ const ActionDrawer = ({
     enabled: shouldLoadAudioTranscriptHistory,
   });
 
+  // Drawer open/close intentionally resets the nested flow state.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useLayoutEffect(() => {
     if (open && initialNested) {
       setActiveNested(initialNested);
@@ -161,6 +164,7 @@ const ActionDrawer = ({
       return { ...current, dateKey: nextDateKey };
     });
   }, [mealDateMinKey]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const resetTranscriptState = useCallback(() => {
     setTranscriptText("");
@@ -170,7 +174,15 @@ const ActionDrawer = ({
     setAudioLoggedAtHint(null);
     setAudioTargetDateKey(null);
     setInputSource("manual");
-  }, []);
+  }, [
+    setAudioLoggedAtHint,
+    setAudioTargetDateKey,
+    setInputSource,
+    setTextAddVariant,
+    setTranscriptConfidenceScores,
+    setTranscriptSegments,
+    setTranscriptText,
+  ]);
 
   const transcriptConfidence = useMemo(() => {
     if (!transcriptConfidenceScores.length) return null;
@@ -203,7 +215,11 @@ const ActionDrawer = ({
     setTranscriptConfidenceScores((current) =>
       current.filter((_, i) => i !== index),
     );
-  }, []);
+  }, [
+    setTranscriptConfidenceScores,
+    setTranscriptSegments,
+    setTranscriptText,
+  ]);
 
   const handleUseAudioTranscriptHistory = useCallback((historyItem) => {
     const transcript = String(historyItem?.transcript || "").trim();
@@ -216,7 +232,16 @@ const ActionDrawer = ({
     setAudioLoggedAtHint(historyItem?.loggedAt || null);
     setAudioTargetDateKey(null);
     setTranscriptConfidenceScores([]);
-  }, []);
+  }, [
+    setAudioLoggedAtHint,
+    setAudioTargetDateKey,
+    setInputSource,
+    setSelectedMealType,
+    setTextAddVariant,
+    setTranscriptConfidenceScores,
+    setTranscriptSegments,
+    setTranscriptText,
+  ]);
 
   const handleUseTextTranscriptHistory = useCallback((historyItem) => {
     const transcript = String(historyItem?.transcript || "").trim();
@@ -229,7 +254,17 @@ const ActionDrawer = ({
     setAudioLoggedAtHint(null);
     setAudioTargetDateKey(null);
     setTranscriptConfidenceScores([]);
-  }, [mealType]);
+  }, [
+    mealType,
+    setAudioLoggedAtHint,
+    setAudioTargetDateKey,
+    setInputSource,
+    setSelectedMealType,
+    setTextAddVariant,
+    setTranscriptConfidenceScores,
+    setTranscriptSegments,
+    setTranscriptText,
+  ]);
 
   const handleRemoveHistoryItem = useCallback(
     async (historyId) => {
@@ -246,7 +281,7 @@ const ActionDrawer = ({
     setCameraTextOpen(false);
     setCameraAiDraftOpen(false);
     resetTranscriptState();
-  }, [resetTranscriptState]);
+  }, [resetTranscriptState, setCameraAiDraftOpen, setCameraTextOpen]);
 
   return (
     <div>

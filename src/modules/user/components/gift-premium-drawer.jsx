@@ -24,10 +24,11 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import PremiumPlanOption, {
+import PremiumPlanOption from "@/components/premium/plan-option.jsx";
+import {
   formatPremiumPrice,
   getShortestPremiumPlan,
-} from "@/components/premium/plan-option.jsx";
+} from "@/components/premium/plan-option-utils.js";
 import { api } from "@/hooks/api/use-api";
 import usePremium from "@/hooks/app/use-premium";
 import { getRequestErrorMessage } from "@/hooks/app/use-profile-settings";
@@ -290,6 +291,10 @@ export default function GiftPremiumDrawer({
 
   const searchTimeoutRef = React.useRef(null);
 
+  /*
+   * Opening the gift flow resets the local wizard/search/payment fields.
+   */
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (!open) {
       return;
@@ -351,6 +356,7 @@ export default function GiftPremiumDrawer({
       }
     };
   }, [activeStep, open, recipientInput, selectedRecipient]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const activePlan = React.useMemo(
     () => plans.find((plan) => plan.code === selectedPlan) ?? plans[0] ?? null,

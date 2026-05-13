@@ -127,6 +127,7 @@ const WorkoutPlanBuilder = ({
   const [metaDrawerOpen, setMetaDrawerOpen] = useState(false);
 
   // ─── Initialize from plan ──────────────────────────────────────────────
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!isActive) return;
     if (planSource) {
@@ -179,6 +180,7 @@ const WorkoutPlanBuilder = ({
       setSelectedGroup("all");
     }
   }, [categories, selectedGroup]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // ─── Filtered exercises for library ─────────────────────────────────────
   const filteredExercises = useMemo(

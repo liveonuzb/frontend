@@ -5,9 +5,11 @@ const RestTimer = ({ seconds, onComplete, className }) => {
     const [remaining, setRemaining] = React.useState(seconds);
     const audioRef = React.useRef(null);
 
+    /* eslint-disable react-hooks/set-state-in-effect */
     React.useEffect(() => {
         setRemaining(seconds);
     }, [seconds]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     React.useEffect(() => {
         if (remaining <= 0) {

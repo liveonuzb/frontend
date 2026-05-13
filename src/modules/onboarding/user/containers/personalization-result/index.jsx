@@ -54,7 +54,7 @@ import {
   usePutQuery,
 } from "@/hooks/api";
 import {
-  getUserOnboardingPlanPreviewPath,
+  getUserOnboardingGeneratingPath,
   getUserOnboardingPersonalizingPath,
 } from "@/lib/app-paths";
 import { cn } from "@/lib/utils";
@@ -831,6 +831,7 @@ const EditDrawer = ({
     customItems: [],
   });
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useLayoutEffect(() => {
     if (!field || !result) return;
 
@@ -841,6 +842,7 @@ const EditDrawer = ({
 
     setValue(getEditValue(field, result, onboarding));
   }, [field, onboarding, result]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (!field) return null;
 
@@ -1286,6 +1288,11 @@ const Index = () => {
     });
   const { mutateAsync: confirmMetabolism, isPending: isConfirming } =
     usePostQuery();
+  const { mutateAsync: generatePlan, isPending: isGenerating } = usePostQuery({
+    mutationProps: {
+      mutationKey: ["generate-personal-plan"],
+    },
+  });
 
   const handleSave = async (field, value) => {
     try {
@@ -1340,19 +1347,23 @@ const Index = () => {
 
   const handleNext = async () => {
     try {
-      const response = await confirmMetabolism({
+      await confirmMetabolism({
         url: "/user/onboarding/confirm-metabolism",
       });
-      const body = unwrapApiData(response);
+      const generationResponse = await generatePlan({
+        url: "/user/onboarding/generate-personal-plan",
+      });
+      const job = unwrapApiData(generationResponse);
+      const nextPath = getUserOnboardingGeneratingPath(job?.id);
+
       setOnboardingFlow({
-        onboardingFlowStatus: body?.onboardingFlowStatus ?? body?.status,
-        onboardingNextPath:
-          body?.onboardingNextPath ?? getUserOnboardingPlanPreviewPath(),
+        onboardingFlowStatus:
+          job?.onboardingFlowStatus ?? job?.flowStatus ?? job?.status,
+        onboardingNextPath: job?.nextPath ?? nextPath,
+        latestPlanGenerationJobId: job?.id,
       });
-      await queryClient.invalidateQueries({
-        queryKey: ["onboarding", "plan-preflight"],
-      });
-      navigate(getUserOnboardingPlanPreviewPath(), { replace: true });
+      await queryClient.invalidateQueries({ queryKey: ["me"] });
+      navigate(nextPath, { replace: true });
     } catch (error) {
       const message = error?.response?.data?.message;
       toast.error(
@@ -1372,9 +1383,9 @@ const Index = () => {
         tone.buttonTone,
       )}
       onClick={handleNext}
-      disabled={!result || isConfirming}
+      disabled={!result || isConfirming || isGenerating}
     >
-      {isConfirming ? (
+      {isConfirming || isGenerating ? (
         <Loader2Icon className="size-4 animate-spin" />
       ) : (
         <ChevronRightIcon className="size-4" />

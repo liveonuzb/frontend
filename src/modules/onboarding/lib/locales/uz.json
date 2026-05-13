@@ -675,41 +675,6 @@
           "finalizing": "Natijalar yakunlanmoqda"
         }
       },
-      "planPreview": {
-        "cta": "AI rejani boshlash",
-        "badge": "Reja sifati tekshirildi",
-        "title": "AI reja yaratishdan oldin oxirgi tekshiruv",
-        "subtitle": "Ovqatlanish, mashg'ulot, xavfsizlik va katalog mosligi tekshirildi. Bloklovchi muammo bo'lmasa, keyingi bosqichda meal va workout plan alohida generatsiya qilinadi.",
-        "readinessScore": "Reja tayyorgarlik balli",
-        "qualityScore": "Plan quality score",
-        "fixFirstTitle": "Avval tuzatish kerak",
-        "attentionTitle": "E'tibor berish kerak",
-        "ready": "Reja generatsiyasini boshlash mumkin.",
-        "nutritionTitle": "Ovqatlanish inputlari",
-        "workoutTitle": "Workout inputlari",
-        "recommendationsTitle": "Tavsiyalar",
-        "noRecommendations": "Inputlar yetarli. Reja generatsiyasini boshlashingiz mumkin.",
-        "blockingLocked": "Bloklovchi muammolar tuzatilmaguncha reja generatsiyasi yopiq.",
-        "rows": {
-          "calories": "Kaloriya",
-          "macros": "Makro",
-          "meals": "Ovqatlanish",
-          "cuisines": "Oshxona tanlovi",
-          "allergies": "Allergiya",
-          "budget": "Budjet",
-          "weeklyWorkouts": "Haftalik mashg'ulot",
-          "location": "Joy",
-          "equipment": "Jihozlar",
-          "bodyParts": "Target tana qismlari"
-        },
-        "values": {
-          "kcal": "{{value}} kcal",
-          "macros": "{{protein}}g P / {{carbs}}g C / {{fat}}g F",
-          "meals": "{{count}} mahal",
-          "count": "{{count}} ta",
-          "days": "{{count}} kun"
-        }
-      },
       "planReady": {
         "badge": "Plan tayyor",
         "title": "Shaxsiy rejangiz tayyor",

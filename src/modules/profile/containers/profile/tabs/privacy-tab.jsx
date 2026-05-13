@@ -367,9 +367,11 @@ export const PrivacyTab = ({ embedded = false }) => {
   );
   const [form, setForm] = React.useState(initialForm);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     setForm(initialForm);
   }, [initialForm]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const isDirty = !isEqual(form, initialForm);
 

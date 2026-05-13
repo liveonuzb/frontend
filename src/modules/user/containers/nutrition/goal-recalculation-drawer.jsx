@@ -115,6 +115,7 @@ export default function GoalRecalculationDrawer({ open, onOpenChange }) {
     eatingStyle: "balanced",
   });
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (!open) return;
 
@@ -132,6 +133,7 @@ export default function GoalRecalculationDrawer({ open, onOpenChange }) {
       eatingStyle: "balanced",
     });
   }, [onboarding, open]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const recommendation = React.useMemo(() => {
     const currentWeight = toNumber(form.currentWeight, 70);

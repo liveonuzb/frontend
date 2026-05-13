@@ -991,6 +991,16 @@ const CreateWorkoutPlanPage = () => {
     description: get(initialPlan, "description", ""),
     coverImageUrl: get(initialPlan, "coverImageUrl", ""),
   });
+  const planMetaRef = React.useRef(planMeta);
+  const updatePlanMeta = React.useCallback((nextPlanMeta) => {
+    const resolvedPlanMeta =
+      typeof nextPlanMeta === "function"
+        ? nextPlanMeta(planMetaRef.current)
+        : nextPlanMeta;
+
+    planMetaRef.current = resolvedPlanMeta;
+    setPlanMeta(resolvedPlanMeta);
+  }, []);
   const [aiForm, setAiForm] = React.useState({
     goal: "muscle_building",
     level: "beginner",
@@ -1022,6 +1032,7 @@ const CreateWorkoutPlanPage = () => {
     ]);
   }, [setBreadcrumbs]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (hasSeededCatalog.current) return;
     if (size(equipmentOptions) === 0 || size(muscleOptions) === 0) return;
@@ -1033,9 +1044,10 @@ const CreateWorkoutPlanPage = () => {
       focusMuscleIds: map(muscleOptions.slice(0, 2), "id"),
     }));
   }, [equipmentOptions, muscleOptions]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const validatePlanName = () => {
-    if (!trim(planMeta.name)) {
+    if (!trim(planMetaRef.current.name)) {
       toast.error("Reja nomini kiriting");
       return false;
     }
@@ -1066,7 +1078,7 @@ const CreateWorkoutPlanPage = () => {
         return;
       }
 
-      setPlanMeta((current) => ({ ...current, coverImageUrl }));
+      updatePlanMeta((current) => ({ ...current, coverImageUrl }));
       toast.success("Cover rasm yuklandi");
     } catch {
       toast.error("Rasm yuklab bo'lmadi");
@@ -1077,13 +1089,14 @@ const CreateWorkoutPlanPage = () => {
     if (!validatePlanName()) return;
 
     try {
+      const currentPlanMeta = planMetaRef.current;
       const source = get(initialPlan, "isTemplate")
         ? "template"
         : get(initialPlan, "source", "manual");
       const createdPlan = await createPlanMutation.createPlan({
-        name: trim(planMeta.name),
-        description: trim(planMeta.description),
-        coverImageUrl: planMeta.coverImageUrl || undefined,
+        name: trim(currentPlanMeta.name),
+        description: trim(currentPlanMeta.description),
+        coverImageUrl: currentPlanMeta.coverImageUrl || undefined,
         days: Number(get(initialPlan, "days", 28)) || 28,
         daysPerWeek: Number(get(initialPlan, "daysPerWeek", 0)) || 0,
         difficulty: get(initialPlan, "difficulty"),
@@ -1153,15 +1166,19 @@ const CreateWorkoutPlanPage = () => {
     }
 
     try {
+      const currentPlanMeta = planMetaRef.current;
       const preview = await generateMutation.generatePlan(
         buildGenerateWorkoutPlanPayload({
           ...aiForm,
-          name: planMeta.name,
-          coverImageUrl: planMeta.coverImageUrl,
+          name: currentPlanMeta.name,
+          coverImageUrl: currentPlanMeta.coverImageUrl,
           benchmarkEnabled,
         }),
       );
-      const generatedPlan = resolveGeneratedPlan(preview, planMeta.coverImageUrl);
+      const generatedPlan = resolveGeneratedPlan(
+        preview,
+        currentPlanMeta.coverImageUrl,
+      );
 
       setAiPreview(generatedPlan);
       setOneRmOpen(false);
@@ -1178,9 +1195,13 @@ const CreateWorkoutPlanPage = () => {
     if (!aiPreview) return;
 
     try {
+      const currentPlanMeta = planMetaRef.current;
       const createdPlan = await createPlanMutation.createPlan({
         ...getGeneratedPlanSavePayload(aiPreview),
-        coverImageUrl: get(aiPreview, "coverImageUrl") || planMeta.coverImageUrl || undefined,
+        coverImageUrl:
+          get(aiPreview, "coverImageUrl") ||
+          currentPlanMeta.coverImageUrl ||
+          undefined,
       });
       toast.success("AI workout reja saqlandi");
       navigate(`/user/workout/plans/${get(createdPlan, "id")}`, {
@@ -1208,11 +1229,12 @@ const CreateWorkoutPlanPage = () => {
               if (!aiPreview) return;
 
               try {
+                const currentPlanMeta = planMetaRef.current;
                 const createdPlan = await createPlanMutation.createPlan({
                   ...getGeneratedPlanSavePayload(aiPreview),
                   coverImageUrl:
                     get(aiPreview, "coverImageUrl") ||
-                    planMeta.coverImageUrl ||
+                    currentPlanMeta.coverImageUrl ||
                     undefined,
                 });
 
@@ -1242,7 +1264,7 @@ const CreateWorkoutPlanPage = () => {
             coverOptions={coverOptions}
             isUploading={uploadMutation.isPending}
             isSubmitting={isSubmitting}
-            onMetaChange={setPlanMeta}
+            onMetaChange={updatePlanMeta}
             onUploadCover={handleCoverUpload}
             onOpenChange={(open) => {
               setMetaDrawerOpen(open);

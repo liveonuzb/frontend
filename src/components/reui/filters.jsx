@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-refresh/only-export-components */
 import { map, filter, find, some, reduce, includes } from "lodash";
 import {
   createContext,
@@ -488,9 +489,11 @@ function SelectOptionsPopover(
   const context = useFilterContext()
   const baseId = useId()
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setHighlightedIndex(-1)
   }, [searchInput, open])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     if (highlightedIndex >= 0 && open) {
@@ -884,6 +887,7 @@ function FilterSubmenuContent(
   const inputRef = useRef(null)
   const baseId = useId()
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setHighlightedIndex(-1)
   }, [searchInput])
@@ -909,6 +913,7 @@ function FilterSubmenuContent(
       setHighlightedIndex(0)
     }
   }, [isActive, filteredOptions.length])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <div className="flex flex-col" onMouseEnter={onActive}>
@@ -1102,6 +1107,7 @@ export function Filters(
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [enableShortcut, shortcutKey, addFilterOpen])
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setHighlightedIndex(-1)
   }, [menuSearchInput])
@@ -1197,6 +1203,7 @@ export function Filters(
       setHighlightedIndex(0)
     }
   }, [addFilterOpen, filteredFields.length])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <FilterContext.Provider

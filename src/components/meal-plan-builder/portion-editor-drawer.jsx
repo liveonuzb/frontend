@@ -23,9 +23,11 @@ const PortionEditorDrawer = ({
   const [grams, setGrams] = useState(food?.grams ?? 100);
 
   // food o'zgarganda grams ni reset qilish (useLayoutEffect — paint dan oldin, flicker yo'q)
+  /* eslint-disable react-hooks/set-state-in-effect */
   useLayoutEffect(() => {
     if (food) setGrams(food.grams);
   }, [food?.id]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const macros = food ? calculateMacros(food, grams) : null;
 

@@ -388,6 +388,11 @@ export const NotificationSettingsDrawer = ({
   const [qhStart, setQhStart] = React.useState("22:00");
   const [qhEnd, setQhEnd] = React.useState("08:00");
 
+  /*
+   * Drawer form state is reset from the latest server preferences whenever
+   * settings are refetched/opened.
+   */
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     setForm(initialForm);
   }, [initialForm]);
@@ -401,6 +406,7 @@ export const NotificationSettingsDrawer = ({
     setQhStart(quietHours.start ?? "22:00");
     setQhEnd(quietHours.end ?? "08:00");
   }, [quietHours.enabled, quietHours.end, quietHours.start]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const isDirty = !isEqual(form, initialForm);
   const isCoachPrefsDirty =

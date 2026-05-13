@@ -302,4 +302,6 @@ const SortableExerciseItem = memo(({ item, colId, onRemove, onUpdate }) => {
   );
 });
 
+SortableExerciseItem.displayName = "SortableExerciseItem";
+
 export default SortableExerciseItem;

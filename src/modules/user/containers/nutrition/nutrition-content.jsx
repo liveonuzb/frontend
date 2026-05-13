@@ -34,7 +34,7 @@ import NutritionDrawers from "./nutrition-drawers.jsx";
 import {
   buildMealPayloadFromDraft,
   getDraftNutritionPreview,
-} from "./meal-draft-review.jsx";
+} from "./meal-draft-review-utils.js";
 
 const NutritionErrorFallback = () => (
   <div className="flex min-h-[55vh] items-center justify-center px-4">

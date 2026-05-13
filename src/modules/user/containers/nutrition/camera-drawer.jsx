@@ -42,19 +42,19 @@ import {
   useSavedMeals,
   useSavedMealsActions,
 } from "@/hooks/app/use-saved-meals";
+import { MealDraftCard, MealDraftSummaryCard } from "./meal-draft-review.jsx";
 import {
   buildMealPayloadFromDraft,
   getDraftImageUrl,
-  MealDraftCard,
-  MealDraftSummaryCard,
-} from "./meal-draft-review.jsx";
+} from "./meal-draft-review-utils.js";
 import {
   addMealIngredient,
   removeMealIngredient,
   updateMealIngredient,
 } from "./meal-ingredients.js";
 import SaveToMyMealsButton from "./save-to-my-meals-button.jsx";
-import MealDateTimeDrawer, {
+import MealDateTimeDrawer from "./meal-date-time-drawer.jsx";
+import {
   clampMealDateKey,
   formatMealTime,
   getDateKey,
@@ -62,7 +62,7 @@ import MealDateTimeDrawer, {
   getTimePartsFromDate,
   resolveDayjsLocale,
   toMealDateTimeIso,
-} from "./meal-date-time-drawer.jsx";
+} from "./meal-date-time-utils.js";
 import RecentMealsDrawer from "./recent-meals-drawer.jsx";
 
 const buildLoggedMealFromSavedMeal = (savedMeal, addedAt) => ({
@@ -216,6 +216,11 @@ const ScanCameraView = ({
     [stopCamera],
   );
 
+  /*
+   * Camera lifecycle cleanup must synchronously stop tracks and reset transient
+   * capture flags when the drawer mode changes.
+   */
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!isActive || scanMode !== "camera") {
       stopCamera();
@@ -229,12 +234,15 @@ const ScanCameraView = ({
           devices.filter((device) => device.kind === "videoinput").length > 1,
         );
       })
-      .catch(() => {});
+      .catch(() => {
+        // Device enumeration is best-effort; capture can still proceed.
+      });
 
     startCamera("environment");
 
     return stopCamera;
   }, [isActive, scanMode, startCamera, stopCamera]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const switchCamera = () => {
     const next = facing === "environment" ? "user" : "environment";
@@ -250,7 +258,9 @@ const ScanCameraView = ({
       const next = !flashOn;
       await track.applyConstraints({ advanced: [{ torch: next }] });
       setFlashOn(next);
-    } catch {}
+    } catch {
+      // Torch support is optional and varies by browser/device.
+    }
   };
 
   const handleCapture = useCallback(() => {
@@ -909,6 +919,11 @@ export default function CameraDrawer({
     [barcodeAmount, barcodeFood],
   );
 
+  /*
+   * Opening/closing this drawer intentionally resets transient scan and copy
+   * state so stale camera or meal data is never shown in a new flow.
+   */
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!open) return;
 
@@ -972,6 +987,7 @@ export default function CameraDrawer({
 
     setSelectedRecentMealId(recentMeals[0].id);
   }, [recentMeals, recentMealsOpen, selectedRecentMealId]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleCapture = async (dataUrl) => {
     if (onInlineCapture) {
@@ -1263,7 +1279,12 @@ export default function CameraDrawer({
       setSelectedRecentMealId(recentMeals[0].id);
     }
     setRecentMealsOpen(true);
-  }, [recentMeals, selectedRecentMealId]);
+  }, [
+    recentMeals,
+    selectedRecentMealId,
+    setRecentMealsOpen,
+    setSelectedRecentMealId,
+  ]);
 
   const handleCopyRecentMeal = useCallback(async () => {
     const selectedMeal = recentMeals.find(
@@ -1299,6 +1320,8 @@ export default function CameraDrawer({
     onClose,
     recentMeals,
     selectedRecentMealId,
+    setIsCopyingRecentMeal,
+    setRecentMealsOpen,
   ]);
 
   const isNoFoodView = view === "result" && scannedItems.length === 0;

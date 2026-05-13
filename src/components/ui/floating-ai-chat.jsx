@@ -42,11 +42,13 @@ export function FloatingAiChat() {
     scrollToBottom();
   }, [messages, isTyping]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (shouldHide && isOpen) {
       setIsOpen(false);
     }
   }, [isOpen, shouldHide]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (shouldHide) {
     return null;

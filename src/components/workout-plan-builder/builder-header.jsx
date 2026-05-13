@@ -148,4 +148,6 @@ const BuilderHeader = memo(({
   );
 });
 
+BuilderHeader.displayName = "BuilderHeader";
+
 export default BuilderHeader;

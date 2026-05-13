@@ -17,6 +17,7 @@ import {
     useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { get, toLower, trim } from "lodash";
 import { 
     SearchIcon, 
     DumbbellIcon, 

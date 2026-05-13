@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router";
 import { get, trim, isArray, join, find } from "lodash";

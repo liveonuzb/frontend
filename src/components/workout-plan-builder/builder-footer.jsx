@@ -27,4 +27,6 @@ const BuilderFooter = memo(({
   );
 });
 
+BuilderFooter.displayName = "BuilderFooter";
+
 export default BuilderFooter;

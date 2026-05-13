@@ -178,11 +178,13 @@ export const UserProfileTab = ({ embedded = false }) => {
     setResendCountdown(60);
   }, []);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     setForm(initialForm);
     setAvatarChanged(false);
     setAvatarError("");
   }, [initialForm]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const normalizedForm = React.useMemo(() => normalizeForm(form), [form]);
   const normalizedInitialForm = React.useMemo(

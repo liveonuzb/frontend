@@ -182,6 +182,7 @@ const WorkoutPlanDayDetailPage = () => {
   const focus = get(selectedDay, "focus") || get(selectedDay, "day") || "Workout";
   const coverImageUrl = get(plan, "coverImageUrl");
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (!isRegenerateOverlayOpen) {
       return undefined;
@@ -196,6 +197,7 @@ const WorkoutPlanDayDetailPage = () => {
       window.clearInterval(intervalId);
     };
   }, [isRegenerateOverlayOpen]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   React.useEffect(() => {
     setBreadcrumbs([

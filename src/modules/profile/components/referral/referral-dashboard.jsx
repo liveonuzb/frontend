@@ -473,6 +473,7 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
     const xpTotal = get(xpPayload, "total", 0);
 
     const [allXpTransactions, setAllXpTransactions] = useState([]);
+    /* eslint-disable react-hooks/set-state-in-effect */
     React.useEffect(() => {
         const payload = getApiResponseData(xpData, {});
         const transactions = get(payload, "transactions", []);
@@ -485,6 +486,7 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
             });
         }
     }, [xpData, xpOffset]);
+    /* eslint-enable react-hooks/set-state-in-effect */
     const hasMoreXp = size(allXpTransactions) < xpTotal;
 
     const { data: leaderboardData, isLoading: leaderboardLoading } = useGetQuery({
@@ -520,19 +522,19 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
     // -----------------------------------------------------------------------
     // Handlers
     // -----------------------------------------------------------------------
-    const handleCopyCode = useCallback(() => {
+    const handleCopyCode = () => {
         navigator.clipboard.writeText(referralCode);
         setCopied(true);
         toast.success(t("profile.referral.codeCopied"));
         setTimeout(() => setCopied(false), 2000);
-    }, [referralCode, t]);
+    };
 
-    const handleCopyLink = useCallback(() => {
+    const handleCopyLink = () => {
         navigator.clipboard.writeText(referralLink);
         toast.success(t("profile.referral.linkCopied"));
-    }, [referralLink, t]);
+    };
 
-    const handleShare = useCallback(async () => {
+    const handleShare = async () => {
         if (navigator.share) {
             try {
                 await navigator.share({ title: "LiveOn", text: t("profile.referral.shareText", "LiveOn ilovasiga qo'shiling!"), url: referralLink });
@@ -540,7 +542,7 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
         } else {
             handleCopyLink();
         }
-    }, [referralLink, handleCopyLink, t]);
+    };
 
     const handleSaveCode = useCallback(() => {
         const trimmed = toUpper(trim(codeInput));

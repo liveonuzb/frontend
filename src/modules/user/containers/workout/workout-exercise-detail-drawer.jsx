@@ -120,11 +120,13 @@ const WorkoutExerciseDetailDrawer = ({
   const hasVideo = Boolean(get(exercise, "youtubeUrl"));
   const recentRecords = slice(records.entries, 0, 4);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (open) {
       setTab("instructions");
     }
   }, [open]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">

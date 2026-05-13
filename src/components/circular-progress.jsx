@@ -14,6 +14,7 @@ const CircularProgress = ({
     showValue = true,
     children,
 }) => {
+    const reactId = React.useId();
     const radius = Math.max(0, (size - strokeWidth) / 2);
     const circumference = radius * 2 * Math.PI;
     const boundedValue = clamp(value, 0, max);
@@ -21,7 +22,7 @@ const CircularProgress = ({
     const strokeDashoffset = circumference - percent * circumference;
 
     // Create a unique id for the gradient to allow multiple usages
-    const gradientId = `circ-grad-${Math.random().toString(36).substr(2, 9)}`;
+    const gradientId = `circ-grad-${reactId.replace(/:/g, "")}`;
 
     return (
         <div

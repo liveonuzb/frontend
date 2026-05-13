@@ -53,6 +53,7 @@ const emptyResponse = { data: null, isLoading: false };
 
 vi.mock("react-router", () => ({
   useNavigate: () => mockNavigate,
+  useLocation: () => ({ pathname: "/admin/achievements/create", search: "" }),
   useParams: () => mockRouteParams,
   useBlocker: () => ({
     state: "unblocked",

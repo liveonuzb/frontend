@@ -90,6 +90,11 @@ const RunningLivePage = () => {
     }
   }, [activeSession]);
 
+  /*
+   * Live running view hydrates queue/timer/GPS status from active session and
+   * browser geolocation watcher lifecycle.
+   */
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (!workoutSessionId) {
       return;
@@ -177,6 +182,7 @@ const RunningLivePage = () => {
 
     return () => navigator.geolocation.clearWatch(watchId);
   }, [appendPoints, isPaused, workoutSessionId]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handlePauseResume = async () => {
     if (!workoutSessionId) {

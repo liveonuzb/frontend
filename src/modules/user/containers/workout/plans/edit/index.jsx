@@ -61,6 +61,7 @@ const EditWorkoutPlanPage = () => {
     trim(metaName) !== trim(get(effectivePlan, "name", "")) ||
     trim(metaDescription) !== trim(get(effectivePlan, "description", ""));
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     setMetaName(get(effectivePlan, "name", ""));
     setMetaDescription(get(effectivePlan, "description", ""));
@@ -69,6 +70,7 @@ const EditWorkoutPlanPage = () => {
     effectivePlan?.name,
     effectivePlan?.description,
   ]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   React.useEffect(() => {
     setBreadcrumbs([

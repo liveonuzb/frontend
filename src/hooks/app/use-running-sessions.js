@@ -102,7 +102,7 @@ export const useRunningActiveSession = (options = {}) => {
     queryProps: {
       queryKey: RUNNING_ACTIVE_QUERY_KEY,
       enabled,
-      staleTime: 10_000,
+      staleTime: 10000,
     },
   });
 
@@ -169,7 +169,7 @@ export const useRunningStatsSummary = (options = {}) => {
     queryProps: {
       queryKey: [...RUNNING_STATS_QUERY_KEY, "summary"],
       enabled,
-      staleTime: 30_000,
+      staleTime: 30000,
     },
   });
 

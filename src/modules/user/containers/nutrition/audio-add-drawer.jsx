@@ -119,7 +119,10 @@ function useNativeAudioRecorder(options = {}) {
   const timerRef = useRef(null);
   const streamRef = useRef(null);
   const callbackRef = useRef(onRecordingComplete);
-  callbackRef.current = onRecordingComplete;
+
+  useEffect(() => {
+    callbackRef.current = onRecordingComplete;
+  }, [onRecordingComplete]);
 
   const cleanup = useCallback(() => {
     if (timerRef.current) {
@@ -192,7 +195,8 @@ function useNativeAudioRecorder(options = {}) {
     ) {
       try {
         mediaRecorderRef.current.requestData(); 
-      } catch (e) {
+      } catch {
+        // Some browsers do not support requestData while stopping.
       }
       mediaRecorderRef.current.stop();
     }
@@ -226,9 +230,12 @@ const AudioAddDrawer = ({ onClose, onTranscriptReady }) => {
 
   // always-fresh refs for callbacks
   const fnTranscribe = useRef(transcribeMealAudio);
-  fnTranscribe.current = transcribeMealAudio;
   const fnReady = useRef(onTranscriptReady);
-  fnReady.current = onTranscriptReady;
+
+  useEffect(() => {
+    fnTranscribe.current = transcribeMealAudio;
+    fnReady.current = onTranscriptReady;
+  }, [onTranscriptReady, transcribeMealAudio]);
 
   const handleRecordingComplete = useCallback(async (blob) => {
     if (!blob || blob.size <= 0) {
@@ -309,9 +316,11 @@ const AudioAddDrawer = ({ onClose, onTranscriptReady }) => {
   }, []);
 
   // Sync recorder errors
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (recorderError) setLocalError(recorderError);
   }, [recorderError]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleStart = () => {
     setLocalError("");

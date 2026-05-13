@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React from "react"
 import { motion } from "motion/react";
 
@@ -20,6 +21,8 @@ export function SwipeRow({
   children
 }) {
   const [dragX, setDragX] = React.useState(0)
+  const [leftActionWidth, setLeftActionWidth] = React.useState(0)
+  const [rightActionWidth, setRightActionWidth] = React.useState(0)
 
   const actionRefLeft = React.useRef(null)
   const actionRefRight = React.useRef(null)
@@ -53,9 +56,24 @@ export function SwipeRow({
     setDragX,
     actionRefLeft,
     actionRefRight,
+    leftActionWidth,
+    rightActionWidth,
+    setLeftActionWidth,
+    setRightActionWidth,
     handleDrag,
     handleDragEnd,
-  }), [dragX, setDragX, actionRefLeft, actionRefRight, handleDrag, handleDragEnd])
+  }), [
+    dragX,
+    setDragX,
+    actionRefLeft,
+    actionRefRight,
+    leftActionWidth,
+    rightActionWidth,
+    setLeftActionWidth,
+    setRightActionWidth,
+    handleDrag,
+    handleDragEnd,
+  ])
 
   return (
     <SwipeRowContext.Provider value={contextValue}>
@@ -75,7 +93,15 @@ export function SwipeRowContent({
   className,
   ...props
 }) {
-  const { actionRefLeft, actionRefRight, dragX, handleDrag, handleDragEnd } =
+  const {
+    actionRefLeft,
+    actionRefRight,
+    dragX,
+    handleDrag,
+    handleDragEnd,
+    leftActionWidth,
+    rightActionWidth,
+  } =
     useSwipeRowContext()
 
   return (
@@ -85,12 +111,8 @@ export function SwipeRowContent({
       className={cn("relative cursor-grab p-4 select-none active:cursor-grabbing", className)}
       drag="x"
       dragConstraints={{
-        left: actionRefRight?.current
-          ? -(actionRefRight?.current?.offsetWidth || 0)
-          : 0,
-        right: actionRefLeft?.current
-          ? actionRefLeft?.current?.offsetWidth || 0
-          : 0,
+        left: -rightActionWidth,
+        right: leftActionWidth,
       }}
       dragElastic={0.1}
       onDrag={handleDrag}
@@ -108,7 +130,13 @@ export function SwipeLeftActions({
   children,
   ...props
 }) {
-  const { actionRefLeft, dragX } = useSwipeRowContext()
+  const { actionRefLeft, dragX, leftActionWidth, setLeftActionWidth } =
+    useSwipeRowContext()
+
+  React.useLayoutEffect(() => {
+    setLeftActionWidth(actionRefLeft.current?.offsetWidth || 0)
+  }, [actionRefLeft, children, setLeftActionWidth])
+
   return (
     <motion.div
       role="region"
@@ -117,11 +145,11 @@ export function SwipeLeftActions({
       className={cn("absolute top-0 left-0 flex h-full items-center", className)}
       initial={{ opacity: 0 }}
       animate={{
-        opacity: dragX > ACTIONS_VIEW_THRESHOLD && actionRefLeft ? 1 : 0,
+        opacity: dragX > ACTIONS_VIEW_THRESHOLD && leftActionWidth ? 1 : 0,
         x:
-          dragX > 0 && actionRefLeft
+          dragX > 0 && leftActionWidth
             ? 0
-            : -(actionRefLeft?.current?.offsetWidth || 0),
+            : -leftActionWidth,
       }}
       transition={{ stiffness: 300 }}
       {...props}>
@@ -135,7 +163,13 @@ export function SwipeRightActions({
   children,
   ...props
 }) {
-  const { actionRefRight, dragX } = useSwipeRowContext()
+  const { actionRefRight, dragX, rightActionWidth, setRightActionWidth } =
+    useSwipeRowContext()
+
+  React.useLayoutEffect(() => {
+    setRightActionWidth(actionRefRight.current?.offsetWidth || 0)
+  }, [actionRefRight, children, setRightActionWidth])
+
   return (
     <motion.div
       role="region"
@@ -144,11 +178,11 @@ export function SwipeRightActions({
       className={cn("absolute top-0 right-0 flex h-full items-center", className)}
       initial={{ opacity: 0 }}
       animate={{
-        opacity: dragX < -ACTIONS_VIEW_THRESHOLD && actionRefRight ? 1 : 0,
+        opacity: dragX < -ACTIONS_VIEW_THRESHOLD && rightActionWidth ? 1 : 0,
         x:
-          dragX < 0 && actionRefRight
+          dragX < 0 && rightActionWidth
             ? 0
-            : actionRefRight?.current?.offsetWidth || 0,
+            : rightActionWidth,
       }}
       transition={{ stiffness: 300 }}
       {...props}>

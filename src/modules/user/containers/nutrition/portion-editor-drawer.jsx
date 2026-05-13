@@ -30,9 +30,11 @@ const PortionEditorDrawer = ({ food, open, onClose, onConfirm }) => {
   const { goals } = useHealthGoals();
   const [grams, setGrams] = useState(food?.grams ?? food?.defaultAmount ?? 100);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useLayoutEffect(() => {
     if (food && open) setGrams(food.grams ?? food.defaultAmount ?? 100);
   }, [food?.id, open]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const macros = food ? calcMacros(food, grams) : null;
   const isGrams = !food?.unit || food?.unit === "g" || food?.unit === "ml";

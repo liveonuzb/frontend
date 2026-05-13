@@ -31,12 +31,14 @@ const BuilderMetaDrawer = ({
     description || "",
   );
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (!open) return;
 
     setDraftName(name || "");
     setDraftDescription(description || "");
   }, [description, name, open]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSave = () => {
     const normalizedName = trim(draftName);

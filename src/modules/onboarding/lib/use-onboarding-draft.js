@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useMemo } from "react";
 import { debounce } from "lodash";
 import { useGetQuery, usePutQuery } from "@/hooks/api";
 import { getOnboardingDraftApiPath } from "./onboarding-api-paths";
@@ -31,9 +31,8 @@ export function useOnboardingDraft(
   });
 
   // 3. Debounced save function
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const debouncedSave = useCallback(
-    debounce(async (draftData) => {
+  const debouncedSave = useMemo(
+    () => debounce(async (draftData) => {
       try {
         await saveDraft({
           url: getOnboardingDraftApiPath(type),
@@ -44,7 +43,7 @@ export function useOnboardingDraft(
         console.warn("Auto-save failed:", e);
       }
     }, debounceMs),
-    [type, debounceMs],
+    [debounceMs, saveDraft, type],
   );
 
   // Cleanup debounce on unmount

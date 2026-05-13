@@ -93,6 +93,7 @@ const RunMapPanel = ({
   const [mapComponents, setMapComponents] = React.useState(null);
   const [loadState, setLoadState] = React.useState("idle");
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (routeCoordinates.length === 0) {
       setMapComponents(null);
@@ -125,6 +126,7 @@ const RunMapPanel = ({
       cancelled = true;
     };
   }, [provider, routeCoordinates.length, routeKey]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const center = getMapCenter(routeCoordinates);
   const {
