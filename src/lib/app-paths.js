@@ -52,6 +52,10 @@ export const canAccessUserDashboard = (status, onboardingCompleted = false) => {
     return Boolean(onboardingCompleted);
   }
 
+  if (status === ONBOARDING_FLOW_STATUS.draft && onboardingCompleted) {
+    return true;
+  }
+
   return (
     status === ONBOARDING_FLOW_STATUS.planReady ||
     status === ONBOARDING_FLOW_STATUS.activated
@@ -83,6 +87,7 @@ export const getPostOnboardingPath = (user = {}) => {
     case ONBOARDING_FLOW_STATUS.activated:
       return "/user";
     case ONBOARDING_FLOW_STATUS.draft:
+      return user?.onboardingCompleted ? "/user" : getUserOnboardingPath();
     default:
       return getUserOnboardingPath();
   }
