@@ -18,6 +18,7 @@ import RunningLivePage from "./running/live";
 import RunningHistoryPage from "./running/history";
 import RunningDetailPage from "./running/detail";
 import WorkoutShell from "./workout-shell";
+import { config } from "@/config.js";
 
 const Index = () => {
   return (
@@ -51,17 +52,23 @@ const Index = () => {
         />
         <Route path="plans/:planId" element={<WorkoutPlanDetailPage />} />
         <Route path="plans/edit/:planId" element={<EditWorkoutPlanPage />} />
-        <Route path="running" element={<RunningPage />} />
-        <Route path="running/live" element={<RunningLivePage />} />
-        <Route
-          path="running/live/:workoutSessionId"
-          element={<RunningLivePage />}
-        />
-        <Route path="running/history" element={<RunningHistoryPage />} />
-        <Route
-          path="running/:workoutSessionId"
-          element={<RunningDetailPage />}
-        />
+        {config.runningFeatureEnabled ? (
+          <>
+            <Route path="running" element={<RunningPage />} />
+            <Route path="running/live" element={<RunningLivePage />} />
+            <Route
+              path="running/live/:workoutSessionId"
+              element={<RunningLivePage />}
+            />
+            <Route path="running/history" element={<RunningHistoryPage />} />
+            <Route
+              path="running/:workoutSessionId"
+              element={<RunningDetailPage />}
+            />
+          </>
+        ) : (
+          <Route path="running/*" element={<Navigate to="../home" replace />} />
+        )}
         <Route path="exercises" element={<WorkoutExercisesPage />} />
         <Route path="logs/create" element={<CreateWorkoutLogPage />} />
         <Route path="logs/edit/:logGroupId" element={<EditWorkoutLogPage />} />

@@ -45,7 +45,6 @@ import {
 } from "@/modules/profile/hooks/use-profile-overlay";
 import { getStandaloneProfileTabPath } from "@/modules/profile/lib/profile-tab-navigation";
 import NavUser from "@/components/nav-user/index.jsx";
-import { Shop } from "iconsax-reactjs";
 
 const otherNav = [];
 
@@ -165,11 +164,6 @@ const Index = () => {
         to: "/user/friends",
         label: "Do'stlar",
         icon: UserPlusIcon,
-      },
-      {
-        to: "/user/marketplace",
-        label: "Marketplace",
-        icon: Shop,
       },
     ],
     [],

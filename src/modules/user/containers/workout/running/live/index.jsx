@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router";
 import {
   AlertTriangleIcon,
   CheckCircle2Icon,
-  MapIcon,
   PauseIcon,
   PlayIcon,
   SquareIcon,
@@ -25,15 +24,25 @@ import {
   clearActiveRunningSession,
   clearRunningPointQueue,
   enqueueRunningPoints,
+  loadActiveRunningSession,
   loadRunningPointQueue,
   saveActiveRunningSession,
 } from "@/lib/running-offline-queue";
 import {
   calculateLiveRunningDuration,
+  calculateLiveRunningMetrics,
   formatRunningDistance,
   formatRunningDuration,
   formatRunningPace,
 } from "@/lib/running-metrics";
+import RunMapPanel from "../components/run-map-panel.jsx";
+
+const getMaxPointSequence = (points = []) =>
+  points.reduce(
+    (maxSequence, point) =>
+      Math.max(maxSequence, Number(point?.sequence ?? 0) || 0),
+    0,
+  );
 
 const RunningLivePage = () => {
   const navigate = useNavigate();
@@ -51,11 +60,29 @@ const RunningLivePage = () => {
   const [gpsStatus, setGpsStatus] = React.useState("Waiting for GPS");
   const [elapsedSeconds, setElapsedSeconds] = React.useState(0);
   const [queuedCount, setQueuedCount] = React.useState(0);
+  const [livePoints, setLivePoints] = React.useState([]);
   const sequenceRef = React.useRef(0);
+  const localActiveSession = React.useMemo(() => loadActiveRunningSession(), []);
   const workoutSessionId =
-    routeWorkoutSessionId ?? activeSession?.workoutSessionId ?? null;
-  const isPaused = activeSession?.status === "paused";
-  const metrics = activeSession?.metrics ?? {};
+    routeWorkoutSessionId ??
+    activeSession?.workoutSessionId ??
+    localActiveSession?.workoutSessionId ??
+    null;
+  const effectiveActiveSession =
+    activeSession ??
+    (localActiveSession?.workoutSessionId === workoutSessionId
+      ? localActiveSession
+      : null);
+  const isPaused = effectiveActiveSession?.status === "paused";
+  const metrics = React.useMemo(
+    () =>
+      calculateLiveRunningMetrics({
+        baseMetrics: effectiveActiveSession?.metrics ?? {},
+        elapsedSeconds,
+        points: livePoints,
+      }),
+    [effectiveActiveSession?.metrics, elapsedSeconds, livePoints],
+  );
 
   React.useEffect(() => {
     if (activeSession?.workoutSessionId) {
@@ -64,17 +91,35 @@ const RunningLivePage = () => {
   }, [activeSession]);
 
   React.useEffect(() => {
-    if (!activeSession?.startedAt) {
+    if (!workoutSessionId) {
+      return;
+    }
+
+    const queuedPoints = loadRunningPointQueue(workoutSessionId);
+    sequenceRef.current = Math.max(
+      sequenceRef.current,
+      Number(effectiveActiveSession?.lastAcceptedSequence ?? 0) || 0,
+      getMaxPointSequence(queuedPoints),
+    );
+    setQueuedCount(queuedPoints.length);
+  }, [effectiveActiveSession?.lastAcceptedSequence, workoutSessionId]);
+
+  React.useEffect(() => {
+    if (!effectiveActiveSession?.startedAt) {
       return undefined;
     }
 
-    setElapsedSeconds(calculateLiveRunningDuration(activeSession.startedAt));
+    setElapsedSeconds(
+      calculateLiveRunningDuration(effectiveActiveSession.startedAt),
+    );
     const timer = window.setInterval(() => {
-      setElapsedSeconds(calculateLiveRunningDuration(activeSession.startedAt));
+      setElapsedSeconds(
+        calculateLiveRunningDuration(effectiveActiveSession.startedAt),
+      );
     }, 1000);
 
     return () => window.clearInterval(timer);
-  }, [activeSession?.startedAt]);
+  }, [effectiveActiveSession?.startedAt]);
 
   React.useEffect(() => {
     if (!workoutSessionId || isPaused) {
@@ -88,8 +133,10 @@ const RunningLivePage = () => {
 
     const watchId = navigator.geolocation.watchPosition(
       async (position) => {
+        const nextSequence = sequenceRef.current + 1;
+        sequenceRef.current = nextSequence;
         const point = {
-          sequence: (sequenceRef.current += 1),
+          sequence: nextSequence,
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
           altitude: position.coords.altitude ?? undefined,
@@ -99,10 +146,16 @@ const RunningLivePage = () => {
           sourceTimestamp: new Date(position.timestamp).toISOString(),
         };
 
+        setLivePoints((currentPoints) => [...currentPoints, point].slice(-500));
+
         try {
           const queued = loadRunningPointQueue(workoutSessionId);
           const points = [...queued, point];
-          await appendPoints(workoutSessionId, points);
+          const result = await appendPoints(workoutSessionId, points);
+          sequenceRef.current = Math.max(
+            sequenceRef.current,
+            Number(result?.lastAcceptedSequence ?? 0) || 0,
+          );
           clearRunningPointQueue(workoutSessionId);
           setQueuedCount(0);
           setGpsStatus("GPS locked");
@@ -141,6 +194,23 @@ const RunningLivePage = () => {
   const handleFinish = async () => {
     if (!workoutSessionId) {
       return;
+    }
+
+    const queuedPoints = loadRunningPointQueue(workoutSessionId);
+    if (queuedPoints.length > 0) {
+      try {
+        const result = await appendPoints(workoutSessionId, queuedPoints);
+        sequenceRef.current = Math.max(
+          sequenceRef.current,
+          Number(result?.lastAcceptedSequence ?? 0) || 0,
+        );
+        clearRunningPointQueue(workoutSessionId);
+        setQueuedCount(0);
+      } catch {
+        setQueuedCount(loadRunningPointQueue(workoutSessionId).length);
+        setGpsStatus("Sync queued");
+        return;
+      }
     }
 
     const session = await finishRunningSession(workoutSessionId, {
@@ -224,18 +294,11 @@ const RunningLivePage = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="flex min-h-[280px] items-center justify-center p-6">
-            <div className="text-center">
-              <MapIcon className="mx-auto size-8 text-primary" />
-              <p className="mt-3 text-sm font-medium">Map preview</p>
-              <p className="mt-1 max-w-md text-sm text-muted-foreground">
-                Route rendering uses the lazy map provider on detail screens.
-                Live GPS points are synced to the running session.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <RunMapPanel
+          title="Live route"
+          points={livePoints}
+          emptyLabel="Waiting for GPS"
+        />
 
         <div className="grid gap-3 sm:grid-cols-3">
           <Button

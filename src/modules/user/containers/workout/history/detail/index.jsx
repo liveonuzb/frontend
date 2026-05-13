@@ -8,6 +8,7 @@ import {
   DumbbellIcon,
   FlameIcon,
   GaugeIcon,
+  RouteIcon,
   TimerIcon,
 } from "lucide-react";
 import PageLoader from "@/components/page-loader/index.jsx";
@@ -20,6 +21,12 @@ import {
   useWorkoutSessionHistory,
   useWorkoutSessionHistoryItem,
 } from "@/hooks/app/use-workout-sessions";
+import { formatRunningDistance, formatRunningPace } from "@/lib/running-metrics";
+import {
+  getWorkoutSessionDistanceMeters,
+  getWorkoutSessionPaceSecondsPerKm,
+  isOutdoorRunningSession,
+} from "@/lib/workout-session-metrics";
 import { useBreadcrumbStore } from "@/store";
 
 const formatDateTime = (value) => {
@@ -112,6 +119,9 @@ const SessionHistoryDetailPage = () => {
     () => getRenderableExercises(session),
     [session],
   );
+  const isRunning = isOutdoorRunningSession(session);
+  const distanceMeters = getWorkoutSessionDistanceMeters(session);
+  const paceSecondsPerKm = getWorkoutSessionPaceSecondsPerKm(session);
 
   if (isLoading) {
     return <PageLoader />;
@@ -134,6 +144,127 @@ const SessionHistoryDetailPage = () => {
             </Button>
           </CardContent>
         </Card>
+      </PageTransition>
+    );
+  }
+
+  if (isRunning) {
+    return (
+      <PageTransition mode="slide-up">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+          <TrackingPageHeader
+            title={get(session, "focus") || "Outdoor run"}
+            subtitle="Yakunlangan running session tafsilotlari va GPS metrikalari."
+            hideTitleOnMobile={false}
+            actions={
+              <>
+                <Button variant="outline" onClick={() => navigate("/user/workout/history")}>
+                  <ArrowLeftIcon data-icon="inline-start" />
+                  Tarix
+                </Button>
+                <Button onClick={() => navigate(`/user/workout/running/${sessionId}`)}>
+                  Running detail
+                </Button>
+              </>
+            }
+          />
+
+          <TrackingPageLayout
+            aside={
+              <div className="space-y-4">
+                <Card className="rounded-[2rem]">
+                  <CardHeader className="pb-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline">
+                        <RouteIcon />
+                        Running
+                      </Badge>
+                      <Badge variant="secondary">
+                        <CheckCircle2Icon />
+                        Yakunlandi
+                      </Badge>
+                    </div>
+                    <CardTitle className="text-2xl font-black">
+                      GPS running session
+                    </CardTitle>
+                    <CardDescription>
+                      {formatDateTime(get(session, "endedAt"))}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm text-muted-foreground">
+                    <p className="inline-flex items-center gap-2">
+                      <CalendarDaysIcon className="size-4" />
+                      {formatDateTime(get(session, "endedAt"))}
+                    </p>
+                    <p className="inline-flex items-center gap-2">
+                      <TimerIcon className="size-4" />
+                      {formatDuration(get(session, "durationSeconds"))}
+                    </p>
+                    <p className="inline-flex items-center gap-2">
+                      <FlameIcon className="size-4" />
+                      {get(session, "estimatedCalories", 0)} kcal
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {previousSessionId ? (
+                  <Card className="rounded-[2rem]">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base font-black">Oldingi session</CardTitle>
+                      <CardDescription>
+                        Avvalgi workout tafsilotlarini ham ko'rishingiz mumkin.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => navigate(`/user/workout/history/${previousSessionId}`)}
+                      >
+                        Oldingi sessionni ochish
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : null}
+              </div>
+            }
+          >
+            <Card className="rounded-[2rem]">
+              <CardHeader>
+                <CardTitle>Running summary</CardTitle>
+                <CardDescription>
+                  Umumiy masofa, vaqt, pace va kaloriya ko'rsatkichlari.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-3xl bg-muted/30 p-5">
+                  <p className="text-xs text-muted-foreground">Masofa</p>
+                  <p className="mt-2 text-2xl font-black">
+                    {formatRunningDistance(distanceMeters)}
+                  </p>
+                </div>
+                <div className="rounded-3xl bg-muted/30 p-5">
+                  <p className="text-xs text-muted-foreground">Davomiyligi</p>
+                  <p className="mt-2 text-2xl font-black">
+                    {formatDuration(get(session, "durationSeconds"))}
+                  </p>
+                </div>
+                <div className="rounded-3xl bg-muted/30 p-5">
+                  <p className="text-xs text-muted-foreground">Pace</p>
+                  <p className="mt-2 text-2xl font-black">
+                    {formatRunningPace(paceSecondsPerKm)}
+                  </p>
+                </div>
+                <div className="rounded-3xl bg-muted/30 p-5">
+                  <p className="text-xs text-muted-foreground">Calories</p>
+                  <p className="mt-2 text-2xl font-black">
+                    {get(session, "estimatedCalories", 0)} kcal
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TrackingPageLayout>
+        </div>
       </PageTransition>
     );
   }

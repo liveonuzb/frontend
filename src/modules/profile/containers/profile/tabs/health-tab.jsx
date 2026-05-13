@@ -658,6 +658,8 @@ const HealthTabContent = ({
   measurementsTrends,
   insightsLoading,
   telegramConnected,
+  workoutCalorieAdjustmentEnabled,
+  onWorkoutCalorieAdjustmentChange,
 }) => {
   const goalTheme = GOAL_THEME[selectedPreset] ?? GOAL_THEME.lose;
   const selectedPresetMeta =
@@ -1009,7 +1011,7 @@ const HealthTabContent = ({
           </div>
           <Switch
             checked={workoutCalorieAdjustmentEnabled}
-            onCheckedChange={setWorkoutCalorieAdjustmentEnabled}
+            onCheckedChange={onWorkoutCalorieAdjustmentChange}
           />
         </div>
 
@@ -1209,9 +1211,9 @@ export const HealthTab = ({ embedded = false }) => {
 
   const [form, setForm] = React.useState(initialForm);
   const [saveStatus, setSaveStatus] = React.useState("idle");
-  const [selectedPreset, setSelectedPreset] = React.useState(resolvedGoalPreset);
-  const [selectedIntensity, setSelectedIntensity] =
-    React.useState(inferredIntensity);
+  const [selectedStrategy, setSelectedStrategy] = React.useState(null);
+  const selectedPreset = selectedStrategy?.preset ?? resolvedGoalPreset;
+  const selectedIntensity = selectedStrategy?.intensity ?? inferredIntensity;
   const lastSyncedFormRef = React.useRef(initialForm);
   const saveGoalsRef = React.useRef(saveGoals);
   const lastSubmittedFormRef = React.useRef(null);
@@ -1296,11 +1298,6 @@ export const HealthTab = ({ embedded = false }) => {
   }, [initialForm]);
 
   React.useEffect(() => {
-    setSelectedPreset(resolvedGoalPreset);
-    setSelectedIntensity(inferredIntensity);
-  }, [inferredIntensity, resolvedGoalPreset]);
-
-  React.useEffect(() => {
     if (saveStatus !== "saved") {
       return undefined;
     }
@@ -1347,8 +1344,7 @@ export const HealthTab = ({ embedded = false }) => {
       });
 
       vibrateSoft();
-      setSelectedPreset(presetId);
-      setSelectedIntensity(intensityId);
+      setSelectedStrategy({ preset: presetId, intensity: intensityId });
       setForm((current) =>
         applyRecommendedGoalsToForm(current, presetId, nextTargets),
       );
@@ -1418,9 +1414,6 @@ export const HealthTab = ({ embedded = false }) => {
 
     if (!isDirty) {
       lastSubmittedFormRef.current = form;
-      if (saveStatus === "error") {
-        setSaveStatus("idle");
-      }
       return;
     }
 
@@ -1474,6 +1467,8 @@ export const HealthTab = ({ embedded = false }) => {
         isHealthReportLoading || isWaterAnalyticsLoading || isMeasurementsLoading
       }
       telegramConnected={Boolean(user?.telegramConnected)}
+      workoutCalorieAdjustmentEnabled={workoutCalorieAdjustmentEnabled}
+      onWorkoutCalorieAdjustmentChange={setWorkoutCalorieAdjustmentEnabled}
     />
   );
 

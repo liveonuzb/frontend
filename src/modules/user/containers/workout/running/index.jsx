@@ -22,6 +22,7 @@ import {
   useRunningStatsSummary,
   useStartRunningSession,
 } from "@/hooks/app/use-running-sessions";
+import { loadActiveRunningSession } from "@/lib/running-offline-queue";
 import {
   formatRunningDistance,
   formatRunningDuration,
@@ -57,6 +58,8 @@ const RunningPage = () => {
   const { activeSession } = useRunningActiveSession();
   const { stats = {} } = useRunningStatsSummary();
   const { startRunningSession, isPending } = useStartRunningSession();
+  const localActiveSession = React.useMemo(() => loadActiveRunningSession(), []);
+  const recoverySession = activeSession ?? localActiveSession;
 
   React.useEffect(() => {
     setBreadcrumbs([
@@ -113,7 +116,7 @@ const RunningPage = () => {
               </div>
             </div>
 
-            {activeSession ? (
+            {recoverySession ? (
               <Card className="border-primary/30 bg-primary/5">
                 <CardHeader>
                   <CardTitle>Active run found</CardTitle>
@@ -126,7 +129,7 @@ const RunningPage = () => {
                     className="w-full"
                     onClick={() =>
                       navigate(
-                        `/user/workout/running/live/${activeSession.workoutSessionId}`,
+                        `/user/workout/running/live/${recoverySession.workoutSessionId}`,
                       )
                     }
                   >

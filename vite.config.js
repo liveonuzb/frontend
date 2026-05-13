@@ -21,11 +21,13 @@ export default defineConfig({
       algorithm: "brotliCompress",
       ext: ".br",
       deleteOriginFile: false,
+      verbose: false,
     }),
     compression({
       algorithm: "gzip",
       ext: ".gz",
       deleteOriginFile: false,
+      verbose: false,
     }),
   ],
 

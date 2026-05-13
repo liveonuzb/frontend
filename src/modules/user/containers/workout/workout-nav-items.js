@@ -5,8 +5,9 @@ import {
   HouseIcon,
   RouteIcon,
 } from "lucide-react";
+import { config } from "@/config.js";
 
-export const WORKOUT_NAV_ITEMS = [
+const WORKOUT_NAV_ITEMS_BASE = [
   {
     to: "/user/workout/home",
     label: "Home",
@@ -24,6 +25,7 @@ export const WORKOUT_NAV_ITEMS = [
     to: "/user/workout/running",
     label: "Running",
     icon: RouteIcon,
+    feature: "running",
     match: (pathname) => pathname.startsWith("/user/workout/running"),
   },
   {
@@ -41,3 +43,7 @@ export const WORKOUT_NAV_ITEMS = [
       pathname.startsWith("/user/workout/history"),
   },
 ];
+
+export const WORKOUT_NAV_ITEMS = WORKOUT_NAV_ITEMS_BASE.filter(
+  (item) => item.feature !== "running" || config.runningFeatureEnabled,
+);

@@ -1,9 +1,11 @@
 import React from "react";
 import { find, get, isArray } from "lodash";
 import { Link } from "react-router";
-import { ArrowRightIcon, DumbbellIcon } from "lucide-react";
+import { ArrowRightIcon, DumbbellIcon, RouteIcon } from "lucide-react";
 import useGetQuery from "@/hooks/api/use-get-query";
+import { useRunningStatsSummary } from "@/hooks/app/use-running-sessions";
 import { getApiResponseData } from "@/lib/api-response";
+import { formatRunningDistance } from "@/lib/running-metrics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
@@ -31,6 +33,7 @@ export default function WorkoutWidget({
       enabled: shouldFetch,
     },
   });
+  const { stats: runningStats = {} } = useRunningStatsSummary();
   const payload = React.useMemo(() => getApiResponseData(data, {}), [data]);
   const plans = React.useMemo(
     () => (isArray(get(payload, "items")) ? get(payload, "items") : []),
@@ -46,6 +49,49 @@ export default function WorkoutWidget({
       find(plans, (plan) => get(plan, "id") === activePlanId) || null,
     );
   }, [activePlanOverride, payload, plans]);
+  const hasRunningStats =
+    Number(get(runningStats, "totalRuns", 0)) > 0 ||
+    Number(get(runningStats, "totalDistanceMeters", 0)) > 0;
+  const runningSummary = hasRunningStats ? (
+    interactive ? (
+      <Link
+        to="/user/workout/running"
+        className="mt-2 flex items-center justify-between rounded-2xl border bg-muted/30 px-3 py-2 text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
+      >
+        <span className="inline-flex min-w-0 items-center gap-2">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <RouteIcon className="size-3.5" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-[11px] font-bold leading-tight">Running</span>
+            <span className="block text-[10px] text-muted-foreground">
+              {Number(get(runningStats, "totalRuns", 0))} runs
+            </span>
+          </span>
+        </span>
+        <span className="shrink-0 text-xs font-black">
+          {formatRunningDistance(get(runningStats, "totalDistanceMeters", 0))}
+        </span>
+      </Link>
+    ) : (
+      <div className="mt-2 flex items-center justify-between rounded-2xl border bg-muted/30 px-3 py-2 text-left">
+        <span className="inline-flex min-w-0 items-center gap-2">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <RouteIcon className="size-3.5" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-[11px] font-bold leading-tight">Running</span>
+            <span className="block text-[10px] text-muted-foreground">
+              {Number(get(runningStats, "totalRuns", 0))} runs
+            </span>
+          </span>
+        </span>
+        <span className="shrink-0 text-xs font-black">
+          {formatRunningDistance(get(runningStats, "totalDistanceMeters", 0))}
+        </span>
+      </div>
+    )
+  ) : null;
 
   return (
     <Card className={cn("relative h-full overflow-hidden", className)}>
@@ -85,6 +131,7 @@ export default function WorkoutWidget({
                 <ArrowRightIcon className="ml-1 size-3" />
               </Link>
             ) : null}
+            {runningSummary}
           </div>
         ) : (
           <div className="text-center">
@@ -100,6 +147,7 @@ export default function WorkoutWidget({
                 <ArrowRightIcon className="ml-1 size-3" />
               </Link>
             ) : null}
+            {runningSummary}
           </div>
         )}
       </CardContent>

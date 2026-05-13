@@ -46,6 +46,69 @@ const initialState = {
   isHydrated: false,
 };
 
+const authStorageKey = "auth-storage";
+const noopAuthStorage = {
+  getItem: () => null,
+  setItem: () => undefined,
+  removeItem: () => undefined,
+};
+
+const getAuthStorage = () => {
+  if (typeof window === "undefined") {
+    return noopAuthStorage;
+  }
+
+  try {
+    window.localStorage?.removeItem(authStorageKey);
+  } catch {
+    // Ignore storage access errors in restricted browser contexts.
+  }
+
+  return window.sessionStorage;
+};
+
+const sanitizePendingVerification = (payload) =>
+  payload
+    ? {
+        channel: payload.channel ?? null,
+        purpose: payload.purpose ?? null,
+        phone: payload.phone ?? null,
+        expiresAt: payload.expiresAt ?? null,
+      }
+    : null;
+
+const sanitizeAuthPhoneFlow = (payload) =>
+  payload
+    ? {
+        phone: payload.phone,
+        flow: payload.flow,
+        referralCode: payload.referralCode ?? null,
+      }
+    : null;
+
+const sanitizePasswordReset = (payload) =>
+  payload
+    ? {
+        resetToken: payload.resetToken ?? null,
+        expiresAt: payload.expiresAt ?? null,
+        phone: payload.phone ?? null,
+      }
+    : null;
+
+const persistAuthState = (state) => ({
+  isAuthenticated: state.isAuthenticated,
+  token: state.token,
+  refreshToken: state.refreshToken,
+  user: state.user,
+  roles: state.roles,
+  activeRole: state.activeRole,
+  onboardingCompleted: state.onboardingCompleted,
+  onboardingFlowStatus: state.onboardingFlowStatus,
+  onboardingNextPath: state.onboardingNextPath,
+  latestPersonalizationJobId: state.latestPersonalizationJobId,
+  latestPlanGenerationJobId: state.latestPlanGenerationJobId,
+});
+
 const useAuthStore = create()(
   persist(
     (set, get) => ({
@@ -204,7 +267,7 @@ const useAuthStore = create()(
 
       setPendingVerification: (payload) => {
         set(() => ({
-          pendingVerification: payload,
+          pendingVerification: sanitizePendingVerification(payload),
         }));
       },
 
@@ -216,13 +279,7 @@ const useAuthStore = create()(
 
       setAuthPhoneFlow: (payload) => {
         set(() => ({
-          authPhoneFlow: payload
-            ? {
-                phone: payload.phone,
-                flow: payload.flow,
-                referralCode: payload.referralCode ?? null,
-              }
-            : null,
+          authPhoneFlow: sanitizeAuthPhoneFlow(payload),
         }));
       },
 
@@ -234,7 +291,7 @@ const useAuthStore = create()(
 
       setPasswordReset: (payload) => {
         set(() => ({
-          passwordReset: payload,
+          passwordReset: sanitizePasswordReset(payload),
         }));
       },
 
@@ -251,14 +308,15 @@ const useAuthStore = create()(
       },
     }),
     {
-      name: "auth-storage",
-      storage: createJSONStorage(() => localStorage),
-      version: 3,
+      name: authStorageKey,
+      storage: createJSONStorage(getAuthStorage),
+      version: 4,
+      partialize: persistAuthState,
       onRehydrateStorage: () => (state) => {
         state?.setHydrated(true);
       },
       migrate: (persistedState, version) => {
-        if (version !== 3) {
+        if (version !== 4) {
           return initialState;
         }
 

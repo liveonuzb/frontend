@@ -8,6 +8,7 @@ import {
   useRunningStatsSummary,
   useStartRunningSession,
 } from "@/hooks/app/use-running-sessions";
+import { loadActiveRunningSession } from "@/lib/running-offline-queue";
 
 vi.mock("@/components/page-transition", () => ({
   default: ({ children }) => <>{children}</>,
@@ -17,6 +18,10 @@ vi.mock("@/hooks/app/use-running-sessions", () => ({
   useRunningActiveSession: vi.fn(),
   useRunningStatsSummary: vi.fn(),
   useStartRunningSession: vi.fn(),
+}));
+
+vi.mock("@/lib/running-offline-queue", () => ({
+  loadActiveRunningSession: vi.fn(),
 }));
 
 vi.mock("@/store", () => ({
@@ -58,6 +63,7 @@ describe("RunningPage", () => {
       activeSession: null,
       isLoading: false,
     });
+    loadActiveRunningSession.mockReturnValue(null);
     useRunningStatsSummary.mockReturnValue({
       stats: {
         totalRuns: 3,
@@ -113,6 +119,21 @@ describe("RunningPage", () => {
 
     expect(router.state.location.pathname).toBe(
       "/user/workout/running/live/workout-active",
+    );
+  });
+
+  it("recovers a locally saved active session when server active data is empty", () => {
+    loadActiveRunningSession.mockReturnValue({
+      workoutSessionId: "workout-local",
+      status: "active",
+    });
+    const router = renderPage();
+
+    expect(screen.getByText("Active run found")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /resume/i }));
+
+    expect(router.state.location.pathname).toBe(
+      "/user/workout/running/live/workout-local",
     );
   });
 });

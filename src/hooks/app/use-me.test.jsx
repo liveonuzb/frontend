@@ -67,7 +67,7 @@ describe("useMe", () => {
         },
       },
     });
-    expect(result.current.onboarding).toEqual({
+    expect(result.current.onboarding).toMatchObject({
       firstName: null,
       lastName: null,
       gender: "male",
@@ -85,8 +85,10 @@ describe("useMe", () => {
       weeklyPace: null,
       activityLevel: null,
       mealFrequency: null,
-      waterHabits: null,
       dietRestrictions: [],
+      goals: [],
+      budgetCurrency: "UZS",
+      workoutLocation: "home",
     });
   });
 

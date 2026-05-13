@@ -29,18 +29,6 @@ vi.mock("@/components/page-loader/index.jsx", () => ({
   default: () => <div data-testid="page-loader">Loading</div>,
 }));
 
-vi.mock("../../session-drawer", () => ({
-  default: ({ open, plan, initialDayIdx }) => (
-    <div
-      data-testid="session-drawer"
-      data-open={String(open)}
-      data-day-index={String(initialDayIdx)}
-    >
-      {plan?.name}
-    </div>
-  ),
-}));
-
 vi.mock("@/store", () => ({
   useBreadcrumbStore: () => ({
     setBreadcrumbs: vi.fn(),
@@ -113,6 +101,10 @@ const renderPage = () => {
       {
         path: "/user/workout/plans/:planId/days/:dayIndex",
         element: <div data-testid="day-detail-route">Day detail route</div>,
+      },
+      {
+        path: "/user/workout/plans/:planId/days/:dayIndex/session",
+        element: <div data-testid="session-route">Session route</div>,
       },
       {
         path: "/user/workout/plans",
@@ -188,13 +180,13 @@ describe("WorkoutPlanDetailPage", () => {
     });
   });
 
-  it("activates the plan and opens the session drawer", async () => {
+  it("activates the plan and navigates to the session route", async () => {
     activatePlanMock.mockResolvedValue({
       ...defaultPlan,
       status: "active",
     });
 
-    renderPage();
+    const router = renderPage();
     fireEvent.click(screen.getAllByText("Boshlash")[0]);
 
     await waitFor(() => {
@@ -206,14 +198,11 @@ describe("WorkoutPlanDetailPage", () => {
       );
     });
 
-    expect(screen.getByTestId("session-drawer")).toHaveAttribute(
-      "data-open",
-      "true",
-    );
-    expect(screen.getByTestId("session-drawer")).toHaveAttribute(
-      "data-day-index",
-      "0",
-    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(
+        "/user/workout/plans/plan-1/days/0/session",
+      );
+    });
   });
 
   it("navigates to the full edit page from the detail action", async () => {
