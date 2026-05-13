@@ -393,6 +393,7 @@ const useLandingTheme = () => {
     return resolveTheme(window.localStorage.getItem("theme") || "light");
   });
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
 
@@ -403,6 +404,7 @@ const useLandingTheme = () => {
     window.addEventListener("app-theme-change", handleThemeChange);
     return () => window.removeEventListener("app-theme-change", handleThemeChange);
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const toggleTheme = () => {
     const nextTheme = theme === "dark" ? "light" : "dark";

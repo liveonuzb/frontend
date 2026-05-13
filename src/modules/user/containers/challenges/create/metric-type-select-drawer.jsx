@@ -32,9 +32,11 @@ const MetricTypeSelectTrigger = ({ value, onClick }) => {
 export const MetricTypeSelectDrawer = ({ open, onOpenChange, value, onChange }) => {
   const [draft, setDraft] = React.useState(value || "STEPS");
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (open) setDraft(value || "STEPS");
   }, [open, value]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleApply = () => {
     onChange(draft);

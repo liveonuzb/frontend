@@ -23,7 +23,7 @@ const Index = () => {
     queryProps: {
       queryKey: ["onboarding"],
       enabled: isAuthenticated,
-      staleTime: 60_000,
+      staleTime: 60000,
     },
   });
 

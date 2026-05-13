@@ -135,7 +135,7 @@ export default function ClientNotesPanel({
       );
     } catch (error) {
       toast.error(
-        get(error, "response.get")(data, "message") ||
+        get(error, "response.data.message") ||
           t("coach.clients.clientDetail.notes.createError", {
             defaultValue: "Could not save note.",
           }),
@@ -153,7 +153,7 @@ export default function ClientNotesPanel({
       );
     } catch (error) {
       toast.error(
-        get(error, "response.get")(data, "message") ||
+        get(error, "response.data.message") ||
           t("coach.clients.clientDetail.notes.deleteError", {
             defaultValue: "Could not delete note.",
           }),

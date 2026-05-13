@@ -54,28 +54,24 @@ let cache = null;
 export const loadYMaps = async () => {
   if (cache) return cache;
 
-  try {
-    await injectYMapsScript();
-    const ymaps3Instance = await waitForYMaps();
+  await injectYMapsScript();
+  const ymaps3Instance = await waitForYMaps();
 
-    // Import only the core reactify module
-    // Note: YMapDefaultSchemeLayer and YMapDefaultFeaturesLayer are part of the core ymaps3 package
-    const [ymaps3React] = await Promise.all([
-      ymaps3Instance.import("@yandex/ymaps3-reactify"),
-      ymaps3Instance.ready,
-    ]);
+  // Import only the core reactify module
+  // Note: YMapDefaultSchemeLayer and YMapDefaultFeaturesLayer are part of the core ymaps3 package
+  const [ymaps3React] = await Promise.all([
+    ymaps3Instance.import("@yandex/ymaps3-reactify"),
+    ymaps3Instance.ready,
+  ]);
 
-    const reactify = ymaps3React.reactify.bindTo(React, ReactDom);
+  const reactify = ymaps3React.reactify.bindTo(React, ReactDom);
 
-    // Merge core components into the cache
-    cache = {
-      ...reactify.module(ymaps3Instance),
-      reactify,
-      ymaps3: ymaps3Instance,
-    };
+  // Merge core components into the cache
+  cache = {
+    ...reactify.module(ymaps3Instance),
+    reactify,
+    ymaps3: ymaps3Instance,
+  };
 
-    return cache;
-  } catch (error) {
-    throw error;
-  }
+  return cache;
 };

@@ -31,7 +31,6 @@ import ReviewPage from "@/modules/onboarding/user/pages/review/index.jsx";
 import ReportPage from "@/modules/onboarding/user/pages/report/index.jsx";
 import PersonalizingPage from "@/modules/onboarding/user/pages/personalizing/index.jsx";
 import PersonalizationResultPage from "@/modules/onboarding/user/pages/result/index.jsx";
-import PlanPreviewPage from "@/modules/onboarding/user/pages/plan-preview/index.jsx";
 import GeneratingPage from "@/modules/onboarding/user/pages/generating/index.jsx";
 import PlanReadyPage from "@/modules/onboarding/user/pages/plan-ready/index.jsx";
 
@@ -141,7 +140,10 @@ const UserOnboardingModule = () => {
           element={<Navigate to="../metabolism-result" replace />}
         />
         <Route path="metabolism-result" element={<PersonalizationResultPage />} />
-        <Route path="plan-preview" element={<PlanPreviewPage />} />
+        <Route
+          path="plan-preview"
+          element={<Navigate to="../plan-generating" replace />}
+        />
         <Route
           path="generating"
           element={<Navigate to="../plan-generating" replace />}

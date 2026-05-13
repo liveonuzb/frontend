@@ -5,6 +5,25 @@ import { useAuthStore } from "@/store";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 
+const LevelBadge = ({ level, size = "md" }) => (
+  <div
+    className={cn(
+      "relative flex items-center justify-center shrink-0",
+      size === "sm" ? "size-8" : "size-12",
+    )}
+  >
+    <div className="absolute inset-0 rounded-lg bg-primary rotate-45 shadow-lg shadow-primary/20" />
+    <span
+      className={cn(
+        "relative leading-none font-black text-primary-foreground",
+        size === "sm" ? "text-xs" : "text-lg",
+      )}
+    >
+      {level}
+    </span>
+  </div>
+);
+
 const GamificationBadges = ({ compact = false, className }) => {
   const { t } = useTranslation();
   const { user } = useAuthStore();
@@ -13,32 +32,12 @@ const GamificationBadges = ({ compact = false, className }) => {
   const progress = user?.levelProgress || 0;
   const streak = 3;
 
-  // Level badge component
-  const LevelBadge = ({ size = "md" }) => (
-    <div
-      className={cn(
-        "relative flex items-center justify-center shrink-0",
-        size === "sm" ? "size-8" : "size-12",
-      )}
-    >
-      <div className="absolute inset-0 rounded-lg bg-primary rotate-45 shadow-lg shadow-primary/20" />
-      <span
-        className={cn(
-          "relative leading-none font-black text-primary-foreground",
-          size === "sm" ? "text-xs" : "text-lg",
-        )}
-      >
-        {level}
-      </span>
-    </div>
-  );
-
   if (compact) {
     return (
       <div
         className={cn("flex items-center gap-3 w-full max-w-[200px]", className)}
       >
-        <LevelBadge size="sm" />
+        <LevelBadge level={level} size="sm" />
         <div className="flex-1 min-w-0 space-y-1.5">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[10px] font-black uppercase tracking-tighter text-primary">
@@ -57,7 +56,7 @@ const GamificationBadges = ({ compact = false, className }) => {
   return (
     <div className={cn("flex flex-col gap-5 w-full", className)}>
       <div className="flex items-center gap-4 border border-border/40 bg-card p-4 rounded-[28px] shadow-sm">
-        <LevelBadge />
+        <LevelBadge level={level} />
         <div className="flex-1 space-y-2">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">

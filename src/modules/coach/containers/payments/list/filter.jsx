@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { Filters } from "@/components/reui/filters.jsx";
 
 export { usePaymentFilters } from "./use-filters.js";

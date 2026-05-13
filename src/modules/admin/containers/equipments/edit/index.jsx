@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React from "react";
 import { useParams } from "react-router";
 import { get, find, trim } from "lodash";

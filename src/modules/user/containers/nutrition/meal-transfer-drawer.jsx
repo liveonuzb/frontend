@@ -37,11 +37,13 @@ export default function MealTransferDrawer({
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const isMove = mode === "move";
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (!open) return;
     setTargetDate(getTodayKey());
     setTargetMealType(sourceMealType || "breakfast");
   }, [open, sourceMealType]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleConfirm = React.useCallback(async () => {
     if (!targetDate || !food) return;

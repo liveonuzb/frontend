@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildMealPayloadFromDraft,
   getDraftNutritionPreview,
-} from "./meal-draft-review.jsx";
+} from "./meal-draft-review-utils.js";
 import {
   addMealIngredient,
   removeMealIngredient,

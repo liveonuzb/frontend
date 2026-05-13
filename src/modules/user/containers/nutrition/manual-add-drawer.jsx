@@ -76,6 +76,11 @@ export default function ManualAddDrawer({
   const [grams, setGrams] = useState(100);
   const loadMoreRef = useRef(null);
 
+  /*
+   * Manual add keeps editable grams/search/tab state local to the active food
+   * and route context.
+   */
+  /* eslint-disable react-hooks/set-state-in-effect */
   useLayoutEffect(() => {
     if (editingFood) setGrams(editingFood.defaultAmount || 100);
   }, [editingFood?.barcode]);
@@ -191,6 +196,7 @@ export default function ManualAddDrawer({
       setSelectedTabKey(tabEntries[0].key);
     }
   }, [selectedTabKey, tabEntries]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const tabFoods = useMemo(() => {
     if (selectedTabKey === "__favorites__") return filteredFavorites;

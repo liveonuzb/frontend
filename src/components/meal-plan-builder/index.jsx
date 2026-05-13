@@ -230,6 +230,11 @@ const Index = ({
     normalizeDaysData(initialData || {}, foodMap),
   );
 
+  /*
+   * Builder state mirrors the selected source plan and the latest normalized
+   * food library.
+   */
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setDaysData(normalizeDaysData(initialData || {}, foodMap));
   }, [initialData]);
@@ -237,6 +242,7 @@ const Index = ({
   useEffect(() => {
     setDaysData((current) => normalizeDaysData(current, foodMap));
   }, [foodMap]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const [editingFood, setEditingFood] = useState(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState("all");
@@ -293,6 +299,7 @@ const Index = ({
     });
   }, [foods, search, selectedCategoryId]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (categoriesWithAll.length === 0) {
       setSelectedCategoryId("all");
@@ -305,6 +312,7 @@ const Index = ({
       setSelectedCategoryId("all");
     }
   }, [categoriesWithAll, selectedCategoryId]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const currentDayColumns = daysData[selectedDay] || [];
   const savedMealsById = useMemo(
@@ -337,6 +345,7 @@ const Index = ({
     Boolean(selectedTemplateId) &&
     recurringPatternForTarget?.templateId === selectedTemplateId;
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!selectedTemplateId && savedMealTemplates[0]?.id) {
       setSelectedTemplateId(savedMealTemplates[0].id);
@@ -353,6 +362,7 @@ const Index = ({
 
     setTemplateTargetColId(currentDayColumns[0]?.id || "");
   }, [currentDayColumns, templateTargetColId]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // lodash keyBy + mapValues bilan kanban columns map
   const kanbanColumns = useMemo(() => {

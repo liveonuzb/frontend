@@ -56,4 +56,6 @@ const ExerciseLibraryItem = memo(({ exercise, onAdd }) => {
   );
 });
 
+ExerciseLibraryItem.displayName = "ExerciseLibraryItem";
+
 export default ExerciseLibraryItem;

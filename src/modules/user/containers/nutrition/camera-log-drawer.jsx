@@ -74,9 +74,16 @@ const CameraView = ({ onCapture, onBack }) => {
       const track = stream.getVideoTracks()[0];
       const caps = track.getCapabilities?.();
       setHasFlash(!!caps?.torch);
-    } catch (_) {}
+    } catch {
+      // Camera startup can fail when permission is denied or hardware is missing.
+    }
   }, []);
 
+  /*
+   * Camera startup and teardown intentionally reset capture flags when this
+   * view mounts.
+   */
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     navigator.mediaDevices
       .enumerateDevices?.()
@@ -85,7 +92,9 @@ const CameraView = ({ onCapture, onBack }) => {
           devices.filter((d) => d.kind === "videoinput").length > 1,
         );
       })
-      .catch(() => {});
+      .catch(() => {
+        // Device enumeration is best-effort; camera capture can still proceed.
+      });
 
     startCamera("environment");
 
@@ -93,6 +102,7 @@ const CameraView = ({ onCapture, onBack }) => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
     };
   }, [startCamera]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const switchCamera = () => {
     const next = facing === "environment" ? "user" : "environment";
@@ -107,7 +117,9 @@ const CameraView = ({ onCapture, onBack }) => {
       const next = !flashOn;
       await track.applyConstraints({ advanced: [{ torch: next }] });
       setFlashOn(next);
-    } catch (_) {}
+    } catch {
+      // Torch support is optional and varies by device/browser.
+    }
   };
 
   const capture = () => {
@@ -213,9 +225,11 @@ const PreviewView = ({ food, imageUrl, onRetake, onSave, isConsumed }) => {
   const defaultAmt = food?.defaultAmount || food?.grams || 100;
   const [grams, setGrams] = useState(defaultAmt);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useLayoutEffect(() => {
     setGrams(defaultAmt);
   }, [defaultAmt]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const isGrams = !food?.unit || food?.unit === "g" || food?.unit === "ml";
   const maxVal = isGrams ? 1000 : (food?.step || 1) * 20;
@@ -392,12 +406,14 @@ const CameraLogDrawer = ({ food, open, onClose, onSave }) => {
   const [view, setView] = useState("camera");
   const [preview, setPreview] = useState(null);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (open) {
       setView("camera");
       setPreview(null);
     }
   }, [open]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const isConsumed = get(food, "isConsumed", false);
   const emoji = get(food, "emoji", "🍽️");

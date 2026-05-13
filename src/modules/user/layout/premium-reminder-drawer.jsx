@@ -134,6 +134,10 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
   const previousAuthStateRef = React.useRef(isAuthenticated);
   const isPremiumActive = hasActivePremium(user);
 
+  /*
+   * Reminder drawers are transient UI state tied to auth/user/payment lifecycle.
+   */
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     setLastReminderAt(readLastReminderAt(userId));
     setReminderOpen(false);
@@ -225,6 +229,7 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
       closeAllDrawers();
     }
   }, [closeAllDrawers, isPremiumActive, successOpen]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleContinueFromReminder = React.useCallback(() => {
     setReminderOpen(false);
@@ -283,6 +288,7 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
     t,
   ]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (!isPremiumActive || !isFinalizingCheckout) {
       return;
@@ -291,6 +297,7 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
     closeAllDrawers();
     setSuccessOpen(true);
   }, [closeAllDrawers, isFinalizingCheckout, isPremiumActive]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleOpenPremiumDetails = React.useCallback(() => {
     setSuccessOpen(false);

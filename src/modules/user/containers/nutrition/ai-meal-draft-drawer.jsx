@@ -14,12 +14,11 @@ import { useDailyTrackingActions } from "@/hooks/app/use-daily-tracking";
 import { useFoodScan } from "@/hooks/app/use-food-catalog";
 import { useSavedMealsActions } from "@/hooks/app/use-saved-meals";
 import useHealthGoals from "@/hooks/app/use-health-goals";
+import { MealDraftCard, MealDraftSummaryCard } from "./meal-draft-review.jsx";
 import {
   buildMealPayloadFromDraft,
   getDraftImageUrl,
-  MealDraftCard,
-  MealDraftSummaryCard,
-} from "./meal-draft-review.jsx";
+} from "./meal-draft-review-utils.js";
 import {
   addMealIngredient,
   removeMealIngredient,
@@ -88,6 +87,10 @@ export default function AiMealDraftDrawer({
     [targetDateKey],
   );
 
+  /*
+   * Reset transient AI-review state when a new source text/date context opens.
+   */
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     setAnalysisItems([]);
     setAnalysisError(null);
@@ -103,6 +106,7 @@ export default function AiMealDraftDrawer({
     loggedAtHint,
     targetDateKey,
   ]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleAnalyze = React.useCallback(
     async (overrideText) => {

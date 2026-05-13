@@ -84,6 +84,7 @@ const useRestTimer = (onComplete) => {
   const [running, setRunning] = React.useState(false);
   const [endsAt, setEndsAt] = React.useState(null);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (!running) {
       return undefined;
@@ -104,6 +105,7 @@ const useRestTimer = (onComplete) => {
 
     return () => window.clearInterval(id);
   }, [onComplete, running, seconds]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const start = React.useCallback((value) => {
     const nextSeconds = Math.max(0, Number(value) || 0);
@@ -339,12 +341,14 @@ const SessionDurationDrawer = ({
   const [startValue, setStartValue] = React.useState("");
   const [endValue, setEndValue] = React.useState("");
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (!open) return;
     setMode("auto");
     setStartValue(formatDateTimeLocal(sessionStartTime));
     setEndValue(formatDateTimeLocal(sessionStartTime + elapsed * 1000));
   }, [elapsed, open, sessionStartTime]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const startMs = new Date(startValue).getTime();
   const endMs = new Date(endValue).getTime();
@@ -658,6 +662,11 @@ const WorkoutPlanSessionPage = () => {
     });
   });
 
+  /*
+   * Session restore/start effects initialize local workout draft state from
+   * persisted local/remote session snapshots.
+   */
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (!selectedDay) return;
     const localDraft = readSessionDraft(sessionDraftStorageKey);
@@ -770,6 +779,7 @@ const WorkoutPlanSessionPage = () => {
         setRemoteDraftPersistenceEnabled(false);
       });
   }, [dayIndex, planId, remoteDraft, selectedDay, startSession]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   React.useEffect(() => {
     const id = setInterval(

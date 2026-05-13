@@ -30,11 +30,13 @@ export default function TimeDrawer({ children, label, goalKey }) {
     }
   };
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (open) {
       setTempVal(goals[goalKey] || "08:00");
     }
   }, [goalKey, goals, open]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <Drawer open={open} onOpenChange={setOpen} direction="bottom">

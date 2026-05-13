@@ -224,6 +224,7 @@ export const usePremium = () => {
     [giftActivateMutation],
   );
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (typeof window === "undefined" || isPremiumCheckoutReturnHandled) {
       return;
@@ -298,6 +299,7 @@ export const usePremium = () => {
         setIsFinalizingGift(false);
       });
   }, [activateGift]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return {
     ...query,

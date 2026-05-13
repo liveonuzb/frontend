@@ -47,6 +47,7 @@ export const useMobileChromeHidden = () => {
     };
   }, []);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     mobileChromeHiddenRef.current = false;
     setMobileChromeHidden(false);
@@ -54,6 +55,7 @@ export const useMobileChromeHidden = () => {
       lastScrollYRef.current = window.scrollY;
     }
   }, [location.pathname]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return mobileChromeHidden;
 };

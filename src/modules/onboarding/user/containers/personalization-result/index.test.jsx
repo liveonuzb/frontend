@@ -11,6 +11,7 @@ const navigateMock = vi.hoisted(() => vi.fn());
 const invalidateQueriesMock = vi.hoisted(() => vi.fn());
 const setOnboardingFlowMock = vi.hoisted(() => vi.fn());
 const confirmMetabolismMock = vi.hoisted(() => vi.fn());
+const generatePlanMock = vi.hoisted(() => vi.fn());
 const patchResultMock = vi.hoisted(() => vi.fn());
 const getQueryResultMock = vi.hoisted(() => vi.fn());
 
@@ -51,10 +52,13 @@ vi.mock("@/hooks/api", () => ({
     mutateAsync: vi.fn(),
     isPending: false,
   }),
-  usePostQuery: () => ({
-    mutateAsync: confirmMetabolismMock,
+  usePostQuery: vi.fn((options) => ({
+    mutateAsync:
+      options?.mutationProps?.mutationKey?.[0] === "generate-personal-plan"
+        ? generatePlanMock
+        : confirmMetabolismMock,
     isPending: false,
-  }),
+  })),
 }));
 
 const renderResultPage = () =>
@@ -116,6 +120,16 @@ describe("PersonalizationResult onboarding screen", () => {
           status: "RESULT_CONFIRMED",
           onboardingFlowStatus: "RESULT_CONFIRMED",
           onboardingNextPath: "/user/onboarding/plan-preview",
+        },
+      },
+    });
+    generatePlanMock.mockReset();
+    generatePlanMock.mockResolvedValue({
+      data: {
+        data: {
+          id: "generation-1",
+          flowStatus: "PLAN_GENERATING",
+          nextPath: "/user/onboarding/plan-generating/generation-1",
         },
       },
     });
@@ -367,7 +381,7 @@ describe("PersonalizationResult onboarding screen", () => {
     });
   });
 
-  it("confirms metabolism before opening the plan preview", async () => {
+  it("confirms metabolism before starting plan generation", async () => {
     renderResultPage();
 
     fireEvent.click(screen.getByRole("button", { name: "Rejani yaratish" }));
@@ -377,12 +391,18 @@ describe("PersonalizationResult onboarding screen", () => {
         url: "/user/onboarding/confirm-metabolism",
       });
     });
+    await waitFor(() => {
+      expect(generatePlanMock).toHaveBeenCalledWith({
+        url: "/user/onboarding/generate-personal-plan",
+      });
+    });
     expect(setOnboardingFlowMock).toHaveBeenCalledWith({
-      onboardingFlowStatus: "RESULT_CONFIRMED",
-      onboardingNextPath: "/user/onboarding/plan-preview",
+      onboardingFlowStatus: "PLAN_GENERATING",
+      onboardingNextPath: "/user/onboarding/plan-generating/generation-1",
+      latestPlanGenerationJobId: "generation-1",
     });
     expect(navigateMock).toHaveBeenCalledWith(
-      "/user/onboarding/plan-preview",
+      "/user/onboarding/plan-generating/generation-1",
       { replace: true },
     );
   });

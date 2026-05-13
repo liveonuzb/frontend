@@ -13,10 +13,12 @@ import { NutritionDrawerContent } from "./nutrition-drawer-layout.jsx";
 import {
   MealDraftCard,
   MealDraftSummaryCard,
+} from "./meal-draft-review.jsx";
+import {
   getDraftImageUrl,
   getDraftNutritionPreview,
   getDraftPortion,
-} from "./meal-draft-review.jsx";
+} from "./meal-draft-review-utils.js";
 import {
   addMealIngredient,
   removeMealIngredient,
@@ -39,6 +41,11 @@ export default function InlineScanReviewDrawer({
   const [manualGrams, setManualGrams] = React.useState(null);
   const [manualTouched, setManualTouched] = React.useState(false);
 
+  /*
+   * Opening a scan review drawer copies the selected draft into local editable
+   * form state, including manual macro overrides.
+   */
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (open && scan?.item) {
       const nextDraft = {
@@ -58,6 +65,7 @@ export default function InlineScanReviewDrawer({
       setManualTouched(false);
     }
   }, [open, scan]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const setMacroValue = React.useCallback((key, value) => {
     const numeric = Math.max(0, Number(value) || 0);

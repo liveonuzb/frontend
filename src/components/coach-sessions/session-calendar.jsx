@@ -74,7 +74,7 @@ const SessionCalendar = ({
   onReschedule,
   isBusy,
 }) => {
-  const today = new Date();
+  const today = React.useMemo(() => new Date(), []);
   const [currentMonth, setCurrentMonth] = React.useState(today.getMonth());
   const [currentYear, setCurrentYear] = React.useState(today.getFullYear());
   const [selectedDate, setSelectedDate] = React.useState(null);
@@ -89,9 +89,13 @@ const SessionCalendar = ({
     () => getMonthDays(currentYear, currentMonth),
     [currentYear, currentMonth],
   );
-  const weekAnchor = selectedDate
-    ? new Date(`${selectedDate}T00:00:00`)
-    : new Date(currentYear, currentMonth, today.getDate());
+  const weekAnchor = React.useMemo(
+    () =>
+      selectedDate
+        ? new Date(`${selectedDate}T00:00:00`)
+        : new Date(currentYear, currentMonth, today.getDate()),
+    [currentMonth, currentYear, selectedDate, today],
+  );
   const weekDays = React.useMemo(() => getWeekDays(weekAnchor), [weekAnchor]);
 
   const todayKey = formatDateKey(today);

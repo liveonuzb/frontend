@@ -675,41 +675,6 @@
           "finalizing": "Finalizing results"
         }
       },
-      "planPreview": {
-        "cta": "Start AI plan",
-        "badge": "Plan quality checked",
-        "title": "Final check before creating your AI plan",
-        "subtitle": "Nutrition, workout, safety, and catalog fit have been checked. If there are no blocking issues, meal and workout plans will be generated separately in the next step.",
-        "readinessScore": "Plan readiness score",
-        "qualityScore": "Plan quality score",
-        "fixFirstTitle": "Fix these first",
-        "attentionTitle": "Worth checking",
-        "ready": "Plan generation can start.",
-        "nutritionTitle": "Nutrition inputs",
-        "workoutTitle": "Workout inputs",
-        "recommendationsTitle": "Recommendations",
-        "noRecommendations": "Inputs are enough. You can start plan generation.",
-        "blockingLocked": "Plan generation is locked until blocking issues are fixed.",
-        "rows": {
-          "calories": "Calories",
-          "macros": "Macros",
-          "meals": "Meals",
-          "cuisines": "Cuisine choices",
-          "allergies": "Allergies",
-          "budget": "Budget",
-          "weeklyWorkouts": "Weekly workouts",
-          "location": "Location",
-          "equipment": "Equipment",
-          "bodyParts": "Target body parts"
-        },
-        "values": {
-          "kcal": "{{value}} kcal",
-          "macros": "{{protein}}g P / {{carbs}}g C / {{fat}}g F",
-          "meals": "{{count}} meals",
-          "count": "{{count}} selected",
-          "days": "{{count}} days"
-        }
-      },
       "planReady": {
         "badge": "Plan ready",
         "title": "Your plan is ready",

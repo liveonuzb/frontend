@@ -159,11 +159,13 @@ const FloatingActionButton = () => {
 
   const closeFab = React.useCallback(() => setIsOpen(false), []);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (!isVisible && isOpen) {
       setIsOpen(false);
     }
   }, [isOpen, isVisible]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   React.useEffect(() => {
     if (!isOpen) {

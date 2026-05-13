@@ -134,7 +134,7 @@ export default function ChallengeReminderDrawer() {
       window.localStorage.setItem(storageKey(userId, reminderChallenge.id), today);
     }
     setOpen(false);
-  }, [reminderChallenge?.id, today, userId]);
+  }, [reminderChallenge, setOpen, today, userId]);
 
   const openChallenge = () => {
     if (!reminderChallenge?.id) return;

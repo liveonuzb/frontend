@@ -57,6 +57,7 @@ const usePullToRefresh = (onRefresh, enabled = true) => {
         }
     }, [pullDistance, refreshing, onRefresh, enabled]);
 
+    /* eslint-disable react-hooks/set-state-in-effect */
     React.useEffect(() => {
         if (!enabled) {
             setPullDistance(0);
@@ -75,6 +76,7 @@ const usePullToRefresh = (onRefresh, enabled = true) => {
             document.removeEventListener("touchend", handleTouchEnd);
         };
     }, [handleTouchStart, handleTouchMove, handleTouchEnd, enabled]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     const progress = Math.min((pullDistance / THRESHOLD) * 100, 100);
 

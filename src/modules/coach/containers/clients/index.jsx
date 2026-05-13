@@ -63,7 +63,12 @@ import {
   DataGridTableRowSelect,
   DataGridTableRowSelectAll,
 } from "@/components/reui/data-grid";
-import { useCoachClients, useCoachGroups } from "@/hooks/app/use-coach.js";
+import {
+  useCoachClients,
+  useCoachGroups,
+  useCoachMealPlans,
+  useCoachWorkoutPlans,
+} from "@/hooks/app/use-coach.js";
 import ClientDetailDrawerContent from "@/modules/coach/components/client-detail-drawer-content.jsx";
 import { useBreadcrumbStore } from "@/store";
 import { cn } from "@/lib/utils";
@@ -327,6 +332,9 @@ const Index = () => {
     isUpdatingClientPricing,
     isCancellingClientPayment,
   } = useCoachClients(queryParams);
+  const { assignMealPlan: assignMealPlanToClient } = useCoachMealPlans();
+  const { assignWorkoutPlan: assignWorkoutPlanToClient } =
+    useCoachWorkoutPlans();
 
   const { groups, addClientsToGroup, createGroupWithClients } =
     useCoachGroups();
@@ -1431,6 +1439,27 @@ const Index = () => {
     setPlanType(null);
     setRowSelection({});
   }, [activeClientIds, planType]);
+
+  const handleAssignPlanToClient = React.useCallback(
+    async (planId) => {
+      if (!planId || isEmpty(activeClientIds)) return;
+
+      if (planType === "meal") {
+        await assignMealPlanToClient(planId, activeClientIds);
+      } else {
+        await assignWorkoutPlanToClient(planId, activeClientIds);
+      }
+
+      handlePlanAssigned();
+    },
+    [
+      activeClientIds,
+      assignMealPlanToClient,
+      assignWorkoutPlanToClient,
+      handlePlanAssigned,
+      planType,
+    ],
+  );
 
   const handleRemove = React.useCallback(async () => {
     if (!removeCandidate) {

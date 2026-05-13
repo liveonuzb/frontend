@@ -61,7 +61,7 @@ export const useWorkoutSessionDraft = (planId, dayIndex, options = {}) => {
     queryProps: {
       queryKey: getWorkoutSessionDraftQueryKey(planId, dayIndex),
       enabled: Boolean(planId) && Number.isInteger(dayIndex) && dayIndex >= 0 && enabled,
-      staleTime: 15_000,
+      staleTime: 15000,
     },
   });
 

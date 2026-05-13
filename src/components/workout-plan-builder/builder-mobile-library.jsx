@@ -100,4 +100,6 @@ const BuilderMobileLibrary = memo(({
   );
 });
 
+BuilderMobileLibrary.displayName = "BuilderMobileLibrary";
+
 export default BuilderMobileLibrary;

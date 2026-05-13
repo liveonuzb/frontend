@@ -317,11 +317,13 @@ export default function ChallengeCreateContainer() {
     }
   }, [navigate, routeState.challengeId, routeState.invalid]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (routeState.challengeId) return;
     loadedChallengeIdRef.current = null;
     setForm(createInitialForm());
   }, [routeState.challengeId]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   React.useEffect(() => {
     if (!routeState.challengeId || routeState.challengeId === loadedChallengeIdRef.current) {

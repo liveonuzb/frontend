@@ -212,4 +212,6 @@ const BuilderDesktopView = memo(({
   );
 });
 
+BuilderDesktopView.displayName = "BuilderDesktopView";
+
 export default BuilderDesktopView;

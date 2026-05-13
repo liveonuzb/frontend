@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React from "react";
 import { map as lodashMap } from "lodash";
 import { Badge } from "@/components/ui/badge";

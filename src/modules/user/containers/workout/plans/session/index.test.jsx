@@ -183,9 +183,9 @@ describe("WorkoutPlanSessionPage", () => {
       expect(startSessionMock).toHaveBeenCalledTimes(1);
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 1_200));
+    await new Promise((resolve) => setTimeout(resolve, 1200));
     expect(startSessionMock).toHaveBeenCalledTimes(1);
-  }, 8_000);
+  }, 8000);
 
   it("stops remote draft PUT sync when start falls back without a server session id", async () => {
     startSessionMock.mockResolvedValue({
@@ -201,9 +201,9 @@ describe("WorkoutPlanSessionPage", () => {
       expect(startSessionMock).toHaveBeenCalledTimes(1);
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 1_200));
+    await new Promise((resolve) => setTimeout(resolve, 1200));
     expect(updateProgressMock).not.toHaveBeenCalled();
-  }, 8_000);
+  }, 8000);
 
   it("logs the next set from the sticky action", async () => {
     renderPage();
@@ -310,11 +310,11 @@ describe("WorkoutPlanSessionPage", () => {
       JSON.stringify({
         planId: "plan-1",
         dayIndex: 0,
-        sessionStartTime: Date.now() - 45_000,
+        sessionStartTime: Date.now() - 45000,
         elapsed: 45,
         expandedExerciseId: "7-0",
         restSecondsRemaining: 28,
-        restEndsAt: new Date(Date.now() + 28_000).toISOString(),
+        restEndsAt: new Date(Date.now() + 28000).toISOString(),
         exercises: [
           {
             id: 7,

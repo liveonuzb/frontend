@@ -37,9 +37,6 @@ export const getUserOnboardingPersonalizingPath = (jobId = "") => {
 export const getUserOnboardingResultPath = () =>
   `${USER_ONBOARDING_BASE_PATH}/metabolism-result`;
 
-export const getUserOnboardingPlanPreviewPath = () =>
-  `${USER_ONBOARDING_BASE_PATH}/plan-preview`;
-
 export const getUserOnboardingGeneratingPath = (jobId = "") => {
   const normalizedJobId = trimSlashes(jobId);
   return normalizedJobId
@@ -77,7 +74,7 @@ export const getPostOnboardingPath = (user = {}) => {
     case ONBOARDING_FLOW_STATUS.personalizationReady:
       return getUserOnboardingResultPath();
     case ONBOARDING_FLOW_STATUS.resultConfirmed:
-      return getUserOnboardingPlanPreviewPath();
+      return getUserOnboardingGeneratingPath();
     case ONBOARDING_FLOW_STATUS.planGenerating:
     case ONBOARDING_FLOW_STATUS.planFailed:
       return getUserOnboardingGeneratingPath(planJobId);

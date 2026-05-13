@@ -346,11 +346,13 @@ const Index = () => {
     return () => setBreadcrumbs([]);
   }, [setBreadcrumbs]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (!activeReportId && historyItems.length) {
       setActiveReportId(historyItems[0].id);
     }
   }, [activeReportId, historyItems]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const periodAccess = React.useMemo(() => {
     const map = new Map();

@@ -105,7 +105,7 @@ const OnboardingLayoutInner = () => {
     isCoachScope && routePath ? `coach/${routePath}` : routePath;
   const isResultRoute =
     !isCoachScope &&
-    ["result", "metabolism-result", "plan-preview", "plan-ready"].includes(
+    ["result", "metabolism-result", "plan-ready"].includes(
       currentPath,
     );
   const isMetabolismResultRoute = currentPath === "metabolism-result";
@@ -136,7 +136,6 @@ const OnboardingLayoutInner = () => {
     "metabolism-calculating",
     "result",
     "metabolism-result",
-    "plan-preview",
     "generating",
     "plan-generating",
     "plan-ready",
@@ -156,11 +155,9 @@ const OnboardingLayoutInner = () => {
   const prevPath =
     returnToPath ||
     (isResultRoute
-      ? currentPath === "plan-preview"
+      ? currentPath === "plan-ready"
         ? getUserOnboardingPath("metabolism-result")
-        : currentPath === "plan-ready"
-          ? getUserOnboardingPath("plan-preview")
-          : getUserOnboardingPath("review")
+        : getUserOnboardingPath("review")
       : prevStep
         ? getOnboardingPathFromStep(prevStep)
         : currentStepIndex === 0

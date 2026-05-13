@@ -83,6 +83,7 @@ export default function IngredientEditDrawer({
       : createEmptyIngredientDraft(),
   );
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (!open) return;
     setDraft(
@@ -91,6 +92,7 @@ export default function IngredientEditDrawer({
         : createEmptyIngredientDraft(),
     );
   }, [ingredient, open]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const preview = React.useMemo(
     () => getIngredientNutritionPreview(draft),

@@ -937,6 +937,7 @@ const WorkoutDashboardPage = () => {
     ]);
   }, [setBreadcrumbs]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     const focusFilters = buildFocusFilters(get(catalog, "bodyParts", []));
 
@@ -947,6 +948,7 @@ const WorkoutDashboardPage = () => {
       setSelectedFocus(focusFilters[0]);
     }
   }, [catalog, selectedFocus]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const openPlans = React.useCallback(() => {
     navigate("/user/workout/plans");

@@ -509,7 +509,7 @@ export default function ChallengesContainer() {
     setSelectedInvitees((curr) =>
       includes(curr, id) ? curr.filter((x) => x !== id) : [...curr, id],
     );
-  }, []);
+  }, [setSelectedInvitees]);
 
   const handleSendInvites = React.useCallback(async () => {
     if (!inviteChallenge?.id || selectedInvitees.length === 0 || isInvitingFriends)
@@ -531,7 +531,17 @@ export default function ChallengesContainer() {
     } catch {
       // store-level toast
     }
-  }, [inviteChallenge?.id, inviteFriends, inviteMessage, isInvitingFriends, selectedInvitees]);
+  }, [
+    inviteChallenge,
+    inviteFriends,
+    inviteMessage,
+    isInvitingFriends,
+    selectedInvitees,
+    setInviteChallenge,
+    setInviteMessage,
+    setIsInviteDrawerOpen,
+    setSelectedInvitees,
+  ]);
 
   const handleInvitationResponse = React.useCallback(
     async (invitationId, action) => {

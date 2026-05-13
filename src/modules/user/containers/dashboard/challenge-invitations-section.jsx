@@ -133,10 +133,12 @@ export default function ChallengeInvitationsSection() {
     [invitationSignature, userId],
   );
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     setLastDismissedAt(readLastDismissedAt(invitationStorageKey));
     setNow(Date.now());
   }, [invitationStorageKey]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   React.useEffect(() => {
     if (!lastDismissedAt) return undefined;

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { useEffect } from "react";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { useLanguageStore } from "@/store";

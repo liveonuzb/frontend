@@ -195,6 +195,7 @@ export const useCoachNotificationsFeed = (options = {}) => {
   const meta = get(responseData, "meta", {});
   const hasMore = Number(meta.page || page) < Number(meta.totalPages || 0);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     setPage(1);
     setItems(EMPTY_ITEMS);
@@ -219,6 +220,7 @@ export const useCoachNotificationsFeed = (options = {}) => {
       return Array.from(byId.values());
     });
   }, [enabled, page, pageItems]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const markReadMutation = usePostQuery({
     queryKey: COACH_NOTIFICATIONS_QUERY_KEY,

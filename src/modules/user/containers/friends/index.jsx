@@ -136,9 +136,11 @@ const LoadingRows = () => (
 const useInfiniteSlice = (items, batchSize) => {
   const [visibleCount, setVisibleCount] = React.useState(batchSize);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     setVisibleCount(batchSize);
   }, [batchSize, items]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const visibleItems = React.useMemo(
     () => items.slice(0, visibleCount),
@@ -291,10 +293,12 @@ export default function FriendsContainer() {
     ]);
   }, [setBreadcrumbs]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     const urlTab = resolveFriendsTab(tabFromUrl);
     setActiveTab((current) => (current === urlTab ? current : urlTab));
   }, [tabFromUrl]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const summary = React.useMemo(
     () => ({
