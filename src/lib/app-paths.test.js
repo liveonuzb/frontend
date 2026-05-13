@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  canAccessUserDashboard,
   getPostOnboardingPath,
   ONBOARDING_FLOW_STATUS,
 } from "./app-paths.js";
@@ -62,5 +63,17 @@ describe("post-onboarding route resolution", () => {
         },
       }),
     ).toBe("/user/onboarding/plan-generating/nested-plan");
+  });
+
+  it("does not loop completed seeded users back to onboarding when status is draft", () => {
+    expect(canAccessUserDashboard(ONBOARDING_FLOW_STATUS.draft, true)).toBe(
+      true,
+    );
+    expect(
+      getPostOnboardingPath({
+        onboardingCompleted: true,
+        onboardingFlowStatus: ONBOARDING_FLOW_STATUS.draft,
+      }),
+    ).toBe("/user");
   });
 });
