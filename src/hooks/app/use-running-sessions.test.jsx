@@ -16,6 +16,7 @@ import {
   RUNNING_SESSIONS_QUERY_KEY,
   useAppendRunningPoints,
   useRunningActiveSession,
+  useRunningSessionDetail,
   useStartRunningSession,
 } from "./use-running-sessions.js";
 
@@ -143,5 +144,44 @@ describe("use-running-sessions", () => {
         ],
       },
     });
+  });
+
+  it("keeps detail route points for map rendering", () => {
+    mockUseGetQuery.mockReturnValue({
+      data: {
+        data: {
+          data: {
+            workoutSessionId: "workout-1",
+            status: "completed",
+            metrics: {
+              distanceMeters: 1000,
+            },
+            points: [
+              {
+                sequence: 1,
+                latitude: 41.311081,
+                longitude: 69.240562,
+              },
+            ],
+          },
+        },
+      },
+      isLoading: false,
+    });
+
+    const { result } = renderHook(
+      () => useRunningSessionDetail("workout-1"),
+      {
+        wrapper: createWrapper(queryClient),
+      },
+    );
+
+    expect(result.current.session.points).toEqual([
+      expect.objectContaining({
+        sequence: 1,
+        latitude: 41.311081,
+        longitude: 69.240562,
+      }),
+    ]);
   });
 });

@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router";
-import { ArrowLeftIcon, MapIcon } from "lucide-react";
+import { ArrowLeftIcon } from "lucide-react";
 import PageLoader from "@/components/page-loader/index.jsx";
 import PageTransition from "@/components/page-transition";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import {
   formatRunningDuration,
   formatRunningPace,
 } from "@/lib/running-metrics";
+import RunMapPanel from "../components/run-map-panel.jsx";
 
 const RunningDetailPage = () => {
   const navigate = useNavigate();
@@ -90,19 +91,11 @@ const RunningDetailPage = () => {
           </Card>
         </section>
 
-        <Card>
-          <CardContent className="flex min-h-[320px] items-center justify-center p-6">
-            <div className="text-center">
-              <MapIcon className="mx-auto size-8 text-primary" />
-              <p className="mt-3 text-sm font-medium">Route map</p>
-              <p className="mt-1 max-w-md text-sm text-muted-foreground">
-                {session.route?.polyline
-                  ? "Route polyline is saved and ready for the lazy map provider."
-                  : "No route polyline was recorded for this run."}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <RunMapPanel
+          points={session.points}
+          polyline={session.route?.polyline}
+          emptyLabel="No route recorded"
+        />
       </div>
     </PageTransition>
   );

@@ -7,11 +7,9 @@ import React, {
 import {
   map,
   filter,
-  some,
   reduce,
   find,
   findIndex,
-  values,
   get,
   isArray,
   max,
@@ -21,8 +19,6 @@ import {
   isNil,
   size,
   isEmpty,
-  compact,
-  slice,
   join,
 } from "lodash";
 import { toast } from "sonner";
@@ -93,20 +89,34 @@ import {
 const useRestTimer = (onComplete) => {
   const [seconds, setSeconds] = useState(0);
   const [running, setRunning] = useState(false);
+  const onCompleteRef = React.useRef(onComplete);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   useEffect(() => {
     if (!running || seconds <= 0) {
-      if (running && seconds <= 0) {
-        setRunning(false);
-        if (!isNil(onComplete)) {
-          onComplete();
-        }
-      }
       return;
     }
-    const id = setInterval(() => setSeconds((s) => s - 1), 1000);
+
+    const id = setInterval(() => {
+      setSeconds((current) => {
+        if (current <= 1) {
+          clearInterval(id);
+          setRunning(false);
+          if (!isNil(onCompleteRef.current)) {
+            onCompleteRef.current();
+          }
+          return 0;
+        }
+
+        return current - 1;
+      });
+    }, 1000);
+
     return () => clearInterval(id);
-  }, [running, seconds, onComplete]);
+  }, [running, seconds]);
 
   const start = useCallback((secs) => {
     setSeconds(secs);
@@ -151,10 +161,6 @@ const ExerciseCard = ({
     size(trackingFields) === 1
       ? "grid grid-cols-[36px_1fr_40px] items-center gap-3 rounded-2xl border bg-background p-3 sm:grid-cols-[44px_1fr_48px]"
       : "grid grid-cols-[36px_1fr_1fr_40px] items-center gap-3 rounded-2xl border bg-background p-3 sm:grid-cols-[44px_1fr_1fr_48px]";
-
-  useEffect(() => {
-    setSets(normalizeExerciseSets(exercise));
-  }, [exercise]);
 
   const updateSet = (i, field, value) => {
     // NumberField passes a number, we can store it directly or as string
@@ -234,19 +240,6 @@ const ExerciseCard = ({
         done: false,
       },
     ];
-    setSets(newSets);
-    if (!isNil(onProgressChange)) {
-      onProgressChange(
-        get(exercise, "_id"),
-        get(filter(newSets, (s) => get(s, "done")), "length"),
-        size(newSets),
-      );
-    }
-    setIsExpanded(true); // expand when adding a set
-  };
-
-  const removeSet = (i) => {
-    const newSets = filter(sets, (_, j) => j !== i);
     setSets(newSets);
     if (!isNil(onProgressChange)) {
       onProgressChange(
@@ -609,7 +602,11 @@ export default function SessionDrawer({
   dateKey,
 }) {
   const { createLog, isPending: isSavingSession } = useCreateWorkoutLog();
-  const scheduleSource = isArray(get(plan, "schedule")) ? plan.schedule : [];
+  const planSchedule = get(plan, "schedule");
+  const scheduleSource = React.useMemo(
+    () => (isArray(planSchedule) ? planSchedule : []),
+    [planSchedule],
+  );
   const schedule = React.useMemo(() => {
     const scheduledDays = filter(
       scheduleSource,
@@ -623,13 +620,14 @@ export default function SessionDrawer({
   const [elapsed, setElapsed] = useState(0);
   const [startTime, setStartTime] = useState(() => Date.now());
   const [progressData, setProgressData] = useState({}); // { exId: { done, total } }
+  const exerciseInstanceIdRef = React.useRef(0);
 
   const [isAddingExercise, setIsAddingExercise] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedGroup, setSelectedGroup] = useState("all");
   const deferredSearch = useDeferredValue(toLower(trim(search)));
 
-  const { data: exercisesData, isLoading: isLoadingExercises } = useGetQuery({
+  const { data: exercisesData } = useGetQuery({
     url: "/coach/exercises",
     params: deferredSearch ? { search: deferredSearch } : undefined,
     queryProps: {
@@ -637,13 +635,16 @@ export default function SessionDrawer({
       enabled: isAddingExercise,
     },
   });
+  const exerciseItems = get(exercisesData, "data");
+
+  const createExerciseInstanceId = useCallback((name, scope = "exercise") => {
+    exerciseInstanceIdRef.current += 1;
+    return `${name || "exercise"}-${scope}-${exerciseInstanceIdRef.current}`;
+  }, []);
 
   const exerciseCatalog = React.useMemo(() => {
-    if (
-      isArray(get(exercisesData, "data")) &&
-      size(get(exercisesData, "data")) > 0
-    ) {
-      return map(exercisesData.data, (exercise) => ({
+    if (isArray(exerciseItems) && size(exerciseItems) > 0) {
+      return map(exerciseItems, (exercise) => ({
         ...exercise,
         group: exercise.category || exercise.groupLabel || "General",
         groupLabel: exercise.category || exercise.groupLabel || "General",
@@ -688,7 +689,7 @@ export default function SessionDrawer({
           ? [{ url: exercise.equipmentImageUrl }]
           : [],
     }));
-  }, [get(exercisesData, "data")]);
+  }, [exerciseItems]);
 
   const restTimer = useRestTimer(() => {
     toast.success("Dam olish vaqti tugadi! Keyingi setga tayyorlaning 💪", {
@@ -696,10 +697,15 @@ export default function SessionDrawer({
     });
     try {
       if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-    } catch (e) {}
+    } catch {
+      // Vibration is best-effort and may be blocked by the browser.
+    }
   });
 
-  // Initialize exercises
+  const { start: startRestTimer, stop: stopRestTimer } = restTimer;
+
+  // Opening a session intentionally rebuilds the editable draft from the plan.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!open) return;
     const initial = {};
@@ -711,7 +717,7 @@ export default function SessionDrawer({
           (item) =>
             toLower(String(item.name || "")) === toLower(String(ex.name || "")),
         );
-        const id = `${ex.name}-${idx}-${Date.now()}`;
+        const id = createExerciseInstanceId(ex.name, idx);
         prog[id] = { done: 0, total: getExerciseSetCount(ex) };
         return {
           ...ex,
@@ -770,8 +776,17 @@ export default function SessionDrawer({
     setStartTime(Date.now());
     setCompletedSets({});
     setIsAddingExercise(false);
-    restTimer.stop();
-  }, [exerciseCatalog, open, plan, initialDayIdx, schedule, scheduleSource]);
+    stopRestTimer();
+  }, [
+    createExerciseInstanceId,
+    exerciseCatalog,
+    initialDayIdx,
+    open,
+    schedule,
+    scheduleSource,
+    stopRestTimer,
+  ]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Elapsed timer
   useEffect(() => {
@@ -856,19 +871,8 @@ export default function SessionDrawer({
       ),
     [exerciseCatalog],
   );
-  const completedExerciseCount = get(
-    filter(currentExercises, (exercise) => {
-      const exerciseProgress = get(progressData, get(exercise, "_id"));
-      return (
-        get(exerciseProgress, "total", 0) > 0 &&
-        get(exerciseProgress, "done") === get(exerciseProgress, "total")
-      );
-    }),
-    "length",
-  );
-
   const handleAddFromLibrary = (exercise) => {
-    const _id = `${get(exercise, "name")}-${Date.now()}`;
+    const _id = createExerciseInstanceId(get(exercise, "name"), "library");
     const trackingType = normalizeWorkoutTrackingType(
       get(exercise, "trackingType"),
     );
@@ -962,10 +966,10 @@ export default function SessionDrawer({
         };
       });
       if (done) {
-        restTimer.start(rest);
+        startRestTimer(rest);
       }
     },
-    [restTimer],
+    [startRestTimer],
   );
 
   const handleProgressChange = useCallback((exId, done, total) => {
@@ -1138,18 +1142,18 @@ export default function SessionDrawer({
             className="flex items-center gap-2 overflow-x-auto pb-2 -mx-2 px-2"
             style={{ scrollbarWidth: "none" }}
           >
-            {map(allMuscleGroups, (g) => (
+            {map(allMuscleGroups, (group) => (
               <button
-                key={g}
-                onClick={() => setSelectedGroup(g)}
+                key={group.id}
+                onClick={() => setSelectedGroup(group.id)}
                 className={cn(
                   "shrink-0 rounded-xl border px-4 py-2 text-xs font-bold transition-all active:scale-95",
-                  selectedGroup === g
+                  selectedGroup === group.id
                     ? "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                     : "border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-primary/5",
                 )}
               >
-                {get(MODERN_MUSCLE_GROUPS, [g]) || g}
+                {group.label}
               </button>
             ))}
           </div>
@@ -1306,7 +1310,6 @@ export default function SessionDrawer({
             <div className="flex gap-2 overflow-x-auto pb-1">
               {map(schedule, (day, index) => {
                 const isActive = index === selectedDayIdx;
-                const exercisesCount = size(get(day, "exercises"));
                 return (
                   <button
                     key={`${get(day, "day")}-${index}`}

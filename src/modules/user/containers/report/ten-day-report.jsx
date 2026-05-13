@@ -8,6 +8,9 @@ import {
   SparklesIcon,
   TargetIcon,
   AlertTriangleIcon,
+  FlameIcon,
+  RouteIcon,
+  TimerIcon,
 } from "lucide-react";
 import PageTransition from "@/components/page-transition";
 import { Button } from "@/components/ui/button";
@@ -17,6 +20,7 @@ import RechartsLine from "@/components/charts/line-chart";
 import { CHART_COLORS } from "@/lib/chart-colors";
 import useGetQuery from "@/hooks/api/use-get-query";
 import { getApiResponseData } from "@/lib/api-response";
+import { formatRunningDistance, formatRunningPace } from "@/lib/running-metrics";
 import useBreadcrumbStore from "@/store/breadcrumb-store";
 import ScoreCircle from "./components/score-circle.jsx";
 import DayStatusDot from "./components/day-status-dot.jsx";
@@ -120,6 +124,10 @@ export default function TenDayReport() {
   const trends = report?.trends ?? {};
   const averages = report?.averages ?? {};
   const highlights = report?.highlights ?? {};
+  const running = averages?.running ?? null;
+  const hasRunning =
+    Number(running?.distanceMeters ?? 0) > 0 ||
+    Number(running?.durationMinutes ?? 0) > 0;
 
   const rangeLabel =
     report?.period?.startDate && report?.period?.endDate
@@ -229,6 +237,53 @@ export default function TenDayReport() {
             )}
           </CardContent>
         </Card>
+
+        {hasRunning ? (
+          <Card className="rounded-3xl shadow-sm">
+            <CardContent className="flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <RouteIcon className="size-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-black">Running</p>
+                  <p className="text-xs text-muted-foreground">
+                    {Number(running?.count ?? 0)} runs
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="rounded-2xl bg-muted/30 px-3 py-2 text-center">
+                  <p className="text-[11px] text-muted-foreground">Masofa</p>
+                  <p className="mt-1 text-sm font-black">
+                    {formatRunningDistance(running?.distanceMeters)}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-muted/30 px-3 py-2 text-center">
+                  <p className="text-[11px] text-muted-foreground">Vaqt</p>
+                  <p className="mt-1 inline-flex items-center justify-center gap-1 text-sm font-black">
+                    <TimerIcon className="size-3.5 text-muted-foreground" />
+                    {Math.round(Number(running?.durationMinutes) || 0)} min
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-muted/30 px-3 py-2 text-center">
+                  <p className="text-[11px] text-muted-foreground">Pace</p>
+                  <p className="mt-1 text-sm font-black">
+                    {formatRunningPace(running?.averagePaceSecondsPerKm)}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-muted/30 px-3 py-2 text-center">
+                  <p className="text-[11px] text-muted-foreground">Calories</p>
+                  <p className="mt-1 inline-flex items-center justify-center gap-1 text-sm font-black">
+                    <FlameIcon className="size-3.5 text-muted-foreground" />
+                    {Math.round(Number(running?.burnedCalories) || 0)} kcal
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
 
         {/* Trend cards */}
         <div className="grid gap-4 md:grid-cols-2">

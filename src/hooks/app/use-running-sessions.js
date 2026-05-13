@@ -1,10 +1,12 @@
 import React from "react";
 import { get } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
+import { config } from "@/config.js";
 import { useGetQuery, usePostQuery } from "@/hooks/api";
 import { WORKOUT_LOGS_QUERY_KEY } from "@/hooks/app/use-workout-logs";
 import { WORKOUT_OVERVIEW_QUERY_KEY } from "@/hooks/app/use-workout-overview";
 import { WORKOUT_SESSION_HISTORY_QUERY_KEY } from "@/hooks/app/use-workout-sessions";
+import { useAuthStore } from "@/store";
 
 export const RUNNING_SESSIONS_QUERY_KEY = ["user", "workout", "running"];
 export const RUNNING_ACTIVE_QUERY_KEY = [
@@ -20,6 +22,12 @@ export const getRunningSessionDetailQueryKey = (workoutSessionId) => [
 
 const resolveResponseData = (response, fallback = null) =>
   get(response, "data.data", get(response, "data", fallback));
+
+const useRunningQueryEnabled = (enabled = true) => {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  return Boolean(config.runningFeatureEnabled && isAuthenticated && enabled);
+};
 
 const normalizeRunningSession = (session) => {
   if (!session) {
@@ -88,7 +96,7 @@ const invalidateRunningQueries = async (queryClient) => {
 };
 
 export const useRunningActiveSession = (options = {}) => {
-  const enabled = options.enabled ?? true;
+  const enabled = useRunningQueryEnabled(options.enabled ?? true);
   const { data, ...query } = useGetQuery({
     url: "/user/workout/running/active",
     queryProps: {
@@ -106,7 +114,7 @@ export const useRunningActiveSession = (options = {}) => {
 };
 
 export const useRunningSessions = (params = {}, options = {}) => {
-  const enabled = options.enabled ?? true;
+  const enabled = useRunningQueryEnabled(options.enabled ?? true);
   const queryString = new URLSearchParams(
     Object.entries(params).filter(
       ([, value]) => value !== undefined && value !== null && value !== "",
@@ -138,7 +146,7 @@ export const useRunningSessions = (params = {}, options = {}) => {
 };
 
 export const useRunningSessionDetail = (workoutSessionId, options = {}) => {
-  const enabled = options.enabled ?? true;
+  const enabled = useRunningQueryEnabled(options.enabled ?? true);
   const { data, ...query } = useGetQuery({
     url: `/user/workout/running/${workoutSessionId}`,
     queryProps: {
@@ -155,7 +163,7 @@ export const useRunningSessionDetail = (workoutSessionId, options = {}) => {
 };
 
 export const useRunningStatsSummary = (options = {}) => {
-  const enabled = options.enabled ?? true;
+  const enabled = useRunningQueryEnabled(options.enabled ?? true);
   const { data, ...query } = useGetQuery({
     url: "/user/workout/running/stats/summary",
     queryProps: {

@@ -1,5 +1,5 @@
 import React from "react";
-import { render, waitFor } from "@testing-library/react";
+import { act, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useOnboardingStore } from "@/store";
 import {
@@ -46,6 +46,7 @@ describe("useOnboardingAutoSave", () => {
   });
 
   it("coalesces rapid step changes into one draft save", async () => {
+    vi.useFakeTimers();
     putMock.mockResolvedValue({});
 
     const { rerender } = render(
@@ -58,9 +59,15 @@ describe("useOnboardingAutoSave", () => {
       <AutoSaveProbe step="coach/specialization" debounceMs={5} type="coach" />,
     );
 
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(4);
+    });
     expect(putMock).not.toHaveBeenCalled();
 
-    await waitFor(() => expect(putMock).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(putMock).toHaveBeenCalledTimes(1);
     expect(putMock.mock.calls[0][1].currentStep).toBe("specialization");
   });
 

@@ -1,11 +1,19 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router";
-import { ArrowLeftIcon, CheckCircle2Icon, AlertTriangleIcon } from "lucide-react";
+import {
+  AlertTriangleIcon,
+  ArrowLeftIcon,
+  CheckCircle2Icon,
+  FlameIcon,
+  RouteIcon,
+  TimerIcon,
+} from "lucide-react";
 import PageTransition from "@/components/page-transition";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import useGetQuery from "@/hooks/api/use-get-query";
 import { getApiResponseData } from "@/lib/api-response";
+import { formatRunningDistance, formatRunningPace } from "@/lib/running-metrics";
 import useBreadcrumbStore from "@/store/breadcrumb-store";
 import MetricCard from "./components/metric-card.jsx";
 import ScoreCircle from "./components/score-circle.jsx";
@@ -19,6 +27,8 @@ import {
 const isDateKey = (value) => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
 
 const resolveDailyMetrics = (report) => report?.metrics ?? null;
+
+const formatRunningMinutes = (minutes) => `${Math.round(Number(minutes) || 0)} min`;
 
 const progressPctFor = (metricKey, metric) => {
   if (!metric) return 0;
@@ -79,6 +89,10 @@ export default function DailyReport() {
   const report = getApiResponseData(response, null);
   const metrics = resolveDailyMetrics(report);
   const hasData = Boolean(report?.hasData);
+  const runningMetrics = metrics?.running ?? null;
+  const hasRunningMetrics =
+    Number(runningMetrics?.distanceMeters ?? 0) > 0 ||
+    Number(runningMetrics?.durationMinutes ?? 0) > 0;
 
   const trackedKeys = ["water", "calories", "protein", "carbs", "fat", "fastFood"];
 
@@ -178,6 +192,53 @@ export default function DailyReport() {
           </div>
         ) : null}
 
+        {hasData && hasRunningMetrics ? (
+          <div className="rounded-3xl border bg-card p-4 shadow-sm">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <RouteIcon className="size-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-black">Running</p>
+                  <p className="text-xs text-muted-foreground">
+                    {runningMetrics?.label || "Yakunlangan yugurish"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="rounded-2xl bg-muted/30 px-3 py-2 text-center">
+                  <p className="text-[11px] text-muted-foreground">Masofa</p>
+                  <p className="mt-1 text-sm font-black">
+                    {formatRunningDistance(runningMetrics?.distanceMeters)}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-muted/30 px-3 py-2 text-center">
+                  <p className="text-[11px] text-muted-foreground">Vaqt</p>
+                  <p className="mt-1 inline-flex items-center justify-center gap-1 text-sm font-black">
+                    <TimerIcon className="size-3.5 text-muted-foreground" />
+                    {formatRunningMinutes(runningMetrics?.durationMinutes)}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-muted/30 px-3 py-2 text-center">
+                  <p className="text-[11px] text-muted-foreground">Pace</p>
+                  <p className="mt-1 text-sm font-black">
+                    {formatRunningPace(runningMetrics?.averagePaceSecondsPerKm)}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-muted/30 px-3 py-2 text-center">
+                  <p className="text-[11px] text-muted-foreground">Calories</p>
+                  <p className="mt-1 inline-flex items-center justify-center gap-1 text-sm font-black">
+                    <FlameIcon className="size-3.5 text-muted-foreground" />
+                    {Math.round(Number(runningMetrics?.burnedCalories) || 0)} kcal
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         {hasData ? (
           <div className="flex flex-col gap-3 pt-2 md:flex-row md:items-center md:justify-between">
             <p className="text-sm text-muted-foreground">
@@ -196,4 +257,3 @@ export default function DailyReport() {
     </PageTransition>
   );
 }
-
