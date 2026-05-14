@@ -44,7 +44,7 @@ import { ONBOARDING_GRID_SCROLL_AREA_CLASS } from "../onboarding-scroll-area.js"
 
 const tone = ONBOARDING_ACCENTS.green;
 
-const buildCompletePayload = (state) => {
+export const buildCompletePayload = (state) => {
   const payload = toUserOnboardingPayload({
     firstName: state.firstName,
     lastName: state.lastName,
@@ -95,7 +95,6 @@ const buildCompletePayload = (state) => {
     customDislikedIngredients: [],
     dislikedOtherText: null,
     weeklyWorkoutCount: 0,
-    workoutExperience: null,
     workoutLocation: null,
     equipmentIds: [],
     customEquipment: [],

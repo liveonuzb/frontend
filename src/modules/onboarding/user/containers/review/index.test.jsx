@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { buildCompletePayload } from "./index.jsx";
 import {
   getHealthConstraintsSummary,
   getReviewBlockingErrors,
@@ -81,5 +82,37 @@ describe("review issue classification", () => {
     expect(getHealthConstraintsSummary(state, t)).toBe(
       "onboarding.healthConstraints.noneSummary",
     );
+  });
+});
+
+describe("review completion payload", () => {
+  it("does not submit unsupported workout experience when clearing removed plan data", () => {
+    const payload = buildCompletePayload({
+      ...baseState,
+      weeklyWorkoutCount: "4",
+      workoutExperience: "advanced",
+      workoutLocation: "gym",
+      equipmentIds: [1],
+      customEquipment: ["dumbbell"],
+      workoutBodyPartIds: [2],
+      customWorkoutBodyParts: ["legs"],
+      preferredExerciseIds: [3],
+      dislikedExerciseIds: [4],
+      customPreferredExercises: ["push up"],
+      customDislikedExercises: ["burpee"],
+    });
+
+    expect(payload).not.toHaveProperty("workoutExperience");
+    expect(payload).toHaveProperty("weeklyWorkoutCount", 0);
+    expect(payload).toHaveProperty("workoutLocation", null);
+    expect(payload).toHaveProperty("equipmentIds", []);
+    expect(payload).toHaveProperty("customEquipment", []);
+    expect(payload).toHaveProperty("workoutBodyPartIds", []);
+    expect(payload).toHaveProperty("customWorkoutBodyParts", []);
+    expect(payload).toHaveProperty("preferredExerciseIds", []);
+    expect(payload).toHaveProperty("dislikedExerciseIds", []);
+    expect(payload).toHaveProperty("customPreferredExercises", []);
+    expect(payload).toHaveProperty("customDislikedExercises", []);
+    expect(payload).toHaveProperty("completed", true);
   });
 });
