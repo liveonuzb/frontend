@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  ChevronRightIcon,
-  Loader2Icon,
-  PlusIcon,
-  XIcon,
-} from "lucide-react";
+import { ChevronRightIcon, Loader2Icon, PlusIcon, XIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
@@ -44,7 +39,7 @@ const OPTIONS_KEY = "dietRequirements";
 const FIELD = "dietRequirementIds";
 const LEGACY_FIELD = null;
 const CUSTOM_FIELD = "customDietRequirements";
-const NEXT_PATH = "/user/onboarding/preferred-cuisines";
+const NEXT_PATH = "/user/onboarding/health-constraints";
 const OPPOSITE_FIELD = null;
 const OPPOSITE_CUSTOM_FIELD = null;
 const CONFLICT_I18N_KEY = null;

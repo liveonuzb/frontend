@@ -13,16 +13,12 @@ import {
   InfoIcon,
   Loader2Icon,
   PencilIcon,
-  PlusIcon,
   SaladIcon,
   SaveIcon,
   ScaleIcon,
-  SearchIcon,
   SparklesIcon,
   TargetIcon,
   UtensilsIcon,
-  WalletCardsIcon,
-  XIcon,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -38,7 +34,6 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { Input } from "@/components/ui/input";
 import {
   NumberField,
   NumberFieldDecrement,
@@ -46,44 +41,26 @@ import {
   NumberFieldIncrement,
   NumberFieldInput,
 } from "@/components/reui/number-field";
-import { Textarea } from "@/components/ui/textarea";
 import {
   useGetQuery,
   usePatchQuery,
   usePostQuery,
   usePutQuery,
 } from "@/hooks/api";
-import {
-  getUserOnboardingGeneratingPath,
-  getUserOnboardingPersonalizingPath,
-} from "@/lib/app-paths";
+import { getUserOnboardingPersonalizingPath } from "@/lib/app-paths";
 import { cn } from "@/lib/utils";
 import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-context";
-import {
-  getOnboardingOptionsPath,
-  getOnboardingOptionsQueryKey,
-  normalizeOnboardingOptionsResponse,
-} from "@/modules/onboarding/lib/onboarding-options";
 import { useAuthStore } from "@/store";
 import PageAura from "../../components/page-aura.jsx";
 import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
 import { buildMetabolismResultViewModel } from "./result-view-model.js";
 import {
-  buildOnboardingPreferencePatch,
   buildOnboardingSyncPatch,
   buildPersonalizationPatch,
   formatNumber,
   getMacroBalanceMessage,
-  isOnboardingPreferenceField,
-  normalizeCatalogIds,
-  normalizeCustomItems,
   unwrapApiData,
 } from "../../lib/personalization.js";
-import {
-  hasChipLabel,
-  normalizeChipKey,
-  normalizeChipLabel,
-} from "../../lib/chip-selection.js";
 
 const tone = ONBOARDING_ACCENTS.amber;
 
@@ -93,78 +70,6 @@ const editKeys = {
   carbsGram: "carbsGram",
   fatGram: "fatGram",
   recommendedWaterMl: "recommendedWaterMl",
-  currentWeight: "currentWeight",
-  targetWeight: "targetWeight",
-  goal: "goal",
-  weeklyWeightChangeGoal: "weeklyWeightChangeGoal",
-  mealsPerDay: "mealsPerDay",
-  weeklyWorkoutDays: "weeklyWorkoutDays",
-  activityLevel: "activityLevel",
-  foodBudget: "foodBudget",
-  allergies: "allergies",
-  dietRequirements: "dietRequirements",
-  dislikedFoods: "dislikedFoods",
-  workoutExperience: "workoutExperience",
-  sleepHours: "sleepHours",
-  injurySeverity: "injurySeverity",
-  forbiddenExercises: "forbiddenExercises",
-};
-
-const optionSets = {
-  goal: ["lose", "maintain", "gain"],
-  weeklyWeightChangeGoal: [0.25, 0.5, 0.75, 1],
-  mealsPerDay: [2, 3, 4, 5],
-  weeklyWorkoutDays: [2, 3, 4, 5, 6],
-  activityLevel: [
-    "sedentary",
-    "lightly-active",
-    "moderately-active",
-    "very-active",
-  ],
-  workoutExperience: ["beginner", "intermediate", "advanced"],
-  injurySeverity: ["none", "mild", "moderate", "severe"],
-};
-
-const textareaFields = new Set([editKeys.forbiddenExercises]);
-const chipFieldConfigs = {
-  [editKeys.allergies]: {
-    idsKey: "allergyIds",
-    legacyIdsKey: "allergyIngredientIds",
-    customKey: "customAllergies",
-    optionsKey: "allergies",
-  },
-  [editKeys.dietRequirements]: {
-    idsKey: "dietRequirementIds",
-    customKey: "customDietRequirements",
-    optionsKey: "dietRequirements",
-  },
-  [editKeys.dislikedFoods]: {
-    idsKey: "dislikedFoodIds",
-    customKey: "customDislikedFoods",
-    optionsKey: "foods",
-  },
-};
-const chipFields = new Set(Object.keys(chipFieldConfigs));
-const onboardingRecalculationFields = new Set([
-  editKeys.currentWeight,
-  editKeys.goal,
-  editKeys.activityLevel,
-]);
-
-const extractOptions = (response, optionsKey) =>
-  normalizeOnboardingOptionsResponse(response, optionsKey);
-
-const mergeOptions = (...groups) => {
-  const map = new Map();
-
-  for (const group of groups) {
-    for (const item of Array.isArray(group) ? group : []) {
-      if (!item?.id) continue;
-      map.set(Number(item.id), item);
-    }
-  }
-
-  return Array.from(map.values());
 };
 
 const formatResultNumber = (value) => {
@@ -188,7 +93,7 @@ const editableFieldMeta = {
     step: 25,
     min: 800,
     formatOptions: { maximumFractionDigits: 0 },
-    helper: "AI reja shu kunlik limitdan boshlanadi.",
+    helper: "Dashboarddagi kunlik target shu qiymatdan boshlanadi.",
   },
   [editKeys.proteinGram]: {
     icon: SaladIcon,
@@ -206,7 +111,7 @@ const editableFieldMeta = {
     step: 5,
     min: 0,
     formatOptions: { maximumFractionDigits: 0 },
-    helper: "Uglevod energiya va mashg'ulot ritmini balanslaydi.",
+    helper: "Uglevod kunlik energiya balansiga ta'sir qiladi.",
   },
   [editKeys.fatGram]: {
     icon: FlameIcon,
@@ -244,12 +149,9 @@ const metricIconMap = {
   bmi: ScaleIcon,
   age: GaugeIcon,
   date: CalendarDaysIcon,
-  meals: UtensilsIcon,
-  workouts: ActivityIcon,
   activity: ActivityIcon,
   adjustment: TargetIcon,
   final: CheckIcon,
-  budget: WalletCardsIcon,
 };
 
 const IconBubble = ({
@@ -323,7 +225,12 @@ const StatChip = ({ item }) => {
     >
       <IconBubble icon={Icon} className="size-10" />
       <span className="min-w-0">
-        <span className={cn("block text-[11px] font-medium leading-tight", premiumTextSecondary)}>
+        <span
+          className={cn(
+            "block text-[11px] font-medium leading-tight",
+            premiumTextSecondary,
+          )}
+        >
           {item.label}
         </span>
         <span
@@ -353,7 +260,12 @@ const MetricTile = ({ item, compact = false }) => {
     >
       <IconBubble icon={Icon} water={water} className="size-9" />
       <span className="min-w-0">
-        <span className={cn("block text-[11px] font-medium leading-tight", premiumTextSecondary)}>
+        <span
+          className={cn(
+            "block text-[11px] font-medium leading-tight",
+            premiumTextSecondary,
+          )}
+        >
           {item.label}
         </span>
         <span className="mt-0.5 block text-[15px] font-black leading-tight text-white">
@@ -391,7 +303,12 @@ const MacroCard = ({ item, onEdit, water = false }) => {
       ) : null}
       <IconBubble icon={Icon} water={water} className="size-10 shrink-0" />
       <span className="min-w-0 flex-1">
-        <span className={cn("block text-[11px] font-medium leading-tight", premiumTextSecondary)}>
+        <span
+          className={cn(
+            "block text-[11px] font-medium leading-tight",
+            premiumTextSecondary,
+          )}
+        >
           {item.label}
         </span>
         <span className="mt-1 block whitespace-nowrap text-base font-black leading-none text-white min-[390px]:text-lg">
@@ -447,7 +364,12 @@ const CalculationSummary = ({ steps }) => {
                   : "border-[#ff990020] bg-black/18",
               )}
             >
-              <span className={cn("block text-[10px] font-black uppercase", premiumTextMuted)}>
+              <span
+                className={cn(
+                  "block text-[10px] font-black uppercase",
+                  premiumTextMuted,
+                )}
+              >
                 {item.key === "final" ? "Target" : item.label}
               </span>
               <span className="mt-1 block truncate text-[12px] font-black leading-tight text-white">
@@ -455,7 +377,10 @@ const CalculationSummary = ({ steps }) => {
               </span>
             </div>
             {index < summarySteps.length - 1 ? (
-              <ChevronRightIcon className="size-4 shrink-0 text-[#ffb000]" aria-hidden="true" />
+              <ChevronRightIcon
+                className="size-4 shrink-0 text-[#ffb000]"
+                aria-hidden="true"
+              />
             ) : null}
           </React.Fragment>
         ))}
@@ -494,7 +419,12 @@ const CalculationStep = ({ item, index, isLast }) => {
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <span className={cn("block text-[11px] font-bold leading-tight", premiumTextSecondary)}>
+            <span
+              className={cn(
+                "block text-[11px] font-bold leading-tight",
+                premiumTextSecondary,
+              )}
+            >
               {index + 1}. {item.label}
             </span>
             <span className="mt-1 block text-[17px] font-black leading-tight text-white">
@@ -514,7 +444,12 @@ const CalculationStep = ({ item, index, isLast }) => {
             </span>
           ) : null}
         </div>
-        <p className={cn("mt-1.5 text-[11px] font-medium leading-4", premiumTextMuted)}>
+        <p
+          className={cn(
+            "mt-1.5 text-[11px] font-medium leading-4",
+            premiumTextMuted,
+          )}
+        >
           {item.caption}
         </p>
       </div>
@@ -539,13 +474,17 @@ const MacroEnergyRow = ({ item }) => (
         <span className="block truncate text-[13px] font-black text-white">
           {item.label}
         </span>
-        <span className={cn("block text-[11px] font-bold", premiumTextSecondary)}>
+        <span
+          className={cn("block text-[11px] font-bold", premiumTextSecondary)}
+        >
           {item.grams}
         </span>
       </span>
     </div>
     <div className="text-right">
-      <span className="block text-[13px] font-black text-white">{item.kcal}</span>
+      <span className="block text-[13px] font-black text-white">
+        {item.kcal}
+      </span>
       <span className="mt-1 inline-flex rounded-full bg-white/8 px-2 py-1 text-[11px] font-black text-white/72">
         {item.percent}
       </span>
@@ -556,263 +495,31 @@ const MacroEnergyRow = ({ item }) => (
   </div>
 );
 
-const SegmentOptions = ({ value, options, labelPrefix, onChange, t }) => (
-  <div className="grid gap-2">
-    {options.map((item) => {
-      const active = String(value) === String(item);
-      return (
-        <button
-          key={item}
-          type="button"
-          className={cn(
-            "flex h-12 items-center justify-between rounded-2xl border px-4 text-sm font-bold transition",
-            active
-              ? "border-primary/40 bg-primary/10 text-primary"
-              : "border-border/70 bg-background hover:border-primary/25",
-          )}
-          onClick={() => onChange(item)}
-        >
-          {t(`${labelPrefix}.${item}`, { defaultValue: String(item) })}
-          {active ? <TargetIcon className="size-4" /> : null}
-        </button>
-      );
-    })}
-  </div>
-);
-
-const getEditValue = (field, result, onboarding) => {
+const getEditValue = (field, result) => {
   if (!field) return "";
-
-  if (field === editKeys.currentWeight) {
-    return onboarding?.currentWeight?.value ?? result?.currentWeight ?? "";
-  }
 
   if (field === editKeys.recommendedWaterMl) {
     const waterMl = Number(result?.recommendedWaterMl);
     return Number.isFinite(waterMl) && waterMl > 0 ? waterMl / 1000 : "";
   }
 
-  if (field === editKeys.forbiddenExercises) {
-    return (onboarding?.forbiddenExercises ?? []).join("\n");
-  }
-
-  if (isOnboardingPreferenceField(field)) {
-    return onboarding?.[field] ?? "";
-  }
-
   return result?.[field] ?? "";
 };
 
-const formatEditDisplayValue = (field, result, onboarding) => {
+const formatEditDisplayValue = (field, result) => {
   const meta = editableFieldMeta[field];
   if (!meta) return "-";
-  const rawValue = getEditValue(field, result, onboarding);
+  const rawValue = getEditValue(field, result);
   const numberValue = Number(rawValue);
   if (!Number.isFinite(numberValue)) return "-";
 
   const maximumFractionDigits =
-    meta.formatOptions?.maximumFractionDigits ?? (field === editKeys.recommendedWaterMl ? 1 : 0);
+    meta.formatOptions?.maximumFractionDigits ??
+    (field === editKeys.recommendedWaterMl ? 1 : 0);
 
   return `${new Intl.NumberFormat("en-US", {
     maximumFractionDigits,
   }).format(numberValue)} ${meta.unit}`;
-};
-
-const getChipValue = (field, onboarding) => {
-  const config = chipFieldConfigs[field];
-  if (!config) {
-    return { ids: [], customItems: [] };
-  }
-
-  return {
-    ids:
-      onboarding?.[config.idsKey] ??
-      (config.legacyIdsKey ? onboarding?.[config.legacyIdsKey] : []) ??
-      [],
-    customItems: onboarding?.[config.customKey] ?? [],
-  };
-};
-
-const CatalogChipEditor = ({ field, value, onChange, t }) => {
-  const config = chipFieldConfigs[field];
-  const [search, setSearch] = React.useState("");
-  const searchLabel = normalizeChipLabel(search);
-  const searchKey = normalizeChipKey(searchLabel);
-  const selectedIds = normalizeCatalogIds(value.ids);
-  const customItems = normalizeCustomItems(value.customItems);
-  const baseQuery = useGetQuery({
-    url: getOnboardingOptionsPath(config.optionsKey),
-    queryProps: {
-      queryKey: getOnboardingOptionsQueryKey(
-        config.optionsKey,
-        "post-result",
-        field,
-      ),
-      staleTime: 60000,
-    },
-  });
-  const searchQuery = useGetQuery({
-    url: getOnboardingOptionsPath(config.optionsKey),
-    params: { q: searchLabel },
-    queryProps: {
-      queryKey: getOnboardingOptionsQueryKey(
-        config.optionsKey,
-        "post-result",
-        field,
-        searchLabel,
-      ),
-      enabled: searchLabel.length >= 2,
-      staleTime: 15000,
-    },
-  });
-  const baseOptions = React.useMemo(
-    () => extractOptions(baseQuery.data, config.optionsKey),
-    [baseQuery.data, config.optionsKey],
-  );
-  const searchOptions = React.useMemo(
-    () => extractOptions(searchQuery.data, config.optionsKey),
-    [config.optionsKey, searchQuery.data],
-  );
-  const options = React.useMemo(
-    () => mergeOptions(baseOptions, searchOptions),
-    [baseOptions, searchOptions],
-  );
-  const visibleOptions = searchLabel.length >= 2 ? searchOptions : baseOptions;
-  const selectedSet = React.useMemo(() => new Set(selectedIds), [selectedIds]);
-  const optionMap = React.useMemo(
-    () => new Map(options.map((item) => [Number(item.id), item])),
-    [options],
-  );
-  const exactActiveMatch = options.some(
-    (item) => normalizeChipKey(item.name) === searchKey,
-  );
-  const canAddCustom =
-    searchLabel.length >= 2 &&
-    !exactActiveMatch &&
-    !hasChipLabel(customItems, searchLabel);
-
-  const commit = (ids, nextCustom = customItems) => {
-    onChange({
-      ids: normalizeCatalogIds(ids),
-      customItems: normalizeCustomItems(nextCustom),
-    });
-  };
-
-  return (
-    <div className="space-y-3">
-      <div className="relative">
-        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder={t(
-            `onboarding.postOnboarding.result.edit.${field}.placeholder`,
-          )}
-          className="h-11 pl-9"
-        />
-      </div>
-
-      {selectedIds.length || customItems.length ? (
-        <div className="flex flex-wrap gap-2">
-          {selectedIds.map((id) => (
-            <button
-              key={`${field}-${id}`}
-              type="button"
-              onClick={() => commit(selectedIds.filter((item) => item !== id))}
-              className="inline-flex max-w-full items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary"
-            >
-              <span className="truncate">
-                {optionMap.get(id)?.name ?? `#${id}`}
-              </span>
-              <XIcon className="size-3.5" />
-            </button>
-          ))}
-          {customItems.map((label) => (
-            <button
-              key={`${field}-custom-${label}`}
-              type="button"
-              onClick={() => {
-                const key = normalizeChipKey(label);
-                commit(
-                  selectedIds,
-                  customItems.filter((item) => normalizeChipKey(item) !== key),
-                );
-              }}
-              className="inline-flex max-w-full items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-700"
-            >
-              <span className="truncate">{label}</span>
-              <XIcon className="size-3.5" />
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      <div className="grid max-h-72 gap-2 overflow-y-auto pr-1">
-        {visibleOptions.map((item) => {
-          const id = Number(item.id);
-          const active = selectedSet.has(id);
-
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() =>
-                commit(
-                  active
-                    ? selectedIds.filter((selectedId) => selectedId !== id)
-                    : [...selectedIds, id],
-                )
-              }
-              className={cn(
-                "flex min-h-12 items-center gap-3 rounded-2xl border px-3 py-2 text-left text-sm font-semibold",
-                active
-                  ? "border-primary/35 bg-primary/10 text-primary"
-                  : "border-border/70 bg-background",
-              )}
-            >
-              {item?.imageUrl ? (
-                <img
-                  src={item.imageUrl}
-                  alt=""
-                  className="size-8 rounded-lg object-cover"
-                />
-              ) : (
-                <SaladIcon className="size-4 shrink-0" />
-              )}
-              <span className="min-w-0 flex-1">
-                <span className="block truncate">{item.name}</span>
-                {item?.isOnboarding === false ? (
-                  <span className="mt-0.5 block text-xs font-medium text-muted-foreground">
-                    {t("onboarding.chipSelect.nonOnboarding")}
-                  </span>
-                ) : null}
-              </span>
-            </button>
-          );
-        })}
-
-        {canAddCustom ? (
-          <button
-            type="button"
-            onClick={() => {
-              commit(selectedIds, [...customItems, searchLabel]);
-              setSearch("");
-            }}
-            className="flex min-h-12 items-center gap-3 rounded-2xl border border-dashed border-primary/40 bg-primary/5 px-3 py-2 text-left text-sm font-semibold text-primary"
-          >
-            <PlusIcon className="size-4" />
-            {t("onboarding.chipSelect.addCustom", { value: searchLabel })}
-          </button>
-        ) : null}
-      </div>
-
-      {baseQuery.isLoading || searchQuery.isFetching ? (
-        <div className="flex justify-center py-1">
-          <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
-        </div>
-      ) : null}
-    </div>
-  );
 };
 
 const EditDrawer = ({
@@ -826,29 +533,17 @@ const EditDrawer = ({
 }) => {
   const { t } = useTranslation();
   const [value, setValue] = React.useState("");
-  const [chipValue, setChipValue] = React.useState({
-    ids: [],
-    customItems: [],
-  });
 
   /* eslint-disable react-hooks/set-state-in-effect */
   React.useLayoutEffect(() => {
     if (!field || !result) return;
 
-    if (chipFields.has(field)) {
-      setChipValue(getChipValue(field, onboarding));
-      return;
-    }
-
-    setValue(getEditValue(field, result, onboarding));
+    setValue(getEditValue(field, result));
   }, [field, onboarding, result]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   if (!field) return null;
 
-  const isOptionField = Object.prototype.hasOwnProperty.call(optionSets, field);
-  const isChipField = chipFields.has(field);
-  const isTextarea = textareaFields.has(field);
   const editMeta = editableFieldMeta[field];
   const EditIcon = editMeta?.icon ?? TargetIcon;
   const title = t(`onboarding.postOnboarding.result.edit.${field}.title`);
@@ -858,16 +553,10 @@ const EditDrawer = ({
   const rawValue = String(value ?? "").trim();
   const numberValue = Number(value);
   const hasNumberValue = rawValue !== "" && Number.isFinite(numberValue);
-  const isNumberField = !isChipField && !isOptionField && !isTextarea;
-  const currentDisplayValue = formatEditDisplayValue(field, result, onboarding);
-  const saveDisabled =
-    saving ||
-    (isNumberField && !hasNumberValue) ||
-    (isOptionField && rawValue === "");
+  const currentDisplayValue = formatEditDisplayValue(field, result);
+  const saveDisabled = saving || !hasNumberValue;
   const showLowCalorieWarning =
-    field === editKeys.dailyCalories &&
-    hasNumberValue &&
-    numberValue < 1200;
+    field === editKeys.dailyCalories && hasNumberValue && numberValue < 1200;
   const showLowFatWarning =
     field === editKeys.fatGram &&
     hasNumberValue &&
@@ -875,18 +564,15 @@ const EditDrawer = ({
     numberValue <
       Number(onboarding?.currentWeight?.value ?? result.currentWeight) * 0.5;
   const macroEnergyPreview =
-    [
-      editKeys.proteinGram,
-      editKeys.carbsGram,
-      editKeys.fatGram,
-    ].includes(field) && hasNumberValue
+    [editKeys.proteinGram, editKeys.carbsGram, editKeys.fatGram].includes(
+      field,
+    ) && hasNumberValue
       ? Math.round(numberValue * (field === editKeys.fatGram ? 9 : 4))
       : null;
-  const saveValue = isNumberField
-    ? field === editKeys.recommendedWaterMl
+  const saveValue =
+    field === editKeys.recommendedWaterMl
       ? Math.round(numberValue * 1000)
-      : Number(value)
-    : value;
+      : Number(value);
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
@@ -929,31 +615,7 @@ const EditDrawer = ({
             </div>
           ) : null}
 
-          {isChipField ? (
-            <CatalogChipEditor
-              field={field}
-              value={chipValue}
-              onChange={setChipValue}
-              t={t}
-            />
-          ) : isOptionField ? (
-            <SegmentOptions
-              value={value}
-              options={optionSets[field]}
-              labelPrefix={`onboarding.postOnboarding.result.options.${field}`}
-              onChange={setValue}
-              t={t}
-            />
-          ) : isTextarea ? (
-            <Textarea
-              value={value}
-              onChange={(event) => setValue(event.target.value)}
-              className="min-h-36"
-              placeholder={t(
-                "onboarding.postOnboarding.result.edit.forbiddenExercises.placeholder",
-              )}
-            />
-          ) : editMeta ? (
+          {editMeta ? (
             <div className="space-y-2">
               <label className="text-[13px] font-black text-white">
                 Yangi qiymat
@@ -985,15 +647,7 @@ const EditDrawer = ({
                 </NumberFieldGroup>
               </NumberField>
             </div>
-          ) : (
-            <Input
-              type="number"
-              inputMode="decimal"
-              value={value}
-              onChange={(event) => setValue(event.target.value)}
-              className="h-12"
-            />
-          )}
+          ) : null}
 
           {field === editKeys.dailyCalories ? (
             <div className="rounded-[1.15rem] border border-[#ff990024] bg-[#ff9800]/8 p-3 text-[13px] font-medium text-white/66">
@@ -1003,16 +657,19 @@ const EditDrawer = ({
           ) : null}
 
           {field === editKeys.proteinGram &&
-          Number(onboarding?.currentWeight?.value ?? result?.currentWeight) > 0 ? (
+          Number(onboarding?.currentWeight?.value ?? result?.currentWeight) >
+            0 ? (
             <div className="rounded-[1.15rem] border border-[#ff990024] bg-[#ff9800]/8 p-3 text-[13px] font-medium text-white/66">
               {t("onboarding.postOnboarding.result.proteinRecommendation", {
                 min: Math.round(
-                  Number(onboarding?.currentWeight?.value ?? result.currentWeight) *
-                    1.6,
+                  Number(
+                    onboarding?.currentWeight?.value ?? result.currentWeight,
+                  ) * 1.6,
                 ),
                 max: Math.round(
-                  Number(onboarding?.currentWeight?.value ?? result.currentWeight) *
-                    2.2,
+                  Number(
+                    onboarding?.currentWeight?.value ?? result.currentWeight,
+                  ) * 2.2,
                 ),
               })}
             </div>
@@ -1053,13 +710,7 @@ const EditDrawer = ({
 
               onSave(
                 field,
-                isChipField
-                  ? chipValue
-                  : isOptionField
-                    ? value
-                    : isTextarea
-                    ? value
-                    : saveValue,
+                saveValue,
               );
             }}
             disabled={saveDisabled}
@@ -1133,7 +784,12 @@ export const ResultContent = ({ result, onboarding, onEdit }) => {
               hisobingiz tayyor
             </span>
           </h1>
-          <p className={cn("mt-3 max-w-[480px] text-[13px] font-medium leading-5", premiumTextSecondary)}>
+          <p
+            className={cn(
+              "mt-3 max-w-[480px] text-[13px] font-medium leading-5",
+              premiumTextSecondary,
+            )}
+          >
             {snapshot.description}
           </p>
         </div>
@@ -1157,11 +813,19 @@ export const ResultContent = ({ result, onboarding, onEdit }) => {
           <span className="block text-[15px] font-black text-[#ffb000]">
             AI tahlili
           </span>
-          <span className={cn("mt-1 block text-[13px] font-medium leading-5", premiumTextSecondary)}>
+          <span
+            className={cn(
+              "mt-1 block text-[13px] font-medium leading-5",
+              premiumTextSecondary,
+            )}
+          >
             {snapshot.aiAnalysis}
           </span>
         </span>
-        <ChevronRightIcon className="size-5 shrink-0 text-white/70" aria-hidden="true" />
+        <ChevronRightIcon
+          className="size-5 shrink-0 text-white/70"
+          aria-hidden="true"
+        />
       </button>
 
       <SectionCard title="Kunlik kaloriya maqsadi" className="p-4">
@@ -1173,9 +837,19 @@ export const ResultContent = ({ result, onboarding, onEdit }) => {
               className="absolute right-0 top-0"
             />
             <div className="flex items-center gap-4">
-              <IconBubble icon={FlameIcon} className="size-16" iconClassName="size-8" glow />
+              <IconBubble
+                icon={FlameIcon}
+                className="size-16"
+                iconClassName="size-8"
+                glow
+              />
               <div>
-                <span className={cn("block text-[11px] font-black", premiumTextSecondary)}>
+                <span
+                  className={cn(
+                    "block text-[11px] font-black",
+                    premiumTextSecondary,
+                  )}
+                >
                   Kunlik target
                 </span>
                 <div className="mt-2 flex flex-wrap items-end gap-x-2">
@@ -1188,7 +862,7 @@ export const ResultContent = ({ result, onboarding, onEdit }) => {
                 </div>
               </div>
             </div>
-          <span className="mt-4 inline-flex w-fit rounded-full bg-[#ff9800]/10 px-3 py-1.5 text-[11px] font-bold text-white/72">
+            <span className="mt-4 inline-flex w-fit rounded-full bg-[#ff9800]/10 px-3 py-1.5 text-[11px] font-bold text-white/72">
               Kunlik target
             </span>
           </div>
@@ -1207,7 +881,12 @@ export const ResultContent = ({ result, onboarding, onEdit }) => {
       </SectionCard>
 
       <SectionCard title="Hisoblash zanjiri">
-        <p className={cn("-mt-1 mb-3 text-[12px] font-medium leading-5", premiumTextSecondary)}>
+        <p
+          className={cn(
+            "-mt-1 mb-3 text-[12px] font-medium leading-5",
+            premiumTextSecondary,
+          )}
+        >
           BMRdan boshlanib, faollik va maqsad sozlamasi orqali yakuniy kunlik
           target hisoblanadi.
         </p>
@@ -1255,8 +934,6 @@ export const ResultContent = ({ result, onboarding, onEdit }) => {
       </SectionCard>
     </div>
   );
-
-
 };
 
 const Index = () => {
@@ -1288,45 +965,25 @@ const Index = () => {
     });
   const { mutateAsync: confirmMetabolism, isPending: isConfirming } =
     usePostQuery();
-  const { mutateAsync: generatePlan, isPending: isGenerating } = usePostQuery({
-    mutationProps: {
-      mutationKey: ["generate-personal-plan"],
-    },
-  });
 
   const handleSave = async (field, value) => {
     try {
-      if (isOnboardingPreferenceField(field)) {
-        const patch = buildOnboardingPreferencePatch(field, value, onboarding);
+      const patch = buildPersonalizationPatch(field, value);
+      await patchResult({
+        url: "/user/onboarding/metabolism-result",
+        attributes: patch,
+      });
+
+      const onboardingPatch = buildOnboardingSyncPatch(
+        field,
+        value,
+        onboarding,
+      );
+      if (Object.keys(onboardingPatch).length > 0) {
         await updateOnboarding({
           url: "/user/onboarding/user",
-          attributes: patch,
+          attributes: onboardingPatch,
         });
-
-        if (onboardingRecalculationFields.has(field)) {
-          await patchResult({
-            url: "/user/onboarding/metabolism-result",
-            attributes: {},
-          });
-        }
-      } else {
-        const patch = buildPersonalizationPatch(field, value);
-        await patchResult({
-          url: "/user/onboarding/metabolism-result",
-          attributes: patch,
-        });
-
-        const onboardingPatch = buildOnboardingSyncPatch(
-          field,
-          value,
-          onboarding,
-        );
-        if (Object.keys(onboardingPatch).length > 0) {
-          await updateOnboarding({
-            url: "/user/onboarding/user",
-            attributes: onboardingPatch,
-          });
-        }
       }
 
       await queryClient.invalidateQueries({
@@ -1347,23 +1004,19 @@ const Index = () => {
 
   const handleNext = async () => {
     try {
-      await confirmMetabolism({
+      const response = await confirmMetabolism({
         url: "/user/onboarding/confirm-metabolism",
       });
-      const generationResponse = await generatePlan({
-        url: "/user/onboarding/generate-personal-plan",
-      });
-      const job = unwrapApiData(generationResponse);
-      const nextPath = getUserOnboardingGeneratingPath(job?.id);
+      const body = unwrapApiData(response);
 
       setOnboardingFlow({
         onboardingFlowStatus:
-          job?.onboardingFlowStatus ?? job?.flowStatus ?? job?.status,
-        onboardingNextPath: job?.nextPath ?? nextPath,
-        latestPlanGenerationJobId: job?.id,
+          body?.onboardingFlowStatus ?? body?.flowStatus ?? body?.status,
+        onboardingNextPath: body?.onboardingNextPath ?? "/user",
+        latestPlanGenerationJobId: null,
       });
       await queryClient.invalidateQueries({ queryKey: ["me"] });
-      navigate(nextPath, { replace: true });
+      navigate("/user/dashboard", { replace: true });
     } catch (error) {
       const message = error?.response?.data?.message;
       toast.error(
@@ -1383,14 +1036,14 @@ const Index = () => {
         tone.buttonTone,
       )}
       onClick={handleNext}
-      disabled={!result || isConfirming || isGenerating}
+      disabled={!result || isConfirming}
     >
-      {isConfirming || isGenerating ? (
+      {isConfirming ? (
         <Loader2Icon className="size-4 animate-spin" />
       ) : (
         <ChevronRightIcon className="size-4" />
       )}
-      Rejani yaratish
+      {t("onboarding.postOnboarding.result.openDashboard")}
     </Button>,
   );
 

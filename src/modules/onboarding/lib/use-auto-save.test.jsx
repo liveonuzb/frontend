@@ -89,4 +89,34 @@ describe("useOnboardingAutoSave", () => {
     await waitFor(() => expect(putMock).toHaveBeenCalledTimes(2));
     expect(useOnboardingStore.getState().draftSaveStatus).toBe("saved");
   });
+
+  it("saves only active user onboarding draft fields", async () => {
+    putMock.mockResolvedValue({});
+    useOnboardingStore.getState().setFields({
+      firstName: "Ali",
+      mealFrequency: "3",
+      completedUserOnboardingSteps: ["other-goals"],
+      weeklyWorkoutCount: 4,
+      workoutExperience: "advanced",
+      foodBudgetTier: "high",
+      preferredCuisineIds: ["uzbek"],
+      workoutLocation: "gym",
+    });
+
+    render(<AutoSaveProbe debounceMs={1} />);
+
+    await waitFor(() => expect(putMock).toHaveBeenCalledTimes(1));
+    const payload = putMock.mock.calls[0][1].data;
+
+    expect(payload).toMatchObject({
+      firstName: "Ali",
+      mealFrequency: "3",
+      completedUserOnboardingSteps: ["other-goals"],
+    });
+    expect(payload).not.toHaveProperty("weeklyWorkoutCount");
+    expect(payload).not.toHaveProperty("workoutExperience");
+    expect(payload).not.toHaveProperty("foodBudgetTier");
+    expect(payload).not.toHaveProperty("preferredCuisineIds");
+    expect(payload).not.toHaveProperty("workoutLocation");
+  });
 });

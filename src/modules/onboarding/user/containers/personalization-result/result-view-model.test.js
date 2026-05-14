@@ -68,9 +68,9 @@ describe("buildMetabolismResultViewModel", () => {
     expect(model.bmi).toBe("28");
     expect(model.metabolicAge).toBe("35 yosh");
     expect(model.targetDate).toBe("2026 M09 28");
-    expect(model.meals).toBe("3 mahal");
-    expect(model.workouts).toBe("4 kun/hafta");
-    expect(model.budget).toBe("O'rtacha byudjet");
+    expect(model).not.toHaveProperty("meals");
+    expect(model).not.toHaveProperty("workouts");
+    expect(model).not.toHaveProperty("budget");
     expect(model.macroDelta).toBe("Farq: ~2 kcal");
   });
 

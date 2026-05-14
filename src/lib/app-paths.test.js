@@ -4,6 +4,7 @@ import {
   getPostOnboardingPath,
   ONBOARDING_FLOW_STATUS,
 } from "./app-paths.js";
+import * as appPaths from "./app-paths.js";
 
 describe("post-onboarding route resolution", () => {
   it("keeps users on the correct post-onboarding status route after auth refresh", () => {
@@ -31,27 +32,27 @@ describe("post-onboarding route resolution", () => {
       getPostOnboardingPath({
         onboardingFlowStatus: ONBOARDING_FLOW_STATUS.resultConfirmed,
       }),
-    ).toBe("/user/onboarding/plan-generating");
+    ).toBe("/user/onboarding/metabolism-result");
 
     expect(
       getPostOnboardingPath({
         onboardingFlowStatus: ONBOARDING_FLOW_STATUS.planGenerating,
         latestPlanGenerationJobId: "plan-1",
       }),
-    ).toBe("/user/onboarding/plan-generating/plan-1");
+    ).toBe("/user/onboarding/metabolism-result");
 
     expect(
       getPostOnboardingPath({
         onboardingFlowStatus: ONBOARDING_FLOW_STATUS.planFailed,
         latestPlanGenerationJobId: "plan-failed",
       }),
-    ).toBe("/user/onboarding/plan-generating/plan-failed");
+    ).toBe("/user/onboarding/metabolism-result");
 
     expect(
       getPostOnboardingPath({
         onboardingFlowStatus: ONBOARDING_FLOW_STATUS.planReady,
       }),
-    ).toBe("/user/onboarding/plan-ready");
+    ).toBe("/user");
   });
 
   it("uses nested onboarding status fields from a refreshed user payload", () => {
@@ -62,7 +63,7 @@ describe("post-onboarding route resolution", () => {
           latestPlanGenerationJobId: "nested-plan",
         },
       }),
-    ).toBe("/user/onboarding/plan-generating/nested-plan");
+    ).toBe("/user/onboarding/metabolism-result");
   });
 
   it("does not loop completed seeded users back to onboarding when status is draft", () => {
@@ -75,5 +76,10 @@ describe("post-onboarding route resolution", () => {
         onboardingFlowStatus: ONBOARDING_FLOW_STATUS.draft,
       }),
     ).toBe("/user");
+  });
+
+  it("does not expose active plan generation onboarding path helpers", () => {
+    expect(appPaths).not.toHaveProperty("getUserOnboardingGeneratingPath");
+    expect(appPaths).not.toHaveProperty("getUserOnboardingPlanReadyPath");
   });
 });

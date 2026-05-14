@@ -1,8 +1,9 @@
 import { indexOf, isArray } from "lodash";
 import {
   COACH_ONBOARDING_STEPS,
+  ONBOARDING_STEPS,
   isCoachOnboardingStep,
-  isKnownOnboardingStep,
+  normalizeUserOnboardingStep,
 } from "../constants";
 
 const hasValue = (value) => {
@@ -63,14 +64,6 @@ export const getNextUserOnboardingPath = (state) => {
   }
 
   if (
-    !hasValue(state.foodBudgetTier) &&
-    !hasValue(state.foodBudget) &&
-    !hasCompletedStep(state, "food-budget")
-  ) {
-    return "food-budget";
-  }
-
-  if (
     !hasValue(state.allergyIds) &&
     !hasValue(state.allergyIngredientIds) &&
     !hasValue(state.customAllergies) &&
@@ -91,38 +84,6 @@ export const getNextUserOnboardingPath = (state) => {
   }
 
   if (
-    !hasValue(state.preferredCuisineIds) &&
-    !hasValue(state.customPreferredCuisines) &&
-    !hasCompletedStep(state, "preferred-cuisines")
-  ) {
-    return "preferred-cuisines";
-  }
-
-  if (
-    !hasValue(state.dislikedFoodIds) &&
-    !hasValue(state.customDislikedFoods) &&
-    !hasCompletedStep(state, "disliked-foods")
-  ) {
-    return "disliked-foods";
-  }
-
-  if (
-    !hasValue(state.preferredIngredientIds) &&
-    !hasValue(state.customPreferredIngredients) &&
-    !hasCompletedStep(state, "preferred-ingredients")
-  ) {
-    return "preferred-ingredients";
-  }
-
-  if (
-    !hasValue(state.dislikedIngredientIds) &&
-    !hasValue(state.customDislikedIngredients) &&
-    !hasCompletedStep(state, "disliked-ingredients")
-  ) {
-    return "disliked-ingredients";
-  }
-
-  if (
     !hasValue(state.healthConstraints) &&
     !hasValue(state.customHealthConstraints) &&
     !hasCompletedStep(state, "health-constraints")
@@ -130,41 +91,13 @@ export const getNextUserOnboardingPath = (state) => {
     return "health-constraints";
   }
 
-  if (!hasValue(state.weeklyWorkoutCount)) {
-    return "weekly-workout-count";
-  }
-
-  if (!hasValue(state.workoutExperience)) {
-    return "workout-experience";
-  }
-
-  if (!hasCompletedStep(state, "workout-location")) {
-    return "workout-location";
-  }
-
-  if (
-    state.workoutLocation !== "gym" &&
-    !hasValue(state.equipmentIds) &&
-    !hasValue(state.customEquipment) &&
-    !hasCompletedStep(state, "workout-equipment")
-  ) {
-    return "workout-equipment";
-  }
-
-  if (
-    !hasValue(state.workoutBodyPartIds) &&
-    !hasValue(state.customWorkoutBodyParts) &&
-    !hasCompletedStep(state, "workout-body-parts")
-  ) {
-    return "workout-body-parts";
-  }
-
   return "review";
 };
 
 export const getResumeOnboardingPath = (state, onboardingCompleted) => {
-  if (isKnownOnboardingStep(state.lastVisitedPath)) {
-    return state.lastVisitedPath;
+  const lastVisitedStep = normalizeUserOnboardingStep(state.lastVisitedPath);
+  if (ONBOARDING_STEPS.includes(lastVisitedStep)) {
+    return lastVisitedStep;
   }
 
   if (onboardingCompleted) {

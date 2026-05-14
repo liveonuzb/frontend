@@ -37,11 +37,7 @@ describe("review issue classification", () => {
     };
 
     expect(getReviewBlockingErrors(state, t)).toEqual([]);
-    expect(getReviewRecommendations(state, t)).toEqual([
-      "onboarding.review.recommendations.foodBudget",
-      "onboarding.review.recommendations.allergies",
-      "onboarding.review.recommendations.preferredCuisines",
-    ]);
+    expect(getReviewRecommendations(state, t)).toEqual([]);
   });
 
   it("classifies missing required profile data as blockers", () => {

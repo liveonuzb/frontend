@@ -51,12 +51,6 @@ const activityLabels = {
   very_active: "Juda faol",
 };
 
-const budgetTierLabels = {
-  low: "Past byudjet",
-  medium: "O'rtacha byudjet",
-  high: "Yuqori byudjet",
-};
-
 const getNumberOrFallback = (value, fallback = null) => {
   if (value === null || value === undefined || value === "") return fallback;
   const numberValue = Number(value);
@@ -139,25 +133,6 @@ const formatTargetDate = (value) => {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${date.getFullYear()} M${month} ${day}`;
-};
-
-const resolveBudget = (onboarding = {}) => {
-  if (onboarding?.foodBudgetTier) {
-    return budgetTierLabels[onboarding.foodBudgetTier] ?? "O'rtacha byudjet";
-  }
-
-  const amount = getNumberOrFallback(onboarding?.foodBudget, null);
-  if (amount === null) return "O'rtacha byudjet";
-
-  const currency = onboarding?.budgetCurrency || "UZS";
-  const period =
-    {
-      daily: "kuniga",
-      weekly: "haftasiga",
-      monthly: "oyiga",
-    }[onboarding?.budgetPeriod] ?? "haftasiga";
-
-  return `${formatNumber(amount)} ${currency} / ${period}`;
 };
 
 const resolveExplanation = (result = {}, goalKey) => {
@@ -264,7 +239,7 @@ export const buildMetabolismResultViewModel = (
   const model = {
     title: "Metabolizm hisobingiz tayyor",
     description:
-      "BMR, TDEE, kaloriya va makro formulalar asosida tahlil qilindi. Bu ko'rsatkichlar sizning yakuniy planingizni yaratish uchun ishlatiladi.",
+      "BMR, TDEE, kaloriya va makro formulalar asosida tahlil qilindi. Bu ko'rsatkichlar dashboard targetlari uchun ishlatiladi.",
     aiAnalysis: resolveExplanation(result, providedGoalKey),
     currentWeight: `${formatNumber(currentWeight)} kg`,
     targetWeight: targetWeight !== null ? `${formatNumber(targetWeight)} kg` : "-",
@@ -287,15 +262,6 @@ export const buildMetabolismResultViewModel = (
         ? `${formatNumber(result.metabolicAge)} yosh`
         : "-",
     targetDate: formatTargetDate(result?.estimatedGoalDate),
-    meals:
-      getNumberOrFallback(result?.mealsPerDay, null) !== null
-        ? `${formatNumber(result.mealsPerDay)} mahal`
-        : "-",
-    workouts:
-      getNumberOrFallback(result?.weeklyWorkoutDays, null) !== null
-        ? `${formatNumber(result.weeklyWorkoutDays)} kun/hafta`
-        : "-",
-    budget: resolveBudget(onboarding),
     goal: goalLabels[goalKey] ?? "Ozish",
     formulaName,
     macroDelta:
@@ -371,7 +337,7 @@ export const buildMetabolismResultViewModel = (
       key: "final",
       label: "Yakuniy target",
       value: model.dailyCaloriesWithUnit,
-      caption: "AI reja uchun asosiy limit",
+      caption: "Dashboard uchun kunlik limit",
       operator: "=",
       highlighted: true,
     },
@@ -385,8 +351,6 @@ export const buildMetabolismResultViewModel = (
     { key: "bmi", label: "BMI", value: model.bmi },
     { key: "age", label: "Metabolik yosh", value: model.metabolicAge },
     { key: "date", label: "Maqsad sanasi", value: model.targetDate },
-    { key: "meals", label: "Ovqatlanish", value: model.meals },
-    { key: "workouts", label: "Mashg'ulot", value: model.workouts },
   ];
 
   model.profileSummary = [
@@ -397,7 +361,6 @@ export const buildMetabolismResultViewModel = (
       label: "Faollik darajasi",
       value: model.activityLabel,
     },
-    { key: "budget", label: "Byudjet", value: model.budget },
   ];
 
   return model;

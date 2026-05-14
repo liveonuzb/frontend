@@ -8,7 +8,6 @@ import {
   AlertTriangleIcon,
   CheckCircle2Icon,
   ChevronRightIcon,
-  DumbbellIcon,
   HeartPulseIcon,
   InfoIcon,
   Loader2Icon,
@@ -30,7 +29,6 @@ import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-q
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-context";
 import { isMeaningfulUserDraftData } from "@/modules/onboarding/lib/user-draft-data";
-import { isNoWorkoutPlan } from "@/modules/onboarding/lib/onboarding-validation";
 import {
   getCountSummary,
   getOnboardingValueLabel,
@@ -47,10 +45,7 @@ import { ONBOARDING_GRID_SCROLL_AREA_CLASS } from "../onboarding-scroll-area.js"
 const tone = ONBOARDING_ACCENTS.green;
 
 const buildCompletePayload = (state) => {
-  const noWorkout = isNoWorkoutPlan(state.weeklyWorkoutCount);
-
-  return {
-    ...toUserOnboardingPayload({
+  const payload = toUserOnboardingPayload({
     firstName: state.firstName,
     lastName: state.lastName,
     gender: state.gender,
@@ -63,17 +58,7 @@ const buildCompletePayload = (state) => {
     targetWeight: state.targetWeight,
     weeklyPace: state.weeklyPace,
     activityLevel: state.activityLevel,
-    weeklyWorkoutCount: state.weeklyWorkoutCount,
-    workoutExperience: noWorkout ? "" : state.workoutExperience,
     mealFrequency: state.mealFrequency,
-    foodBudgetTier: state.foodBudgetTier,
-    workoutLocation: noWorkout ? null : state.workoutLocation,
-    equipmentIds:
-      noWorkout || state.workoutLocation === "gym" ? [] : state.equipmentIds,
-    customEquipment:
-      noWorkout || state.workoutLocation === "gym" ? [] : state.customEquipment,
-    workoutBodyPartIds: noWorkout ? [] : state.workoutBodyPartIds,
-    customWorkoutBodyParts: noWorkout ? [] : state.customWorkoutBodyParts,
     allergyIds: state.allergyIds?.length
       ? state.allergyIds
       : state.allergyIngredientIds,
@@ -92,7 +77,34 @@ const buildCompletePayload = (state) => {
     nutritionPreferenceKeys: state.nutritionPreferenceKeys,
     healthConstraints: state.healthConstraints,
     customHealthConstraints: state.customHealthConstraints,
-    }),
+  });
+
+  return {
+    ...payload,
+    foodBudget: null,
+    foodBudgetTier: null,
+    budgetPeriod: null,
+    budgetCurrency: "UZS",
+    preferredCuisineIds: [],
+    customPreferredCuisines: [],
+    dislikedFoodIds: [],
+    customDislikedFoods: [],
+    preferredIngredientIds: [],
+    dislikedIngredientIds: [],
+    customPreferredIngredients: [],
+    customDislikedIngredients: [],
+    dislikedOtherText: null,
+    weeklyWorkoutCount: 0,
+    workoutExperience: null,
+    workoutLocation: null,
+    equipmentIds: [],
+    customEquipment: [],
+    workoutBodyPartIds: [],
+    customWorkoutBodyParts: [],
+    preferredExerciseIds: [],
+    dislikedExerciseIds: [],
+    customPreferredExercises: [],
+    customDislikedExercises: [],
     completed: true,
   };
 };
@@ -136,23 +148,6 @@ const SummaryCard = ({ editLabel, icon: Icon, title, items, onEdit }) => (
     </div>
   </section>
 );
-
-const resolveBudgetLabel = (state, t) => {
-  if (state.foodBudgetTier) {
-    return getOnboardingValueLabel("foodBudgetTier", state.foodBudgetTier, t);
-  }
-
-  if (state.foodBudget) {
-    return `${state.foodBudget} ${state.budgetCurrency || "UZS"}`;
-  }
-
-  return "";
-};
-
-const resolveWorkoutLocationLabel = (state, t) =>
-  isNoWorkoutPlan(state.weeklyWorkoutCount)
-    ? t("onboarding.review.noWorkout")
-    : getOnboardingValueLabel("workoutLocation", state.workoutLocation, t);
 
 const reviewReturnState = { returnTo: "/user/onboarding/review" };
 
@@ -401,10 +396,6 @@ const Index = () => {
                 onboardingState.mealFrequency,
               ],
               [
-                t("onboarding.review.fields.foodBudget"),
-                resolveBudgetLabel(onboardingState, t),
-              ],
-              [
                 t("onboarding.review.fields.allergies"),
                 getCountSummary(
                   (onboardingState.allergyIds?.length ?? 0) +
@@ -417,14 +408,6 @@ const Index = () => {
                 getCountSummary(
                   (onboardingState.dietRequirementIds?.length ?? 0) +
                     (onboardingState.customDietRequirements?.length ?? 0),
-                  t,
-                ),
-              ],
-              [
-                t("onboarding.review.fields.preferredCuisines"),
-                getCountSummary(
-                  (onboardingState.preferredCuisineIds?.length ?? 0) +
-                    (onboardingState.customPreferredCuisines?.length ?? 0),
                   t,
                 ),
               ],
@@ -444,53 +427,6 @@ const Index = () => {
               [
                 t("onboarding.review.fields.healthConstraints"),
                 getHealthConstraintsSummary(onboardingState, t),
-              ],
-            ]}
-          />
-
-          <SummaryCard
-            icon={DumbbellIcon}
-            title={t("onboarding.review.sections.workout")}
-            editLabel={t("onboarding.review.edit")}
-            onEdit={() =>
-              navigate("/user/onboarding/weekly-workout-count", {
-                state: reviewReturnState,
-              })
-            }
-            items={[
-              [
-                t("onboarding.review.fields.weeklyWorkoutCount"),
-                getOnboardingValueLabel(
-                  "weeklyWorkoutCount",
-                  onboardingState.weeklyWorkoutCount,
-                  t,
-                ),
-              ],
-              [
-                t("onboarding.review.fields.workoutExperience"),
-                isNoWorkoutPlan(onboardingState.weeklyWorkoutCount)
-                  ? t("onboarding.review.noWorkout")
-                  : getOnboardingValueLabel(
-                      "workoutExperience",
-                      onboardingState.workoutExperience,
-                      t,
-                    ),
-              ],
-              [
-                t("onboarding.review.fields.workoutLocation"),
-                resolveWorkoutLocationLabel(onboardingState, t),
-              ],
-              [
-                t("onboarding.review.fields.equipment"),
-                isNoWorkoutPlan(onboardingState.weeklyWorkoutCount)
-                  ? t("onboarding.review.none")
-                  : onboardingState.workoutLocation === "gym"
-                  ? "-"
-                  : getCountSummary(
-                      (onboardingState.equipmentIds?.length ?? 0) +
-                        (onboardingState.customEquipment?.length ?? 0),
-                      t,
-                    ),
               ],
             ]}
           />

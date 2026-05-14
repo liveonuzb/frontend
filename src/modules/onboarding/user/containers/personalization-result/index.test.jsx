@@ -11,7 +11,6 @@ const navigateMock = vi.hoisted(() => vi.fn());
 const invalidateQueriesMock = vi.hoisted(() => vi.fn());
 const setOnboardingFlowMock = vi.hoisted(() => vi.fn());
 const confirmMetabolismMock = vi.hoisted(() => vi.fn());
-const generatePlanMock = vi.hoisted(() => vi.fn());
 const patchResultMock = vi.hoisted(() => vi.fn());
 const getQueryResultMock = vi.hoisted(() => vi.fn());
 
@@ -52,11 +51,8 @@ vi.mock("@/hooks/api", () => ({
     mutateAsync: vi.fn(),
     isPending: false,
   }),
-  usePostQuery: vi.fn((options) => ({
-    mutateAsync:
-      options?.mutationProps?.mutationKey?.[0] === "generate-personal-plan"
-        ? generatePlanMock
-        : confirmMetabolismMock,
+  usePostQuery: vi.fn(() => ({
+    mutateAsync: confirmMetabolismMock,
     isPending: false,
   })),
 }));
@@ -117,19 +113,10 @@ describe("PersonalizationResult onboarding screen", () => {
     confirmMetabolismMock.mockResolvedValue({
       data: {
         data: {
-          status: "RESULT_CONFIRMED",
-          onboardingFlowStatus: "RESULT_CONFIRMED",
-          onboardingNextPath: "/user/onboarding/plan-preview",
-        },
-      },
-    });
-    generatePlanMock.mockReset();
-    generatePlanMock.mockResolvedValue({
-      data: {
-        data: {
-          id: "generation-1",
-          flowStatus: "PLAN_GENERATING",
-          nextPath: "/user/onboarding/plan-generating/generation-1",
+          status: "ACTIVATED",
+          onboardingFlowStatus: "ACTIVATED",
+          onboardingNextPath: "/user",
+          activatedAt: "2026-05-01T09:05:00.000Z",
         },
       },
     });
@@ -157,21 +144,25 @@ describe("PersonalizationResult onboarding screen", () => {
     expect(screen.getAllByText("Maqsad vazn").length).toBeGreaterThan(0);
     expect(screen.getByText("Hisoblash zanjiri")).toBeTruthy();
     expect(screen.getByText("Makro energiya")).toBeTruthy();
-    expect(
-      screen.getByText("Kunlik maqsad va ko'rsatkichlar"),
-    ).toBeTruthy();
+    expect(screen.getByText("Kunlik maqsad va ko'rsatkichlar")).toBeTruthy();
     expect(screen.queryByText("Profil va sozlamalar")).toBeNull();
     expect(
       screen.getByRole("button", {
         name: "Kunlik kaloriya maqsadini tahrirlash",
       }),
     ).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Oqsilni tahrirlash" })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Oqsilni tahrirlash" }),
+    ).toBeTruthy();
     expect(
       screen.getByRole("button", { name: "Uglevodni tahrirlash" }),
     ).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Yog'ni tahrirlash" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Suvni tahrirlash" })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Yog'ni tahrirlash" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Suvni tahrirlash" }),
+    ).toBeTruthy();
     expect(screen.getByText("Suv maqsadi")).toBeTruthy();
     expect(screen.getByText("Qadam")).toBeTruthy();
     expect(screen.getAllByText("BMR").length).toBeGreaterThan(0);
@@ -179,7 +170,9 @@ describe("PersonalizationResult onboarding screen", () => {
     expect(screen.getByText("BMI")).toBeTruthy();
     expect(screen.getByText("Metabolik yosh")).toBeTruthy();
     expect(screen.getByText("Maqsad sanasi")).toBeTruthy();
-    expect(screen.getByText("Ovqatlanish")).toBeTruthy();
+    expect(screen.queryByText("Ovqatlanish")).toBeNull();
+    expect(screen.queryByText("Mashg'ulot")).toBeNull();
+    expect(screen.queryByText("Byudjet")).toBeNull();
 
     expect(screen.queryByText("Reja inputlari")).toBeNull();
     expect(screen.queryByText("Jihozlar")).toBeNull();
@@ -193,16 +186,13 @@ describe("PersonalizationResult onboarding screen", () => {
   it("keeps hero goal metrics read-only", () => {
     render(<ResultContent result={{}} onboarding={{}} onEdit={vi.fn()} />);
 
-    [
-      "Hozirgi vazn",
-      "Maqsad vazn",
-      "Vazn farqi",
-      "Haftalik sur'at",
-    ].forEach((label) => {
-      screen.getAllByText(label).forEach((node) => {
-        expect(node.closest("button")).toBeNull();
-      });
-    });
+    ["Hozirgi vazn", "Maqsad vazn", "Vazn farqi", "Haftalik sur'at"].forEach(
+      (label) => {
+        screen.getAllByText(label).forEach((node) => {
+          expect(node.closest("button")).toBeNull();
+        });
+      },
+    );
   });
 
   it("renders an empty state instead of fallback metrics when API result is null", () => {
@@ -338,7 +328,7 @@ describe("PersonalizationResult onboarding screen", () => {
         name: "onboarding.postOnboarding.result.edit.proteinGram.title",
       }),
       {
-      target: { value: "170" },
+        target: { value: "170" },
       },
     );
     fireEvent.click(
@@ -381,29 +371,27 @@ describe("PersonalizationResult onboarding screen", () => {
     });
   });
 
-  it("confirms metabolism before starting plan generation", async () => {
+  it("confirms metabolism and opens the dashboard", async () => {
     renderResultPage();
 
-    fireEvent.click(screen.getByRole("button", { name: "Rejani yaratish" }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "onboarding.postOnboarding.result.openDashboard",
+      }),
+    );
 
     await waitFor(() => {
       expect(confirmMetabolismMock).toHaveBeenCalledWith({
         url: "/user/onboarding/confirm-metabolism",
       });
     });
-    await waitFor(() => {
-      expect(generatePlanMock).toHaveBeenCalledWith({
-        url: "/user/onboarding/generate-personal-plan",
-      });
-    });
     expect(setOnboardingFlowMock).toHaveBeenCalledWith({
-      onboardingFlowStatus: "PLAN_GENERATING",
-      onboardingNextPath: "/user/onboarding/plan-generating/generation-1",
-      latestPlanGenerationJobId: "generation-1",
+      onboardingFlowStatus: "ACTIVATED",
+      onboardingNextPath: "/user",
+      latestPlanGenerationJobId: null,
     });
-    expect(navigateMock).toHaveBeenCalledWith(
-      "/user/onboarding/plan-generating/generation-1",
-      { replace: true },
-    );
+    expect(navigateMock).toHaveBeenCalledWith("/user/dashboard", {
+      replace: true,
+    });
   });
 });

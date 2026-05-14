@@ -1,4 +1,4 @@
-const USER_DRAFT_FIELD_KEYS = new Set([
+export const ACTIVE_USER_ONBOARDING_DRAFT_KEYS = new Set([
   "firstName",
   "lastName",
   "gender",
@@ -11,58 +11,26 @@ const USER_DRAFT_FIELD_KEYS = new Set([
   "targetWeight",
   "weeklyPace",
   "activityLevel",
-  "weeklyWorkoutCount",
-  "workoutExperience",
-  "sleepHours",
-  "workType",
-  "fastFoodFrequency",
-  "sweetDrinkHabit",
-  "cookingTime",
-  "cookingAccess",
   "mealFrequency",
-  "foodBudget",
-  "foodBudgetTier",
-  "budgetPeriod",
-  "budgetCurrency",
-  "workoutLocation",
-  "equipmentIds",
-  "customEquipment",
-  "workoutBodyPartIds",
-  "customWorkoutBodyParts",
+  "completedUserOnboardingSteps",
   "allergyIds",
   "allergyIngredientIds",
   "customAllergies",
   "dietRequirementIds",
   "customDietRequirements",
-  "preferredCuisineIds",
-  "customPreferredCuisines",
-  "dislikedFoodIds",
-  "customDislikedFoods",
-  "preferredIngredientIds",
-  "customPreferredIngredients",
-  "dislikedIngredientIds",
-  "customDislikedIngredients",
-  "nutritionPreferenceKeys",
   "allergyOtherText",
-  "dislikedOtherText",
-  "nutritionPreferenceOtherText",
-  "dietRestrictions",
   "healthConstraints",
   "customHealthConstraints",
-  "injurySeverity",
-  "forbiddenExercises",
-  "medications",
-  "supplements",
-  "playsFootball",
-  "cardioLevel",
-  "notificationPreference",
 ]);
+
+export function pickActiveUserDraftData(data = {}) {
+  return Object.fromEntries(
+    Array.from(ACTIVE_USER_ONBOARDING_DRAFT_KEYS, (key) => [key, data[key]]),
+  );
+}
 
 const USER_DRAFT_DEFAULT_VALUES = {
   weeklyPace: 0.5,
-  budgetPeriod: "weekly",
-  budgetCurrency: "UZS",
-  workoutLocation: "home",
 };
 
 function hasMeaningfulUserDraftValue(key, value) {
@@ -100,7 +68,7 @@ export function isMeaningfulUserDraftData(data) {
   }
 
   return Object.entries(data).some(([key, value]) => {
-    if (!USER_DRAFT_FIELD_KEYS.has(key)) return false;
+    if (!ACTIVE_USER_ONBOARDING_DRAFT_KEYS.has(key)) return false;
 
     return hasMeaningfulUserDraftValue(key, value);
   });
