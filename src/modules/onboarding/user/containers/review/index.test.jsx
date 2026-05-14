@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCompletePayload } from "./index.jsx";
+import { buildCompletePayload } from "./complete-payload.js";
 import {
   getHealthConstraintsSummary,
   getReviewBlockingErrors,
