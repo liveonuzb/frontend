@@ -19,10 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { usePostQuery } from "@/hooks/api";
 import { getUserOnboardingPersonalizingPath } from "@/lib/app-paths";
-import {
-  normalizeUserOnboarding,
-  toUserOnboardingPayload,
-} from "@/lib/user-onboarding";
+import { normalizeUserOnboarding } from "@/lib/user-onboarding";
 import { cn } from "@/lib/utils";
 import { useAuthStore, useOnboardingStore } from "@/store";
 import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-question";
@@ -40,74 +37,10 @@ import {
   getReviewBlockingErrors,
   getReviewRecommendations,
 } from "./review-issues.js";
+import { buildCompletePayload } from "./complete-payload.js";
 import { ONBOARDING_GRID_SCROLL_AREA_CLASS } from "../onboarding-scroll-area.js";
 
 const tone = ONBOARDING_ACCENTS.green;
-
-const buildCompletePayload = (state) => {
-  const payload = toUserOnboardingPayload({
-    firstName: state.firstName,
-    lastName: state.lastName,
-    gender: state.gender,
-    age: state.age,
-    height: state.height,
-    currentWeight: state.currentWeight,
-    goal: state.goal,
-    weightGoal: state.weightGoal,
-    goals: state.goals,
-    targetWeight: state.targetWeight,
-    weeklyPace: state.weeklyPace,
-    activityLevel: state.activityLevel,
-    mealFrequency: state.mealFrequency,
-    allergyIds: state.allergyIds?.length
-      ? state.allergyIds
-      : state.allergyIngredientIds,
-    allergyIngredientIds: state.allergyIngredientIds,
-    customAllergies: state.customAllergies,
-    dietRequirementIds: state.dietRequirementIds,
-    customDietRequirements: state.customDietRequirements,
-    preferredCuisineIds: state.preferredCuisineIds,
-    customPreferredCuisines: state.customPreferredCuisines,
-    dislikedFoodIds: state.dislikedFoodIds,
-    customDislikedFoods: state.customDislikedFoods,
-    preferredIngredientIds: state.preferredIngredientIds,
-    customPreferredIngredients: state.customPreferredIngredients,
-    dislikedIngredientIds: state.dislikedIngredientIds,
-    customDislikedIngredients: state.customDislikedIngredients,
-    nutritionPreferenceKeys: state.nutritionPreferenceKeys,
-    healthConstraints: state.healthConstraints,
-    customHealthConstraints: state.customHealthConstraints,
-  });
-
-  return {
-    ...payload,
-    foodBudget: null,
-    foodBudgetTier: null,
-    budgetPeriod: null,
-    budgetCurrency: "UZS",
-    preferredCuisineIds: [],
-    customPreferredCuisines: [],
-    dislikedFoodIds: [],
-    customDislikedFoods: [],
-    preferredIngredientIds: [],
-    dislikedIngredientIds: [],
-    customPreferredIngredients: [],
-    customDislikedIngredients: [],
-    dislikedOtherText: null,
-    weeklyWorkoutCount: 0,
-    workoutExperience: null,
-    workoutLocation: null,
-    equipmentIds: [],
-    customEquipment: [],
-    workoutBodyPartIds: [],
-    customWorkoutBodyParts: [],
-    preferredExerciseIds: [],
-    dislikedExerciseIds: [],
-    customPreferredExercises: [],
-    customDislikedExercises: [],
-    completed: true,
-  };
-};
 
 const SummaryCard = ({ editLabel, icon: Icon, title, items, onEdit }) => (
   <section className="rounded-2xl border bg-background/90 p-4">
