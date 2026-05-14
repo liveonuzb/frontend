@@ -2,7 +2,7 @@ import React from "react";
 import { Navigate, Route, Routes } from "react-router";
 
 import Layout from "@/modules/onboarding/layout/index.jsx";
-import { UserOnboardingRoutes } from "@/modules/onboarding/user/routes.jsx";
+import { renderUserOnboardingRoutes } from "@/modules/onboarding/user/routes.jsx";
 
 // Coach onboarding imports
 import CoachEntryPage from "@/modules/onboarding/coach/pages/entry/index.jsx";
@@ -21,7 +21,7 @@ const Index = () => {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <UserOnboardingRoutes />
+        {renderUserOnboardingRoutes()}
 
         <Route
           path="roles"

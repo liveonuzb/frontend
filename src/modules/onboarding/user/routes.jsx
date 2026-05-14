@@ -52,7 +52,7 @@ const postMetabolismLegacyRedirects = {
   "plan-generating/:jobId": "metabolism-result",
 };
 
-export const UserOnboardingRoutes = () => (
+export const renderUserOnboardingRoutes = () => (
   <>
     <Route index element={<EntryPage />} />
 
