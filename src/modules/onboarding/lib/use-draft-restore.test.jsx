@@ -57,4 +57,33 @@ describe("useDraftRestore", () => {
       );
     });
   });
+
+  it("does not restore drafts that contain only removed plan fields", async () => {
+    getQueryResultMock.mockReturnValue({
+      isLoading: false,
+      data: {
+        data: {
+          weeklyWorkoutCount: 4,
+          workoutExperience: "advanced",
+          foodBudgetTier: "high",
+          preferredCuisineIds: ["uzbek"],
+          workoutLocation: "gym",
+        },
+      },
+    });
+
+    render(<DraftRestoreProbe />);
+
+    await waitFor(() => {
+      expect(useOnboardingStore.getState()).toEqual(
+        expect.objectContaining({
+          weeklyWorkoutCount: "",
+          workoutExperience: "",
+          foodBudgetTier: null,
+          preferredCuisineIds: [],
+          workoutLocation: "home",
+        }),
+      );
+    });
+  });
 });

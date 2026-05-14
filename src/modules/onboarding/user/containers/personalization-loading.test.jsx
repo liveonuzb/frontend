@@ -7,7 +7,7 @@ import {
 } from "./personalization-loading.jsx";
 import {
   buildLoadingStepStates,
-  planGenerationChecklist,
+  metabolismChecklist,
 } from "../lib/personalization.js";
 
 const getQueryResultMock = vi.hoisted(() => vi.fn());
@@ -34,14 +34,12 @@ vi.mock("react-i18next", () => ({
 }));
 
 vi.mock("react-router", () => ({
+  Navigate: ({ to, replace }) => {
+    navigateMock(to, { replace });
+    return <div data-testid="legacy-plan-generation-redirect" />;
+  },
   useNavigate: () => navigateMock,
   useParams: () => paramsMock(),
-}));
-
-vi.mock("@tanstack/react-query", () => ({
-  useQueryClient: () => ({
-    invalidateQueries: vi.fn(),
-  }),
 }));
 
 vi.mock("@/hooks/api", () => ({
@@ -70,24 +68,24 @@ describe("PersonalizingContainer", () => {
     vi.useRealTimers();
   });
 
-  it("maps AI plan generation progress into completed, active, and pending states", () => {
-    const stepStates = buildLoadingStepStates(50, planGenerationChecklist);
+  it("maps metabolism progress into completed, active, and pending states", () => {
+    const stepStates = buildLoadingStepStates(50, metabolismChecklist);
     const completedKeys = stepStates
       .filter((step) => step.status === "completed")
       .map((step) => step.key);
 
-    expect(completedKeys).toEqual(["mealContext", "workoutContext"]);
+    expect(completedKeys).toEqual(["bmrFormula", "metabolicAge"]);
     expect(stepStates[2]).toMatchObject({
-      key: "mealPlan",
+      key: "calorieMacros",
       status: "active",
     });
     expect(stepStates[3]).toMatchObject({
-      key: "workoutPlan",
+      key: "waterSteps",
       status: "pending",
     });
 
     expect(
-      buildLoadingStepStates(100, planGenerationChecklist).every(
+      buildLoadingStepStates(100, metabolismChecklist).every(
         (step) => step.status === "completed",
       ),
     ).toBe(true);
@@ -125,219 +123,16 @@ describe("PersonalizingContainer", () => {
     expect(navigateMock).not.toHaveBeenCalled();
   });
 
-  it("uses the active generation job route after refresh without starting a new plan", () => {
-    paramsMock.mockReturnValue({ jobId: "generation-1" });
-    const mutateAsync = vi.fn();
-    getQueryResultMock.mockReturnValue({
-      data: {
-        data: {
-          id: "generation-1",
-          status: "PROCESSING",
-          progress: 42,
-          flowStatus: "GENERATING_PLAN",
-          nextPath: "/user/onboarding/plan-generating/generation-1",
-        },
-      },
-      isError: false,
-      isSuccess: false,
-      refetch: vi.fn(),
-    });
-    postQueryResultMock.mockReturnValue({
-      mutateAsync,
-      isPending: false,
-    });
-
+  it("redirects legacy plan generation screens to metabolism result without starting a plan job", () => {
     render(<GeneratingContainer />);
 
-    expect(getQueryResultMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        url: "/user/onboarding/generation-status/generation-1",
-      }),
-    );
-    expect(mutateAsync).not.toHaveBeenCalled();
-    expect(navigateMock).not.toHaveBeenCalled();
-  });
-
-  it("renders the mode-aware AI plan generation shell with the current step", () => {
-    document.documentElement.dataset.appMode = "focus";
-    paramsMock.mockReturnValue({ jobId: "generation-1" });
-    getQueryResultMock.mockReturnValue({
-      data: {
-        data: {
-          id: "generation-1",
-          status: "PROCESSING",
-          progress: 50,
-          flowStatus: "GENERATING_PLAN",
-          nextPath: "/user/onboarding/plan-generating/generation-1",
-        },
-      },
-      isError: false,
-      isSuccess: false,
-      refetch: vi.fn(),
-    });
-    postQueryResultMock.mockReturnValue({
-      mutateAsync: vi.fn(),
-      isPending: false,
-    });
-
-    render(<GeneratingContainer />);
-
-    expect(screen.getByTestId("ai-plan-generation")).toHaveClass(
-      "ai-plan-generation",
-    );
-    expect(screen.getByRole("progressbar")).toHaveAttribute(
-      "aria-valuenow",
-      "50",
-    );
-    const activeStep = screen
-      .getByText("onboarding.postOnboarding.loading.checklist.mealPlan")
-      .closest("li");
-    expect(activeStep).toHaveAttribute("aria-current", "step");
-    expect(activeStep).toHaveClass("ai-plan-generation__step--active");
-    expect(
-      screen.getByText("onboarding.postOnboarding.loading.hintTitle"),
-    ).toBeInTheDocument();
-  });
-
-  it("navigates to plan ready when plan generation completes", async () => {
-    vi.useFakeTimers();
-    paramsMock.mockReturnValue({ jobId: "generation-1" });
-    getQueryResultMock.mockReturnValue({
-      data: {
-        data: {
-          id: "generation-1",
-          status: "COMPLETED",
-          progress: 100,
-          flowStatus: "PLAN_READY",
-          nextPath: "/user/onboarding/plan-ready",
-        },
-      },
-      isError: false,
-      isSuccess: true,
-      refetch: vi.fn(),
-    });
-    postQueryResultMock.mockReturnValue({
-      mutateAsync: vi.fn(),
-      isPending: false,
-    });
-
-    render(<GeneratingContainer />);
-
-    await vi.advanceTimersByTimeAsync(650);
-
-    expect(navigateMock).toHaveBeenCalledWith("/user/onboarding/plan-ready", {
-      replace: true,
-    });
-  });
-
-  it("shows quality-gate issues when plan generation fails validation", () => {
-    paramsMock.mockReturnValue({ jobId: "generation-1" });
-    getQueryResultMock.mockReturnValue({
-      data: {
-        data: {
-          id: "generation-1",
-          status: "FAILED",
-          progress: 100,
-          missingData: [],
-          qualityReport: {
-            score: 72,
-            passed: false,
-            level: "blocked",
-            blockingIssues: [
-              {
-                code: "nutrition.weekly_calories_out_of_range",
-                message:
-                  "Weekly average calories are outside the target tolerance.",
-              },
-            ],
-            warnings: [],
-            metrics: {},
-          },
-        },
-      },
-      isError: false,
-      isSuccess: false,
-      refetch: vi.fn(),
-    });
-    postQueryResultMock.mockReturnValue({
-      mutateAsync: vi.fn(),
-      isPending: false,
-    });
-
-    render(<GeneratingContainer />);
-
-    const shell = screen.getByTestId("ai-plan-generation");
-    expect(shell).toHaveClass("ai-plan-generation--error");
-    expect(shell).not.toHaveClass("ai-plan-generation--complete");
-    expect(screen.getByRole("progressbar")).toHaveAttribute(
-      "aria-valuenow",
-      "92",
-    );
-    expect(
-      screen
-        .getByText("onboarding.postOnboarding.loading.checklist.finalizing")
-        .closest("li"),
-    ).not.toHaveClass("ai-plan-generation__step--completed");
-    expect(
-      screen.getByText(
-        "- Weekly average calories are outside the target tolerance.",
-      ),
-    ).toBeInTheDocument();
-  });
-
-  it("retries a failed generation job by starting a new plan job", async () => {
-    paramsMock.mockReturnValue({ jobId: "generation-1" });
-    const mutateAsync = vi.fn().mockResolvedValue({
-      data: {
-        data: {
-          id: "generation-2",
-          flowStatus: "GENERATING_PLAN",
-          nextPath: "/user/onboarding/plan-generating/generation-2",
-        },
-      },
-    });
-    getQueryResultMock.mockReturnValue({
-      data: {
-        data: {
-          id: "generation-1",
-          status: "FAILED",
-          progress: 100,
-          missingData: [],
-        },
-      },
-      isError: false,
-      isSuccess: false,
-      refetch: vi.fn(),
-    });
-    postQueryResultMock.mockReturnValue({
-      mutateAsync,
-      isPending: false,
-    });
-
-    render(<GeneratingContainer />);
-
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: /onboarding\.postOnboarding\.loading\.retry/,
-      }),
-    );
-
-    await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith({
-        url: "/user/onboarding/generate-personal-plan",
-      });
-    });
-    expect(setOnboardingFlowMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        onboardingFlowStatus: "GENERATING_PLAN",
-        onboardingNextPath: "/user/onboarding/plan-generating/generation-2",
-        latestPlanGenerationJobId: "generation-2",
-      }),
-    );
+    expect(screen.getByTestId("legacy-plan-generation-redirect")).toBeTruthy();
     expect(navigateMock).toHaveBeenCalledWith(
-      "/user/onboarding/plan-generating/generation-2",
+      "/user/onboarding/metabolism-result",
       { replace: true },
     );
+    expect(getQueryResultMock).not.toHaveBeenCalled();
+    expect(postQueryResultMock).not.toHaveBeenCalled();
   });
 
   it("shows a visible recovery path when a metabolism job fails", async () => {

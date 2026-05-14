@@ -94,6 +94,6 @@ describe("MealFrequency onboarding step", () => {
 
     fireEvent.click(nextButton);
 
-    expect(navigate).toHaveBeenCalledWith("/user/onboarding/food-budget");
+    expect(navigate).toHaveBeenCalledWith("/user/onboarding/allergies");
   });
 });

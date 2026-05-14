@@ -61,6 +61,15 @@ const renderOnboardingLayout = (initialPath) =>
       <Routes>
         <Route path="/user/onboarding" element={<Layout />}>
           <Route
+            path="name"
+            element={
+              <>
+                <div>Name child</div>
+                <PathProbe />
+              </>
+            }
+          />
+          <Route
             path="gender"
             element={
               <>
@@ -226,9 +235,9 @@ describe("Onboarding layout post-result behavior", () => {
 
     expect(
       screen.getByRole("progressbar", {
-        name: "14/25 - nutrition",
+        name: "13/15 - nutrition",
       }),
-    ).toHaveAttribute("aria-valuenow", "14");
+    ).toHaveAttribute("aria-valuenow", "13");
   });
 
   it("shows retry guidance when draft auto-save fails", () => {
@@ -251,7 +260,7 @@ describe("Onboarding layout post-result behavior", () => {
   });
 
   it("uses compact footer reserve only for single-button hero steps", () => {
-    ["gender"].forEach((step) => {
+    ["name", "gender"].forEach((step) => {
       const compact = renderOnboardingLayout(`/user/onboarding/${step}`);
       const compactMain = compact.container.querySelector("main");
 
@@ -264,6 +273,19 @@ describe("Onboarding layout post-result behavior", () => {
 
       compact.unmount();
     });
+  });
+
+  it("uses tighter footer padding on the name step", () => {
+    const { container } = renderOnboardingLayout("/user/onboarding/name");
+    const footer = container.querySelector("footer");
+
+    expect(footer).toHaveClass("px-3");
+    expect(footer).toHaveClass("pb-[calc(0.5rem+env(safe-area-inset-bottom))]");
+    expect(footer).toHaveClass("pt-2");
+    expect(footer).not.toHaveClass("px-4");
+    expect(footer).not.toHaveClass(
+      "pb-[calc(1rem+env(safe-area-inset-bottom))]",
+    );
   });
 
   it("uses dense footer reserve for numeric picker steps", () => {
@@ -294,24 +316,12 @@ describe("Onboarding layout post-result behavior", () => {
     );
   });
 
-  it("keeps calculating and generating screens without fixed onboarding header", () => {
+  it("keeps metabolism calculating screens without fixed onboarding header", () => {
     const personalizing = renderOnboardingLayout(
       "/user/onboarding/metabolism-calculating",
     );
 
     expect(personalizing.container.querySelector("header")).toBeNull();
-
-    personalizing.unmount();
-
-    const generating = renderOnboardingLayout(
-      "/user/onboarding/plan-generating",
-    );
-
-    expect(generating.container.querySelector("header")).toBeNull();
-    expect(generating.container.querySelector("main")).toHaveClass("pb-0");
-    expect(generating.container.querySelector("footer")).toHaveClass("px-0");
-    expect(generating.container.querySelector("footer")).toHaveClass("pb-0");
-    expect(generating.container.querySelector("footer")).toHaveClass("pt-0");
   });
 
   it("hydrates persisted user onboarding when server draft is empty", async () => {

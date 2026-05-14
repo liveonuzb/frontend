@@ -2,22 +2,23 @@ import { describe, expect, it } from "vitest";
 import { getNextStep, getPrevStep } from "./constants";
 
 describe("user onboarding step order", () => {
-  it("places other goals after weekly pace and nutrition before workout", () => {
+  it("keeps only nutrition safety before review", () => {
     expect(getNextStep("gender")).toBe("age");
     expect(getNextStep("goal")).toBe("target-weight");
     expect(getNextStep("weekly-pace")).toBe("other-goals");
     expect(getNextStep("activity-level")).toBe("meal-frequency");
-    expect(getNextStep("disliked-ingredients")).toBe("health-constraints");
-    expect(getNextStep("health-constraints")).toBe("weekly-workout-count");
-    expect(getNextStep("workout-experience")).toBe("workout-location");
-    expect(getNextStep("workout-body-parts")).toBe("review");
+    expect(getNextStep("meal-frequency")).toBe("allergies");
+    expect(getNextStep("allergies")).toBe("diet-requirements");
+    expect(getNextStep("diet-requirements")).toBe("health-constraints");
+    expect(getNextStep("health-constraints")).toBe("review");
   });
 
   it("keeps back navigation aligned with the reordered flow", () => {
     expect(getPrevStep("other-goals")).toBe("weekly-pace");
     expect(getPrevStep("meal-frequency")).toBe("activity-level");
-    expect(getPrevStep("health-constraints")).toBe("disliked-ingredients");
-    expect(getPrevStep("weekly-workout-count")).toBe("health-constraints");
-    expect(getPrevStep("workout-location")).toBe("workout-experience");
+    expect(getPrevStep("allergies")).toBe("meal-frequency");
+    expect(getPrevStep("diet-requirements")).toBe("allergies");
+    expect(getPrevStep("health-constraints")).toBe("diet-requirements");
+    expect(getPrevStep("review")).toBe("health-constraints");
   });
 });

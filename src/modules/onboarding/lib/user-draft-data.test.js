@@ -37,4 +37,18 @@ describe("isMeaningfulUserDraftData", () => {
       }),
     ).toBe(false);
   });
+
+  it("ignores removed meal and workout plan draft fields", () => {
+    expect(
+      isMeaningfulUserDraftData({
+        weeklyWorkoutCount: 4,
+        workoutExperience: "advanced",
+        foodBudgetTier: "high",
+        preferredCuisineIds: ["uzbek"],
+        dislikedFoodIds: ["burger"],
+        preferredIngredientIds: ["rice"],
+        workoutLocation: "gym",
+      }),
+    ).toBe(false);
+  });
 });

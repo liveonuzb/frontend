@@ -279,7 +279,7 @@ const Index = () => {
   const goNext = React.useCallback(() => {
     if (!hasSelection) return;
     markCompleted();
-    navigate("/user/onboarding/weekly-workout-count");
+    navigate("/user/onboarding/review");
   }, [hasSelection, markCompleted, navigate]);
 
   const handleSkip = React.useCallback(() => {
@@ -297,7 +297,7 @@ const Index = () => {
         ]),
       ),
     });
-    navigate("/user/onboarding/weekly-workout-count");
+    navigate("/user/onboarding/review");
   }, [completedUserOnboardingSteps, navigate, setFields]);
 
   const handleOtherOpenChange = React.useCallback((open) => {

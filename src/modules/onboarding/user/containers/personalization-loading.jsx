@@ -1,6 +1,5 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { get } from "lodash";
 import {
   AlertTriangleIcon,
   CheckCircle2Icon,
@@ -8,29 +7,24 @@ import {
   RefreshCcwIcon,
   SparklesIcon,
 } from "lucide-react";
-import { useNavigate, useParams } from "react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { Navigate, useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useGetQuery, usePostQuery } from "@/hooks/api";
 import {
-  getUserOnboardingGeneratingPath,
-  getUserOnboardingPlanReadyPath,
   getUserOnboardingPersonalizingPath,
   getUserOnboardingResultPath,
 } from "@/lib/app-paths";
 import { cn } from "@/lib/utils";
 import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-context";
 import { useAuthStore } from "@/store";
-import AiPlanGeneration from "../components/ai-plan-generation.jsx";
 import PageAura from "../components/page-aura.jsx";
 import { ONBOARDING_ACCENTS } from "../lib/tones.js";
 import {
   buildVisibleLoadingIssues,
   clampProgress,
   getLoadingStepIndex,
-  getPlanGenerationQualityIssues,
   metabolismChecklist,
   metabolismLoadingSteps,
   unwrapApiData,
@@ -296,134 +290,8 @@ export const PersonalizingContainer = () => {
   );
 };
 
-export const GeneratingContainer = () => {
-  const { jobId } = useParams();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const setOnboardingFlow = useAuthStore((state) => state.setOnboardingFlow);
-  const [activeJobId, setActiveJobId] = React.useState(jobId ?? "");
-  const [localProgress, setLocalProgress] = React.useState(0);
-  const [manualContinueJobId, setManualContinueJobId] = React.useState("");
-  const startedRef = React.useRef(false);
-  const { mutateAsync: startGeneration, isPending: isStarting } =
-    usePostQuery();
-
-  const statusQuery = useGetQuery({
-    url: activeJobId ? `/user/onboarding/generation-status/${activeJobId}` : "",
-    queryProps: {
-      queryKey: ["onboarding", "generation-status", activeJobId],
-      enabled: Boolean(activeJobId),
-      refetchInterval: (query) => {
-        const status = unwrapApiData(query.state.data)?.status;
-        return status === "COMPLETED" || status === "FAILED" ? false : 1600;
-      },
-    },
-  });
-  const job = unwrapApiData(statusQuery.data);
-  const jobStatus = get(job, "status");
-  const isFailed = jobStatus === "FAILED" || statusQuery.isError;
-  const hasServerProgress = Number.isFinite(Number(get(job, "progress")));
-  const progress = clampProgress(
-    hasServerProgress ? get(job, "progress") : localProgress,
-  );
-  const displayProgress = isFailed
-    ? clampProgress(Math.min(progress, 92))
-    : progress;
-  const qualityIssues = getPlanGenerationQualityIssues(job);
-  const isGenerationCompleted = jobStatus === "COMPLETED" && progress >= 100;
-  const completedJobId = String(get(job, "id", "completed"));
-  const showManualContinue =
-    isGenerationCompleted && manualContinueJobId === completedJobId;
-
-  const continueToPlanReady = React.useCallback(() => {
-    setOnboardingFlow({
-      onboardingFlowStatus: get(job, "flowStatus"),
-      onboardingNextPath: getUserOnboardingPlanReadyPath(),
-      latestPlanGenerationJobId: get(job, "id"),
-    });
-    void queryClient.invalidateQueries({ queryKey: ["me"] });
-    navigate(getUserOnboardingPlanReadyPath(), { replace: true });
-  }, [job, navigate, queryClient, setOnboardingFlow]);
-
-  const start = React.useCallback(async () => {
-    startedRef.current = true;
-    const response = await startGeneration({
-      url: "/user/onboarding/generate-personal-plan",
-    });
-    const nextJob = unwrapApiData(response);
-    if (nextJob?.id) {
-      setOnboardingFlow({
-        onboardingFlowStatus: nextJob.flowStatus,
-        onboardingNextPath: nextJob.nextPath,
-        latestPlanGenerationJobId: nextJob.id,
-      });
-      setActiveJobId(nextJob.id);
-      navigate(getUserOnboardingGeneratingPath(nextJob.id), { replace: true });
-    }
-  }, [navigate, setOnboardingFlow, startGeneration]);
-
-  React.useEffect(() => {
-    if (!activeJobId && !startedRef.current) {
-      void start();
-    }
-  }, [activeJobId, start]);
-
-  React.useEffect(() => {
-    if (isGenerationCompleted) {
-      const redirectTimer = window.setTimeout(continueToPlanReady, 650);
-      const fallbackTimer = window.setTimeout(() => {
-        setManualContinueJobId(completedJobId);
-      }, 2200);
-
-      return () => {
-        window.clearTimeout(redirectTimer);
-        window.clearTimeout(fallbackTimer);
-      };
-    }
-
-    return undefined;
-  }, [completedJobId, continueToPlanReady, isGenerationCompleted]);
-
-  React.useEffect(() => {
-    const flowStatus = get(job, "flowStatus");
-    const nextPath = get(job, "nextPath");
-
-    if (flowStatus || nextPath) {
-      setOnboardingFlow({
-        onboardingFlowStatus: flowStatus,
-        onboardingNextPath: nextPath,
-        latestPlanGenerationJobId: get(job, "id"),
-      });
-    }
-  }, [job, setOnboardingFlow]);
-
-  React.useEffect(() => {
-    const timer = window.setInterval(() => {
-      setLocalProgress((current) =>
-        activeJobId ? Math.min(92, current + 2) : Math.min(20, current + 3),
-      );
-    }, 300);
-
-    return () => window.clearInterval(timer);
-  }, [activeJobId]);
-
-  return (
-    <AiPlanGeneration
-      progress={isStarting ? Math.max(displayProgress, 12) : displayProgress}
-      error={isFailed}
-      missingData={get(job, "missingData", [])}
-      qualityIssues={qualityIssues}
-      onRetry={() => {
-        startedRef.current = false;
-        setManualContinueJobId("");
-        setActiveJobId("");
-        setLocalProgress(0);
-        void start();
-      }}
-      canContinue={showManualContinue}
-      onContinue={continueToPlanReady}
-    />
-  );
-};
+export const GeneratingContainer = () => (
+  <Navigate to={getUserOnboardingResultPath()} replace />
+);
 
 export default PersonalizingContainer;

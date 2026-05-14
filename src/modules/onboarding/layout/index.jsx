@@ -48,28 +48,21 @@ const USER_STEP_SECTION_KEYS = {
   "other-goals": "goal",
   "activity-level": "goal",
   "meal-frequency": "nutrition",
-  "food-budget": "nutrition",
   allergies: "nutrition",
   "diet-requirements": "nutrition",
-  "preferred-cuisines": "nutrition",
-  "disliked-foods": "nutrition",
-  "preferred-ingredients": "nutrition",
-  "disliked-ingredients": "nutrition",
   "health-constraints": "health",
-  "weekly-workout-count": "workout",
-  "workout-experience": "workout",
-  "workout-location": "workout",
-  "workout-equipment": "workout",
-  "workout-body-parts": "workout",
   review: "review",
 };
 
 const COMPACT_FOOTER_RESERVE_STEPS = new Set([
+  "name",
   "gender",
   "goal",
   "weekly-pace",
   "activity-level",
 ]);
+
+const TIGHT_FOOTER_PADDING_STEPS = new Set(["name"]);
 
 const DENSE_FOOTER_RESERVE_STEPS = new Set([
   "age",
@@ -104,16 +97,11 @@ const OnboardingLayoutInner = () => {
   const currentPath =
     isCoachScope && routePath ? `coach/${routePath}` : routePath;
   const isResultRoute =
-    !isCoachScope &&
-    ["result", "metabolism-result", "plan-ready"].includes(
-      currentPath,
-    );
+    !isCoachScope && ["result", "metabolism-result"].includes(currentPath);
   const isMetabolismResultRoute = currentPath === "metabolism-result";
   const isStandalonePostOnboardingRoute = [
     "personalizing",
     "metabolism-calculating",
-    "generating",
-    "plan-generating",
   ].some((path) => currentPath === path || currentPath.startsWith(`${path}/`));
 
   const userCurrentStep = normalizeUserOnboardingStep(currentPath);
@@ -136,9 +124,6 @@ const OnboardingLayoutInner = () => {
     "metabolism-calculating",
     "result",
     "metabolism-result",
-    "generating",
-    "plan-generating",
-    "plan-ready",
   ].some((path) => currentPath === path || currentPath.startsWith(`${path}/`));
   const { isLoading: isDraftLoading } = useDraftRestore(
     isCoachScope ? "coach" : "user",
@@ -155,9 +140,7 @@ const OnboardingLayoutInner = () => {
   const prevPath =
     returnToPath ||
     (isResultRoute
-      ? currentPath === "plan-ready"
-        ? getUserOnboardingPath("metabolism-result")
-        : getUserOnboardingPath("review")
+      ? getUserOnboardingPath("review")
       : prevStep
         ? getOnboardingPathFromStep(prevStep)
         : currentStepIndex === 0
@@ -423,6 +406,8 @@ const OnboardingLayoutInner = () => {
     !isCoachStep && COMPACT_FOOTER_RESERVE_STEPS.has(userCurrentStep);
   const hasDenseFooterReserve =
     !isCoachStep && DENSE_FOOTER_RESERVE_STEPS.has(userCurrentStep);
+  const hasTightFooterPadding =
+    !isCoachStep && TIGHT_FOOTER_PADDING_STEPS.has(userCurrentStep);
 
   if (isDraftLoading && !isPostOnboardingRoute) {
     return (
@@ -575,7 +560,9 @@ const OnboardingLayoutInner = () => {
             ? "px-0 pb-0 pt-0 bg-gradient-to-t from-[#070503] via-[#070503]/86 to-transparent backdrop-blur-sm"
             : isStandalonePostOnboardingRoute
               ? "px-0 pb-0 pt-0"
-              : "bg-transparent backdrop-blur-sm",
+              : hasTightFooterPadding
+                ? "px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 bg-transparent backdrop-blur-sm"
+                : "bg-transparent backdrop-blur-sm",
         )}
       >
         <div className={cn("pointer-events-auto mx-auto", shellMaxWidthClass)}>

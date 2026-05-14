@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getNextUserOnboardingPath } from "./resume";
+import {
+  getNextUserOnboardingPath,
+  getResumeOnboardingPath,
+} from "./resume";
 
 const completeProfile = {
   firstName: "Ali",
@@ -24,13 +27,8 @@ const completeNutrition = {
   mealFrequency: "3",
   completedUserOnboardingSteps: [
     "other-goals",
-    "food-budget",
     "allergies",
     "diet-requirements",
-    "preferred-cuisines",
-    "disliked-foods",
-    "preferred-ingredients",
-    "disliked-ingredients",
   ],
 };
 
@@ -57,27 +55,37 @@ describe("user onboarding resume", () => {
     ).toBe("other-goals");
   });
 
-  it("resumes to meal frequency after activity level because nutrition comes before workout", () => {
+  it("resumes to meal frequency after activity level", () => {
     expect(getNextUserOnboardingPath(completeGoals)).toBe("meal-frequency");
   });
 
-  it("resumes through the nutrition preference block before health constraints", () => {
+  it("resumes through nutrition safety before health constraints", () => {
     expect(
       getNextUserOnboardingPath({
         ...completeGoals,
         mealFrequency: "3",
-        completedUserOnboardingSteps: ["other-goals", "food-budget"],
+        completedUserOnboardingSteps: ["other-goals"],
       }),
     ).toBe("allergies");
   });
 
-  it("resumes to health constraints after disliked ingredients are completed", () => {
+  it("resumes to diet requirements after allergies are completed", () => {
+    expect(
+      getNextUserOnboardingPath({
+        ...completeGoals,
+        mealFrequency: "3",
+        completedUserOnboardingSteps: ["other-goals", "allergies"],
+      }),
+    ).toBe("diet-requirements");
+  });
+
+  it("resumes to health constraints after diet requirements are completed", () => {
     expect(getNextUserOnboardingPath(completeNutrition)).toBe(
       "health-constraints",
     );
   });
 
-  it("resumes to weekly workout count after health constraints are skipped", () => {
+  it("resumes to review after health constraints are skipped", () => {
     expect(
       getNextUserOnboardingPath({
         ...completeNutrition,
@@ -86,77 +94,29 @@ describe("user onboarding resume", () => {
           ...completeNutrition.completedUserOnboardingSteps,
           "health-constraints",
         ],
-      }),
-    ).toBe("weekly-workout-count");
-  });
-
-  it("resumes to workout experience when weekly workout count is present", () => {
-    expect(
-      getNextUserOnboardingPath({
-        ...completeNutrition,
-        healthConstraints: ["none"],
-        completedUserOnboardingSteps: [
-          ...completeNutrition.completedUserOnboardingSteps,
-          "health-constraints",
-        ],
-        weeklyWorkoutCount: "4",
-      }),
-    ).toBe("workout-experience");
-  });
-
-  it("resumes to workout location after workout experience", () => {
-    expect(
-      getNextUserOnboardingPath({
-        ...completeNutrition,
-        healthConstraints: ["none"],
-        completedUserOnboardingSteps: [
-          ...completeNutrition.completedUserOnboardingSteps,
-          "health-constraints",
-          "weekly-workout-count",
-          "workout-experience",
-        ],
-        weeklyWorkoutCount: "4",
-        workoutExperience: "intermediate",
-      }),
-    ).toBe("workout-location");
-  });
-
-  it("resumes to review after workout body parts are completed", () => {
-    expect(
-      getNextUserOnboardingPath({
-        ...completeNutrition,
-        healthConstraints: ["none"],
-        completedUserOnboardingSteps: [
-          ...completeNutrition.completedUserOnboardingSteps,
-          "health-constraints",
-          "weekly-workout-count",
-          "workout-experience",
-          "workout-location",
-          "workout-equipment",
-          "workout-body-parts",
-        ],
-        weeklyWorkoutCount: "4",
-        workoutExperience: "intermediate",
       }),
     ).toBe("review");
   });
 
-  it("skips equipment when workout location is gym", () => {
+  it("normalizes removed last visited steps before resuming", () => {
     expect(
-      getNextUserOnboardingPath({
-        ...completeNutrition,
-        healthConstraints: ["none"],
-        completedUserOnboardingSteps: [
-          ...completeNutrition.completedUserOnboardingSteps,
-          "health-constraints",
-          "weekly-workout-count",
-          "workout-experience",
-          "workout-location",
-        ],
-        weeklyWorkoutCount: "4",
-        workoutExperience: "intermediate",
-        workoutLocation: "gym",
-      }),
-    ).toBe("workout-body-parts");
+      getResumeOnboardingPath(
+        {
+          ...completeGoals,
+          lastVisitedPath: "food-budget",
+        },
+        false,
+      ),
+    ).toBe("allergies");
+
+    expect(
+      getResumeOnboardingPath(
+        {
+          ...completeGoals,
+          lastVisitedPath: "workout-location",
+        },
+        false,
+      ),
+    ).toBe("health-constraints");
   });
 });

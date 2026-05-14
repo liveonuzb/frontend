@@ -1,5 +1,4 @@
-const trimSlashes = (value) =>
-  String(value ?? "").replace(/^\/+|\/+$/g, "");
+const trimSlashes = (value) => String(value ?? "").replace(/^\/+|\/+$/g, "");
 
 export const USER_ONBOARDING_BASE_PATH = "/user/onboarding";
 export const COACH_ONBOARDING_BASE_PATH = "/coach/onboarding";
@@ -37,16 +36,6 @@ export const getUserOnboardingPersonalizingPath = (jobId = "") => {
 export const getUserOnboardingResultPath = () =>
   `${USER_ONBOARDING_BASE_PATH}/metabolism-result`;
 
-export const getUserOnboardingGeneratingPath = (jobId = "") => {
-  const normalizedJobId = trimSlashes(jobId);
-  return normalizedJobId
-    ? `${USER_ONBOARDING_BASE_PATH}/plan-generating/${encodeURIComponent(normalizedJobId)}`
-    : `${USER_ONBOARDING_BASE_PATH}/plan-generating`;
-};
-
-export const getUserOnboardingPlanReadyPath = () =>
-  `${USER_ONBOARDING_BASE_PATH}/plan-ready`;
-
 export const canAccessUserDashboard = (status, onboardingCompleted = false) => {
   if (!status) {
     return Boolean(onboardingCompleted);
@@ -67,8 +56,6 @@ export const getPostOnboardingPath = (user = {}) => {
   const personalizationJobId =
     user?.latestPersonalizationJobId ??
     user?.onboarding?.latestPersonalizationJobId;
-  const planJobId =
-    user?.latestPlanGenerationJobId ?? user?.onboarding?.latestPlanGenerationJobId;
 
   switch (status) {
     case ONBOARDING_FLOW_STATUS.submitted:
@@ -78,12 +65,10 @@ export const getPostOnboardingPath = (user = {}) => {
     case ONBOARDING_FLOW_STATUS.personalizationReady:
       return getUserOnboardingResultPath();
     case ONBOARDING_FLOW_STATUS.resultConfirmed:
-      return getUserOnboardingGeneratingPath();
     case ONBOARDING_FLOW_STATUS.planGenerating:
     case ONBOARDING_FLOW_STATUS.planFailed:
-      return getUserOnboardingGeneratingPath(planJobId);
+      return getUserOnboardingResultPath();
     case ONBOARDING_FLOW_STATUS.planReady:
-      return getUserOnboardingPlanReadyPath();
     case ONBOARDING_FLOW_STATUS.activated:
       return "/user";
     case ONBOARDING_FLOW_STATUS.draft:
