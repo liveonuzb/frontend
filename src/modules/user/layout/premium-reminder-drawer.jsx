@@ -9,6 +9,7 @@ import {
   SparklesIcon,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "react-router";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -105,6 +106,7 @@ const DrawerBackButton = ({ onClick }) => (
 
 const PremiumReminderDrawer = ({ forceOpen = false }) => {
   const { t } = useTranslation();
+  const { pathname } = useLocation();
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const { openProfile } = useProfileOverlay();
@@ -133,6 +135,8 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
   );
   const previousAuthStateRef = React.useRef(isAuthenticated);
   const isPremiumActive = hasActivePremium(user);
+  const suppressAutoReminder =
+    !forceOpen && pathname.startsWith("/user/workout/running");
 
   /*
    * Reminder drawers are transient UI state tied to auth/user/payment lifecycle.
@@ -187,7 +191,13 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
     const wasAuthenticated = previousAuthStateRef.current;
     previousAuthStateRef.current = isAuthenticated;
 
-    if (!isAuthenticated || wasAuthenticated || !userId || isPremiumActive) {
+    if (
+      !isAuthenticated ||
+      wasAuthenticated ||
+      !userId ||
+      isPremiumActive ||
+      suppressAutoReminder
+    ) {
       return;
     }
 
@@ -195,7 +205,14 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
     writeLastReminderAt(userId, nextTimestamp);
     setLastReminderAt(nextTimestamp);
     openReminder();
-  }, [closeAllDrawers, isAuthenticated, isPremiumActive, openReminder, userId]);
+  }, [
+    closeAllDrawers,
+    isAuthenticated,
+    isPremiumActive,
+    openReminder,
+    suppressAutoReminder,
+    userId,
+  ]);
 
   React.useEffect(() => {
     if (forceOpen) {
@@ -204,7 +221,7 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
   }, [forceOpen, openReminder]);
 
   React.useEffect(() => {
-    if (!userId || isPremiumActive) {
+    if (!userId || isPremiumActive || suppressAutoReminder) {
       closeAllDrawers();
       return;
     }
@@ -222,7 +239,14 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
     }, delay);
 
     return () => window.clearTimeout(timerId);
-  }, [closeAllDrawers, isPremiumActive, lastReminderAt, openReminder, userId]);
+  }, [
+    closeAllDrawers,
+    isPremiumActive,
+    lastReminderAt,
+    openReminder,
+    suppressAutoReminder,
+    userId,
+  ]);
 
   React.useEffect(() => {
     if (isPremiumActive && !successOpen) {

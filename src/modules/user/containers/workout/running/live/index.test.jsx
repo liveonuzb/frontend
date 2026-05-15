@@ -159,6 +159,8 @@ describe("RunningLivePage", () => {
   it("continues GPS point sequencing from the last accepted server sequence", async () => {
     renderPage();
 
+    expect(screen.getByText("3")).toBeInTheDocument();
+
     await act(async () => {
       await watchSuccess({
         coords: {
@@ -223,6 +225,41 @@ describe("RunningLivePage", () => {
     expect(await screen.findByText("1.0 km")).toBeInTheDocument();
   });
 
+  it("opens a finish confirmation and lets the user continue the run", async () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /yakunlash/i }));
+
+    expect(
+      screen.getByRole("dialog", { name: /finish training/i }),
+    ).toBeInTheDocument();
+    expect(finishRunningSession).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: /continue/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: /finish training/i }),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it("finishes the run from the confirmation dialog", async () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /yakunlash/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^finish$/i }));
+
+    await waitFor(() => {
+      expect(finishRunningSession).toHaveBeenCalledWith(
+        "workout-1",
+        expect.objectContaining({
+          finalPointSequence: 42,
+        }),
+      );
+    });
+  });
+
   it("keeps the run open when queued points cannot sync before finish", async () => {
     appendPoints.mockRejectedValueOnce(new Error("offline"));
     enqueueRunningPoints("workout-1", [
@@ -236,6 +273,7 @@ describe("RunningLivePage", () => {
     renderPage();
 
     fireEvent.click(screen.getByRole("button", { name: /yakunlash/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^finish$/i }));
 
     await waitFor(() => {
       expect(appendPoints).toHaveBeenCalledWith("workout-1", [
@@ -372,6 +410,7 @@ describe("RunningLivePage", () => {
 
     renderPage();
     fireEvent.click(screen.getByRole("button", { name: /yakunlash/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^finish$/i }));
 
     await waitFor(() => {
       expect(appendPoints).toHaveBeenCalled();

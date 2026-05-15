@@ -9,9 +9,9 @@ const runtimeBaseURL =
     ? runtimeConfig.VITE_API_BASE_URL.trim()
     : "";
 
-const runtimeYandexMapsApiKey =
-  typeof runtimeConfig.VITE_YANDEX_MAPS_API_KEY === "string"
-    ? runtimeConfig.VITE_YANDEX_MAPS_API_KEY.trim()
+const runtimeMapStyleUrl =
+  typeof runtimeConfig.VITE_MAP_STYLE_URL === "string"
+    ? runtimeConfig.VITE_MAP_STYLE_URL.trim()
     : "";
 
 const runtimeRunningFeatureEnabled =
@@ -34,8 +34,10 @@ const resolveBooleanFlag = (value, fallback = true) => {
 export const config = {
   baseURL:
     runtimeBaseURL || import.meta.env.VITE_API_BASE_URL || fallbackBaseURL,
-  yandexMapsApiKey:
-    runtimeYandexMapsApiKey || import.meta.env.VITE_YANDEX_MAPS_API_KEY || "",
+  mapStyleUrl:
+    runtimeMapStyleUrl ||
+    import.meta.env.VITE_MAP_STYLE_URL ||
+    "https://tiles.openfreemap.org/styles/dark",
   runningFeatureEnabled: resolveBooleanFlag(
     runtimeRunningFeatureEnabled || import.meta.env.VITE_RUNNING_FEATURE_ENABLED,
     true,

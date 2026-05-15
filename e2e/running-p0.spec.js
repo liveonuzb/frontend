@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+/* global process */
+
 const apiBase = process.env.E2E_API_BASE_URL ?? "http://localhost:3000/api/v1";
 
 const authState = {
@@ -96,7 +98,7 @@ const buildRoutePoints = (acceptedSequences) =>
     longitude: 69.240562,
     accuracy: 8,
     sourceTimestamp: new Date(
-      Date.parse("2026-05-15T04:00:00.000Z") + sequence * 60_000,
+      Date.parse("2026-05-15T04:00:00.000Z") + sequence * 60000,
     ).toISOString(),
   }));
 
@@ -387,7 +389,7 @@ const fulfillJson = (route, payload, status = 200, headers = {}) =>
 
 test("running P0 flow survives rate-limited point sync", async ({ page }) => {
   await installBrowserState(page);
-  await page.route("https://api-maps.yandex.ru/**", (route) => route.abort());
+  await page.route("https://tiles.openfreemap.org/**", (route) => route.abort());
   const api = await setupRunningApi(page, {
     batchFailuresBeforeSuccess: 1,
     batchFailureStatus: 429,
@@ -410,6 +412,10 @@ test("running P0 flow survives rate-limited point sync", async ({ page }) => {
 
   await expect.poll(() => api.batchAttempts).toBeGreaterThan(1);
   await page.getByRole("button", { name: /Yakunlash/i }).click();
+  await expect(
+    page.getByRole("dialog", { name: /Finish training/i }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: /^Finish$/i }).click();
   await expect(page).toHaveURL(/\/user\/workout\/running\/workout-e2e/);
   await expect(page.getByTestId("route-fallback-svg")).toHaveAttribute(
     "data-coordinate-count",

@@ -357,6 +357,287 @@ const RouteSvgFallback = ({
   );
 };
 
+const ROUTE_SOURCE_ID = "liveon-running-route";
+const ROUTE_GLOW_LAYER_ID = "liveon-running-route-glow";
+const ROUTE_LINE_LAYER_ID = "liveon-running-route-line";
+
+const buildRouteFeatureCollection = (coordinates) => ({
+  type: "FeatureCollection",
+  features:
+    coordinates.length > 1
+      ? [
+          {
+            type: "Feature",
+            properties: {},
+            geometry: {
+              type: "LineString",
+              coordinates,
+            },
+          },
+        ]
+      : [],
+});
+
+const createRouteMarker = (kind) => {
+  const marker = document.createElement("div");
+  marker.setAttribute(
+    "aria-label",
+    kind === "start" ? "Route start" : "Route finish",
+  );
+  marker.style.width = "1rem";
+  marker.style.height = "1rem";
+  marker.style.borderRadius = "9999px";
+  marker.style.border = "2px solid #fff";
+  marker.style.background = kind === "start" ? "#7cc765" : "#ef3f24";
+  marker.style.boxShadow = "0 2px 10px rgba(0,0,0,0.35)";
+  return marker;
+};
+
+const createTransparentMapImage = () => {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1;
+  canvas.height = 1;
+  return canvas;
+};
+
+const fitRouteBounds = ({ map, maplibregl, coordinates, center }) => {
+  if (!map || coordinates.length === 0) {
+    return;
+  }
+
+  if (coordinates.length === 1) {
+    map.setCenter(center);
+    map.setZoom(16);
+    return;
+  }
+
+  const bounds = coordinates.reduce(
+    (nextBounds, coordinate) => nextBounds.extend(coordinate),
+    new maplibregl.LngLatBounds(coordinates[0], coordinates[0]),
+  );
+
+  map.fitBounds(bounds, {
+    padding: 56,
+    maxZoom: 16,
+    duration: 0,
+  });
+};
+
+const ensureRouteLayers = (map) => {
+  if (!map.getSource(ROUTE_SOURCE_ID)) {
+    map.addSource(ROUTE_SOURCE_ID, {
+      type: "geojson",
+      data: buildRouteFeatureCollection([]),
+    });
+  }
+
+  if (!map.getLayer(ROUTE_GLOW_LAYER_ID)) {
+    map.addLayer({
+      id: ROUTE_GLOW_LAYER_ID,
+      type: "line",
+      source: ROUTE_SOURCE_ID,
+      layout: {
+        "line-cap": "round",
+        "line-join": "round",
+      },
+      paint: {
+        "line-color": "#fbbf24",
+        "line-width": 10,
+        "line-opacity": 0.28,
+        "line-blur": 2,
+      },
+    });
+  }
+
+  if (!map.getLayer(ROUTE_LINE_LAYER_ID)) {
+    map.addLayer({
+      id: ROUTE_LINE_LAYER_ID,
+      type: "line",
+      source: ROUTE_SOURCE_ID,
+      layout: {
+        "line-cap": "round",
+        "line-join": "round",
+      },
+      paint: {
+        "line-color": "#f97316",
+        "line-width": 5,
+      },
+    });
+  }
+};
+
+const MapLibreRouteMap = ({
+  center,
+  coordinates,
+  mapProvider,
+  routeCenter,
+  onError,
+}) => {
+  const containerRef = React.useRef(null);
+  const mapRef = React.useRef(null);
+  const markerRefs = React.useRef([]);
+  const readyRef = React.useRef(false);
+  const [isReady, setIsReady] = React.useState(false);
+  const { maplibregl, styleUrl } = mapProvider ?? {};
+  const coordinateCount = coordinates.length;
+  const initialRouteCenterRef = React.useRef(routeCenter);
+  const initialZoomRef = React.useRef(coordinateCount > 1 ? 15 : 16);
+
+  React.useEffect(() => {
+    if (!containerRef.current || !maplibregl || !styleUrl) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    let retryTimer = null;
+    let fallbackTimer = null;
+    let markReady = null;
+    let handleMissingStyleImage = null;
+
+    try {
+      const map = new maplibregl.Map({
+        container: containerRef.current,
+        style: styleUrl,
+        center: initialRouteCenterRef.current,
+        zoom: initialZoomRef.current,
+        attributionControl: true,
+      });
+
+      mapRef.current = map;
+      readyRef.current = false;
+      map.addControl(
+        new maplibregl.NavigationControl({
+          showCompass: false,
+          visualizePitch: false,
+        }),
+        "top-right",
+      );
+
+      markReady = () => {
+        if (cancelled || readyRef.current) {
+          return;
+        }
+
+        try {
+          ensureRouteLayers(map);
+          readyRef.current = true;
+          setIsReady(true);
+          if (retryTimer) {
+            window.clearTimeout(retryTimer);
+            retryTimer = null;
+          }
+          if (fallbackTimer) {
+            window.clearTimeout(fallbackTimer);
+            fallbackTimer = null;
+          }
+        } catch {
+          retryTimer = window.setTimeout(markReady, 250);
+        }
+      };
+      handleMissingStyleImage = (event) => {
+        const id = event?.id;
+
+        if (!id || map.hasImage?.(id)) {
+          return;
+        }
+
+        try {
+          map.addImage(id, createTransparentMapImage());
+        } catch {
+          // Missing style sprites are visual decoration; route rendering should continue.
+        }
+      };
+
+      map.once("load", markReady);
+      map.on("styledata", markReady);
+      map.on("styleimagemissing", handleMissingStyleImage);
+      retryTimer = window.setTimeout(markReady, 250);
+      fallbackTimer = window.setTimeout(() => {
+        if (!cancelled && !readyRef.current) {
+          onError?.();
+        }
+      }, 8000);
+    } catch {
+      onError?.();
+    }
+
+    return () => {
+      cancelled = true;
+      if (retryTimer) {
+        window.clearTimeout(retryTimer);
+      }
+      if (fallbackTimer) {
+        window.clearTimeout(fallbackTimer);
+      }
+      if (markReady) {
+        mapRef.current?.off?.("styledata", markReady);
+      }
+      if (handleMissingStyleImage) {
+        mapRef.current?.off?.("styleimagemissing", handleMissingStyleImage);
+      }
+      markerRefs.current.forEach((marker) => marker.remove());
+      markerRefs.current = [];
+      mapRef.current?.remove();
+      mapRef.current = null;
+      readyRef.current = false;
+    };
+  }, [maplibregl, onError, styleUrl]);
+
+  React.useEffect(() => {
+    const map = mapRef.current;
+
+    if (!map || !isReady) {
+      return;
+    }
+
+    ensureRouteLayers(map);
+    const source = map.getSource(ROUTE_SOURCE_ID);
+    source?.setData(buildRouteFeatureCollection(coordinates));
+
+    markerRefs.current.forEach((marker) => marker.remove());
+    markerRefs.current = [];
+
+    if (coordinates[0]) {
+      markerRefs.current.push(
+        new maplibregl.Marker({
+          element: createRouteMarker("start"),
+          anchor: "center",
+        })
+          .setLngLat(coordinates[0])
+          .addTo(map),
+      );
+    }
+
+    const endCoordinate = coordinates.at(-1);
+    if (endCoordinate) {
+      markerRefs.current.push(
+        new maplibregl.Marker({
+          element: createRouteMarker("end"),
+          anchor: "center",
+        })
+          .setLngLat(endCoordinate)
+          .addTo(map),
+      );
+    }
+
+    fitRouteBounds({
+      map,
+      maplibregl,
+      coordinates,
+      center,
+    });
+  }, [center, coordinates, isReady, maplibregl]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="h-full w-full overflow-hidden rounded-[inherit]"
+      data-testid="maplibre-map"
+      data-coordinate-count={coordinateCount}
+    />
+  );
+};
+
 const defaultLabels = {
   loading: "Xarita yuklanmoqda…",
   error: "Xarita ishlamadi",
@@ -379,7 +660,7 @@ const RunMapPanel = ({
   emptyLabel = "No route recorded",
   loadingLabel,
   errorLabel,
-  provider = "yandex",
+  provider = "maplibre",
   variant = "full",
   qualityScore = null,
   showQuality = variant === "preview",
@@ -447,15 +728,12 @@ const RunMapPanel = ({
   }, [isPreview, provider, routeCoordinates.length, routeKey]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  const center = getMapCenter(routeCoordinates);
   const routeCenter = getRouteCenter(routeCoordinates);
-  const {
-    YMap,
-    YMapDefaultSchemeLayer,
-    YMapDefaultFeaturesLayer,
-    YMapFeature,
-    YMapMarker,
-  } = mapComponents ?? {};
+  const center = getMapCenter(routeCoordinates);
+  const handleMapError = React.useCallback(() => {
+    setMapComponents(null);
+    setLoadState("error");
+  }, []);
 
   const surface = (
     <div
@@ -498,7 +776,7 @@ const RunMapPanel = ({
           labels={labels}
           showQuality={showQuality}
         />
-      ) : loadState === "error" || !YMap ? (
+      ) : loadState === "error" || mapComponents?.type !== "maplibre" ? (
         <RouteSvgFallback
           coordinates={routeCoordinates}
           label={labels.error}
@@ -507,40 +785,13 @@ const RunMapPanel = ({
           showQuality={showQuality}
         />
       ) : (
-        <YMap
-          key={routeKey}
-          location={{
-            center: routeCenter,
-            zoom: routeCoordinates.length > 1 ? 15 : 16,
-          }}
-        >
-          {YMapDefaultSchemeLayer ? <YMapDefaultSchemeLayer /> : null}
-          {YMapDefaultFeaturesLayer ? <YMapDefaultFeaturesLayer /> : null}
-          {YMapFeature && routeCoordinates.length > 1 ? (
-            <YMapFeature
-              geometry={{
-                type: "LineString",
-                coordinates: routeCoordinates,
-              }}
-              style={{
-                stroke: [
-                  { color: "#fbbf24", width: 9, opacity: 0.28 },
-                  { color: "#f97316", width: 5 },
-                ],
-              }}
-            />
-          ) : null}
-          {YMapMarker && routeCoordinates[0] ? (
-            <YMapMarker coordinates={routeCoordinates[0]}>
-              <div className="size-4 rounded-full border-2 border-white bg-[#7cc765] shadow" />
-            </YMapMarker>
-          ) : null}
-          {YMapMarker ? (
-            <YMapMarker coordinates={center}>
-              <div className="size-4 rounded-full border-2 border-white bg-[#ef3f24] shadow" />
-            </YMapMarker>
-          ) : null}
-        </YMap>
+        <MapLibreRouteMap
+          center={center}
+          coordinates={routeCoordinates}
+          mapProvider={mapComponents}
+          routeCenter={routeCenter}
+          onError={handleMapError}
+        />
       )}
     </div>
   );

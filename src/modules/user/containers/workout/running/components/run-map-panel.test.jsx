@@ -1,40 +1,97 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import RunMapPanel from "./run-map-panel.jsx";
 
 const mockLoadMapProvider = vi.fn();
+const mapInstances = [];
+const markerInstances = [];
 
 vi.mock("@/lib/maps", () => ({
   loadMapProvider: (...args) => mockLoadMapProvider(...args),
 }));
 
+class FakeMap {
+  constructor(options) {
+    this.options = options;
+    this.sources = new globalThis.Map();
+    this.layers = new Set();
+    this.addControl = vi.fn();
+    this.fitBounds = vi.fn();
+    this.setCenter = vi.fn();
+    this.setZoom = vi.fn();
+    this.remove = vi.fn();
+    mapInstances.push(this);
+  }
+
+  once(event, callback) {
+    if (event === "load") {
+      queueMicrotask(callback);
+    }
+  }
+
+  on() {}
+
+  getSource(id) {
+    return this.sources.get(id);
+  }
+
+  addSource(id, source) {
+    const storedSource = {
+      ...source,
+      setData: vi.fn((data) => {
+        storedSource.data = data;
+      }),
+    };
+    this.sources.set(id, storedSource);
+  }
+
+  getLayer(id) {
+    return this.layers.has(id) ? { id } : undefined;
+  }
+
+  addLayer(layer) {
+    this.layers.add(layer.id);
+  }
+}
+
+class FakeMarker {
+  constructor(options) {
+    this.options = options;
+    this.setLngLat = vi.fn(() => this);
+    this.addTo = vi.fn(() => this);
+    this.remove = vi.fn();
+    markerInstances.push(this);
+  }
+}
+
+class FakeLngLatBounds {
+  constructor(start) {
+    this.coordinates = [start];
+  }
+
+  extend(coordinate) {
+    this.coordinates.push(coordinate);
+    return this;
+  }
+}
+
 const providerComponents = {
-  YMap: ({ children, location }) => (
-    <div
-      data-testid="map-root"
-      data-center={JSON.stringify(location.center)}
-      data-zoom={location.zoom}
-    >
-      {children}
-    </div>
-  ),
-  YMapDefaultSchemeLayer: () => <div data-testid="map-scheme-layer" />,
-  YMapDefaultFeaturesLayer: () => <div data-testid="map-features-layer" />,
-  YMapFeature: ({ geometry }) => (
-    <div
-      data-testid="map-route"
-      data-coordinate-count={geometry.coordinates.length}
-    />
-  ),
-  YMapMarker: ({ coordinates }) => (
-    <div data-testid="map-marker" data-point={JSON.stringify(coordinates)} />
-  ),
+  type: "maplibre",
+  styleUrl: "https://tiles.openfreemap.org/styles/dark",
+  maplibregl: {
+    Map: FakeMap,
+    Marker: FakeMarker,
+    NavigationControl: class FakeNavigationControl {},
+    LngLatBounds: FakeLngLatBounds,
+  },
 };
 
 describe("RunMapPanel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mapInstances.length = 0;
+    markerInstances.length = 0;
     mockLoadMapProvider.mockResolvedValue(providerComponents);
   });
 
@@ -51,16 +108,21 @@ describe("RunMapPanel", () => {
       "Xarita yuklanmoqda…",
     );
 
-    expect(await screen.findByTestId("map-root")).toBeInTheDocument();
-    expect(screen.getByTestId("map-route")).toHaveAttribute(
+    expect(await screen.findByTestId("maplibre-map")).toHaveAttribute(
       "data-coordinate-count",
       "3",
     );
-    expect(screen.getAllByTestId("map-marker").at(-1)).toHaveAttribute(
-      "data-point",
-      JSON.stringify([-126.453, 43.252]),
+    expect(mapInstances[0].options.style).toBe(
+      "https://tiles.openfreemap.org/styles/dark",
     );
-    expect(mockLoadMapProvider).toHaveBeenCalledWith("yandex");
+    await waitFor(() => expect(mapInstances[0].fitBounds).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(markerInstances.at(-1).setLngLat).toHaveBeenCalledWith([
+        -126.453,
+        43.252,
+      ]),
+    );
+    expect(mockLoadMapProvider).toHaveBeenCalledWith("maplibre");
   });
 
   it("does not load the map provider when there is no route data", () => {

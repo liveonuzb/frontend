@@ -1,8 +1,10 @@
-export const loadMapProvider = async (provider = "yandex") => {
-  if (provider !== "yandex") {
+export const DEFAULT_MAP_PROVIDER = "maplibre";
+
+export const loadMapProvider = async (provider = DEFAULT_MAP_PROVIDER) => {
+  if (provider !== DEFAULT_MAP_PROVIDER && provider !== "openfreemap") {
     throw new Error(`Unsupported map provider: ${provider}`);
   }
 
-  const { loadYMaps } = await import("@/lib/ymaps.js");
-  return loadYMaps();
+  const { loadMapLibre } = await import("@/lib/maplibre.js");
+  return loadMapLibre();
 };
