@@ -64,16 +64,6 @@ export const getNextUserOnboardingPath = (state) => {
   }
 
   if (
-    !hasValue(state.allergyIds) &&
-    !hasValue(state.allergyIngredientIds) &&
-    !hasValue(state.customAllergies) &&
-    !hasValue(state.allergyOtherText) &&
-    !hasCompletedStep(state, "allergies")
-  ) {
-    return "allergies";
-  }
-
-  if (
     !hasValue(state.dietRequirementIds) &&
     !hasValue(state.customDietRequirements) &&
     !hasValue(state.nutritionPreferenceKeys) &&

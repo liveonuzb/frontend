@@ -27,6 +27,7 @@ const FAB_VISIBLE_PATHS = [
   "/user/nutrition",
   "/user/workout",
   "/user/challenges",
+  "/user/friends",
   "/user/measurement",
 ];
 
@@ -214,7 +215,7 @@ const FloatingActionButton = () => {
       type="button"
       aria-label={isOpen ? "Close quick actions" : "Open quick actions"}
       className={cn(
-        "flex size-16 items-center justify-center rounded-full bg-foreground text-background shadow-2xl transition-transform duration-300 active:scale-95",
+        "flex size-16 items-center justify-center rounded-full bg-[linear-gradient(135deg,#62c944_0%,#85d820_100%)] text-white shadow-[0_20px_45px_rgba(132,204,22,0.35)] transition-transform duration-300 hover:shadow-[0_24px_52px_rgba(132,204,22,0.42)] active:scale-95 dark:text-white",
         isOpen ? "rotate-45" : "rotate-0",
       )}
       onClick={() => setIsOpen((value) => !value)}

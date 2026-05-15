@@ -72,12 +72,6 @@ const editKeys = {
   recommendedWaterMl: "recommendedWaterMl",
 };
 
-const formatResultNumber = (value) => {
-  const numberValue = Number(value);
-  if (!Number.isFinite(numberValue)) return "-";
-  return new Intl.NumberFormat("en-US").format(Math.round(numberValue));
-};
-
 const premiumSurface =
   "border-[#ff990038] bg-[rgba(18,12,7,0.92)] shadow-[0_20px_70px_rgba(0,0,0,0.45)] backdrop-blur-xl";
 const premiumTile =
@@ -322,15 +316,6 @@ const MacroCard = ({ item, onEdit, water = false }) => {
   );
 };
 
-const ProgressBar = ({ value }) => (
-  <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-white/10">
-    <div
-      className="h-full rounded-full bg-gradient-to-r from-[#ffb000] to-[#ff6a00] shadow-[0_0_18px_rgba(255,152,0,0.38)]"
-      style={{ width: `${Math.max(4, Math.min(100, Number(value) || 0))}%` }}
-    />
-  </div>
-);
-
 const calculationSummaryKeys = ["bmr", "tdee", "final"];
 
 const getCalculationBadge = (item) => {
@@ -457,44 +442,6 @@ const CalculationStep = ({ item, index, isLast }) => {
   );
 };
 
-const MacroEnergyRow = ({ item }) => (
-  <div className="grid grid-cols-[minmax(76px,0.8fr)_auto] items-center gap-x-3 gap-y-2 rounded-[1rem]">
-    <div className="flex min-w-0 items-center gap-3">
-      <IconBubble
-        icon={
-          item.label === "Oqsil"
-            ? SaladIcon
-            : item.label === "Uglevod"
-              ? UtensilsIcon
-              : FlameIcon
-        }
-        className="size-9"
-      />
-      <span className="min-w-0">
-        <span className="block truncate text-[13px] font-black text-white">
-          {item.label}
-        </span>
-        <span
-          className={cn("block text-[11px] font-bold", premiumTextSecondary)}
-        >
-          {item.grams}
-        </span>
-      </span>
-    </div>
-    <div className="text-right">
-      <span className="block text-[13px] font-black text-white">
-        {item.kcal}
-      </span>
-      <span className="mt-1 inline-flex rounded-full bg-white/8 px-2 py-1 text-[11px] font-black text-white/72">
-        {item.percent}
-      </span>
-    </div>
-    <div className="col-span-2">
-      <ProgressBar value={item.progress} />
-    </div>
-  </div>
-);
-
 const getEditValue = (field, result) => {
   if (!field) return "";
 
@@ -563,12 +510,6 @@ const EditDrawer = ({
     Number(onboarding?.currentWeight?.value ?? result?.currentWeight) > 0 &&
     numberValue <
       Number(onboarding?.currentWeight?.value ?? result.currentWeight) * 0.5;
-  const macroEnergyPreview =
-    [editKeys.proteinGram, editKeys.carbsGram, editKeys.fatGram].includes(
-      field,
-    ) && hasNumberValue
-      ? Math.round(numberValue * (field === editKeys.fatGram ? 9 : 4))
-      : null;
   const saveValue =
     field === editKeys.recommendedWaterMl
       ? Math.round(numberValue * 1000)
@@ -684,12 +625,6 @@ const EditDrawer = ({
                 },
                 t,
               )}
-            </div>
-          ) : null}
-
-          {macroEnergyPreview !== null ? (
-            <div className="rounded-[1.15rem] border border-[#ff990024] bg-[#ff9800]/8 p-3 text-[13px] font-medium text-white/66">
-              Makro energiya: {formatResultNumber(macroEnergyPreview)} kcal
             </div>
           ) : null}
 
@@ -880,6 +815,14 @@ export const ResultContent = ({ result, onboarding, onEdit }) => {
         </div>
       </SectionCard>
 
+      <SectionCard title="Kunlik maqsad va ko'rsatkichlar">
+        <div className="grid grid-cols-2 gap-2.5">
+          {snapshot.dailyIndicators.map((item) => (
+            <MetricTile key={item.key} item={item} compact />
+          ))}
+        </div>
+      </SectionCard>
+
       <SectionCard title="Hisoblash zanjiri">
         <p
           className={cn(
@@ -913,22 +856,6 @@ export const ResultContent = ({ result, onboarding, onEdit }) => {
             >
               {warning}
             </span>
-          ))}
-        </div>
-      </SectionCard>
-
-      <SectionCard title="Makro energiya" badge={snapshot.macroDelta}>
-        <div className="grid gap-4">
-          <MacroEnergyRow item={snapshot.macros.protein} />
-          <MacroEnergyRow item={snapshot.macros.carbs} />
-          <MacroEnergyRow item={snapshot.macros.fat} />
-        </div>
-      </SectionCard>
-
-      <SectionCard title="Kunlik maqsad va ko'rsatkichlar">
-        <div className="grid grid-cols-2 gap-2.5">
-          {snapshot.dailyIndicators.map((item) => (
-            <MetricTile key={item.key} item={item} compact />
           ))}
         </div>
       </SectionCard>

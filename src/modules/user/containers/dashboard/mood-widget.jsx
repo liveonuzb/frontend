@@ -11,7 +11,7 @@ import {
   getDashboardDayQueryKey,
   getDayDataFromResponse,
 } from "./query-helpers.js";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 const getMoodLabel = (value, labels = {}) => {
   if (!value) return null;
@@ -25,8 +25,10 @@ export function MoodWidgetView({
   readOnly = false,
   isPending = false,
   className,
+  compact = false,
   labels = {},
 }) {
+  const shouldReduceMotion = useReducedMotion();
   const title = labels.title ?? "Kayfiyat";
   const pendingLabel = labels.pending ?? "Saqlanmoqda...";
   const emptyLabel = labels.empty ?? "Kayfiyat kiritilmagan";
@@ -34,42 +36,82 @@ export function MoodWidgetView({
   const selectedMoodLabel = getMoodLabel(selectedMood, labels);
 
   return (
-    <Card className={cn("py-6 mood-widget", className)}>
+    <Card
+      className={cn(
+        compact ? "gap-3 py-4" : "py-6",
+        "mood-widget",
+        className,
+      )}
+    >
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-xl">
+        <CardTitle
+          className={cn(
+            "flex items-center gap-2",
+            compact ? "text-lg" : "text-xl",
+          )}
+        >
           <motion.div
             key={selectedMood || "good"}
-            initial={{ scale: 0.5, rotate: -15, opacity: 0 }}
+            initial={
+              shouldReduceMotion
+                ? false
+                : { scale: 0.5, rotate: -15, opacity: 0 }
+            }
             animate={{ scale: 1, rotate: 0, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 300, damping: 18 }}
-            className={`size-7 ${selectedMood || "good"}`}
+            transition={
+              shouldReduceMotion
+                ? { duration: 0 }
+                : { type: "spring", stiffness: 300, damping: 18 }
+            }
+            className={cn(compact ? "size-6" : "size-7", selectedMood || "good")}
           />
           {title}
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="flex flex-1 flex-col justify-center gap-5 px-4">
+      <CardContent
+        className={cn(
+          "flex flex-1 flex-col justify-center px-4",
+          compact ? "gap-3" : "gap-5",
+        )}
+      >
         <div className="flex gap-3">
           {map(MOOD_OPTIONS, (moodOption = {}) => {
             const value = get(moodOption, "value");
             const isSelected = selectedMood === value;
+            const moodLabel = getMoodLabel(value, labels) ?? value;
 
             return (
               <motion.button
                 key={value}
                 type="button"
+                aria-label={moodLabel}
                 disabled={isPending || readOnly}
-                whileHover={!readOnly ? { scale: 1.08, y: -3 } : undefined}
-                whileTap={!readOnly ? { scale: 0.92 } : undefined}
-                animate={{
-                  scale: isSelected ? 1.08 : 1,
-                  y: isSelected ? -4 : 0,
-                }}
-                transition={{
-                  type: "spring",
-                  stiffness: 380,
-                  damping: 18,
-                }}
+                whileHover={
+                  !readOnly && !shouldReduceMotion
+                    ? { scale: 1.08, y: -3 }
+                    : undefined
+                }
+                whileTap={
+                  !readOnly && !shouldReduceMotion ? { scale: 0.92 } : undefined
+                }
+                animate={
+                  shouldReduceMotion
+                    ? undefined
+                    : {
+                        scale: isSelected ? 1.08 : 1,
+                        y: isSelected ? -4 : 0,
+                      }
+                }
+                transition={
+                  shouldReduceMotion
+                    ? { duration: 0 }
+                    : {
+                        type: "spring",
+                        stiffness: 380,
+                        damping: 18,
+                      }
+                }
                 onClick={() => {
                   if (isPending || readOnly) return;
                   onMoodSelect?.(value);
@@ -83,9 +125,9 @@ export function MoodWidgetView({
                 )}
               >
                 <motion.div
-                  className={`size-14 ${value}`}
+                  className={cn(compact ? "size-12" : "size-14", value)}
                   animate={
-                    isSelected
+                    isSelected && !shouldReduceMotion
                       ? {
                           rotate: [0, -8, 8, -4, 4, 0],
                           scale: [1, 1.15, 1],
@@ -119,6 +161,8 @@ export default function MoodWidget({
   dateKey,
   dayData: dayDataOverride,
   readOnly = false,
+  className,
+  compact = false,
 }) {
   const queryClient = useQueryClient();
   const { data } = useGetQuery({
@@ -143,6 +187,8 @@ export default function MoodWidget({
 
   return (
     <MoodWidgetView
+      className={className}
+      compact={compact}
       isPending={setMoodMutation.isPending}
       readOnly={readOnly}
       selectedMood={selectedMood}

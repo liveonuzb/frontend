@@ -33,7 +33,7 @@ const Index = () => {
 
   const goNext = React.useCallback(() => {
     markCompleted();
-    navigate("/user/onboarding/allergies");
+    navigate("/user/onboarding/diet-requirements");
   }, [markCompleted, navigate]);
 
   const handleSelect = React.useCallback(

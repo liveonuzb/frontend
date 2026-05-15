@@ -23,6 +23,7 @@ import { useAddMealOverlayStore } from "@/store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ArrowRightIcon,
+  ChevronDownIcon,
   FlameIcon,
   PlusIcon,
   UtensilsIcon,
@@ -61,6 +62,7 @@ export default function MealsWidget({
   onAddMeal,
   showQuickAdd = true,
 }) {
+  const [expandedMealTypes, setExpandedMealTypes] = React.useState({});
   const navigate = useNavigate();
   const openActionDrawer = useAddMealOverlayStore(
     (state) => state.openActionDrawer,
@@ -119,6 +121,12 @@ export default function MealsWidget({
   const suggestedTemplate = suggestedPattern
     ? templatesById[suggestedPattern.templateId]
     : null;
+  const toggleMealType = React.useCallback((mealType) => {
+    setExpandedMealTypes((current) => ({
+      ...current,
+      [mealType]: !current[mealType],
+    }));
+  }, []);
 
   const handleApplySuggestedPattern = React.useCallback(async () => {
     if (!suggestedPattern || !suggestedTemplate) return;
@@ -150,8 +158,8 @@ export default function MealsWidget({
   }, [addMeal, dateKey, savedMealsById, suggestedPattern, suggestedTemplate]);
 
   return (
-    <Card className="h-full py-6 meals-widget">
-      <CardHeader>
+    <Card className="min-h-0 w-full flex-1 gap-4 py-4 meals-widget">
+      <CardHeader className="px-5">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-sm">
             <UtensilsIcon className="size-4 text-orange-500" />
@@ -160,14 +168,15 @@ export default function MealsWidget({
           <Button
             variant="outline"
             type="button"
-            className="flex size-9 w-11 items-center justify-center rounded-md bg-muted transition-colors hover:bg-muted/80"
+            aria-label="Ovqatlanish sahifasini ochish"
+            className="flex size-8 w-10 items-center justify-center rounded-md bg-muted transition-colors hover:bg-muted/80"
             onClick={() => (onOpen ? onOpen() : navigate("/user/nutrition"))}
           >
             <ArrowRightIcon className="size-4" />
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="flex flex-1 flex-col justify-between gap-3">
+      <CardContent className="flex flex-1 flex-col justify-start gap-5 px-5">
         {suggestedPattern && suggestedTemplate ? (
           <div className="rounded-2xl border bg-primary/5 p-3">
             <div className="flex items-start justify-between gap-3">
@@ -209,95 +218,152 @@ export default function MealsWidget({
           );
 
           const progress = mealGoal > 0 ? Math.min(calories / mealGoal, 1) : 0;
-          const ringSize = 56;
-          const ringRadius = 25;
+          const ringSize = 52;
+          const ringRadius = 23;
           const ringStroke = 4;
           const circumference = 2 * Math.PI * ringRadius;
           const dashOffset = circumference * (1 - progress);
           const gradientId = `dashboardMealRingGrad-${type}`;
+          const isExpanded = Boolean(expandedMealTypes[type]);
+          const detailsId = `dashboard-meal-${type}-details`;
 
           return (
             <div
               key={type}
-              className="group/meal flex cursor-pointer items-center gap-3 py-1"
-              onClick={() => (onOpen ? onOpen() : navigate("/user/nutrition"))}
+              className="group/meal rounded-2xl transition-colors"
             >
-              <div
-                className="relative shrink-0"
-                style={{ width: ringSize, height: ringSize }}
-              >
-                <svg
-                  width={ringSize}
-                  height={ringSize}
-                  className="rotate-[-90deg]"
-                >
-                  <circle
-                    cx={ringSize / 2}
-                    cy={ringSize / 2}
-                    r={ringRadius}
-                    fill="none"
-                    stroke="#efd8b7"
-                    strokeWidth={ringStroke}
-                  />
-                  <circle
-                    cx={ringSize / 2}
-                    cy={ringSize / 2}
-                    r={ringRadius}
-                    fill="none"
-                    stroke={`url(#${gradientId})`}
-                    strokeWidth={ringStroke}
-                    strokeLinecap="round"
-                    strokeDasharray={circumference}
-                    strokeDashoffset={dashOffset}
-                    className="transition-all duration-700"
-                  />
-                  <defs>
-                    <linearGradient
-                      id={gradientId}
-                      x1="0%"
-                      y1="0%"
-                      x2="100%"
-                      y2="0%"
-                    >
-                      <stop offset="0%" stopColor="#d7e8b8" />
-                      <stop offset="100%" stopColor="#5fb34e" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-
-                <div className="absolute left-1/2 top-1/2 flex size-[46px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-secondary shadow-inner">
-                  <div
-                    className={cn(
-                      get(config, "icon"),
-                      "size-8 bg-contain bg-center bg-no-repeat",
-                    )}
-                  />
-                </div>
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold">{get(config, "label")}</p>
-                <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                  <FlameIcon className="size-3 text-orange-400" />
-                  {calories > 0 ? `${calories} kcal` : "0 kcal"}
-                </p>
-              </div>
-
-              {showQuickAdd ? (
+              <div className="flex items-center gap-3 py-0.5">
                 <button
                   type="button"
-                  className="group-hover/meal:bg-primary/10 flex size-10 shrink-0 items-center justify-center rounded-full bg-muted/50 transition-colors hover:bg-muted cursor-pointer shadow"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    if (onAddMeal) {
-                      onAddMeal(type);
-                      return;
-                    }
-                    openActionDrawer({ mealType: type, dateKey });
-                  }}
+                  aria-expanded={isExpanded}
+                  aria-controls={detailsId}
+                  className="flex min-w-0 flex-1 items-center gap-3 rounded-xl text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+                  onClick={() => toggleMealType(type)}
                 >
-                  <PlusIcon className="size-4 text-muted-foreground transition-colors group-hover/meal:text-primary" />
+                  <div
+                    className="relative shrink-0"
+                    style={{ width: ringSize, height: ringSize }}
+                  >
+                    <svg
+                      width={ringSize}
+                      height={ringSize}
+                      className="rotate-[-90deg]"
+                    >
+                      <circle
+                        cx={ringSize / 2}
+                        cy={ringSize / 2}
+                        r={ringRadius}
+                        fill="none"
+                        stroke="#efd8b7"
+                        strokeWidth={ringStroke}
+                      />
+                      <circle
+                        cx={ringSize / 2}
+                        cy={ringSize / 2}
+                        r={ringRadius}
+                        fill="none"
+                        stroke={`url(#${gradientId})`}
+                        strokeWidth={ringStroke}
+                        strokeLinecap="round"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={dashOffset}
+                        className="transition-all duration-700"
+                      />
+                      <defs>
+                        <linearGradient
+                          id={gradientId}
+                          x1="0%"
+                          y1="0%"
+                          x2="100%"
+                          y2="0%"
+                        >
+                          <stop offset="0%" stopColor="#d7e8b8" />
+                          <stop offset="100%" stopColor="#5fb34e" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+
+                    <div className="absolute left-1/2 top-1/2 flex size-[42px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-secondary shadow-inner">
+                      <div
+                        className={cn(
+                          get(config, "icon"),
+                          "size-7 bg-contain bg-center bg-no-repeat",
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold">{get(config, "label")}</p>
+                    <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                      <FlameIcon className="size-3 text-orange-400" />
+                      {calories > 0 ? `${calories} kcal` : "0 kcal"}
+                    </p>
+                  </div>
+                  <ChevronDownIcon
+                    className={cn(
+                      "size-4 shrink-0 text-muted-foreground transition-transform",
+                      isExpanded && "rotate-180",
+                    )}
+                  />
                 </button>
+
+                {showQuickAdd ? (
+                  <button
+                    type="button"
+                    aria-label={`${get(config, "label")} qo'shish`}
+                    className="group-hover/meal:bg-primary/10 flex size-9 shrink-0 items-center justify-center rounded-full bg-muted/50 transition-colors hover:bg-muted cursor-pointer shadow"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      if (onAddMeal) {
+                        onAddMeal(type);
+                        return;
+                      }
+                      openActionDrawer({ mealType: type, dateKey });
+                    }}
+                  >
+                    <PlusIcon className="size-4 text-muted-foreground transition-colors group-hover/meal:text-primary" />
+                  </button>
+                ) : null}
+              </div>
+
+              {isExpanded ? (
+                <div
+                  id={detailsId}
+                  className="ml-[68px] mt-2 grid gap-2 rounded-2xl bg-muted/20 p-2"
+                >
+                  {size(foods) > 0 ? (
+                    map(foods, (food, index) => {
+                      const qty = toPositiveNumber(get(food, "qty"), 1);
+                      const itemCalories = Math.round(
+                        toNonNegativeNumber(get(food, "cal"), 0) * qty,
+                      );
+
+                      return (
+                        <div
+                          key={get(food, "id", `${type}-${index}`)}
+                          className="flex items-center justify-between gap-3 rounded-xl bg-background/60 px-3 py-2"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold">
+                              {get(food, "name") || "Taom"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {qty}x
+                            </p>
+                          </div>
+                          <span className="shrink-0 text-xs font-semibold text-muted-foreground">
+                            {itemCalories} kcal
+                          </span>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="px-3 py-2 text-sm text-muted-foreground">
+                      Hali taom kiritilmagan
+                    </p>
+                  )}
+                </div>
               ) : null}
             </div>
           );

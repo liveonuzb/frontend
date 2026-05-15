@@ -16,6 +16,7 @@ import MediaUploadDialog from "@/components/chat/media-upload-dialog";
 import ForwardDialog from "@/components/chat/forward-dialog";
 import { cn } from "@/lib/utils";
 import { getChatBasePath, getChatPath } from "@/lib/app-paths.js";
+import { findOrCreateDirectChatRoom } from "../../lib/direct-chat-room.js";
 
 // New Components
 import ChatHeader from "../../components/ChatHeader";
@@ -109,6 +110,7 @@ const ChatView = () => {
     const navigate = useNavigate();
     const { chatId: activeChat } = useParams();
     const [searchParams] = useSearchParams();
+    const directTargetUserId = searchParams.get("userId")?.trim() || "";
     const highlightMessageId = searchParams.get("msgId");
     const { activeRole } = useAuthStore();
     const isCoach = activeRole === "COACH";
@@ -123,6 +125,7 @@ const ChatView = () => {
         typingUsers,
         pinnedMessages,
         fetchMessages,
+        fetchRooms,
         sendMessage,
         addReaction,
         deleteMessage,
@@ -185,6 +188,44 @@ const ChatView = () => {
     const messageRefs = React.useRef({});
     const bottomSentinelRef = React.useRef(null);
     const lastPrefillNonceRef = React.useRef(null);
+    const resolvingDirectTargetRef = React.useRef(null);
+
+    React.useEffect(() => {
+        if (activeChat || !directTargetUserId) {
+            return undefined;
+        }
+
+        if (resolvingDirectTargetRef.current === directTargetUserId) {
+            return undefined;
+        }
+
+        let cancelled = false;
+        resolvingDirectTargetRef.current = directTargetUserId;
+
+        const resolveDirectRoom = async () => {
+            try {
+                const roomId = await findOrCreateDirectChatRoom(directTargetUserId);
+                if (cancelled) return;
+
+                await fetchRooms();
+                if (cancelled) return;
+
+                navigate(getChatPath(activeRole, roomId), { replace: true });
+            } catch (error) {
+                if (cancelled) return;
+
+                resolvingDirectTargetRef.current = null;
+                toast.error(getErrorMessage(error, "Chat ochib bo'lmadi"));
+                navigate(getChatBasePath(activeRole), { replace: true });
+            }
+        };
+
+        resolveDirectRoom();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [activeChat, activeRole, directTargetUserId, fetchRooms, navigate]);
 
     React.useEffect(() => {
         if (activeChat) {
@@ -845,6 +886,7 @@ const ChatView = () => {
     }, [highlightMessageId, chatMessages]);
 
     const showMobileChat = Boolean(activeChat);
+    const isResolvingDirectChat = Boolean(directTargetUserId && !activeChat);
 
     return (
         <>
@@ -1028,11 +1070,12 @@ const ChatView = () => {
                             <div className="absolute inset-0 rounded-full border-2 border-dashed border-primary/10 animate-[spin_10s_linear_infinite]" />
                         </div>
                         <h3 className="text-xl font-black text-foreground mb-2 tracking-tight">
-                            Suhbatni boshlang
+                            {isResolvingDirectChat ? "Chat ochilmoqda..." : "Suhbatni boshlang"}
                         </h3>
                         <p className="text-sm opacity-60 max-w-[240px] text-center leading-relaxed">
-                            Kontaktlardan birini tanlang va muloqotni professional darajada
-                            davom ettiring
+                            {isResolvingDirectChat
+                                ? "Do'stingiz bilan suhbat xonasi tayyorlanmoqda."
+                                : "Kontaktlardan birini tanlang va muloqotni professional darajada davom ettiring"}
                         </p>
                     </div>
                 )}

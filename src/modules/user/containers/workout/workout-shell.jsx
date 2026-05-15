@@ -14,10 +14,19 @@ const PRIMARY_TAB_PATHS = [
 const WorkoutShell = () => {
   const { pathname } = useLocation();
   const shouldHideTabs = !PRIMARY_TAB_PATHS.includes(pathname);
+  const navItems = React.useMemo(
+    () =>
+      pathname.startsWith("/user/workout/running")
+        ? WORKOUT_NAV_ITEMS.filter(
+            (item) => item.to !== "/user/workout/report",
+          )
+        : WORKOUT_NAV_ITEMS,
+    [pathname],
+  );
 
   return (
     <FeatureModuleShell
-      items={WORKOUT_NAV_ITEMS}
+      items={navItems}
       hideMobileNav={shouldHideTabs}
       hideDesktopNav={shouldHideTabs}
     />

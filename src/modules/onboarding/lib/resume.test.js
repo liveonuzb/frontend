@@ -25,11 +25,7 @@ const completeGoals = {
 const completeNutrition = {
   ...completeGoals,
   mealFrequency: "3",
-  completedUserOnboardingSteps: [
-    "other-goals",
-    "allergies",
-    "diet-requirements",
-  ],
+  completedUserOnboardingSteps: ["other-goals", "diet-requirements"],
 };
 
 describe("user onboarding resume", () => {
@@ -59,22 +55,12 @@ describe("user onboarding resume", () => {
     expect(getNextUserOnboardingPath(completeGoals)).toBe("meal-frequency");
   });
 
-  it("resumes through nutrition safety before health constraints", () => {
+  it("resumes to diet requirements after meal frequency", () => {
     expect(
       getNextUserOnboardingPath({
         ...completeGoals,
         mealFrequency: "3",
         completedUserOnboardingSteps: ["other-goals"],
-      }),
-    ).toBe("allergies");
-  });
-
-  it("resumes to diet requirements after allergies are completed", () => {
-    expect(
-      getNextUserOnboardingPath({
-        ...completeGoals,
-        mealFrequency: "3",
-        completedUserOnboardingSteps: ["other-goals", "allergies"],
       }),
     ).toBe("diet-requirements");
   });
@@ -107,7 +93,17 @@ describe("user onboarding resume", () => {
         },
         false,
       ),
-    ).toBe("allergies");
+    ).toBe("diet-requirements");
+
+    expect(
+      getResumeOnboardingPath(
+        {
+          ...completeGoals,
+          lastVisitedPath: "allergies",
+        },
+        false,
+      ),
+    ).toBe("diet-requirements");
 
     expect(
       getResumeOnboardingPath(

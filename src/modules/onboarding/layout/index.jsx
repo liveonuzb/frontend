@@ -48,7 +48,6 @@ const USER_STEP_SECTION_KEYS = {
   "other-goals": "goal",
   "activity-level": "goal",
   "meal-frequency": "nutrition",
-  allergies: "nutrition",
   "diet-requirements": "nutrition",
   "health-constraints": "health",
   review: "review",

@@ -1,4 +1,4 @@
-import { formatWeightDelta, macroCalories } from "../../lib/personalization.js";
+import { formatWeightDelta } from "../../lib/personalization.js";
 
 const fallbackResult = {
   dailyCalories: 2100,
@@ -227,15 +227,6 @@ export const buildMetabolismResultViewModel = (
     result?.recommendedWaterMl,
     fallbackResult.recommendedWaterMl,
   );
-  const macroTotal = macroCalories({
-    proteinGram,
-    carbsGram,
-    fatGram,
-  });
-  const macroDelta =
-    getNumberOrFallback(macroReport.calorieDelta, null) ??
-    (dailyCalories && macroTotal ? Math.round(macroTotal - dailyCalories) : null);
-
   const model = {
     title: "Metabolizm hisobingiz tayyor",
     description:
@@ -264,10 +255,6 @@ export const buildMetabolismResultViewModel = (
     targetDate: formatTargetDate(result?.estimatedGoalDate),
     goal: goalLabels[goalKey] ?? "Ozish",
     formulaName,
-    macroDelta:
-      getNumberOrFallback(macroDelta, null) !== null
-        ? `Farq: ~${Math.abs(Math.round(macroDelta))} kcal`
-        : null,
     hasCalculationReport: Boolean(calculationReport),
     warningPills: [
       calorieReport.floorApplied ? "Minimal kaloriya floor qo'llandi" : null,

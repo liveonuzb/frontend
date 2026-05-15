@@ -20,6 +20,7 @@ export const APP_MODE_THEMES = {
       curious: "/madagascar/curious.webp",
       notFound: "/madagascar/not-found-crop-male.webp",
       onboardingBase: "/madagascar/onboarding",
+      friendsHero: "/focus/friends/hero.png",
     },
     heroGradient:
       "linear-gradient(145deg,#8fa3b8 0%,#546e87 52%,#2c3e52 100%)",
@@ -46,6 +47,7 @@ export const APP_MODE_THEMES = {
       curious: "/madagascar/curious.webp",
       notFound: "/madagascar/not-found-crop-male.webp",
       onboardingBase: "/madagascar/onboarding",
+      friendsHero: "/zen/friends/hero.png",
     },
     heroGradient:
       "linear-gradient(145deg,#9ad4c0 0%,#4aa88a 52%,#1e6655 100%)",
@@ -72,6 +74,7 @@ export const APP_MODE_THEMES = {
       curious: "/madagascar/curious.webp",
       notFound: "/madagascar/not-found-crop-male.webp",
       onboardingBase: "/madagascar/onboarding",
+      friendsHero: "/madagascar/friends/hero.png",
     },
     heroGradient:
       "linear-gradient(145deg,#fb8a4c 0%,#df5238 52%,#9f2c29 100%)",

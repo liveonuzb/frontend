@@ -2,6 +2,7 @@ import { map, take } from "lodash";
 import React, { useEffect } from "react";
 import { Navigate, Outlet, NavLink, useLocation } from "react-router";
 import {
+  FileTextIcon,
   LayoutDashboardIcon,
   UtensilsIcon,
   RulerIcon,
@@ -104,6 +105,8 @@ const Index = () => {
   );
   const mobileChromeHidden = useMobileChromeHidden();
   const isMobileChatView = location.pathname.startsWith("/user/chat");
+  const isRunningWorkoutRoute =
+    location.pathname.startsWith("/user/workout/running");
   const isFeatureScopedMobileNav =
     location.pathname.startsWith("/user/workout") ||
     location.pathname.startsWith("/user/nutrition");
@@ -139,6 +142,11 @@ const Index = () => {
         to: "/user/dashboard",
         label: "Dashboard",
         icon: LayoutDashboardIcon,
+      },
+      {
+        to: "/user/report",
+        label: "Report",
+        icon: FileTextIcon,
       },
       {
         to: "/user/nutrition/home",
@@ -277,7 +285,7 @@ const Index = () => {
               <Outlet />
             </PullToRefresh>
           </div>
-          {!isMobileChatView ? (
+          {!isMobileChatView && !isRunningWorkoutRoute ? (
             <div className="md:hidden">
               <MobileNav hidden={mobileChromeHidden} />
             </div>

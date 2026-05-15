@@ -1,5 +1,11 @@
 import React from "react";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import RunningLivePage from "./index.jsx";
@@ -20,6 +26,19 @@ import {
 
 vi.mock("@/components/page-transition", () => ({
   default: ({ children }) => <>{children}</>,
+}));
+
+vi.mock("sonner", () => ({
+  toast: {
+    error: vi.fn(),
+    success: vi.fn(),
+  },
+}));
+
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (_key, fallback) => (typeof fallback === "string" ? fallback : _key),
+  }),
 }));
 
 vi.mock("@/hooks/app/use-running-sessions", () => ({
@@ -78,6 +97,7 @@ describe("RunningLivePage", () => {
   let appendPoints;
   let finishRunningSession;
   let watchSuccess;
+  let watchError;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -91,12 +111,14 @@ describe("RunningLivePage", () => {
       workoutSessionId: "workout-1",
     });
     watchSuccess = null;
+    watchError = null;
 
     Object.defineProperty(window.navigator, "geolocation", {
       configurable: true,
       value: {
-        watchPosition: vi.fn((success) => {
+        watchPosition: vi.fn((success, error) => {
           watchSuccess = success;
+          watchError = error;
           return 9;
         }),
         clearWatch: vi.fn(),
@@ -161,7 +183,9 @@ describe("RunningLivePage", () => {
       ]);
     });
     expect(loadRunningPointQueue).toHaveBeenCalledWith("workout-1");
-    expect(clearRunningPointQueue).toHaveBeenCalledWith("workout-1");
+    await waitFor(() => {
+      expect(loadRunningPointQueue("workout-1")).toEqual([]);
+    });
     expect(screen.getByTestId("run-map-panel")).toHaveAttribute(
       "data-last-sequence",
       "43",
@@ -211,7 +235,7 @@ describe("RunningLivePage", () => {
     ]);
     renderPage();
 
-    fireEvent.click(screen.getByRole("button", { name: /finish/i }));
+    fireEvent.click(screen.getByRole("button", { name: /yakunlash/i }));
 
     await waitFor(() => {
       expect(appendPoints).toHaveBeenCalledWith("workout-1", [
@@ -222,7 +246,168 @@ describe("RunningLivePage", () => {
     });
     expect(finishRunningSession).not.toHaveBeenCalled();
     expect(clearRunningPointQueue).not.toHaveBeenCalledWith("workout-1");
-    expect(screen.getByText("Sync queued")).toBeInTheDocument();
+    expect(screen.getByText("Sync navbatda")).toBeInTheDocument();
+  });
+
+  it("keeps newer GPS points queued while an upload is already in flight", async () => {
+    let resolveFirstAppend;
+    appendPoints.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveFirstAppend = resolve;
+        }),
+    );
+    renderPage();
+
+    await act(async () => {
+      const firstPoint = watchSuccess({
+        coords: {
+          latitude: 41.311081,
+          longitude: 69.240562,
+          altitude: null,
+          accuracy: 8,
+          speed: null,
+          heading: null,
+        },
+        timestamp: Date.parse("2026-05-12T10:01:00.000Z"),
+      });
+      const secondPoint = watchSuccess({
+        coords: {
+          latitude: 41.320081,
+          longitude: 69.240562,
+          altitude: null,
+          accuracy: 8,
+          speed: null,
+          heading: null,
+        },
+        timestamp: Date.parse("2026-05-12T10:02:00.000Z"),
+      });
+      await Promise.resolve();
+
+      expect(appendPoints).toHaveBeenCalledTimes(1);
+      expect(
+        loadRunningPointQueue("workout-1").map((point) => point.sequence),
+      ).toEqual([43, 44]);
+
+      resolveFirstAppend({
+        acceptedCount: 1,
+        lastAcceptedSequence: 43,
+      });
+      await Promise.resolve(firstPoint);
+      await Promise.resolve(secondPoint);
+    });
+
+    await waitFor(() => {
+      expect(
+        loadRunningPointQueue("workout-1").map((point) => point.sequence),
+      ).toEqual([44]);
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /pauza/i }));
+
+    await waitFor(() => {
+      expect(appendPoints).toHaveBeenCalledTimes(2);
+    });
+    expect(appendPoints.mock.calls[1][1]).toEqual([
+      expect.objectContaining({
+        sequence: 44,
+      }),
+    ]);
+  });
+
+  it("pauses even when queued GPS points are still retrying", async () => {
+    const pauseRunningSession = vi.fn().mockResolvedValue({
+      workoutSessionId: "workout-1",
+      status: "paused",
+    });
+    appendPoints.mockRejectedValueOnce({
+      response: {
+        status: 429,
+        headers: {
+          "retry-after-short": "1",
+        },
+      },
+    });
+    usePauseRunningSession.mockReturnValue({
+      pauseRunningSession,
+      isPending: false,
+    });
+    enqueueRunningPoints("workout-1", [
+      {
+        sequence: 43,
+        latitude: 41.311081,
+        longitude: 69.240562,
+        sourceTimestamp: "2026-05-12T10:01:00.000Z",
+      },
+    ]);
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /pauza/i }));
+
+    await waitFor(() => {
+      expect(pauseRunningSession).toHaveBeenCalledWith("workout-1");
+    });
+    expect(await screen.findByText("Pauzada")).toBeInTheDocument();
+    expect(screen.getByText("Sync navbatda")).toBeInTheDocument();
+    expect(window.navigator.geolocation.clearWatch).toHaveBeenCalledWith(9);
+  });
+
+  it("shows a retryable finish state when final point sync is rate limited", async () => {
+    appendPoints.mockRejectedValueOnce({
+      response: {
+        status: 429,
+        headers: {
+          "retry-after-short": "1",
+        },
+      },
+    });
+    enqueueRunningPoints("workout-1", [
+      {
+        sequence: 43,
+        latitude: 41.311081,
+        longitude: 69.240562,
+        sourceTimestamp: "2026-05-12T10:01:00.000Z",
+      },
+    ]);
+
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: /yakunlash/i }));
+
+    await waitFor(() => {
+      expect(appendPoints).toHaveBeenCalled();
+    });
+    expect(finishRunningSession).not.toHaveBeenCalled();
+    expect(
+      screen.getByText(
+        "GPS sync kutilyapti. Birozdan keyin yakunlashni qayta urinib ko'ring.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("requires confirmation before cancelling a run", async () => {
+    const cancelRunningSession = vi.fn().mockResolvedValue({
+      success: true,
+    });
+    useCancelRunningSession.mockReturnValue({
+      cancelRunningSession,
+      isPending: false,
+    });
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /bekor qilish/i }));
+
+    expect(cancelRunningSession).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("dialog", { name: /yugurishni bekor qilish/i }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /ha, bekor qilish/i }));
+
+    await waitFor(() => {
+      expect(cancelRunningSession).toHaveBeenCalledWith("workout-1", {
+        reason: "user_cancelled",
+      });
+    });
   });
 
   it("continues GPS point sequencing from a locally saved active session after reload", async () => {
@@ -264,5 +449,37 @@ describe("RunningLivePage", () => {
         }),
       ]);
     });
+  });
+
+  it("lets the user retry GPS watching after a permission or timeout error", async () => {
+    renderPage();
+
+    act(() => {
+      watchError();
+    });
+
+    expect(screen.getByText("GPS ruxsati kerak")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /gps qayta urinish/i }));
+
+    await waitFor(() => {
+      expect(window.navigator.geolocation.watchPosition).toHaveBeenCalledTimes(
+        2,
+      );
+    });
+  });
+
+  it("shows GPS unavailable when the browser geolocation API is incomplete", () => {
+    Object.defineProperty(window.navigator, "geolocation", {
+      configurable: true,
+      value: {},
+    });
+
+    renderPage();
+
+    expect(screen.getByText("GPS mavjud emas")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /gps qayta urinish/i }),
+    ).toBeInTheDocument();
   });
 });

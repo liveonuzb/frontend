@@ -64,6 +64,7 @@ const getSliderMax = (food) => {
 
 export default function ManualAddDrawer({
   dateKey,
+  initialFood = null,
   mealType,
   loggedAt = null,
   initialSearch = "",
@@ -86,9 +87,9 @@ export default function ManualAddDrawer({
   }, [editingFood?.barcode]);
 
   useEffect(() => {
-    setSearch(initialSearch || "");
-    setEditingFood(null);
-  }, [initialSearch, dateKey, mealType]);
+    setSearch(initialSearch || initialFood?.name || "");
+    setEditingFood(initialFood ? { ...initialFood } : null);
+  }, [initialFood, initialSearch, dateKey, mealType]);
 
   const { addMeal: addMealAction } = useDailyTrackingActions();
   const { dayData } = useDailyTrackingDay(dateKey);

@@ -1,29 +1,26 @@
 import React from "react";
-import { get } from "lodash";
 import {
+  ArrowRightIcon,
   ChevronDownIcon,
   CheckIcon,
-  Clock3Icon,
+  ClipboardListIcon,
   Loader2Icon,
-  MessageCircleIcon,
   MessageSquareIcon,
-  PhoneIcon,
   SearchIcon,
   SendIcon,
-  SparklesIcon,
   Trash2Icon,
+  UsersIcon,
   UserPlusIcon,
   XIcon,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { cn } from "@/lib/utils";
 import PageTransition from "@/components/page-transition";
-import { api } from "@/hooks/api/use-api";
 import useGetQuery from "@/hooks/api/use-get-query";
 import usePostQuery from "@/hooks/api/use-post-query";
 import useDeleteQuery from "@/hooks/api/use-delete-query";
+import useAppModeTheme from "@/hooks/app/use-app-mode-theme";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -42,46 +39,51 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useBreadcrumbStore } from "@/store";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import { Label } from "@/components/ui/label";
-import { PhoneInput } from "@/components/ui/phone-input";
-import { Textarea } from "@/components/ui/textarea";
 import { invalidateGamificationQueries } from "@/modules/user/lib/gamification-query-keys";
+import { buildFriendRequestPayload } from "@/modules/user/lib/friend-request-payload";
+import { buildFriendSuggestionRows } from "@/modules/user/lib/friend-suggestions";
 import {
   getFriendItems,
   getFriendRequests,
 } from "@/modules/user/lib/friends-response";
+import { cn } from "@/lib/utils";
 import PersonRow from "./components/person-row.jsx";
 import SectionCard from "./components/section-card.jsx";
 
 const FRIENDS_QUERY_KEY = ["friends"];
 const FRIEND_REQUESTS_QUERY_KEY = ["friend-requests"];
+const FRIEND_SUGGESTIONS_QUERY_KEY = ["me", "friend-suggestions"];
+const USER_SEARCH_QUERY_KEY = ["users", "search"];
 
 const resolveApiErrorMessage = (error, fallback) => {
-  const message = error?.response?.data?.message;
+  const responseData = error?.response?.data;
+  const details = responseData?.error?.details;
+  const detailMessages = Array.isArray(details)
+    ? details.map((detail) => detail?.message).filter(Boolean)
+    : [];
+
+  if (detailMessages.length > 0) {
+    return detailMessages.join(", ");
+  }
+
+  const message = responseData?.error?.message ?? responseData?.message;
   if (Array.isArray(message)) {
     return message.join(", ");
   }
   return message || fallback;
 };
 
-const getRequestDescription = (request) => {
+const getRequestDescription = (request, userKey = "requester") => {
   if (request?.message) {
     return request.message;
   }
 
-  if (request?.requester?.username) {
-    return `@${request.requester.username}`;
+  const user = request?.[userKey];
+  if (user?.username) {
+    return `@${user.username}`;
   }
 
-  return request?.requester?.email || request?.requester?.phone || "Do'stlik so'rovi";
+  return "Do'stlik so'rovi";
 };
 
 const getFriendSubtitle = (friend) =>
@@ -101,17 +103,86 @@ const formatRequestDate = (value) => {
   });
 };
 
-
-
-const SearchField = ({ value, onChange, placeholder }) => (
-  <div className="relative mb-2">
-    <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/70" />
+const SearchField = ({ value, onChange, placeholder, className }) => (
+  <div className={cn("relative mb-2", className)}>
+    <SearchIcon className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/70 dark:text-slate-400" />
     <Input
       placeholder={placeholder}
       value={value}
       onChange={onChange}
-      className="h-12 w-full rounded-2xl border-border/50 bg-muted/20 pl-10 text-sm shadow-none focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-primary/30 transition-all font-medium"
+      className="h-12 w-full rounded-[1.4rem] border-border/60 bg-muted/20 pl-11 text-sm font-medium shadow-none transition-all placeholder:text-muted-foreground/70 focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-primary/30 dark:border-white/10 dark:bg-white/[0.035] dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus-visible:bg-white/[0.055] dark:focus-visible:ring-emerald-400/30"
     />
+  </div>
+);
+
+const STAT_TONES = {
+  green:
+    "border-emerald-400/20 bg-emerald-500/10 text-emerald-600 dark:border-emerald-300/18 dark:bg-emerald-400/10 dark:text-emerald-300",
+  cyan:
+    "border-cyan-400/20 bg-cyan-500/10 text-cyan-600 dark:border-cyan-300/18 dark:bg-cyan-400/10 dark:text-cyan-300",
+  amber:
+    "border-amber-400/25 bg-amber-500/10 text-amber-600 dark:border-amber-300/20 dark:bg-amber-400/10 dark:text-amber-300",
+};
+
+const StatTile = ({ icon: Icon, value, label, tone }) => (
+  <div
+    className={cn(
+      "flex min-h-[92px] flex-col justify-center gap-2 rounded-[1.35rem] border px-3 py-3 shadow-sm backdrop-blur-xl sm:flex-row sm:items-center sm:gap-3 sm:px-4 dark:shadow-none",
+      STAT_TONES[tone],
+    )}
+  >
+    <Icon className="size-6 shrink-0 sm:size-7" strokeWidth={2.2} />
+    <div className="min-w-0">
+      <p className="text-2xl font-black leading-none tracking-tight sm:text-3xl">
+        {value}
+      </p>
+      <p className="mt-1 text-[9px] font-semibold uppercase leading-tight tracking-wide text-foreground/65 sm:text-[11px] dark:text-slate-300/80">
+        {label}
+      </p>
+    </div>
+  </div>
+);
+
+const HeroVisual = ({ src }) => (
+  <div className="pointer-events-none absolute -right-24 top-16 z-0 h-44 w-72 opacity-55 sm:-right-20 sm:top-10 sm:h-56 sm:w-[24rem] md:-right-10 md:h-64 md:w-[27rem] md:opacity-80 lg:right-1 lg:h-72 lg:w-[31rem] dark:opacity-90">
+    <img
+      src={src}
+      alt=""
+      aria-hidden="true"
+      className="h-full w-full object-contain object-right drop-shadow-[0_28px_60px_rgba(245,158,11,0.22)]"
+      loading="eager"
+    />
+  </div>
+);
+
+const EmptyPanel = ({
+  icon: Icon,
+  title,
+  description,
+  actionLabel,
+  onAction,
+}) => (
+  <div className="flex min-h-[260px] flex-col items-center justify-center rounded-[1.6rem] border border-dashed border-border/70 bg-muted/20 px-5 py-10 text-center dark:border-white/10 dark:bg-white/[0.025]">
+    <div className="mb-5 flex size-24 items-center justify-center rounded-full bg-background text-muted-foreground shadow-sm ring-1 ring-border/60 dark:bg-slate-900/80 dark:text-slate-300 dark:ring-white/10">
+      <Icon className="size-10" strokeWidth={1.8} />
+    </div>
+    <h3 className="text-lg font-semibold text-foreground dark:text-slate-50">
+      {title}
+    </h3>
+    <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+      {description}
+    </p>
+    {actionLabel && onAction ? (
+      <Button
+        type="button"
+        variant="outline"
+        className="mt-5 rounded-[1.1rem] border-emerald-500/30 px-5 font-semibold text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-400/5 dark:text-emerald-300 dark:hover:bg-emerald-400/10 dark:hover:text-emerald-200"
+        onClick={onAction}
+      >
+        <UserPlusIcon className="mr-2 size-4" />
+        {actionLabel}
+      </Button>
+    ) : null}
   </div>
 );
 
@@ -120,7 +191,7 @@ const LoadingRows = () => (
     {Array.from({ length: 4 }).map((_, index) => (
       <div
         key={index}
-        className="flex w-full items-center gap-3 rounded-2xl border border-border/70 bg-background p-3"
+        className="flex w-full items-center gap-3 rounded-[1.35rem] border border-border/70 bg-background/90 p-3 dark:border-white/10 dark:bg-white/[0.035]"
       >
         <Skeleton className="size-11 shrink-0 rounded-full" />
         <div className="min-w-0 flex-1 space-y-2 py-1">
@@ -176,38 +247,19 @@ const useInfiniteSlice = (items, batchSize) => {
 const LoadMoreFooter = ({ canLoadMore, onLoadMore }) =>
   canLoadMore ? (
     <div className="flex justify-center py-2">
-      <Button type="button" variant="outline" className="rounded-xl" onClick={onLoadMore}>
+      <Button
+        type="button"
+        variant="outline"
+        className="rounded-xl dark:border-white/10 dark:bg-white/[0.035] dark:hover:bg-white/[0.065]"
+        onClick={onLoadMore}
+      >
         <ChevronDownIcon className="mr-2 size-4" />
         Yana ko&apos;rsatish
       </Button>
     </div>
   ) : null;
 
-const INVITE_METHOD_OPTIONS = [
-  {
-    value: "username",
-    label: "Username orqali",
-    description: "Foydalanuvchining @username nomi bilan taklif yuboriladi.",
-    icon: MessageCircleIcon,
-    placeholder: "@username",
-  },
-  {
-    value: "phone",
-    label: "Telefon orqali",
-    description: "Do'stingizning telefon raqami bilan taklif yuboriladi.",
-    icon: PhoneIcon,
-    placeholder: "+998 90 123 45 67",
-  },
-];
-
-const INITIAL_INVITE_FORM = {
-  step: "method", // method, identifier, message
-  method: "username",
-  identifier: "",
-  message: "",
-};
-
-const FRIENDS_TABS = new Set(["friends", "requests", "suggestions"]);
+const FRIENDS_TABS = new Set(["friends", "suggestions"]);
 const FRIENDS_BATCH_SIZE = 12;
 const REQUESTS_BATCH_SIZE = 10;
 
@@ -220,19 +272,27 @@ export default function FriendsContainer() {
   const tabFromUrl = searchParams.get("tab");
   const { setBreadcrumbs } = useBreadcrumbStore();
   const queryClient = useQueryClient();
+  const appModeTheme = useAppModeTheme();
+  const friendsHeroSrc =
+    appModeTheme?.assets?.friendsHero ?? "/madagascar/friends/hero.png";
 
   const [activeTab, setActiveTab] = React.useState(() =>
     resolveFriendsTab(searchParams.get("tab")),
   );
   const [friendSearch, setFriendSearch] = React.useState("");
-  const [inviteDrawerOpen, setInviteDrawerOpen] = React.useState(false);
-  const [inviteForm, setInviteForm] = React.useState(INITIAL_INVITE_FORM);
+  const [suggestionSearch, setSuggestionSearch] = React.useState("");
   const [isFiltering, startFiltering] = React.useTransition();
   const deferredFriendSearch = React.useDeferredValue(friendSearch);
+  const deferredSuggestionSearch = React.useDeferredValue(suggestionSearch);
   const [respondingById, setRespondingById] = React.useState({});
   const [removingById, setRemovingById] = React.useState({});
   const [addingById, setAddingById] = React.useState({});
-  const [isInviting, setIsInviting] = React.useState(false);
+  const [cancellingById, setCancellingById] = React.useState({});
+  const normalizedSuggestionSearch = React.useMemo(
+    () => deferredSuggestionSearch.trim(),
+    [deferredSuggestionSearch],
+  );
+  const isSuggestionSearchActive = normalizedSuggestionSearch.length >= 2;
 
   // --- Data fetching via API hooks ---
   const { data: friendsData, isLoading: isFriendsLoading } = useGetQuery({
@@ -244,7 +304,7 @@ export default function FriendsContainer() {
   });
   const friends = getFriendItems(friendsData);
 
-  const { data: requestsData, isLoading: isRequestsLoading } = useGetQuery({
+  const { data: requestsData } = useGetQuery({
     url: "/users/me/friends/requests",
     queryProps: {
       queryKey: FRIEND_REQUESTS_QUERY_KEY,
@@ -258,16 +318,31 @@ export default function FriendsContainer() {
   const { data: suggestionsData, isLoading: isSuggestionsLoading } = useGetQuery({
     url: "/users/me/friends/suggestions",
     queryProps: {
-      queryKey: ["me", "friend-suggestions"],
+      queryKey: FRIEND_SUGGESTIONS_QUERY_KEY,
     },
   });
   const suggestions = getFriendItems(suggestionsData);
+
+  const { data: userSearchData, isLoading: isUserSearchLoading } = useGetQuery({
+    url: "/users/search",
+    params: {
+      query: normalizedSuggestionSearch,
+      limit: 20,
+    },
+    queryProps: {
+      queryKey: [...USER_SEARCH_QUERY_KEY, normalizedSuggestionSearch],
+      enabled: isSuggestionSearchActive,
+    },
+  });
+  const searchedUsers = getFriendItems(userSearchData);
 
   // --- Mutations ---
   const invalidateAll = React.useCallback(() => {
     return Promise.all([
       queryClient.invalidateQueries({ queryKey: FRIENDS_QUERY_KEY }),
       queryClient.invalidateQueries({ queryKey: FRIEND_REQUESTS_QUERY_KEY }),
+      queryClient.invalidateQueries({ queryKey: FRIEND_SUGGESTIONS_QUERY_KEY }),
+      queryClient.invalidateQueries({ queryKey: USER_SEARCH_QUERY_KEY }),
     ]);
   }, [queryClient]);
 
@@ -282,6 +357,11 @@ export default function FriendsContainer() {
   });
 
   const { mutateAsync: removeFriendMutation } = useDeleteQuery({
+    queryKey: FRIENDS_QUERY_KEY,
+    listKey: FRIEND_REQUESTS_QUERY_KEY,
+  });
+
+  const { mutateAsync: cancelFriendRequestMutation } = useDeleteQuery({
     queryKey: FRIENDS_QUERY_KEY,
     listKey: FRIEND_REQUESTS_QUERY_KEY,
   });
@@ -309,69 +389,28 @@ export default function FriendsContainer() {
     [friends.length, incomingRequests.length, outgoingRequests.length],
   );
   const friendsList = useInfiniteSlice(friends, FRIENDS_BATCH_SIZE);
-  const resetInviteFlow = React.useCallback(() => {
-    setInviteForm(INITIAL_INVITE_FORM);
-    setInviteDrawerOpen(false);
-  }, []);
-
-  const updateInviteForm = React.useCallback((updates) => {
-    setInviteForm((prev) => ({ ...prev, ...updates }));
-  }, []);
 
   const incomingList = useInfiniteSlice(incomingRequests, REQUESTS_BATCH_SIZE);
-
-  const handleInviteFriend = React.useCallback(async () => {
-    const identifier = inviteForm.identifier.trim();
-    if (!identifier) {
-      toast.error("Iltimos, ma'lumotni kiriting.");
-      return;
-    }
-
-    setIsInviting(true);
-    try {
-      const response = await api.get("/users/me/friends/candidates", {
-        params: { q: identifier },
-      });
-      const candidateItems = getFriendItems(response);
-      if (!candidateItems || candidateItems.length === 0) {
-        toast.error("Foydalanuvchi topilmadi.");
-        return;
-      }
-
-      const targetUser =
-        candidateItems.find(
-          (c) =>
-            c.username?.toLowerCase() ===
-              identifier.toLowerCase().replace("@", "") ||
-            c.phone?.replace(/\D/g, "").includes(identifier.replace(/\D/g, "")),
-        ) || candidateItems[0];
-
-      const result = await sendFriendRequestMutation({
-        url: "/users/me/friends/requests",
-        attributes: {
-          targetUserId: targetUser.id,
-          message: inviteForm.message.trim() || undefined,
-        },
-      });
-
-      if (result?.data?.autoAccepted) {
-        toast.success("Do'stlik so'rovi avtomatik qabul qilindi.");
-        await invalidateGamificationQueries(queryClient);
-      } else if (result?.data?.alreadyFriends) {
-        toast.message("Bu foydalanuvchi allaqachon do'stingiz.");
-      } else if (result?.data?.alreadyPending) {
-        toast.message("Bu foydalanuvchiga allaqachon so'rov yuborilgansiz.");
-      } else {
-        toast.success("Do'stlik so'rovi yuborildi.");
-      }
-      await invalidateAll();
-      resetInviteFlow();
-    } catch (error) {
-      toast.error(resolveApiErrorMessage(error, "So'rov yuborib bo'lmadi"));
-    } finally {
-      setIsInviting(false);
-    }
-  }, [inviteForm, invalidateAll, queryClient, resetInviteFlow, sendFriendRequestMutation]);
+  const suggestionRows = React.useMemo(
+    () =>
+      buildFriendSuggestionRows({
+        suggestions,
+        sourceUsers: isSuggestionSearchActive ? searchedUsers : undefined,
+        outgoingRequests,
+        friends,
+        incomingRequests,
+        includeOutgoingRows: !isSuggestionSearchActive,
+      }),
+    [
+      friends,
+      incomingRequests,
+      isSuggestionSearchActive,
+      outgoingRequests,
+      searchedUsers,
+      suggestions,
+    ],
+  );
+  const suggestionList = useInfiniteSlice(suggestionRows, FRIENDS_BATCH_SIZE);
 
   const handleRemoveFriend = React.useCallback(
     async (friendId) => {
@@ -409,10 +448,10 @@ export default function FriendsContainer() {
       try {
         await sendFriendRequestMutation({
           url: "/users/me/friends/requests",
-          attributes: { recipientId: userId },
+          attributes: buildFriendRequestPayload({ targetUserId: userId }),
         });
         toast.success("Do'stlik so'rovi yuborildi.");
-        queryClient.invalidateQueries({ queryKey: ["me", "friend-suggestions"] });
+        await invalidateAll();
       } catch (error) {
         toast.error(resolveApiErrorMessage(error, "So'rov yuborib bo'lmadi"));
       } finally {
@@ -423,7 +462,32 @@ export default function FriendsContainer() {
         });
       }
     },
-    [addingById, sendFriendRequestMutation, queryClient],
+    [addingById, invalidateAll, sendFriendRequestMutation],
+  );
+
+  const handleCancelOutgoingRequest = React.useCallback(
+    async (requestId) => {
+      if (cancellingById[requestId]) {
+        return;
+      }
+      setCancellingById((prev) => ({ ...prev, [requestId]: true }));
+      try {
+        await cancelFriendRequestMutation({
+          url: `/users/me/friends/requests/${requestId}`,
+        });
+        toast.success("Yuborilgan so'rov bekor qilindi.");
+        await invalidateAll();
+      } catch (error) {
+        toast.error(resolveApiErrorMessage(error, "So'rov bekor qilinmadi"));
+      } finally {
+        setCancellingById((prev) => {
+          const next = { ...prev };
+          delete next[requestId];
+          return next;
+        });
+      }
+    },
+    [cancelFriendRequestMutation, cancellingById, invalidateAll],
   );
 
   const handleRespond = React.useCallback(
@@ -459,13 +523,6 @@ export default function FriendsContainer() {
     [invalidateAll, queryClient, respondToFriendRequestMutation, respondingById],
   );
 
-  const selectedMethod = React.useMemo(
-    () =>
-      INVITE_METHOD_OPTIONS.find((m) => m.value === inviteForm.method) ||
-      INVITE_METHOD_OPTIONS[0],
-    [inviteForm.method],
-  );
-
   const onFriendSearchChange = React.useCallback(
     (event) => {
       const value = event.target.value;
@@ -473,6 +530,10 @@ export default function FriendsContainer() {
     },
     [startFiltering],
   );
+
+  const onSuggestionSearchChange = React.useCallback((event) => {
+    setSuggestionSearch(event.target.value);
+  }, []);
 
   const handleTabChange = React.useCallback(
     (value) => {
@@ -501,81 +562,90 @@ export default function FriendsContainer() {
   const friendsEmpty = friends.length === 0;
 
   return (
-    <PageTransition className="space-y-6">
-      <Card className="relative overflow-hidden rounded-3xl border-primary/20 bg-gradient-to-br from-primary/10 via-background to-emerald-500/10">
-        <div className="pointer-events-none absolute -right-20 -top-20 size-56 rounded-full bg-primary/10 blur-3xl" />
-        <CardContent className="relative flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.15em] text-primary/80">
-              <SparklesIcon className="size-3.5" />
+    <PageTransition className="relative isolate space-y-6 pb-28 dark:text-slate-50">
+      <div className="pointer-events-none absolute inset-x-[-1rem] top-[-1.5rem] -z-10 h-[calc(100%+8rem)] opacity-0 dark:bg-[linear-gradient(180deg,#020812_0%,#061018_42%,#02070d_100%)] dark:opacity-100" />
+
+      <Card className="relative overflow-hidden rounded-[2rem] border-primary/20 bg-[linear-gradient(135deg,rgba(34,197,94,0.10)_0%,rgba(255,255,255,0.96)_48%,rgba(245,158,11,0.10)_100%)] shadow-sm dark:border-white/10 dark:bg-[linear-gradient(135deg,rgba(2,8,23,0.96)_0%,rgba(6,24,26,0.92)_44%,rgba(91,45,12,0.74)_100%)] dark:shadow-2xl dark:shadow-emerald-950/20">
+        <HeroVisual src={friendsHeroSrc} />
+        <CardContent className="relative z-10 flex flex-col gap-6 p-5 sm:p-6 md:pr-[18rem] lg:min-h-[430px] lg:pr-[25rem]">
+          <div className="max-w-2xl">
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-emerald-600 dark:text-emerald-400">
+              <UsersIcon className="size-4" />
               Community
             </p>
-            <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
+            <h1 className="mt-5 text-3xl font-black tracking-tight text-foreground sm:text-4xl dark:text-white">
               Do&apos;stlar tarmog&apos;ingiz
             </h1>
-            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+            <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground dark:text-slate-300">
               Challenge, leaderboard va kundalik motivatsiya uchun do&apos;stlar
               qo&apos;shing. Faqat do&apos;stlaringizni challenge&apos;larga taklif
               qila olasiz.
             </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Badge className="rounded-full border-primary/20 bg-primary/10 text-primary">
-                {summary.friends} ta do&apos;st
-              </Badge>
-              <Badge className="rounded-full border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
-                {summary.incoming} ta kelgan so&apos;rov
-              </Badge>
-              <Badge className="rounded-full border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300">
-                {summary.outgoing} ta yuborilgan so&apos;rov
-              </Badge>
-            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
+
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <StatTile
+              icon={UsersIcon}
+              value={summary.friends}
+              label="ta do'st"
+              tone="green"
+            />
+            <StatTile
+              icon={ClipboardListIcon}
+              value={summary.incoming}
+              label="ta kelgan so'rov"
+              tone="cyan"
+            />
+            <StatTile
+              icon={SendIcon}
+              value={summary.outgoing}
+              label="ta yuborilgan so'rov"
+              tone="amber"
+            />
+          </div>
+
+          <div className="mt-auto border-t border-border/60 pt-5 dark:border-white/10">
             <Button
               type="button"
-              className="rounded-xl"
-              onClick={() => setInviteDrawerOpen(true)}
+              className="h-14 w-full justify-between rounded-[1.25rem] bg-[linear-gradient(135deg,#f59e0b_0%,#ff7a00_48%,#ff5a1f_100%)] px-5 text-base font-bold text-white shadow-lg shadow-orange-500/25 transition-transform hover:scale-[1.01] hover:shadow-orange-500/35"
+              onClick={() => handleTabChange("suggestions")}
             >
-              <UserPlusIcon className="mr-2 size-4" />
-              Do&apos;st taklif qilish
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="rounded-xl"
-              onClick={() => handleTabChange("requests")}
-            >
-              <Clock3Icon className="mr-2 size-4" />
-              So&apos;rovlar
+              <span className="inline-flex items-center gap-3">
+                <UserPlusIcon className="size-5" />
+                Do&apos;st taklif qilish
+              </span>
+              <span className="flex size-10 items-center justify-center rounded-full bg-white/20">
+                <ArrowRightIcon className="size-5" />
+              </span>
             </Button>
           </div>
         </CardContent>
       </Card>
 
-
-
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-        <div className="flex justify-start">
-          <TabsList className="inline-flex h-auto items-center justify-start rounded-2xl bg-muted/60 p-1.5 shadow-sm">
-            <TabsTrigger value="friends" className="rounded-xl px-5 py-2.5 font-medium transition-all data-[state=active]:shadow-sm">
-              Do&apos;stlar
-              <span className="ml-2.5 rounded-full bg-background/80 px-2 py-0.5 text-xs font-semibold text-foreground/80 ring-1 ring-border/50">
+        <div className="overflow-hidden rounded-[1.75rem] border border-border/70 bg-background/70 p-1 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.045] dark:shadow-2xl dark:shadow-black/20">
+          <TabsList className="grid h-14 w-full grid-cols-2 bg-transparent p-0 text-muted-foreground">
+            <TabsTrigger
+              value="friends"
+              className="group relative h-full min-w-0 rounded-[1.45rem] px-2 text-sm font-semibold transition-all data-[state=active]:bg-background/95 data-[state=active]:text-emerald-600 data-[state=active]:shadow-sm sm:text-base dark:data-[state=active]:bg-slate-950/80 dark:data-[state=active]:text-emerald-300"
+            >
+              <UserPlusIcon className="mr-2 size-5" />
+              <span>Do&apos;stlar</span>
+              <span className="ml-2.5 rounded-full bg-background/80 px-2 py-0.5 text-xs font-semibold text-foreground/80 ring-1 ring-border/50 dark:bg-emerald-400/10 dark:text-emerald-300 dark:ring-emerald-300/15">
                 {summary.friends}
               </span>
+              <span className="pointer-events-none absolute inset-x-8 bottom-1 h-0.5 rounded-full bg-[linear-gradient(90deg,#d9f99d,#22c55e)] opacity-0 transition-opacity group-data-[state=active]:opacity-100 group-data-active:opacity-100" />
             </TabsTrigger>
-            <TabsTrigger value="requests" className="relative rounded-xl px-5 py-2.5 font-medium transition-all data-[state=active]:shadow-sm">
-              So&apos;rovlar
-              {summary.incoming > 0 && (
-                <span className="absolute right-0 top-0 -translate-y-1/3 translate-x-1/3 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm ring-2 ring-background">
-                  {summary.incoming}
-                </span>
-              )}
-              <span className={`ml-2.5 rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${activeTab === 'requests' ? 'bg-background/80 text-foreground/80 ring-border/50' : 'bg-muted-foreground/10 text-muted-foreground ring-transparent'}`}>
-                {summary.incoming}
+            <TabsTrigger
+              value="suggestions"
+              className="group relative h-full min-w-0 rounded-[1.45rem] px-2 text-sm font-semibold transition-all data-[state=active]:bg-background/95 data-[state=active]:text-cyan-600 data-[state=active]:shadow-sm sm:text-base dark:data-[state=active]:bg-slate-950/80 dark:data-[state=active]:text-cyan-300"
+            >
+              <UsersIcon className="mr-2 size-5" />
+              <span>Tavsiyalar</span>
+              <span className="ml-2.5 rounded-full bg-background/80 px-2 py-0.5 text-xs font-semibold text-foreground/80 ring-1 ring-border/50 dark:bg-cyan-400/10 dark:text-cyan-300 dark:ring-cyan-300/15">
+                {suggestionRows.length}
               </span>
-            </TabsTrigger>
-            <TabsTrigger value="suggestions" className="rounded-xl px-5 py-2.5 font-medium transition-all data-[state=active]:shadow-sm">
-              Tavsiyalar
+              <span className="pointer-events-none absolute inset-x-8 bottom-1 h-0.5 rounded-full bg-[linear-gradient(90deg,#67e8f9,#22c55e)] opacity-0 transition-opacity group-data-[state=active]:opacity-100 group-data-active:opacity-100" />
             </TabsTrigger>
           </TabsList>
         </div>
@@ -584,7 +654,12 @@ export default function FriendsContainer() {
           <SectionCard
             title="Do'stlar ro'yxati"
             subtitle="Challenge va boshqa faoliyatlarga shu do'stlarni taklif qilasiz"
-            right={<Badge variant="secondary">{friends.length} ta</Badge>}
+            className="dark:bg-slate-950/50"
+            right={
+              <Badge className="rounded-full border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-emerald-700 dark:border-emerald-300/15 dark:bg-emerald-400/10 dark:text-emerald-300">
+                {friends.length} ta
+              </Badge>
+            }
           >
             <SearchField
               value={friendSearch}
@@ -597,14 +672,86 @@ export default function FriendsContainer() {
                 Qidiruv yangilanmoqda...
               </p>
             ) : null}
+            {!incomingEmpty ? (
+              <div className="space-y-2 rounded-[1.35rem] border border-emerald-500/20 bg-emerald-500/5 p-3 dark:border-emerald-300/15 dark:bg-emerald-400/[0.045]">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-sm font-semibold">Kelgan so&apos;rovlar</h3>
+                  <Badge
+                    variant="outline"
+                    className="rounded-full dark:border-emerald-300/20 dark:text-emerald-300"
+                  >
+                    {summary.incoming} ta
+                  </Badge>
+                </div>
+                <div
+                  className="max-h-[300px] space-y-2 overflow-y-auto pr-2"
+                  onScroll={incomingList.handleScroll}
+                >
+                  {incomingList.visibleItems.map((request) => {
+                    const isResponding = Boolean(respondingById[request.id]);
+                    return (
+                      <PersonRow
+                        key={request.id}
+                        person={request.requester}
+                        description={
+                          getRequestDescription(request, "requester") +
+                          (request?.createdAt
+                            ? ` • ${formatRequestDate(request.createdAt)}`
+                            : "")
+                        }
+                        right={
+                          <div className="flex items-center gap-1.5 sm:gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              className="relative z-10 h-9 rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive dark:hover:bg-red-500/10 dark:hover:text-red-300"
+                              onClick={() => handleRespond(request.id, "DECLINE")}
+                              disabled={isResponding}
+                              title="Rad etish"
+                            >
+                              {isResponding ? (
+                                <Loader2Icon className="size-4 animate-spin" />
+                              ) : (
+                                <XIcon className="size-4" />
+                              )}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              className="relative z-10 h-9 rounded-xl bg-emerald-600 px-4 font-semibold text-white shadow-sm transition-shadow hover:bg-emerald-500 hover:shadow-md dark:bg-emerald-400 dark:text-slate-950 dark:hover:bg-emerald-300"
+                              onClick={() => handleRespond(request.id, "ACCEPT")}
+                              disabled={isResponding}
+                            >
+                              {isResponding ? (
+                                <Loader2Icon className="mr-1.5 size-4 animate-spin" />
+                              ) : (
+                                <CheckIcon className="mr-1.5 size-4" />
+                              )}
+                              Qabul qilish
+                            </Button>
+                          </div>
+                        }
+                      />
+                    );
+                  })}
+                  <LoadMoreFooter
+                    canLoadMore={incomingList.canLoadMore}
+                    onLoadMore={incomingList.loadMore}
+                  />
+                </div>
+              </div>
+            ) : null}
             {isFriendsLoading && friendsEmpty ? (
               <LoadingRows />
             ) : friendsEmpty ? (
-              <Card className="border-dashed">
-                <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                  Hali do&apos;stlar yo&apos;q.
-                </CardContent>
-              </Card>
+              <EmptyPanel
+                icon={UsersIcon}
+                title="Hali do'stlar yo'q."
+                description="Do'st taklif qiling va birga maqsadlaringizga erishing."
+                actionLabel="Do'st taklif qilish"
+                onAction={() => handleTabChange("suggestions")}
+              />
             ) : (
               <div
                 className="max-h-[430px] space-y-2 overflow-y-auto pr-2"
@@ -623,7 +770,7 @@ export default function FriendsContainer() {
                             type="button"
                             size="sm"
                             variant="secondary"
-                            className="relative z-10 h-9 rounded-xl px-3 sm:px-4 font-semibold hover:bg-primary/10 hover:text-primary transition-colors"
+                            className="relative z-10 h-9 rounded-xl px-3 font-semibold transition-colors hover:bg-emerald-500/10 hover:text-emerald-700 sm:px-4 dark:bg-emerald-400/10 dark:text-emerald-300 dark:hover:bg-emerald-400/15 dark:hover:text-emerald-200"
                             onClick={() => handleOpenFriendChat(friend.id)}
                           >
                             <MessageSquareIcon className="mr-1.5 size-4" />
@@ -635,7 +782,7 @@ export default function FriendsContainer() {
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="relative z-10 h-9 rounded-xl px-2 sm:px-3 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                                className="relative z-10 h-9 rounded-xl px-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive sm:px-3 dark:hover:bg-red-500/10 dark:hover:text-red-300"
                                 disabled={isRemoving}
                                 title="Do'stlar ro'yxatidan o'chirish"
                               >
@@ -678,100 +825,57 @@ export default function FriendsContainer() {
           </SectionCard>
         </TabsContent>
 
-        <TabsContent value="requests" className="mt-0">
-          <SectionCard
-            title="Kelgan so'rovlar"
-            subtitle="Qabul qiling yoki rad eting"
-            right={<Badge variant="secondary">{incomingRequests.length} ta</Badge>}
-          >
-            {isRequestsLoading && incomingEmpty ? (
-              <LoadingRows />
-            ) : incomingEmpty ? (
-              <Card className="border-dashed">
-                <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                  Yangi so&apos;rovlar yo&apos;q.
-                </CardContent>
-              </Card>
-            ) : (
-              <div
-                className="max-h-[390px] space-y-2 overflow-y-auto pr-2"
-                onScroll={incomingList.handleScroll}
-              >
-                {incomingList.visibleItems.map((request) => {
-                  const isResponding = Boolean(respondingById[request.id]);
-                  return (
-                    <PersonRow
-                      key={request.id}
-                      person={request.requester}
-                      description={
-                        getRequestDescription(request) +
-                        (request?.createdAt
-                          ? ` • ${formatRequestDate(request.createdAt)}`
-                          : "")
-                      }
-                      right={
-                        <div className="flex items-center gap-1.5 sm:gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            className="relative z-10 h-9 rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                            onClick={() => handleRespond(request.id, "DECLINE")}
-                            disabled={isResponding}
-                            title="Rad etish"
-                          >
-                            {isResponding ? (
-                              <Loader2Icon className="size-4 animate-spin" />
-                            ) : (
-                              <XIcon className="size-4" />
-                            )}
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            className="relative z-10 h-9 rounded-xl px-4 font-semibold shadow-sm hover:shadow-md transition-shadow"
-                            onClick={() => handleRespond(request.id, "ACCEPT")}
-                            disabled={isResponding}
-                          >
-                            {isResponding ? (
-                              <Loader2Icon className="mr-1.5 size-4 animate-spin" />
-                            ) : (
-                              <CheckIcon className="mr-1.5 size-4" />
-                            )}
-                            Qabul qilish
-                          </Button>
-                        </div>
-                      }
-                    />
-                  );
-                })}
-                <LoadMoreFooter
-                  canLoadMore={incomingList.canLoadMore}
-                  onLoadMore={incomingList.loadMore}
-                />
-              </div>
-            )}
-          </SectionCard>
-        </TabsContent>
         <TabsContent value="suggestions" className="mt-0">
           <SectionCard
             title="Tavsiya qilingan do'stlar"
-            subtitle="Umumiy do'stlar yoki boshqa asoslar bo'yicha tavsiyalar"
+            subtitle="Foydalanuvchini qidiring, so'rov yuboring yoki yuborilgan so'rovni qaytaring"
+            className="dark:bg-slate-950/50"
+            right={
+              <Badge className="rounded-full border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-cyan-700 dark:border-cyan-300/15 dark:bg-cyan-400/10 dark:text-cyan-300">
+                {suggestionRows.length} ta
+              </Badge>
+            }
           >
-            {isSuggestionsLoading ? (
+            <SearchField
+              value={suggestionSearch}
+              onChange={onSuggestionSearchChange}
+              placeholder="Username yoki ism bo'yicha qidirish"
+            />
+            {suggestionSearch.trim().length === 1 ? (
+              <p className="text-xs text-muted-foreground">
+                Qidirish uchun kamida 2 ta belgi kiriting.
+              </p>
+            ) : null}
+            {(isSuggestionSearchActive && isUserSearchLoading) ||
+            (!isSuggestionSearchActive && isSuggestionsLoading) ? (
               <LoadingRows />
-            ) : suggestions.length === 0 ? (
-              <Card className="border-dashed">
-                <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                  Hozircha tavsiyalar yo&apos;q.
-                </CardContent>
-              </Card>
+            ) : suggestionRows.length === 0 ? (
+              <EmptyPanel
+                icon={SearchIcon}
+                title={
+                  isSuggestionSearchActive
+                    ? "Mos foydalanuvchi topilmadi."
+                    : "Hozircha tavsiyalar yo'q."
+                }
+                description={
+                  isSuggestionSearchActive
+                    ? "Boshqa username yoki ism bilan qidirib ko'ring."
+                    : "Yangi tavsiyalar paydo bo'lganda shu yerda ko'rinadi."
+                }
+              />
             ) : (
-              <div className="space-y-2">
-                {suggestions.map((user) => {
+              <div
+                className="max-h-[430px] space-y-2 overflow-y-auto pr-2"
+                onScroll={suggestionList.handleScroll}
+              >
+                {suggestionList.visibleItems.map((user) => {
                   const isAdding = Boolean(addingById[user.id]);
+                  const isRequestSent = user.friendshipStatus === "request_sent";
+                  const isCancelling = Boolean(cancellingById[user.requestId]);
                   const subtitle =
-                    user.mutualFriendCount > 0
+                    isRequestSent
+                      ? "So'rov yuborilgan"
+                      : user.mutualFriendCount > 0
                       ? `${user.mutualFriendCount} ta umumiy do'st`
                       : user.username
                         ? `@${user.username}`
@@ -782,200 +886,51 @@ export default function FriendsContainer() {
                       person={user}
                       description={subtitle}
                       right={
-                        <Button
-                          type="button"
-                          size="sm"
-                          className="h-9 rounded-xl px-4 font-semibold"
-                          disabled={isAdding}
-                          onClick={() => handleAddFromSuggestion(user.id)}
-                        >
-                          {isAdding ? (
-                            <Loader2Icon className="mr-1.5 size-4 animate-spin" />
-                          ) : (
-                            <UserPlusIcon className="mr-1.5 size-4" />
-                          )}
-                          Do&apos;st bo&apos;lish
-                        </Button>
+                        isRequestSent ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-9 rounded-xl px-3 font-semibold text-muted-foreground hover:bg-destructive/10 hover:text-destructive dark:border-white/10 dark:bg-white/[0.035] dark:hover:bg-red-500/10 dark:hover:text-red-300"
+                            disabled={!user.requestId || isCancelling}
+                            onClick={() => handleCancelOutgoingRequest(user.requestId)}
+                          >
+                            {isCancelling ? (
+                              <Loader2Icon className="mr-1.5 size-4 animate-spin" />
+                            ) : (
+                              <XIcon className="mr-1.5 size-4" />
+                            )}
+                            Bekor qilish
+                          </Button>
+                        ) : (
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="h-9 rounded-xl bg-slate-800 px-4 font-semibold text-white hover:bg-slate-700 dark:bg-emerald-400 dark:text-slate-950 dark:hover:bg-emerald-300"
+                            disabled={isAdding}
+                            onClick={() => handleAddFromSuggestion(user.id)}
+                          >
+                            {isAdding ? (
+                              <Loader2Icon className="mr-1.5 size-4 animate-spin" />
+                            ) : (
+                              <UserPlusIcon className="mr-1.5 size-4" />
+                            )}
+                            Do&apos;st bo&apos;lish
+                          </Button>
+                        )
                       }
                     />
                   );
                 })}
+                <LoadMoreFooter
+                  canLoadMore={suggestionList.canLoadMore}
+                  onLoadMore={suggestionList.loadMore}
+                />
               </div>
             )}
           </SectionCard>
         </TabsContent>
       </Tabs>
-
-      <Drawer
-        open={inviteDrawerOpen}
-        onOpenChange={(open) => !open && resetInviteFlow()}
-        direction="bottom"
-      >
-        <DrawerContent className="outline-none">
-          {inviteForm.step === "method" && (
-            <>
-              <DrawerHeader className="border-b border-border/40 pb-4 pt-5">
-                <DrawerTitle className="text-center text-xl font-bold text-foreground">
-                  Do&apos;st taklif qilish
-                </DrawerTitle>
-                <DrawerDescription className="text-center">
-                  Avval qanday yo&apos;l bilan do&apos;st taklif qilishni tanlang.
-                </DrawerDescription>
-              </DrawerHeader>
-              <div className="space-y-3 px-4 py-4">
-                {INVITE_METHOD_OPTIONS.map((option) => {
-                  const Icon = option.icon;
-                  const active = inviteForm.method === option.value;
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      className={cn(
-                        "w-full rounded-2xl border px-4 py-4 text-left transition-colors",
-                        active ? "border-primary bg-primary/5" : "hover:bg-muted/40",
-                      )}
-                      onClick={() => updateInviteForm({ method: option.value })}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="flex size-10 items-center justify-center rounded-full bg-muted">
-                          <Icon className="size-5" />
-                        </div>
-                        <div className="space-y-1">
-                          <div className="font-medium">{option.label}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {option.description}
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-              <DrawerFooter className="border-t border-border/40 p-4">
-                <Button
-                  className="h-11 rounded-xl px-8 font-semibold"
-                  onClick={() => updateInviteForm({ step: "identifier" })}
-                >
-                  Davom etish
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-11 rounded-xl px-6 font-semibold"
-                  onClick={resetInviteFlow}
-                >
-                  Bekor qilish
-                </Button>
-              </DrawerFooter>
-            </>
-          )}
-
-          {inviteForm.step === "identifier" && (
-            <>
-              <DrawerHeader className="border-b border-border/40 pb-4 pt-5">
-                <DrawerTitle className="text-center text-xl font-bold text-foreground">
-                  Ma&apos;lumotni kiriting
-                </DrawerTitle>
-                <DrawerDescription className="text-center">
-                  {selectedMethod.label} uchun kerakli qiymatni kiriting.
-                </DrawerDescription>
-              </DrawerHeader>
-              <div className="space-y-4 px-4 py-4 text-left">
-                <div className="space-y-2">
-                  <Label htmlFor="friend-invite-identifier" className="ml-1 text-xs font-bold uppercase text-muted-foreground">
-                    Qiymat
-                  </Label>
-                  {inviteForm.method === "phone" ? (
-                    <PhoneInput
-                      id="friend-invite-identifier"
-                      value={inviteForm.identifier}
-                      onChange={(value) => updateInviteForm({ identifier: value ?? "" })}
-                      defaultCountry="UZ"
-                      placeholder={selectedMethod.placeholder}
-                    />
-                  ) : (
-                    <Input
-                      id="friend-invite-identifier"
-                      className="h-11 rounded-xl"
-                      value={inviteForm.identifier}
-                      onChange={(e) => updateInviteForm({ identifier: e.target.value })}
-                      placeholder={selectedMethod.placeholder}
-                    />
-                  )}
-                </div>
-              </div>
-              <DrawerFooter className="border-t border-border/40 p-4">
-                <Button
-                  className="h-11 rounded-xl px-8 font-semibold"
-                  onClick={() => {
-                    if (!inviteForm.identifier.trim()) {
-                      toast.error("Iltimos, qiymatni kiriting.");
-                      return;
-                    }
-                    updateInviteForm({ step: "message" });
-                  }}
-                >
-                  Davom etish
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-11 rounded-xl px-6 font-semibold"
-                  onClick={() => updateInviteForm({ step: "method" })}
-                >
-                  Orqaga
-                </Button>
-              </DrawerFooter>
-            </>
-          )}
-
-          {inviteForm.step === "message" && (
-            <>
-              <DrawerHeader className="border-b border-border/40 pb-4 pt-5">
-                <DrawerTitle className="text-center text-xl font-bold text-foreground">
-                  Xabar qoldiring
-                </DrawerTitle>
-                <DrawerDescription className="text-center">
-                  Ixtiyoriy xabar qoldiring va taklifni yuboring.
-                </DrawerDescription>
-              </DrawerHeader>
-              <div className="space-y-4 px-4 py-4 text-left">
-                <div className="space-y-2">
-                  <Label htmlFor="friend-invite-message" className="ml-1 text-xs font-bold uppercase text-muted-foreground">
-                    Xabar (ixtiyoriy)
-                  </Label>
-                  <Textarea
-                    id="friend-invite-message"
-                    className="min-h-[100px] rounded-xl"
-                    value={inviteForm.message}
-                    onChange={(e) => updateInviteForm({ message: e.target.value })}
-                    placeholder="Masalan: Salom, do'stlar ro'yxatiga qo'shilaylik!"
-                  />
-                </div>
-              </div>
-              <DrawerFooter className="border-t border-border/40 p-4">
-                <Button
-                  className="h-11 rounded-xl px-8 font-semibold shadow-lg shadow-primary/20"
-                  onClick={handleInviteFriend}
-                  disabled={isInviting}
-                >
-                  {isInviting ? (
-                    <Loader2Icon className="mr-2 size-4 animate-spin" />
-                  ) : (
-                    <SendIcon className="mr-2 size-4" />
-                  )}
-                  Taklif yuborish
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-11 rounded-xl px-6 font-semibold"
-                  onClick={() => updateInviteForm({ step: "identifier" })}
-                >
-                  Orqaga
-                </Button>
-              </DrawerFooter>
-            </>
-          )}
-        </DrawerContent>
-      </Drawer>
     </PageTransition>
   );
 }

@@ -85,4 +85,15 @@ describe("UserOnboardingModule routes", () => {
     expect(screen.getByText("layout")).toBeInTheDocument();
     expect(screen.getByText("name-page")).toBeInTheDocument();
   });
+
+  it("redirects the removed allergies step to diet requirements", () => {
+    render(
+      <MemoryRouter initialEntries={["/allergies"]}>
+        <UserOnboardingModule />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("diet-requirements-page")).toBeInTheDocument();
+    expect(screen.queryByText("allergies-page")).toBeNull();
+  });
 });

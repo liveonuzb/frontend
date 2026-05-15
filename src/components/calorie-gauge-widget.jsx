@@ -1,6 +1,6 @@
 import React from "react";
 import { clamp, round, times } from "lodash";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ChevronsUpDown, FlameIcon } from "lucide-react";
 import {
   Card,
@@ -58,7 +58,9 @@ export default function CalorieGaugeWidget({
   calorieMode,
   onCalorieModeChange,
   labels = {},
+  compact = false,
 }) {
+  const shouldReduceMotion = useReducedMotion();
   const resolvedLabels = {
     title: labels.title ?? "Bugungi Kaloriya",
     eaten: labels.eaten ?? "Yeyilgan",
@@ -117,6 +119,20 @@ export default function CalorieGaugeWidget({
 
     onCalorieModeChange?.(nextMode);
   };
+  const isInteractive = typeof onClick === "function";
+  const handleCardKeyDown = React.useCallback(
+    (event) => {
+      if (!isInteractive || event.target !== event.currentTarget) {
+        return;
+      }
+
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        onClick();
+      }
+    },
+    [isInteractive, onClick],
+  );
 
   const vw = 280;
   const vh = 155;
@@ -201,14 +217,26 @@ export default function CalorieGaugeWidget({
   return (
     <Card
       className={cn(
-        "backdrop-blur-2xl relative overflow-hidden h-full py-6",
-        onClick ? "cursor-pointer" : null,
+        "backdrop-blur-2xl relative overflow-hidden h-full",
+        compact ? "gap-3 py-4" : "py-6",
+        isInteractive
+          ? "cursor-pointer focus-visible:ring-2 focus-visible:ring-ring"
+          : null,
         className,
       )}
       onClick={onClick}
+      onKeyDown={handleCardKeyDown}
+      role={isInteractive ? "button" : undefined}
+      tabIndex={isInteractive ? 0 : undefined}
+      aria-label={isInteractive ? gaugeAriaLabel : undefined}
     >
       <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-primary/10 rounded-full blur-[80px] pointer-events-none" />
-      <CardHeader className="mb-4 flex items-start justify-between gap-4">
+      <CardHeader
+        className={cn(
+          "flex items-start justify-between gap-4",
+          compact ? "mb-1 px-5" : "mb-4",
+        )}
+      >
         <div className="space-y-2">
           <h3 className="flex items-center gap-1.5 text-base font-bold">
             {resolvedLabels.title} <span className="text-lg">🔥</span>
@@ -236,14 +264,19 @@ export default function CalorieGaugeWidget({
           ) : null}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className={compact ? "px-5" : undefined}>
         <div className="space-y-4 md:hidden">
           <div className="flex items-end justify-between gap-3">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 {centerLabel}
               </p>
-              <p className={cn("mt-1 text-3xl font-black", centerIsOver && "text-red-500")}>
+              <p
+                className={cn(
+                  "mt-1 text-3xl font-black",
+                  centerIsOver && "text-red-500",
+                )}
+              >
                 {centerValueLabel}
                 <span className="ml-1 text-sm text-muted-foreground">
                   {resolvedLabels.kcal}
@@ -261,15 +294,22 @@ export default function CalorieGaugeWidget({
           </div>
           <div className="h-3 overflow-hidden rounded-full bg-muted">
             <motion.div
-              className={cn("h-full rounded-full", isOver ? "bg-red-500" : "bg-lime-500")}
-              initial={{ width: 0 }}
+              className={cn(
+                "h-full rounded-full",
+                isOver ? "bg-red-500" : "bg-lime-500",
+              )}
+              initial={shouldReduceMotion ? false : { width: 0 }}
               animate={{ width: `${Math.min(100, pctLabel)}%` }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
+              transition={
+                shouldReduceMotion
+                  ? { duration: 0 }
+                  : { duration: 0.8, ease: "easeOut" }
+              }
             />
           </div>
         </div>
 
-        <div className="hidden justify-center flex-1 items-center md:flex">
+        <div className="hidden flex-1 items-center justify-center md:flex">
           <svg
             role="img"
             aria-label={gaugeAriaLabel}
@@ -277,7 +317,7 @@ export default function CalorieGaugeWidget({
             style={{
               width: "100%",
               height: "auto",
-              maxHeight: 160,
+              maxHeight: compact ? 138 : 160,
               overflow: "visible",
             }}
             preserveAspectRatio="xMidYMid meet"
@@ -349,9 +389,15 @@ export default function CalorieGaugeWidget({
               strokeWidth={strokeW}
               strokeLinecap="round"
               filter={pct > 0.01 ? "url(#arcGlow)" : undefined}
-              initial={{ pathLength: 0, opacity: 0 }}
+              initial={
+                shouldReduceMotion ? false : { pathLength: 0, opacity: 0 }
+              }
               animate={{ pathLength: 1, opacity: 1 }}
-              transition={{ duration: 1.2, ease: "easeOut" }}
+              transition={
+                shouldReduceMotion
+                  ? { duration: 0 }
+                  : { duration: 1.2, ease: "easeOut" }
+              }
             />
 
             {/* Tick marks */}
@@ -376,9 +422,13 @@ export default function CalorieGaugeWidget({
 
             {/* Knob */}
             <motion.g
-              initial={{ scale: 0 }}
+              initial={shouldReduceMotion ? false : { scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 0.8, type: "spring", bounce: 0.4 }}
+              transition={
+                shouldReduceMotion
+                  ? { duration: 0 }
+                  : { delay: 0.8, type: "spring", bounce: 0.4 }
+              }
             >
               <circle
                 cx={knobPos.x}
@@ -456,7 +506,18 @@ export default function CalorieGaugeWidget({
             ))}
           </div>
         ) : null}
-        <Separator className={cn(goalAlerts.length > 0 ? "mt-6" : "mt-14", "mb-6")} />
+        <Separator
+          className={cn(
+            goalAlerts.length > 0
+              ? compact
+                ? "mt-4"
+                : "mt-6"
+              : compact
+                ? "mt-8"
+                : "mt-14",
+            compact ? "mb-4" : "mb-6",
+          )}
+        />
         <div className="flex justify-around items-center">
           {macroItems.map((m) => (
             <div key={m.label} className="flex flex-col items-center gap-1">

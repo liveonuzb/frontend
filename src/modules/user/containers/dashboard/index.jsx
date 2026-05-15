@@ -183,57 +183,70 @@ const DashboardContainer = () => {
             <CoachInvitationsSection />
             <ChallengeInvitationsSection />
             <CoachActivitySection user={user} />
-            <div className="grid grid-flow-row-dense auto-rows-min grid-cols-1 items-stretch gap-4 md:grid-cols-2 lg:grid-cols-11">
-              <div className="md:col-span-1 lg:col-span-3">
-                <CalorieGaugeWidget
-                  dateKey={dateKey}
-                  dayData={dayData}
-                  goalsState={goalsState}
-                  user={user}
-                  showCalorieModeToggle
-                />
-              </div>
-              <div className="md:col-span-2 lg:col-span-5">
-                <div className="space-y-3">
-                  <ActiveMealPlanBanner activePlan={activeMealPlan} t={t} />
-                  <MealsWidget
+            <div className="grid grid-cols-1 gap-4">
+              <div
+                data-testid="dashboard-top-card-row"
+                className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 lg:h-[400px] lg:grid-cols-11"
+              >
+                <div className="flex min-h-0 md:col-span-1 lg:col-span-3">
+                  <CalorieGaugeWidget
                     dateKey={dateKey}
                     dayData={dayData}
                     goalsState={goalsState}
+                    user={user}
+                    showCalorieModeToggle
                   />
                 </div>
-              </div>
-              <div className="md:col-span-1 lg:col-span-3">
-                <div className="space-y-4">
-                  <WaterWidget
-                    dateKey={dateKey}
-                    dayData={dayData}
-                    goalsState={goalsState}
-                  />
-                  <MoodWidget dateKey={dateKey} dayData={dayData} />
+                <div className="flex min-h-0 md:col-span-2 lg:col-span-5">
+                  <div className="flex min-h-0 w-full flex-col gap-3">
+                    <ActiveMealPlanBanner activePlan={activeMealPlan} t={t} />
+                    <MealsWidget
+                      dateKey={dateKey}
+                      dayData={dayData}
+                      goalsState={goalsState}
+                    />
+                  </div>
+                </div>
+                <div className="flex min-h-0 md:col-span-1 lg:col-span-3">
+                  <div className="grid min-h-0 w-full grid-rows-2 gap-4 lg:h-full">
+                    <WaterWidget
+                      dateKey={dateKey}
+                      dayData={dayData}
+                      goalsState={goalsState}
+                      compact
+                    />
+                    <MoodWidget
+                      dateKey={dateKey}
+                      dayData={dayData}
+                      compact
+                      className="h-full w-full"
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="md:col-span-1 lg:col-span-3">
-                <BmiWidget measurementSnapshot={measurementSnapshot} />
-              </div>
-              <div className="md:col-span-1 lg:col-span-3">
-                <WeightWidget measurementSnapshot={measurementSnapshot} />
-              </div>
-              <div className="md:col-span-2 lg:col-span-5">
-                <WorkoutWidget activePlan={activeWorkoutPlan} />
-              </div>
-              <div className="md:col-span-2 lg:col-span-3">
-                <AchievementsWidget />
-              </div>
-              <div className="md:col-span-2 lg:col-span-3">
-                <ChallengeWidget currentChallenge={currentChallenge} />
-              </div>
-              <div className="md:col-span-2 lg:col-span-5">
-                <FriendActivityFeed
-                  friends={friends}
-                  challenges={challenges}
-                  currentUserId={get(user, "id")}
-                />
+              <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 lg:grid-cols-11">
+                <div className="md:col-span-1 lg:col-span-3">
+                  <BmiWidget measurementSnapshot={measurementSnapshot} />
+                </div>
+                <div className="md:col-span-1 lg:col-span-3">
+                  <WeightWidget measurementSnapshot={measurementSnapshot} />
+                </div>
+                <div className="md:col-span-2 lg:col-span-5">
+                  <WorkoutWidget activePlan={activeWorkoutPlan} />
+                </div>
+                <div className="md:col-span-2 lg:col-span-3">
+                  <AchievementsWidget />
+                </div>
+                <div className="md:col-span-2 lg:col-span-3">
+                  <ChallengeWidget currentChallenge={currentChallenge} />
+                </div>
+                <div className="md:col-span-2 lg:col-span-5">
+                  <FriendActivityFeed
+                    friends={friends}
+                    challenges={challenges}
+                    currentUserId={get(user, "id")}
+                  />
+                </div>
               </div>
             </div>
           </>
