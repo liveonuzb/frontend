@@ -158,6 +158,37 @@ describe("WorkoutPlanDayDetailPage", () => {
     expect(screen.getByText("46 kg")).toBeInTheDocument();
     expect(screen.getByText("1 exercises")).toBeInTheDocument();
     expect(screen.getAllByText(/Bench Press/).length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: /start/i })).toBeInTheDocument();
+  });
+
+  it("renders the page loader while the plan is loading", () => {
+    useWorkoutPlanDetail.mockReturnValue({
+      plan: null,
+      isLoading: true,
+      isError: false,
+      refetch: refetchMock,
+    });
+
+    renderPage();
+
+    expect(screen.getByTestId("page-loader")).toBeInTheDocument();
+  });
+
+  it("shows an error state with retry and back navigation actions", () => {
+    useWorkoutPlanDetail.mockReturnValue({
+      plan: null,
+      isLoading: false,
+      isError: true,
+      refetch: refetchMock,
+    });
+
+    renderPage();
+
+    expect(screen.getByText("Workout reja topilmadi")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "DAY 1" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Planga qaytish" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Qayta urinish" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Rejalarga qaytish" })).toBeInTheDocument();
   });
 
   it("shows an invalid day state when the route index is outside the schedule", () => {
@@ -263,6 +294,29 @@ describe("WorkoutPlanDayDetailPage", () => {
       screen.getByText("Keyingi kunni boshlashdan oldin oldingi workout kunlarini yakunlang."),
     ).toBeInTheDocument();
     expect(activatePlanMock).not.toHaveBeenCalled();
+  });
+
+  it("shows an empty exercise state for a day without exercises", () => {
+    useWorkoutPlanDetail.mockReturnValue({
+      plan: {
+        ...defaultPlan,
+        schedule: [
+          {
+            day: "Dushanba",
+            focus: "Mobility",
+            exercises: [],
+          },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: refetchMock,
+    });
+
+    renderPage();
+
+    expect(screen.getByText("Bu kunda mashq yo'q")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /start/i })).toBeInTheDocument();
   });
 
   it("regenerates the opened AI workout day", async () => {

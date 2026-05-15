@@ -271,20 +271,41 @@ const WorkoutPlanDayDetailPage = () => {
   if (isError || !plan) {
     return (
       <PageTransition mode="slide-up">
-        <Card>
-          <CardHeader>
-            <CardTitle>Workout reja topilmadi</CardTitle>
-            <CardDescription>
-              Reja o'chirilgan yoki sizda unga ruxsat yo'q.
-            </CardDescription>
-          </CardHeader>
-          <CardFooter className="gap-2">
-            <Button onClick={() => refetch()}>Qayta urinish</Button>
-            <Button variant="outline" onClick={() => navigate("/user/workout/plans")}>
-              Rejalarga qaytish
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+          <header className="flex items-center gap-3">
+            <Button
+              variant="secondary"
+              size="icon"
+              className="rounded-full"
+              onClick={() => navigate(`/user/workout/plans/${planId}`)}
+              aria-label="Planga qaytish"
+            >
+              <ArrowLeftIcon />
             </Button>
-          </CardFooter>
-        </Card>
+            <div className="min-w-0">
+              <h1 className="text-3xl font-black tracking-normal">
+                DAY {dayIndex + 1}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Workout kuni tafsilotlari
+              </p>
+            </div>
+          </header>
+          <Card>
+            <CardHeader>
+              <CardTitle>Workout reja topilmadi</CardTitle>
+              <CardDescription>
+                Reja o'chirilgan yoki sizda unga ruxsat yo'q.
+              </CardDescription>
+            </CardHeader>
+            <CardFooter className="gap-2">
+              <Button onClick={() => refetch()}>Qayta urinish</Button>
+              <Button variant="outline" onClick={() => navigate("/user/workout/plans")}>
+                Rejalarga qaytish
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
       </PageTransition>
     );
   }

@@ -166,6 +166,7 @@ describe("WorkoutPlanDetailPage", () => {
     expect(screen.getByText("AI asoslari")).toBeInTheDocument();
     expect(screen.getAllByText("46 kg").length).toBeGreaterThan(0);
     expect(screen.getByText("Day 1")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /boshlash/i })).toBeInTheDocument();
   });
 
   it("navigates to a separate day detail page when a day is selected", async () => {
@@ -187,7 +188,7 @@ describe("WorkoutPlanDetailPage", () => {
     });
 
     const router = renderPage();
-    fireEvent.click(screen.getAllByText("Boshlash")[0]);
+    fireEvent.click(screen.getByRole("button", { name: /boshlash/i }));
 
     await waitFor(() => {
       expect(activatePlanMock).toHaveBeenCalledWith(
@@ -208,13 +209,26 @@ describe("WorkoutPlanDetailPage", () => {
   it("navigates to the full edit page from the detail action", async () => {
     const router = renderPage();
 
-    fireEvent.click(screen.getAllByText("Tahrirlash")[0]);
+    fireEvent.click(screen.getByRole("button", { name: /tahrirlash/i }));
 
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(
         "/user/workout/plans/edit/plan-1",
       );
     });
+  });
+
+  it("renders the page loader while the plan is loading", () => {
+    useWorkoutPlanDetail.mockReturnValue({
+      plan: null,
+      isLoading: true,
+      isError: false,
+      refetch: refetchMock,
+    });
+
+    renderPage();
+
+    expect(screen.getByTestId("page-loader")).toBeInTheDocument();
   });
 
   it("shows an error state when the plan cannot be loaded", () => {
@@ -228,5 +242,24 @@ describe("WorkoutPlanDetailPage", () => {
     renderPage();
 
     expect(screen.getByText("Workout reja topilmadi")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Workout reja" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Qayta urinish" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Rejalarga qaytish" })).toBeInTheDocument();
+  });
+
+  it("shows an empty schedule state when the plan has no days", () => {
+    useWorkoutPlanDetail.mockReturnValue({
+      plan: {
+        ...defaultPlan,
+        schedule: [],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: refetchMock,
+    });
+
+    renderPage();
+
+    expect(screen.getByText("Schedule hali to'ldirilmagan")).toBeInTheDocument();
   });
 });

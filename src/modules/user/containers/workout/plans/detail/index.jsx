@@ -215,20 +215,27 @@ const WorkoutPlanDetailPage = () => {
   if (isError || !plan) {
     return (
       <PageTransition mode="slide-up">
-        <Card>
-          <CardHeader>
-            <CardTitle>Workout reja topilmadi</CardTitle>
-            <CardDescription>
-              Reja o'chirilgan yoki sizda unga ruxsat yo'q.
-            </CardDescription>
-          </CardHeader>
-          <CardFooter className="gap-2">
-            <Button onClick={() => refetch()}>Qayta urinish</Button>
-            <Button variant="outline" onClick={() => navigate("/user/workout/plans")}>
-              Rejalarga qaytish
-            </Button>
-          </CardFooter>
-        </Card>
+        <div className="flex flex-col gap-6">
+          <TrackingPageHeader
+            title="Workout reja"
+            subtitle="Workout plan ichki sahifasi."
+            hideTitleOnMobile={false}
+          />
+          <Card>
+            <CardHeader>
+              <CardTitle>Workout reja topilmadi</CardTitle>
+              <CardDescription>
+                Reja o'chirilgan yoki sizda unga ruxsat yo'q.
+              </CardDescription>
+            </CardHeader>
+            <CardFooter className="gap-2">
+              <Button onClick={() => refetch()}>Qayta urinish</Button>
+              <Button variant="outline" onClick={() => navigate("/user/workout/plans")}>
+                Rejalarga qaytish
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
       </PageTransition>
     );
   }

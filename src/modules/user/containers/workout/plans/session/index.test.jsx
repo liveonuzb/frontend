@@ -163,7 +163,69 @@ describe("WorkoutPlanSessionPage", () => {
     expect(screen.getByText("Day 1-Legs")).toBeInTheDocument();
     expect(screen.getByText("Sumo Squat · Barbell")).toBeInTheDocument();
     expect(screen.getByText("0/2 Done")).toBeInTheDocument();
-    expect(screen.getByText("LOG NEXT SET")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "LOG NEXT SET" })).toBeInTheDocument();
+  });
+
+  it("renders the page loader while the plan is loading", () => {
+    useWorkoutPlanDetail.mockReturnValue({
+      plan: null,
+      isLoading: true,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    renderPage();
+
+    expect(screen.getByTestId("page-loader")).toBeInTheDocument();
+  });
+
+  it("shows an error state with retry and back navigation actions", () => {
+    useWorkoutPlanDetail.mockReturnValue({
+      plan: null,
+      isLoading: false,
+      isError: true,
+      refetch: vi.fn(),
+    });
+
+    renderPage();
+
+    expect(screen.getByText("Workout reja topilmadi")).toBeInTheDocument();
+    expect(screen.getByText("Day 1-Workout session")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ortga" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Qayta urinish" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Rejalarga qaytish" })).toBeInTheDocument();
+  });
+
+  it("shows an invalid day state with navigation back to the plan", () => {
+    renderPage("/user/workout/plans/plan-1/days/9/session");
+
+    expect(screen.getByText("Workout kuni topilmadi")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /plan sahifasiga qaytish/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows an empty session state when the selected day has no exercises", () => {
+    useWorkoutPlanDetail.mockReturnValue({
+      plan: {
+        ...plan,
+        schedule: [
+          {
+            day: "Day 1",
+            focus: "Recovery",
+            exercises: [],
+          },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    renderPage();
+
+    expect(screen.getByText("Mashqlar yo'q")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "LOG NEXT SET" })).toBeDisabled();
   });
 
   it("starts or resumes a backend workout session on page load", async () => {
@@ -275,7 +337,10 @@ describe("WorkoutPlanSessionPage", () => {
 
     fireEvent.click(screen.getByText("LOG NEXT SET"));
     fireEvent.click(screen.getByText("LOG NEXT SET"));
-    fireEvent.click(screen.getByText("MASHG'ULOTNI YAKUNLASH"));
+    expect(
+      screen.getByRole("button", { name: /mashg'ulotni yakunlash/i }),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /mashg'ulotni yakunlash/i }));
 
     await waitFor(() => {
       expect(finishSessionMock).toHaveBeenCalledWith(

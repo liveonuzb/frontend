@@ -1316,18 +1316,41 @@ const WorkoutPlanSessionPage = () => {
   if (isError || !plan) {
     return (
       <PageTransition mode="slide-up">
-        <Card>
-          <CardHeader>
-            <CardTitle>Workout reja topilmadi</CardTitle>
-            <CardDescription>Reja o'chirilgan yoki sizda unga ruxsat yo'q.</CardDescription>
-          </CardHeader>
-          <CardFooter className="gap-2">
-            <Button onClick={() => refetch()}>Qayta urinish</Button>
-            <Button variant="outline" onClick={() => navigate("/user/workout/plans")}>
-              Rejalarga qaytish
+        <div className="relative mx-auto flex min-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col bg-muted/30 md:rounded-[2rem] md:ring-1 md:ring-border">
+          <header className="flex items-start gap-3 border-b bg-background/95 px-4 py-4 backdrop-blur md:rounded-t-[2rem]">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="mt-1 rounded-full"
+              onClick={() => navigate(`/user/workout/plans/${planId}/days/${dayIndex}`)}
+              aria-label="Ortga"
+            >
+              <ArrowLeftIcon />
             </Button>
-          </CardFooter>
-        </Card>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-base font-semibold">
+                Day {dayIndex + 1}-Workout session
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Reja ma'lumotlari yuklanmadi
+              </p>
+            </div>
+          </header>
+          <main className="flex flex-1 flex-col px-3 py-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Workout reja topilmadi</CardTitle>
+                <CardDescription>Reja o'chirilgan yoki sizda unga ruxsat yo'q.</CardDescription>
+              </CardHeader>
+              <CardFooter className="gap-2">
+                <Button onClick={() => refetch()}>Qayta urinish</Button>
+                <Button variant="outline" onClick={() => navigate("/user/workout/plans")}>
+                  Rejalarga qaytish
+                </Button>
+              </CardFooter>
+            </Card>
+          </main>
+        </div>
       </PageTransition>
     );
   }
