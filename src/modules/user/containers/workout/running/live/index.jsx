@@ -173,6 +173,8 @@ const RunningLivePage = () => {
   const watchIdRef = React.useRef(null);
   const geolocationRef = React.useRef(null);
   const trackingSuspendedRef = React.useRef(false);
+  const workoutSessionIdRef = React.useRef(null);
+  const currentStatusRef = React.useRef("active");
   const localActiveSession = React.useMemo(
     () => loadActiveRunningSession(),
     [],
@@ -193,6 +195,8 @@ const RunningLivePage = () => {
       : null;
   const currentStatus =
     optimisticStatus ?? effectiveActiveSession?.status ?? "active";
+  workoutSessionIdRef.current = workoutSessionId;
+  currentStatusRef.current = currentStatus;
   const isPaused = currentStatus === "paused";
   const isActionPending =
     isPausing || isResuming || isFinishing || isCancelling;
@@ -282,6 +286,13 @@ const RunningLivePage = () => {
     trackingSuspendedRef.current = false;
     setTrackingSuspended(false);
   }, []);
+
+  const canRestoreGpsTracking = React.useCallback(
+    (targetWorkoutSessionId) =>
+      workoutSessionIdRef.current === targetWorkoutSessionId &&
+      currentStatusRef.current === "active",
+    [],
+  );
 
   const syncRunningPoints = React.useCallback(
     async ({ force = false } = {}) => {
@@ -545,7 +556,7 @@ const RunningLivePage = () => {
     const hasUnsyncedPoints = !syncResult.ok || remainingQueue.length > 0;
 
     if (hasUnsyncedPoints) {
-      if (!isPaused) {
+      if (canRestoreGpsTracking(workoutSessionId)) {
         allowGpsTracking();
       }
       const message = t(
@@ -609,7 +620,7 @@ const RunningLivePage = () => {
         "user.workout.running.live.finishError",
         "Yugurishni yakunlab bo'lmadi. Qayta urinib ko'ring.",
       );
-      if (!isPaused) {
+      if (canRestoreGpsTracking(workoutSessionId)) {
         allowGpsTracking();
       }
       setFinishRetryMessage(message);
