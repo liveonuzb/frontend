@@ -260,10 +260,14 @@ describe("RunningLivePage", () => {
       expect(finishRunningSession).toHaveBeenCalledWith(
         "workout-1",
         expect.objectContaining({
+          finishedAt: expect.any(String),
           finalPointSequence: 42,
         }),
       );
     });
+    expect(finishRunningSession.mock.calls[0][1]).not.toHaveProperty(
+      "endedAt",
+    );
   });
 
   it("guards finish while queued GPS points fail to sync and retries after sync succeeds", async () => {
@@ -305,6 +309,89 @@ describe("RunningLivePage", () => {
       );
     });
     expect(clearRunningPointQueue).toHaveBeenCalledWith("workout-1");
+  });
+
+  it("ignores a stale GPS callback during finish after tracking is stopped", async () => {
+    let resolveFinish;
+    finishRunningSession.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveFinish = resolve;
+        }),
+    );
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /yakunlash/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^finish$/i }));
+
+    await waitFor(() => {
+      expect(window.navigator.geolocation.clearWatch).toHaveBeenCalledWith(9);
+    });
+
+    await act(async () => {
+      await watchSuccess({
+        coords: {
+          latitude: 41.311081,
+          longitude: 69.240562,
+          altitude: null,
+          accuracy: 8,
+          speed: null,
+          heading: null,
+        },
+        timestamp: Date.parse("2026-05-12T10:03:00.000Z"),
+      });
+    });
+
+    expect(appendPoints).not.toHaveBeenCalled();
+    expect(loadRunningPointQueue("workout-1")).toEqual([]);
+    expect(finishRunningSession).toHaveBeenCalledWith(
+      "workout-1",
+      expect.objectContaining({
+        finalPointSequence: 42,
+        finishedAt: expect.any(String),
+      }),
+    );
+
+    await act(async () => {
+      resolveFinish({ workoutSessionId: "workout-1" });
+    });
+  });
+
+  it("keeps finish blocked when a forced sync leaves more queued points", async () => {
+    appendPoints.mockResolvedValueOnce({
+      acceptedCount: 24,
+      lastAcceptedSequence: 66,
+    });
+    enqueueRunningPoints(
+      "workout-1",
+      Array.from({ length: 25 }, (_, index) => ({
+        sequence: 43 + index,
+        latitude: 41.311081 + index * 0.0001,
+        longitude: 69.240562,
+        sourceTimestamp: new Date(
+          Date.parse("2026-05-12T10:01:00.000Z") + index * 1000,
+        ).toISOString(),
+      })),
+    );
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /yakunlash/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^finish$/i }));
+
+    await waitFor(() => {
+      expect(appendPoints).toHaveBeenCalledWith(
+        "workout-1",
+        expect.arrayContaining([
+          expect.objectContaining({ sequence: 43 }),
+          expect.objectContaining({ sequence: 66 }),
+        ]),
+      );
+    });
+    expect(loadRunningPointQueue("workout-1")).toEqual([
+      expect.objectContaining({ sequence: 67 }),
+    ]);
+    expect(finishRunningSession).not.toHaveBeenCalled();
+    expect(screen.getAllByText(/sync navbat/i).length).toBeGreaterThan(0);
   });
 
   it("keeps newer GPS points queued while an upload is already in flight", async () => {
@@ -410,11 +497,18 @@ describe("RunningLivePage", () => {
     expect(window.navigator.geolocation.clearWatch).toHaveBeenCalledWith(9);
   });
 
-  it("clears the GPS watcher on pause and starts tracking again on resume", async () => {
+  it("restarts tracking only after resume succeeds", async () => {
+    let resolveResume;
     const pauseRunningSession = vi.fn().mockResolvedValue({
       workoutSessionId: "workout-1",
       status: "paused",
     });
+    resumeRunningSession.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveResume = resolve;
+        }),
+    );
     usePauseRunningSession.mockReturnValue({
       pauseRunningSession,
       isPending: false,
@@ -435,6 +529,15 @@ describe("RunningLivePage", () => {
     await waitFor(() => {
       expect(resumeRunningSession).toHaveBeenCalledWith("workout-1");
     });
+    expect(window.navigator.geolocation.watchPosition).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveResume({
+        workoutSessionId: "workout-1",
+        status: "active",
+      });
+    });
+
     await waitFor(() => {
       expect(window.navigator.geolocation.watchPosition).toHaveBeenCalledTimes(
         2,

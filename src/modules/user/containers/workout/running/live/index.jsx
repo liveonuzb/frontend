@@ -164,11 +164,15 @@ const RunningLivePage = () => {
   const [countdownValue, setCountdownValue] = React.useState(null);
   const [gpsRetryKey, setGpsRetryKey] = React.useState(0);
   const [finishRetryMessage, setFinishRetryMessage] = React.useState("");
+  const [trackingSuspended, setTrackingSuspended] = React.useState(false);
   const sequenceRef = React.useRef(0);
   const syncInFlightRef = React.useRef(false);
   const syncTimerRef = React.useRef(null);
   const syncFailureCountRef = React.useRef(0);
   const nextSyncAtRef = React.useRef(0);
+  const watchIdRef = React.useRef(null);
+  const geolocationRef = React.useRef(null);
+  const trackingSuspendedRef = React.useRef(false);
   const localActiveSession = React.useMemo(
     () => loadActiveRunningSession(),
     [],
@@ -256,6 +260,28 @@ const RunningLivePage = () => {
     },
     [workoutSessionId],
   );
+
+  const stopGpsTracking = React.useCallback(() => {
+    trackingSuspendedRef.current = true;
+    setTrackingSuspended(true);
+
+    const geolocation = geolocationRef.current ?? navigator.geolocation;
+    const watchId = watchIdRef.current;
+
+    if (
+      watchId !== null &&
+      typeof geolocation?.clearWatch === "function"
+    ) {
+      geolocation.clearWatch(watchId);
+    }
+
+    watchIdRef.current = null;
+  }, []);
+
+  const allowGpsTracking = React.useCallback(() => {
+    trackingSuspendedRef.current = false;
+    setTrackingSuspended(false);
+  }, []);
 
   const syncRunningPoints = React.useCallback(
     async ({ force = false } = {}) => {
@@ -374,7 +400,7 @@ const RunningLivePage = () => {
   }, [effectiveActiveSession?.startedAt]);
 
   React.useEffect(() => {
-    if (!workoutSessionId || isPaused) {
+    if (!workoutSessionId || isPaused || trackingSuspended) {
       return undefined;
     }
 
@@ -387,6 +413,10 @@ const RunningLivePage = () => {
 
     const watchId = geolocation.watchPosition(
       (position) => {
+        if (trackingSuspendedRef.current) {
+          return;
+        }
+
         const nextSequence = sequenceRef.current + 1;
         sequenceRef.current = nextSequence;
         const point = {
@@ -405,6 +435,10 @@ const RunningLivePage = () => {
         void syncRunningPoints();
       },
       () => {
+        if (trackingSuspendedRef.current) {
+          return;
+        }
+
         setGpsState(GPS_STATUS.permission);
       },
       {
@@ -413,10 +447,16 @@ const RunningLivePage = () => {
         timeout: 15000,
       },
     );
+    geolocationRef.current = geolocation;
+    watchIdRef.current = watchId;
 
     return () => {
-      if (typeof geolocation.clearWatch === "function") {
+      if (
+        watchIdRef.current === watchId &&
+        typeof geolocation.clearWatch === "function"
+      ) {
         geolocation.clearWatch(watchId);
+        watchIdRef.current = null;
       }
     };
   }, [
@@ -424,6 +464,7 @@ const RunningLivePage = () => {
     isPaused,
     persistIncomingPoints,
     syncRunningPoints,
+    trackingSuspended,
     workoutSessionId,
   ]);
 
@@ -456,10 +497,11 @@ const RunningLivePage = () => {
     }
 
     if (isPaused) {
-      setLocalStatus({ workoutSessionId, status: "active" });
-      saveLocalStatus("active");
       try {
         await resumeRunningSession(workoutSessionId);
+        allowGpsTracking();
+        setLocalStatus({ workoutSessionId, status: "active" });
+        saveLocalStatus("active");
       } catch {
         setLocalStatus({ workoutSessionId, status: "paused" });
         saveLocalStatus("paused");
@@ -497,11 +539,15 @@ const RunningLivePage = () => {
 
     setFinishOpen(false);
     setFinishRetryMessage("");
+    stopGpsTracking();
     const syncResult = await syncRunningPoints({ force: true });
     const remainingQueue = loadRunningPointQueue(workoutSessionId);
     const hasUnsyncedPoints = !syncResult.ok || remainingQueue.length > 0;
 
     if (hasUnsyncedPoints) {
+      if (!isPaused) {
+        allowGpsTracking();
+      }
       const message = t(
         "user.workout.running.live.finishQueuedSync",
         "Sync navbatda. GPS nuqtalar sync bo'lgandan keyin yakunlang.",
@@ -563,6 +609,9 @@ const RunningLivePage = () => {
         "user.workout.running.live.finishError",
         "Yugurishni yakunlab bo'lmadi. Qayta urinib ko'ring.",
       );
+      if (!isPaused) {
+        allowGpsTracking();
+      }
       setFinishRetryMessage(message);
       toast.error(message);
     }
