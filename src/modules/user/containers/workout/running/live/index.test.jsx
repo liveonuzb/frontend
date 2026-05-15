@@ -414,6 +414,69 @@ describe("RunningLivePage", () => {
     expect(window.navigator.geolocation.watchPosition).toHaveBeenCalledTimes(1);
   });
 
+  it("does not restore tracking after finish failure when the same session becomes paused", async () => {
+    let rejectFinish;
+    let activeStatus = "active";
+    useRunningActiveSession.mockImplementation(() => ({
+      activeSession: {
+        workoutSessionId: "workout-1",
+        status: activeStatus,
+        startedAt: "2026-05-12T10:00:00.000Z",
+        lastAcceptedSequence: 42,
+        metrics: {
+          distanceMeters: 0,
+          durationSeconds: 0,
+        },
+      },
+    }));
+    finishRunningSession
+      .mockImplementationOnce(
+        () =>
+          new Promise((_resolve, reject) => {
+            rejectFinish = reject;
+          }),
+      )
+      .mockRejectedValueOnce(new Error("finish failed"));
+    const router = createMemoryRouter(
+      [
+        {
+          path: "/user/workout/running/live/:workoutSessionId",
+          element: <RunningLivePage />,
+        },
+        {
+          path: "/user/workout/running/:workoutSessionId",
+          element: <div>Run detail</div>,
+        },
+        {
+          path: "/user/workout/running",
+          element: <div>Running home</div>,
+        },
+      ],
+      { initialEntries: ["/user/workout/running/live/workout-1"] },
+    );
+    const view = render(<RouterProvider router={router} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /yakunlash/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^finish$/i }));
+
+    await waitFor(() => {
+      expect(window.navigator.geolocation.clearWatch).toHaveBeenCalledWith(9);
+    });
+
+    activeStatus = "paused";
+    view.rerender(<RouterProvider router={router} />);
+    expect(window.navigator.geolocation.watchPosition).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      rejectFinish(new Error("finish failed"));
+    });
+
+    await waitFor(() => {
+      expect(finishRunningSession).toHaveBeenCalledTimes(2);
+    });
+    expect(window.navigator.geolocation.watchPosition).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps finish blocked when a forced sync leaves more queued points", async () => {
     appendPoints.mockResolvedValueOnce({
       acceptedCount: 24,
