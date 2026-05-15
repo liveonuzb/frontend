@@ -301,7 +301,7 @@ describe("RunningLivePage", () => {
     await waitFor(() => {
       expect(finishRunningSession).toHaveBeenCalledWith(
         expect.any(String),
-        expect.objectContaining({ endedAt: expect.any(String) }),
+        expect.objectContaining({ finishedAt: expect.any(String) }),
       );
     });
     expect(clearRunningPointQueue).toHaveBeenCalledWith("workout-1");

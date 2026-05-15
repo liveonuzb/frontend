@@ -298,6 +298,16 @@ const setupRunningApi = async (
     }
 
     if (path === "/user/workout/running/workout-e2e/finish") {
+      const body = request.postDataJSON();
+      if ("endedAt" in body || !body.finishedAt) {
+        await fulfillJson(
+          route,
+          { message: "Finish payload must use finishedAt" },
+          400,
+        );
+        return;
+      }
+
       activeSession = {
         ...activeSession,
         status: "completed",

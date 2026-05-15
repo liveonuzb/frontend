@@ -512,9 +512,9 @@ const RunningLivePage = () => {
       return;
     }
 
-    const endedAt = new Date().toISOString();
+    const finishedAt = new Date().toISOString();
     const finishPayload = {
-      endedAt,
+      finishedAt,
       finalPointSequence: sequenceRef.current || undefined,
       clientSummary: {
         durationSeconds: Math.max(
@@ -551,7 +551,7 @@ const RunningLivePage = () => {
     } catch {
       try {
         const session = await finishRunningSession(workoutSessionId, {
-          endedAt,
+          finishedAt,
         });
         completeFinish(session, true);
         return;
@@ -819,7 +819,7 @@ const RunningLivePage = () => {
               <DrawerDescription>
                 {t(
                   "user.workout.running.live.finishDescription",
-                  "Yugurishni yakunlashdan oldin GPS nuqtalar bir marta sync qilinadi. Navbat bo'shamasa ham sessiya saqlanadi.",
+                  "Yugurishni yakunlashdan oldin GPS nuqtalar sync qilinadi. Navbat bo'shamaguncha yakunlash kutiladi.",
                 )}
               </DrawerDescription>
             </DrawerHeader>
