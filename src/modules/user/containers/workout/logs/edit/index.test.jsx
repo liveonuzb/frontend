@@ -21,9 +21,20 @@ vi.mock("@/components/page-loader/index.jsx", () => ({
 }));
 
 vi.mock("../../workout-log-drawer.jsx", () => ({
-  default: ({ initialLog, onSave }) => (
+  default: ({
+    dateKey,
+    initialLog,
+    isSubmitting,
+    onOpenChange,
+    onSave,
+    open,
+  }) => (
     <div data-testid="workout-log-drawer">
+      <div data-testid="drawer-open">{String(open)}</div>
       <div>{initialLog.name}</div>
+      <div data-testid="drawer-initial-log-id">{initialLog.id}</div>
+      <div data-testid="drawer-date-key">{dateKey || ""}</div>
+      <div data-testid="drawer-is-submitting">{String(isSubmitting)}</div>
       <button
         type="button"
         onClick={() =>
@@ -31,6 +42,9 @@ vi.mock("../../workout-log-drawer.jsx", () => ({
         }
       >
         Save drawer
+      </button>
+      <button type="button" onClick={() => onOpenChange(false)}>
+        Close drawer
       </button>
     </div>
   ),
@@ -102,6 +116,11 @@ describe("EditWorkoutLogPage", () => {
   it("updates a workout log and returns to workout home", async () => {
     const router = renderPage();
 
+    expect(screen.getByTestId("drawer-open")).toHaveTextContent("true");
+    expect(screen.getByTestId("drawer-initial-log-id")).toHaveTextContent("log-1");
+    expect(screen.getByTestId("drawer-date-key")).toHaveTextContent("2026-05-15");
+    expect(screen.getByTestId("drawer-is-submitting")).toHaveTextContent("false");
+
     fireEvent.click(screen.getByText("Save drawer"));
 
     await waitFor(() => {
@@ -115,15 +134,29 @@ describe("EditWorkoutLogPage", () => {
     });
   });
 
-  it("navigates back and shows an error when the workout log is missing", async () => {
+  it("passes submitting state and closes back to workout home", async () => {
+    useUpdateWorkoutLog.mockReturnValue({
+      updateLog: updateLogMock,
+      isPending: true,
+    });
     const router = renderPage();
 
+    expect(screen.getByTestId("drawer-is-submitting")).toHaveTextContent("true");
+
+    fireEvent.click(screen.getByText("Close drawer"));
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/user/workout");
+    });
+  });
+
+  it("navigates back and shows an error when the workout log is missing", async () => {
     useWorkoutLog.mockReturnValue({
       log: null,
       isLoading: false,
     });
 
-    render(<RouterProvider router={router} />);
+    const router = renderPage();
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Workout log topilmadi");

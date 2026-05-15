@@ -96,13 +96,12 @@ describe("WorkoutExercisesPage", () => {
     expect(screen.queryByText("Push-up")).not.toBeInTheDocument();
   });
 
-  it("shows an empty state when selected filters have no exercises", () => {
-    useWorkoutExercises.mockReturnValue({
-      exercises: [],
-      isLoading: false,
-    });
-
+  it("shows an empty state when the search filter has no matching exercises", () => {
     render(<WorkoutExercisesPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("Mashq qidirish..."), {
+      target: { value: "deadlift" },
+    });
 
     expect(
       screen.getByText("Tanlangan filter bo'yicha mashq topilmadi."),
