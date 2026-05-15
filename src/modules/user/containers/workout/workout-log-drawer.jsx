@@ -30,7 +30,6 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { useGetQuery } from "@/hooks/api";
 import { ALL_EXERCISES } from "@/data/exercises.mock";
 import {
   NumberField,
@@ -45,6 +44,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { getTodayKey } from "@/hooks/app/use-daily-tracking";
+import { useWorkoutExercises } from "@/hooks/app/use-workout-plans";
 import { normalizeExerciseSets } from "./utils";
 import {
   createWorkoutSetTemplate,
@@ -83,41 +83,60 @@ const mapInitialSets = (initialLog) =>
         : "",
   }));
 
-const buildExerciseCatalog = (exercisesData) => {
-  if (size(get(exercisesData, "data")) > 0) {
-    return map(get(exercisesData, "data"), (exercise) => ({
-      ...exercise,
-      sets: [
-        {
-          done: false,
-          reps: get(exercise, "defaultReps", 10),
-          durationSeconds: get(exercise, "defaultDurationSeconds", 0),
-          distanceMeters: get(exercise, "defaultDistanceMeters", 0),
-          weight: 0,
-        },
-      ],
-    }));
-  }
+const normalizeExerciseCatalog = (exercises = []) =>
+  filter(
+    map(exercises, (exercise, index) => {
+      const name = trim(String(get(exercise, "name", "")));
 
-  return map(ALL_EXERCISES, (exercise, index) => ({
-    id: get(exercise, "id") || `mock-${index}`,
-    name: get(exercise, "name"),
-    category:
-      get(exercise, "groupLabel") || get(exercise, "category") || "General",
-    imageUrl: get(exercise, "imageUrl") || null,
-    emoji: get(exercise, "emoji") || "🏋️",
-    trackingType: get(exercise, "trackingType") || "REPS_WEIGHT",
-    defaultSets: get(exercise, "defaultSets") || 3,
-    defaultReps: get(exercise, "defaultReps") ?? 10,
-    defaultDurationSeconds: get(exercise, "defaultDurationSeconds") ?? 0,
-    defaultDistanceMeters: get(exercise, "defaultDistanceMeters") ?? 0,
-    defaultRest:
-      get(exercise, "defaultRest") || get(exercise, "defaultRestSeconds") || 60,
-    defaultRestSeconds:
-      get(exercise, "defaultRestSeconds") || get(exercise, "defaultRest") || 60,
-    groupLabel:
-      get(exercise, "groupLabel") || get(exercise, "category") || "General",
-  }));
+      if (!name) {
+        return null;
+      }
+
+      const groupLabel =
+        get(exercise, "groupLabel") ||
+        get(exercise, "category") ||
+        get(exercise, "group") ||
+        "General";
+
+      return {
+        ...exercise,
+        id: get(exercise, "id") || `mock-${index}`,
+        name,
+        category: get(exercise, "category") || groupLabel,
+        imageUrl: get(exercise, "imageUrl") || null,
+        emoji: get(exercise, "emoji") || "🏋️",
+        trackingType: get(exercise, "trackingType") || "REPS_WEIGHT",
+        defaultSets: get(exercise, "defaultSets") || 3,
+        defaultReps: get(exercise, "defaultReps") ?? 10,
+        defaultDurationSeconds: get(exercise, "defaultDurationSeconds") ?? 0,
+        defaultDistanceMeters: get(exercise, "defaultDistanceMeters") ?? 0,
+        defaultRest:
+          get(exercise, "defaultRest") ||
+          get(exercise, "defaultRestSeconds") ||
+          60,
+        defaultRestSeconds:
+          get(exercise, "defaultRestSeconds") ||
+          get(exercise, "defaultRest") ||
+          60,
+        groupLabel,
+        sets: [
+          {
+            done: false,
+            reps: get(exercise, "defaultReps", 10),
+            durationSeconds: get(exercise, "defaultDurationSeconds", 0),
+            distanceMeters: get(exercise, "defaultDistanceMeters", 0),
+            weight: 0,
+          },
+        ],
+      };
+    }),
+    Boolean,
+  );
+
+const buildExerciseCatalog = (exercises = []) => {
+  const catalog = normalizeExerciseCatalog(exercises);
+
+  return size(catalog) > 0 ? catalog : normalizeExerciseCatalog(ALL_EXERCISES);
 };
 
 const buildWorkoutLogPayload = ({
@@ -225,17 +244,14 @@ export default function WorkoutLogDrawer({
       ? "grid grid-cols-[36px_1fr_40px] items-center gap-3 rounded-2xl border bg-background p-3 sm:grid-cols-[44px_1fr_48px]"
       : "grid grid-cols-[36px_1fr_1fr_40px] items-center gap-3 rounded-2xl border bg-background p-3 sm:grid-cols-[44px_1fr_1fr_48px]";
 
-  const { data: exercisesData, isLoading: isExercisesLoading } = useGetQuery({
-    url: "/coach/exercises",
-    queryProps: {
-      queryKey: ["workout-exercises", "library"],
-      enabled: open,
-    },
-  });
+  const { exercises, isLoading: isExercisesLoading } = useWorkoutExercises(
+    {},
+    { enabled: open },
+  );
 
   const exerciseCatalog = useMemo(
-    () => buildExerciseCatalog(exercisesData),
-    [exercisesData],
+    () => buildExerciseCatalog(exercises),
+    [exercises],
   );
 
   /* eslint-disable react-hooks/set-state-in-effect */
@@ -416,9 +432,9 @@ export default function WorkoutLogDrawer({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {map(filteredExercises, (exercise) => (
+                  {map(filteredExercises, (exercise, exerciseIndex) => (
                     <button
-                      key={get(exercise, "id") || get(exercise, "name")}
+                      key={`${get(exercise, "id") || get(exercise, "name")}-${exerciseIndex}`}
                       type="button"
                       onClick={() => handleSelect(exercise)}
                       className="flex w-full items-center gap-4 rounded-2xl border bg-background p-4 text-left"

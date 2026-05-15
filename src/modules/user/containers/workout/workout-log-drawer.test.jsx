@@ -2,7 +2,7 @@ import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { toast } from "sonner";
-import { useGetQuery } from "@/hooks/api";
+import { useWorkoutExercises } from "@/hooks/app/use-workout-plans";
 import WorkoutLogDrawer from "./workout-log-drawer.jsx";
 
 vi.mock("sonner", () => ({
@@ -26,12 +26,12 @@ vi.mock("@/components/ui/drawer", async () => {
   };
 });
 
-vi.mock("@/hooks/api", async (importOriginal) => {
+vi.mock("@/hooks/app/use-workout-plans", async (importOriginal) => {
   const actual = await importOriginal();
 
   return {
     ...actual,
-    useGetQuery: vi.fn(),
+    useWorkoutExercises: vi.fn(),
   };
 });
 
@@ -61,10 +61,16 @@ const exerciseCatalog = [
 describe("WorkoutLogDrawer", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useGetQuery.mockReturnValue({
-      data: {
-        data: exerciseCatalog,
-      },
+    useWorkoutExercises.mockReturnValue({
+      exercises: [
+        ...exerciseCatalog,
+        {
+          id: "legacy-empty-name",
+          category: "General",
+          trackingType: "REPS_WEIGHT",
+          defaultReps: 10,
+        },
+      ],
       isLoading: false,
     });
   });
@@ -78,25 +84,53 @@ describe("WorkoutLogDrawer", () => {
     expect(searchInput).toBeInTheDocument();
     expect(screen.getByText("Push-up")).toBeInTheDocument();
     expect(screen.getByText("Squat")).toBeInTheDocument();
+    expect(screen.getByText("2 results")).toBeInTheDocument();
 
     fireEvent.change(searchInput, {
-      target: { value: "push" },
+      target: { value: "squat" },
     });
 
-    expect(screen.getByText("Push-up")).toBeInTheDocument();
-    expect(screen.queryByText("Squat")).not.toBeInTheDocument();
+    expect(screen.getByText("Squat")).toBeInTheDocument();
+    expect(screen.getByText("1 results")).toBeInTheDocument();
+    expect(screen.queryByText("Push-up")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByText("Push-up"));
+    fireEvent.click(screen.getByText("Squat"));
     fireEvent.click(screen.getByRole("button", { name: /saqlash|save/i }));
 
     await waitFor(() => {
       expect(onSave).toHaveBeenCalledWith(
         expect.objectContaining({
-          name: "Push-up",
-          entries: expect.any(Array),
+          name: "Squat",
+          exerciseId: "squat",
+          trackingType: "REPS_WEIGHT",
+          entries: [
+            expect.objectContaining({
+              reps: 8,
+              durationMinutes: 2,
+              burnedCalories: 10,
+            }),
+          ],
         }),
       );
     });
+  });
+
+  it("falls back to the bundled catalog when API exercises are unnamed", () => {
+    useWorkoutExercises.mockReturnValue({
+      exercises: [
+        {
+          id: "legacy-empty-name",
+          category: "General",
+          trackingType: "REPS_WEIGHT",
+        },
+      ],
+      isLoading: false,
+    });
+
+    render(<WorkoutLogDrawer open onOpenChange={vi.fn()} onSave={vi.fn()} />);
+
+    expect(screen.getByText("Bench Press")).toBeInTheDocument();
+    expect(screen.queryByText("0 results")).not.toBeInTheDocument();
   });
 
   it("does not save and shows validation when no set has a valid value", async () => {
