@@ -102,6 +102,26 @@ const buildRoutePoints = (acceptedSequences) =>
     ).toISOString(),
   }));
 
+const mockMapStyle = async (page) => {
+  await page.route("https://tiles.openfreemap.org/styles/dark", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        version: 8,
+        sources: {},
+        layers: [
+          {
+            id: "background",
+            type: "background",
+            paint: { "background-color": "#17120d" },
+          },
+        ],
+      }),
+    }),
+  );
+};
+
 const setupRunningApi = async (
   page,
   {
@@ -339,6 +359,9 @@ const openRunningHome = async (page) => {
     await page.goto("/user/workout/running");
   }
   await expect(page.getByRole("heading", { name: /Running/i })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /Start run|Resume run|Davom ettirish/i }),
+  ).toBeVisible();
 };
 
 const startRun = async (page) => {
@@ -398,7 +421,9 @@ test("running P0 flow survives rate-limited point sync", async ({ page }) => {
 
   await openRunningHome(page);
   await startRun(page);
+  await expect(page.getByText(/^[123]$/).first()).toBeVisible();
   await emitPosition(page);
+  await expect.poll(() => api.batchAttempts).toBeGreaterThan(0);
   await emitPosition(page, {
     latitude: 41.315081,
     timestamp: Date.parse("2026-05-15T04:02:00.000Z"),
@@ -407,6 +432,8 @@ test("running P0 flow survives rate-limited point sync", async ({ page }) => {
   await expect(page.getByText(/GPS tracking/i)).toBeVisible();
   await page.getByRole("button", { name: /Pauza/i }).click();
   await expect(page.getByText(/Pauzada/i)).toBeVisible();
+  await expect(page.getByText(/^END$/i)).toBeVisible();
+  await expect(page.getByText(/^RESUME$/i)).toBeVisible();
   await page.getByRole("button", { name: /Davom ettirish/i }).click();
   await expect(page.getByText(/GPS tracking/i)).toBeVisible();
 
@@ -415,6 +442,7 @@ test("running P0 flow survives rate-limited point sync", async ({ page }) => {
   await expect(
     page.getByRole("dialog", { name: /Finish training/i }),
   ).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Continue$/i })).toBeVisible();
   await page.getByRole("button", { name: /^Finish$/i }).click();
   await expect(page).toHaveURL(/\/user\/workout\/running\/workout-e2e/);
   await expect(page.getByTestId("route-fallback-svg")).toHaveAttribute(
@@ -436,6 +464,39 @@ test("running live page shows a recoverable denied-location state", async ({
   await expect(
     page.getByRole("button", { name: /GPS qayta urinish/i }),
   ).toBeVisible();
+  await expect(page.getByRole("button", { name: /Pauza/i })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /Bekor qilish/i }),
+  ).toBeVisible();
+});
+
+test("running dashboard route preview uses the real map container when route points exist", async ({
+  page,
+}) => {
+  await installBrowserState(page);
+  await mockMapStyle(page);
+  await setupRunningApi(page, {
+    initialActiveSession: createSession({
+      status: "completed",
+      endedAt: new Date("2026-05-15T04:06:00.000Z").toISOString(),
+      metrics: {
+        distanceMeters: 500,
+        durationSeconds: 240,
+        caloriesBurned: 36,
+        averagePaceSecondsPerKm: 480,
+        gpsQualityScore: 0.92,
+      },
+      lastAcceptedSequence: 2,
+      points: buildRoutePoints([1, 2]),
+    }),
+  });
+
+  await openRunningHome(page);
+
+  await expect(page.getByTestId("maplibre-map").first()).toHaveAttribute(
+    "data-coordinate-count",
+    "2",
+  );
 });
 
 test("running live page survives reload and keeps pause/resume controls working", async ({

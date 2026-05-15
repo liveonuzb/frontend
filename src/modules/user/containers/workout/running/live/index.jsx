@@ -500,32 +500,40 @@ const RunningLivePage = () => {
     const syncResult = await syncRunningPoints({ force: true });
     const remainingQueue = loadRunningPointQueue(workoutSessionId);
     const hasUnsyncedPoints = !syncResult.ok || remainingQueue.length > 0;
-    const finishedAt = new Date().toISOString();
-    const finishPayload = hasUnsyncedPoints
-      ? { finishedAt }
-      : {
-          finishedAt,
-          finalPointSequence: sequenceRef.current || undefined,
-          clientSummary: {
-            durationSeconds: Math.max(
-              elapsedSeconds,
-              metrics.durationSeconds ?? 0,
-            ),
-            distanceMeters: Math.round(
-              Number(metrics.distanceMeters ?? 0) || 0,
-            ),
-            caloriesBurned: Number(metrics.caloriesBurned ?? 0) || 0,
-          },
-        };
 
-    const completeFinish = (session, usedUnsyncedFallback = false) => {
+    if (hasUnsyncedPoints) {
+      const message = t(
+        "user.workout.running.live.finishQueuedSync",
+        "Sync navbatda. GPS nuqtalar sync bo'lgandan keyin yakunlang.",
+      );
+      setFinishOpen(true);
+      setFinishRetryMessage(message);
+      toast.error(message);
+      return;
+    }
+
+    const endedAt = new Date().toISOString();
+    const finishPayload = {
+      endedAt,
+      finalPointSequence: sequenceRef.current || undefined,
+      clientSummary: {
+        durationSeconds: Math.max(
+          elapsedSeconds,
+          metrics.durationSeconds ?? 0,
+        ),
+        distanceMeters: Math.round(Number(metrics.distanceMeters ?? 0) || 0),
+        caloriesBurned: Number(metrics.caloriesBurned ?? 0) || 0,
+      },
+    };
+
+    const completeFinish = (session, usedLightweightFallback = false) => {
       clearActiveRunningSession();
       clearRunningPointQueue(workoutSessionId);
       toast.success(
-        usedUnsyncedFallback
+        usedLightweightFallback
           ? t(
-              "user.workout.running.live.finishSuccessWithPendingGps",
-              "Yugurish yakunlandi. Sync bo'lmagan GPS nuqtalar yakuniy hisobga kirmasligi mumkin.",
+              "user.workout.running.live.finishSuccessWithLightweightPayload",
+              "Yugurish yakunlandi. Yakuniy hisob server tomonidan qayta hisoblanadi.",
             )
           : t(
               "user.workout.running.live.finishSuccess",
@@ -539,18 +547,16 @@ const RunningLivePage = () => {
 
     try {
       const session = await finishRunningSession(workoutSessionId, finishPayload);
-      completeFinish(session, hasUnsyncedPoints);
+      completeFinish(session);
     } catch {
-      if (!hasUnsyncedPoints) {
-        try {
-          const session = await finishRunningSession(workoutSessionId, {
-            finishedAt,
-          });
-          completeFinish(session, true);
-          return;
-        } catch {
-          // Fall through to the visible finish error below.
-        }
+      try {
+        const session = await finishRunningSession(workoutSessionId, {
+          endedAt,
+        });
+        completeFinish(session, true);
+        return;
+      } catch {
+        // Fall through to the visible finish error below.
       }
 
       const message = t(

@@ -96,6 +96,7 @@ const renderPage = () => {
 describe("RunningLivePage", () => {
   let appendPoints;
   let finishRunningSession;
+  let resumeRunningSession;
   let watchSuccess;
   let watchError;
 
@@ -109,6 +110,10 @@ describe("RunningLivePage", () => {
     });
     finishRunningSession = vi.fn().mockResolvedValue({
       workoutSessionId: "workout-1",
+    });
+    resumeRunningSession = vi.fn().mockResolvedValue({
+      workoutSessionId: "workout-1",
+      status: "active",
     });
     watchSuccess = null;
     watchError = null;
@@ -143,7 +148,7 @@ describe("RunningLivePage", () => {
       isPending: false,
     });
     useResumeRunningSession.mockReturnValue({
-      resumeRunningSession: vi.fn(),
+      resumeRunningSession,
       isPending: false,
     });
     useFinishRunningSession.mockReturnValue({
@@ -242,6 +247,7 @@ describe("RunningLivePage", () => {
         screen.getByRole("dialog", { name: /finish training/i }),
       ).toHaveAttribute("data-state", "closed");
     });
+    expect(finishRunningSession).not.toHaveBeenCalled();
   });
 
   it("finishes the run from the confirmation dialog", async () => {
@@ -260,8 +266,13 @@ describe("RunningLivePage", () => {
     });
   });
 
-  it("finishes with a lightweight payload when queued points cannot sync", async () => {
-    appendPoints.mockRejectedValueOnce(new Error("offline"));
+  it("guards finish while queued GPS points fail to sync and retries after sync succeeds", async () => {
+    appendPoints
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValueOnce({
+        acceptedCount: 1,
+        lastAcceptedSequence: 43,
+      });
     enqueueRunningPoints("workout-1", [
       {
         sequence: 43,
@@ -282,19 +293,18 @@ describe("RunningLivePage", () => {
         }),
       ]);
     });
+    expect(screen.getAllByText(/sync navbat/i).length).toBeGreaterThan(0);
+    expect(finishRunningSession).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: /^finish$/i }));
+
     await waitFor(() => {
-      expect(finishRunningSession).toHaveBeenCalledWith("workout-1", {
-        finishedAt: expect.any(String),
-      });
+      expect(finishRunningSession).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ endedAt: expect.any(String) }),
+      );
     });
-    expect(finishRunningSession.mock.calls[0][1]).not.toHaveProperty(
-      "finalPointSequence",
-    );
-    expect(finishRunningSession.mock.calls[0][1]).not.toHaveProperty(
-      "clientSummary",
-    );
     expect(clearRunningPointQueue).toHaveBeenCalledWith("workout-1");
-    expect(await screen.findByText("Run detail")).toBeInTheDocument();
   });
 
   it("keeps newer GPS points queued while an upload is already in flight", async () => {
@@ -400,7 +410,39 @@ describe("RunningLivePage", () => {
     expect(window.navigator.geolocation.clearWatch).toHaveBeenCalledWith(9);
   });
 
-  it("finishes when final point sync is rate limited", async () => {
+  it("clears the GPS watcher on pause and starts tracking again on resume", async () => {
+    const pauseRunningSession = vi.fn().mockResolvedValue({
+      workoutSessionId: "workout-1",
+      status: "paused",
+    });
+    usePauseRunningSession.mockReturnValue({
+      pauseRunningSession,
+      isPending: false,
+    });
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /pauza/i }));
+
+    await waitFor(() => {
+      expect(window.navigator.geolocation.clearWatch).toHaveBeenCalled();
+    });
+    expect(await screen.findByText("Pauzada")).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /davom ettirish|resume/i }),
+    );
+
+    await waitFor(() => {
+      expect(resumeRunningSession).toHaveBeenCalledWith("workout-1");
+    });
+    await waitFor(() => {
+      expect(window.navigator.geolocation.watchPosition).toHaveBeenCalledTimes(
+        2,
+      );
+    });
+  });
+
+  it("does not finish when final point sync is rate limited", async () => {
     appendPoints.mockRejectedValueOnce({
       response: {
         status: 429,
@@ -425,12 +467,9 @@ describe("RunningLivePage", () => {
     await waitFor(() => {
       expect(appendPoints).toHaveBeenCalled();
     });
-    await waitFor(() => {
-      expect(finishRunningSession).toHaveBeenCalledWith("workout-1", {
-        finishedAt: expect.any(String),
-      });
-    });
-    expect(clearRunningPointQueue).toHaveBeenCalledWith("workout-1");
+    expect(screen.getAllByText(/sync navbat/i).length).toBeGreaterThan(0);
+    expect(finishRunningSession).not.toHaveBeenCalled();
+    expect(clearRunningPointQueue).not.toHaveBeenCalled();
   });
 
   it("requires confirmation before cancelling a run", async () => {
