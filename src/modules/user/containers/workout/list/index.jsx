@@ -239,6 +239,17 @@ const formatPace = (secondsPerKm) => {
 const formatTemperature = (value) =>
   Number.isFinite(Number(value)) ? `${Math.round(Number(value))}°C` : "--";
 
+const EMPTY_WEATHER = {
+  location: "Tashkent",
+  temperatureC: null,
+  feelsLikeC: null,
+  condition: "Ob-havo yuklanmoqda",
+  humidity: null,
+  windKph: null,
+  aqi: null,
+  aqiLabel: "Unknown",
+};
+
 const getRunningMetrics = (session) => ({
   distanceMeters: Number(get(session, "metrics.distanceMeters", 0)) || 0,
   durationSeconds: Number(get(session, "metrics.durationSeconds", 0)) || 0,
@@ -628,11 +639,12 @@ function TodaySummaryCard({ weeklyStats, runningStats }) {
 }
 
 function WeatherCard({ weather, isLoading, isError, locationStatus }) {
+  const weatherData = weather ?? EMPTY_WEATHER;
   const isFallbackLocation = locationStatus === "fallback";
   const location =
-    isFallbackLocation && weather.location === "Current location"
+    isFallbackLocation && weatherData.location === "Current location"
       ? "Tashkent"
-      : weather.location;
+      : weatherData.location;
 
   return (
     <Card>
@@ -644,10 +656,10 @@ function WeatherCard({ weather, isLoading, isError, locationStatus }) {
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-4xl font-black">
-              {isLoading ? "--" : formatTemperature(weather.temperatureC)}
+              {isLoading ? "--" : formatTemperature(weatherData.temperatureC)}
             </p>
             <p className="mt-1 text-sm font-medium text-muted-foreground">
-              {isError ? "Ob-havo vaqtincha mavjud emas" : weather.condition}
+              {isError ? "Ob-havo vaqtincha mavjud emas" : weatherData.condition}
             </p>
           </div>
           <div className="grid size-16 place-items-center rounded-full bg-primary/10 text-primary">
@@ -657,21 +669,21 @@ function WeatherCard({ weather, isLoading, isError, locationStatus }) {
         <div className="grid grid-cols-3 gap-3 text-sm">
           <div>
             <p className="text-muted-foreground">His qilinadi</p>
-            <p className="mt-1 font-black">{formatTemperature(weather.feelsLikeC)}</p>
+            <p className="mt-1 font-black">{formatTemperature(weatherData.feelsLikeC)}</p>
           </div>
           <div>
             <p className="text-muted-foreground">Shamol</p>
             <p className="mt-1 font-black">
-              {Number.isFinite(Number(weather.windKph))
-                ? `${Math.round(Number(weather.windKph))} km/h`
+              {Number.isFinite(Number(weatherData.windKph))
+                ? `${Math.round(Number(weatherData.windKph))} km/h`
                 : "--"}
             </p>
           </div>
           <div>
             <p className="text-muted-foreground">Namlik</p>
             <p className="mt-1 font-black">
-              {Number.isFinite(Number(weather.humidity))
-                ? `${Math.round(Number(weather.humidity))}%`
+              {Number.isFinite(Number(weatherData.humidity))
+                ? `${Math.round(Number(weatherData.humidity))}%`
                 : "--"}
             </p>
           </div>
@@ -681,11 +693,11 @@ function WeatherCard({ weather, isLoading, isError, locationStatus }) {
             <div>
               <p className="text-sm text-muted-foreground">Havo sifati</p>
               <p className="mt-1 text-2xl font-black">
-                AQI {weather.aqi ?? "--"}
+                AQI {weatherData.aqi ?? "--"}
               </p>
             </div>
             <Badge variant="secondary" className="rounded-full">
-              {weather.aqiLabel}
+              {weatherData.aqiLabel}
             </Badge>
           </div>
           <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">

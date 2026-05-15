@@ -323,6 +323,60 @@ describe("WorkoutDashboardPage", () => {
     expect(screen.getByText("Tashkent")).toBeInTheDocument();
   });
 
+  it("keeps the weather card visible while weather is loading", () => {
+    useWorkoutWeatherToday.mockReturnValue({
+      weather: null,
+      isLoading: true,
+      isError: false,
+      locationStatus: "requesting",
+    });
+
+    renderPage();
+
+    expect(screen.getByText("Bugungi ob-havo")).toBeInTheDocument();
+    expect(screen.getByText("Ob-havo yuklanmoqda")).toBeInTheDocument();
+  });
+
+  it("keeps Tashkent fallback weather visible when location permission is denied", () => {
+    useWorkoutWeatherToday.mockReturnValue({
+      weather: {
+        location: "Tashkent",
+        temperatureC: 28,
+        feelsLikeC: 30,
+        condition: "Clear",
+        humidity: 32,
+        windKph: 9,
+        aqi: 42,
+        aqiLabel: "Good",
+        pm25: 8,
+        source: "open-meteo",
+        updatedAt: "2026-05-15T07:15:00.000Z",
+      },
+      isLoading: false,
+      isError: false,
+      locationStatus: "fallback",
+    });
+
+    renderPage();
+
+    expect(screen.getByText("Bugungi ob-havo")).toBeInTheDocument();
+    expect(screen.getByText("Tashkent")).toBeInTheDocument();
+  });
+
+  it("keeps the weather card visible when weather is unavailable", () => {
+    useWorkoutWeatherToday.mockReturnValue({
+      weather: null,
+      isLoading: false,
+      isError: true,
+      locationStatus: "denied",
+    });
+
+    renderPage();
+
+    expect(screen.getByText("Bugungi ob-havo")).toBeInTheDocument();
+    expect(screen.getByText("Ob-havo vaqtincha mavjud emas")).toBeInTheDocument();
+  });
+
   it("renders real zero state for weekly goal without fake premium badge", () => {
     renderPage();
 
