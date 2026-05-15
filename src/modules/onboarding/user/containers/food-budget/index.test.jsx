@@ -79,7 +79,7 @@ describe("FoodBudget onboarding step", () => {
     });
   });
 
-  it("skip clears tier and continues to allergies", async () => {
+  it("skip clears tier and continues to diet requirements", async () => {
     useOnboardingStore.getState().setFields({ foodBudgetTier: "high" });
 
     renderFoodBudget();
@@ -91,7 +91,9 @@ describe("FoodBudget onboarding step", () => {
 
     await waitFor(() => {
       expect(useOnboardingStore.getState().foodBudgetTier).toBeNull();
-      expect(navigate).toHaveBeenCalledWith("/user/onboarding/allergies");
+      expect(navigate).toHaveBeenCalledWith(
+        "/user/onboarding/diet-requirements",
+      );
     });
   });
 });

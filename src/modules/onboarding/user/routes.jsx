@@ -16,7 +16,6 @@ import WeeklyPacePage from "@/modules/onboarding/user/pages/weekly-pace/index.js
 import OtherGoalsPage from "@/modules/onboarding/user/pages/other-goals/index.jsx";
 import ActivityLevelPage from "@/modules/onboarding/user/pages/activity-level/index.jsx";
 import MealFrequencyPage from "@/modules/onboarding/user/pages/meal-frequency/index.jsx";
-import AllergiesPage from "@/modules/onboarding/user/pages/allergies/index.jsx";
 import DietRequirementsPage from "@/modules/onboarding/user/pages/diet-requirements/index.jsx";
 import HealthConstraintsPage from "@/modules/onboarding/user/pages/health-constraints/index.jsx";
 import ReviewPage from "@/modules/onboarding/user/pages/review/index.jsx";
@@ -36,7 +35,6 @@ const activeStepElements = {
   "other-goals": <OtherGoalsPage />,
   "activity-level": <ActivityLevelPage />,
   "meal-frequency": <MealFrequencyPage />,
-  allergies: <AllergiesPage />,
   "diet-requirements": <DietRequirementsPage />,
   "health-constraints": <HealthConstraintsPage />,
   review: <ReviewPage />,

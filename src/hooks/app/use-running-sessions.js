@@ -79,6 +79,24 @@ const normalizeRunningSession = (session) => {
     },
     route: session.route ?? null,
     splits: Array.isArray(session.splits) ? session.splits : [],
+    points: Array.isArray(session.points)
+      ? session.points
+          .map((point) => ({
+            ...point,
+            sequence: Number(point?.sequence ?? 0) || 0,
+            latitude: Number(point?.latitude),
+            longitude: Number(point?.longitude),
+            accuracy:
+              point?.accuracy === undefined || point?.accuracy === null
+                ? null
+                : Number(point.accuracy),
+          }))
+          .filter(
+            (point) =>
+              Number.isFinite(point.latitude) &&
+              Number.isFinite(point.longitude),
+          )
+      : [],
   };
 };
 

@@ -26,7 +26,12 @@ const FeatureSubNav = ({ items = [], className, mobile = false }) => {
       {mobile ? (
         <div className="rounded-[1.75rem] border bg-background/95 px-1 py-1 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80">
           <div className="overflow-x-auto no-scrollbar">
-            <div className="flex min-w-max flex-nowrap items-center gap-2">
+            <div
+              className={cn(
+                "flex min-w-max flex-nowrap items-center gap-1.5",
+                items.length <= 4 && "min-w-full justify-between",
+              )}
+            >
               {items.map((item) => {
                 const active = isItemActive(pathname, item);
 
@@ -35,7 +40,7 @@ const FeatureSubNav = ({ items = [], className, mobile = false }) => {
                     key={item.to}
                     to={item.to}
                     className={cn(
-                      "inline-flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors",
+                      "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm font-semibold transition-colors",
                       active
                         ? "bg-primary/10 text-primary"
                         : "text-muted-foreground hover:bg-muted hover:text-foreground",

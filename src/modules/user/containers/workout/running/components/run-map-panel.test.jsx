@@ -46,14 +46,17 @@ describe("RunMapPanel", () => {
       />,
     );
 
-    expect(screen.getByText("Loading map")).toBeInTheDocument();
+    expect(screen.getByText("Xarita yuklanmoqda…")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Xarita yuklanmoqda…",
+    );
 
     expect(await screen.findByTestId("map-root")).toBeInTheDocument();
     expect(screen.getByTestId("map-route")).toHaveAttribute(
       "data-coordinate-count",
       "3",
     );
-    expect(screen.getByTestId("map-marker")).toHaveAttribute(
+    expect(screen.getAllByTestId("map-marker").at(-1)).toHaveAttribute(
       "data-point",
       JSON.stringify([-126.453, 43.252]),
     );
@@ -65,5 +68,60 @@ describe("RunMapPanel", () => {
 
     expect(screen.getByText("No route recorded")).toBeInTheDocument();
     expect(mockLoadMapProvider).not.toHaveBeenCalled();
+  });
+
+  it("renders a compact real-data route preview without loading the provider", () => {
+    const onExpand = vi.fn();
+
+    render(
+      <RunMapPanel
+        title={null}
+        variant="preview"
+        points={[
+          {
+            sequence: 1,
+            latitude: 41.311081,
+            longitude: 69.240562,
+          },
+          {
+            sequence: 2,
+            latitude: 41.320069,
+            longitude: 69.240562,
+          },
+        ]}
+        qualityScore={0.92}
+        showExpand
+        expandLabel="Expand route preview"
+        onExpand={onExpand}
+      />,
+    );
+
+    expect(mockLoadMapProvider).not.toHaveBeenCalled();
+    expect(screen.getByTestId("route-fallback-svg")).toHaveAttribute(
+      "data-coordinate-count",
+      "2",
+    );
+    expect(screen.getByText("92")).toBeInTheDocument();
+
+    screen.getByRole("button", { name: /expand route preview/i }).click();
+    expect(onExpand).toHaveBeenCalledTimes(1);
+  });
+
+  it("falls back to the real route SVG when the map provider cannot load", async () => {
+    mockLoadMapProvider.mockRejectedValueOnce(new Error("missing key"));
+
+    render(
+      <RunMapPanel
+        title="Route map"
+        polyline="_p~iF~ps|U_ulLnnqC_mqNvxq`@"
+        errorLabel="Map unavailable"
+      />,
+    );
+
+    expect(await screen.findByText("Map unavailable")).toBeInTheDocument();
+    expect(screen.getByTestId("route-fallback-svg")).toHaveAttribute(
+      "data-coordinate-count",
+      "3",
+    );
   });
 });

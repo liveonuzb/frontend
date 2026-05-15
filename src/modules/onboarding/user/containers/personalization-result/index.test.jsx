@@ -142,9 +142,17 @@ describe("PersonalizationResult onboarding screen", () => {
     expect(screen.getAllByText("Hozirgi vazn").length).toBeGreaterThan(0);
     expect(screen.getAllByText("70 kg").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Maqsad vazn").length).toBeGreaterThan(0);
-    expect(screen.getByText("Hisoblash zanjiri")).toBeTruthy();
-    expect(screen.getByText("Makro energiya")).toBeTruthy();
-    expect(screen.getByText("Kunlik maqsad va ko'rsatkichlar")).toBeTruthy();
+    expect(screen.queryByText("Makro energiya")).toBeNull();
+    const dailyIndicatorsTitle = screen.getByText(
+      "Kunlik maqsad va ko'rsatkichlar",
+    );
+    const calculationTitle = screen.getByText("Hisoblash zanjiri");
+    expect(
+      Boolean(
+        dailyIndicatorsTitle.compareDocumentPosition(calculationTitle) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+    ).toBe(true);
     expect(screen.queryByText("Profil va sozlamalar")).toBeNull();
     expect(
       screen.getByRole("button", {
@@ -252,7 +260,7 @@ describe("PersonalizationResult onboarding screen", () => {
     ).toBeDisabled();
   });
 
-  it("renders the calculation report chain and macro kcal breakdown", () => {
+  it("renders the daily indicators before the calculation report chain", () => {
     render(
       <ResultContent
         result={{
@@ -293,13 +301,21 @@ describe("PersonalizationResult onboarding screen", () => {
     );
 
     expect(screen.getByText("Hisoblash zanjiri")).toBeTruthy();
+    expect(screen.queryByText("Makro energiya")).toBeNull();
+    expect(
+      Boolean(
+        screen
+          .getByText("Kunlik maqsad va ko'rsatkichlar")
+          .compareDocumentPosition(screen.getByText("Hisoblash zanjiri")) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+    ).toBe(true);
     expect(screen.getByText("Mifflin-St Jeor")).toBeTruthy();
     expect(screen.getByText("x1.55")).toBeTruthy();
     expect(screen.getAllByText("1,880 kcal").length).toBeGreaterThan(0);
     expect(screen.getAllByText("2,914 kcal").length).toBeGreaterThan(0);
     expect(screen.getByText("-550 kcal")).toBeTruthy();
     expect(screen.getAllByText("2,364 kcal").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("720 kcal").length).toBeGreaterThan(0);
     expect(screen.getAllByText("30.5%").length).toBeGreaterThan(0);
   });
 
@@ -323,6 +339,7 @@ describe("PersonalizationResult onboarding screen", () => {
     renderResultPage();
 
     fireEvent.click(screen.getByRole("button", { name: "Oqsilni tahrirlash" }));
+    expect(screen.queryByText(/Makro energiya/i)).toBeNull();
     fireEvent.change(
       screen.getByRole("textbox", {
         name: "onboarding.postOnboarding.result.edit.proteinGram.title",

@@ -235,9 +235,9 @@ describe("Onboarding layout post-result behavior", () => {
 
     expect(
       screen.getByRole("progressbar", {
-        name: "13/15 - nutrition",
+        name: "12/14 - nutrition",
       }),
-    ).toHaveAttribute("aria-valuenow", "13");
+    ).toHaveAttribute("aria-valuenow", "12");
   });
 
   it("shows retry guidance when draft auto-save fails", () => {

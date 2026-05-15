@@ -23,6 +23,7 @@ export default function WaterWidget({
   onAddOverride,
   interactive = true,
   hideAdd = false,
+  compact = false,
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -90,7 +91,8 @@ export default function WaterWidget({
         interactive ? (onOpen ?? (() => navigate("/user/water"))) : undefined
       }
       hideAdd={hideAdd || !interactive}
-      className="h-full"
+      compact={compact}
+      className="h-full w-full"
     />
   );
 }

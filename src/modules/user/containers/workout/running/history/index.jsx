@@ -1,6 +1,7 @@
 import React from "react";
-import { useNavigate } from "react-router";
-import { RouteIcon } from "lucide-react";
+import { Link } from "react-router";
+import { useTranslation } from "react-i18next";
+import { ArrowRightIcon, RouteIcon } from "lucide-react";
 import PageLoader from "@/components/page-loader/index.jsx";
 import PageTransition from "@/components/page-transition";
 import { Button } from "@/components/ui/button";
@@ -12,8 +13,26 @@ import {
   formatRunningPace,
 } from "@/lib/running-metrics";
 
+const runDateFormatter = new Intl.DateTimeFormat("uz-UZ", {
+  day: "2-digit",
+  month: "long",
+  year: "numeric",
+});
+
+const formatGpsQuality = (score, t) => {
+  const numericScore = Number(score);
+  if (!Number.isFinite(numericScore) || numericScore <= 0) {
+    return t(
+      "user.workout.running.history.noGpsQuality",
+      "GPS sifati yo'q",
+    );
+  }
+
+  return `GPS ${Math.round(numericScore * 100)}%`;
+};
+
 const RunningHistoryPage = () => {
-  const navigate = useNavigate();
+  const { t } = useTranslation();
   const { sessions, isLoading, isError, refetch } = useRunningSessions();
 
   if (isLoading) {
@@ -22,75 +41,135 @@ const RunningHistoryPage = () => {
 
   if (isError) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Running history failed to load</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Button onClick={() => refetch()}>Retry</Button>
-        </CardContent>
-      </Card>
-    );
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {t(
+                "user.workout.running.history.errorTitle",
+                "Yugurish tarixi yuklanmadi",
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => refetch()}>
+              {t("user.workout.running.history.retry", "Qayta urinish")}
+            </Button>
+          </CardContent>
+        </Card>
+      );
   }
 
   return (
     <PageTransition mode="slide-up">
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold">Running history</h1>
+          <div className="min-w-0">
+            <h1 className="text-2xl font-semibold">
+              {t("user.workout.running.history.title", "Yugurish tarixi")}
+            </h1>
             <p className="text-sm text-muted-foreground">
-              Completed outdoor runs from Workout.
+              {t(
+                "user.workout.running.history.description",
+                "Yakunlangan ochiq yugurishlar va route metrikalari.",
+              )}
             </p>
           </div>
-          <Button onClick={() => navigate("/user/workout/running")}>
-            Running
+          <Button asChild>
+            <Link to="/user/workout/running">
+              {t("user.workout.running.history.start", "Yugurish")}
+            </Link>
           </Button>
         </div>
 
         {sessions.length === 0 ? (
           <Card>
-            <CardContent className="p-6 text-sm text-muted-foreground">
-              No runs yet.
+            <CardContent className="space-y-4 p-6">
+              <div>
+                <p className="text-base font-semibold">
+                  {t(
+                    "user.workout.running.history.emptyTitle",
+                    "Hali yugurishlar yo'q",
+                  )}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {t(
+                    "user.workout.running.history.emptyDescription",
+                    "Birinchi GPS yugurishni boshlang va route, pace hamda masofani shu yerda ko'ring.",
+                  )}
+                </p>
+              </div>
+              <Button asChild>
+                <Link to="/user/workout/running">
+                  {t(
+                    "user.workout.running.history.emptyAction",
+                    "Birinchi yugurishni boshlash",
+                  )}
+                </Link>
+              </Button>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-3">
             {sessions.map((session) => (
-              <Card
+              <Link
                 key={session.workoutSessionId}
-                className="cursor-pointer"
-                onClick={() =>
-                  navigate(`/user/workout/running/${session.workoutSessionId}`)
-                }
+                to={`/user/workout/running/${session.workoutSessionId}`}
+                className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                aria-label={t(
+                  "user.workout.running.history.runAriaLabel",
+                  "Ochiq yugurish {{date}}",
+                  {
+                    date: runDateFormatter.format(new Date(session.startedAt)),
+                  },
+                )}
               >
-                <CardContent className="flex items-center justify-between gap-4 p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-full bg-primary/10 p-2 text-primary">
-                      <RouteIcon className="size-4" />
+                <Card className="transition-colors hover:bg-muted/30">
+                  <CardContent className="flex items-center justify-between gap-4 p-4">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="rounded-full bg-primary/10 p-2 text-primary">
+                        <RouteIcon className="size-4" aria-hidden="true" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold">
+                          {t(
+                            "user.workout.running.shared.outdoorRunUz",
+                            "Ochiq yugurish",
+                          )}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {runDateFormatter.format(new Date(session.startedAt))}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {formatGpsQuality(
+                            session.metrics.gpsQualityScore,
+                            t,
+                          )}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold">Outdoor run</p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(session.startedAt).toLocaleDateString(
-                          "uz-UZ",
-                        )}
-                      </p>
+                    <div className="flex shrink-0 items-center gap-3 text-right text-sm">
+                      <div>
+                        <p className="font-semibold tabular-nums">
+                          {formatRunningDistance(session.metrics.distanceMeters)}
+                        </p>
+                        <p className="text-muted-foreground">
+                          {formatRunningDuration(
+                            session.metrics.durationSeconds,
+                          )}{" "}
+                          ·{" "}
+                          {formatRunningPace(
+                            session.metrics.averagePaceSecondsPerKm,
+                          )}
+                        </p>
+                      </div>
+                      <ArrowRightIcon
+                        className="size-4 text-muted-foreground"
+                        aria-hidden="true"
+                      />
                     </div>
-                  </div>
-                  <div className="text-right text-sm">
-                    <p className="font-semibold">
-                      {formatRunningDistance(session.metrics.distanceMeters)}
-                    </p>
-                    <p className="text-muted-foreground">
-                      {formatRunningDuration(session.metrics.durationSeconds)} -{" "}
-                      {formatRunningPace(
-                        session.metrics.averagePaceSecondsPerKm,
-                      )}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         )}

@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import RunningDetailPage from "./index.jsx";
@@ -7,6 +7,15 @@ import { useRunningSessionDetail } from "@/hooks/app/use-running-sessions";
 
 vi.mock("@/components/page-transition", () => ({
   default: ({ children }) => <>{children}</>,
+}));
+
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (_key, fallback, values = {}) =>
+      typeof fallback === "string"
+        ? fallback.replaceAll("{{index}}", String(values.index ?? ""))
+        : _key,
+  }),
 }));
 
 vi.mock("@/components/page-loader/index.jsx", () => ({
@@ -58,12 +67,21 @@ describe("RunningDetailPage", () => {
           distanceMeters: 1000,
           durationSeconds: 600,
           caloriesBurned: 72,
-          averagePaceSecondsPerKm: 600,
-        },
-        route: {
-          polyline: "encoded-route",
-        },
-        points: [
+            averagePaceSecondsPerKm: 600,
+            gpsQualityScore: 0.91,
+          },
+          route: {
+            polyline: "encoded-route",
+          },
+          splits: [
+            {
+              index: 1,
+              distanceMeters: 1000,
+              durationSeconds: 600,
+              paceSecondsPerKm: 600,
+            },
+          ],
+          points: [
           {
             sequence: 1,
             latitude: 41.311081,
@@ -85,5 +103,20 @@ describe("RunningDetailPage", () => {
       "data-point-count",
       "1",
     );
+  });
+
+  it("exposes accessible back navigation and split quality details", () => {
+    const router = renderPage();
+
+    expect(
+      screen.getByRole("button", { name: /tarixga qaytish/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("GPS sifati")).toBeInTheDocument();
+    expect(screen.getByText("91%")).toBeInTheDocument();
+    expect(screen.getByText("1-km")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /tarixga qaytish/i }));
+
+    expect(router.state.location.pathname).toBe("/user/workout/running/history");
   });
 });

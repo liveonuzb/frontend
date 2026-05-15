@@ -26,6 +26,7 @@ import { useGetQuery, usePostQuery } from "@/hooks/api";
 import useApi from "@/hooks/api/use-api";
 import PageTransition from "@/components/page-transition";
 import GiftPremiumDrawer from "@/modules/user/components/gift-premium-drawer.jsx";
+import { buildFriendRequestPayload } from "@/modules/user/lib/friend-request-payload";
 
 const MutualFriends = ({ profileId }) => {
   const { data } = useGetQuery({
@@ -110,7 +111,7 @@ const PublicProfileContainer = () => {
     if (!profile) return;
     sendFriendRequest.mutate({
       url: "/users/me/friends/requests",
-      attributes: { recipientId: profile.id },
+      attributes: buildFriendRequestPayload({ targetUserId: profile.id }),
     });
   }, [profile, sendFriendRequest]);
 

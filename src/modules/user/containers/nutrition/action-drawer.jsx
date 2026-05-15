@@ -7,22 +7,8 @@ import React, {
 } from "react";
 import {
   Drawer,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
 } from "@/components/ui/drawer.jsx";
-import { Button } from "@/components/ui/button.jsx";
 import {
-  BarcodeIcon,
-  CalendarClockIcon,
-  CameraIcon,
-  ChefHatIcon,
-  KeyboardIcon,
-  MicIcon,
-  SearchIcon,
-} from "lucide-react";
-import {
-  NutritionDrawerBody,
   NutritionDrawerContent,
 } from "./nutrition-drawer-layout.jsx";
 import CameraDrawer from "./camera-drawer.jsx";
@@ -31,7 +17,12 @@ import AudioTranscriptDrawer from "./audio-transcript-drawer.jsx";
 import TextAddDrawer from "./text-add-drawer.jsx";
 import ManualAddDrawer from "./manual-add-drawer.jsx";
 import AiMealDraftDrawer from "./ai-meal-draft-drawer.jsx";
-import { useFoodAudioTranscriptHistory } from "@/hooks/app/use-food-catalog";
+import useFoodCatalog, {
+  useFoodAudioTranscriptHistory,
+} from "@/hooks/app/use-food-catalog";
+import { useDailyTrackingActions } from "@/hooks/app/use-daily-tracking";
+import { useSavedMeals } from "@/hooks/app/use-saved-meals";
+import { toast } from "sonner";
 import MealDateTimeDrawer from "./meal-date-time-drawer.jsx";
 import {
   clampMealDateKey,
@@ -44,6 +35,9 @@ import {
 } from "./meal-date-time-utils.js";
 import useLanguageStore from "@/store/language-store";
 import { useAuthStore } from "@/store";
+import { getMealConfig } from "@/modules/user/lib/meal-config";
+import SmartAddSheet from "./smart-add-sheet.jsx";
+import { buildNutritionQuickAdds } from "./nutrition-quick-adds.js";
 
 const toIsoByDateKeyAndTimeHint = (dateKey, timeHint) => {
   if (!dateKey || !timeHint || timeHint.hour == null || timeHint.minute == null) {
@@ -101,7 +95,9 @@ const ActionDrawer = ({
   const [cameraTextOpen, setCameraTextOpen] = useState(false);
   const [cameraAiDraftOpen, setCameraAiDraftOpen] = useState(false);
   const [cameraInitialMode, setCameraInitialMode] = useState("camera");
+  const [catalogInitialFood, setCatalogInitialFood] = useState(null);
   const [mealTimeOpen, setMealTimeOpen] = useState(false);
+  const [quickAddingId, setQuickAddingId] = useState(null);
   const [selectedMealTime, setSelectedMealTime] = useState(() => ({
     dateKey: clampMealDateKey(dateKey || getDateKey(new Date()), mealDateMinKey),
     ...getTimePartsFromDate(),
@@ -111,12 +107,29 @@ const ActionDrawer = ({
   const isCameraAiDraftFlow = activeNested === "camera" && cameraAiDraftOpen;
   const selectedDateKey = selectedMealTime.dateKey || dateKey;
   const selectedLoggedAt = toMealDateTimeIso(selectedMealTime);
+  const activeMealType = selectedMealType || mealType || "breakfast";
   const shouldLoadAudioTranscriptHistory =
     open &&
     (activeNested === "audio" ||
       activeNested === "text" ||
       textAddVariant === "audio" ||
       cameraTextOpen);
+  const { addMeal: addQuickMealAction } = useDailyTrackingActions();
+  const { recentFoods } = useFoodCatalog();
+  const { items: savedMeals } = useSavedMeals({ enabled: open });
+  const quickItems = useMemo(
+    () =>
+      buildNutritionQuickAdds({
+        savedMeals,
+        recentFoods,
+        limit: 6,
+      }),
+    [recentFoods, savedMeals],
+  );
+  const activeMealConfig = getMealConfig(activeMealType, {
+    label: "Ovqat",
+    emoji: "🍽️",
+  });
 
   const {
     items: audioTranscriptHistory,
@@ -138,6 +151,7 @@ const ActionDrawer = ({
       setCameraTextOpen(false);
       setCameraAiDraftOpen(false);
       setCameraInitialMode("camera");
+      setCatalogInitialFood(null);
       setMealTimeOpen(false);
     }
   }, [open, initialNested]);
@@ -283,6 +297,83 @@ const ActionDrawer = ({
     resetTranscriptState();
   }, [resetTranscriptState, setCameraAiDraftOpen, setCameraTextOpen]);
 
+  const handleOpenSavedMeals = useCallback(() => {
+    onOpenSavedMeals?.();
+    onCloseAll?.();
+  }, [onCloseAll, onOpenSavedMeals]);
+
+  const handleOpenCatalog = useCallback(() => {
+    setCatalogInitialFood(null);
+    setActiveNested("catalog");
+  }, [setActiveNested, setCatalogInitialFood]);
+
+  const handleOpenText = useCallback(() => {
+    resetTranscriptState();
+    setTextAddVariant("text");
+    setInputSource("text");
+    setActiveNested("text");
+  }, [
+    resetTranscriptState,
+    setActiveNested,
+    setInputSource,
+    setTextAddVariant,
+  ]);
+
+  const handleOpenAudio = useCallback(() => {
+    resetTranscriptState();
+    setActiveNested("audio");
+  }, [resetTranscriptState, setActiveNested]);
+
+  const handleOpenCamera = useCallback(() => {
+    setCameraInitialMode("camera");
+    setActiveNested("camera");
+  }, [setActiveNested, setCameraInitialMode]);
+
+  const handleQuickAdd = useCallback(
+    async (item) => {
+      if (disabled || !item?.payload || !selectedDateKey) {
+        return;
+      }
+
+      setQuickAddingId(item.id);
+      try {
+        await addQuickMealAction(selectedDateKey, activeMealType, {
+          ...item.payload,
+          addedAt: selectedLoggedAt || undefined,
+        });
+        toast.success(`${item.title} qo'shildi`);
+      } catch {
+        toast.error("Ovqatni qo'shib bo'lmadi");
+      } finally {
+        setQuickAddingId(null);
+      }
+    },
+    [
+      activeMealType,
+      addQuickMealAction,
+      disabled,
+      selectedDateKey,
+      selectedLoggedAt,
+    ],
+  );
+
+  const handleEditQuickAdd = useCallback(
+    (item) => {
+      if (disabled || !item) {
+        return;
+      }
+
+      if (item.type === "catalog") {
+        setCatalogInitialFood(item.sourceItem || null);
+        setActiveNested("catalog");
+        return;
+      }
+
+      handleOpenSavedMeals();
+    },
+    [disabled, handleOpenSavedMeals, setActiveNested, setCatalogInitialFood],
+  );
+
   return (
     <div>
       <Drawer
@@ -291,124 +382,21 @@ const ActionDrawer = ({
         onOpenChange={onOpenChange}
       >
         <NutritionDrawerContent size="sm">
-          <DrawerHeader>
-            <DrawerTitle>Ovqat qo'shish</DrawerTitle>
-            <DrawerDescription>
-              Ovqatni kamera, barcode, audio, matn yoki katalog orqali qo&apos;shishingiz
-              mumkin.
-            </DrawerDescription>
-          </DrawerHeader>
-          <NutritionDrawerBody className="flex flex-col gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={disabled}
-              className="h-14 w-full justify-start rounded-2xl border-dashed px-4 text-left"
-              onClick={() => setMealTimeOpen(true)}
-            >
-              <div className="mr-3 flex size-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
-                <CalendarClockIcon className="size-5 text-emerald-600" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-bold">Sana va vaqt</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {formatMealTime(selectedMealTime, dayjsLocale)}
-                </p>
-              </div>
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              disabled={disabled}
-              className="w-full h-16 rounded-2xl justify-start items-center px-4 hover:bg-primary/5 hover:border-primary/30 transition-all font-bold text-[15px] text-foreground border-border/50 group"
-              onClick={() => {
-                setCameraInitialMode("camera");
-                setActiveNested("camera");
-              }}
-            >
-              <div className="size-10 rounded-full bg-blue-500/10 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
-                <CameraIcon className="size-5 text-blue-500" />
-              </div>
-              Kamera orqali
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              disabled={disabled}
-              className="w-full h-16 rounded-2xl justify-start items-center px-4 hover:bg-primary/5 hover:border-primary/30 transition-all font-bold text-[15px] text-foreground border-border/50 group"
-              onClick={() => {
-                setCameraInitialMode("barcode");
-                setActiveNested("camera");
-              }}
-            >
-              <div className="size-10 rounded-full bg-cyan-500/10 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
-                <BarcodeIcon className="size-5 text-cyan-500" />
-              </div>
-              Barcode orqali
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              disabled={disabled}
-              className="w-full h-16 rounded-2xl justify-start items-center px-4 hover:bg-primary/5 hover:border-primary/30 transition-all font-bold text-[15px] text-foreground border-border/50 group"
-              onClick={() => {
-                resetTranscriptState();
-                setTextAddVariant("text");
-                setInputSource("text");
-                setActiveNested("text");
-              }}
-            >
-              <div className="size-10 rounded-full bg-violet-500/10 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
-                <KeyboardIcon className="size-5 text-violet-500" />
-              </div>
-              Matn orqali
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              disabled={disabled}
-              className="w-full h-16 rounded-2xl justify-start items-center px-4 hover:bg-primary/5 hover:border-primary/30 transition-all font-bold text-[15px] text-foreground border-border/50 group"
-              onClick={() => setActiveNested("catalog")}
-            >
-              <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
-                <SearchIcon className="size-5 text-primary" />
-              </div>
-              Katalogdan tanlash
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              disabled={disabled}
-              className="w-full h-16 rounded-2xl justify-start items-center px-4 hover:bg-primary/5 hover:border-primary/30 transition-all font-bold text-[15px] text-foreground border-border/50 group"
-              onClick={() => {
-                resetTranscriptState();
-                setActiveNested("audio");
-              }}
-            >
-              <div className="size-10 rounded-full bg-emerald-500/10 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
-                <MicIcon className="size-5 text-emerald-500" />
-              </div>
-              Audio orqali
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              disabled={disabled}
-              className="w-full h-16 rounded-2xl justify-start items-center px-4 hover:bg-primary/5 hover:border-primary/30 transition-all font-bold text-[15px] text-foreground border-border/50 group"
-              onClick={() => onOpenSavedMeals?.()}
-            >
-              <div className="size-10 rounded-full bg-orange-500/10 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
-                <ChefHatIcon className="size-5 text-orange-500" />
-              </div>
-              Mening taomlarim
-            </Button>
-          </NutritionDrawerBody>
+          <SmartAddSheet
+            disabled={disabled}
+            formattedTime={formatMealTime(selectedMealTime, dayjsLocale)}
+            isQuickAddingId={quickAddingId}
+            mealLabel={activeMealConfig.label}
+            onEditQuickAdd={handleEditQuickAdd}
+            onOpenAudio={handleOpenAudio}
+            onOpenCamera={handleOpenCamera}
+            onOpenCatalog={handleOpenCatalog}
+            onOpenSavedMeals={handleOpenSavedMeals}
+            onOpenText={handleOpenText}
+            onOpenTime={() => setMealTimeOpen(true)}
+            onQuickAdd={handleQuickAdd}
+            quickItems={quickItems}
+          />
         </NutritionDrawerContent>
       </Drawer>
 
@@ -418,10 +406,10 @@ const ActionDrawer = ({
         onOpenChange={(value) => !value && setActiveNested(null)}
         dateKey={selectedDateKey}
         loggedAt={selectedLoggedAt}
-        mealType={mealType}
+        mealType={activeMealType}
         initialMode={cameraInitialMode}
         onInlineCapture={(dataUrl) => {
-          onInlineCameraCapture?.(dataUrl, selectedMealType || mealType);
+          onInlineCameraCapture?.(dataUrl, activeMealType);
           closeStackedCameraText();
           setActiveNested(null);
           onCloseAll?.();
@@ -585,16 +573,22 @@ const ActionDrawer = ({
       {/* ManualAddDrawer (Catalog) */}
       <Drawer
         open={activeNested === "catalog"}
-        onOpenChange={(value) => !value && setActiveNested(null)}
+        onOpenChange={(value) => {
+          if (value) return;
+          setCatalogInitialFood(null);
+          setActiveNested(null);
+        }}
         direction="bottom"
       >
         <NutritionDrawerContent size="lg">
           <ManualAddDrawer
             dateKey={selectedDateKey}
-            mealType={mealType}
+            initialFood={catalogInitialFood}
+            mealType={activeMealType}
             loggedAt={selectedLoggedAt}
-            initialSearch=""
+            initialSearch={catalogInitialFood?.name || ""}
             onClose={() => {
+              setCatalogInitialFood(null);
               setActiveNested(null);
               onCloseAll?.();
             }}

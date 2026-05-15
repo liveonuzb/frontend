@@ -71,7 +71,7 @@ describe("buildMetabolismResultViewModel", () => {
     expect(model).not.toHaveProperty("meals");
     expect(model).not.toHaveProperty("workouts");
     expect(model).not.toHaveProperty("budget");
-    expect(model.macroDelta).toBe("Farq: ~2 kcal");
+    expect(model).not.toHaveProperty("macroDelta");
   });
 
   it("uses report macro kcal and percent values without drifting from API output", () => {

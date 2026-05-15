@@ -86,4 +86,16 @@ describe("FloatingActionButton", () => {
 
     expect(screen.queryByText("Weight")).not.toBeInTheDocument();
   });
+
+  it("is visible on the friends page", () => {
+    render(
+      <MemoryRouter initialEntries={["/user/friends"]}>
+        <FloatingActionButton />
+      </MemoryRouter>,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Open quick actions" }),
+    ).toBeInTheDocument();
+  });
 });
