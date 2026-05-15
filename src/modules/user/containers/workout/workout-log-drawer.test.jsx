@@ -46,6 +46,16 @@ const exerciseCatalog = [
     defaultReps: 10,
     defaultRestSeconds: 60,
   },
+  {
+    id: "squat",
+    name: "Squat",
+    category: "Legs",
+    groupLabel: "Legs",
+    trackingType: "REPS_WEIGHT",
+    defaultSets: 1,
+    defaultReps: 8,
+    defaultRestSeconds: 90,
+  },
 ];
 
 describe("WorkoutLogDrawer", () => {
@@ -64,7 +74,17 @@ describe("WorkoutLogDrawer", () => {
 
     render(<WorkoutLogDrawer open onOpenChange={vi.fn()} onSave={onSave} />);
 
-    expect(screen.getByPlaceholderText(/qidirish/i)).toBeInTheDocument();
+    const searchInput = screen.getByPlaceholderText(/qidirish/i);
+    expect(searchInput).toBeInTheDocument();
+    expect(screen.getByText("Push-up")).toBeInTheDocument();
+    expect(screen.getByText("Squat")).toBeInTheDocument();
+
+    fireEvent.change(searchInput, {
+      target: { value: "push" },
+    });
+
+    expect(screen.getByText("Push-up")).toBeInTheDocument();
+    expect(screen.queryByText("Squat")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByText("Push-up"));
     fireEvent.click(screen.getByRole("button", { name: /saqlash|save/i }));
