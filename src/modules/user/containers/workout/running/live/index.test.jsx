@@ -239,8 +239,8 @@ describe("RunningLivePage", () => {
 
     await waitFor(() => {
       expect(
-        screen.queryByRole("dialog", { name: /finish training/i }),
-      ).not.toBeInTheDocument();
+        screen.getByRole("dialog", { name: /finish training/i }),
+      ).toHaveAttribute("data-state", "closed");
     });
   });
 
@@ -260,7 +260,7 @@ describe("RunningLivePage", () => {
     });
   });
 
-  it("keeps the run open when queued points cannot sync before finish", async () => {
+  it("finishes with a lightweight payload when queued points cannot sync", async () => {
     appendPoints.mockRejectedValueOnce(new Error("offline"));
     enqueueRunningPoints("workout-1", [
       {
@@ -282,9 +282,19 @@ describe("RunningLivePage", () => {
         }),
       ]);
     });
-    expect(finishRunningSession).not.toHaveBeenCalled();
-    expect(clearRunningPointQueue).not.toHaveBeenCalledWith("workout-1");
-    expect(screen.getByText("Sync navbatda")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(finishRunningSession).toHaveBeenCalledWith("workout-1", {
+        finishedAt: expect.any(String),
+      });
+    });
+    expect(finishRunningSession.mock.calls[0][1]).not.toHaveProperty(
+      "finalPointSequence",
+    );
+    expect(finishRunningSession.mock.calls[0][1]).not.toHaveProperty(
+      "clientSummary",
+    );
+    expect(clearRunningPointQueue).toHaveBeenCalledWith("workout-1");
+    expect(await screen.findByText("Run detail")).toBeInTheDocument();
   });
 
   it("keeps newer GPS points queued while an upload is already in flight", async () => {
@@ -390,7 +400,7 @@ describe("RunningLivePage", () => {
     expect(window.navigator.geolocation.clearWatch).toHaveBeenCalledWith(9);
   });
 
-  it("shows a retryable finish state when final point sync is rate limited", async () => {
+  it("finishes when final point sync is rate limited", async () => {
     appendPoints.mockRejectedValueOnce({
       response: {
         status: 429,
@@ -415,12 +425,12 @@ describe("RunningLivePage", () => {
     await waitFor(() => {
       expect(appendPoints).toHaveBeenCalled();
     });
-    expect(finishRunningSession).not.toHaveBeenCalled();
-    expect(
-      screen.getByText(
-        "GPS sync kutilyapti. Birozdan keyin yakunlashni qayta urinib ko'ring.",
-      ),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(finishRunningSession).toHaveBeenCalledWith("workout-1", {
+        finishedAt: expect.any(String),
+      });
+    });
+    expect(clearRunningPointQueue).toHaveBeenCalledWith("workout-1");
   });
 
   it("requires confirmation before cancelling a run", async () => {

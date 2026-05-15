@@ -8,10 +8,16 @@ import useWorkoutOverview from "@/hooks/app/use-workout-overview";
 import useWorkoutPlan from "@/hooks/app/use-workout-plan";
 import { useWorkoutSessionHistory } from "@/hooks/app/use-workout-sessions";
 import {
+  useRunningActiveSession,
+  useRunningSessions,
+  useRunningStatsSummary,
+} from "@/hooks/app/use-running-sessions";
+import {
   useWorkoutCatalog,
   useWorkoutExerciseCategories,
   useWorkoutExercises,
 } from "@/hooks/app/use-workout-plans";
+import useWorkoutWeatherToday from "@/hooks/app/use-workout-weather";
 
 vi.mock("@/components/page-transition", () => ({
   default: ({ children }) => <>{children}</>,
@@ -19,6 +25,18 @@ vi.mock("@/components/page-transition", () => ({
 
 vi.mock("@/modules/user/containers/dashboard/calorie-gauge-widget.jsx", () => ({
   default: () => <div data-testid="calorie-widget">Calories</div>,
+}));
+
+vi.mock("../running/components/run-map-panel.jsx", () => ({
+  default: ({ points, polyline, variant, emptyLabel }) => (
+    <div
+      data-testid="workout-home-real-running-map"
+      data-point-count={points?.length ?? 0}
+      data-polyline={polyline ?? ""}
+      data-variant={variant ?? ""}
+      data-empty-label={emptyLabel ?? ""}
+    />
+  ),
 }));
 
 vi.mock("@/hooks/app/use-workout-overview", () => ({
@@ -33,6 +51,12 @@ vi.mock("@/hooks/app/use-workout-sessions", () => ({
   useWorkoutSessionHistory: vi.fn(),
 }));
 
+vi.mock("@/hooks/app/use-running-sessions", () => ({
+  useRunningActiveSession: vi.fn(),
+  useRunningSessions: vi.fn(),
+  useRunningStatsSummary: vi.fn(),
+}));
+
 vi.mock("@/hooks/app/use-workout-plans", async (importOriginal) => {
   const actual = await importOriginal();
   return {
@@ -42,6 +66,10 @@ vi.mock("@/hooks/app/use-workout-plans", async (importOriginal) => {
     useWorkoutExercises: vi.fn(),
   };
 });
+
+vi.mock("@/hooks/app/use-workout-weather", () => ({
+  default: vi.fn(),
+}));
 
 vi.mock("@/store", () => ({
   useBreadcrumbStore: () => ({
@@ -74,6 +102,14 @@ const renderPage = () => {
       {
         path: "/user/workout/history",
         element: <div>History</div>,
+      },
+      {
+        path: "/user/workout/running",
+        element: <div>Running dashboard</div>,
+      },
+      {
+        path: "/user/workout/running/live/:workoutSessionId",
+        element: <div>Running live</div>,
       },
       {
         path: "/user/challenges",
@@ -129,6 +165,162 @@ describe("WorkoutDashboardPage", () => {
     useWorkoutExercises.mockReturnValue({
       exercises: [],
     });
+    useRunningActiveSession.mockReturnValue({
+      activeSession: null,
+    });
+    useRunningSessions.mockReturnValue({
+      sessions: [],
+    });
+    useRunningStatsSummary.mockReturnValue({
+      stats: {
+        totalRuns: 0,
+        totalDistanceMeters: 0,
+        totalDurationSeconds: 0,
+        totalCaloriesBurned: 0,
+      },
+    });
+    useWorkoutWeatherToday.mockReturnValue({
+      weather: {
+        location: "Tashkent",
+        temperatureC: 28,
+        feelsLikeC: 30,
+        condition: "Clear",
+        humidity: 32,
+        windKph: 9,
+        aqi: 42,
+        aqiLabel: "Good",
+        pm25: 8,
+        source: "open-meteo",
+        updatedAt: "2026-05-15T07:15:00.000Z",
+      },
+      isLoading: false,
+      isError: false,
+      locationStatus: "fallback",
+    });
+  });
+
+  it("renders the activity dashboard and removes catalog-heavy sections", () => {
+    renderPage();
+
+    expect(screen.getByText("Bugungi mashg'ulot")).toBeInTheDocument();
+    expect(screen.getByText("So'nggi faoliyat")).toBeInTheDocument();
+    expect(screen.getByText("Bugungi ob-havo")).toBeInTheDocument();
+    expect(screen.getByText("Haftalik statistika")).toBeInTheDocument();
+    expect(screen.getByText("Maqsadlar")).toBeInTheDocument();
+    expect(screen.getByText("Yutuqlar")).toBeInTheDocument();
+    expect(screen.queryByText("Challenge")).not.toBeInTheDocument();
+    expect(screen.queryByText("Body Focus")).not.toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText("Workout, plan yoki mashg'ulot qidirish..."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows active running state and resumes the live session", () => {
+    useRunningActiveSession.mockReturnValue({
+      activeSession: {
+        workoutSessionId: "run-active",
+        status: "active",
+        startedAt: "2026-05-15T06:00:00.000Z",
+        metrics: {
+          distanceMeters: 2300,
+          durationSeconds: 940,
+          caloriesBurned: 180,
+          averagePaceSecondsPerKm: 408,
+        },
+      },
+    });
+
+    const router = renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /davom ettirish/i }));
+
+    expect(router.state.location.pathname).toBe(
+      "/user/workout/running/live/run-active",
+    );
+  });
+
+  it("shows the latest running session in the activity feed", () => {
+    useRunningSessions.mockReturnValue({
+      sessions: [
+        {
+          workoutSessionId: "run-1",
+          status: "completed",
+          startedAt: "2026-05-15T02:15:00.000Z",
+          endedAt: "2026-05-15T02:52:45.000Z",
+          metrics: {
+            distanceMeters: 6230,
+            durationSeconds: 2265,
+            caloriesBurned: 462,
+            averagePaceSecondsPerKm: 363,
+          },
+        },
+      ],
+    });
+
+    renderPage();
+
+    expect(screen.getByText("Morning Run")).toBeInTheDocument();
+    expect(screen.getAllByText("6.2 km").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("06:03 /km").length).toBeGreaterThan(0);
+  });
+
+  it("renders the running activity card with a real map preview from route data", () => {
+    useRunningSessions.mockReturnValue({
+      sessions: [
+        {
+          workoutSessionId: "run-1",
+          status: "completed",
+          startedAt: "2026-05-15T02:15:00.000Z",
+          endedAt: "2026-05-15T02:52:45.000Z",
+          route: {
+            polyline: "encoded-route",
+          },
+          points: [
+            {
+              sequence: 1,
+              latitude: 41.311081,
+              longitude: 69.240562,
+            },
+            {
+              sequence: 2,
+              latitude: 41.320069,
+              longitude: 69.240562,
+            },
+          ],
+          metrics: {
+            distanceMeters: 6230,
+            durationSeconds: 2265,
+            caloriesBurned: 462,
+            averagePaceSecondsPerKm: 363,
+            gpsQualityScore: 0.92,
+          },
+        },
+      ],
+    });
+
+    renderPage();
+
+    expect(screen.queryByTestId("workout-home-fake-route-svg")).not.toBeInTheDocument();
+    expect(screen.getByTestId("workout-home-real-running-map")).toHaveAttribute(
+      "data-point-count",
+      "2",
+    );
+    expect(screen.getByTestId("workout-home-real-running-map")).toHaveAttribute(
+      "data-polyline",
+      "encoded-route",
+    );
+    expect(screen.getByTestId("workout-home-real-running-map")).toHaveAttribute(
+      "data-variant",
+      "preview",
+    );
+  });
+
+  it("renders weather and AQI fallback data for today's workout decision", () => {
+    renderPage();
+
+    expect(screen.getByText("28°C")).toBeInTheDocument();
+    expect(screen.getByText("AQI 42")).toBeInTheDocument();
+    expect(screen.getByText("Tashkent")).toBeInTheDocument();
   });
 
   it("renders real zero state for weekly goal without fake premium badge", () => {
@@ -166,7 +358,7 @@ describe("WorkoutDashboardPage", () => {
     renderPage();
 
     expect(screen.getByText("2/4 mashg'ulot")).toBeInTheDocument();
-    expect(screen.getByText("50%")).toBeInTheDocument();
+    expect(screen.getAllByText("50%").length).toBeGreaterThan(0);
   });
 
   it("shows empty next workout state when there is no active plan", () => {
@@ -177,42 +369,12 @@ describe("WorkoutDashboardPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders backend-driven challenge cards and filters exercises on CTA", () => {
-    useWorkoutCatalog.mockReturnValue({
-      catalog: {
-        bodyParts: [{ id: 14, name: "Butun tana" }],
-        exercises: [],
-      },
-    });
-    useWorkoutExerciseCategories.mockReturnValue({
-      categories: [{ id: 2, name: "Kuch" }],
-    });
-    useWorkoutExercises.mockReturnValue({
-      exercises: [
-        {
-          id: 5,
-          name: "Bench Press",
-          categoryId: 2,
-          categoryIds: [2],
-          bodyParts: ["Ko'krak"],
-          targetMuscles: ["Pectoralis major"],
-          trackingType: "REPS_WEIGHT",
-          defaultSets: 3,
-          imageUrl: "https://example.com/bench.jpg",
-        },
-      ],
-    });
-
+  it("keeps catalog challenge content off the activity dashboard", () => {
     renderPage();
 
-    expect(screen.getByText("Kuch")).toBeInTheDocument();
-
-    fireEvent.click(screen.getAllByText("Boshlash")[0]);
-
-    expect(toast.info).toHaveBeenCalledWith(
-      "Kuch bo'yicha mashqlar filtrlab ko'rsatildi.",
-    );
-    expect(screen.getAllByText("Bench Press")).toHaveLength(2);
+    expect(screen.queryByText("Challenge")).not.toBeInTheDocument();
+    expect(screen.queryByText("Body Focus")).not.toBeInTheDocument();
+    expect(toast.info).not.toHaveBeenCalled();
   });
 
   it("renders next workout recommendations without fake fixed time and opens selected day", () => {
@@ -244,7 +406,7 @@ describe("WorkoutDashboardPage", () => {
 
     expect(screen.queryByText(/17:00/)).not.toBeInTheDocument();
     expect(screen.getByText("Day 2")).toBeInTheDocument();
-    expect(screen.getByText("Bugun")).toBeInTheDocument();
+    expect(screen.getAllByText("Bugun").length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByText("Day 2"));
 

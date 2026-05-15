@@ -17,6 +17,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -490,40 +499,67 @@ const RunningLivePage = () => {
     setFinishRetryMessage("");
     const syncResult = await syncRunningPoints({ force: true });
     const remainingQueue = loadRunningPointQueue(workoutSessionId);
+    const hasUnsyncedPoints = !syncResult.ok || remainingQueue.length > 0;
+    const finishedAt = new Date().toISOString();
+    const finishPayload = hasUnsyncedPoints
+      ? { finishedAt }
+      : {
+          finishedAt,
+          finalPointSequence: sequenceRef.current || undefined,
+          clientSummary: {
+            durationSeconds: Math.max(
+              elapsedSeconds,
+              metrics.durationSeconds ?? 0,
+            ),
+            distanceMeters: Math.round(
+              Number(metrics.distanceMeters ?? 0) || 0,
+            ),
+            caloriesBurned: Number(metrics.caloriesBurned ?? 0) || 0,
+          },
+        };
 
-    if (!syncResult.ok || remainingQueue.length > 0) {
-      setFinishRetryMessage(
-        t(
-          "user.workout.running.live.finishRetrySync",
-          "GPS sync kutilyapti. Birozdan keyin yakunlashni qayta urinib ko'ring.",
-        ),
+    const completeFinish = (session, usedUnsyncedFallback = false) => {
+      clearActiveRunningSession();
+      clearRunningPointQueue(workoutSessionId);
+      toast.success(
+        usedUnsyncedFallback
+          ? t(
+              "user.workout.running.live.finishSuccessWithPendingGps",
+              "Yugurish yakunlandi. Sync bo'lmagan GPS nuqtalar yakuniy hisobga kirmasligi mumkin.",
+            )
+          : t(
+              "user.workout.running.live.finishSuccess",
+              "Yugurish yakunlandi.",
+            ),
       );
-      toast.error(
-        t(
-          "user.workout.running.live.finishRetrySyncToast",
-          "GPS nuqtalar sync navbatida. Yakunlashni birozdan keyin qayta urinib ko'ring.",
-        ),
+      navigate(
+        `/user/workout/running/${session?.workoutSessionId ?? workoutSessionId}`,
       );
-      return;
+    };
+
+    try {
+      const session = await finishRunningSession(workoutSessionId, finishPayload);
+      completeFinish(session, hasUnsyncedPoints);
+    } catch {
+      if (!hasUnsyncedPoints) {
+        try {
+          const session = await finishRunningSession(workoutSessionId, {
+            finishedAt,
+          });
+          completeFinish(session, true);
+          return;
+        } catch {
+          // Fall through to the visible finish error below.
+        }
+      }
+
+      const message = t(
+        "user.workout.running.live.finishError",
+        "Yugurishni yakunlab bo'lmadi. Qayta urinib ko'ring.",
+      );
+      setFinishRetryMessage(message);
+      toast.error(message);
     }
-
-    const session = await finishRunningSession(workoutSessionId, {
-      finishedAt: new Date().toISOString(),
-      finalPointSequence: sequenceRef.current || undefined,
-      clientSummary: {
-        durationSeconds: Math.max(elapsedSeconds, metrics.durationSeconds ?? 0),
-        distanceMeters: Math.round(Number(metrics.distanceMeters ?? 0) || 0),
-        caloriesBurned: Number(metrics.caloriesBurned ?? 0) || 0,
-      },
-    });
-    clearActiveRunningSession();
-    clearRunningPointQueue(workoutSessionId);
-    toast.success(
-      t("user.workout.running.live.finishSuccess", "Yugurish yakunlandi."),
-    );
-    navigate(
-      `/user/workout/running/${session?.workoutSessionId ?? workoutSessionId}`,
-    );
   };
 
   const handleCancel = async () => {
@@ -561,7 +597,7 @@ const RunningLivePage = () => {
   return (
     <PageTransition mode="slide-up">
       <div className="mx-auto max-w-[980px] space-y-4 pb-24">
-        <section className="overflow-hidden rounded-[1.75rem] border bg-background shadow-[0_24px_70px_rgba(0,0,0,0.16)]">
+        <section className="relative overflow-hidden rounded-[1.75rem] border bg-background shadow-[0_24px_70px_rgba(0,0,0,0.16)]">
           <div className="border-b bg-background px-3 py-4 sm:px-5">
             <div className="grid grid-cols-3 gap-2 text-center">
               {primaryMetricCards(metrics, elapsedSeconds, t).map((item) => (
@@ -634,54 +670,51 @@ const RunningLivePage = () => {
               </div>
             ) : null}
 
-            {isPaused ? (
-              <div className="absolute inset-0 z-20 flex flex-col items-center justify-end gap-8 bg-black/60 px-6 pb-10 text-white">
-                <div className="text-center">
-                  <p className="text-sm font-semibold uppercase tracking-normal text-white/70">
-                    {t(
-                      "user.workout.running.live.pausedOverlay",
-                      "Dam olish rejimi",
-                    )}
-                  </p>
-                  <p className="mt-2 text-2xl font-semibold">
-                    {formatRunningDuration(
-                      Math.max(elapsedSeconds, metrics.durationSeconds ?? 0),
-                    )}
-                  </p>
-                </div>
-                <div className="grid w-full max-w-[360px] grid-cols-2 gap-7">
-                  <button
-                    type="button"
-                    className="flex flex-col items-center gap-3 text-sm font-semibold uppercase tracking-normal text-white disabled:opacity-50"
-                    onClick={() => setFinishOpen(true)}
-                    disabled={isActionPending}
-                  >
-                    <span
-                      className="flex size-28 items-center justify-center rounded-full bg-destructive text-white shadow-[0_18px_45px_rgba(0,0,0,0.25)]"
-                      aria-hidden="true"
-                    >
-                      <SquareIcon className="size-10 fill-current" />
-                    </span>
-                    {t("user.workout.running.live.finish", "Yakunlash")}
-                  </button>
-                  <button
-                    type="button"
-                    className="flex flex-col items-center gap-3 text-sm font-semibold uppercase tracking-normal text-white disabled:opacity-50"
-                    onClick={handlePauseResume}
-                    disabled={isActionPending}
-                  >
-                    <span
-                      className="flex size-28 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_18px_45px_rgba(0,0,0,0.25)]"
-                      aria-hidden="true"
-                    >
-                      <PlayIcon className="size-11 fill-current" />
-                    </span>
-                    {t("user.workout.running.live.resume", "Davom ettirish")}
-                  </button>
-                </div>
-              </div>
-            ) : null}
           </div>
+
+          {isPaused ? (
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-end bg-black/65 px-6 pb-10 pt-28 text-white">
+              <div className="grid w-full max-w-[360px] grid-cols-2 gap-7">
+                <button
+                  type="button"
+                  aria-label={t("user.workout.running.live.finish", "Yakunlash")}
+                  className="flex flex-col items-center gap-4 text-sm font-semibold uppercase tracking-normal text-white disabled:opacity-50"
+                  onClick={() => setFinishOpen(true)}
+                  disabled={isActionPending}
+                >
+                  <span>
+                    {t("user.workout.running.live.endAction", "END")}
+                  </span>
+                  <span
+                    className="flex size-28 items-center justify-center rounded-full bg-destructive text-white shadow-[0_18px_45px_rgba(0,0,0,0.25)]"
+                    aria-hidden="true"
+                  >
+                    <SquareIcon className="size-10 fill-current" />
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  aria-label={t(
+                    "user.workout.running.live.resume",
+                    "Davom ettirish",
+                  )}
+                  className="flex flex-col items-center gap-4 text-sm font-semibold uppercase tracking-normal text-white disabled:opacity-50"
+                  onClick={handlePauseResume}
+                  disabled={isActionPending}
+                >
+                  <span>
+                    {t("user.workout.running.live.resumeAction", "RESUME")}
+                  </span>
+                  <span
+                    className="flex size-28 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_18px_45px_rgba(0,0,0,0.25)]"
+                    aria-hidden="true"
+                  >
+                    <PlayIcon className="size-11 fill-current" />
+                  </span>
+                </button>
+              </div>
+            </div>
+          ) : null}
         </section>
 
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-background p-4">
@@ -736,29 +769,55 @@ const RunningLivePage = () => {
           </div>
         ) : null}
 
-        <Dialog open={finishOpen} onOpenChange={setFinishOpen}>
-          <DialogContent className="!bottom-0 !left-0 !right-0 !top-auto !max-w-none !translate-x-0 !translate-y-0 rounded-t-[2rem] border-0 p-7 sm:!left-[50%] sm:!right-auto sm:!top-[50%] sm:!max-w-md sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:rounded-[2rem]">
-            <DialogHeader className="items-center text-center">
+        <Drawer
+          direction="bottom"
+          open={finishOpen}
+          onOpenChange={setFinishOpen}
+          shouldScaleBackground={false}
+        >
+          <DrawerContent
+            className="data-[vaul-drawer-direction=bottom]:mx-0 before:rounded-b-none before:rounded-t-[2rem]"
+            style={{
+              maxWidth: "none",
+              width: "100%",
+            }}
+          >
+            <DrawerClose asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-5 top-5 z-10 rounded-full"
+                disabled={isFinishing}
+                aria-label={t(
+                  "user.workout.running.live.finishClose",
+                  "Close",
+                )}
+              >
+                <XIcon className="size-5" aria-hidden="true" />
+              </Button>
+            </DrawerClose>
+            <DrawerHeader className="items-center p-7 pb-3 text-center">
               <div
                 className="flex size-20 items-center justify-center rounded-full bg-primary/15 text-primary"
                 aria-hidden="true"
               >
                 <FlagIcon className="size-10" />
               </div>
-              <DialogTitle className="text-3xl font-semibold uppercase">
+              <DrawerTitle className="text-3xl font-semibold uppercase">
                 {t(
                   "user.workout.running.live.finishTitle",
                   "Finish training?",
                 )}
-              </DialogTitle>
-              <DialogDescription>
+              </DrawerTitle>
+              <DrawerDescription>
                 {t(
                   "user.workout.running.live.finishDescription",
-                  "GPS nuqtalar sync bo'lgach, yugurish yakunlangan mashg'ulot sifatida saqlanadi.",
+                  "Yugurishni yakunlashdan oldin GPS nuqtalar bir marta sync qilinadi. Navbat bo'shamasa ham sessiya saqlanadi.",
                 )}
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="grid gap-3 sm:grid-cols-1 sm:space-x-0">
+              </DrawerDescription>
+            </DrawerHeader>
+            <DrawerFooter className="grid gap-3 p-7 pt-3">
               <Button
                 type="button"
                 size="lg"
@@ -778,9 +837,9 @@ const RunningLivePage = () => {
               >
                 {t("user.workout.running.live.finishContinue", "Continue")}
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
 
         <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
           <DialogContent>

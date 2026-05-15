@@ -104,9 +104,7 @@ describe("RunMapPanel", () => {
     );
 
     expect(screen.getByText("Xarita yuklanmoqda…")).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Xarita yuklanmoqda…",
-    );
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
 
     expect(await screen.findByTestId("maplibre-map")).toHaveAttribute(
       "data-coordinate-count",
@@ -125,14 +123,18 @@ describe("RunMapPanel", () => {
     expect(mockLoadMapProvider).toHaveBeenCalledWith("maplibre");
   });
 
-  it("does not load the map provider when there is no route data", () => {
+  it("loads a real map shell when there is no route data yet", async () => {
     render(<RunMapPanel emptyLabel="No route recorded" />);
 
-    expect(screen.getByText("No route recorded")).toBeInTheDocument();
-    expect(mockLoadMapProvider).not.toHaveBeenCalled();
+    expect(screen.getByText("Xarita yuklanmoqda…")).toBeInTheDocument();
+    expect(await screen.findByTestId("maplibre-map")).toHaveAttribute(
+      "data-coordinate-count",
+      "0",
+    );
+    expect(mockLoadMapProvider).toHaveBeenCalledWith("maplibre");
   });
 
-  it("renders a compact real-data route preview without loading the provider", () => {
+  it("renders a compact preview with the real map provider when route data exists", async () => {
     const onExpand = vi.fn();
 
     render(
@@ -158,11 +160,11 @@ describe("RunMapPanel", () => {
       />,
     );
 
-    expect(mockLoadMapProvider).not.toHaveBeenCalled();
-    expect(screen.getByTestId("route-fallback-svg")).toHaveAttribute(
+    expect(await screen.findByTestId("maplibre-map")).toHaveAttribute(
       "data-coordinate-count",
       "2",
     );
+    expect(mockLoadMapProvider).toHaveBeenCalledWith("maplibre");
     expect(screen.getByText("92")).toBeInTheDocument();
 
     screen.getByRole("button", { name: /expand route preview/i }).click();

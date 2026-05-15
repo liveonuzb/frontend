@@ -132,7 +132,10 @@ const normalizeQualityScore = (score) => {
     return null;
   }
 
-  return Math.min(100, Math.round(numericScore <= 1 ? numericScore * 100 : numericScore));
+  return Math.min(
+    100,
+    Math.round(numericScore <= 1 ? numericScore * 100 : numericScore),
+  );
 };
 
 const getQualityText = (score, labels) => {
@@ -166,6 +169,20 @@ const getQualityText = (score, labels) => {
     description: labels.weakDescription,
   };
 };
+
+const MapExpandButton = ({ showExpand, expandLabel, onExpand }) =>
+  showExpand ? (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className="absolute right-4 top-4 z-10 rounded-2xl border border-white/10 bg-white/[0.08] text-white/80 hover:bg-white/[0.15] focus-visible:ring-2 focus-visible:ring-[#f59e0b]"
+      aria-label={expandLabel}
+      onClick={onExpand}
+    >
+      <Maximize2Icon className="size-5" aria-hidden="true" />
+    </Button>
+  ) : null;
 
 const RouteQualityCard = ({
   qualityScore,
@@ -260,18 +277,11 @@ const RouteSvgFallback = ({
         }}
       />
       <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#1b1510] to-transparent" />
-      {showExpand ? (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="absolute right-4 top-4 z-10 rounded-2xl border border-white/10 bg-white/[0.08] text-white/80 hover:bg-white/[0.15] focus-visible:ring-2 focus-visible:ring-[#f59e0b]"
-          aria-label={expandLabel}
-          onClick={onExpand}
-        >
-          <Maximize2Icon className="size-5" aria-hidden="true" />
-        </Button>
-      ) : null}
+      <MapExpandButton
+        showExpand={showExpand}
+        expandLabel={expandLabel}
+        onExpand={onExpand}
+      />
       {hasRoute ? (
         <svg
           className="absolute inset-0 h-full w-full"
@@ -638,6 +648,31 @@ const MapLibreRouteMap = ({
   );
 };
 
+const MapOverlay = ({
+  showExpand,
+  expandLabel,
+  onExpand,
+  showQuality,
+  qualityScore,
+  labels,
+  compact,
+}) => (
+  <>
+    <MapExpandButton
+      showExpand={showExpand}
+      expandLabel={expandLabel}
+      onExpand={onExpand}
+    />
+    {showQuality ? (
+      <RouteQualityCard
+        qualityScore={qualityScore}
+        labels={labels}
+        compact={compact}
+      />
+    ) : null}
+  </>
+);
+
 const defaultLabels = {
   loading: "Xarita yuklanmoqda…",
   error: "Xarita ishlamadi",
@@ -695,7 +730,7 @@ const RunMapPanel = ({
 
   /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
-    if (isPreview || routeCoordinates.length === 0) {
+    if (routeCoordinates.length === 0 && provider === "none") {
       setMapComponents(null);
       setLoadState("idle");
       return undefined;
@@ -725,7 +760,7 @@ const RunMapPanel = ({
     return () => {
       cancelled = true;
     };
-  }, [isPreview, provider, routeCoordinates.length, routeKey]);
+  }, [provider, routeCoordinates.length, routeKey]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const routeCenter = getRouteCenter(routeCoordinates);
@@ -738,40 +773,15 @@ const RunMapPanel = ({
   const surface = (
     <div
       className={cn(
-        "h-[320px] min-h-[260px] bg-[#17120d] md:h-[460px]",
-        isPreview && "h-full min-h-[300px] md:h-full",
+        "relative h-[320px] min-h-[260px] overflow-hidden rounded-[1.5rem] bg-[#17120d] md:h-[460px]",
+        isPreview && "h-full min-h-[300px] rounded-[1.25rem] md:h-full",
         surfaceClassName,
       )}
     >
-      {routeCoordinates.length === 0 ? (
-        <RouteSvgFallback
-          coordinates={[]}
-          label={emptyLabel}
-          qualityScore={qualityScore}
-          labels={labels}
-          showQuality={showQuality}
-          showExpand={showExpand}
-          expandLabel={expandLabel}
-          onExpand={onExpand}
-          compact={isPreview}
-        />
-      ) : isPreview ? (
-        <RouteSvgFallback
-          coordinates={routeCoordinates}
-          label={emptyLabel}
-          qualityScore={qualityScore}
-          labels={labels}
-          showQuality={showQuality}
-          showExpand={showExpand}
-          expandLabel={expandLabel}
-          onExpand={onExpand}
-          compact
-        />
-      ) : loadState === "loading" ? (
+      {loadState === "idle" || loadState === "loading" ? (
         <RouteSvgFallback
           coordinates={routeCoordinates}
           label={labels.loading}
-          live
           qualityScore={qualityScore}
           labels={labels}
           showQuality={showQuality}
@@ -785,13 +795,29 @@ const RunMapPanel = ({
           showQuality={showQuality}
         />
       ) : (
-        <MapLibreRouteMap
-          center={center}
-          coordinates={routeCoordinates}
-          mapProvider={mapComponents}
-          routeCenter={routeCenter}
-          onError={handleMapError}
-        />
+        <>
+          <MapLibreRouteMap
+            center={center}
+            coordinates={routeCoordinates}
+            mapProvider={mapComponents}
+            routeCenter={routeCenter}
+            onError={handleMapError}
+          />
+          <MapOverlay
+            showExpand={showExpand}
+            expandLabel={expandLabel}
+            onExpand={onExpand}
+            showQuality={showQuality}
+            qualityScore={qualityScore}
+            labels={labels}
+            compact={isPreview}
+          />
+          {routeCoordinates.length === 0 && emptyLabel ? (
+            <p className="absolute left-4 top-4 max-w-[60%] rounded-full border border-white/10 bg-black/25 px-3 py-1 text-xs font-medium text-white/75 backdrop-blur">
+              {emptyLabel}
+            </p>
+          ) : null}
+        </>
       )}
     </div>
   );
