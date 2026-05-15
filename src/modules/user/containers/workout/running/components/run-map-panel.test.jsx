@@ -20,6 +20,7 @@ class FakeMap {
     this.fitBounds = vi.fn();
     this.setCenter = vi.fn();
     this.setZoom = vi.fn();
+    this.easeTo = vi.fn();
     this.remove = vi.fn();
     mapInstances.push(this);
   }
@@ -31,6 +32,8 @@ class FakeMap {
   }
 
   on() {}
+
+  off() {}
 
   getSource(id) {
     return this.sources.get(id);
@@ -169,6 +172,56 @@ describe("RunMapPanel", () => {
 
     screen.getByRole("button", { name: /expand route preview/i }).click();
     expect(onExpand).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the same live map instance when route points update", async () => {
+    const { rerender } = render(
+      <RunMapPanel
+        title={null}
+        variant="live"
+        points={[
+          {
+            sequence: 1,
+            latitude: 41.311081,
+            longitude: 69.240562,
+          },
+        ]}
+      />,
+    );
+
+    expect(await screen.findByTestId("maplibre-map")).toHaveAttribute(
+      "data-coordinate-count",
+      "1",
+    );
+    await waitFor(() => expect(mapInstances).toHaveLength(1));
+
+    rerender(
+      <RunMapPanel
+        title={null}
+        variant="live"
+        points={[
+          {
+            sequence: 1,
+            latitude: 41.311081,
+            longitude: 69.240562,
+          },
+          {
+            sequence: 2,
+            latitude: 41.320069,
+            longitude: 69.240562,
+          },
+        ]}
+      />,
+    );
+
+    expect(await screen.findByTestId("maplibre-map")).toHaveAttribute(
+      "data-coordinate-count",
+      "2",
+    );
+    expect(mockLoadMapProvider).toHaveBeenCalledTimes(1);
+    expect(mapInstances).toHaveLength(1);
+    expect(mapInstances[0].remove).not.toHaveBeenCalled();
+    expect(mapInstances[0].fitBounds).not.toHaveBeenCalled();
   });
 
   it("falls back to the real route SVG when the map provider cannot load", async () => {

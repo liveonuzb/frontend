@@ -1,42 +1,286 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import { ArrowLeftIcon, GaugeIcon, RouteIcon } from "lucide-react";
+import { get } from "lodash";
+import {
+  ClockIcon,
+  FlameIcon,
+  GaugeIcon,
+  ImagePlusIcon,
+  MountainIcon,
+  NavigationIcon,
+  PencilIcon,
+  RulerIcon,
+  Share2Icon,
+  TimerIcon,
+  Trash2Icon,
+  WeightIcon,
+  XIcon,
+} from "lucide-react";
+import { toast } from "sonner";
 import PageLoader from "@/components/page-loader/index.jsx";
 import PageTransition from "@/components/page-transition";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useRunningSessionDetail } from "@/hooks/app/use-running-sessions";
+import { Card, CardContent } from "@/components/ui/card";
 import {
-  formatRunningDistance,
-  formatRunningDuration,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { usePostQuery } from "@/hooks/api";
+import useMe from "@/hooks/app/use-me";
+import {
+  useDeleteRunningSession,
+  useRunningSessionDetail,
+  useUpdateRunningSessionDetails,
+} from "@/hooks/app/use-running-sessions";
+import useShare from "@/hooks/utils/use-share";
+import {
+  formatRunningClockDuration,
   formatRunningPace,
 } from "@/lib/running-metrics";
 import RunMapPanel from "../components/run-map-panel.jsx";
 
-const detailDateFormatter = new Intl.DateTimeFormat("uz-UZ", {
-  day: "2-digit",
-  month: "long",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-});
+const formatMainDistance = (meters = 0) =>
+  (Math.max(0, Number(meters) || 0) / 1000).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
-const formatGpsQualityPercent = (score) => {
-  const numericScore = Number(score);
-  if (!Number.isFinite(numericScore) || numericScore <= 0) {
-    return "--";
+const formatDateTimeRange = (startedAt, endedAt) => {
+  if (!startedAt) {
+    return "";
   }
 
-  return `${Math.round(numericScore * 100)}%`;
+  const start = new Date(startedAt);
+  const end = endedAt ? new Date(endedAt) : null;
+  const date = new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(start);
+  const time = new Intl.DateTimeFormat("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(start);
+  const endTime = end
+    ? new Intl.DateTimeFormat("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }).format(end)
+    : null;
+
+  return endTime ? `${date} • ${time} – ${endTime}` : `${date} • ${time}`;
 };
+
+const getUserName = (user) => {
+  const firstName =
+    get(user, "profile.firstName", "") || get(user, "firstName", "");
+  const lastName =
+    get(user, "profile.lastName", "") || get(user, "lastName", "");
+  const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
+  return (
+    fullName || get(user, "name", "") || get(user, "phone", "LiveOn runner")
+  );
+};
+
+const getInitial = (name) => name.trim().charAt(0).toUpperCase() || "U";
+
+const ResultCard = ({ children, className = "" }) => (
+  <Card
+    className={`rounded-[1.35rem] border-primary/20 bg-background/95 shadow-sm ${className}`}
+  >
+    <CardContent className="p-4 sm:p-6">{children}</CardContent>
+  </Card>
+);
+
+const DataCell = ({ icon: Icon, label, value, suffix }) => (
+  <div className="min-w-0 border-border/70 px-1.5 py-3 first:border-l-0 sm:border-l sm:px-2">
+    <div className="flex items-center gap-1.5 text-xs text-muted-foreground sm:gap-2 sm:text-sm">
+      <Icon className="size-4 shrink-0 text-primary" aria-hidden="true" />
+      <span className="truncate">{label}</span>
+    </div>
+    <div className="mt-2 flex items-end gap-1">
+      <span className="whitespace-nowrap text-[1.3rem] font-semibold leading-none tabular-nums sm:text-2xl">
+        {value}
+      </span>
+      {suffix ? (
+        <span className="text-xs text-muted-foreground sm:text-sm">
+          {suffix}
+        </span>
+      ) : null}
+    </div>
+  </div>
+);
 
 const RunningDetailPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { workoutSessionId } = useParams();
+  const { user } = useMe();
+  const { share } = useShare();
   const { session, isLoading } = useRunningSessionDetail(workoutSessionId);
+  const { updateRunningSessionDetails, isPending: isSavingDetails } =
+    useUpdateRunningSessionDetails();
+  const { deleteRunningSession, isPending: isDeleting } =
+    useDeleteRunningSession();
+  const imageUploadMutation = usePostQuery();
+  const [details, setDetails] = React.useState({
+    momentTitle: "",
+    momentText: "",
+    heightCm: "",
+    weightKg: "",
+    feelingLevel: 0,
+  });
+  const [imageUrl, setImageUrl] = React.useState(null);
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
+
+  const sessionDetailsSnapshot = React.useMemo(() => {
+    if (!session) {
+      return null;
+    }
+
+    return {
+      momentTitle: get(session, "moments.title", "") ?? "",
+      momentText: get(session, "moments.text", "") ?? "",
+      heightCm: get(session, "bodyMetrics.heightCm") ?? "",
+      weightKg: get(session, "bodyMetrics.weightKg") ?? "",
+      feelingLevel: Number(get(session, "feeling.level", 0)) || 0,
+      imageUrl: get(session, "moments.imageUrl", null),
+    };
+  }, [
+    session?.bodyMetrics?.heightCm,
+    session?.bodyMetrics?.weightKg,
+    session?.feeling?.level,
+    session?.moments?.imageUrl,
+    session?.moments?.text,
+    session?.moments?.title,
+    session?.workoutSessionId,
+  ]);
+
+  React.useEffect(() => {
+    if (!sessionDetailsSnapshot) {
+      return;
+    }
+
+    setDetails({
+      momentTitle: sessionDetailsSnapshot.momentTitle,
+      momentText: sessionDetailsSnapshot.momentText,
+      heightCm: sessionDetailsSnapshot.heightCm,
+      weightKg: sessionDetailsSnapshot.weightKg,
+      feelingLevel: sessionDetailsSnapshot.feelingLevel,
+    });
+    setImageUrl(sessionDetailsSnapshot.imageUrl);
+  }, [sessionDetailsSnapshot]);
+
+  const saveDetails = React.useCallback(
+    async (patch) => {
+      if (!workoutSessionId) {
+        return;
+      }
+
+      try {
+        const updated = await updateRunningSessionDetails(
+          workoutSessionId,
+          patch,
+        );
+        setImageUrl(get(updated, "moments.imageUrl", imageUrl));
+      } catch {
+        toast.error(
+          t(
+            "user.workout.running.detail.saveError",
+            "Ma'lumotlarni saqlab bo'lmadi.",
+          ),
+        );
+      }
+    },
+    [imageUrl, t, updateRunningSessionDetails, workoutSessionId],
+  );
+
+  const handleUploadPhoto = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file || !workoutSessionId) {
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", "running-moments");
+
+    try {
+      const response = await imageUploadMutation.mutateAsync({
+        url: "/user/media/images",
+        attributes: formData,
+      });
+      const uploaded = get(response, "data.data", get(response, "data"));
+      const uploadedUrl = uploaded?.url ?? null;
+      setImageUrl(uploadedUrl);
+      await saveDetails({
+        momentImageUploadId: uploaded?.id,
+      });
+    } catch {
+      toast.error(
+        t("user.workout.running.detail.photoError", "Rasm yuklanmadi."),
+      );
+    }
+  };
+
+  const handleBlurSave = (field) => {
+    const rawValue = details[field];
+    const numericFields = new Set(["heightCm", "weightKg"]);
+    const value = numericFields.has(field)
+      ? rawValue === ""
+        ? undefined
+        : Number(rawValue)
+      : rawValue;
+
+    if (value === undefined || Number.isNaN(value)) {
+      return;
+    }
+
+    void saveDetails({ [field]: value });
+  };
+
+  const handleFeeling = (level) => {
+    setDetails((current) => ({
+      ...current,
+      feelingLevel: level,
+    }));
+    void saveDetails({ feelingLevel: level });
+  };
+
+  const handleShare = () => {
+    void share({
+      title: t("user.workout.running.detail.shareTitle", "Running activity"),
+      text: `${formatMainDistance(session?.metrics?.distanceMeters)} KM`,
+      url: window.location.href,
+    });
+  };
+
+  const handleDelete = async () => {
+    if (!workoutSessionId) {
+      return;
+    }
+
+    try {
+      await deleteRunningSession(workoutSessionId);
+      toast.success(
+        t("user.workout.running.detail.deleteSuccess", "Activity o'chirildi."),
+      );
+      navigate("/user/workout/running");
+    } catch {
+      toast.error(
+        t("user.workout.running.detail.deleteError", "Activity o'chirilmadi."),
+      );
+    }
+  };
 
   if (isLoading) {
     return <PageLoader />;
@@ -44,165 +288,352 @@ const RunningDetailPage = () => {
 
   if (!session) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {t("user.workout.running.detail.notFound", "Yugurish topilmadi")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Button onClick={() => navigate("/user/workout/running/history")}>
-            {t(
-              "user.workout.running.detail.backToHistory",
-              "Tarixga qaytish",
-            )}
-          </Button>
-        </CardContent>
-      </Card>
+      <ResultCard>
+        <p className="text-lg font-semibold">
+          {t("user.workout.running.detail.notFound", "Yugurish topilmadi")}
+        </p>
+        <Button
+          className="mt-4"
+          onClick={() => navigate("/user/workout/running")}
+        >
+          {t("user.workout.running.detail.backToHistory", "Tarixga qaytish")}
+        </Button>
+      </ResultCard>
     );
   }
 
+  const userName = getUserName(user);
+  const metrics = session.metrics ?? {};
+  const feelingLevel =
+    Number(details.feelingLevel) ||
+    Number(get(session, "feeling.level", 0)) ||
+    0;
+  const averageSpeed =
+    Number(metrics.averageSpeedKmh ?? 0) ||
+    (Number(metrics.distanceMeters ?? 0) > 0 &&
+    Number(metrics.durationSeconds ?? 0) > 0
+      ? Number(metrics.distanceMeters) /
+        1000 /
+        (Number(metrics.durationSeconds) / 3600)
+      : 0);
+
   return (
     <PageTransition mode="slide-up">
-      <div className="space-y-4">
-        <div className="flex items-center gap-3">
+      <div className="mx-auto max-w-[620px] space-y-5 px-4 pb-8 pt-[max(1rem,env(safe-area-inset-top))]">
+        <header className="flex items-center justify-between gap-3">
           <Button
             variant="ghost"
             size="icon"
-            aria-label={t(
-              "user.workout.running.detail.backToHistory",
-              "Tarixga qaytish",
-            )}
-            onClick={() => navigate("/user/workout/running/history")}
+            className="size-11 rounded-full"
+            aria-label={t("user.workout.running.detail.close", "Close")}
+            onClick={() => navigate("/user/workout/running")}
           >
-            <ArrowLeftIcon className="size-4" aria-hidden="true" />
+            <XIcon className="size-7" aria-hidden="true" />
           </Button>
+          <Button
+            variant="outline"
+            className="h-11 rounded-full border-primary/30 px-5 text-primary"
+            onClick={handleShare}
+          >
+            <Share2Icon className="size-5" aria-hidden="true" />
+            {t("user.workout.running.detail.share", "Share")}
+          </Button>
+        </header>
+
+        <section className="flex items-center gap-4">
+          <div className="flex size-16 shrink-0 items-center justify-center rounded-full bg-primary text-3xl font-semibold text-primary-foreground">
+            {getInitial(userName)}
+          </div>
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-semibold">
-                {t(
-                  "user.workout.running.detail.title",
-                  "Ochiq yugurish",
-                )}
-              </h1>
-              <Badge variant="secondary" className="gap-1">
-                <RouteIcon className="size-3" aria-hidden="true" />
-                {t("user.workout.running.detail.gps", "GPS")}
-              </Badge>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {detailDateFormatter.format(new Date(session.startedAt))}
+            <h1 className="truncate text-xl font-semibold">{userName}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {formatDateTimeRange(session.startedAt, session.endedAt)}
             </p>
           </div>
-        </div>
-
-        <section className="grid gap-3 sm:grid-cols-4">
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">
-                {t("user.workout.running.detail.distance", "Masofa")}
-              </p>
-              <p className="text-2xl font-semibold tabular-nums">
-                {formatRunningDistance(session.metrics.distanceMeters)}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">
-                {t("user.workout.running.detail.time", "Vaqt")}
-              </p>
-              <p className="text-2xl font-semibold tabular-nums">
-                {formatRunningDuration(session.metrics.durationSeconds)}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">Pace</p>
-              <p className="text-2xl font-semibold tabular-nums">
-                {formatRunningPace(session.metrics.averagePaceSecondsPerKm)}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">
-                {t("user.workout.running.detail.calories", "Kaloriya")}
-              </p>
-              <p className="text-2xl font-semibold tabular-nums">
-                {session.metrics.caloriesBurned}
-              </p>
-            </CardContent>
-          </Card>
         </section>
 
-        <RunMapPanel
-          points={session.points}
-          polyline={session.route?.polyline}
-          emptyLabel={t(
-            "user.workout.running.detail.noRoute",
-            "Route yozilmagan",
-          )}
-        />
+        <section>
+          <div className="flex items-end gap-2">
+            <span className="text-[5rem] font-semibold leading-none tracking-normal">
+              {formatMainDistance(metrics.distanceMeters)}
+            </span>
+            <span className="pb-3 text-2xl font-semibold text-muted-foreground">
+              KM
+            </span>
+          </div>
+        </section>
 
-        <section className="grid gap-3 md:grid-cols-[0.7fr_1.3fr]">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <GaugeIcon className="size-4 text-primary" aria-hidden="true" />
-                {t("user.workout.running.detail.gpsQuality", "GPS sifati")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-semibold tabular-nums">
-                {formatGpsQualityPercent(session.metrics.gpsQualityScore)}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {t(
-                  "user.workout.running.detail.gpsQualityDescription",
-                  "Route hisobida past aniqlikdagi nuqtalar filtrlanadi.",
-                )}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                {t("user.workout.running.detail.splits", "Splitlar")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {session.splits?.length ? (
-                session.splits.map((split) => (
-                  <div
-                    key={split.index}
-                    className="flex items-center justify-between gap-3 rounded-xl bg-muted/40 px-3 py-2"
-                  >
-                    <span className="font-medium">
-                      {t(
-                        "user.workout.running.detail.splitLabel",
-                        "{{index}}-km",
-                        { index: split.index },
-                      )}
-                    </span>
-                    <span className="text-sm tabular-nums text-muted-foreground">
-                      {formatRunningPace(split.paceSecondsPerKm)}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  {t(
-                    "user.workout.running.detail.noSplits",
-                    "Splitlar uchun yetarli masofa yozilmagan.",
-                  )}
-                </p>
+        <ResultCard className="overflow-hidden p-0">
+          <div className="-m-4 sm:-m-6">
+            <RunMapPanel
+              title={null}
+              points={session.points}
+              polyline={session.route?.polyline}
+              emptyLabel={t(
+                "user.workout.running.detail.noRoute",
+                "Route yozilmagan",
               )}
-            </CardContent>
-          </Card>
-        </section>
+              className="h-[260px]"
+              surfaceClassName="h-[260px] min-h-[260px] rounded-[1.35rem]"
+            />
+          </div>
+        </ResultCard>
+
+        <ResultCard>
+          <div className="mb-3 flex items-center gap-3">
+            <h2 className="text-xl font-semibold text-primary">
+              {t("user.workout.running.detail.trainingData", "Training Data")}
+            </h2>
+            <GaugeIcon className="size-5 text-primary" aria-hidden="true" />
+          </div>
+          <div className="grid grid-cols-3 divide-x divide-y divide-border/70 overflow-hidden rounded-2xl border border-border/70">
+            <DataCell
+              icon={ClockIcon}
+              label={t("user.workout.running.detail.movingTime", "Moving time")}
+              value={formatRunningClockDuration(
+                metrics.movingDurationSeconds ?? metrics.durationSeconds,
+              )}
+            />
+            <DataCell
+              icon={GaugeIcon}
+              label={t("user.workout.running.detail.avgPace", "Avg Pace")}
+              value={formatRunningPace(metrics.averagePaceSecondsPerKm).replace(
+                /\s*\/km$/,
+                "",
+              )}
+              suffix="/km"
+            />
+            <DataCell
+              icon={MountainIcon}
+              label={t("user.workout.running.detail.elevation", "Elevation")}
+              value={Math.round(Number(metrics.elevationGainMeters ?? 0) || 0)}
+              suffix="m"
+            />
+            <DataCell
+              icon={TimerIcon}
+              label={t("user.workout.running.detail.totalTime", "Total Time")}
+              value={formatRunningClockDuration(metrics.durationSeconds)}
+            />
+            <DataCell
+              icon={NavigationIcon}
+              label={t("user.workout.running.detail.avgSpeed", "Avg speed")}
+              value={averageSpeed.toFixed(2)}
+              suffix="kph"
+            />
+            <DataCell
+              icon={FlameIcon}
+              label={t("user.workout.running.detail.calories", "Calories")}
+              value={Math.round(Number(metrics.caloriesBurned ?? 0) || 0)}
+              suffix="kcal"
+            />
+          </div>
+        </ResultCard>
+
+        <ResultCard>
+          <h2 className="border-l-4 border-primary pl-3 text-xl font-semibold">
+            {t(
+              "user.workout.running.detail.trainingMoments",
+              "Training Moments",
+            )}
+          </h2>
+          <div className="mt-5 grid gap-4 sm:grid-cols-[0.9fr_1.4fr]">
+            <label className="flex min-h-[180px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-primary/30 bg-primary/5 text-center text-primary">
+              {imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <>
+                  <span className="flex size-20 items-center justify-center rounded-full bg-primary/10">
+                    <ImagePlusIcon className="size-10" aria-hidden="true" />
+                  </span>
+                  <span className="mt-4 text-sm font-semibold uppercase">
+                    {t("user.workout.running.detail.addPhoto", "Add a photo")}
+                  </span>
+                </>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={handleUploadPhoto}
+                disabled={imageUploadMutation.isPending || isSavingDetails}
+              />
+            </label>
+            <div className="space-y-3">
+              <input
+                value={details.momentTitle}
+                onChange={(event) =>
+                  setDetails((current) => ({
+                    ...current,
+                    momentTitle: event.target.value,
+                  }))
+                }
+                onBlur={() => handleBlurSave("momentTitle")}
+                placeholder={t(
+                  "user.workout.running.detail.addTitle",
+                  "Add a title",
+                )}
+                className="h-14 w-full rounded-2xl border bg-background px-4 text-base outline-none focus:ring-2 focus:ring-primary"
+              />
+              <div className="relative">
+                <PencilIcon
+                  className="pointer-events-none absolute left-4 top-4 size-4 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                <textarea
+                  value={details.momentText}
+                  onChange={(event) =>
+                    setDetails((current) => ({
+                      ...current,
+                      momentText: event.target.value,
+                    }))
+                  }
+                  onBlur={() => handleBlurSave("momentText")}
+                  placeholder={t(
+                    "user.workout.running.detail.addText",
+                    "Add text",
+                  )}
+                  className="min-h-[110px] w-full resize-none rounded-2xl border bg-background py-4 pl-11 pr-4 text-base outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+          </div>
+        </ResultCard>
+
+        <ResultCard>
+          <h2 className="border-l-4 border-primary pl-3 text-xl font-semibold">
+            {t(
+              "user.workout.running.detail.trainingFeeling",
+              "Training Feeling",
+            )}
+          </h2>
+          <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+            <span>{t("user.workout.running.detail.easy", "Easy")}</span>
+            <span>
+              {t("user.workout.running.detail.exhausting", "Exhausting")}
+            </span>
+          </div>
+          <div className="mt-4 grid grid-cols-4 gap-3">
+            {[1, 2, 3, 4].map((level) => (
+              <Button
+                key={level}
+                type="button"
+                variant={feelingLevel === level ? "default" : "outline"}
+                className="h-14 rounded-2xl text-base font-semibold"
+                onClick={() => handleFeeling(level)}
+              >
+                <FlameIcon className="size-5" aria-hidden="true" />x{level}
+              </Button>
+            ))}
+          </div>
+        </ResultCard>
+
+        <ResultCard>
+          <h2 className="border-l-4 border-primary pl-3 text-xl font-semibold">
+            {t("user.workout.running.detail.bodyMetrics", "Height / Weight")}
+          </h2>
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <label className="rounded-2xl border p-4">
+              <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                <RulerIcon className="size-4 text-primary" aria-hidden="true" />
+                {t("user.workout.running.detail.height", "Height")}
+              </span>
+              <input
+                type="number"
+                min="100"
+                max="250"
+                value={details.heightCm}
+                onChange={(event) =>
+                  setDetails((current) => ({
+                    ...current,
+                    heightCm: event.target.value,
+                  }))
+                }
+                onBlur={() => handleBlurSave("heightCm")}
+                className="mt-3 w-full bg-transparent text-2xl font-semibold outline-none"
+                placeholder="170"
+              />
+              <span className="text-sm text-muted-foreground">cm</span>
+            </label>
+            <label className="rounded-2xl border p-4">
+              <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                <WeightIcon
+                  className="size-4 text-primary"
+                  aria-hidden="true"
+                />
+                {t("user.workout.running.detail.weight", "Weight")}
+              </span>
+              <input
+                type="number"
+                min="20"
+                max="300"
+                value={details.weightKg}
+                onChange={(event) =>
+                  setDetails((current) => ({
+                    ...current,
+                    weightKg: event.target.value,
+                  }))
+                }
+                onBlur={() => handleBlurSave("weightKg")}
+                className="mt-3 w-full bg-transparent text-2xl font-semibold outline-none"
+                placeholder="70"
+              />
+              <span className="text-sm text-muted-foreground">kg</span>
+            </label>
+          </div>
+        </ResultCard>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="h-16 w-full rounded-2xl border-destructive/25 text-lg font-semibold text-destructive hover:text-destructive"
+          onClick={() => setDeleteOpen(true)}
+        >
+          <Trash2Icon className="size-5" aria-hidden="true" />
+          {t(
+            "user.workout.running.detail.deleteActivity",
+            "Delete this activity",
+          )}
+        </Button>
+
+        <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {t(
+                  "user.workout.running.detail.deleteTitle",
+                  "Activity o'chirilsinmi?",
+                )}
+              </DialogTitle>
+              <DialogDescription>
+                {t(
+                  "user.workout.running.detail.deleteDescription",
+                  "Bu running activity, GPS route va workout loglardan butunlay o'chadi.",
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDeleteOpen(false)}
+              >
+                {t("user.workout.running.detail.cancel", "Cancel")}
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {t("user.workout.running.detail.delete", "Delete")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </PageTransition>
   );

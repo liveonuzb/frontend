@@ -6,9 +6,11 @@ import {
   CheckCircle2Icon,
   ChevronDownIcon,
   FlagIcon,
+  MenuIcon,
   PauseIcon,
   PlayIcon,
   SquareIcon,
+  UserIcon,
   XIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -35,6 +37,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   useAppendRunningPoints,
+  useBeginRunningSession,
   useCancelRunningSession,
   useFinishRunningSession,
   usePauseRunningSession,
@@ -53,13 +56,13 @@ import {
 import {
   buildRunningPointBatch,
   computeRunningSyncBackoffMs,
+  dedupeRunningPoints,
   RUNNING_POINT_SYNC_INTERVAL_MS,
 } from "@/lib/running-point-sync";
 import {
   calculateLiveRunningDuration,
   calculateLiveRunningMetrics,
-  formatRunningDistance,
-  formatRunningDuration,
+  formatRunningClockDuration,
   formatRunningPace,
 } from "@/lib/running-metrics";
 import RunMapPanel from "../components/run-map-panel.jsx";
@@ -110,41 +113,54 @@ const getGpsStatusLabel = (status, t) => {
 };
 
 const formatPrimaryRunningPace = (secondsPerKm) =>
-  formatRunningPace(secondsPerKm).replace(/\s*\/km$/, "");
+  Number(secondsPerKm) > 0
+    ? formatRunningPace(secondsPerKm).replace(/\s*\/km$/, "")
+    : "0:00";
+
+const formatPrimaryRunningDistance = (meters = 0) =>
+  (Math.max(0, Number(meters) || 0) / 1000).toFixed(2);
+
+const formatPrimaryRunningDuration = (seconds = 0) => {
+  const parts = formatRunningClockDuration(seconds).split(":");
+  return `${Number(parts[0]) || 0}:${parts[1]}:${parts[2]}`;
+};
 
 const primaryMetricCards = (metrics, elapsedSeconds, t) => [
   {
-    label: t("user.workout.running.live.time", "Vaqt"),
-    value: formatRunningDuration(
+    label: t("user.workout.running.live.time", "MIN"),
+    value: formatPrimaryRunningDuration(
       Math.max(elapsedSeconds, metrics.durationSeconds ?? 0),
     ),
   },
   {
-    label: t("user.workout.running.live.distance", "Masofa"),
-    value: formatRunningDistance(metrics.distanceMeters),
+    label: t("user.workout.running.live.distance", "KM"),
+    value: formatPrimaryRunningDistance(metrics.distanceMeters),
   },
   {
-    label: t("user.workout.running.live.pace", "Pace"),
+    label: t("user.workout.running.live.pace", "PACE (MIN/KM)"),
     value: formatPrimaryRunningPace(metrics.averagePaceSecondsPerKm),
   },
 ];
 
-const secondaryMetricCards = (metrics, queuedCount, t) => [
-  {
-    label: t("user.workout.running.live.queue", "Navbat"),
-    value: String(queuedCount),
-  },
-  {
-    label: t("user.workout.running.live.calories", "Kaloriya"),
-    value: String(Number(metrics.caloriesBurned ?? 0) || 0),
-  },
-];
+const ActivityLogo = () => (
+  <svg viewBox="0 0 32 32" className="size-8" fill="none" aria-hidden="true">
+    <path
+      d="M4 17h5l2.5-8 5 14 3-10 2.5 4h6"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
 
 const RunningLivePage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { workoutSessionId: routeWorkoutSessionId } = useParams();
   const { activeSession } = useRunningActiveSession();
+  const { beginRunningSession, isPending: isBeginning } =
+    useBeginRunningSession();
   const { appendPoints } = useAppendRunningPoints();
   const { pauseRunningSession, isPending: isPausing } =
     usePauseRunningSession();
@@ -174,7 +190,7 @@ const RunningLivePage = () => {
   const geolocationRef = React.useRef(null);
   const trackingSuspendedRef = React.useRef(false);
   const workoutSessionIdRef = React.useRef(null);
-  const currentStatusRef = React.useRef("active");
+  const currentStatusRef = React.useRef("ready");
   const localActiveSession = React.useMemo(
     () => loadActiveRunningSession(),
     [],
@@ -193,13 +209,21 @@ const RunningLivePage = () => {
     localStatus?.workoutSessionId === workoutSessionId
       ? localStatus.status
       : null;
+  const optimisticStartedAt =
+    localStatus?.workoutSessionId === workoutSessionId
+      ? localStatus.startedAt
+      : null;
   const currentStatus =
-    optimisticStatus ?? effectiveActiveSession?.status ?? "active";
+    optimisticStatus ?? effectiveActiveSession?.status ?? "ready";
+  const effectiveStartedAt =
+    optimisticStartedAt ?? effectiveActiveSession?.startedAt ?? null;
   workoutSessionIdRef.current = workoutSessionId;
   currentStatusRef.current = currentStatus;
+  const isReady = currentStatus === "ready";
+  const isTrackingActive = currentStatus === "active";
   const isPaused = currentStatus === "paused";
   const isActionPending =
-    isPausing || isResuming || isFinishing || isCancelling;
+    isBeginning || isPausing || isResuming || isFinishing || isCancelling;
   const gpsStatus = getGpsStatusLabel(gpsState, t);
   const canRetryGps =
     gpsState === GPS_STATUS.permission || gpsState === GPS_STATUS.unavailable;
@@ -220,13 +244,14 @@ const RunningLivePage = () => {
   }, [activeSession]);
 
   const saveLocalStatus = React.useCallback(
-    (status) => {
+    (status, extra = {}) => {
       if (!effectiveActiveSession?.workoutSessionId) {
         return;
       }
 
       saveActiveRunningSession({
         ...effectiveActiveSession,
+        ...extra,
         status,
       });
     },
@@ -272,10 +297,7 @@ const RunningLivePage = () => {
     const geolocation = geolocationRef.current ?? navigator.geolocation;
     const watchId = watchIdRef.current;
 
-    if (
-      watchId !== null &&
-      typeof geolocation?.clearWatch === "function"
-    ) {
+    if (watchId !== null && typeof geolocation?.clearWatch === "function") {
       geolocation.clearWatch(watchId);
     }
 
@@ -296,7 +318,11 @@ const RunningLivePage = () => {
 
   const syncRunningPoints = React.useCallback(
     async ({ force = false } = {}) => {
-      if (!workoutSessionId || syncInFlightRef.current) {
+      if (
+        !workoutSessionId ||
+        syncInFlightRef.current ||
+        currentStatusRef.current === "ready"
+      ) {
         return { ok: false, reason: "busy" };
       }
 
@@ -368,50 +394,21 @@ const RunningLivePage = () => {
   }, [effectiveActiveSession?.lastAcceptedSequence, workoutSessionId]);
 
   React.useEffect(() => {
-    if (!workoutSessionId) {
-      setCountdownValue(null);
+    if (isReady || !effectiveStartedAt) {
+      setElapsedSeconds(0);
       return undefined;
     }
 
-    setCountdownValue(COUNTDOWN_START);
+    setElapsedSeconds(calculateLiveRunningDuration(effectiveStartedAt));
     const timer = window.setInterval(() => {
-      setCountdownValue((currentValue) => {
-        if (currentValue === null) {
-          window.clearInterval(timer);
-          return null;
-        }
-
-        if (currentValue <= 1) {
-          window.clearInterval(timer);
-          return null;
-        }
-
-        return currentValue - 1;
-      });
-    }, COUNTDOWN_TICK_MS);
-
-    return () => window.clearInterval(timer);
-  }, [workoutSessionId]);
-
-  React.useEffect(() => {
-    if (!effectiveActiveSession?.startedAt) {
-      return undefined;
-    }
-
-    setElapsedSeconds(
-      calculateLiveRunningDuration(effectiveActiveSession.startedAt),
-    );
-    const timer = window.setInterval(() => {
-      setElapsedSeconds(
-        calculateLiveRunningDuration(effectiveActiveSession.startedAt),
-      );
+      setElapsedSeconds(calculateLiveRunningDuration(effectiveStartedAt));
     }, 1000);
 
     return () => window.clearInterval(timer);
-  }, [effectiveActiveSession?.startedAt]);
+  }, [effectiveStartedAt, isReady]);
 
   React.useEffect(() => {
-    if (!workoutSessionId || isPaused || trackingSuspended) {
+    if (!workoutSessionId || !isTrackingActive || trackingSuspended) {
       return undefined;
     }
 
@@ -472,7 +469,7 @@ const RunningLivePage = () => {
     };
   }, [
     gpsRetryKey,
-    isPaused,
+    isTrackingActive,
     persistIncomingPoints,
     syncRunningPoints,
     trackingSuspended,
@@ -480,7 +477,7 @@ const RunningLivePage = () => {
   ]);
 
   React.useEffect(() => {
-    if (!workoutSessionId) {
+    if (!workoutSessionId || isReady) {
       return undefined;
     }
 
@@ -494,7 +491,7 @@ const RunningLivePage = () => {
         syncTimerRef.current = null;
       }
     };
-  }, [syncRunningPoints, workoutSessionId]);
+  }, [isReady, syncRunningPoints, workoutSessionId]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleRetryGps = () => {
@@ -502,20 +499,87 @@ const RunningLivePage = () => {
     setGpsRetryKey((currentKey) => currentKey + 1);
   };
 
+  const runStartCountdown = React.useCallback(async () => {
+    for (let value = COUNTDOWN_START; value >= 1; value -= 1) {
+      setCountdownValue(value);
+      await new Promise((resolve) =>
+        window.setTimeout(resolve, COUNTDOWN_TICK_MS),
+      );
+    }
+    setCountdownValue(null);
+  }, []);
+
+  const handleStartRun = async () => {
+    if (!workoutSessionId || isActionPending || !isReady) {
+      return;
+    }
+
+    setFinishRetryMessage("");
+    setGpsState(GPS_STATUS.waiting);
+
+    try {
+      await runStartCountdown();
+      const startedAt = new Date().toISOString();
+      const session = await beginRunningSession(workoutSessionId, {
+        startedAt,
+      });
+      const nextStartedAt = session?.startedAt ?? startedAt;
+      setLocalStatus({
+        workoutSessionId,
+        status: "active",
+        startedAt: nextStartedAt,
+      });
+      saveLocalStatus("active", {
+        startedAt: nextStartedAt,
+        metrics: session?.metrics ?? effectiveActiveSession?.metrics,
+        lastAcceptedSequence:
+          session?.lastAcceptedSequence ??
+          effectiveActiveSession?.lastAcceptedSequence,
+      });
+      allowGpsTracking();
+      setElapsedSeconds(0);
+    } catch {
+      setCountdownValue(null);
+      setLocalStatus({ workoutSessionId, status: "ready" });
+      saveLocalStatus("ready");
+      toast.error(
+        t(
+          "user.workout.running.live.beginError",
+          "Yugurishni boshlash imkoni bo'lmadi.",
+        ),
+      );
+    }
+  };
+
   const handlePauseResume = async () => {
     if (!workoutSessionId) {
       return;
     }
 
+    if (isReady) {
+      await handleStartRun();
+      return;
+    }
+
     if (isPaused) {
       try {
-        await resumeRunningSession(workoutSessionId);
+        const session = await resumeRunningSession(workoutSessionId);
         allowGpsTracking();
-        setLocalStatus({ workoutSessionId, status: "active" });
-        saveLocalStatus("active");
+        setLocalStatus({
+          workoutSessionId,
+          status: "active",
+          startedAt: session?.startedAt ?? effectiveStartedAt,
+        });
+        saveLocalStatus("active", {
+          startedAt: session?.startedAt ?? effectiveStartedAt,
+        });
       } catch {
-        setLocalStatus({ workoutSessionId, status: "paused" });
-        saveLocalStatus("paused");
+        setLocalStatus({
+          workoutSessionId,
+          status: "paused",
+          startedAt: effectiveStartedAt,
+        });
+        saveLocalStatus("paused", { startedAt: effectiveStartedAt });
         toast.error(
           t(
             "user.workout.running.live.resumeError",
@@ -527,13 +591,21 @@ const RunningLivePage = () => {
     }
 
     void syncRunningPoints({ force: true });
-    setLocalStatus({ workoutSessionId, status: "paused" });
-    saveLocalStatus("paused");
+    setLocalStatus({
+      workoutSessionId,
+      status: "paused",
+      startedAt: effectiveStartedAt,
+    });
+    saveLocalStatus("paused", { startedAt: effectiveStartedAt });
     try {
       await pauseRunningSession(workoutSessionId);
     } catch {
-      setLocalStatus({ workoutSessionId, status: "active" });
-      saveLocalStatus("active");
+      setLocalStatus({
+        workoutSessionId,
+        status: "active",
+        startedAt: effectiveStartedAt,
+      });
+      saveLocalStatus("active", { startedAt: effectiveStartedAt });
       toast.error(
         t(
           "user.workout.running.live.pauseError",
@@ -551,71 +623,36 @@ const RunningLivePage = () => {
     setFinishOpen(false);
     setFinishRetryMessage("");
     stopGpsTracking();
-    const syncResult = await syncRunningPoints({ force: true });
-    const remainingQueue = loadRunningPointQueue(workoutSessionId);
-    const hasUnsyncedPoints = !syncResult.ok || remainingQueue.length > 0;
-
-    if (hasUnsyncedPoints) {
-      if (canRestoreGpsTracking(workoutSessionId)) {
-        allowGpsTracking();
-      }
-      const message = t(
-        "user.workout.running.live.finishQueuedSync",
-        "Sync navbatda. GPS nuqtalar sync bo'lgandan keyin yakunlang.",
-      );
-      setFinishOpen(true);
-      setFinishRetryMessage(message);
-      toast.error(message);
-      return;
-    }
+    const finalPoints = dedupeRunningPoints([
+      ...loadRunningPointQueue(workoutSessionId),
+      ...livePoints,
+    ]).slice(-600);
+    const finalPointSequence =
+      Math.max(sequenceRef.current, getMaxPointSequence(finalPoints)) ||
+      undefined;
 
     const finishedAt = new Date().toISOString();
     const finishPayload = {
       finishedAt,
-      finalPointSequence: sequenceRef.current || undefined,
-      clientSummary: {
-        durationSeconds: Math.max(
-          elapsedSeconds,
-          metrics.durationSeconds ?? 0,
-        ),
-        distanceMeters: Math.round(Number(metrics.distanceMeters ?? 0) || 0),
-        caloriesBurned: Number(metrics.caloriesBurned ?? 0) || 0,
-      },
+      finalPointSequence,
+      finalPoints,
     };
 
-    const completeFinish = (session, usedLightweightFallback = false) => {
+    const completeFinish = (session) => {
       clearActiveRunningSession();
       clearRunningPointQueue(workoutSessionId);
-      toast.success(
-        usedLightweightFallback
-          ? t(
-              "user.workout.running.live.finishSuccessWithLightweightPayload",
-              "Yugurish yakunlandi. Yakuniy hisob server tomonidan qayta hisoblanadi.",
-            )
-          : t(
-              "user.workout.running.live.finishSuccess",
-              "Yugurish yakunlandi.",
-            ),
-      );
       navigate(
         `/user/workout/running/${session?.workoutSessionId ?? workoutSessionId}`,
       );
     };
 
     try {
-      const session = await finishRunningSession(workoutSessionId, finishPayload);
+      const session = await finishRunningSession(
+        workoutSessionId,
+        finishPayload,
+      );
       completeFinish(session);
     } catch {
-      try {
-        const session = await finishRunningSession(workoutSessionId, {
-          finishedAt,
-        });
-        completeFinish(session, true);
-        return;
-      } catch {
-        // Fall through to the visible finish error below.
-      }
-
       const message = t(
         "user.workout.running.live.finishError",
         "Yugurishni yakunlab bo'lmadi. Qayta urinib ko'ring.",
@@ -662,97 +699,148 @@ const RunningLivePage = () => {
 
   return (
     <PageTransition mode="slide-up">
-      <div className="mx-auto max-w-[980px] space-y-4 pb-24">
-        <section className="relative overflow-hidden rounded-[1.75rem] border bg-background shadow-[0_24px_70px_rgba(0,0,0,0.16)]">
-          <div className="border-b bg-background px-3 py-4 sm:px-5">
-            <div className="grid grid-cols-3 gap-2 text-center">
-              {primaryMetricCards(metrics, elapsedSeconds, t).map((item) => (
-                <div key={item.label} className="min-w-0 px-1">
-                  <p className="truncate text-3xl font-semibold leading-none tabular-nums text-foreground sm:text-5xl">
-                    {item.value}
-                  </p>
-                  <p className="mt-2 truncate text-xs font-medium uppercase tracking-normal text-muted-foreground sm:text-sm">
-                    {item.label}
-                  </p>
-                </div>
-              ))}
+      <div className="mx-auto min-h-[100dvh] max-w-[520px] overflow-hidden bg-background text-foreground shadow-[0_28px_80px_rgba(0,0,0,0.16)] md:rounded-[2rem]">
+        <section className="relative z-20 bg-background px-5 pb-4 pt-[max(1rem,env(safe-area-inset-top))]">
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              aria-label={t("user.workout.running.live.cancel", "Bekor qilish")}
+              className="flex size-11 items-center justify-center rounded-full text-foreground hover:bg-muted disabled:opacity-50"
+              onClick={() => setCancelOpen(true)}
+              disabled={isActionPending}
+            >
+              <MenuIcon className="size-7" aria-hidden="true" />
+            </button>
+            <div
+              className="flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg"
+              aria-hidden="true"
+            >
+              <ActivityLogo />
             </div>
-            <div className="mt-3 flex justify-center text-muted-foreground">
-              <ChevronDownIcon className="size-5" aria-hidden="true" />
+            <div className="flex size-11 items-center justify-center rounded-full border bg-muted/40 text-sm font-semibold">
+              <UserIcon className="size-5" aria-hidden="true" />
             </div>
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+          </div>
+
+          <div className="mt-9 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2 text-center sm:gap-3">
+            {primaryMetricCards(metrics, elapsedSeconds, t).map(
+              (item, index) => (
+                <React.Fragment key={item.label}>
+                  <div className="min-w-0">
+                    <p className="whitespace-nowrap text-[1.9rem] font-semibold leading-none tabular-nums tracking-normal text-foreground min-[390px]:text-[2.05rem] sm:text-[2.65rem]">
+                      {item.value}
+                    </p>
+                    <p className="mt-4 whitespace-nowrap text-[0.68rem] font-medium uppercase tracking-normal text-muted-foreground sm:text-sm">
+                      {item.label}
+                    </p>
+                  </div>
+                  {index < 2 ? (
+                    <div
+                      className="mb-6 h-16 w-px bg-border"
+                      aria-hidden="true"
+                    />
+                  ) : null}
+                </React.Fragment>
+              ),
+            )}
+          </div>
+          <div className="mt-3 flex justify-center text-muted-foreground">
+            <ChevronDownIcon className="size-5" aria-hidden="true" />
+          </div>
+        </section>
+
+        <section className="relative h-[calc(100dvh-14.4rem)] min-h-[520px] overflow-hidden bg-muted">
+          <RunMapPanel
+            title={null}
+            variant="live"
+            points={livePoints}
+            emptyLabel={gpsStatus}
+            className="h-full"
+            contentClassName="p-0"
+            surfaceClassName="h-full min-h-0 rounded-none md:h-full"
+          />
+
+          <div className="absolute left-5 top-5 z-10 flex flex-wrap items-center gap-2">
+            <Badge
+              variant="secondary"
+              className="h-12 gap-2 rounded-full border bg-background/90 px-4 text-base shadow-lg backdrop-blur"
+              role="status"
+              aria-live="polite"
+            >
+              {gpsState === GPS_STATUS.connected ? (
+                <CheckCircle2Icon
+                  className="size-5 text-primary"
+                  aria-hidden="true"
+                />
+              ) : (
+                <AlertTriangleIcon
+                  className="size-5 text-primary"
+                  aria-hidden="true"
+                />
+              )}
+              {gpsStatus}
+            </Badge>
+            {queuedCount > 0 ? (
               <Badge
-                variant="secondary"
-                className="gap-1"
-                role="status"
-                aria-live="polite"
+                variant="outline"
+                className="h-10 rounded-full bg-background/90 px-3 shadow-lg backdrop-blur"
               >
-                {gpsState === GPS_STATUS.connected ? (
-                  <CheckCircle2Icon className="size-3.5" aria-hidden="true" />
-                ) : (
-                  <AlertTriangleIcon className="size-3.5" aria-hidden="true" />
-                )}
-                {gpsStatus}
+                {t("user.workout.running.live.queue", "Navbat")} {queuedCount}
               </Badge>
-              {canRetryGps ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={handleRetryGps}
-                >
-                  {t("user.workout.running.live.retryGps", "GPS qayta urinish")}
-                </Button>
-              ) : null}
-              {secondaryMetricCards(metrics, queuedCount, t).map((item) => (
-                <Badge key={item.label} variant="outline" className="gap-1">
-                  <span>{item.label}</span>
-                  <span className="font-semibold tabular-nums">
-                    {item.value}
-                  </span>
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          <div className="relative">
-            <RunMapPanel
-              title={null}
-              points={livePoints}
-              emptyLabel={gpsStatus}
-              className="border-0 bg-transparent shadow-none"
-              contentClassName="p-0"
-              surfaceClassName="h-[58vh] min-h-[360px] rounded-none md:h-[620px]"
-            />
-
-            {countdownValue ? (
-              <div
-                className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/70 backdrop-blur-[1px]"
-                aria-live="polite"
-              >
-                <span className="text-8xl font-semibold leading-none text-primary drop-shadow-2xl sm:text-9xl">
-                  {countdownValue}
-                </span>
-              </div>
             ) : null}
-
+            {canRetryGps ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                className="rounded-full bg-background/90 shadow-lg backdrop-blur"
+                onClick={handleRetryGps}
+              >
+                {t("user.workout.running.live.retryGps", "GPS qayta urinish")}
+              </Button>
+            ) : null}
           </div>
+
+          {isReady ? (
+            <button
+              type="button"
+              className="absolute bottom-[max(5.5rem,env(safe-area-inset-bottom))] left-1/2 z-10 flex size-40 -translate-x-1/2 items-center justify-center rounded-full bg-destructive text-4xl font-semibold uppercase text-white shadow-[0_24px_70px_rgba(239,68,68,0.38)] disabled:opacity-60"
+              onClick={handleStartRun}
+              disabled={isActionPending || Boolean(countdownValue)}
+            >
+              {isBeginning
+                ? t("user.workout.running.live.starting", "START")
+                : t("user.workout.running.live.start", "START")}
+            </button>
+          ) : null}
+
+          {countdownValue ? (
+            <div
+              className="absolute inset-0 z-30 flex items-center justify-center bg-black/80"
+              aria-live="polite"
+            >
+              <span className="text-9xl font-semibold leading-none text-primary drop-shadow-2xl">
+                {countdownValue}
+              </span>
+            </div>
+          ) : null}
 
           {isPaused ? (
-            <div className="absolute inset-0 z-20 flex flex-col items-center justify-end bg-black/65 px-6 pb-10 pt-28 text-white">
-              <div className="grid w-full max-w-[360px] grid-cols-2 gap-7">
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-end bg-black/58 px-7 pb-[max(4rem,env(safe-area-inset-bottom))] text-white">
+              <div className="grid w-full max-w-[360px] grid-cols-2 gap-10">
                 <button
                   type="button"
-                  aria-label={t("user.workout.running.live.finish", "Yakunlash")}
-                  className="flex flex-col items-center gap-4 text-sm font-semibold uppercase tracking-normal text-white disabled:opacity-50"
+                  aria-label={t(
+                    "user.workout.running.live.finish",
+                    "Yakunlash",
+                  )}
+                  className="flex flex-col items-center gap-5 text-base font-semibold uppercase tracking-normal text-white disabled:opacity-50"
                   onClick={() => setFinishOpen(true)}
                   disabled={isActionPending}
                 >
-                  <span>
-                    {t("user.workout.running.live.endAction", "END")}
-                  </span>
+                  <span>{t("user.workout.running.live.endAction", "END")}</span>
                   <span
-                    className="flex size-28 items-center justify-center rounded-full bg-destructive text-white shadow-[0_18px_45px_rgba(0,0,0,0.25)]"
+                    className="flex size-28 items-center justify-center rounded-full bg-destructive text-white shadow-[0_22px_54px_rgba(0,0,0,0.32)]"
                     aria-hidden="true"
                   >
                     <SquareIcon className="size-10 fill-current" />
@@ -764,7 +852,7 @@ const RunningLivePage = () => {
                     "user.workout.running.live.resume",
                     "Davom ettirish",
                   )}
-                  className="flex flex-col items-center gap-4 text-sm font-semibold uppercase tracking-normal text-white disabled:opacity-50"
+                  className="flex flex-col items-center gap-5 text-base font-semibold uppercase tracking-normal text-white disabled:opacity-50"
                   onClick={handlePauseResume}
                   disabled={isActionPending}
                 >
@@ -772,7 +860,7 @@ const RunningLivePage = () => {
                     {t("user.workout.running.live.resumeAction", "RESUME")}
                   </span>
                   <span
-                    className="flex size-28 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_18px_45px_rgba(0,0,0,0.25)]"
+                    className="flex size-28 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_22px_54px_rgba(0,0,0,0.32)]"
                     aria-hidden="true"
                   >
                     <PlayIcon className="size-11 fill-current" />
@@ -781,56 +869,42 @@ const RunningLivePage = () => {
               </div>
             </div>
           ) : null}
+
+          {!isReady && !isPaused ? (
+            <div className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 right-4 z-20 grid grid-cols-2 gap-3 rounded-[1.75rem] bg-background/92 p-3 shadow-xl backdrop-blur">
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={handlePauseResume}
+                disabled={isActionPending}
+                className="h-14 rounded-2xl"
+              >
+                <PauseIcon className="size-4" aria-hidden="true" />
+                {t("user.workout.running.live.pause", "Pauza")}
+              </Button>
+              <Button
+                size="lg"
+                onClick={() => setFinishOpen(true)}
+                disabled={isActionPending}
+                className="h-14 rounded-2xl"
+              >
+                <SquareIcon className="size-4" aria-hidden="true" />
+                {t("user.workout.running.live.finish", "Yakunlash")}
+              </Button>
+            </div>
+          ) : null}
         </section>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-background p-4">
-          <div>
-            <h1 className="text-lg font-semibold">
-              {t("user.workout.running.live.title", "Live yugurish")}
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {isPaused
-                ? t("user.workout.running.live.paused", "Pauzada")
-                : t("user.workout.running.live.tracking", "GPS tracking")}
-            </p>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setCancelOpen(true)}
-            disabled={isActionPending}
-          >
-            <XIcon className="size-4" aria-hidden="true" />
-            {t("user.workout.running.live.cancel", "Bekor qilish")}
-          </Button>
+        <div className="sr-only">
+          {isPaused
+            ? t("user.workout.running.live.paused", "Pauzada")
+            : isReady
+              ? t("user.workout.running.live.ready", "Startga tayyor")
+              : t("user.workout.running.live.tracking", "GPS tracking")}
         </div>
 
-        {!isPaused ? (
-          <div className="sticky bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-30 grid gap-3 rounded-[1.5rem] border bg-background/95 p-3 shadow-lg backdrop-blur sm:grid-cols-2">
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={handlePauseResume}
-              disabled={isActionPending}
-              className="h-14"
-            >
-              <PauseIcon className="size-4" aria-hidden="true" />
-              {t("user.workout.running.live.pause", "Pauza")}
-            </Button>
-            <Button
-              size="lg"
-              onClick={() => setFinishOpen(true)}
-              disabled={isActionPending}
-              className="h-14"
-            >
-              <SquareIcon className="size-4" aria-hidden="true" />
-              {t("user.workout.running.live.finish", "Yakunlash")}
-            </Button>
-          </div>
-        ) : null}
-
         {finishRetryMessage ? (
-          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-800">
+          <div className="m-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-800">
             {finishRetryMessage}
           </div>
         ) : null}
@@ -855,10 +929,7 @@ const RunningLivePage = () => {
                 size="icon"
                 className="absolute right-5 top-5 z-10 rounded-full"
                 disabled={isFinishing}
-                aria-label={t(
-                  "user.workout.running.live.finishClose",
-                  "Close",
-                )}
+                aria-label={t("user.workout.running.live.finishClose", "Close")}
               >
                 <XIcon className="size-5" aria-hidden="true" />
               </Button>
@@ -871,15 +942,12 @@ const RunningLivePage = () => {
                 <FlagIcon className="size-10" />
               </div>
               <DrawerTitle className="text-3xl font-semibold uppercase">
-                {t(
-                  "user.workout.running.live.finishTitle",
-                  "Finish training?",
-                )}
+                {t("user.workout.running.live.finishTitle", "Finish training?")}
               </DrawerTitle>
               <DrawerDescription>
                 {t(
                   "user.workout.running.live.finishDescription",
-                  "Yugurishni yakunlashdan oldin GPS nuqtalar sync qilinadi. Navbat bo'shamaguncha yakunlash kutiladi.",
+                  "Yugurish yakunlanadi va navbatdagi GPS nuqtalar shu request ichida saqlanadi.",
                 )}
               </DrawerDescription>
             </DrawerHeader>

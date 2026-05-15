@@ -110,7 +110,8 @@ const projectCoordinates = (coordinates) => {
   return coordinates.map(([longitude, latitude]) => {
     const x =
       longitudeSpan > 0
-        ? SVG_PADDING + ((longitude - minLongitude) / longitudeSpan) * drawableSize
+        ? SVG_PADDING +
+          ((longitude - minLongitude) / longitudeSpan) * drawableSize
         : SVG_SIZE / 2;
     const y =
       latitudeSpan > 0
@@ -292,7 +293,13 @@ const RouteSvgFallback = ({
           data-coordinate-count={coordinates.length}
         >
           <defs>
-            <linearGradient id={`${svgId}-route-gradient`} x1="0" x2="1" y1="0" y2="1">
+            <linearGradient
+              id={`${svgId}-route-gradient`}
+              x1="0"
+              x2="1"
+              y1="0"
+              y2="1"
+            >
               <stop offset="0%" stopColor="#fde047" />
               <stop offset="48%" stopColor="#f59e0b" />
               <stop offset="100%" stopColor="#f97316" />
@@ -346,7 +353,10 @@ const RouteSvgFallback = ({
       ) : (
         <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
           <div>
-            <MapIcon className="mx-auto size-8 text-[#f59e0b]" aria-hidden="true" />
+            <MapIcon
+              className="mx-auto size-8 text-[#f59e0b]"
+              aria-hidden="true"
+            />
             <p className="mt-3 text-sm font-medium text-white/80">{label}</p>
           </div>
         </div>
@@ -403,6 +413,32 @@ const createRouteMarker = (kind) => {
   return marker;
 };
 
+const createCurrentLocationMarker = () => {
+  const marker = document.createElement("div");
+  marker.setAttribute("aria-label", "Current location");
+  marker.style.width = "1.5rem";
+  marker.style.height = "1.5rem";
+  marker.style.borderRadius = "9999px";
+  marker.style.border = "3px solid #fff";
+  marker.style.background = "#0b84ff";
+  marker.style.boxShadow =
+    "0 0 0 12px rgba(11,132,255,0.18), 0 8px 24px rgba(0,0,0,0.28)";
+
+  const heading = document.createElement("div");
+  heading.style.position = "absolute";
+  heading.style.left = "50%";
+  heading.style.top = "-0.55rem";
+  heading.style.width = "0";
+  heading.style.height = "0";
+  heading.style.transform = "translateX(-50%)";
+  heading.style.borderLeft = "0.35rem solid transparent";
+  heading.style.borderRight = "0.35rem solid transparent";
+  heading.style.borderBottom = "0.65rem solid #1d4ed8";
+  marker.appendChild(heading);
+
+  return marker;
+};
+
 const createTransparentMapImage = () => {
   const canvas = document.createElement("canvas");
   canvas.width = 1;
@@ -431,6 +467,29 @@ const fitRouteBounds = ({ map, maplibregl, coordinates, center }) => {
     maxZoom: 16,
     duration: 0,
   });
+};
+
+const moveMapToLatestCoordinate = ({ map, coordinate, initial = false }) => {
+  if (!map || !coordinate) {
+    return;
+  }
+
+  if (initial) {
+    map.setCenter(coordinate);
+    map.setZoom(16);
+    return;
+  }
+
+  if (typeof map.easeTo === "function") {
+    map.easeTo({
+      center: coordinate,
+      duration: 450,
+      essential: true,
+    });
+    return;
+  }
+
+  map.setCenter(coordinate);
 };
 
 const ensureRouteLayers = (map) => {
@@ -479,14 +538,21 @@ const ensureRouteLayers = (map) => {
 const MapLibreRouteMap = ({
   center,
   coordinates,
+  live = false,
   mapProvider,
   routeCenter,
   onError,
 }) => {
   const containerRef = React.useRef(null);
   const mapRef = React.useRef(null);
-  const markerRefs = React.useRef([]);
+  const markerRefs = React.useRef({
+    start: null,
+    end: null,
+    current: null,
+  });
   const readyRef = React.useRef(false);
+  const didInitialLiveCenterRef = React.useRef(false);
+  const lastFollowAtRef = React.useRef(0);
   const [isReady, setIsReady] = React.useState(false);
   const { maplibregl, styleUrl } = mapProvider ?? {};
   const coordinateCount = coordinates.length;
@@ -503,6 +569,25 @@ const MapLibreRouteMap = ({
     let fallbackTimer = null;
     let markReady = null;
     let handleMissingStyleImage = null;
+    let handleMapError = null;
+    let failed = false;
+
+    const failMap = () => {
+      if (cancelled || failed) {
+        return;
+      }
+
+      failed = true;
+      if (retryTimer) {
+        window.clearTimeout(retryTimer);
+        retryTimer = null;
+      }
+      if (fallbackTimer) {
+        window.clearTimeout(fallbackTimer);
+        fallbackTimer = null;
+      }
+      onError?.();
+    };
 
     try {
       const map = new maplibregl.Map({
@@ -524,7 +609,7 @@ const MapLibreRouteMap = ({
       );
 
       markReady = () => {
-        if (cancelled || readyRef.current) {
+        if (cancelled || failed || readyRef.current) {
           return;
         }
 
@@ -557,18 +642,22 @@ const MapLibreRouteMap = ({
           // Missing style sprites are visual decoration; route rendering should continue.
         }
       };
+      handleMapError = () => {
+        failMap();
+      };
 
       map.once("load", markReady);
       map.on("styledata", markReady);
       map.on("styleimagemissing", handleMissingStyleImage);
+      map.on("error", handleMapError);
       retryTimer = window.setTimeout(markReady, 250);
       fallbackTimer = window.setTimeout(() => {
-        if (!cancelled && !readyRef.current) {
-          onError?.();
+        if (!readyRef.current) {
+          failMap();
         }
       }, 8000);
     } catch {
-      onError?.();
+      failMap();
     }
 
     return () => {
@@ -585,11 +674,19 @@ const MapLibreRouteMap = ({
       if (handleMissingStyleImage) {
         mapRef.current?.off?.("styleimagemissing", handleMissingStyleImage);
       }
-      markerRefs.current.forEach((marker) => marker.remove());
-      markerRefs.current = [];
+      if (handleMapError) {
+        mapRef.current?.off?.("error", handleMapError);
+      }
+      Object.values(markerRefs.current).forEach((marker) => marker?.remove());
+      markerRefs.current = {
+        start: null,
+        end: null,
+        current: null,
+      };
       mapRef.current?.remove();
       mapRef.current = null;
       readyRef.current = false;
+      didInitialLiveCenterRef.current = false;
     };
   }, [maplibregl, onError, styleUrl]);
 
@@ -604,30 +701,83 @@ const MapLibreRouteMap = ({
     const source = map.getSource(ROUTE_SOURCE_ID);
     source?.setData(buildRouteFeatureCollection(coordinates));
 
-    markerRefs.current.forEach((marker) => marker.remove());
-    markerRefs.current = [];
-
     if (coordinates[0]) {
-      markerRefs.current.push(
-        new maplibregl.Marker({
+      if (!markerRefs.current.start) {
+        markerRefs.current.start = new maplibregl.Marker({
           element: createRouteMarker("start"),
           anchor: "center",
         })
           .setLngLat(coordinates[0])
-          .addTo(map),
-      );
+          .addTo(map);
+      } else {
+        markerRefs.current.start.setLngLat(coordinates[0]);
+      }
+    } else if (markerRefs.current.start) {
+      markerRefs.current.start.remove();
+      markerRefs.current.start = null;
     }
 
     const endCoordinate = coordinates.at(-1);
+    if (live) {
+      if (endCoordinate) {
+        if (!markerRefs.current.current) {
+          markerRefs.current.current = new maplibregl.Marker({
+            element: createCurrentLocationMarker(),
+            anchor: "center",
+          })
+            .setLngLat(endCoordinate)
+            .addTo(map);
+        } else {
+          markerRefs.current.current.setLngLat(endCoordinate);
+        }
+      } else if (markerRefs.current.current) {
+        markerRefs.current.current.remove();
+        markerRefs.current.current = null;
+      }
+
+      if (markerRefs.current.end) {
+        markerRefs.current.end.remove();
+        markerRefs.current.end = null;
+      }
+
+      if (endCoordinate && !didInitialLiveCenterRef.current) {
+        moveMapToLatestCoordinate({
+          map,
+          coordinate: endCoordinate,
+          initial: true,
+        });
+        didInitialLiveCenterRef.current = true;
+      } else if (endCoordinate) {
+        const now = Date.now();
+
+        if (now - lastFollowAtRef.current > 900) {
+          moveMapToLatestCoordinate({ map, coordinate: endCoordinate });
+          lastFollowAtRef.current = now;
+        }
+      }
+
+      return;
+    }
+
     if (endCoordinate) {
-      markerRefs.current.push(
-        new maplibregl.Marker({
+      if (!markerRefs.current.end) {
+        markerRefs.current.end = new maplibregl.Marker({
           element: createRouteMarker("end"),
           anchor: "center",
         })
           .setLngLat(endCoordinate)
-          .addTo(map),
-      );
+          .addTo(map);
+      } else {
+        markerRefs.current.end.setLngLat(endCoordinate);
+      }
+    } else if (markerRefs.current.end) {
+      markerRefs.current.end.remove();
+      markerRefs.current.end = null;
+    }
+
+    if (markerRefs.current.current) {
+      markerRefs.current.current.remove();
+      markerRefs.current.current = null;
     }
 
     fitRouteBounds({
@@ -636,7 +786,7 @@ const MapLibreRouteMap = ({
       coordinates,
       center,
     });
-  }, [center, coordinates, isReady, maplibregl]);
+  }, [center, coordinates, isReady, live, maplibregl]);
 
   return (
     <div
@@ -720,13 +870,10 @@ const RunMapPanel = ({
     () => getRouteCoordinates({ points, polyline }),
     [points, polyline],
   );
-  const routeKey = React.useMemo(
-    () => JSON.stringify(routeCoordinates),
-    [routeCoordinates],
-  );
   const [mapComponents, setMapComponents] = React.useState(null);
   const [loadState, setLoadState] = React.useState("idle");
   const isPreview = variant === "preview";
+  const isLive = variant === "live";
 
   /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
@@ -760,14 +907,14 @@ const RunMapPanel = ({
     return () => {
       cancelled = true;
     };
-  }, [provider, routeCoordinates.length, routeKey]);
+  }, [provider]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const routeCenter = getRouteCenter(routeCoordinates);
   const center = getMapCenter(routeCoordinates);
   const handleMapError = React.useCallback(() => {
-    setMapComponents(null);
-    setLoadState("error");
+    setMapComponents((current) => (current === null ? current : null));
+    setLoadState((current) => (current === "error" ? current : "error"));
   }, []);
 
   const surface = (
@@ -775,6 +922,7 @@ const RunMapPanel = ({
       className={cn(
         "relative h-[320px] min-h-[260px] overflow-hidden rounded-[1.5rem] bg-[#17120d] md:h-[460px]",
         isPreview && "h-full min-h-[300px] rounded-[1.25rem] md:h-full",
+        isLive && "h-full min-h-0 rounded-none md:h-full",
         surfaceClassName,
       )}
     >
@@ -799,6 +947,7 @@ const RunMapPanel = ({
           <MapLibreRouteMap
             center={center}
             coordinates={routeCoordinates}
+            live={isLive}
             mapProvider={mapComponents}
             routeCenter={routeCenter}
             onError={handleMapError}
@@ -822,7 +971,7 @@ const RunMapPanel = ({
     </div>
   );
 
-  if (isPreview) {
+  if (isPreview || isLive) {
     return <div className={cn("relative", className)}>{surface}</div>;
   }
 

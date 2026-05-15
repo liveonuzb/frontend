@@ -20,6 +20,17 @@ export const formatRunningDuration = (seconds = 0) => {
   return parts.map((part) => String(part).padStart(2, "0")).join(":");
 };
 
+export const formatRunningClockDuration = (seconds = 0) => {
+  const totalSeconds = Math.max(0, Number(seconds) || 0);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const remainingSeconds = Math.floor(totalSeconds % 60);
+
+  return [hours, minutes, remainingSeconds]
+    .map((part) => String(part).padStart(2, "0"))
+    .join(":");
+};
+
 export const formatRunningPace = (secondsPerKm) => {
   const pace = Number(secondsPerKm);
   if (!Number.isFinite(pace) || pace <= 0) {

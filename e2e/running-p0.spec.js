@@ -135,6 +135,7 @@ const setupRunningApi = async (
   let activeSession = initialActiveSession;
   let batchAttempts = 0;
   let startAttempts = 0;
+  let beginAttempts = 0;
   const acceptedSequences = [];
 
   await page.route(`${apiBase}/**`, async (route) => {
@@ -237,7 +238,25 @@ const setupRunningApi = async (
         return;
       }
 
-      activeSession = createSession();
+      activeSession = createSession({
+        status: "ready",
+        startedAt: new Date("2026-05-15T03:59:00.000Z").toISOString(),
+      });
+      await fulfillJson(route, { data: activeSession }, 201);
+      return;
+    }
+
+    if (
+      path === "/user/workout/running/workout-e2e/begin" &&
+      method === "POST"
+    ) {
+      beginAttempts += 1;
+      const body = request.postDataJSON();
+      activeSession = {
+        ...activeSession,
+        status: "active",
+        startedAt: body.startedAt ?? new Date().toISOString(),
+      };
       await fulfillJson(route, { data: activeSession }, 201);
       return;
     }
@@ -308,6 +327,11 @@ const setupRunningApi = async (
         return;
       }
 
+      for (const point of body.finalPoints ?? []) {
+        acceptedSequences.push(point.sequence);
+      }
+
+      const uniqueSequences = [...new Set(acceptedSequences)];
       activeSession = {
         ...activeSession,
         status: "completed",
@@ -319,7 +343,7 @@ const setupRunningApi = async (
           averagePaceSecondsPerKm: 480,
           gpsQualityScore: 0.92,
         },
-        points: buildRoutePoints(acceptedSequences),
+        points: buildRoutePoints(uniqueSequences),
         route: { polyline: null, encoding: "google" },
       };
       await fulfillJson(route, { data: activeSession }, 201);
@@ -353,6 +377,9 @@ const setupRunningApi = async (
     get startAttempts() {
       return startAttempts;
     },
+    get beginAttempts() {
+      return beginAttempts;
+    },
     get activeSession() {
       return activeSession;
     },
@@ -377,6 +404,9 @@ const openRunningHome = async (page) => {
 const startRun = async (page) => {
   await page.getByRole("button", { name: /Start run/i }).click();
   await expect(page).toHaveURL(/\/user\/workout\/running\/live\/workout-e2e/);
+  await expect(page.getByRole("button", { name: /^START$/i })).toBeVisible();
+  await page.getByRole("button", { name: /^START$/i }).click();
+  await expect(page.getByText(/^[123]$/).first()).toBeVisible();
 };
 
 const emitPosition = async (

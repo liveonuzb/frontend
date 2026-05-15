@@ -107,6 +107,14 @@ const Index = () => {
   const isMobileChatView = location.pathname.startsWith("/user/chat");
   const isRunningWorkoutRoute =
     location.pathname.startsWith("/user/workout/running");
+  const isRunningLiveRoute = location.pathname.startsWith(
+    "/user/workout/running/live",
+  );
+  const isRunningResultRoute =
+    location.pathname.startsWith("/user/workout/running/") &&
+    !location.pathname.startsWith("/user/workout/running/live") &&
+    !location.pathname.startsWith("/user/workout/running/history");
+  const isRunningImmersiveRoute = isRunningLiveRoute || isRunningResultRoute;
   const isFeatureScopedMobileNav =
     location.pathname.startsWith("/user/workout") ||
     location.pathname.startsWith("/user/nutrition");
@@ -215,7 +223,7 @@ const Index = () => {
             isFeatureScopedMobileNav ? "overflow-visible" : "overflow-hidden",
           )}
         >
-          {isMobileChatView ? (
+          {isRunningImmersiveRoute ? null : isMobileChatView ? (
             <div className="hidden md:block">
               <LayoutHeader
                 mobileChromeHidden={mobileChromeHidden}
@@ -271,7 +279,9 @@ const Index = () => {
           <div
             className={cn(
               "relative min-w-0 flex-1 md:mt-0 md:overflow-visible md:p-6 md:pb-3",
-              isMobileChatView
+              isRunningImmersiveRoute
+                ? "mt-0 overflow-visible p-0 pb-0 md:p-0 md:pb-0"
+                : isMobileChatView
                 ? "mt-0 p-0 pb-0"
                 : isFeatureScopedMobileNav
                   ? "mt-16 overflow-visible p-3 pb-4"

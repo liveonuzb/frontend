@@ -2,7 +2,12 @@ import React from "react";
 import { get } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
 import { config } from "@/config.js";
-import { useGetQuery, usePostQuery } from "@/hooks/api";
+import {
+  useDeleteQuery,
+  useGetQuery,
+  usePatchQuery,
+  usePostQuery,
+} from "@/hooks/api";
 import { WORKOUT_LOGS_QUERY_KEY } from "@/hooks/app/use-workout-logs";
 import { WORKOUT_OVERVIEW_QUERY_KEY } from "@/hooks/app/use-workout-overview";
 import { WORKOUT_SESSION_HISTORY_QUERY_KEY } from "@/hooks/app/use-workout-sessions";
@@ -71,6 +76,26 @@ const normalizeRunningSession = (session) => {
         "metrics.averagePaceSecondsPerKm",
         session.averagePaceSecondsPerKm ?? null,
       ),
+      bestPaceSecondsPerKm: get(
+        session,
+        "metrics.bestPaceSecondsPerKm",
+        session.bestPaceSecondsPerKm ?? null,
+      ),
+      averageSpeedKmh: get(
+        session,
+        "metrics.averageSpeedKmh",
+        session.averageSpeedKmh ?? null,
+      ),
+      maxSpeedKmh: get(
+        session,
+        "metrics.maxSpeedKmh",
+        session.maxSpeedKmh ?? null,
+      ),
+      elevationGainMeters: get(
+        session,
+        "metrics.elevationGainMeters",
+        session.elevationGainMeters ?? null,
+      ),
       gpsQualityScore: get(
         session,
         "metrics.gpsQualityScore",
@@ -78,6 +103,27 @@ const normalizeRunningSession = (session) => {
       ),
     },
     route: session.route ?? null,
+    moments: {
+      title: get(session, "moments.title", session.momentTitle ?? ""),
+      text: get(session, "moments.text", session.momentText ?? ""),
+      imageUploadId: get(
+        session,
+        "moments.imageUploadId",
+        session.momentImageUploadId ?? null,
+      ),
+      imageUrl: get(
+        session,
+        "moments.imageUrl",
+        session.momentImageUrl ?? null,
+      ),
+    },
+    feeling: {
+      level: get(session, "feeling.level", session.feelingLevel ?? null),
+    },
+    bodyMetrics: {
+      heightCm: get(session, "bodyMetrics.heightCm", session.heightCm ?? null),
+      weightKg: get(session, "bodyMetrics.weightKg", session.weightKg ?? null),
+    },
     splits: Array.isArray(session.splits) ? session.splits : [],
     points: Array.isArray(session.points)
       ? session.points
@@ -123,11 +169,15 @@ export const useRunningActiveSession = (options = {}) => {
       staleTime: 10000,
     },
   });
+  const activeSession = React.useMemo(
+    () => normalizeRunningSession(resolveResponseData(data, null)),
+    [data],
+  );
 
   return {
     ...query,
     data,
-    activeSession: normalizeRunningSession(resolveResponseData(data, null)),
+    activeSession,
   };
 };
 
@@ -148,17 +198,28 @@ export const useRunningSessions = (params = {}, options = {}) => {
       enabled,
     },
   });
-  const responseData = resolveResponseData(data, {});
-  const items = Array.isArray(responseData)
-    ? responseData
-    : Array.isArray(responseData?.data)
-      ? responseData.data
-      : [];
+  const responseData = React.useMemo(
+    () => resolveResponseData(data, {}),
+    [data],
+  );
+  const items = React.useMemo(
+    () =>
+      Array.isArray(responseData)
+        ? responseData
+        : Array.isArray(responseData?.data)
+          ? responseData.data
+          : [],
+    [responseData],
+  );
+  const sessions = React.useMemo(
+    () => items.map(normalizeRunningSession),
+    [items],
+  );
 
   return {
     ...query,
     data,
-    sessions: items.map(normalizeRunningSession),
+    sessions,
     meta: responseData?.meta ?? null,
   };
 };
@@ -172,11 +233,15 @@ export const useRunningSessionDetail = (workoutSessionId, options = {}) => {
       enabled: Boolean(workoutSessionId) && enabled,
     },
   });
+  const session = React.useMemo(
+    () => normalizeRunningSession(resolveResponseData(data, null)),
+    [data],
+  );
 
   return {
     ...query,
     data,
-    session: normalizeRunningSession(resolveResponseData(data, null)),
+    session,
   };
 };
 
@@ -190,33 +255,39 @@ export const useRunningStatsSummary = (options = {}) => {
       staleTime: 30000,
     },
   });
+  const stats = React.useMemo(
+    () =>
+      resolveResponseData(data, {
+        totalRuns: 0,
+        totalDistanceMeters: 0,
+        totalDurationSeconds: 0,
+        totalCaloriesBurned: 0,
+      }),
+    [data],
+  );
 
   return {
     ...query,
     data,
-    stats: resolveResponseData(data, {
-      totalRuns: 0,
-      totalDistanceMeters: 0,
-      totalDurationSeconds: 0,
-      totalCaloriesBurned: 0,
-    }),
+    stats,
   };
 };
 
 export const useStartRunningSession = () => {
   const queryClient = useQueryClient();
   const mutation = usePostQuery();
+  const { mutateAsync } = mutation;
 
   const startRunningSession = React.useCallback(
     async (payload = {}) => {
-      const response = await mutation.mutateAsync({
+      const response = await mutateAsync({
         url: "/user/workout/running/start",
         attributes: payload,
       });
       await invalidateRunningQueries(queryClient);
       return normalizeRunningSession(resolveResponseData(response, null));
     },
-    [mutation, queryClient],
+    [mutateAsync, queryClient],
   );
 
   return {
@@ -225,12 +296,39 @@ export const useStartRunningSession = () => {
   };
 };
 
+export const useBeginRunningSession = () => {
+  const queryClient = useQueryClient();
+  const mutation = usePostQuery();
+  const { mutateAsync } = mutation;
+
+  const beginRunningSession = React.useCallback(
+    async (workoutSessionId, payload = {}) => {
+      const response = await mutateAsync({
+        url: `/user/workout/running/${workoutSessionId}/begin`,
+        attributes: payload,
+      });
+      await invalidateRunningQueries(queryClient);
+      await queryClient.invalidateQueries({
+        queryKey: getRunningSessionDetailQueryKey(workoutSessionId),
+      });
+      return normalizeRunningSession(resolveResponseData(response, null));
+    },
+    [mutateAsync, queryClient],
+  );
+
+  return {
+    ...mutation,
+    beginRunningSession,
+  };
+};
+
 export const useAppendRunningPoints = () => {
   const mutation = usePostQuery();
+  const { mutateAsync } = mutation;
 
   const appendPoints = React.useCallback(
     async (workoutSessionId, points, extra = {}) => {
-      const response = await mutation.mutateAsync({
+      const response = await mutateAsync({
         url: `/user/workout/running/${workoutSessionId}/points/batch`,
         attributes: {
           ...extra,
@@ -240,7 +338,7 @@ export const useAppendRunningPoints = () => {
 
       return resolveResponseData(response, null);
     },
-    [mutation],
+    [mutateAsync],
   );
 
   return {
@@ -252,16 +350,17 @@ export const useAppendRunningPoints = () => {
 export const usePauseRunningSession = () => {
   const queryClient = useQueryClient();
   const mutation = usePostQuery();
+  const { mutateAsync } = mutation;
 
   const pauseRunningSession = React.useCallback(
     async (workoutSessionId) => {
-      const response = await mutation.mutateAsync({
+      const response = await mutateAsync({
         url: `/user/workout/running/${workoutSessionId}/pause`,
       });
       await invalidateRunningQueries(queryClient);
       return normalizeRunningSession(resolveResponseData(response, null));
     },
-    [mutation, queryClient],
+    [mutateAsync, queryClient],
   );
 
   return {
@@ -273,16 +372,17 @@ export const usePauseRunningSession = () => {
 export const useResumeRunningSession = () => {
   const queryClient = useQueryClient();
   const mutation = usePostQuery();
+  const { mutateAsync } = mutation;
 
   const resumeRunningSession = React.useCallback(
     async (workoutSessionId) => {
-      const response = await mutation.mutateAsync({
+      const response = await mutateAsync({
         url: `/user/workout/running/${workoutSessionId}/resume`,
       });
       await invalidateRunningQueries(queryClient);
       return normalizeRunningSession(resolveResponseData(response, null));
     },
-    [mutation, queryClient],
+    [mutateAsync, queryClient],
   );
 
   return {
@@ -294,10 +394,11 @@ export const useResumeRunningSession = () => {
 export const useFinishRunningSession = () => {
   const queryClient = useQueryClient();
   const mutation = usePostQuery();
+  const { mutateAsync } = mutation;
 
   const finishRunningSession = React.useCallback(
     async (workoutSessionId, payload = {}) => {
-      const response = await mutation.mutateAsync({
+      const response = await mutateAsync({
         url: `/user/workout/running/${workoutSessionId}/finish`,
         attributes: payload,
       });
@@ -307,7 +408,7 @@ export const useFinishRunningSession = () => {
       });
       return normalizeRunningSession(resolveResponseData(response, null));
     },
-    [mutation, queryClient],
+    [mutateAsync, queryClient],
   );
 
   return {
@@ -316,20 +417,98 @@ export const useFinishRunningSession = () => {
   };
 };
 
+export const useUpdateRunningSessionDetails = () => {
+  const queryClient = useQueryClient();
+  const mutation = usePatchQuery();
+  const { mutateAsync } = mutation;
+
+  const updateRunningSessionDetails = React.useCallback(
+    async (workoutSessionId, payload = {}) => {
+      const response = await mutateAsync({
+        url: `/user/workout/running/${workoutSessionId}/details`,
+        attributes: payload,
+      });
+      await invalidateRunningQueries(queryClient);
+      await queryClient.invalidateQueries({
+        queryKey: getRunningSessionDetailQueryKey(workoutSessionId),
+      });
+      return normalizeRunningSession(resolveResponseData(response, null));
+    },
+    [mutateAsync, queryClient],
+  );
+
+  return {
+    ...mutation,
+    updateRunningSessionDetails,
+  };
+};
+
+export const useUploadRunningMomentImage = () => {
+  const mutation = usePostQuery();
+  const { mutateAsync } = mutation;
+
+  const uploadRunningMomentImage = React.useCallback(
+    async (file) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "running-moments");
+
+      const response = await mutateAsync({
+        url: "/user/media/images",
+        attributes: formData,
+      });
+
+      return resolveResponseData(response, null);
+    },
+    [mutateAsync],
+  );
+
+  return {
+    ...mutation,
+    uploadRunningMomentImage,
+  };
+};
+
+export const useDeleteRunningSession = () => {
+  const queryClient = useQueryClient();
+  const mutation = useDeleteQuery();
+  const { mutateAsync } = mutation;
+
+  const deleteRunningSession = React.useCallback(
+    async (workoutSessionId) => {
+      const response = await mutateAsync({
+        url: `/user/workout/running/${workoutSessionId}`,
+      });
+      await invalidateRunningQueries(queryClient);
+      await queryClient.invalidateQueries({
+        queryKey: getRunningSessionDetailQueryKey(workoutSessionId),
+      });
+      return resolveResponseData(response, null);
+    },
+    [mutateAsync, queryClient],
+  );
+
+  return {
+    ...mutation,
+    deleteRunningSession,
+  };
+};
+
 export const useCancelRunningSession = () => {
   const queryClient = useQueryClient();
   const mutation = usePostQuery();
+  const { mutateAsync } = mutation;
 
   const cancelRunningSession = React.useCallback(
     async (workoutSessionId, payload = {}) => {
-      const response = await mutation.mutateAsync({
+      const response = await mutateAsync({
         url: `/user/workout/running/${workoutSessionId}/cancel`,
         attributes: payload,
       });
       await invalidateRunningQueries(queryClient);
       return resolveResponseData(response, null);
     },
-    [mutation, queryClient],
+    [mutateAsync, queryClient],
   );
 
   return {
