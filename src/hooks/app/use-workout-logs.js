@@ -47,6 +47,10 @@ const normalizeWorkoutSummary = (summary = {}) => ({
 });
 
 export const normalizeWorkoutLog = (log = {}) => {
+  if (!log || typeof log !== "object") {
+    return null;
+  }
+
   const entries = Array.isArray(log.entries)
     ? log.entries.map(normalizeWorkoutEntry)
     : [];
@@ -90,7 +94,7 @@ export const normalizeWorkoutLog = (log = {}) => {
 };
 
 const normalizeWorkoutLogList = (payload) =>
-  Array.isArray(payload) ? payload.map(normalizeWorkoutLog) : [];
+  Array.isArray(payload) ? payload.map(normalizeWorkoutLog).filter(Boolean) : [];
 
 const invalidateWorkoutLogQueries = async (
   queryClient,

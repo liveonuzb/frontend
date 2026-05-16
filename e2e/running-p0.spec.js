@@ -390,10 +390,11 @@ const setupRunningApi = async (
 };
 
 const openRunningHome = async (page) => {
-  await page.goto("/user/workout/running");
-  await page.waitForLoadState("networkidle").catch(() => undefined);
+  await page.goto("/user/workout/running", { waitUntil: "domcontentloaded" });
   if (new URL(page.url()).pathname !== "/user/workout/running") {
-    await page.goto("/user/workout/running");
+    await page.goto("/user/workout/running", {
+      waitUntil: "domcontentloaded",
+    });
   }
   await expect(page.getByRole("heading", { name: /Running/i })).toBeVisible();
   await expect(
@@ -452,7 +453,9 @@ const fulfillJson = (route, payload, status = 200, headers = {}) =>
 
 test("running P0 flow survives rate-limited point sync", async ({ page }) => {
   await installBrowserState(page);
-  await page.route("https://tiles.openfreemap.org/**", (route) => route.abort());
+  await page.route("https://tiles.openfreemap.org/**", (route) =>
+    route.abort(),
+  );
   const api = await setupRunningApi(page, {
     batchFailuresBeforeSuccess: 1,
     batchFailureStatus: 429,
@@ -470,15 +473,20 @@ test("running P0 flow survives rate-limited point sync", async ({ page }) => {
   });
 
   await expect(page.getByText(/GPS tracking/i)).toBeVisible();
-  await page.getByRole("button", { name: /Pauza/i }).click();
+  await expect(page.getByRole("button", { name: /^END$/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^RESUME$/i })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /Pauza|Yakunlash|Завершить/i }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: /^RESUME$/i }).click();
   await expect(page.getByText(/Pauzada/i)).toBeVisible();
   await expect(page.getByText(/^END$/i)).toBeVisible();
   await expect(page.getByText(/^RESUME$/i)).toBeVisible();
-  await page.getByRole("button", { name: /Davom ettirish/i }).click();
+  await page.getByRole("button", { name: /^RESUME$/i }).click();
   await expect(page.getByText(/GPS tracking/i)).toBeVisible();
 
   await expect.poll(() => api.batchAttempts).toBeGreaterThan(1);
-  await page.getByRole("button", { name: /Yakunlash/i }).click();
+  await page.getByRole("button", { name: /^END$/i }).click();
   await expect(
     page.getByRole("dialog", { name: /Finish training/i }),
   ).toBeVisible();
@@ -504,10 +512,11 @@ test("running live page shows a recoverable denied-location state", async ({
   await expect(
     page.getByRole("button", { name: /GPS qayta urinish/i }),
   ).toBeVisible();
-  await expect(page.getByRole("button", { name: /Pauza/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^RESUME$/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^END$/i })).toBeVisible();
   await expect(
-    page.getByRole("button", { name: /Bekor qilish/i }),
-  ).toBeVisible();
+    page.getByRole("button", { name: /Bekor qilish|Pauza|Yakunlash/i }),
+  ).toHaveCount(0);
 });
 
 test("running dashboard route preview uses the real map container when route points exist", async ({
@@ -554,9 +563,9 @@ test("running live page survives reload and keeps pause/resume controls working"
   await expect(page).toHaveURL(/\/user\/workout\/running\/live\/workout-e2e/);
   await expect(page.getByText(/GPS tracking/i)).toBeVisible();
 
-  await page.getByRole("button", { name: /Pauza/i }).click();
+  await page.getByRole("button", { name: /^RESUME$/i }).click();
   await expect(page.getByText(/Pauzada/i)).toBeVisible();
-  await page.getByRole("button", { name: /Davom ettirish/i }).click();
+  await page.getByRole("button", { name: /^RESUME$/i }).click();
   await expect(page.getByText(/GPS tracking/i)).toBeVisible();
 });
 
@@ -576,7 +585,7 @@ test("running live page shows queued sync state after a temporary upload outage"
 
   await expect.poll(() => api.batchAttempts).toBe(1);
   await expect(page.getByText(/Sync navbatda/i)).toBeVisible();
-  await page.getByRole("button", { name: /Pauza/i }).click();
+  await page.getByRole("button", { name: /^RESUME$/i }).click();
   await expect.poll(() => api.batchAttempts).toBeGreaterThan(1);
 });
 

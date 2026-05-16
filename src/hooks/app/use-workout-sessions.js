@@ -219,22 +219,43 @@ export const useFinishWorkoutSession = () => {
   };
 };
 
-export const useWorkoutSessionHistory = (options = {}) => {
+const hasHistoryQueryParams = (value = {}) =>
+  Object.prototype.hasOwnProperty.call(value, "limit") ||
+  Object.prototype.hasOwnProperty.call(value, "cursor");
+
+export const useWorkoutSessionHistory = (paramsOrOptions = {}, maybeOptions = {}) => {
+  const params = hasHistoryQueryParams(paramsOrOptions) ? paramsOrOptions : {};
+  const options = hasHistoryQueryParams(paramsOrOptions)
+    ? maybeOptions
+    : paramsOrOptions;
   const enabled = options.enabled ?? true;
+  const queryString = new URLSearchParams(
+    Object.entries(params).filter(
+      ([, value]) => value !== undefined && value !== null && value !== "",
+    ),
+  ).toString();
+  const url = queryString
+    ? `/user/workout/sessions/history?${queryString}`
+    : "/user/workout/sessions/history";
   const { data, ...query } = useGetQuery({
-    url: "/user/workout/sessions/history",
+    url,
     queryProps: {
-      queryKey: WORKOUT_SESSION_HISTORY_QUERY_KEY,
+      queryKey: [...WORKOUT_SESSION_HISTORY_QUERY_KEY, params],
       enabled,
     },
   });
+  const responseData = resolveResponseData(data, []);
+  const sessions = Array.isArray(responseData)
+    ? responseData
+    : Array.isArray(responseData?.data)
+      ? responseData.data
+      : [];
 
   return {
     ...query,
     data,
-    sessions: Array.isArray(resolveResponseData(data, []))
-      ? resolveResponseData(data, [])
-      : [],
+    sessions,
+    meta: responseData?.meta ?? null,
   };
 };
 

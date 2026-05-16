@@ -287,6 +287,7 @@ const RunningPage = () => {
   const { stats = {} } = useRunningStatsSummary();
   const { sessions = [] } = useRunningSessions({}, { enabled: true });
   const { startRunningSession, isPending } = useStartRunningSession();
+  const startRequestInFlightRef = React.useRef(false);
   const localActiveSession = React.useMemo(
     () => loadActiveRunningSession(),
     [],
@@ -380,6 +381,10 @@ const RunningPage = () => {
   }, [setBreadcrumbs, t]);
 
   const handleStart = async () => {
+    if (startRequestInFlightRef.current) {
+      return;
+    }
+
     if (recoverySession?.workoutSessionId) {
       navigate(
         `/user/workout/running/live/${recoverySession.workoutSessionId}`,
@@ -388,6 +393,7 @@ const RunningPage = () => {
     }
 
     setStartErrorMessage("");
+    startRequestInFlightRef.current = true;
     try {
       const session = await startRunningSession({
         clientSessionId: `web-${Date.now()}`,
@@ -406,6 +412,8 @@ const RunningPage = () => {
       );
       setStartErrorMessage(message);
       toast.error(message);
+    } finally {
+      startRequestInFlightRef.current = false;
     }
   };
 

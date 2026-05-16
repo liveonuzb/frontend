@@ -16,6 +16,7 @@ export const loadMapLibre = async () => {
     type: "maplibre",
     maplibregl,
     styleUrl: config.mapStyleUrl,
+    styleUrls: config.mapStyleUrls,
   };
 
   return cache;

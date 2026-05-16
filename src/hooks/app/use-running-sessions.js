@@ -211,10 +211,29 @@ export const useRunningSessions = (params = {}, options = {}) => {
           : [],
     [responseData],
   );
-  const sessions = React.useMemo(
-    () => items.map(normalizeRunningSession),
-    [items],
-  );
+  const sessions = React.useMemo(() => {
+    const seenSessionIds = new Set();
+
+    return items
+      .map(normalizeRunningSession)
+      .filter((session) => {
+        if (!session) {
+          return false;
+        }
+
+        const sessionId = session.workoutSessionId || session.runningSessionId;
+        if (!sessionId) {
+          return true;
+        }
+
+        if (seenSessionIds.has(sessionId)) {
+          return false;
+        }
+
+        seenSessionIds.add(sessionId);
+        return true;
+      });
+  }, [items]);
 
   return {
     ...query,

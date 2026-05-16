@@ -17,9 +17,14 @@ vi.mock("@/components/page-loader/index.jsx", () => ({
 }));
 
 vi.mock("../workout-exercise-detail-drawer.jsx", () => ({
-  default: ({ open, exercise }) =>
+  default: ({ open, exercise, onOpenChange }) =>
     open ? (
-      <div data-testid="exercise-detail-drawer">{exercise?.name}</div>
+      <div data-testid="exercise-detail-drawer">
+        {exercise?.name}
+        <button type="button" onClick={() => onOpenChange(false)}>
+          Close drawer
+        </button>
+      </div>
     ) : null,
 }));
 
@@ -71,7 +76,10 @@ describe("WorkoutExercisesPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useWorkoutExerciseCategories.mockReturnValue({
-      categories: [{ id: "strength", name: "Strength" }],
+      categories: [
+        { id: "strength", name: "Strength" },
+        { id: "legs", name: "Legs" },
+      ],
       isLoading: false,
     });
     useWorkoutExercises.mockReturnValue({
@@ -96,6 +104,20 @@ describe("WorkoutExercisesPage", () => {
     expect(screen.queryByText("Push-up")).not.toBeInTheDocument();
   });
 
+  it("passes category filters to the catalog hook and keeps cards keyboard-visible", () => {
+    render(<WorkoutExercisesPage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Legs" }));
+
+    expect(useWorkoutExercises).toHaveBeenLastCalledWith({
+      categoryId: "legs",
+      query: "",
+    });
+    expect(screen.getByRole("button", { name: /squat/i })).toHaveClass(
+      "focus-visible:ring-2",
+    );
+  });
+
   it("shows an empty state when the search filter has no matching exercises", () => {
     render(<WorkoutExercisesPage />);
 
@@ -106,5 +128,24 @@ describe("WorkoutExercisesPage", () => {
     expect(
       screen.getByText("Tanlangan filter bo'yicha mashq topilmadi."),
     ).toBeInTheDocument();
+  });
+
+  it("opens the exercise detail drawer from an exercise card", () => {
+    render(<WorkoutExercisesPage />);
+
+    fireEvent.click(screen.getByRole("button", { name: /push-up/i }));
+
+    expect(screen.getByTestId("exercise-detail-drawer")).toHaveTextContent(
+      "Push-up",
+    );
+  });
+
+  it("closes the exercise detail drawer through onOpenChange", () => {
+    render(<WorkoutExercisesPage />);
+
+    fireEvent.click(screen.getByRole("button", { name: /push-up/i }));
+    fireEvent.click(screen.getByRole("button", { name: /close drawer/i }));
+
+    expect(screen.queryByTestId("exercise-detail-drawer")).not.toBeInTheDocument();
   });
 });

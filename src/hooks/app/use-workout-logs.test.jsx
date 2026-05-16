@@ -18,6 +18,7 @@ vi.mock("@/hooks/api", () => ({
 import {
   WORKOUT_LOGS_QUERY_KEY,
   useCreateWorkoutLog,
+  useWorkoutLog,
   useWorkoutLogs,
 } from "./use-workout-logs.js";
 import { WORKOUT_OVERVIEW_QUERY_KEY } from "./use-workout-overview.js";
@@ -115,6 +116,20 @@ describe("useWorkoutLogs", () => {
         items: [expect.objectContaining({ id: "entry-1", reps: 8, weight: 80 })],
       }),
     ]);
+  });
+
+  it("keeps the edit-log hook null-safe while the log query is still empty", () => {
+    mockUseGetQuery.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    });
+
+    const { result } = renderHook(() => useWorkoutLog("group-1"), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    expect(result.current.log).toBeNull();
+    expect(result.current.isLoading).toBe(true);
   });
 
   it("invalidates workout feature queries after creating a grouped log", async () => {

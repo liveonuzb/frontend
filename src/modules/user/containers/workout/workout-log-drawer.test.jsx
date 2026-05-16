@@ -156,4 +156,63 @@ describe("WorkoutLogDrawer", () => {
     expect(onSave).not.toHaveBeenCalled();
     expect(toast.error).toHaveBeenCalledWith("Kamida 1 ta to'g'ri set kiriting");
   });
+
+  it("adds, updates, and removes set rows without saving stale totals", async () => {
+    const onSave = vi.fn().mockResolvedValue({});
+
+    render(
+      <WorkoutLogDrawer
+        open
+        onOpenChange={vi.fn()}
+        onSave={onSave}
+        initialExercise={{
+          id: "push-up",
+          name: "Push-up",
+          trackingType: "REPS_ONLY",
+          defaultSets: 1,
+          defaultReps: 10,
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /yana set/i }));
+
+    const setInputs = screen.getAllByRole("textbox");
+    expect(setInputs).toHaveLength(2);
+
+    fireEvent.change(setInputs[1], { target: { value: "15" } });
+    fireEvent.click(screen.getByRole("button", { name: /saqlash|save/i }));
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entries: [
+            expect.objectContaining({ reps: 10 }),
+            expect.objectContaining({ reps: 15 }),
+          ],
+        }),
+      );
+    });
+
+    onSave.mockClear();
+
+    fireEvent.click(screen.getByRole("button", { name: /2-setni olib tashlash/i }));
+    fireEvent.click(screen.getByRole("button", { name: /saqlash|save/i }));
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entries: [
+            expect.objectContaining({
+              reps: 10,
+              durationMinutes: 2,
+              burnedCalories: 10,
+            }),
+          ],
+        }),
+      );
+    });
+
+    expect(onSave.mock.calls[0][0].entries).toHaveLength(1);
+  });
 });

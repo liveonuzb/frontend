@@ -520,6 +520,7 @@ export default function WorkoutLogDrawer({
                       variant="ghost"
                       onClick={() => removeSet(index)}
                       disabled={sets.length === 1}
+                      aria-label={`${index + 1}-setni olib tashlash`}
                     >
                       <Trash2Icon className="size-4" />
                     </Button>

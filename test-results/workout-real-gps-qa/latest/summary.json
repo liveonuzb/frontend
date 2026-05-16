@@ -1,0 +1,78 @@
+{
+  "status": "pending",
+  "tester": "",
+  "testedAt": "",
+  "device": {
+    "model": "",
+    "os": "",
+    "browser": "",
+    "network": "mobile-data-or-wifi"
+  },
+  "environment": {
+    "frontendUrl": "http://10.15.45.16:3030",
+    "backendUrl": "",
+    "appMode": "madagascar",
+    "colorMode": "light-and-dark",
+    "buildCommit": ""
+  },
+  "observations": {
+    "testDurationMinutes": null,
+    "routePointCount": null,
+    "markerFlickerCount": null,
+    "mapBlankingCount": null,
+    "gpsPermissionPrompts": null,
+    "gpsAccuracyMetersMin": null,
+    "gpsAccuracyMetersMax": null
+  },
+  "checks": [
+    {
+      "id": "permission-granted",
+      "pass": false,
+      "notes": "",
+      "evidence": []
+    },
+    {
+      "id": "pre-start-stable-map",
+      "pass": false,
+      "notes": "",
+      "evidence": []
+    },
+    {
+      "id": "start-begins-real-watch",
+      "pass": false,
+      "notes": "",
+      "evidence": []
+    },
+    {
+      "id": "live-marker-no-flicker",
+      "pass": false,
+      "notes": "",
+      "evidence": []
+    },
+    {
+      "id": "route-line-grows",
+      "pass": false,
+      "notes": "",
+      "evidence": []
+    },
+    {
+      "id": "pause-resume-stable",
+      "pass": false,
+      "notes": "",
+      "evidence": []
+    },
+    {
+      "id": "finish-detail-route-map",
+      "pass": false,
+      "notes": "",
+      "evidence": []
+    },
+    {
+      "id": "light-dark-map-readable",
+      "pass": false,
+      "notes": "",
+      "evidence": []
+    }
+  ],
+  "blockers": []
+}

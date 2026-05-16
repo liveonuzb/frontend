@@ -26,11 +26,15 @@ vi.mock("@/hooks/app/use-workout-plans", () => ({
   useWorkoutPlans: vi.fn(),
 }));
 
-const renderPage = () => {
+const renderPage = (initialEntry = "/user/workout/history") => {
   const router = createMemoryRouter(
     [
       {
         path: "/user/workout/history",
+        element: <SessionHistoryPage />,
+      },
+      {
+        path: "/user/workout/report",
         element: <SessionHistoryPage />,
       },
       {
@@ -46,7 +50,7 @@ const renderPage = () => {
         element: <div data-testid="running-detail-route">Running detail route</div>,
       },
     ],
-    { initialEntries: ["/user/workout/history"] },
+    { initialEntries: [initialEntry] },
   );
 
   render(<RouterProvider router={router} />);
@@ -182,6 +186,7 @@ describe("SessionHistoryPage", () => {
 
     expect(screen.getByText("Outdoor run")).toBeInTheDocument();
     expect(screen.getByText("5.0 km")).toBeInTheDocument();
+    expect(screen.getAllByText("00:30:00").length).toBeGreaterThan(0);
     expect(screen.getByText("6:00 /km")).toBeInTheDocument();
 
     fireEvent.click(screen.getByText("Outdoor run"));
@@ -223,5 +228,15 @@ describe("SessionHistoryPage", () => {
     renderPage();
 
     expect(screen.getByText("Hali yakunlangan mashg'ulot yo'q")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /rejalarni ko'rish/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /yangi plan yaratish/i })).toBeInTheDocument();
+  });
+
+  it("loads the report alias with the same aggregate session data", () => {
+    renderPage("/user/workout/report");
+
+    expect(screen.getByText("Workout tarixi")).toBeInTheDocument();
+    expect(screen.getByText("Leg Power")).toBeInTheDocument();
+    expect(screen.getByText("Oylik ko‘rinish")).toBeInTheDocument();
   });
 });

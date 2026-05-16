@@ -163,6 +163,34 @@ describe("RunningPage", () => {
     );
   });
 
+  it("does not create duplicate active sessions on a rapid double start tap", async () => {
+    let resolveStart;
+    const startRunningSession = vi.fn(
+      () =>
+        new Promise((resolve) => {
+          resolveStart = resolve;
+        }),
+    );
+    useStartRunningSession.mockReturnValue({
+      startRunningSession,
+      isPending: false,
+    });
+    const router = renderPage();
+    const startButton = screen.getByRole("button", { name: /start run/i });
+
+    fireEvent.click(startButton);
+    fireEvent.click(startButton);
+
+    expect(startRunningSession).toHaveBeenCalledTimes(1);
+
+    resolveStart({ workoutSessionId: "workout-1" });
+    await screen.findByTestId("running-live-route");
+
+    expect(router.state.location.pathname).toBe(
+      "/user/workout/running/live/workout-1",
+    );
+  });
+
   it("shows an inline start error when the backend running feature is unavailable", async () => {
     const startRunningSession = vi
       .fn()

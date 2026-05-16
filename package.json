@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
-    "test:e2e:running": "playwright test e2e/running-p0.spec.js"
+    "test:e2e:running": "playwright test e2e/running-p0.spec.js",
+    "qa:running:real-gps": "node scripts/workout-real-gps-qa.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

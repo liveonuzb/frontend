@@ -166,7 +166,7 @@ describe("RunningDetailPage", () => {
     useShare.mockReturnValue({ share });
   });
 
-  it("renders the running result layout with route, data, moments, feeling, and body metrics", () => {
+  it("renders the running result layout with route, data, moments, and feeling", () => {
     renderPage();
 
     expect(screen.getByText("Shoxrux Shomurodov")).toBeInTheDocument();
@@ -174,7 +174,7 @@ describe("RunningDetailPage", () => {
     expect(screen.getByText("Training Data")).toBeInTheDocument();
     expect(screen.getByText("Training Moments")).toBeInTheDocument();
     expect(screen.getByText("Training Feeling")).toBeInTheDocument();
-    expect(screen.getByText("Height / Weight")).toBeInTheDocument();
+    expect(screen.queryByText("Height / Weight")).not.toBeInTheDocument();
     expect(screen.getByText("Delete this activity")).toBeInTheDocument();
     expect(screen.getByTestId("run-map-panel")).toHaveAttribute(
       "data-polyline",
@@ -183,6 +183,88 @@ describe("RunningDetailPage", () => {
     expect(screen.getByTestId("run-map-panel")).toHaveAttribute(
       "data-point-count",
       "1",
+    );
+  });
+
+  it("passes an empty route state to the map without crashing", () => {
+    useRunningSessionDetail.mockReturnValue({
+      isLoading: false,
+      session: {
+        ...sessionFixture,
+        route: null,
+        points: [],
+      },
+    });
+
+    renderPage();
+
+    expect(screen.getByTestId("run-map-panel")).toHaveAttribute(
+      "data-empty-label",
+      "Route yozilmagan",
+    );
+    expect(screen.getByTestId("run-map-panel")).toHaveAttribute(
+      "data-point-count",
+      "0",
+    );
+  });
+
+  it("passes many route points to the map preview", () => {
+    useRunningSessionDetail.mockReturnValue({
+      isLoading: false,
+      session: {
+        ...sessionFixture,
+        route: {
+          polyline: "encoded-many-points",
+        },
+        points: [
+          { sequence: 1, latitude: 41.311081, longitude: 69.240562 },
+          { sequence: 2, latitude: 41.312081, longitude: 69.241562 },
+          { sequence: 3, latitude: 41.313081, longitude: 69.242562 },
+          { sequence: 4, latitude: 41.314081, longitude: 69.243562 },
+        ],
+      },
+    });
+
+    renderPage();
+
+    expect(screen.getByTestId("run-map-panel")).toHaveAttribute(
+      "data-polyline",
+      "encoded-many-points",
+    );
+    expect(screen.getByTestId("run-map-panel")).toHaveAttribute(
+      "data-point-count",
+      "4",
+    );
+  });
+
+  it("hydrates saved moment values after reload", () => {
+    useRunningSessionDetail.mockReturnValue({
+      isLoading: false,
+      session: {
+        ...sessionFixture,
+        moments: {
+          title: "Saved morning run",
+          text: "Kept after reload.",
+          imageUploadId: "image-2",
+          imageUrl: "https://cdn.example.com/saved.jpg",
+        },
+        feeling: {
+          level: 4,
+        },
+      },
+    });
+
+    renderPage();
+
+    expect(screen.getByPlaceholderText("Add a title")).toHaveValue(
+      "Saved morning run",
+    );
+    expect(screen.getByPlaceholderText("Add text")).toHaveValue(
+      "Kept after reload.",
+    );
+    expect(screen.getByRole("button", { name: /x4/i })).toHaveAttribute(
+      "data-variant",
+      "default",
     );
   });
 
@@ -208,7 +290,7 @@ describe("RunningDetailPage", () => {
     expect(useRunningSessionDetail.mock.calls.length).toBeLessThan(10);
   });
 
-  it("saves title, text, feeling, height, and weight changes", async () => {
+  it("saves title, text, and feeling changes", async () => {
     renderPage();
 
     fireEvent.change(screen.getByPlaceholderText("Add a title"), {
@@ -223,16 +305,6 @@ describe("RunningDetailPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /x3/i }));
 
-    fireEvent.change(screen.getByPlaceholderText("170"), {
-      target: { value: "180" },
-    });
-    fireEvent.blur(screen.getByPlaceholderText("170"));
-
-    fireEvent.change(screen.getByPlaceholderText("70"), {
-      target: { value: "75" },
-    });
-    fireEvent.blur(screen.getByPlaceholderText("70"));
-
     await waitFor(() => {
       expect(updateRunningSessionDetails).toHaveBeenCalledWith("workout-1", {
         momentTitle: "Morning run",
@@ -244,12 +316,18 @@ describe("RunningDetailPage", () => {
     expect(updateRunningSessionDetails).toHaveBeenCalledWith("workout-1", {
       feelingLevel: 3,
     });
-    expect(updateRunningSessionDetails).toHaveBeenCalledWith("workout-1", {
-      heightCm: 180,
-    });
-    expect(updateRunningSessionDetails).toHaveBeenCalledWith("workout-1", {
-      weightKg: 75,
-    });
+    expect(updateRunningSessionDetails).not.toHaveBeenCalledWith(
+      "workout-1",
+      expect.objectContaining({
+        heightCm: expect.anything(),
+      }),
+    );
+    expect(updateRunningSessionDetails).not.toHaveBeenCalledWith(
+      "workout-1",
+      expect.objectContaining({
+        weightKg: expect.anything(),
+      }),
+    );
   });
 
   it("uploads a moment photo through the existing media endpoint", async () => {
@@ -284,6 +362,14 @@ describe("RunningDetailPage", () => {
         text: "0.01 KM",
       }),
     );
+  });
+
+  it("closes back to the running dashboard from the header close button", () => {
+    const router = renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /^close$/i }));
+
+    expect(router.state.location.pathname).toBe("/user/workout/running");
   });
 
   it("hard deletes the activity after confirmation", async () => {

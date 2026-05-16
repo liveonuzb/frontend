@@ -119,7 +119,7 @@ const WorkoutExercisesPage = () => {
                     setSelectedExercise(exercise);
                   }
                 }}
-                className="overflow-hidden rounded-[1.75rem] border transition-colors hover:bg-accent/30"
+                className="overflow-hidden rounded-[1.75rem] border transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 <CardContent className="flex items-center gap-4 p-4">
                   <div className="size-20 shrink-0 overflow-hidden rounded-2xl bg-muted">

@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRunningSessions } from "@/hooks/app/use-running-sessions";
 import {
+  formatRunningClockDuration,
   formatRunningDistance,
-  formatRunningDuration,
   formatRunningPace,
 } from "@/lib/running-metrics";
 
@@ -30,6 +30,9 @@ const formatGpsQuality = (score, t) => {
 
   return `GPS ${Math.round(numericScore * 100)}%`;
 };
+
+const formatRunningCalories = (calories = 0) =>
+  `${Math.round(Math.max(0, Number(calories) || 0))} kcal`;
 
 const RunningHistoryPage = () => {
   const { t } = useTranslation();
@@ -153,13 +156,14 @@ const RunningHistoryPage = () => {
                           {formatRunningDistance(session.metrics.distanceMeters)}
                         </p>
                         <p className="text-muted-foreground">
-                          {formatRunningDuration(
+                          {formatRunningClockDuration(
                             session.metrics.durationSeconds,
                           )}{" "}
                           ·{" "}
                           {formatRunningPace(
                             session.metrics.averagePaceSecondsPerKm,
-                          )}
+                          )}{" "}
+                          · {formatRunningCalories(session.metrics.caloriesBurned)}
                         </p>
                       </div>
                       <ArrowRightIcon

@@ -7,6 +7,7 @@ import {
   useLocation,
 } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { toast } from "sonner";
 import CreateWorkoutPlanPage from "./index.jsx";
 import { usePostFileQuery } from "@/hooks/api";
 import {
@@ -337,6 +338,71 @@ describe("CreateWorkoutPlanPage", () => {
         }),
       );
     });
+  });
+
+  it("keeps the AI generator retryable after a generation failure", async () => {
+    generatePlanMock
+      .mockRejectedValueOnce(new Error("AI down"))
+      .mockResolvedValueOnce({
+        plan: {
+          id: null,
+          name: "Retry Upper",
+          description: "Generated after retry",
+          days: 28,
+          daysPerWeek: 4,
+          schedule: [{ day: "DAY 1", focus: "Chest", exercises: [] }],
+          source: "ai",
+        },
+      });
+
+    renderPage({ pathname: "/user/workout/plans/create" });
+
+    fireEvent.change(screen.getByLabelText("Plan nomi"), {
+      target: { value: "Retry Upper" },
+    });
+    fireEvent.click(screen.getAllByRole("button", { name: "AI bilan yaratish" })[0]);
+    fireEvent.click(await screen.findByRole("button", { name: "Keyingi" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Keyingi" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Keyingi" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Generate" }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("AI workout reja yaratib bo'lmadi");
+    });
+
+    expect(screen.getByRole("button", { name: "Generate" })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate" }));
+
+    expect(await screen.findByText("Retry Upper")).toBeInTheDocument();
+    expect(generatePlanMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("disables AI generation entry while generation is pending", () => {
+    useGenerateWorkoutPlan.mockReturnValue({
+      generatePlan: generatePlanMock,
+      isPending: true,
+    });
+
+    renderPage({ pathname: "/user/workout/plans/create" });
+
+    expect(
+      screen.getAllByRole("button", { name: "AI bilan yaratish" })[0],
+    ).toBeDisabled();
+  });
+
+  it("backs out of AI setup without generating a preview", async () => {
+    renderPage({ pathname: "/user/workout/plans/create" });
+
+    fireEvent.change(screen.getByLabelText("Plan nomi"), {
+      target: { value: "Manual fallback" },
+    });
+    fireEvent.click(screen.getAllByRole("button", { name: "AI bilan yaratish" })[0]);
+    fireEvent.click(await screen.findByRole("button", { name: /orqaga/i }));
+
+    expect(screen.getByText("Yangi workout plan")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Manual fallback")).toBeInTheDocument();
+    expect(generatePlanMock).not.toHaveBeenCalled();
   });
 
   it("skips equipment drawer for bodyweight mode and still requires muscle selection", async () => {

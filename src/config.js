@@ -14,6 +14,16 @@ const runtimeMapStyleUrl =
     ? runtimeConfig.VITE_MAP_STYLE_URL.trim()
     : "";
 
+const runtimeMapStyleUrlLight =
+  typeof runtimeConfig.VITE_MAP_STYLE_URL_LIGHT === "string"
+    ? runtimeConfig.VITE_MAP_STYLE_URL_LIGHT.trim()
+    : "";
+
+const runtimeMapStyleUrlDark =
+  typeof runtimeConfig.VITE_MAP_STYLE_URL_DARK === "string"
+    ? runtimeConfig.VITE_MAP_STYLE_URL_DARK.trim()
+    : "";
+
 const runtimeRunningFeatureEnabled =
   typeof runtimeConfig.VITE_RUNNING_FEATURE_ENABLED === "string"
     ? runtimeConfig.VITE_RUNNING_FEATURE_ENABLED.trim()
@@ -38,8 +48,23 @@ export const config = {
     runtimeMapStyleUrl ||
     import.meta.env.VITE_MAP_STYLE_URL ||
     "https://tiles.openfreemap.org/styles/dark",
+  mapStyleUrls: {
+    light:
+      runtimeMapStyleUrlLight ||
+      import.meta.env.VITE_MAP_STYLE_URL_LIGHT ||
+      runtimeMapStyleUrl ||
+      import.meta.env.VITE_MAP_STYLE_URL ||
+      "https://tiles.openfreemap.org/styles/bright",
+    dark:
+      runtimeMapStyleUrlDark ||
+      import.meta.env.VITE_MAP_STYLE_URL_DARK ||
+      runtimeMapStyleUrl ||
+      import.meta.env.VITE_MAP_STYLE_URL ||
+      "https://tiles.openfreemap.org/styles/dark",
+  },
   runningFeatureEnabled: resolveBooleanFlag(
-    runtimeRunningFeatureEnabled || import.meta.env.VITE_RUNNING_FEATURE_ENABLED,
+    runtimeRunningFeatureEnabled ||
+      import.meta.env.VITE_RUNNING_FEATURE_ENABLED,
     true,
   ),
 };

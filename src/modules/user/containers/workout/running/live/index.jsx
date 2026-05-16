@@ -6,11 +6,8 @@ import {
   CheckCircle2Icon,
   ChevronDownIcon,
   FlagIcon,
-  MenuIcon,
-  PauseIcon,
   PlayIcon,
   SquareIcon,
-  UserIcon,
   XIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -28,17 +25,8 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   useAppendRunningPoints,
   useBeginRunningSession,
-  useCancelRunningSession,
   useFinishRunningSession,
   usePauseRunningSession,
   useResumeRunningSession,
@@ -65,6 +53,7 @@ import {
   formatRunningClockDuration,
   formatRunningPace,
 } from "@/lib/running-metrics";
+import { cn } from "@/lib/utils";
 import RunMapPanel from "../components/run-map-panel.jsx";
 
 const getMaxPointSequence = (points = []) =>
@@ -142,18 +131,6 @@ const primaryMetricCards = (metrics, elapsedSeconds, t) => [
   },
 ];
 
-const ActivityLogo = () => (
-  <svg viewBox="0 0 32 32" className="size-8" fill="none" aria-hidden="true">
-    <path
-      d="M4 17h5l2.5-8 5 14 3-10 2.5 4h6"
-      stroke="currentColor"
-      strokeWidth="3"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
 const RunningLivePage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -168,14 +145,11 @@ const RunningLivePage = () => {
     useResumeRunningSession();
   const { finishRunningSession, isPending: isFinishing } =
     useFinishRunningSession();
-  const { cancelRunningSession, isPending: isCancelling } =
-    useCancelRunningSession();
   const [gpsState, setGpsState] = React.useState(GPS_STATUS.waiting);
   const [elapsedSeconds, setElapsedSeconds] = React.useState(0);
   const [queuedCount, setQueuedCount] = React.useState(0);
   const [livePoints, setLivePoints] = React.useState([]);
   const [localStatus, setLocalStatus] = React.useState(null);
-  const [cancelOpen, setCancelOpen] = React.useState(false);
   const [finishOpen, setFinishOpen] = React.useState(false);
   const [countdownValue, setCountdownValue] = React.useState(null);
   const [gpsRetryKey, setGpsRetryKey] = React.useState(0);
@@ -222,8 +196,7 @@ const RunningLivePage = () => {
   const isReady = currentStatus === "ready";
   const isTrackingActive = currentStatus === "active";
   const isPaused = currentStatus === "paused";
-  const isActionPending =
-    isBeginning || isPausing || isResuming || isFinishing || isCancelling;
+  const isActionPending = isBeginning || isPausing || isResuming || isFinishing;
   const gpsStatus = getGpsStatusLabel(gpsState, t);
   const canRetryGps =
     gpsState === GPS_STATUS.permission || gpsState === GPS_STATUS.unavailable;
@@ -665,18 +638,6 @@ const RunningLivePage = () => {
     }
   };
 
-  const handleCancel = async () => {
-    if (!workoutSessionId) {
-      return;
-    }
-
-    await cancelRunningSession(workoutSessionId, { reason: "user_cancelled" });
-    clearActiveRunningSession();
-    clearRunningPointQueue(workoutSessionId);
-    setCancelOpen(false);
-    navigate("/user/workout/running");
-  };
-
   if (!workoutSessionId) {
     return (
       <PageTransition mode="slide-up">
@@ -699,44 +660,23 @@ const RunningLivePage = () => {
 
   return (
     <PageTransition mode="slide-up">
-      <div className="mx-auto min-h-[100dvh] max-w-[520px] overflow-hidden bg-background text-foreground shadow-[0_28px_80px_rgba(0,0,0,0.16)] md:rounded-[2rem]">
-        <section className="relative z-20 bg-background px-5 pb-4 pt-[max(1rem,env(safe-area-inset-top))]">
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              aria-label={t("user.workout.running.live.cancel", "Bekor qilish")}
-              className="flex size-11 items-center justify-center rounded-full text-foreground hover:bg-muted disabled:opacity-50"
-              onClick={() => setCancelOpen(true)}
-              disabled={isActionPending}
-            >
-              <MenuIcon className="size-7" aria-hidden="true" />
-            </button>
-            <div
-              className="flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg"
-              aria-hidden="true"
-            >
-              <ActivityLogo />
-            </div>
-            <div className="flex size-11 items-center justify-center rounded-full border bg-muted/40 text-sm font-semibold">
-              <UserIcon className="size-5" aria-hidden="true" />
-            </div>
-          </div>
-
-          <div className="mt-9 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2 text-center sm:gap-3">
+      <div className="flex min-h-[100dvh] w-full flex-col overflow-hidden bg-background text-foreground">
+        <section className="relative z-20 bg-background px-4 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-6 sm:pb-3 md:px-8">
+          <div className="mx-auto grid w-full max-w-[1120px] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2 text-center sm:gap-5">
             {primaryMetricCards(metrics, elapsedSeconds, t).map(
               (item, index) => (
                 <React.Fragment key={item.label}>
                   <div className="min-w-0">
-                    <p className="whitespace-nowrap text-[1.9rem] font-semibold leading-none tabular-nums tracking-normal text-foreground min-[390px]:text-[2.05rem] sm:text-[2.65rem]">
+                    <p className="whitespace-nowrap text-[1.55rem] font-semibold leading-none tabular-nums tracking-normal text-foreground min-[390px]:text-[1.7rem] sm:text-[2.15rem] lg:text-[2.65rem]">
                       {item.value}
                     </p>
-                    <p className="mt-4 whitespace-nowrap text-[0.68rem] font-medium uppercase tracking-normal text-muted-foreground sm:text-sm">
+                    <p className="mt-2 whitespace-nowrap text-[0.6rem] font-medium uppercase tracking-normal text-muted-foreground sm:text-xs lg:text-sm">
                       {item.label}
                     </p>
                   </div>
                   {index < 2 ? (
                     <div
-                      className="mb-6 h-16 w-px bg-border"
+                      className="mb-3 h-10 w-px bg-border sm:h-12 lg:h-14"
                       aria-hidden="true"
                     />
                   ) : null}
@@ -744,18 +684,18 @@ const RunningLivePage = () => {
               ),
             )}
           </div>
-          <div className="mt-3 flex justify-center text-muted-foreground">
-            <ChevronDownIcon className="size-5" aria-hidden="true" />
+          <div className="mt-1 flex justify-center text-muted-foreground">
+            <ChevronDownIcon className="size-4" aria-hidden="true" />
           </div>
         </section>
 
-        <section className="relative h-[calc(100dvh-14.4rem)] min-h-[520px] overflow-hidden bg-muted">
+        <section className="relative min-h-[520px] flex-1 overflow-hidden bg-muted">
           <RunMapPanel
             title={null}
             variant="live"
             points={livePoints}
             emptyLabel={gpsStatus}
-            className="h-full"
+            className="absolute inset-0"
             contentClassName="p-0"
             surfaceClassName="h-full min-h-0 rounded-none md:h-full"
           />
@@ -763,7 +703,7 @@ const RunningLivePage = () => {
           <div className="absolute left-5 top-5 z-10 flex flex-wrap items-center gap-2">
             <Badge
               variant="secondary"
-              className="h-12 gap-2 rounded-full border bg-background/90 px-4 text-base shadow-lg backdrop-blur"
+              className="h-12 w-[13rem] max-w-[calc(100vw-2.5rem)] justify-start gap-2 rounded-full border bg-background/90 px-4 text-sm shadow-lg backdrop-blur sm:w-[14.5rem] sm:text-base"
               role="status"
               aria-live="polite"
             >
@@ -778,7 +718,7 @@ const RunningLivePage = () => {
                   aria-hidden="true"
                 />
               )}
-              {gpsStatus}
+              <span className="min-w-0 truncate">{gpsStatus}</span>
             </Badge>
             {queuedCount > 0 ? (
               <Badge
@@ -804,7 +744,7 @@ const RunningLivePage = () => {
           {isReady ? (
             <button
               type="button"
-              className="absolute bottom-[max(5.5rem,env(safe-area-inset-bottom))] left-1/2 z-10 flex size-40 -translate-x-1/2 items-center justify-center rounded-full bg-destructive text-4xl font-semibold uppercase text-white shadow-[0_24px_70px_rgba(239,68,68,0.38)] disabled:opacity-60"
+              className="absolute bottom-[max(3rem,env(safe-area-inset-bottom))] left-1/2 z-10 flex size-28 -translate-x-1/2 items-center justify-center rounded-full bg-destructive text-2xl font-semibold uppercase text-white shadow-[0_24px_70px_rgba(239,68,68,0.38)] disabled:opacity-60 sm:size-32 sm:text-3xl"
               onClick={handleStartRun}
               disabled={isActionPending || Boolean(countdownValue)}
             >
@@ -825,34 +765,36 @@ const RunningLivePage = () => {
             </div>
           ) : null}
 
-          {isPaused ? (
-            <div className="absolute inset-0 z-20 flex flex-col items-center justify-end bg-black/58 px-7 pb-[max(4rem,env(safe-area-inset-bottom))] text-white">
-              <div className="grid w-full max-w-[360px] grid-cols-2 gap-10">
+          {!isReady ? (
+            <div
+              className={cn(
+                "absolute inset-x-0 bottom-0 z-20 flex justify-center bg-gradient-to-t from-black/60 via-black/25 to-transparent px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-20 text-white",
+                isPaused && "top-0 items-end bg-black/58",
+              )}
+            >
+              <div className="grid w-full max-w-[340px] grid-cols-2 gap-5 sm:max-w-[400px] sm:gap-8">
                 <button
                   type="button"
-                  aria-label={t(
-                    "user.workout.running.live.finish",
-                    "Yakunlash",
-                  )}
-                  className="flex flex-col items-center gap-5 text-base font-semibold uppercase tracking-normal text-white disabled:opacity-50"
+                  aria-label={t("user.workout.running.live.endAction", "END")}
+                  className="flex flex-col items-center gap-3 text-sm font-semibold uppercase tracking-normal text-white disabled:opacity-50"
                   onClick={() => setFinishOpen(true)}
                   disabled={isActionPending}
                 >
                   <span>{t("user.workout.running.live.endAction", "END")}</span>
                   <span
-                    className="flex size-28 items-center justify-center rounded-full bg-destructive text-white shadow-[0_22px_54px_rgba(0,0,0,0.32)]"
+                    className="flex size-20 items-center justify-center rounded-full bg-destructive text-white shadow-[0_22px_54px_rgba(0,0,0,0.32)] sm:size-24"
                     aria-hidden="true"
                   >
-                    <SquareIcon className="size-10 fill-current" />
+                    <SquareIcon className="size-7 fill-current" />
                   </span>
                 </button>
                 <button
                   type="button"
                   aria-label={t(
-                    "user.workout.running.live.resume",
-                    "Davom ettirish",
+                    "user.workout.running.live.resumeAction",
+                    "RESUME",
                   )}
-                  className="flex flex-col items-center gap-5 text-base font-semibold uppercase tracking-normal text-white disabled:opacity-50"
+                  className="flex flex-col items-center gap-3 text-sm font-semibold uppercase tracking-normal text-white disabled:opacity-50"
                   onClick={handlePauseResume}
                   disabled={isActionPending}
                 >
@@ -860,37 +802,13 @@ const RunningLivePage = () => {
                     {t("user.workout.running.live.resumeAction", "RESUME")}
                   </span>
                   <span
-                    className="flex size-28 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_22px_54px_rgba(0,0,0,0.32)]"
+                    className="flex size-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_22px_54px_rgba(0,0,0,0.32)] sm:size-24"
                     aria-hidden="true"
                   >
-                    <PlayIcon className="size-11 fill-current" />
+                    <PlayIcon className="size-8 fill-current" />
                   </span>
                 </button>
               </div>
-            </div>
-          ) : null}
-
-          {!isReady && !isPaused ? (
-            <div className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 right-4 z-20 grid grid-cols-2 gap-3 rounded-[1.75rem] bg-background/92 p-3 shadow-xl backdrop-blur">
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={handlePauseResume}
-                disabled={isActionPending}
-                className="h-14 rounded-2xl"
-              >
-                <PauseIcon className="size-4" aria-hidden="true" />
-                {t("user.workout.running.live.pause", "Pauza")}
-              </Button>
-              <Button
-                size="lg"
-                onClick={() => setFinishOpen(true)}
-                disabled={isActionPending}
-                className="h-14 rounded-2xl"
-              >
-                <SquareIcon className="size-4" aria-hidden="true" />
-                {t("user.workout.running.live.finish", "Yakunlash")}
-              </Button>
             </div>
           ) : null}
         </section>
@@ -974,45 +892,6 @@ const RunningLivePage = () => {
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
-
-        <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {t(
-                  "user.workout.running.live.cancelTitle",
-                  "Yugurishni bekor qilish",
-                )}
-              </DialogTitle>
-              <DialogDescription>
-                {t(
-                  "user.workout.running.live.cancelDescription",
-                  "Bu sessiya bekor qilinsa, navbatdagi GPS nuqtalar ham tozalanadi. Yakunlangan yugurish sifatida saqlanmaydi.",
-                )}
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setCancelOpen(false)}
-              >
-                {t("user.workout.running.live.back", "Ortga")}
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={handleCancel}
-                disabled={isCancelling}
-              >
-                {t(
-                  "user.workout.running.live.confirmCancel",
-                  "Ha, bekor qilish",
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </PageTransition>
   );

@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { toast } from "sonner";
@@ -104,8 +104,16 @@ const renderPage = () => {
         element: <div>History</div>,
       },
       {
+        path: "/user/workout/history/:sessionId",
+        element: <div>Workout history detail</div>,
+      },
+      {
         path: "/user/workout/running",
         element: <div>Running dashboard</div>,
+      },
+      {
+        path: "/user/workout/running/:workoutSessionId",
+        element: <div>Running detail</div>,
       },
       {
         path: "/user/workout/running/live/:workoutSessionId",
@@ -202,6 +210,7 @@ describe("WorkoutDashboardPage", () => {
   it("renders the activity dashboard and removes catalog-heavy sections", () => {
     renderPage();
 
+    expect(useWorkoutSessionHistory).toHaveBeenCalledWith({ limit: 6 });
     expect(screen.getByText("Bugungi mashg'ulot")).toBeInTheDocument();
     expect(screen.getByText("So'nggi faoliyat")).toBeInTheDocument();
     expect(screen.getByText("Bugungi ob-havo")).toBeInTheDocument();
@@ -264,7 +273,98 @@ describe("WorkoutDashboardPage", () => {
     expect(screen.getAllByText("06:03 /km").length).toBeGreaterThan(0);
   });
 
-  it("renders the running activity card with a real map preview from route data", () => {
+  it("renders recent running feed routes with real map data instead of a static image", () => {
+    useRunningSessions.mockReturnValue({
+      sessions: [
+        {
+          workoutSessionId: "run-1",
+          status: "completed",
+          startedAt: "2026-05-15T02:15:00.000Z",
+          endedAt: "2026-05-15T02:52:45.000Z",
+          route: {
+            polyline: "encoded-feed-route",
+          },
+          points: [
+            {
+              sequence: 1,
+              latitude: 41.311081,
+              longitude: 69.240562,
+            },
+            {
+              sequence: 2,
+              latitude: 41.320069,
+              longitude: 69.240562,
+            },
+          ],
+          metrics: {
+            distanceMeters: 6230,
+            durationSeconds: 2265,
+            caloriesBurned: 462,
+            averagePaceSecondsPerKm: 363,
+            gpsQualityScore: 0.92,
+          },
+        },
+      ],
+    });
+
+    renderPage();
+
+    const mapPanels = screen.getAllByTestId("workout-home-real-running-map");
+    expect(
+      mapPanels.some(
+        (panel) =>
+          panel.getAttribute("data-polyline") === "encoded-feed-route" &&
+          panel.getAttribute("data-point-count") === "2",
+      ),
+    ).toBe(true);
+    expect(screen.queryByAltText("Morning Run")).not.toBeInTheDocument();
+  });
+
+  it("opens running and workout detail pages from recent activity rows", async () => {
+    useWorkoutSessionHistory.mockReturnValue({
+      sessions: [
+        {
+          id: "strength-1",
+          title: "Upper Body",
+          startedAt: "2026-05-15T01:00:00.000Z",
+          endedAt: "2026-05-15T01:45:00.000Z",
+          durationSeconds: 2700,
+          burnedCalories: 320,
+        },
+      ],
+    });
+    useRunningSessions.mockReturnValue({
+      sessions: [
+        {
+          workoutSessionId: "run-1",
+          status: "completed",
+          startedAt: "2026-05-15T02:15:00.000Z",
+          endedAt: "2026-05-15T02:52:45.000Z",
+          metrics: {
+            distanceMeters: 6230,
+            durationSeconds: 2265,
+            caloriesBurned: 462,
+            averagePaceSecondsPerKm: 363,
+          },
+        },
+      ],
+    });
+
+    const router = renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /morning run/i }));
+    expect(router.state.location.pathname).toBe("/user/workout/running/run-1");
+
+    await act(async () => {
+      await router.navigate("/user/workout");
+    });
+    fireEvent.click(screen.getByRole("button", { name: /upper body/i }));
+    expect(router.state.location.pathname).toBe(
+      "/user/workout/history/strength-1",
+    );
+  });
+
+  it("shows a start-running widget in recent activity when no run is active", () => {
     useRunningSessions.mockReturnValue({
       sessions: [
         {
@@ -298,9 +398,71 @@ describe("WorkoutDashboardPage", () => {
       ],
     });
 
-    renderPage();
+    const router = renderPage();
+    const startMap = screen
+      .getAllByTestId("workout-home-real-running-map")
+      .find(
+        (panel) =>
+          panel.getAttribute("data-empty-label") ===
+          "Yugurishni boshlanganda xarita shu yerda ko'rinadi",
+      );
 
     expect(screen.queryByTestId("workout-home-fake-route-svg")).not.toBeInTheDocument();
+    expect(startMap).toHaveAttribute(
+      "data-point-count",
+      "0",
+    );
+    expect(startMap).toHaveAttribute(
+      "data-polyline",
+      "",
+    );
+    expect(startMap).toHaveAttribute(
+      "data-empty-label",
+      "Yugurishni boshlanganda xarita shu yerda ko'rinadi",
+    );
+    expect(startMap).toHaveAttribute(
+      "data-variant",
+      "preview",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /yugurishni boshlash/i }));
+
+    expect(router.state.location.pathname).toBe("/user/workout/running");
+  });
+
+  it("renders the running activity card with active route data when a run is in progress", () => {
+    useRunningActiveSession.mockReturnValue({
+      activeSession: {
+        workoutSessionId: "run-active",
+        status: "active",
+        startedAt: "2026-05-15T06:00:00.000Z",
+        route: {
+          polyline: "encoded-route",
+        },
+        points: [
+          {
+            sequence: 1,
+            latitude: 41.311081,
+            longitude: 69.240562,
+          },
+          {
+            sequence: 2,
+            latitude: 41.320069,
+            longitude: 69.240562,
+          },
+        ],
+        metrics: {
+          distanceMeters: 2300,
+          durationSeconds: 940,
+          caloriesBurned: 180,
+          averagePaceSecondsPerKm: 408,
+          gpsQualityScore: 0.92,
+        },
+      },
+    });
+
+    renderPage();
+
     expect(screen.getByTestId("workout-home-real-running-map")).toHaveAttribute(
       "data-point-count",
       "2",
@@ -308,10 +470,6 @@ describe("WorkoutDashboardPage", () => {
     expect(screen.getByTestId("workout-home-real-running-map")).toHaveAttribute(
       "data-polyline",
       "encoded-route",
-    );
-    expect(screen.getByTestId("workout-home-real-running-map")).toHaveAttribute(
-      "data-variant",
-      "preview",
     );
   });
 
@@ -415,6 +573,122 @@ describe("WorkoutDashboardPage", () => {
     expect(screen.getAllByText("50%").length).toBeGreaterThan(0);
   });
 
+  it("clamps goal progress percentages between zero and one hundred", () => {
+    useWorkoutOverview.mockReturnValue({
+      overview: {
+        weeklyStats: {
+          count: 0,
+          calories: -500,
+          duration: 0,
+        },
+        recentWorkoutDays: [],
+      },
+    });
+    useRunningStatsSummary.mockReturnValue({
+      stats: {
+        totalRuns: 8,
+        totalDistanceMeters: 100000,
+        totalDurationSeconds: 7200,
+        totalCaloriesBurned: 1200,
+      },
+    });
+
+    renderPage();
+
+    const goalsCard = screen.getByText("Maqsadlar").closest('[data-slot="card"]');
+
+    expect(within(goalsCard).queryByText(/-/)).not.toBeInTheDocument();
+    expect(within(goalsCard).getByText("0%")).toBeInTheDocument();
+    expect(within(goalsCard).getByText("100%")).toBeInTheDocument();
+  });
+
+  it("includes active running metrics in today's summary", () => {
+    useWorkoutOverview.mockReturnValue({
+      overview: {
+        weeklyStats: {
+          count: 0,
+          calories: 120,
+          duration: 0,
+        },
+        recentWorkoutDays: [],
+      },
+    });
+    useRunningActiveSession.mockReturnValue({
+      activeSession: {
+        workoutSessionId: "run-active",
+        status: "active",
+        metrics: {
+          distanceMeters: 1200,
+          durationSeconds: 300,
+        },
+      },
+    });
+    useRunningStatsSummary.mockReturnValue({
+      stats: {
+        totalRuns: 0,
+        totalDistanceMeters: 0,
+        totalDurationSeconds: 0,
+        totalCaloriesBurned: 0,
+      },
+    });
+
+    renderPage();
+
+    const todayCard = screen
+      .getByText("Bugun", { selector: '[data-slot="card-title"]' })
+      .closest('[data-slot="card"]');
+
+    expect(within(todayCard).getByText("25%")).toBeInTheDocument();
+    expect(within(todayCard).getByText("1.2 km")).toBeInTheDocument();
+    expect(within(todayCard).getByText("05:00")).toBeInTheDocument();
+  });
+
+  it("keeps today's summary readable with partial running stats", () => {
+    useRunningStatsSummary.mockReturnValue({
+      stats: {
+        totalDistanceMeters: null,
+      },
+    });
+
+    renderPage();
+
+    const todayCard = screen
+      .getByText("Bugun", { selector: '[data-slot="card-title"]' })
+      .closest('[data-slot="card"]');
+
+    expect(within(todayCard).queryByText(/NaN|undefined/i)).not.toBeInTheDocument();
+    expect(within(todayCard).getByText("0 m")).toBeInTheDocument();
+    expect(within(todayCard).getByText("0:00")).toBeInTheDocument();
+  });
+
+  it("marks completed week days when the overview returns date strings", () => {
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    useWorkoutOverview.mockReturnValue({
+      overview: {
+        weeklyStats: {
+          count: 2,
+          calories: 320,
+          duration: 45,
+        },
+        recentWorkoutDays: [
+          now.toISOString().slice(0, 10),
+          yesterday.toISOString().slice(0, 10),
+        ],
+      },
+    });
+
+    renderPage();
+
+    const weeklyStatsCard = screen
+      .getByText("Haftalik statistika")
+      .closest('[data-slot="card"]');
+
+    expect(within(weeklyStatsCard).getAllByText("–")).toHaveLength(5);
+  });
+
   it("shows empty next workout state when there is no active plan", () => {
     renderPage();
 
@@ -423,12 +697,82 @@ describe("WorkoutDashboardPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("opens the next planned workout from the hero CTA", async () => {
+    const planStart = new Date();
+    planStart.setDate(planStart.getDate() - 1);
+
+    useWorkoutPlan.mockReturnValue({
+      plans: [],
+      activePlan: {
+        id: "plan-1",
+        status: "active",
+        startDate: planStart.toISOString(),
+        daysPerWeek: 3,
+        schedule: [
+          { title: "Day 1", exercises: [{ name: "Squat" }] },
+          { title: "Day 2", exercises: [{ name: "Bench" }] },
+        ],
+        dayProgress: [
+          { dayIndex: 0, completed: true, exerciseCount: 1 },
+          { dayIndex: 1, completed: false, exerciseCount: 1 },
+        ],
+      },
+      startPlan: vi.fn(),
+    });
+
+    const router = renderPage();
+
+    const heroCta = screen
+      .getAllByRole("button", { name: /batafsil ko'rish/i })
+      .find((element) => element.tagName === "BUTTON");
+
+    expect(heroCta).toBeTruthy();
+    fireEvent.click(heroCta);
+
+    expect(router.state.location.pathname).toBe(
+      "/user/workout/plans/plan-1/days/1/session",
+    );
+  });
+
   it("keeps catalog challenge content off the activity dashboard", () => {
     renderPage();
 
     expect(screen.queryByText("Challenge")).not.toBeInTheDocument();
     expect(screen.queryByText("Body Focus")).not.toBeInTheDocument();
     expect(toast.info).not.toHaveBeenCalled();
+  });
+
+  it("shows an empty achievements state instead of a +0 badge", () => {
+    renderPage();
+
+    const achievementsCard = screen
+      .getByText("Yutuqlar")
+      .closest('[data-slot="card"]');
+
+    expect(within(achievementsCard).getByText("Hali yutuqlar yo'q")).toBeInTheDocument();
+    expect(within(achievementsCard).queryByText("+0")).not.toBeInTheDocument();
+  });
+
+  it("shows the remaining achievement count when there are many achievements", () => {
+    useWorkoutOverview.mockReturnValue({
+      overview: {
+        weeklyStats: {
+          count: 0,
+          calories: 0,
+          duration: 0,
+        },
+        personalRecordCount: 12,
+        recentWorkoutDays: [],
+      },
+    });
+
+    renderPage();
+
+    const achievementsCard = screen
+      .getByText("Yutuqlar")
+      .closest('[data-slot="card"]');
+
+    expect(within(achievementsCard).getByText("+12")).toBeInTheDocument();
   });
 
   it("renders next workout recommendations without fake fixed time and opens selected day", () => {

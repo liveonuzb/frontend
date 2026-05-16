@@ -74,6 +74,14 @@ const getDateKey = (value = new Date()) => {
   return date.toISOString().split("T")[0];
 };
 
+const getWorkoutDayDateKey = (item) => {
+  if (typeof item === "string" || item instanceof Date) {
+    return getDateKey(item);
+  }
+
+  return getDateKey(get(item, "date", get(item, "completedAt", item)));
+};
+
 const toStartOfDay = (value) => {
   const date = value instanceof Date ? new Date(value) : new Date(value);
 
@@ -239,6 +247,11 @@ const formatPace = (secondsPerKm) => {
 const formatTemperature = (value) =>
   Number.isFinite(Number(value)) ? `${Math.round(Number(value))}°C` : "--";
 
+const clampMetric = (value) => Math.max(0, Number(value) || 0);
+
+const clampPercent = (value) =>
+  Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+
 const EMPTY_WEATHER = {
   location: "Tashkent",
   temperatureC: null,
@@ -296,36 +309,57 @@ const formatActivityTime = (value) => {
 };
 
 const buildActivityFeed = (workoutSessions = [], runningSessions = []) => {
-  const workoutItems = workoutSessions.slice(0, 4).map((session, index) => ({
-    id: get(session, "id", `workout-${index}`),
-    type: "workout",
-    title:
-      get(session, "title") ||
-      get(session, "planDayTitle") ||
-      get(session, "planName") ||
-      "Full Body Strength",
-    subtitle: "Workout",
-    image: get(session, "image") || get(session, "imageUrl") || IMAGE_SET.dumbbell,
-    sortDate: get(session, "endedAt") || get(session, "startedAt"),
-    metrics: [
-      { icon: Clock3Icon, label: formatMetricDuration(getWorkoutDurationSeconds(session)) },
-      { icon: FlameIcon, label: `${formatNumber(getWorkoutCalories(session))} kcal` },
-      {
-        icon: HeartPulseIcon,
-        label: `${Number(get(session, "averageHeartRate", 0)) || 145} bpm`,
-      },
-    ],
-  }));
+  const workoutItems = workoutSessions.slice(0, 4).map((session, index) => {
+    const sessionId = get(session, "id", null);
+
+    return {
+      id: sessionId || `workout-${index}`,
+      type: "workout",
+      title:
+        get(session, "title") ||
+        get(session, "planDayTitle") ||
+        get(session, "planName") ||
+        "Full Body Strength",
+      subtitle: "Workout",
+      image: get(session, "image") || get(session, "imageUrl") || IMAGE_SET.dumbbell,
+      href: sessionId
+        ? `/user/workout/history/${sessionId}`
+        : "/user/workout/history",
+      sortDate: get(session, "endedAt") || get(session, "startedAt"),
+      metrics: [
+        { icon: Clock3Icon, label: formatMetricDuration(getWorkoutDurationSeconds(session)) },
+        { icon: FlameIcon, label: `${formatNumber(getWorkoutCalories(session))} kcal` },
+        {
+          icon: HeartPulseIcon,
+          label: `${Number(get(session, "averageHeartRate", 0)) || 145} bpm`,
+        },
+      ],
+    };
+  });
 
   const runningItems = runningSessions.slice(0, 4).map((session, index) => {
     const metrics = getRunningMetrics(session);
+    const workoutSessionId =
+      get(session, "workoutSessionId") || get(session, "id") || null;
+    const routePoints = Array.isArray(get(session, "points"))
+      ? get(session, "points")
+      : [];
 
     return {
-      id: get(session, "workoutSessionId", `run-${index}`),
+      id: workoutSessionId || `run-${index}`,
       type: "running",
       title: get(session, "title") || "Morning Run",
       subtitle: "Yugurish",
-      image: IMAGE_SET.map,
+      href: workoutSessionId
+        ? `/user/workout/running/${workoutSessionId}`
+        : "/user/workout/running/history",
+      routePoints,
+      routePolyline: get(session, "route.polyline", get(session, "polyline", null)),
+      routeQualityScore: get(
+        session,
+        "metrics.gpsQualityScore",
+        get(session, "gpsQualityScore", null),
+      ),
       sortDate: get(session, "endedAt") || get(session, "startedAt"),
       metrics: [
         { icon: RouteIcon, label: formatRunningDistance(metrics.distanceMeters) },
@@ -379,17 +413,10 @@ function TodayWorkoutHero({ item, activePlan, weeklyStats, onOpen, onCreate }) {
 
   return (
     <Card className="overflow-hidden p-0">
-      <div
-        role="button"
-        tabIndex={0}
-        className="group relative min-h-[300px] cursor-pointer overflow-hidden p-8 outline-none"
+      <button
+        type="button"
+        className="group relative block min-h-[300px] w-full overflow-hidden p-5 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring sm:p-8"
         onClick={hasWorkout ? onOpen : onCreate}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            (hasWorkout ? onOpen : onCreate)();
-          }
-        }}
       >
         <img
           src={image}
@@ -398,7 +425,7 @@ function TodayWorkoutHero({ item, activePlan, weeklyStats, onOpen, onCreate }) {
           loading="lazy"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/92 to-background/20" />
-        <div className="relative z-10 flex h-full max-w-3xl flex-col gap-7">
+        <div className="relative z-10 flex h-full max-w-3xl flex-col gap-5 sm:gap-7">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-black tracking-normal md:text-3xl">
               Bugungi mashg'ulot
@@ -408,8 +435,8 @@ function TodayWorkoutHero({ item, activePlan, weeklyStats, onOpen, onCreate }) {
             </Badge>
           </div>
 
-          <div className="grid size-16 place-items-center rounded-full bg-primary/10 text-primary">
-            <DumbbellIcon className="size-8" />
+          <div className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary sm:size-16">
+            <DumbbellIcon className="size-6 sm:size-8" />
           </div>
 
           <div>
@@ -425,7 +452,7 @@ function TodayWorkoutHero({ item, activePlan, weeklyStats, onOpen, onCreate }) {
             ) : null}
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
             <MetricPill
               icon={Clock3Icon}
               value={formatMetricDuration(durationSeconds)}
@@ -450,23 +477,17 @@ function TodayWorkoutHero({ item, activePlan, weeklyStats, onOpen, onCreate }) {
             />
           </div>
 
-          <Button
-            className="mt-auto w-fit rounded-2xl px-8"
-            onClick={(event) => {
-              event.stopPropagation();
-              (hasWorkout ? onOpen : onCreate)();
-            }}
-          >
+          <span className="mt-auto inline-flex w-fit items-center justify-center rounded-2xl bg-primary px-8 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors group-hover:bg-primary/90">
             Batafsil ko'rish
-          </Button>
+          </span>
         </div>
-      </div>
+      </button>
     </Card>
   );
 }
 
-function RunningActivityCard({ activeSession, latestRun, onPrimary }) {
-  const session = activeSession || latestRun;
+function RunningActivityCard({ activeSession, onPrimary }) {
+  const session = activeSession ?? null;
   const metrics = getRunningMetrics(session);
   const isActive = Boolean(activeSession);
   const routePoints = Array.isArray(get(session, "points"))
@@ -552,7 +573,9 @@ function RunningActivityCard({ activeSession, latestRun, onPrimary }) {
             <MapPinIcon className="size-4" />
             Toshkent, O'zbekiston
           </span>
-          <span>{formatActivityTime(get(session, "startedAt"))}</span>
+          {isActive ? (
+            <span>{formatActivityTime(get(session, "startedAt"))}</span>
+          ) : null}
           <Button className="ml-auto rounded-2xl" onClick={onPrimary}>
             <PlayIcon data-icon="inline-start" />
             {isActive ? "Davom ettirish" : "Yugurishni boshlash"}
@@ -563,16 +586,22 @@ function RunningActivityCard({ activeSession, latestRun, onPrimary }) {
   );
 }
 
-function TodaySummaryCard({ weeklyStats, runningStats }) {
-  const calories = Number(get(weeklyStats, "calories", 0)) || 0;
-  const activityPercent = Math.min(
-    100,
-    Math.round(((Number(get(weeklyStats, "count", 0)) || 0) / 4) * 100),
+function TodaySummaryCard({ weeklyStats, runningStats, activeSession }) {
+  const activeRunningMetrics = getRunningMetrics(activeSession);
+  const activeRunCount = activeSession?.workoutSessionId ? 1 : 0;
+  const calories =
+    clampMetric(get(weeklyStats, "calories", 0)) +
+    clampMetric(activeRunningMetrics.caloriesBurned);
+  const activityPercent = clampPercent(
+    ((clampMetric(get(weeklyStats, "count", 0)) + activeRunCount) / 4) * 100,
   );
-  const caloriePercent = Math.min(
-    100,
-    Math.round((calories / DAILY_CALORIE_GOAL) * 100),
-  );
+  const caloriePercent = clampPercent((calories / DAILY_CALORIE_GOAL) * 100);
+  const distanceMeters =
+    clampMetric(get(runningStats, "totalDistanceMeters", 0)) +
+    clampMetric(activeRunningMetrics.distanceMeters);
+  const durationSeconds =
+    clampMetric(get(runningStats, "totalDurationSeconds", 0)) +
+    clampMetric(activeRunningMetrics.durationSeconds);
 
   return (
     <Card>
@@ -624,12 +653,12 @@ function TodaySummaryCard({ weeklyStats, runningStats }) {
           <MetricPill icon={RouteIcon} value="--" label="Qadamlar" />
           <MetricPill
             icon={MapPinIcon}
-            value={formatRunningDistance(get(runningStats, "totalDistanceMeters", 0))}
+            value={formatRunningDistance(distanceMeters)}
             label="Masofa"
           />
           <MetricPill
             icon={Clock3Icon}
-            value={formatMetricDuration(get(runningStats, "totalDurationSeconds", 0))}
+            value={formatMetricDuration(durationSeconds)}
             label="Faol vaqt"
           />
         </div>
@@ -794,15 +823,11 @@ function WeeklyStatsCard({
 }
 
 function GoalsCard({ weeklyStats, runningStats }) {
-  const calories = Number(get(weeklyStats, "calories", 0)) || 0;
-  const calorieProgress = Math.min(
-    100,
-    Math.round((calories / DAILY_CALORIE_GOAL) * 100),
-  );
-  const distanceMeters = Number(get(runningStats, "totalDistanceMeters", 0)) || 0;
-  const distanceProgress = Math.min(
-    100,
-    Math.round((distanceMeters / WEEKLY_DISTANCE_GOAL_METERS) * 100),
+  const calories = clampMetric(get(weeklyStats, "calories", 0));
+  const calorieProgress = clampPercent((calories / DAILY_CALORIE_GOAL) * 100);
+  const distanceMeters = clampMetric(get(runningStats, "totalDistanceMeters", 0));
+  const distanceProgress = clampPercent(
+    (distanceMeters / WEEKLY_DISTANCE_GOAL_METERS) * 100,
   );
 
   return (
@@ -850,6 +875,8 @@ function GoalsCard({ weeklyStats, runningStats }) {
 }
 
 function AchievementsCard({ personalRecordCount }) {
+  const achievementCount = clampMetric(personalRecordCount);
+
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between gap-4">
@@ -858,33 +885,42 @@ function AchievementsCard({ personalRecordCount }) {
           Barchasini ko'rish
         </Button>
       </CardHeader>
-      <CardContent className="flex items-center gap-4">
-        {[TrophyIcon, MedalIcon, TargetIcon, CalendarCheck2Icon].map(
-          (Icon, index) => (
-            <div
-              key={index}
-              className={cn(
-                "grid size-14 place-items-center rounded-full border text-primary shadow-sm",
-                index === 1
-                  ? "bg-violet-500/10 text-violet-600"
-                  : index === 2
-                    ? "bg-amber-500/10 text-amber-600"
-                    : "bg-primary/10",
-              )}
-            >
-              <Icon className="size-7" />
+      <CardContent className="flex flex-wrap items-center gap-4">
+        {achievementCount <= 0 ? (
+          <div className="flex min-h-14 items-center gap-3 rounded-2xl border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+            <TrophyIcon className="size-5 text-primary" aria-hidden="true" />
+            <span>Hali yutuqlar yo'q</span>
+          </div>
+        ) : (
+          <>
+            {[TrophyIcon, MedalIcon, TargetIcon, CalendarCheck2Icon].map(
+              (Icon, index) => (
+                <div
+                  key={index}
+                  className={cn(
+                    "grid size-14 place-items-center rounded-full border text-primary shadow-sm",
+                    index === 1
+                      ? "bg-violet-500/10 text-violet-600"
+                      : index === 2
+                        ? "bg-amber-500/10 text-amber-600"
+                        : "bg-primary/10",
+                  )}
+                >
+                  <Icon className="size-7" />
+                </div>
+              ),
+            )}
+            <div className="grid size-14 place-items-center rounded-full border bg-background text-sm font-black">
+              +{achievementCount}
             </div>
-          ),
+          </>
         )}
-        <div className="grid size-14 place-items-center rounded-full border bg-background text-sm font-black">
-          +{Math.max(0, Number(personalRecordCount) || 0)}
-        </div>
       </CardContent>
     </Card>
   );
 }
 
-function RecentActivitiesCard({ activities, onOpenHistory }) {
+function RecentActivitiesCard({ activities, onOpenHistory, onOpenActivity }) {
   return (
     <Card className="overflow-hidden p-0">
       <CardHeader className="px-8 pt-8">
@@ -900,14 +936,41 @@ function RecentActivitiesCard({ activities, onOpenHistory }) {
         {activities.map((activity) => (
           <div
             key={`${activity.type}-${activity.id}`}
-            className="grid grid-cols-[88px_1fr_auto] items-center gap-4 border-t px-8 py-4"
+            role="button"
+            tabIndex={0}
+            onClick={() => onOpenActivity(activity)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onOpenActivity(activity);
+              }
+            }}
+            className="grid cursor-pointer grid-cols-[88px_1fr_auto] items-center gap-4 border-t px-8 py-4 text-left outline-none transition-colors hover:bg-muted/40 focus-visible:bg-muted/50 focus-visible:ring-1 focus-visible:ring-ring"
           >
-            <img
-              src={activity.image}
-              alt={activity.title}
-              className="h-16 w-full rounded-xl object-cover"
-              loading="lazy"
-            />
+            {activity.type === "running" ? (
+              <div aria-hidden="true" className="pointer-events-none h-16 overflow-hidden rounded-xl">
+                <RunMapPanel
+                  title={null}
+                  variant="preview"
+                  points={activity.routePoints}
+                  polyline={activity.routePolyline}
+                  qualityScore={activity.routeQualityScore}
+                  emptyLabel="Route data kutilmoqda"
+                  showQuality={Boolean(
+                    activity.routePolyline || activity.routePoints?.length,
+                  )}
+                  className="h-full"
+                  surfaceClassName="h-full min-h-0 rounded-xl md:h-full"
+                />
+              </div>
+            ) : (
+              <img
+                src={activity.image}
+                alt={activity.title}
+                className="h-16 w-full rounded-xl object-cover"
+                loading="lazy"
+              />
+            )}
             <div className="min-w-0">
               <div className="flex items-center gap-3">
                 <span
@@ -966,7 +1029,7 @@ const WorkoutDashboardPage = () => {
   const navigate = useNavigate();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const { overview: workoutOverview } = useWorkoutOverview();
-  const { sessions: sessionHistory } = useWorkoutSessionHistory();
+  const { sessions: sessionHistory } = useWorkoutSessionHistory({ limit: 6 });
   const { activePlan: rawActivePlan, startPlan } = useWorkoutPlan();
   const { activeSession } = useRunningActiveSession();
   const { sessions: runningSessions } = useRunningSessions({ limit: 4 });
@@ -986,7 +1049,6 @@ const WorkoutDashboardPage = () => {
     [activePlan],
   );
   const featuredWorkout = nextWorkouts[0] ?? null;
-  const latestRun = runningSessions[0] ?? null;
   const activities = React.useMemo(
     () => buildActivityFeed(sessionHistory, runningSessions),
     [runningSessions, sessionHistory],
@@ -996,7 +1058,7 @@ const WorkoutDashboardPage = () => {
     () =>
       Array.isArray(get(workoutOverview, "recentWorkoutDays"))
         ? workoutOverview.recentWorkoutDays
-            .map((item) => item?.date)
+            .map((item) => getWorkoutDayDateKey(item))
             .filter(Boolean)
         : [],
     [workoutOverview],
@@ -1027,6 +1089,17 @@ const WorkoutDashboardPage = () => {
   const openHistory = React.useCallback(() => {
     navigate("/user/workout/history");
   }, [navigate]);
+
+  const openActivity = React.useCallback(
+    (activity) => {
+      if (!activity?.href) {
+        return;
+      }
+
+      navigate(activity.href);
+    },
+    [navigate],
+  );
 
   const createPlan = React.useCallback(() => {
     navigate("/user/workout/plans/create");
@@ -1105,12 +1178,12 @@ const WorkoutDashboardPage = () => {
             />
             <RunningActivityCard
               activeSession={activeSession}
-              latestRun={latestRun}
               onPrimary={handleRunningPrimary}
             />
             <RecentActivitiesCard
               activities={activities}
               onOpenHistory={openHistory}
+              onOpenActivity={openActivity}
             />
           </main>
 
@@ -1118,6 +1191,7 @@ const WorkoutDashboardPage = () => {
             <TodaySummaryCard
               weeklyStats={get(workoutOverview, "weeklyStats", {})}
               runningStats={runningStats}
+              activeSession={activeSession}
             />
             <WeatherCard
               weather={weather}

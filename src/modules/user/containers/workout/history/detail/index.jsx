@@ -53,9 +53,13 @@ const getRenderableExercises = (session) => {
     : [];
 
   if (detailedExercises.length > 0) {
-    return detailedExercises.map((exercise) => ({
-      key: get(exercise, "id") || get(exercise, "exerciseKey"),
-      name: get(exercise, "exerciseName"),
+    return detailedExercises.map((exercise, index) => ({
+      key:
+        get(exercise, "id") ||
+        get(exercise, "exerciseKey") ||
+        get(exercise, "name") ||
+        `exercise-${index}`,
+      name: get(exercise, "exerciseName") || get(exercise, "name"),
       equipment: get(exercise, "equipment"),
       completedSets: get(exercise, "completedSets", 0),
       totalSets: get(exercise, "totalSets", 0),
@@ -67,8 +71,11 @@ const getRenderableExercises = (session) => {
     }));
   }
 
-  return map(get(session, "exerciseSummaries", []), (item) => ({
-    key: get(item, "exerciseKey"),
+  return map(get(session, "exerciseSummaries", []), (item, index) => ({
+    key:
+      get(item, "exerciseKey") ||
+      get(item, "exerciseName") ||
+      `summary-${index}`,
     name: get(item, "exerciseName"),
     equipment: null,
     completedSets: get(item, "completedSets", 0),

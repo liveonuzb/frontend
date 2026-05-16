@@ -46,6 +46,10 @@ import {
 } from "@/modules/profile/hooks/use-profile-overlay";
 import { getStandaloneProfileTabPath } from "@/modules/profile/lib/profile-tab-navigation";
 import NavUser from "@/components/nav-user/index.jsx";
+import {
+  isRunningLiveImmersivePath,
+  shouldHideMobileNavForPath,
+} from "./layout-route-state.js";
 
 const otherNav = [];
 
@@ -105,16 +109,8 @@ const Index = () => {
   );
   const mobileChromeHidden = useMobileChromeHidden();
   const isMobileChatView = location.pathname.startsWith("/user/chat");
-  const isRunningWorkoutRoute =
-    location.pathname.startsWith("/user/workout/running");
-  const isRunningLiveRoute = location.pathname.startsWith(
-    "/user/workout/running/live",
-  );
-  const isRunningResultRoute =
-    location.pathname.startsWith("/user/workout/running/") &&
-    !location.pathname.startsWith("/user/workout/running/live") &&
-    !location.pathname.startsWith("/user/workout/running/history");
-  const isRunningImmersiveRoute = isRunningLiveRoute || isRunningResultRoute;
+  const isRunningImmersiveRoute = isRunningLiveImmersivePath(location.pathname);
+  const hideMobileNav = shouldHideMobileNavForPath(location.pathname);
   const isFeatureScopedMobileNav =
     location.pathname.startsWith("/user/workout") ||
     location.pathname.startsWith("/user/nutrition");
@@ -197,26 +193,28 @@ const Index = () => {
   return (
     <KeyboardShortcutsProvider>
       <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <Sidebar direction={"left"} variant={"floating"} collapsible={"icon"}>
-          <SidebarHeader>
-            <RoleSwitcher />
-          </SidebarHeader>
-          <SidebarContent>
-            <NavGroup
-              label="Kuzatish"
-              items={trackingNav}
-              pathname={location.pathname}
-            />
-            <NavGroup
-              label="Boshqa"
-              items={otherNav}
-              pathname={location.pathname}
-            />
-          </SidebarContent>
-          <SidebarFooter>
-            <NavUser />
-          </SidebarFooter>
-        </Sidebar>
+        {!isRunningImmersiveRoute ? (
+          <Sidebar direction={"left"} variant={"floating"} collapsible={"icon"}>
+            <SidebarHeader>
+              <RoleSwitcher />
+            </SidebarHeader>
+            <SidebarContent>
+              <NavGroup
+                label="Kuzatish"
+                items={trackingNav}
+                pathname={location.pathname}
+              />
+              <NavGroup
+                label="Boshqa"
+                items={otherNav}
+                pathname={location.pathname}
+              />
+            </SidebarContent>
+            <SidebarFooter>
+              <NavUser />
+            </SidebarFooter>
+          </Sidebar>
+        ) : null}
         <SidebarInset
           className={cn(
             "min-w-0 md:overflow-visible",
@@ -282,10 +280,10 @@ const Index = () => {
               isRunningImmersiveRoute
                 ? "mt-0 overflow-visible p-0 pb-0 md:p-0 md:pb-0"
                 : isMobileChatView
-                ? "mt-0 p-0 pb-0"
-                : isFeatureScopedMobileNav
-                  ? "mt-16 overflow-visible p-3 pb-4"
-                  : "mt-16 overflow-x-auto p-3 pb-12",
+                  ? "mt-0 p-0 pb-0"
+                  : isFeatureScopedMobileNav
+                    ? "mt-16 overflow-visible p-3 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-3"
+                    : "mt-16 overflow-x-auto p-3 pb-12",
             )}
           >
             <PullToRefresh
@@ -295,7 +293,7 @@ const Index = () => {
               <Outlet />
             </PullToRefresh>
           </div>
-          {!isMobileChatView && !isRunningWorkoutRoute ? (
+          {!hideMobileNav ? (
             <div className="md:hidden">
               <MobileNav hidden={mobileChromeHidden} />
             </div>

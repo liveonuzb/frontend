@@ -7,8 +7,10 @@ const PRIMARY_TAB_PATHS = [
   "/user/workout/home",
   "/user/workout/plans",
   "/user/workout/running",
+  "/user/workout/running/history",
   "/user/workout/exercises",
   "/user/workout/report",
+  "/user/workout/history",
 ];
 
 const WorkoutShell = () => {

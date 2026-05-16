@@ -19,7 +19,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useWorkoutPlans } from "@/hooks/app/use-workout-plans";
 import { useWorkoutSessionHistory } from "@/hooks/app/use-workout-sessions";
-import { formatRunningDistance, formatRunningPace } from "@/lib/running-metrics";
+import {
+  formatRunningClockDuration,
+  formatRunningDistance,
+  formatRunningPace,
+} from "@/lib/running-metrics";
 import {
   getWorkoutSessionDistanceMeters,
   getWorkoutSessionPaceSecondsPerKm,
@@ -44,6 +48,11 @@ const formatDuration = (seconds) => {
   const totalMinutes = Math.max(0, Math.round((Number(seconds) || 0) / 60));
   return `${totalMinutes} daqiqa`;
 };
+
+const formatSessionDuration = (session) =>
+  isOutdoorRunningSession(session)
+    ? formatRunningClockDuration(get(session, "durationSeconds"))
+    : formatDuration(get(session, "durationSeconds"));
 
 const getDateKey = (value) => {
   const date = new Date(value);
@@ -501,7 +510,7 @@ const SessionHistoryPage = () => {
                           </span>
                           <span className="inline-flex items-center gap-1.5">
                             <TimerIcon className="size-4" />
-                            {formatDuration(get(session, "durationSeconds"))}
+                            {formatSessionDuration(session)}
                           </span>
                           <span className="inline-flex items-center gap-1.5">
                             <FlameIcon className="size-4" />
@@ -522,7 +531,9 @@ const SessionHistoryPage = () => {
                             <div className="rounded-2xl bg-muted/30 px-3 py-3 text-center">
                               <p className="text-xs text-muted-foreground">Vaqt</p>
                               <p className="mt-1 font-black">
-                                {formatDuration(get(session, "durationSeconds"))}
+                                {formatRunningClockDuration(
+                                  get(session, "durationSeconds"),
+                                )}
                               </p>
                             </div>
                             <div className="rounded-2xl bg-muted/30 px-3 py-3 text-center">

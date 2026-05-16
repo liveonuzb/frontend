@@ -84,7 +84,9 @@ const activeSession = (overrides = {}) => ({
   ...overrides,
 });
 
-const renderPage = (initialEntries = ["/user/workout/running/live/workout-1"]) => {
+const renderPage = (
+  initialEntries = ["/user/workout/running/live/workout-1"],
+) => {
   const router = createMemoryRouter(
     [
       {
@@ -208,6 +210,13 @@ describe("RunningLivePage", () => {
 
     expect(window.navigator.geolocation.watchPosition).not.toHaveBeenCalled();
     expect(screen.getByText(/00:00(?::00)?/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^start$/i })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^END$/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^RESUME$/i }),
+    ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /^start$/i }));
     expect(screen.getByText("3")).toBeInTheDocument();
@@ -296,10 +305,57 @@ describe("RunningLivePage", () => {
     expect(await screen.findByText("1.00")).toBeInTheDocument();
   });
 
+  it("renders live without the top app bar and keeps END/RESUME controls visible after start", () => {
+    renderPage();
+
+    expect(
+      screen.queryByRole("button", { name: /bekor qilish/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^END$/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /^RESUME$/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /pauza/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /yakunlash/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps the GPS status pill width stable as labels change", async () => {
+    renderPage();
+
+    const gpsPill = screen
+      .getByText("GPS kutilmoqda")
+      .closest('[role="status"]');
+    expect(gpsPill).toHaveClass("w-[13rem]", "sm:w-[14.5rem]");
+
+    await act(async () => {
+      await watchSuccess({
+        coords: {
+          latitude: 41.311081,
+          longitude: 69.240562,
+          altitude: null,
+          accuracy: 8,
+          speed: null,
+          heading: null,
+        },
+        timestamp: Date.parse("2026-05-12T10:01:00.000Z"),
+      });
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("GPS ulandi").closest('[role="status"]'),
+      ).toHaveClass("w-[13rem]", "sm:w-[14.5rem]");
+    });
+  });
+
   it("opens a bottom finish drawer and lets the user continue the run", async () => {
     renderPage();
 
-    fireEvent.click(screen.getByRole("button", { name: /yakunlash/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^END$/i }));
 
     expect(
       screen.getByRole("dialog", { name: /finish training/i }),
@@ -328,7 +384,7 @@ describe("RunningLivePage", () => {
     ]);
     renderPage();
 
-    fireEvent.click(screen.getByRole("button", { name: /yakunlash/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^END$/i }));
     fireEvent.click(screen.getByRole("button", { name: /^finish$/i }));
 
     await waitFor(() => {
@@ -360,7 +416,7 @@ describe("RunningLivePage", () => {
     );
     renderPage();
 
-    fireEvent.click(screen.getByRole("button", { name: /yakunlash/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^END$/i }));
     fireEvent.click(screen.getByRole("button", { name: /^finish$/i }));
 
     await waitFor(() => {
@@ -405,7 +461,7 @@ describe("RunningLivePage", () => {
     );
     renderPage();
 
-    fireEvent.click(screen.getByRole("button", { name: /pauza/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^RESUME$/i }));
 
     await waitFor(() => {
       expect(pauseRunningSession).toHaveBeenCalledWith("workout-1");
@@ -413,9 +469,7 @@ describe("RunningLivePage", () => {
     expect(await screen.findByText("Pauzada")).toBeInTheDocument();
     expect(window.navigator.geolocation.clearWatch).toHaveBeenCalledWith(9);
 
-    fireEvent.click(
-      screen.getByRole("button", { name: /davom ettirish|resume/i }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: /^RESUME$/i }));
 
     await waitFor(() => {
       expect(resumeRunningSession).toHaveBeenCalledWith("workout-1");
@@ -436,23 +490,13 @@ describe("RunningLivePage", () => {
     });
   });
 
-  it("requires confirmation before cancelling a run", async () => {
+  it("does not expose the old cancel menu from the removed top bar", () => {
     renderPage();
 
-    fireEvent.click(screen.getByRole("button", { name: /bekor qilish/i }));
-
-    expect(cancelRunningSession).not.toHaveBeenCalled();
     expect(
-      screen.getByRole("dialog", { name: /yugurishni bekor qilish/i }),
-    ).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: /ha, bekor qilish/i }));
-
-    await waitFor(() => {
-      expect(cancelRunningSession).toHaveBeenCalledWith("workout-1", {
-        reason: "user_cancelled",
-      });
-    });
+      screen.queryByRole("button", { name: /bekor qilish/i }),
+    ).not.toBeInTheDocument();
+    expect(cancelRunningSession).not.toHaveBeenCalled();
   });
 
   it("continues GPS point sequencing from a locally saved active session after reload", async () => {

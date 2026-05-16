@@ -21,6 +21,9 @@ class FakeMap {
     this.setCenter = vi.fn();
     this.setZoom = vi.fn();
     this.easeTo = vi.fn();
+    this.setStyle = vi.fn((styleUrl) => {
+      this.options.style = styleUrl;
+    });
     this.remove = vi.fn();
     mapInstances.push(this);
   }
@@ -82,6 +85,10 @@ class FakeLngLatBounds {
 const providerComponents = {
   type: "maplibre",
   styleUrl: "https://tiles.openfreemap.org/styles/dark",
+  styleUrls: {
+    light: "https://tiles.openfreemap.org/styles/bright",
+    dark: "https://tiles.openfreemap.org/styles/dark",
+  },
   maplibregl: {
     Map: FakeMap,
     Marker: FakeMarker,
@@ -95,15 +102,14 @@ describe("RunMapPanel", () => {
     vi.clearAllMocks();
     mapInstances.length = 0;
     markerInstances.length = 0;
+    document.documentElement.classList.remove("dark");
+    window.localStorage.removeItem("theme");
     mockLoadMapProvider.mockResolvedValue(providerComponents);
   });
 
   it("lazy-loads the map provider and renders a decoded route polyline", async () => {
     render(
-      <RunMapPanel
-        title="Route map"
-        polyline="_p~iF~ps|U_ulLnnqC_mqNvxq`@"
-      />,
+      <RunMapPanel title="Route map" polyline="_p~iF~ps|U_ulLnnqC_mqNvxq`@" />,
     );
 
     expect(screen.getByText("Xarita yuklanmoqda…")).toBeInTheDocument();
@@ -114,13 +120,14 @@ describe("RunMapPanel", () => {
       "3",
     );
     expect(mapInstances[0].options.style).toBe(
-      "https://tiles.openfreemap.org/styles/dark",
+      "https://tiles.openfreemap.org/styles/bright",
     );
+    expect(mapInstances[0].options.attributionControl).toBe(false);
+    expect(mapInstances[0].addControl).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(mapInstances[0].fitBounds).toHaveBeenCalled());
     await waitFor(() =>
       expect(markerInstances.at(-1).setLngLat).toHaveBeenCalledWith([
-        -126.453,
-        43.252,
+        -126.453, 43.252,
       ]),
     );
     expect(mockLoadMapProvider).toHaveBeenCalledWith("maplibre");
@@ -135,6 +142,53 @@ describe("RunMapPanel", () => {
       "0",
     );
     expect(mockLoadMapProvider).toHaveBeenCalledWith("maplibre");
+  });
+
+  it("uses the dark map style when the app theme is dark", async () => {
+    document.documentElement.classList.add("dark");
+
+    render(<RunMapPanel emptyLabel="No route recorded" />);
+
+    expect(await screen.findByTestId("maplibre-map")).toBeInTheDocument();
+    await waitFor(() => expect(mapInstances).toHaveLength(1));
+    expect(mapInstances[0].options.style).toBe(
+      "https://tiles.openfreemap.org/styles/dark",
+    );
+  });
+
+  it("switches map style on app theme changes without remounting the live map", async () => {
+    render(
+      <RunMapPanel
+        title={null}
+        variant="live"
+        points={[
+          {
+            sequence: 1,
+            latitude: 41.311081,
+            longitude: 69.240562,
+          },
+        ]}
+      />,
+    );
+
+    expect(await screen.findByTestId("maplibre-map")).toHaveAttribute(
+      "data-coordinate-count",
+      "1",
+    );
+    await waitFor(() => expect(mapInstances).toHaveLength(1));
+
+    document.documentElement.classList.add("dark");
+    window.dispatchEvent(
+      new CustomEvent("app-theme-change", { detail: "dark" }),
+    );
+
+    await waitFor(() => {
+      expect(mapInstances[0].setStyle).toHaveBeenCalledWith(
+        "https://tiles.openfreemap.org/styles/dark",
+      );
+    });
+    expect(mapInstances).toHaveLength(1);
+    expect(mapInstances[0].remove).not.toHaveBeenCalled();
   });
 
   it("renders a compact preview with the real map provider when route data exists", async () => {
@@ -236,9 +290,32 @@ describe("RunMapPanel", () => {
     );
 
     expect(await screen.findByText("Map unavailable")).toBeInTheDocument();
+    expect(screen.getByTestId("route-map-fallback")).toHaveClass(
+      "bg-card",
+      "text-card-foreground",
+    );
     expect(screen.getByTestId("route-fallback-svg")).toHaveAttribute(
       "data-coordinate-count",
       "3",
+    );
+  });
+
+  it("keeps the empty fallback readable on app-mode card surfaces", async () => {
+    mockLoadMapProvider.mockRejectedValueOnce(new Error("missing key"));
+
+    render(
+      <RunMapPanel
+        title="Route map"
+        emptyLabel="No route recorded"
+        errorLabel="Map unavailable"
+      />,
+    );
+
+    expect(await screen.findByText("Map unavailable")).toBeInTheDocument();
+    expect(screen.getByTestId("route-map-fallback")).toHaveClass(
+      "border-border",
+      "bg-card",
+      "text-card-foreground",
     );
   });
 });

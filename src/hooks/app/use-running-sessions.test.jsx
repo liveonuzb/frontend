@@ -17,6 +17,7 @@ import {
   useAppendRunningPoints,
   useRunningActiveSession,
   useRunningSessionDetail,
+  useRunningSessions,
   useStartRunningSession,
 } from "./use-running-sessions.js";
 
@@ -182,6 +183,42 @@ describe("use-running-sessions", () => {
         latitude: 41.311081,
         longitude: 69.240562,
       }),
+    ]);
+  });
+
+  it("deduplicates running session list rows by workout session id", () => {
+    mockUseGetQuery.mockReturnValue({
+      data: {
+        data: {
+          data: [
+            {
+              workoutSessionId: "workout-1",
+              status: "completed",
+              startedAt: "2026-05-12T10:00:00.000Z",
+            },
+            {
+              id: "workout-1",
+              status: "completed",
+              startedAt: "2026-05-12T10:00:00.000Z",
+            },
+            {
+              workoutSessionId: "workout-2",
+              status: "completed",
+              startedAt: "2026-05-13T10:00:00.000Z",
+            },
+          ],
+        },
+      },
+      isLoading: false,
+    });
+
+    const { result } = renderHook(() => useRunningSessions(), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    expect(result.current.sessions.map((session) => session.workoutSessionId)).toEqual([
+      "workout-1",
+      "workout-2",
     ]);
   });
 });

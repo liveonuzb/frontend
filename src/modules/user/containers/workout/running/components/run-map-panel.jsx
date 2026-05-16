@@ -3,11 +3,52 @@ import { MapIcon, Maximize2Icon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { loadMapProvider } from "@/lib/maps";
+import { resolveTheme } from "@/lib/user-preferences";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_CENTER = [69.240562, 41.311081];
 const SVG_SIZE = 360;
 const SVG_PADDING = 54;
+
+const getCurrentMapTheme = () => {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return "light";
+  }
+
+  if (document.documentElement.classList.contains("dark")) {
+    return "dark";
+  }
+
+  return resolveTheme(window.localStorage.getItem("theme") || "light");
+};
+
+const useMapTheme = () => {
+  const [theme, setTheme] = React.useState(getCurrentMapTheme);
+
+  React.useEffect(() => {
+    const syncTheme = () => setTheme(getCurrentMapTheme());
+
+    window.addEventListener("app-theme-change", syncTheme);
+
+    const observer = new MutationObserver(syncTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => {
+      window.removeEventListener("app-theme-change", syncTheme);
+      observer.disconnect();
+    };
+  }, []);
+
+  return theme;
+};
+
+const getMapStyleUrl = (mapProvider, theme) =>
+  mapProvider?.styleUrls?.[theme] ??
+  mapProvider?.styleUrl ??
+  "https://tiles.openfreemap.org/styles/dark";
 
 const roundCoordinate = (value) => Math.round(value * 1e6) / 1e6;
 const roundSvgPoint = (value) => Math.round(value * 10) / 10;
@@ -263,21 +304,22 @@ const RouteSvgFallback = ({
   return (
     <div
       className={cn(
-        "relative h-full min-h-[260px] overflow-hidden rounded-[1.5rem] bg-[#17120d]",
+        "relative h-full min-h-[260px] overflow-hidden rounded-[1.5rem] border border-border bg-card text-card-foreground",
         compact && "min-h-0 rounded-[1.25rem]",
       )}
       role={live ? "status" : undefined}
       aria-live={live ? "polite" : undefined}
+      data-testid="route-map-fallback"
     >
       <div
-        className="absolute inset-0 opacity-35"
+        className="absolute inset-0 opacity-[0.16] dark:opacity-[0.22]"
         style={{
           backgroundImage:
-            "linear-gradient(34deg, transparent 0 44%, rgba(255,255,255,.16) 45% 47%, transparent 48%), linear-gradient(118deg, transparent 0 35%, rgba(255,255,255,.13) 36% 38%, transparent 39%), linear-gradient(8deg, transparent 0 54%, rgba(255,255,255,.1) 55% 57%, transparent 58%), linear-gradient(90deg, transparent 0 64%, rgba(255,255,255,.08) 65% 67%, transparent 68%)",
+            "linear-gradient(34deg, transparent 0 44%, hsl(var(--foreground) / .34) 45% 47%, transparent 48%), linear-gradient(118deg, transparent 0 35%, hsl(var(--foreground) / .28) 36% 38%, transparent 39%), linear-gradient(8deg, transparent 0 54%, hsl(var(--foreground) / .22) 55% 57%, transparent 58%), linear-gradient(90deg, transparent 0 64%, hsl(var(--foreground) / .18) 65% 67%, transparent 68%)",
           backgroundSize: "118px 118px, 136px 136px, 96px 96px, 132px 132px",
         }}
       />
-      <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#1b1510] to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background/70 to-transparent" />
       <MapExpandButton
         showExpand={showExpand}
         expandLabel={expandLabel}
@@ -354,15 +396,17 @@ const RouteSvgFallback = ({
         <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
           <div>
             <MapIcon
-              className="mx-auto size-8 text-[#f59e0b]"
+              className="mx-auto size-8 text-primary"
               aria-hidden="true"
             />
-            <p className="mt-3 text-sm font-medium text-white/80">{label}</p>
+            <p className="mt-3 text-sm font-medium text-card-foreground">
+              {label}
+            </p>
           </div>
         </div>
       )}
       {hasRoute && label ? (
-        <p className="absolute left-4 top-4 max-w-[60%] rounded-full border border-white/10 bg-black/25 px-3 py-1 text-xs font-medium text-white/75 backdrop-blur">
+        <p className="absolute left-4 top-4 max-w-[60%] rounded-full border border-border bg-background/85 px-3 py-1 text-xs font-medium text-foreground shadow-sm backdrop-blur">
           {label}
         </p>
       ) : null}
@@ -540,6 +584,7 @@ const MapLibreRouteMap = ({
   coordinates,
   live = false,
   mapProvider,
+  styleUrl,
   routeCenter,
   onError,
 }) => {
@@ -553,14 +598,16 @@ const MapLibreRouteMap = ({
   const readyRef = React.useRef(false);
   const didInitialLiveCenterRef = React.useRef(false);
   const lastFollowAtRef = React.useRef(0);
+  const initialStyleUrlRef = React.useRef(styleUrl);
+  const currentStyleUrlRef = React.useRef(null);
   const [isReady, setIsReady] = React.useState(false);
-  const { maplibregl, styleUrl } = mapProvider ?? {};
+  const { maplibregl } = mapProvider ?? {};
   const coordinateCount = coordinates.length;
   const initialRouteCenterRef = React.useRef(routeCenter);
   const initialZoomRef = React.useRef(coordinateCount > 1 ? 15 : 16);
 
   React.useEffect(() => {
-    if (!containerRef.current || !maplibregl || !styleUrl) {
+    if (!containerRef.current || !maplibregl || !initialStyleUrlRef.current) {
       return undefined;
     }
 
@@ -592,13 +639,14 @@ const MapLibreRouteMap = ({
     try {
       const map = new maplibregl.Map({
         container: containerRef.current,
-        style: styleUrl,
+        style: initialStyleUrlRef.current,
         center: initialRouteCenterRef.current,
         zoom: initialZoomRef.current,
-        attributionControl: true,
+        attributionControl: false,
       });
 
       mapRef.current = map;
+      currentStyleUrlRef.current = initialStyleUrlRef.current;
       readyRef.current = false;
       map.addControl(
         new maplibregl.NavigationControl({
@@ -688,7 +736,28 @@ const MapLibreRouteMap = ({
       readyRef.current = false;
       didInitialLiveCenterRef.current = false;
     };
-  }, [maplibregl, onError, styleUrl]);
+  }, [maplibregl, onError]);
+
+  React.useEffect(() => {
+    const map = mapRef.current;
+
+    if (!map || !styleUrl || currentStyleUrlRef.current === styleUrl) {
+      return;
+    }
+
+    if (!isReady || !readyRef.current || typeof map.setStyle !== "function") {
+      return;
+    }
+
+    try {
+      currentStyleUrlRef.current = styleUrl;
+      readyRef.current = false;
+      setIsReady(false);
+      map.setStyle(styleUrl);
+    } catch {
+      onError?.();
+    }
+  }, [isReady, onError, styleUrl]);
 
   React.useEffect(() => {
     const map = mapRef.current;
@@ -870,6 +939,7 @@ const RunMapPanel = ({
     () => getRouteCoordinates({ points, polyline }),
     [points, polyline],
   );
+  const mapTheme = useMapTheme();
   const [mapComponents, setMapComponents] = React.useState(null);
   const [loadState, setLoadState] = React.useState("idle");
   const isPreview = variant === "preview";
@@ -912,6 +982,7 @@ const RunMapPanel = ({
 
   const routeCenter = getRouteCenter(routeCoordinates);
   const center = getMapCenter(routeCoordinates);
+  const mapStyleUrl = getMapStyleUrl(mapComponents, mapTheme);
   const handleMapError = React.useCallback(() => {
     setMapComponents((current) => (current === null ? current : null));
     setLoadState((current) => (current === "error" ? current : "error"));
@@ -949,6 +1020,7 @@ const RunMapPanel = ({
             coordinates={routeCoordinates}
             live={isLive}
             mapProvider={mapComponents}
+            styleUrl={mapStyleUrl}
             routeCenter={routeCenter}
             onError={handleMapError}
           />

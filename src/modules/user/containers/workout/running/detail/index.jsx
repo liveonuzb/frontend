@@ -10,11 +10,9 @@ import {
   MountainIcon,
   NavigationIcon,
   PencilIcon,
-  RulerIcon,
   Share2Icon,
   TimerIcon,
   Trash2Icon,
-  WeightIcon,
   XIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -133,8 +131,6 @@ const RunningDetailPage = () => {
   const [details, setDetails] = React.useState({
     momentTitle: "",
     momentText: "",
-    heightCm: "",
-    weightKg: "",
     feelingLevel: 0,
   });
   const [imageUrl, setImageUrl] = React.useState(null);
@@ -148,14 +144,10 @@ const RunningDetailPage = () => {
     return {
       momentTitle: get(session, "moments.title", "") ?? "",
       momentText: get(session, "moments.text", "") ?? "",
-      heightCm: get(session, "bodyMetrics.heightCm") ?? "",
-      weightKg: get(session, "bodyMetrics.weightKg") ?? "",
       feelingLevel: Number(get(session, "feeling.level", 0)) || 0,
       imageUrl: get(session, "moments.imageUrl", null),
     };
   }, [
-    session?.bodyMetrics?.heightCm,
-    session?.bodyMetrics?.weightKg,
     session?.feeling?.level,
     session?.moments?.imageUrl,
     session?.moments?.text,
@@ -171,8 +163,6 @@ const RunningDetailPage = () => {
     setDetails({
       momentTitle: sessionDetailsSnapshot.momentTitle,
       momentText: sessionDetailsSnapshot.momentText,
-      heightCm: sessionDetailsSnapshot.heightCm,
-      weightKg: sessionDetailsSnapshot.weightKg,
       feelingLevel: sessionDetailsSnapshot.feelingLevel,
     });
     setImageUrl(sessionDetailsSnapshot.imageUrl);
@@ -233,19 +223,7 @@ const RunningDetailPage = () => {
   };
 
   const handleBlurSave = (field) => {
-    const rawValue = details[field];
-    const numericFields = new Set(["heightCm", "weightKg"]);
-    const value = numericFields.has(field)
-      ? rawValue === ""
-        ? undefined
-        : Number(rawValue)
-      : rawValue;
-
-    if (value === undefined || Number.isNaN(value)) {
-      return;
-    }
-
-    void saveDetails({ [field]: value });
+    void saveDetails({ [field]: details[field] });
   };
 
   const handleFeeling = (level) => {
@@ -531,65 +509,9 @@ const RunningDetailPage = () => {
           </div>
         </ResultCard>
 
-        <ResultCard>
-          <h2 className="border-l-4 border-primary pl-3 text-xl font-semibold">
-            {t("user.workout.running.detail.bodyMetrics", "Height / Weight")}
-          </h2>
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <label className="rounded-2xl border p-4">
-              <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                <RulerIcon className="size-4 text-primary" aria-hidden="true" />
-                {t("user.workout.running.detail.height", "Height")}
-              </span>
-              <input
-                type="number"
-                min="100"
-                max="250"
-                value={details.heightCm}
-                onChange={(event) =>
-                  setDetails((current) => ({
-                    ...current,
-                    heightCm: event.target.value,
-                  }))
-                }
-                onBlur={() => handleBlurSave("heightCm")}
-                className="mt-3 w-full bg-transparent text-2xl font-semibold outline-none"
-                placeholder="170"
-              />
-              <span className="text-sm text-muted-foreground">cm</span>
-            </label>
-            <label className="rounded-2xl border p-4">
-              <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                <WeightIcon
-                  className="size-4 text-primary"
-                  aria-hidden="true"
-                />
-                {t("user.workout.running.detail.weight", "Weight")}
-              </span>
-              <input
-                type="number"
-                min="20"
-                max="300"
-                value={details.weightKg}
-                onChange={(event) =>
-                  setDetails((current) => ({
-                    ...current,
-                    weightKg: event.target.value,
-                  }))
-                }
-                onBlur={() => handleBlurSave("weightKg")}
-                className="mt-3 w-full bg-transparent text-2xl font-semibold outline-none"
-                placeholder="70"
-              />
-              <span className="text-sm text-muted-foreground">kg</span>
-            </label>
-          </div>
-        </ResultCard>
-
         <Button
           type="button"
-          variant="outline"
-          className="h-16 w-full rounded-2xl border-destructive/25 text-lg font-semibold text-destructive hover:text-destructive"
+          className="w-full"
           onClick={() => setDeleteOpen(true)}
         >
           <Trash2Icon className="size-5" aria-hidden="true" />

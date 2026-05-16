@@ -39,6 +39,10 @@ const renderPage = (initialEntry = "/user/workout/history/session-1") => {
         element: <SessionHistoryDetailPage />,
       },
       {
+        path: "/user/workout/report/:sessionId",
+        element: <SessionHistoryDetailPage />,
+      },
+      {
         path: "/user/workout/history",
         element: <div data-testid="history-route">History route</div>,
       },
@@ -188,5 +192,26 @@ describe("SessionHistoryDetailPage", () => {
 
     expect(router.state.location.pathname).toBe("/user/workout/running/run-session-1");
     expect(screen.getByTestId("running-detail-route")).toBeInTheDocument();
+  });
+
+  it("loads the report detail alias by session id", () => {
+    renderPage("/user/workout/report/session-1");
+
+    expect(screen.getByText("Legs")).toBeInTheDocument();
+    expect(screen.getByText("Bajarilgan mashqlar")).toBeInTheDocument();
+  });
+
+  it("shows a not-found state when a session cannot be loaded", () => {
+    useWorkoutSessionHistoryItem.mockReturnValue({
+      session: null,
+      isLoading: false,
+      isError: true,
+      refetch: vi.fn(),
+    });
+
+    renderPage("/user/workout/history/missing-session");
+
+    expect(screen.getByText("Workout session topilmadi")).toBeInTheDocument();
+    expect(screen.getByText("Tarixga qaytish")).toBeInTheDocument();
   });
 });

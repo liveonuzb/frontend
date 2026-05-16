@@ -59,6 +59,7 @@ describe("RunningHistoryPage", () => {
           metrics: {
             distanceMeters: 1000,
             durationSeconds: 600,
+            caloriesBurned: 72,
             averagePaceSecondsPerKm: 600,
             gpsQualityScore: 0.92,
           },
@@ -75,6 +76,11 @@ describe("RunningHistoryPage", () => {
     const runLink = screen.getByRole("link", { name: /ochiq yugurish/i });
 
     expect(runLink).toHaveAttribute("href", "/user/workout/running/workout-1");
+    expect(screen.getByText("1.0 km")).toBeInTheDocument();
+    expect(screen.getByText(/00:10:00/)).toBeInTheDocument();
+    expect(screen.getByText(/10:00 \/km/)).toBeInTheDocument();
+    expect(screen.getByText(/72 kcal/)).toBeInTheDocument();
+    expect(screen.getByText("GPS 92%")).toBeInTheDocument();
 
     fireEvent.click(runLink);
 
