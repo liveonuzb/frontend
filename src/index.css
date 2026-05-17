@@ -2167,3 +2167,60 @@ html[data-app-mode="madagascar"].dark {
     }
   }
 }
+
+.workout-layout-theme {
+  --workout-layout-accent-rgb: 255 106 0;
+  --workout-layout-accent-strong-rgb: 242 72 34;
+  --workout-accent: rgb(var(--workout-layout-accent-rgb));
+  --workout-accent-strong: rgb(var(--workout-layout-accent-strong-rgb));
+  --workout-page-bg: #fffaf4;
+  --workout-page-bg-soft: #fff4e8;
+  --workout-page-bg-muted: #fffdf9;
+  --workout-panel-bg: rgba(255, 255, 255, 0.82);
+  --workout-panel-border: rgba(255, 106, 0, 0.16);
+  --workout-panel-shadow: 0 22px 70px rgba(255, 106, 0, 0.08);
+  --workout-layout-text: rgb(15, 23, 42);
+  --workout-muted: rgb(100, 116, 139);
+}
+
+.dark .workout-layout-theme {
+  --workout-page-bg: #050b12;
+  --workout-page-bg-soft: #07111d;
+  --workout-page-bg-muted: #0b1522;
+  --workout-panel-bg: rgba(7, 17, 29, 0.72);
+  --workout-panel-border: rgba(255, 153, 77, 0.18);
+  --workout-panel-shadow: 0 24px 90px rgba(0, 0, 0, 0.32);
+  --workout-layout-text: rgb(241, 245, 249);
+  --workout-muted: rgb(148, 163, 184);
+}
+
+.workout-page-surface {
+  color: var(--workout-layout-text);
+}
+
+.dark .workout-page-surface {
+  color: var(--workout-layout-text);
+}
+
+.workout-glass-card {
+  border: 1px solid var(--workout-panel-border);
+  background: var(--workout-panel-bg);
+  box-shadow: var(--workout-panel-shadow);
+  backdrop-filter: blur(18px);
+}
+
+.workout-orange-button {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--btn-from) 0%, var(--btn-to) 100%);
+  color: white;
+  box-shadow: 0 20px 48px var(--btn-shadow);
+}
+
+.workout-orange-button:hover {
+  opacity: 0.94;
+  box-shadow: 0 22px 56px var(--btn-shadow);
+}
+
+.workout-page-surface .workout-muted {
+  color: var(--workout-muted);
+}

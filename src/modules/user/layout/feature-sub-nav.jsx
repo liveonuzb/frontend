@@ -24,7 +24,10 @@ const FeatureSubNav = ({ items = [], className, mobile = false }) => {
       )}
     >
       {mobile ? (
-        <div className="rounded-[1.75rem] border bg-background/95 px-1 py-1 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <div
+          data-workout-tab="surface"
+          className="rounded-[1.75rem] border bg-background/95 px-1 py-1 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80"
+        >
           <div className="overflow-x-auto no-scrollbar">
             <div
               className={cn(
@@ -55,7 +58,10 @@ const FeatureSubNav = ({ items = [], className, mobile = false }) => {
           </div>
         </div>
       ) : (
-        <div className="rounded-[1.25rem] border bg-background/80 p-2 backdrop-blur">
+        <div
+          data-workout-tab="surface"
+          className="rounded-[1.25rem] border bg-background/80 p-2 backdrop-blur"
+        >
           <div className="flex flex-wrap items-center justify-start gap-2 overflow-x-auto no-scrollbar">
             {items.map((item) => {
               const active = isItemActive(pathname, item);

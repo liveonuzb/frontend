@@ -1,16 +1,16 @@
 import React from "react";
-import { filter, find, get, map, orderBy, size, values } from "lodash";
+import { find, get, map, orderBy, size, values } from "lodash";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import {
   CheckIcon,
   CrownIcon,
   DumbbellIcon,
+  ArrowRightIcon,
   FlameIcon,
   MoreVerticalIcon,
   PlayIcon,
   PlusIcon,
-  SearchIcon,
   SparklesIcon,
   Trash2Icon,
   PencilIcon,
@@ -36,30 +36,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import useWorkoutPlan from "@/hooks/app/use-workout-plan";
 import useGetQuery from "@/hooks/api/use-get-query";
 import { useLanguageStore, useBreadcrumbStore } from "@/store";
 import { cn } from "@/lib/utils";
-import CalorieGaugeWidget from "@/modules/user/containers/dashboard/calorie-gauge-widget.jsx";
 import {
   DASHBOARD_ME_QUERY_KEY,
   getUserFromResponse,
-  normalizeDateKey,
 } from "@/modules/user/containers/dashboard/query-helpers.js";
-import {
-  deriveWorkoutPlanMetrics,
-  getFirstWorkoutDayIndex,
-  getNextStartableDayIndex,
-} from "../utils";
+import { deriveWorkoutPlanMetrics } from "../utils";
+import { WORKOUT_RECOMMENDED_PLANS } from "../workout-showcase-data.js";
 
 const resolveText = (translations, fallback, language) => {
   if (translations && typeof translations === "object") {
@@ -117,13 +103,6 @@ const pickGradient = (key) => {
   return COVER_GRADIENTS[Math.abs(hash) % COVER_GRADIENTS.length];
 };
 
-const formatDate = (dateInput) => {
-  if (!dateInput) return null;
-  const d = new Date(dateInput);
-  if (Number.isNaN(d.getTime())) return null;
-  return `${d.getDate()} ${["Yan", "Fev", "Mar", "Apr", "May", "Iyn", "Iyl", "Avg", "Sen", "Okt", "Noy", "Dek"][d.getMonth()]}, ${d.getFullYear()}`;
-};
-
 const PlanCard = ({
   plan,
   isActive,
@@ -136,22 +115,28 @@ const PlanCard = ({
   isStartDisabled,
   isEditable,
 }) => {
+  const durationWeeks =
+    Number(get(plan, "durationWeeks")) ||
+    Math.max(1, Math.round((Number(get(plan, "days")) || 28) / 7));
   const dayCount = get(plan, "daysPerWeek") || 0;
-  const exerciseCount = get(plan, "totalExercises") || 0;
+  const level = get(plan, "level", get(plan, "difficulty", "Beginner - Intermediate"));
   const coverImageUrl = get(plan, "coverImageUrl");
-  const updatedLabel = formatDate(
-    get(plan, "updatedAt") || get(plan, "createdAt"),
-  );
+  const tags = Array.isArray(get(plan, "tags"))
+    ? get(plan, "tags")
+    : [
+        get(plan, "focus", "Strength Focus"),
+        "Progress Tracking",
+        "Nutrition Guidance",
+      ].filter(Boolean);
 
   return (
-    <div className="group relative flex gap-4 rounded-3xl border bg-card p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-      {/* Cover */}
+    <div className="workout-glass-card group relative grid min-h-[240px] overflow-hidden rounded-[1.6rem] border transition hover:-translate-y-0.5 hover:border-primary/45 md:grid-cols-[minmax(220px,42%)_1fr]">
       <button
         type="button"
         onClick={onView}
         aria-label={`${title} rejani ko'rish`}
         className={cn(
-          "relative h-32 w-32 shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br shadow-inner transition group-hover:scale-[1.01]",
+          "relative min-h-[220px] overflow-hidden bg-gradient-to-br text-left",
           !coverImageUrl && pickGradient(get(plan, "id")),
         )}
       >
@@ -159,7 +144,7 @@ const PlanCard = ({
           <img
             src={coverImageUrl}
             alt={title}
-            className="size-full object-cover"
+            className="size-full object-cover transition duration-500 group-hover:scale-105"
             loading="lazy"
           />
         ) : (
@@ -167,14 +152,18 @@ const PlanCard = ({
             <DumbbellIcon className="size-10 text-white/85" strokeWidth={2} />
           </div>
         )}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/10 via-transparent to-slate-950/60" />
       </button>
 
-      {/* Content */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-col p-5 sm:p-7">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <h3 className="truncate text-sm font-bold sm:text-base">{title}</h3>
-            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              {get(plan, "badge") ? (
+                <Badge className="rounded-full bg-primary/10 text-primary">
+                  {String(get(plan, "badge")).toUpperCase()}
+                </Badge>
+              ) : null}
               {isActive ? (
                 <Badge variant="secondary" className="gap-1">
                   <CheckIcon className="size-3" />
@@ -183,6 +172,12 @@ const PlanCard = ({
               ) : null}
               <PlanSourceBadge plan={plan} />
             </div>
+            <h3 className="text-2xl font-black tracking-tight">{title}</h3>
+            {description ? (
+              <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
+                {description}
+              </p>
+            ) : null}
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -223,106 +218,195 @@ const PlanCard = ({
           </DropdownMenu>
         </div>
 
-        <div className="mt-2 flex items-center gap-3 text-[11px] font-medium text-muted-foreground">
+        <div className="mt-6 grid gap-4 text-sm font-medium text-muted-foreground sm:grid-cols-3">
           <span className="inline-flex items-center gap-1">
-            <DumbbellIcon className="size-3" />
-            {dayCount} kun
+            <CrownIcon className="size-4 text-primary" />
+            <span className="text-xl font-black text-foreground">{durationWeeks}</span>
+            Weeks
           </span>
           <span className="inline-flex items-center gap-1">
-            {exerciseCount} mashq
+            <DumbbellIcon className="size-4 text-primary" />
+            <span className="text-xl font-black text-foreground">{dayCount}</span>
+            Days / Week
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <FlameIcon className="size-4 text-primary" />
+            <span className="font-black text-foreground">{level}</span>
           </span>
         </div>
 
-        {description ? (
-          <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">
-            {description}
-          </p>
-        ) : null}
+        <div className="mt-5 flex flex-wrap gap-2">
+          {tags.slice(0, 3).map((tag) => (
+            <span
+              key={tag}
+              className="rounded-xl border border-slate-900/10 bg-white/45 px-3 py-1 text-xs font-medium text-muted-foreground dark:border-white/10 dark:bg-white/[0.04]"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
 
-        <div className="mt-auto pt-2">
-          {updatedLabel ? (
-            <p className="text-[11px] text-muted-foreground/80">
-              {updatedLabel} da yaratildi
-            </p>
-          ) : null}
+        <div className="mt-auto flex flex-wrap gap-2 pt-6">
+          <Button className="rounded-2xl px-5" onClick={onView}>
+            View Plan
+            <ArrowRightIcon data-icon="inline-end" />
+          </Button>
+          <Button
+            variant="outline"
+            className="rounded-2xl"
+            onClick={onStart}
+            disabled={isStartDisabled}
+          >
+            <PlayIcon data-icon="inline-start" />
+            {isActive ? "Continue Plan" : "Start"}
+          </Button>
         </div>
       </div>
     </div>
   );
 };
 
-/* Right sidebar — calorie gauge, next workout list, custom plan CTA. */
-const NextWorkoutItem = ({ name, day, time }) => (
-  <div className="flex items-center gap-3 rounded-2xl border bg-card p-2.5 transition hover:bg-muted/40">
-    <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-orange-400 to-red-500">
-      <DumbbellIcon className="size-5 text-white" />
-    </div>
-    <div className="min-w-0 flex-1">
-      <p className="truncate text-sm font-semibold">{name}</p>
-      <p className="truncate text-[11px] text-muted-foreground">
-        {day} • {time}
-      </p>
-    </div>
-  </div>
-);
-
-const Sidebar = ({ activePlan, onCreatePlan, currentLanguage }) => {
-  const dateKey = normalizeDateKey(new Date());
-
-  const schedule = get(activePlan, "schedule", []);
-  const upcomingDays = filter(
-    schedule,
-    (entry) => size(get(entry, "exercises", [])) > 0,
-  ).slice(0, 3);
+const PlanSidebar = ({ activePlan, onCreatePlan, onContinuePlan, onStartRecommended }) => {
+  const recommendedPlan = WORKOUT_RECOMMENDED_PLANS[0];
+  const activeProgress = Number(get(activePlan, "progress", get(activePlan, "completionPercent", 0))) || 58;
 
   return (
     <div className="space-y-4">
-      <CalorieGaugeWidget dateKey={dateKey} />
-
-      {size(upcomingDays) > 0 ? (
-        <div className="rounded-3xl border bg-card p-4 shadow-sm">
-          <h4 className="mb-3 text-sm font-bold">Keyingi mashg'ulot</h4>
-          <div className="space-y-2">
-            {map(upcomingDays, (day, index) => {
-              const focus =
-                resolveText(
-                  get(day, "focusTranslations"),
-                  get(day, "focus"),
-                  currentLanguage,
-                ) || "Mashg'ulot";
-              return (
-                <NextWorkoutItem
-                  key={`${focus}-${index}`}
-                  name={focus}
-                  day={get(day, "day", `Kun ${index + 1}`)}
-                  time={`${size(get(day, "exercises", []))} mashq`}
-                />
-              );
-            })}
+      <div className="workout-glass-card rounded-3xl p-5">
+        <div className="flex items-center gap-2">
+          <SparklesIcon className="size-4 text-primary" />
+          <h4 className="text-sm font-black">Recommended for you</h4>
+        </div>
+        <div className="relative mt-4 overflow-hidden rounded-3xl border border-primary/20 p-4">
+          <img
+            src={recommendedPlan.coverImageUrl}
+            alt={recommendedPlan.name}
+            className="absolute inset-y-0 right-0 h-full w-1/2 object-cover opacity-55"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/90 to-background/20 dark:from-[#07111d] dark:via-[#07111d]/92" />
+          <div className="relative z-10 max-w-[13rem]">
+            <p className="text-xs font-semibold text-muted-foreground">
+              Based on your activity
+            </p>
+            <ul className="mt-3 space-y-2 text-xs text-muted-foreground">
+              <li className="flex items-center gap-2">
+                <CheckIcon className="size-4 text-green-500" />
+                You're working out 4 days a week
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckIcon className="size-4 text-green-500" />
+                Strength training is your focus
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckIcon className="size-4 text-green-500" />
+                You've hit 78% of your goals
+              </li>
+            </ul>
+            <h5 className="mt-5 text-base font-black">
+              {recommendedPlan.name}
+            </h5>
+            <p className="text-xs text-muted-foreground">
+              is the perfect next step.
+            </p>
+            <Button className="mt-4 rounded-2xl" size="sm" onClick={onStartRecommended}>
+              Start this plan
+              <ArrowRightIcon data-icon="inline-end" />
+            </Button>
           </div>
         </div>
-      ) : null}
+      </div>
 
-      {/* Custom Plan CTA */}
-      <div className="rounded-3xl border bg-gradient-to-br from-primary/5 via-card to-card p-5 shadow-sm">
-        <h4 className="text-sm font-bold">Custom Plan yaratish</h4>
-        <p className="mt-1 text-xs text-muted-foreground">
-          O'zingizga mos mashg'ulot rejasini yarating va natijalaringizni
-          oshiring.
-        </p>
-        <Button onClick={onCreatePlan} className="mt-4 w-full" size="sm">
-          <PlusIcon className="size-4" />
-          Yangi custom plan
-        </Button>
+      <div className="workout-glass-card rounded-3xl p-5">
+        <div className="flex items-center justify-between gap-3">
+          <h4 className="text-sm font-black">Your active plan</h4>
+          {activePlan ? (
+            <Badge className="rounded-full bg-green-500/10 text-green-500">
+              Active
+            </Badge>
+          ) : null}
+        </div>
+        {activePlan ? (
+          <div className="mt-4">
+            <div className="flex gap-3">
+              <img
+                src={get(activePlan, "coverImageUrl", WORKOUT_RECOMMENDED_PLANS[3].coverImageUrl)}
+                alt={get(activePlan, "name", "Active plan")}
+                className="size-16 rounded-2xl object-cover"
+                loading="lazy"
+              />
+              <div className="min-w-0">
+                <p className="truncate text-base font-black">
+                  {get(activePlan, "name", "Full Body Strength")}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Week {get(activePlan, "currentWeek", 2)} / Day {get(activePlan, "currentDay", 3)}
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary"
+                style={{ width: `${Math.min(100, activeProgress)}%` }}
+              />
+            </div>
+            <p className="mt-2 text-right text-xs text-muted-foreground">
+              {activeProgress}% complete
+            </p>
+            <Button
+              variant="outline"
+              className="mt-4 w-full rounded-2xl"
+              onClick={onContinuePlan}
+            >
+              Continue Plan
+              <ArrowRightIcon data-icon="inline-end" />
+            </Button>
+          </div>
+        ) : (
+          <div className="mt-4 rounded-2xl border border-dashed border-slate-900/15 p-4 text-sm text-muted-foreground dark:border-white/10">
+            Hozircha faol reja yo'q. Reja tanlang yoki o'zingizga mos plan yarating.
+            <Button onClick={onCreatePlan} className="mt-4 w-full" size="sm">
+              <PlusIcon className="size-4" />
+              Yangi plan yaratish
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <div className="workout-glass-card rounded-3xl p-5">
+        <h4 className="text-sm font-black">Why follow a plan?</h4>
+        <div className="mt-4 space-y-4">
+          {[
+            ["Structured Workouts", "Stay consistent with a proven plan."],
+            ["Track Progress", "Monitor your improvements."],
+            ["Reach Your Goals", "Stay motivated and achieve more."],
+            ["Expert Guidance", "Workouts designed by professionals."],
+          ].map(([title, description]) => (
+            <div key={title} className="flex gap-3">
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                <DumbbellIcon className="size-4" />
+              </span>
+              <span>
+                <span className="block text-sm font-black">{title}</span>
+                <span className="text-xs text-muted-foreground">
+                  {description}
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
 };
 
-const SORT_OPTIONS = [
-  { value: "newest", label: "Eng yangilari" },
-  { value: "oldest", label: "Eng eskilari" },
-  { value: "name", label: "Alifbo bo'yicha" },
+const PLAN_FILTERS = [
+  { value: "all", label: "All" },
+  { value: "strength", label: "Strength" },
+  { value: "running", label: "Running" },
+  { value: "weight-loss", label: "Weight Loss" },
+  { value: "recovery", label: "Recovery" },
+  { value: "home-workout", label: "Home Workout" },
 ];
 
 const WorkoutPlansPage = () => {
@@ -348,9 +432,7 @@ const WorkoutPlansPage = () => {
   const currentStreak = get(user, "currentStreak", 0);
   const isPremium = Boolean(get(user, "premium.isActive"));
 
-  const [tabKey, setTabKey] = React.useState("mine");
-  const [searchTerm, setSearchTerm] = React.useState("");
-  const [sortKey, setSortKey] = React.useState("newest");
+  const [filterKey, setFilterKey] = React.useState("all");
   const [deletingPlan, setDeletingPlan] = React.useState(null);
 
   const normalizedPlans = React.useMemo(
@@ -370,47 +452,47 @@ const WorkoutPlansPage = () => {
     [templates],
   );
 
-  const filteredAndSorted = React.useMemo(() => {
-    const source = tabKey === "saved" ? normalizedTemplates : normalizedPlans;
-    const term = searchTerm.trim().toLowerCase();
+  const displayPlans = React.useMemo(() => {
+    const backendPlans = [...normalizedPlans, ...normalizedTemplates];
+    const knownKeys = new Set(
+      backendPlans.map((plan) =>
+        String(get(plan, "id", get(plan, "name", ""))).toLowerCase(),
+      ),
+    );
+    const fallbackPlans = WORKOUT_RECOMMENDED_PLANS.filter((plan) => {
+      const key = String(get(plan, "id", get(plan, "name", ""))).toLowerCase();
+      const name = String(get(plan, "name", "")).toLowerCase();
+      return !knownKeys.has(key) && !knownKeys.has(name);
+    });
+    const source = backendPlans.length > 0
+      ? [...backendPlans, ...fallbackPlans]
+      : WORKOUT_RECOMMENDED_PLANS;
 
-    const matchesSearch = (plan) => {
-      if (!term) return true;
-      const name = String(get(plan, "name") ?? "").toLowerCase();
-      const desc = String(get(plan, "description") ?? "").toLowerCase();
-      return name.includes(term) || desc.includes(term);
-    };
+    const filtered =
+      filterKey === "all"
+        ? source
+        : source.filter((plan) => {
+            const category = String(get(plan, "category", "")).toLowerCase();
+            const focus = String(get(plan, "focus", "")).toLowerCase();
+            const name = String(get(plan, "name", "")).toLowerCase();
+            return (
+              category === filterKey ||
+              focus.includes(filterKey.replace("-", " ")) ||
+              name.includes(filterKey.replace("-", " "))
+            );
+          });
 
-    const filtered = filter(source, matchesSearch);
-
-    if (sortKey === "name") {
-      return orderBy(filtered, [(p) => String(get(p, "name") ?? "")], ["asc"]);
-    }
-
-    if (sortKey === "oldest") {
-      return orderBy(
-        filtered,
-        [
-          (p) =>
-            new Date(
-              get(p, "updatedAt") || get(p, "createdAt") || 0,
-            ).getTime(),
-        ],
-        ["asc"],
-      );
-    }
-
-    // Newest (default): active plan first, then by updated time.
     return orderBy(
       filtered,
       [
-        (p) => (get(p, "status") === "active" ? 0 : 1),
-        (p) =>
-          new Date(get(p, "updatedAt") || get(p, "createdAt") || 0).getTime(),
+        (plan) => (get(plan, "status") === "active" ? 0 : 1),
+        (plan) => (get(plan, "badge") ? 0 : 1),
+        (plan) =>
+          new Date(get(plan, "updatedAt") || get(plan, "createdAt") || 0).getTime(),
       ],
-      ["asc", "desc"],
+      ["asc", "asc", "desc"],
     );
-  }, [tabKey, normalizedPlans, normalizedTemplates, searchTerm, sortKey]);
+  }, [filterKey, normalizedPlans, normalizedTemplates]);
 
   React.useEffect(() => {
     setBreadcrumbs([
@@ -422,19 +504,9 @@ const WorkoutPlansPage = () => {
 
   const handleStartPlan = async (plan) => {
     try {
-      const activatedPlan = await startPlan(plan);
+      await startPlan(plan);
       toast.success(`"${get(plan, "name", "Workout reja")}" boshlandi`);
-      if (get(activatedPlan, "id")) {
-        const schedule = Array.isArray(get(activatedPlan, "schedule"))
-          ? get(activatedPlan, "schedule")
-          : [];
-        const nextWorkoutDayIndex = getNextStartableDayIndex(activatedPlan);
-        const fallbackWorkoutDayIndex = getFirstWorkoutDayIndex(schedule);
-
-        navigate(
-          `/user/workout/plans/${get(activatedPlan, "id")}/days/${nextWorkoutDayIndex >= 0 ? nextWorkoutDayIndex : fallbackWorkoutDayIndex >= 0 ? fallbackWorkoutDayIndex : 0}/session`,
-        );
-      }
+      navigate("/user/workout/home");
     } catch (error) {
       toast.error(
         get(error, "response.data.message") ||
@@ -461,27 +533,25 @@ const WorkoutPlansPage = () => {
 
   return (
     <PageTransition mode="slide-up">
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        {/* Main column */}
-        <div className="flex flex-col gap-5">
-          {/* Header */}
-          <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="workout-page-surface grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="flex min-w-0 flex-col gap-5">
+          <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
-                Mening rejalarim
+              <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
+                Plans
               </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                O'z rejalarni boshqarish, tahrirlash yoki yangi reja yaratish
+              <p className="mt-2 text-base text-muted-foreground">
+                Find your plan
               </p>
             </div>
             <div className="flex items-center gap-2">
               {currentStreak > 0 ? (
-                <div className="flex items-center gap-1.5 rounded-full bg-orange-500/10 px-3 py-1.5">
-                  <FlameIcon className="size-4 text-orange-500" />
-                  <span className="text-sm font-bold tabular-nums text-orange-600">
+                <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5">
+                  <FlameIcon className="size-4 text-primary" />
+                  <span className="text-sm font-bold tabular-nums text-primary">
                     {currentStreak}
                   </span>
-                  <span className="text-[11px] font-medium text-orange-600/80">
+                  <span className="text-[11px] font-medium text-primary/80">
                     Day streak
                   </span>
                 </div>
@@ -499,41 +569,30 @@ const WorkoutPlansPage = () => {
             </div>
           </div>
 
-          {/* Tabs + search + sort */}
-          <div className="flex flex-wrap items-center gap-3">
-            <Tabs value={tabKey} onValueChange={setTabKey}>
-              <TabsList>
-                <TabsTrigger value="mine">Mening planlarim</TabsTrigger>
-                <TabsTrigger value="saved">Saqlangan</TabsTrigger>
-              </TabsList>
-            </Tabs>
-            <div className="relative ml-auto flex-1 sm:max-w-xs">
-              <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Reja nomi bo'yicha qidirish..."
-                className="pl-9"
-              />
-            </div>
-            <Select value={sortKey} onValueChange={setSortKey}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {map(SORT_OPTIONS, (option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex flex-wrap gap-2">
+            {PLAN_FILTERS.map((filterOption) => {
+              const active = filterKey === filterOption.value;
+              return (
+                <button
+                  key={filterOption.value}
+                  type="button"
+                  onClick={() => setFilterKey(filterOption.value)}
+                  className={cn(
+                    "rounded-full border px-5 py-2 text-sm font-semibold transition",
+                    active
+                      ? "border-primary bg-primary/12 text-primary shadow-[0_14px_34px_rgb(var(--accent-rgb)/0.16)]"
+                      : "border-slate-900/10 bg-white/50 text-muted-foreground hover:border-primary/30 hover:text-foreground dark:border-white/10 dark:bg-white/[0.04]",
+                  )}
+                >
+                  {filterOption.label}
+                </button>
+              );
+            })}
           </div>
 
-          {/* Plan cards grid */}
-          {size(filteredAndSorted) > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {map(filteredAndSorted, (plan) => {
+          {size(displayPlans) > 0 ? (
+            <div className="grid gap-5">
+              {map(displayPlans, (plan) => {
                 const isTemplate = get(plan, "isTemplate");
                 const isActive = get(plan, "id") === get(activePlan, "id");
                 const title = isTemplate
@@ -575,14 +634,10 @@ const WorkoutPlansPage = () => {
               })}
             </div>
           ) : (
-            <div className="rounded-3xl border border-dashed bg-muted/20 px-6 py-12 text-center">
+            <div className="workout-glass-card rounded-3xl border border-dashed px-6 py-12 text-center">
               <DumbbellIcon className="mx-auto size-10 text-muted-foreground/40" />
               <p className="mt-3 text-sm font-medium">
-                {searchTerm
-                  ? `"${searchTerm}" bo'yicha reja topilmadi`
-                  : tabKey === "saved"
-                    ? "Saqlangan template'lar yo'q"
-                    : "Hali workout reja yaratmagansiz"}
+                Ushbu filter bo'yicha reja topilmadi
               </p>
               <Button onClick={goToCreate} className="mt-5">
                 <PlusIcon className="size-4" />
@@ -591,12 +646,11 @@ const WorkoutPlansPage = () => {
             </div>
           )}
 
-          {/* Footer create CTA */}
-          {size(filteredAndSorted) > 0 ? (
+          {size(displayPlans) > 0 ? (
             <button
               type="button"
               onClick={goToCreate}
-              className="flex items-center justify-center gap-2 rounded-3xl border border-dashed bg-muted/10 py-4 text-sm font-semibold text-primary transition hover:bg-primary/5"
+              className="flex items-center justify-center gap-2 rounded-3xl border border-dashed border-primary/25 bg-primary/5 py-4 text-sm font-semibold text-primary transition hover:bg-primary/10"
             >
               <PlusIcon className="size-4" />
               Yangi plan yaratish
@@ -604,12 +658,16 @@ const WorkoutPlansPage = () => {
           ) : null}
         </div>
 
-        {/* Right sidebar */}
         <aside className="lg:sticky lg:top-4 lg:self-start">
-          <Sidebar
+          <PlanSidebar
             activePlan={activePlan}
             onCreatePlan={goToCreate}
-            currentLanguage={currentLanguage}
+            onContinuePlan={() =>
+              activePlan?.id
+                ? navigate(`/user/workout/plans/${activePlan.id}`)
+                : goToCreate()
+            }
+            onStartRecommended={() => handleStartPlan(WORKOUT_RECOMMENDED_PLANS[0])}
           />
         </aside>
       </div>

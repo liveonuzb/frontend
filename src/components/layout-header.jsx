@@ -14,6 +14,7 @@ const LayoutHeader = ({
   user,
   onOpenProfile,
   desktopRightContent,
+  className,
 }) => {
   const { t } = useTranslation();
   const modeTheme = useAppModeTheme();
@@ -33,6 +34,7 @@ const LayoutHeader = ({
       className={cn(
         "fixed top-0 inset-x-0 z-10 h-16 shrink-0 bg-background/50 px-2 shadow backdrop-blur-2xl transition-transform duration-200 md:static md:border-b md:px-4 md:shadow-none md:translate-y-0",
         mobileChromeHidden ? "-translate-y-full" : "translate-y-0",
+        className,
       )}
     >
       <div className="flex h-full items-center md:hidden">

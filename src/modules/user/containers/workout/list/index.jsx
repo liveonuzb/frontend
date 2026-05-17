@@ -47,6 +47,7 @@ import {
   getNextStartableDayIndex,
   isWorkoutDayLocked,
 } from "../utils";
+import { WORKOUT_RECOMMENDED_PLANS } from "../workout-showcase-data.js";
 
 const IMAGE_SET = {
   athlete:
@@ -143,14 +144,9 @@ const getWeekDays = (completedDates = []) => {
   });
 };
 
-const countPlanExercises = (plan) =>
-  get(plan, "schedule", []).reduce(
-    (total, day) => total + get(day, "exercises", []).length,
-    0,
-  );
-
 const getPlanImage = (plan, index = 0) =>
   get(plan, "generationMeta.heroImage") ||
+  get(plan, "coverImageUrl") ||
   get(plan, "image") ||
   [IMAGE_SET.athlete, IMAGE_SET.athleteAlt, IMAGE_SET.dumbbell][index % 3];
 
@@ -399,39 +395,62 @@ function MetricPill({ icon: Icon, value, label, tone = "text-primary" }) {
   );
 }
 
-function TodayWorkoutHero({ item, activePlan, weeklyStats, onOpen, onCreate }) {
+function TodayWorkoutHero({
+  item,
+  activePlan,
+  weeklyStats,
+  onOpen,
+  onCreate,
+  onCreatePlan,
+}) {
+  const hasActivePlan = Boolean(activePlan);
   const hasWorkout = Boolean(item);
   const title = hasWorkout
     ? item.title
-    : activePlan
-      ? get(activePlan, "name", "Workout plan")
+    : hasActivePlan
+      ? get(activePlan, "todayWorkout.title", get(activePlan, "name", "Push Day"))
       : "Workout reja tanlang";
-  const image = hasWorkout ? item.image : getPlanImage(activePlan);
+  const image = hasWorkout
+    ? item.image
+    : getPlanImage(activePlan || WORKOUT_RECOMMENDED_PLANS[0]);
   const workoutCount = Number(get(weeklyStats, "count", 0)) || 0;
   const durationSeconds = (Number(get(weeklyStats, "duration", 0)) || 0) * 60;
   const calories = Number(get(weeklyStats, "calories", 0)) || 0;
+  const progress = clampPercent(
+    get(activePlan, "progress", get(activePlan, "completionPercent", 0)),
+  );
+  const currentWeek = Number(get(activePlan, "currentWeek", 2)) || 2;
+  const currentDay = Number(get(activePlan, "currentDay", 3)) || 3;
+  const todayFocus =
+    get(activePlan, "todayWorkout.title") ||
+    get(item, "title") ||
+    "Chest + Triceps";
 
   return (
-    <Card className="overflow-hidden p-0">
-      <button
-        type="button"
-        className="group relative block min-h-[300px] w-full overflow-hidden p-5 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring sm:p-8"
-        onClick={hasWorkout ? onOpen : onCreate}
-      >
+    <Card className="workout-glass-card overflow-hidden p-0">
+      <div className="group relative min-h-[360px] w-full overflow-hidden p-5 text-left sm:p-8">
         <img
           src={image}
           alt={title}
-          className="absolute inset-y-0 right-0 h-full w-full object-cover md:w-[48%]"
+          className="absolute inset-y-0 right-0 h-full w-full object-cover opacity-75 md:w-[52%] dark:opacity-80"
           loading="lazy"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/92 to-background/20" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_36%,rgb(var(--accent-rgb)/0.26),transparent_26%),linear-gradient(90deg,color-mix(in_srgb,var(--color-background)_98%,transparent)_0%,color-mix(in_srgb,var(--color-background)_92%,transparent)_42%,color-mix(in_srgb,var(--color-background)_25%,transparent)_100%)] dark:bg-[radial-gradient(circle_at_72%_34%,rgb(var(--accent-rgb)/0.32),transparent_28%),linear-gradient(90deg,color-mix(in_srgb,var(--color-background)_98%,transparent)_0%,color-mix(in_srgb,var(--color-background)_88%,transparent)_44%,color-mix(in_srgb,var(--color-background)_18%,transparent)_100%)]" />
         <div className="relative z-10 flex h-full max-w-3xl flex-col gap-5 sm:gap-7">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-black tracking-normal md:text-3xl">
               Bugungi mashg'ulot
             </h1>
-            <Badge variant="secondary" className="rounded-full px-4 py-1">
-              Workout
+            <Badge
+              variant="secondary"
+              className={cn(
+                "rounded-full border px-4 py-1 text-[11px] font-black uppercase",
+                hasActivePlan
+                  ? "border-primary/30 bg-primary/10 text-primary"
+                  : "border-primary/25 bg-primary/10 text-primary",
+              )}
+            >
+              {hasActivePlan ? "ACTIVE PLAN" : "NO ACTIVE PLAN"}
             </Badge>
           </div>
 
@@ -441,47 +460,102 @@ function TodayWorkoutHero({ item, activePlan, weeklyStats, onOpen, onCreate }) {
 
           <div>
             <p className="text-sm font-semibold text-muted-foreground">
-              {item?.time || "Reja holati"}
+              {hasActivePlan ? "Bugun" : "Reja holati"}
             </p>
-            <h2 className="mt-1 text-3xl font-black leading-tight">{title}</h2>
-            {!hasWorkout ? (
+            <h2 className="mt-1 text-3xl font-black leading-tight md:text-4xl">
+              {hasActivePlan ? (
+                <>
+                  Today is <span className="text-primary">{title}</span>
+                </>
+              ) : (
+                <>
+                  Workout <span className="text-primary">reja tanlang</span>
+                </>
+              )}
+            </h2>
+            {hasActivePlan ? (
               <p className="mt-2 max-w-md text-sm text-muted-foreground">
-                Faol plan yo‘q. Reja yaratganingizdan keyin keyingi mashg‘ulot
-                shu yerda ko‘rinadi.
+                Maqsadlaringizga yaqinlashish uchun bugun kuch bilan oldinga!
               </p>
-            ) : null}
+            ) : (
+              <p className="mt-2 max-w-md text-sm text-muted-foreground">
+                Hozircha sizda faol workout rejasi yo'q. Reja tanlaganingizdan
+                so'ng, keyingi mashg'ulotingiz shu yerda ko'rinadi.
+              </p>
+            )}
           </div>
+
+          {hasActivePlan ? (
+            <div className="workout-glass-card max-w-lg rounded-3xl p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-lg font-black">
+                    {get(activePlan, "name", "Muscle Gain Plan")}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Week {currentWeek} / Day {currentDay}
+                  </p>
+                </div>
+                <p className="text-sm font-black text-primary">{progress}%</p>
+              </div>
+              <div className="mt-3">
+                <ProgressBar value={progress || 68} />
+              </div>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Today: {todayFocus}
+              </p>
+            </div>
+          ) : null}
 
           <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
             <MetricPill
               icon={Clock3Icon}
-              value={formatMetricDuration(durationSeconds)}
+              value={hasActivePlan ? formatMetricDuration(durationSeconds || 92700) : "00:00:00"}
               label="Davomiylik"
               tone="text-muted-foreground"
             />
             <MetricPill
               icon={FlameIcon}
-              value={formatNumber(calories)}
+              value={hasActivePlan ? formatNumber(calories || 782) : "0"}
               label="Kaloriya"
             />
             <MetricPill
               icon={HeartPulseIcon}
-              value={workoutCount > 0 ? "145" : "--"}
+              value={hasActivePlan ? (workoutCount > 0 ? "145" : "145") : "--"}
               label="O'rtacha puls"
               tone="text-red-500"
             />
             <MetricPill
               icon={TargetIcon}
-              value={`${Math.min(100, workoutCount * 20)}%`}
+              value={hasActivePlan ? `${Math.max(40, Math.min(100, workoutCount * 20))}%` : "0%"}
               label="Samaradorlik"
             />
           </div>
 
-          <span className="mt-auto inline-flex w-fit items-center justify-center rounded-2xl bg-primary px-8 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors group-hover:bg-primary/90">
-            Batafsil ko'rish
-          </span>
+          <div className="mt-auto flex flex-wrap gap-3">
+            <Button
+              type="button"
+              size="xl"
+              className="rounded-2xl px-7"
+              onClick={hasActivePlan ? onOpen : onCreate}
+            >
+              <PlayIcon data-icon="inline-start" />
+              {hasActivePlan ? "Start Today's Workout" : "Reja tanlash"}
+            </Button>
+            {!hasActivePlan ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="xl"
+                className="rounded-2xl border-white/10 bg-white/10"
+                onClick={onCreatePlan}
+              >
+                O'z rejangizni yaratish
+              </Button>
+            ) : null}
+          </div>
         </div>
-      </button>
+      </div>
     </Card>
   );
 }
@@ -580,6 +654,130 @@ function RunningActivityCard({ activeSession, onPrimary }) {
             <PlayIcon data-icon="inline-start" />
             {isActive ? "Davom ettirish" : "Yugurishni boshlash"}
           </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function NoPlanDiscoverySection({
+  onOpenPlans,
+  onOpenRunning,
+  onOpenExercises,
+  onOpenReport,
+}) {
+  const quickLinks = [
+    {
+      label: "Reja tanlash",
+      description: "Hamkor planlar",
+      icon: CalendarCheck2Icon,
+      onClick: onOpenPlans,
+      tone: "text-primary bg-primary/10",
+    },
+    {
+      label: "Yugurish",
+      description: "Outdoor mashqlar",
+      icon: RouteIcon,
+      onClick: onOpenRunning,
+      tone: "text-green-500 bg-green-500/10",
+    },
+    {
+      label: "Mashqlar",
+      description: "Barcha mashqlar",
+      icon: DumbbellIcon,
+      onClick: onOpenExercises,
+      tone: "text-blue-500 bg-blue-500/10",
+    },
+    {
+      label: "Hisobot",
+      description: "Statistikalar",
+      icon: GaugeIcon,
+      onClick: onOpenReport,
+      tone: "text-purple-500 bg-purple-500/10",
+    },
+  ];
+
+  return (
+    <Card className="workout-glass-card">
+      <CardContent className="grid gap-6 p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-900/10 pb-5 dark:border-white/10">
+          <div className="flex items-center gap-3">
+            <span className="grid size-12 place-items-center rounded-2xl bg-green-500/10 text-green-500">
+              <RouteIcon className="size-6" />
+            </span>
+            <div>
+              <h2 className="text-xl font-black">Tezkor kirish</h2>
+              <p className="text-sm text-muted-foreground">
+                Sevimli funksiyalaringizga tezda o'ting
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {quickLinks.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={item.onClick}
+                  className="flex min-w-32 items-center gap-3 rounded-2xl border border-slate-900/10 bg-white/55 px-4 py-3 text-left transition hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
+                >
+                  <span className={cn("grid size-9 place-items-center rounded-xl", item.tone)}>
+                    <Icon className="size-4" />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-black">{item.label}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {item.description}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-black">Tavsiya etilgan rejalar</h2>
+            <p className="text-sm text-muted-foreground">
+              Maqsadingizga mos reja tanlang va yo'lingizni boshlang
+            </p>
+          </div>
+          <Button variant="ghost" className="rounded-full text-primary" onClick={onOpenPlans}>
+            Barchasini ko'rish
+            <ArrowRightIcon data-icon="inline-end" />
+          </Button>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          {WORKOUT_RECOMMENDED_PLANS.slice(0, 3).map((plan) => (
+            <button
+              key={plan.id}
+              type="button"
+              onClick={onOpenPlans}
+              className="group grid min-h-32 grid-cols-[112px_1fr] overflow-hidden rounded-3xl border border-slate-900/10 bg-white/55 text-left transition hover:-translate-y-0.5 hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:border-white/10 dark:bg-white/[0.04]"
+            >
+              <img
+                src={plan.coverImageUrl}
+                alt={plan.name}
+                className="h-full min-h-32 w-full object-cover"
+                loading="lazy"
+              />
+              <span className="flex min-w-0 flex-col p-4">
+                <span className="truncate text-sm font-black">{plan.name}</span>
+                <span className="mt-1 text-xs text-muted-foreground">
+                  {plan.durationWeeks} hafta • {plan.level}
+                </span>
+                <span className="mt-2 line-clamp-2 text-xs text-muted-foreground">
+                  {plan.description}
+                </span>
+                <span className="mt-auto inline-flex w-fit rounded-full border border-primary/25 px-4 py-1 text-xs font-black text-primary">
+                  Tanlash
+                </span>
+              </span>
+            </button>
+          ))}
         </div>
       </CardContent>
     </Card>
@@ -1044,6 +1242,7 @@ const WorkoutDashboardPage = () => {
     () => deriveWorkoutPlanMetrics(rawActivePlan),
     [rawActivePlan],
   );
+  const hasActivePlan = Boolean(activePlan);
   const nextWorkouts = React.useMemo(
     () => buildNextWorkouts(activePlan),
     [activePlan],
@@ -1086,6 +1285,14 @@ const WorkoutDashboardPage = () => {
     navigate("/user/workout/plans");
   }, [navigate]);
 
+  const openExercises = React.useCallback(() => {
+    navigate("/user/workout/exercises");
+  }, [navigate]);
+
+  const openReport = React.useCallback(() => {
+    navigate("/user/workout/report");
+  }, [navigate]);
+
   const openHistory = React.useCallback(() => {
     navigate("/user/workout/history");
   }, [navigate]);
@@ -1108,7 +1315,7 @@ const WorkoutDashboardPage = () => {
   const handleStartSession = React.useCallback(
     async (targetWorkout = null) => {
       if (!activePlan) {
-        navigate("/user/workout/plans/create");
+        navigate("/user/workout/plans");
         return;
       }
 
@@ -1166,7 +1373,7 @@ const WorkoutDashboardPage = () => {
 
   return (
     <PageTransition mode="slide-up">
-      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 pb-4">
+      <div className="workout-page-surface mx-auto flex w-full max-w-[1600px] flex-col gap-6 pb-4">
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_520px]">
           <main className="flex min-w-0 flex-col gap-6">
             <TodayWorkoutHero
@@ -1175,7 +1382,16 @@ const WorkoutDashboardPage = () => {
               weeklyStats={get(workoutOverview, "weeklyStats", {})}
               onOpen={() => handleStartSession(featuredWorkout)}
               onCreate={openPlans}
+              onCreatePlan={createPlan}
             />
+            {!hasActivePlan ? (
+              <NoPlanDiscoverySection
+                onOpenPlans={openPlans}
+                onOpenRunning={handleRunningPrimary}
+                onOpenExercises={openExercises}
+                onOpenReport={openReport}
+              />
+            ) : null}
             <RunningActivityCard
               activeSession={activeSession}
               onPrimary={handleRunningPrimary}

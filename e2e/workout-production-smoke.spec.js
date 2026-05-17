@@ -528,7 +528,7 @@ test.describe("workout production smoke", () => {
         "/user/workout/plans",
         (targetPage) =>
           expect(
-            targetPage.getByRole("heading", { name: "Mening rejalarim" }),
+            targetPage.getByRole("heading", { name: "Plans" }),
           ).toBeVisible(),
       ],
       [
@@ -653,7 +653,7 @@ test.describe("workout production smoke", () => {
         "/user/workout/plans",
         (targetPage) =>
           expect(
-            targetPage.getByRole("heading", { name: "Mening rejalarim" }),
+            targetPage.getByRole("heading", { name: "Plans" }),
           ).toBeVisible(),
       ],
       [
@@ -698,6 +698,96 @@ test.describe("workout production smoke", () => {
           await openAndSmoke(page, route, assertVisible);
         }
       }
+    }
+  });
+
+  test("workout home default components follow the selected app mode palette", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const buttonBackgrounds = [];
+
+    for (const mode of ["focus", "zen", "madagascar"]) {
+      await installBrowserState(page, { mode, theme: "light" });
+      await page.goto("/user/workout/home", { waitUntil: "domcontentloaded" });
+      await expect(page.getByText("Bugungi mashg'ulot")).toBeVisible();
+
+      const ctaState = await page
+        .getByRole("button", { name: /start today's workout/i })
+        .evaluate((element) => ({
+          mode: document.documentElement.dataset.appMode,
+          backgroundImage: window.getComputedStyle(element).backgroundImage,
+      }));
+
+      expect(ctaState.mode).toBe(mode);
+      if (mode !== "madagascar") {
+        expect(ctaState.backgroundImage).not.toContain("rgb(255, 106, 0)");
+      }
+      buttonBackgrounds.push(ctaState.backgroundImage);
+      await expectNoPageOverflow(page);
+    }
+
+    expect(new Set(buttonBackgrounds).size).toBe(3);
+  });
+
+  test("workout home does not recolor the global layout chrome", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    const pickChrome = async () =>
+      page.evaluate(() => {
+        const pickStyle = (selector) => {
+          const element = document.querySelector(selector);
+          const style = window.getComputedStyle(element);
+          return {
+            backgroundColor: style.backgroundColor,
+            backgroundImage: style.backgroundImage,
+            borderColor: style.borderColor,
+            boxShadow: style.boxShadow,
+            color: style.color,
+          };
+        };
+
+        const activeSubnav = document.querySelector(
+          '.workout-subnav a[aria-current="page"]',
+        );
+
+        return {
+          inset: pickStyle('[data-slot="sidebar-inset"]'),
+          sidebar: pickStyle('[data-slot="sidebar-inner"]'),
+          activeMenu: pickStyle(
+            '[data-slot="sidebar-menu-button"][data-active="true"]',
+          ),
+          activeSubnav: activeSubnav
+            ? pickStyle('.workout-subnav a[aria-current="page"]')
+            : null,
+          header: pickStyle(".workout-layout-header, header"),
+        };
+      });
+
+    for (const mode of ["focus", "zen", "madagascar"]) {
+      await installBrowserState(page, { mode, theme: "light" });
+      await page.goto("/user/dashboard", { waitUntil: "domcontentloaded" });
+      await expect(
+        page.locator('[data-slot="sidebar-menu-button"][data-active="true"]'),
+      ).toBeVisible();
+      const dashboardChrome = await pickChrome();
+
+      await page.goto("/user/workout/home", { waitUntil: "domcontentloaded" });
+      await expect(page.getByText("Bugungi mashg'ulot")).toBeVisible();
+      const workoutChrome = await pickChrome();
+
+      expect(workoutChrome).toMatchObject({
+        inset: dashboardChrome.inset,
+        sidebar: dashboardChrome.sidebar,
+        activeMenu: dashboardChrome.activeMenu,
+        header: dashboardChrome.header,
+      });
+      expect(workoutChrome.activeSubnav).toMatchObject({
+        backgroundColor: dashboardChrome.activeMenu.backgroundColor,
+        color: dashboardChrome.activeMenu.color,
+      });
+      await expectNoPageOverflow(page);
     }
   });
 

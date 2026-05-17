@@ -11,6 +11,7 @@ import {
   useDeleteWorkoutPlan,
   useWorkoutPlanDetail,
 } from "@/hooks/app/use-workout-plans";
+import useWorkoutPlan from "@/hooks/app/use-workout-plan";
 import { useWorkoutLogs } from "@/hooks/app/use-workout-logs";
 
 vi.mock("sonner", () => ({
@@ -46,11 +47,16 @@ vi.mock("@/hooks/app/use-workout-plans", async (importOriginal) => {
   };
 });
 
+vi.mock("@/hooks/app/use-workout-plan", () => ({
+  default: vi.fn(),
+}));
+
 vi.mock("@/hooks/app/use-workout-logs", () => ({
   useWorkoutLogs: vi.fn(),
 }));
 
 const activatePlanMock = vi.fn();
+const startPlanMock = vi.fn();
 const deletePlanMock = vi.fn();
 const refetchMock = vi.fn();
 
@@ -111,6 +117,10 @@ const renderPage = () => {
         element: <div data-testid="plans-route">Plans route</div>,
       },
       {
+        path: "/user/workout/home",
+        element: <div data-testid="workout-home-route">Workout home route</div>,
+      },
+      {
         path: "/user/workout/plans/edit/:planId",
         element: <div data-testid="edit-route">Edit route</div>,
       },
@@ -126,6 +136,7 @@ const renderPage = () => {
 describe("WorkoutPlanDetailPage", () => {
   beforeEach(() => {
     activatePlanMock.mockReset();
+    startPlanMock.mockReset();
     deletePlanMock.mockReset();
     refetchMock.mockReset();
 
@@ -138,6 +149,10 @@ describe("WorkoutPlanDetailPage", () => {
     useActivateWorkoutPlan.mockReturnValue({
       activatePlan: activatePlanMock,
       isPending: false,
+    });
+    useWorkoutPlan.mockReturnValue({
+      startPlan: startPlanMock,
+      isStartingPlan: false,
     });
     useDeleteWorkoutPlan.mockReturnValue({
       deletePlan: deletePlanMock,
@@ -163,10 +178,12 @@ describe("WorkoutPlanDetailPage", () => {
     renderPage();
 
     expect(screen.getAllByText("AI Upper").length).toBeGreaterThan(0);
-    expect(screen.getByText("AI asoslari")).toBeInTheDocument();
-    expect(screen.getAllByText("46 kg").length).toBeGreaterThan(0);
+    expect(screen.getByText("Goal")).toBeInTheDocument();
+    expect(screen.getByText("Difficulty level")).toBeInTheDocument();
     expect(screen.getByText("Day 1")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /boshlash/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /start this plan/i }),
+    ).toBeInTheDocument();
   });
 
   it("navigates to a separate day detail page when a day is selected", async () => {
@@ -181,27 +198,24 @@ describe("WorkoutPlanDetailPage", () => {
     });
   });
 
-  it("activates the plan and navigates to the session route", async () => {
-    activatePlanMock.mockResolvedValue({
+  it("activates the plan and navigates back to workout home", async () => {
+    startPlanMock.mockResolvedValue({
       ...defaultPlan,
       status: "active",
     });
 
     const router = renderPage();
-    fireEvent.click(screen.getByRole("button", { name: /boshlash/i }));
+    fireEvent.click(screen.getByRole("button", { name: /start this plan/i }));
 
     await waitFor(() => {
-      expect(activatePlanMock).toHaveBeenCalledWith(
-        "plan-1",
-        expect.objectContaining({
-          name: "AI Upper",
-        }),
+      expect(startPlanMock).toHaveBeenCalledWith(
+        expect.objectContaining({ name: "AI Upper" }),
       );
     });
 
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(
-        "/user/workout/plans/plan-1/days/0/session",
+        "/user/workout/home",
       );
     });
   });

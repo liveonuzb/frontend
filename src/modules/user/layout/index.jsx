@@ -110,6 +110,7 @@ const Index = () => {
   const mobileChromeHidden = useMobileChromeHidden();
   const isMobileChatView = location.pathname.startsWith("/user/chat");
   const isRunningImmersiveRoute = isRunningLiveImmersivePath(location.pathname);
+  const isWorkoutRoute = location.pathname.startsWith("/user/workout");
   const hideMobileNav = shouldHideMobileNavForPath(location.pathname);
   const isFeatureScopedMobileNav =
     location.pathname.startsWith("/user/workout") ||
@@ -192,7 +193,11 @@ const Index = () => {
 
   return (
     <KeyboardShortcutsProvider>
-      <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
+      <SidebarProvider
+        open={sidebarOpen}
+        onOpenChange={setSidebarOpen}
+        className={cn(isWorkoutRoute && !isRunningImmersiveRoute && "workout-layout-theme")}
+      >
         {!isRunningImmersiveRoute ? (
           <Sidebar direction={"left"} variant={"floating"} collapsible={"icon"}>
             <SidebarHeader>
@@ -227,6 +232,7 @@ const Index = () => {
                 mobileChromeHidden={mobileChromeHidden}
                 user={user}
                 onOpenProfile={() => openProfile(PROFILE_OVERVIEW_TAB)}
+                className={isWorkoutRoute ? "workout-layout-header" : undefined}
                 desktopRightContent={
                   <>
                     <NotificationCenter />
@@ -253,6 +259,7 @@ const Index = () => {
               mobileChromeHidden={mobileChromeHidden}
               user={user}
               onOpenProfile={() => openProfile(PROFILE_OVERVIEW_TAB)}
+              className={isWorkoutRoute ? "workout-layout-header" : undefined}
               desktopRightContent={
                 <>
                   <NotificationCenter />

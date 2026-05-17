@@ -693,7 +693,7 @@ describe("WorkoutDashboardPage", () => {
     renderPage();
 
     expect(
-      screen.getByText(/Faol plan yo‘q. Reja yaratganingizdan keyin/),
+      screen.getByText(/Hozircha sizda faol workout rejasi yo'q/),
     ).toBeInTheDocument();
   });
 
@@ -722,9 +722,9 @@ describe("WorkoutDashboardPage", () => {
 
     const router = renderPage();
 
-    const heroCta = screen
-      .getAllByRole("button", { name: /batafsil ko'rish/i })
-      .find((element) => element.tagName === "BUTTON");
+    const heroCta = screen.getByRole("button", {
+      name: /start today's workout/i,
+    });
 
     expect(heroCta).toBeTruthy();
     fireEvent.click(heroCta);
@@ -806,7 +806,9 @@ describe("WorkoutDashboardPage", () => {
     expect(screen.getByText("Day 2")).toBeInTheDocument();
     expect(screen.getAllByText("Bugun").length).toBeGreaterThan(0);
 
-    fireEvent.click(screen.getByText("Day 2"));
+    fireEvent.click(
+      screen.getByRole("button", { name: /start today's workout/i }),
+    );
 
     expect(router.state.location.pathname).toBe(
       "/user/workout/plans/plan-1/days/1/session",

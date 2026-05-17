@@ -10,6 +10,7 @@ const FeatureModuleShell = ({
   items = [],
   className,
   contentClassName,
+  navClassName,
   hideDesktopNav = false,
   hideMobileNav = false,
 }) => {
@@ -21,11 +22,15 @@ const FeatureModuleShell = ({
     <div className={cn("flex min-h-full flex-col gap-y-5", className)}>
       {!shouldHideDesktopNav ? (
         <div className="mb-4 hidden md:block">
-          <FeatureSubNav items={items} />
+          <FeatureSubNav items={items} className={navClassName} />
         </div>
       ) : null}
       {!shouldHideMobileNav ? (
-        <FeatureSubNav items={items} mobile className="md:hidden" />
+        <FeatureSubNav
+          items={items}
+          mobile
+          className={cn("md:hidden", navClassName)}
+        />
       ) : null}
       <div className={cn("flex-1", contentClassName)}>
         <Outlet />

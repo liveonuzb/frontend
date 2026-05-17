@@ -29,6 +29,8 @@ const WorkoutShell = () => {
   return (
     <FeatureModuleShell
       items={navItems}
+      className="workout-module-shell"
+      navClassName="workout-subnav"
       hideMobileNav={shouldHideTabs}
       hideDesktopNav={shouldHideTabs}
     />
