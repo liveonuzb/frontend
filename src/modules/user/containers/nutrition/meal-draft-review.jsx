@@ -22,6 +22,8 @@ import {
   getDraftTotals,
 } from "./meal-draft-review-utils.js";
 
+import { isArray, map } from "lodash";
+
 export const MealDraftSummaryCard = ({
   items,
   goals,
@@ -194,7 +196,7 @@ export const MealDraftCard = ({
 }) => {
   const [ingredientEditor, setIngredientEditor] = React.useState(null);
   const imageUrl = React.useMemo(() => getDraftImageUrl(item), [item]);
-  const ingredientCount = Array.isArray(item?.ingredients)
+  const ingredientCount = isArray(item?.ingredients)
     ? item.ingredients.length
     : 0;
   const normalizedIngredients = React.useMemo(
@@ -276,7 +278,6 @@ export const MealDraftCard = ({
           </div>
         </div>
       </div>
-
       <div className="mt-3 space-y-2.5">
         <div className="rounded-2xl border border-border/50 bg-muted/10 p-2.5">
           <div className="mb-2 flex items-center justify-between gap-2 px-1">
@@ -302,7 +303,7 @@ export const MealDraftCard = ({
 
           {normalizedIngredients.length > 0 ? (
             <div className="space-y-2">
-              {normalizedIngredients.map((ingredient) => (
+              {map(normalizedIngredients, (ingredient) => (
                 <IngredientCompactRow
                   key={ingredient.id}
                   ingredient={ingredient}
@@ -321,7 +322,6 @@ export const MealDraftCard = ({
           )}
         </div>
       </div>
-
       <IngredientEditDrawer
         open={Boolean(ingredientEditor)}
         mode={ingredientEditor?.mode || "edit"}

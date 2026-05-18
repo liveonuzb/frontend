@@ -3,6 +3,8 @@ import { useLocation } from "react-router";
 import FeatureModuleShell from "@/modules/user/layout/feature-module-shell.jsx";
 import { WORKOUT_NAV_ITEMS } from "./workout-nav-items.js";
 
+import { filter, includes } from "lodash";
+
 const PRIMARY_TAB_PATHS = [
   "/user/workout/home",
   "/user/workout/plans",
@@ -15,13 +17,11 @@ const PRIMARY_TAB_PATHS = [
 
 const WorkoutShell = () => {
   const { pathname } = useLocation();
-  const shouldHideTabs = !PRIMARY_TAB_PATHS.includes(pathname);
+  const shouldHideTabs = !includes(PRIMARY_TAB_PATHS, pathname);
   const navItems = React.useMemo(
     () =>
       pathname.startsWith("/user/workout/running")
-        ? WORKOUT_NAV_ITEMS.filter(
-            (item) => item.to !== "/user/workout/report",
-          )
+        ? filter(WORKOUT_NAV_ITEMS, (item) => item.to !== "/user/workout/report")
         : WORKOUT_NAV_ITEMS,
     [pathname],
   );

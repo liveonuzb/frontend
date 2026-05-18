@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { useBreadcrumbStore } from "@/store";
 import { useGetQuery } from "@/hooks/api";
-import { get } from "lodash";
+import { get, map, take, toUpper, split } from "lodash";
 
 const getRelativeTimeLabel = (isoString) => {
   if (!isoString) return "Hozir";
@@ -60,7 +60,7 @@ const Index = () => {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">So'nggi faoliyat</h1>
             <p className="text-muted-foreground">
-              Yangi foydalanuvchilar va coach jarayonidagi oxirgi o'zgarishlar.
+              Yangi foydalanuvchilar va platformadagi oxirgi o'zgarishlar.
             </p>
           </div>
         </div>
@@ -80,18 +80,14 @@ const Index = () => {
                 Faoliyatlar yuklanmoqda...
               </p>
             ) : recentActivities.length > 0 ? (
-              recentActivities.map((activity) => (
+              map(recentActivities, (activity) => (
                 <div
                   key={activity.id}
                   className="flex items-start gap-3 rounded-2xl border border-border/60 bg-muted/20 px-3 py-2.5"
                 >
                   <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
-                    {(activity.user ?? "?")
-                      .split(" ")
-                      .slice(0, 2)
-                      .map((part) => part[0] ?? "")
-                      .join("")
-                      .toUpperCase()}
+                    {toUpper(map(take(split((activity.user ?? "?"), " "), 2), (part) => part[0] ?? "")
+                      .join(""))}
                   </div>
                   <div className="min-w-0 space-y-0.5">
                     <p className="text-sm leading-5">

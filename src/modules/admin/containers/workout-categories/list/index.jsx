@@ -7,7 +7,11 @@ import {
   isArray,
   map as lodashMap,
   trim,
-  values,
+  values as lodashValues,
+  fromPairs,
+  toNumber,
+  toUpper,
+  toPairs,
 } from "lodash";
 import {
   getCoreRowModel,
@@ -65,7 +69,7 @@ const resolveLabel = (translations, fallback, language) => {
     const uz = trim(String(get(translations, "uz", "")));
     if (uz) return uz;
 
-    const first = lodashFind(values(translations), (value) =>
+    const first = lodashFind(lodashValues(translations), (value) =>
       trim(String(value)),
     );
     if (first) return trim(String(first));
@@ -298,8 +302,8 @@ const Index = () => {
   const deferredSearch = React.useDeferredValue(search);
   const queryParams = React.useMemo(
     () => ({
-      ...(deferredSearch.trim() ? { q: deferredSearch.trim() } : {}),
-      ...((deferredSearch.trim() ||
+      ...(trim(deferredSearch) ? { q: trim(deferredSearch) } : {}),
+      ...((trim(deferredSearch) ||
         searchOperator === "empty" ||
         searchOperator === "not_empty") &&
       searchOperator !== "contains"
@@ -441,16 +445,14 @@ const Index = () => {
 
     setTranslatingCategory(category);
     setTranslationForm(
-      Object.fromEntries(
-        lodashMap(activeLanguages, (language) => [
+      fromPairs(lodashMap(activeLanguages, (language) => [
+        language.code,
+        resolveLabel(
+          category?.translations,
+          category?.name ?? "",
           language.code,
-          resolveLabel(
-            category?.translations,
-            category?.name ?? "",
-            language.code,
-          ),
-        ]),
-      ),
+        ),
+      ])),
     );
   }, [activeLanguages, translatingCategoryData]);
 
@@ -461,7 +463,7 @@ const Index = () => {
   );
 
   React.useEffect(() => {
-    const totalPages = Math.max(1, Number(get(meta, "totalPages")) || 1);
+    const totalPages = Math.max(1, toNumber(get(meta, "totalPages")) || 1);
     if (currentPage > totalPages) {
       void setPageQuery(String(totalPages));
     }
@@ -473,16 +475,14 @@ const Index = () => {
     (category) => {
       setTranslatingCategory(category);
       setTranslationForm(
-        Object.fromEntries(
-          lodashMap(activeLanguages, (language) => [
+        fromPairs(lodashMap(activeLanguages, (language) => [
+          language.code,
+          resolveLabel(
+            category?.translations,
+            category?.name ?? "",
             language.code,
-            resolveLabel(
-              category?.translations,
-              category?.name ?? "",
-              language.code,
-            ),
-          ]),
-        ),
+          ),
+        ])),
       );
       navigate(`translate/${category.id}`);
     },
@@ -493,11 +493,10 @@ const Index = () => {
     if (!translatingCategory) return;
 
     const localizedName = trim(String(get(translationForm, currentLanguage, "")));
-    const cleanedTranslations = Object.fromEntries(
-      Object.entries(translationForm || {})
-        .map(([code, value]) => [code, trim(String(value ?? ""))])
-        .filter(([, value]) => Boolean(value)),
-    );
+    const cleanedTranslations = fromPairs(lodashFilter(lodashMap(
+      toPairs(translationForm || {}),
+      ([code, value]) => [code, trim(String(value ?? ""))],
+    ), ([, value]) => Boolean(value)));
 
     try {
       await updateCategory(translatingCategory.id, {
@@ -541,8 +540,10 @@ const Index = () => {
       const dependencySummary = error?.response?.data?.dependencySummary;
       const baseMessage = isArray(message) ? message.join(", ") : message;
       toast.error(
-        [baseMessage || "Kategoriyani o'chirib bo'lmadi", dependencySummary]
-          .filter(Boolean)
+        lodashFilter(
+          [baseMessage || "Kategoriyani o'chirib bo'lmadi", dependencySummary],
+          Boolean,
+        )
           .join(" "),
       );
     }
@@ -689,13 +690,11 @@ const Index = () => {
           </Button>
         </div>
       </div>
-
       <Filter
         filterFields={filterFields}
         activeFilters={activeFilters}
         handleFiltersChange={handleFiltersChange}
       />
-
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <p>
           {get(meta, "total", 0)} ta kategoriya
@@ -707,7 +706,6 @@ const Index = () => {
           <p>Filter yoqilganda drag and drop o'chadi</p>
         ) : null}
       </div>
-
       <DataGrid
         table={table}
         isLoading={isLoading}
@@ -734,17 +732,14 @@ const Index = () => {
           sizes={[10, 25, 50, 100]}
         />
       </DataGrid>
-
       {!isLoading && !categories.length ? (
         <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
           Filtrlarga mos kategoriya topilmadi.
         </div>
       ) : null}
-
       {isLoading ? (
         <div className="text-sm text-muted-foreground">Yuklanmoqda...</div>
       ) : null}
-
       <Drawer
         open={translationsDrawerOpen}
         onOpenChange={(open) => {
@@ -785,7 +780,7 @@ const Index = () => {
                   {currentLanguageMeta?.flag
                     ? `${currentLanguageMeta.flag} `
                     : ""}
-                  {currentLanguageMeta?.name ?? currentLanguage.toUpperCase()}.
+                  {currentLanguageMeta?.name ?? toUpper(currentLanguage)}.
                   Shu til qiymati saqlansa, asosiy nom ham yangilanadi.
                 </p>
               </div>
@@ -849,7 +844,6 @@ const Index = () => {
           </div>
         </DrawerContent>
       </Drawer>
-
       <DeleteAlert
         category={categoryToDelete}
         open={Boolean(categoryToDelete)}
@@ -859,10 +853,12 @@ const Index = () => {
         onConfirm={handleDelete}
         currentLanguage={currentLanguage}
       />
-
       <Outlet />
     </div>
   );
 };
 
 export default Index;
+
+
+

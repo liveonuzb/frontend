@@ -1,5 +1,5 @@
 import React from "react";
-import { get, isArray, join } from "lodash";
+import { get, isArray, join, toNumber, trim } from "lodash";
 import { toast } from "sonner";
 import { PlusIcon } from "lucide-react";
 import { usePostQuery } from "@/hooks/api";
@@ -35,7 +35,7 @@ const CreatePromoCode = () => {
   const handleSave = React.useCallback(async () => {
     if (!canManageGrowth) return;
 
-    const code = form.code.trim();
+    const code = trim(form.code);
     if (!code) {
       toast.error("Promo kodni kiriting");
       return;
@@ -49,10 +49,10 @@ const CreatePromoCode = () => {
       code,
       description: form.description || undefined,
       discountType: form.discountType,
-      discountValue: Number(form.discountValue),
-      maxUses: form.maxUses ? Number(form.maxUses) : null,
+      discountValue: toNumber(form.discountValue),
+      maxUses: form.maxUses ? toNumber(form.maxUses) : null,
       stackable: form.stackable,
-      minPlanPrice: form.minPlanPrice ? Number(form.minPlanPrice) : null,
+      minPlanPrice: form.minPlanPrice ? toNumber(form.minPlanPrice) : null,
       validFrom: form.validFrom || undefined,
       validTo: form.validTo || undefined,
       applicablePlanIds:

@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, toNumber } from "lodash";
 import { Badge } from "@/components/ui/badge";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import ActionsMenu from "./actions-menu.jsx";
@@ -21,7 +21,7 @@ const formatDiscount = (row) => {
   const type = get(row, "discountType");
   const value = get(row, "discountValue");
   if (type === "PERCENTAGE") return `${value}%`;
-  if (type === "FIXED_AMOUNT") return `${Number(value).toLocaleString("uz-UZ")} UZS`;
+  if (type === "FIXED_AMOUNT") return `${toNumber(value).toLocaleString("uz-UZ")} UZS`;
   return String(value);
 };
 

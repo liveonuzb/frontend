@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
-import { filter, find, get, isArray, join, map, trim } from "lodash";
+import { filter, find, get, isArray, join, map, trim, fromPairs, reduce } from "lodash";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -43,15 +43,13 @@ const resolveCurrentLanguage = (activeLanguages, currentLanguage) =>
   get(activeLanguages, "0", { code: "uz", name: "Uzbek", flag: "UZ" });
 
 const buildDefaultValues = (item, languages) =>
-  Object.fromEntries(
-    map(languages, (language) => {
-      const code = get(language, "code");
-      return [code, get(item, `translations.${code}`, "")];
-    }),
-  );
+  fromPairs(map(languages, (language) => {
+    const code = get(language, "code");
+    return [code, get(item, `translations.${code}`, "")];
+  }));
 
 const buildPayload = (values, languages, currentLanguage) => {
-  const translations = languages.reduce((acc, language) => {
+  const translations = reduce(languages, (acc, language) => {
     const code = get(language, "code");
     const value = trim(get(values, code, ""));
     if (value) acc[code] = value;

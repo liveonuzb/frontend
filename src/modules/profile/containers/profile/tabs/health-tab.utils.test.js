@@ -4,6 +4,8 @@ import {
   buildRecommendedGoals,
 } from "./health-tab.utils.js";
 
+import { map } from "lodash";
+
 describe("health-tab utils", () => {
   it("recalculates recommendation calories and carbs when selected goal changes", () => {
     const baseGoals = {
@@ -93,7 +95,7 @@ describe("health-tab utils", () => {
     });
 
     expect(items[0]?.id).toBe("protein");
-    expect(items.map((item) => item.id)).toEqual([
+    expect(map(items, (item) => item.id)).toEqual([
       "protein",
       "calories",
       "water",

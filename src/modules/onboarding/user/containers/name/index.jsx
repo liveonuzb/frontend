@@ -16,20 +16,21 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronRight } from "lucide-react";
 import PageAura from "../../components/page-aura.jsx";
 import { ONBOARDING_TONES } from "../../lib/tones.js";
-import useAppModeTheme from "@/hooks/app/use-app-mode-theme";
+import { useOnboardingAssets } from "@/hooks/app/use-onboarding-base";
+
+import { trim } from "lodash";
 
 const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { firstName, setFields } = useOnboardingStore();
   const tone = ONBOARDING_TONES.neutral;
-  const modeTheme = useAppModeTheme();
+  const { curious } = useOnboardingAssets();
   const schema = React.useMemo(
     () =>
       z.object({
-        firstName: z
-          .string()
-          .trim()
+        firstName: trim(z
+          .string())
           .min(1, t("onboarding.name.firstNameRequired")),
       }),
     [t],
@@ -44,7 +45,7 @@ const Index = () => {
   });
 
   const onSubmit = (values) => {
-    setFields({ firstName: values.firstName.trim(), lastName: "" });
+    setFields({ firstName: trim(values.firstName), lastName: "" });
     navigate("/user/onboarding/gender");
   };
 
@@ -77,7 +78,7 @@ const Index = () => {
           >
             <img
               loading="lazy"
-              src={modeTheme.assets.curious}
+              src={curious}
               alt={t("onboarding.illustrationAlt")}
               className="max-h-[240px] w-full max-w-[240px] object-contain md:max-h-[340px] md:max-w-[340px]"
             />

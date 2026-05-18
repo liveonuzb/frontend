@@ -1,5 +1,5 @@
 import React from "react";
-import { clamp, get } from "lodash";
+import { clamp, get, map, toNumber, trim } from "lodash";
 import {
   DrawerBody,
   DrawerDescription,
@@ -38,7 +38,7 @@ const formatLoggedTimeHint = (value) => {
 };
 
 const getConfidenceMeta = (value) => {
-  const normalized = clamp(Number(value) || 0, 0, 1);
+  const normalized = clamp(toNumber(value) || 0, 0, 1);
 
   if (normalized >= 0.85) {
     return {
@@ -85,7 +85,7 @@ const AudioTranscriptDrawer = ({
   onRemoveHistoryItem,
   onClearHistory,
 }) => {
-  const hasText = Boolean(value.trim());
+  const hasText = Boolean(trim(value));
   const confidenceMeta =
     typeof transcriptConfidence === "number"
       ? getConfidenceMeta(transcriptConfidence)
@@ -104,7 +104,6 @@ const AudioTranscriptDrawer = ({
           yuboring.
         </DrawerDescription>
       </DrawerHeader>
-
       <DrawerBody className="space-y-4">
         <div className="rounded-3xl border bg-muted/15 p-4">
           <div className="flex items-start justify-between gap-3">
@@ -124,7 +123,7 @@ const AudioTranscriptDrawer = ({
               Ovqat turini tekshiring
             </p>
             <div className="flex flex-wrap gap-2">
-              {MEAL_TYPE_OPTIONS.map((option) => {
+              {map(MEAL_TYPE_OPTIONS, (option) => {
                 const isActive = option.value === suggestedMealType;
                 return (
                   <button
@@ -213,7 +212,7 @@ const AudioTranscriptDrawer = ({
               </span>
             </div>
             <div className="space-y-2">
-              {transcriptSegments.map((segment, index) => (
+              {map(transcriptSegments, (segment, index) => (
                 <div
                   key={`${segment}-${index}`}
                   className="rounded-2xl border px-3 py-3"
@@ -266,7 +265,7 @@ const AudioTranscriptDrawer = ({
               </div>
             </div>
             <div className="space-y-2">
-              {transcriptHistory.map((item, index) => (
+              {map(transcriptHistory, (item, index) => (
                 <div
                   key={`${item.transcript}-${index}`}
                   className="rounded-2xl border px-3 py-3"
@@ -320,7 +319,6 @@ const AudioTranscriptDrawer = ({
           tekshirasiz.
         </p>
       </DrawerBody>
-
       <DrawerFooter>
         {onAppendAudio ? (
           <Button

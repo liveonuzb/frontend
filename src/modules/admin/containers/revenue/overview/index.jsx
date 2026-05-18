@@ -1,5 +1,5 @@
 import React from "react";
-import { get, isArray, isNil, join, map, size, trim } from "lodash";
+import { get, isArray, isNil, join, map, size, trim, split, toNumber } from "lodash";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -94,11 +94,6 @@ const typeBadgeConfig = {
     className:
       "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800",
   },
-  coach: {
-    label: "Coach",
-    className:
-      "bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800",
-  },
   challenge: {
     label: "Challenge",
     className:
@@ -154,7 +149,7 @@ const chartTooltip = ({ active, payload, label }) => {
 const getDefaultExpenseForm = () => ({
   category: "",
   amount: "",
-  expenseDate: new Date().toISOString().split("T")[0],
+  expenseDate: split(new Date().toISOString(), "T")[0],
   notes: "",
 });
 
@@ -284,7 +279,7 @@ const Revenue = () => {
       expenseDate: get(
         expense,
         "expenseDate",
-        new Date().toISOString().split("T")[0],
+        split(new Date().toISOString(), "T")[0],
       ),
       notes: get(expense, "notes", ""),
     });
@@ -296,7 +291,7 @@ const Revenue = () => {
 
     const payload = {
       category: trim(expenseForm.category),
-      amount: Number(expenseForm.amount),
+      amount: toNumber(expenseForm.amount),
       expenseDate: expenseForm.expenseDate,
       notes: trim(expenseForm.notes),
     };

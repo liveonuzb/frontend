@@ -1,8 +1,4 @@
 export const getOnboardingDraftApiBase = (type) => {
-  if (type === "coach") {
-    return "/coach/onboarding/coach";
-  }
-
   if (type === "user") {
     return "/user/onboarding/user";
   }

@@ -1,4 +1,4 @@
-import { find, get, isEqual } from "lodash";
+import { find, get, isEqual, reduce, toNumber, trim } from "lodash";
 
 export const ADMIN_TEXT_OPERATORS = [
   "contains",
@@ -13,10 +13,10 @@ export const ADMIN_TEXT_OPERATORS = [
 export const ADMIN_SELECT_OPERATORS = ["is", "is_not", "empty", "not_empty"];
 export const ADMIN_SORT_DIRECTIONS = ["asc", "desc"];
 
-export const clampAdminPage = (value) => Math.max(1, Number(value) || 1);
+export const clampAdminPage = (value) => Math.max(1, toNumber(value) || 1);
 
 export const clampAdminPageSize = (value, fallback = 10, max = 100) =>
-  Math.min(max, Math.max(1, Number(value) || fallback));
+  Math.min(max, Math.max(1, toNumber(value) || fallback));
 
 export const buildAdminSortingState = ({
   sortBy,
@@ -51,7 +51,7 @@ export const makeAdminTextActiveFilter = ({
   operator = "contains",
   visible = false,
 }) => {
-  const normalizedValue = String(value ?? "").trim();
+  const normalizedValue = trim(String(value ?? ""));
   if (!visible && !normalizedValue && !isAdminEmptyOperator(operator)) {
     return null;
   }
@@ -88,7 +88,7 @@ export const makeAdminSelectActiveFilter = ({
 };
 
 export const buildAdminFilterParams = (filters) =>
-  filters.reduce((params, filter) => {
+  reduce(filters, (params, filter) => {
     const {
       key,
       opKey = `${key}Op`,
@@ -100,7 +100,7 @@ export const buildAdminFilterParams = (filters) =>
       includeOperator = true,
     } = filter;
     const normalizedValue =
-      typeof value === "string" && trim ? value.trim() : value;
+      typeof value === "string" && trim ? trim(value) : value;
     const hasValue =
       isAdminEmptyOperator(operator) ||
       (typeof normalizedValue === "string"

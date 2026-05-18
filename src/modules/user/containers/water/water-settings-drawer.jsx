@@ -14,7 +14,7 @@ import { SettingsIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
 import useHealthGoals from "@/hooks/app/use-health-goals";
 import useMe from "@/hooks/app/use-me";
 import { cn } from "@/lib/utils";
-import { some } from "lodash";
+import { some, map } from "lodash";
 
 import DailyGoalDrawer from "./daily-goal-drawer";
 import CustomCupDrawer from "./custom-cup-drawer";
@@ -190,7 +190,7 @@ export default function WaterSettingsDrawer() {
               Stakan hajmi
             </span>
             <div className="grid grid-cols-3 gap-3">
-              {CUP_SIZES.map((cup) => {
+              {map(CUP_SIZES, (cup) => {
                 const active = cupSize === cup.value;
                 return (
                   <button

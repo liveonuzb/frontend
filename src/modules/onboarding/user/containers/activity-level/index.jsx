@@ -1,4 +1,4 @@
-import { map } from "lodash";
+import { map, find } from "lodash";
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";
@@ -12,14 +12,14 @@ import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import { ChevronRight } from "lucide-react";
 import PageAura from "../../components/page-aura.jsx";
 import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
-import useOnboardingBase from "@/hooks/app/use-onboarding-base";
+import { useOnboardingAssets } from "@/hooks/app/use-onboarding-base";
 import OnboardingSelectCard from "../../components/onboarding-select-card.jsx";
 
 const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { activityLevel, setField } = useOnboardingStore();
-  const base = useOnboardingBase();
+  const { asset } = useOnboardingAssets();
 
   const levels = [
     {
@@ -27,7 +27,7 @@ const Index = () => {
       label: t("onboarding.activityLevel.sedentary"),
       title: t("onboarding.activityLevel.sedentaryTitle"),
       description: t("onboarding.activityLevel.sedentaryDescription"),
-      image: `${base}/slow.webp`,
+      image: asset("slow"),
       tone: ONBOARDING_ACCENTS.amber,
     },
     {
@@ -35,7 +35,7 @@ const Index = () => {
       label: t("onboarding.activityLevel.lightlyActive"),
       title: t("onboarding.activityLevel.lightlyActiveTitle"),
       description: t("onboarding.activityLevel.lightlyActiveDescription"),
-      image: `${base}/recommend.webp`,
+      image: asset("recommend"),
       tone: ONBOARDING_ACCENTS.sky,
     },
     {
@@ -43,7 +43,7 @@ const Index = () => {
       label: t("onboarding.activityLevel.moderatelyActive"),
       title: t("onboarding.activityLevel.moderatelyActiveTitle"),
       description: t("onboarding.activityLevel.moderatelyActiveDescription"),
-      image: `${base}/focussed.webp`,
+      image: asset("focussed"),
       tone: ONBOARDING_ACCENTS.green,
       recommended: true,
     },
@@ -52,14 +52,14 @@ const Index = () => {
       label: t("onboarding.activityLevel.veryActive"),
       title: t("onboarding.activityLevel.veryActiveTitle"),
       description: t("onboarding.activityLevel.veryActiveDescription"),
-      image: `${base}/aggressive.webp`,
+      image: asset("aggressive"),
       tone: ONBOARDING_ACCENTS.rose,
     },
   ];
 
   useOnboardingAutoSave("user", "activity-level");
   const selectedLevel =
-    levels.find((level) => level.value === activityLevel) ?? levels[2];
+    find(levels, (level) => level.value === activityLevel) ?? levels[2];
   const hasSelection = Boolean(activityLevel);
 
   const handleSelect = (value) => {

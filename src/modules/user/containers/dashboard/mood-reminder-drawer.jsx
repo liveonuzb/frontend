@@ -10,8 +10,8 @@ import {
   DrawerBody,
   DrawerFooter,
 } from "@/components/ui/drawer";
-import useGetQuery from "@/hooks/api/use-get-query";
-import usePutQuery from "@/hooks/api/use-put-query";
+import { useGetQuery } from "@/hooks/api";
+import { usePutQuery } from "@/hooks/api";
 import { useAuthStore } from "@/store";
 import { MOOD_OPTIONS } from "@/lib/mood";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,8 @@ import {
 } from "./query-helpers.js";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button.jsx";
+
+import { find, map } from "lodash";
 
 const STORAGE_PREFIX = "mood-reminder:dismissed-on";
 const ACTIVE_THRESHOLD_MS = 60000;
@@ -35,9 +37,7 @@ export default function MoodReminderDrawer() {
 
   const [open, setOpen] = useState(false);
   const [selectedMood, setSelectedMood] = useState(null);
-  const selectedMoodOption = MOOD_OPTIONS.find(
-    (option) => option.value === selectedMood,
-  );
+  const selectedMoodOption = find(MOOD_OPTIONS, (option) => option.value === selectedMood);
   const previewMoodClass = selectedMood ?? "how";
 
   const { data } = useGetQuery({
@@ -173,7 +173,7 @@ export default function MoodReminderDrawer() {
           </div>
 
           <div className="grid grid-cols-5 gap-2 px-2 pb-3">
-            {MOOD_OPTIONS.map(({ value, label }) => {
+            {map(MOOD_OPTIONS, ({ value, label }) => {
               const active = selectedMood === value;
 
               return (

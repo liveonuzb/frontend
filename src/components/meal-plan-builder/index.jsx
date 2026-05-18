@@ -17,6 +17,12 @@ import {
   find,
   filter,
   forEach,
+  some,
+  split,
+  toLower,
+  includes,
+  trim,
+  toNumber,
 } from "lodash";
 import useIsMobile from "@/hooks/utils/use-mobile.js";
 
@@ -162,9 +168,9 @@ const normalizePlanFood = (food = {}, foodMap) => {
 
 const normalizeDaysData = (data = {}, foodMap) =>
   mapValues(data, (columns = []) =>
-    columns.map((column) => ({
+    map(columns, (column) => ({
       ...column,
-      items: (column.items || []).map((item) => normalizePlanFood(item, foodMap)),
+      items: map((column.items || []), (item) => normalizePlanFood(item, foodMap)),
     })),
   );
 
@@ -217,12 +223,12 @@ const Index = ({
   }, [selectedDay]);
 
   const foodMap = useMemo(
-    () => new Map(foods.map((food) => [food.barcode, food])),
+    () => new Map(map(foods, (food) => [food.barcode, food])),
     [foods],
   );
 
   const libraryFoodById = useMemo(
-    () => new Map(foods.map((food) => [food.id, food])),
+    () => new Map(map(foods, (food) => [food.id, food])),
     [foods],
   );
 
@@ -253,7 +259,7 @@ const Index = ({
         id: "all",
         label: "Barchasi",
       },
-      ...categories.map((category) => ({
+      ...map(categories, (category) => ({
         id: String(category.id),
         label: category.label || category.name,
       })),
@@ -265,8 +271,8 @@ const Index = ({
     const counts = new Map();
     counts.set("all", foods.length);
 
-    foods.forEach((food) => {
-      (food.categoryIds || []).forEach((categoryId) => {
+    forEach(foods, (food) => {
+      forEach((food.categoryIds || []), (categoryId) => {
         const key = String(categoryId);
         counts.set(key, (counts.get(key) || 0) + 1);
       });
@@ -276,13 +282,13 @@ const Index = ({
   }, [foods]);
 
   const filteredLibraryFoods = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
+    const normalizedSearch = toLower(trim(search));
 
-    return foods.filter((food) => {
+    return filter(foods, (food) => {
       const matchesCategory =
         selectedCategoryId === "all"
           ? true
-          : food.categoryIds?.includes(Number(selectedCategoryId));
+          : includes(food.categoryIds, toNumber(selectedCategoryId));
 
       if (!matchesCategory) {
         return false;
@@ -292,10 +298,7 @@ const Index = ({
         return true;
       }
 
-      return (
-        food.name.toLowerCase().includes(normalizedSearch) ||
-        food.originalName?.toLowerCase().includes(normalizedSearch)
-      );
+      return (includes(toLower(food.name), normalizedSearch) || includes(toLower(food.originalName), normalizedSearch));
     });
   }, [foods, search, selectedCategoryId]);
 
@@ -307,7 +310,7 @@ const Index = ({
     }
 
     if (
-      !categoriesWithAll.some((category) => category.id === selectedCategoryId)
+      !some(categoriesWithAll, (category) => category.id === selectedCategoryId)
     ) {
       setSelectedCategoryId("all");
     }
@@ -316,7 +319,7 @@ const Index = ({
 
   const currentDayColumns = daysData[selectedDay] || [];
   const savedMealsById = useMemo(
-    () => new Map(savedMeals.map((item) => [item.id, item])),
+    () => new Map(map(savedMeals, (item) => [item.id, item])),
     [savedMeals],
   );
   const selectedTemplate = useMemo(
@@ -355,7 +358,7 @@ const Index = ({
   useEffect(() => {
     if (
       templateTargetColId &&
-      currentDayColumns.some((column) => column.id === templateTargetColId)
+      some(currentDayColumns, (column) => column.id === templateTargetColId)
     ) {
       return;
     }
@@ -377,9 +380,9 @@ const Index = ({
   const recalculateSnackTimes = (columns) => {
     const parseTime = (t) => {
       if (!t) return null;
-      const [start] = t.split("-");
+      const [start] = split(t, "-");
       if (!start) return null;
-      const [h, m] = start.split(":").map(Number);
+      const [h, m] = map(split(start, ":"), Number);
       if (isNaN(h) || isNaN(m)) return null;
       return h * 60 + m;
     };
@@ -498,18 +501,15 @@ const Index = ({
       return;
     }
 
-    const templateMeals = selectedTemplate.mealIds
-      .map((mealId) => savedMealsById.get(mealId))
-      .filter(Boolean);
+    const templateMeals = filter(map(selectedTemplate.mealIds, (mealId) => savedMealsById.get(mealId)), Boolean);
 
     if (templateMeals.length === 0) {
       toast.error("Bu shablondagi taomlar topilmadi");
       return;
     }
 
-    const foodsToAdd = templateMeals.map((meal, index) =>
-      buildPlanFoodFromSavedMeal(meal, `${selectedTemplate.id}-${index}`),
-    );
+    const foodsToAdd = map(templateMeals, (meal, index) =>
+      buildPlanFoodFromSavedMeal(meal, `${selectedTemplate.id}-${index}`));
 
     setDaysData((prev) => {
       const dayData = [...(prev[selectedDay] || [])];
@@ -809,7 +809,7 @@ const Index = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    {savedMealTemplates.map((template) => (
+                    {map(savedMealTemplates, (template) => (
                       <SelectItem key={template.id} value={template.id}>
                         {template.name}
                       </SelectItem>
@@ -827,7 +827,7 @@ const Index = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    {currentDayColumns.map((column) => (
+                    {map(currentDayColumns, (column) => (
                       <SelectItem key={column.id} value={column.id}>
                         {column.type}
                       </SelectItem>
@@ -854,7 +854,7 @@ const Index = ({
                     }
                   />
                   <RepeatIcon className="size-3.5" />
-                  Har {selectedDay} {templateTargetColumn.type.toLowerCase()}{" "}
+                  Har {selectedDay} {toLower(templateTargetColumn.type)}{" "}
                   uchun {selectedTemplate.name} ishlatilsin
                 </label>
               ) : null}
@@ -929,7 +929,7 @@ const Index = ({
             </div>
           ) : (
             /* DESKTOP: Kanban layout (unchanged) */
-            <div className="flex-1 flex overflow-hidden">
+            (<div className="flex-1 flex overflow-hidden">
               <Kanban
                 value={kanbanColumns}
                 onValueChange={handleKanbanChange}
@@ -1176,7 +1176,7 @@ const Index = ({
                   </KanbanOverlay>
                 </div>
               </Kanban>
-            </div>
+            </div>)
           )}
           <PortionEditorDrawer
             food={editingFood}

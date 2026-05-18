@@ -1,4 +1,4 @@
-import { join } from "lodash";
+import { join, isArray } from "lodash";
 import { api } from "@/hooks/api/use-api";
 
 export const CHALLENGES_QUERY_KEY = ["admin", "challenges"];
@@ -8,7 +8,7 @@ export const getChallengeQueryKey = (id) => ["admin", "challenge", String(id)];
 export const resolveChallengeApiErrorMessage = (error, fallback) => {
   const message = error?.response?.data?.message;
 
-  if (Array.isArray(message)) {
+  if (isArray(message)) {
     return join(message, ", ");
   }
 

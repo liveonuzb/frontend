@@ -73,7 +73,7 @@ export default function PlansDrawer({
         <NutritionDrawerBody className="pb-5">
           <div className="max-h-[58vh] space-y-3 overflow-y-auto pr-1">
             {isLoading ? (
-              [0, 1, 2].map((item) => <PlanCardSkeleton key={item} />)
+              map([0, 1, 2], (item) => <PlanCardSkeleton key={item} />)
             ) : (
               <NutritionPlansList
                 orderedPlans={orderedPlans}

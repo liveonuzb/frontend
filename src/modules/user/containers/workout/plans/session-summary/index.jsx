@@ -1,5 +1,5 @@
 import React from "react";
-import { findIndex, get, map, sumBy } from "lodash";
+import { findIndex, get, map, sumBy, isArray, toNumber } from "lodash";
 import { useLocation, useNavigate, useParams } from "react-router";
 import {
   ArrowLeftIcon,
@@ -12,7 +12,6 @@ import {
 import PageTransition from "@/components/page-transition";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import SessionSummaryCard from "@/components/coach-sessions/session-summary-card";
 import { Badge } from "@/components/ui/badge";
 import { useWorkoutPlanDetail } from "@/hooks/app/use-workout-plans";
 
@@ -42,11 +41,26 @@ const clearStoredSummary = (planId, dayIndex) => {
   window.sessionStorage.removeItem(getSummaryStorageKey(planId, dayIndex));
 };
 
-const formatDuration = (minutes) => `${Number(minutes || 0)} daqiqa`;
+const formatDuration = (minutes) => `${toNumber(minutes || 0)} daqiqa`;
+
+const SessionSummaryCard = ({ title, value, hint, icon: Icon, tone }) => (
+  <div className="rounded-3xl border bg-card p-4">
+    <div className="flex items-start justify-between gap-3">
+      <div>
+        <p className="text-xs text-muted-foreground">{title}</p>
+        <p className="mt-2 text-xl font-black">{value}</p>
+        {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
+      </div>
+      <span className={`flex size-10 shrink-0 items-center justify-center rounded-2xl ${tone}`}>
+        <Icon className="size-5" />
+      </span>
+    </div>
+  </div>
+);
 
 const WorkoutPlanSessionSummaryPage = () => {
   const { planId, dayIndex: dayIndexParam } = useParams();
-  const dayIndex = Number(dayIndexParam);
+  const dayIndex = toNumber(dayIndexParam);
   const location = useLocation();
   const navigate = useNavigate();
   const { plan } = useWorkoutPlanDetail(planId, {
@@ -55,13 +69,13 @@ const WorkoutPlanSessionSummaryPage = () => {
   const summary =
     get(location, "state.summary") || readStoredSummary(planId, dayIndex);
   const nextWorkoutDayIndex = React.useMemo(() => {
-    const schedule = Array.isArray(get(plan, "schedule")) ? get(plan, "schedule") : [];
+    const schedule = isArray(get(plan, "schedule")) ? get(plan, "schedule") : [];
 
     return findIndex(
       schedule,
       (day, index) =>
         index > dayIndex &&
-        Array.isArray(get(day, "exercises")) &&
+        isArray(get(day, "exercises")) &&
         get(day, "exercises.length") > 0,
     );
   }, [dayIndex, plan]);
@@ -98,10 +112,10 @@ const WorkoutPlanSessionSummaryPage = () => {
     );
   }
 
-  const exerciseSummaries = Array.isArray(summary.exerciseSummaries)
+  const exerciseSummaries = isArray(summary.exerciseSummaries)
     ? summary.exerciseSummaries
     : [];
-  const distanceMeters = sumBy(exerciseSummaries, (item) => Number(item?.distanceMeters || 0));
+  const distanceMeters = sumBy(exerciseSummaries, (item) => toNumber(item?.distanceMeters || 0));
 
   return (
     <PageTransition mode="slide-up">

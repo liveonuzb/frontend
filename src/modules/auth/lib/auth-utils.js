@@ -1,4 +1,4 @@
-import { get, join, trim, some, includes } from "lodash";
+import { get, join, trim, some, filter, isArray, map } from "lodash";
 import { config } from "@/config.js";
 import {
   canAccessUserDashboard,
@@ -7,10 +7,11 @@ import {
 } from "@/lib/app-paths.js";
 
 const normalizeAuthErrorMessage = (message) => {
-  if (Array.isArray(message)) {
-    const messages = message
-      .map((item) => (typeof item === "string" ? item : get(item, "message")))
-      .filter((item) => typeof item === "string" && trim(item));
+  if (isArray(message)) {
+    const messages = filter(map(
+      message,
+      (item) => (typeof item === "string" ? item : get(item, "message")),
+    ), (item) => typeof item === "string" && trim(item));
 
     return messages.length > 0 ? join(messages, ", ") : null;
   }
@@ -58,10 +59,6 @@ export const getPostAuthRoute = (user) => {
 
   if (some(roles, (role) => role === "SUPER_ADMIN")) {
     return "/admin/dashboard";
-  }
-
-  if (includes(roles, "COACH")) {
-    return "/coach/dashboard";
   }
 
   if (

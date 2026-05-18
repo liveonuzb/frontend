@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { get } from "lodash";
+import { get, find } from "lodash";
 import { FlameIcon } from "lucide-react";
 import {
   Drawer,
@@ -9,7 +9,7 @@ import {
   DrawerDescription,
   DrawerBody,
 } from "@/components/ui/drawer";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 import { useAuthStore } from "@/store";
 import {
   DASHBOARD_ME_QUERY_KEY,
@@ -118,7 +118,7 @@ export default function StreakReminderDrawer() {
   };
 
   const nextMilestone =
-    STREAK_MILESTONES.find((m) => m > currentStreak) ?? currentStreak + 10;
+    find(STREAK_MILESTONES, (m) => m > currentStreak) ?? currentStreak + 10;
   const progressPct =
     nextMilestone > 0
       ? Math.min(100, Math.round((currentStreak / nextMilestone) * 100))

@@ -18,7 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import RechartsLine from "@/components/charts/line-chart";
 import { CHART_COLORS } from "@/lib/chart-colors";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 import { getApiResponseData } from "@/lib/api-response";
 import { formatRunningDistance, formatRunningPace } from "@/lib/running-metrics";
 import useBreadcrumbStore from "@/store/breadcrumb-store";
@@ -32,6 +32,8 @@ import {
   rangeReportQueryKey,
 } from "./report-helpers.js";
 
+import { map, toNumber } from "lodash";
+
 const isDateKey = (value) => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
 
 const todayKey = () => {
@@ -44,7 +46,7 @@ const todayKey = () => {
 };
 
 const toChartData = (series, dates) =>
-  (series ?? []).map((value, index) => ({
+  map((series ?? []), (value, index) => ({
     name: dates?.[index] ? formatShortDay(dates[index]) : String(index + 1),
     value,
   }));
@@ -90,7 +92,7 @@ export default function TenDayReport() {
   const setBreadcrumbs = useBreadcrumbStore((s) => s.setBreadcrumbs);
 
   const days = React.useMemo(() => {
-    const parsed = Number(daysParam);
+    const parsed = toNumber(daysParam);
     if (!Number.isFinite(parsed)) return 10;
     const value = Math.floor(parsed);
     if (value < 3) return 10;
@@ -120,14 +122,14 @@ export default function TenDayReport() {
 
   const report = getApiResponseData(response, null);
   const calendar = report?.daysCalendar ?? [];
-  const dates = calendar.map((d) => d.date);
+  const dates = map(calendar, (d) => d.date);
   const trends = report?.trends ?? {};
   const averages = report?.averages ?? {};
   const highlights = report?.highlights ?? {};
   const running = averages?.running ?? null;
   const hasRunning =
-    Number(running?.distanceMeters ?? 0) > 0 ||
-    Number(running?.durationMinutes ?? 0) > 0;
+    toNumber(running?.distanceMeters ?? 0) > 0 ||
+    toNumber(running?.durationMinutes ?? 0) > 0;
 
   const rangeLabel =
     report?.period?.startDate && report?.period?.endDate
@@ -210,7 +212,7 @@ export default function TenDayReport() {
             ) : (
               <>
                 <div className="flex flex-wrap justify-between gap-2">
-                  {calendar.map((day) => (
+                  {map(calendar, (day) => (
                     <DayStatusDot
                       key={day.date}
                       dayNumber={new Date(day.date).getDate()}
@@ -248,7 +250,7 @@ export default function TenDayReport() {
                 <div className="min-w-0">
                   <p className="text-sm font-black">Running</p>
                   <p className="text-xs text-muted-foreground">
-                    {Number(running?.count ?? 0)} runs
+                    {toNumber(running?.count ?? 0)} runs
                   </p>
                 </div>
               </div>
@@ -264,7 +266,7 @@ export default function TenDayReport() {
                   <p className="text-[11px] text-muted-foreground">Vaqt</p>
                   <p className="mt-1 inline-flex items-center justify-center gap-1 text-sm font-black">
                     <TimerIcon className="size-3.5 text-muted-foreground" />
-                    {Math.round(Number(running?.durationMinutes) || 0)} min
+                    {Math.round(toNumber(running?.durationMinutes) || 0)} min
                   </p>
                 </div>
                 <div className="rounded-2xl bg-muted/30 px-3 py-2 text-center">
@@ -277,7 +279,7 @@ export default function TenDayReport() {
                   <p className="text-[11px] text-muted-foreground">Calories</p>
                   <p className="mt-1 inline-flex items-center justify-center gap-1 text-sm font-black">
                     <FlameIcon className="size-3.5 text-muted-foreground" />
-                    {Math.round(Number(running?.burnedCalories) || 0)} kcal
+                    {Math.round(toNumber(running?.burnedCalories) || 0)} kcal
                   </p>
                 </div>
               </div>
@@ -287,14 +289,14 @@ export default function TenDayReport() {
 
         {/* Trend cards */}
         <div className="grid gap-4 md:grid-cols-2">
-          {[
+          {map([
             ["water", "water"],
             ["protein", "protein"],
             ["calories", "calories"],
             ["carbs", "carbs"],
             ["fat", "fat"],
             ["fastFood", "fastFood"],
-          ].map(([key, trendKey], index) => {
+          ], ([key, trendKey], index) => {
             const meta = METRIC_META[key];
             const avg = averages?.[key] ?? null;
             const series = trends?.[trendKey] ?? [];
@@ -378,7 +380,7 @@ export default function TenDayReport() {
             {isLoading ? (
               <Skeleton className="h-16 w-full" />
             ) : (report?.improvements?.length ?? 0) > 0 ? (
-              report.improvements.map((item, idx) => (
+              map(report.improvements, (item, idx) => (
                 <div key={idx} className="flex items-start gap-2 rounded-2xl bg-emerald-500/5 p-3">
                   <CheckCircle2Icon className="mt-0.5 size-4 shrink-0 text-emerald-600" />
                   <span className="text-sm text-muted-foreground">{item.label}</span>
@@ -404,7 +406,7 @@ export default function TenDayReport() {
             {isLoading ? (
               <Skeleton className="h-16 w-full" />
             ) : (report?.recommendations?.length ?? 0) > 0 ? (
-              report.recommendations.map((item, idx) => (
+              map(report.recommendations, (item, idx) => (
                 <div
                   key={idx}
                   className="flex items-start gap-3 rounded-2xl border bg-card p-3"

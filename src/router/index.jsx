@@ -17,22 +17,19 @@ import {
   getPostOnboardingPath,
 } from "@/lib/app-paths.js";
 
+import { some } from "lodash";
+
 const AuthModule = lazy(() => import("@/modules/auth/index.jsx"));
 const LandingModule = lazy(() => import("@/modules/landing/index.jsx"));
 const UserOnboardingModule = lazy(
   () => import("@/modules/onboarding/user/index.jsx"),
 );
-const CoachOnboardingModule = lazy(
-  () => import("@/modules/onboarding/coach/index.jsx"),
-);
 const AdminModule = lazy(() => import("@/modules/admin/index.jsx"));
 const UserModule = lazy(() => import("@/modules/user/index.jsx"));
-const CoachModule = lazy(() => import("@/modules/coach/index.jsx"));
 const NotFound = lazy(() => import("@/pages/not-found/index.jsx"));
 const ReferralRedirectPage = lazy(
   () => import("@/pages/referral-redirect/index.jsx"),
 );
-const JoinReferralPage = lazy(() => import("@/pages/referral-join/index.jsx"));
 
 const renderRouteElement = (element) => (
   <Suspense fallback={<PageLoader />}>{element}</Suspense>
@@ -102,10 +99,9 @@ const Index = () => {
   // Authenticated Telegram WebApp users must be allowed to finish password setup
   // before any public language/mode redirect can run.
   if (!isAuthenticated && !isTelegramWebApp) {
-    const referralPaths = ["/r/", "/ref/", "/join"];
-    const isReferralPath = referralPaths.some((path) =>
-      location.pathname.startsWith(path),
-    );
+    const referralPaths = ["/r/", "/ref/"];
+    const isReferralPath = some(referralPaths, (path) =>
+      location.pathname.startsWith(path));
     const isLandingPath = location.pathname === "/";
 
     if (!isReferralPath && !isLandingPath) {
@@ -136,8 +132,6 @@ const Index = () => {
         path="/ref/:code"
         element={renderRouteElement(<ReferralRedirectPage />)}
       />
-      <Route path="/join" element={renderRouteElement(<JoinReferralPage />)} />
-
       <Route
         path="/"
         element={
@@ -172,23 +166,6 @@ const Index = () => {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/coach/onboarding/*"
-        element={
-          <ProtectedRoute>
-            {renderRouteElement(<CoachOnboardingModule />)}
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/coach/*"
-        element={
-          <ProtectedRoute allowedRoles={["COACH"]}>
-            {renderRouteElement(<CoachModule />)}
-          </ProtectedRoute>
-        }
-      />
-
       <Route
         path="/user/onboarding/*"
         element={

@@ -1,5 +1,7 @@
 import { formatWeightDelta } from "../../lib/personalization.js";
 
+import { filter, toNumber, trim, isArray, map, take } from "lodash";
+
 const fallbackResult = {
   dailyCalories: 2100,
   weightToChange: -10,
@@ -53,7 +55,7 @@ const activityLabels = {
 
 const getNumberOrFallback = (value, fallback = null) => {
   if (value === null || value === undefined || value === "") return fallback;
-  const numberValue = Number(value);
+  const numberValue = toNumber(value);
   return Number.isFinite(numberValue) ? numberValue : fallback;
 };
 
@@ -111,11 +113,10 @@ const formatWarningLabel = (value) => {
   if (!value) return "";
   if (warningLabelMap[value]) return warningLabelMap[value];
 
-  return String(value)
+  return trim(String(value)
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+    .replace(/\s+/g, " "));
 };
 
 const formatLiters = (value) => {
@@ -137,7 +138,7 @@ const formatTargetDate = (value) => {
 
 const resolveExplanation = (result = {}, goalKey) => {
   const explanation =
-    typeof result?.explanation === "string" ? result.explanation.trim() : "";
+    typeof result?.explanation === "string" ? trim(result.explanation) : "";
   return explanation || goalExplanationFallbacks[goalKey] || fallbackResult.explanation;
 };
 
@@ -256,13 +257,13 @@ export const buildMetabolismResultViewModel = (
     goal: goalLabels[goalKey] ?? "Ozish",
     formulaName,
     hasCalculationReport: Boolean(calculationReport),
-    warningPills: [
+    warningPills: filter([
       calorieReport.floorApplied ? "Minimal kaloriya floor qo'llandi" : null,
       calorieReport.capApplied ? "Sur'at cap qo'llandi" : null,
-      ...(Array.isArray(calculationReport?.warnings)
-        ? calculationReport.warnings.slice(0, 2).map(formatWarningLabel)
+      ...(isArray(calculationReport?.warnings)
+        ? map(take(calculationReport.warnings, 2), formatWarningLabel)
         : []),
-    ].filter(Boolean),
+    ], Boolean),
     macros: {
       protein: buildMacro({
         label: "Oqsil",

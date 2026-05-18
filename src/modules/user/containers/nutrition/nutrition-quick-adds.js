@@ -1,14 +1,22 @@
+import {
+  filter,
+  forEach,
+  isArray,
+  some,
+  toLower,
+  toNumber as lodashToNumber,
+  trim,
+  map,
+} from "lodash";
 const QUICK_ADD_LIMIT = 6;
 
 const toNumber = (value, fallback = 0) => {
-  const normalized = Number(value);
+  const normalized = lodashToNumber(value);
   return Number.isFinite(normalized) ? normalized : fallback;
 };
 
 const normalizeKeyPart = (value) =>
-  String(value || "")
-    .trim()
-    .toLowerCase();
+  toLower(trim(String(value || "")));
 
 const makeNameKey = (name) => {
   const normalized = normalizeKeyPart(name);
@@ -26,7 +34,7 @@ const makeCatalogIdKey = (food) => {
   return normalized ? `catalog:${normalized}` : null;
 };
 
-const compact = (items) => items.filter(Boolean);
+const compact = (items) => filter(items, Boolean);
 
 export const buildSavedMealQuickAddPayload = (savedMeal = {}) => ({
   name: savedMeal.name,
@@ -39,7 +47,7 @@ export const buildSavedMealQuickAddPayload = (savedMeal = {}) => ({
   fiber: toNumber(savedMeal.fiber),
   grams: toNumber(savedMeal.grams, 0),
   image: savedMeal.imageUrl ?? savedMeal.image ?? null,
-  ingredients: Array.isArray(savedMeal.ingredients) ? savedMeal.ingredients : [],
+  ingredients: isArray(savedMeal.ingredients) ? savedMeal.ingredients : [],
 });
 
 export const buildCatalogQuickAddPayload = (food = {}) => ({
@@ -61,7 +69,7 @@ export const buildCatalogQuickAddPayload = (food = {}) => ({
 });
 
 const makeSavedQuickAdd = (savedMeal) => {
-  if (!savedMeal?.id || !String(savedMeal.name || "").trim()) {
+  if (!savedMeal?.id || !trim(String(savedMeal.name || ""))) {
     return null;
   }
 
@@ -85,7 +93,7 @@ const makeSavedQuickAdd = (savedMeal) => {
 };
 
 const makeCatalogQuickAdd = (food) => {
-  if (!food?.id || !String(food.name || "").trim()) {
+  if (!food?.id || !trim(String(food.name || ""))) {
     return null;
   }
 
@@ -125,16 +133,16 @@ export const buildNutritionQuickAdds = ({
       return;
     }
 
-    if (item.dedupeKeys.some((key) => seen.has(key))) {
+    if (some(item.dedupeKeys, (key) => seen.has(key))) {
       return;
     }
 
-    item.dedupeKeys.forEach((key) => seen.add(key));
+    forEach(item.dedupeKeys, (key) => seen.add(key));
     quickAdds.push(item);
   };
 
-  savedMeals.map(makeSavedQuickAdd).forEach(pushIfUnique);
-  recentFoods.map(makeCatalogQuickAdd).forEach(pushIfUnique);
+  forEach(map(savedMeals, makeSavedQuickAdd), pushIfUnique);
+  forEach(map(recentFoods, makeCatalogQuickAdd), pushIfUnique);
 
   return quickAdds;
 };

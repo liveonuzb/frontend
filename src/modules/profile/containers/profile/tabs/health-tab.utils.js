@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { calculateGoals } from "@/lib/goal-calculator";
 
+import { filter, find, includes, isArray, map, toNumber, take, takeRight } from "lodash";
+
 export const AUTO_SAVE_DELAY_MS = 700;
 
 export const PERIOD_OPTIONS = [
@@ -232,7 +234,7 @@ export const PROGRESS_META = {
     icon: MoonStarIcon,
     iconClass: "text-indigo-500",
     format: (value) =>
-      `${Number(value || 0).toFixed(Number.isInteger(value || 0) ? 0 : 1)} soat`,
+      `${toNumber(value || 0).toFixed(Number.isInteger(value || 0) ? 0 : 1)} soat`,
   },
 };
 
@@ -265,15 +267,15 @@ export const toGoalsPayload = (form) => ({
   heightUnit: form.heightUnit,
   waterUnit: form.waterUnit,
   waterNotification: Boolean(form.waterNotification),
-  calories: Number(form.calories) || 0,
-  protein: Number(form.protein) || 0,
-  carbs: Number(form.carbs) || 0,
-  fat: Number(form.fat) || 0,
-  fiber: Number(form.fiber) || 0,
-  waterMl: Number(form.waterMl) || 0,
-  steps: Number(form.steps) || 0,
-  sleepHours: Number(form.sleepHours) || 0,
-  workoutMinutes: Number(form.workoutMinutes) || 0,
+  calories: toNumber(form.calories) || 0,
+  protein: toNumber(form.protein) || 0,
+  carbs: toNumber(form.carbs) || 0,
+  fat: toNumber(form.fat) || 0,
+  fiber: toNumber(form.fiber) || 0,
+  waterMl: toNumber(form.waterMl) || 0,
+  steps: toNumber(form.steps) || 0,
+  sleepHours: toNumber(form.sleepHours) || 0,
+  workoutMinutes: toNumber(form.workoutMinutes) || 0,
 });
 
 export const clampMetricValue = (value, min, max) =>
@@ -282,10 +284,10 @@ export const clampMetricValue = (value, min, max) =>
 export const roundToStep = (value, step) => Math.round(value / step) * step;
 
 export const formatNumber = (value) =>
-  new Intl.NumberFormat("en-US").format(Number(value) || 0);
+  new Intl.NumberFormat("en-US").format(toNumber(value) || 0);
 
 export const formatLiters = (value) =>
-  (Math.round((Number(value) || 0) / 100) / 10).toFixed(1);
+  (Math.round((toNumber(value) || 0) / 100) / 10).toFixed(1);
 
 export const formatMetricValue = (value, unit) => {
   if (unit === "ml") {
@@ -297,7 +299,7 @@ export const formatMetricValue = (value, unit) => {
   }
 
   if (unit === "soat") {
-    const numeric = Number(value || 0);
+    const numeric = toNumber(value || 0);
     const fixed = Number.isInteger(numeric) ? numeric.toString() : numeric.toFixed(1);
     return `${fixed} soat`;
   }
@@ -306,7 +308,7 @@ export const formatMetricValue = (value, unit) => {
 };
 
 export const formatChange = (value, unit) => {
-  const numeric = Number(value || 0);
+  const numeric = toNumber(value || 0);
   const sign = numeric > 0 ? "+" : "";
 
   if (unit === "kg" || unit === "cm" || unit === "%") {
@@ -330,13 +332,13 @@ export const vibrateSoft = () => {
 };
 
 export const getSavedNumbers = (form) => ({
-  calories: Number(form.calories) || 0,
-  waterMl: Number(form.waterMl) || 0,
-  steps: Number(form.steps) || 0,
+  calories: toNumber(form.calories) || 0,
+  waterMl: toNumber(form.waterMl) || 0,
+  steps: toNumber(form.steps) || 0,
 });
 
 export const inferPresetFromGoals = (goals) => {
-  const calories = Number(goals?.calories);
+  const calories = toNumber(goals?.calories);
 
   if (!Number.isFinite(calories) || calories <= 0) {
     return "maintain";
@@ -377,11 +379,11 @@ export const resolveGoalPreset = ({
   onboardingGoalIntent,
   goals,
 }) => {
-  if (["lose", "maintain", "gain"].includes(storedGoal)) {
+  if (includes(["lose", "maintain", "gain"], storedGoal)) {
     return storedGoal;
   }
 
-  if (["lose", "maintain", "gain"].includes(onboardingGoalIntent)) {
+  if (includes(["lose", "maintain", "gain"], onboardingGoalIntent)) {
     return onboardingGoalIntent;
   }
 
@@ -390,7 +392,7 @@ export const resolveGoalPreset = ({
 
 export const buildPresetTargets = (baseGoals, presetId, intensityId) => {
   const intensity =
-    INTENSITY_OPTIONS.find((item) => item.id === intensityId) ??
+    find(INTENSITY_OPTIONS, (item) => item.id === intensityId) ??
     INTENSITY_OPTIONS[1];
   const caloriesBase = baseGoals.calories || 2200;
   const waterBase = baseGoals.waterMl || 2500;
@@ -491,7 +493,7 @@ export const buildRecommendedGoals = ({
   presetId,
   intensityId,
 }) => {
-  const goalId = ["lose", "maintain", "gain"].includes(presetId)
+  const goalId = includes(["lose", "maintain", "gain"], presetId)
     ? presetId
     : "maintain";
 
@@ -622,12 +624,12 @@ export const buildActionItems = ({
   healthSummary,
   waterSummary,
 }) => {
-  const averageWater = Number(waterSummary?.averageMl) || Number(healthSummary?.avgWaterMl) || 0;
-  const averageCalories = Number(healthSummary?.avgCalories) || 0;
-  const averageSteps = Number(healthSummary?.avgSteps) || 0;
-  const averageProtein = Number(healthSummary?.avgProtein) || 0;
-  const averageWorkout = Number(healthSummary?.avgWorkoutMinutes) || 0;
-  const averageSleep = Number(healthSummary?.avgSleepHours) || 0;
+  const averageWater = toNumber(waterSummary?.averageMl) || toNumber(healthSummary?.avgWaterMl) || 0;
+  const averageCalories = toNumber(healthSummary?.avgCalories) || 0;
+  const averageSteps = toNumber(healthSummary?.avgSteps) || 0;
+  const averageProtein = toNumber(healthSummary?.avgProtein) || 0;
+  const averageWorkout = toNumber(healthSummary?.avgWorkoutMinutes) || 0;
+  const averageSleep = toNumber(healthSummary?.avgSleepHours) || 0;
 
   const items = {
     calories: {
@@ -651,26 +653,26 @@ export const buildActionItems = ({
     protein: {
       id: "protein",
       average: averageProtein,
-      target: Number(recommendedGoals?.protein) || 0,
+      target: toNumber(recommendedGoals?.protein) || 0,
       value: `${formatNumber(averageProtein || recommendedGoals?.protein)} / ${formatNumber(recommendedGoals?.protein)} g`,
     },
     workout: {
       id: "workout",
       average: averageWorkout,
-      target: Number(recommendedGoals?.workoutMinutes) || 0,
+      target: toNumber(recommendedGoals?.workoutMinutes) || 0,
       value: `${formatNumber(averageWorkout || recommendedGoals?.workoutMinutes)} / ${formatNumber(recommendedGoals?.workoutMinutes)} min`,
     },
     sleep: {
       id: "sleep",
       average: averageSleep,
-      target: Number(recommendedGoals?.sleepHours) || 0,
-      value: `${Number(averageSleep || recommendedGoals?.sleepHours || 0).toFixed(1)} / ${Number(recommendedGoals?.sleepHours || 0).toFixed(1)} soat`,
+      target: toNumber(recommendedGoals?.sleepHours) || 0,
+      value: `${toNumber(averageSleep || recommendedGoals?.sleepHours || 0).toFixed(1)} / ${toNumber(recommendedGoals?.sleepHours || 0).toFixed(1)} soat`,
     },
   };
 
-  return GOAL_THEME[goalPreset].actionOrder.map((key) => {
-    const target = Number(items[key].target) || 0;
-    const average = Number(items[key].average) || 0;
+  return map(GOAL_THEME[goalPreset].actionOrder, (key) => {
+    const target = toNumber(items[key].target) || 0;
+    const average = toNumber(items[key].average) || 0;
     const gap = target - average;
     const tone = getStatusTone(average, target);
 
@@ -704,75 +706,75 @@ export const buildProgressMetrics = ({
   currentNumbers,
   waterSummary,
   recommendedGoals,
-}) => [
+}) => map([
   {
     id: "calories",
-    current: Number(summary?.avgCalories) || 0,
-    target: Number(currentNumbers?.calories) || 0,
-    footnote: `${Number(summary?.caloriesGoalMet) || 0} kun maqsadga yaqin`,
+    current: toNumber(summary?.avgCalories) || 0,
+    target: toNumber(currentNumbers?.calories) || 0,
+    footnote: `${toNumber(summary?.caloriesGoalMet) || 0} kun maqsadga yaqin`,
   },
   {
     id: "water",
-    current: Number(waterSummary?.averageMl) || Number(summary?.avgWaterMl) || 0,
-    target: Number(currentNumbers?.waterMl) || 0,
-    footnote: `${Number(waterSummary?.daysGoalMet) || Number(summary?.waterGoalMet) || 0} kun goal met`,
+    current: toNumber(waterSummary?.averageMl) || toNumber(summary?.avgWaterMl) || 0,
+    target: toNumber(currentNumbers?.waterMl) || 0,
+    footnote: `${toNumber(waterSummary?.daysGoalMet) || toNumber(summary?.waterGoalMet) || 0} kun goal met`,
   },
   {
     id: "steps",
-    current: Number(summary?.avgSteps) || 0,
-    target: Number(currentNumbers?.steps) || 0,
-    footnote: `${Number(summary?.stepsGoalMet) || 0} kun pace yetdi`,
+    current: toNumber(summary?.avgSteps) || 0,
+    target: toNumber(currentNumbers?.steps) || 0,
+    footnote: `${toNumber(summary?.stepsGoalMet) || 0} kun pace yetdi`,
   },
   {
     id: "workout",
-    current: Number(summary?.avgWorkoutMinutes) || 0,
-    target: Number(recommendedGoals?.workoutMinutes) || 0,
-    footnote: `${Number(summary?.daysTracked) || 0} kun tracking`,
+    current: toNumber(summary?.avgWorkoutMinutes) || 0,
+    target: toNumber(recommendedGoals?.workoutMinutes) || 0,
+    footnote: `${toNumber(summary?.daysTracked) || 0} kun tracking`,
   },
   {
     id: "sleep",
-    current: Number(summary?.avgSleepHours) || 0,
-    target: Number(recommendedGoals?.sleepHours) || 0,
+    current: toNumber(summary?.avgSleepHours) || 0,
+    target: toNumber(recommendedGoals?.sleepHours) || 0,
     footnote:
-      Number(summary?.avgSleepHours) > 0
+      toNumber(summary?.avgSleepHours) > 0
         ? "Recovery sifatini kuzatmoqda"
         : "Uyqu tracking hali kam",
   },
-].map((item) => ({
+], (item) => ({
   ...item,
   ...PROGRESS_META[item.id],
   progress: getProgressPercent(item.current, item.target),
 }));
 
 export const buildWeightTrendBars = (trend = []) => {
-  const items = Array.isArray(trend) ? trend.filter((entry) => Number(entry?.weight) > 0) : [];
+  const items = isArray(trend) ? filter(trend, (entry) => toNumber(entry?.weight) > 0) : [];
 
   if (!items.length) {
     return [];
   }
 
-  const weights = items.map((item) => Number(item.weight));
+  const weights = map(items, (item) => toNumber(item.weight));
   const min = Math.min(...weights);
   const max = Math.max(...weights);
   const spread = Math.max(max - min, 0.6);
 
-  return items.slice(-10).map((item) => ({
+  return map(takeRight(items, 10), (item) => ({
     date: item.date,
-    weight: Number(item.weight),
-    height: 26 + Math.round(((Number(item.weight) - min) / spread) * 58),
+    weight: toNumber(item.weight),
+    height: 26 + Math.round(((toNumber(item.weight) - min) / spread) * 58),
   }));
 };
 
 export const getWeightTrendSummary = (weight = {}, goalPreset = "lose") => {
-  const trend = Array.isArray(weight?.trend) ? weight.trend.filter((item) => Number(item?.weight) > 0) : [];
-  const current = Number(weight?.current);
+  const trend = isArray(weight?.trend) ? filter(weight.trend, (item) => toNumber(item?.weight) > 0) : [];
+  const current = toNumber(weight?.current);
 
   if (!trend.length && !current) {
     return null;
   }
 
-  const first = Number(trend[0]?.weight || current || 0);
-  const last = Number(trend[trend.length - 1]?.weight || current || 0);
+  const first = toNumber(trend[0]?.weight || current || 0);
+  const last = toNumber(trend[trend.length - 1]?.weight || current || 0);
   const delta = last - first;
   const isImproving =
     goalPreset === "lose"
@@ -816,12 +818,8 @@ export const getBodyChangeHighlights = (trendsPayload, goalPreset) => {
 
   const priority = BODY_CHANGE_PRIORITY[goalPreset] || BODY_CHANGE_PRIORITY.lose;
 
-  return priority
-    .map((key) => ({
+  return map(take(filter(map(priority, (key) => ({
       id: key,
       metric: trends[key],
-    }))
-    .filter((item) => item.metric && item.metric.last !== null)
-    .slice(0, 4)
-    .map((item) => item);
+    })), (item) => item.metric && item.metric.last !== null), 4), (item) => item);
 };

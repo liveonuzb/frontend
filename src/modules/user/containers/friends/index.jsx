@@ -17,9 +17,9 @@ import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import PageTransition from "@/components/page-transition";
-import useGetQuery from "@/hooks/api/use-get-query";
-import usePostQuery from "@/hooks/api/use-post-query";
-import useDeleteQuery from "@/hooks/api/use-delete-query";
+import { useGetQuery } from "@/hooks/api";
+import { usePostQuery } from "@/hooks/api";
+import { useDeleteQuery } from "@/hooks/api";
 import useAppModeTheme from "@/hooks/app/use-app-mode-theme";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,6 +50,8 @@ import { cn } from "@/lib/utils";
 import PersonRow from "./components/person-row.jsx";
 import SectionCard from "./components/section-card.jsx";
 
+import { filter, isArray, map, trim, take } from "lodash";
+
 const FRIENDS_QUERY_KEY = ["friends"];
 const FRIEND_REQUESTS_QUERY_KEY = ["friend-requests"];
 const FRIEND_SUGGESTIONS_QUERY_KEY = ["me", "friend-suggestions"];
@@ -58,8 +60,8 @@ const USER_SEARCH_QUERY_KEY = ["users", "search"];
 const resolveApiErrorMessage = (error, fallback) => {
   const responseData = error?.response?.data;
   const details = responseData?.error?.details;
-  const detailMessages = Array.isArray(details)
-    ? details.map((detail) => detail?.message).filter(Boolean)
+  const detailMessages = isArray(details)
+    ? filter(map(details, (detail) => detail?.message), Boolean)
     : [];
 
   if (detailMessages.length > 0) {
@@ -67,7 +69,7 @@ const resolveApiErrorMessage = (error, fallback) => {
   }
 
   const message = responseData?.error?.message ?? responseData?.message;
-  if (Array.isArray(message)) {
+  if (isArray(message)) {
     return message.join(", ");
   }
   return message || fallback;
@@ -188,7 +190,7 @@ const EmptyPanel = ({
 
 const LoadingRows = () => (
   <div className="space-y-2">
-    {Array.from({ length: 4 }).map((_, index) => (
+    {map(Array.from({ length: 4 }), (_, index) => (
       <div
         key={index}
         className="flex w-full items-center gap-3 rounded-[1.35rem] border border-border/70 bg-background/90 p-3 dark:border-white/10 dark:bg-white/[0.035]"
@@ -214,7 +216,7 @@ const useInfiniteSlice = (items, batchSize) => {
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const visibleItems = React.useMemo(
-    () => items.slice(0, visibleCount),
+    () => take(items, visibleCount),
     [items, visibleCount],
   );
 
@@ -289,7 +291,7 @@ export default function FriendsContainer() {
   const [addingById, setAddingById] = React.useState({});
   const [cancellingById, setCancellingById] = React.useState({});
   const normalizedSuggestionSearch = React.useMemo(
-    () => deferredSuggestionSearch.trim(),
+    () => trim(deferredSuggestionSearch),
     [deferredSuggestionSearch],
   );
   const isSuggestionSearchActive = normalizedSuggestionSearch.length >= 2;
@@ -564,7 +566,6 @@ export default function FriendsContainer() {
   return (
     <PageTransition className="relative isolate space-y-6 pb-28 dark:text-slate-50">
       <div className="pointer-events-none absolute inset-x-[-1rem] top-[-1.5rem] -z-10 h-[calc(100%+8rem)] opacity-0 dark:bg-[linear-gradient(180deg,#020812_0%,#061018_42%,#02070d_100%)] dark:opacity-100" />
-
       <Card className="relative overflow-hidden rounded-[2rem] border-primary/20 bg-[linear-gradient(135deg,rgba(34,197,94,0.10)_0%,rgba(255,255,255,0.96)_48%,rgba(245,158,11,0.10)_100%)] shadow-sm dark:border-white/10 dark:bg-[linear-gradient(135deg,rgba(2,8,23,0.96)_0%,rgba(6,24,26,0.92)_44%,rgba(91,45,12,0.74)_100%)] dark:shadow-2xl dark:shadow-emerald-950/20">
         <HeroVisual src={friendsHeroSrc} />
         <CardContent className="relative z-10 flex flex-col gap-6 p-5 sm:p-6 md:pr-[18rem] lg:min-h-[430px] lg:pr-[25rem]">
@@ -621,7 +622,6 @@ export default function FriendsContainer() {
           </div>
         </CardContent>
       </Card>
-
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <div className="overflow-hidden rounded-[1.75rem] border border-border/70 bg-background/70 p-1 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.045] dark:shadow-2xl dark:shadow-black/20">
           <TabsList className="grid h-14 w-full grid-cols-2 bg-transparent p-0 text-muted-foreground">
@@ -687,7 +687,7 @@ export default function FriendsContainer() {
                   className="max-h-[300px] space-y-2 overflow-y-auto pr-2"
                   onScroll={incomingList.handleScroll}
                 >
-                  {incomingList.visibleItems.map((request) => {
+                  {map(incomingList.visibleItems, (request) => {
                     const isResponding = Boolean(respondingById[request.id]);
                     return (
                       <PersonRow
@@ -757,7 +757,7 @@ export default function FriendsContainer() {
                 className="max-h-[430px] space-y-2 overflow-y-auto pr-2"
                 onScroll={friendsList.handleScroll}
               >
-                {friendsList.visibleItems.map((friend) => {
+                {map(friendsList.visibleItems, (friend) => {
                   const isRemoving = Boolean(removingById[friend.id]);
                   return (
                     <PersonRow
@@ -841,7 +841,7 @@ export default function FriendsContainer() {
               onChange={onSuggestionSearchChange}
               placeholder="Username yoki ism bo'yicha qidirish"
             />
-            {suggestionSearch.trim().length === 1 ? (
+            {trim(suggestionSearch).length === 1 ? (
               <p className="text-xs text-muted-foreground">
                 Qidirish uchun kamida 2 ta belgi kiriting.
               </p>
@@ -868,7 +868,7 @@ export default function FriendsContainer() {
                 className="max-h-[430px] space-y-2 overflow-y-auto pr-2"
                 onScroll={suggestionList.handleScroll}
               >
-                {suggestionList.visibleItems.map((user) => {
+                {map(suggestionList.visibleItems, (user) => {
                   const isAdding = Boolean(addingById[user.id]);
                   const isRequestSent = user.friendshipStatus === "request_sent";
                   const isCancelling = Boolean(cancellingById[user.requestId]);

@@ -8,6 +8,8 @@ import { getMetricMeta } from "../challenge-utils.js";
 import ChallengeCoverPicker from "./challenge-cover-picker.jsx";
 import { StepSection } from "./form-fields.jsx";
 
+import { map, toNumber } from "lodash";
+
 const toInputDate = (date) => format(date, "yyyy-MM-dd");
 
 const TEMPLATES = [
@@ -71,12 +73,12 @@ const StepBasics = ({ form, setForm, imagePreviewUrl, onImageChange, onImageRemo
           </p>
         </div>
         <div className="grid gap-2 sm:grid-cols-2">
-          {TEMPLATES.map((template) => {
+          {map(TEMPLATES, (template) => {
             const metric = getMetricMeta(template.metricType);
             const isSelected =
               form.title === template.title &&
               form.metricType === template.metricType &&
-              Number(form.metricTarget) === template.metricTarget;
+              toNumber(form.metricTarget) === template.metricTarget;
 
             return (
               <Button
@@ -104,7 +106,6 @@ const StepBasics = ({ form, setForm, imagePreviewUrl, onImageChange, onImageRemo
           })}
         </div>
       </div>
-
       <ChallengeCoverPicker
         imageFile={form.imageFile}
         imagePreviewUrl={imagePreviewUrl}

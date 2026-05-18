@@ -35,6 +35,8 @@ import {
   resolveLabel,
 } from "./utils.jsx";
 
+import { toUpper } from "lodash";
+
 const CuisineFormDrawer = ({ mode }) => {
   const { id } = useParams();
   const closeAdminDrawer = useAdminDrawerCloseNavigation("/admin/cuisines/list");
@@ -111,7 +113,7 @@ const CuisineFormDrawer = ({ mode }) => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>
-                          Nomi ({currentLanguage.toUpperCase()})
+                          Nomi ({toUpper(currentLanguage)})
                         </FormLabel>
                         <FormControl>
                           <Input

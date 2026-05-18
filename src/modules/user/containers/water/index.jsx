@@ -465,7 +465,7 @@ const Index = () => {
             </div>
             <div className="flex flex-col gap-1">
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-xs font-bold uppercase tracking-wider text-transparent dark:from-blue-400 dark:to-purple-400">
-                AI Hydration Coach
+                AI Hydration
               </span>
               <p className="text-sm font-medium leading-relaxed text-foreground/90">
                 {gt(remaining, 0)

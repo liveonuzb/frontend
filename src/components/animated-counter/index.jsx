@@ -1,4 +1,4 @@
-import { round } from "lodash";
+import { round, toNumber } from "lodash";
 import React from "react";
 import { cn } from "@/lib/utils";
 
@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
  */
 const AnimatedCounter = ({ value, duration = 1200, prefix = "", suffix = "", className, decimals = 0 }) => {
     const [display, setDisplay] = React.useState(0);
-    const numValue = typeof value === "string" ? parseFloat(value.replace(/,/g, "")) : value;
+    const numValue = typeof value === "string" ? toNumber(value.replace(/,/g, "")) : value;
 
     React.useEffect(() => {
         if (isNaN(numValue)) return;

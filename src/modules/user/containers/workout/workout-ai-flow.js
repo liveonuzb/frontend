@@ -1,4 +1,4 @@
-import { get, map } from "lodash";
+import { get, map, toNumber, trim } from "lodash";
 
 export const WORKOUT_GOALS = [
   { value: "muscle_building", label: "Mushak qurish" },
@@ -20,8 +20,8 @@ export const EQUIPMENT_MODES = [
 ];
 
 export const calculateOneRepMax = (weightKg, reps) => {
-  const weight = Number(weightKg) || 0;
-  const repCount = Number(reps) || 0;
+  const weight = toNumber(weightKg) || 0;
+  const repCount = toNumber(reps) || 0;
 
   if (weight <= 0 || repCount <= 0) {
     return 0;
@@ -49,23 +49,23 @@ export const buildGenerateWorkoutPlanPayload = ({
   const oneRepMaxKg = calculateOneRepMax(benchmarkWeight, benchmarkReps);
 
   const payload = {
-    name: name?.trim() || "My Upper Body Day",
-    coverImageUrl: coverImageUrl?.trim() || undefined,
+    name: trim(name) || "My Upper Body Day",
+    coverImageUrl: trim(coverImageUrl) || undefined,
     goal,
     level,
-    days: Number(days) || 28,
-    daysPerWeek: Number(daysPerWeek) || 4,
+    days: toNumber(days) || 28,
+    daysPerWeek: toNumber(daysPerWeek) || 4,
     equipmentMode,
     selectedEquipmentIds: map(selectedEquipmentIds, Number),
     focusMuscleIds: map(focusMuscleIds, Number),
-    caloriesGoal: Number(caloriesGoal) || 2400,
+    caloriesGoal: toNumber(caloriesGoal) || 2400,
   };
 
   if (benchmarkEnabled) {
     payload.benchmark = {
       exerciseName: benchmarkExercise || "Bench Press",
-      weightKg: Number(benchmarkWeight) || 0,
-      reps: Number(benchmarkReps) || 1,
+      weightKg: toNumber(benchmarkWeight) || 0,
+      reps: toNumber(benchmarkReps) || 1,
       oneRepMaxKg,
     };
   }

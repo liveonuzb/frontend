@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, find, isArray, orderBy, some, toNumber, filter } from "lodash";
 import { ArrowRightIcon, TargetIcon, TrophyIcon } from "lucide-react";
 import { useNavigate } from "react-router";
 import {
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 import { getApiResponseData } from "@/lib/api-response";
 import { useAuthStore } from "@/store";
 import {
@@ -30,19 +30,21 @@ const storageKey = (userId, challengeId) =>
 
 const getChallengeItems = (response) => {
   const payload = getApiResponseData(response, []);
-  return Array.isArray(payload) ? payload : get(payload, "items", []);
+  return isArray(payload) ? payload : get(payload, "items", []);
 };
 
 const isJoinedChallenge = (challenge, userId) =>
   Boolean(challenge?.isJoined) ||
-  (Array.isArray(challenge?.participants) &&
-    challenge.participants.some((participant) => participant.userId === userId));
+  (isArray(challenge?.participants) &&
+    some(challenge.participants, (participant) => participant.userId === userId));
 
 const getMetricType = (challenge) =>
   get(challenge, "metricDetails.type") || get(challenge, "metricType") || "STEPS";
 
 const getMetricTarget = (challenge) =>
-  Number(get(challenge, "metricDetails.target") ?? get(challenge, "metricTarget") ?? 0);
+  toNumber(
+    get(challenge, "metricDetails.target") ?? get(challenge, "metricTarget") ?? 0,
+  );
 
 const getTodayMetricValue = (challenge, today) => {
   const source =
@@ -51,8 +53,8 @@ const getTodayMetricValue = (challenge, today) => {
     get(challenge, "progressHistory") ||
     get(challenge, "myProgress.history") ||
     [];
-  const entries = Array.isArray(source) ? source : [];
-  const todayEntry = entries.find((item) => {
+  const entries = isArray(source) ? source : [];
+  const todayEntry = find(entries, (item) => {
     const rawDate = get(item, "date") || get(item, "day") || get(item, "loggedAt");
     if (!rawDate) return false;
     const date = new Date(rawDate);
@@ -61,30 +63,24 @@ const getTodayMetricValue = (challenge, today) => {
   });
 
   if (todayEntry) {
-    return Number(
-      get(todayEntry, "metricValue") ??
-        get(todayEntry, "value") ??
-        get(todayEntry, "amount") ??
-        0,
-    );
+    return toNumber(get(todayEntry, "metricValue") ??
+      get(todayEntry, "value") ??
+      get(todayEntry, "amount") ??
+      0);
   }
 
-  return Number(get(challenge, "myMetricValue") ?? 0);
+  return toNumber(get(challenge, "myMetricValue") ?? 0);
 };
 
 const getProgress = (challenge) =>
-  Math.max(0, Math.min(100, Number(get(challenge, "myProgress") ?? 0)));
+  Math.max(0, Math.min(100, toNumber(get(challenge, "myProgress") ?? 0)));
 
 const findReminderChallenge = (challenges, userId, today) =>
-  challenges
-    .filter(
-      (challenge) =>
-        challenge?.status === "ACTIVE" &&
-        isJoinedChallenge(challenge, userId) &&
-        getProgress(challenge) < 100,
-    )
-    .sort((left, right) => new Date(left.endDate).getTime() - new Date(right.endDate).getTime())
-    .find((challenge) => {
+  find(orderBy(filter(challenges, (challenge) =>
+    challenge?.status === "ACTIVE" &&
+    isJoinedChallenge(challenge, userId) &&
+    getProgress(challenge) < 100)
+    , [(challenge) => new Date(challenge.endDate).getTime()], ["asc"]), (challenge) => {
       if (typeof window === "undefined") return true;
       return window.localStorage.getItem(storageKey(userId, challenge.id)) !== today;
     }) || null;

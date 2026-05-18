@@ -24,6 +24,8 @@ import {
   DIFFICULTY_OPTIONS,
 } from "./workout-plan-utils.js";
 
+import { map, trim } from "lodash";
+
 export function WorkoutPlanFormDrawer({
   open,
   onOpenChange,
@@ -105,7 +107,7 @@ export function WorkoutPlanFormDrawer({
                     <SelectValue placeholder="Qiyinchilikni tanlang" />
                   </SelectTrigger>
                   <SelectContent>
-                    {DIFFICULTY_OPTIONS.map((option) => (
+                    {map(DIFFICULTY_OPTIONS, (option) => (
                       <SelectItem key={option} value={option}>
                         {option}
                       </SelectItem>
@@ -148,7 +150,7 @@ export function WorkoutPlanFormDrawer({
                       <SelectValue placeholder="Approval status" />
                     </SelectTrigger>
                     <SelectContent>
-                      {APPROVAL_STATUS_OPTIONS.map((option) => (
+                      {map(APPROVAL_STATUS_OPTIONS, (option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>
@@ -170,7 +172,7 @@ export function WorkoutPlanFormDrawer({
                         approvalReason: event.target.value,
                       }))
                     }
-                    placeholder="Masalan: AI va coach uchun tasdiqlandi"
+                    placeholder="Masalan: AI uchun tasdiqlandi"
                   />
                 </div>
               </div>
@@ -180,10 +182,10 @@ export function WorkoutPlanFormDrawer({
                   Preview
                 </p>
                 <p className="mt-3 text-lg font-black">
-                  {String(form.name ?? "").trim() || "Nomi kiritilmagan"}
+                  {trim(String(form.name ?? "")) || "Nomi kiritilmagan"}
                 </p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  {String(form.description ?? "").trim() ||
+                  {trim(String(form.description ?? "")) ||
                     "Tavsif kiritilmagan"}
                 </p>
               </div>

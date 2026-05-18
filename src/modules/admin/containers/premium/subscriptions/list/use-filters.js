@@ -1,6 +1,6 @@
 import React from "react";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
-import { get, find, isEmpty, isEqual } from "lodash";
+import { get, find, isEmpty, isEqual, toNumber, trim } from "lodash";
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -32,8 +32,8 @@ export const useSubscriptionFilters = () => {
     parseAsString.withDefault(String(DEFAULT_PAGE_SIZE)),
   );
 
-  const currentPage = Math.max(1, Number(pageQuery) || 1);
-  const pageSize = Math.max(1, Number(pageSizeQuery) || DEFAULT_PAGE_SIZE);
+  const currentPage = Math.max(1, toNumber(pageQuery) || 1);
+  const pageSize = Math.max(1, toNumber(pageSizeQuery) || DEFAULT_PAGE_SIZE);
 
   const filterFields = React.useMemo(
     () => [
@@ -84,7 +84,7 @@ export const useSubscriptionFilters = () => {
 
   const activeFilters = React.useMemo(() => {
     const items = [];
-    if (!isEmpty(String(search).trim())) {
+    if (!isEmpty(trim(String(search)))) {
       items.push({
         id: "q",
         field: "q",

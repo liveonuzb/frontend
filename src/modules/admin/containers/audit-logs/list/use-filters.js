@@ -1,6 +1,6 @@
 import React from "react";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
-import { get, find, map } from "lodash";
+import { get, find, map, keys, toNumber, trim } from "lodash";
 import {
   AUDIT_LOG_SORT_FIELDS,
   AUDIT_LOG_SORT_DIRECTIONS,
@@ -54,8 +54,8 @@ export const useAuditLogFilters = ({ actions = [], entityTypes = [] }) => {
   );
 
   const deferredSearch = React.useDeferredValue(search);
-  const currentPage = Math.max(1, Number(pageQuery) || 1);
-  const pageSize = Math.max(1, Number(pageSizeQuery) || ITEMS_PER_PAGE);
+  const currentPage = Math.max(1, toNumber(pageQuery) || 1);
+  const pageSize = Math.max(1, toNumber(pageSizeQuery) || ITEMS_PER_PAGE);
 
   const sorting = React.useMemo(
     () => [{ id: sortBy, desc: sortDir === "desc" }],
@@ -101,7 +101,7 @@ export const useAuditLogFilters = ({ actions = [], entityTypes = [] }) => {
         options: [
           { value: "all", label: "Barcha actionlar" },
           ...map(
-            actions.length ? actions : Object.keys(auditActionLabels),
+            actions.length ? actions : keys(auditActionLabels),
             (value) => ({
               value,
               label: get(auditActionLabels, value, value),
@@ -117,7 +117,7 @@ export const useAuditLogFilters = ({ actions = [], entityTypes = [] }) => {
         options: [
           { value: "all", label: "Barcha entitylar" },
           ...map(
-            entityTypes.length ? entityTypes : Object.keys(auditEntityLabels),
+            entityTypes.length ? entityTypes : keys(auditEntityLabels),
             (value) => ({
               value,
               label: get(auditEntityLabels, value, value),
@@ -162,7 +162,7 @@ export const useAuditLogFilters = ({ actions = [], entityTypes = [] }) => {
   const activeFilters = React.useMemo(() => {
     const items = [];
 
-    if (search.trim()) {
+    if (trim(search)) {
       items.push({
         id: "q",
         field: "q",
@@ -189,7 +189,7 @@ export const useAuditLogFilters = ({ actions = [], entityTypes = [] }) => {
       });
     }
 
-    if (adminId.trim()) {
+    if (trim(adminId)) {
       items.push({
         id: "adminId",
         field: "adminId",
@@ -198,7 +198,7 @@ export const useAuditLogFilters = ({ actions = [], entityTypes = [] }) => {
       });
     }
 
-    if (entityId.trim()) {
+    if (trim(entityId)) {
       items.push({
         id: "entityId",
         field: "entityId",
@@ -207,7 +207,7 @@ export const useAuditLogFilters = ({ actions = [], entityTypes = [] }) => {
       });
     }
 
-    if (dateFrom.trim()) {
+    if (trim(dateFrom)) {
       items.push({
         id: "dateFrom",
         field: "dateFrom",
@@ -216,7 +216,7 @@ export const useAuditLogFilters = ({ actions = [], entityTypes = [] }) => {
       });
     }
 
-    if (dateTo.trim()) {
+    if (trim(dateTo)) {
       items.push({
         id: "dateTo",
         field: "dateTo",

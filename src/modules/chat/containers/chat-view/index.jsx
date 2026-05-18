@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import React from "react";
-import { find, map } from "lodash";
+import { find, map, filter, isArray, split, toLower, trim, includes } from "lodash";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,25 +23,14 @@ import ChatHeader from "../../components/ChatHeader";
 import MessageList from "../../components/MessageList";
 import ChatInput from "../../components/ChatInput";
 import ChatInfoSidebar from "../../components/ChatInfoSidebar";
-import ChatActionShortcutDialog from "../../components/ChatActionShortcutDialog";
 import LiveStreamOverlay from "../../components/LiveStreamOverlay";
 import {
     buildChatAttachmentMetadata,
     validateChatAttachment,
 } from "../../lib/chat-attachment-policy.js";
 import { isChatFeatureEnabled } from "../../lib/chat-feature-flags.js";
-import {
-    useCoachClientDetail,
-    useCoachClientNotes,
-} from "@/hooks/app/use-coach";
 
 const URL_REGEX = /(https?:\/\/[^\s<]+)/g;
-const COACH_SHORTCUT_PREFIX = "coach:";
-const CHAT_MESSAGE_SHORTCUT_ACTIONS = new Set([
-    "invoice",
-    "payment_reminder",
-    "session_booking",
-]);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -70,9 +59,9 @@ function dateLabelForMsg(msg) {
 
 function renderTextWithLinks(text, isMe) {
     if (!text) return null;
-    const parts = text.split(URL_REGEX);
+    const parts = split(text, URL_REGEX);
     if (parts.length === 1) return text;
-    return parts.map((part, i) => {
+    return map(parts, (part, i) => {
         if (URL_REGEX.test(part)) {
             return (
                 <a
@@ -93,12 +82,9 @@ function renderTextWithLinks(text, isMe) {
     });
 }
 
-const getActiveClientId = (activeEntity) =>
-    activeEntity?.otherParticipant?.id ?? activeEntity?.clientId ?? null;
-
 const getErrorMessage = (error, fallback) => {
     const message = error?.response?.data?.message;
-    if (Array.isArray(message)) return message.join(", ");
+    if (isArray(message)) return message.join(", ");
     return message || fallback;
 };
 
@@ -110,10 +96,9 @@ const ChatView = () => {
     const navigate = useNavigate();
     const { chatId: activeChat } = useParams();
     const [searchParams] = useSearchParams();
-    const directTargetUserId = searchParams.get("userId")?.trim() || "";
+    const directTargetUserId = trim(searchParams.get("userId")) || "";
     const highlightMessageId = searchParams.get("msgId");
     const { activeRole } = useAuthStore();
-    const isCoach = activeRole === "COACH";
     const canUseReactions = isChatFeatureEnabled("reactions");
     const canUseBookmarks = isChatFeatureEnabled("bookmarks");
     const canUseMuteBlock = isChatFeatureEnabled("muteBlockControls");
@@ -159,12 +144,6 @@ const ChatView = () => {
     const [deletingMsgId, setDeletingMsgId] = React.useState(null);
     const [forwardDialogOpen, setForwardDialogOpen] = React.useState(false);
     const [forwardingMsg, setForwardingMsg] = React.useState(null);
-    const [shortcutDialog, setShortcutDialog] = React.useState({
-        open: false,
-        action: null,
-        message: null,
-    });
-
     const [chatSearchOpen, setChatSearchOpen] = React.useState(false);
     const [chatSearchQuery, setChatSearchQuery] = React.useState("");
     const [chatSearchIndex, setChatSearchIndex] = React.useState(0);
@@ -303,7 +282,6 @@ const ChatView = () => {
         setEditingMsg(null);
         setDeletingMsgId(null);
         setContextMenu(null);
-        setShortcutDialog({ open: false, action: null, message: null });
         setChatSearchOpen(false);
         setChatSearchQuery("");
         setStickerOpen(false);
@@ -342,39 +320,6 @@ const ChatView = () => {
     const activeEntity = React.useMemo(() => {
         return find(allChats, (c) => c.chatId === activeChat);
     }, [allChats, activeChat]);
-    const activeClientId = React.useMemo(
-        () => getActiveClientId(activeEntity),
-        [activeEntity],
-    );
-    const canUseCoachActions = isCoach && Boolean(activeChat) && Boolean(activeClientId);
-    const {
-        detail: coachClientDetail,
-        createWeeklyCheckIn,
-        createFeedback,
-        createTask,
-        isCreatingWeeklyCheckIn,
-        isCreatingFeedback,
-        isCreatingTask,
-    } = useCoachClientDetail(activeClientId, canUseCoachActions);
-    const { createNote, isCreatingNote } = useCoachClientNotes(
-        activeClientId,
-        canUseCoachActions,
-    );
-    const isShortcutSubmitting =
-        isCreatingNote ||
-        isCreatingWeeklyCheckIn ||
-        isCreatingFeedback ||
-        isCreatingTask;
-    const coachClientPaymentSummary =
-        coachClientDetail?.overview?.paymentSummary ??
-        activeEntity?.paymentSummary ??
-        activeEntity?.payment ??
-        null;
-    const coachClientName =
-        coachClientDetail?.client?.name ??
-        activeEntity?.name ??
-        activeEntity?.otherParticipant?.name ??
-        "";
     const isActiveChatMuted = React.useMemo(
         () => (canUseMuteBlock && activeChat ? isChatMuted(activeChat) : false),
         [activeChat, canUseMuteBlock, isChatMuted],
@@ -389,11 +334,9 @@ const ChatView = () => {
     }, [messages, activeChat]);
 
     const chatSearchMatches = React.useMemo(() => {
-        if (!chatSearchQuery.trim()) return [];
-        const q = chatSearchQuery.toLowerCase();
-        return chatMessages
-            .map((msg, idx) => ({ msg, idx }))
-            .filter(({ msg }) => msg.text && msg.text.toLowerCase().includes(q));
+        if (!trim(chatSearchQuery)) return [];
+        const q = toLower(chatSearchQuery);
+        return filter(map(chatMessages, (msg, idx) => ({ msg, idx })), ({ msg }) => msg.text && includes(toLower(msg.text), q));
     }, [chatMessages, chatSearchQuery]);
 
     React.useEffect(() => {
@@ -421,7 +364,7 @@ const ChatView = () => {
             return;
         }
 
-        const msgText = (typeof textArg === 'string' ? textArg : input).trim();
+        const msgText = trim((typeof textArg === 'string' ? textArg : input));
         if (!msgText && !mediaUrl) return;
 
         try {
@@ -609,22 +552,6 @@ const ChatView = () => {
         (action) => {
             if (!contextMenu?.message) return;
             const msg = contextMenu.message;
-            if (action.startsWith(COACH_SHORTCUT_PREFIX)) {
-                if (!canUseCoachActions) {
-                    toast.error("Bu chat client action shortcutlari uchun ulanmagan.");
-                    setContextMenu(null);
-                    return;
-                }
-
-                setShortcutDialog({
-                    open: true,
-                    action: action.slice(COACH_SHORTCUT_PREFIX.length),
-                    message: msg,
-                });
-                setContextMenu(null);
-                return;
-            }
-
             switch (action) {
                 case "copy":
                     navigator.clipboard.writeText(msg.text || "").then(() => toast.success("Nusxalandi"));
@@ -670,124 +597,7 @@ const ChatView = () => {
             unpinMessage,
             toggleBookmark,
             canUseBookmarks,
-            canUseCoachActions,
         ]
-    );
-
-    const handleShortcutDialogOpenChange = React.useCallback((open) => {
-        setShortcutDialog((current) => ({
-            ...current,
-            open,
-            action: open ? current.action : null,
-            message: open ? current.message : null,
-        }));
-    }, []);
-
-    const handleShortcutSubmit = React.useCallback(
-        async (action, payload) => {
-            if (!activeClientId) {
-                toast.error("Client topilmadi.");
-                return;
-            }
-
-            if (
-                CHAT_MESSAGE_SHORTCUT_ACTIONS.has(action) &&
-                canUseMuteBlock &&
-                activeChat &&
-                isChatBlocked(activeChat)
-            ) {
-                toast.error("Bu chat bloklangan. Chatga shortcut yuborib bo'lmaydi.");
-                return;
-            }
-
-            const sourceMessageId = shortcutDialog.message?.id;
-            const metadata = {
-                source: "coach_chat_shortcut",
-                sourceMessageId,
-                clientId: activeClientId,
-            };
-
-            try {
-                if (action === "note") {
-                    await createNote({
-                        ...payload,
-                        tags: [...(payload.tags ?? []), "chat-shortcut"].filter(Boolean),
-                    });
-                    toast.success("Note saqlandi");
-                } else if (action === "task") {
-                    await createTask({
-                        ...payload,
-                        description: [
-                            payload.description,
-                            sourceMessageId ? `Message: ${sourceMessageId}` : null,
-                        ]
-                            .filter(Boolean)
-                            .join("\n\n"),
-                    });
-                    toast.success("Task yaratildi");
-                } else if (action === "check_in") {
-                    await createWeeklyCheckIn({
-                        ...payload,
-                        note: [
-                            payload.note,
-                            sourceMessageId ? `Message: ${sourceMessageId}` : null,
-                        ]
-                            .filter(Boolean)
-                            .join("\n\n"),
-                    });
-                    toast.success("Check-in request yaratildi");
-                } else if (action === "invoice") {
-                    await sendMessage(activeChat, payload.text, null, "invoice", {
-                        ...payload.metadata,
-                        ...metadata,
-                    });
-                    toast.success("Invoice chatga yuborildi");
-                } else if (action === "payment_reminder") {
-                    await sendMessage(activeChat, payload.text, null, "text", {
-                        type: "payment_reminder",
-                        ...metadata,
-                    });
-                    toast.success("Payment reminder yuborildi");
-                } else if (action === "meal_feedback" || action === "workout_feedback") {
-                    await createFeedback({
-                        ...payload,
-                        title:
-                            payload.title ||
-                            (action === "meal_feedback"
-                                ? "Nutrition feedback"
-                                : "Workout feedback"),
-                    });
-                    toast.success("Feedback yaratildi");
-                } else if (action === "session_booking") {
-                    await sendBooking(
-                        activeChat,
-                        payload.title,
-                        payload.date,
-                        payload.slots,
-                        payload.durationMinutes,
-                        payload.note,
-                    );
-                    toast.success("Session booking yuborildi");
-                }
-
-                setShortcutDialog({ open: false, action: null, message: null });
-            } catch (error) {
-                toast.error(getErrorMessage(error, "Shortcut action bajarilmadi"));
-            }
-        },
-        [
-            activeChat,
-            activeClientId,
-            canUseMuteBlock,
-            createFeedback,
-            createNote,
-            createTask,
-            createWeeklyCheckIn,
-            isChatBlocked,
-            sendBooking,
-            sendMessage,
-            shortcutDialog.message,
-        ],
     );
 
     const handleDelete = React.useCallback(async () => {
@@ -867,7 +677,7 @@ const ChatView = () => {
     }, [chatMessages]);
 
     const searchHighlightIds = React.useMemo(() => {
-        if (!chatSearchQuery.trim()) return new Set();
+        if (!trim(chatSearchQuery)) return new Set();
         return new Set(map(chatSearchMatches, (m) => m.msg.id));
     }, [chatSearchQuery, chatSearchMatches]);
 
@@ -913,7 +723,6 @@ const ChatView = () => {
                             chatSearchIndex={chatSearchIndex}
                             handleChatSearchPrev={handleChatSearchPrev}
                             handleChatSearchNext={handleChatSearchNext}
-                            isCoach={isCoach}
                             onToggleInfo={() => setShowInfoSidebar(!showInfoSidebar)}
                             isMuted={isActiveChatMuted}
                             isBlocked={isActiveChatBlocked}
@@ -930,7 +739,7 @@ const ChatView = () => {
                                               ? endLive()
                                               : startLive(
                                                     activeChat,
-                                                    isCoach ? "Siz (Coach)" : activeEntity.name,
+                                                    activeEntity.name,
                                                 )
                                     : undefined
                             }
@@ -1040,7 +849,6 @@ const ChatView = () => {
                             handleVoiceSend={handleVoiceSend}
                             handleFileSelect={handleFileSelect}
                             fileInputRef={fileInputRef}
-                            isCoach={isCoach}
                             stickerOpen={stickerOpen}
                             setStickerOpen={setStickerOpen}
                             handleStickerSelect={handleStickerSelect}
@@ -1054,10 +862,6 @@ const ChatView = () => {
                             sendBooking={sendBooking}
                             getAISuggestions={getAISuggestions}
                             chatMessages={chatMessages}
-                            coachReplyContext={{
-                                detail: coachClientDetail,
-                                activeEntity,
-                            }}
                             disabled={canUseMuteBlock && isActiveChatBlocked}
                             disabledReason="Bu suhbat bloklangan. Xabar yuborish vaqtincha o'chirilgan."
                             connectionState={isBrowserOnline ? "online" : "offline"}
@@ -1092,7 +896,6 @@ const ChatView = () => {
                         onClose={() => setShowInfoSidebar(false)}
                         chatMessages={chatMessages}
                         lastSeenText={getLastSeenText(activeEntity)}
-                        isCoach={isCoach}
                     />
                 </div>
             )}
@@ -1100,7 +903,7 @@ const ChatView = () => {
             {canUseLiveActivity && activeLive && (
                 <LiveStreamOverlay
                     activeLive={activeLive}
-                    isHost={isCoach && activeLive.chatId === activeChat}
+                    isHost={false}
                     onEnd={() => endLive()}
                 />
             )}
@@ -1110,22 +913,10 @@ const ChatView = () => {
                     position={{ x: contextMenu.x, y: contextMenu.y }}
                     message={contextMenu.message}
                     isMe={contextMenu.message.from === "me"}
-                    canUseCoachActions={canUseCoachActions}
                     onAction={handleContextMenuAction}
                     onClose={() => setContextMenu(null)}
                 />
             )}
-            <ChatActionShortcutDialog
-                key={`${shortcutDialog.action || "empty"}-${shortcutDialog.message?.id || "none"}`}
-                open={shortcutDialog.open}
-                action={shortcutDialog.action}
-                sourceMessage={shortcutDialog.message}
-                clientName={coachClientName}
-                paymentSummary={coachClientPaymentSummary}
-                isSubmitting={isShortcutSubmitting}
-                onOpenChange={handleShortcutDialogOpenChange}
-                onSubmit={handleShortcutSubmit}
-            />
             <ForwardDialog
                 open={forwardDialogOpen}
                 onClose={() => setForwardDialogOpen(false)}

@@ -1,3 +1,4 @@
+import { filter, find, fromPairs, isArray, toNumber, trim, map, values as lodashValues, toPairs } from "lodash";
 export const ITEMS_PER_PAGE = 10;
 export const DIFFICULTY_OPTIONS = ["Boshlang'ich", "O'rta", "Yuqori"];
 export const APPROVAL_STATUS_OPTIONS = [
@@ -18,41 +19,38 @@ export const emptyForm = {
 
 export function resolveText(translations, fallback, language) {
   if (translations && typeof translations === "object") {
-    const direct = String(translations?.[language] ?? "").trim();
+    const direct = trim(String(translations?.[language] ?? ""));
     if (direct) return direct;
 
-    const uzText = String(translations?.uz ?? "").trim();
+    const uzText = trim(String(translations?.uz ?? ""));
     if (uzText) return uzText;
 
-    const firstValue = Object.values(translations).find((value) =>
-      String(value ?? "").trim(),
-    );
+    const firstValue = find(lodashValues(translations), (value) =>
+      trim(String(value ?? "")));
     if (firstValue) {
-      return String(firstValue).trim();
+      return trim(String(firstValue));
     }
   }
 
-  return String(fallback ?? "").trim();
+  return trim(String(fallback ?? ""));
 }
 
 export function cleanTranslations(translations = {}) {
-  return Object.fromEntries(
-    Object.entries(translations)
-      .map(([code, value]) => [code, String(value ?? "").trim()])
-      .filter(([code, value]) => Boolean(code) && Boolean(value)),
-  );
+  return fromPairs(filter(map(
+    toPairs(translations),
+    ([code, value]) => [code, trim(String(value ?? ""))],
+  ), ([code, value]) => Boolean(code) && Boolean(value)));
 }
 
 export function countFilledTranslations(translations = {}) {
-  return Object.values(translations).filter((value) =>
-    String(value ?? "").trim(),
-  ).length;
+  return filter(lodashValues(translations), (value) =>
+    trim(String(value ?? ""))).length;
 }
 
 export function resolveErrorMessage(error, fallback) {
   const message = error?.response?.data?.message;
 
-  if (Array.isArray(message)) {
+  if (isArray(message)) {
     return message.join(", ");
   }
 
@@ -76,22 +74,18 @@ export function createFormFromTemplate(template, language) {
 }
 
 export const createTranslationForm = (template, languages = []) => ({
-  titles: Object.fromEntries(
-    (Array.isArray(languages) ? languages : []).map((language) => [
+  titles: fromPairs(map((isArray(languages) ? languages : []), (language) => [
+    language.code,
+    resolveText(template?.translations, template?.name ?? "", language.code),
+  ])),
+  descriptions: fromPairs(map((isArray(languages) ? languages : []), (language) => [
+    language.code,
+    resolveText(
+      template?.descriptionTranslations,
+      template?.description ?? "",
       language.code,
-      resolveText(template?.translations, template?.name ?? "", language.code),
-    ]),
-  ),
-  descriptions: Object.fromEntries(
-    (Array.isArray(languages) ? languages : []).map((language) => [
-      language.code,
-      resolveText(
-        template?.descriptionTranslations,
-        template?.description ?? "",
-        language.code,
-      ),
-    ]),
-  ),
+    ),
+  ])),
 });
 
 export function hasCompleteTranslations(template, languageCount) {
@@ -100,7 +94,7 @@ export function hasCompleteTranslations(template, languageCount) {
     template?.descriptionTranslations || {},
   );
   const requiresDescription = Boolean(
-    String(template?.description ?? "").trim(),
+    trim(String(template?.description ?? "")),
   );
 
   return (
@@ -115,7 +109,7 @@ export function sortTemplates(templates, sortBy, sortDir, currentLanguage) {
     numeric: true,
   });
   const factor = sortDir === "desc" ? -1 : 1;
-  const source = Array.isArray(templates) ? templates : [];
+  const source = isArray(templates) ? templates : [];
 
   return [...source].sort((left, right) => {
     let result;
@@ -134,10 +128,10 @@ export function sortTemplates(templates, sortBy, sortDir, currentLanguage) {
         );
         break;
       case "daysPerWeek":
-        result = Number(left.daysPerWeek ?? 0) - Number(right.daysPerWeek ?? 0);
+        result = toNumber(left.daysPerWeek ?? 0) - toNumber(right.daysPerWeek ?? 0);
         break;
       case "days":
-        result = Number(left.days ?? 0) - Number(right.days ?? 0);
+        result = toNumber(left.days ?? 0) - toNumber(right.days ?? 0);
         break;
       case "approvalStatus":
         result = collator.compare(
@@ -146,15 +140,15 @@ export function sortTemplates(templates, sortBy, sortDir, currentLanguage) {
         );
         break;
       case "version":
-        result = Number(left.version ?? 0) - Number(right.version ?? 0);
+        result = toNumber(left.version ?? 0) - toNumber(right.version ?? 0);
         break;
       case "totalExercises":
         result =
-          Number(left.totalExercises ?? 0) - Number(right.totalExercises ?? 0);
+          toNumber(left.totalExercises ?? 0) - toNumber(right.totalExercises ?? 0);
         break;
       case "isActive":
         result =
-          Number(Boolean(left.isActive)) - Number(Boolean(right.isActive));
+          toNumber(Boolean(left.isActive)) - toNumber(Boolean(right.isActive));
         break;
       case "updatedAt":
       default:
@@ -173,3 +167,6 @@ export function sortTemplates(templates, sortBy, sortDir, currentLanguage) {
     return result * factor;
   });
 }
+
+
+

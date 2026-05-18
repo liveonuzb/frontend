@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, filter, find, map, orderBy, toNumber, isArray, take } from "lodash";
 import {
   ArrowLeftIcon,
   CheckIcon,
@@ -39,11 +39,11 @@ const getPaymentMethods = (t) => [
 ];
 
 const formatPrice = (value, t) =>
-  new Intl.NumberFormat(t("common.locale", "uz-UZ")).format(Number(value) || 0);
+  new Intl.NumberFormat(t("common.locale", "uz-UZ")).format(toNumber(value) || 0);
 
 const getPlanMonthlyEquivalent = (plan) => {
-  const durationDays = Number(plan?.durationDays) || 0;
-  const price = Number(plan?.price) || 0;
+  const durationDays = toNumber(plan?.durationDays) || 0;
+  const price = toNumber(plan?.price) || 0;
 
   if (durationDays <= 30 || price <= 0) {
     return null;
@@ -53,10 +53,10 @@ const getPlanMonthlyEquivalent = (plan) => {
 };
 
 const getPlanSavings = (plan, basePlan) => {
-  const planDurationDays = Number(plan?.durationDays) || 0;
-  const baseDurationDays = Number(basePlan?.durationDays) || 0;
-  const planPrice = Number(plan?.price) || 0;
-  const basePrice = Number(basePlan?.price) || 0;
+  const planDurationDays = toNumber(plan?.durationDays) || 0;
+  const baseDurationDays = toNumber(basePlan?.durationDays) || 0;
+  const planPrice = toNumber(plan?.price) || 0;
+  const basePrice = toNumber(basePlan?.price) || 0;
 
   if (
     !basePlan ||
@@ -83,7 +83,7 @@ const readLastReminderAt = (userId) => {
   }
 
   const rawValue = window.localStorage.getItem(getStorageKey(userId));
-  const parsedValue = Number(rawValue);
+  const parsedValue = toNumber(rawValue);
 
   return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : null;
 };
@@ -158,20 +158,20 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
 
   const selectedPlan = React.useMemo(
     () =>
-      plans.find((plan) => plan.code === selectedPlanCode) ?? plans[0] ?? null,
+      find(plans, (plan) => plan.code === selectedPlanCode) ?? plans[0] ?? null,
     [plans, selectedPlanCode],
   );
   const shortestPlan = React.useMemo(() => {
-    const comparablePlans = plans.filter(
-      (plan) => Number(plan?.durationDays) > 0 && Number(plan?.price) > 0,
-    );
+    const comparablePlans = filter(plans, (plan) => toNumber(plan?.durationDays) > 0 && toNumber(plan?.price) > 0);
 
     if (comparablePlans.length === 0) {
       return null;
     }
 
-    return [...comparablePlans].sort(
-      (left, right) => Number(left.durationDays) - Number(right.durationDays),
+    return orderBy(
+      comparablePlans,
+      [(plan) => toNumber(plan.durationDays)],
+      ["asc"],
     )[0];
   }, [plans]);
 
@@ -392,7 +392,6 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
-
       <Drawer open={planOpen} onOpenChange={setPlanOpen} direction="bottom">
         <DrawerContent>
           <DrawerHeader className="flex flex-col items-center justify-center space-y-1 text-center">
@@ -414,12 +413,12 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
                 {t("profile.premium.noPlans")}
               </div>
             ) : (
-              plans.map((plan) => {
+              map(plans, (plan) => {
                 const isSelected = selectedPlan?.code === plan.code;
                 const monthlyEquivalent = getPlanMonthlyEquivalent(plan);
                 const savings = getPlanSavings(plan, shortestPlan);
                 const hasFeatures =
-                  Array.isArray(plan.features) && plan.features.length > 0;
+                  isArray(plan.features) && plan.features.length > 0;
 
                 return (
                   <button
@@ -518,7 +517,7 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
 
                           {hasFeatures ? (
                             <div className="mt-4 flex flex-wrap gap-2">
-                              {plan.features.slice(0, 2).map((feature) => (
+                              {map(take(plan.features, 2), (feature) => (
                                 <span
                                   key={feature}
                                   className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-muted-foreground"
@@ -547,7 +546,6 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
-
       <Drawer
         open={paymentOpen}
         onOpenChange={setPaymentOpen}
@@ -584,7 +582,7 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
             </div>
 
             <div className="space-y-3">
-              {PAYMENT_METHODS.map((method) => {
+              {map(PAYMENT_METHODS, (method) => {
                 const isSelected = selectedPaymentMethod === method.code;
 
                 return (
@@ -646,7 +644,6 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
-
       <Drawer
         open={successOpen}
         onOpenChange={setSuccessOpen}
@@ -672,9 +669,7 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
                 {t("profile.premium.paymentMethod")}:{" "}
-                {PAYMENT_METHODS.find(
-                  (method) => method.code === selectedPaymentMethod,
-                )?.label || selectedPaymentMethod}
+                {find(PAYMENT_METHODS, (method) => method.code === selectedPaymentMethod)?.label || selectedPaymentMethod}
               </p>
             </div>
           </div>

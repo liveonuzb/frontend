@@ -1,5 +1,16 @@
 import React, { useState, useCallback } from "react";
-import { get, map, isEmpty, times, trim, toUpper, filter, size } from "lodash";
+import {
+    get,
+    map,
+    isEmpty,
+    times,
+    trim,
+    toUpper,
+    filter,
+    size,
+    split,
+    parseInt as lodashParseInt,
+} from "lodash";
 import { useTranslation } from "react-i18next";
 import {
     Card, CardContent, CardHeader, CardTitle, CardFooter
@@ -63,8 +74,6 @@ function MiniQR({ value }) {
 const XP_TYPE_CONFIG = {
     REFERRAL_REGISTRATION: { icon: UserPlusIcon, color: "text-emerald-600", bg: "bg-emerald-500/10", ring: "ring-emerald-500/20" },
     REFERRAL_SUBSCRIPTION: { icon: CreditCardIcon, color: "text-blue-600", bg: "bg-blue-500/10", ring: "ring-blue-500/20" },
-    COACH_CLIENT_NEW: { icon: UsersIcon, color: "text-violet-600", bg: "bg-violet-500/10", ring: "ring-violet-500/20" },
-    COACH_CLIENT_EXISTING: { icon: UsersIcon, color: "text-indigo-600", bg: "bg-indigo-500/10", ring: "ring-indigo-500/20" },
     WITHDRAWAL: { icon: ArrowDownIcon, color: "text-red-500", bg: "bg-red-500/10", ring: "ring-red-500/20" },
     ADMIN_GRANT: { icon: SparklesIcon, color: "text-amber-600", bg: "bg-amber-500/10", ring: "ring-amber-500/20" },
     CHALLENGE_REWARD: { icon: TrophyIcon, color: "text-amber-600", bg: "bg-amber-500/10", ring: "ring-amber-500/20" },
@@ -80,8 +89,6 @@ function getXpTypeLabel(type, t) {
     const labels = {
         REFERRAL_REGISTRATION: t("profile.referral.xpTypeRegistration", "Referal ro'yxatdan o'tdi"),
         REFERRAL_SUBSCRIPTION: t("profile.referral.xpTypeSubscription", "Referal Pro sotib oldi"),
-        COACH_CLIENT_NEW: t("profile.referral.xpTypeCoachClient", "Yangi shogird to'lovi"),
-        COACH_CLIENT_EXISTING: t("profile.referral.xpTypeCoachClientExisting", "Shogird to'lovi"),
         WITHDRAWAL: t("profile.referral.xpTypeWithdrawal", "Yechib olish"),
         ADMIN_GRANT: t("profile.referral.xpTypeAdjustment", "Admin bonus"),
         CHALLENGE_REWARD: t("profile.referral.xpTypeBonus", "Challenge mukofoti"),
@@ -130,13 +137,13 @@ function formatRelativeDate(dateStr, t) {
 
 function formatCardInput(value) {
     const digits = value.replace(/\D/g, "").slice(0, 16);
-    return digits.replace(/(.{4})/g, "$1 ").trim();
+    return trim(digits.replace(/(.{4})/g, "$1 "));
 }
 
 function getInitials(name) {
     if (!name) return "?";
-    const parts = name.split(" ");
-    return (parts[0]?.[0] || "").toUpperCase() + (parts[1]?.[0] || "").toUpperCase();
+    const parts = split(name, " ");
+    return toUpper((parts[0]?.[0] || "")) + toUpper((parts[1]?.[0] || ""));
 }
 
 // ---------------------------------------------------------------------------
@@ -212,7 +219,7 @@ function WithdrawalDialog({ open, onOpenChange, xpBalance, onSuccess }) {
         listKey: ["referral", "withdrawals"],
     });
 
-    const numericAmount = parseInt(amount.replace(/\D/g, ""), 10) || 0;
+    const numericAmount = lodashParseInt(amount.replace(/\D/g, ""), 10) || 0;
     const isValidAmount = numericAmount >= MIN_WITHDRAWAL && numericAmount <= (xpBalance || 0);
     const rawCard = cardNumber.replace(/\D/g, "");
     const isValidCard = rawCard.length === 16;
@@ -283,7 +290,7 @@ function WithdrawalDialog({ open, onOpenChange, xpBalance, onSuccess }) {
                             value={amount}
                             onChange={(e) => {
                                 const raw = e.target.value.replace(/\D/g, "");
-                                setAmount(raw ? parseInt(raw, 10).toLocaleString() : "");
+                                setAmount(raw ? lodashParseInt(raw, 10).toLocaleString() : "");
                             }}
                             className="h-12 text-lg font-bold"
                         />
@@ -334,7 +341,7 @@ function WithdrawalDialog({ open, onOpenChange, xpBalance, onSuccess }) {
                         <Input
                             placeholder="ISM FAMILIYA"
                             value={cardHolder}
-                            onChange={(e) => setCardHolder(e.target.value.toUpperCase())}
+                            onChange={(e) => setCardHolder(toUpper(e.target.value))}
                             className="h-12 uppercase tracking-wide"
                         />
                     </div>
@@ -576,7 +583,6 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
             {/* Dialogs */}
             <QRDrawer open={showQR} onOpenChange={setShowQR} referralCode={referralCode} onCopyLink={handleCopyLink} />
             <WithdrawalDialog open={withdrawOpen} onOpenChange={setWithdrawOpen} xpBalance={xpBalance} />
-
             {/* ============================================================= */}
             {/* HERO: Referral Code Card                                       */}
             {/* ============================================================= */}
@@ -607,7 +613,7 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
                             <Input
                                 autoFocus
                                 value={codeInput}
-                                onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                                onChange={(e) => setCodeInput(toUpper(e.target.value))}
                                 maxLength={20}
                                 className="font-mono text-base font-bold tracking-widest h-12 border-primary/40 flex-1"
                                 placeholder={t("profile.referral.enterNewCode")}
@@ -665,16 +671,15 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
                     )}
                 </CardContent>
             </Card>
-
             {/* ============================================================= */}
             {/* HOW IT WORKS                                                    */}
             {/* ============================================================= */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {[
+                {map([
                     { step: "1", icon: ShareIcon, title: t("profile.referral.step1Title"), desc: t("profile.referral.step1Desc"), color: "primary" },
                     { step: "2", icon: UsersIcon, title: t("profile.referral.step2Title"), desc: t("profile.referral.step2Desc", { xp: "1,000 XP" }), color: "blue-600" },
                     { step: "3", icon: GiftIcon, title: t("profile.referral.step3Title"), desc: t("profile.referral.step3Desc", { xp: "10%" }), color: "emerald-600" },
-                ].map((item) => (
+                ], (item) => (
                     <Card key={item.step} className="group hover:shadow-md transition-all hover:border-primary/20">
                         <CardContent className="p-4 flex items-start gap-3">
                             <div className={`size-9 rounded-xl bg-${item.color}/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
@@ -688,7 +693,6 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
                     </Card>
                 ))}
             </div>
-
             {/* ============================================================= */}
             {/* BALANCE + STATS                                                */}
             {/* ============================================================= */}
@@ -749,7 +753,6 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
                     </div>
                 </CardContent>
             </Card>
-
             {/* ============================================================= */}
             {/* LEADERBOARD + RECENT REFERRALS                                 */}
             {/* ============================================================= */}
@@ -888,7 +891,6 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
                     </CardContent>
                 </Card>
             </div>
-
             {/* ============================================================= */}
             {/* XP HISTORY                                                     */}
             {/* ============================================================= */}
@@ -983,7 +985,6 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
                     </CardFooter>
                 )}
             </Card>
-
             {/* ============================================================= */}
             {/* WITHDRAWALS HISTORY                                            */}
             {/* ============================================================= */}

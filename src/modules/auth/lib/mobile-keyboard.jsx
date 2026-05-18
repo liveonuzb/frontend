@@ -1,6 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
 import React from "react";
 
+import { forEach } from "lodash";
+
 const AuthMobileKeyboardContext = React.createContext(false);
 
 const isMobileInputTarget = () => {
@@ -184,7 +186,7 @@ function useAuthMobileAutoFocus({ enabled = true } = {}) {
     ];
 
     return () => {
-      timers.forEach((timer) => window.clearTimeout(timer));
+      forEach(timers, (timer) => window.clearTimeout(timer));
     };
   }, [enabled, focusElement]);
 

@@ -55,20 +55,20 @@ describe("SignUpContainer referral banner", () => {
       data: {
         data: {
           valid: true,
-          referrerName: "Coach One",
+          referrerName: "Friend One",
         },
       },
     });
 
     render(
-      <MemoryRouter initialEntries={["/auth/sign-up?ref=coach-code"]}>
+      <MemoryRouter initialEntries={["/auth/sign-up?ref=friend-code"]}>
         <SignUpContainer />
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("invited:Coach One")).toBeInTheDocument();
+    expect(screen.getByText("invited:Friend One")).toBeInTheDocument();
     expect(
-      screen.getByText("password-form:+998901234567:coach-code"),
+      screen.getByText("password-form:+998901234567:friend-code"),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Sign up with Apple" }),

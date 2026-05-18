@@ -8,6 +8,9 @@ import {
   startsWith,
   toNumber,
   trim,
+  filter,
+  map,
+  toUpper,
 } from "lodash";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -174,20 +177,20 @@ const FoodFormDrawer = ({
         categoryIds: initialValues.categoryIds ?? [],
         cuisineIds: initialValues.cuisineIds ?? [],
         nutritionMode: initialValues.nutritionMode ?? "manual",
-        calories: Number(initialValues.calories) || 0,
+        calories: toNumber(initialValues.calories) || 0,
         maxIntake:
           initialValues.maxIntake !== "" && initialValues.maxIntake != null
-            ? Number(initialValues.maxIntake)
+            ? toNumber(initialValues.maxIntake)
             : undefined,
-        protein: Number(initialValues.protein) || 0,
-        carbs: Number(initialValues.carbs) || 0,
-        fat: Number(initialValues.fat) || 0,
+        protein: toNumber(initialValues.protein) || 0,
+        carbs: toNumber(initialValues.carbs) || 0,
+        fat: toNumber(initialValues.fat) || 0,
         servingUnit: initialValues.servingUnit || "g",
-        servingSize: Number(initialValues.servingSize) || 100,
-        dietaryTags: Array.isArray(initialValues.dietaryTags)
+        servingSize: toNumber(initialValues.servingSize) || 100,
+        dietaryTags: isArray(initialValues.dietaryTags)
           ? initialValues.dietaryTags
           : [],
-        allergenTags: Array.isArray(initialValues.allergenTags)
+        allergenTags: isArray(initialValues.allergenTags)
           ? initialValues.allergenTags
           : [],
         isOnboarding: initialValues.isOnboarding !== false,
@@ -224,7 +227,7 @@ const FoodFormDrawer = ({
           </DrawerTitle>
           <DrawerDescription className="mt-1">
             {currentLanguageMeta?.flag ? `${currentLanguageMeta.flag} ` : ""}
-            {currentLanguageMeta?.name ?? currentLanguage.toUpperCase()} tilida
+            {currentLanguageMeta?.name ?? toUpper(currentLanguage)} tilida
             ma&apos;lumot kiriting
           </DrawerDescription>
         </DrawerHeader>
@@ -257,7 +260,7 @@ const FoodFormDrawer = ({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>
-                          Nomi ({currentLanguage.toUpperCase()}){" "}
+                          Nomi ({toUpper(currentLanguage)}){" "}
                           <span className="text-destructive">*</span>
                         </FormLabel>
                         <FormControl>
@@ -400,11 +403,11 @@ const FoodFormDrawer = ({
                     )}
                   />
 
-                  {[
+                  {map([
                     ["protein", "Protein (g)"],
                     ["carbs", "Uglevod (g)"],
                     ["fat", "Yog' (g)"],
-                  ].map(([name, label]) => (
+                  ], ([name, label]) => (
                     <FormField
                       key={name}
                       control={form.control}
@@ -650,12 +653,12 @@ const EditFoodPage = () => {
   const languages = get(languagesData, "data.data", []);
 
   const activeLanguages = React.useMemo(
-    () => (languages || []).filter((language) => language.isActive),
+    () => filter((languages || []), (language) => language.isActive),
     [languages],
   );
 
   const currentLanguageMeta = React.useMemo(
-    () => activeLanguages.find((language) => language.code === currentLanguage),
+    () => find(activeLanguages, (language) => language.code === currentLanguage),
     [activeLanguages, currentLanguage],
   );
 

@@ -1,3 +1,4 @@
+import { find } from "lodash";
 const ATHLETE_IMAGES = {
   strength:
     "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=1200&q=80",
@@ -74,7 +75,7 @@ export const WORKOUT_RECOMMENDED_PLANS = [
       workouts: 24,
       exercises: 126,
       progressTracking: true,
-      aiCoachTips: true,
+      aiTips: true,
     },
   },
   {
@@ -124,7 +125,7 @@ export const WORKOUT_RECOMMENDED_PLANS = [
       workouts: 12,
       exercises: 28,
       progressTracking: true,
-      aiCoachTips: true,
+      aiTips: true,
     },
   },
   {
@@ -167,7 +168,7 @@ export const WORKOUT_RECOMMENDED_PLANS = [
       workouts: 30,
       exercises: 84,
       progressTracking: true,
-      aiCoachTips: true,
+      aiTips: true,
     },
   },
   {
@@ -220,10 +221,10 @@ export const WORKOUT_RECOMMENDED_PLANS = [
       workouts: 18,
       exercises: 72,
       progressTracking: true,
-      aiCoachTips: true,
+      aiTips: true,
     },
   },
 ];
 
 export const getFallbackWorkoutPlan = (planId) =>
-  WORKOUT_RECOMMENDED_PLANS.find((plan) => plan.id === planId) ?? null;
+  find(WORKOUT_RECOMMENDED_PLANS, (plan) => plan.id === planId) ?? null;

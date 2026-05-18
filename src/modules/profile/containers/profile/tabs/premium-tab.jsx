@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { get } from "lodash";
+import { get, find, map, trim, toUpper, split, take } from "lodash";
 import {
   CheckIcon,
   CircleDollarSignIcon,
@@ -127,12 +127,12 @@ const PaymentMethodOption = ({
 const PLAN_FEATURES = [
   { label: "Kunlik kuzatuv (Suv, Ovqat, Mashq)", free: true, premium: true, family: true },
   { label: "Do'stlar tarmog'i va challenge", free: true, premium: true, family: true },
-  { label: "Discover (Zallar, Ovqatlar, Murabbiylar)", free: true, premium: true, family: true },
+  { label: "Discover (Zallar va ovqatlar)", free: true, premium: true, family: true },
   { label: "AI ovqat tahlili (kamera orqali)", free: false, premium: true, family: true },
   { label: "Cheksiz ovqat logi", free: false, premium: true, family: true },
   { label: "Premium Leaderboard", free: false, premium: true, family: true },
   { label: "Haftalik sog'liq hisoboti (PDF)", free: false, premium: true, family: true },
-  { label: "Murabbiy ulanishi (Premium rejim)", free: false, premium: true, family: true },
+  { label: "Premium qo'llab-quvvatlash", free: false, premium: true, family: true },
   { label: "Reklama yo'q", free: false, premium: true, family: true },
   { label: "Oila a'zolari (5 tagacha)", free: false, premium: false, family: true },
   { label: "Oila leaderboard", free: false, premium: false, family: true },
@@ -152,10 +152,10 @@ const PlanComparisonSection = () => (
           </tr>
         </thead>
         <tbody className="divide-y divide-white/5">
-          {PLAN_FEATURES.map((f) => (
+          {map(PLAN_FEATURES, (f) => (
             <tr key={f.label}>
               <td className="py-2.5 pr-4 text-xs leading-5">{f.label}</td>
-              {["free", "premium", "family"].map((plan) => (
+              {map(["free", "premium", "family"], (plan) => (
                 <td key={plan} className="py-2.5 text-center">
                   {f[plan] ? (
                     <CheckIcon className="mx-auto size-4 text-emerald-400" />
@@ -187,11 +187,11 @@ const FamilyPlanSection = () => {
   const group = data?.data?.group;
 
   const handleAddMember = async () => {
-    if (!identifier.trim()) return;
+    if (!trim(identifier)) return;
     try {
       setIsAdding(true);
       await request.post("/users/me/family/members", {
-        identifier: identifier.trim(),
+        identifier: trim(identifier),
       });
       setIdentifier("");
       queryClient.invalidateQueries({ queryKey: ["me", "family"] });
@@ -272,7 +272,7 @@ const FamilyPlanSection = () => {
             <Button
               type="button"
               size="sm"
-              disabled={!identifier.trim() || isAdding}
+              disabled={!trim(identifier) || isAdding}
               onClick={handleAddMember}
             >
               <UserPlusIcon className="mr-1.5 size-3.5" />
@@ -294,12 +294,9 @@ const FamilyPlanSection = () => {
           </div>
         ) : (
           <div className="space-y-2">
-            {group.members.map((member) => {
-              const initials = member.name
-                .split(" ")
-                .map((n) => n[0])
-                .join("")
-                .toUpperCase()
+            {map(group.members, (member) => {
+              const initials = toUpper(map(split(member.name, " "), (n) => n[0])
+                .join(""))
                 .slice(0, 2);
               return (
                 <div
@@ -345,7 +342,7 @@ const FamilyPlanSection = () => {
 export const PremiumTab = () => {
   const { t } = useTranslation();
   const currentLocale = t("common.locale", "uz-UZ");
-  const currencyLabel = t("profile.coach.currency");
+  const currencyLabel = t("profile.premium.currency", "so'm");
   const statusLabel = getStatusLabels(t);
   const paymentMethodLabel = getPaymentMethodLabels(t);
   const PAYMENT_METHODS = React.useMemo(() => getPaymentMethods(t), [t]);
@@ -381,7 +378,7 @@ export const PremiumTab = () => {
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const activePlan = React.useMemo(
-    () => plans.find((plan) => plan.code === selectedPlan) ?? plans[0] ?? null,
+    () => find(plans, (plan) => plan.code === selectedPlan) ?? plans[0] ?? null,
     [plans, selectedPlan],
   );
   const shortestPlan = React.useMemo(
@@ -575,7 +572,7 @@ export const PremiumTab = () => {
             </div>
 
             <div className="grid gap-4 xl:grid-cols-2">
-              {plans.map((plan) => {
+              {map(plans, (plan) => {
                 const isSelected = selectedPlan === plan.code;
                 const isCurrent =
                   premium?.planCode === plan.code && premium?.status === "active";
@@ -668,7 +665,6 @@ export const PremiumTab = () => {
           </div>
         </div>
       </section>
-
       {history.length > 0 ? (
         <Card className="border-white/10 bg-white/[0.03] py-6">
           <CardHeader className="pb-2">
@@ -677,7 +673,7 @@ export const PremiumTab = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 p-6">
-            {history.slice(0, 5).map((item) => (
+            {map(take(history, 5), (item) => (
               <div
                 key={item.id}
                 className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/10 p-4"
@@ -696,7 +692,6 @@ export const PremiumTab = () => {
           </CardContent>
         </Card>
       ) : null}
-
       {recentPayments.length > 0 ? (
         <Card className="border-white/10 bg-white/[0.03] py-6">
           <CardHeader className="pb-2">
@@ -705,7 +700,7 @@ export const PremiumTab = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 p-6">
-            {recentPayments.slice(0, 5).map((payment) => (
+            {map(take(recentPayments, 5), (payment) => (
               <div
                 key={payment.id}
                 className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/10 p-4"
@@ -734,7 +729,6 @@ export const PremiumTab = () => {
           </CardContent>
         </Card>
       ) : null}
-
       <Drawer
         open={checkoutOpen}
         onOpenChange={setCheckoutOpen}
@@ -777,7 +771,7 @@ export const PremiumTab = () => {
                   {t("profile.premium.paymentMethod")}
                 </p>
                 <div className="grid gap-3">
-                  {PAYMENT_METHODS.map((method) => {
+                  {map(PAYMENT_METHODS, (method) => {
                     const isSelected = selectedPaymentMethod === method.code;
 
                     return (
@@ -820,11 +814,8 @@ export const PremiumTab = () => {
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
-
       <PlanComparisonSection />
-
       <FamilyPlanSection />
-
       <GiftPremiumDrawer
         open={giftDrawerOpen}
         onOpenChange={setGiftDrawerOpen}

@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, filter } from "lodash";
 import { useGetQuery, usePostQuery } from "@/hooks/api";
 
 export const USER_WEEKLY_CHECK_INS_QUERY_KEY = ["user", "weekly-check-ins"];
@@ -32,10 +32,8 @@ export const useWeeklyCheckIns = (options = {}) => {
   return {
     ...query,
     checkIns: items,
-    pendingCheckIns: items.filter(
-      (item) => item.status === "pending" || item.status === "overdue",
-    ),
-    completedCheckIns: items.filter((item) => item.status === "submitted"),
+    pendingCheckIns: filter(items, (item) => item.status === "pending" || item.status === "overdue"),
+    completedCheckIns: filter(items, (item) => item.status === "submitted"),
     submitWeeklyCheckIn,
     isSubmittingWeeklyCheckIn: submitMutation.isPending,
   };

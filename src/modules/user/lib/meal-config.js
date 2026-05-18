@@ -1,3 +1,4 @@
+import { map, reduce } from "lodash";
 export const DEFAULT_MEAL_TYPE = "breakfast";
 
 export const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"];
@@ -9,22 +10,22 @@ export const MEAL_CONFIG = {
   snack: { label: "Snack", emoji: "🥜", time: "Istalgan vaqt" },
 };
 
-export const MEAL_LABELS = MEAL_TYPES.reduce((labels, type) => {
+export const MEAL_LABELS = reduce(MEAL_TYPES, (labels, type) => {
   labels[type] = MEAL_CONFIG[type].label;
   return labels;
 }, {});
 
-export const MEAL_ICONS = MEAL_TYPES.reduce((icons, type) => {
+export const MEAL_ICONS = reduce(MEAL_TYPES, (icons, type) => {
   icons[type] = MEAL_CONFIG[type].emoji;
   return icons;
 }, {});
 
-export const MEAL_TYPE_OPTIONS = MEAL_TYPES.map((type) => ({
+export const MEAL_TYPE_OPTIONS = map(MEAL_TYPES, (type) => ({
   value: type,
   label: MEAL_CONFIG[type].label,
 }));
 
-export const MEAL_LABEL_TO_TYPE = MEAL_TYPES.reduce((labels, type) => {
+export const MEAL_LABEL_TO_TYPE = reduce(MEAL_TYPES, (labels, type) => {
   labels[MEAL_CONFIG[type].label] = type;
   return labels;
 }, {});

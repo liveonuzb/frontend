@@ -7,6 +7,8 @@ import {
 } from "@/modules/onboarding/lib/onboarding-footer-context";
 import ResultPage, { ResultContent } from "./index.jsx";
 
+import { forEach } from "lodash";
+
 const navigateMock = vi.hoisted(() => vi.fn());
 const invalidateQueriesMock = vi.hoisted(() => vi.fn());
 const setOnboardingFlowMock = vi.hoisted(() => vi.fn());
@@ -194,9 +196,10 @@ describe("PersonalizationResult onboarding screen", () => {
   it("keeps hero goal metrics read-only", () => {
     render(<ResultContent result={{}} onboarding={{}} onEdit={vi.fn()} />);
 
-    ["Hozirgi vazn", "Maqsad vazn", "Vazn farqi", "Haftalik sur'at"].forEach(
+    forEach(
+      ["Hozirgi vazn", "Maqsad vazn", "Vazn farqi", "Haftalik sur'at"],
       (label) => {
-        screen.getAllByText(label).forEach((node) => {
+        forEach(screen.getAllByText(label), (node) => {
           expect(node.closest("button")).toBeNull();
         });
       },

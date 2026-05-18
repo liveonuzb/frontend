@@ -6,6 +6,12 @@ import {
   keys,
   some,
   trim,
+  filter,
+  isArray,
+  map,
+  toLower,
+  toNumber,
+  take,
 } from "lodash";
 import { format } from "date-fns";
 import { uz } from "date-fns/locale";
@@ -155,16 +161,14 @@ const ChallengeCard = ({
       ),
   );
 
-  const maxParticipants = Number(get(challenge, "maxParticipants", 0)) || null;
+  const maxParticipants = toNumber(get(challenge, "maxParticipants", 0)) || null;
   const isFull = Boolean(maxParticipants && participantCount >= maxParticipants);
   const isJoinClosed = includes(["COMPLETED", "CANCELLED"], challenge.status);
 
-  const joinFeeXp = Number(get(challenge, "joinFeeXp", 0));
+  const joinFeeXp = toNumber(get(challenge, "joinFeeXp", 0));
   const metricType =
     get(challenge, "metricDetails.type") || challenge.metricType || "STEPS";
-  const metricTarget = Number(
-    get(challenge, "metricDetails.target") ?? challenge.metricTarget ?? 0,
-  );
+  const metricTarget = toNumber(get(challenge, "metricDetails.target") ?? challenge.metricTarget ?? 0);
   const metricMeta = getMetricMeta(metricType);
 
   const buttonLabel = isParticipant
@@ -389,11 +393,11 @@ export default function ChallengesContainer() {
   } = useChallengeStore();
 
   const challengeList = React.useMemo(
-    () => (Array.isArray(challenges) ? challenges : []),
+    () => (isArray(challenges) ? challenges : []),
     [challenges],
   );
   const challengeInvitationList = React.useMemo(
-    () => (Array.isArray(challengeInvitations) ? challengeInvitations : []),
+    () => (isArray(challengeInvitations) ? challengeInvitations : []),
     [challengeInvitations],
   );
 
@@ -442,43 +446,35 @@ export default function ChallengesContainer() {
   // ── derived lists ──
 
   const shaxsiyChallenges = React.useMemo(() => {
-    const q = trim(deferredSearch).toLowerCase();
-    return challengeList.filter((c) => {
+    const q = toLower(trim(deferredSearch));
+    return filter(challengeList, (c) => {
       const isPersonal =
         c.type === "CUSTOM" ||
         get(c, "creator.id") === user?.id ||
         get(c, "creator.userId") === user?.id;
       if (!isPersonal) return false;
       if (!q) return true;
-      return (
-        includes(String(get(c, "title", "")).toLowerCase(), q) ||
-        includes(String(get(c, "description", "")).toLowerCase(), q)
-      );
+      return (includes(toLower(String(get(c, "title", ""))), q) || includes(toLower(String(get(c, "description", ""))), q));
     });
   }, [challengeList, deferredSearch, user?.id]);
 
   const ommabopChallenges = React.useMemo(() => {
-    const q = trim(deferredSearch).toLowerCase();
-    return challengeList.filter((c) => {
+    const q = toLower(trim(deferredSearch));
+    return filter(challengeList, (c) => {
       const isPublic = c.type !== "CUSTOM" || get(c, "creator.id") !== user?.id;
       if (!isPublic) return false;
       if (!q) return true;
-      return (
-        includes(String(get(c, "title", "")).toLowerCase(), q) ||
-        includes(String(get(c, "description", "")).toLowerCase(), q) ||
-        includes(
-          String(get(c, "creator.profile.firstName", "")).toLowerCase(),
-          q,
-        )
-      );
+      return (includes(toLower(String(get(c, "title", ""))), q) ||
+      includes(toLower(String(get(c, "description", ""))), q) || includes(
+        toLower(String(get(c, "creator.profile.firstName", ""))),
+        q,
+      ));
     });
   }, [challengeList, deferredSearch, user?.id]);
 
   const pendingInvitations = React.useMemo(
     () =>
-      challengeInvitationList.filter(
-        (inv) => get(inv, "status") === "PENDING",
-      ),
+      filter(challengeInvitationList, (inv) => get(inv, "status") === "PENDING"),
     [challengeInvitationList],
   );
 
@@ -507,7 +503,7 @@ export default function ChallengesContainer() {
 
   const toggleInvitee = React.useCallback((id) => {
     setSelectedInvitees((curr) =>
-      includes(curr, id) ? curr.filter((x) => x !== id) : [...curr, id],
+      includes(curr, id) ? filter(curr, (x) => x !== id) : [...curr, id],
     );
   }, [setSelectedInvitees]);
 
@@ -519,7 +515,7 @@ export default function ChallengesContainer() {
         inviteChallenge.id,
         {
           userIds: selectedInvitees,
-          ...(inviteMessage.trim() ? { message: inviteMessage.trim() } : {}),
+          ...(trim(inviteMessage) ? { message: trim(inviteMessage) } : {}),
         },
         () => {
           setIsInviteDrawerOpen(false);
@@ -578,10 +574,10 @@ export default function ChallengesContainer() {
 
         {/* ── Segmented control ── */}
         <div className="flex gap-1 rounded-2xl border bg-muted/40 p-1">
-          {[
+          {map([
             { key: "shaxsiy", label: "Shaxsiy" },
             { key: "ommabop", label: "Ommabop" },
-          ].map((tab) => (
+          ], (tab) => (
             <button
               key={tab.key}
               type="button"
@@ -625,7 +621,7 @@ export default function ChallengesContainer() {
                   </div>
                 </div>
                 <div className="flex -space-x-3 overflow-hidden">
-                  {pendingInvitations.slice(0, 3).map((inv) => (
+                  {map(take(pendingInvitations, 3), (inv) => (
                     <div
                       key={inv.id}
                       className="flex size-10 cursor-help items-center justify-center rounded-full border-2 border-background bg-muted transition-transform hover:z-10 hover:-translate-y-1"
@@ -643,7 +639,7 @@ export default function ChallengesContainer() {
               </div>
 
               <div className="grid gap-3 p-3 pt-0 sm:p-6 sm:pt-0">
-                {pendingInvitations.slice(0, 2).map((inv) => (
+                {map(take(pendingInvitations, 2), (inv) => (
                   <motion.div
                     key={inv.id}
                     layout
@@ -722,7 +718,7 @@ export default function ChallengesContainer() {
               exit={{ opacity: 0 }}
               className="grid gap-6 md:grid-cols-2 xl:grid-cols-3"
             >
-              {Array.from({ length: 6 }).map((_, i) => (
+              {map(Array.from({ length: 6 }), (_, i) => (
                 <Skeleton
                   key={i}
                   className="aspect-[16/20] rounded-[2rem] bg-muted/50"
@@ -747,7 +743,7 @@ export default function ChallengesContainer() {
               }}
               className="grid gap-6 md:grid-cols-2 xl:grid-cols-3"
             >
-              {activeList.map((challenge) => (
+              {map(activeList, (challenge) => (
                 <motion.div
                   key={challenge.id}
                   variants={{
@@ -769,7 +765,6 @@ export default function ChallengesContainer() {
           )}
         </AnimatePresence>
       </div>
-
       {/* ── Floating create button (mobile) ── */}
       <button
         type="button"
@@ -778,7 +773,6 @@ export default function ChallengesContainer() {
       >
         <PlusIcon className="size-7" />
       </button>
-
       {/* ── Invite friends drawer (for existing challenges) ── */}
       <Drawer
         open={isInviteDrawerOpen}
@@ -844,8 +838,8 @@ export default function ChallengesContainer() {
                 </Card>
               ) : (
                 <div className="flex flex-col gap-2">
-                  {inviteCandidates.map((candidate) => {
-                    const checked = selectedInvitees.includes(candidate.id);
+                  {map(inviteCandidates, (candidate) => {
+                    const checked = includes(selectedInvitees, candidate.id);
                     return (
                       <button
                         key={candidate.id}

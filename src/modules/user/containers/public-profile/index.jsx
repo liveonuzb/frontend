@@ -1,4 +1,4 @@
-import { compact } from "lodash";
+import { compact, map, toUpper, take } from "lodash";
 import React from "react";
 import { useParams, useNavigate } from "react-router";
 import {
@@ -18,12 +18,10 @@ import {
   UsersIcon,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { useGetQuery, usePostQuery } from "@/hooks/api";
-import useApi from "@/hooks/api/use-api";
+import { useDeleteQuery, useGetQuery, usePostQuery } from "@/hooks/api";
 import PageTransition from "@/components/page-transition";
 import GiftPremiumDrawer from "@/modules/user/components/gift-premium-drawer.jsx";
 import { buildFriendRequestPayload } from "@/modules/user/lib/friend-request-payload";
@@ -51,10 +49,9 @@ const MutualFriends = ({ profileId }) => {
         </span>
       </div>
       <div className="mt-2 flex items-center gap-1.5">
-        {items.slice(0, 5).map((f) => {
-          const initials = compact([f.name?.[0]])
-            .join("")
-            .toUpperCase() || "?";
+        {map(take(items, 5), (f) => {
+          const initials = toUpper(compact([f.name?.[0]])
+            .join("")) || "?";
           return (
             <Avatar key={f.id} className="size-7 border border-border">
               <AvatarImage src={f.avatarUrl || undefined} />
@@ -91,12 +88,8 @@ const PublicProfileContainer = () => {
     listKey: ["me", "friends"],
   });
 
-  const { request } = useApi();
-  const queryClient = useQueryClient();
   const profile = data?.data;
   const [giftDrawerOpen, setGiftDrawerOpen] = React.useState(false);
-  const [isBlocking, setIsBlocking] = React.useState(false);
-  const [isMuting, setIsMuting] = React.useState(false);
 
   const { data: muteStatusData } = useGetQuery({
     url: profile ? `/users/me/muted/${profile?.id}/status` : null,
@@ -106,6 +99,20 @@ const PublicProfileContainer = () => {
     },
   });
   const isMutedByMe = muteStatusData?.data?.muted ?? false;
+  const blockMutation = usePostQuery({
+    queryKey: ["users", "profile", identifier],
+  });
+  const unblockMutation = useDeleteQuery({
+    queryKey: ["users", "profile", identifier],
+  });
+  const muteMutation = usePostQuery({
+    queryKey: ["users", "mute-status", profile?.id],
+  });
+  const unmuteMutation = useDeleteQuery({
+    queryKey: ["users", "mute-status", profile?.id],
+  });
+  const isBlocking = blockMutation.isPending || unblockMutation.isPending;
+  const isMuting = muteMutation.isPending || unmuteMutation.isPending;
 
   const handleSendFriendRequest = React.useCallback(() => {
     if (!profile) return;
@@ -117,57 +124,49 @@ const PublicProfileContainer = () => {
 
   const handleBlock = React.useCallback(async () => {
     if (!profile) return;
-    setIsBlocking(true);
     try {
-      await request.post(`/users/me/blocked/${profile.id}`);
-      queryClient.invalidateQueries({ queryKey: ["users", "profile", identifier] });
+      await blockMutation.mutateAsync({
+        url: `/users/me/blocked/${profile.id}`,
+      });
     } catch {
       toast.error("Xatolik yuz berdi");
-    } finally {
-      setIsBlocking(false);
     }
-  }, [profile, request, queryClient, identifier]);
+  }, [blockMutation, profile]);
 
   const handleUnblock = React.useCallback(async () => {
     if (!profile) return;
-    setIsBlocking(true);
     try {
-      await request.delete(`/users/me/blocked/${profile.id}`);
-      queryClient.invalidateQueries({ queryKey: ["users", "profile", identifier] });
+      await unblockMutation.mutateAsync({
+        url: `/users/me/blocked/${profile.id}`,
+      });
     } catch {
       toast.error("Xatolik yuz berdi");
-    } finally {
-      setIsBlocking(false);
     }
-  }, [profile, request, queryClient, identifier]);
+  }, [profile, unblockMutation]);
 
   const handleMute = React.useCallback(async () => {
     if (!profile) return;
-    setIsMuting(true);
     try {
-      await request.post(`/users/me/muted/${profile.id}`);
-      queryClient.invalidateQueries({ queryKey: ["users", "mute-status", profile.id] });
+      await muteMutation.mutateAsync({
+        url: `/users/me/muted/${profile.id}`,
+      });
       toast.success("Foydalanuvchi ovozi o'chirildi");
     } catch {
       toast.error("Xatolik yuz berdi");
-    } finally {
-      setIsMuting(false);
     }
-  }, [profile, request, queryClient]);
+  }, [muteMutation, profile]);
 
   const handleUnmute = React.useCallback(async () => {
     if (!profile) return;
-    setIsMuting(true);
     try {
-      await request.delete(`/users/me/muted/${profile.id}`);
-      queryClient.invalidateQueries({ queryKey: ["users", "mute-status", profile.id] });
+      await unmuteMutation.mutateAsync({
+        url: `/users/me/muted/${profile.id}`,
+      });
       toast.success("Foydalanuvchi ovozi yoqildi");
     } catch {
       toast.error("Xatolik yuz berdi");
-    } finally {
-      setIsMuting(false);
     }
-  }, [profile, request, queryClient]);
+  }, [profile, unmuteMutation]);
 
   if (isLoading) {
     return (
@@ -197,9 +196,8 @@ const PublicProfileContainer = () => {
   }
 
   const fullName = compact([profile.firstName, profile.lastName]).join(" ");
-  const initials = compact([profile.firstName?.[0], profile.lastName?.[0]])
-    .join("")
-    .toUpperCase();
+  const initials = toUpper(compact([profile.firstName?.[0], profile.lastName?.[0]])
+    .join(""));
 
   // Private profile
   if (profile.isPrivate) {

@@ -1,10 +1,10 @@
-import { get } from "lodash";
+import { get, isArray } from "lodash";
 import { getApiResponseData } from "@/lib/api-response";
 
 export const getFriendItems = (response) => {
   const payload = getApiResponseData(response, {});
 
-  if (Array.isArray(payload)) {
+  if (isArray(payload)) {
     return payload;
   }
 

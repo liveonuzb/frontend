@@ -9,7 +9,7 @@ import {
   DrawerDescription,
   DrawerBody,
 } from "@/components/ui/drawer";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 import { useDailyTrackingActions } from "@/hooks/app/use-daily-tracking";
 import useHealthGoals from "@/hooks/app/use-health-goals";
 import { useAuthStore } from "@/store";
@@ -21,6 +21,8 @@ import {
   normalizeDateKey,
 } from "./query-helpers.js";
 import useReminderTrigger from "./use-reminder-trigger.js";
+
+import { filter, map, split } from "lodash";
 
 /* ─────────────────────────────────────────────
    WATER REMINDER DRAWER (Dashboard-only)
@@ -54,7 +56,7 @@ const parseClock = (value, fallback) => {
     typeof value === "string" && /^\d{1,2}:\d{2}$/.test(value)
       ? value
       : fallback;
-  const [h, m] = source.split(":").map(Number);
+  const [h, m] = map(split(source, ":"), Number);
   return h * 60 + m;
 };
 
@@ -162,7 +164,7 @@ export default function WaterReminderDrawer() {
 
   const progressPct =
     goalMl > 0 ? Math.min(100, Math.round((consumedMl / goalMl) * 100)) : 0;
-  const altCups = ALT_CUP_SIZES.filter((v) => v !== preferredMl);
+  const altCups = filter(ALT_CUP_SIZES, (v) => v !== preferredMl);
   const submitting = submittingMl != null;
 
   return (
@@ -220,7 +222,7 @@ export default function WaterReminderDrawer() {
           {/* Alternative cup sizes */}
           {altCups.length > 0 && (
             <div className="grid grid-cols-3 gap-2 px-2">
-              {altCups.map((value) => (
+              {map(altCups, (value) => (
                 <button
                   key={value}
                   type="button"

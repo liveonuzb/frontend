@@ -1,5 +1,5 @@
 import React from "react";
-import { find, get, map, trim } from "lodash";
+import { find, get, map, trim, values as lodashValues } from "lodash";
 import { ImageIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { DataGridTableDndRowHandle } from "@/components/reui/data-grid";
@@ -29,7 +29,7 @@ const resolveLabel = (translations, fallback, language) => {
     }
 
     const first = find(
-      Object.values(translations),
+      lodashValues(translations),
       (value) => typeof value === "string" && trim(value),
     );
     if (typeof first === "string" && trim(first)) {
@@ -271,3 +271,6 @@ export const useColumns = ({
     ],
   );
 };
+
+
+

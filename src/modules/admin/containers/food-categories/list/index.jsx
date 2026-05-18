@@ -15,7 +15,8 @@ import {
   size,
   toString,
   trim,
-  values,
+  values as lodashValues,
+  toNumber,
 } from "lodash";
 import { toast } from "sonner";
 import {
@@ -61,7 +62,7 @@ const resolveLabel = (translations, fallback, language) => {
     if (typeof uz === "string" && trim(uz)) return trim(uz);
 
     const first = find(
-      values(translations),
+      lodashValues(translations),
       (value) => typeof value === "string" && trim(value),
     );
     if (typeof first === "string" && trim(first)) return trim(first);
@@ -73,7 +74,7 @@ const resolveLabel = (translations, fallback, language) => {
 const countFilledTranslations = (translations = {}) =>
   size(
     lodashFilter(
-      values(translations),
+      lodashValues(translations),
       (value) => typeof value === "string" && trim(value).length > 0,
     ),
   );
@@ -459,8 +460,10 @@ const Index = () => {
       const dependencySummary = get(error, "response.data.dependencySummary");
       const baseMessage = isArray(message) ? join(message, ", ") : message;
       toast.error(
-        [baseMessage || "Kategoriyani o'chirib bo'lmadi", dependencySummary]
-          .filter(Boolean)
+        lodashFilter(
+          [baseMessage || "Kategoriyani o'chirib bo'lmadi", dependencySummary],
+          Boolean,
+        )
           .join(" "),
       );
     }
@@ -526,8 +529,8 @@ const Index = () => {
         typeof updater === "function"
           ? updater({ pageIndex: currentPage - 1, pageSize })
           : updater;
-      const nextPage = Number(next.pageIndex) + 1;
-      const nextPageSize = Number(next.pageSize) || pageSize;
+      const nextPage = toNumber(next.pageIndex) + 1;
+      const nextPageSize = toNumber(next.pageSize) || pageSize;
       React.startTransition(() => {
         void setPageQuery(String(nextPageSize === pageSize ? nextPage : 1));
         void setPageSizeQuery(String(nextPageSize));
@@ -683,3 +686,6 @@ const Index = () => {
 };
 
 export default Index;
+
+
+

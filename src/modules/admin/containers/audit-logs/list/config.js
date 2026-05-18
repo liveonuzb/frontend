@@ -20,7 +20,6 @@ export const auditActionLabels = {
   premium_gifted: "Premium sovg'a qilindi",
   subscription_cancelled: "Obuna bekor qilindi",
   subscription_extended: "Obuna uzaytirildi",
-  coach_status_updated: "Coach holati yangilandi",
   food_created: "Ovqat yaratildi",
   food_updated: "Ovqat yangilandi",
   food_deleted: "Ovqat trashga yuborildi",
@@ -39,7 +38,6 @@ export const auditActionLabels = {
 
 export const auditEntityLabels = {
   user: "User",
-  coach: "Coach",
   subscription: "Obuna",
   language: "Til",
   food_category: "Kategoriya",

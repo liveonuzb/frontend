@@ -25,6 +25,8 @@ import {
   updateMealIngredient,
 } from "./meal-ingredients.js";
 
+import { toNumber, trim } from "lodash";
+
 export default function InlineScanReviewDrawer({
   open,
   onOpenChange,
@@ -68,7 +70,7 @@ export default function InlineScanReviewDrawer({
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const setMacroValue = React.useCallback((key, value) => {
-    const numeric = Math.max(0, Number(value) || 0);
+    const numeric = Math.max(0, toNumber(value) || 0);
     setManualTouched(true);
     setManualMacros((current) => ({
       calories: 0,
@@ -171,7 +173,7 @@ export default function InlineScanReviewDrawer({
                 value={manualGrams ?? 0}
                 onChange={(event) => {
                   setManualTouched(true);
-                  setManualGrams(Math.max(0, Number(event.target.value) || 0));
+                  setManualGrams(Math.max(0, toNumber(event.target.value) || 0));
                 }}
                 aria-label="Porsiya gramm"
               />
@@ -239,7 +241,7 @@ export default function InlineScanReviewDrawer({
           ) : null}
           <Button
             type="button"
-            disabled={isSaving || !draft?.title?.trim()}
+            disabled={isSaving || !trim(draft?.title)}
             onClick={() =>
               draft &&
               onConfirm?.({

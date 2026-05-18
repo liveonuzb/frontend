@@ -1,13 +1,15 @@
 import { getTargetWeightValidationError } from "@/modules/onboarding/lib/onboarding-validation";
 
+import { filter, includes, isArray, trim } from "lodash";
+
 const hasValue = (value) => {
-  if (Array.isArray(value)) return value.length > 0;
-  return value !== null && value !== undefined && String(value).trim() !== "";
+  if (isArray(value)) return value.length > 0;
+  return value !== null && value !== undefined && trim(String(value)) !== "";
 };
 
 const isHealthConstraintsStepCompleted = (state) =>
-  Array.isArray(state.completedUserOnboardingSteps) &&
-  state.completedUserOnboardingSteps.includes("health-constraints");
+  isArray(state.completedUserOnboardingSteps) &&
+  includes(state.completedUserOnboardingSteps, "health-constraints");
 
 export const hasAnsweredHealthConstraints = (state) =>
   hasValue(state.healthConstraints) ||
@@ -16,7 +18,7 @@ export const hasAnsweredHealthConstraints = (state) =>
 
 export const getHealthConstraintsSummary = (state, t) => {
   const selectedCount =
-    (state.healthConstraints?.filter((item) => item !== "none")?.length ?? 0) +
+    (filter(state.healthConstraints, (item) => item !== "none")?.length ?? 0) +
     (state.customHealthConstraints?.length ?? 0);
 
   if (selectedCount > 0) {

@@ -9,6 +9,8 @@ import {
   DrawerClose,
 } from "@/components/ui/drawer";
 
+import { find, map } from "lodash";
+
 /* Shared between auth layout and profile drawer. */
 
 export function ModeDrawer({ open, onOpenChange }) {
@@ -23,7 +25,7 @@ export function ModeDrawer({ open, onOpenChange }) {
   }, [open, mode]);
 
   const active =
-    MODE_OPTIONS.find((m) => m.value === selected) ?? MODE_OPTIONS[0];
+    find(MODE_OPTIONS, (m) => m.value === selected) ?? MODE_OPTIONS[0];
 
   const handleApply = () => {
     setMode(selected);
@@ -60,7 +62,7 @@ export function ModeDrawer({ open, onOpenChange }) {
 
         {/* Mode cards */}
         <div className="relative z-10 flex flex-col gap-2.5 px-4 pt-3">
-          {MODE_OPTIONS.map((item) => {
+          {map(MODE_OPTIONS, (item) => {
             const isActive = selected === item.value;
             return (
               <motion.button

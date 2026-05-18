@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, isArray } from "lodash";
 import { useGetQuery } from "@/hooks/api";
 
 export const APP_LANGUAGES_QUERY_KEY = ["languages"];
@@ -21,7 +21,7 @@ const useAppLanguages = () => {
   const responseLanguages = React.useMemo(() => get(data, "data", []), [data]);
 
   const languages = React.useMemo(() => {
-    if (Array.isArray(responseLanguages) && responseLanguages.length > 0) {
+    if (isArray(responseLanguages) && responseLanguages.length > 0) {
       return responseLanguages;
     }
 

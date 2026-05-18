@@ -1,5 +1,7 @@
 import React from "react";
 
+import { filter, find, includes, isArray, map, toLower, toNumber, trim } from "lodash";
+
 const STORAGE_KEY = "liveon:nutrition:saved-meal-templates:v1";
 const RECURRING_STORAGE_KEY =
   "liveon:nutrition:recurring-meal-template-patterns:v1";
@@ -15,10 +17,10 @@ export const WEEK_DAYS = [
 ];
 
 export const mealTypeToMealKey = (mealType = "") => {
-  const normalized = String(mealType).toLowerCase();
-  if (normalized.includes("nonushta")) return "breakfast";
-  if (normalized.includes("tushlik")) return "lunch";
-  if (normalized.includes("kechki")) return "dinner";
+  const normalized = toLower(String(mealType));
+  if (includes(normalized, "nonushta")) return "breakfast";
+  if (includes(normalized, "tushlik")) return "lunch";
+  if (includes(normalized, "kechki")) return "dinner";
   return "snack";
 };
 
@@ -38,7 +40,7 @@ const readStorageArray = (key) => {
 
   try {
     const parsed = JSON.parse(window.localStorage.getItem(key) || "[]");
-    return Array.isArray(parsed) ? parsed : [];
+    return isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
@@ -51,9 +53,9 @@ const writeStorageArray = (key, value) => {
 
 const normalizeTemplate = (template = {}) => ({
   id: template.id || createId(),
-  name: String(template.name || "Mening shablonim").trim(),
-  mealIds: Array.isArray(template.mealIds)
-    ? [...new Set(template.mealIds.filter(Boolean))]
+  name: trim(String(template.name || "Mening shablonim")),
+  mealIds: isArray(template.mealIds)
+    ? [...new Set(filter(template.mealIds, Boolean))]
     : [],
   createdAt: template.createdAt || new Date().toISOString(),
   updatedAt: template.updatedAt || new Date().toISOString(),
@@ -61,8 +63,8 @@ const normalizeTemplate = (template = {}) => ({
 
 const normalizeRecurringPattern = (pattern = {}) => ({
   id: pattern.id || createId(),
-  weekday: WEEK_DAYS.includes(pattern.weekday) ? pattern.weekday : WEEK_DAYS[0],
-  mealType: String(pattern.mealType || "Nonushta").trim(),
+  weekday: includes(WEEK_DAYS, pattern.weekday) ? pattern.weekday : WEEK_DAYS[0],
+  mealType: trim(String(pattern.mealType || "Nonushta")),
   mealKey: pattern.mealKey || mealTypeToMealKey(pattern.mealType),
   templateId: pattern.templateId || null,
   createdAt: pattern.createdAt || new Date().toISOString(),
@@ -70,8 +72,8 @@ const normalizeRecurringPattern = (pattern = {}) => ({
 });
 
 export const buildPlanFoodFromSavedMeal = (savedMeal = {}, seed = "") => {
-  const grams = Math.max(1, Number(savedMeal.grams) || 100);
-  const per100 = (value) => Math.round((Number(value) || 0) / grams * 100);
+  const grams = Math.max(1, toNumber(savedMeal.grams) || 100);
+  const per100 = (value) => Math.round((toNumber(value) || 0) / grams * 100);
 
   return {
     id: `saved-template-${savedMeal.id || seed}-${Date.now()}-${seed}`,
@@ -88,11 +90,11 @@ export const buildPlanFoodFromSavedMeal = (savedMeal = {}, seed = "") => {
     baseProtein: per100(savedMeal.protein),
     baseCarbs: per100(savedMeal.carbs),
     baseFat: per100(savedMeal.fat),
-    cal: Math.round(Number(savedMeal.calories) || 0),
-    protein: Math.round(Number(savedMeal.protein) || 0),
-    carbs: Math.round(Number(savedMeal.carbs) || 0),
-    fat: Math.round(Number(savedMeal.fat) || 0),
-    fiber: Math.round(Number(savedMeal.fiber) || 0),
+    cal: Math.round(toNumber(savedMeal.calories) || 0),
+    protein: Math.round(toNumber(savedMeal.protein) || 0),
+    carbs: Math.round(toNumber(savedMeal.carbs) || 0),
+    fat: Math.round(toNumber(savedMeal.fat) || 0),
+    fiber: Math.round(toNumber(savedMeal.fiber) || 0),
   };
 };
 
@@ -112,10 +114,10 @@ export const buildLoggedMealFromSavedMealTemplate = (savedMeal = {}) => ({
 
 export const useSavedMealTemplates = () => {
   const [templates, setTemplates] = React.useState(() =>
-    readStorageArray(STORAGE_KEY).map(normalizeTemplate),
+    map(readStorageArray(STORAGE_KEY), normalizeTemplate),
   );
   const [recurringPatterns, setRecurringPatterns] = React.useState(() =>
-    readStorageArray(RECURRING_STORAGE_KEY).map(normalizeRecurringPattern),
+    map(readStorageArray(RECURRING_STORAGE_KEY), normalizeRecurringPattern),
   );
 
   React.useEffect(() => {
@@ -140,20 +142,19 @@ export const useSavedMealTemplates = () => {
   const updateTemplate = React.useCallback((templateId, patch) => {
     const updatedAt = new Date().toISOString();
     setTemplates((current) =>
-      current.map((template) =>
+      map(current, (template) =>
         template.id === templateId
           ? normalizeTemplate({ ...template, ...patch, updatedAt })
-          : template,
-      ),
+          : template),
     );
   }, []);
 
   const deleteTemplate = React.useCallback((templateId) => {
     setTemplates((current) =>
-      current.filter((template) => template.id !== templateId),
+      filter(current, (template) => template.id !== templateId),
     );
     setRecurringPatterns((current) =>
-      current.filter((pattern) => pattern.templateId !== templateId),
+      filter(current, (pattern) => pattern.templateId !== templateId),
     );
   }, []);
 
@@ -165,31 +166,28 @@ export const useSavedMealTemplates = () => {
     });
 
     setRecurringPatterns((current) => {
-      const existing = current.find(
-        (item) =>
-          item.weekday === nextPattern.weekday &&
-          item.mealType === nextPattern.mealType,
-      );
+      const existing = find(current, (item) =>
+        item.weekday === nextPattern.weekday &&
+        item.mealType === nextPattern.mealType);
 
       if (!existing) {
         return [nextPattern, ...current];
       }
 
-      return current.map((item) =>
+      return map(current, (item) =>
         item.id === existing.id
           ? {
               ...nextPattern,
               id: existing.id,
               createdAt: existing.createdAt,
             }
-          : item,
-      );
+          : item);
     });
   }, []);
 
   const deleteRecurringPattern = React.useCallback((patternId) => {
     setRecurringPatterns((current) =>
-      current.filter((pattern) => pattern.id !== patternId),
+      filter(current, (pattern) => pattern.id !== patternId),
     );
   }, []);
 

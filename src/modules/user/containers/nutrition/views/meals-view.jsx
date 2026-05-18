@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { PlusIcon } from "lucide-react";
 import NutritionMealSections from "../nutrition-meal-sections.jsx";
 
+import { map } from "lodash";
+
 export default function NutritionMealsView(props) {
   const {
     goals,
@@ -15,7 +17,6 @@ export default function NutritionMealsView(props) {
     activeNutritionFilterCount,
     setIsFilterDrawerOpen,
     filteredMealSections,
-    mealFeedbackById,
     activeMealType,
     setSelectedMealTypeForAdd,
     setIsActionDrawerOpen,
@@ -41,7 +42,6 @@ export default function NutritionMealsView(props) {
           Tarmoq yo&apos;q — o&apos;zgarishlar saqlanmaydi
         </div>
       ) : null}
-
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-sm font-medium text-muted-foreground">
@@ -50,14 +50,13 @@ export default function NutritionMealsView(props) {
           <h1 className="text-3xl font-black tracking-tight">Ovqatlar</h1>
         </div>
       </div>
-
       <div className="grid gap-3 sm:grid-cols-4">
-        {[
+        {map([
           ["Kaloriya", `${roundedTotals.calories}/${goals.calories}`, "kcal"],
           ["Protein", `${roundedTotals.protein}/${goals.protein}`, "g"],
           ["Carbs", `${roundedTotals.carbs}/${goals.carbs}`, "g"],
           ["Fat", `${roundedTotals.fat}/${goals.fat}`, "g"],
-        ].map(([label, value, unit]) => (
+        ], ([label, value, unit]) => (
           <div key={label} className="rounded-2xl border bg-card px-4 py-3">
             <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               {label}
@@ -68,7 +67,6 @@ export default function NutritionMealsView(props) {
           </div>
         ))}
       </div>
-
       <NutritionMealSections
         mealConfig={mealConfig}
         mealFilter={mealFilter}
@@ -78,7 +76,6 @@ export default function NutritionMealsView(props) {
         activeFilterCount={activeNutritionFilterCount}
         setIsFilterDrawerOpen={setIsFilterDrawerOpen}
         filteredMealSections={filteredMealSections}
-        mealFeedbackById={mealFeedbackById}
         activeMealType={activeMealType}
         setSelectedMealTypeForAdd={setSelectedMealTypeForAdd}
         setIsActionDrawerOpen={setIsActionDrawerOpen}
@@ -96,7 +93,6 @@ export default function NutritionMealsView(props) {
         addDisabled={!isOnline}
         onCopyFromYesterday={handleCopyFromYesterday}
       />
-
       <Button
         type="button"
         disabled={!isOnline}

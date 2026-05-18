@@ -1,7 +1,7 @@
 import React from "react";
 import { Outlet, useNavigate } from "react-router";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
-import { get, isArray, map, trim } from "lodash";
+import { get, isArray, map, trim, filter, find, toNumber } from "lodash";
 import dayjs from "dayjs";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import {
@@ -104,7 +104,7 @@ const ListPage = () => {
     "dietaryTag",
     parseAsStringEnum([
       "all",
-      ...DIETARY_TAG_OPTIONS.map((item) => item.value),
+      ...map(DIETARY_TAG_OPTIONS, (item) => item.value),
     ]).withDefault("all"),
   );
   const [dietaryTagOp, setDietaryTagOp] = useQueryState(
@@ -115,7 +115,7 @@ const ListPage = () => {
     "allergenTag",
     parseAsStringEnum([
       "all",
-      ...ALLERGEN_TAG_OPTIONS.map((item) => item.value),
+      ...map(ALLERGEN_TAG_OPTIONS, (item) => item.value),
     ]).withDefault("all"),
   );
   const [allergenTagOp, setAllergenTagOp] = useQueryState(
@@ -162,10 +162,10 @@ const ListPage = () => {
     "sortDir",
     parseAsStringEnum(SORT_DIRECTIONS).withDefault("asc"),
   );
-  const currentPage = Math.max(1, Number(pageQuery) || 1);
+  const currentPage = Math.max(1, toNumber(pageQuery) || 1);
   const pageSize = Math.min(
     100,
-    Math.max(1, Number(pageSizeQuery) || ITEMS_PER_PAGE),
+    Math.max(1, toNumber(pageSizeQuery) || ITEMS_PER_PAGE),
   );
   const sorting = React.useMemo(
     () =>
@@ -272,7 +272,7 @@ const ListPage = () => {
   const activeLanguages = React.useMemo(() => {
     const languages = getPayload(languagesData);
     return isArray(languages)
-      ? languages.filter((language) => get(language, "isActive") !== false)
+      ? filter(languages, (language) => get(language, "isActive") !== false)
       : [];
   }, [languagesData]);
   const patchMutation = usePatchQuery({ queryKey: QUERY_KEY });
@@ -512,7 +512,7 @@ const ListPage = () => {
 
           return tags.length ? (
             <div className="flex flex-wrap gap-1">
-              {tags.map((tag) => (
+              {map(tags, (tag) => (
                 <Badge
                   key={tag}
                   variant="outline"
@@ -842,7 +842,7 @@ const ListPage = () => {
   ]);
   const handleFiltersChange = React.useCallback(
     (next) => {
-      const byField = (field) => next.find((item) => item.field === field);
+      const byField = (field) => find(next, (item) => item.field === field);
       React.startTransition(() => {
         void setName(byField("name")?.values?.[0] ?? "");
         void setNameOp(byField("name")?.operator ?? "contains");
@@ -910,10 +910,10 @@ const ListPage = () => {
         typeof updater === "function"
           ? updater({ pageIndex: currentPage - 1, pageSize })
           : updater;
-      const nextPageSize = Number(next.pageSize) || pageSize;
+      const nextPageSize = toNumber(next.pageSize) || pageSize;
       React.startTransition(() => {
         void setPageQuery(
-          String(nextPageSize === pageSize ? Number(next.pageIndex) + 1 : 1),
+          String(nextPageSize === pageSize ? toNumber(next.pageIndex) + 1 : 1),
         );
         void setPageSizeQuery(String(nextPageSize));
       });
@@ -922,7 +922,7 @@ const ListPage = () => {
   });
   const handleDragEnd = async ({ active, over }) => {
     if (!canReorder || !active || !over || active.id === over.id) return;
-    const ids = items.map((item) => String(item.id));
+    const ids = map(items, (item) => String(item.id));
     const oldIndex = ids.indexOf(active.id);
     const newIndex = ids.indexOf(over.id);
     const ordered = [...items];
@@ -1019,7 +1019,7 @@ const ListPage = () => {
               {canReorder ? (
                 <DataGridTableDndRows
                   table={table}
-                  dataIds={items.map((item) => String(item.id))}
+                  dataIds={map(items, (item) => String(item.id))}
                   handleDragEnd={handleDragEnd}
                 />
               ) : (

@@ -1,17 +1,19 @@
 import React from "react";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 import { getApiResponseData } from "@/lib/api-response";
 import { USER_AI_REPORT_QUERY_KEY } from "@/hooks/app/use-user-ai-reports";
 import { dailyReportQueryKey } from "@/modules/user/containers/report/report-helpers.js";
 
+import { isArray } from "lodash";
+
 const RESTORE_QUOTE_QUERY_KEY = ["user", "gamification", "streak", "restore-quote"];
 
 const getFirstReport = (payload) => {
-  if (Array.isArray(payload)) {
+  if (isArray(payload)) {
     return payload[0] ?? null;
   }
 
-  if (Array.isArray(payload?.items)) {
+  if (isArray(payload?.items)) {
     return payload.items[0] ?? null;
   }
 

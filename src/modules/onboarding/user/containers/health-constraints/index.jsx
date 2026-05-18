@@ -35,6 +35,8 @@ import PageAura from "../../components/page-aura.jsx";
 import OnboardingSelectCard from "../../components/onboarding-select-card.jsx";
 import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
 
+import { filter, forEach, includes, isArray, map, some, trim } from "lodash";
+
 const getTone = (selected) => {
   if (selected?.type === "medical_condition") return ONBOARDING_ACCENTS.rose;
   if (selected?.type === "mobility_limitation") return ONBOARDING_ACCENTS.sky;
@@ -46,16 +48,16 @@ const extractConstraints = (response) =>
   normalizeOnboardingOptionsResponse(response, "health-constraints");
 
 const ensureEllipsis = (value) => {
-  const label = String(value ?? "").trim();
+  const label = trim(String(value ?? ""));
   if (!label) return "";
   return label.endsWith("…") ? label : `${label.replace(/\.\.\.$/, "")}…`;
 };
 
 const normalizeConstraintKeys = (values = []) =>
-  Array.isArray(values)
+  isArray(values)
     ? Array.from(
         new Set(
-          values.map((value) => String(value ?? "").trim()).filter(Boolean),
+          filter(map(values, (value) => trim(String(value ?? ""))), Boolean),
         ),
       )
     : [];
@@ -141,26 +143,24 @@ const Index = () => {
   );
   const allOptions = React.useMemo(() => {
     const map = new Map();
-    [...options, ...otherOptions].forEach((item) => {
+    forEach([...options, ...otherOptions], (item) => {
       if (item?.key) map.set(item.key, item);
     });
     return [...map.values()];
   }, [options, otherOptions]);
   const optionMap = React.useMemo(
-    () => new Map(allOptions.map((item) => [item.key, item])),
+    () => new Map(map(allOptions, (item) => [item.key, item])),
     [allOptions],
   );
   const selectedOptions = React.useMemo(
-    () => selectedKeys.map((key) => optionMap.get(key)).filter(Boolean),
+    () => filter(map(selectedKeys, (key) => optionMap.get(key)), Boolean),
     [optionMap, selectedKeys],
   );
   const hasSelection = selectedKeys.length > 0 || customChips.length > 0;
   const activeTone = getTone(selectedOptions[0]);
-  const exactMatch = allOptions.some(
-    (item) =>
-      normalizeChipKey(item.name) === searchKey ||
-      normalizeChipKey(item.key) === searchKey,
-  );
+  const exactMatch = some(allOptions, (item) =>
+    normalizeChipKey(item.name) === searchKey ||
+    normalizeChipKey(item.key) === searchKey);
   const canAddCustom =
     searchLabel.length >= 2 &&
     !exactMatch &&
@@ -171,7 +171,7 @@ const Index = () => {
       const normalizedKeys = normalizeConstraintKeys(nextKeys);
       const normalizedCustom = normalizeCustomChips(nextCustom);
 
-      if (normalizedKeys.includes("none")) {
+      if (includes(normalizedKeys, "none")) {
         setFields({
           healthConstraints: ["none"],
           customHealthConstraints: [],
@@ -184,7 +184,7 @@ const Index = () => {
       }
 
       setFields({
-        healthConstraints: normalizedKeys.filter((key) => key !== "none"),
+        healthConstraints: filter(normalizedKeys, (key) => key !== "none"),
         customHealthConstraints: normalizedCustom,
         injurySeverity: "",
       });
@@ -194,7 +194,7 @@ const Index = () => {
 
   const toggleOption = React.useCallback(
     (item) => {
-      const key = String(item?.key ?? "").trim();
+      const key = trim(String(item?.key ?? ""));
       if (!key) return;
 
       if (key === "none") {
@@ -202,10 +202,10 @@ const Index = () => {
         return;
       }
 
-      const baseKeys = selectedKeys.filter((value) => value !== "none");
+      const baseKeys = filter(selectedKeys, (value) => value !== "none");
       commitSelection(
         selectedKeySet.has(key)
-          ? baseKeys.filter((value) => value !== key)
+          ? filter(baseKeys, (value) => value !== key)
           : [...baseKeys, key],
       );
     },
@@ -215,7 +215,7 @@ const Index = () => {
   const addCustom = React.useCallback(() => {
     if (!canAddCustom) return;
     commitSelection(
-      selectedKeys.filter((key) => key !== "none"),
+      filter(selectedKeys, (key) => key !== "none"),
       [...customChips, searchLabel],
     );
     setSearch("");
@@ -224,7 +224,7 @@ const Index = () => {
   const removeConstraint = React.useCallback(
     (key) => {
       commitSelection(
-        selectedKeys.filter((value) => value !== key),
+        filter(selectedKeys, (value) => value !== key),
         key === "none" ? [] : customChips,
       );
     },
@@ -235,8 +235,8 @@ const Index = () => {
     (label) => {
       const key = normalizeChipKey(label);
       commitSelection(
-        selectedKeys.filter((value) => value !== "none"),
-        customChips.filter((value) => normalizeChipKey(value) !== key),
+        filter(selectedKeys, (value) => value !== "none"),
+        filter(customChips, (value) => normalizeChipKey(value) !== key),
       );
     },
     [commitSelection, customChips, selectedKeys],
@@ -244,7 +244,7 @@ const Index = () => {
 
   const drawerSelectedItems = React.useMemo(
     () => [
-      ...selectedKeys.map((key) => {
+      ...map(selectedKeys, (key) => {
         const option = optionMap.get(key);
         const itemTone = getTone(option);
         return {
@@ -254,7 +254,7 @@ const Index = () => {
           onRemove: () => removeConstraint(key),
         };
       }),
-      ...customChips.map((label) => ({
+      ...map(customChips, (label) => ({
         key: `custom-${normalizeChipKey(label)}`,
         label,
         className:
@@ -359,7 +359,7 @@ const Index = () => {
               {t("onboarding.chipSelect.error")}
             </div>
           ) : (
-            options.map((item) => {
+            map(options, (item) => {
               const isActive = selectedKeySet.has(item.key);
               const itemTone = getTone(item);
               const Icon =
@@ -421,7 +421,7 @@ const Index = () => {
             />
           </div>
         ) : drawerOptions.length ? (
-          drawerOptions.map((item) => {
+          map(drawerOptions, (item) => {
             const isActive = selectedKeySet.has(item.key);
             return (
               <OnboardingSelectCard

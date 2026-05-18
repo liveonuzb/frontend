@@ -1,5 +1,5 @@
 import React from "react";
-import { includes, join, map, take } from "lodash";
+import { join, map, take, toUpper, trim, split } from "lodash";
 import { useNavigate } from "react-router";
 import {
   ChevronsUpDown,
@@ -8,7 +8,6 @@ import {
   CreditCardIcon,
   BellIcon,
   SparklesIcon,
-  GraduationCapIcon,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
@@ -27,37 +26,33 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAuthStore, useOnboardingStore } from "@/store";
+import { useAuthStore } from "@/store";
 import { usePostQuery } from "@/hooks/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { useProfileOverlay } from "@/modules/profile/hooks/use-profile-overlay";
-import { getResumeCoachOnboardingPath } from "@/modules/onboarding/lib/resume";
-import { getCoachOnboardingPath } from "@/lib/app-paths.js";
 
 const NavUser = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { isMobile } = useSidebar();
-  const { logout, refreshToken, roles, setActiveRole, user } = useAuthStore();
-  const onboardingState = useOnboardingStore();
+  const { logout, refreshToken, user } = useAuthStore();
   const { mutateAsync: logoutRequest } = usePostQuery();
   const { openProfile } = useProfileOverlay();
   const { t } = useTranslation();
 
   const displayName = user?.firstName
-    ? `${user.firstName} ${user.lastName || ""}`.trim()
+    ? trim(`${user.firstName} ${user.lastName || ""}`)
     : t("common.navUser.user");
 
   const email = user?.email || "user@example.com";
-  const isAlreadyCoach = includes(roles, "COACH");
 
-  const initials = join(
+  const initials = toUpper(join(
     take(
-      map(displayName.split(" "), (n) => n[0]),
+      map(split(displayName, " "), (n) => n[0]),
       2,
     ),
     "",
-  ).toUpperCase();
+  ));
 
   const handleLogout = () => {
     const run = async () => {
@@ -84,21 +79,6 @@ const NavUser = () => {
 
   const handleProfileClick = () => {
     openProfileEntry("profile");
-  };
-
-  const handleCoachClick = () => {
-    if (isAlreadyCoach) {
-      setActiveRole("COACH");
-      navigate("/coach");
-      return;
-    }
-
-    const resumePath = getResumeCoachOnboardingPath(
-      onboardingState,
-      user?.coachApplicationStatus ?? null,
-    );
-
-    navigate(getCoachOnboardingPath(resumePath ?? "category"));
   };
 
   return (
@@ -159,12 +139,6 @@ const NavUser = () => {
               <DropdownMenuItem onClick={handleProfileClick}>
                 <UserIcon />
                 {t("common.navUser.profile")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleCoachClick}>
-                <GraduationCapIcon />
-                {isAlreadyCoach
-                  ? t("common.navUser.coachCabinet")
-                  : t("common.navUser.becomeCoach")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => openProfileEntry("premium")}>
                 <CreditCardIcon />

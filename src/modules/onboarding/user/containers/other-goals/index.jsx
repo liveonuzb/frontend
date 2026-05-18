@@ -1,4 +1,4 @@
-import { filter, get, includes, isArray, map } from "lodash";
+import { filter, get, includes, isArray, map, find } from "lodash";
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";
@@ -15,12 +15,12 @@ import {
   getOnboardingOptionsPath,
   getOnboardingOptionsQueryKey,
 } from "@/modules/onboarding/lib/onboarding-options";
-import useOnboardingBase from "@/hooks/app/use-onboarding-base";
+import { useOnboardingAssets } from "@/hooks/app/use-onboarding-base";
 import PageAura from "../../components/page-aura.jsx";
 import OnboardingSelectCard from "../../components/onboarding-select-card.jsx";
 
-const fallbackTone = (base) => ({
-  image: `${base}/maintain.webp`,
+const fallbackTone = (asset) => ({
+  image: asset("maintain"),
   accent: "from-emerald-500/18 via-teal-400/10 to-transparent",
   border: "border-emerald-500/20",
   pageTint: "from-emerald-500/12 via-teal-400/8 to-transparent",
@@ -29,10 +29,10 @@ const fallbackTone = (base) => ({
     "from-emerald-500 to-teal-500 hover:from-emerald-500/90 hover:to-teal-500/90 text-white shadow-[0_18px_44px_rgba(16,185,129,0.24)]",
 });
 
-const otherGoalTones = (base) => [
-  fallbackTone(base),
+const otherGoalTones = (asset) => [
+  fallbackTone(asset),
   {
-    image: `${base}/gain.webp`,
+    image: asset("gain"),
     accent: "from-sky-500/18 via-indigo-400/10 to-transparent",
     border: "border-sky-500/20",
     pageTint: "from-sky-500/12 via-indigo-400/8 to-transparent",
@@ -41,7 +41,7 @@ const otherGoalTones = (base) => [
       "from-sky-500 to-indigo-500 hover:from-sky-500/90 hover:to-indigo-500/90 text-white shadow-[0_18px_44px_rgba(59,130,246,0.24)]",
   },
   {
-    image: `${base}/lose.webp`,
+    image: asset("lose"),
     accent: "from-rose-500/18 via-orange-400/10 to-transparent",
     border: "border-rose-500/20",
     pageTint: "from-rose-500/12 via-orange-400/8 to-transparent",
@@ -59,7 +59,7 @@ const Index = () => {
     goals: selectedGoals = [],
     setFields,
   } = useOnboardingStore();
-  const base = useOnboardingBase();
+  const { asset } = useOnboardingAssets();
 
   useOnboardingAutoSave("user", "other-goals");
 
@@ -68,12 +68,10 @@ const Index = () => {
     queryProps: { queryKey: getOnboardingOptionsQueryKey("goals") },
   });
   const apiGoals = get(data, "data.data", get(data, "data", []));
-  const toneList = React.useMemo(() => otherGoalTones(base), [base]);
+  const toneList = React.useMemo(() => otherGoalTones(asset), [asset]);
   const goals = React.useMemo(() => {
     const source = isArray(apiGoals) ? apiGoals : [];
-    return source
-      .filter((item) => item.goalType === "other")
-      .map((item, index) => {
+    return map(filter(source, (item) => item.goalType === "other"), (item, index) => {
         const tone = toneList[index % toneList.length] ?? toneList[0];
         return {
           value: item.key,
@@ -86,14 +84,13 @@ const Index = () => {
       });
   }, [apiGoals, toneList]);
 
-  const selectedGoal = goals.find((item) =>
-    includes(selectedGoals, item.value),
-  ) ??
+  const selectedGoal = find(goals, (item) =>
+    includes(selectedGoals, item.value)) ??
     goals[0] ?? {
       value: "other-goals",
       title: t("onboarding.otherGoals.fallbackTitle"),
       description: "",
-      ...fallbackTone(base),
+      ...fallbackTone(asset),
     };
 
   const handleSelect = (value) => {

@@ -6,7 +6,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { filter } from "lodash";
+import { filter, includes, map, toLower } from "lodash";
 import * as BasePhoneInput from "react-phone-number-input";
 import flags from "react-phone-number-input/flags";
 import { cn } from "@/lib/utils.js";
@@ -110,7 +110,7 @@ function CountrySelect({
   const filteredCountries = useMemo(() => {
     if (!searchValue) return countryList;
     return filter(countryList, ({ label }) =>
-      label.toLowerCase().includes(searchValue.toLowerCase()),
+      includes(toLower(label), toLower(searchValue)),
     );
   }, [countryList, searchValue]);
 
@@ -167,7 +167,7 @@ function CountrySelect({
           <div className="relative flex max-h-full">
             <div className="flex max-h-[min(var(--available-height),24rem)] w-full scroll-pt-2 scroll-pb-2 flex-col overscroll-contain">
               <ScrollArea className="size-full min-h-0 **:data-[slot=scroll-area-scrollbar]:m-0 [&_[data-slot=scroll-area-viewport]]:h-full [&_[data-slot=scroll-area-viewport]]:overscroll-contain">
-                {filteredCountries.map((item) =>
+                {map(filteredCountries, (item) =>
                   item.value ? (
                     <ComboboxItem
                       key={item.value}
@@ -183,8 +183,7 @@ function CountrySelect({
                         {`+${BasePhoneInput.getCountryCallingCode(item.value)}`}
                       </span>
                     </ComboboxItem>
-                  ) : null,
-                )}
+                  ) : null)}
               </ScrollArea>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, map, take } from "lodash";
 import { AnimatePresence, motion } from "framer-motion";
 import { BellIcon, TrophyIcon, UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,7 @@ const InvitationsBanner = ({
             </div>
           </div>
           <div className="flex -space-x-3 overflow-hidden">
-            {invitations.slice(0, 3).map((inv) => (
+            {map(take(invitations, 3), (inv) => (
               <div
                 key={inv.id}
                 className="flex size-10 cursor-help items-center justify-center rounded-full border-2 border-background bg-muted transition-transform hover:z-10 hover:-translate-y-1"
@@ -54,7 +54,7 @@ const InvitationsBanner = ({
         </div>
 
         <div className="grid gap-3 p-3 pt-0 sm:p-5 sm:pt-0">
-          {invitations.slice(0, 2).map((inv) => (
+          {map(take(invitations, 2), (inv) => (
             <motion.div
               key={inv.id}
               layout

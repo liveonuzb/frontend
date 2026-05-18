@@ -1,5 +1,5 @@
 import React from "react";
-import { get, round } from "lodash";
+import { get, round, filter, isArray, map, toNumber as lodashToNumber, trim } from "lodash";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import {
   useDeleteQuery,
@@ -56,7 +56,7 @@ const imageInputToFile = async (input, fallbackName = "meal-capture") => {
 };
 
 const toNumber = (value, fallback = 0) => {
-  const normalized = Number(value);
+  const normalized = lodashToNumber(value);
   return Number.isFinite(normalized) ? normalized : fallback;
 };
 
@@ -68,13 +68,13 @@ const formatAmount = (value) => {
 const resolveLabel = (translations, fallback, language) => {
   if (translations && typeof translations === "object") {
     const direct = translations[language];
-    if (typeof direct === "string" && direct.trim()) {
-      return direct.trim();
+    if (typeof direct === "string" && trim(direct)) {
+      return trim(direct);
     }
 
     const uz = translations.uz;
-    if (typeof uz === "string" && uz.trim()) {
-      return uz.trim();
+    if (typeof uz === "string" && trim(uz)) {
+      return trim(uz);
     }
   }
 
@@ -119,8 +119,8 @@ const deriveLoggedAmount = (item, catalogFood) => {
 export const createCatalogFood = (food, language) => {
   const unit = food.servingUnit || "g";
   const defaultAmount = Math.max(1, toNumber(food.servingSize, 100));
-  const categories = Array.isArray(food.categories)
-    ? food.categories.map((category) => ({
+  const categories = isArray(food.categories)
+    ? map(food.categories, (category) => ({
         ...category,
         label: resolveLabel(category.translations, category.name, language),
       }))
@@ -157,7 +157,7 @@ export const createCatalogFood = (food, language) => {
     maxIntake: food.maxIntake ?? null,
     category: primaryCategory?.label || "Boshqa",
     categoryId: primaryCategory?.id ?? null,
-    categoryIds: Array.isArray(food.categoryIds) ? food.categoryIds : [],
+    categoryIds: isArray(food.categoryIds) ? food.categoryIds : [],
     categories,
     isActive: Boolean(food.isActive),
   };
@@ -195,7 +195,7 @@ const useFoodCatalog = () => {
 
   const categories = React.useMemo(
     () =>
-      get(data, "data.data.categories", []).map((category) => ({
+      map(get(data, "data.data.categories", []), (category) => ({
         ...category,
         label: resolveLabel(
           category.translations,
@@ -208,14 +208,13 @@ const useFoodCatalog = () => {
 
   const foods = React.useMemo(
     () =>
-      get(data, "data.data.foods", []).map((food) =>
-        createCatalogFood(food, currentLanguage),
-      ),
+      map(get(data, "data.data.foods", []), (food) =>
+        createCatalogFood(food, currentLanguage)),
     [data, currentLanguage],
   );
 
   const foodMap = React.useMemo(
-    () => new Map(foods.map((food) => [food.barcode, food])),
+    () => new Map(map(foods, (food) => [food.barcode, food])),
     [foods],
   );
 
@@ -225,13 +224,13 @@ const useFoodCatalog = () => {
   );
 
   const favoriteIdSet = React.useMemo(
-    () => new Set(get(quickAdd, "favorites", []).map((food) => food.id)),
+    () => new Set(map(get(quickAdd, "favorites", []), (food) => food.id)),
     [quickAdd],
   );
 
   const favorites = React.useMemo(
     () =>
-      get(quickAdd, "favorites", []).map((food) => ({
+      map(get(quickAdd, "favorites", []), (food) => ({
         ...createCatalogFood(food, currentLanguage),
         isFavorite: true,
       })),
@@ -240,7 +239,7 @@ const useFoodCatalog = () => {
 
   const recentFoods = React.useMemo(
     () =>
-      get(quickAdd, "recent", []).map((food) => ({
+      map(get(quickAdd, "recent", []), (food) => ({
         ...createCatalogFood(food, currentLanguage),
         isFavorite: favoriteIdSet.has(food.id),
       })),
@@ -261,7 +260,7 @@ const useFoodCatalog = () => {
 
 export const useFoodsByCategory = (categoryId, options = {}) => {
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
-  const search = String(options.search ?? "").trim();
+  const search = trim(String(options.search ?? ""));
   const pageSize = options.pageSize ?? FOODS_CATALOG_PAGE_SIZE;
   const enabled = options.enabled ?? true;
   const query = useInfiniteQuery({
@@ -281,16 +280,15 @@ export const useFoodsByCategory = (categoryId, options = {}) => {
       const payload = getApiResponseData(lastPage, {});
       const pagination = get(payload, "pagination", {});
 
-      return pagination.hasNextPage ? Number(pagination.page || 1) + 1 : undefined;
+      return pagination.hasNextPage ? lodashToNumber(pagination.page || 1) + 1 : undefined;
     },
   });
 
   const foods = React.useMemo(
     () =>
       get(query.data, "pages", []).flatMap((page) =>
-        get(getApiResponseData(page, {}), "foods", []).map((food) =>
-          createCatalogFood(food, currentLanguage),
-        ),
+        map(get(getApiResponseData(page, {}), "foods", []), (food) =>
+          createCatalogFood(food, currentLanguage)),
       ),
     [currentLanguage, query.data],
   );
@@ -318,7 +316,7 @@ export const useFoodBarcodeLookup = () => {
 
   const lookupFoodByBarcode = React.useCallback(
     async (code) => {
-      const normalizedCode = String(code || "").trim();
+      const normalizedCode = trim(String(code || ""));
 
       if (!normalizedCode) {
         return null;
@@ -423,8 +421,7 @@ export const useFoodScan = () => {
 
   const normalizeScanItems = React.useCallback(
     (items = []) =>
-      items
-        .map((item, index) => {
+      filter(map(items, (item, index) => {
           const food = get(item, "food");
 
           if (!food) {
@@ -443,8 +440,7 @@ export const useFoodScan = () => {
             confidence: toNumber(get(item, "confidence"), 0),
             reason: get(item, "reason", null),
           };
-        })
-        .filter(Boolean),
+        }), Boolean),
     [currentLanguage],
   );
 
@@ -479,7 +475,7 @@ export const useFoodScan = () => {
 
       return {
         id: get(ingredient, "id", fallbackId),
-        name: String(get(ingredient, "name", "Ingredient")).trim(),
+        name: trim(String(get(ingredient, "name", "Ingredient"))),
         grams,
         baseGrams: baseGrams || grams,
         estimatedGrams: toNumber(get(ingredient, "estimatedGrams"), grams),
@@ -502,10 +498,9 @@ export const useFoodScan = () => {
 
   const normalizeDraftItems = React.useCallback(
     (items = []) =>
-      items
-        .map((item, index) => ({
+      filter(map(items, (item, index) => ({
           id: get(item, "id", `draft-${index + 1}`),
-          title: String(get(item, "title", `Meal ${index + 1}`)).trim(),
+          title: trim(String(get(item, "title", `Meal ${index + 1}`))),
           confidence: toNumber(get(item, "confidence"), 0),
           portionGrams: toNumber(get(item, "portionGrams"), 0),
           aiNotes: get(item, "aiNotes", null),
@@ -519,17 +514,15 @@ export const useFoodScan = () => {
             fat: toNumber(get(item, "nutrition.fat"), 0),
             fiber: toNumber(get(item, "nutrition.fiber"), 0),
           },
-          ingredients: (Array.isArray(get(item, "ingredients"))
-            ? get(item, "ingredients")
-            : []
-          ).map((ingredient, ingredientIndex) =>
-            normalizeDraftIngredient(
-              ingredient,
-              `${get(item, "id", `draft-${index + 1}`)}-ingredient-${ingredientIndex + 1}`,
-            ),
+          ingredients: map(
+            (isArray(get(item, "ingredients")) ? get(item, "ingredients") : []),
+            (ingredient, ingredientIndex) =>
+              normalizeDraftIngredient(
+                ingredient,
+                `${get(item, "id", `draft-${index + 1}`)}-ingredient-${ingredientIndex + 1}`,
+              ),
           ),
-        }))
-        .filter((item) => item.title),
+        })), (item) => item.title),
     [normalizeDraftIngredient],
   );
 
@@ -596,16 +589,14 @@ export const useFoodScan = () => {
     // Returns array of enriched ingredient objects keyed by original id.
     analyzeIngredientsBatch: async (ingredients = []) => {
       const results = await Promise.allSettled(
-        ingredients.map(({ name, grams }) =>
+        map(ingredients, ({ name, grams }) =>
           batchIngredientsMutation.mutateAsync({
             url: "/foods/analyze-ingredient",
             attributes: { name, grams },
-          }),
-        ),
+          })),
       );
 
-      return results
-        .map((result, index) => {
+      return filter(map(results, (result, index) => {
           if (result.status !== "fulfilled") return null;
           const payload = getResponsePayload(result.value);
           const enriched = normalizeDraftIngredient(
@@ -613,8 +604,7 @@ export const useFoodScan = () => {
             ingredients[index].id || `ingredient-${index + 1}`,
           );
           return { ...enriched, originalId: ingredients[index].id };
-        })
-        .filter(Boolean);
+        }), Boolean);
     },
     uploadMealCapture: async (imageInput) => {
       const file = await imageInputToFile(imageInput);
@@ -645,7 +635,7 @@ export const useFoodScan = () => {
       const payload = getResponsePayload(response);
 
       return {
-        transcript: String(get(payload, "transcript", "")).trim(),
+        transcript: trim(String(get(payload, "transcript", ""))),
         confidence: toNumber(get(payload, "confidence"), 0),
       };
     },

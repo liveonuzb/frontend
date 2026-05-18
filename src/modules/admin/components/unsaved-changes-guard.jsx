@@ -12,6 +12,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+import { toLower } from "lodash";
+
 const DEFAULT_TITLE = "O'zgarishlar saqlanmagan";
 const DEFAULT_DESCRIPTION =
   "Sahifadan chiqsangiz, kiritilgan o'zgarishlar yo'qoladi.";
@@ -38,7 +40,7 @@ const stripBasename = (pathname, basename) => {
     ? basename.slice(0, -1)
     : basename;
 
-  if (!pathname.toLowerCase().startsWith(normalizedBasename.toLowerCase())) {
+  if (!toLower(pathname).startsWith(toLower(normalizedBasename))) {
     return null;
   }
 

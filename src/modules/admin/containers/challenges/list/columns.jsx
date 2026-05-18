@@ -1,5 +1,5 @@
 import React from "react";
-import { get, toPairs, take } from "lodash";
+import { get, toPairs, take, isArray, map, toNumber } from "lodash";
 import { format } from "date-fns";
 import { uz } from "date-fns/locale";
 import {
@@ -90,7 +90,7 @@ const extractPlaceRewards = (challenge) => {
   const source =
     challenge.rewardDetails?.placeRewards || challenge.placeRewards;
 
-  if (!source || typeof source !== "object" || Array.isArray(source)) {
+  if (!source || typeof source !== "object" || isArray(source)) {
     return {};
   }
 
@@ -100,7 +100,7 @@ const extractPlaceRewards = (challenge) => {
 const extractPlaceRewardPreview = (challenge) => {
   const source = challenge.rewardDetails?.placeRewardPreview;
 
-  if (!source || typeof source !== "object" || Array.isArray(source)) {
+  if (!source || typeof source !== "object" || isArray(source)) {
     return {};
   }
 
@@ -109,7 +109,7 @@ const extractPlaceRewardPreview = (challenge) => {
 
 const getPlaceRewardUnit = (challenge) =>
   challenge.rewardDetails?.placeRewardUnit ||
-  (Number(challenge.joinFeeXp || 0) > 0 ? "PERCENT" : "XP");
+  (toNumber(challenge.joinFeeXp || 0) > 0 ? "PERCENT" : "XP");
 
 const getRewardSummary = (challenge) => {
   const mode = getChallengeRewardMode(challenge);
@@ -135,14 +135,13 @@ const getRewardSummary = (challenge) => {
   const placeRewards = extractPlaceRewards(challenge);
   const placeRewardPreview = extractPlaceRewardPreview(challenge);
   const placeUnit = getPlaceRewardUnit(challenge);
-  const placeLabel = take(toPairs(placeRewards), 3)
-    .map(
-      ([place, value]) =>
-        `${place}-o'rin ${value}${placeUnit === "PERCENT" ? "%" : " XP"}`,
-    )
+  const placeLabel = map(take(toPairs(placeRewards), 3), ([place, value]) =>
+    `${place}-o'rin ${value}${placeUnit === "PERCENT" ? "%" : " XP"}`)
     .join(" \u00B7 ");
-  const previewLabel = take(toPairs(placeRewardPreview), 3)
-    .map(([place, value]) => `${place}-o'rin \u2248 ${value} XP`)
+  const previewLabel = map(
+    take(toPairs(placeRewardPreview), 3),
+    ([place, value]) => `${place}-o'rin \u2248 ${value} XP`,
+  )
     .join(" \u00B7 ");
 
   return {

@@ -1,5 +1,5 @@
 import React from "react";
-import { get, map } from "lodash";
+import { get, map, trim } from "lodash";
 import { Badge } from "@/components/ui/badge";
 import { DataGridColumnHeader } from "@/components/reui/data-grid";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
@@ -10,7 +10,6 @@ import {
   roleBgColors,
   roleLabels,
   statusConfig,
-  coachStatusConfig,
   premiumStatusConfig,
 } from "../config";
 import { cn } from "@/lib/utils";
@@ -33,7 +32,6 @@ export const useColumns = ({
   onCancelPremium,
   onBanToggle,
   onDelete,
-  onCoachStatusUpdate,
 }) => {
   return React.useMemo(
     () => [
@@ -68,7 +66,7 @@ export const useColumns = ({
               </div>
               <div className="min-w-0">
                 <p className="font-medium truncate">
-                  {`${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() ||
+                  {trim(`${user.firstName ?? ""} ${user.lastName ?? ""}`) ||
                     "Nomsiz user"}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
@@ -131,21 +129,6 @@ export const useColumns = ({
                   {roleLabels[role] ?? role}
                 </Badge>
               ))}
-              {user.coachStatus ? (
-                <Badge
-                  variant="outline"
-                  className={get(
-                    coachStatusConfig[user.coachStatus],
-                    "className",
-                  )}
-                >
-                  {get(
-                    coachStatusConfig[user.coachStatus],
-                    "label",
-                    user.coachStatus,
-                  )}
-                </Badge>
-              ) : null}
             </div>
           );
         },
@@ -237,7 +220,6 @@ export const useColumns = ({
               onCancelPremium={onCancelPremium}
               onBanToggle={onBanToggle}
               onDelete={onDelete}
-              onCoachStatusUpdate={onCoachStatusUpdate}
             />
           </div>
         ),
@@ -260,7 +242,6 @@ export const useColumns = ({
       onCancelPremium,
       onBanToggle,
       onDelete,
-      onCoachStatusUpdate,
     ],
   );
 };

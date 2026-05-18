@@ -10,7 +10,6 @@
       "benefitCalories": "Отслеживайте калории и питание",
       "benefitWater": "Контролируйте потребление воды",
       "benefitWorkouts": "Планируйте тренировки",
-      "benefitAiCoach": "Используйте рекомендации AI-тренера",
       "copyright": "© 2026 LiveOn. Все права защищены.",
       "panelBadge": "AI-план за 60 секунд",
       "panelPill": "AI-план за 60 секунд",
@@ -158,9 +157,6 @@
       "workoutLabel": "СЛЕДУЮЩАЯ ТРЕНИРОВКА",
       "workoutValue": "Верх тела · 42м",
       "workoutMeta": "19:00",
-      "coachLabel": "LIVEON AI",
-      "coachValue": "«План готов на сегодня»",
-      "coachMeta": "сейчас",
       "panelCopyright": "© 2026 LiveOn."
     },
     "signIn": {

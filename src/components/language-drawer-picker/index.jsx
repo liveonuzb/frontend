@@ -1,5 +1,5 @@
 import React from "react";
-import { find, map } from "lodash";
+import { find, map, toUpper } from "lodash";
 import { CheckIcon, LanguagesIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -69,7 +69,6 @@ const LanguageDrawerPicker = ({
           <span className="truncate">{resolvedLanguage?.name || "Til"}</span>
         ) : null}
       </Button>
-
       <DrawerContent>
         <DrawerHeader className="text-left">
           <DrawerTitle>{title}</DrawerTitle>
@@ -104,16 +103,14 @@ const LanguageDrawerPicker = ({
                 >
                   {language.flag || "🌐"}
                 </span>
-
                 <div className="min-w-0 flex-1">
                   <p className={cn("font-bold", denseOptions ? "text-sm md:text-base" : "text-base md:text-lg")}>
                     {language.label || language.name}
                   </p>
                   <p className={cn("text-muted-foreground", denseOptions ? "text-xs" : "text-xs md:text-sm")}>
-                    {language.native || language.code.toUpperCase()}
+                    {language.native || toUpper(language.code)}
                   </p>
                 </div>
-
                 <div
                   className={cn(
                     "flex shrink-0 items-center justify-center rounded-full border-2",

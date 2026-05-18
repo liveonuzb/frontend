@@ -9,7 +9,7 @@ import {
   NumberFieldDecrement,
 } from "@/components/reui/number-field";
 import { Card } from "@/components/ui/card";
-import { get, map } from "lodash";
+import { get, map, toNumber } from "lodash";
 import useMe from "@/hooks/app/use-me";
 
 const MeasurementInput = ({ label, value, onChange, editing, unit, side }) => {
@@ -34,7 +34,7 @@ const MeasurementInput = ({ label, value, onChange, editing, unit, side }) => {
       </span>
       {editing ? (
         <NumberField
-          value={value !== "" ? Number(value) : undefined}
+          value={value !== "" ? toNumber(value) : undefined}
           onValueChange={(val) =>
             onChange(val !== undefined ? String(val) : "")
           }

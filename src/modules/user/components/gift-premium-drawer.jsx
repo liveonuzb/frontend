@@ -1,5 +1,4 @@
 import React from "react";
-import { get } from "lodash";
 import {
   ArrowLeftIcon,
   CircleDollarSignIcon,
@@ -29,11 +28,13 @@ import {
   formatPremiumPrice,
   getShortestPremiumPlan,
 } from "@/components/premium/plan-option-utils.js";
-import { api } from "@/hooks/api/use-api";
+import { useGetQuery } from "@/hooks/api";
 import usePremium from "@/hooks/app/use-premium";
 import { getRequestErrorMessage } from "@/hooks/app/use-profile-settings";
 import { cn } from "@/lib/utils";
 import { getFriendItems } from "@/modules/user/lib/friends-response";
+
+import { filter, find, map, trim, split, toUpper, take } from "lodash";
 
 const PAYMENT_METHODS = (t) => [
   {
@@ -53,21 +54,17 @@ const STEPS = {
 const MIN_IDENTIFIER_LENGTH = 3;
 
 const resolveInitials = (name) => {
-  const parts = String(name ?? "")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2);
+  const parts = take(filter(split(trim(String(name ?? "")), /\s+/), Boolean), 2);
 
   if (!parts.length) {
     return "U";
   }
 
-  return parts.map((part) => part[0]?.toUpperCase() ?? "").join("");
+  return map(parts, (part) => toUpper(part[0]) ?? "").join("");
 };
 
 const resolveRecipientName = (user) =>
-  [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
+  filter([user?.firstName, user?.lastName], Boolean).join(" ") ||
   user?.name ||
   user?.username ||
   user?.phone ||
@@ -225,7 +222,7 @@ const GiftStepDrawer = ({
             </p>
 
             <div className="mt-3 flex items-center justify-center gap-1.5">
-              {stepSequence.map((step, index) => (
+              {map(stepSequence, (step, index) => (
                 <span
                   key={step}
                   className={cn(
@@ -263,7 +260,7 @@ export default function GiftPremiumDrawer({
 }) {
   const { t } = useTranslation();
   const currentLocale = t("common.locale", "uz-UZ");
-  const currencyLabel = t("profile.coach.currency");
+  const currencyLabel = t("profile.premium.currency", "so'm");
   const paymentMethods = React.useMemo(() => PAYMENT_METHODS(t), [t]);
   const initialStep = recipientUser ? STEPS.PLAN : STEPS.RECIPIENT;
   const stepSequence = React.useMemo(
@@ -277,8 +274,8 @@ export default function GiftPremiumDrawer({
 
   const [activeStep, setActiveStep] = React.useState(initialStep);
   const [recipientInput, setRecipientInput] = React.useState("");
-  const [searchResults, setSearchResults] = React.useState([]);
-  const [isSearching, setIsSearching] = React.useState(false);
+  const [debouncedRecipientQuery, setDebouncedRecipientQuery] =
+    React.useState("");
   const [selectedRecipient, setSelectedRecipient] = React.useState(
     recipientUser || null,
   );
@@ -289,7 +286,37 @@ export default function GiftPremiumDrawer({
   const [promoCode, setPromoCode] = React.useState("");
   const [note, setNote] = React.useState("");
 
-  const searchTimeoutRef = React.useRef(null);
+  const recipientSearchParams = React.useMemo(
+    () => ({ q: debouncedRecipientQuery }),
+    [debouncedRecipientQuery],
+  );
+  const shouldSearchRecipients =
+    open &&
+    activeStep === STEPS.RECIPIENT &&
+    !selectedRecipient &&
+    debouncedRecipientQuery.length >= 2;
+  const {
+    data: recipientSearchData,
+    isFetching: isSearching,
+  } = useGetQuery({
+    url: "/users/me/friends/candidates",
+    params: recipientSearchParams,
+    queryProps: {
+      queryKey: [
+        "users",
+        "me",
+        "friends",
+        "candidates",
+        "gift-premium",
+        debouncedRecipientQuery,
+      ],
+      enabled: shouldSearchRecipients,
+    },
+  });
+  const searchResults = React.useMemo(
+    () => (shouldSearchRecipients ? getFriendItems(recipientSearchData) : []),
+    [recipientSearchData, shouldSearchRecipients],
+  );
 
   /*
    * Opening the gift flow resets the local wizard/search/payment fields.
@@ -302,7 +329,7 @@ export default function GiftPremiumDrawer({
 
     setActiveStep(initialStep);
     setRecipientInput(recipientUser ? resolveRecipientInputValue(recipientUser) : "");
-    setSearchResults([]);
+    setDebouncedRecipientQuery("");
     setSelectedRecipient(recipientUser || null);
     setSelectedPlan(null);
     setSelectedPaymentMethod(paymentMethods[0].code);
@@ -317,49 +344,30 @@ export default function GiftPremiumDrawer({
   }, [plans, selectedPlan]);
 
   React.useEffect(() => {
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
     if (!open || activeStep !== STEPS.RECIPIENT || selectedRecipient) {
-      setSearchResults([]);
-      setIsSearching(false);
+      setDebouncedRecipientQuery("");
       return undefined;
     }
 
-    const query = recipientInput.trim();
+    const query = trim(recipientInput);
 
     if (query.length < 2) {
-      setSearchResults([]);
-      setIsSearching(false);
+      setDebouncedRecipientQuery("");
       return undefined;
     }
 
-    searchTimeoutRef.current = setTimeout(async () => {
-      setIsSearching(true);
-
-      try {
-        const response = await api.get("/users/me/friends/candidates", {
-          params: { q: query },
-        });
-        setSearchResults(getFriendItems(response));
-      } catch {
-        setSearchResults([]);
-      } finally {
-        setIsSearching(false);
-      }
+    const timeoutId = setTimeout(() => {
+      setDebouncedRecipientQuery(query);
     }, 350);
 
     return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
+      clearTimeout(timeoutId);
     };
   }, [activeStep, open, recipientInput, selectedRecipient]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const activePlan = React.useMemo(
-    () => plans.find((plan) => plan.code === selectedPlan) ?? plans[0] ?? null,
+    () => find(plans, (plan) => plan.code === selectedPlan) ?? plans[0] ?? null,
     [plans, selectedPlan],
   );
   const shortestPlan = React.useMemo(
@@ -368,14 +376,14 @@ export default function GiftPremiumDrawer({
   );
   const selectedRecipientName = selectedRecipient
     ? resolveRecipientName(selectedRecipient)
-    : recipientInput.trim();
+    : trim(recipientInput);
   const selectedRecipientSubtitle = selectedRecipient
     ? resolveRecipientSubtitle(selectedRecipient)
     : t("profile.premium.gift.recipient.manualLabel");
   const recipientIdentifier =
-    resolveRecipientIdentifier(selectedRecipient) || recipientInput.trim();
+    resolveRecipientIdentifier(selectedRecipient) || trim(recipientInput);
   const hasManualRecipient =
-    !selectedRecipient && recipientInput.trim().length >= MIN_IDENTIFIER_LENGTH;
+    !selectedRecipient && trim(recipientInput).length >= MIN_IDENTIFIER_LENGTH;
   const canContinueRecipient = Boolean(selectedRecipient) || hasManualRecipient;
 
   const closeDrawer = React.useCallback(() => {
@@ -418,7 +426,7 @@ export default function GiftPremiumDrawer({
   const handleSelectRecipient = React.useCallback((user) => {
     setSelectedRecipient(user);
     setRecipientInput(resolveRecipientInputValue(user));
-    setSearchResults([]);
+    setDebouncedRecipientQuery("");
   }, []);
 
   const handleClearSelectedRecipient = React.useCallback(() => {
@@ -436,8 +444,8 @@ export default function GiftPremiumDrawer({
         planSlug: activePlan.code,
         paymentMethod: selectedPaymentMethod,
         recipientIdentifier,
-        promoCode: promoCode.trim() || undefined,
-        note: note.trim() || undefined,
+        promoCode: trim(promoCode) || undefined,
+        note: trim(note) || undefined,
       });
 
       if (data.mode === "redirect" && data.checkoutUrl) {
@@ -546,7 +554,7 @@ export default function GiftPremiumDrawer({
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {t("profile.premium.gift.recipient.manualDescription", {
-                    value: recipientInput.trim(),
+                    value: trim(recipientInput),
                   })}
                 </p>
               </div>
@@ -561,7 +569,7 @@ export default function GiftPremiumDrawer({
 
             {!selectedRecipient && !isSearching && searchResults.length > 0 ? (
               <div className="space-y-2">
-                {searchResults.map((user) => {
+                {map(searchResults, (user) => {
                   const name = resolveRecipientName(user);
                   const subtitle = resolveRecipientSubtitle(user);
                   const isActive = selectedRecipient?.id === user.id;
@@ -613,7 +621,7 @@ export default function GiftPremiumDrawer({
 
             {!selectedRecipient &&
             !isSearching &&
-            recipientInput.trim().length >= 2 &&
+            trim(recipientInput).length >= 2 &&
             searchResults.length === 0 ? (
               <p className="py-2 text-center text-sm text-muted-foreground">
                 {t("profile.premium.gift.recipient.noResults")}
@@ -622,7 +630,6 @@ export default function GiftPremiumDrawer({
           </div>
         </DrawerBody>
       </GiftStepDrawer>
-
       <GiftStepDrawer
         stepKey={STEPS.PLAN}
         activeStep={activeStep}
@@ -672,7 +679,7 @@ export default function GiftPremiumDrawer({
             />
 
             <div className="space-y-3">
-              {plans.map((plan) => (
+              {map(plans, (plan) => (
                 <PremiumPlanOption
                   key={plan.code}
                   plan={plan}
@@ -701,7 +708,6 @@ export default function GiftPremiumDrawer({
           </div>
         </DrawerBody>
       </GiftStepDrawer>
-
       <GiftStepDrawer
         stepKey={STEPS.PAYMENT}
         activeStep={activeStep}
@@ -768,7 +774,7 @@ export default function GiftPremiumDrawer({
                 {t("profile.premium.gift.payment.methodTitle")}
               </p>
               <div className="grid gap-3">
-                {paymentMethods.map((method) => (
+                {map(paymentMethods, (method) => (
                   <PaymentMethodOption
                     key={method.code}
                     method={method}
@@ -801,7 +807,6 @@ export default function GiftPremiumDrawer({
           </div>
         </DrawerBody>
       </GiftStepDrawer>
-
       <GiftStepDrawer
         stepKey={STEPS.REVIEW}
         activeStep={activeStep}
@@ -878,9 +883,7 @@ export default function GiftPremiumDrawer({
                     {t("profile.premium.gift.review.paymentMethodLabel")}
                   </span>
                   <p className="font-medium">
-                    {paymentMethods.find(
-                      (method) => method.code === selectedPaymentMethod,
-                    )?.label || selectedPaymentMethod}
+                    {find(paymentMethods, (method) => method.code === selectedPaymentMethod)?.label || selectedPaymentMethod}
                   </p>
                 </div>
 
@@ -894,13 +897,13 @@ export default function GiftPremiumDrawer({
                   </p>
                 </div>
 
-                {promoCode.trim() ? (
+                {trim(promoCode) ? (
                   <div className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-3 py-2">
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-sm text-muted-foreground">
                         {t("profile.premium.gift.review.promoCodeLabel")}
                       </span>
-                      <span className="font-medium">{promoCode.trim()}</span>
+                      <span className="font-medium">{trim(promoCode)}</span>
                     </div>
                     <p className="mt-2 text-xs text-muted-foreground">
                       {t("profile.premium.gift.review.promoHint")}

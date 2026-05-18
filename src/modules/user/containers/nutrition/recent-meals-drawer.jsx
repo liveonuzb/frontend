@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { NutritionDrawerContent } from "./nutrition-drawer-layout.jsx";
 
+import { find, map } from "lodash";
+
 export default function RecentMealsDrawer({
   open,
   onOpenChange,
@@ -29,7 +31,7 @@ export default function RecentMealsDrawer({
   onCopy,
   isCopying = false,
 }) {
-  const selectedMeal = meals.find((meal) => meal.id === selectedMealId) || null;
+  const selectedMeal = find(meals, (meal) => meal.id === selectedMealId) || null;
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
@@ -62,7 +64,7 @@ export default function RecentMealsDrawer({
             </div>
           ) : (
             <div className="flex gap-5 overflow-x-auto pb-3 no-scrollbar">
-              {meals.map((meal) => {
+              {map(meals, (meal) => {
                 const isSelected = meal.id === selectedMealId;
 
                 return (

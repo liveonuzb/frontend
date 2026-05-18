@@ -1,5 +1,5 @@
 import React from "react";
-import { get, map, sumBy } from "lodash";
+import { get, map, orderBy, sumBy, filter, forEach, split, toNumber, isArray, toUpper } from "lodash";
 import { useNavigate } from "react-router";
 import {
   ArrowLeftIcon,
@@ -45,7 +45,7 @@ const formatDateTime = (value) => {
 };
 
 const formatDuration = (seconds) => {
-  const totalMinutes = Math.max(0, Math.round((Number(seconds) || 0) / 60));
+  const totalMinutes = Math.max(0, Math.round((toNumber(seconds) || 0) / 60));
   return `${totalMinutes} daqiqa`;
 };
 
@@ -80,8 +80,8 @@ const getMonthKey = (value) => {
 };
 
 const formatMonthLabel = (monthKey) => {
-  const [year, month] = String(monthKey).split("-");
-  const date = new Date(Number(year), Number(month) - 1, 1);
+  const [year, month] = split(String(monthKey), "-");
+  const date = new Date(toNumber(year), toNumber(month) - 1, 1);
   if (Number.isNaN(date.getTime())) return monthKey;
   return new Intl.DateTimeFormat("uz-UZ", {
     month: "short",
@@ -100,13 +100,11 @@ const isWithinLastDays = (value, days) => {
 };
 
 const calculateCurrentStreak = (sessions) => {
-  const uniqueDays = Array.from(
+  const uniqueDays = orderBy(Array.from(
     new Set(
-      sessions
-        .map((item) => getDateKey(get(item, "endedAt")))
-        .filter(Boolean),
+      filter(map(sessions, (item) => getDateKey(get(item, "endedAt"))), Boolean),
     ),
-  ).sort((a, b) => (a > b ? -1 : 1));
+  ), [(value) => value], ["desc"]);
 
   if (uniqueDays.length === 0) return 0;
 
@@ -150,19 +148,17 @@ const buildMonthlyBuckets = (sessions, monthsCount = 6) => {
   for (let offset = monthsCount - 1; offset >= 0; offset -= 1) {
     const date = new Date(now.getFullYear(), now.getMonth() - offset, 1);
     const monthKey = getMonthKey(date);
-    const monthSessions = sessions.filter(
-      (item) => getMonthKey(get(item, "endedAt")) === monthKey,
-    );
+    const monthSessions = filter(sessions, (item) => getMonthKey(get(item, "endedAt")) === monthKey);
 
     buckets.push({
       monthKey,
       label: formatMonthLabel(monthKey),
       sessions: monthSessions.length,
       minutes: Math.round(
-        sumBy(monthSessions, (item) => Number(item.durationSeconds || 0)) / 60,
+        sumBy(monthSessions, (item) => toNumber(item.durationSeconds || 0)) / 60,
       ),
-      calories: sumBy(monthSessions, (item) => Number(item.estimatedCalories || 0)),
-      volume: sumBy(monthSessions, (item) => Number(item.totalVolumeKg || 0)),
+      calories: sumBy(monthSessions, (item) => toNumber(item.estimatedCalories || 0)),
+      volume: sumBy(monthSessions, (item) => toNumber(item.totalVolumeKg || 0)),
     });
   }
 
@@ -176,8 +172,8 @@ const calculateMissedWorkouts = (plans = []) => {
   let scheduledThisMonth = 0;
   let completedThisMonth = 0;
 
-  plans.forEach((plan) => {
-    if (String(get(plan, "status", "")).toUpperCase() !== "ACTIVE") {
+  forEach(plans, (plan) => {
+    if (toUpper(String(get(plan, "status", ""))) !== "ACTIVE") {
       return;
     }
 
@@ -186,11 +182,11 @@ const calculateMissedWorkouts = (plans = []) => {
       return;
     }
 
-    const schedule = Array.isArray(get(plan, "schedule")) ? get(plan, "schedule") : [];
-    const progress = Array.isArray(get(plan, "dayProgress")) ? get(plan, "dayProgress") : [];
+    const schedule = isArray(get(plan, "schedule")) ? get(plan, "schedule") : [];
+    const progress = isArray(get(plan, "dayProgress")) ? get(plan, "dayProgress") : [];
 
-    schedule.forEach((day, index) => {
-      const exercises = Array.isArray(get(day, "exercises")) ? get(day, "exercises") : [];
+    forEach(schedule, (day, index) => {
+      const exercises = isArray(get(day, "exercises")) ? get(day, "exercises") : [];
       if (exercises.length === 0) {
         return;
       }
@@ -244,11 +240,11 @@ const SessionHistoryPage = () => {
 
   const filteredSessions = React.useMemo(() => {
     if (period === "7d") {
-      return sessions.filter((item) => isWithinLastDays(get(item, "endedAt"), 7));
+      return filter(sessions, (item) => isWithinLastDays(get(item, "endedAt"), 7));
     }
 
     if (period === "30d") {
-      return sessions.filter((item) => isWithinLastDays(get(item, "endedAt"), 30));
+      return filter(sessions, (item) => isWithinLastDays(get(item, "endedAt"), 30));
     }
 
     return sessions;
@@ -258,10 +254,10 @@ const SessionHistoryPage = () => {
     () => ({
       totalSessions: filteredSessions.length,
       totalMinutes: Math.round(
-        sumBy(filteredSessions, (item) => Number(item.durationSeconds || 0)) / 60,
+        sumBy(filteredSessions, (item) => toNumber(item.durationSeconds || 0)) / 60,
       ),
-      totalCalories: sumBy(filteredSessions, (item) => Number(item.estimatedCalories || 0)),
-      totalVolumeKg: sumBy(filteredSessions, (item) => Number(item.totalVolumeKg || 0)),
+      totalCalories: sumBy(filteredSessions, (item) => toNumber(item.estimatedCalories || 0)),
+      totalVolumeKg: sumBy(filteredSessions, (item) => toNumber(item.totalVolumeKg || 0)),
       streak: calculateCurrentStreak(sessions),
     }),
     [filteredSessions, sessions],
@@ -332,7 +328,7 @@ const SessionHistoryPage = () => {
         ) : (
           <>
             <div className="flex flex-wrap gap-2">
-              {PERIODS.map((item) => (
+              {map(PERIODS, (item) => (
                 <Button
                   key={item.key}
                   type="button"
@@ -490,7 +486,7 @@ const SessionHistoryPage = () => {
                           ) : (
                             <Badge variant="outline">
                               <DumbbellIcon />
-                              Day {(Number(get(session, "planDayIndex")) || 0) + 1}
+                              Day {(toNumber(get(session, "planDayIndex")) || 0) + 1}
                             </Badge>
                           )}
                           <Badge variant="secondary">

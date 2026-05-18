@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  BanknoteIcon,
   BellIcon,
   BellOffIcon,
   CalendarIcon,
@@ -10,11 +9,8 @@ import {
   FilterIcon,
   GiftIcon,
   Loader2Icon,
-  MessageSquareIcon,
-  TargetIcon,
   TrophyIcon,
   UserPlusIcon,
-  UtensilsIcon,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { cn } from "@/lib/utils";
@@ -27,10 +23,11 @@ import { Badge } from "@/components/ui/badge";
 import { useBreadcrumbStore } from "@/store";
 import { useUserNotificationsFeed } from "@/hooks/app/use-notifications";
 
+import { map } from "lodash";
+
 const CATEGORY_OPTIONS = [
   { value: "", label: "Hammasi" },
   { value: "FRIENDS", label: "Do'stlar" },
-  { value: "COACH", label: "Murabbiy" },
   { value: "CHALLENGE", label: "Musobaqalar" },
   { value: "PAYMENT", label: "To'lovlar" },
   { value: "PROGRESS", label: "Progress" },
@@ -41,13 +38,7 @@ const NOTIFICATION_ICONS = {
   challenge_invitation: { icon: TrophyIcon, color: "text-amber-500" },
   friend_request_incoming: { icon: UserPlusIcon, color: "text-emerald-500" },
   friend_request_accepted: { icon: CheckIcon, color: "text-emerald-500" },
-  coach_invitation: { icon: UserPlusIcon, color: "text-blue-500" },
   weekly_check_in: { icon: CalendarIcon, color: "text-violet-500" },
-  coach_feedback: { icon: MessageSquareIcon, color: "text-violet-500" },
-  coach_task: { icon: TargetIcon, color: "text-cyan-500" },
-  coach_plan_update: { icon: UtensilsIcon, color: "text-orange-500" },
-  coach_connected: { icon: MessageSquareIcon, color: "text-emerald-500" },
-  coach_payment_due: { icon: BanknoteIcon, color: "text-amber-500" },
   premium_expiring: { icon: CrownIcon, color: "text-amber-500" },
   premium_upsell: { icon: CrownIcon, color: "text-primary" },
   achievement_earned: { icon: TrophyIcon, color: "text-amber-500" },
@@ -240,7 +231,7 @@ const Index = () => {
 
             {/* Category filter */}
             <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-              {CATEGORY_OPTIONS.map((cat) => (
+              {map(CATEGORY_OPTIONS, (cat) => (
                 <Button
                   key={cat.value}
                   variant={selectedCategory === cat.value ? "default" : "outline"}
@@ -258,14 +249,14 @@ const Index = () => {
             <Card>
               <CardContent className="p-0">
                 {isLoading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
+                  map(Array.from({ length: 5 }), (_, i) => (
                     <NotificationSkeleton key={i} />
                   ))
                 ) : filteredItems.length === 0 ? (
                   <EmptyState filter="all" />
                 ) : (
                   <>
-                    {filteredItems.map((notif) => (
+                    {map(filteredItems, (notif) => (
                       <NotificationItem
                         key={notif.id}
                         notification={notif}
@@ -293,14 +284,14 @@ const Index = () => {
             <Card>
               <CardContent className="p-0">
                 {isLoading ? (
-                  Array.from({ length: 3 }).map((_, i) => (
+                  map(Array.from({ length: 3 }), (_, i) => (
                     <NotificationSkeleton key={i} />
                   ))
                 ) : filteredItems.length === 0 ? (
                   <EmptyState filter="unread" />
                 ) : (
                   <>
-                    {filteredItems.map((notif) => (
+                    {map(filteredItems, (notif) => (
                       <NotificationItem
                         key={notif.id}
                         notification={notif}

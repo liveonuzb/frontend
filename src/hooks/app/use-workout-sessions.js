@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, filter, isArray, toNumber, toPairs } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDeleteQuery, useGetQuery, usePostQuery, usePutQuery } from "@/hooks/api";
 import { WORKOUT_LOGS_QUERY_KEY } from "@/hooks/app/use-workout-logs";
@@ -40,14 +40,14 @@ const normalizeWorkoutSessionDraft = (draft) => {
     planDayIndex:
       draft.planDayIndex === undefined || draft.planDayIndex === null
         ? null
-        : Number(draft.planDayIndex),
+        : toNumber(draft.planDayIndex),
     planDayKey: draft.planDayKey ?? null,
     sessionStartTime: draft.sessionStartTime ?? null,
-    elapsedSeconds: Number(draft.elapsedSeconds ?? 0) || 0,
+    elapsedSeconds: toNumber(draft.elapsedSeconds ?? 0) || 0,
     expandedExerciseId: draft.expandedExerciseId ?? null,
-    restSecondsRemaining: Number(draft.restSecondsRemaining ?? 0) || 0,
+    restSecondsRemaining: toNumber(draft.restSecondsRemaining ?? 0) || 0,
     restEndsAt: draft.restEndsAt ?? null,
-    exercises: Array.isArray(draft.exercises) ? draft.exercises : [],
+    exercises: isArray(draft.exercises) ? draft.exercises : [],
     lastSyncedAt: draft.lastSyncedAt ?? draft.updatedAt ?? null,
     createdAt: draft.createdAt ?? null,
     updatedAt: draft.updatedAt ?? null,
@@ -230,7 +230,8 @@ export const useWorkoutSessionHistory = (paramsOrOptions = {}, maybeOptions = {}
     : paramsOrOptions;
   const enabled = options.enabled ?? true;
   const queryString = new URLSearchParams(
-    Object.entries(params).filter(
+    filter(
+      toPairs(params),
       ([, value]) => value !== undefined && value !== null && value !== "",
     ),
   ).toString();
@@ -245,9 +246,9 @@ export const useWorkoutSessionHistory = (paramsOrOptions = {}, maybeOptions = {}
     },
   });
   const responseData = resolveResponseData(data, []);
-  const sessions = Array.isArray(responseData)
+  const sessions = isArray(responseData)
     ? responseData
-    : Array.isArray(responseData?.data)
+    : isArray(responseData?.data)
       ? responseData.data
       : [];
 

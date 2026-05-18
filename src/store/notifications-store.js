@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { every, map, filter, union } from "lodash";
+import { every, map, filter, union, includes } from "lodash";
 
 const areNotificationsEqual = (left = [], right = []) => {
   if (left === right) return true;
@@ -32,8 +32,8 @@ const useNotificationsStore = create()(
       setInitialNotifications: (list) => {
         const { deletedIds, notifications, readIds } = get();
         const filtered = map(
-          filter(list, (n) => !deletedIds.includes(n.id)),
-          (n) => ({ ...n, read: readIds.includes(n.id) ? true : n.read }),
+          filter(list, (n) => !includes(deletedIds, n.id)),
+          (n) => ({ ...n, read: includes(readIds, n.id) ? true : n.read }),
         );
 
         if (areNotificationsEqual(notifications, filtered)) {

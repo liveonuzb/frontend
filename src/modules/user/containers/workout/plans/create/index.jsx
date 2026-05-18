@@ -1,5 +1,18 @@
 import React from "react";
-import { filter, find, get, map, size, trim, uniqBy } from "lodash";
+import {
+  filter,
+  find,
+  get,
+  map,
+  size,
+  take,
+  trim,
+  uniqBy,
+  includes,
+  isArray,
+  toLower,
+  toNumber,
+} from "lodash";
 import { useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 import {
@@ -109,13 +122,13 @@ const normalizeCatalogItems = (items, fallback) =>
   get(items, "length") > 0
     ? map(items, (item) => ({
         ...item,
-        id: Number(get(item, "id")),
+        id: toNumber(get(item, "id")),
         name: get(item, "name") || get(item, "title") || `#${get(item, "id")}`,
       }))
     : fallback;
 
 const toggleId = (items, id) =>
-  items.includes(id)
+  includes(items, id)
     ? filter(items, (itemId) => itemId !== id)
     : [...items, id];
 
@@ -138,26 +151,26 @@ const resolveGeneratedPlan = (preview, fallbackCoverImageUrl = null) => {
 };
 
 const getEquipmentTab = (item) => {
-  const name = String(get(item, "name", "")).toLowerCase();
+  const name = toLower(String(get(item, "name", "")));
 
   if (
-    name.includes("barbell") ||
-    name.includes("dumbbell") ||
-    name.includes("kettlebell") ||
-    name.includes("ez")
+    includes(name, "barbell") ||
+    includes(name, "dumbbell") ||
+    includes(name, "kettlebell") ||
+    includes(name, "ez")
   ) {
     return "free_weights";
   }
-  if (name.includes("bench") || name.includes("bar")) {
+  if (includes(name, "bench") || includes(name, "bar")) {
     return "benches";
   }
   if (
-    name.includes("machine") ||
-    name.includes("smith") ||
-    name.includes("press") ||
-    name.includes("cable") ||
-    name.includes("lat") ||
-    name.includes("pec")
+    includes(name, "machine") ||
+    includes(name, "smith") ||
+    includes(name, "press") ||
+    includes(name, "cable") ||
+    includes(name, "lat") ||
+    includes(name, "pec")
   ) {
     return "machines";
   }
@@ -189,7 +202,7 @@ const buildCoverOptions = (catalog, initialPlan) => {
       ]
     : [];
 
-  return uniqBy([...initialCover, ...exerciseImages], "url").slice(0, 12);
+  return take(uniqBy([...initialCover, ...exerciseImages], "url"), 12);
 };
 
 const PlanCoverPicker = ({
@@ -438,7 +451,7 @@ const AiPlanSetupDrawer = ({
                     variant="ghost"
                     size="icon"
                     aria-label="Plan kunlarini kamaytirish"
-                    onClick={() => update("days", Math.max(7, Number(form.days) - 7))}
+                    onClick={() => update("days", Math.max(7, toNumber(form.days) - 7))}
                   >
                     <MinusIcon />
                   </Button>
@@ -450,7 +463,7 @@ const AiPlanSetupDrawer = ({
                     variant="ghost"
                     size="icon"
                     aria-label="Plan kunlarini oshirish"
-                    onClick={() => update("days", Math.min(365, Number(form.days) + 7))}
+                    onClick={() => update("days", Math.min(365, toNumber(form.days) + 7))}
                   >
                     <PlusIcon />
                   </Button>
@@ -466,7 +479,7 @@ const AiPlanSetupDrawer = ({
                     size="icon"
                     aria-label="Haftalik kunlarni kamaytirish"
                     onClick={() =>
-                      update("daysPerWeek", Math.max(1, Number(form.daysPerWeek) - 1))
+                      update("daysPerWeek", Math.max(1, toNumber(form.daysPerWeek) - 1))
                     }
                   >
                     <MinusIcon />
@@ -480,7 +493,7 @@ const AiPlanSetupDrawer = ({
                     size="icon"
                     aria-label="Haftalik kunlarni oshirish"
                     onClick={() =>
-                      update("daysPerWeek", Math.min(7, Number(form.daysPerWeek) + 1))
+                      update("daysPerWeek", Math.min(7, toNumber(form.daysPerWeek) + 1))
                     }
                   >
                     <PlusIcon />
@@ -536,7 +549,7 @@ const AiEquipmentDrawer = ({
     [equipment, tab],
   );
   const selectedItems = React.useMemo(
-    () => filter(equipment, (item) => selectedIds.includes(get(item, "id"))),
+    () => filter(equipment, (item) => includes(selectedIds, get(item, "id"))),
     [equipment, selectedIds],
   );
 
@@ -564,7 +577,7 @@ const AiEquipmentDrawer = ({
 
           <div className="flex flex-col gap-3 px-4 pb-4">
             {map(visibleItems, (item) => {
-              const checked = selectedIds.includes(get(item, "id"));
+              const checked = includes(selectedIds, get(item, "id"));
 
               return (
                 <button
@@ -610,7 +623,7 @@ const AiEquipmentDrawer = ({
         <DrawerFooter>
           <div className="flex items-center justify-between gap-3 rounded-3xl border bg-card px-3 py-2">
             <div className="flex min-w-0 items-center gap-1">
-              {map(selectedItems.slice(0, 5), (item) => (
+              {map(take(selectedItems, 5), (item) => (
                 <span
                   key={get(item, "id")}
                   className="flex size-10 items-center justify-center rounded-xl bg-muted/60"
@@ -665,7 +678,7 @@ const AiMuscleGroupDrawer = ({
       <DrawerBody>
         <div className="grid gap-3 sm:grid-cols-2">
           {map(muscles, (item) => {
-            const checked = selectedIds.includes(get(item, "id"));
+            const checked = includes(selectedIds, get(item, "id"));
 
             return (
               <button
@@ -905,7 +918,7 @@ const AiPreviewCard = ({
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            {map(get(plan, "schedule", []).slice(0, 7), (day, index) => (
+            {map(take(get(plan, "schedule", []), 7), (day, index) => (
               <div
                 key={`${get(day, "day")}-${index}`}
                 className="flex items-center justify-between gap-3 rounded-2xl border bg-background px-3 py-2 text-sm"
@@ -1004,8 +1017,8 @@ const CreateWorkoutPlanPage = () => {
   const [aiForm, setAiForm] = React.useState({
     goal: "muscle_building",
     level: "beginner",
-    days: Number(get(initialPlan, "days", 28)) || 28,
-    daysPerWeek: Number(get(initialPlan, "daysPerWeek", 4)) || 4,
+    days: toNumber(get(initialPlan, "days", 28)) || 28,
+    daysPerWeek: toNumber(get(initialPlan, "daysPerWeek", 4)) || 4,
     equipmentMode: "gym",
     selectedEquipmentIds: [],
     focusMuscleIds: [],
@@ -1040,8 +1053,8 @@ const CreateWorkoutPlanPage = () => {
     hasSeededCatalog.current = true;
     setAiForm((current) => ({
       ...current,
-      selectedEquipmentIds: map(equipmentOptions.slice(0, 4), "id"),
-      focusMuscleIds: map(muscleOptions.slice(0, 2), "id"),
+      selectedEquipmentIds: map(take(equipmentOptions, 4), "id"),
+      focusMuscleIds: map(take(muscleOptions, 2), "id"),
     }));
   }, [equipmentOptions, muscleOptions]);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -1097,10 +1110,10 @@ const CreateWorkoutPlanPage = () => {
         name: trim(currentPlanMeta.name),
         description: trim(currentPlanMeta.description),
         coverImageUrl: currentPlanMeta.coverImageUrl || undefined,
-        days: Number(get(initialPlan, "days", 28)) || 28,
-        daysPerWeek: Number(get(initialPlan, "daysPerWeek", 0)) || 0,
+        days: toNumber(get(initialPlan, "days", 28)) || 28,
+        daysPerWeek: toNumber(get(initialPlan, "daysPerWeek", 0)) || 0,
         difficulty: get(initialPlan, "difficulty"),
-        schedule: Array.isArray(get(initialPlan, "schedule"))
+        schedule: isArray(get(initialPlan, "schedule"))
           ? get(initialPlan, "schedule")
           : [],
         source,

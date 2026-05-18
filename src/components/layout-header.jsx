@@ -1,4 +1,4 @@
-import { map, join } from "lodash";
+import { map, join, toUpper, trim, split } from "lodash";
 import React from "react";
 import { cn } from "@/lib/utils";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -19,15 +19,14 @@ const LayoutHeader = ({
   const { t } = useTranslation();
   const modeTheme = useAppModeTheme();
   const displayName =
-    `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
+    trim(`${user?.firstName || ""} ${user?.lastName || ""}`) ||
     user?.username ||
     t("common.navUser.user");
-  const initials = join(
-    map(displayName.split(" "), (part) => part[0]),
+  const initials = toUpper(join(
+    map(split(displayName, " "), (part) => part[0]),
     "",
   )
-    .slice(0, 2)
-    .toUpperCase();
+    .slice(0, 2));
 
   return (
     <header

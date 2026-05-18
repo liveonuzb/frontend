@@ -17,12 +17,14 @@ import {
   getOnboardingWeightIllustration,
 } from "../../lib/illustration.js";
 import PageAura from "../../components/page-aura.jsx";
+import { useOnboardingAssets } from "@/hooks/app/use-onboarding-base";
 
 const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { currentWeight, setField, gender, age, height, firstName } =
     useOnboardingStore();
+  const { base, extension } = useOnboardingAssets();
 
   useOnboardingAutoSave("user", "current-weight");
 
@@ -33,6 +35,8 @@ const Index = () => {
     age,
     currentVal,
     height?.value,
+    base,
+    extension,
   );
   const illustrationHeight = getOnboardingIllustrationHeight(height?.value);
 

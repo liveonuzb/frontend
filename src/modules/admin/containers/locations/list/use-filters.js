@@ -1,6 +1,6 @@
 import React from "react";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
-import { trim } from "lodash";
+import { trim, find, map, toNumber } from "lodash";
 
 const LOCATION_TYPES = ["country", "region", "district", "city"];
 const FILTER_LOCATION_TYPES = ["all", ...LOCATION_TYPES];
@@ -72,10 +72,10 @@ export const useLocationFilters = () => {
     "sortDir",
     parseAsStringEnum(SORT_DIRECTIONS).withDefault("asc"),
   );
-  const currentPage = Math.max(1, Number(pageQuery) || 1);
+  const currentPage = Math.max(1, toNumber(pageQuery) || 1);
   const pageSize = Math.min(
     100,
-    Math.max(1, Number(pageSizeQuery) || DEFAULT_PAGE_SIZE),
+    Math.max(1, toNumber(pageSizeQuery) || DEFAULT_PAGE_SIZE),
   );
   const sorting = React.useMemo(
     () =>
@@ -123,7 +123,7 @@ export const useLocationFilters = () => {
         type: "select",
         defaultOperator: "is",
         operators: selectOperatorOptions,
-        options: FILTER_LOCATION_TYPES.map((value) => ({
+        options: map(FILTER_LOCATION_TYPES, (value) => ({
           value,
           label: value === "all" ? "Barcha turlar" : TYPE_LABELS[value],
         })),
@@ -213,9 +213,9 @@ export const useLocationFilters = () => {
   const handleFiltersChange = React.useCallback(
     (nextFilters) => {
       const getValue = (field, fallback = "") =>
-        nextFilters.find((item) => item.field === field)?.values?.[0] ?? fallback;
+        find(nextFilters, (item) => item.field === field)?.values?.[0] ?? fallback;
       const getOperator = (field, fallback = "is") =>
-        nextFilters.find((item) => item.field === field)?.operator ?? fallback;
+        find(nextFilters, (item) => item.field === field)?.operator ?? fallback;
 
       React.startTransition(() => {
         void setSearch(getValue("q", ""));

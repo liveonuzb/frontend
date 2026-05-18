@@ -41,18 +41,6 @@ vi.mock("./use-dashboard-data.js", () => ({
   }),
 }));
 
-vi.mock("./connected-coach-banner.jsx", () => ({
-  default: () => null,
-}));
-
-vi.mock("./coach-invitations-section.jsx", () => ({
-  default: () => null,
-}));
-
-vi.mock("./coach-activity-section.jsx", () => ({
-  default: () => null,
-}));
-
 vi.mock("@/modules/user/containers/dashboard/challenge-invitations-section.jsx", () => ({
   default: () => null,
 }));

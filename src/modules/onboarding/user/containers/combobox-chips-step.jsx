@@ -39,6 +39,8 @@ import {
   normalizeSelectedIds,
 } from "../lib/chip-selection.js";
 
+import { filter, forEach, isArray, map, some, toNumber, take, flatten } from "lodash";
+
 const tone = ONBOARDING_ACCENTS.green;
 const EMPTY_ARRAY = Object.freeze([]);
 const CATALOG_PREFIX = "catalog:";
@@ -49,7 +51,7 @@ const toCustomValue = (label) => `${CUSTOM_PREFIX}${label}`;
 const isCatalogValue = (value) => String(value).startsWith(CATALOG_PREFIX);
 const isCustomValue = (value) => String(value).startsWith(CUSTOM_PREFIX);
 const fromCatalogValue = (value) =>
-  Number(String(value).slice(CATALOG_PREFIX.length));
+  toNumber(String(value).slice(CATALOG_PREFIX.length));
 const fromCustomValue = (value) => String(value).slice(CUSTOM_PREFIX.length);
 
 const extractOptions = (response, optionsKey) =>
@@ -57,8 +59,8 @@ const extractOptions = (response, optionsKey) =>
 
 const mergeOptions = (...groups) => {
   const seen = new Set();
-  return groups.flat().filter((item) => {
-    const id = Number(item?.id);
+  return filter(flatten(groups), (item) => {
+    const id = toNumber(item?.id);
     if (!Number.isInteger(id) || id <= 0 || seen.has(id)) return false;
     seen.add(id);
     return true;
@@ -174,7 +176,7 @@ const OnboardingComboboxChipsStep = ({
     [baseOptions, searchOptions],
   );
   const optionMap = React.useMemo(
-    () => new Map(allOptions.map((item) => [Number(item.id), item])),
+    () => new Map(map(allOptions, (item) => [toNumber(item.id), item])),
     [allOptions],
   );
   const selectedIdSet = React.useMemo(
@@ -187,13 +189,13 @@ const OnboardingComboboxChipsStep = ({
   );
   const oppositeCustomKeySet = React.useMemo(
     () =>
-      new Set(oppositeCustomChips.map((value) => normalizeChipKey(value))),
+      new Set(map(oppositeCustomChips, (value) => normalizeChipKey(value))),
     [oppositeCustomChips],
   );
 
   const visibleOptions = React.useMemo(() => {
     const source = searchLabel.length >= 2 ? searchOptions : baseOptions;
-    return source.filter((item) => !oppositeIdSet.has(Number(item.id)));
+    return filter(source, (item) => !oppositeIdSet.has(toNumber(item.id)));
   }, [baseOptions, oppositeIdSet, searchLabel.length, searchOptions]);
   const featuredOptions = React.useMemo(() => {
     const isFeatured = (item) =>
@@ -201,19 +203,16 @@ const OnboardingComboboxChipsStep = ({
         ? item?.isAllergic === true
         : item?.isOnboarding !== false;
 
-    return baseOptions
-      .filter((item) => isFeatured(item) && !oppositeIdSet.has(Number(item.id)))
-      .slice(0, 8);
+    return take(filter(
+      baseOptions,
+      (item) => isFeatured(item) && !oppositeIdSet.has(toNumber(item.id)),
+    ), 8);
   }, [baseOptions, oppositeIdSet, optionsKey]);
 
-  const exactVisibleMatch = visibleOptions.some(
-    (item) => normalizeChipKey(item.name) === searchKey,
-  );
-  const conflictsWithOppositeId = allOptions.some(
-    (item) =>
-      oppositeIdSet.has(Number(item.id)) &&
-      normalizeChipKey(item.name) === searchKey,
-  );
+  const exactVisibleMatch = some(visibleOptions, (item) => normalizeChipKey(item.name) === searchKey);
+  const conflictsWithOppositeId = some(allOptions, (item) =>
+    oppositeIdSet.has(toNumber(item.id)) &&
+    normalizeChipKey(item.name) === searchKey);
   const hasOppositeConflict =
     searchLabel.length >= 2 &&
     (conflictsWithOppositeId || oppositeCustomKeySet.has(searchKey));
@@ -225,15 +224,15 @@ const OnboardingComboboxChipsStep = ({
 
   const selectedValues = React.useMemo(
     () => [
-      ...selectedIds.map(toCatalogValue),
-      ...customChips.map(toCustomValue),
+      ...map(selectedIds, toCatalogValue),
+      ...map(customChips, toCustomValue),
     ],
     [customChips, selectedIds],
   );
   const customAddValue = canAddCustom ? toCustomValue(searchLabel) : null;
   const filteredItems = React.useMemo(
     () => [
-      ...visibleOptions.map((item) => toCatalogValue(item.id)),
+      ...map(visibleOptions, (item) => toCatalogValue(item.id)),
       ...(customAddValue ? [customAddValue] : []),
     ],
     [customAddValue, visibleOptions],
@@ -245,10 +244,9 @@ const OnboardingComboboxChipsStep = ({
 
   const commitFields = React.useCallback(
     (nextIds, nextCustom = customChips) => {
-      const normalizedIds = normalizeSelectedIds(nextIds).filter(
-        (id) => !oppositeIdSet.has(id),
-      );
-      const normalizedCustom = normalizeCustomChips(nextCustom).filter(
+      const normalizedIds = filter(normalizeSelectedIds(nextIds), (id) => !oppositeIdSet.has(id));
+      const normalizedCustom = filter(
+        normalizeCustomChips(nextCustom),
         (label) => !oppositeCustomKeySet.has(normalizeChipKey(label)),
       );
       const fields = {
@@ -275,13 +273,13 @@ const OnboardingComboboxChipsStep = ({
 
   const toggleFeaturedOption = React.useCallback(
     (option) => {
-      const id = Number(option?.id);
+      const id = toNumber(option?.id);
       if (!Number.isInteger(id) || id <= 0 || oppositeIdSet.has(id)) {
         return;
       }
 
       const nextIds = selectedIdSet.has(id)
-        ? selectedIds.filter((value) => value !== id)
+        ? filter(selectedIds, (value) => value !== id)
         : [...selectedIds, id];
 
       commitFields(nextIds, customChips);
@@ -297,12 +295,12 @@ const OnboardingComboboxChipsStep = ({
 
   const handleValueChange = React.useCallback(
     (nextValue) => {
-      const nextItems = Array.isArray(nextValue) ? nextValue : [];
+      const nextItems = isArray(nextValue) ? nextValue : [];
       const nextIds = [];
       const nextCustom = [];
       let addedCustom = false;
 
-      nextItems.forEach((value) => {
+      forEach(nextItems, (value) => {
         if (isCatalogValue(value)) {
           const id = fromCatalogValue(value);
           if (Number.isInteger(id) && id > 0 && !oppositeIdSet.has(id)) {
@@ -450,8 +448,8 @@ const OnboardingComboboxChipsStep = ({
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {featuredOptions.map((option) => {
-                const id = Number(option.id);
+              {map(featuredOptions, (option) => {
+                const id = toNumber(option.id);
                 const isSelected = selectedIdSet.has(id);
 
                 return (
@@ -514,7 +512,7 @@ const OnboardingComboboxChipsStep = ({
               <ComboboxValue>
                 {(nextValues) => (
                   <>
-                    {nextValues.map((item) => (
+                    {map(nextValues, (item) => (
                       <ComboboxChip key={item} className="h-8 rounded-xl text-sm">
                         {valueToLabel(item)}
                       </ComboboxChip>
@@ -609,3 +607,4 @@ const OnboardingComboboxChipsStep = ({
 };
 
 export default OnboardingComboboxChipsStep;
+

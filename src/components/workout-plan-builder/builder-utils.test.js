@@ -6,6 +6,8 @@ import {
   initFromPlan,
 } from "./builder-utils.js";
 
+import { map } from "lodash";
+
 describe("workout plan builder utils", () => {
   it("preserves plan day and exercise order through edit normalization", () => {
     vi.spyOn(Date, "now").mockReturnValue(1700000000000);
@@ -54,12 +56,12 @@ describe("workout plan builder utils", () => {
       exercisesByDay: exercises,
     });
 
-    expect(savedPlan.schedule.map((day) => day.day)).toEqual(["Day 2", "Day 1"]);
-    expect(savedPlan.schedule[0].exercises.map((exercise) => exercise.name)).toEqual([
+    expect(map(savedPlan.schedule, (day) => day.day)).toEqual(["Day 2", "Day 1"]);
+    expect(map(savedPlan.schedule[0].exercises, (exercise) => exercise.name)).toEqual([
       "Lat Pulldown",
       "Cable Row",
     ]);
-    expect(savedPlan.schedule[1].exercises.map((exercise) => exercise.name)).toEqual([
+    expect(map(savedPlan.schedule[1].exercises, (exercise) => exercise.name)).toEqual([
       "Bench Press",
     ]);
   });

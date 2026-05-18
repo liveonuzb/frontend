@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import { findIndex } from "lodash";
+import { findIndex, map } from "lodash";
 import { cn } from "@/lib/utils";
 
 export const ScrollPicker = ({
@@ -92,7 +92,7 @@ export const ScrollPicker = ({
         `,
           }}
         />
-        {items.map((item) => {
+        {map(items, (item) => {
           const isSelected = item.value === value;
           return (
             <div

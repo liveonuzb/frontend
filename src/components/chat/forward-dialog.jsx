@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { map, filter, includes } from "lodash";
+import { map, filter, includes, toLower, trim } from "lodash";
 import {
   Drawer,
   DrawerContent,
@@ -36,9 +36,9 @@ export default function ForwardDialog({ open, onClose, onForward, message }) {
 
   // Filter chats by search query
   const filteredChats = useMemo(() => {
-    if (!search.trim()) return allChats;
-    const query = search.toLowerCase();
-    return filter(allChats, (chat) => includes(chat.name.toLowerCase(), query));
+    if (!trim(search)) return allChats;
+    const query = toLower(search);
+    return filter(allChats, (chat) => includes(toLower(chat.name), query));
   }, [allChats, search]);
 
   const handleForward = (chatId) => {

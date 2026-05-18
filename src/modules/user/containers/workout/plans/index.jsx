@@ -1,5 +1,20 @@
 import React from "react";
-import { find, get, map, orderBy, size, values } from "lodash";
+import {
+  find,
+  get,
+  map,
+  orderBy,
+  size,
+  values as lodashValues,
+  filter,
+  isArray,
+  toNumber,
+  toUpper,
+  trim,
+  includes,
+  toLower,
+  take,
+} from "lodash";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import {
@@ -37,7 +52,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import useWorkoutPlan from "@/hooks/app/use-workout-plan";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 import { useLanguageStore, useBreadcrumbStore } from "@/store";
 import { cn } from "@/lib/utils";
 import {
@@ -49,20 +64,20 @@ import { WORKOUT_RECOMMENDED_PLANS } from "../workout-showcase-data.js";
 
 const resolveText = (translations, fallback, language) => {
   if (translations && typeof translations === "object") {
-    const direct = String(get(translations, language, "")).trim();
+    const direct = trim(String(get(translations, language, "")));
     if (direct) return direct;
-    const uzText = String(get(translations, "uz", "")).trim();
+    const uzText = trim(String(get(translations, "uz", "")));
     if (uzText) return uzText;
-    const enText = String(get(translations, "en", "")).trim();
+    const enText = trim(String(get(translations, "en", "")));
     if (enText) return enText;
-    const ruText = String(get(translations, "ru", "")).trim();
+    const ruText = trim(String(get(translations, "ru", "")));
     if (ruText) return ruText;
-    const firstValue = find(values(translations), (value) =>
-      String(value ?? "").trim(),
+    const firstValue = find(lodashValues(translations), (value) =>
+      trim(String(value ?? "")),
     );
-    if (firstValue) return String(firstValue).trim();
+    if (firstValue) return trim(String(firstValue));
   }
-  return String(fallback ?? "").trim();
+  return trim(String(fallback ?? ""));
 };
 
 const PlanSourceBadge = ({ plan }) => {
@@ -76,7 +91,6 @@ const PlanSourceBadge = ({ plan }) => {
     );
   }
   if (get(plan, "isTemplate")) return <Badge variant="outline">Template</Badge>;
-  if (source === "coach") return <Badge variant="outline">Murabbiy</Badge>;
   return null;
 };
 
@@ -116,18 +130,18 @@ const PlanCard = ({
   isEditable,
 }) => {
   const durationWeeks =
-    Number(get(plan, "durationWeeks")) ||
-    Math.max(1, Math.round((Number(get(plan, "days")) || 28) / 7));
+    toNumber(get(plan, "durationWeeks")) ||
+    Math.max(1, Math.round((toNumber(get(plan, "days")) || 28) / 7));
   const dayCount = get(plan, "daysPerWeek") || 0;
   const level = get(plan, "level", get(plan, "difficulty", "Beginner - Intermediate"));
   const coverImageUrl = get(plan, "coverImageUrl");
-  const tags = Array.isArray(get(plan, "tags"))
+  const tags = isArray(get(plan, "tags"))
     ? get(plan, "tags")
-    : [
+    : filter([
         get(plan, "focus", "Strength Focus"),
         "Progress Tracking",
         "Nutrition Guidance",
-      ].filter(Boolean);
+      ], Boolean);
 
   return (
     <div className="workout-glass-card group relative grid min-h-[240px] overflow-hidden rounded-[1.6rem] border transition hover:-translate-y-0.5 hover:border-primary/45 md:grid-cols-[minmax(220px,42%)_1fr]">
@@ -154,14 +168,13 @@ const PlanCard = ({
         )}
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950/10 via-transparent to-slate-950/60" />
       </button>
-
       <div className="flex min-w-0 flex-col p-5 sm:p-7">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="mb-3 flex flex-wrap items-center gap-2">
               {get(plan, "badge") ? (
                 <Badge className="rounded-full bg-primary/10 text-primary">
-                  {String(get(plan, "badge")).toUpperCase()}
+                  {toUpper(String(get(plan, "badge")))}
                 </Badge>
               ) : null}
               {isActive ? (
@@ -236,7 +249,7 @@ const PlanCard = ({
         </div>
 
         <div className="mt-5 flex flex-wrap gap-2">
-          {tags.slice(0, 3).map((tag) => (
+          {map(take(tags, 3), (tag) => (
             <span
               key={tag}
               className="rounded-xl border border-slate-900/10 bg-white/45 px-3 py-1 text-xs font-medium text-muted-foreground dark:border-white/10 dark:bg-white/[0.04]"
@@ -268,7 +281,7 @@ const PlanCard = ({
 
 const PlanSidebar = ({ activePlan, onCreatePlan, onContinuePlan, onStartRecommended }) => {
   const recommendedPlan = WORKOUT_RECOMMENDED_PLANS[0];
-  const activeProgress = Number(get(activePlan, "progress", get(activePlan, "completionPercent", 0))) || 58;
+  const activeProgress = toNumber(get(activePlan, "progress", get(activePlan, "completionPercent", 0))) || 58;
 
   return (
     <div className="space-y-4">
@@ -316,7 +329,6 @@ const PlanSidebar = ({ activePlan, onCreatePlan, onContinuePlan, onStartRecommen
           </div>
         </div>
       </div>
-
       <div className="workout-glass-card rounded-3xl p-5">
         <div className="flex items-center justify-between gap-3">
           <h4 className="text-sm font-black">Your active plan</h4>
@@ -372,16 +384,15 @@ const PlanSidebar = ({ activePlan, onCreatePlan, onContinuePlan, onStartRecommen
           </div>
         )}
       </div>
-
       <div className="workout-glass-card rounded-3xl p-5">
         <h4 className="text-sm font-black">Why follow a plan?</h4>
         <div className="mt-4 space-y-4">
-          {[
+          {map([
             ["Structured Workouts", "Stay consistent with a proven plan."],
             ["Track Progress", "Monitor your improvements."],
             ["Reach Your Goals", "Stay motivated and achieve more."],
             ["Expert Guidance", "Workouts designed by professionals."],
-          ].map(([title, description]) => (
+          ], ([title, description]) => (
             <div key={title} className="flex gap-3">
               <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
                 <DumbbellIcon className="size-4" />
@@ -455,13 +466,12 @@ const WorkoutPlansPage = () => {
   const displayPlans = React.useMemo(() => {
     const backendPlans = [...normalizedPlans, ...normalizedTemplates];
     const knownKeys = new Set(
-      backendPlans.map((plan) =>
-        String(get(plan, "id", get(plan, "name", ""))).toLowerCase(),
-      ),
+      map(backendPlans, (plan) =>
+        toLower(String(get(plan, "id", get(plan, "name", ""))))),
     );
-    const fallbackPlans = WORKOUT_RECOMMENDED_PLANS.filter((plan) => {
-      const key = String(get(plan, "id", get(plan, "name", ""))).toLowerCase();
-      const name = String(get(plan, "name", "")).toLowerCase();
+    const fallbackPlans = filter(WORKOUT_RECOMMENDED_PLANS, (plan) => {
+      const key = toLower(String(get(plan, "id", get(plan, "name", ""))));
+      const name = toLower(String(get(plan, "name", "")));
       return !knownKeys.has(key) && !knownKeys.has(name);
     });
     const source = backendPlans.length > 0
@@ -471,15 +481,12 @@ const WorkoutPlansPage = () => {
     const filtered =
       filterKey === "all"
         ? source
-        : source.filter((plan) => {
-            const category = String(get(plan, "category", "")).toLowerCase();
-            const focus = String(get(plan, "focus", "")).toLowerCase();
-            const name = String(get(plan, "name", "")).toLowerCase();
-            return (
-              category === filterKey ||
-              focus.includes(filterKey.replace("-", " ")) ||
-              name.includes(filterKey.replace("-", " "))
-            );
+        : filter(source, (plan) => {
+            const category = toLower(String(get(plan, "category", "")));
+            const focus = toLower(String(get(plan, "focus", "")));
+            const name = toLower(String(get(plan, "name", "")));
+            return (category === filterKey ||
+            includes(focus, filterKey.replace("-", " ")) || includes(name, filterKey.replace("-", " ")));
           });
 
     return orderBy(
@@ -570,7 +577,7 @@ const WorkoutPlansPage = () => {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {PLAN_FILTERS.map((filterOption) => {
+            {map(PLAN_FILTERS, (filterOption) => {
               const active = filterKey === filterOption.value;
               return (
                 <button
@@ -626,9 +633,7 @@ const WorkoutPlansPage = () => {
                     }
                     onDelete={() => setDeletingPlan(plan)}
                     isStartDisabled={isStartingPlan}
-                    isEditable={
-                      !isTemplate && get(plan, "source") !== "coach"
-                    }
+                    isEditable={!isTemplate}
                   />
                 );
               })}
@@ -671,7 +676,6 @@ const WorkoutPlansPage = () => {
           />
         </aside>
       </div>
-
       <AlertDialog
         open={Boolean(deletingPlan)}
         onOpenChange={(open) => {
@@ -706,3 +710,5 @@ const WorkoutPlansPage = () => {
 };
 
 export default WorkoutPlansPage;
+
+

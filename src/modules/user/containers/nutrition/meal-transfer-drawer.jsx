@@ -22,7 +22,9 @@ import {
 } from "./nutrition-drawer-layout.jsx";
 import { MEAL_TYPE_OPTIONS } from "@/modules/user/lib/meal-config";
 
-const getTodayKey = () => new Date().toISOString().split("T")[0];
+import { map, split } from "lodash";
+
+const getTodayKey = () => split(new Date().toISOString(), "T")[0];
 
 export default function MealTransferDrawer({
   open,
@@ -95,7 +97,7 @@ export default function MealTransferDrawer({
                 <SelectValue placeholder="Bo'limni tanlang" />
               </SelectTrigger>
               <SelectContent>
-                {MEAL_TYPE_OPTIONS.map((option) => (
+                {map(MEAL_TYPE_OPTIONS, (option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>

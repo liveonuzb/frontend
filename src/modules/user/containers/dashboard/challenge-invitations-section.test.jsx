@@ -2,20 +2,17 @@ import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import ChallengeInvitationsSection from "./challenge-invitations-section.jsx";
-import useGetQuery from "@/hooks/api/use-get-query";
-import usePostQuery from "@/hooks/api/use-post-query";
+import { useGetQuery } from "@/hooks/api";
+import { usePostQuery } from "@/hooks/api";
 import useReminderTrigger from "./use-reminder-trigger.js";
 
 const mutateAsync = vi.fn();
 const invalidateQueries = vi.fn();
 const navigate = vi.fn();
 
-vi.mock("@/hooks/api/use-get-query", () => ({
-  default: vi.fn(),
-}));
-
-vi.mock("@/hooks/api/use-post-query", () => ({
-  default: vi.fn(),
+vi.mock("@/hooks/api", () => ({
+  useGetQuery: vi.fn(),
+  usePostQuery: vi.fn(),
 }));
 
 vi.mock("./use-reminder-trigger.js", () => ({

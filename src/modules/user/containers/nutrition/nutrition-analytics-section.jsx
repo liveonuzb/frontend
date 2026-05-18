@@ -1,5 +1,5 @@
 import React from "react";
-import { map } from "lodash";
+import { map, filter, includes, isArray, orderBy, reduce, toNumber, find } from "lodash";
 import {
   BarChart,
   Bar,
@@ -55,10 +55,8 @@ const GRID_STROKE = "hsl(var(--border))";
 const CALORIE_CHART_MARGIN = { top: 4, right: 4, left: -24, bottom: 0 };
 const MACRO_CHART_MARGIN = { top: 4, right: 8, left: -24, bottom: 0 };
 
-const getSourceLabel = (source) => {
-  if (source === "coach-meal-plan") return SOURCE_META["meal-plan"].label;
-  return SOURCE_META[source]?.label || SOURCE_META.manual.label;
-};
+const getSourceLabel = (source) =>
+  SOURCE_META[source]?.label || SOURCE_META.manual.label;
 
 const toDateKey = (date) => date.toISOString().slice(0, 10);
 
@@ -82,7 +80,7 @@ const escapeCsvCell = (value) => {
 };
 
 const toCsv = (rows) =>
-  rows.map((row) => row.map(escapeCsvCell).join(",")).join("\r\n");
+  map(rows, (row) => map(row, escapeCsvCell).join(",")).join("\r\n");
 
 const downloadCsv = (filename, csv) => {
   if (typeof document === "undefined") return;
@@ -101,7 +99,7 @@ const downloadCsv = (filename, csv) => {
 
 const buildNutritionCsv = ({ daily, summary, goals, period, sourceBreakdown }) => {
   const mealRows = daily.flatMap((entry) => {
-    const meals = Array.isArray(entry.meals) ? entry.meals : [];
+    const meals = isArray(entry.meals) ? entry.meals : [];
     if (meals.length === 0) {
       return [
         [
@@ -110,26 +108,26 @@ const buildNutritionCsv = ({ daily, summary, goals, period, sourceBreakdown }) =
           "",
           "",
           "",
-          Math.round(Number(entry.calories || 0)),
-          Math.round(Number(entry.protein || 0)),
-          Math.round(Number(entry.carbs || 0)),
-          Math.round(Number(entry.fat || 0)),
+          Math.round(toNumber(entry.calories || 0)),
+          Math.round(toNumber(entry.protein || 0)),
+          Math.round(toNumber(entry.carbs || 0)),
+          Math.round(toNumber(entry.fat || 0)),
           "",
         ],
       ];
     }
 
-    return meals.map((meal) => [
+    return map(meals, (meal) => [
       entry.date,
       meal.addedAt || "",
       meal.mealType || "",
       meal.name || "",
       meal.source || "",
-      Math.round(Number(meal.calories || 0)),
-      Math.round(Number(meal.protein || 0)),
-      Math.round(Number(meal.carbs || 0)),
-      Math.round(Number(meal.fat || 0)),
-      Math.round(Number(meal.fiber || 0)),
+      Math.round(toNumber(meal.calories || 0)),
+      Math.round(toNumber(meal.protein || 0)),
+      Math.round(toNumber(meal.carbs || 0)),
+      Math.round(toNumber(meal.fat || 0)),
+      Math.round(toNumber(meal.fiber || 0)),
     ]);
   });
   const rows = [
@@ -166,15 +164,15 @@ const buildNutritionCsv = ({ daily, summary, goals, period, sourceBreakdown }) =
       "sleep_hours",
       "mood",
     ],
-    ...daily.map((entry) => [
+    ...map(daily, (entry) => [
       entry.date,
-      Math.round(Number(entry.calories || 0)),
-      Math.round(Number(entry.protein || 0)),
-      Math.round(Number(entry.carbs || 0)),
-      Math.round(Number(entry.fat || 0)),
-      Math.round(Number(entry.waterMl || 0)),
-      Math.round(Number(entry.steps || 0)),
-      Math.round(Number(entry.workoutMinutes || 0)),
+      Math.round(toNumber(entry.calories || 0)),
+      Math.round(toNumber(entry.protein || 0)),
+      Math.round(toNumber(entry.carbs || 0)),
+      Math.round(toNumber(entry.fat || 0)),
+      Math.round(toNumber(entry.waterMl || 0)),
+      Math.round(toNumber(entry.steps || 0)),
+      Math.round(toNumber(entry.workoutMinutes || 0)),
       entry.sleepHours || "",
       entry.mood || "",
     ]),
@@ -201,7 +199,7 @@ const buildNutritionCsv = ({ daily, summary, goals, period, sourceBreakdown }) =
     [],
     ["source_breakdown"],
     ["source", "label", "count", "percent"],
-    ...sourceBreakdown.map((item) => [
+    ...map(sourceBreakdown, (item) => [
       item.source,
       getSourceLabel(item.source),
       item.count,
@@ -243,10 +241,10 @@ const getWeekComparisonRanges = () => {
 const WEEKDAY_LABELS = ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"];
 
 const averageCalories = (items = []) => {
-  const logged = items.filter((item) => Number(item.calories || 0) > 0);
+  const logged = filter(items, (item) => toNumber(item.calories || 0) > 0);
   if (logged.length === 0) return 0;
   return Math.round(
-    logged.reduce((sum, item) => sum + Number(item.calories || 0), 0) /
+    reduce(logged, (sum, item) => sum + toNumber(item.calories || 0), 0) /
       logged.length,
   );
 };
@@ -279,7 +277,7 @@ const CustomTooltip = React.memo(({ active, payload, label }) => {
   return (
     <div className="rounded-xl border bg-popover px-3 py-2 text-xs text-popover-foreground shadow-md">
       <p className="mb-1 font-semibold">{label}</p>
-      {payload.map((entry, i) => (
+      {map(payload, (entry, i) => (
         <p key={i} style={{ color: entry.color }}>
           {entry.name}: {entry.value}
         </p>
@@ -330,7 +328,7 @@ const SourceBreakdownChart = React.memo(({ sourceChartData, topSource }) => {
               outerRadius={78}
               paddingAngle={2}
             >
-              {sourceChartData.map((entry, index) => (
+              {map(sourceChartData, (entry, index) => (
                 <Cell
                   key={entry.name}
                   fill={SOURCE_COLORS[index % SOURCE_COLORS.length]}
@@ -353,7 +351,7 @@ const SourceBreakdownChart = React.memo(({ sourceChartData, topSource }) => {
           </h3>
         </div>
         <div className="grid gap-2 sm:grid-cols-2">
-          {sourceChartData.map((item, index) => (
+          {map(sourceChartData, (item, index) => (
             <div
               key={item.name}
               className="flex items-center justify-between rounded-xl border bg-card px-3 py-2"
@@ -497,7 +495,7 @@ WeekComparisonChart.displayName = "WeekComparisonChart";
 const MacroTrendChart = React.memo(
   ({ chartData, goals, activeMacros, onToggleMacro }) => {
     const visibleMacros = React.useMemo(
-      () => MACRO_SERIES.filter((macro) => activeMacros.includes(macro.key)),
+      () => filter(MACRO_SERIES, (macro) => includes(activeMacros, macro.key)),
       [activeMacros],
     );
 
@@ -510,8 +508,8 @@ const MacroTrendChart = React.memo(
             Makrolar trendi (g)
           </p>
           <div className="flex flex-wrap gap-1.5">
-            {MACRO_SERIES.map((macro) => {
-              const active = activeMacros.includes(macro.key);
+            {map(MACRO_SERIES, (macro) => {
+              const active = includes(activeMacros, macro.key);
               return (
                 <button
                   key={macro.key}
@@ -545,7 +543,7 @@ const MacroTrendChart = React.memo(
                 tickLine={false}
               />
               <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-              {visibleMacros.map((macro) =>
+              {map(visibleMacros, (macro) =>
                 goals[macro.goalKey] > 0 ? (
                   <ReferenceLine
                     key={`goal-${macro.key}`}
@@ -555,10 +553,9 @@ const MacroTrendChart = React.memo(
                     strokeWidth={1.25}
                     ifOverflow="extendDomain"
                   />
-                ) : null,
-              )}
+                ) : null)}
               <RechartsTooltip content={<CustomTooltip />} />
-              {visibleMacros.map((macro) => (
+              {map(visibleMacros, (macro) => (
                 <Line
                   key={macro.key}
                   type="monotone"
@@ -587,14 +584,14 @@ const MacroTrendCards = React.memo(({ chartData }) => {
 
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      {TREND_CARD_SERIES.map((item) => {
-        const values = chartData.map((entry) => Number(entry[item.key] || 0));
-        const first = values.find((value) => value > 0) || 0;
-        const last = [...values].reverse().find((value) => value > 0) || 0;
+      {map(TREND_CARD_SERIES, (item) => {
+        const values = map(chartData, (entry) => toNumber(entry[item.key] || 0));
+        const first = find(values, (value) => value > 0) || 0;
+        const last = find([...values].reverse(), (value) => value > 0) || 0;
         const delta =
           first > 0 ? Math.round(((last - first) / first) * 100) : 0;
         const average = values.length
-          ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length)
+          ? Math.round(reduce(values, (sum, value) => sum + value, 0) / values.length)
           : 0;
 
         return (
@@ -649,7 +646,7 @@ const ChartSkeleton = () => (
   <div className="rounded-[28px] border bg-card p-5 shadow-sm sm:p-6 space-y-4">
     <Skeleton className="h-5 w-40 rounded-lg" />
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      {[0, 1, 2, 3].map((i) => (
+      {map([0, 1, 2, 3], (i) => (
         <Skeleton key={i} className="h-20 rounded-2xl" />
       ))}
     </div>
@@ -663,7 +660,7 @@ export default function NutritionAnalyticsSection() {
   const [customRange, setCustomRange] = React.useState(getDefaultCustomRange);
   const [comparisonEnabled, setComparisonEnabled] = React.useState(false);
   const [activeMacros, setActiveMacros] = React.useState(() =>
-    MACRO_SERIES.map((item) => item.key),
+    map(MACRO_SERIES, (item) => item.key),
   );
 
   const hasCustomRange =
@@ -745,7 +742,7 @@ export default function NutritionAnalyticsSection() {
   const previousWeekDaily = previousWeekData?.data?.daily ?? EMPTY_ARRAY;
   const comparisonChartData = React.useMemo(
     () =>
-      WEEKDAY_LABELS.map((label, index) => ({
+      map(WEEKDAY_LABELS, (label, index) => ({
         date: label,
         "Bu hafta": Math.round(currentWeekDaily[index]?.calories ?? 0),
         "O'tgan hafta": Math.round(previousWeekDaily[index]?.calories ?? 0),
@@ -766,7 +763,7 @@ export default function NutritionAnalyticsSection() {
   );
   const sourceChartData = React.useMemo(
     () =>
-      sourceBreakdown.map((item) => ({
+      map(sourceBreakdown, (item) => ({
         name: getSourceLabel(item.source),
         value: item.count,
         percent: item.percent,
@@ -778,24 +775,22 @@ export default function NutritionAnalyticsSection() {
     [sourceChartData],
   );
   const trackedCalorieDays = React.useMemo(
-    () => daily.filter((entry) => Number(entry.calories || 0) > 0),
+    () => filter(daily, (entry) => toNumber(entry.calories || 0) > 0),
     [daily],
   );
   const dayHighlights = React.useMemo(() => {
-    const calorieGoal = Number(goals.calories || 0);
+    const calorieGoal = toNumber(goals.calories || 0);
     if (!calorieGoal || trackedCalorieDays.length === 0) {
       return null;
     }
 
-    const withDiff = trackedCalorieDays.map((entry) => ({
+    const withDiff = map(trackedCalorieDays, (entry) => ({
       ...entry,
-      diff: Math.round(Number(entry.calories || 0) - calorieGoal),
-      absDiff: Math.abs(Number(entry.calories || 0) - calorieGoal),
+      diff: Math.round(toNumber(entry.calories || 0) - calorieGoal),
+      absDiff: Math.abs(toNumber(entry.calories || 0) - calorieGoal),
     }));
-    const best = [...withDiff].sort((left, right) => left.absDiff - right.absDiff)[0];
-    const hardest = [...withDiff].sort(
-      (left, right) => right.absDiff - left.absDiff,
-    )[0];
+    const best = orderBy(withDiff, ["absDiff"], ["asc"])[0];
+    const hardest = orderBy(withDiff, ["absDiff"], ["desc"])[0];
 
     return { best, hardest };
   }, [goals.calories, trackedCalorieDays]);
@@ -815,10 +810,10 @@ export default function NutritionAnalyticsSection() {
 
   const toggleMacro = React.useCallback((key) => {
     setActiveMacros((current) => {
-      if (current.includes(key)) {
+      if (includes(current, key)) {
         return current.length === 1
           ? current
-          : current.filter((item) => item !== key);
+          : filter(current, (item) => item !== key);
       }
       return [...current, key];
     });
@@ -847,7 +842,7 @@ export default function NutritionAnalyticsSection() {
             <DownloadIcon className="size-3.5" />
             CSV
           </button>
-          {PERIOD_OPTIONS.map((opt) => (
+          {map(PERIOD_OPTIONS, (opt) => (
             <button
               key={opt.value}
               type="button"
@@ -891,7 +886,6 @@ export default function NutritionAnalyticsSection() {
           </button>
         </div>
       </div>
-
       {rangeMode === "custom" ? (
         <div className="space-y-2 rounded-2xl border bg-muted/20 p-3">
           <div className="grid gap-2 sm:grid-cols-2">
@@ -927,7 +921,6 @@ export default function NutritionAnalyticsSection() {
           ) : null}
         </div>
       ) : null}
-
       {/* Stat badges */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatBadge
@@ -970,7 +963,6 @@ export default function NutritionAnalyticsSection() {
           </div>
         </div>
       </div>
-
       {dayHighlights ? (
         <div className="grid gap-3 lg:grid-cols-3">
           <HighlightCard
@@ -1000,26 +992,21 @@ export default function NutritionAnalyticsSection() {
           />
         </div>
       ) : null}
-
       <SourceBreakdownChart
         sourceChartData={sourceChartData}
         topSource={topSource}
       />
-
       <CalorieBarChart
         chartData={chartData}
         calorieGoal={goals.calories ?? 0}
       />
-
       <MacroTrendCards chartData={chartData} />
-
       {comparisonEnabled ? (
         <WeekComparisonChart
           comparisonChartData={comparisonChartData}
           averageCaloriesDelta={averageCaloriesDelta}
         />
       ) : null}
-
       <MacroTrendChart
         chartData={chartData}
         goals={goals}

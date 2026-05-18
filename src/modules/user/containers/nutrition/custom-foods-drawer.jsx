@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { get } from "lodash";
+import { get, isArray, map, trim } from "lodash";
 import {
   Drawer,
   DrawerBody,
@@ -31,9 +31,13 @@ import {
   ArrowLeftIcon,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
-import { useGetQuery, usePostFileQuery, usePostQuery } from "@/hooks/api";
-import useApi from "@/hooks/api/use-api";
+import {
+  useDeleteQuery,
+  useGetQuery,
+  usePatchQuery,
+  usePostFileQuery,
+  usePostQuery,
+} from "@/hooks/api";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { NutritionDrawerContent } from "./nutrition-drawer-layout.jsx";
 import GaugeProgress from "@/components/meal-plan-builder/gauge-progress.jsx";
@@ -52,7 +56,7 @@ const EMPTY_FORM = {
 };
 
 const validateForm = (form) => {
-  if (!form.name.trim()) return "Taom nomi kiritilmagan";
+  if (!trim(form.name)) return "Taom nomi kiritilmagan";
   if (form.calories == null || Number.isNaN(form.calories) || form.calories < 0)
     return "Kaloriya miqdori noto'g'ri";
   return null;
@@ -203,7 +207,7 @@ const CustomFoodForm = ({
     }
     setError("");
     onSave({
-      name: form.name.trim(),
+      name: trim(form.name),
       calories: safeNum(form.calories),
       protein: safeNum(form.protein),
       carbs: safeNum(form.carbs),
@@ -365,11 +369,8 @@ const CustomFoodsDrawer = ({
   mealType,
   onAddMeal,
 }) => {
-  const { request } = useApi();
-  const queryClient = useQueryClient();
   const [view, setView] = useState("list"); // "list" | "create" | "edit"
   const [editingItem, setEditingItem] = useState(null);
-  const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [loggingId, setLoggingId] = useState(null);
 
@@ -385,48 +386,49 @@ const CustomFoodsDrawer = ({
     },
   });
 
-  const items = Array.isArray(get(data, "data.data.items"))
+  const items = isArray(get(data, "data.data.items"))
     ? get(data, "data.data.items", [])
     : get(data, "data.items", []);
 
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: CUSTOM_FOODS_KEY });
+  const createMutation = usePostQuery({ queryKey: CUSTOM_FOODS_KEY });
+  const updateMutation = usePatchQuery({ queryKey: CUSTOM_FOODS_KEY });
+  const deleteMutation = useDeleteQuery({ queryKey: CUSTOM_FOODS_KEY });
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   const handleCreate = async (formData) => {
-    setIsSaving(true);
     try {
-      await request.post("/users/me/custom-foods", formData);
-      await invalidate();
+      await createMutation.mutateAsync({
+        url: "/users/me/custom-foods",
+        attributes: formData,
+      });
       setView("list");
       toast.success("Taom qo'shildi");
     } catch {
       toast.error("Xatolik yuz berdi");
-    } finally {
-      setIsSaving(false);
     }
   };
 
   const handleUpdate = async (formData) => {
     if (!editingItem) return;
-    setIsSaving(true);
     try {
-      await request.patch(`/users/me/custom-foods/${editingItem.id}`, formData);
-      await invalidate();
+      await updateMutation.mutateAsync({
+        url: `/users/me/custom-foods/${editingItem.id}`,
+        attributes: formData,
+      });
       setView("list");
       setEditingItem(null);
       toast.success("Taom yangilandi");
     } catch {
       toast.error("Xatolik yuz berdi");
-    } finally {
-      setIsSaving(false);
     }
   };
 
   const handleDelete = async (id) => {
     setDeletingId(id);
     try {
-      await request.delete(`/users/me/custom-foods/${id}`);
-      await invalidate();
+      await deleteMutation.mutateAsync({
+        url: `/users/me/custom-foods/${id}`,
+      });
       toast.success("Taom o'chirildi");
     } catch {
       toast.error("Xatolik yuz berdi");
@@ -533,7 +535,7 @@ const CustomFoodsDrawer = ({
               />
             ) : isLoading ? (
               <div className="space-y-2">
-                {[0, 1, 2].map((i) => (
+                {map([0, 1, 2], (i) => (
                   <Skeleton key={i} className="h-14 rounded-2xl" />
                 ))}
               </div>
@@ -546,7 +548,7 @@ const CustomFoodsDrawer = ({
               </div>
             ) : (
               <div className="space-y-2">
-                {items.map((item) => (
+                {map(items, (item) => (
                   <div
                     key={item.id}
                     className="flex items-center gap-3 rounded-2xl border bg-card px-4 py-3"
@@ -622,7 +624,6 @@ const CustomFoodsDrawer = ({
           ) : null}
         </DrawerContent>
       </Drawer>
-
       {/* Portion editor */}
       <Drawer
         open={!!portionItem}

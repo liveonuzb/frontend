@@ -10,6 +10,7 @@ import {
   trim,
   toNumber,
   fromPairs,
+  parseInt as lodashParseInt,
 } from "lodash";
 import {
   createWorkoutSetTemplate,
@@ -158,7 +159,7 @@ export const initFromPlan = (plan, library = [], { lockWeekDays = false } = {}) 
           ),
         );
       } else {
-        const setCount = parseInt(get(ex, "sets")) || get(found, "defaultSets", 3);
+        const setCount = lodashParseInt(get(ex, "sets")) || get(found, "defaultSets", 3);
         sets = Array.from({ length: setCount }, () =>
           createWorkoutSetTemplate(
             { ...found, ...ex, trackingType },

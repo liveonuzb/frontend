@@ -1,5 +1,6 @@
+import { filter, map, reduce, toNumber, slice } from "lodash";
 export const formatRunningDistance = (meters = 0) => {
-  const numericMeters = Number(meters) || 0;
+  const numericMeters = toNumber(meters) || 0;
   if (numericMeters < 1000) {
     return `${Math.round(numericMeters)} m`;
   }
@@ -8,7 +9,7 @@ export const formatRunningDistance = (meters = 0) => {
 };
 
 export const formatRunningDuration = (seconds = 0) => {
-  const totalSeconds = Math.max(0, Number(seconds) || 0);
+  const totalSeconds = Math.max(0, toNumber(seconds) || 0);
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const remainingSeconds = Math.floor(totalSeconds % 60);
@@ -17,22 +18,24 @@ export const formatRunningDuration = (seconds = 0) => {
       ? [hours, minutes, remainingSeconds]
       : [minutes, remainingSeconds];
 
-  return parts.map((part) => String(part).padStart(2, "0")).join(":");
+  return map(parts, (part) => String(part).padStart(2, "0")).join(":");
 };
 
 export const formatRunningClockDuration = (seconds = 0) => {
-  const totalSeconds = Math.max(0, Number(seconds) || 0);
+  const totalSeconds = Math.max(0, toNumber(seconds) || 0);
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const remainingSeconds = Math.floor(totalSeconds % 60);
 
-  return [hours, minutes, remainingSeconds]
-    .map((part) => String(part).padStart(2, "0"))
+  return map(
+    [hours, minutes, remainingSeconds],
+    (part) => String(part).padStart(2, "0"),
+  )
     .join(":");
 };
 
 export const formatRunningPace = (secondsPerKm) => {
-  const pace = Number(secondsPerKm);
+  const pace = toNumber(secondsPerKm);
   if (!Number.isFinite(pace) || pace <= 0) {
     return "--";
   }
@@ -56,8 +59,8 @@ const EARTH_RADIUS_METERS = 6371000;
 const toRadians = (degrees) => (degrees * Math.PI) / 180;
 
 const isValidCoordinate = (point) => {
-  const latitude = Number(point?.latitude);
-  const longitude = Number(point?.longitude);
+  const latitude = toNumber(point?.latitude);
+  const longitude = toNumber(point?.longitude);
 
   return (
     Number.isFinite(latitude) &&
@@ -80,7 +83,7 @@ const compareRunningPoints = (left, right) => {
     }
   }
 
-  return (Number(left?.sequence) || 0) - (Number(right?.sequence) || 0);
+  return (toNumber(left?.sequence) || 0) - (toNumber(right?.sequence) || 0);
 };
 
 export const calculatePointDistanceMeters = (fromPoint, toPoint) => {
@@ -88,13 +91,13 @@ export const calculatePointDistanceMeters = (fromPoint, toPoint) => {
     return 0;
   }
 
-  const fromLatitude = toRadians(Number(fromPoint.latitude));
-  const toLatitude = toRadians(Number(toPoint.latitude));
+  const fromLatitude = toRadians(toNumber(fromPoint.latitude));
+  const toLatitude = toRadians(toNumber(toPoint.latitude));
   const deltaLatitude = toRadians(
-    Number(toPoint.latitude) - Number(fromPoint.latitude),
+    toNumber(toPoint.latitude) - toNumber(fromPoint.latitude),
   );
   const deltaLongitude = toRadians(
-    Number(toPoint.longitude) - Number(fromPoint.longitude),
+    toNumber(toPoint.longitude) - toNumber(fromPoint.longitude),
   );
   const haversine =
     Math.sin(deltaLatitude / 2) ** 2 +
@@ -110,12 +113,10 @@ export const calculatePointDistanceMeters = (fromPoint, toPoint) => {
 };
 
 export const calculateRunningDistanceMeters = (points = []) => {
-  const orderedPoints = points
-    .filter(isValidCoordinate)
-    .slice()
+  const orderedPoints = slice(filter(points, isValidCoordinate))
     .sort(compareRunningPoints);
 
-  return orderedPoints.reduce((total, point, index) => {
+  return reduce(orderedPoints, (total, point, index) => {
     if (index === 0) {
       return total;
     }
@@ -129,12 +130,12 @@ export const calculateLiveRunningMetrics = ({
   elapsedSeconds = 0,
   points = [],
 } = {}) => {
-  const baseDistanceMeters = Number(baseMetrics.distanceMeters ?? 0) || 0;
+  const baseDistanceMeters = toNumber(baseMetrics.distanceMeters ?? 0) || 0;
   const liveDistanceMeters = calculateRunningDistanceMeters(points);
   const distanceMeters = baseDistanceMeters + liveDistanceMeters;
   const durationSeconds = Math.max(
-    Number(baseMetrics.durationSeconds ?? 0) || 0,
-    Number(elapsedSeconds) || 0,
+    toNumber(baseMetrics.durationSeconds ?? 0) || 0,
+    toNumber(elapsedSeconds) || 0,
   );
 
   return {

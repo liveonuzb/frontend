@@ -5,6 +5,8 @@ import { getApiResponseData } from "@/lib/api-response";
 import useMe, { ME_QUERY_KEY } from "@/hooks/app/use-me";
 import { calculateGoals, normalizeGoal } from "@/lib/goal-calculator";
 
+import { every, toNumber, trim } from "lodash";
+
 export const HEALTH_GOALS_QUERY_KEY = ["health-goals"];
 
 export const DEFAULT_HEALTH_GOALS = {
@@ -43,7 +45,7 @@ const GOAL_PRESET_KEYS = [
 ];
 
 export const normalizeStoredGoal = (goal) => {
-  const rawGoal = String(goal ?? "").trim();
+  const rawGoal = trim(String(goal ?? ""));
 
   if (!rawGoal) {
     return null;
@@ -53,7 +55,7 @@ export const normalizeStoredGoal = (goal) => {
 };
 
 export const inferGoalIntentFromGoals = (goals = {}) => {
-  const calories = Number(goals?.calories);
+  const calories = toNumber(goals?.calories);
 
   if (!Number.isFinite(calories) || calories <= 0) {
     return null;
@@ -92,9 +94,7 @@ export const normalizeHealthGoals = (goals = {}) => ({
 
 export const hasDefaultHealthGoalPreset = (goals = {}) => {
   const normalized = normalizeHealthGoals(goals);
-  return GOAL_PRESET_KEYS.every(
-    (key) => normalized[key] === DEFAULT_HEALTH_GOALS[key],
-  );
+  return every(GOAL_PRESET_KEYS, (key) => normalized[key] === DEFAULT_HEALTH_GOALS[key]);
 };
 
 export const toHealthGoalsPayload = (goals = {}) => {

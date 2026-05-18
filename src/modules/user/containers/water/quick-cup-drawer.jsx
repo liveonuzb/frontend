@@ -1,5 +1,5 @@
 import React from "react";
-import { find } from "lodash";
+import { find, map } from "lodash";
 import {
   Drawer,
   DrawerContent,
@@ -41,7 +41,7 @@ export default function QuickCupDrawer({ children }) {
         </DrawerHeader>
         <DrawerBody className="space-y-4 py-6">
           <div className="grid grid-cols-3 gap-3 water-cup">
-            {CUP_SIZES.map((cup) => {
+            {map(CUP_SIZES, (cup) => {
               const active = cupSize === cup.value;
               return (
                 <button

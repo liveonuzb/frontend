@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import React from "react";
-import { get, map } from "lodash";
+import { get, map, filter, includes, toUpper } from "lodash";
 import { useGetQuery } from "@/hooks/api";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,7 +31,7 @@ const PromoCodeForm = ({ form, setForm }) => {
   });
   const plans = get(plansData, "data.data", []);
   const activePlans = React.useMemo(
-    () => plans.filter((p) => get(p, "isActive")),
+    () => filter(plans, (p) => get(p, "isActive")),
     [plans],
   );
 
@@ -42,8 +42,8 @@ const PromoCodeForm = ({ form, setForm }) => {
   const togglePlanId = (planId) => {
     setForm((current) => {
       const ids = current.applicablePlanIds || [];
-      if (ids.includes(planId)) {
-        return { ...current, applicablePlanIds: ids.filter((id) => id !== planId) };
+      if (includes(ids, planId)) {
+        return { ...current, applicablePlanIds: filter(ids, (id) => id !== planId) };
       }
       return { ...current, applicablePlanIds: [...ids, planId] };
     });
@@ -56,12 +56,11 @@ const PromoCodeForm = ({ form, setForm }) => {
         <Label className="text-sm font-medium">Promo kod</Label>
         <Input
           value={form.code}
-          onChange={(e) => handleChange("code", e.target.value.toUpperCase())}
+          onChange={(e) => handleChange("code", toUpper(e.target.value))}
           placeholder="Masalan: SUMMER2025"
           className="font-mono"
         />
       </div>
-
       {/* Description */}
       <div className="flex flex-col gap-2">
         <Label className="text-sm font-medium">Tavsif</Label>
@@ -72,7 +71,6 @@ const PromoCodeForm = ({ form, setForm }) => {
           rows={2}
         />
       </div>
-
       {/* Discount Type */}
       <div className="flex flex-col gap-2">
         <Label className="text-sm font-medium">Chegirma turi</Label>
@@ -95,7 +93,6 @@ const PromoCodeForm = ({ form, setForm }) => {
           </Button>
         </div>
       </div>
-
       {/* Discount Value */}
       <div className="flex flex-col gap-2">
         <Label className="text-sm font-medium">
@@ -111,7 +108,6 @@ const PromoCodeForm = ({ form, setForm }) => {
           min={0}
         />
       </div>
-
       {/* Max Uses */}
       <div className="flex flex-col gap-2">
         <Label className="text-sm font-medium">
@@ -125,7 +121,6 @@ const PromoCodeForm = ({ form, setForm }) => {
           min={0}
         />
       </div>
-
       {/* Stackable */}
       <div className="flex items-center gap-3">
         <Switch
@@ -134,7 +129,6 @@ const PromoCodeForm = ({ form, setForm }) => {
         />
         <Label className="text-sm font-medium">Stackable (boshqa kodlar bilan birga ishlatish)</Label>
       </div>
-
       {/* Min Plan Price */}
       <div className="flex flex-col gap-2">
         <Label className="text-sm font-medium">
@@ -148,7 +142,6 @@ const PromoCodeForm = ({ form, setForm }) => {
           min={0}
         />
       </div>
-
       {/* Valid From */}
       <div className="flex flex-col gap-2">
         <Label className="text-sm font-medium">Boshlanish sanasi</Label>
@@ -158,7 +151,6 @@ const PromoCodeForm = ({ form, setForm }) => {
           onChange={(e) => handleChange("validFrom", e.target.value)}
         />
       </div>
-
       {/* Valid To */}
       <div className="flex flex-col gap-2">
         <Label className="text-sm font-medium">Tugash sanasi</Label>
@@ -168,7 +160,6 @@ const PromoCodeForm = ({ form, setForm }) => {
           onChange={(e) => handleChange("validTo", e.target.value)}
         />
       </div>
-
       {/* Applicable Plans */}
       <div className="flex flex-col gap-2">
         <Label className="text-sm font-medium">Tegishli planlar</Label>
@@ -176,7 +167,7 @@ const PromoCodeForm = ({ form, setForm }) => {
           <div className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-muted/20 p-3">
             {map(activePlans, (plan) => {
               const planId = get(plan, "id");
-              const checked = (form.applicablePlanIds || []).includes(planId);
+              const checked = includes((form.applicablePlanIds || []), planId);
               return (
                 <label
                   key={planId}
@@ -197,7 +188,6 @@ const PromoCodeForm = ({ form, setForm }) => {
           </p>
         )}
       </div>
-
       {/* Is Active */}
       <div className="flex items-center gap-3">
         <Switch

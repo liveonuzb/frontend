@@ -1,5 +1,5 @@
 import React from "react";
-import { filter, get } from "lodash";
+import { filter, get, includes, map, toLower, isArray, trim, take } from "lodash";
 import { SearchIcon } from "lucide-react";
 import PageLoader from "@/components/page-loader/index.jsx";
 import PageTransition from "@/components/page-transition";
@@ -38,16 +38,14 @@ const WorkoutExercisesPage = () => {
   }, [setBreadcrumbs]);
 
   const visibleExercises = React.useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+    const normalizedQuery = toLower(trim(query));
 
     return filter(exercises, (exercise) => {
       if (!normalizedQuery) {
         return true;
       }
 
-      return String(get(exercise, "name", ""))
-        .toLowerCase()
-        .includes(normalizedQuery);
+      return includes(toLower(String(get(exercise, "name", ""))), normalizedQuery);
     });
   }, [exercises, query]);
 
@@ -84,7 +82,7 @@ const WorkoutExercisesPage = () => {
             >
               Barchasi
             </Button>
-            {categories.map((category) => (
+            {map(categories, (category) => (
               <Button
                 key={category.id}
                 type="button"
@@ -99,11 +97,11 @@ const WorkoutExercisesPage = () => {
         </div>
 
         <div className="grid gap-3">
-          {visibleExercises.map((exercise) => {
-            const equipments = Array.isArray(get(exercise, "equipments"))
+          {map(visibleExercises, (exercise) => {
+            const equipments = isArray(get(exercise, "equipments"))
               ? get(exercise, "equipments")
               : [];
-            const targetMuscles = Array.isArray(get(exercise, "targetMuscles"))
+            const targetMuscles = isArray(get(exercise, "targetMuscles"))
               ? get(exercise, "targetMuscles")
               : [];
 
@@ -153,7 +151,7 @@ const WorkoutExercisesPage = () => {
                     </div>
 
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {equipments.slice(0, 2).map((item) => (
+                      {map(take(equipments, 2), (item) => (
                         <Badge
                           key={`${exercise.id}-eq-${item}`}
                           variant="outline"
@@ -162,7 +160,7 @@ const WorkoutExercisesPage = () => {
                           {item}
                         </Badge>
                       ))}
-                      {targetMuscles.slice(0, 2).map((item) => (
+                      {map(take(targetMuscles, 2), (item) => (
                         <Badge
                           key={`${exercise.id}-muscle-${item}`}
                           variant="outline"
@@ -185,7 +183,6 @@ const WorkoutExercisesPage = () => {
           ) : null}
         </div>
       </div>
-
       <WorkoutExerciseDetailDrawer
         open={Boolean(selectedExercise)}
         onOpenChange={(open) => {

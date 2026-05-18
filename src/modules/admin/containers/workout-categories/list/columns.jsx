@@ -1,5 +1,5 @@
 import React from "react";
-import { filter, find, get, map } from "lodash";
+import { filter, find, get, map, trim, values as lodashValues } from "lodash";
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,21 +22,21 @@ const SWITCH_COLUMN_META = {
 const resolveLabel = (translations, fallback, language) => {
   if (translations && typeof translations === "object") {
     const direct = get(translations, language);
-    if (typeof direct === "string" && direct.trim()) {
-      return direct.trim();
+    if (typeof direct === "string" && trim(direct)) {
+      return trim(direct);
     }
 
     const uz = get(translations, "uz");
-    if (typeof uz === "string" && uz.trim()) {
-      return uz.trim();
+    if (typeof uz === "string" && trim(uz)) {
+      return trim(uz);
     }
 
     const first = find(
-      Object.values(translations),
-      (value) => typeof value === "string" && value.trim(),
+      lodashValues(translations),
+      (value) => typeof value === "string" && trim(value),
     );
-    if (typeof first === "string" && first.trim()) {
-      return first.trim();
+    if (typeof first === "string" && trim(first)) {
+      return trim(first);
     }
   }
 
@@ -45,8 +45,8 @@ const resolveLabel = (translations, fallback, language) => {
 
 const countFilledTranslations = (translations = {}) =>
   filter(
-    Object.values(translations),
-    (value) => typeof value === "string" && value.trim().length > 0,
+    lodashValues(translations),
+    (value) => typeof value === "string" && trim(value).length > 0,
   ).length;
 
 export const useColumns = ({
@@ -277,3 +277,6 @@ export const useColumns = ({
     ],
   );
 };
+
+
+

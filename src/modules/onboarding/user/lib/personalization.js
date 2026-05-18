@@ -1,4 +1,20 @@
-import { clamp, compact, find, get, gt, gte, map, size } from "lodash";
+import {
+  clamp,
+  compact,
+  find,
+  get,
+  gt,
+  gte,
+  map,
+  size,
+  filter,
+  includes,
+  reduce,
+  toNumber,
+  isArray,
+  trim,
+  split,
+} from "lodash";
 
 export const unwrapApiData = (response) =>
   get(response, "data.data", get(response, "data", null));
@@ -43,7 +59,7 @@ export const personalizationLoadingSteps = metabolismLoadingSteps;
 export const personalizationChecklist = metabolismChecklist;
 
 export const clampProgress = (value) =>
-  clamp(Math.round(Number(value) || 0), 0, 100);
+  clamp(Math.round(toNumber(value) || 0), 0, 100);
 
 export const getLoadingStepIndex = (progress, steps = []) => {
   const stepCount = size(steps);
@@ -113,13 +129,13 @@ export const getPlanGenerationQualityIssues = (job) => {
 };
 
 export const formatNumber = (value, locale = "uz-UZ") => {
-  const numberValue = Number(value);
+  const numberValue = toNumber(value);
   if (!Number.isFinite(numberValue)) return "-";
   return new Intl.NumberFormat(locale).format(Math.round(numberValue));
 };
 
 export const formatWeightDelta = (value) => {
-  const numberValue = Number(value);
+  const numberValue = toNumber(value);
   if (!Number.isFinite(numberValue)) return "0 kg";
   if (numberValue === 0) return "0 kg";
   return `${numberValue > 0 ? "+" : ""}${Math.round(numberValue * 10) / 10} kg`;
@@ -129,11 +145,11 @@ export const macroCalories = ({
   proteinGram = 0,
   carbsGram = 0,
   fatGram = 0,
-}) => Number(proteinGram) * 4 + Number(carbsGram) * 4 + Number(fatGram) * 9;
+}) => toNumber(proteinGram) * 4 + toNumber(carbsGram) * 4 + toNumber(fatGram) * 9;
 
 export const getMacroBalanceMessage = (result, t) => {
   const total = macroCalories(result);
-  const target = Number(result?.dailyCalories) || 0;
+  const target = toNumber(result?.dailyCalories) || 0;
 
   if (!target || !total) {
     return t("onboarding.postOnboarding.result.balanceUnknown");
@@ -154,18 +170,15 @@ export const getMacroBalanceMessage = (result, t) => {
 export const normalizeEquipmentIds = (values) =>
   Array.from(
     new Set(
-      (Array.isArray(values) ? values : [])
-        .map((value) => Number(value))
-        .filter((value) => Number.isInteger(value) && value > 0),
+      filter(map((isArray(values) ? values : []), (value) => toNumber(value)), (value) => Number.isInteger(value) && value > 0),
     ),
   );
 
 export const normalizeCustomEquipment = (values) => {
   const seen = new Set();
-  return (Array.isArray(values) ? values : []).reduce((acc, value) => {
-    const label = String(value ?? "")
-      .replace(/\s+/g, " ")
-      .trim();
+  return reduce((isArray(values) ? values : []), (acc, value) => {
+    const label = trim(String(value ?? "")
+      .replace(/\s+/g, " "));
     const key = label.toLocaleLowerCase("uz-UZ");
 
     if (!label || seen.has(key)) return acc;
@@ -179,11 +192,7 @@ export const normalizeCatalogIds = normalizeEquipmentIds;
 export const normalizeCustomItems = normalizeCustomEquipment;
 
 export const splitTextList = (value) =>
-  String(value ?? "")
-    .split(/[\n,]/)
-    .map((item) => item.replace(/\s+/g, " ").trim())
-    .filter(Boolean)
-    .filter((item, index, list) => {
+  filter(filter(map(split(String(value ?? ""), /[\n,]/), (item) => trim(item.replace(/\s+/g, " "))), Boolean), (item, index, list) => {
       const key = item.toLocaleLowerCase("uz-UZ");
       return (
         list.findIndex((next) => next.toLocaleLowerCase("uz-UZ") === key) ===
@@ -233,7 +242,7 @@ export const buildOnboardingPreferencePatch = (key, value, onboarding = {}) => {
   }
 
   if (key === "currentWeight") {
-    const numberValue = Number(value);
+    const numberValue = toNumber(value);
     return Number.isFinite(numberValue)
       ? {
           currentWeight: {
@@ -245,7 +254,7 @@ export const buildOnboardingPreferencePatch = (key, value, onboarding = {}) => {
   }
 
   if (key === "foodBudget") {
-    if (["low", "medium", "high"].includes(value)) {
+    if (includes(["low", "medium", "high"], value)) {
       return {
         foodBudgetTier: value,
         foodBudget: null,
@@ -254,7 +263,7 @@ export const buildOnboardingPreferencePatch = (key, value, onboarding = {}) => {
       };
     }
 
-    const numberValue = Number(value);
+    const numberValue = toNumber(value);
     return Number.isFinite(numberValue) && numberValue >= 0
       ? {
           foodBudget: numberValue,
@@ -265,7 +274,7 @@ export const buildOnboardingPreferencePatch = (key, value, onboarding = {}) => {
   }
 
   if (key === "sleepHours") {
-    const numberValue = Number(value);
+    const numberValue = toNumber(value);
     return Number.isFinite(numberValue) && numberValue > 0
       ? { sleepHours: numberValue }
       : { sleepHours: null };
@@ -276,9 +285,7 @@ export const buildOnboardingPreferencePatch = (key, value, onboarding = {}) => {
   }
 
   if (
-    ["goal", "activityLevel", "workoutExperience", "injurySeverity"].includes(
-      key,
-    )
+    includes(["goal", "activityLevel", "workoutExperience", "injurySeverity"], key)
   ) {
     return { [key]: value || null };
   }
@@ -288,7 +295,7 @@ export const buildOnboardingPreferencePatch = (key, value, onboarding = {}) => {
 
 export const buildOnboardingSyncPatch = (key, value, onboarding = {}) => {
   if (key === "targetWeight") {
-    const numberValue = Number(value);
+    const numberValue = toNumber(value);
     return Number.isFinite(numberValue)
       ? {
           targetWeight: {
@@ -300,19 +307,19 @@ export const buildOnboardingSyncPatch = (key, value, onboarding = {}) => {
   }
 
   if (key === "weeklyWeightChangeGoal") {
-    const numberValue = Number(value);
+    const numberValue = toNumber(value);
     return Number.isFinite(numberValue) ? { weeklyPace: numberValue } : {};
   }
 
   if (key === "mealsPerDay") {
-    const numberValue = Number(value);
+    const numberValue = toNumber(value);
     return Number.isInteger(numberValue)
       ? { mealFrequency: String(numberValue) }
       : {};
   }
 
   if (key === "weeklyWorkoutDays") {
-    const numberValue = Number(value);
+    const numberValue = toNumber(value);
     return Number.isInteger(numberValue)
       ? { weeklyWorkoutCount: numberValue }
       : {};
@@ -344,9 +351,9 @@ export const buildPersonalizationPatch = (key, value) => {
     return {};
   }
 
-  if (["workoutLocation"].includes(key)) {
+  if (includes(["workoutLocation"], key)) {
     return { [key]: value };
   }
 
-  return { [key]: Number(value) };
+  return { [key]: toNumber(value) };
 };

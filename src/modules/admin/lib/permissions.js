@@ -1,5 +1,5 @@
 import { useAuthStore } from "@/store";
-import { get } from "lodash";
+import { get, includes, isArray, some } from "lodash";
 import { useGetQuery } from "@/hooks/api";
 
 const CAPABILITY_ROLES = {
@@ -12,7 +12,6 @@ const CAPABILITY_ROLES = {
     "READONLY_ADMIN",
     "ADMIN",
     "MODERATOR",
-    "COACH_MANAGER",
     "NUTRITION_MANAGER",
     "WORKOUT_MANAGER",
   ],
@@ -36,10 +35,9 @@ const CAPABILITY_ROLES = {
     "SUPPORT",
     "ADMIN",
     "MODERATOR",
-    "COACH_MANAGER",
     "READONLY_ADMIN",
   ],
-  "support.manage": ["SUPER_ADMIN", "SUPPORT", "COACH_MANAGER"],
+  "support.manage": ["SUPER_ADMIN", "SUPPORT"],
   "support.sensitive": ["SUPER_ADMIN", "SUPPORT"],
   "support.block": ["SUPER_ADMIN", "SUPPORT", "ADMIN"],
   "support.delete": ["SUPER_ADMIN"],
@@ -52,32 +50,31 @@ const CAPABILITY_ROLES = {
     "GROWTH",
     "FINANCE",
     "ADMIN",
-    "COACH_MANAGER",
     "READONLY_ADMIN",
   ],
-  "growth.manage": ["SUPER_ADMIN", "GROWTH", "COACH_MANAGER"],
+  "growth.manage": ["SUPER_ADMIN", "GROWTH"],
   "growth.gift": ["SUPER_ADMIN", "GROWTH"],
   "settings.manage": ["SUPER_ADMIN"],
 };
 
 export const hasAdminCapability = (roles, capability) => {
   const allowedRoles = CAPABILITY_ROLES[capability] || [];
-  if (!Array.isArray(roles) || !roles.length || !allowedRoles.length) {
+  if (!isArray(roles) || !roles.length || !allowedRoles.length) {
     return false;
   }
 
-  return roles.some((role) => allowedRoles.includes(role));
+  return some(roles, (role) => includes(allowedRoles, role));
 };
 
 export const isSuperAdminRole = (roles) =>
-  Array.isArray(roles) && roles.includes("SUPER_ADMIN");
+  isArray(roles) && includes(roles, "SUPER_ADMIN");
 
 export const useAdminPermissions = () => {
   const roles = useAuthStore((state) => state.roles ?? []);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isSuperAdmin = isSuperAdminRole(roles);
-  const isAdmin = roles.some((role) =>
-    [
+  const isAdmin = some(roles, (role) =>
+    includes([
       "SUPER_ADMIN",
       "CONTENT_MANAGER",
       "SUPPORT",
@@ -86,11 +83,9 @@ export const useAdminPermissions = () => {
       "READONLY_ADMIN",
       "ADMIN",
       "MODERATOR",
-      "COACH_MANAGER",
       "NUTRITION_MANAGER",
       "WORKOUT_MANAGER",
-    ].includes(role),
-  );
+    ], role));
   const { data, isLoading } = useGetQuery({
     url: "/admin/me/permissions",
     queryProps: {
@@ -100,7 +95,7 @@ export const useAdminPermissions = () => {
     },
   });
   const backendCapabilities = get(data, "data.data.capabilities");
-  const capabilitySet = Array.isArray(backendCapabilities)
+  const capabilitySet = isArray(backendCapabilities)
     ? new Set(backendCapabilities)
     : null;
   const hasCapability = (capability) =>

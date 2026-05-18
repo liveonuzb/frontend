@@ -3,10 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { NotificationSettingsDrawer } from "./notifications-tab.jsx";
 import useProfileSettings from "@/hooks/app/use-profile-settings";
-import {
-  useCoachNotificationPreferences,
-  useQuietHours,
-} from "@/hooks/app/use-notifications";
+import { useQuietHours } from "@/hooks/app/use-notifications";
 import useMe from "@/hooks/app/use-me";
 import useUserTelegram from "@/hooks/app/use-user-telegram";
 
@@ -38,7 +35,6 @@ vi.mock("@/hooks/app/use-profile-settings", () => ({
 }));
 
 vi.mock("@/hooks/app/use-notifications", () => ({
-  useCoachNotificationPreferences: vi.fn(),
   useQuietHours: vi.fn(),
 }));
 
@@ -98,11 +94,6 @@ describe("NotificationSettingsDrawer", () => {
       saveNotificationSettings: vi.fn(),
       isSavingNotifications: false,
     });
-    vi.mocked(useCoachNotificationPreferences).mockReturnValue({
-      preferences: [],
-      updatePreferences: vi.fn(),
-      isUpdating: false,
-    });
     vi.mocked(useQuietHours).mockReturnValue({
       quietHours: {
         enabled: false,
@@ -157,11 +148,6 @@ describe("NotificationSettingsDrawer", () => {
       saveNotificationSettings: vi.fn(),
       isSavingNotifications: false,
     });
-    vi.mocked(useCoachNotificationPreferences).mockReturnValue({
-      preferences: [],
-      updatePreferences: vi.fn(),
-      isUpdating: false,
-    });
     vi.mocked(useQuietHours).mockReturnValue({
       quietHours: {
         enabled: false,
@@ -209,11 +195,6 @@ describe("NotificationSettingsDrawer", () => {
       settings: null,
       saveNotificationSettings: vi.fn(),
       isSavingNotifications: false,
-    });
-    vi.mocked(useCoachNotificationPreferences).mockReturnValue({
-      preferences: [],
-      updatePreferences: vi.fn(),
-      isUpdating: false,
     });
     vi.mocked(useQuietHours).mockReturnValue({
       quietHours: {

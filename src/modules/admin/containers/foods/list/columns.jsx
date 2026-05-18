@@ -175,7 +175,7 @@ export const useColumns = ({
 
           return tags.length ? (
             <div className="flex flex-wrap gap-1">
-              {tags.map((tag) => (
+              {lodashMap(tags, (tag) => (
                 <Badge
                   key={tag}
                   variant="outline"

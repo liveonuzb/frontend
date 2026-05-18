@@ -1,4 +1,4 @@
-import { get } from "lodash";
+import { get, filter, isArray, toNumber } from "lodash";
 import { getUserAiReportPeriodLabel } from "@/hooks/app/use-user-ai-reports";
 
 const getReportBody = (report) => report?.report ?? report?.body ?? {};
@@ -22,15 +22,15 @@ const getReportSummary = (report) => {
 
 const getNextAction = (report) => {
   const body = getReportBody(report);
-  const nextActions = Array.isArray(body.nextActions) ? body.nextActions : [];
+  const nextActions = isArray(body.nextActions) ? body.nextActions : [];
 
   return nextActions[0] ?? "";
 };
 
 const resolveQuota = (limits = {}) => ({
-  used: Number(limits?.quota?.used ?? 0) || 0,
-  monthly: Number(limits?.quota?.monthly ?? 0) || 0,
-  remaining: Number(limits?.quota?.remaining ?? 0) || 0,
+  used: toNumber(limits?.quota?.used ?? 0) || 0,
+  monthly: toNumber(limits?.quota?.monthly ?? 0) || 0,
+  remaining: toNumber(limits?.quota?.remaining ?? 0) || 0,
 });
 
 const hasDailyTrackingData = (dailyReport) => {
@@ -42,7 +42,7 @@ const hasDailyTrackingData = (dailyReport) => {
     return Boolean(dailyReport.hasData);
   }
 
-  return Boolean(dailyReport.summary || Number(dailyReport.score ?? 0) > 0);
+  return Boolean(dailyReport.summary || toNumber(dailyReport.score ?? 0) > 0);
 };
 
 export const getDashboardAiInsightViewModel = (
@@ -57,11 +57,11 @@ export const getDashboardAiInsightViewModel = (
   const isPremium = Boolean(
     limits?.isPremium ?? get(user, "premium.status") === "active",
   );
-  const lockedPeriods = Array.isArray(limits?.periods)
-    ? limits.periods.filter((period) => Boolean(period?.locked))
+  const lockedPeriods = isArray(limits?.periods)
+    ? filter(limits.periods, (period) => Boolean(period?.locked))
     : [];
   const dailyHasData = hasDailyTrackingData(dailyReport);
-  const dailyScore = Number(dailyReport?.score ?? 0) || 0;
+  const dailyScore = toNumber(dailyReport?.score ?? 0) || 0;
   const latestSummary = latestReport ? getReportSummary(latestReport) : null;
   const latestNextAction = latestReport ? getNextAction(latestReport) : "";
   const hasTodayCachedReport = Boolean(

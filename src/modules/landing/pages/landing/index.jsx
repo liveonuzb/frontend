@@ -81,6 +81,7 @@ import { cn } from "@/lib/utils";
 import { applyTheme, resolveTheme } from "@/lib/user-preferences";
 import { getPostAuthRoute } from "@/modules/auth/lib/auth-utils.js";
 import { useAppModeStore, useAuthStore, useLanguageStore } from "@/store";
+import { isArray, map, toLower } from "lodash";
 const LANGUAGES = [
   {
     code: "ru",
@@ -145,14 +146,14 @@ const landingIconMap = {
   ZapIcon
 };
 const hydrateIconRows = (items = [], fallbackIcon = SparklesIcon) =>
-  items.map(([title, body, iconName, ...rest]) => [
+  map(items, ([title, body, iconName, ...rest]) => [
     title,
     body,
     landingIconMap[iconName] ?? fallbackIcon,
     ...rest
   ]);
 const hydrateMetricRows = (items = []) =>
-  items.map(([value, label, iconName, tone]) => [
+  map(items, ([value, label, iconName, tone]) => [
     value,
     label,
     landingIconMap[iconName] ?? ActivityIcon,
@@ -172,10 +173,6 @@ const hydrateLandingCopy = (copy = {}) => ({
   progress: {
     ...copy.progress,
     metrics: hydrateMetricRows(copy.progress?.metrics)
-  },
-  coachMode: {
-    ...copy.coachMode,
-    features: hydrateIconRows(copy.coachMode?.features)
   },
   local: {
     ...copy.local,
@@ -256,14 +253,14 @@ const SOCIAL_LINKS = [
   }
 ];
 const resolveFooterLink = (item) => {
-  if (Array.isArray(item)) {
+  if (isArray(item)) {
     return {
       label: item[0],
       href: item[1] || "/"
     };
   }
 
-  const normalized = String(item).toLowerCase();
+  const normalized = toLower(String(item));
   const fallbackLinks = {
     faq: "#faq",
     help: "mailto:support@liveon.uz",
@@ -446,81 +443,83 @@ const Header = ({
     setMenuOpen(false);
     onAnchor(id);
   };
-  return <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/70 bg-white/88 px-4 py-2 text-slate-950 shadow-[0_10px_34px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/82 dark:text-white dark:shadow-none md:px-6">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
-        <Link
-    to="/"
-    className="inline-flex min-h-9 items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-orange-300"
-    aria-label="LiveOn"
-  >
-          <img
-    src="/madagascar/logo-main.webp"
-    alt={copy.nav.logoAlt}
-    className="size-8 object-contain"
-    loading="eager"
-  />
-          <span className="text-base font-black">LiveOn</span>
-        </Link>
+  return (
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/70 bg-white/88 px-4 py-2 text-slate-950 shadow-[0_10px_34px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/82 dark:text-white dark:shadow-none md:px-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+          <Link
+      to="/"
+      className="inline-flex min-h-9 items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-orange-300"
+      aria-label="LiveOn"
+    >
+            <img
+      src="/madagascar/logo-main.webp"
+      alt={copy.nav.logoAlt}
+      className="size-8 object-contain"
+      loading="eager"
+    />
+            <span className="text-base font-black">LiveOn</span>
+          </Link>
 
-        <nav className="hidden items-center gap-0.5 xl:flex" aria-label="Landing navigation">
-          {copy.nav.links.map(([id, label]) => <button
-    key={id}
-    type="button"
-    onClick={() => onAnchor(id)}
-    className="min-h-8 whitespace-nowrap rounded-lg px-2.5 text-[13px] font-semibold leading-4 text-slate-600 outline-none transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-orange-300 dark:text-white/68 dark:hover:bg-white/8 dark:hover:text-white"
-  >
-              {label}
-            </button>)}
-        </nav>
-
-        <div className="flex items-center gap-1.5">
-          <LandingThemeToggle className="hidden size-9 lg:inline-flex" />
-          <LanguageSwitcher
-    label={copy.nav.language}
-    language={language}
-    onLanguageChange={onLanguageChange}
-    title={copy.nav.languageTitle}
-    description={copy.nav.languageDescription}
-  />
-          <CTAButton
-    onClick={() => onStart("header_cta_clicked")}
-    className="hidden min-h-9 rounded-xl px-4 text-[13px] lg:inline-flex [&_[data-icon='inline-end']]:size-4"
-  >
-            {copy.nav.cta}
-          </CTAButton>
-          <Button
-    type="button"
-    variant="outline"
-    size="icon"
-    className="size-9 border-slate-200 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-950 dark:border-white/18 dark:bg-white/8 dark:text-white dark:hover:bg-white/14 dark:hover:text-white xl:hidden"
-    aria-label={menuOpen ? copy.nav.menuClose : copy.nav.menuOpen}
-    aria-expanded={menuOpen}
-    onClick={() => setMenuOpen((value) => !value)}
-  >
-            {menuOpen ? <XIcon /> : <MenuIcon />}
-          </Button>
-        </div>
-      </div>
-
-      {menuOpen ? <div className="mx-auto mt-3 max-w-7xl rounded-2xl border border-slate-200 bg-white/96 p-3 text-slate-950 shadow-[0_24px_80px_rgba(2,6,23,0.18)] dark:border-white/10 dark:bg-slate-900/96 dark:text-white dark:shadow-[0_24px_80px_rgba(2,6,23,0.38)] xl:hidden">
-          <nav className="grid gap-1" aria-label="Mobile landing navigation">
-            {copy.nav.links.map(([id, label]) => <button
-    key={id}
-    type="button"
-    onClick={() => navigateTo(id)}
-    className="min-h-11 rounded-xl px-3 text-left text-sm font-semibold text-slate-700 outline-none transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-orange-300 dark:text-white/76 dark:hover:bg-white/8 dark:hover:text-white"
-  >
+          <nav className="hidden items-center gap-0.5 xl:flex" aria-label="Landing navigation">
+            {map(copy.nav.links, ([id, label]) => <button
+      key={id}
+      type="button"
+      onClick={() => onAnchor(id)}
+      className="min-h-8 whitespace-nowrap rounded-lg px-2.5 text-[13px] font-semibold leading-4 text-slate-600 outline-none transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-orange-300 dark:text-white/68 dark:hover:bg-white/8 dark:hover:text-white"
+    >
                 {label}
               </button>)}
           </nav>
-          <div className="mt-3 grid gap-2">
-            <LandingThemeToggle className="h-9 w-full justify-center" />
-            <CTAButton onClick={() => onStart("mobile_menu_cta_clicked")} className="w-full">
+
+          <div className="flex items-center gap-1.5">
+            <LandingThemeToggle className="hidden size-9 lg:inline-flex" />
+            <LanguageSwitcher
+      label={copy.nav.language}
+      language={language}
+      onLanguageChange={onLanguageChange}
+      title={copy.nav.languageTitle}
+      description={copy.nav.languageDescription}
+    />
+            <CTAButton
+      onClick={() => onStart("header_cta_clicked")}
+      className="hidden min-h-9 rounded-xl px-4 text-[13px] lg:inline-flex [&_[data-icon='inline-end']]:size-4"
+    >
               {copy.nav.cta}
             </CTAButton>
+            <Button
+      type="button"
+      variant="outline"
+      size="icon"
+      className="size-9 border-slate-200 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-950 dark:border-white/18 dark:bg-white/8 dark:text-white dark:hover:bg-white/14 dark:hover:text-white xl:hidden"
+      aria-label={menuOpen ? copy.nav.menuClose : copy.nav.menuOpen}
+      aria-expanded={menuOpen}
+      onClick={() => setMenuOpen((value) => !value)}
+    >
+              {menuOpen ? <XIcon /> : <MenuIcon />}
+            </Button>
           </div>
-        </div> : null}
-    </header>;
+        </div>
+
+        {menuOpen ? <div className="mx-auto mt-3 max-w-7xl rounded-2xl border border-slate-200 bg-white/96 p-3 text-slate-950 shadow-[0_24px_80px_rgba(2,6,23,0.18)] dark:border-white/10 dark:bg-slate-900/96 dark:text-white dark:shadow-[0_24px_80px_rgba(2,6,23,0.38)] xl:hidden">
+            <nav className="grid gap-1" aria-label="Mobile landing navigation">
+              {map(copy.nav.links, ([id, label]) => <button
+      key={id}
+      type="button"
+      onClick={() => navigateTo(id)}
+      className="min-h-11 rounded-xl px-3 text-left text-sm font-semibold text-slate-700 outline-none transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-orange-300 dark:text-white/76 dark:hover:bg-white/8 dark:hover:text-white"
+    >
+                  {label}
+                </button>)}
+            </nav>
+            <div className="mt-3 grid gap-2">
+              <LandingThemeToggle className="h-9 w-full justify-center" />
+              <CTAButton onClick={() => onStart("mobile_menu_cta_clicked")} className="w-full">
+                {copy.nav.cta}
+              </CTAButton>
+            </div>
+          </div> : null}
+      </header>
+  );
 };
 const LanguageSwitcher = ({
   label,
@@ -548,79 +547,90 @@ const HeroSection = ({
   onExample
 }) => {
   const shouldReduceMotion = useReducedMotion();
-  return <section className="relative isolate overflow-hidden bg-slate-950 pt-20 text-white">
-      <div
-    className="absolute inset-0 bg-cover bg-center opacity-34"
-    style={{ backgroundImage: "url('/madagascar/background.webp')" }}
-    aria-hidden="true"
-  />
-      <div
-    className="absolute inset-0 bg-[radial-gradient(circle_at_78%_20%,rgba(249,115,22,0.28),transparent_30%),radial-gradient(circle_at_20%_75%,rgba(20,184,166,0.16),transparent_28%),linear-gradient(90deg,rgba(2,6,23,0.98),rgba(2,6,23,0.9)_44%,rgba(2,6,23,0.76))]"
-    aria-hidden="true"
-  />
-      <div className="relative z-10 mx-auto grid min-h-[calc(100svh-80px)] max-w-7xl gap-10 px-5 py-12 md:grid-cols-[0.92fr_1.08fr] md:items-center md:px-8 md:py-16">
-        <motion.div
-    className="max-w-3xl"
-    initial={shouldReduceMotion ? false : { opacity: 0, y: 22 }}
-    animate={shouldReduceMotion ? void 0 : { opacity: 1, y: 0 }}
-    transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-  >
-          <p className="text-2xl font-black md:text-3xl">LiveOn</p>
-          <Badge className="mt-6 h-7 bg-orange-500/14 px-3 uppercase tracking-[0.18em] text-orange-100 ring-1 ring-orange-300/20">
-            <SparklesIcon data-icon="inline-start" />
-            {copy.hero.badge}
-          </Badge>
-          <h1 className="mt-5 text-4xl font-semibold leading-[1.04] text-white md:text-6xl">
-            {copy.hero.title}
-          </h1>
-          <p className="mt-6 max-w-2xl text-base leading-8 text-white/72 md:text-lg">
-            {copy.hero.body}
-          </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <CTAButton onClick={onStart} className="w-full sm:w-auto">
-              {copy.hero.primaryCta}
-            </CTAButton>
-            <CTAButton variant="outline" onClick={onExample} className="w-full sm:w-auto">
-              {copy.hero.secondaryCta}
-            </CTAButton>
-          </div>
-          <dl className="mt-9 grid gap-4 sm:grid-cols-3">
-            {copy.hero.metrics.map(([value, label]) => <div key={value} className="border-l border-white/16 pl-4">
-                <dt className="text-xl font-semibold text-white md:text-2xl">{value}</dt>
-                <dd className="mt-1 text-sm leading-5 text-white/56">{label}</dd>
-              </div>)}
-          </dl>
-        </motion.div>
+  return (
+    <section className="relative isolate overflow-hidden bg-slate-950 pt-20 text-white">
+        <div
+      className="absolute inset-0 bg-cover bg-center opacity-34"
+      style={{ backgroundImage: "url('/madagascar/background.webp')" }}
+      aria-hidden="true"
+    />
+        <div
+      className="absolute inset-0 bg-[radial-gradient(circle_at_78%_20%,rgba(249,115,22,0.28),transparent_30%),radial-gradient(circle_at_20%_75%,rgba(20,184,166,0.16),transparent_28%),linear-gradient(90deg,rgba(2,6,23,0.98),rgba(2,6,23,0.9)_44%,rgba(2,6,23,0.76))]"
+      aria-hidden="true"
+    />
+        <div className="relative z-10 mx-auto grid min-h-[calc(100svh-80px)] max-w-7xl gap-10 px-5 py-12 md:grid-cols-[0.92fr_1.08fr] md:items-center md:px-8 md:py-16">
+          <motion.div
+      className="max-w-3xl"
+      initial={shouldReduceMotion ? false : { opacity: 0, y: 22 }}
+      animate={shouldReduceMotion ? void 0 : { opacity: 1, y: 0 }}
+      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+    >
+            <p className="text-2xl font-black md:text-3xl">LiveOn</p>
+            <Badge className="mt-6 h-7 bg-orange-500/14 px-3 uppercase tracking-[0.18em] text-orange-100 ring-1 ring-orange-300/20">
+              <SparklesIcon data-icon="inline-start" />
+              {copy.hero.badge}
+            </Badge>
+            <h1 className="mt-5 text-4xl font-semibold leading-[1.04] text-white md:text-6xl">
+              {copy.hero.title}
+            </h1>
+            <p className="mt-6 max-w-2xl text-base leading-8 text-white/72 md:text-lg">
+              {copy.hero.body}
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <CTAButton onClick={onStart} className="w-full sm:w-auto">
+                {copy.hero.primaryCta}
+              </CTAButton>
+              <CTAButton variant="outline" onClick={onExample} className="w-full sm:w-auto">
+                {copy.hero.secondaryCta}
+              </CTAButton>
+            </div>
+            <dl className="mt-9 grid gap-4 sm:grid-cols-3">
+              {map(
+                copy.hero.metrics,
+                ([value, label]) => <div key={value} className="border-l border-white/16 pl-4">
+                    <dt className="text-xl font-semibold text-white md:text-2xl">{value}</dt>
+                    <dd className="mt-1 text-sm leading-5 text-white/56">{label}</dd>
+                  </div>,
+              )}
+            </dl>
+          </motion.div>
 
-        <motion.div
-    initial={shouldReduceMotion ? false : { opacity: 0, y: 28, scale: 0.98 }}
-    animate={shouldReduceMotion ? void 0 : { opacity: 1, y: 0, scale: 1 }}
-    transition={{ delay: 0.08, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-    className="relative mx-auto w-full max-w-2xl md:max-w-none"
-  >
-          <ProductPreviewSlider preview={productPreview} variant="landing" />
-        </motion.div>
-      </div>
-    </section>;
+          <motion.div
+      initial={shouldReduceMotion ? false : { opacity: 0, y: 28, scale: 0.98 }}
+      animate={shouldReduceMotion ? void 0 : { opacity: 1, y: 0, scale: 1 }}
+      transition={{ delay: 0.08, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      className="relative mx-auto w-full max-w-2xl md:max-w-none"
+    >
+            <ProductPreviewSlider preview={productPreview} variant="landing" />
+          </motion.div>
+        </div>
+      </section>
+  );
 };
 const ValueStrip = ({ items }) => <section className={cn("border-y", warmSectionClass)}>
     <div className="mx-auto grid max-w-7xl gap-3 px-5 py-5 md:grid-cols-2 md:px-8 lg:grid-cols-4">
-      {items.map(([title, body, Icon]) => <div key={title} className="flex gap-3 rounded-2xl px-1 py-2">
-          <span className={cn("grid size-10 shrink-0 place-items-center rounded-2xl ring-1 ring-orange-500/12", iconSurfaceClass)}>
-            <Icon className="size-5" />
-          </span>
-          <span>
-            <span className={cn("block font-semibold", strongTextClass)}>{title}</span>
-            <span className={cn("mt-1 block text-sm leading-5", mutedTextClass)}>{body}</span>
-          </span>
-        </div>)}
+      {map(
+        items,
+        ([title, body, Icon]) => <div key={title} className="flex gap-3 rounded-2xl px-1 py-2">
+            <span className={cn("grid size-10 shrink-0 place-items-center rounded-2xl ring-1 ring-orange-500/12", iconSurfaceClass)}>
+              <Icon className="size-5" />
+            </span>
+            <span>
+              <span className={cn("block font-semibold", strongTextClass)}>{title}</span>
+              <span className={cn("mt-1 block text-sm leading-5", mutedTextClass)}>{body}</span>
+            </span>
+          </div>,
+      )}
     </div>
   </section>;
 const HowItWorks = ({ copy }) => <MotionSection id="how" className={cn(plainSectionClass, "py-16 md:py-24")}>
     <div className="mx-auto max-w-7xl px-5 md:px-8">
       <SectionHeader eyebrow={copy.eyebrow} title={copy.title} body={copy.body} align="center" />
       <div className="mt-10 grid gap-5 md:grid-cols-3">
-        {copy.steps.map(([title, body, Icon], index) => <StepCard key={title} index={index + 1} title={title} body={body} icon={Icon} />)}
+        {map(
+          copy.steps,
+          ([title, body, Icon], index) => <StepCard key={title} index={index + 1} title={title} body={body} icon={Icon} />,
+        )}
       </div>
     </div>
   </MotionSection>;
@@ -647,7 +657,10 @@ const DailyPlanFeatures = ({ copy }) => <MotionSection id="features" className={
     <div className="mx-auto max-w-7xl px-5 md:px-8">
       <SectionHeader eyebrow={copy.eyebrow} title={copy.title} body={copy.body} />
       <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {copy.features.map(([title, body, Icon]) => <FeatureCard key={title} title={title} body={body} icon={Icon} />)}
+        {map(
+          copy.features,
+          ([title, body, Icon]) => <FeatureCard key={title} title={title} body={body} icon={Icon} />,
+        )}
       </div>
     </div>
   </MotionSection>;
@@ -685,76 +698,78 @@ const PlanExampleCard = ({
   onClick
 }) => {
   const Icon = type === "meal" ? SaladIcon : DumbbellIcon;
-  return <Card
-    id={type === "workout" ? "workouts" : void 0}
-    className={cn(
-      landingCardPaddingY,
-      "h-full",
-      cardSurfaceClass,
-      type === "workout" && "bg-slate-950 text-white ring-white/10 dark:bg-slate-950"
-    )}
-  >
-      <CardHeader>
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <Badge
-    className={cn(
-      "bg-orange-500/12 text-orange-700 ring-1 ring-orange-500/16",
-      type === "workout" && "bg-orange-300/12 text-orange-100 ring-orange-300/20"
-    )}
-  >
-              {data.badge}
-            </Badge>
-            <CardTitle className={cn("mt-4 text-2xl font-semibold", strongTextClass, type === "workout" && "text-white")}>
-              {data.title}
-            </CardTitle>
-            <CardDescription className={cn("mt-2 text-base leading-7", mutedTextClass, type === "workout" && "text-white/66")}>
-              {data.body}
-            </CardDescription>
+  return (
+    <Card
+      id={type === "workout" ? "workouts" : void 0}
+      className={cn(
+        landingCardPaddingY,
+        "h-full",
+        cardSurfaceClass,
+        type === "workout" && "bg-slate-950 text-white ring-white/10 dark:bg-slate-950"
+      )}
+    >
+        <CardHeader>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <Badge
+      className={cn(
+        "bg-orange-500/12 text-orange-700 ring-1 ring-orange-500/16",
+        type === "workout" && "bg-orange-300/12 text-orange-100 ring-orange-300/20"
+      )}
+    >
+                {data.badge}
+              </Badge>
+              <CardTitle className={cn("mt-4 text-2xl font-semibold", strongTextClass, type === "workout" && "text-white")}>
+                {data.title}
+              </CardTitle>
+              <CardDescription className={cn("mt-2 text-base leading-7", mutedTextClass, type === "workout" && "text-white/66")}>
+                {data.body}
+              </CardDescription>
+            </div>
+            <span
+      className={cn(
+        "grid size-12 shrink-0 place-items-center rounded-2xl bg-orange-500/10 text-orange-700",
+        type === "workout" && "bg-white/8 text-orange-200"
+      )}
+    >
+              <Icon className="size-6" />
+            </span>
           </div>
-          <span
-    className={cn(
-      "grid size-12 shrink-0 place-items-center rounded-2xl bg-orange-500/10 text-orange-700",
-      type === "workout" && "bg-white/8 text-orange-200"
-    )}
-  >
-            <Icon className="size-6" />
-          </span>
-        </div>
-      </CardHeader>
-      <CardContent className="grid gap-5">
-        <div
-    className={cn(
-      "rounded-3xl bg-[#fff8ee] p-4 text-sm leading-7 text-slate-800",
-      "dark:bg-white/[0.07] dark:text-white/78 dark:ring-1 dark:ring-white/10",
-      type === "workout" && "bg-white/[0.06] text-white/82 ring-1 ring-white/10"
-    )}
-  >
-          {data.example.map((item) => <p key={item}>{item}</p>)}
-        </div>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {data.checklist.map((item) => <div
-    key={item}
-    className={cn("flex items-center gap-2 text-sm font-medium", bodyTextClass, type === "workout" && "text-white/72")}
-  >
-              <CheckIcon className={cn("size-4 text-emerald-600", type === "workout" && "text-emerald-300")} />
-              {item}
-            </div>)}
-        </div>
-      </CardContent>
-      <CardFooter>
-        <CTAButton variant={type === "workout" ? "light" : "dark"} onClick={onClick} className="w-full sm:w-auto">
-          {data.cta}
-        </CTAButton>
-      </CardFooter>
-    </Card>;
+        </CardHeader>
+        <CardContent className="grid gap-5">
+          <div
+      className={cn(
+        "rounded-3xl bg-[#fff8ee] p-4 text-sm leading-7 text-slate-800",
+        "dark:bg-white/[0.07] dark:text-white/78 dark:ring-1 dark:ring-white/10",
+        type === "workout" && "bg-white/[0.06] text-white/82 ring-1 ring-white/10"
+      )}
+    >
+            {map(data.example, (item) => <p key={item}>{item}</p>)}
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {map(data.checklist, (item) => <div
+      key={item}
+      className={cn("flex items-center gap-2 text-sm font-medium", bodyTextClass, type === "workout" && "text-white/72")}
+    >
+                <CheckIcon className={cn("size-4 text-emerald-600", type === "workout" && "text-emerald-300")} />
+                {item}
+              </div>)}
+          </div>
+        </CardContent>
+        <CardFooter>
+          <CTAButton variant={type === "workout" ? "light" : "dark"} onClick={onClick} className="w-full sm:w-auto">
+            {data.cta}
+          </CTAButton>
+        </CardFooter>
+      </Card>
+  );
 };
 const ProgressSection = ({ copy }) => <MotionSection id="progress" className="overflow-hidden bg-slate-950 py-16 text-white md:py-24">
     <div className="mx-auto grid max-w-7xl gap-10 px-5 md:px-8 lg:grid-cols-[0.88fr_1.12fr] lg:items-center">
       <SectionHeader eyebrow={copy.eyebrow} title={copy.title} body={copy.body} inverse />
       <div className="grid gap-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {copy.metrics.map(([value, label, Icon, tone]) => <MetricCard
+          {map(copy.metrics, ([value, label, Icon, tone]) => <MetricCard
   key={value}
   value={value}
   label={label}
@@ -788,21 +803,26 @@ const MetricCard = ({
   </div>;
 const ChartPanel = ({ title, rangeLabel }) => {
   const values = [62, 74, 68, 84, 76, 92, 78];
-  return <div className="rounded-3xl bg-white/[0.06] p-5 ring-1 ring-white/10">
-      <div className="flex items-center justify-between gap-4">
-        <p className="font-semibold">{title}</p>
-        <Badge className="bg-blue-300/12 text-blue-100 ring-1 ring-blue-300/20">{rangeLabel}</Badge>
+  return (
+    <div className="rounded-3xl bg-white/[0.06] p-5 ring-1 ring-white/10">
+        <div className="flex items-center justify-between gap-4">
+          <p className="font-semibold">{title}</p>
+          <Badge className="bg-blue-300/12 text-blue-100 ring-1 ring-blue-300/20">{rangeLabel}</Badge>
+        </div>
+        <div className="mt-6 flex h-40 items-end gap-3">
+          {map(
+            values,
+            (value, index) => <div key={`${value}-${index}`} className="flex flex-1 flex-col items-center gap-2">
+                <div
+        className="w-full rounded-t-2xl bg-gradient-to-t from-orange-500 to-orange-300"
+        style={{ height: `${value}%` }}
+      />
+                <span className="text-xs text-white/42">{index + 1}</span>
+              </div>,
+          )}
+        </div>
       </div>
-      <div className="mt-6 flex h-40 items-end gap-3">
-        {values.map((value, index) => <div key={`${value}-${index}`} className="flex flex-1 flex-col items-center gap-2">
-            <div
-    className="w-full rounded-t-2xl bg-gradient-to-t from-orange-500 to-orange-300"
-    style={{ height: `${value}%` }}
-  />
-            <span className="text-xs text-white/42">{index + 1}</span>
-          </div>)}
-      </div>
-    </div>;
+  );
 };
 const WeightPanel = ({ title, value, change }) => <div className="rounded-3xl bg-white/[0.06] p-5 ring-1 ring-white/10">
     <div className="flex items-center justify-between gap-4">
@@ -827,221 +847,11 @@ const WeightPanel = ({ title, value, change }) => <div className="rounded-3xl bg
 />
     </svg>
   </div>;
-const clampPercent = (value) => `${Math.max(8, Math.min(Number(value) || 0, 100))}%`;
-const coachTabIcons = {
-  dashboard: UsersIcon,
-  telegram: BotIcon,
-  clients: TrophyIcon
-};
-const CoachModeSection = ({ copy }) => {
-  const tabs = copy?.tabs ?? [];
-  const [activeTab, setActiveTab] = useState(tabs[0]?.[0] ?? "dashboard");
-  const activeTabExists = tabs.some(([id]) => id === activeTab);
-  const resolvedTab = activeTabExists ? activeTab : tabs[0]?.[0] ?? "dashboard";
-
-  if (!copy) {
-    return null;
-  }
-
-  return <MotionSection id="coach-mode" className="relative overflow-hidden bg-slate-950 py-16 text-white md:py-24">
-      <div className="pointer-events-none absolute inset-x-0 h-64 bg-[radial-gradient(circle_at_68%_10%,rgba(249,115,22,0.18),transparent_32%),radial-gradient(circle_at_18%_84%,rgba(20,184,166,0.14),transparent_30%)]" aria-hidden="true" />
-      <div className="relative mx-auto grid max-w-7xl gap-10 px-5 md:px-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
-        <div>
-          <SectionHeader eyebrow={copy.eyebrow} title={copy.title} body={copy.body} inverse />
-          <div className="mt-8 grid gap-3">
-            {(copy.features ?? []).map(([title, body, Icon]) => <div
-  key={title}
-  className="flex gap-3 rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3"
->
-                <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-orange-400/12 text-orange-100 ring-1 ring-orange-300/18">
-                  <Icon className="size-5" />
-                </span>
-                <span>
-                  <span className="block font-semibold text-white">{title}</span>
-                  <span className="mt-1 block text-sm leading-6 text-white/58">{body}</span>
-                </span>
-              </div>)}
-          </div>
-        </div>
-
-        <div className="rounded-[2rem] border border-white/12 bg-white/[0.06] p-3 shadow-[0_30px_110px_rgba(0,0,0,0.28)] backdrop-blur">
-          <div className="rounded-[1.55rem] bg-[#fbfaf7] p-4 text-slate-950 shadow-[0_24px_74px_rgba(2,6,23,0.28)] md:p-5">
-            <div className="mb-4 flex flex-wrap gap-2" role="tablist" aria-label={copy.eyebrow}>
-              {tabs.map(([id, label]) => {
-                const Icon = coachTabIcons[id] ?? SparklesIcon;
-                const isActive = id === resolvedTab;
-
-                return <button
-    key={id}
-    type="button"
-    role="tab"
-    aria-selected={isActive}
-    onClick={() => setActiveTab(id)}
-    className={cn(
-      "inline-flex min-h-10 items-center gap-2 rounded-2xl px-3 text-sm font-black outline-none ring-1 transition-colors focus-visible:ring-2 focus-visible:ring-orange-400",
-      isActive
-        ? "bg-slate-950 text-white ring-slate-950"
-        : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50 hover:text-slate-950"
-    )}
-  >
-                    <Icon className="size-4" />
-                    {label}
-                  </button>;
-              })}
-            </div>
-            <CoachPreviewPanel copy={copy.preview} tab={resolvedTab} />
-          </div>
-        </div>
-      </div>
-    </MotionSection>;
-};
-const CoachPreviewPanel = ({ copy = {}, tab }) => {
-  if (tab === "telegram") {
-    return <CoachTelegramPreview copy={copy} />;
-  }
-
-  if (tab === "clients") {
-    return <CoachClientsPreview copy={copy} />;
-  }
-
-  return <CoachDashboardPreview copy={copy} />;
-};
-const CoachPreviewHeader = ({ badge, title, body, icon: Icon }) => <div className="mb-4 flex items-start justify-between gap-4">
-    <div>
-      <Badge className="bg-orange-500/12 text-orange-700 ring-1 ring-orange-500/16">
-        {badge}
-      </Badge>
-      <h3 className="mt-3 text-2xl font-black leading-tight text-slate-950">{title}</h3>
-      <p className="mt-2 max-w-lg text-sm leading-6 text-slate-500">{body}</p>
-    </div>
-    <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-slate-950 text-white">
-      <Icon className="size-5" />
-    </span>
-  </div>;
-const CoachDashboardPreview = ({ copy }) => <div>
-    <CoachPreviewHeader
-  badge={copy.badge}
-  title={copy.dashboardTitle}
-  body={copy.dashboardDescription}
-  icon={UsersIcon}
-/>
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      {(copy.dashboardMetrics ?? []).map(([value, label, tone]) => <div
-  key={label}
-  className={cn("rounded-2xl p-3.5 ring-1", metricTone[tone] ?? metricTone.blue)}
->
-          <p className="text-xl font-black">{value}</p>
-          <p className="mt-1 text-xs font-semibold text-slate-600">{label}</p>
-        </div>)}
-    </div>
-    <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <p className="font-black text-slate-950">{copy.clientsTitle}</p>
-        <BellIcon className="size-5 text-orange-500" />
-      </div>
-      <div className="grid gap-3">
-        {(copy.clients ?? []).map(([name, goal, progress, status]) => <div key={name} className="rounded-2xl bg-slate-50 p-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-black text-slate-950">{name}</p>
-                <p className="mt-1 truncate text-xs font-semibold text-slate-500">{goal}</p>
-              </div>
-              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-600 shadow-sm">
-                {status}
-              </span>
-            </div>
-            <div className="mt-3 h-2 rounded-full bg-white">
-              <div className="h-full rounded-full bg-orange-500" style={{ width: clampPercent(progress) }} />
-            </div>
-          </div>)}
-      </div>
-    </div>
-  </div>;
-const CoachTelegramPreview = ({ copy }) => <div>
-    <CoachPreviewHeader
-  badge={copy.badge}
-  title={copy.telegramTitle}
-  body={copy.telegramDescription}
-  icon={MessageCircleIcon}
-/>
-    <div className="grid gap-4 lg:grid-cols-[1fr_0.92fr]">
-      <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="mb-3 font-black text-slate-950">{copy.telegramGroupsTitle}</p>
-        <div className="grid gap-3">
-          {(copy.telegramGroups ?? []).map(([name, members, status]) => <div key={name} className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 p-3">
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-black text-slate-950">{name}</span>
-                <span className="mt-1 block truncate text-xs font-semibold text-slate-500">{members}</span>
-              </span>
-              <Badge className="bg-emerald-500/12 text-emerald-700 ring-1 ring-emerald-500/16">
-                {status}
-              </Badge>
-            </div>)}
-        </div>
-      </div>
-      <div className="grid gap-3">
-        <div className="rounded-3xl bg-slate-950 p-4 text-white">
-          <div className="flex items-center justify-between gap-3">
-            <p className="font-black">{copy.botTitle}</p>
-            <BotIcon className="size-5 text-orange-300" />
-          </div>
-          <div className="mt-4 grid gap-2">
-            {(copy.botStats ?? []).map(([label, value]) => <div key={label} className="flex items-center justify-between gap-3 rounded-2xl bg-white/[0.07] px-3 py-2">
-                <span className="text-xs font-semibold text-white/58">{label}</span>
-                <span className="text-sm font-black text-white">{value}</span>
-              </div>)}
-          </div>
-        </div>
-        <div className="rounded-3xl border border-orange-200 bg-orange-50 p-4">
-          <p className="font-black text-slate-950">{copy.broadcastTitle}</p>
-          <p className="mt-2 text-sm leading-6 text-slate-600">{copy.broadcastBody}</p>
-        </div>
-      </div>
-    </div>
-  </div>;
-const CoachClientsPreview = ({ copy }) => <div>
-    <CoachPreviewHeader
-  badge={copy.badge}
-  title={copy.clientsLinkTitle}
-  body={copy.clientsLinkDescription}
-  icon={UserCheckIcon}
-/>
-    <div className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-      <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="mb-3 font-black text-slate-950">{copy.linksTitle}</p>
-        <div className="grid gap-3">
-          {(copy.clientLinks ?? []).map(([title, body, status]) => <div key={title} className="rounded-2xl bg-slate-50 p-3">
-              <div className="flex items-center justify-between gap-3">
-                <LinkIcon className="size-4 text-teal-600" />
-                <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-600 shadow-sm">{status}</span>
-              </div>
-              <p className="mt-2 text-sm font-black text-slate-950">{title}</p>
-              <p className="mt-1 text-xs leading-5 text-slate-500">{body}</p>
-            </div>)}
-        </div>
-      </div>
-      <div className="rounded-3xl bg-slate-950 p-4 text-white">
-        <div className="flex items-center justify-between gap-3">
-          <p className="font-black">{copy.gamificationTitle}</p>
-          <TrophyIcon className="size-5 text-orange-300" />
-        </div>
-        <div className="mt-4 grid gap-3">
-          {(copy.gamification ?? []).map(([title, value, tone]) => <div
-  key={title}
-  className={cn("rounded-2xl p-3 ring-1", darkMetricTone[tone] ?? darkMetricTone.orange)}
->
-              <p className="text-xs font-semibold text-white/58">{title}</p>
-              <p className="mt-1 text-xl font-black text-white">{value}</p>
-            </div>)}
-        </div>
-      </div>
-    </div>
-  </div>;
 const LocalMarketSection = ({ copy }) => <MotionSection id="local-market" className={cn(warmSectionClass, "py-16 md:py-24")}>
     <div className="mx-auto grid max-w-7xl gap-10 px-5 md:px-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-start">
       <SectionHeader eyebrow={copy.eyebrow} title={copy.title} body={copy.body} />
       <div className="grid gap-4 sm:grid-cols-2">
-        {copy.cards.map(([title, body, Icon], index) => <Card
+        {map(copy.cards, ([title, body, Icon], index) => <Card
   key={title}
   className={cn(
     landingCardPaddingY,
@@ -1068,7 +878,7 @@ const ComparisonSection = ({ copy }) => <MotionSection className={cn(plainSectio
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                {copy.columns.map((column, index) => <TableHead
+                {map(copy.columns, (column, index) => <TableHead
   key={column}
   className={cn(
     "h-14 text-sm font-semibold text-slate-600 dark:text-white/64",
@@ -1080,34 +890,40 @@ const ComparisonSection = ({ copy }) => <MotionSection className={cn(plainSectio
               </TableRow>
             </TableHeader>
             <TableBody>
-              {copy.rows.map(([feature, liveon, ordinary, generic]) => <TableRow key={feature} className="hover:bg-orange-50/45 dark:hover:bg-white/[0.04]">
-                  <TableCell className={cn("font-medium", strongTextClass)}>{feature}</TableCell>
-                  <TableCell className="bg-slate-950">
-                    <StatusBadge value={liveon} copy={copy} highlighted />
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge value={ordinary} copy={copy} />
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge value={generic} copy={copy} />
-                  </TableCell>
-                </TableRow>)}
+              {map(
+                copy.rows,
+                ([feature, liveon, ordinary, generic]) => <TableRow key={feature} className="hover:bg-orange-50/45 dark:hover:bg-white/[0.04]">
+                    <TableCell className={cn("font-medium", strongTextClass)}>{feature}</TableCell>
+                    <TableCell className="bg-slate-950">
+                      <StatusBadge value={liveon} copy={copy} highlighted />
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge value={ordinary} copy={copy} />
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge value={generic} copy={copy} />
+                    </TableCell>
+                  </TableRow>,
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
 
       <div className="mt-10 grid gap-4 lg:hidden">
-        {copy.rows.map(([feature, liveon, ordinary, generic]) => <Card key={feature} className={cn(compactCardPaddingY, cardSurfaceClass)}>
-            <CardHeader>
-              <CardTitle className={cn("font-semibold", strongTextClass)}>{feature}</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-3">
-              <MobileStatus label={copy.columns[1]} value={liveon} copy={copy} highlighted />
-              <MobileStatus label={copy.columns[2]} value={ordinary} copy={copy} />
-              <MobileStatus label={copy.columns[3]} value={generic} copy={copy} />
-            </CardContent>
-          </Card>)}
+        {map(
+          copy.rows,
+          ([feature, liveon, ordinary, generic]) => <Card key={feature} className={cn(compactCardPaddingY, cardSurfaceClass)}>
+              <CardHeader>
+                <CardTitle className={cn("font-semibold", strongTextClass)}>{feature}</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-3">
+                <MobileStatus label={copy.columns[1]} value={liveon} copy={copy} highlighted />
+                <MobileStatus label={copy.columns[2]} value={ordinary} copy={copy} />
+                <MobileStatus label={copy.columns[3]} value={generic} copy={copy} />
+              </CardContent>
+            </Card>,
+        )}
       </div>
     </div>
   </MotionSection>;
@@ -1147,15 +963,18 @@ const TestimonialsSection = ({ copy }) => <MotionSection id="testimonials" class
     <div className="mx-auto max-w-7xl px-5 md:px-8">
       <SectionHeader eyebrow={copy.eyebrow} title={copy.title} body={copy.body} align="center" />
       <div className="mt-10 grid gap-5 md:grid-cols-3">
-        {copy.items.map(([title, body, tag]) => <Card key={title} className={cn(landingCardPaddingY, "h-full", warmCardSurfaceClass)}>
-            <CardHeader>
-              <Badge className="bg-emerald-500/12 text-emerald-700 ring-1 ring-emerald-500/16">
-                {tag}
-              </Badge>
-              <CardTitle className={cn("text-xl font-semibold", strongTextClass)}>{title}</CardTitle>
-              <CardDescription className={cn("text-base leading-7", mutedTextClass)}>{body}</CardDescription>
-            </CardHeader>
-          </Card>)}
+        {map(
+          copy.items,
+          ([title, body, tag]) => <Card key={title} className={cn(landingCardPaddingY, "h-full", warmCardSurfaceClass)}>
+              <CardHeader>
+                <Badge className="bg-emerald-500/12 text-emerald-700 ring-1 ring-emerald-500/16">
+                  {tag}
+                </Badge>
+                <CardTitle className={cn("text-xl font-semibold", strongTextClass)}>{title}</CardTitle>
+                <CardDescription className={cn("text-base leading-7", mutedTextClass)}>{body}</CardDescription>
+              </CardHeader>
+            </Card>,
+        )}
       </div>
     </div>
   </MotionSection>;
@@ -1198,10 +1017,13 @@ const PricingCard = ({
       </div>
     </CardHeader>
     <CardContent className="grid gap-3">
-      {data.features.map((item) => <div key={item} className={cn("flex items-center gap-2 text-sm font-medium", mutedTextClass, highlighted && "text-white/70")}>
-          <CheckCircle2Icon className={cn("size-4 text-emerald-600", highlighted && "text-orange-300")} />
-          {item}
-        </div>)}
+      {map(
+        data.features,
+        (item) => <div key={item} className={cn("flex items-center gap-2 text-sm font-medium", mutedTextClass, highlighted && "text-white/70")}>
+            <CheckCircle2Icon className={cn("size-4 text-emerald-600", highlighted && "text-orange-300")} />
+            {item}
+          </div>,
+      )}
     </CardContent>
     <CardFooter>
       <CTAButton variant={highlighted ? "light" : "dark"} onClick={onClick} className="w-full" disabled={highlighted}>
@@ -1214,7 +1036,10 @@ const FAQSection = ({ copy }) => <MotionSection id="faq" className={cn(warmSecti
       <SectionHeader eyebrow={copy.eyebrow} title={copy.title} align="center" />
       <div className="mt-10">
         <Accordion type="single" collapsible defaultValue="faq-0" className="border-orange-900/10 bg-white dark:border-white/10 dark:bg-white/[0.06]">
-          {copy.items.map(([question, answer], index) => <FAQItem key={question} question={question} answer={answer} value={`faq-${index}`} />)}
+          {map(
+            copy.items,
+            ([question, answer], index) => <FAQItem key={question} question={question} answer={answer} value={`faq-${index}`} />,
+          )}
         </Accordion>
       </div>
     </div>
@@ -1263,14 +1088,17 @@ const Footer = ({ copy }) => <footer className="border-t border-white/10 bg-slat
         </div>
         <p className="mt-4 max-w-sm leading-7 text-white/62">{copy.tagline}</p>
         <div className="mt-6 flex gap-2">
-          {SOCIAL_LINKS.map(({ label, href, icon }) => <SocialButton key={label} label={label} href={href} icon={icon} />)}
+          {map(
+            SOCIAL_LINKS,
+            ({ label, href, icon }) => <SocialButton key={label} label={label} href={href} icon={icon} />,
+          )}
         </div>
       </div>
       <div className="grid gap-8 sm:grid-cols-3">
-        {copy.columns.map(([title, links]) => <div key={title}>
+        {map(copy.columns, ([title, links]) => <div key={title}>
             <h3 className="font-semibold">{title}</h3>
             <ul className="mt-4 flex flex-col gap-3">
-              {links.map((item) => {
+              {map(links, (item) => {
                 const { label, href } = resolveFooterLink(item);
                 return <li key={label}>
                   <a href={href} className="text-sm text-white/58 transition-colors hover:text-white">
@@ -1313,7 +1141,7 @@ const createLandingSchemas = (copy = {}, language) => ({
       name: "LiveOn",
       url: LANDING_ORIGIN,
       logo: `${LANDING_ORIGIN}/madagascar/logo-main.webp`,
-      sameAs: SOCIAL_LINKS.map((item) => item.href)
+      sameAs: map(SOCIAL_LINKS, (item) => item.href)
     },
     {
       "@type": "SoftwareApplication",
@@ -1337,7 +1165,7 @@ const createLandingSchemas = (copy = {}, language) => ({
       "@type": "FAQPage",
       "@id": `${LANDING_ORIGIN}/#faq`,
       inLanguage: language,
-      mainEntity: (copy.faq?.items ?? []).map(([question, answer]) => ({
+      mainEntity: map((copy.faq?.items ?? []), ([question, answer]) => ({
         "@type": "Question",
         name: question,
         acceptedAnswer: {
@@ -1431,9 +1259,8 @@ const LandingPage = () => {
     copy={copy.showcase}
     onMeal={showPlanExample}
     onWorkout={() => scrollToSection("workouts")}
-  />
+      />
       <ProgressSection copy={copy.progress} />
-      <CoachModeSection copy={copy.coachMode} />
       <LocalMarketSection copy={copy.local} />
       <ComparisonSection copy={copy.comparison} />
       <TestimonialsSection copy={copy.scenarios} />

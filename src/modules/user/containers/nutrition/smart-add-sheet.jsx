@@ -12,6 +12,8 @@ import {
 import { cn } from "@/lib/utils.js";
 import { NutritionDrawerBody } from "./nutrition-drawer-layout.jsx";
 
+import { map, toNumber } from "lodash";
+
 const METHOD_ACTIONS = [
   {
     key: "camera",
@@ -48,12 +50,11 @@ const METHOD_ACTIONS = [
 ];
 
 const getMacroSummary = (item) =>
-  [
+  map([
     ["P", item.protein],
     ["C", item.carbs],
     ["F", item.fat],
-  ]
-    .map(([label, value]) => `${label} ${Math.round(Number(value) || 0)}g`)
+  ], ([label, value]) => `${label} ${Math.round(toNumber(value) || 0)}g`)
     .join(" · ");
 
 const QuickAddCard = ({
@@ -101,7 +102,7 @@ const QuickAddCard = ({
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
           <span className="rounded-full bg-muted px-2 py-0.5">
-            {Math.round(Number(item.calories) || 0)} kcal
+            {Math.round(toNumber(item.calories) || 0)} kcal
           </span>
           <span>{getMacroSummary(item)}</span>
         </div>
@@ -199,7 +200,6 @@ export default function SmartAddSheet({
           </Button>
         </div>
       </div>
-
       <NutritionDrawerBody className="flex flex-col gap-5 pb-6">
         <section>
           <div className="mb-2 flex items-center justify-between gap-3">
@@ -222,7 +222,7 @@ export default function SmartAddSheet({
 
           {quickItems.length > 0 ? (
             <div className="space-y-2">
-              {quickItems.map((item) => (
+              {map(quickItems, (item) => (
                 <QuickAddCard
                   key={item.id}
                   disabled={disabled}
@@ -251,7 +251,7 @@ export default function SmartAddSheet({
             </p>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            {METHOD_ACTIONS.map((action) => (
+            {map(METHOD_ACTIONS, (action) => (
               <MethodButton
                 key={action.key}
                 action={action}

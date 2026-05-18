@@ -1,4 +1,16 @@
-import { find, map, filter, take, clamp, split, join } from "lodash";
+import {
+  find,
+  map,
+  filter,
+  take,
+  clamp,
+  split,
+  join,
+  isArray,
+  toNumber,
+  toUpper,
+  trim,
+} from "lodash";
 import React from "react";
 import { useNavigate } from "react-router";
 import { useGetQuery } from "@/hooks/api";
@@ -23,18 +35,18 @@ import { cn } from "@/lib/utils";
 const podiumOrder = [1, 0, 2];
 
 const getInitials = (value = "") =>
-  (join(
+  (toUpper(join(
     take(
-      map(split(String(value).trim(), /\s+/), (part) => part[0]),
+      map(split(trim(String(value)), /\s+/), (part) => part[0]),
       2,
     ),
     "",
-  ).toUpperCase()) || "U";
+  ))) || "U";
 
 const formatXp = (value) =>
   new Intl.NumberFormat("uz-UZ", {
     maximumFractionDigits: 0,
-  }).format(Number(value) || 0);
+  }).format(toNumber(value) || 0);
 
 const getPodiumTone = (rank) => {
   if (rank === 1) {
@@ -107,7 +119,7 @@ const LeaderboardPage = () => {
 
   if (isLoading) return <PageLoader />;
 
-  const users = Array.isArray(leaderboardData?.data) ? leaderboardData.data : [];
+  const users = isArray(leaderboardData?.data) ? leaderboardData.data : [];
   const meEntry = find(users, (item) => item.id === user?.id) ?? null;
   const champion = users[0] ?? null;
   const podium = map(
@@ -127,7 +139,7 @@ const LeaderboardPage = () => {
             <div className="space-y-2">
               <div className="inline-flex items-center gap-2 rounded-full border bg-background/70 px-3 py-1 text-xs font-semibold">
                 <SparklesIcon className="size-3.5 text-primary" />
-                {PERIOD_OPTIONS.find((o) => o.value === period)?.label ?? "Leaderboard"}
+                {find(PERIOD_OPTIONS, (o) => o.value === period)?.label ?? "Leaderboard"}
               </div>
               <h1 className="text-3xl font-black tracking-tight md:text-4xl">
                 Eng kuchli 10 talik
@@ -166,7 +178,7 @@ const LeaderboardPage = () => {
         {/* Filters */}
         <div className="flex flex-wrap gap-3">
           <div className="flex gap-1.5 rounded-xl border bg-card p-1">
-            {PERIOD_OPTIONS.map((opt) => (
+            {map(PERIOD_OPTIONS, (opt) => (
               <button
                 key={opt.value}
                 type="button"
@@ -183,7 +195,7 @@ const LeaderboardPage = () => {
             ))}
           </div>
           <div className="flex gap-1.5 rounded-xl border bg-card p-1">
-            {SCOPE_OPTIONS.map((opt) => (
+            {map(SCOPE_OPTIONS, (opt) => (
               <button
                 key={opt.value}
                 type="button"
@@ -207,9 +219,9 @@ const LeaderboardPage = () => {
               <CardTitle className="text-base">Top 3 podium</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3 md:grid-cols-3">
-              {podium.map((item) => {
+              {map(podium, (item) => {
                 const tone = getPodiumTone(item.position);
-                const progressValue = clamp(Number(item.level || 1) * 8, 8, 100);
+                const progressValue = clamp(toNumber(item.level || 1) * 8, 8, 100);
 
                 return (
                   <div
@@ -258,11 +270,11 @@ const LeaderboardPage = () => {
             <CardTitle className="text-base">To&apos;liq ro&apos;yxat</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {list.map((item) => {
+            {map(list, (item) => {
               const isMe = item.id === user?.id;
               const isTopThree = item.rank <= 3;
               const aheadXp =
-                item.rank > 1 ? Number(list[item.rank - 2]?.xp ?? item.xp) - Number(item.xp) : 0;
+                item.rank > 1 ? toNumber(list[item.rank - 2]?.xp ?? item.xp) - toNumber(item.xp) : 0;
 
               return (
                 <div
@@ -324,7 +336,7 @@ const LeaderboardPage = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 p-4">
-              {xpHistory.map((item) => (
+              {map(xpHistory, (item) => (
                 <div
                   key={item.id}
                   className="flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-sm"

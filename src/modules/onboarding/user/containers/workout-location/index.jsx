@@ -17,6 +17,8 @@ import PageAura from "../../components/page-aura.jsx";
 import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
 import OnboardingSelectCard from "../../components/onboarding-select-card.jsx";
 
+import { filter, map } from "lodash";
+
 const tone = ONBOARDING_ACCENTS.sky;
 
 const LOCATION_OPTIONS = [
@@ -51,9 +53,7 @@ const Index = () => {
         fields.equipmentIds = [];
         fields.customEquipment = [];
       } else {
-        fields.completedUserOnboardingSteps = (completedSteps ?? []).filter(
-          (step) => step !== "workout-equipment",
-        );
+        fields.completedUserOnboardingSteps = filter((completedSteps ?? []), (step) => step !== "workout-equipment");
       }
 
       setFields(fields);
@@ -123,7 +123,7 @@ const Index = () => {
         />
         <div className="min-h-0 flex-1 overflow-y-auto py-4">
           <div className="flex min-h-full flex-col justify-center gap-3 md:mx-auto md:max-w-2xl md:gap-4">
-            {LOCATION_OPTIONS.map((option) => {
+            {map(LOCATION_OPTIONS, (option) => {
               const isActive = workoutLocation === option.value;
 
               return (

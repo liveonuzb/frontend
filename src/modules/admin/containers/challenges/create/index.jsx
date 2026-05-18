@@ -1,6 +1,6 @@
 import React from "react";
 import { addDays, format } from "date-fns";
-import { get } from "lodash";
+import { get, fromPairs, map, reduce, some, toNumber, trim, filter, toPairs, take } from "lodash";
 import { toast } from "sonner";
 import { ArrowLeftIcon, CheckCircle2Icon, LoaderCircleIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -68,11 +68,10 @@ const createInitialForm = () => ({
 });
 
 const cleanTranslations = (translations = {}) =>
-  Object.fromEntries(
-    Object.entries(translations)
-      .map(([code, value]) => [code, String(value ?? "").trim()])
-      .filter(([code, value]) => Boolean(code) && Boolean(value)),
-  );
+  fromPairs(filter(map(
+    toPairs(translations),
+    ([code, value]) => [code, trim(String(value ?? ""))],
+  ), ([code, value]) => Boolean(code) && Boolean(value)));
 
 const toIsoDate = (value, endOfDay = false) => {
   const date = new Date(`${value}T${endOfDay ? "23:59:59" : "00:00:00"}`);
@@ -80,17 +79,17 @@ const toIsoDate = (value, endOfDay = false) => {
 };
 
 const buildPlaceRewards = (items) =>
-  items.slice(0, 3).reduce((result, item) => {
-    if (Number(item.value) > 0) result[String(item.place)] = Number(item.value);
+  reduce(take(items, 3), (result, item) => {
+    if (toNumber(item.value) > 0) result[String(item.place)] = toNumber(item.value);
     return result;
   }, {});
 
 const validateStep = (stepKey, form) => {
-  if (stepKey === "basic" && !form.title.trim()) {
+  if (stepKey === "basic" && !trim(form.title)) {
     throw new Error("Musobaqa nomini kiriting");
   }
 
-  if (stepKey === "metric" && (!Number(form.metricTarget) || Number(form.metricTarget) <= 0)) {
+  if (stepKey === "metric" && (!toNumber(form.metricTarget) || toNumber(form.metricTarget) <= 0)) {
     throw new Error("Maqsad qiymati 0 dan katta bo'lishi kerak");
   }
 
@@ -106,12 +105,12 @@ const validateStep = (stepKey, form) => {
   }
 
   if (stepKey === "reward" && form.rewardMode === "PLACE_XP") {
-    const rewards = form.placeRewards.slice(0, 3).map((item) => Number(item.value) || 0);
-    const total = rewards.reduce((sum, value) => sum + value, 0);
-    if (Number(form.joinFeeXp) <= 0) {
+    const rewards = map(take(form.placeRewards, 3), (item) => toNumber(item.value) || 0);
+    const total = reduce(rewards, (sum, value) => sum + value, 0);
+    if (toNumber(form.joinFeeXp) <= 0) {
       throw new Error("O'rin bo'yicha mukofot uchun kirish narxi 0 dan katta bo'lishi kerak");
     }
-    if (rewards.length !== 3 || rewards.some((value) => value <= 0)) {
+    if (rewards.length !== 3 || some(rewards, (value) => value <= 0)) {
       throw new Error("1, 2 va 3-o'rin foizlari 0 dan katta bo'lishi kerak");
     }
     if (total !== 100) {
@@ -124,38 +123,38 @@ const validateStep = (stepKey, form) => {
 };
 
 const buildPayload = (form, currentLanguage) => {
-  const title = form.title.trim();
+  const title = trim(form.title);
   if (!title) throw new Error("Musobaqa nomini kiriting");
 
   const payload = {
     title,
-    description: form.description.trim() || undefined,
+    description: trim(form.description) || undefined,
     translations: cleanTranslations({
       ...(form.translations || {}),
       [currentLanguage]: title,
     }),
     descriptionTranslations: cleanTranslations({
       ...(form.descriptionTranslations || {}),
-      ...(form.description.trim() ? { [currentLanguage]: form.description.trim() } : {}),
+      ...(trim(form.description) ? { [currentLanguage]: trim(form.description) } : {}),
     }),
     type: "GLOBAL",
     status: form.status || "UPCOMING",
     metricType: form.metricType,
     metricAggregation: form.metricAggregation,
-    metricTarget: Number(form.metricTarget),
+    metricTarget: toNumber(form.metricTarget),
     startDate: toIsoDate(form.startDate),
     endDate: toIsoDate(form.endDate, true),
     rewardMode: form.rewardMode,
-    joinFeeXp: Number(form.joinFeeXp) || 0,
-    maxParticipants: Number(form.maxParticipants) || null,
+    joinFeeXp: toNumber(form.joinFeeXp) || 0,
+    maxParticipants: toNumber(form.maxParticipants) || null,
   };
 
   if (form.uploadedImageId) payload.imageId = form.uploadedImageId;
 
   if (form.rewardMode === "FIXED_XP") {
-    payload.rewardXp = Number(form.rewardXp) || 0;
+    payload.rewardXp = toNumber(form.rewardXp) || 0;
   } else if (form.rewardMode === "PERCENT_OF_POOL") {
-    payload.rewardPercent = Number(form.rewardPercent) || 0;
+    payload.rewardPercent = toNumber(form.rewardPercent) || 0;
   } else {
     payload.placeRewards = buildPlaceRewards(form.placeRewards);
   }
@@ -211,12 +210,12 @@ const ChallengeBasicStep = ({ form, setForm, onImageChange, onImageRemove }) => 
         className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4"
         spacing={2}
       >
-        {[
+        {map([
           ["UPCOMING", "Boshlanmagan"],
           ["ACTIVE", "Faol"],
           ["COMPLETED", "Yakunlangan"],
           ["CANCELLED", "Bekor qilingan"],
-        ].map(([value, label]) => (
+        ], ([value, label]) => (
           <ToggleGroupItem
             key={value}
             value={value}
@@ -391,7 +390,7 @@ const CreateChallengePage = () => {
                 {STEPS[stepIndex].label} · {stepIndex + 1}/{STEPS.length}
               </p>
               <div className="mt-3 flex gap-1.5">
-                {STEPS.map((step, index) => (
+                {map(STEPS, (step, index) => (
                   <span
                     key={step.key}
                     className={cn(

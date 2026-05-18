@@ -1,8 +1,7 @@
+import { filter, forEach, map, trim } from "lodash";
 const getUserName = (user) => {
-  const fullName = [user?.firstName, user?.lastName]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
+  const fullName = trim(filter([user?.firstName, user?.lastName], Boolean)
+    .join(" "));
 
   return fullName || user?.name || user?.username || "Foydalanuvchi";
 };
@@ -27,16 +26,12 @@ export const buildFriendSuggestionRows = ({
   includeOutgoingRows = true,
 } = {}) => {
   const sourceItems = sourceUsers ?? suggestions;
-  const friendIds = new Set(friends.map((friend) => friend?.id).filter(Boolean));
+  const friendIds = new Set(filter(map(friends, (friend) => friend?.id), Boolean));
   const incomingIds = new Set(
-    incomingRequests
-      .map((request) => request?.requester?.id)
-      .filter(Boolean),
+    filter(map(incomingRequests, (request) => request?.requester?.id), Boolean),
   );
   const outgoingByUserId = new Map(
-    outgoingRequests
-      .filter((request) => request?.addressee?.id)
-      .map((request) => [request.addressee.id, request]),
+    map(filter(outgoingRequests, (request) => request?.addressee?.id), (request) => [request.addressee.id, request]),
   );
   const rowsById = new Map();
 
@@ -51,7 +46,7 @@ export const buildFriendSuggestionRows = ({
   };
 
   if (includeOutgoingRows) {
-    outgoingRequests.forEach((request) => {
+    forEach(outgoingRequests, (request) => {
       addRow(request?.addressee, {
         friendshipStatus: "request_sent",
         requestId: request?.id ?? null,
@@ -59,7 +54,7 @@ export const buildFriendSuggestionRows = ({
     });
   }
 
-  sourceItems.forEach((user) => {
+  forEach(sourceItems, (user) => {
     const outgoingRequest = outgoingByUserId.get(user?.id);
     const friendshipStatus =
       outgoingRequest || user?.friendshipStatus === "request_sent"

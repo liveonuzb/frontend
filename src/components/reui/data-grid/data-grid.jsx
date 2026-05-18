@@ -29,6 +29,8 @@ import {
 import { cn } from "@/lib/utils";
 import { DataGridColumnVisibility } from "./data-grid-column-visibility";
 
+import { filter, map, toLower, toNumber, trim, take } from "lodash";
+
 const DataGridContext = createContext(undefined);
 
 function useDataGrid() {
@@ -43,7 +45,7 @@ function DataGridProvider({ children, table, ...props }) {
   const hasExplicitRecordCount =
     props.recordCount !== undefined && props.recordCount !== null;
   const normalizedRecordCount = hasExplicitRecordCount
-    ? Number(props.recordCount)
+    ? toNumber(props.recordCount)
     : Number.NaN;
   const recordCount = Number.isFinite(normalizedRecordCount)
     ? normalizedRecordCount
@@ -154,11 +156,11 @@ function DataGridSavedViews({ table, storageKey }) {
   );
 
   const handleSaveView = useCallback(() => {
-    const trimmedName = viewName.trim();
+    const trimmedName = trim(viewName);
     if (!trimmedName) return;
 
     const nextView = {
-      id: trimmedName.toLowerCase().replace(/[^a-z0-9]+/gi, "-"),
+      id: toLower(trimmedName).replace(/[^a-z0-9]+/gi, "-"),
       name: trimmedName,
       search: getCurrentSearch(),
       sorting: table.getState().sorting ?? [],
@@ -168,10 +170,10 @@ function DataGridSavedViews({ table, storageKey }) {
       columnVisibility: table.getState().columnVisibility ?? {},
       createdAt: Date.now(),
     };
-    const nextViews = [
+    const nextViews = take([
       nextView,
-      ...views.filter((item) => item.id !== nextView.id),
-    ].slice(0, 8);
+      ...filter(views, (item) => item.id !== nextView.id),
+    ], 8);
 
     persistViews(nextViews);
     setViewName("");
@@ -198,7 +200,7 @@ function DataGridSavedViews({ table, storageKey }) {
 
   const handleDeleteView = useCallback(
     (viewId) => {
-      persistViews(views.filter((item) => item.id !== viewId));
+      persistViews(filter(views, (item) => item.id !== viewId));
     },
     [persistViews, views],
   );
@@ -230,7 +232,7 @@ function DataGridSavedViews({ table, storageKey }) {
             type="button"
             size="sm"
             className="h-8 shrink-0"
-            disabled={!viewName.trim()}
+            disabled={!trim(viewName)}
             onClick={handleSaveView}
           >
             <SaveIcon className="size-3.5" />
@@ -240,7 +242,7 @@ function DataGridSavedViews({ table, storageKey }) {
         {views.length === 0 ? (
           <DropdownMenuItem disabled>Saqlangan view yo'q</DropdownMenuItem>
         ) : (
-          views.map((view) => (
+          map(views, (view) => (
             <div key={view.id} className="flex items-center gap-1 px-1">
               <DropdownMenuItem
                 className="min-w-0 flex-1"
@@ -273,11 +275,7 @@ function DataGridToolbar() {
   const manualPagination = Boolean(table.options?.manualPagination);
   const showServerBadge = manualSorting || manualPagination || props.serverSide;
   const visibleColumnCount = table.getVisibleFlatColumns().length;
-  const isCoachRoute = canUseWindow()
-    ? window.location.pathname.startsWith("/coach")
-    : false;
-
-  if (props.toolbar === false || (props.toolbar !== true && !isCoachRoute)) {
+  if (props.toolbar !== true) {
     return null;
   }
 

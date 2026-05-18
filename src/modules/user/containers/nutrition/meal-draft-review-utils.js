@@ -1,4 +1,4 @@
-import { round } from "lodash";
+import { round, filter, reduce, some } from "lodash";
 import {
   buildMealIngredientsPayload,
   getMealIngredientTotals,
@@ -48,30 +48,25 @@ export const getDraftNutritionPreview = (item = {}) => {
 
 export const isDraftReviewNeeded = (item = {}) =>
   Boolean(item?.reviewNeeded) ||
-  normalizeMealIngredients(item?.ingredients).some(
-    (ingredient) =>
-      ingredient.reviewNeeded || ingredient.matchStatus === "unmatched",
-  );
+  some(normalizeMealIngredients(item?.ingredients), (ingredient) =>
+    ingredient.reviewNeeded || ingredient.matchStatus === "unmatched");
 
 export const getDraftReviewCount = (items = []) =>
-  items.filter(isDraftReviewNeeded).length;
+  filter(items, isDraftReviewNeeded).length;
 
 export const getDraftTotals = (items = []) =>
-  items.reduce(
-    (acc, item) => {
-      const preview = getDraftNutritionPreview(item);
-      acc.calories += preview.calories;
-      acc.protein = round(acc.protein + preview.protein, 1);
-      acc.carbs = round(acc.carbs + preview.carbs, 1);
-      acc.fat = round(acc.fat + preview.fat, 1);
-      acc.fiber = round(acc.fiber + preview.fiber, 1);
-      return acc;
-    },
-    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
-  );
+  reduce(items, (acc, item) => {
+    const preview = getDraftNutritionPreview(item);
+    acc.calories += preview.calories;
+    acc.protein = round(acc.protein + preview.protein, 1);
+    acc.carbs = round(acc.carbs + preview.carbs, 1);
+    acc.fat = round(acc.fat + preview.fat, 1);
+    acc.fiber = round(acc.fiber + preview.fiber, 1);
+    return acc;
+  }, { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
 
 export const getDraftMaxCalories = (items = []) =>
-  items.reduce((acc, item) => {
+  reduce(items, (acc, item) => {
     const totals = getDraftNutritionPreview(item);
     return acc + totals.calories;
   }, 0);

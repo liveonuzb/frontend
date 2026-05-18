@@ -27,9 +27,7 @@ import { isChatFeatureEnabled } from "@/modules/chat/lib/chat-feature-flags.js";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-const chatTypeBadges = {
-    COACH_CLIENT: { label: "Coach", emoji: "💪" },
-};
+const chatTypeBadges = {};
 
 const ChatHeader = ({
     activeEntity,
@@ -44,7 +42,6 @@ const ChatHeader = ({
     setChatSearchIndex,
     handleChatSearchPrev,
     handleChatSearchNext,
-    isCoach,
     onToggleInfo,
     isMuted,
     isBlocked,
@@ -115,7 +112,7 @@ const ChatHeader = ({
                 </div>
                 <div className="flex items-center gap-0.5 md:gap-1 shrink-0">
                     {/* Live indicator for others */}
-                    {canUseLiveActivity && isLive && !isCoach && (
+                    {canUseLiveActivity && isLive && (
                         <Button variant="destructive" size="sm" className="h-8 text-[10px] font-black rounded-full animate-bounce px-3 mr-2" onClick={onStartLive}>
                             QO'SHILISH
                         </Button>
@@ -147,11 +144,6 @@ const ChatHeader = ({
                             <Button variant="ghost" size="icon" className="size-8 md:size-10 rounded-full"><MoreVerticalIcon className="size-4 md:size-5 opacity-70" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-2xl">
-                            {canUseLiveActivity && isCoach && (
-                                <DropdownMenuItem disabled className="text-xs p-2.5 cursor-not-allowed opacity-40">
-                                    <VideoIcon className="mr-2 size-4" /> Jonli efirni boshlash (Tez kunda...)
-                                </DropdownMenuItem>
-                            )}
                             <DropdownMenuItem onClick={onToggleInfo} className="text-xs p-2.5 cursor-pointer">
                                 <UserRoundIcon className="mr-2 size-4" /> Profilni ko'rish
                             </DropdownMenuItem>

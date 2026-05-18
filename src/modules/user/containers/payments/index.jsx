@@ -1,5 +1,18 @@
 import React from "react";
-import { compact, filter, find, join, map, toLower, words } from "lodash";
+import {
+  compact,
+  filter,
+  find,
+  join,
+  map,
+  toLower,
+  includes,
+  isArray,
+  reduce,
+  toNumber,
+  toUpper,
+  trim,
+} from "lodash";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 import {
   getCoreRowModel,
@@ -11,7 +24,6 @@ import {
   CheckCircle2Icon,
   ExternalLinkIcon,
   ReceiptTextIcon,
-  UserRoundIcon,
   WalletCardsIcon,
   XCircleIcon,
 } from "lucide-react";
@@ -23,13 +35,12 @@ import {
 } from "@/components/ui/drawer";
 import { Separator } from "@/components/ui/separator";
 import PageTransition from "@/components/page-transition";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Filters } from "@/components/reui/filters.jsx";
 import { useBreadcrumbStore } from "@/store";
-import useUserCoachPayments from "@/hooks/app/use-user-coach-payments";
+import { useGetQuery } from "@/hooks/api";
 import {
   DataGrid,
   DataGridColumnHeader,
@@ -39,7 +50,7 @@ import {
 } from "@/components/reui/data-grid";
 import { cn } from "@/lib/utils";
 
-const SOURCE_FILTER_OPTIONS = ["all", "coach", "subscription"];
+const SOURCE_FILTER_OPTIONS = ["all", "subscription"];
 const METHOD_FILTER_OPTIONS = [
   "all",
   "cash",
@@ -56,12 +67,11 @@ const SORT_FIELDS = [
   "source",
   "method",
   "reason",
-  "coachName",
+  "planName",
 ];
 const SORT_DIRECTIONS = ["asc", "desc"];
 
 const SOURCE_LABELS = {
-  coach: "Murabbiy",
   subscription: "Subscription",
 };
 
@@ -76,22 +86,15 @@ const METHOD_LABELS = {
 };
 
 const SOURCE_BADGE = {
-  coach: "border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-400",
   subscription:
     "border-violet-500/20 bg-violet-500/10 text-violet-700 dark:text-violet-400",
 };
 
-const getInitials = (value = "") =>
-  join(
-    map(words(String(value)).slice(0, 2), (part) => part[0].toUpperCase()),
-    "",
-  );
-
 const formatMoney = (value, currency = "UZS") => {
-  const amount = Number(value);
+  const amount = toNumber(value);
   if (!Number.isFinite(amount) || amount <= 0) return "0 so'm";
 
-  if (String(currency).toUpperCase() === "UZS") {
+  if (toUpper(String(currency)) === "UZS") {
     return `${new Intl.NumberFormat("uz-UZ").format(amount)} so'm`;
   }
 
@@ -132,7 +135,7 @@ const DetailRow = ({ label, value }) =>
     </div>
   ) : null;
 
-const PaymentDetailDrawer = ({ payment, onClose, onUploadReceipt }) => (
+const PaymentDetailDrawer = ({ payment, onClose }) => (
   <Drawer
     open={Boolean(payment)}
     onOpenChange={(open) => !open && onClose()}
@@ -161,14 +164,6 @@ const PaymentDetailDrawer = ({ payment, onClose, onUploadReceipt }) => (
           />
           <DetailRow label="Sabab" value={payment.reason} />
           <DetailRow label="Izoh" value={payment.note} />
-          {payment.source === "coach" && payment.coach ? (
-            <>
-              <Separator className="my-1" />
-              <DetailRow label="Murabbiy" value={payment.coach?.name} />
-              <DetailRow label="Email" value={payment.coach?.email} />
-              <DetailRow label="Telefon" value={payment.coach?.phone} />
-            </>
-          ) : null}
           {payment.source === "subscription" ? (
             <>
               <Separator className="my-1" />
@@ -187,24 +182,6 @@ const PaymentDetailDrawer = ({ payment, onClose, onUploadReceipt }) => (
                 <ExternalLinkIcon className="size-3.5" />
                 Chek ko&apos;rish
               </a>
-            </>
-          ) : payment.source === "coach" ? (
-            <>
-              <Separator className="my-1" />
-              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-dashed px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/5">
-                <ReceiptTextIcon className="size-3.5" />
-                Chek biriktirish
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    if (file) onUploadReceipt?.(payment.rowId, file);
-                    event.target.value = "";
-                  }}
-                />
-              </label>
             </>
           ) : null}
           {payment.cancelledAt ? (
@@ -229,7 +206,7 @@ const normalizePaymentSource = (payment) => {
   if (payment?.source === "subscription" || payment?.type === "subscription") {
     return "subscription";
   }
-  return "coach";
+  return "subscription";
 };
 
 const normalizeMethod = (value) => {
@@ -263,15 +240,38 @@ const Index = () => {
   const [selectedPayment, setSelectedPayment] = React.useState(null);
 
   const deferredSearch = React.useDeferredValue(search);
-  const pageIndex = Math.max(0, Number(pageQuery || "1") - 1);
+  const pageIndex = Math.max(0, toNumber(pageQuery || "1") - 1);
   const [pageSize, setPageSize] = React.useState(10);
 
-  const {
-    payments,
-    summary,
-    isLoading,
-    uploadCoachPaymentReceipt,
-  } = useUserCoachPayments();
+  const { data: paymentsData, isLoading } = useGetQuery({
+    url: "/users/me/payments",
+    queryProps: {
+      queryKey: ["user", "payments"],
+    },
+  });
+  const paymentsPayload = get(paymentsData, "data.data", []);
+  const payments = React.useMemo(
+    () =>
+      isArray(paymentsPayload)
+        ? paymentsPayload
+        : get(paymentsPayload, "items", []),
+    [paymentsPayload],
+  );
+  const summary = React.useMemo(() => {
+    const totalPaidAmount = reduce(
+      payments,
+      (sum, payment) => sum + toNumber(payment.amount || 0),
+      0,
+    );
+
+    return {
+      totalPaymentsCount: payments.length,
+      totalCompletedPayments: payments.length,
+      totalPaidAmount,
+      subscriptionPaymentsCount: payments.length,
+      subscriptionPaidAmount: totalPaidAmount,
+    };
+  }, [payments]);
 
   React.useEffect(() => {
     setBreadcrumbs([
@@ -288,21 +288,17 @@ const Index = () => {
         const reason =
           payment.reason ||
           payment.note ||
-          (source === "subscription"
-            ? `${payment.planName || "Premium"} obunasi uchun to'lov`
-            : "Murabbiy xizmati uchun to'lov");
+          `${payment.planName || "Premium"} obunasi uchun to'lov`;
 
         return {
           rowId: payment.id,
           source,
           method,
           paidAt: payment.paidAt || payment.date || null,
-          amount: Number(payment.amount || 0),
+          amount: toNumber(payment.amount || 0),
           currency: payment.currency || "UZS",
           reason,
           note: payment.note || null,
-          coach: payment.coach || null,
-          coachName: payment?.coach?.name || null,
           planName: payment.planName || null,
           receiptUrl: payment.receiptUrl || null,
           cancelledAt: payment.cancelledAt || null,
@@ -312,7 +308,7 @@ const Index = () => {
     [payments],
   );
 
-  const normalizedSearch = toLower(deferredSearch.trim());
+  const normalizedSearch = toLower(trim(deferredSearch));
   const filteredRows = React.useMemo(() => {
     return filter(rows, (row) => {
       const isSourceMatched =
@@ -331,7 +327,6 @@ const Index = () => {
             SOURCE_LABELS[row.source] || row.source,
             row.reason,
             row.note,
-            row.coachName,
             row.planName,
             row.method,
             row.amount ? String(row.amount) : null,
@@ -339,7 +334,7 @@ const Index = () => {
           " ",
         ),
       );
-      return haystack.includes(normalizedSearch);
+      return includes(haystack, normalizedSearch);
     });
   }, [methodFilter, normalizedSearch, rows, sourceFilter]);
 
@@ -360,7 +355,7 @@ const Index = () => {
         key: "q",
         type: "text",
         defaultOperator: "contains",
-        placeholder: "To'lov sababi, murabbiy yoki plan bo'yicha qidiring",
+        placeholder: "To'lov sababi yoki plan bo'yicha qidiring",
       },
       {
         label: "Manba",
@@ -369,7 +364,6 @@ const Index = () => {
         defaultOperator: "is",
         options: [
           { value: "all", label: "Barchasi" },
-          { value: "coach", label: "Murabbiy" },
           { value: "subscription", label: "Subscription" },
         ],
       },
@@ -396,7 +390,7 @@ const Index = () => {
   const activeFilters = React.useMemo(() => {
     const next = [];
 
-    if (search.trim()) {
+    if (trim(search)) {
       next.push({
         id: "q",
         field: "q",
@@ -493,16 +487,16 @@ const Index = () => {
       },
       {
         id: "source",
-        accessorFn: (row) => row?.source || "coach",
+        accessorFn: (row) => row?.source || "subscription",
         header: ({ column }) => (
           <DataGridColumnHeader column={column} title="Manba" />
         ),
         cell: ({ row }) => {
-          const source = row.original?.source || "coach";
+          const source = row.original?.source || "subscription";
           return (
             <Badge
               variant="outline"
-              className={SOURCE_BADGE[source] || SOURCE_BADGE.coach}
+              className={SOURCE_BADGE[source] || SOURCE_BADGE.subscription}
             >
               {SOURCE_LABELS[source] || source}
             </Badge>
@@ -510,38 +504,18 @@ const Index = () => {
         },
       },
       {
-        id: "coachName",
-        accessorFn: (row) => row?.coachName || row?.planName || "",
+        id: "planName",
+        accessorFn: (row) => row?.planName || "",
         header: ({ column }) => (
           <DataGridColumnHeader column={column} title="Kimga" />
         ),
         cell: ({ row }) => {
-          if (row.original?.source === "subscription") {
-            return (
-              <div className="min-w-[200px]">
-                <p className="font-semibold">
-                  {row.original?.planName || "Premium"}
-                </p>
-                <p className="text-xs text-muted-foreground">Subscription</p>
-              </div>
-            );
-          }
-
-          const coach = row.original?.coach;
           return (
-            <div className="flex min-w-[220px] items-center gap-3">
-              <Avatar className="size-10">
-                <AvatarImage src={coach?.avatar} alt={coach?.name} />
-                <AvatarFallback>{getInitials(coach?.name)}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <p className="truncate font-semibold">
-                  {coach?.name || "Murabbiy"}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {coach?.email || coach?.phone || "Kontakt yo'q"}
-                </p>
-              </div>
+            <div className="min-w-[200px]">
+              <p className="font-semibold">
+                {row.original?.planName || "Premium"}
+              </p>
+              <p className="text-xs text-muted-foreground">Subscription</p>
             </div>
           );
         },
@@ -560,7 +534,7 @@ const Index = () => {
       },
       {
         id: "amount",
-        accessorFn: (row) => Number(row?.amount || 0),
+        accessorFn: (row) => toNumber(row?.amount || 0),
         header: ({ column }) => (
           <DataGridColumnHeader column={column} title="Summa" />
         ),
@@ -621,7 +595,7 @@ const Index = () => {
             })
           : updater;
       const safeIndex = Math.max(0, nextPagination?.pageIndex ?? 0);
-      const safeSize = Math.max(1, Number(nextPagination?.pageSize) || 10);
+      const safeSize = Math.max(1, toNumber(nextPagination?.pageSize) || 10);
       setPageSize(safeSize);
       void setPageQuery(String(safeIndex + 1));
     },
@@ -645,7 +619,7 @@ const Index = () => {
             Barcha qilingan to&apos;lovlar ro&apos;yxati.
           </p>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <StatCard
             icon={WalletCardsIcon}
             title="Jami qilingan to'lovlar"
@@ -659,13 +633,6 @@ const Index = () => {
             value={formatMoney(summary.totalPaidAmount)}
             hint="Muvaffaqiyatli to'lovlar summasi"
             tone="bg-emerald-500/10 text-emerald-600"
-          />
-          <StatCard
-            icon={UserRoundIcon}
-            title="Murabbiy to'lovlari"
-            value={String(summary.coachPaymentsCount)}
-            hint={formatMoney(summary.coachPaidAmount)}
-            tone="bg-blue-500/10 text-blue-600"
           />
           <StatCard
             icon={CheckCircle2Icon}
@@ -706,11 +673,6 @@ const Index = () => {
       <PaymentDetailDrawer
         payment={selectedPayment}
         onClose={() => setSelectedPayment(null)}
-        onUploadReceipt={(paymentId, file) =>
-          uploadCoachPaymentReceipt(paymentId, file).then(() =>
-            setSelectedPayment(null),
-          )
-        }
       />
     </PageTransition>
   );

@@ -1,5 +1,5 @@
 import React from "react";
-import { get, includes } from "lodash";
+import { get, includes, map } from "lodash";
 import { Badge } from "@/components/ui/badge.jsx";
 import { Button } from "@/components/ui/button";
 import {
@@ -140,7 +140,7 @@ const NutritionFilterDrawer = ({
               Qaysi manbadan qo'shilgan ovqatlarni ko'rsatish kerak?
             </p>
           </div>
-          {FILTERS.map((filter) => {
+          {map(FILTERS, (filter) => {
             const isActive = includes(activeFilters, filter.key);
             return (
               <div key={filter.key} className="flex items-center justify-between gap-4">

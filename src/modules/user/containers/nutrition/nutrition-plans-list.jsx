@@ -7,7 +7,6 @@ import {
   ChevronRightIcon,
   PencilIcon,
   PlayIcon,
-  ShieldCheckIcon,
   ShoppingCartIcon,
   Trash2Icon,
 } from "lucide-react";
@@ -74,11 +73,6 @@ export default function NutritionPlansList({
                 >
                   {getPlanSourceMeta(plan.source).label}
                 </span>
-                {plan.syncStatus === "update_available" ? (
-                  <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-1 text-[11px] font-medium text-blue-600 dark:text-blue-300">
-                    Yangilanish bor
-                  </span>
-                ) : null}
               </div>
               <p className="truncate text-base font-black">{plan.name}</p>
               {plan.description ? (
@@ -90,26 +84,6 @@ export default function NutritionPlansList({
                   {plan.mealCount || 4} mahal uchun tuzilgan reja
                 </p>
               )}
-              {plan.source === "coach" && plan.coach?.name ? (
-                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  {plan.coach.avatar ? (
-                    <img
-                      loading="lazy"
-                      src={plan.coach.avatar}
-                      alt={plan.coach.name}
-                      className="size-5 rounded-full object-cover"
-                    />
-                  ) : (
-                    <ShieldCheckIcon className="size-3.5 text-blue-500" />
-                  )}
-                  <span className="truncate">{plan.coach.name} yuborgan</span>
-                  {plan.coachTemplate?.version ? (
-                    <span className="rounded-full border border-blue-500/15 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:text-blue-300">
-                      v{plan.coachTemplate.version}
-                    </span>
-                  ) : null}
-                </div>
-              ) : null}
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <div className="rounded-2xl bg-muted/40 px-3 py-2.5">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -212,18 +186,16 @@ export default function NutritionPlansList({
               Xaridlar ro&apos;yxati
             </Button>
           )}
-          {plan.source !== "coach" ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="text-destructive hover:text-destructive"
-              onClick={() => void onRemovePlan(plan)}
-              aria-label="Rejani o\u2018chirish"
-            >
-              <Trash2Icon className="size-4" />
-            </Button>
-          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="text-destructive hover:text-destructive"
+            onClick={() => void onRemovePlan(plan)}
+            aria-label="Rejani o\u2018chirish"
+          >
+            <Trash2Icon className="size-4" />
+          </Button>
         </div>
       </div>
     );

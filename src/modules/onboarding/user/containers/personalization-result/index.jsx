@@ -62,6 +62,8 @@ import {
   unwrapApiData,
 } from "../../lib/personalization.js";
 
+import { filter, isArray, keys, map, toNumber, trim, find } from "lodash";
+
 const tone = ONBOARDING_ACCENTS.amber;
 
 const editKeys = {
@@ -332,14 +334,12 @@ const getCalculationBadge = (item) => {
 };
 
 const CalculationSummary = ({ steps }) => {
-  const summarySteps = calculationSummaryKeys
-    .map((key) => steps.find((step) => step.key === key))
-    .filter(Boolean);
+  const summarySteps = filter(map(calculationSummaryKeys, (key) => find(steps, (step) => step.key === key)), Boolean);
 
   return (
     <div className="rounded-[1.15rem] border border-[#ff99002a] bg-[rgba(30,20,11,0.58)] p-3">
       <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
-        {summarySteps.map((item, index) => (
+        {map(summarySteps, (item, index) => (
           <React.Fragment key={item.key}>
             <div
               className={cn(
@@ -446,7 +446,7 @@ const getEditValue = (field, result) => {
   if (!field) return "";
 
   if (field === editKeys.recommendedWaterMl) {
-    const waterMl = Number(result?.recommendedWaterMl);
+    const waterMl = toNumber(result?.recommendedWaterMl);
     return Number.isFinite(waterMl) && waterMl > 0 ? waterMl / 1000 : "";
   }
 
@@ -457,7 +457,7 @@ const formatEditDisplayValue = (field, result) => {
   const meta = editableFieldMeta[field];
   if (!meta) return "-";
   const rawValue = getEditValue(field, result);
-  const numberValue = Number(rawValue);
+  const numberValue = toNumber(rawValue);
   if (!Number.isFinite(numberValue)) return "-";
 
   const maximumFractionDigits =
@@ -497,8 +497,8 @@ const EditDrawer = ({
   const description = t(
     `onboarding.postOnboarding.result.edit.${field}.description`,
   );
-  const rawValue = String(value ?? "").trim();
-  const numberValue = Number(value);
+  const rawValue = trim(String(value ?? ""));
+  const numberValue = toNumber(value);
   const hasNumberValue = rawValue !== "" && Number.isFinite(numberValue);
   const currentDisplayValue = formatEditDisplayValue(field, result);
   const saveDisabled = saving || !hasNumberValue;
@@ -507,13 +507,13 @@ const EditDrawer = ({
   const showLowFatWarning =
     field === editKeys.fatGram &&
     hasNumberValue &&
-    Number(onboarding?.currentWeight?.value ?? result?.currentWeight) > 0 &&
+    toNumber(onboarding?.currentWeight?.value ?? result?.currentWeight) > 0 &&
     numberValue <
-      Number(onboarding?.currentWeight?.value ?? result.currentWeight) * 0.5;
+      toNumber(onboarding?.currentWeight?.value ?? result.currentWeight) * 0.5;
   const saveValue =
     field === editKeys.recommendedWaterMl
       ? Math.round(numberValue * 1000)
-      : Number(value);
+      : toNumber(value);
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
@@ -598,19 +598,15 @@ const EditDrawer = ({
           ) : null}
 
           {field === editKeys.proteinGram &&
-          Number(onboarding?.currentWeight?.value ?? result?.currentWeight) >
+          toNumber(onboarding?.currentWeight?.value ?? result?.currentWeight) >
             0 ? (
             <div className="rounded-[1.15rem] border border-[#ff990024] bg-[#ff9800]/8 p-3 text-[13px] font-medium text-white/66">
               {t("onboarding.postOnboarding.result.proteinRecommendation", {
                 min: Math.round(
-                  Number(
-                    onboarding?.currentWeight?.value ?? result.currentWeight,
-                  ) * 1.6,
+                  toNumber(onboarding?.currentWeight?.value ?? result.currentWeight) * 1.6,
                 ),
                 max: Math.round(
-                  Number(
-                    onboarding?.currentWeight?.value ?? result.currentWeight,
-                  ) * 2.2,
+                  toNumber(onboarding?.currentWeight?.value ?? result.currentWeight) * 2.2,
                 ),
               })}
             </div>
@@ -730,12 +726,11 @@ export const ResultContent = ({ result, onboarding, onEdit }) => {
         </div>
 
         <div className="relative mt-5 grid grid-cols-2 gap-3">
-          {snapshot.heroStats.map((item) => (
+          {map(snapshot.heroStats, (item) => (
             <StatChip key={item.key} item={item} />
           ))}
         </div>
       </section>
-
       <button
         type="button"
         className={cn(
@@ -762,7 +757,6 @@ export const ResultContent = ({ result, onboarding, onEdit }) => {
           aria-hidden="true"
         />
       </button>
-
       <SectionCard title="Kunlik kaloriya maqsadi" className="p-4">
         <div className="grid gap-4">
           <div className="relative flex min-h-[168px] flex-col justify-center rounded-[1.2rem] pr-10 text-left">
@@ -803,7 +797,7 @@ export const ResultContent = ({ result, onboarding, onEdit }) => {
           </div>
 
           <div className="grid grid-cols-2 gap-2.5">
-            {macroItems.map((item) => (
+            {map(macroItems, (item) => (
               <MacroCard
                 key={item.key}
                 item={item}
@@ -814,15 +808,13 @@ export const ResultContent = ({ result, onboarding, onEdit }) => {
           </div>
         </div>
       </SectionCard>
-
       <SectionCard title="Kunlik maqsad va ko'rsatkichlar">
         <div className="grid grid-cols-2 gap-2.5">
-          {snapshot.dailyIndicators.map((item) => (
+          {map(snapshot.dailyIndicators, (item) => (
             <MetricTile key={item.key} item={item} compact />
           ))}
         </div>
       </SectionCard>
-
       <SectionCard title="Hisoblash zanjiri">
         <p
           className={cn(
@@ -835,7 +827,7 @@ export const ResultContent = ({ result, onboarding, onEdit }) => {
         </p>
         <CalculationSummary steps={snapshot.calculationSteps} />
         <div className="mt-4 grid gap-1">
-          {snapshot.calculationSteps.map((item, index) => (
+          {map(snapshot.calculationSteps, (item, index) => (
             <CalculationStep
               key={item.key}
               item={item}
@@ -849,7 +841,7 @@ export const ResultContent = ({ result, onboarding, onEdit }) => {
             <InfoIcon className="size-3.5" aria-hidden="true" />
             Formula: {snapshot.formulaName}
           </span>
-          {snapshot.warningPills.map((warning) => (
+          {map(snapshot.warningPills, (warning) => (
             <span
               key={warning}
               className="rounded-full border border-[#ff990030] bg-[#ff9800]/10 px-2.5 py-1 text-[11px] font-bold text-[#ffcf70]"
@@ -906,7 +898,7 @@ const Index = () => {
         value,
         onboarding,
       );
-      if (Object.keys(onboardingPatch).length > 0) {
+      if (keys(onboardingPatch).length > 0) {
         await updateOnboarding({
           url: "/user/onboarding/user",
           attributes: onboardingPatch,
@@ -922,7 +914,7 @@ const Index = () => {
     } catch (error) {
       const message = error?.response?.data?.message;
       toast.error(
-        Array.isArray(message)
+        isArray(message)
           ? message.join(", ")
           : message || t("onboarding.postOnboarding.result.saveError"),
       );
@@ -947,7 +939,7 @@ const Index = () => {
     } catch (error) {
       const message = error?.response?.data?.message;
       toast.error(
-        Array.isArray(message)
+        isArray(message)
           ? message.join(", ")
           : message || t("onboarding.postOnboarding.result.confirmError"),
       );

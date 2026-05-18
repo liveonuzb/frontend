@@ -1,4 +1,4 @@
-import { get, trim } from "lodash";
+import { get, trim, isArray } from "lodash";
 import { buildWorkoutPlanPayload } from "@/hooks/app/use-workout-plans";
 
 export const WORKOUT_PLAN_BUILDER_STEP = "builder";
@@ -31,7 +31,7 @@ export const buildWorkoutPlanMetaPayload = ({
     coverImageUrl: get(basePlan, "coverImageUrl", undefined),
   };
 
-  if (!Array.isArray(payload.schedule)) {
+  if (!isArray(payload.schedule)) {
     payload.schedule = [];
   }
 

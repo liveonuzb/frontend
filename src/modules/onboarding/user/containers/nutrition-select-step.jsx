@@ -1,4 +1,4 @@
-import { filter, get, includes, isArray, map, trim } from "lodash";
+import { filter, get, includes, isArray, map, take, trim, toNumber } from "lodash";
 import React from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router";
@@ -17,10 +17,10 @@ import { ONBOARDING_ACCENTS } from "../lib/tones.js";
 const tone = ONBOARDING_ACCENTS.green;
 
 const normalizeIds = (values = []) =>
-  isArray(values) ? values.map((value) => Number(value)).filter(Boolean) : [];
+  isArray(values) ? filter(map(values, (value) => toNumber(value)), Boolean) : [];
 
 const normalizeKeys = (values = []) =>
-  isArray(values) ? values.map(String).filter(Boolean) : [];
+  isArray(values) ? filter(map(values, String), Boolean) : [];
 
 const NutritionSelectStep = ({
   step,
@@ -58,7 +58,7 @@ const NutritionSelectStep = ({
     },
   });
   const options = React.useMemo(
-    () => get(data, "data.data", get(data, "data", [])).slice(0, 6),
+    () => take(get(data, "data.data", get(data, "data", [])), 6),
     [data],
   );
   const suggestions = React.useMemo(
@@ -66,7 +66,7 @@ const NutritionSelectStep = ({
     [suggestionsData],
   );
 
-  const getValue = (item) => (valueType === "id" ? Number(item.id) : item.key);
+  const getValue = (item) => (valueType === "id" ? toNumber(item.id) : item.key);
   const isSelected = (item) => includes(selectedValues, getValue(item));
   const toggle = (item) => {
     const value = getValue(item);

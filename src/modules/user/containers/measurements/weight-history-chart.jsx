@@ -4,7 +4,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUpIcon, ScaleIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart.jsx";
-import { get, min, max, map, find } from "lodash";
+import { get, min, max, map, find, toNumber } from "lodash";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 const chartConfig = {
@@ -36,7 +36,6 @@ const CustomTooltip = ({ active, payload, label, targetW }) => {
       <p className="text-muted-foreground/80 mb-2 font-medium border-b border-border/50 pb-1.5">
         {dateStr}
       </p>
-
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-1.5">
@@ -44,7 +43,7 @@ const CustomTooltip = ({ active, payload, label, targetW }) => {
             <span className="font-medium text-muted-foreground">Vazn</span>
           </div>
           <p className="font-black text-sm text-foreground">
-            {Number(currentWeight).toFixed(1)}{" "}
+            {toNumber(currentWeight).toFixed(1)}{" "}
             <span className="text-[10px] text-muted-foreground font-semibold">
               kg
             </span>
@@ -61,7 +60,7 @@ const CustomTooltip = ({ active, payload, label, targetW }) => {
                 </span>
               </div>
               <p className="font-black text-sm text-foreground">
-                {Number(targetW).toFixed(1)}{" "}
+                {toNumber(targetW).toFixed(1)}{" "}
                 <span className="text-[10px] text-muted-foreground font-semibold">
                   kg
                 </span>

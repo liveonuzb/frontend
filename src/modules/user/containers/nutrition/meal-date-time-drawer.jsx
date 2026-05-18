@@ -14,6 +14,8 @@ import {
   getCameraDateOptions,
 } from "./meal-date-time-utils.js";
 
+import { map, toNumber } from "lodash";
+
 export default function MealDateTimeDrawer({
   open,
   onOpenChange,
@@ -36,7 +38,7 @@ export default function MealDateTimeDrawer({
   );
   const datePickerItems = useMemo(
     () =>
-      dateOptions.map((option) => ({
+      map(dateOptions, (option) => ({
         value: option.dateKey,
         label: option.label,
       })),
@@ -113,7 +115,7 @@ export default function MealDateTimeDrawer({
                 items={hours}
                 value={String(currentValue.hour).padStart(2, "0")}
                 onChange={(hourValue) =>
-                  onChange({ ...currentValue, hour: Number(hourValue) })
+                  onChange({ ...currentValue, hour: toNumber(hourValue) })
                 }
                 itemHeight={48}
                 selectedClassName="text-[24px] font-black text-foreground"
@@ -126,7 +128,7 @@ export default function MealDateTimeDrawer({
                 items={minutes}
                 value={String(currentValue.minute).padStart(2, "0")}
                 onChange={(minuteValue) =>
-                  onChange({ ...currentValue, minute: Number(minuteValue) })
+                  onChange({ ...currentValue, minute: toNumber(minuteValue) })
                 }
                 itemHeight={48}
                 selectedClassName="text-[24px] font-black text-foreground"

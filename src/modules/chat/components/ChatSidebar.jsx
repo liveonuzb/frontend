@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { filter, map, take, includes } from "lodash";
+import { filter, map, orderBy, take, includes, trim } from "lodash";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -46,7 +46,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const ChatSidebar = ({
     showMobileChat,
-    isCoach,
     searchQuery,
     setSearchQuery,
     filteredChats,
@@ -56,9 +55,6 @@ const ChatSidebar = ({
     getLastMessagePreview,
     getLastMessageTime,
     bookmarks = [],
-    triageItems = [],
-    activeTriageFilter = "all",
-    onTriageFilterChange,
 }) => {
     const navigate = useNavigate();
     const canUseBookmarks = isChatFeatureEnabled("bookmarks");
@@ -85,7 +81,7 @@ const ChatSidebar = ({
     );
 
     useEffect(() => {
-        const normalizedQuery = searchQuery.trim();
+        const normalizedQuery = trim(searchQuery);
         if (normalizedQuery.length <= 1) {
             searchGlobalMessages("");
             return undefined;
@@ -101,29 +97,23 @@ const ChatSidebar = ({
     // Sorting and Filtering logic
     const tabFilteredChats = useMemo(() => {
         const list = filter(filteredChats, (chat) => !chat.isGroup);
-
-        // 2. Apply Custom Order if exists
-        if (canCustomizeChatList && chatOrder) {
-            list.sort((a, b) => {
-                const idxA = chatOrder.indexOf(a.chatId);
-                const idxB = chatOrder.indexOf(b.chatId);
-                if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-                if (idxA !== -1) return -1;
-                if (idxB !== -1) return 1;
+        const customOrder = (chat) => {
+            if (!canCustomizeChatList || !chatOrder) {
                 return 0;
-            });
-        }
+            }
 
-        // 3. Pinned Chats always on top (if not in custom order or override)
-        list.sort((a, b) => {
-            const isPinnedA = canUseLocalChatPinning && pinnedChats.includes(a.chatId);
-            const isPinnedB = canUseLocalChatPinning && pinnedChats.includes(b.chatId);
-            if (isPinnedA && !isPinnedB) return -1;
-            if (!isPinnedA && isPinnedB) return 1;
-            return 0;
-        });
+            const index = chatOrder.indexOf(chat.chatId);
+            return index === -1 ? Number.MAX_SAFE_INTEGER : index;
+        };
 
-        return list;
+        return orderBy(
+            list,
+            [
+                (chat) => (canUseLocalChatPinning && includes(pinnedChats, chat.chatId) ? 0 : 1),
+                customOrder,
+            ],
+            ["asc", "asc"],
+        );
     }, [
         filteredChats,
         pinnedChats,
@@ -137,7 +127,7 @@ const ChatSidebar = ({
         if (over && active.id !== over.id) {
             const oldIndex = tabFilteredChats.findIndex(c => c.chatId === active.id);
             const newIndex = tabFilteredChats.findIndex(c => c.chatId === over.id);
-            const newOrder = arrayMove(tabFilteredChats, oldIndex, newIndex).map(c => c.chatId);
+            const newOrder = map(arrayMove(tabFilteredChats, oldIndex, newIndex), c => c.chatId);
             reorderChats(newOrder);
         }
     };
@@ -153,7 +143,7 @@ const ChatSidebar = ({
                     <div className="flex items-center gap-2 md:gap-3">
                         <Button
                             variant="ghost" size="icon" className="size-8 rounded-full"
-                            onClick={() => navigate(isCoach ? "/coach" : "/user")}
+                            onClick={() => navigate("/user")}
                         >
                             <HomeIcon className="size-4" />
                         </Button>
@@ -181,40 +171,7 @@ const ChatSidebar = ({
                     />
                 </div>
 
-                {isCoach && triageItems.length > 0 && (
-                    <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
-                        {triageItems.map((item) => {
-                            const active = activeTriageFilter === item.key;
-                            return (
-                                <button
-                                    key={item.key}
-                                    type="button"
-                                    onClick={() => onTriageFilterChange?.(item.key)}
-                                    className={cn(
-                                        "h-7 shrink-0 rounded-full border px-2.5 text-[10px] font-bold transition-colors flex items-center gap-1.5",
-                                        active
-                                            ? "bg-primary text-primary-foreground border-primary"
-                                            : "bg-background hover:bg-muted text-muted-foreground",
-                                    )}
-                                >
-                                    <span>{item.label}</span>
-                                    <span
-                                        className={cn(
-                                            "min-w-4 rounded-full px-1 text-[9px] leading-4 text-center",
-                                            active
-                                                ? "bg-primary-foreground/20"
-                                                : "bg-muted text-foreground",
-                                        )}
-                                    >
-                                        {item.count}
-                                    </span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                )}
             </div>
-
             <div className="flex-1 overflow-y-auto custom-scrollbar">
                 {isLoading ? (
                     <div className="flex flex-col items-center justify-center py-20 opacity-50">
@@ -226,7 +183,7 @@ const ChatSidebar = ({
                         {tabFilteredChats.length > 0 && (
                             <div className="px-4 py-2 text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Kontaktlar</div>
                         )}
-                        {tabFilteredChats.map((chat) => (
+                        {map(tabFilteredChats, (chat) => (
                             <ContactItem
                                 key={chat.chatId} chat={chat} activeChat={activeChat}
                                 handleChatSelect={handleChatSelect} getUnreadCount={getUnreadCount}
@@ -245,7 +202,7 @@ const ChatSidebar = ({
                                 Xabarlar qidirilmoqda...
                             </div>
                         )}
-                        {messageSearchResults.map((res, i) => (
+                        {map(messageSearchResults, (res, i) => (
                             <button
                                 key={`msg-res-${i}`}
                                 onClick={() => handleChatSelect(res.chatId, res.msgId)}
@@ -281,7 +238,7 @@ const ChatSidebar = ({
                                     <span className="text-[9px] font-bold uppercase tracking-wider">Xatcho'plar</span>
                                 </div>
                                 <div className="space-y-1.5">
-                                    {take(bookmarks, 2).map((b, i) => (
+                                    {map(take(bookmarks, 2), (b, i) => (
                                         <div key={i} className="text-[10px] p-2 rounded-lg bg-background border border-primary/10 truncate">
                                             <span className="font-bold mr-1">{b.senderName}:</span>
                                             <span className="opacity-70">{b.text}</span>
@@ -301,7 +258,7 @@ const ChatSidebar = ({
                                     items={map(tabFilteredChats, c => c.chatId)}
                                     strategy={verticalListSortingStrategy}
                                 >
-                                    {tabFilteredChats.map((chat) => (
+                                    {map(tabFilteredChats, (chat) => (
                                         <SortableContactItem
                                             key={chat.chatId}
                                             chat={chat}
@@ -318,7 +275,7 @@ const ChatSidebar = ({
                                 </SortableContext>
                             </DndContext>
                         ) : (
-                            tabFilteredChats.map((chat) => (
+                            map(tabFilteredChats, (chat) => (
                                 <ContactItem
                                     key={chat.chatId}
                                     chat={chat}
@@ -347,7 +304,7 @@ const ChatSidebar = ({
                                     variant="outline"
                                     size="sm"
                                     className="rounded-xl font-bold"
-                                    onClick={() => navigate(isCoach ? "/coach/clients" : "/user/friends")}
+                                    onClick={() => navigate("/user/friends")}
                                 >
                                     Kontakt qidirish
                                 </Button>

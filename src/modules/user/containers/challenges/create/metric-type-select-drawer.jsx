@@ -12,6 +12,8 @@ import {
 import { cn } from "@/lib/utils";
 import { getMetricMeta, METRIC_TYPE_OPTIONS } from "../challenge-utils.js";
 
+import { map } from "lodash";
+
 const MetricTypeSelectTrigger = ({ value, onClick }) => {
   const selected = getMetricMeta(value);
   return (
@@ -50,7 +52,7 @@ export const MetricTypeSelectDrawer = ({ open, onOpenChange, value, onChange }) 
           <DrawerTitle>O'lchov turini tanlang</DrawerTitle>
         </DrawerHeader>
         <DrawerBody className="flex flex-col gap-2">
-          {METRIC_TYPE_OPTIONS.map((option) => {
+          {map(METRIC_TYPE_OPTIONS, (option) => {
             const active = draft === option.value;
             return (
               <button

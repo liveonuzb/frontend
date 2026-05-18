@@ -1,6 +1,6 @@
 import React, { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { map, get, size, some } from "lodash";
+import { map, get, size, some, toNumber } from "lodash";
 import {
   PlusIcon,
   DumbbellIcon,
@@ -123,7 +123,6 @@ const BuilderMobileView = memo(({
           placeholder={t("components.workoutPlanBuilder.column.focusPlaceholder")}
         />
       </div>
-
       {size(selectedDayExercises) === 0 ? (
         <button
           type="button"
@@ -187,7 +186,6 @@ const BuilderMobileView = memo(({
                     </span>
                     <MoreVerticalIcon className="text-muted-foreground" />
                   </button>
-
                   {isExpanded ? (
                     <div className="flex flex-col gap-3 px-4 pb-4">
                       {map(get(ex, "sets", []), (set, setIndex) => (
@@ -202,7 +200,7 @@ const BuilderMobileView = memo(({
                             <NumberField
                               key={get(field, "key")}
                               value={
-                                Number(get(set, get(field, "key"))) ||
+                                toNumber(get(set, get(field, "key"))) ||
                                 undefined
                               }
                               onValueChange={(value) =>

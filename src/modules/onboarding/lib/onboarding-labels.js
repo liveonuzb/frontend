@@ -1,3 +1,4 @@
+import { toLower, toNumber, trim } from "lodash";
 const ACTIVITY_LABEL_KEYS = {
   sedentary: "sedentary",
   "lightly-active": "lightlyActive",
@@ -44,9 +45,7 @@ const DIET_REQUIREMENT_LABEL_KEYS = {
 };
 
 const normalizeLabelKey = (value) =>
-  String(value ?? "")
-    .trim()
-    .toLowerCase()
+  toLower(trim(String(value ?? "")))
     .replace(/[_-]+/g, " ")
     .replace(/\s+/g, " ");
 
@@ -92,7 +91,7 @@ export const getOnboardingValueLabel = (type, value, t) => {
 };
 
 export const getCountSummary = (count, t, emptyKey = "onboarding.review.none") =>
-  Number(count) > 0
+  toNumber(count) > 0
     ? t("onboarding.review.countValue", { count })
     : t(emptyKey);
 

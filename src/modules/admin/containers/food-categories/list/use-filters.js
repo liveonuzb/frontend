@@ -1,6 +1,6 @@
 import React from "react";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
-import { get, find } from "lodash";
+import { get, find, toNumber, trim } from "lodash";
 
 const ITEMS_PER_PAGE = 10;
 const SORT_FIELDS = ["orderKey", "name", "createdAt", "isActive"];
@@ -54,8 +54,8 @@ export const useCategoryFilters = () => {
     "sortDir",
     parseAsStringEnum(SORT_DIRECTIONS).withDefault("asc"),
   );
-  const currentPage = Math.max(1, Number(pageQuery) || 1);
-  const pageSize = Math.min(100, Math.max(1, Number(pageSizeQuery) || 10));
+  const currentPage = Math.max(1, toNumber(pageQuery) || 1);
+  const pageSize = Math.min(100, Math.max(1, toNumber(pageSizeQuery) || 10));
   const sorting = React.useMemo(
     () =>
       sortBy === "orderKey" && sortDir === "asc"
@@ -64,7 +64,7 @@ export const useCategoryFilters = () => {
     [sortBy, sortDir],
   );
   const canReorder =
-    search.trim() === "" &&
+    trim(search) === "" &&
     searchOperator === "contains" &&
     statusFilter === "all" &&
     statusOperator === "is" &&
@@ -112,7 +112,7 @@ export const useCategoryFilters = () => {
   const activeFilters = React.useMemo(() => {
     const items = [];
 
-    if (search.trim()) {
+    if (trim(search)) {
       items.push({
         id: "q",
         field: "q",

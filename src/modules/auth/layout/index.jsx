@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Link, Outlet } from "react-router";
-import { first } from "lodash";
+import { first, filter, find, some } from "lodash";
 import { MoonIcon, PaletteIcon, SunIcon } from "lucide-react";
 import LanguageDrawerPicker from "@/components/language-drawer-picker";
 import ProductPreviewSlider, {
@@ -28,7 +28,7 @@ const Index = () => {
   const mode = useAppModeStore((state) => state.mode);
   const modeTheme = useAppModeTheme();
   const activeMode =
-    MODE_OPTIONS.find((option) => option.value === mode) ?? MODE_OPTIONS[0];
+    find(MODE_OPTIONS, (option) => option.value === mode) ?? MODE_OPTIONS[0];
 
   const copy = {
     logoAlt: t("auth.layout.logoAlt"),
@@ -215,7 +215,7 @@ function AuthLanguagePicker({ copy }) {
   const { languages } = useAppLanguages();
 
   const activeLanguages = React.useMemo(
-    () => languages.filter((language) => language.isActive !== false),
+    () => filter(languages, (language) => language.isActive !== false),
     [languages],
   );
 
@@ -224,9 +224,7 @@ function AuthLanguagePicker({ copy }) {
       return;
     }
 
-    const hasCurrentLanguage = activeLanguages.some(
-      (language) => language.code === currentLanguage,
-    );
+    const hasCurrentLanguage = some(activeLanguages, (language) => language.code === currentLanguage);
 
     if (!hasCurrentLanguage) {
       setCurrentLanguage(first(activeLanguages).code);
@@ -234,7 +232,7 @@ function AuthLanguagePicker({ copy }) {
   }, [activeLanguages, currentLanguage, setCurrentLanguage]);
 
   const resolvedLanguage =
-    activeLanguages.find((language) => language.code === currentLanguage) ||
+    find(activeLanguages, (language) => language.code === currentLanguage) ||
     first(activeLanguages);
 
   return (

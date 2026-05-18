@@ -1,6 +1,6 @@
 import React from "react";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { get } from "lodash";
+import { get, toNumber, trim } from "lodash";
 import { useBreadcrumbStore } from "@/store";
 import { useGetQuery } from "@/hooks/api";
 import { Button } from "@/components/ui/button";
@@ -42,13 +42,13 @@ const Index = () => {
 
   const queryParams = React.useMemo(
     () => ({
-      ...(search.trim() ? { q: deferredSearch.trim() } : {}),
+      ...(trim(search) ? { q: trim(deferredSearch) } : {}),
       ...(actionFilter !== "all" ? { action: actionFilter } : {}),
       ...(entityFilter !== "all" ? { entityType: entityFilter } : {}),
-      ...(adminId.trim() ? { adminId: adminId.trim() } : {}),
-      ...(entityId.trim() ? { entityId: entityId.trim() } : {}),
-      ...(dateFrom.trim() ? { dateFrom: dateFrom.trim() } : {}),
-      ...(dateTo.trim() ? { dateTo: dateTo.trim() } : {}),
+      ...(trim(adminId) ? { adminId: trim(adminId) } : {}),
+      ...(trim(entityId) ? { entityId: trim(entityId) } : {}),
+      ...(trim(dateFrom) ? { dateFrom: trim(dateFrom) } : {}),
+      ...(trim(dateTo) ? { dateTo: trim(dateTo) } : {}),
       sortBy,
       sortDir,
       page: currentPage,
@@ -125,11 +125,11 @@ const Index = () => {
         typeof updater === "function"
           ? updater({ pageIndex: currentPage - 1, pageSize })
           : updater;
-      const nextPageSize = Number(get(next, "pageSize")) || pageSize;
+      const nextPageSize = toNumber(get(next, "pageSize")) || pageSize;
 
       React.startTransition(() => {
         void setPageQuery(
-          String(nextPageSize === pageSize ? Number(get(next, "pageIndex", 0)) + 1 : 1),
+          String(nextPageSize === pageSize ? toNumber(get(next, "pageIndex", 0)) + 1 : 1),
         );
         void setPageSizeQuery(String(nextPageSize));
       });

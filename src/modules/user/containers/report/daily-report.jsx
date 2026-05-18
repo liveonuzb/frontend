@@ -11,7 +11,7 @@ import {
 import PageTransition from "@/components/page-transition";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 import { getApiResponseData } from "@/lib/api-response";
 import { formatRunningDistance, formatRunningPace } from "@/lib/running-metrics";
 import useBreadcrumbStore from "@/store/breadcrumb-store";
@@ -24,11 +24,13 @@ import {
   METRIC_META,
 } from "./report-helpers.js";
 
+import { map, toNumber } from "lodash";
+
 const isDateKey = (value) => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
 
 const resolveDailyMetrics = (report) => report?.metrics ?? null;
 
-const formatRunningMinutes = (minutes) => `${Math.round(Number(minutes) || 0)} min`;
+const formatRunningMinutes = (minutes) => `${Math.round(toNumber(minutes) || 0)} min`;
 
 const progressPctFor = (metricKey, metric) => {
   if (!metric) return 0;
@@ -91,8 +93,8 @@ export default function DailyReport() {
   const hasData = Boolean(report?.hasData);
   const runningMetrics = metrics?.running ?? null;
   const hasRunningMetrics =
-    Number(runningMetrics?.distanceMeters ?? 0) > 0 ||
-    Number(runningMetrics?.durationMinutes ?? 0) > 0;
+    toNumber(runningMetrics?.distanceMeters ?? 0) > 0 ||
+    toNumber(runningMetrics?.durationMinutes ?? 0) > 0;
 
   const trackedKeys = ["water", "calories", "protein", "carbs", "fat", "fastFood"];
 
@@ -158,7 +160,7 @@ export default function DailyReport() {
 
         {hasData ? (
           <div className="grid gap-4 md:grid-cols-2">
-            {trackedKeys.map((key) => {
+            {map(trackedKeys, (key) => {
               const meta = METRIC_META[key];
               if (!meta) return null;
               const item = key === "fastFood" ? metrics?.fastFood : metrics?.[key];
@@ -231,7 +233,7 @@ export default function DailyReport() {
                   <p className="text-[11px] text-muted-foreground">Calories</p>
                   <p className="mt-1 inline-flex items-center justify-center gap-1 text-sm font-black">
                     <FlameIcon className="size-3.5 text-muted-foreground" />
-                    {Math.round(Number(runningMetrics?.burnedCalories) || 0)} kcal
+                    {Math.round(toNumber(runningMetrics?.burnedCalories) || 0)} kcal
                   </p>
                 </div>
               </div>

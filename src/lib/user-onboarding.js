@@ -1,4 +1,4 @@
-import { isArray } from "lodash";
+import { isArray, filter, map, reduce, toNumber, trim } from "lodash";
 const toValueUnit = (field, unit, defaultUnit) => {
   if (!field && field !== 0) {
     return null;
@@ -171,9 +171,7 @@ const toNumberArray = (values) =>
   isArray(values)
     ? Array.from(
         new Set(
-          values
-            .map((value) => Number(value))
-            .filter((value) => Number.isInteger(value) && value > 0),
+          filter(map(values, (value) => toNumber(value)), (value) => Number.isInteger(value) && value > 0),
         ),
       )
     : undefined;
@@ -184,10 +182,9 @@ export const normalizeCustomTextArray = (values) => {
   }
 
   const seen = new Set();
-  return values.reduce((acc, value) => {
-    const label = String(value ?? "")
-      .replace(/\s+/g, " ")
-      .trim();
+  return reduce(values, (acc, value) => {
+    const label = trim(String(value ?? "")
+      .replace(/\s+/g, " "));
     const key = label.toLocaleLowerCase("uz-UZ");
 
     if (!label || seen.has(key)) {
@@ -208,17 +205,17 @@ export const normalizeIngredientPreferencePair = ({
 } = {}) => {
   const preferredIds = toNumberArray(preferredIngredientIds) ?? [];
   const preferredIdSet = new Set(preferredIds);
-  const dislikedIds = (toNumberArray(dislikedIngredientIds) ?? []).filter(
+  const dislikedIds = filter(
+    (toNumberArray(dislikedIngredientIds) ?? []),
     (id) => !preferredIdSet.has(id),
   );
   const preferredCustom =
     normalizeCustomTextArray(customPreferredIngredients) ?? [];
   const preferredCustomSet = new Set(
-    preferredCustom.map((value) => value.toLocaleLowerCase("uz-UZ")),
+    map(preferredCustom, (value) => value.toLocaleLowerCase("uz-UZ")),
   );
-  const dislikedCustom = (
-    normalizeCustomTextArray(customDislikedIngredients) ?? []
-  ).filter(
+  const dislikedCustom = filter(
+    (normalizeCustomTextArray(customDislikedIngredients) ?? []),
     (value) => !preferredCustomSet.has(value.toLocaleLowerCase("uz-UZ")),
   );
 
@@ -235,7 +232,7 @@ const toNullableBudget = (value) => {
     return null;
   }
 
-  const numberValue = Number(value);
+  const numberValue = toNumber(value);
   return Number.isFinite(numberValue) ? numberValue : null;
 };
 
@@ -249,12 +246,12 @@ export const toUserOnboardingPayload = (patch = {}) => {
     payload.age =
       patch.age === "" || patch.age === null || patch.age === undefined
         ? undefined
-        : Number(patch.age);
+        : toNumber(patch.age);
   }
   if ("height" in patch) {
     payload.height = hasValue(patch.height)
       ? {
-          value: Number(patch.height.value),
+          value: toNumber(patch.height.value),
           unit: patch.height.unit ?? "cm",
         }
       : undefined;
@@ -262,7 +259,7 @@ export const toUserOnboardingPayload = (patch = {}) => {
   if ("currentWeight" in patch) {
     payload.currentWeight = hasValue(patch.currentWeight)
       ? {
-          value: Number(patch.currentWeight.value),
+          value: toNumber(patch.currentWeight.value),
           unit: patch.currentWeight.unit ?? "kg",
         }
       : undefined;
@@ -275,7 +272,7 @@ export const toUserOnboardingPayload = (patch = {}) => {
   if ("targetWeight" in patch) {
     payload.targetWeight = hasValue(patch.targetWeight)
       ? {
-          value: Number(patch.targetWeight.value),
+          value: toNumber(patch.targetWeight.value),
           unit: patch.targetWeight.unit ?? "kg",
         }
       : undefined;
@@ -286,7 +283,7 @@ export const toUserOnboardingPayload = (patch = {}) => {
       patch.weeklyPace === null ||
       patch.weeklyPace === undefined
         ? undefined
-        : Number(patch.weeklyPace);
+        : toNumber(patch.weeklyPace);
   }
   if ("activityLevel" in patch) {
     payload.activityLevel = patch.activityLevel || undefined;
@@ -297,7 +294,7 @@ export const toUserOnboardingPayload = (patch = {}) => {
       patch.weeklyWorkoutCount === null ||
       patch.weeklyWorkoutCount === undefined
         ? undefined
-        : Number(patch.weeklyWorkoutCount);
+        : toNumber(patch.weeklyWorkoutCount);
   }
   if ("workoutExperience" in patch) {
     payload.workoutExperience = patch.workoutExperience || undefined;
@@ -308,7 +305,7 @@ export const toUserOnboardingPayload = (patch = {}) => {
       patch.sleepHours === null ||
       patch.sleepHours === undefined
         ? undefined
-        : Number(patch.sleepHours);
+        : toNumber(patch.sleepHours);
   }
   if ("workType" in patch) {
     payload.workType = patch.workType || undefined;
@@ -468,7 +465,7 @@ export const toUserOnboardingPayload = (patch = {}) => {
   }
   if ("healthConstraints" in patch) {
     payload.healthConstraints = isArray(patch.healthConstraints)
-      ? patch.healthConstraints.filter((item) => item !== "none")
+      ? filter(patch.healthConstraints, (item) => item !== "none")
       : undefined;
   }
   if ("customHealthConstraints" in patch) {

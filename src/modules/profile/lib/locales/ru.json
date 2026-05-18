@@ -4,8 +4,6 @@
     "navUser": {
       "home": "Главная",
       "profile": "Профиль",
-      "coachCabinet": "Кабинет тренера",
-      "becomeCoach": "Стать тренером",
       "payment": "Платежи",
       "notifications": "Уведомления",
       "upgradePro": "Перейти на Pro",
@@ -21,10 +19,6 @@
       "ADMIN": {
         "label": "Админ",
         "description": "Управление системой"
-      },
-      "COACH": {
-        "label": "Тренер",
-        "description": "Панель тренера"
       },
       "USER": {
         "label": "Пользователь",
@@ -59,46 +53,6 @@
       "badge": "AI report",
       "action": "Открыть отчёт"
     },
-    "coach": {
-      "myCoach": "Мой тренер",
-      "connectedAt": "Подключен: {{date}}",
-      "notSpecified": "Пока не указано",
-      "email": "Email",
-      "phone": "Телефон",
-      "notProvided": "Не указано",
-      "specializations": {
-        "title": "Специализация",
-        "weightLoss": "Похудение",
-        "muscleGain": "Набор массы",
-        "nutrition": "Питание",
-        "yoga": "Йога",
-        "cardio": "Кардио",
-        "strength": "Силовые",
-        "rehab": "Реабилитация",
-        "general": "Общий фитнес"
-      },
-      "experience": {
-        "title": "Уровень опыта",
-        "beginner": "Новичок (1-2 года)",
-        "intermediate": "Средний (3-5 лет)",
-        "advanced": "Продвинутый (5-10 лет)",
-        "expert": "Эксперт (10+ лет)"
-      },
-      "workMode": {
-        "title": "Режим работы",
-        "online": "Онлайн",
-        "offline": "В зале",
-        "hybrid": "Гибрид"
-      },
-      "negotiable": "По договоренности",
-      "currency": "сум",
-      "priceTitle": "Стоимость услуг в месяц",
-      "city": "Город",
-      "cityPlaceholder": "Ташкент",
-      "workplace": "Место работы",
-      "bioPlaceholder": "Напишите о себе, своих достижениях и стиле коучинга...",
-      "saveSuccess": "Профиль тренера сохранен."
-    },
     "tabs": {
       "profile": "Профиль",
       "general": "Язык",
@@ -108,9 +62,7 @@
       "privacy": "Приватность",
       "security": "Безопасность",
       "premium": "Премиум",
-      "referral": "Рефералы",
-      "coachProfile": "Профиль тренера",
-      "findCoach": "Найти тренера"
+      "referral": "Рефералы"
     },
     "language": {
       "title": "Язык",
@@ -452,35 +404,11 @@
       "statusCompleted": "Завершен",
       "referralRegistration": "Реферальный бонус",
       "referralSubscription": "Комиссия с подписки",
-      "coachClientNew": "Бонус тренера (новый)",
-      "coachClientExisting": "Бонус тренера",
       "challengeReward": "Награда за челлендж",
       "adminGrant": "От администратора",
       "xpSpend": "Трата XP",
       "withdrawalTx": "Вывод",
       "invitedBy": "Вас пригласил(а) {{name}}!"
-    },
-    "findCoach": {
-      "subtitle": "Выберите подходящего тренера и достигайте результатов быстрее",
-      "searchPlaceholder": "Поиск по имени или специализации...",
-      "yourCoach": "Ваш тренер",
-      "active": "Активен",
-      "connectedDate": "Подключен: {{date}}",
-      "needOtherTitle": "Нужен другой тренер?",
-      "needOtherDesc": "Вы можете отключиться от текущего тренера и найти нового.",
-      "clients": "клиентов",
-      "bioFallback": "Профессиональный фитнес-тренер с {{exp}}-летним опытом. Индивидуальный подход к каждому клиенту.",
-      "connect": "Связаться",
-      "noResults": "Тренеров не найдено",
-      "requestTitle": "Запрос на сотрудничество",
-      "requestSubtitle": "Хотите начать работу с {{name}}?",
-      "professionalCoach": "Профессиональный Тренер",
-      "messageLabel": "Сообщение тренеру (необязательно)",
-      "messagePlaceholder": "Напишите кратко о своих целях и о себе...",
-      "requestHint": "После отправки запроса тренер рассмотрит его и свяжется с вами.",
-      "sendRequest": "Отправить запрос",
-      "requestSuccess": "Запрос на сотрудничество отправлен!",
-      "requestError": "Ошибка при отправке запроса"
     },
     "premiumReminder": {
       "title": "Откройте больше возможностей с Premium",

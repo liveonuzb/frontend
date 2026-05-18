@@ -13,14 +13,16 @@ import { Button } from "@/components/ui/button.jsx";
 import { ChevronDownIcon, CopyIcon, PlusIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton.jsx";
 import EmptyState from "@/components/empty-state/index.jsx";
-import { map, sumBy, isEmpty } from "lodash";
+import { map, sumBy, isEmpty, filter, forEach } from "lodash";
 import MealCard from "./meal-card.jsx";
 import { getMealConfig } from "@/modules/user/lib/meal-config";
 
 const getMealIdentity = (item = {}) =>
   item.barcode ||
-  [item.name, item.grams ?? item.defaultAmount ?? "", item.unit ?? ""]
-    .filter(Boolean)
+  filter(
+    [item.name, item.grams ?? item.defaultAmount ?? "", item.unit ?? ""],
+    Boolean,
+  )
     .join(":");
 
 const getStoredOpenState = (type) => {
@@ -54,7 +56,6 @@ const MealSection = ({
   time,
   items = [],
   plannedItems = [],
-  mealFeedbackById = {},
   onRemove,
   onAdd,
   onTogglePlanned,
@@ -100,14 +101,14 @@ const MealSection = ({
   const allSectionItems = React.useMemo(() => {
     const loggedQueues = new Map();
 
-    items.forEach((item) => {
+    forEach(items, (item) => {
       const identity = getMealIdentity(item);
       const queue = loggedQueues.get(identity) || [];
       queue.push(item);
       loggedQueues.set(identity, queue);
     });
 
-    const mergedItems = plannedItems.map((plannedItem) => {
+    const mergedItems = map(plannedItems, (plannedItem) => {
       const identity = getMealIdentity(plannedItem);
       const queue = loggedQueues.get(identity);
 
@@ -128,8 +129,8 @@ const MealSection = ({
       };
     });
 
-    loggedQueues.forEach((queue) => {
-      queue.forEach((item) => {
+    forEach(loggedQueues, (queue) => {
+      forEach(queue, (item) => {
         mergedItems.push({
           ...item,
           isConsumed: true,
@@ -164,34 +165,30 @@ const MealSection = ({
     onImageUpload(mealType, food.id, imageDataUrl, adjustedGrams, macros);
   };
 
-  const renderMealCard = (food, i) => {
-    const itemFeedback = food.id ? mealFeedbackById[food.id] || [] : [];
-
-    return (
-      <MealCard
-        key={food.id || `${food.name}-${i}`}
-        food={{ ...food, coachFeedback: itemFeedback }}
-        index={i}
-        mealType={type}
-        isFromPlan={Boolean(food.isFromPlanLinked)}
-        onRemove={onRemove}
-        onTogglePlanned={onTogglePlanned}
-        onLogPlanned={onLogPlanned}
-        onSaveImage={handleSaveImage}
-        onUpdateLoggedMeal={onUpdateMeal}
-        onRetryScan={onRetryScan}
-        onRemoveScan={onRemoveScan}
-        onOpenDraftScan={onOpenDraftScan}
-        onTransferMeal={onTransferMeal}
-        onCopyMealToToday={onCopyMealToToday}
-        readOnly={readOnly}
-        isSelectionMode={isSelectionMode}
-        isSelected={Boolean(selectedItems[`${type}:${food.id}`])}
-        onToggleSelect={onToggleSelect}
-        onEnterSelectionMode={onEnterSelectionMode}
-      />
-    );
-  };
+  const renderMealCard = (food, i) => (
+    <MealCard
+      key={food.id || `${food.name}-${i}`}
+      food={food}
+      index={i}
+      mealType={type}
+      isFromPlan={Boolean(food.isFromPlanLinked)}
+      onRemove={onRemove}
+      onTogglePlanned={onTogglePlanned}
+      onLogPlanned={onLogPlanned}
+      onSaveImage={handleSaveImage}
+      onUpdateLoggedMeal={onUpdateMeal}
+      onRetryScan={onRetryScan}
+      onRemoveScan={onRemoveScan}
+      onOpenDraftScan={onOpenDraftScan}
+      onTransferMeal={onTransferMeal}
+      onCopyMealToToday={onCopyMealToToday}
+      readOnly={readOnly}
+      isSelectionMode={isSelectionMode}
+      isSelected={Boolean(selectedItems[`${type}:${food.id}`])}
+      onToggleSelect={onToggleSelect}
+      onEnterSelectionMode={onEnterSelectionMode}
+    />
+  );
 
   return (
     <Card
@@ -249,7 +246,6 @@ const MealSection = ({
           </div>
         </div>
       </CardHeader>
-
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
@@ -262,7 +258,7 @@ const MealSection = ({
             <CardContent className="">
               {isLoading ? (
                 <div className="space-y-2">
-                  {[0, 1, 2].map((item) => (
+                  {map([0, 1, 2], (item) => (
                     <MealCardSkeleton key={item} />
                   ))}
                 </div>
@@ -278,7 +274,7 @@ const MealSection = ({
                     className="relative w-full"
                     style={{ height: rowVirtualizer.getTotalSize() }}
                   >
-                    {rowVirtualizer.getVirtualItems().map((virtualItem) => {
+                    {map(rowVirtualizer.getVirtualItems(), (virtualItem) => {
                       const food = allSectionItems[virtualItem.index];
                       return (
                         <div

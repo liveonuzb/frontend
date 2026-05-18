@@ -6,6 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import PageLoader from "@/components/page-loader/index.jsx";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 
+import { some, includes } from "lodash";
+
 const AdminForbidden = ({ capability, roles }) => (
   <div className="flex min-h-[calc(100vh-9rem)] items-center justify-center px-4 py-10">
     <Card className="w-full max-w-md border-border/70 shadow-sm">
@@ -58,7 +60,7 @@ const AdminCapabilityRoute = ({ capability, roles, children }) => {
     ? permissions.hasCapability(capability)
     : true;
   const hasRole = roles?.length
-    ? roles.some((role) => permissions.roles.includes(role))
+    ? some(roles, (role) => includes(permissions.roles, role))
     : true;
 
   if (!hasCapability || !hasRole) {

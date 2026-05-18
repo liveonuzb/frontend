@@ -26,6 +26,8 @@ import {
 } from "./meal-ingredients.js";
 import SaveToMyMealsButton from "./save-to-my-meals-button.jsx";
 
+import { filter, isArray, map, trim } from "lodash";
+
 const formatLoggedAtHint = (value) => {
   if (!value) {
     return null;
@@ -70,7 +72,7 @@ export default function AiMealDraftDrawer({
   const [saveToMyMeals, setSaveToMyMeals] = React.useState(false);
   const autoAnalyzeRef = React.useRef(false);
   const sourceText = React.useMemo(
-    () => String(initialText || "").trim(),
+    () => trim(String(initialText || "")),
     [initialText],
   );
 
@@ -110,7 +112,7 @@ export default function AiMealDraftDrawer({
 
   const handleAnalyze = React.useCallback(
     async (overrideText) => {
-      const normalizedText = String(overrideText ?? sourceText).trim();
+      const normalizedText = trim(String(overrideText ?? sourceText));
 
       if (!normalizedText) {
         toast.error("Ovqat matnini kiriting");
@@ -126,7 +128,7 @@ export default function AiMealDraftDrawer({
           text: normalizedText,
           mode: inputSource === "audio" ? "audio" : "text",
         });
-        const items = Array.isArray(response?.items) ? response.items : [];
+        const items = isArray(response?.items) ? response.items : [];
         setAnalysisItems(items);
 
         if (items.length === 0) {
@@ -147,7 +149,7 @@ export default function AiMealDraftDrawer({
   );
 
   React.useEffect(() => {
-    if (!initialText.trim() || autoAnalyzeRef.current) {
+    if (!trim(initialText) || autoAnalyzeRef.current) {
       return;
     }
 
@@ -158,7 +160,7 @@ export default function AiMealDraftDrawer({
   const handleIngredientUpdate = React.useCallback(
     (draftId, ingredientId, ingredient) => {
       setAnalysisItems((current) =>
-        current.map((item) =>
+        map(current, (item) =>
           item.id === draftId
             ? {
                 ...item,
@@ -168,8 +170,7 @@ export default function AiMealDraftDrawer({
                   ingredient,
                 ),
               }
-            : item,
-        ),
+            : item),
       );
     },
     [],
@@ -177,54 +178,51 @@ export default function AiMealDraftDrawer({
 
   const handleIngredientRemove = React.useCallback((draftId, ingredientId) => {
     setAnalysisItems((current) =>
-      current.map((item) =>
+      map(current, (item) =>
         item.id === draftId
           ? {
               ...item,
               ingredients: removeMealIngredient(item.ingredients, ingredientId),
             }
-          : item,
-      ),
+          : item),
     );
   }, []);
 
   const handleIngredientAdd = React.useCallback((draftId, ingredient) => {
     setAnalysisItems((current) =>
-      current.map((item) =>
+      map(current, (item) =>
         item.id === draftId
           ? {
               ...item,
               ingredients: addMealIngredient(item.ingredients, ingredient),
             }
-          : item,
-      ),
+          : item),
     );
   }, []);
 
   const handleRemoveItem = React.useCallback((draftId) => {
     setAnalysisItems((current) =>
-      current.filter((item) => item.id !== draftId),
+      filter(current, (item) => item.id !== draftId),
     );
   }, []);
 
   const handleConfirmItem = React.useCallback((draftId) => {
     setAnalysisItems((current) =>
-      current.map((item) =>
+      map(current, (item) =>
         item.id === draftId
           ? {
               ...item,
               confidence: 1,
               reviewNeeded: false,
-              ingredients: Array.isArray(item.ingredients)
-                ? item.ingredients.map((ingredient) => ({
+              ingredients: isArray(item.ingredients)
+                ? map(item.ingredients, (ingredient) => ({
                     ...ingredient,
                     reviewNeeded: false,
                   }))
                 : [],
               aiNotes: item.aiNotes || "Foydalanuvchi tomonidan tasdiqlandi.",
             }
-          : item,
-      ),
+          : item),
     );
   }, []);
 
@@ -337,7 +335,6 @@ export default function AiMealDraftDrawer({
           </div>
         ) : null}
       </DrawerHeader>
-
       <DrawerBody className="p-0">
         <ScrollArea className="h-full px-5">
           {isAnalyzing ? (
@@ -367,7 +364,7 @@ export default function AiMealDraftDrawer({
 
               {analysisItems.length > 0 ? (
                 <div className="space-y-3">
-                  {analysisItems.map((item) => (
+                  {map(analysisItems, (item) => (
                     <MealDraftCard
                       key={item.id}
                       item={item}
@@ -398,7 +395,6 @@ export default function AiMealDraftDrawer({
           )}
         </ScrollArea>
       </DrawerBody>
-
       <DrawerFooter>
         <Button
           type="button"

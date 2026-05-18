@@ -1,5 +1,18 @@
 import React from "react";
-import { get, map, max, reduce, size } from "lodash";
+import {
+  get,
+  map,
+  max,
+  reduce,
+  size,
+  every,
+  filter,
+  find,
+  isArray,
+  toNumber,
+  trim,
+  some,
+} from "lodash";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import {
@@ -62,12 +75,12 @@ import {
 } from "../../utils";
 
 const parseDayIndex = (value) => {
-  const parsed = Number(value);
+  const parsed = toNumber(value);
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : -1;
 };
 
 const formatTimer = (seconds, { long = false } = {}) => {
-  const total = Math.max(0, Number(seconds) || 0);
+  const total = Math.max(0, toNumber(seconds) || 0);
   const hours = Math.floor(total / 3600);
   const minutes = Math.floor((total % 3600) / 60);
   const secs = total % 60;
@@ -108,7 +121,7 @@ const useRestTimer = (onComplete) => {
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const start = React.useCallback((value) => {
-    const nextSeconds = Math.max(0, Number(value) || 0);
+    const nextSeconds = Math.max(0, toNumber(value) || 0);
     if (nextSeconds <= 0) {
       setRunning(false);
       setSeconds(0);
@@ -128,7 +141,7 @@ const useRestTimer = (onComplete) => {
   }, []);
 
   const addTime = React.useCallback((value) => {
-    const extraSeconds = Math.max(0, Number(value) || 0);
+    const extraSeconds = Math.max(0, toNumber(value) || 0);
     if (extraSeconds <= 0) {
       return;
     }
@@ -144,7 +157,7 @@ const useRestTimer = (onComplete) => {
 
   const restore = React.useCallback(({ seconds: savedSeconds, endsAt: savedEndsAt }) => {
     const parsedEndsAt = savedEndsAt ? new Date(savedEndsAt).getTime() : null;
-    const fallbackSeconds = Math.max(0, Number(savedSeconds) || 0);
+    const fallbackSeconds = Math.max(0, toNumber(savedSeconds) || 0);
     const remainingSeconds = Number.isFinite(parsedEndsAt)
       ? Math.max(0, Math.ceil((parsedEndsAt - Date.now()) / 1000))
       : fallbackSeconds;
@@ -301,13 +314,13 @@ const toTimestamp = (value) => {
 };
 
 const getSetValue = (set, key) => {
-  const value = Number(get(set, key) || 0);
+  const value = toNumber(get(set, key) || 0);
   return Number.isFinite(value) ? value : 0;
 };
 
 const getCompletedSetEntries = (exercises) =>
   exercises.flatMap((exercise) =>
-    map(get(exercise, "sets", []), (set, setIndex) =>
+    filter(map(get(exercise, "sets", []), (set, setIndex) =>
       get(set, "done")
         ? {
             exerciseKey: get(exercise, "_id"),
@@ -322,11 +335,11 @@ const getCompletedSetEntries = (exercises) =>
             distanceMeters: getSetValue(set, "distanceMeters"),
           }
         : null,
-    ).filter(Boolean),
+    ), Boolean),
   );
 
 const toExerciseCatalogId = (exercise) => {
-  const candidate = Number(get(exercise, "exerciseId") ?? get(exercise, "id"));
+  const candidate = toNumber(get(exercise, "exerciseId") ?? get(exercise, "id"));
   return Number.isInteger(candidate) && candidate > 0 ? candidate : undefined;
 };
 
@@ -484,7 +497,7 @@ const SessionExerciseCard = ({
   onOpenActions,
 }) => {
   const sets = get(exercise, "sets", []);
-  const doneCount = sets.filter((set) => get(set, "done")).length;
+  const doneCount = filter(sets, (set) => get(set, "done")).length;
   const trackingType = normalizeWorkoutTrackingType(get(exercise, "trackingType"));
   const fields = getWorkoutTrackingFields(trackingType);
   const hasImage = Boolean(get(exercise, "imageUrl"));
@@ -530,7 +543,6 @@ const SessionExerciseCard = ({
           <MoreVerticalIcon className="size-5" />
         </button>
       </div>
-
       {expanded && !get(exercise, "skipped") ? (
         <div className="space-y-3 px-4 pb-4">
           {map(sets, (set, setIndex) => (
@@ -561,7 +573,7 @@ const SessionExerciseCard = ({
                   className="grid grid-cols-[1fr_auto] items-center gap-2 rounded-2xl bg-background px-2 py-1.5"
                 >
                   <NumberField
-                    value={Number(get(set, get(field, "key"))) || undefined}
+                    value={toNumber(get(set, get(field, "key"))) || undefined}
                     onValueChange={(value) =>
                       onUpdateSet(setIndex, get(field, "key"), value)
                     }
@@ -626,7 +638,7 @@ const WorkoutPlanSessionPage = () => {
   const { exercises: replacementExercises } = useWorkoutExercises(
     {
       categoryId: replaceCategory || undefined,
-      query: replaceSearch.trim() || undefined,
+      query: trim(replaceSearch) || undefined,
     },
     {
       enabled: Boolean(planId) && replaceDrawerOpen,
@@ -637,7 +649,7 @@ const WorkoutPlanSessionPage = () => {
     isPending: isUpdatingWorkoutSessionProgress,
   } = useUpdateWorkoutSessionProgress();
   const plan = React.useMemo(() => deriveWorkoutPlanMetrics(rawPlan), [rawPlan]);
-  const schedule = Array.isArray(get(plan, "schedule")) ? get(plan, "schedule") : [];
+  const schedule = isArray(get(plan, "schedule")) ? get(plan, "schedule") : [];
   const selectedDay = dayIndex >= 0 ? get(schedule, `[${dayIndex}]`) : null;
   const sessionDraftStorageKey = React.useMemo(
     () => getSessionDraftStorageKey(planId, dayIndex),
@@ -669,7 +681,7 @@ const WorkoutPlanSessionPage = () => {
   React.useEffect(() => {
     if (!selectedDay) return;
     const localDraft = readSessionDraft(sessionDraftStorageKey);
-    const localSavedAt = Number(get(localDraft, "savedAt")) || 0;
+    const localSavedAt = toNumber(get(localDraft, "savedAt")) || 0;
     const remoteSavedAt = toTimestamp(get(remoteDraft, "lastSyncedAt")) || 0;
     const draft =
       remoteSavedAt > localSavedAt
@@ -680,7 +692,7 @@ const WorkoutPlanSessionPage = () => {
             savedAt: remoteSavedAt,
           }
         : localDraft;
-    const draftExercises = Array.isArray(get(draft, "exercises"))
+    const draftExercises = isArray(get(draft, "exercises"))
       ? get(draft, "exercises")
       : null;
     const shouldRestore =
@@ -693,9 +705,9 @@ const WorkoutPlanSessionPage = () => {
       const restoredServerSessionId = get(draft, "id") || null;
       setServerSessionId(restoredServerSessionId);
       setRemoteDraftPersistenceEnabled(Boolean(restoredServerSessionId));
-      const restoredElapsed = Math.max(0, Number(get(draft, "elapsed")) || 0);
+      const restoredElapsed = Math.max(0, toNumber(get(draft, "elapsed")) || 0);
       const restoredStartTime =
-        Number(get(draft, "sessionStartTime")) || Date.now() - restoredElapsed * 1000;
+        toNumber(get(draft, "sessionStartTime")) || Date.now() - restoredElapsed * 1000;
 
       setExercises(restoredExercises);
       setExpandedExerciseId(
@@ -877,17 +889,13 @@ const WorkoutPlanSessionPage = () => {
     (total, exercise) =>
       get(exercise, "skipped")
         ? total
-        : total + get(exercise, "sets", []).filter((set) => get(set, "done")).length,
+        : total + filter(get(exercise, "sets", []), (set) => get(set, "done")).length,
     0,
   );
   const allDone = totalSets > 0 && doneSets === totalSets;
   const focus = get(selectedDay, "focus") || get(selectedDay, "day") || get(plan, "name");
-  const selectedExercise = exercises.find(
-    (exercise) => get(exercise, "_id") === expandedExerciseId,
-  );
-  const actionExercise = exercises.find(
-    (exercise) => get(exercise, "_id") === exerciseActionsId,
-  );
+  const selectedExercise = find(exercises, (exercise) => get(exercise, "_id") === expandedExerciseId);
+  const actionExercise = find(exercises, (exercise) => get(exercise, "_id") === exerciseActionsId);
 
   const updateSet = (exerciseId, setIndex, field, value) => {
     setExercises((current) =>
@@ -1016,7 +1024,7 @@ const WorkoutPlanSessionPage = () => {
   const toggleAllForExpanded = () => {
     if (!selectedExercise || get(selectedExercise, "skipped")) return;
     const sets = get(selectedExercise, "sets", []);
-    const shouldComplete = !sets.every((set) => get(set, "done"));
+    const shouldComplete = !every(sets, (set) => get(set, "done"));
 
     setExercises((current) =>
       map(current, (exercise) =>
@@ -1083,20 +1091,20 @@ const WorkoutPlanSessionPage = () => {
 
     const durationMinutes = max([1, Math.round(elapsed / 60)]);
     const estimatedCalories = Math.round(durationMinutes * 6.5);
-    const totalVolumeKg = completedSetEntries.reduce(
-      (total, set) => total + Number(get(set, "reps") || 0) * Number(get(set, "weight") || 0),
+    const totalVolumeKg = reduce(
+      completedSetEntries,
+      (total, set) => total + toNumber(get(set, "reps") || 0) * toNumber(get(set, "weight") || 0),
       0,
     );
-    const completedExerciseCount = exercises.filter((exercise) =>
-      !get(exercise, "skipped") && get(exercise, "sets", []).some((set) => get(set, "done")),
-    ).length;
-    const exerciseSummaries = exercises
-      .map((exercise) => {
+    const completedExerciseCount = filter(exercises, (exercise) =>
+      !get(exercise, "skipped") && some(get(exercise, "sets", []), (set) => get(set, "done"))).length;
+    const exerciseSummaries = filter(map(exercises, (exercise) => {
         if (get(exercise, "skipped")) {
           return null;
         }
 
-        const completedSets = completedSetEntries.filter(
+        const completedSets = filter(
+          completedSetEntries,
           (set) => get(set, "exerciseKey") === get(exercise, "_id"),
         );
 
@@ -1108,27 +1116,22 @@ const WorkoutPlanSessionPage = () => {
           exerciseKey: get(exercise, "_id"),
           exerciseName: get(exercise, "name"),
           completedSets: size(completedSets),
-          totalReps: completedSets.reduce(
-            (total, set) => total + Number(get(set, "reps") || 0),
-            0,
-          ),
-          totalVolumeKg: completedSets.reduce(
-            (total, set) =>
-              total +
-              Number(get(set, "reps") || 0) * Number(get(set, "weight") || 0),
-            0,
-          ),
-          distanceMeters: completedSets.reduce(
-            (total, set) => total + Number(get(set, "distanceMeters") || 0),
+          totalReps: reduce(completedSets, (total, set) => total + toNumber(get(set, "reps") || 0), 0),
+          totalVolumeKg: reduce(completedSets, (total, set) =>
+            total +
+            toNumber(get(set, "reps") || 0) * toNumber(get(set, "weight") || 0), 0),
+          distanceMeters: reduce(
+            completedSets,
+            (total, set) => total + toNumber(get(set, "distanceMeters") || 0),
             0,
           ),
         };
-      })
-      .filter(Boolean);
+      }), Boolean);
     const exerciseLogs = exercises.flatMap((exercise) => {
       if (get(exercise, "skipped")) return [];
 
-      const completedExerciseSets = completedSetEntries.filter(
+      const completedExerciseSets = filter(
+        completedSetEntries,
         (set) => get(set, "exerciseKey") === get(exercise, "_id"),
       );
 
@@ -1161,17 +1164,18 @@ const WorkoutPlanSessionPage = () => {
             undefined,
           entries: map(completedExerciseSets, (set) => ({
             sets: 1,
-            reps: Number(get(set, "reps") || 0),
-            weight: Number(get(set, "weight") || 0),
-            durationSeconds: Number(get(set, "durationSeconds") || 0),
-            distanceMeters: Number(get(set, "distanceMeters") || 0),
+            reps: toNumber(get(set, "reps") || 0),
+            weight: toNumber(get(set, "weight") || 0),
+            durationSeconds: toNumber(get(set, "durationSeconds") || 0),
+            distanceMeters: toNumber(get(set, "distanceMeters") || 0),
           })),
         },
       ];
     });
 
-    const sessionExercises = exercises.map((exercise, exerciseIndex) => {
-      const completedExerciseSets = completedSetEntries.filter(
+    const sessionExercises = map(exercises, (exercise, exerciseIndex) => {
+      const completedExerciseSets = filter(
+        completedSetEntries,
         (set) => get(set, "exerciseKey") === get(exercise, "_id"),
       );
 
@@ -1192,27 +1196,26 @@ const WorkoutPlanSessionPage = () => {
         skipped: Boolean(get(exercise, "skipped")),
         completedSets: size(completedExerciseSets),
         totalSets: size(get(exercise, "sets", [])),
-        totalReps: completedExerciseSets.reduce(
-          (total, set) => total + Number(get(set, "reps") || 0),
+        totalReps: reduce(
+          completedExerciseSets,
+          (total, set) => total + toNumber(get(set, "reps") || 0),
           0,
         ),
-        totalVolumeKg: completedExerciseSets.reduce(
-          (total, set) =>
-            total +
-            Number(get(set, "reps") || 0) * Number(get(set, "weight") || 0),
-          0,
-        ),
-        distanceMeters: completedExerciseSets.reduce(
-          (total, set) => total + Number(get(set, "distanceMeters") || 0),
+        totalVolumeKg: reduce(completedExerciseSets, (total, set) =>
+          total +
+          toNumber(get(set, "reps") || 0) * toNumber(get(set, "weight") || 0), 0),
+        distanceMeters: reduce(
+          completedExerciseSets,
+          (total, set) => total + toNumber(get(set, "distanceMeters") || 0),
           0,
         ),
         restSeconds: getExerciseRestSeconds(exercise),
         sets: map(get(exercise, "sets", []), (set, setIndex) => ({
           setIndex,
-          reps: Number(get(set, "reps") || 0),
-          weight: Number(get(set, "weight") || 0),
-          durationSeconds: Number(get(set, "durationSeconds") || 0),
-          distanceMeters: Number(get(set, "distanceMeters") || 0),
+          reps: toNumber(get(set, "reps") || 0),
+          weight: toNumber(get(set, "weight") || 0),
+          durationSeconds: toNumber(get(set, "durationSeconds") || 0),
+          distanceMeters: toNumber(get(set, "distanceMeters") || 0),
           restSeconds: getExerciseRestSeconds(exercise),
           completed: Boolean(get(set, "done")),
           skipped: Boolean(get(exercise, "skipped")),

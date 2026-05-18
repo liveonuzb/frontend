@@ -1,5 +1,5 @@
 import React from "react";
-import { filter, find, values, get } from "lodash";
+import { find, values as lodashValues, get, map, orderBy, trim } from "lodash";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DrawerBody, DrawerFooter } from "@/components/ui/drawer";
@@ -18,25 +18,25 @@ import {
 
 const resolveText = (translations, fallback, language) => {
   if (translations && typeof translations === "object") {
-    const direct = String(get(translations, language, "")).trim();
+    const direct = trim(String(get(translations, language, "")));
     if (direct) return direct;
 
-    const uzText = String(get(translations, "uz", "")).trim();
+    const uzText = trim(String(get(translations, "uz", "")));
     if (uzText) return uzText;
 
-    const enText = String(get(translations, "en", "")).trim();
+    const enText = trim(String(get(translations, "en", "")));
     if (enText) return enText;
 
-    const ruText = String(get(translations, "ru", "")).trim();
+    const ruText = trim(String(get(translations, "ru", "")));
     if (ruText) return ruText;
 
-    const firstValue = find(values(translations), (value) =>
-      String(value ?? "").trim(),
+    const firstValue = find(lodashValues(translations), (value) =>
+      trim(String(value ?? "")),
     );
-    if (firstValue) return String(firstValue).trim();
+    if (firstValue) return trim(String(firstValue));
   }
 
-  return String(fallback ?? "").trim();
+  return trim(String(fallback ?? ""));
 };
 
 export default function PlansTab({
@@ -53,20 +53,19 @@ export default function PlansTab({
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
 
   const userPlans = React.useMemo(() => {
-    return [...plans].sort((left, right) => {
-      const leftPriority = get(left, "status") === "active" ? 0 : get(left, "status") === "draft" ? 1 : 2;
-      const rightPriority =
-        get(right, "status") === "active" ? 0 : get(right, "status") === "draft" ? 1 : 2;
+    const getStatusPriority = (plan) => {
+      const status = get(plan, "status");
+      return status === "active" ? 0 : status === "draft" ? 1 : 2;
+    };
 
-      if (leftPriority !== rightPriority) {
-        return leftPriority - rightPriority;
-      }
-
-      return (
-        new Date(get(right, "updatedAt") || get(right, "createdAt") || 0).getTime() -
-        new Date(get(left, "updatedAt") || get(left, "createdAt") || 0).getTime()
-      );
-    });
+    return orderBy(
+      plans,
+      [
+        getStatusPriority,
+        (plan) => new Date(get(plan, "updatedAt") || get(plan, "createdAt") || 0).getTime(),
+      ],
+      ["asc", "desc"],
+    );
   }, [plans]);
 
   return (
@@ -83,7 +82,7 @@ export default function PlansTab({
               </div>
 
               <div className="grid gap-3">
-                {userPlans.map((plan) => {
+                {map(userPlans, (plan) => {
                   const isActive = get(plan, "id") === get(activePlan, "id");
 
                   return (
@@ -113,11 +112,7 @@ export default function PlansTab({
                                   ? "Faol"
                                   : get(plan, "status")}
                             </Badge>
-                            {get(plan, "source") === "coach" ? (
-                              <Badge variant="outline">Murabbiy</Badge>
-                            ) : (
-                              <Badge variant="outline">Meniki</Badge>
-                            )}
+                            <Badge variant="outline">Meniki</Badge>
                           </div>
                           <p className="truncate text-base font-black">
                             {get(plan, "name")}
@@ -170,28 +165,24 @@ export default function PlansTab({
                     </button>
 
                     <div className="flex flex-wrap items-center gap-2 border-t pt-4">
-                      {get(plan, "source") !== "coach" ? (
-                        <>
-                          <Button
-                            size="icon"
-                            variant="outline"
-                            aria-label="Rejani tahrirlash"
-                            onClick={() => onEditPlan(plan)}
-                          >
-                            <PencilIcon className="size-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="outline"
-                            disabled={isRemovingPlan}
-                            aria-label="Rejani o'chirish"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => onDeletePlan(plan)}
-                          >
-                            <Trash2Icon className="size-4" />
-                          </Button>
-                        </>
-                      ) : null}
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        aria-label="Rejani tahrirlash"
+                        onClick={() => onEditPlan(plan)}
+                      >
+                        <PencilIcon className="size-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        disabled={isRemovingPlan}
+                        aria-label="Rejani o'chirish"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => onDeletePlan(plan)}
+                      >
+                        <Trash2Icon className="size-4" />
+                      </Button>
                       <Button
                         className="flex-1"
                         variant={isActive ? "outline" : "default"}
@@ -218,7 +209,7 @@ export default function PlansTab({
             </div>
 
             <div className="grid gap-3">
-              {templates.map((plan) => {
+              {map(templates, (plan) => {
                 const title = resolveText(
                   get(plan, "translations"),
                   get(plan, "name"),
@@ -281,7 +272,6 @@ export default function PlansTab({
           </section>
         </div>
       </DrawerBody>
-
       <DrawerFooter>
         <Button variant="outline" onClick={() => onOpenPlanBuilder(null)}>
           <PlusIcon className="mr-2 size-4" />

@@ -1,5 +1,5 @@
 import React from "react";
-import { get, map, size } from "lodash";
+import { get, map, size, isArray, reduce, toNumber } from "lodash";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import {
@@ -70,16 +70,12 @@ const PlanSourceBadge = ({ plan }) => {
     );
   }
 
-  if (get(plan, "source") === "coach") {
-    return <Badge variant="outline">Murabbiy</Badge>;
-  }
-
   return <Badge variant="outline">Manual</Badge>;
 };
 
 const getTotalExerciseCount = (schedule = []) =>
-  schedule.reduce((total, day) => {
-    const exercises = Array.isArray(get(day, "exercises"))
+  reduce(schedule, (total, day) => {
+    const exercises = isArray(get(day, "exercises"))
       ? get(day, "exercises")
       : [];
     return total + exercises.length;
@@ -154,12 +150,12 @@ const WorkoutPlanDetailPage = () => {
     () => deriveWorkoutPlanMetrics(sourcePlan),
     [sourcePlan],
   );
-  const schedule = Array.isArray(get(plan, "schedule"))
+  const schedule = isArray(get(plan, "schedule"))
     ? get(plan, "schedule")
     : [];
   const todayName = WEEK_DAYS[new Date().getDay()];
   const [deleteOpen, setDeleteOpen] = React.useState(false);
-  const dayProgress = Array.isArray(get(plan, "dayProgress"))
+  const dayProgress = isArray(get(plan, "dayProgress"))
     ? get(plan, "dayProgress")
     : [];
 
@@ -246,9 +242,9 @@ const WorkoutPlanDetailPage = () => {
   }
 
   const durationWeeks =
-    Number(get(plan, "durationWeeks")) ||
-    Math.max(1, Math.round((Number(get(plan, "days")) || 56) / 7));
-  const daysPerWeek = Number(get(plan, "daysPerWeek")) || 4;
+    toNumber(get(plan, "durationWeeks")) ||
+    Math.max(1, Math.round((toNumber(get(plan, "days")) || 56) / 7));
+  const daysPerWeek = toNumber(get(plan, "daysPerWeek")) || 4;
   const coverImageUrl = get(plan, "coverImageUrl");
   const workoutDuration =
     get(plan, "todayWorkout.duration") ||
@@ -260,11 +256,11 @@ const WorkoutPlanDetailPage = () => {
     "Focus on progressive overload, compound movements, and proper recovery to maximize muscle growth.";
   const included = get(plan, "included", {});
   const totalWorkouts =
-    Number(get(included, "workouts")) ||
+    toNumber(get(included, "workouts")) ||
     Math.max(0, durationWeeks * daysPerWeek);
   const totalExercises =
-    Number(get(included, "exercises")) ||
-    Number(get(plan, "totalExercises")) ||
+    toNumber(get(included, "exercises")) ||
+    toNumber(get(plan, "totalExercises")) ||
     getTotalExerciseCount(schedule);
 
   return (
@@ -296,11 +292,11 @@ const WorkoutPlanDetailPage = () => {
                   "A structured 8-week program designed to build lean muscle, increase strength, and improve overall fitness."}
               </p>
               <div className="mt-7 grid gap-3 sm:grid-cols-3">
-                {[
+                {map([
                   [CalendarDaysIcon, durationWeeks, "Weeks", "Total duration"],
                   [CalendarDaysIcon, daysPerWeek, "Days / week", "Recommended"],
                   [Clock3Icon, workoutDuration, "Min / workout", "Estimated time"],
-                ].map(([Icon, value, label, caption]) => (
+                ], ([Icon, value, label, caption]) => (
                   <div
                     key={`${label}-${value}`}
                     className="workout-glass-card rounded-3xl p-4"
@@ -374,12 +370,12 @@ const WorkoutPlanDetailPage = () => {
           <section className="workout-glass-card rounded-[1.5rem] border p-5 sm:p-6">
             <h2 className="text-2xl font-black">Included</h2>
             <div className="mt-5 grid gap-4 sm:grid-cols-4">
-              {[
+              {map([
                 [CalendarDaysIcon, totalWorkouts, "Workouts", "Structured sessions"],
                 [DumbbellIcon, totalExercises, "Exercises", "Variety of movements"],
                 [BarChart3Icon, "Progress", "tracking", "Track your improvement"],
-                [SparklesIcon, "AI Coach", "tips", "Personalized guidance"],
-              ].map(([Icon, value, label, caption]) => (
+                [SparklesIcon, "AI", "tips", "Personalized guidance"],
+              ], ([Icon, value, label, caption]) => (
                 <div key={`${value}-${label}`} className="rounded-2xl border border-slate-900/10 bg-white/45 p-4 dark:border-white/10 dark:bg-white/[0.04]">
                   <Icon className="size-6 text-primary" />
                   <p className="mt-3 text-2xl font-black">{value}</p>
@@ -478,7 +474,6 @@ const WorkoutPlanDetailPage = () => {
               variant="outline"
               className="flex-1 rounded-2xl"
               onClick={() => setDeleteOpen(true)}
-              disabled={get(plan, "source") === "coach"}
             >
               <Trash2Icon data-icon="inline-start" />
               O'chirish
@@ -486,7 +481,6 @@ const WorkoutPlanDetailPage = () => {
           </div>
         </aside>
       </div>
-
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

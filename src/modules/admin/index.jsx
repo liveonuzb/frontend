@@ -10,9 +10,6 @@ const DashboardPage = lazy(
   () => import("@/modules/admin/pages/dashboard/index.jsx"),
 );
 const UsersPage = lazy(() => import("@/modules/admin/pages/users/index.jsx"));
-const CoachesPage = lazy(
-  () => import("@/modules/admin/pages/coaches/index.jsx"),
-);
 const AiPage = lazy(() => import("@/modules/admin/pages/ai/index.jsx"));
 const TrackingPage = lazy(
   () => import("@/modules/admin/pages/tracking/index.jsx"),
@@ -88,9 +85,6 @@ const AchievementsPage = lazy(
 const PlatformBotPage = lazy(
   () => import("@/modules/admin/pages/platform-bot/index.jsx"),
 );
-const CoachSpecializationsPage = lazy(
-  () => import("@/modules/admin/pages/coach-specializations/index.jsx"),
-);
 const HealthConstraintsPage = lazy(
   () => import("@/modules/admin/pages/health-constraints/index.jsx"),
 );
@@ -127,12 +121,6 @@ const Index = () => {
         <Route
           path="users/*"
           element={renderAdminRoute(UsersPage, { capability: "support.read" })}
-        />
-        <Route
-          path="coaches/*"
-          element={renderAdminRoute(CoachesPage, {
-            capability: "support.read",
-          })}
         />
         <Route
           path="tracking"
@@ -280,12 +268,6 @@ const Index = () => {
         <Route
           path="challenges/*"
           element={renderAdminRoute(ChallengesPage, {
-            capability: "content.read",
-          })}
-        />
-        <Route
-          path="coach-specializations/*"
-          element={renderAdminRoute(CoachSpecializationsPage, {
             capability: "content.read",
           })}
         />

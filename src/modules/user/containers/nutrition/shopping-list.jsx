@@ -1,5 +1,19 @@
 import React, { useMemo, useState } from "react";
-import { defaultTo, each, filter, get, isEmpty, size, sortBy } from "lodash";
+import {
+  defaultTo,
+  each,
+  filter,
+  get,
+  isEmpty,
+  size,
+  sortBy,
+  forEach,
+  map,
+  reduce,
+  toLower,
+  toNumber,
+  trim,
+} from "lodash";
 import {
   Drawer,
   DrawerBody,
@@ -29,12 +43,12 @@ const buildShoppingList = (weeklyPlan) => {
   each(weekDays, (day) => {
     each(defaultTo(weeklyPlan[day], []), (col) => {
       each(defaultTo(get(col, "items"), []), (item) => {
-        const name = String(get(item, "name", "")).trim();
+        const name = trim(String(get(item, "name", "")));
         if (!name) return;
 
-        const qty = Number(get(item, "qty")) || 1;
+        const qty = toNumber(get(item, "qty")) || 1;
         const grams =
-          Number(get(item, "grams")) || Number(get(item, "defaultAmount")) || 0;
+          toNumber(get(item, "grams")) || toNumber(get(item, "defaultAmount")) || 0;
         const unit = get(item, "unit", "g");
 
         const existing = productsMap.get(name) || {
@@ -48,7 +62,7 @@ const buildShoppingList = (weeklyPlan) => {
         };
 
         existing.count += qty;
-        existing.totalCal += (Number(get(item, "cal")) || 0) * qty;
+        existing.totalCal += (toNumber(get(item, "cal")) || 0) * qty;
         existing.totalAmount += grams * qty;
         productsMap.set(name, existing);
       });
@@ -62,16 +76,16 @@ const buildShoppingList = (weeklyPlan) => {
 };
 
 const getItemAmountLabel = (item) => {
-  const amount = Number(get(item, "grams")) || Number(get(item, "defaultAmount")) || 0;
+  const amount = toNumber(get(item, "grams")) || toNumber(get(item, "defaultAmount")) || 0;
   const unit = get(item, "unit", "g");
   return amount > 0 ? `${amount} ${unit}` : "";
 };
 
 const getItemMetaLabel = (item) => {
-  const cal = Number(get(item, "cal")) || 0;
-  const protein = Number(get(item, "protein")) || 0;
-  const carbs = Number(get(item, "carbs")) || 0;
-  const fat = Number(get(item, "fat")) || 0;
+  const cal = toNumber(get(item, "cal")) || 0;
+  const protein = toNumber(get(item, "protein")) || 0;
+  const carbs = toNumber(get(item, "carbs")) || 0;
+  const fat = toNumber(get(item, "fat")) || 0;
   const macros = [];
 
   if (cal) macros.push(`${cal} kcal`);
@@ -83,9 +97,7 @@ const getItemMetaLabel = (item) => {
 };
 
 const getFileSafeName = (value, fallback) => {
-  const safe = String(value || "")
-    .trim()
-    .toLowerCase()
+  const safe = toLower(trim(String(value || "")))
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
@@ -175,10 +187,7 @@ const downloadPDF = (weeklyPlan, shoppingList, planName, checkedItems) => {
 
   each(weekDays, (day) => {
     const columns = defaultTo(weeklyPlan[day], []);
-    const dayItemCount = columns.reduce(
-      (sum, col) => sum + size(defaultTo(get(col, "items"), [])),
-      0,
-    );
+    const dayItemCount = reduce(columns, (sum, col) => sum + size(defaultTo(get(col, "items"), [])), 0);
 
     checkY(18);
     doc.setFillColor(248, 250, 252);
@@ -247,7 +256,7 @@ const downloadPDF = (weeklyPlan, shoppingList, planName, checkedItems) => {
   addPage();
   addHeader();
   const total = shoppingList.length;
-  const bought = shoppingList.filter((item) => checkedItems[item.name]).length;
+  const bought = filter(shoppingList, (item) => checkedItems[item.name]).length;
   addSectionTitle("Xarid ro'yxati", `${bought}/${total} belgilangan`);
 
   if (isEmpty(shoppingList)) {
@@ -256,7 +265,7 @@ const downloadPDF = (weeklyPlan, shoppingList, planName, checkedItems) => {
     doc.setTextColor(100, 116, 139);
     doc.text("Xarid ro'yxati bo'sh.", margin, y);
   } else {
-    shoppingList.forEach((item, idx) => {
+    forEach(shoppingList, (item, idx) => {
       checkY(12);
       const isChecked = !!checkedItems[item.name];
 
@@ -379,7 +388,7 @@ export const ShoppingList = ({
               </p>
             </div>
           ) : (
-            shoppingList.map((item) => (
+            map(shoppingList, (item) => (
               <label
                 key={item.name}
                 className="flex items-center gap-3 rounded-xl border p-3 cursor-pointer hover:bg-muted/40 transition-colors"

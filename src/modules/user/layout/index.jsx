@@ -1,4 +1,4 @@
-import { map, take } from "lodash";
+import { map, take, toUpper, trim, split } from "lodash";
 import React, { useEffect } from "react";
 import { Navigate, Outlet, NavLink, useLocation } from "react-router";
 import {
@@ -120,15 +120,14 @@ const Index = () => {
   );
 
   const displayName =
-    `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
+    trim(`${user?.firstName || ""} ${user?.lastName || ""}`) ||
     user?.username ||
     "Foydalanuvchi";
-  const initials = take(
-    map(displayName.split(" "), (part) => part[0]),
+  const initials = toUpper(take(
+    map(split(displayName, " "), (part) => part[0]),
     2,
   )
-    .join("")
-    .toUpperCase();
+    .join(""));
   const standaloneProfilePath = React.useMemo(() => {
     const params = new URLSearchParams(location.search);
     const profileState = params.get("profile");

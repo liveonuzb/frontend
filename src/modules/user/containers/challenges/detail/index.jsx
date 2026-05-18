@@ -1,5 +1,21 @@
 import React from "react";
-import { compact, get, includes, join, map, orderBy, some, take } from "lodash";
+import {
+  compact,
+  get,
+  includes,
+  join,
+  map,
+  orderBy,
+  some,
+  take,
+  filter,
+  find,
+  isArray,
+  split,
+  toNumber,
+  toUpper,
+  trim,
+} from "lodash";
 import { eachDayOfInterval, format } from "date-fns";
 import { uz } from "date-fns/locale";
 import { useNavigate, useParams } from "react-router";
@@ -27,7 +43,7 @@ import {
   LogOutIcon,
   Share2Icon,
 } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,8 +61,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import useGetQuery from "@/hooks/api/use-get-query";
-import { api } from "@/hooks/api/use-api";
+import { useGetQuery, usePostQuery } from "@/hooks/api";
 import { getApiResponseData } from "@/lib/api-response";
 import PageTransition from "@/components/page-transition";
 import { cn } from "@/lib/utils";
@@ -101,7 +116,7 @@ const formatCommentTime = (value) => {
   return format(date, "d MMM, HH:mm", { locale: uz });
 };
 
-const normalizePercent = (value) => Math.max(0, Math.min(100, Number(value) || 0));
+const normalizePercent = (value) => Math.max(0, Math.min(100, toNumber(value) || 0));
 
 const getDailyProgressEntries = (challenge, metricTarget) => {
   const source =
@@ -110,22 +125,18 @@ const getDailyProgressEntries = (challenge, metricTarget) => {
     get(challenge, "progressHistory") ||
     get(challenge, "myProgress.history") ||
     [];
-  const sourceItems = Array.isArray(source) ? source : [];
+  const sourceItems = isArray(source) ? source : [];
   const byDay = new Map(
-    sourceItems
-      .map((item) => {
+    filter(map(sourceItems, (item) => {
         const rawDate = get(item, "date") || get(item, "day") || get(item, "loggedAt");
         const date = rawDate ? new Date(rawDate) : null;
         if (!date || Number.isNaN(date.getTime())) return null;
-        const value = Number(
-          get(item, "metricValue") ?? get(item, "value") ?? get(item, "amount") ?? 0,
-        );
+        const value = toNumber(get(item, "metricValue") ?? get(item, "value") ?? get(item, "amount") ?? 0);
         const progress = normalizePercent(
           get(item, "progress") ?? (metricTarget > 0 ? (value / metricTarget) * 100 : 0),
         );
         return [format(date, "yyyy-MM-dd"), { value, progress }];
-      })
-      .filter(Boolean),
+      }), Boolean),
   );
 
   const start = challenge?.startDate ? new Date(challenge.startDate) : new Date();
@@ -135,9 +146,9 @@ const getDailyProgressEntries = (challenge, metricTarget) => {
     Number.isNaN(end.getTime()) || end.getTime() < safeStart.getTime() ? safeStart : end;
   const today = new Date();
   const fallbackProgress = normalizePercent(challenge?.myProgress);
-  const fallbackValue = Number(challenge?.myMetricValue ?? 0);
+  const fallbackValue = toNumber(challenge?.myMetricValue ?? 0);
 
-  return eachDayOfInterval({ start: safeStart, end: safeEnd }).map((date) => {
+  return map(eachDayOfInterval({ start: safeStart, end: safeEnd }), (date) => {
     const key = format(date, "yyyy-MM-dd");
     const entry = byDay.get(key);
     const isToday = format(date, "yyyy-MM-dd") === format(today, "yyyy-MM-dd");
@@ -157,11 +168,10 @@ const getDailyProgressEntries = (challenge, metricTarget) => {
 
 const getSparklinePoints = (items) => {
   if (!items.length) return "";
-  const maxValue = Math.max(...items.map((item) => Number(item.value) || 0), 1);
-  return items
-    .map((item, index) => {
+  const maxValue = Math.max(...map(items, (item) => toNumber(item.value) || 0), 1);
+  return map(items, (item, index) => {
       const x = items.length === 1 ? 100 : (index / (items.length - 1)) * 100;
-      const y = 36 - ((Number(item.value) || 0) / maxValue) * 32;
+      const y = 36 - ((toNumber(item.value) || 0) / maxValue) * 32;
       return `${x},${y}`;
     })
     .join(" ");
@@ -170,7 +180,7 @@ const getSparklinePoints = (items) => {
 const resolveDisplayName = (participant) => {
   const profile = get(participant, "user.profile");
   const fullName = join(
-    compact(map([get(profile, "firstName"), get(profile, "lastName")], (v) => String(v ?? "").trim())),
+    compact(map([get(profile, "firstName"), get(profile, "lastName")], (v) => trim(String(v ?? "")))),
     " ",
   );
 
@@ -182,12 +192,12 @@ const resolveDisplayName = (participant) => {
 
 const initialsFromName = (value) => {
   const parts = take(
-    compact(String(value ?? "").trim().split(/\s+/)),
+    compact(split(trim(String(value ?? "")), /\s+/)),
     2,
   );
 
   if (!parts.length) return "U";
-  return join(map(parts, (part) => part[0]?.toUpperCase() ?? ""), "");
+  return join(map(parts, (part) => toUpper(part[0]) ?? ""), "");
 };
 
 const resolveRewardPreview = (challenge) => {
@@ -269,7 +279,6 @@ export default function ChallengeDetailContainer() {
   const [shareCopied, setShareCopied] = React.useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false);
   const [commentBody, setCommentBody] = React.useState("");
-  const [commentSubmitting, setCommentSubmitting] = React.useState(false);
   const [reactingCommentId, setReactingCommentId] = React.useState(null);
 
   React.useEffect(() => {
@@ -291,24 +300,24 @@ export default function ChallengeDetailContainer() {
   }, [challengeDetail?.title, challengeId, setBreadcrumbs]);
 
   const ranking = React.useMemo(() => {
-    if (!Array.isArray(get(challengeDetail, "participants"))) {
+    if (!isArray(get(challengeDetail, "participants"))) {
       return [];
     }
 
     return map(
       orderBy(
         challengeDetail.participants,
-        [(p) => Number(get(p, "metricValue", 0)), (p) => Number(get(p, "progress", 0))],
+        [(p) => toNumber(get(p, "metricValue", 0)), (p) => toNumber(get(p, "progress", 0))],
         ["desc", "desc"],
       ),
       (participant, index) => ({ ...participant, rank: index + 1 }),
     );
-  }, [challengeDetail?.participants]);
+  }, [challengeDetail]);
 
   const metricType =
     get(challengeDetail, "metricDetails.type") || get(challengeDetail, "metricType") || "STEPS";
   const metricMeta = get(METRIC_META, metricType, METRIC_META.STEPS);
-  const metricTarget = Number(
+  const metricTarget = toNumber(
     get(challengeDetail, "metricDetails.target") ?? get(challengeDetail, "metricTarget") ?? 0,
   );
   const dailyProgress = React.useMemo(
@@ -323,22 +332,22 @@ export default function ChallengeDetailContainer() {
   const podiumRanking = React.useMemo(
     () =>
       compact([
-        topThreeRanking.find((participant) => participant.rank === 2),
-        topThreeRanking.find((participant) => participant.rank === 1),
-        topThreeRanking.find((participant) => participant.rank === 3),
+        find(topThreeRanking, (participant) => participant.rank === 2),
+        find(topThreeRanking, (participant) => participant.rank === 1),
+        find(topThreeRanking, (participant) => participant.rank === 3),
       ]),
     [topThreeRanking],
   );
   const participantCount =
-    Number(get(challengeDetail, "_count.participants") ?? ranking.length) || 0;
-  const maxParticipants = Number(get(challengeDetail, "maxParticipants", 0)) || null;
+    toNumber(get(challengeDetail, "_count.participants") ?? ranking.length) || 0;
+  const maxParticipants = toNumber(get(challengeDetail, "maxParticipants", 0)) || null;
   const isParticipant = Boolean(
     get(challengeDetail, "isJoined") ||
       some(ranking, (item) => item?.userId && item.userId === user?.id),
   );
   const isFull = Boolean(maxParticipants && participantCount >= maxParticipants);
   const isJoinClosed = includes(["COMPLETED", "CANCELLED"], get(challengeDetail, "status"));
-  const joinFeeXp = Number(get(challengeDetail, "joinFeeXp", 0));
+  const joinFeeXp = toNumber(get(challengeDetail, "joinFeeXp", 0));
   const isJoining = Boolean(get(actionLoading, `joiningById.${challengeId}`));
   const isInvitingFriends = Boolean(actionLoading?.inviting);
   const isUpdatingChallenge = Boolean(actionLoading?.updating);
@@ -364,9 +373,16 @@ export default function ChallengeDetailContainer() {
       enabled: Boolean(challengeId && canDiscussChallenge),
     },
   });
+  const {
+    mutateAsync: createComment,
+    isPending: commentSubmitting,
+  } = usePostQuery({ queryKey: ["challenge-comments", challengeId] });
+  const { mutateAsync: reactToComment } = usePostQuery({
+    queryKey: ["challenge-comments", challengeId],
+  });
   const challengeComments = React.useMemo(() => {
     const payload = getApiResponseData(commentsQuery.data, []);
-    return Array.isArray(payload) ? payload : [];
+    return isArray(payload) ? payload : [];
   }, [commentsQuery.data]);
 
   const handleJoin = React.useCallback(async () => {
@@ -405,7 +421,7 @@ export default function ChallengeDetailContainer() {
 
   const handleFriendsConfirm = React.useCallback(
     async (friends) => {
-      const userIds = map(friends, "id").filter(Boolean);
+      const userIds = filter(map(friends, "id"), Boolean);
       if (!challengeId || userIds.length === 0) {
         return;
       }
@@ -433,20 +449,19 @@ export default function ChallengeDetailContainer() {
   }, [challengeId, fetchChallengeDetail, isUpdatingChallenge, updateChallenge]);
 
   const handleSubmitComment = React.useCallback(async () => {
-    const body = commentBody.trim();
+    const body = trim(commentBody);
     if (!challengeId || !body || commentSubmitting) return;
 
-    setCommentSubmitting(true);
     try {
-      await api.post(`/challenges/${challengeId}/comments`, { body });
+      await createComment({
+        url: `/challenges/${challengeId}/comments`,
+        attributes: { body },
+      });
       setCommentBody("");
-      await commentsQuery.refetch();
     } catch {
       toast.error("Izoh yuborib bo'lmadi");
-    } finally {
-      setCommentSubmitting(false);
     }
-  }, [challengeId, commentBody, commentSubmitting, commentsQuery]);
+  }, [challengeId, commentBody, commentSubmitting, createComment]);
 
   const handleReactComment = React.useCallback(
     async (commentId) => {
@@ -454,17 +469,19 @@ export default function ChallengeDetailContainer() {
 
       setReactingCommentId(commentId);
       try {
-        await api.post(`/challenges/${challengeId}/comments/${commentId}/reactions`, {
-          type: "LIKE",
+        await reactToComment({
+          url: `/challenges/${challengeId}/comments/${commentId}/reactions`,
+          attributes: {
+            type: "LIKE",
+          },
         });
-        await commentsQuery.refetch();
       } catch {
         toast.error("Reaction saqlanmadi");
       } finally {
         setReactingCommentId(null);
       }
     },
-    [challengeId, commentsQuery, reactingCommentId],
+    [challengeId, reactingCommentId, reactToComment],
   );
 
   if (isDetailLoading && !challengeDetail) {
@@ -575,15 +592,15 @@ export default function ChallengeDetailContainer() {
             <Button
               size="lg"
               onClick={handleJoin}
-              disabled={isJoining || isDetailLoading || isParticipant || isFull || isJoinClosed || challengeDetail.type === "COACH"}
+              disabled={isJoining || isDetailLoading || isParticipant || isFull || isJoinClosed}
               className={cn(
                 "h-11 rounded-2xl font-black shadow-lg transition-all active:scale-95",
-                isParticipant || challengeDetail.type === "COACH"
+                isParticipant
                   ? "bg-muted text-foreground border border-border/50 shadow-none hover:bg-muted/80" 
                   : "bg-primary hover:bg-primary/90 text-white shadow-primary/20"
               )}
             >
-              {isParticipant || challengeDetail.type === "COACH"
+              {isParticipant
                 ? "Qatnashyapsiz"
                 : isFull
                   ? "Joy qolmagan"
@@ -663,13 +680,13 @@ export default function ChallengeDetailContainer() {
                     <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-widest text-zinc-500">
                       <span>Sizning progress</span>
                       <span className="text-primary">
-                        {Number(challengeDetail.myMetricValue ?? 0).toLocaleString()} / {metricTarget.toLocaleString()} {metricMeta.unit}
+                        {toNumber(challengeDetail.myMetricValue ?? 0).toLocaleString()} / {metricTarget.toLocaleString()} {metricMeta.unit}
                       </span>
                     </div>
                     <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-white/5">
                       <motion.div
                         initial={{ width: 0 }}
-                        animate={{ width: `${Number(challengeDetail.myProgress ?? 0)}%` }}
+                        animate={{ width: `${toNumber(challengeDetail.myProgress ?? 0)}%` }}
                         transition={{ duration: 1, ease: "easeOut" }}
                         className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-orange-400"
                       />
@@ -684,12 +701,12 @@ export default function ChallengeDetailContainer() {
 
             {/* Bottom: Stats Row */}
             <div className="grid grid-cols-2 sm:grid-cols-4">
-              {[
+              {map([
                 { label: "Muddati", value: formatDateRange(challengeDetail.startDate, challengeDetail.endDate), icon: Clock3Icon, color: "text-blue-400", bg: "bg-blue-400/10" },
                 { label: "Qatnashchilar", value: `${participantCount}${maxParticipants ? ` / ${maxParticipants}` : " (Cheksiz)"}`, icon: UsersIcon, color: "text-orange-400", bg: "bg-orange-400/10" },
                 { label: "Metrika", value: metricMeta.label, icon: ZapIcon, color: "text-primary", bg: "bg-primary/10" },
                 { label: "Maqsad", value: `${metricTarget.toLocaleString()} ${metricMeta.unit}`, icon: TargetIcon, color: "text-emerald-400", bg: "bg-emerald-400/10" },
-              ].map((stat, i) => (
+              ], (stat, i) => (
                 <div
                   key={stat.label}
                   className={cn(
@@ -734,7 +751,7 @@ export default function ChallengeDetailContainer() {
             </div>
 
             <div className="mb-4 flex flex-wrap gap-2">
-              {dailyProgress.map((day) => (
+              {map(dailyProgress, (day) => (
                 <div
                   key={day.key}
                   className={cn(
@@ -758,7 +775,7 @@ export default function ChallengeDetailContainer() {
               <div className="mb-3 flex items-center justify-between text-xs font-bold text-muted-foreground">
                 <span>Trend</span>
                 <span>
-                  {Number(challengeDetail.myMetricValue ?? 0).toLocaleString()} {metricMeta.unit}
+                  {toNumber(challengeDetail.myMetricValue ?? 0).toLocaleString()} {metricMeta.unit}
                 </span>
               </div>
               <svg
@@ -823,10 +840,10 @@ export default function ChallengeDetailContainer() {
             <div className="space-y-2">
               {podiumRanking.length ? (
                 <div className="grid items-end gap-3 md:grid-cols-3">
-                  {podiumRanking.map((participant) => {
+                  {map(podiumRanking, (participant) => {
                     const name = resolveDisplayName(participant);
                     const avatarUrl = participant?.user?.profile?.avatarUrl ?? null;
-                    const metricValue = Number(participant?.metricValue ?? 0);
+                    const metricValue = toNumber(participant?.metricValue ?? 0);
                     const isFirst = participant.rank === 1;
                     const isCurrentUser =
                       participant?.userId === user?.id || participant?.user?.id === user?.id;
@@ -862,11 +879,11 @@ export default function ChallengeDetailContainer() {
                 </div>
               ) : null}
 
-              {ranking.map((participant, i) => {
+              {map(ranking, (participant, i) => {
                 const name = resolveDisplayName(participant);
                 const avatarUrl = participant?.user?.profile?.avatarUrl ?? null;
-                const metricValue = Number(participant?.metricValue ?? 0);
-                const progress = Number(participant?.progress ?? 0);
+                const metricValue = toNumber(participant?.metricValue ?? 0);
+                const progress = toNumber(participant?.progress ?? 0);
                 const isTop3 = participant.rank <= 3;
                 const isCurrentUser =
                   participant?.userId === user?.id || participant?.user?.id === user?.id;
@@ -983,7 +1000,7 @@ export default function ChallengeDetailContainer() {
                 <Button
                   type="button"
                   onClick={handleSubmitComment}
-                  disabled={commentSubmitting || !commentBody.trim()}
+                  disabled={commentSubmitting || !trim(commentBody)}
                 >
                   {commentSubmitting ? (
                     <LoaderCircleIcon className="mr-2 size-4 animate-spin" />
@@ -1002,12 +1019,12 @@ export default function ChallengeDetailContainer() {
                   <Skeleton className="h-16 rounded-xl" />
                 </div>
               ) : challengeComments.length ? (
-                challengeComments.map((comment) => {
+                map(challengeComments, (comment) => {
                   const authorName = resolveDisplayName({ user: comment.author });
                   const avatarUrl = comment?.author?.profile?.avatarUrl ?? null;
-                  const likeCount = Number(comment?.reactions?.LIKE ?? 0);
-                  const liked = Array.isArray(comment?.myReactions)
-                    ? comment.myReactions.includes("LIKE")
+                  const likeCount = toNumber(comment?.reactions?.LIKE ?? 0);
+                  const liked = isArray(comment?.myReactions)
+                    ? includes(comment.myReactions, "LIKE")
                     : false;
 
                   return (

@@ -1,5 +1,5 @@
 import React from "react";
-import { get, map } from "lodash";
+import { get, map, isArray, toNumber } from "lodash";
 import { useNavigate, useParams } from "react-router";
 import {
   ArrowLeftIcon,
@@ -43,17 +43,17 @@ const formatDateTime = (value) => {
 };
 
 const formatDuration = (seconds) => {
-  const totalMinutes = Math.max(0, Math.round((Number(seconds) || 0) / 60));
+  const totalMinutes = Math.max(0, Math.round((toNumber(seconds) || 0) / 60));
   return `${totalMinutes} daqiqa`;
 };
 
 const getRenderableExercises = (session) => {
-  const detailedExercises = Array.isArray(get(session, "exercises"))
+  const detailedExercises = isArray(get(session, "exercises"))
     ? get(session, "exercises")
     : [];
 
   if (detailedExercises.length > 0) {
-    return detailedExercises.map((exercise, index) => ({
+    return map(detailedExercises, (exercise, index) => ({
       key:
         get(exercise, "id") ||
         get(exercise, "exerciseKey") ||
@@ -67,7 +67,7 @@ const getRenderableExercises = (session) => {
       totalVolumeKg: get(exercise, "totalVolumeKg", 0),
       distanceMeters: get(exercise, "distanceMeters", 0),
       skipped: Boolean(get(exercise, "skipped")),
-      sets: Array.isArray(get(exercise, "sets")) ? get(exercise, "sets") : [],
+      sets: isArray(get(exercise, "sets")) ? get(exercise, "sets") : [],
     }));
   }
 
@@ -303,7 +303,7 @@ const SessionHistoryDetailPage = () => {
                 <CardHeader className="pb-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="outline">
-                      Day {(Number(get(session, "planDayIndex")) || 0) + 1}
+                      Day {(toNumber(get(session, "planDayIndex")) || 0) + 1}
                     </Badge>
                     <Badge variant="secondary">
                       <CheckCircle2Icon />
@@ -413,7 +413,7 @@ const SessionHistoryDetailPage = () => {
                         <Badge variant="outline">
                           {get(item, "totalReps", 0)} reps
                         </Badge>
-                        {Number(get(item, "distanceMeters", 0)) > 0 ? (
+                        {toNumber(get(item, "distanceMeters", 0)) > 0 ? (
                           <Badge variant="outline">
                             {get(item, "distanceMeters", 0)} m
                           </Badge>
@@ -431,14 +431,14 @@ const SessionHistoryDetailPage = () => {
                     </div>
                   </div>
 
-                  {Array.isArray(get(item, "sets")) && get(item, "sets.length") > 0 ? (
+                  {isArray(get(item, "sets")) && get(item, "sets.length") > 0 ? (
                     <div className="grid gap-2 sm:grid-cols-2">
                       {map(get(item, "sets", []), (set) => (
                         <div
                           key={get(set, "id") || `${get(item, "key")}-${get(set, "setIndex")}`}
                           className="grid grid-cols-[28px_repeat(4,minmax(0,1fr))] items-center gap-2 rounded-2xl bg-muted/30 px-3 py-2 text-sm"
                         >
-                          <span className="font-black">{Number(get(set, "setIndex", 0)) + 1}</span>
+                          <span className="font-black">{toNumber(get(set, "setIndex", 0)) + 1}</span>
                           <span>{get(set, "reps", 0)} reps</span>
                           <span>{get(set, "weight", 0)} kg</span>
                           <span>{get(set, "durationSeconds", 0)} sec</span>

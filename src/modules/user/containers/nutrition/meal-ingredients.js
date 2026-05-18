@@ -1,8 +1,17 @@
-import { round } from "lodash";
+import {
+  filter,
+  isArray,
+  isFinite,
+  map,
+  reduce,
+  round,
+  toNumber as lodashToNumber,
+  trim,
+} from "lodash";
 
 export const toNumber = (value, fallback = 0) => {
-  const normalized = Number(value);
-  return Number.isFinite(normalized) ? normalized : fallback;
+  const normalized = lodashToNumber(value);
+  return isFinite(normalized) ? normalized : fallback;
 };
 
 export const normalizeMealNutrition = (nutrition = {}) => ({
@@ -34,7 +43,7 @@ export const normalizeMealIngredient = (ingredient = {}, index = 0) => {
 
   return {
     id: ingredient?.id || `ingredient-${index + 1}`,
-    name: String(ingredient?.name || "").trim(),
+    name: trim(String(ingredient?.name || "")),
     grams,
     baseGrams: baseGrams || grams,
     estimatedGrams: Math.max(0, toNumber(ingredient?.estimatedGrams, grams)),
@@ -52,9 +61,10 @@ export const normalizeMealIngredient = (ingredient = {}, index = 0) => {
 };
 
 export const normalizeMealIngredients = (ingredients = []) =>
-  (Array.isArray(ingredients) ? ingredients : [])
-    .map(normalizeMealIngredient)
-    .filter((ingredient) => ingredient.name);
+  filter(
+    map(isArray(ingredients) ? ingredients : [], normalizeMealIngredient),
+    (ingredient) => ingredient.name,
+  );
 
 export const getIngredientNutritionPreview = (ingredient = {}) => {
   const normalized = normalizeMealIngredient(ingredient);
@@ -81,29 +91,27 @@ export const getMealIngredientTotals = (
     return normalizeMealNutrition(fallbackNutrition);
   }
 
-  return normalized.reduce(
-    (totals, ingredient) => {
-      const preview = getIngredientNutritionPreview(ingredient);
-      return {
-        calories: totals.calories + preview.calories,
-        protein: round(totals.protein + preview.protein, 1),
-        carbs: round(totals.carbs + preview.carbs, 1),
-        fat: round(totals.fat + preview.fat, 1),
-        fiber: round(totals.fiber + preview.fiber, 1),
-      };
-    },
-    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
-  );
+  return reduce(normalized, (totals, ingredient) => {
+    const preview = getIngredientNutritionPreview(ingredient);
+    return {
+      calories: totals.calories + preview.calories,
+      protein: round(totals.protein + preview.protein, 1),
+      carbs: round(totals.carbs + preview.carbs, 1),
+      fat: round(totals.fat + preview.fat, 1),
+      fiber: round(totals.fiber + preview.fiber, 1),
+    };
+  }, { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
 };
 
 export const getMealIngredientsGrams = (ingredients = []) =>
-  normalizeMealIngredients(ingredients).reduce(
+  reduce(
+    normalizeMealIngredients(ingredients),
     (sum, ingredient) => sum + Math.max(0, toNumber(ingredient.grams, 0)),
     0,
   );
 
 export const buildMealIngredientsPayload = (ingredients = []) =>
-  normalizeMealIngredients(ingredients).map((ingredient) => ({
+  map(normalizeMealIngredients(ingredients), (ingredient) => ({
     id: ingredient.id,
     name: ingredient.name,
     grams: ingredient.grams,
@@ -120,7 +128,7 @@ export const applyIngredientGramsChange = (
   ingredientId,
   grams,
 ) =>
-  normalizeMealIngredients(ingredients).map((ingredient) =>
+  map(normalizeMealIngredients(ingredients), (ingredient) =>
     ingredient.id === ingredientId
       ? {
           ...ingredient,
@@ -177,7 +185,7 @@ export const updateMealIngredient = (
   ingredientId,
   patch = {},
 ) =>
-  normalizeMealIngredients(ingredients).map((ingredient) =>
+  map(normalizeMealIngredients(ingredients), (ingredient) =>
     ingredient.id === ingredientId
       ? commitEditedIngredient({
           ...ingredient,
@@ -188,7 +196,8 @@ export const updateMealIngredient = (
   );
 
 export const removeMealIngredient = (ingredients = [], ingredientId) =>
-  normalizeMealIngredients(ingredients).filter(
+  filter(
+    normalizeMealIngredients(ingredients),
     (ingredient) => ingredient.id !== ingredientId,
   );
 
@@ -199,7 +208,7 @@ export const formatIngredientHint = (ingredient = {}) => {
   const normalized = normalizeMealIngredient(ingredient);
   if (
     normalized.estimatedQuantity == null ||
-    !String(normalized.estimatedUnit || "").trim()
+    !trim(String(normalized.estimatedUnit || ""))
   ) {
     return null;
   }

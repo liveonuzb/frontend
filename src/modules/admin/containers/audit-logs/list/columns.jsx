@@ -27,8 +27,6 @@ const auditActionBadgeClassNames = {
     "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800",
   subscription_extended:
     "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-200 dark:border-cyan-800",
-  coach_status_updated:
-    "bg-violet-500/10 text-violet-700 dark:text-violet-400 border-violet-200 dark:border-violet-800",
   food_created:
     "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800",
   food_updated:
@@ -61,8 +59,6 @@ const auditActionBadgeClassNames = {
 
 const auditEntityBadgeClassNames = {
   user: "bg-muted text-foreground",
-  coach:
-    "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800",
   subscription:
     "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800",
   language:

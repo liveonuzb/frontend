@@ -2,7 +2,7 @@ import React from "react";
 import { get } from "lodash";
 import { useNavigate } from "react-router";
 import { ChevronRightIcon } from "lucide-react";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 import { getApiResponseData } from "@/lib/api-response";
 import { normalizeUserOnboarding } from "@/lib/user-onboarding";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

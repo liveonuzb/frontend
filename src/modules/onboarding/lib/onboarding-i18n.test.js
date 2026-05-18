@@ -3,6 +3,8 @@ import path from "node:path";
 import process from "node:process";
 import { describe, expect, it } from "vitest";
 
+import { forEach, fromPairs, isArray, toPairs, filter, map, sortBy } from "lodash";
+
 const onboardingRoot = path.join(process.cwd(), "src/modules/onboarding");
 const localesRoot = path.join(onboardingRoot, "lib/locales");
 const localeNames = ["uz", "en", "ru"];
@@ -10,11 +12,11 @@ const localeNames = ["uz", "en", "ru"];
 const readJson = (filePath) => JSON.parse(fs.readFileSync(filePath, "utf8"));
 
 const flattenKeys = (value, prefix = "") => {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
+  if (!value || typeof value !== "object" || isArray(value)) {
     return prefix ? [prefix] : [];
   }
 
-  return Object.entries(value).flatMap(([key, child]) =>
+  return toPairs(value).flatMap(([key, child]) =>
     flattenKeys(child, prefix ? `${prefix}.${key}` : key),
   );
 };
@@ -38,7 +40,7 @@ const extractStaticI18nKeys = () => {
   const keys = new Set();
   const literalCallPattern = /\bt\(\s*(["'`])([^"'`$]+)\1/g;
 
-  listSourceFiles(onboardingRoot).forEach((filePath) => {
+  forEach(listSourceFiles(onboardingRoot), (filePath) => {
     const source = fs.readFileSync(filePath, "utf8");
     let match = literalCallPattern.exec(source);
 
@@ -53,32 +55,30 @@ const extractStaticI18nKeys = () => {
     }
   });
 
-  return Array.from(keys).sort();
+  return sortBy(Array.from(keys));
 };
 
 describe("onboarding i18n", () => {
-  const locales = Object.fromEntries(
-    localeNames.map((locale) => [
-      locale,
-      readJson(path.join(localesRoot, `${locale}.json`)),
-    ]),
-  );
+  const locales = fromPairs(map(localeNames, (locale) => [
+    locale,
+    readJson(path.join(localesRoot, `${locale}.json`)),
+  ]));
 
   it("keeps uz, en, and ru locale key sets in sync", () => {
     const [baseLocale, ...otherLocales] = localeNames;
-    const baseKeys = flattenKeys(locales[baseLocale]).sort();
+    const baseKeys = sortBy(flattenKeys(locales[baseLocale]));
 
-    otherLocales.forEach((locale) => {
-      expect(flattenKeys(locales[locale]).sort()).toEqual(baseKeys);
+    forEach(otherLocales, (locale) => {
+      expect(sortBy(flattenKeys(locales[locale]))).toEqual(baseKeys);
     });
   });
 
   it("defines every static onboarding translation key used by source files", () => {
     const sourceKeys = extractStaticI18nKeys();
 
-    localeNames.forEach((locale) => {
+    forEach(localeNames, (locale) => {
       const localeKeys = new Set(flattenKeys(locales[locale]));
-      const missing = sourceKeys.filter((key) => !localeKeys.has(key));
+      const missing = filter(sourceKeys, (key) => !localeKeys.has(key));
 
       expect(missing, `${locale} missing onboarding i18n keys`).toEqual([]);
     });

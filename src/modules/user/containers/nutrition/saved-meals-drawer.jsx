@@ -30,6 +30,8 @@ import { useSavedMealTemplates } from "@/hooks/app/use-saved-meal-templates";
 import { NutritionDrawerContent } from "./nutrition-drawer-layout.jsx";
 import MealIngredientsEditorDrawer from "./meal-ingredients-editor-drawer.jsx";
 
+import { filter, includes, map, orderBy, reduce, toLower, trim, take } from "lodash";
+
 const buildLoggedMealFromSavedMeal = (savedMeal) => ({
   name: savedMeal.name,
   source: "saved-meal",
@@ -89,23 +91,17 @@ const SavedMealsDrawer = ({
   const [sortMode, setSortMode] = React.useState("recent");
 
   const sortedItems = React.useMemo(() => {
-    const nextItems = [...items];
+    const getName = (item) => toLower(trim(item.name || ""));
 
     if (sortMode === "alphabet") {
-      return nextItems.sort((left, right) =>
-        left.name.localeCompare(right.name, "uz", { sensitivity: "base" }),
-      );
+      return orderBy(items, [getName], ["asc"]);
     }
 
-    return nextItems.sort((left, right) => {
-      const byTime = getSavedMealSortTime(right) - getSavedMealSortTime(left);
-      if (byTime !== 0) return byTime;
-      return left.name.localeCompare(right.name, "uz", { sensitivity: "base" });
-    });
+    return orderBy(items, [getSavedMealSortTime, getName], ["desc", "asc"]);
   }, [items, sortMode]);
 
   const savedMealsById = React.useMemo(() => {
-    return items.reduce((acc, item) => {
+    return reduce(items, (acc, item) => {
       acc[item.id] = item;
       return acc;
     }, {});
@@ -143,7 +139,7 @@ const SavedMealsDrawer = ({
     setActiveTab("templates");
     setEditingTemplateId("new");
     setTemplateName("Mening nonushtam");
-    setSelectedMealIds(sortedItems.slice(0, 3).map((item) => item.id));
+    setSelectedMealIds(map(take(sortedItems, 3), (item) => item.id));
   }, [sortedItems]);
 
   const startEditTemplate = React.useCallback((template) => {
@@ -155,15 +151,15 @@ const SavedMealsDrawer = ({
 
   const toggleTemplateMeal = React.useCallback((savedMealId) => {
     setSelectedMealIds((current) =>
-      current.includes(savedMealId)
-        ? current.filter((item) => item !== savedMealId)
+      includes(current, savedMealId)
+        ? filter(current, (item) => item !== savedMealId)
         : [...current, savedMealId],
     );
   }, []);
 
   const handleSaveTemplate = React.useCallback(() => {
-    const safeName = templateName.trim();
-    const mealIds = selectedMealIds.filter((id) => savedMealsById[id]);
+    const safeName = trim(templateName);
+    const mealIds = filter(selectedMealIds, (id) => savedMealsById[id]);
 
     if (!safeName) {
       toast.error("Shablon nomini kiriting");
@@ -202,9 +198,7 @@ const SavedMealsDrawer = ({
         return;
       }
 
-      const mealsToLog = template.mealIds
-        .map((id) => savedMealsById[id])
-        .filter(Boolean);
+      const mealsToLog = filter(map(template.mealIds, (id) => savedMealsById[id]), Boolean);
 
       if (mealsToLog.length === 0) {
         toast.error("Shablonda mavjud taom topilmadi");
@@ -215,7 +209,7 @@ const SavedMealsDrawer = ({
         if (onAddMealsBatch) {
           await onAddMealsBatch(
             dateKey,
-            mealsToLog.map((savedMeal) => ({
+            map(mealsToLog, (savedMeal) => ({
               mealType,
               food: buildLoggedMealFromSavedMeal(savedMeal),
             })),
@@ -303,7 +297,7 @@ const SavedMealsDrawer = ({
 
               {isLoading ? (
                 <div className="space-y-3 py-2">
-                  {[0, 1, 2].map((index) => (
+                  {map([0, 1, 2], (index) => (
                     <SavedMealSkeleton key={index} />
                   ))}
                 </div>
@@ -321,8 +315,8 @@ const SavedMealsDrawer = ({
                       />
 
                       <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
-                        {sortedItems.map((item) => {
-                          const isChecked = selectedMealIds.includes(item.id);
+                        {map(sortedItems, (item) => {
+                          const isChecked = includes(selectedMealIds, item.id);
                           return (
                             <button
                               key={item.id}
@@ -379,10 +373,8 @@ const SavedMealsDrawer = ({
                   ) : null}
 
                   {!editingTemplateId
-                    ? templates.map((template) => {
-                        const templateMeals = template.mealIds
-                          .map((id) => savedMealsById[id])
-                          .filter(Boolean);
+                    ? map(templates, (template) => {
+                        const templateMeals = filter(map(template.mealIds, (id) => savedMealsById[id]), Boolean);
                         return (
                           <div
                             key={template.id}
@@ -398,10 +390,7 @@ const SavedMealsDrawer = ({
                                 </h3>
                                 <p className="mt-1 text-xs text-muted-foreground">
                                   {templateMeals.length} ta taom ·{" "}
-                                  {templateMeals.reduce(
-                                    (sum, item) => sum + item.calories,
-                                    0,
-                                  )}{" "}
+                                  {reduce(templateMeals, (sum, item) => sum + item.calories, 0)}{" "}
                                   kcal
                                 </p>
                               </div>
@@ -440,7 +429,7 @@ const SavedMealsDrawer = ({
                             </div>
                             {templateMeals.length > 0 ? (
                               <div className="mt-2 flex flex-wrap gap-1.5">
-                                {templateMeals.slice(0, 4).map((item) => (
+                                {map(take(templateMeals, 4), (item) => (
                                   <span
                                     key={item.id}
                                     className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground"
@@ -485,7 +474,7 @@ const SavedMealsDrawer = ({
                     </Button>
                   </div>
 
-                  {sortedItems.map((item) => (
+                  {map(sortedItems, (item) => (
                     <div
                       key={item.id}
                       onClick={() => setEditingMeal(item)}
@@ -574,7 +563,6 @@ const SavedMealsDrawer = ({
           </DrawerBody>
         </NutritionDrawerContent>
       </Drawer>
-
       <MealIngredientsEditorDrawer
         open={Boolean(editingMeal)}
         onOpenChange={(nextOpen) => !nextOpen && setEditingMeal(null)}

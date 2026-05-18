@@ -1,4 +1,4 @@
-import { map } from "lodash";
+import { map, find, toNumber } from "lodash";
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";
@@ -10,17 +10,17 @@ import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-
 import { OnboardingQuestion } from "@/modules/onboarding/components/onboarding-question";
 import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import { ChevronRight } from "lucide-react";
-import useOnboardingBase from "@/hooks/app/use-onboarding-base";
+import { useOnboardingAssets } from "@/hooks/app/use-onboarding-base";
 import PageAura from "../../components/page-aura.jsx";
 import OnboardingSelectCard from "../../components/onboarding-select-card.jsx";
 
-const getPaceOptions = (goal, base, t) => [
+const getPaceOptions = (goal, asset, t) => [
   {
     value: 0.25,
     label: "0.25",
     title: t("onboarding.weeklyPace.options.025.title"),
     description: t("onboarding.weeklyPace.options.025.description"),
-    image: `${base}/slow.webp`,
+    image: asset("slow"),
     accent: "from-sky-500/20 via-cyan-400/10 to-transparent",
     border: "border-sky-500/20",
     pageTint: "from-sky-500/12 via-cyan-400/8 to-transparent",
@@ -33,7 +33,7 @@ const getPaceOptions = (goal, base, t) => [
     label: "0.5",
     title: t("onboarding.weeklyPace.options.05.title"),
     description: t("onboarding.weeklyPace.options.05.description"),
-    image: `${base}/recommend.webp`,
+    image: asset("recommend"),
     accent: "from-emerald-500/20 via-lime-400/10 to-transparent",
     border: "border-emerald-500/20",
     pageTint: "from-emerald-500/12 via-lime-400/8 to-transparent",
@@ -46,7 +46,7 @@ const getPaceOptions = (goal, base, t) => [
     label: "0.75",
     title: t("onboarding.weeklyPace.options.075.title"),
     description: t("onboarding.weeklyPace.options.075.description"),
-    image: `${base}/focussed.webp`,
+    image: asset("focussed"),
     accent: "from-amber-500/20 via-orange-400/10 to-transparent",
     border: "border-amber-500/20",
     pageTint: "from-amber-500/12 via-orange-400/8 to-transparent",
@@ -59,7 +59,7 @@ const getPaceOptions = (goal, base, t) => [
     label: "1.0",
     title: t("onboarding.weeklyPace.options.1.title"),
     description: t("onboarding.weeklyPace.options.1.description"),
-    image: `${base}/aggressive.webp`,
+    image: asset("aggressive"),
     accent: "from-rose-500/20 via-fuchsia-400/10 to-transparent",
     border: "border-rose-500/20",
     pageTint: "from-rose-500/12 via-fuchsia-400/8 to-transparent",
@@ -73,13 +73,13 @@ const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { weeklyPace, goal, setField } = useOnboardingStore();
-  const base = useOnboardingBase();
+  const { asset } = useOnboardingAssets();
 
   useOnboardingAutoSave("user", "weekly-pace");
 
-  const paceOptions = getPaceOptions(goal, base, t);
+  const paceOptions = getPaceOptions(goal, asset, t);
   const selectedPace =
-    paceOptions.find((pace) => pace.value === Number(weeklyPace)) ??
+    find(paceOptions, (pace) => pace.value === toNumber(weeklyPace)) ??
     paceOptions[1];
   const hasSelection = Boolean(weeklyPace);
 

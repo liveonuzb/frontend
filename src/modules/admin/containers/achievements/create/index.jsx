@@ -1,5 +1,5 @@
 import React from "react";
-import { get, isArray, join } from "lodash";
+import { get, isArray, join, find, toUpper, trim } from "lodash";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -68,7 +68,7 @@ const buildSchema = (imageField) =>
       isActive: z.boolean().default(true),
     })
     .superRefine((values, ctx) => {
-      if (!String(get(values, imageField, "")).trim()) {
+      if (!trim(String(get(values, imageField, "")))) {
         ctx.addIssue({
           code: "custom",
           path: [imageField],
@@ -93,7 +93,7 @@ const CreateAchievementPage = () => {
   });
   const imageUrl = form.watch(imageField);
   const modeLabel =
-    APP_MODE_OPTIONS.find((option) => option.value === currentMode)?.label ||
+    find(APP_MODE_OPTIONS, (option) => option.value === currentMode)?.label ||
     "Madagascar";
 
   const { mutateAsync, isPending } = usePostQuery({
@@ -185,7 +185,7 @@ const CreateAchievementPage = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold">
-                      Nomi ({currentLanguage.toUpperCase()}) *
+                      Nomi ({toUpper(currentLanguage)}) *
                     </FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="Birinchi taom" className="h-11" />
@@ -201,7 +201,7 @@ const CreateAchievementPage = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold">
-                      Tavsif ({currentLanguage.toUpperCase()}) *
+                      Tavsif ({toUpper(currentLanguage)}) *
                     </FormLabel>
                     <FormControl>
                       <Textarea

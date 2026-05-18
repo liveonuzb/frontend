@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { get } from "lodash";
+import { get, toNumber } from "lodash";
 import {
   Drawer,
   DrawerContent,
@@ -10,7 +10,7 @@ import {
   DrawerBody,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 import { useAuthStore } from "@/store";
 import { getApiResponseData } from "@/lib/api-response";
 import { cn } from "@/lib/utils";
@@ -71,7 +71,7 @@ export default function TenDayPopupDrawer() {
     if (typeof window === "undefined") return;
 
     const lastShown = window.localStorage.getItem(storageKey(userId));
-    if (lastShown && Number(lastShown) === currentStreak) return;
+    if (lastShown && toNumber(lastShown) === currentStreak) return;
 
     const state = { cancelled: false, retryId: null };
 

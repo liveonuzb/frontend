@@ -11,7 +11,7 @@ import {
   some,
 } from "lodash";
 import { useNavigate } from "react-router";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 import { useDailyTrackingActions } from "@/hooks/app/use-daily-tracking";
 import { useSavedMeals } from "@/hooks/app/use-saved-meals";
 import {

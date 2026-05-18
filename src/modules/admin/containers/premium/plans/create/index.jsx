@@ -1,5 +1,5 @@
 import React from "react";
-import { get, isArray, join } from "lodash";
+import { get, isArray, join, trim } from "lodash";
 import { toast } from "sonner";
 import { PlusIcon } from "lucide-react";
 import { usePostQuery } from "@/hooks/api";
@@ -29,7 +29,7 @@ const CreatePlan = () => {
     async (payload) => {
       if (!canManageGrowth) return;
 
-      if (!payload.name || !payload.name.trim()) {
+      if (!payload.name || !trim(payload.name)) {
         toast.error("Plan nomini kiriting");
         return;
       }

@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import { get } from "lodash";
+import { get, map, toNumber, toUpper, trim, filter } from "lodash";
 import {
   ClockIcon,
   FlameIcon,
@@ -43,7 +43,7 @@ import {
 import RunMapPanel from "../components/run-map-panel.jsx";
 
 const formatMainDistance = (meters = 0) =>
-  (Math.max(0, Number(meters) || 0) / 1000).toLocaleString("en-US", {
+  (Math.max(0, toNumber(meters) || 0) / 1000).toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
@@ -81,13 +81,13 @@ const getUserName = (user) => {
     get(user, "profile.firstName", "") || get(user, "firstName", "");
   const lastName =
     get(user, "profile.lastName", "") || get(user, "lastName", "");
-  const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
+  const fullName = trim(filter([firstName, lastName], Boolean).join(" "));
   return (
     fullName || get(user, "name", "") || get(user, "phone", "LiveOn runner")
   );
 };
 
-const getInitial = (name) => name.trim().charAt(0).toUpperCase() || "U";
+const getInitial = (name) => toUpper(trim(name).charAt(0)) || "U";
 
 const ResultCard = ({ children, className = "" }) => (
   <Card
@@ -144,7 +144,7 @@ const RunningDetailPage = () => {
     return {
       momentTitle: get(session, "moments.title", "") ?? "",
       momentText: get(session, "moments.text", "") ?? "",
-      feelingLevel: Number(get(session, "feeling.level", 0)) || 0,
+      feelingLevel: toNumber(get(session, "feeling.level", 0)) || 0,
       imageUrl: get(session, "moments.imageUrl", null),
     };
   }, [
@@ -283,16 +283,16 @@ const RunningDetailPage = () => {
   const userName = getUserName(user);
   const metrics = session.metrics ?? {};
   const feelingLevel =
-    Number(details.feelingLevel) ||
-    Number(get(session, "feeling.level", 0)) ||
+    toNumber(details.feelingLevel) ||
+    toNumber(get(session, "feeling.level", 0)) ||
     0;
   const averageSpeed =
-    Number(metrics.averageSpeedKmh ?? 0) ||
-    (Number(metrics.distanceMeters ?? 0) > 0 &&
-    Number(metrics.durationSeconds ?? 0) > 0
-      ? Number(metrics.distanceMeters) /
+    toNumber(metrics.averageSpeedKmh ?? 0) ||
+    (toNumber(metrics.distanceMeters ?? 0) > 0 &&
+    toNumber(metrics.durationSeconds ?? 0) > 0
+      ? toNumber(metrics.distanceMeters) /
         1000 /
-        (Number(metrics.durationSeconds) / 3600)
+        (toNumber(metrics.durationSeconds) / 3600)
       : 0);
 
   return (
@@ -384,7 +384,7 @@ const RunningDetailPage = () => {
             <DataCell
               icon={MountainIcon}
               label={t("user.workout.running.detail.elevation", "Elevation")}
-              value={Math.round(Number(metrics.elevationGainMeters ?? 0) || 0)}
+              value={Math.round(toNumber(metrics.elevationGainMeters ?? 0) || 0)}
               suffix="m"
             />
             <DataCell
@@ -401,7 +401,7 @@ const RunningDetailPage = () => {
             <DataCell
               icon={FlameIcon}
               label={t("user.workout.running.detail.calories", "Calories")}
-              value={Math.round(Number(metrics.caloriesBurned ?? 0) || 0)}
+              value={Math.round(toNumber(metrics.caloriesBurned ?? 0) || 0)}
               suffix="kcal"
             />
           </div>
@@ -495,7 +495,7 @@ const RunningDetailPage = () => {
             </span>
           </div>
           <div className="mt-4 grid grid-cols-4 gap-3">
-            {[1, 2, 3, 4].map((level) => (
+            {map([1, 2, 3, 4], (level) => (
               <Button
                 key={level}
                 type="button"

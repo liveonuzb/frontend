@@ -1,4 +1,4 @@
-import { times } from "lodash";
+import { times, split } from "lodash";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { ClockIcon } from "lucide-react";
@@ -28,7 +28,7 @@ export const TimePicker = ({ value, onChange, className }) => {
   const [open, setOpen] = React.useState(false);
 
   // Split "HH:mm" into components
-  const [hour, minute] = (value || "18:00").split(":");
+  const [hour, minute] = split((value || "18:00"), ":");
 
   const [tempHour, setTempHour] = React.useState(hour);
   const [tempMinute, setTempMinute] = React.useState(minute);
@@ -36,7 +36,7 @@ export const TimePicker = ({ value, onChange, className }) => {
   /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     if (open) {
-      const [h, m] = (value || "18:00").split(":");
+      const [h, m] = split((value || "18:00"), ":");
       setTempHour(h);
       setTempMinute(m);
     }
@@ -66,7 +66,7 @@ export const TimePicker = ({ value, onChange, className }) => {
         <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader className="items-center text-center">
             <DrawerTitle>
-              {t("coach.clients.drawers.timePicker.title", {
+              {t("common.timePicker.title", {
                 defaultValue: "Tanlov",
               })}
             </DrawerTitle>
@@ -111,7 +111,7 @@ export const TimePicker = ({ value, onChange, className }) => {
 
           <DrawerFooter className="pt-2">
             <Button onClick={handleConfirm} className="w-full">
-              {t("coach.clients.drawers.timePicker.confirm", {
+              {t("common.timePicker.confirm", {
                 defaultValue: "Tanlash",
               })}
             </Button>

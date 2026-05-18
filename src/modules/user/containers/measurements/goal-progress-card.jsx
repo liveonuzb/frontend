@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Settings2Icon, TargetIcon } from "lucide-react";
 import { motion } from "framer-motion";
-import { round, min, get } from "lodash";
+import { round, min, get, toNumber } from "lodash";
 
 export const GoalProgressCard = ({
   startW,
@@ -40,9 +40,9 @@ export const GoalProgressCard = ({
 
           <div className="flex-1 flex flex-col justify-center">
             <div className="flex justify-between text-[11px] font-bold text-muted-foreground mb-1.5 uppercase tracking-tighter">
-              <span>Bosh: {Number(startW).toFixed(1)} kg</span>
+              <span>Bosh: {toNumber(startW).toFixed(1)} kg</span>
               <span className="text-primary">{round(progressDone * 100)}%</span>
-              <span>Maqsad: {Number(targetW).toFixed(1)} kg</span>
+              <span>Maqsad: {toNumber(targetW).toFixed(1)} kg</span>
             </div>
 
             <div className="relative h-3 w-full bg-muted rounded-full overflow-hidden mb-6">
@@ -60,7 +60,7 @@ export const GoalProgressCard = ({
                 Hozirgi vazn
               </span>
               <span className="text-lg font-black">
-                {Number(currentW).toFixed(1)} kg
+                {toNumber(currentW).toFixed(1)} kg
               </span>
             </div>
             <div className="flex flex-col items-end">

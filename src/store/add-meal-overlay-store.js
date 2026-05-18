@@ -1,5 +1,7 @@
 import { create } from "zustand";
 
+import { split } from "lodash";
+
 const getDefaultMealType = () => {
   const hour = new Date().getHours();
   if (hour >= 6 && hour < 10) return "breakfast";
@@ -9,7 +11,7 @@ const getDefaultMealType = () => {
   return "snack";
 };
 
-const getDefaultDateKey = () => new Date().toISOString().split("T")[0];
+const getDefaultDateKey = () => split(new Date().toISOString(), "T")[0];
 
 const useAddMealOverlayStore = create((set) => ({
   isActionDrawerOpen: false,

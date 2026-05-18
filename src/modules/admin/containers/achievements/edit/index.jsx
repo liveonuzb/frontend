@@ -1,6 +1,6 @@
 import React from "react";
 import { useParams } from "react-router";
-import { get, isArray, join } from "lodash";
+import { get, isArray, join, toUpper, trim } from "lodash";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -84,6 +84,8 @@ const EditAchievementPage = () => {
       enabled: Boolean(id),
     },
   });
+
+
   const achievement = getResponsePayload(data);
 
   React.useEffect(() => {
@@ -161,7 +163,7 @@ const EditAchievementPage = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-bold">
-                        Nomi ({currentLanguage.toUpperCase()}) *
+                        Nomi ({toUpper(currentLanguage)}) *
                       </FormLabel>
                       <FormControl>
                         <Input {...field} placeholder="Birinchi taom" className="h-11" />
@@ -177,7 +179,7 @@ const EditAchievementPage = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-bold">
-                        Tavsif ({currentLanguage.toUpperCase()}) *
+                        Tavsif ({toUpper(currentLanguage)}) *
                       </FormLabel>
                       <FormControl>
                         <Textarea

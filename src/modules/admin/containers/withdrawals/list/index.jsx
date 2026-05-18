@@ -1,6 +1,6 @@
 import React from "react";
 import dayjs from "dayjs";
-import { get, isArray, join, toString } from "lodash";
+import { get, isArray, join, toString, includes, toNumber, toUpper, trim } from "lodash";
 import { parseAsString, useQueryState } from "nuqs";
 import { useQueryClient } from "@tanstack/react-query";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
@@ -68,12 +68,12 @@ const statusClassNames = {
 };
 
 function getUserName(user) {
-  const fullName = `${get(user, "firstName", "") || ""} ${get(user, "lastName", "") || ""}`.trim();
+  const fullName = trim(`${get(user, "firstName", "") || ""} ${get(user, "lastName", "") || ""}`);
   return fullName || get(user, "phone") || get(user, "email") || "Foydalanuvchi";
 }
 
 function formatMoney(value) {
-  const amount = Number(value || 0);
+  const amount = toNumber(value || 0);
   return new Intl.NumberFormat("uz-UZ").format(amount) + " UZS";
 }
 
@@ -105,8 +105,8 @@ const WithdrawalsListPage = () => {
   });
   const [adminNote, setAdminNote] = React.useState("");
 
-  const currentPage = Math.max(Number(pageQuery) || 1, 1);
-  const pageSize = Math.max(Number(pageSizeQuery) || 10, 1);
+  const currentPage = Math.max(toNumber(pageQuery) || 1, 1);
+  const pageSize = Math.max(toNumber(pageSizeQuery) || 10, 1);
 
   React.useEffect(() => {
     setBreadcrumbs([
@@ -194,7 +194,7 @@ const WithdrawalsListPage = () => {
               <Avatar className="size-9">
                 <AvatarImage src={get(user, "avatarUrl") || ""} />
                 <AvatarFallback className="text-xs">
-                  {name.slice(0, 2).toUpperCase()}
+                  {toUpper(name.slice(0, 2))}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
@@ -213,7 +213,7 @@ const WithdrawalsListPage = () => {
         size: 100,
         meta: { skeleton: adminListSkeletons.text },
         cell: ({ getValue }) => (
-          <span className="font-medium">{Number(getValue() || 0).toLocaleString("uz-UZ")} XP</span>
+          <span className="font-medium">{toNumber(getValue() || 0).toLocaleString("uz-UZ")} XP</span>
         ),
       },
       {
@@ -351,7 +351,7 @@ const WithdrawalsListPage = () => {
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <Select
-            value={STATUS_OPTIONS.includes(status) ? status : "all"}
+            value={includes(STATUS_OPTIONS, status) ? status : "all"}
             onValueChange={(value) => {
               void setStatus(value);
               void setPageQuery("1");

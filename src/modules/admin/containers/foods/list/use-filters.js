@@ -1,6 +1,6 @@
 import React from "react";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
-import { map as lodashMap } from "lodash";
+import { map as lodashMap, find, toNumber, trim } from "lodash";
 import {
   ALLERGEN_TAG_OPTIONS,
   DIETARY_TAG_OPTIONS,
@@ -113,7 +113,7 @@ export const useFoodFilters = ({
     "dietaryTag",
     parseAsStringEnum([
       "all",
-      ...DIETARY_TAG_OPTIONS.map((item) => item.value),
+      ...lodashMap(DIETARY_TAG_OPTIONS, (item) => item.value),
     ]).withDefault("all"),
   );
   const [dietaryTagOp, setDietaryTagOp] = useQueryState(
@@ -124,7 +124,7 @@ export const useFoodFilters = ({
     "allergenTag",
     parseAsStringEnum([
       "all",
-      ...ALLERGEN_TAG_OPTIONS.map((item) => item.value),
+      ...lodashMap(ALLERGEN_TAG_OPTIONS, (item) => item.value),
     ]).withDefault("all"),
   );
   const [allergenTagOp, setAllergenTagOp] = useQueryState(
@@ -148,8 +148,8 @@ export const useFoodFilters = ({
     parseAsStringEnum(FOOD_SORT_DIRECTIONS).withDefault("asc"),
   );
 
-  const currentPage = Math.max(1, Number(pageQuery) || 1);
-  const pageSize = Math.max(1, Number(pageSizeQuery) || ITEMS_PER_PAGE);
+  const currentPage = Math.max(1, toNumber(pageQuery) || 1);
+  const pageSize = Math.max(1, toNumber(pageSizeQuery) || ITEMS_PER_PAGE);
 
   const sorting = React.useMemo(
     () =>
@@ -160,7 +160,7 @@ export const useFoodFilters = ({
   );
 
   const canReorder =
-    search.trim() === "" &&
+    trim(search) === "" &&
     searchOp === "contains" &&
     categoryFilter === "all" &&
     categoryOp === "is" &&
@@ -311,12 +311,12 @@ export const useFoodFilters = ({
   const activeFilters = React.useMemo(() => {
     const items = [];
 
-    if (search.trim() || searchOp !== "contains") {
+    if (trim(search) || searchOp !== "contains") {
       items.push({
         id: "q",
         field: "q",
         operator: searchOp,
-        values: search.trim() ? [search] : [],
+        values: trim(search) ? [search] : [],
       });
     }
 
@@ -427,7 +427,7 @@ export const useFoodFilters = ({
   const handleFiltersChange = React.useCallback(
     (nextFilters) => {
       const byField = (field) =>
-        nextFilters.find((filter) => filter.field === field);
+        find(nextFilters, (filter) => filter.field === field);
       const nextSearch = byField("q")?.values?.[0] ?? "";
       const nextCategory = byField("category")?.values?.[0] ?? "all";
       const nextCuisine = byField("cuisine")?.values?.[0] ?? "all";

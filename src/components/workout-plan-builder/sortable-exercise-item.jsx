@@ -1,7 +1,17 @@
 import React, { memo, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { GripVerticalIcon, Trash2Icon, ClockIcon, Settings2Icon, CheckIcon, PlusIcon, XIcon } from "lucide-react";
-import { get, map, filter, size, includes, isNil, isArray } from "lodash";
+import {
+  get,
+  map,
+  filter,
+  size,
+  includes,
+  isNil,
+  isArray,
+  toNumber,
+  parseInt as lodashParseInt,
+} from "lodash";
 import { cn } from "@/lib/utils";
 import { KanbanItem, KanbanItemHandle } from "@/components/reui/kanban";
 import { Badge } from "@/components/ui/badge";
@@ -63,7 +73,7 @@ const SortableExerciseItem = memo(({ item, colId, onRemove, onUpdate }) => {
   const updateSet = (index, field, value) => {
     const nextValue =
       !isNil(value) && !Number.isNaN(value)
-        ? Number(value)
+        ? toNumber(value)
         : 0;
     setLocalSets(map(localSets, (s, i) => i === index ? { ...s, [field]: nextValue } : s));
   };
@@ -71,7 +81,7 @@ const SortableExerciseItem = memo(({ item, colId, onRemove, onUpdate }) => {
   const handleSaveEdit = () => {
     onUpdate(colId, item.id, {
       sets: localSets,
-      rest: parseInt(localRest) || 0,
+      rest: lodashParseInt(localRest) || 0,
     });
     setIsDrawerOpen(false);
   };
@@ -88,11 +98,9 @@ const SortableExerciseItem = memo(({ item, colId, onRemove, onUpdate }) => {
       <KanbanItemHandle className="p-1 -ml-1 text-muted-foreground opacity-30 hover:opacity-100 transition-opacity z-20">
         <GripVerticalIcon className="size-4" />
       </KanbanItemHandle>
-
       <div className="size-10 rounded-xl bg-muted/40 flex items-center justify-center text-xl shrink-0 border border-border/40 relative z-10 group-hover:bg-background transition-colors">
         <span>{item.emoji}</span>
       </div>
-
       <div className="flex-1 min-w-0 pr-12 relative z-10">
         <p className="text-sm font-black truncate text-foreground/90 group-hover:text-primary transition-colors">
           {item.name}
@@ -113,7 +121,6 @@ const SortableExerciseItem = memo(({ item, colId, onRemove, onUpdate }) => {
           </span>
         </div>
       </div>
-
       <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           type="button"
@@ -138,7 +145,6 @@ const SortableExerciseItem = memo(({ item, colId, onRemove, onUpdate }) => {
           <Trash2Icon className="size-3" />
         </button>
       </div>
-
       <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen} direction="bottom">
         <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-md outline-none">
           <DrawerHeader className="px-6 py-4">
@@ -205,7 +211,7 @@ const SortableExerciseItem = memo(({ item, colId, onRemove, onUpdate }) => {
                       {map(trackingFields, (field) => (
                         <div key={get(field, "key")} className="flex justify-center">
                           <NumberField
-                            value={Number(get(set, get(field, "key"))) || undefined}
+                            value={toNumber(get(set, get(field, "key"))) || undefined}
                             onValueChange={(val) =>
                               updateSet(idx, get(field, "key"), val)
                             }
@@ -264,7 +270,7 @@ const SortableExerciseItem = memo(({ item, colId, onRemove, onUpdate }) => {
                 </div>
                 <div className="w-32">
                   <NumberField
-                    value={Number(localRest) || 60}
+                    value={toNumber(localRest) || 60}
                     onValueChange={(val) => setLocalRest(val)}
                     min={0}
                     step={5}

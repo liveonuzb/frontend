@@ -1,7 +1,7 @@
 import React from "react";
 import { get } from "lodash";
 import { useNavigate } from "react-router";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 import CalorieGaugeComponent from "@/components/calorie-gauge-widget";
 import {
   calculateMealCalories,

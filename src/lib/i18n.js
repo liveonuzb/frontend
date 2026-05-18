@@ -12,10 +12,6 @@ import authUz from "@/modules/auth/lib/locales/uz.json";
 import authEn from "@/modules/auth/lib/locales/en.json";
 import authRu from "@/modules/auth/lib/locales/ru.json";
 
-import coachUz from "@/modules/coach/lib/locales/uz.json";
-import coachEn from "@/modules/coach/lib/locales/en.json";
-import coachRu from "@/modules/coach/lib/locales/ru.json";
-
 import profileUz from "@/modules/profile/lib/locales/uz.json";
 import profileEn from "@/modules/profile/lib/locales/en.json";
 import profileRu from "@/modules/profile/lib/locales/ru.json";
@@ -45,7 +41,6 @@ i18n
         translation: {
           ...commonUz,
           ...authUz,
-          ...coachUz,
           ...profileUz,
           ...userUz,
           ...adminUz,
@@ -57,7 +52,6 @@ i18n
         translation: {
           ...commonEn,
           ...authEn,
-          ...coachEn,
           ...profileEn,
           ...userEn,
           ...adminEn,
@@ -69,7 +63,6 @@ i18n
         translation: {
           ...commonRu,
           ...authRu,
-          ...coachRu,
           ...profileRu,
           ...userRu,
           ...adminRu,

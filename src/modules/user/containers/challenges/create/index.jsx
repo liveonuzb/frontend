@@ -12,7 +12,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { api } from "@/hooks/api/use-api";
+import { usePostFileQuery } from "@/hooks/api";
 import { useBreadcrumbStore } from "@/store";
 import { useChallengeStore } from "@/store/challenges-store";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,8 @@ import StepMetric from "./step-metric.jsx";
 import StepReward from "./step-reward.jsx";
 import StepParticipants from "./step-participants.jsx";
 
+import { filter, includes, isArray, map, reduce, some, toNumber, trim, split, take } from "lodash";
+
 const STEPS = [
   { key: "basic", label: "Asosiy" },
   { key: "metric", label: "O'lchov" },
@@ -30,7 +32,7 @@ const STEPS = [
   { key: "participants", label: "Taklif" },
 ];
 
-const STEP_KEYS = STEPS.map((step) => step.key);
+const STEP_KEYS = map(STEPS, (step) => step.key);
 
 const todayInput = () => format(new Date(), "yyyy-MM-dd");
 const addDaysInput = (days) => format(addDays(new Date(), days), "yyyy-MM-dd");
@@ -76,13 +78,13 @@ const parseRouteState = (pathname) => {
   const markerIndex = pathname.indexOf(marker);
   if (markerIndex >= 0) {
     const suffix = pathname.slice(markerIndex + marker.length);
-    const parts = suffix.split("/").filter(Boolean);
+    const parts = filter(split(suffix, "/"), Boolean);
 
     if (parts.length === 0) {
       return { challengeId: null, stepKey: "basic", invalid: false, source: "create" };
     }
 
-    if (parts.length === 2 && STEP_KEYS.includes(parts[1])) {
+    if (parts.length === 2 && includes(STEP_KEYS, parts[1])) {
       return { challengeId: parts[0], stepKey: parts[1], invalid: false, source: "create" };
     }
 
@@ -108,29 +110,29 @@ const parseRouteState = (pathname) => {
 };
 
 const buildPlaceRewards = (items) =>
-  items.slice(0, 3).reduce((result, item) => {
-    if (Number(item.value) > 0) {
-      result[String(item.place)] = Number(item.value);
+  reduce(take(items, 3), (result, item) => {
+    if (toNumber(item.value) > 0) {
+      result[String(item.place)] = toNumber(item.value);
     }
     return result;
   }, {});
 
 const parsePlaceRewards = (value) => {
   const source =
-    value && typeof value === "object" && !Array.isArray(value) ? value : {};
+    value && typeof value === "object" && !isArray(value) ? value : {};
 
-  return [1, 2, 3].map((place) => ({
+  return map([1, 2, 3], (place) => ({
     place,
-    value: Number(source[String(place)] ?? source[place]) || [50, 30, 20][place - 1],
+    value: toNumber(source[String(place)] ?? source[place]) || [50, 30, 20][place - 1],
   }));
 };
 
 const validateStep = (stepKey, form) => {
-  if (stepKey === "basic" && !form.title.trim()) {
+  if (stepKey === "basic" && !trim(form.title)) {
     throw new Error("Chellenj nomini kiriting");
   }
 
-  if (stepKey === "metric" && (!Number(form.metricTarget) || Number(form.metricTarget) <= 0)) {
+  if (stepKey === "metric" && (!toNumber(form.metricTarget) || toNumber(form.metricTarget) <= 0)) {
     throw new Error("Maqsad qiymati 0 dan katta bo'lishi kerak");
   }
 
@@ -146,12 +148,12 @@ const validateStep = (stepKey, form) => {
   }
 
   if (stepKey === "reward" && form.rewardMode === "PLACE_XP") {
-    const rewards = form.placeRewards.slice(0, 3).map((item) => Number(item.value) || 0);
-    const total = rewards.reduce((sum, value) => sum + value, 0);
-    if (Number(form.joinFeeXp) <= 0) {
+    const rewards = map(take(form.placeRewards, 3), (item) => toNumber(item.value) || 0);
+    const total = reduce(rewards, (sum, value) => sum + value, 0);
+    if (toNumber(form.joinFeeXp) <= 0) {
       throw new Error("O'rin bo'yicha mukofot uchun kirish narxi 0 dan katta bo'lishi kerak");
     }
-    if (rewards.length !== 3 || rewards.some((value) => value <= 0)) {
+    if (rewards.length !== 3 || some(rewards, (value) => value <= 0)) {
       throw new Error("1, 2 va 3-o'rin foizlari 0 dan katta bo'lishi kerak");
     }
     if (total !== 100) {
@@ -168,8 +170,8 @@ const validateStep = (stepKey, form) => {
 };
 
 const buildCreatePayload = (form) => ({
-  title: form.title.trim(),
-  description: form.description.trim() || undefined,
+  title: trim(form.title),
+  description: trim(form.description) || undefined,
   type: "USER_CREATED",
   metricType: "STEPS",
   metricAggregation: "SUM",
@@ -185,8 +187,8 @@ const buildCreatePayload = (form) => ({
 const buildPatchPayload = (stepKey, form) => {
   if (stepKey === "basic") {
     return {
-      title: form.title.trim(),
-      description: form.description.trim() || undefined,
+      title: trim(form.title),
+      description: trim(form.description) || undefined,
     };
   }
 
@@ -194,7 +196,7 @@ const buildPatchPayload = (stepKey, form) => {
     return {
       metricType: form.metricType,
       metricAggregation: form.metricAggregation,
-      metricTarget: Number(form.metricTarget),
+      metricTarget: toNumber(form.metricTarget),
     };
   }
 
@@ -207,14 +209,14 @@ const buildPatchPayload = (stepKey, form) => {
 
   const payload = {
     rewardMode: form.rewardMode,
-    joinFeeXp: Number(form.joinFeeXp) || 0,
-    maxParticipants: Number(form.maxParticipants) || null,
+    joinFeeXp: toNumber(form.joinFeeXp) || 0,
+    maxParticipants: toNumber(form.maxParticipants) || null,
   };
 
   if (form.rewardMode === "FIXED_XP") {
-    payload.rewardXp = Number(form.rewardXp) || 0;
+    payload.rewardXp = toNumber(form.rewardXp) || 0;
   } else if (form.rewardMode === "PERCENT_OF_POOL") {
-    payload.rewardPercent = Number(form.rewardPercent) || 0;
+    payload.rewardPercent = toNumber(form.rewardPercent) || 0;
   } else {
     payload.placeRewards = buildPlaceRewards(form.placeRewards);
   }
@@ -240,28 +242,19 @@ const challengeToForm = (challenge) => {
       challenge?.metricAggregation ||
       base.metricAggregation,
     metricTarget:
-      Number(challenge?.metricDetails?.target ?? challenge?.metricTarget) ||
+      toNumber(challenge?.metricDetails?.target ?? challenge?.metricTarget) ||
       base.metricTarget,
     startDate,
     endDate,
     durationDays: durationDays > 0 ? durationDays : null,
     rewardMode: challenge?.rewardMode || rewardDetails.mode || base.rewardMode,
-    rewardXp: Number(challenge?.rewardXp ?? rewardDetails.fixedXp) || base.rewardXp,
+    rewardXp: toNumber(challenge?.rewardXp ?? rewardDetails.fixedXp) || base.rewardXp,
     rewardPercent:
-      Number(challenge?.rewardPercent ?? rewardDetails.percent) || base.rewardPercent,
+      toNumber(challenge?.rewardPercent ?? rewardDetails.percent) || base.rewardPercent,
     placeRewards: parsePlaceRewards(challenge?.placeRewards || rewardDetails.placeRewards),
-    joinFeeXp: Number(challenge?.joinFeeXp) || 0,
-    maxParticipants: Number(challenge?.maxParticipants) || 0,
+    joinFeeXp: toNumber(challenge?.joinFeeXp) || 0,
+    maxParticipants: toNumber(challenge?.maxParticipants) || 0,
   };
-};
-
-const uploadChallengeImage = async (file) => {
-  const formData = new FormData();
-  formData.append("image", file);
-  const response = await api.post("/challenges/images", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-  return response?.data?.id ?? null;
 };
 
 const stepPath = (challengeId, stepKey) =>
@@ -283,6 +276,10 @@ export default function ChallengeCreateContainer() {
   } = useChallengeStore();
   const [form, setForm] = React.useState(createInitialForm);
   const loadedChallengeIdRef = React.useRef(null);
+  const {
+    mutateAsync: uploadChallengeImageMutation,
+    isPending: isUploadingChallengeImage,
+  } = usePostFileQuery({});
 
   const routeState = React.useMemo(
     () => parseRouteState(location.pathname),
@@ -294,9 +291,10 @@ export default function ChallengeCreateContainer() {
   );
   const isExistingBasic = Boolean(routeState.challengeId) && routeState.stepKey === "basic";
   const isSaving = Boolean(
-    actionLoading?.creating ||
+      actionLoading?.creating ||
       actionLoading?.updating ||
       actionLoading?.inviting ||
+      isUploadingChallengeImage ||
       isDetailLoading,
   );
 
@@ -383,6 +381,22 @@ export default function ChallengeCreateContainer() {
 
     navigate("/user/challenges/my");
   }, [navigate, routeState.challengeId, routeState.source]);
+
+  const uploadChallengeImage = React.useCallback(
+    async (file) => {
+      const formData = new FormData();
+      formData.append("image", file);
+      const response = await uploadChallengeImageMutation({
+        url: "/challenges/images",
+        attributes: formData,
+        config: {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      });
+      return response?.data?.id ?? null;
+    },
+    [uploadChallengeImageMutation],
+  );
 
   const handleBack = () => {
     if (currentStepIndex === 0 || !routeState.challengeId) {
@@ -497,7 +511,7 @@ export default function ChallengeCreateContainer() {
                 {STEPS[currentStepIndex]?.label} · {currentStepIndex + 1}/{STEPS.length}
               </p>
               <div className="mt-3 flex gap-1.5">
-                {STEPS.map((step, index) => (
+                {map(STEPS, (step, index) => (
                   <span
                     key={step.key}
                     className={cn(

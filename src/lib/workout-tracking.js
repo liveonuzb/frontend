@@ -1,4 +1,20 @@
-import { includes, some, map, filter, compact, join, take, clamp, times } from "lodash";
+import {
+  includes,
+  some,
+  map,
+  filter,
+  compact,
+  join,
+  take,
+  clamp,
+  times,
+  forEach,
+  isArray,
+  split,
+  toNumber as lodashToNumber,
+  values as lodashValues,
+  parseInt as lodashParseInt,
+} from "lodash";
 
 export const WORKOUT_TRACKING_TYPES = {
   REPS_WEIGHT: "REPS_WEIGHT",
@@ -100,12 +116,12 @@ const getTrackingFields = (t) => ({
 });
 
 const toNumber = (value, fallback = 0) => {
-  const nextValue = Number(value);
+  const nextValue = lodashToNumber(value);
   return Number.isFinite(nextValue) ? nextValue : fallback;
 };
 
 export const normalizeWorkoutTrackingType = (value) =>
-  includes(Object.values(WORKOUT_TRACKING_TYPES), value)
+  includes(lodashValues(WORKOUT_TRACKING_TYPES), value)
     ? value
     : WORKOUT_TRACKING_TYPES.REPS_WEIGHT;
 
@@ -179,7 +195,7 @@ export const parseWorkoutDurationSeconds = (value) => {
   if (typeof value === "number") return value;
   if (!value) return 0;
 
-  const parts = map(value.split(":"), (p) => parseInt(p, 10));
+  const parts = map(split(value, ":"), (p) => lodashParseInt(p, 10));
   if (parts.length === 2) {
     const [min, sec] = parts;
     return (toNumber(min) * 60) + toNumber(sec);
@@ -241,7 +257,7 @@ export const createWorkoutSetTemplate = (exercise = {}, previousSet = null) => {
 };
 
 export const getWorkoutDefaultSetCount = (exercise = {}) =>
-  Array.isArray(exercise?.sets) && exercise.sets.length > 0
+  isArray(exercise?.sets) && exercise.sets.length > 0
     ? exercise.sets.length
     : clamp(toNumber(exercise?.defaultSets ?? exercise?.sets, 3), 1, Infinity);
 
@@ -253,7 +269,7 @@ export const getWorkoutRestSeconds = (exercise = {}) =>
   );
 
 export const normalizeWorkoutSets = (exercise = {}, rawSets = exercise?.sets) => {
-  if (Array.isArray(rawSets) && rawSets.length > 0) {
+  if (isArray(rawSets) && rawSets.length > 0) {
     return map(rawSets, (set) => createWorkoutSetTemplate(exercise, set));
   }
 
@@ -289,7 +305,7 @@ export const getWorkoutExerciseSummary = (exercise = {}, t) => {
   const unitSet = t ? t("components.workoutPlanBuilder.units.set") : "set";
   const parts = [`${sets.length} ${unitSet}`];
 
-  getWorkoutTrackingFields(trackingType, t).forEach((field) => {
+  forEach(getWorkoutTrackingFields(trackingType, t), (field) => {
     const summary = summarizeMetricValues(sets, field.key, t);
     if (summary) {
       parts.push(summary);
@@ -306,3 +322,6 @@ export const getWorkoutSetSummary = (set = {}, trackingType, t) =>
       return value > 0 ? formatWorkoutMetricValue(field.key, value, t) : null;
     }),
   );
+
+
+

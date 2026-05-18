@@ -20,6 +20,8 @@ import PageAura from "../../components/page-aura.jsx";
 import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
 import OnboardingSelectCard from "../../components/onboarding-select-card.jsx";
 
+import { map } from "lodash";
+
 const tone = ONBOARDING_ACCENTS.green;
 const workoutCountOptions = [
   { value: "0", key: "none", icon: CircleOffIcon },
@@ -99,7 +101,7 @@ const Index = () => {
         />
         <div className="min-h-0 flex-1 overflow-y-auto py-4">
           <div className="flex min-h-full flex-col justify-center gap-3 md:mx-auto md:max-w-2xl md:gap-4">
-            {workoutCountOptions.map((option) => {
+            {map(workoutCountOptions, (option) => {
               const active = String(weeklyWorkoutCount) === option.value;
 
               return (

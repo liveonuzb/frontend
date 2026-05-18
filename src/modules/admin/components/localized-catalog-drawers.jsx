@@ -1,5 +1,5 @@
 import React from "react";
-import { get, map } from "lodash";
+import { get, map, toUpper } from "lodash";
 import { CheckCircle2Icon, LoaderCircleIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -69,7 +69,7 @@ export const LocalizedCatalogDrawers = ({
                   {get(
                     currentLanguageMeta,
                     "name",
-                    currentLanguage.toUpperCase(),
+                    toUpper(currentLanguage),
                   )}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -78,7 +78,7 @@ export const LocalizedCatalogDrawers = ({
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label>Nomi ({currentLanguage.toUpperCase()})</Label>
+                <Label>Nomi ({toUpper(currentLanguage)})</Label>
                 <Input
                   value={get(form, "name")}
                   onChange={(event) =>

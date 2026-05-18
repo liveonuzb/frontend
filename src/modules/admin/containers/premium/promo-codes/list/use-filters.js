@@ -1,6 +1,6 @@
 import React from "react";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
-import { get, find } from "lodash";
+import { get, find, toNumber, trim } from "lodash";
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -18,10 +18,10 @@ export const usePromoCodeFilters = () => {
     "pageSize",
     parseAsString.withDefault(String(DEFAULT_PAGE_SIZE)),
   );
-  const currentPage = Math.max(1, Number(pageQuery) || 1);
+  const currentPage = Math.max(1, toNumber(pageQuery) || 1);
   const pageSize = Math.min(
     100,
-    Math.max(1, Number(pageSizeQuery) || DEFAULT_PAGE_SIZE),
+    Math.max(1, toNumber(pageSizeQuery) || DEFAULT_PAGE_SIZE),
   );
 
   const filterFields = React.useMemo(
@@ -51,7 +51,7 @@ export const usePromoCodeFilters = () => {
   const activeFilters = React.useMemo(() => {
     const items = [];
 
-    if (search.trim()) {
+    if (trim(search)) {
       items.push({
         id: "q",
         field: "q",

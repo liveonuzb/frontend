@@ -39,6 +39,8 @@ import {
   TYPE_OPTIONS,
 } from "./utils.jsx";
 
+import { toUpper } from "lodash";
+
 const HealthConstraintFormDrawer = ({ mode }) => {
   const { id } = useParams();
   const closeAdminDrawer = useAdminDrawerCloseNavigation(
@@ -142,7 +144,7 @@ const HealthConstraintFormDrawer = ({ mode }) => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>
-                          Nomi ({currentLanguage.toUpperCase()})
+                          Nomi ({toUpper(currentLanguage)})
                         </FormLabel>
                         <FormControl>
                           <Input {...field} />

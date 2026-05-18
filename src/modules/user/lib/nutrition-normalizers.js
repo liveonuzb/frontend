@@ -1,4 +1,4 @@
-import { map } from "lodash";
+import { map, isArray, reduce } from "lodash";
 import {
   getMealIngredientsGrams,
   normalizeMealIngredients,
@@ -67,7 +67,7 @@ export const normalizeMealItem = (item = {}) => ({
   image: item.image ?? item.imageUrl ?? null,
   grams:
     item.grams ??
-    (Array.isArray(item.ingredients)
+    (isArray(item.ingredients)
       ? getMealIngredientsGrams(item.ingredients)
       : null),
   ingredients: normalizeMealIngredients(item.ingredients),
@@ -101,7 +101,7 @@ export const normalizeDayData = (payload = {}) => {
     ...empty,
     date: normalizeDateKey(payload.date || empty.date),
     waterCups: payload.waterCups ?? payload.waterLog?.length ?? empty.waterCups,
-    waterLog: Array.isArray(payload.waterLog)
+    waterLog: isArray(payload.waterLog)
       ? map(payload.waterLog, (entry) => ({
           id: entry.id,
           time: entry.time ?? new Date().toISOString(),
@@ -109,20 +109,20 @@ export const normalizeDayData = (payload = {}) => {
         }))
       : empty.waterLog,
     meals: {
-      breakfast: Array.isArray(payload.meals?.breakfast)
+      breakfast: isArray(payload.meals?.breakfast)
         ? map(payload.meals.breakfast, normalizeMealItem)
         : empty.meals.breakfast,
-      lunch: Array.isArray(payload.meals?.lunch)
+      lunch: isArray(payload.meals?.lunch)
         ? map(payload.meals.lunch, normalizeMealItem)
         : empty.meals.lunch,
-      dinner: Array.isArray(payload.meals?.dinner)
+      dinner: isArray(payload.meals?.dinner)
         ? map(payload.meals.dinner, normalizeMealItem)
         : empty.meals.dinner,
-      snack: Array.isArray(payload.meals?.snack)
+      snack: isArray(payload.meals?.snack)
         ? map(payload.meals.snack, normalizeMealItem)
         : empty.meals.snack,
     },
-    workoutLogs: Array.isArray(payload.workoutLogs)
+    workoutLogs: isArray(payload.workoutLogs)
       ? map(payload.workoutLogs, normalizeWorkoutLogItem)
       : empty.workoutLogs,
     steps: payload.steps ?? empty.steps,
@@ -157,7 +157,8 @@ export const normalizeSavedMeal = (item = {}) => {
     updatedAt: item?.updatedAt || null,
     lastUsedAt: item?.lastUsedAt || null,
     ingredients,
-    grams: ingredients.reduce(
+    grams: reduce(
+      ingredients,
       (sum, ingredient) => sum + Math.max(0, toNumber(ingredient.grams, 0)),
       0,
     ),

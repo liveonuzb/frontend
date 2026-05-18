@@ -7,6 +7,8 @@ import {
 } from "lucide-react";
 import { config } from "@/config.js";
 
+import { filter } from "lodash";
+
 const WORKOUT_NAV_ITEMS_BASE = [
   {
     to: "/user/workout/home",
@@ -44,6 +46,7 @@ const WORKOUT_NAV_ITEMS_BASE = [
   },
 ];
 
-export const WORKOUT_NAV_ITEMS = WORKOUT_NAV_ITEMS_BASE.filter(
+export const WORKOUT_NAV_ITEMS = filter(
+  WORKOUT_NAV_ITEMS_BASE,
   (item) => item.feature !== "running" || config.runningFeatureEnabled,
 );

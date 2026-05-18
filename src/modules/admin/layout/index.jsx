@@ -1,4 +1,4 @@
-import { filter, map, some, includes } from "lodash";
+import { filter, map, some, includes, toUpper } from "lodash";
 import React from "react";
 import { Outlet, NavLink, useLocation } from "react-router";
 import {
@@ -14,13 +14,11 @@ import {
   GlobeIcon,
   MapPinnedIcon,
   DumbbellIcon,
-  ShieldCheckIcon,
   CrownIcon,
   GemIcon,
   TrophyIcon,
   AwardIcon,
   WrenchIcon,
-  MedalIcon,
   BotIcon,
   HeartPulseIcon,
   WalletCardsIcon,
@@ -77,12 +75,6 @@ const mainNav = [
     capability: "support.read",
   },
   {
-    to: "/admin/coaches",
-    label: "Murabbiylar",
-    icon: ShieldCheckIcon,
-    capability: "support.read",
-  },
-  {
     to: "/admin/tracking",
     label: "Tracking overview",
     icon: BarChart3Icon,
@@ -131,12 +123,6 @@ const contentNav = [
     to: "/admin/locations",
     label: "Locations",
     icon: MapPinnedIcon,
-    capability: "content.read",
-  },
-  {
-    to: "/admin/coach-specializations/list",
-    label: "Sport yo'nalishlari",
-    icon: MedalIcon,
     capability: "content.read",
   },
   {
@@ -427,7 +413,7 @@ const Index = () => {
                   <AvatarFallback className="text-[10px] font-semibold">
                     {(user?.firstName?.[0] || "") +
                       (user?.lastName?.[0] || "") ||
-                      user?.username?.[0]?.toUpperCase() ||
+                      toUpper(user?.username?.[0]) ||
                       "A"}
                   </AvatarFallback>
                 </Avatar>

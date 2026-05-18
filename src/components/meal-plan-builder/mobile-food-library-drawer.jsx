@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { filter, map, includes } from "lodash";
+import { filter, map, includes, forEach, toLower, toNumber, trim } from "lodash";
 import { SearchIcon, FlameIcon } from "lucide-react";
 import {
   Drawer,
@@ -23,13 +23,13 @@ const MobileFoodLibraryDrawer = ({
   const [selectedCategoryId, setSelectedCategoryId] = useState("all");
 
   const filteredFoods = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
+    const normalizedSearch = toLower(trim(search));
 
     return filter(foods, (food) => {
       const matchesCategory =
         selectedCategoryId === "all"
           ? true
-          : includes(food.categoryIds, Number(selectedCategoryId));
+          : includes(food.categoryIds, toNumber(selectedCategoryId));
 
       if (!matchesCategory) {
         return false;
@@ -39,10 +39,7 @@ const MobileFoodLibraryDrawer = ({
         return true;
       }
 
-      return (
-        includes(food.name.toLowerCase(), normalizedSearch) ||
-        includes(food.originalName?.toLowerCase(), normalizedSearch)
-      );
+      return (includes(toLower(food.name), normalizedSearch) || includes(toLower(food.originalName), normalizedSearch));
     });
   }, [foods, search, selectedCategoryId]);
 
@@ -50,8 +47,8 @@ const MobileFoodLibraryDrawer = ({
     const counts = new Map();
     counts.set("all", foods.length);
 
-    foods.forEach((food) => {
-      (food.categoryIds || []).forEach((categoryId) => {
+    forEach(foods, (food) => {
+      forEach((food.categoryIds || []), (categoryId) => {
         const key = String(categoryId);
         counts.set(key, (counts.get(key) || 0) + 1);
       });

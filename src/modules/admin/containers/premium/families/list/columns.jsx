@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, filter, toUpper, map, split } from "lodash";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
@@ -19,11 +19,8 @@ const formatDate = (dateStr) => {
 
 const getInitials = (name) => {
   if (!name) return "?";
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
+  return toUpper(map(split(name, " "), (n) => n[0])
+    .join(""))
     .slice(0, 2);
 };
 
@@ -38,8 +35,7 @@ export const useColumns = () => {
           const row = get(info, "row.original");
           const owner = get(row, "owner");
           const name =
-            [get(owner, "firstName"), get(owner, "lastName")]
-              .filter(Boolean)
+            filter([get(owner, "firstName"), get(owner, "lastName")], Boolean)
               .join(" ") || get(owner, "email", "-");
           const email = get(owner, "email", "");
           const avatar = get(owner, "avatarUrl") || get(owner, "avatar");

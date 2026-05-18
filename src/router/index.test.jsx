@@ -69,26 +69,17 @@ vi.mock("@/modules/landing/index.jsx", () => ({
 vi.mock("@/modules/onboarding/user/index.jsx", () => ({
   default: () => <div>user-onboarding-module</div>,
 }));
-vi.mock("@/modules/onboarding/coach/index.jsx", () => ({
-  default: () => <div>coach-onboarding-module</div>,
-}));
 vi.mock("@/modules/admin/index.jsx", () => ({
   default: () => <div>admin-module</div>,
 }));
 vi.mock("@/modules/user/index.jsx", () => ({
   default: () => <div>user-module</div>,
 }));
-vi.mock("@/modules/coach/index.jsx", () => ({
-  default: () => <div>coach-module</div>,
-}));
 vi.mock("@/pages/not-found/index.jsx", () => ({
   default: () => <div>not-found</div>,
 }));
 vi.mock("@/pages/referral-redirect/index.jsx", () => ({
   default: () => <div>referral-redirect</div>,
-}));
-vi.mock("@/pages/referral-join/index.jsx", () => ({
-  default: () => <div>join-referral</div>,
 }));
 
 describe("root router Telegram password setup routing", () => {

@@ -10,6 +10,8 @@ import {
   some,
   toLower,
   trim,
+  toNumber,
+  parseInt as lodashParseInt,
 } from "lodash";
 import { toast } from "sonner";
 import {
@@ -150,7 +152,7 @@ const buildWorkoutLogPayload = ({
   const validSets = filter(sets, (set) =>
     some(
       trackingFields,
-      (field) => Number(get(set, get(field, "key")) ?? 0) > 0,
+      (field) => toNumber(get(set, get(field, "key")) ?? 0) > 0,
     ),
   );
 
@@ -160,7 +162,7 @@ const buildWorkoutLogPayload = ({
 
   const totalDurationSeconds = reduce(
     validSets,
-    (sum, set) => sum + (parseInt(get(set, "durationSeconds"), 10) || 0),
+    (sum, set) => sum + (lodashParseInt(get(set, "durationSeconds"), 10) || 0),
     0,
   );
   const durationMinutes =
@@ -183,10 +185,10 @@ const buildWorkoutLogPayload = ({
       if (index === validSets.length - 1) {
         return {
           sets: 1,
-          reps: parseInt(get(set, "reps"), 10) || 0,
-          weight: parseFloat(get(set, "weight")) || 0,
-          durationSeconds: parseInt(get(set, "durationSeconds"), 10) || 0,
-          distanceMeters: parseInt(get(set, "distanceMeters"), 10) || 0,
+          reps: lodashParseInt(get(set, "reps"), 10) || 0,
+          weight: toNumber(get(set, "weight")) || 0,
+          durationSeconds: lodashParseInt(get(set, "durationSeconds"), 10) || 0,
+          distanceMeters: lodashParseInt(get(set, "distanceMeters"), 10) || 0,
           durationMinutes: remainingDuration,
           burnedCalories: remainingCalories,
         };
@@ -205,10 +207,10 @@ const buildWorkoutLogPayload = ({
 
       return {
         sets: 1,
-        reps: parseInt(get(set, "reps"), 10) || 0,
-        weight: parseFloat(get(set, "weight")) || 0,
-        durationSeconds: parseInt(get(set, "durationSeconds"), 10) || 0,
-        distanceMeters: parseInt(get(set, "distanceMeters"), 10) || 0,
+        reps: lodashParseInt(get(set, "reps"), 10) || 0,
+        weight: toNumber(get(set, "weight")) || 0,
+        durationSeconds: lodashParseInt(get(set, "durationSeconds"), 10) || 0,
+        distanceMeters: lodashParseInt(get(set, "distanceMeters"), 10) || 0,
         durationMinutes: itemDuration,
         burnedCalories: itemCalories,
       };
@@ -498,7 +500,7 @@ export default function WorkoutLogDrawer({
                     {map(trackingFields, (field) => (
                       <NumberField
                         key={get(field, "key")}
-                        value={Number(get(set, get(field, "key"))) || undefined}
+                        value={toNumber(get(set, get(field, "key"))) || undefined}
                         onValueChange={(value) =>
                           updateSet(index, get(field, "key"), value)
                         }

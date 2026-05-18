@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { some, take } from "lodash";
+import { some, take, split } from "lodash";
 
 const LEVEL_THRESHOLDS = [
   0, 500, 1000, 1500, 2000, 3000, 4000, 5500, 7000, 9000, 11000, 13500,
@@ -19,7 +19,7 @@ const computeLevel = (xp) => {
 const computeNextLevelXP = (level) =>
   LEVEL_THRESHOLDS[level] ?? LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1];
 
-const todayKey = () => new Date().toISOString().split("T")[0];
+const todayKey = () => split(new Date().toISOString(), "T")[0];
 
 const initialState = {
   xp: 2450,
@@ -93,7 +93,7 @@ const useGamificationStore = create()(
 
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayKey = yesterday.toISOString().split("T")[0];
+        const yesterdayKey = split(yesterday.toISOString(), "T")[0];
 
         let newStreak;
         if (lastActiveDate === yesterdayKey) {

@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, filter, includes, map, toNumber } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   BellIcon,
@@ -66,7 +66,6 @@ const DEFAULT_SYSTEM_SETTINGS = {
   typedFeatureFlags: {
     aiPlanGeneration: true,
     foodPhotoAnalysis: true,
-    coachMode: true,
     gamification: true,
     telegramBot: true,
   },
@@ -97,7 +96,6 @@ const DEFAULT_SYSTEM_SETTINGS = {
 const TYPED_FEATURE_FLAGS = [
   ["aiPlanGeneration", "AI plan generation"],
   ["foodPhotoAnalysis", "Food photo analysis"],
-  ["coachMode", "Coach mode"],
   ["gamification", "Gamification"],
   ["telegramBot", "Telegram bot"],
 ];
@@ -199,7 +197,7 @@ const Index = () => {
         DEFAULT_SYSTEM_SETTINGS.appModeDefaults.enabledModes;
       const enabledModes = checked
         ? Array.from(new Set([...currentModes, mode]))
-        : currentModes.filter((item) => item !== mode);
+        : filter(currentModes, (item) => item !== mode);
 
       return {
         ...base,
@@ -207,7 +205,7 @@ const Index = () => {
           ...DEFAULT_SYSTEM_SETTINGS.appModeDefaults,
           ...(base.appModeDefaults ?? {}),
           enabledModes,
-          defaultMode: enabledModes.includes(base.appModeDefaults?.defaultMode)
+          defaultMode: includes(enabledModes, base.appModeDefaults?.defaultMode)
             ? base.appModeDefaults.defaultMode
             : enabledModes[0] ||
               DEFAULT_SYSTEM_SETTINGS.appModeDefaults.defaultMode,
@@ -276,7 +274,7 @@ const Index = () => {
                         onChange={(event) =>
                           handleSystemChange(
                             "globalCommissionRate",
-                            Number(event.target.value),
+                            toNumber(event.target.value),
                           )
                         }
                         className="pr-10"
@@ -293,7 +291,7 @@ const Index = () => {
                       onChange={(event) =>
                         handleSystemChange(
                           "minPayoutAmount",
-                          Number(event.target.value),
+                          toNumber(event.target.value),
                         )
                       }
                       disabled={!canManageSettings}
@@ -382,7 +380,7 @@ const Index = () => {
                       handleNestedSettingsChange(
                         "healthFormulaSettings",
                         "deficitPercent",
-                        Number(value),
+                        toNumber(value),
                       )
                     }
                   />
@@ -395,7 +393,7 @@ const Index = () => {
                       handleNestedSettingsChange(
                         "healthFormulaSettings",
                         "surplusPercent",
-                        Number(value),
+                        toNumber(value),
                       )
                     }
                   />
@@ -408,7 +406,7 @@ const Index = () => {
                       handleNestedSettingsChange(
                         "healthFormulaSettings",
                         "minCaloriesFemale",
-                        Number(value),
+                        toNumber(value),
                       )
                     }
                   />
@@ -421,7 +419,7 @@ const Index = () => {
                       handleNestedSettingsChange(
                         "healthFormulaSettings",
                         "minCaloriesMale",
-                        Number(value),
+                        toNumber(value),
                       )
                     }
                   />
@@ -445,7 +443,7 @@ const Index = () => {
                       handleNestedSettingsChange(
                         "healthFormulaSettings",
                         "waterMlPerKg",
-                        Number(value),
+                        toNumber(value),
                       )
                     }
                   />
@@ -458,7 +456,7 @@ const Index = () => {
                       handleNestedSettingsChange(
                         "healthFormulaSettings",
                         "workoutExtraWaterMl",
-                        Number(value),
+                        toNumber(value),
                       )
                     }
                   />
@@ -473,7 +471,7 @@ const Index = () => {
                       handleNestedSettingsChange(
                         "healthFormulaSettings",
                         "hotWeatherExtraWaterMl",
-                        Number(value),
+                        toNumber(value),
                       )
                     }
                   />
@@ -486,7 +484,7 @@ const Index = () => {
                       handleNestedSettingsChange(
                         "healthFormulaSettings",
                         "minDailyWaterMl",
-                        Number(value),
+                        toNumber(value),
                       )
                     }
                   />
@@ -499,7 +497,7 @@ const Index = () => {
                       handleNestedSettingsChange(
                         "healthFormulaSettings",
                         "maxDailyWaterMl",
-                        Number(value),
+                        toNumber(value),
                       )
                     }
                   />
@@ -516,12 +514,12 @@ const Index = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {[
+                  {map([
                     ["waterReminder", "Water reminder"],
                     ["mealReminder", "Meal reminder"],
                     ["workoutReminder", "Workout reminder"],
                     ["progressReminder", "Progress reminder"],
-                  ].map(([key, label]) => (
+                  ], ([key, label]) => (
                     <div key={key} className="space-y-2">
                       <Label>{label}</Label>
                       <Textarea
@@ -549,12 +547,12 @@ const Index = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {[
+                  {map([
                     ["mealPlanPromptFeature", "Meal plan prompt feature"],
                     ["workoutPlanPromptFeature", "Workout prompt feature"],
                     ["safetyRulesSource", "Safety rules source"],
                     ["budgetRulesSource", "Budget rules source"],
-                  ].map(([key, label]) => (
+                  ], ([key, label]) => (
                     <Field
                       key={key}
                       label={label}
@@ -595,14 +593,12 @@ const Index = () => {
                   <div className="space-y-2">
                     <Label>Enabled modes</Label>
                     <div className="grid gap-2">
-                      {APP_MODES.map(([key, label]) => (
+                      {map(APP_MODES, ([key, label]) => (
                         <SwitchRow
                           key={key}
                           label={label}
                           checked={Boolean(
-                            formData.appModeDefaults?.enabledModes?.includes(
-                              key,
-                            ),
+                            includes(formData.appModeDefaults?.enabledModes, key),
                           )}
                           disabled={!canManageSettings}
                           onChange={(checked) =>
@@ -616,7 +612,7 @@ const Index = () => {
                   <div className="space-y-2">
                     <Label>Typed feature flags</Label>
                     <div className="grid gap-2">
-                      {TYPED_FEATURE_FLAGS.map(([key, label]) => (
+                      {map(TYPED_FEATURE_FLAGS, ([key, label]) => (
                         <SwitchRow
                           key={key}
                           label={label}
@@ -668,7 +664,7 @@ const Index = () => {
                   onChange={(value) =>
                     handleBudgetRuleChange(
                       "maxDailyCostMultiplier",
-                      Number(value),
+                      toNumber(value),
                     )
                   }
                 />
@@ -680,7 +676,7 @@ const Index = () => {
                   onChange={(value) =>
                     handleBudgetRuleChange(
                       "maxWeeklyCostMultiplier",
-                      Number(value),
+                      toNumber(value),
                     )
                   }
                 />
@@ -692,7 +688,7 @@ const Index = () => {
                   onChange={(value) =>
                     handleBudgetRuleChange(
                       "unknownMealCostFallback",
-                      Number(value),
+                      toNumber(value),
                     )
                   }
                 />
@@ -707,7 +703,7 @@ const Index = () => {
                   onChange={(value) =>
                     handleBudgetRuleChange(
                       "unknownIngredientPriceFallbackPer100g",
-                      Number(value),
+                      toNumber(value),
                     )
                   }
                 />
@@ -722,7 +718,7 @@ const Index = () => {
                   onChange={(value) =>
                     handleBudgetRuleChange(
                       "maxUnknownCostMealSlotsPerWeek",
-                      Number(value),
+                      toNumber(value),
                     )
                   }
                 />
@@ -753,7 +749,7 @@ const Index = () => {
                   onChange={(value) =>
                     handleBudgetRuleChange(
                       "cheapIngredientMaxPricePer100g",
-                      Number(value),
+                      toNumber(value),
                     )
                   }
                 />
@@ -844,7 +840,7 @@ const Index = () => {
                     handleNestedSettingsChange(
                       "workoutPlanGenerationSettings",
                       "defaultPlanDays",
-                      Number(value),
+                      toNumber(value),
                     )
                   }
                 />
@@ -857,7 +853,7 @@ const Index = () => {
                     handleNestedSettingsChange(
                       "workoutPlanGenerationSettings",
                       "minDaysPerWeek",
-                      Number(value),
+                      toNumber(value),
                     )
                   }
                 />
@@ -872,7 +868,7 @@ const Index = () => {
                     handleNestedSettingsChange(
                       "workoutPlanGenerationSettings",
                       "defaultDaysPerWeek",
-                      Number(value),
+                      toNumber(value),
                     )
                   }
                 />
@@ -885,7 +881,7 @@ const Index = () => {
                     handleNestedSettingsChange(
                       "workoutPlanGenerationSettings",
                       "maxDaysPerWeek",
-                      Number(value),
+                      toNumber(value),
                     )
                   }
                 />
@@ -901,7 +897,7 @@ const Index = () => {
                     handleNestedSettingsChange(
                       "workoutPlanGenerationSettings",
                       "targetRestDaysPerWeek",
-                      Number(value),
+                      toNumber(value),
                     )
                   }
                 />
@@ -931,7 +927,7 @@ const Index = () => {
                     handleNestedSettingsChange(
                       "workoutPlanGenerationSettings",
                       "deloadEveryWeeks",
-                      Number(value),
+                      toNumber(value),
                     )
                   }
                 />

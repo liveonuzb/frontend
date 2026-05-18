@@ -1,4 +1,4 @@
-import { includes, indexOf } from "lodash";
+import { includes, indexOf, keys } from "lodash";
 
 export const ONBOARDING_STEPS = [
   "name",
@@ -15,19 +15,6 @@ export const ONBOARDING_STEPS = [
   "diet-requirements",
   "health-constraints",
   "review",
-];
-
-export const COACH_ONBOARDING_STEPS = [
-  "coach/category",
-  "coach/experience",
-  "coach/specialization",
-  "coach/target-audience",
-  "coach/availability",
-  "coach/certification",
-  "coach/bio",
-  "coach/pricing",
-  "coach/languages",
-  "coach/avatar",
 ];
 
 export const LEGACY_USER_ONBOARDING_STEP_REDIRECTS = {
@@ -56,21 +43,15 @@ export const LEGACY_USER_ONBOARDING_STEP_REDIRECTS = {
   "disliked-ingredients": "health-constraints",
 };
 
-export const LEGACY_USER_ONBOARDING_STEPS = Object.keys(
-  LEGACY_USER_ONBOARDING_STEP_REDIRECTS,
-);
+export const LEGACY_USER_ONBOARDING_STEPS = keys(LEGACY_USER_ONBOARDING_STEP_REDIRECTS);
 
 export const ALL_ONBOARDING_STEPS = [
   ...ONBOARDING_STEPS,
   ...LEGACY_USER_ONBOARDING_STEPS,
-  ...COACH_ONBOARDING_STEPS,
 ];
 
 export const isKnownOnboardingStep = (step) =>
   includes(ALL_ONBOARDING_STEPS, step);
-
-export const isCoachOnboardingStep = (step) =>
-  includes(COACH_ONBOARDING_STEPS, step);
 
 export const normalizeUserOnboardingStep = (step) =>
   LEGACY_USER_ONBOARDING_STEP_REDIRECTS[step] ?? step;

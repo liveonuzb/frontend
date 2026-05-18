@@ -1,6 +1,6 @@
 import React from "react";
 import { useParams } from "react-router";
-import { get, isArray, join, map } from "lodash";
+import { get, isArray, join, map, filter, toUpper, split } from "lodash";
 import { toast } from "sonner";
 import {
   LoaderCircleIcon,
@@ -53,17 +53,13 @@ const formatDate = (dateStr) => {
 
 const getInitials = (name) => {
   if (!name) return "?";
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
+  return toUpper(map(split(name, " "), (n) => n[0])
+    .join(""))
     .slice(0, 2);
 };
 
 const getFullName = (user) => {
-  const name = [get(user, "firstName"), get(user, "lastName")]
-    .filter(Boolean)
+  const name = filter([get(user, "firstName"), get(user, "lastName")], Boolean)
     .join(" ");
   return name || get(user, "email", "-");
 };

@@ -1,5 +1,5 @@
 import React from "react";
-import { find, get } from "lodash";
+import { find, get, toNumber, trim } from "lodash";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -22,10 +22,10 @@ const SORT_FIELDS = [
 ];
 const SORT_DIRECTIONS = ["asc", "desc"];
 
-const clampPage = (page) => Math.max(1, Number(page) || 1);
+const clampPage = (page) => Math.max(1, toNumber(page) || 1);
 
 const clampPageSize = (pageSize) =>
-  Math.min(100, Math.max(1, Number(pageSize) || DEFAULT_PAGE_SIZE));
+  Math.min(100, Math.max(1, toNumber(pageSize) || DEFAULT_PAGE_SIZE));
 
 const isEmptyOperator = (operator) =>
   operator === "empty" || operator === "not_empty";
@@ -107,8 +107,8 @@ export function useLocalizedCatalogFilters({ pluralSearchPlaceholder }) {
 
   const queryParams = React.useMemo(
     () => ({
-      ...(deferredSearch.trim() ? { q: deferredSearch.trim() } : {}),
-      ...((deferredSearch.trim() || isEmptyOperator(searchOperator)) &&
+      ...(trim(deferredSearch) ? { q: trim(deferredSearch) } : {}),
+      ...((trim(deferredSearch) || isEmptyOperator(searchOperator)) &&
       searchOperator !== "contains"
         ? { qOp: searchOperator }
         : {}),
@@ -200,7 +200,7 @@ export function useLocalizedCatalogFilters({ pluralSearchPlaceholder }) {
   const activeFilters = React.useMemo(() => {
     const next = [];
 
-    if (search.trim() || isEmptyOperator(searchOperator)) {
+    if (trim(search) || isEmptyOperator(searchOperator)) {
       next.push({
         id: "q",
         field: "q",
@@ -290,7 +290,7 @@ export function useLocalizedCatalogFilters({ pluralSearchPlaceholder }) {
   );
 
   const isDefaultReorderView =
-    deferredSearch.trim() === "" &&
+    trim(deferredSearch) === "" &&
     searchOperator === "contains" &&
     statusFilter === "all" &&
     statusOperator === "is" &&

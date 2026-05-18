@@ -1,4 +1,4 @@
-import { times, clamp } from "lodash";
+import { times, clamp, split, toNumber, trim } from "lodash";
 import React from "react";
 import { ScrollPicker } from "@/components/ui/scroll-picker";
 
@@ -19,8 +19,8 @@ const DECIMAL_ITEMS = times(10, (index) => {
 });
 
 const normalizeWeightValue = (value) => {
-  const raw = String(value ?? "").trim();
-  const normalized = Number(raw);
+  const raw = trim(String(value ?? ""));
+  const normalized = toNumber(raw);
 
   if (!Number.isFinite(normalized)) {
     return {
@@ -30,7 +30,7 @@ const normalizeWeightValue = (value) => {
   }
 
   const clamped = clamp(normalized, 30, 250.9);
-  const [kilograms, decimal = "0"] = clamped.toFixed(1).split(".");
+  const [kilograms, decimal = "0"] = split(clamped.toFixed(1), ".");
 
   return {
     kilograms,

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { take, findLast, find } from "lodash";
+import { findLast, find, map, split, trim } from "lodash";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
@@ -7,7 +7,6 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-    DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
     SendIcon,
@@ -17,17 +16,13 @@ import {
     ImageIcon,
     ReplyIcon,
     XIcon,
-    CalendarIcon,
     SparklesIcon,
     TimerIcon,
-    LibraryIcon,
 } from "lucide-react";
 import StickerPicker from "@/components/chat/sticker-picker";
 import { cn } from "@/lib/utils";
 import { useChatStore } from "@/store";
-import { useCoachSnippets, useCoachAvailability } from "@/hooks/app/use-coach";
 import { CHAT_ATTACHMENT_ACCEPT } from "@/modules/chat/lib/chat-attachment-policy.js";
-import { buildGroundedCoachReplySuggestions } from "@/modules/chat/lib/coach-reply-assist.js";
 import { isChatFeatureEnabled } from "@/modules/chat/lib/chat-feature-flags.js";
 
 const TIMER_OPTIONS = [
@@ -44,7 +39,6 @@ const ChatInput = ({
     handleSendMessage,
     handleFileSelect,
     fileInputRef,
-    isCoach,
     stickerOpen,
     setStickerOpen,
     handleStickerSelect,
@@ -57,14 +51,12 @@ const ChatInput = ({
     sendBooking,
     getAISuggestions,
     chatMessages = [],
-    coachReplyContext = null,
     disabled = false,
     disabledReason = "Bu chat bloklangan",
     connectionState = "online",
 }) => {
     const inputRef = React.useRef(null);
     const canUseSelfDestructMessages = isChatFeatureEnabled("selfDestructMessages");
-    const { snippets } = useCoachSnippets();
     const [showBookingDialog, setShowBookingDialog] = useState(false);
     const [showLibraryDialog, setShowLibraryDialog] = useState(false);
     const [isSubmittingBooking, setIsSubmittingBooking] = useState(false);
@@ -74,19 +66,7 @@ const ChatInput = ({
 
     const [bookingTitle, setBookingTitle] = useState("Konsultatsiya");
     const [bookingSlots, setBookingSlots] = useState(["10:00", "14:00"]);
-    const [bookingDate, setBookingDate] = useState(new Date().toISOString().split("T")[0]);
-
-    const { getAvailableSlots } = useCoachAvailability();
-
-    const handleSmartScan = () => {
-        const slots = getAvailableSlots(bookingDate);
-        if (slots.length > 0) {
-            setBookingSlots(take(slots, 4));
-            toast.success("Bo'sh vaqtlaringiz topildi! ✨");
-        } else {
-            toast.error("Bu kunda bo'sh vaqtingiz yo'q");
-        }
-    };
+    const [bookingDate, setBookingDate] = useState(split(new Date().toISOString(), "T")[0]);
 
     React.useEffect(() => { if (replyingTo || editingMsg) inputRef.current?.focus(); }, [replyingTo, editingMsg]);
 
@@ -103,18 +83,11 @@ const ChatInput = ({
 
     const aiSuggestions = React.useMemo(() => {
         const lastOtherMsg = findLast(chatMessages, m => m.from !== "me");
-        if (isCoach && coachReplyContext) {
-            return buildGroundedCoachReplySuggestions({
-                lastMessage: lastOtherMsg,
-                clientContext: coachReplyContext,
-            });
-        }
-
-        return getAISuggestions(lastOtherMsg?.text).map((text) => ({
+        return map(getAISuggestions(lastOtherMsg?.text), (text) => ({
             text,
             reason: "Oxirgi xabar matniga asoslangan tezkor draft",
         }));
-    }, [chatMessages, coachReplyContext, getAISuggestions, isCoach]);
+    }, [chatMessages, getAISuggestions]);
 
     const applySuggestion = (suggestion) => {
         if (disabled) return;
@@ -153,7 +126,7 @@ const ChatInput = ({
 
                     {showLibraryDialog && (
                         <div className="space-y-2">
-                            {library.length === 0 ? <p className="text-center text-xs text-muted-foreground py-4">Kutubxona bo'sh</p> : library.map(res => (
+                            {library.length === 0 ? <p className="text-center text-xs text-muted-foreground py-4">Kutubxona bo'sh</p> : map(library, res => (
                                 <button key={res.id} className="flex items-center w-full p-2.5 hover:bg-muted rounded-xl gap-3 transition-colors text-left" onClick={() => { sendSharedContent(activeChat, "resource", res.id, res.title, res.type); setShowLibraryDialog(false); }}>
                                     <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs uppercase shrink-0">{res.type}</div>
                                     <div className="min-w-0">
@@ -170,24 +143,21 @@ const ChatInput = ({
                             <input value={bookingTitle} onChange={e => setBookingTitle(e.target.value)} className="h-10 w-full rounded-lg border bg-muted/30 px-3 text-sm" placeholder="Mavzu..." />
                             <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
                                 <input type="date" value={bookingDate} onChange={e => setBookingDate(e.target.value)} className="h-9 min-w-0 rounded-md border bg-background px-2 text-xs" />
-                                <Button size="sm" variant="outline" className="h-9 gap-1.5" onClick={handleSmartScan}>
-                                    <SparklesIcon className="size-3 text-primary" /> Smart Scan
-                                </Button>
                             </div>
                             <div className="flex flex-wrap gap-1.5 min-h-[32px]">
-                                {bookingSlots.map(t => (
-                                    <button key={t} onClick={() => setBookingSlots(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])} className={cn("min-h-8 rounded-md border px-2.5 py-1 text-[10px]", bookingSlots.includes(t) ? "bg-primary text-primary-foreground border-primary" : "bg-muted/20")}>{t}</button>
+                                {map(bookingSlots, t => (
+                                    <button key={t} onClick={() => setBookingSlots([t])} className={cn("min-h-8 rounded-md border px-2.5 py-1 text-[10px]", "bg-primary text-primary-foreground border-primary")}>{t}</button>
                                 ))}
                             </div>
                             <Button
                                 className="w-full h-9 text-xs"
-                                disabled={isSubmittingBooking || !bookingTitle.trim() || bookingSlots.length === 0}
+                                disabled={isSubmittingBooking || !trim(bookingTitle) || bookingSlots.length === 0}
                                 onClick={async () => {
                                     try {
                                         setIsSubmittingBooking(true);
                                         await sendBooking(
                                             activeChat,
-                                            bookingTitle.trim(),
+                                            trim(bookingTitle),
                                             bookingDate,
                                             bookingSlots,
                                         );
@@ -204,7 +174,6 @@ const ChatInput = ({
                     )}
                 </div>
             )}
-
             {/* Replying indicator */}
             {replyingTo && (
                 <div className="px-4 py-2 border-t bg-muted/20 flex items-center justify-between animate-in slide-in-from-bottom-2">
@@ -218,11 +187,10 @@ const ChatInput = ({
                     <Button variant="ghost" size="icon" className="size-6" onClick={() => setReplyingTo(null)}><XIcon className="size-4" /></Button>
                 </div>
             )}
-
             {/* AI Suggestions Bar */}
-            {!input.trim() && !replyingTo && !editingMsg && (
+            {!trim(input) && !replyingTo && !editingMsg && (
                 <div className="flex max-h-24 items-center gap-1.5 overflow-x-auto bg-background/50 px-3 py-1.5 no-scrollbar">
-                    {aiSuggestions.map((text, i) => (
+                    {map(aiSuggestions, (text, i) => (
                         <button
                             key={`ai-${i}`}
                             onClick={() => applySuggestion(text)}
@@ -240,12 +208,8 @@ const ChatInput = ({
                             ) : null}
                         </button>
                     ))}
-                    {isCoach && snippets.map((snippet) => (
-                        <button key={snippet.id} onClick={() => setInput(snippet.text)} className="max-w-[72vw] truncate whitespace-nowrap rounded-full border bg-background px-3 py-1.5 text-[10px] font-medium transition-colors hover:bg-muted md:text-xs">{snippet.title}</button>
-                    ))}
                 </div>
             )}
-
             {(disabled || isOffline) && (
                 <div className={cn(
                     "mx-2 mt-2 rounded-xl border px-3 py-2 text-[11px] font-medium md:mx-4 md:text-xs",
@@ -254,7 +218,6 @@ const ChatInput = ({
                     {disabled ? disabledReason : "Internet aloqasi yo'q. Yuborilmagan xabarlar retry tugmasi bilan ko'rinadi."}
                 </div>
             )}
-
             <div className="p-2 shadow-lg shadow-black/5 md:p-4">
                 <div className="mx-auto flex max-w-6xl items-end gap-1.5">
                     <DropdownMenu>
@@ -262,13 +225,6 @@ const ChatInput = ({
                             <Button variant="ghost" size="icon" className="size-9 shrink-0 rounded-full hover:bg-primary/10" disabled={disabled}><PaperclipIcon className="size-4 md:size-5" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" className="w-48 rounded-xl shadow-2xl">
-                            {isCoach && (
-                                <>
-                                    <DropdownMenuItem onClick={() => setShowBookingDialog(true)} className="text-xs p-2.5 cursor-pointer"><CalendarIcon className="mr-2 size-4 text-primary" />Uchrashuv</DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => setShowLibraryDialog(true)} className="text-xs p-2.5 cursor-pointer"><LibraryIcon className="mr-2 size-4 text-primary" />Kutubxona</DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                </>
-                            )}
                             <DropdownMenuItem onClick={() => fileInputRef.current?.click()} className="text-xs p-2.5 cursor-pointer"><ImageIcon className="mr-2 size-4 text-primary" />Media</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -289,7 +245,7 @@ const ChatInput = ({
                                     </button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="start" className="w-32">
-                                    {TIMER_OPTIONS.map(opt => (
+                                    {map(TIMER_OPTIONS, opt => (
                                         <DropdownMenuItem key={opt.label} onClick={() => setTtl(opt.value)} className="text-xs">{opt.label}</DropdownMenuItem>
                                     ))}
                                 </DropdownMenuContent>
@@ -311,7 +267,7 @@ const ChatInput = ({
                         <StickerPicker open={stickerOpen} onClose={() => setStickerOpen(false)} onSelect={handleStickerSelect} />
                     </div>
 
-                    {input.trim() ? (
+                    {trim(input) ? (
                         <div className="flex gap-1 items-center">
                             <Button onClick={() => onSend()} disabled={disabled} className="size-10 md:size-12 rounded-2xl shadow-lg shrink-0"><SendIcon className="size-4 md:size-5" /></Button>
                         </div>

@@ -1,11 +1,10 @@
+import { toLower, trim } from "lodash";
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
 const roundToStep = (value, step) => Math.round(value / step) * step;
 
 export const normalizeGoal = (goal) => {
-  const normalized = String(goal ?? "")
-    .trim()
-    .toLowerCase()
+  const normalized = toLower(trim(String(goal ?? "")))
     .replace(/[\s_]+/g, "-");
 
   if (normalized.startsWith("lose")) {
@@ -20,9 +19,7 @@ export const normalizeGoal = (goal) => {
 };
 
 export const normalizeActivityLevel = (activityLevel) => {
-  const normalized = String(activityLevel ?? "")
-    .trim()
-    .toLowerCase()
+  const normalized = toLower(trim(String(activityLevel ?? "")))
     .replace(/[\s_]+/g, "-");
 
   if (

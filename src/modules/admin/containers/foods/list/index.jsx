@@ -1,8 +1,7 @@
 import React from "react";
 import { useNavigate, Outlet } from "react-router";
 import {
-  chain,
-  filter as lodashFilter,
+  toPairs, filter as lodashFilter,
   find,
   findIndex,
   get,
@@ -11,7 +10,8 @@ import {
   keyBy,
   map as lodashMap,
   trim,
-  values,
+  values as lodashValues,
+  toNumber,
 } from "lodash";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { toast } from "sonner";
@@ -54,7 +54,7 @@ const resolveLabel = (translations, fallback, language) => {
     const uz = trim(String(get(translations, "uz", "")));
     if (uz) return uz;
 
-    const first = find(values(translations), (value) => trim(String(value)));
+    const first = find(lodashValues(translations), (value) => trim(String(value)));
     if (first) return trim(String(first));
   }
 
@@ -67,7 +67,7 @@ const getMutationErrorMessage = (error, fallback) => {
   const dependencySummary = response?.dependencySummary;
   const baseMessage = isArray(message) ? message.join(", ") : message;
 
-  return [baseMessage || fallback, dependencySummary].filter(Boolean).join(" ");
+  return lodashFilter([baseMessage || fallback, dependencySummary], Boolean).join(" ");
 };
 
 const Index = () => {
@@ -463,12 +463,7 @@ const Index = () => {
   );
   const selectedFoodIds = React.useMemo(
     () =>
-      chain(rowSelection)
-        .entries()
-        .filter(([, selected]) => Boolean(selected))
-        .map(([id]) => Number(id))
-        .filter((id) => Number.isInteger(id))
-        .value(),
+      lodashFilter(lodashMap(lodashFilter(toPairs(rowSelection), ([, selected]) => Boolean(selected)), ([id]) => toNumber(id)), (id) => Number.isInteger(id)),
     [rowSelection],
   );
   const selectedFoodCount = selectedFoodIds.length;
@@ -548,7 +543,7 @@ const Index = () => {
       } catch (error) {
         const message = error?.response?.data?.message;
         toast.error(
-          Array.isArray(message)
+          isArray(message)
             ? message.join(", ")
             : message || "Excel import qilib bo'lmadi",
         );
@@ -758,8 +753,8 @@ const Index = () => {
     onPaginationChange: (updater) => {
       const prev = { pageIndex: currentPage - 1, pageSize };
       const next = typeof updater === "function" ? updater(prev) : updater;
-      const nextPage = Number(next.pageIndex) + 1;
-      const nextPageSize = Number(next.pageSize) || pageSize;
+      const nextPage = toNumber(next.pageIndex) + 1;
+      const nextPageSize = toNumber(next.pageSize) || pageSize;
       if (
         (!Number.isFinite(nextPage) || nextPage === currentPage) &&
         nextPageSize === pageSize
@@ -1021,3 +1016,6 @@ const Index = () => {
 };
 
 export default Index;
+
+
+

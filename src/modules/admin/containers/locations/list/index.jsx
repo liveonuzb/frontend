@@ -1,6 +1,20 @@
 import React from "react";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { filter, find, fromPairs, get, isArray, join, map, size, toString, trim } from "lodash";
+import {
+  filter,
+  find,
+  fromPairs,
+  get,
+  isArray,
+  join,
+  map,
+  size,
+  toString,
+  trim,
+  forEach,
+  toNumber,
+  toUpper,
+} from "lodash";
 import { toast } from "sonner";
 import { useMatch, useNavigate } from "react-router";
 import {
@@ -250,7 +264,7 @@ const LocationsIndex = () => {
   }, [setBreadcrumbs]);
 
   React.useEffect(() => {
-    const nextTotalPages = Math.max(1, Number(get(meta, "totalPages")) || 1);
+    const nextTotalPages = Math.max(1, toNumber(get(meta, "totalPages")) || 1);
     if (currentPage > nextTotalPages) {
       void setPageQuery(String(nextTotalPages));
     }
@@ -339,7 +353,7 @@ const LocationsIndex = () => {
   const displayList = React.useMemo(() => {
     const result = [];
     const addWithChildren = (items, depth = 0, parentPath = []) => {
-      items.forEach((item) => {
+      forEach(items, (item) => {
         const localizedName = resolveTranslatedLocationLabel(item.translations, item.name, currentLanguage);
         const path = item.path?.length ? item.path : [...parentPath, localizedName];
         const hasChildren = Boolean(item._count?.children > 0 || item.childrenCount > 0 || item.hasChildren);
@@ -361,8 +375,8 @@ const LocationsIndex = () => {
   }, [locations, expandedIds, childrenMap, currentLanguage]);
 
   const paginatedList = displayList;
-  const totalCount = Number(get(meta, "total")) || 0;
-  const totalPages = Math.max(1, Number(get(meta, "totalPages")) || 1);
+  const totalCount = toNumber(get(meta, "total")) || 0;
+  const totalPages = Math.max(1, toNumber(get(meta, "totalPages")) || 1);
 
   // --- Stats cards ---
   const statsCards = React.useMemo(() => [
@@ -413,7 +427,7 @@ const LocationsIndex = () => {
     const payload = {
       name,
       translations: cleanLocationTranslations({ ...(editingLocation?.translations || {}), [currentLanguage]: name }),
-      type: form.type.toUpperCase(),
+      type: toUpper(form.type),
       ...(PARENT_TYPE_MAP[form.type] ? { parentId: form.parentId } : {}),
       isActive: form.isActive,
     };
@@ -476,7 +490,7 @@ const LocationsIndex = () => {
       if (parentId && childrenMap[parentId]) {
         setChildrenMap((prev) => ({
           ...prev,
-          [parentId]: prev[parentId].filter((c) => c.id !== locationToDelete.id),
+          [parentId]: filter(prev[parentId], (c) => c.id !== locationToDelete.id),
         }));
       }
       refetchRoot();
@@ -543,7 +557,7 @@ const LocationsIndex = () => {
         typeof updater === "function"
           ? updater({ pageIndex: currentPage - 1, pageSize })
           : updater;
-      const nextPageSize = Number(get(next, "pageSize")) || pageSize;
+      const nextPageSize = toNumber(get(next, "pageSize")) || pageSize;
 
       React.startTransition(() => {
         void setPageQuery(
@@ -575,19 +589,15 @@ const LocationsIndex = () => {
           <Button onClick={openCreateDrawer} className="gap-1.5"><PlusIcon className="size-4" />Location qo&apos;shish</Button>
         </div>
       </div>
-
       <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-5">
-        {statsCards.map((item) => <LocationStatCard key={item.label} {...item} />)}
+        {map(statsCards, (item) => <LocationStatCard key={item.label} {...item} />)}
       </div>
-
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Filter filterFields={filterFields} activeFilters={activeFilters} handleFiltersChange={handleFiltersChange} />
       </div>
-
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <p>{totalCount} ta location ko&apos;rsatilmoqda{currentLanguageMeta ? ` \u2022 ${currentLanguageMeta.flag ? `${currentLanguageMeta.flag} ` : ""}${currentLanguageMeta.name}` : ""}</p>
       </div>
-
       <DataGrid
         table={table}
         isLoading={isLoading || isFetching}
@@ -604,7 +614,6 @@ const LocationsIndex = () => {
           sizes={[10, 20, 50, 100]}
         />
       </DataGrid>
-
       {!isLoading && !totalCount ? (
         <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
           {search || typeFilter !== "all" || statusFilter !== "all" || translationFilter !== "all"
@@ -613,7 +622,6 @@ const LocationsIndex = () => {
           }
         </div>
       ) : null}
-
       {/* Create/Edit Drawer */}
       <Drawer
         open={drawerOpen}
@@ -639,8 +647,8 @@ const LocationsIndex = () => {
             ) : (
               <div className="no-scrollbar flex flex-1 flex-col gap-6 overflow-y-auto px-4 py-4">
                 <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-sm">
-                  <p className="font-medium">Joriy til: {currentLanguageMeta?.flag ? `${currentLanguageMeta.flag} ` : ""}{get(currentLanguageMeta, "name", currentLanguage.toUpperCase())}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Shu drawer saqlanganda {currentLanguage.toUpperCase()} nomi `name` va translation qiymati sifatida birga yangilanadi.</p>
+                  <p className="font-medium">Joriy til: {currentLanguageMeta?.flag ? `${currentLanguageMeta.flag} ` : ""}{get(currentLanguageMeta, "name", toUpper(currentLanguage))}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Shu drawer saqlanganda {toUpper(currentLanguage)} nomi `name` va translation qiymati sifatida birga yangilanadi.</p>
                 </div>
                 <div className="flex flex-col gap-2">
                   <Label>Location nomi</Label>
@@ -658,7 +666,6 @@ const LocationsIndex = () => {
           </div>
         </DrawerContent>
       </Drawer>
-
       {/* Translations Drawer */}
       <Drawer
         open={translationsDrawerOpen}
@@ -713,7 +720,6 @@ const LocationsIndex = () => {
           </div>
         </DrawerContent>
       </Drawer>
-
       <DeleteAlert
         location={locationToDelete}
         open={Boolean(locationToDelete)}

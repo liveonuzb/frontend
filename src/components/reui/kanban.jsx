@@ -1,4 +1,4 @@
-import { keys, findIndex, indexOf, find, map, includes, forEach } from "lodash";
+import { keys, findIndex, indexOf, find, map, includes, forEach, some } from "lodash";
 import * as React from "react"
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import {
@@ -100,7 +100,7 @@ function Kanban(
   const findContainer = useCallback((id) => {
     if (isColumn(id)) return id;
     return find(columnIds, (key) =>
-      columns[key].some((item) => getItemValue(item) === id));
+      some(columns[key], (item) => getItemValue(item) === id));
   }, [columns, columnIds, getItemValue, isColumn])
 
   const handleDragStart = useCallback((event) => {

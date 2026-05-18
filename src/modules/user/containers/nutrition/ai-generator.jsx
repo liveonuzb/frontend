@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { find } from "lodash";
+import { find, map } from "lodash";
 import { Button } from "@/components/ui/button";
 import {
   DrawerBody,
@@ -78,11 +78,10 @@ const AIGenerator = ({ onClose, onGenerated }) => {
           </DrawerDescription>
         </div>
       </DrawerHeader>
-
       <DrawerBody className="space-y-3">
         {step === 1 ? (
           <div className="space-y-2">
-            {MEAL_PLAN_GOALS.map((goal) => {
+            {map(MEAL_PLAN_GOALS, (goal) => {
               const isActive = selectedGoal === goal.id;
 
               return (
@@ -141,7 +140,7 @@ const AIGenerator = ({ onClose, onGenerated }) => {
               </div>
             </div>
 
-            {MEAL_COUNTS.map((count) => {
+            {map(MEAL_COUNTS, (count) => {
               const isActive = selectedMealCount === count.id;
 
               return (
@@ -180,7 +179,6 @@ const AIGenerator = ({ onClose, onGenerated }) => {
           </div>
         )}
       </DrawerBody>
-
       <DrawerFooter>
         {step === 2 ? (
           <Button onClick={handleAiGenerate} disabled={isGeneratingAi}>

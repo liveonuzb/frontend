@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { defaultTo, find } from "lodash";
+import { defaultTo, find, map } from "lodash";
 import {
   Drawer,
   DrawerContent,
@@ -63,7 +63,7 @@ export default function IntervalDrawer({ children }) {
 
         <DrawerBody>
           <div className="flex flex-col gap-2.5 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
-            {intervals.map((interval) => {
+            {map(intervals, (interval) => {
               const isSelected = tempVal === find(intervals, { value: interval.value })?.value;
               return (
                 <button

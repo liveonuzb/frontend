@@ -19,6 +19,8 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 
+import { split, parseInt as lodashParseInt } from "lodash";
+
 const DatePicker = ({ value, onChange, placeholder = "DD.MM.YYYY", className }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [inputValue, setInputValue] = React.useState("");
@@ -45,10 +47,10 @@ const DatePicker = ({ value, onChange, placeholder = "DD.MM.YYYY", className }) 
       setInputValue(maskedValue);
 
       if (maskedValue.length === 10) {
-        const parts = maskedValue.split(".");
-        let day = parseInt(parts[0], 10);
-        let month = parseInt(parts[1], 10);
-        let year = parseInt(parts[2], 10);
+        const parts = split(maskedValue, ".");
+        let day = lodashParseInt(parts[0], 10);
+        let month = lodashParseInt(parts[1], 10);
+        let year = lodashParseInt(parts[2], 10);
 
         let corrected = false;
 

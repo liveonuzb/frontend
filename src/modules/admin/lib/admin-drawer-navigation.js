@@ -1,6 +1,8 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router";
 
+import { toNumber } from "lodash";
+
 export const ADMIN_DRAWER_RETURN_TO_STATE_KEY = "adminDrawerReturnTo";
 
 const buildReturnTo = (location) =>
@@ -9,7 +11,7 @@ const buildReturnTo = (location) =>
 const hasBrowserHistoryEntry = () => {
   if (typeof window === "undefined") return false;
 
-  const index = Number(window.history.state?.idx);
+  const index = toNumber(window.history.state?.idx);
   return Number.isFinite(index) && index > 0;
 };
 

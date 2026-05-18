@@ -1,5 +1,5 @@
 import React from "react";
-import { map, filter } from "lodash";
+import { map, filter, isArray, toUpper, trim } from "lodash";
 import { format } from "date-fns";
 import {
   AwardIcon,
@@ -47,12 +47,9 @@ const CATEGORY_LABELS = {
 };
 
 const getCategoryLabel = (category) => {
-  const normalized = String(category ?? "").trim().toUpperCase();
-  return (
-    CATEGORY_LABELS[normalized] ??
-    normalized.replaceAll("_", " ").trim() ??
-    category
-  );
+  const normalized = toUpper(trim(String(category ?? "")));
+  return (CATEGORY_LABELS[normalized] ??
+  trim(normalized.replaceAll("_", " ")) ?? category);
 };
 
 const getAchievementImage = (item, mode = "madagascar") => {
@@ -175,9 +172,6 @@ const XP_TYPE_LABELS = {
   CHALLENGE_JOINED: "Challengega qo'shilish",
   REFERRAL_REGISTRATION: "Referral bonus",
   REFERRAL_SUBSCRIPTION: "Referral komissiyasi",
-  COACH_ENTRY_BONUS: "Coach referral bonusi",
-  COACH_CLIENT_NEW: "Yangi mijoz bonusi",
-  COACH_CLIENT_EXISTING: "Mavjud mijoz bonusi",
   WITHDRAWAL: "Yechib olish",
   OTHER: "XP o'zgarishi",
   DAILY_LOGIN: "Kunlik kirish",
@@ -403,11 +397,11 @@ const AchievementsPage = () => {
     },
   });
 
-  const categories = Array.isArray(getApiResponseData(categoriesData, []))
+  const categories = isArray(getApiResponseData(categoriesData, []))
     ? getApiResponseData(categoriesData, [])
     : [];
   const achievementsPayload = getApiResponseData(achievementsData, []);
-  const achievements = Array.isArray(achievementsPayload) ? achievementsPayload : [];
+  const achievements = isArray(achievementsPayload) ? achievementsPayload : [];
 
   const unlockedCount = filter(achievements, { unlocked: true }).length;
   const totalCount = achievements.length;

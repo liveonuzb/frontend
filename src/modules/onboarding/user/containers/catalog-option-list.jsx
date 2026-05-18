@@ -2,9 +2,11 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 
+import { filter, map, toNumber, take } from "lodash";
+
 const INITIAL_VISIBLE_OPTION_COUNT = 8;
 
-const getOptionId = (item) => Number(item?.id);
+const getOptionId = (item) => toNumber(item?.id);
 
 const CatalogOptionList = ({ children, options, selectedIdSet }) => {
   const { t } = useTranslation();
@@ -14,9 +16,9 @@ const CatalogOptionList = ({ children, options, selectedIdSet }) => {
       return options;
     }
 
-    const initialOptions = options.slice(0, INITIAL_VISIBLE_OPTION_COUNT);
-    const initialIds = new Set(initialOptions.map(getOptionId));
-    const selectedHiddenOptions = options.filter((item) => {
+    const initialOptions = take(options, INITIAL_VISIBLE_OPTION_COUNT);
+    const initialIds = new Set(map(initialOptions, getOptionId));
+    const selectedHiddenOptions = filter(options, (item) => {
       const id = getOptionId(item);
       return selectedIdSet?.has(id) && !initialIds.has(id);
     });
@@ -28,7 +30,7 @@ const CatalogOptionList = ({ children, options, selectedIdSet }) => {
 
   return (
     <>
-      {visibleOptions.map(children)}
+      {map(visibleOptions, children)}
       {canToggle ? (
         <Button
           type="button"

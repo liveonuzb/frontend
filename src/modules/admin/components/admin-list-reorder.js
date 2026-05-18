@@ -1,3 +1,4 @@
+import { map } from "lodash";
 export const buildAdminReorderPayload = ({
   items,
   activeId,
@@ -6,7 +7,7 @@ export const buildAdminReorderPayload = ({
 }) => {
   if (!activeId || !overId || activeId === overId) return null;
 
-  const itemIds = items.map((item) => String(getId(item)));
+  const itemIds = map(items, (item) => String(getId(item)));
   const oldIndex = itemIds.indexOf(String(activeId));
   const newIndex = itemIds.indexOf(String(overId));
 

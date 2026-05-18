@@ -4,6 +4,8 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Layout from "./index.jsx";
 
+import { forEach } from "lodash";
+
 const setFieldsMock = vi.hoisted(() => vi.fn());
 const setLastVisitedPathMock = vi.hoisted(() => vi.fn());
 const getQueryResultMock = vi.hoisted(() => vi.fn());
@@ -260,7 +262,7 @@ describe("Onboarding layout post-result behavior", () => {
   });
 
   it("uses compact footer reserve only for single-button hero steps", () => {
-    ["name", "gender"].forEach((step) => {
+    forEach(["name", "gender"], (step) => {
       const compact = renderOnboardingLayout(`/user/onboarding/${step}`);
       const compactMain = compact.container.querySelector("main");
 
@@ -289,7 +291,7 @@ describe("Onboarding layout post-result behavior", () => {
   });
 
   it("uses dense footer reserve for numeric picker steps", () => {
-    ["age", "height", "current-weight", "target-weight"].forEach((step) => {
+    forEach(["age", "height", "current-weight", "target-weight"], (step) => {
       const dense = renderOnboardingLayout(`/user/onboarding/${step}`);
       const denseMain = dense.container.querySelector("main");
 
@@ -347,7 +349,6 @@ describe("Onboarding layout post-result behavior", () => {
             goal: "maintain",
             mealFrequency: "3",
           },
-          coachOnboarding: null,
         },
       },
     });

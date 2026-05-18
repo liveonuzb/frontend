@@ -1,5 +1,18 @@
 import React from "react";
-import { filter, flatMap, get, map, max, size, slice, toLower } from "lodash";
+import {
+  filter,
+  flatMap,
+  get,
+  map,
+  max,
+  size,
+  slice,
+  toLower,
+  isArray,
+  reduce,
+  toNumber,
+  trim,
+} from "lodash";
 import {
   DumbbellIcon,
   ExternalLinkIcon,
@@ -19,10 +32,10 @@ import {
 } from "@/components/ui/drawer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const normalizeName = (value) => toLower(String(value || "").trim());
+const normalizeName = (value) => toLower(trim(String(value || "")));
 
 const getExerciseEquipment = (exercise) => {
-  const equipments = Array.isArray(get(exercise, "equipments"))
+  const equipments = isArray(get(exercise, "equipments"))
     ? get(exercise, "equipments")
     : [];
   const equipment = get(exercise, "equipment");
@@ -35,7 +48,7 @@ const getExerciseEquipment = (exercise) => {
 };
 
 const getInstructionParts = (exercise) => {
-  const instructions = Array.isArray(get(exercise, "instructions"))
+  const instructions = isArray(get(exercise, "instructions"))
     ? get(exercise, "instructions")
     : [];
 
@@ -45,7 +58,7 @@ const getInstructionParts = (exercise) => {
       "Mashqni boshlashdan oldin holatingizni barqaror qiling va nafasni nazorat qiling.",
     execution:
       instructions.length > 1
-        ? instructions.slice(1)
+        ? slice(instructions, 1)
         : ["Harakatni nazorat bilan bajaring va set davomida texnikani saqlang."],
   };
 };
@@ -81,12 +94,9 @@ const buildExerciseRecords = (exercise, logs = []) => {
 
   return {
     entries,
-    maxWeight: max(map(entries, (entry) => Number(get(entry, "weight", 0)))) || 0,
-    maxReps: max(map(entries, (entry) => Number(get(entry, "reps", 0)))) || 0,
-    totalSets: entries.reduce(
-      (sum, entry) => sum + (Number(get(entry, "sets", 1)) || 1),
-      0,
-    ),
+    maxWeight: max(map(entries, (entry) => toNumber(get(entry, "weight", 0)))) || 0,
+    maxReps: max(map(entries, (entry) => toNumber(get(entry, "reps", 0)))) || 0,
+    totalSets: reduce(entries, (sum, entry) => sum + (toNumber(get(entry, "sets", 1)) || 1), 0),
   };
 };
 
@@ -105,14 +115,14 @@ const WorkoutExerciseDetailDrawer = ({
     () => buildExerciseRecords(exercise, logs),
     [exercise, logs],
   );
-  const targetMuscles = Array.isArray(get(exercise, "targetMuscles"))
+  const targetMuscles = isArray(get(exercise, "targetMuscles"))
     ? get(exercise, "targetMuscles")
     : [];
-  const secondaryMuscles = Array.isArray(get(exercise, "secondaryMuscles"))
+  const secondaryMuscles = isArray(get(exercise, "secondaryMuscles"))
     ? get(exercise, "secondaryMuscles")
     : [];
   const focusArea =
-    [...targetMuscles, ...secondaryMuscles].filter(Boolean).join(", ") ||
+    filter([...targetMuscles, ...secondaryMuscles], Boolean).join(", ") ||
     get(exercise, "groupLabel") ||
     get(exercise, "category") ||
     "Umumiy";

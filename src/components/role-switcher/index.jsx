@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { filter, find, includes, keys, map, uniq } from "lodash";
+import { filter, find, includes, keys, map, uniq, isArray } from "lodash";
 import { useNavigate, useLocation } from "react-router";
 import { 
     ChevronsUpDown, 
@@ -10,7 +10,6 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -20,10 +19,7 @@ import {
     useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuthStore } from "@/store";
-import {
-    getAvailableSelfServiceRoles,
-    ROLE_CONFIG,
-} from "@/lib/role-config";
+import { ROLE_CONFIG } from "@/lib/role-config";
 
 export { ROLE_CONFIG } from "@/lib/role-config";
 
@@ -33,17 +29,11 @@ const RoleSwitcher = () => {
     const location = useLocation();
     const { isMobile } = useSidebar();
     const { roles, activeRole, setActiveRole } = useAuthStore();
-    const availableSelfServiceRoles = useMemo(
-        () => getAvailableSelfServiceRoles(roles),
-        [roles],
-    );
-    const coachUpgradeOption = availableSelfServiceRoles[0] ?? null;
-    const CoachUpgradeIcon = coachUpgradeOption?.icon ?? null;
 
     // Available roles — merge store roles with defined config
     const availableRoles = useMemo(() => {
         const configRoles = keys(ROLE_CONFIG);
-        if (!Array.isArray(roles) || roles.length === 0) {
+        if (!isArray(roles) || roles.length === 0) {
             return ["USER"];
         }
 
@@ -124,22 +114,6 @@ const RoleSwitcher = () => {
                                 </DropdownMenuItem>
                             );
                         })}
-                        {coachUpgradeOption ? (
-                            <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                    className="gap-2 p-2"
-                                    onClick={() => navigate(coachUpgradeOption.route)}
-                                >
-                                    <div className="flex size-6 items-center justify-center rounded-sm border">
-                                        {CoachUpgradeIcon ? (
-                                            <CoachUpgradeIcon className="size-4 shrink-0" />
-                                        ) : null}
-                                    </div>
-                                    <span>{t("common.navUser.becomeCoach")}</span>
-                                </DropdownMenuItem>
-                            </>
-                        ) : null}
                     </DropdownMenuContent>
                 </DropdownMenu>
             </SidebarMenuItem>

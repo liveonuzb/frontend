@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, filter, find, isArray, orderBy, some, toLower, toNumber, trim } from "lodash";
 import {
   AwardIcon,
   GiftIcon,
@@ -25,30 +25,30 @@ const REWARD_TYPES = new Set(["achievement_earned", "referral_reward"]);
 
 const getRewardMetadata = (notification) => {
   const metadata = notification?.metadata;
-  return metadata && typeof metadata === "object" && !Array.isArray(metadata)
+  return metadata && typeof metadata === "object" && !isArray(metadata)
     ? metadata
     : {};
 };
 
 const getRewardTarget = (notification) => {
-  const type = String(notification?.type ?? "").trim().toLowerCase();
+  const type = toLower(trim(String(notification?.type ?? "")));
   return type === "achievement_earned"
     ? "/user/achievements"
     : "/user/referrals";
 };
 
 const getRewardConfirmLabel = (notification) => {
-  const type = String(notification?.type ?? "").trim().toLowerCase();
+  const type = toLower(trim(String(notification?.type ?? "")));
   return type === "achievement_earned"
     ? "Yutuqlarni ko'rish"
     : "Referallarni ko'rish";
 };
 
 const getRewardIcon = (notification) => {
-  const type = String(notification?.type ?? "").trim().toLowerCase();
+  const type = toLower(trim(String(notification?.type ?? "")));
   const metadata = getRewardMetadata(notification);
   const imageUrl =
-    typeof metadata.imageUrl === "string" ? metadata.imageUrl.trim() : "";
+    typeof metadata.imageUrl === "string" ? trim(metadata.imageUrl) : "";
 
   if (type === "achievement_earned" && imageUrl) {
     return (
@@ -68,7 +68,7 @@ const getRewardIcon = (notification) => {
 };
 
 const getRewardSubtitle = (notification) => {
-  const type = String(notification?.type ?? "").trim().toLowerCase();
+  const type = toLower(trim(String(notification?.type ?? "")));
   return type === "achievement_earned"
     ? "Yangi achievement ochildi"
     : "Referral mukofoti tayyor";
@@ -76,9 +76,7 @@ const getRewardSubtitle = (notification) => {
 
 const getRewardXpAmount = (notification) => {
   const metadata = getRewardMetadata(notification);
-  const xpAmount = Number(
-    metadata.xpReward ?? metadata.xpAmount ?? get(notification, "xpReward"),
-  );
+  const xpAmount = toNumber(metadata.xpReward ?? metadata.xpAmount ?? get(notification, "xpReward"));
 
   return Number.isFinite(xpAmount) ? xpAmount : 0;
 };
@@ -104,15 +102,13 @@ const RewardReminderDrawer = () => {
 
   const unreadRewards = React.useMemo(
     () =>
-      (Array.isArray(items) ? items : [])
-        .filter((notification) =>
-          REWARD_TYPES.has(String(notification?.type ?? "").toLowerCase()),
-        )
-        .sort(
-          (left, right) =>
-            new Date(right?.createdAt ?? 0).getTime() -
-            new Date(left?.createdAt ?? 0).getTime(),
+      orderBy(
+        filter((isArray(items) ? items : []), (notification) =>
+          REWARD_TYPES.has(toLower(String(notification?.type ?? ""))),
         ),
+        [(notification) => new Date(notification?.createdAt ?? 0).getTime()],
+        ["desc"],
+      ),
     [items],
   );
   const [ackedId, setAckedId] = React.useState(null);
@@ -127,7 +123,7 @@ const RewardReminderDrawer = () => {
 
   const currentNotification = React.useMemo(
     () =>
-      unreadRewards.find((notification) => notification.id !== ackedId) ?? null,
+      find(unreadRewards, (notification) => notification.id !== ackedId) ?? null,
     [ackedId, unreadRewards],
   );
 
@@ -198,7 +194,7 @@ const RewardReminderDrawer = () => {
       return;
     }
 
-    if (!unreadRewards.some((notification) => notification.id === ackedId)) {
+    if (!some(unreadRewards, (notification) => notification.id === ackedId)) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setAckedId(null);
     }

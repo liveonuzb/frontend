@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { map, filter, reduce } from "lodash";
+import { map, filter, reduce, split } from "lodash";
 
 const STATUS_FLOW = ["accepted", "preparing", "shipped", "delivered"];
 
@@ -53,7 +53,7 @@ const useOrderStore = create()(
           id: `ORD-${Date.now()}`,
           ...orderData,
           status: "accepted",
-          date: new Date().toISOString().split("T")[0],
+          date: split(new Date().toISOString(), "T")[0],
           review: null,
         };
         set({ orders: [newOrder, ...get().orders] });

@@ -1,6 +1,6 @@
 import React from "react";
 import { useParams } from "react-router";
-import { find, get, isArray, join } from "lodash";
+import { find, get, isArray, join, trim } from "lodash";
 import { toast } from "sonner";
 import { PencilIcon } from "lucide-react";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
@@ -39,7 +39,7 @@ const EditPlan = () => {
     async (payload) => {
       if (!canManageGrowth) return;
 
-      if (!payload.name || !payload.name.trim()) {
+      if (!payload.name || !trim(payload.name)) {
         toast.error("Plan nomini kiriting");
         return;
       }

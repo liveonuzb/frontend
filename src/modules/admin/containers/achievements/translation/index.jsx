@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
-import { filter, get, isArray, join, trim } from "lodash";
+import { filter, get, isArray, join, trim, fromPairs, reduce, map } from "lodash";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -56,31 +56,26 @@ const getActiveLanguages = (languages) => {
 };
 
 const buildDefaultValues = (item, languages) =>
-  Object.fromEntries(
-    languages.map((language) => {
-      const code = get(language, "code");
-      return [
-        code,
-        {
-          name: get(item, `translations.${code}`, ""),
-          description: get(item, `descriptionTranslations.${code}`, ""),
-        },
-      ];
-    }),
-  );
+  fromPairs(map(languages, (language) => {
+    const code = get(language, "code");
+    return [
+      code,
+      {
+        name: get(item, `translations.${code}`, ""),
+        description: get(item, `descriptionTranslations.${code}`, ""),
+      },
+    ];
+  }));
 
 const buildPayload = (values, languages) =>
-  languages.reduce(
-    (acc, language) => {
-      const code = get(language, "code");
-      acc.translations[code] = trim(get(values, `${code}.name`, ""));
-      acc.descriptionTranslations[code] = trim(
-        get(values, `${code}.description`, ""),
-      );
-      return acc;
-    },
-    { translations: {}, descriptionTranslations: {} },
-  );
+  reduce(languages, (acc, language) => {
+    const code = get(language, "code");
+    acc.translations[code] = trim(get(values, `${code}.name`, ""));
+    acc.descriptionTranslations[code] = trim(
+      get(values, `${code}.description`, ""),
+    );
+    return acc;
+  }, { translations: {}, descriptionTranslations: {} });
 
 const TranslateAchievement = () => {
   const navigate = useNavigate();

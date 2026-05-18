@@ -1,5 +1,5 @@
 import React from "react";
-import { find, get, isEmpty, isEqual } from "lodash";
+import { find, get, isEmpty, isEqual, toNumber, trim } from "lodash";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 
 const ITEMS_PER_PAGE = 10;
@@ -103,10 +103,10 @@ export const useEquipmentFilters = () => {
     translations: translationFilter !== "all",
   }));
 
-  const currentPage = Math.max(1, Number(pageQuery) || 1);
+  const currentPage = Math.max(1, toNumber(pageQuery) || 1);
   const pageSize = Math.min(
     100,
-    Math.max(1, Number(pageSizeQuery) || ITEMS_PER_PAGE),
+    Math.max(1, toNumber(pageSizeQuery) || ITEMS_PER_PAGE),
   );
   const sorting = React.useMemo(
     () =>
@@ -116,7 +116,7 @@ export const useEquipmentFilters = () => {
     [sortBy, sortDir],
   );
   const canReorder =
-    search.trim() === "" &&
+    trim(search) === "" &&
     searchOperator === "contains" &&
     statusFilter === "all" &&
     statusOperator === "is" &&
@@ -217,7 +217,7 @@ export const useEquipmentFilters = () => {
     const items = [];
 
     if (
-      !isEmpty(String(search).trim()) ||
+      !isEmpty(trim(String(search))) ||
       searchOperator === "empty" ||
       searchOperator === "not_empty"
     ) {

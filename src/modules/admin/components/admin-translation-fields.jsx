@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, map } from "lodash";
 
 import {
   FormControl,
@@ -39,7 +39,7 @@ export function AdminTranslationFields({
 
   return (
     <div className={cn("flex flex-col gap-4", className)}>
-      {languages.map((language) => {
+      {map(languages, (language) => {
         const code = get(language, "code");
         const isCurrent = currentLanguage && code === currentLanguage;
 
@@ -52,8 +52,7 @@ export function AdminTranslationFields({
                 <span className="text-xs text-muted-foreground">Asosiy</span>
               ) : null}
             </div>
-
-            {fields.map((fieldConfig) => {
+            {map(fields, (fieldConfig) => {
               const fieldName = getFieldName(code, fieldConfig);
               const label =
                 typeof fieldConfig.label === "function"

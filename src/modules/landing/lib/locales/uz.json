@@ -36,10 +36,6 @@
           "Progress"
         ],
         [
-          "coach-mode",
-          "Trenerlar uchun"
-        ],
-        [
           "testimonials",
           "Ssenariylar"
         ],
@@ -304,175 +300,6 @@
       "weightValue": "78.4 kg",
       "weightChange": "Haftada -1.2 kg"
     },
-    "coachMode": {
-      "eyebrow": "Coach mode",
-      "title": "Trenerlar, guruhlar va mijozlar uchun instrumentlar",
-      "body": "LiveOn trenerga mijozlar, guruhlar, rejalar, to'lovlar va progressni bitta ish maydonida boshqarishga yordam beradi.",
-      "features": [
-        [
-          "Coach dashboard",
-          "Mijozlar, progress, to'lovlar va muhim signallar bitta ekranda.",
-          "UsersIcon"
-        ],
-        [
-          "Telegram guruhlar",
-          "Guruh va mijoz segmentlarini reja hamda hisobotlar bilan birga yuriting.",
-          "MessageCircleIcon"
-        ],
-        [
-          "Bot management",
-          "Xabarlar, broadcast, webhook status va trener botlarini boshqarish.",
-          "BotIcon"
-        ],
-        [
-          "Trener-mijoz bog'lanishi",
-          "Takliflar, mijozni trenerga biriktirish va individual rejalar.",
-          "UserCheckIcon"
-        ],
-        [
-          "Gamification",
-          "Streak, challenge, achievement va invite flow muntazamlikni oshiradi.",
-          "TrophyIcon"
-        ]
-      ],
-      "tabs": [
-        [
-          "dashboard",
-          "Dashboard"
-        ],
-        [
-          "telegram",
-          "Telegram + bot"
-        ],
-        [
-          "clients",
-          "Clients + gamification"
-        ]
-      ],
-      "preview": {
-        "badge": "LiveOn Coach",
-        "dashboardTitle": "Trener ish kuni",
-        "dashboardDescription": "Mijozlar, progress, to'lovlar va ogohlantirishlar bitta joyda.",
-        "dashboardMetrics": [
-          [
-            "24",
-            "mijoz",
-            "blue"
-          ],
-          [
-            "82%",
-            "o'rtacha progress",
-            "green"
-          ],
-          [
-            "4",
-            "ogohlantirish",
-            "orange"
-          ],
-          [
-            "12",
-            "haftalik reja",
-            "teal"
-          ]
-        ],
-        "clientsTitle": "Bugungi mijozlar",
-        "clients": [
-          [
-            "Alina",
-            "Vazn tashlash",
-            82,
-            "Reja bajarildi"
-          ],
-          [
-            "Maksim",
-            "Mushak yig'ish",
-            64,
-            "Kechki mashg'ulot"
-          ],
-          [
-            "Yevgeniy",
-            "Sog'lom rejim",
-            91,
-            "7 kun ketma-ket"
-          ]
-        ],
-        "telegramTitle": "Telegram guruhlar va bot",
-        "telegramDescription": "Mijozlarni segmentlang, xabar yuboring va bot statusini kuzating.",
-        "telegramGroupsTitle": "Trener guruhlari",
-        "telegramGroups": [
-          [
-            "Bahor 2026",
-            "38 ishtirokchi",
-            "Aktiv"
-          ],
-          [
-            "Sushka",
-            "21 ishtirokchi",
-            "Aktiv"
-          ],
-          [
-            "Uy mashg'ulotlari",
-            "17 ishtirokchi",
-            "Reja tayyor"
-          ]
-        ],
-        "botTitle": "Bot management",
-        "botStats": [
-          [
-            "Webhook",
-            "OK"
-          ],
-          [
-            "Broadcast",
-            "Bugun 18:00"
-          ],
-          [
-            "Segmentlar",
-            "3 guruh"
-          ]
-        ],
-        "broadcastTitle": "Guruhga xabar",
-        "broadcastBody": "Suv va mashg'ulot eslatmasi \"Vazn tashlash\" segmentiga yuboriladi.",
-        "clientsLinkTitle": "Trener-mijoz bog'lanishi",
-        "clientsLinkDescription": "Takliflar, personal rejalar va o'yin mexanikalari mijozni jarayonda ushlab turadi.",
-        "linksTitle": "Bog'lamlar va takliflar",
-        "clientLinks": [
-          [
-            "Link orqali taklif",
-            "Mijoz ro'yxatdan keyin profil, maqsad va rejani oladi.",
-            "Tayyor"
-          ],
-          [
-            "Individual reja",
-            "Trener ovqatlanish va yuklamani mijozga moslab tuzatadi.",
-            "Jarayonda"
-          ],
-          [
-            "Mijoz hisoboti",
-            "Progress, odatlar va tavsiyalar tushunarli formatda chiqadi.",
-            "Haftalik"
-          ]
-        ],
-        "gamificationTitle": "Challenge va achievementlar",
-        "gamification": [
-          [
-            "Streak",
-            "7 kun",
-            "orange"
-          ],
-          [
-            "Challenge",
-            "10 000 qadam",
-            "teal"
-          ],
-          [
-            "Achievement",
-            "Suvsiz tanaffus yo'q",
-            "green"
-          ]
-        ]
-      }
-    },
     "local": {
       "eyebrow": "Asosiy farq",
       "title": "Budjet va odatiy mahsulotlarga mos reja",
@@ -567,12 +394,6 @@
           "no"
         ],
         [
-          "Coach mode va mijozlar",
-          "yes",
-          "partial",
-          "no"
-        ],
-        [
           "Challenge, streak va achievementlar",
           "yes",
           "partial",
@@ -627,7 +448,6 @@
           "Mahsulot almashtirish",
           "Ovqatni foto orqali tahlil",
           "Haftalik hisobotlar",
-          "Coach mode va gamification",
           "PDF eksport",
           "Reklamasiz"
         ],
@@ -692,27 +512,60 @@
         [
           "Mahsulot",
           [
-            ["Imkoniyatlar", "#features"],
-            ["Ovqatlanish", "#nutrition"],
-            ["Mashg'ulot", "#workouts"],
-            ["Progress", "#progress"],
-            ["Tariflar", "#pricing"]
+            [
+              "Imkoniyatlar",
+              "#features"
+            ],
+            [
+              "Ovqatlanish",
+              "#nutrition"
+            ],
+            [
+              "Mashg'ulot",
+              "#workouts"
+            ],
+            [
+              "Progress",
+              "#progress"
+            ],
+            [
+              "Tariflar",
+              "#pricing"
+            ]
           ]
         ],
         [
           "Kompaniya",
           [
-            ["Biz haqimizda", "#local-market"],
-            ["Kontaktlar", "mailto:support@liveon.uz"]
+            [
+              "Biz haqimizda",
+              "#local-market"
+            ],
+            [
+              "Kontaktlar",
+              "mailto:support@liveon.uz"
+            ]
           ]
         ],
         [
           "Yordam",
           [
-            ["FAQ", "#faq"],
-            ["Yordam", "mailto:support@liveon.uz"],
-            ["Foydalanish shartlari", "/terms"],
-            ["Maxfiylik siyosati", "/privacy"]
+            [
+              "FAQ",
+              "#faq"
+            ],
+            [
+              "Yordam",
+              "mailto:support@liveon.uz"
+            ],
+            [
+              "Foydalanish shartlari",
+              "/terms"
+            ],
+            [
+              "Maxfiylik siyosati",
+              "/privacy"
+            ]
           ]
         ]
       ],

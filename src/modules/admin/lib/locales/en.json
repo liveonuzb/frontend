@@ -3,14 +3,11 @@
     "dashboard": {
       "title": "Admin Panel",
       "totalUsers": "Users",
-      "totalCoaches": "Coaches",
-      "pendingCoaches": "Pending Coaches",
       "totalFoods": "Food Database",
       "registrationTrend": "Registration Trend",
       "recentSubscriptions": "Recent Subscriptions",
       "recentActivity": "Recent Activity",
       "pendingActions": "Pending Actions",
-      "pendingCoachVerifications": "Coach Verifications",
       "unresolvedReports": "Unresolved Reports",
       "quickActions": "Quick Actions",
       "newUser": "New User",
@@ -50,14 +47,6 @@
       "sessions": "Sessions",
       "subscription": "Subscription",
       "assignSubscription": "Assign subscription"
-    },
-    "coaches": {
-      "title": "Coaches",
-      "approve": "Approve",
-      "reject": "Reject",
-      "pending": "Pending",
-      "approved": "Approved",
-      "clients": "Clients"
     },
     "foods": {
       "title": "Foods",
@@ -134,7 +123,6 @@
     "sidebar": {
       "dashboard": "Dashboard",
       "users": "Users",
-      "coaches": "Coaches",
       "foods": "Foods",
       "foodCategories": "Food Categories",
       "workouts": "Workouts",

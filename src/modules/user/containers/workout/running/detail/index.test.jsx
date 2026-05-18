@@ -12,6 +12,8 @@ import {
 } from "@/hooks/app/use-running-sessions";
 import useShare from "@/hooks/utils/use-share";
 
+import { map } from "lodash";
+
 vi.mock("@/components/page-transition", () => ({
   default: ({ children }) => <>{children}</>,
 }));
@@ -278,7 +280,7 @@ describe("RunningDetailPage", () => {
         moments: { ...sessionFixture.moments },
         feeling: { ...sessionFixture.feeling },
         bodyMetrics: { ...sessionFixture.bodyMetrics },
-        points: sessionFixture.points.map((point) => ({ ...point })),
+        points: map(sessionFixture.points, (point) => ({ ...point })),
       },
     }));
 

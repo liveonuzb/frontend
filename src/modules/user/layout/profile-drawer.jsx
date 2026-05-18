@@ -1,4 +1,4 @@
-import { map, take, find } from "lodash";
+import { map, take, find, toUpper, trim, split } from "lodash";
 import React from "react";
 import { ArrowLeftIcon, PencilIcon, XIcon } from "lucide-react";
 import { useLocation, useNavigate } from "react-router";
@@ -39,15 +39,14 @@ const ProfileDrawer = () => {
   );
 
   const displayName =
-    `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
+    trim(`${user?.firstName || ""} ${user?.lastName || ""}`) ||
     user?.username ||
     "Foydalanuvchi";
-  const initials = take(
-    map(displayName.split(" "), (part) => part[0]),
+  const initials = toUpper(take(
+    map(split(displayName, " "), (part) => part[0]),
     2,
   )
-    .join("")
-    .toUpperCase();
+    .join(""));
   const activeTitle = isOverview
     ? displayName
     : activeTabConfig?.label ?? t("profile.title");

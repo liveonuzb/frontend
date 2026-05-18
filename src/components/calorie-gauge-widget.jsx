@@ -1,5 +1,5 @@
 import React from "react";
-import { clamp, round, times } from "lodash";
+import { clamp, round, times, find, map } from "lodash";
 import { motion, useReducedMotion } from "framer-motion";
 import { ChevronsUpDown, FlameIcon } from "lucide-react";
 import {
@@ -12,8 +12,8 @@ import { cn } from "@/lib/utils";
 
 const getGoalAlerts = ({ consumed, goal, macroItems, labels }) => {
   const alerts = [];
-  const protein = macroItems.find((item) => item.key === "protein");
-  const fat = macroItems.find((item) => item.key === "fat");
+  const protein = find(macroItems, (item) => item.key === "protein");
+  const fat = find(macroItems, (item) => item.key === "fat");
 
   if (protein?.target > 0 && protein.current / protein.target < 0.7) {
     alerts.push({
@@ -401,7 +401,7 @@ export default function CalorieGaugeWidget({
             />
 
             {/* Tick marks */}
-            {ticks.map((t, i) => (
+            {map(ticks, (t, i) => (
               <line
                 key={i}
                 x1={t.x1}
@@ -493,7 +493,7 @@ export default function CalorieGaugeWidget({
         </div>
         {goalAlerts.length > 0 ? (
           <div className="mt-4 flex flex-wrap justify-center gap-2">
-            {goalAlerts.map((alert) => (
+            {map(goalAlerts, (alert) => (
               <span
                 key={alert.key}
                 className={cn(
@@ -519,7 +519,7 @@ export default function CalorieGaugeWidget({
           )}
         />
         <div className="flex justify-around items-center">
-          {macroItems.map((m) => (
+          {map(macroItems, (m) => (
             <div key={m.label} className="flex flex-col items-center gap-1">
               <div className="flex items-center gap-1.5">
                 <span className="text-base">{m.emoji}</span>

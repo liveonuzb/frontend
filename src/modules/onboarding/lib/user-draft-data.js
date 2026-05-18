@@ -1,3 +1,4 @@
+import { fromPairs, isArray, some, trim, toPairs } from "lodash";
 export const ACTIVE_USER_ONBOARDING_DRAFT_KEYS = new Set([
   "firstName",
   "lastName",
@@ -24,9 +25,7 @@ export const ACTIVE_USER_ONBOARDING_DRAFT_KEYS = new Set([
 ]);
 
 export function pickActiveUserDraftData(data = {}) {
-  return Object.fromEntries(
-    Array.from(ACTIVE_USER_ONBOARDING_DRAFT_KEYS, (key) => [key, data[key]]),
-  );
+  return fromPairs(Array.from(ACTIVE_USER_ONBOARDING_DRAFT_KEYS, (key) => [key, data[key]]));
 }
 
 const USER_DRAFT_DEFAULT_VALUES = {
@@ -36,10 +35,10 @@ const USER_DRAFT_DEFAULT_VALUES = {
 function hasMeaningfulUserDraftValue(key, value) {
   if (value === null || value === undefined) return false;
 
-  if (Array.isArray(value)) return value.length > 0;
+  if (isArray(value)) return value.length > 0;
 
   if (typeof value === "string") {
-    const trimmed = value.trim();
+    const trimmed = trim(value);
     return trimmed.length > 0 && USER_DRAFT_DEFAULT_VALUES[key] !== trimmed;
   }
 
@@ -54,20 +53,19 @@ function hasMeaningfulUserDraftValue(key, value) {
       return hasMeaningfulUserDraftValue(`${key}.value`, value.value);
     }
 
-    return Object.entries(value).some(([childKey, childValue]) =>
-      hasMeaningfulUserDraftValue(childKey, childValue),
-    );
+    return some(toPairs(value), ([childKey, childValue]) =>
+      hasMeaningfulUserDraftValue(childKey, childValue));
   }
 
   return false;
 }
 
 export function isMeaningfulUserDraftData(data) {
-  if (!data || typeof data !== "object" || Array.isArray(data)) {
+  if (!data || typeof data !== "object" || isArray(data)) {
     return false;
   }
 
-  return Object.entries(data).some(([key, value]) => {
+  return some(toPairs(data), ([key, value]) => {
     if (!ACTIVE_USER_ONBOARDING_DRAFT_KEYS.has(key)) return false;
 
     return hasMeaningfulUserDraftValue(key, value);

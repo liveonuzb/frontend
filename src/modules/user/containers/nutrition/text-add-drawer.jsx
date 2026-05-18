@@ -2,7 +2,7 @@ import React from "react";
 import { DrawerBody, DrawerFooter } from "@/components/ui/drawer.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
-import { map, slice } from "lodash";
+import { map, slice, trim } from "lodash";
 import { cn } from "@/lib/utils.js";
 
 const TextAddDrawer = ({
@@ -13,7 +13,7 @@ const TextAddDrawer = ({
   transcriptHistory = [],
   onUseHistory,
 }) => {
-  const hasText = Boolean(value.trim());
+  const hasText = Boolean(trim(value));
   const showHistory = !hasText && transcriptHistory.length > 0;
 
   return (

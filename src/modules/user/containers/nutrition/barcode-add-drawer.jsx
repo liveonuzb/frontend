@@ -15,8 +15,10 @@ import { useDailyTrackingActions } from "@/hooks/app/use-daily-tracking";
 import { useFoodBarcodeLookup } from "@/hooks/app/use-food-catalog";
 import { toast } from "sonner";
 
+import { map, toNumber as lodashToNumber, trim } from "lodash";
+
 const toNumber = (value, fallback = 0) => {
-  const normalized = Number(value);
+  const normalized = lodashToNumber(value);
   return Number.isFinite(normalized) ? normalized : fallback;
 };
 
@@ -79,7 +81,7 @@ const BarcodeAddDrawer = ({ dateKey, mealType, onClose }) => {
 
   const handleScan = useCallback(
     async (code) => {
-      const normalizedCode = String(code || "").trim();
+      const normalizedCode = trim(String(code || ""));
 
       if (!normalizedCode) {
         return;
@@ -136,7 +138,7 @@ const BarcodeAddDrawer = ({ dateKey, mealType, onClose }) => {
   };
 
   const handleAddManualFood = async () => {
-    const name = manualFood.name.trim();
+    const name = trim(manualFood.name);
 
     if (!name) {
       toast.error("Ovqat nomini kiriting");
@@ -187,7 +189,6 @@ const BarcodeAddDrawer = ({ dateKey, mealType, onClose }) => {
           <BarcodeIcon className="relative size-16 text-white/20" />
         </div>
       )}
-
       <AnimatePresence>
         {(status === "loading" || isLookingUp) && (
           <motion.div
@@ -241,12 +242,12 @@ const BarcodeAddDrawer = ({ dateKey, mealType, onClose }) => {
             </div>
 
             <div className="mt-5 grid grid-cols-4 gap-2">
-              {[
+              {map([
                 ["Kcal", foundMacros.cal],
                 ["Oqsil", `${foundMacros.protein}g`],
                 ["Uglevod", `${foundMacros.carbs}g`],
                 ["Yog'", `${foundMacros.fat}g`],
-              ].map(([label, value]) => (
+              ], ([label, value]) => (
                 <div key={label} className="rounded-2xl bg-muted/60 px-3 py-2 text-center">
                   <p className="text-[10px] font-bold text-muted-foreground">{label}</p>
                   <p className="text-sm font-black">{value}</p>
@@ -309,7 +310,7 @@ const BarcodeAddDrawer = ({ dateKey, mealType, onClose }) => {
                 onChange={(event) => updateManualField("name", event.target.value)}
               />
               <div className="grid grid-cols-2 gap-2">
-                {macroInputs.map((item) => (
+                {map(macroInputs, (item) => (
                   <label key={item.key} className="space-y-1">
                     <span className="text-xs font-bold text-muted-foreground">
                       {item.label}

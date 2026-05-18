@@ -1,5 +1,5 @@
 import React from "react";
-import { get, map, size, uniq } from "lodash";
+import { get, map, size, uniq, filter, isArray, toNumber } from "lodash";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import {
@@ -42,7 +42,7 @@ import {
 } from "../../utils";
 
 const parseDayIndex = (value) => {
-  const parsed = Number(value);
+  const parsed = toNumber(value);
 
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : -1;
 };
@@ -50,11 +50,11 @@ const parseDayIndex = (value) => {
 const getDayEquipments = (exercises = []) => {
   const equipmentNames = uniq(
     exercises.flatMap((exercise) => {
-      const equipments = Array.isArray(get(exercise, "equipments"))
+      const equipments = isArray(get(exercise, "equipments"))
         ? get(exercise, "equipments")
         : [];
 
-      return [...equipments, get(exercise, "equipment")].filter(Boolean);
+      return filter([...equipments, get(exercise, "equipment")], Boolean);
     }),
   );
 
@@ -169,11 +169,11 @@ const WorkoutPlanDayDetailPage = () => {
     () => deriveWorkoutPlanMetrics(rawPlan),
     [rawPlan],
   );
-  const schedule = Array.isArray(get(plan, "schedule"))
+  const schedule = isArray(get(plan, "schedule"))
     ? get(plan, "schedule")
     : [];
   const selectedDay = dayIndex >= 0 ? get(schedule, `[${dayIndex}]`) : null;
-  const exercises = Array.isArray(get(selectedDay, "exercises"))
+  const exercises = isArray(get(selectedDay, "exercises"))
     ? get(selectedDay, "exercises")
     : [];
   const isLocked = isWorkoutDayLocked(plan, dayIndex);

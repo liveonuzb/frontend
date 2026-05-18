@@ -12,7 +12,11 @@ import {
   map as lodashMap,
   sortBy as lodashSortBy,
   trim,
-  values,
+  values as lodashValues,
+  forEach,
+  some,
+  toNumber,
+  toUpper,
 } from "lodash";
 import { toast } from "sonner";
 import { useLanguageStore } from "@/store";
@@ -61,7 +65,7 @@ const resolveLabel = (translations, fallback, language) => {
     const uz = trim(String(get(translations, "uz", "")));
     if (uz) return uz;
 
-    const first = find(values(translations), (value) => trim(String(value)));
+    const first = find(lodashValues(translations), (value) => trim(String(value)));
     if (first) return trim(String(first));
   }
 
@@ -157,7 +161,7 @@ const InlineNumberField = ({
   formatOptions,
 }) => (
   <NumberField
-    value={value !== "" ? Number(value) : undefined}
+    value={value !== "" ? toNumber(value) : undefined}
     onValueChange={(nextValue) =>
       onChange(nextValue !== undefined ? String(nextValue) : "")
     }
@@ -177,14 +181,13 @@ const createWorkoutPayload = (form, language) => {
   const localizedName = trim(form.name);
   const cleanNumber = (value) => {
     if (value === "" || value === null || value === undefined) return undefined;
-    const nextValue = Number(value);
+    const nextValue = toNumber(value);
     return Number.isFinite(nextValue) ? nextValue : undefined;
   };
 
   const cleanArray = (arr) =>
     isArray(arr)
-      ? chain(arr)
-          .map((s) => trim(String(s)))
+      ? lodashMap(chain(arr), (s) => trim(String(s)))
           .compact()
           .value()
       : [];
@@ -220,8 +223,7 @@ const createFormFromWorkout = (workout, language) => {
     isArray(arr) && arr.length > 0 ? arr : [""];
   const ensureArray = (arr) =>
     isArray(arr)
-      ? chain(arr)
-          .map((item) => trim(String(item)))
+      ? lodashMap(chain(arr), (item) => trim(String(item)))
           .compact()
           .value()
       : [];
@@ -278,10 +280,10 @@ const ArrayField = ({
       onChange([""]);
       return;
     }
-    onChange(fieldValues.filter((_, i) => i !== index));
+    onChange(lodashFilter(fieldValues, (_, i) => i !== index));
   };
   const handleUpdateItem = (index, value) =>
-    onChange(fieldValues.map((v, i) => (i === index ? value : v)));
+    onChange(lodashMap(fieldValues, (v, i) => (i === index ? value : v)));
 
   return (
     <div className="space-y-3">
@@ -292,7 +294,7 @@ const ArrayField = ({
         ) : null}
       </div>
       <div className="space-y-2">
-        {fieldValues.map((value, index) => (
+        {lodashMap(fieldValues, (value, index) => (
           <div key={index} className="flex items-center gap-2">
             <Input
               value={value}
@@ -319,14 +321,14 @@ const ArrayField = ({
 };
 
 const buildCatalogOptions = (items, selectedValues, language) => {
-  const baseOptions = (isArray(items) ? items : []).map((item) => ({
+  const baseOptions = lodashMap((isArray(items) ? items : []), (item) => ({
     value: item.name,
     label: resolveLabel(item.translations, item.name, language),
     isActive: item.isActive,
   }));
-  const knownValues = new Set(baseOptions.map((option) => option.value));
+  const knownValues = new Set(lodashMap(baseOptions, (option) => option.value));
 
-  (isArray(selectedValues) ? selectedValues : []).forEach((value) => {
+  forEach((isArray(selectedValues) ? selectedValues : []), (value) => {
     const normalized = trim(String(value));
     if (normalized && !knownValues.has(normalized)) {
       baseOptions.push({
@@ -556,13 +558,13 @@ const EditWorkoutPage = () => {
             <p className="font-medium">
               Joriy til:{" "}
               {currentLanguageMeta?.flag ? `${currentLanguageMeta.flag} ` : ""}
-              {currentLanguageMeta?.name ?? currentLanguage.toUpperCase()}
+              {currentLanguageMeta?.name ?? toUpper(currentLanguage)}
             </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label>Nomi ({currentLanguage.toUpperCase()}) *</Label>
+              <Label>Nomi ({toUpper(currentLanguage)}) *</Label>
               <Input
                 value={form.name}
                 onChange={(event) =>
@@ -700,7 +702,7 @@ const EditWorkoutPage = () => {
                   <SelectValue placeholder="Log turini tanlang" />
                 </SelectTrigger>
                 <SelectContent>
-                  {WORKOUT_TRACKING_OPTIONS.map((option) => (
+                  {lodashMap(WORKOUT_TRACKING_OPTIONS, (option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
@@ -736,7 +738,7 @@ const EditWorkoutPage = () => {
               />
             </div>
 
-            {trackingFields.some((field) => field.key === "reps") ? (
+            {some(trackingFields, (field) => field.key === "reps") ? (
               <div className="space-y-2">
                 <Label>Default takror</Label>
                 <InlineNumberField
@@ -750,7 +752,7 @@ const EditWorkoutPage = () => {
               </div>
             ) : null}
 
-            {trackingFields.some((field) => field.key === "durationSeconds") ? (
+            {some(trackingFields, (field) => field.key === "durationSeconds") ? (
               <div className="space-y-2">
                 <Label>Default vaqt (sek)</Label>
                 <InlineNumberField
@@ -767,7 +769,7 @@ const EditWorkoutPage = () => {
               </div>
             ) : null}
 
-            {trackingFields.some((field) => field.key === "distanceMeters") ? (
+            {some(trackingFields, (field) => field.key === "distanceMeters") ? (
               <div className="space-y-2">
                 <Label>Default masofa (m)</Label>
                 <InlineNumberField
@@ -854,3 +856,6 @@ const EditWorkoutPage = () => {
 };
 
 export default EditWorkoutPage;
+
+
+

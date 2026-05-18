@@ -2,13 +2,15 @@ import React from "react";
 import { useNavigate, useParams } from "react-router";
 import PageLoader from "@/components/page-loader/index.jsx";
 
+import { trim } from "lodash";
+
 const ReferralRedirectPage = () => {
   const navigate = useNavigate();
   const { code = "" } = useParams();
 
   React.useEffect(() => {
     let isMounted = true;
-    const normalizedCode = code.trim();
+    const normalizedCode = trim(code);
     const target = `/join${
       normalizedCode ? `?ref=${encodeURIComponent(normalizedCode)}` : ""
     }`;

@@ -1,8 +1,8 @@
 import React from "react";
-import { get } from "lodash";
+import { get, isArray } from "lodash";
 import { useNavigate } from "react-router";
 import { ArrowRightIcon, TrophyIcon } from "lucide-react";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 import { getApiResponseData } from "@/lib/api-response";
 import { getFriendItems } from "@/modules/user/lib/friends-response";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import {
 
 const getChallengeItems = (response) => {
   const payload = getApiResponseData(response, []);
-  return Array.isArray(payload) ? payload : get(payload, "items", []);
+  return isArray(payload) ? payload : get(payload, "items", []);
 };
 
 export default function ChallengeWidget({

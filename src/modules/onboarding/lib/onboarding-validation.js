@@ -1,9 +1,10 @@
+import { toNumber } from "lodash";
 const toFiniteNumber = (value) => {
   const raw =
     value && typeof value === "object" && "value" in value
       ? value.value
       : value;
-  const numberValue = Number(raw);
+  const numberValue = toNumber(raw);
   return Number.isFinite(numberValue) ? numberValue : null;
 };
 

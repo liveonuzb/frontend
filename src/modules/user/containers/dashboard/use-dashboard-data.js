@@ -1,6 +1,6 @@
 import React from "react";
 import { compact, find, get, isArray, map, some } from "lodash";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 import useMealPlan from "@/hooks/app/use-meal-plan";
 import { getApiResponseData } from "@/lib/api-response";
 import { normalizeUserOnboarding } from "@/lib/user-onboarding";

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { some } from "lodash";
+import { some, map, trim } from "lodash";
 import { useLocation } from "react-router";
 import {
   MessageCircleIcon,
@@ -32,7 +32,7 @@ export function FloatingAiChat() {
   const shouldHide = React.useMemo(
     () =>
       some(
-        ["/auth", "/user", "/coach", "/admin"],
+        ["/auth", "/user", "/admin"],
         (prefix) => pathname.startsWith(prefix),
       ),
     [pathname],
@@ -56,7 +56,7 @@ export function FloatingAiChat() {
 
   const handleSend = (e) => {
     e.preventDefault();
-    if (!inputValue.trim()) return;
+    if (!trim(inputValue)) return;
 
     const userMessage = { role: "user", text: inputValue };
     setMessages((prev) => [...prev, userMessage]);
@@ -70,7 +70,7 @@ export function FloatingAiChat() {
         ...prev,
         {
           role: "ai",
-          text: "Tushunarli! Bizning platformamiz orqali siz o'zingizga mos murabbiy topishingiz va AI orqali ovqatlanishingizni nazorat qilishingiz mumkin. Bepul ro'yxatdan o'tishni xohlaysizmi?",
+          text: "Tushunarli! Platformada AI orqali ovqatlanish, suv va mashg'ulotlaringizni nazorat qilishingiz mumkin. Bepul ro'yxatdan o'tishni xohlaysizmi?",
         },
       ]);
     }, 1500);
@@ -109,7 +109,7 @@ export function FloatingAiChat() {
 
           {/* Chat Body */}
           <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-muted/10">
-            {messages.map((msg, idx) => (
+            {map(messages, (msg, idx) => (
               <div
                 key={idx}
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
@@ -163,7 +163,7 @@ export function FloatingAiChat() {
                 type="submit"
                 size="icon"
                 className="absolute right-1 h-8 w-8 rounded-full bg-primary hover:bg-primary/90 text-white"
-                disabled={!inputValue.trim() || isTyping}
+                disabled={!trim(inputValue) || isTyping}
               >
                 <SendIcon className="h-3.5 w-3.5" />
               </Button>
@@ -171,7 +171,6 @@ export function FloatingAiChat() {
           </div>
         </Card>
       </div>
-
       {/* Toggle Button */}
       <Button
         onClick={() => setIsOpen(!isOpen)}

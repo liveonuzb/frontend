@@ -3,14 +3,11 @@
     "dashboard": {
       "title": "Admin paneli",
       "totalUsers": "Foydalanuvchilar",
-      "totalCoaches": "Coachlar",
-      "pendingCoaches": "Kutilayotgan coachlar",
       "totalFoods": "Ovqatlar bazasi",
       "registrationTrend": "Ro'yxatdan o'tish dinamikasi",
       "recentSubscriptions": "So'nggi obunalar",
       "recentActivity": "So'nggi faollik",
       "pendingActions": "Kutilayotgan amallar",
-      "pendingCoachVerifications": "Coach tasdiqlash",
       "unresolvedReports": "Hal qilinmagan hisobotlar",
       "quickActions": "Tezkor amallar",
       "newUser": "Yangi foydalanuvchi",
@@ -50,14 +47,6 @@
       "sessions": "Sessiyalar",
       "subscription": "Obuna",
       "assignSubscription": "Obuna berish"
-    },
-    "coaches": {
-      "title": "Coachlar",
-      "approve": "Tasdiqlash",
-      "reject": "Rad etish",
-      "pending": "Kutilmoqda",
-      "approved": "Tasdiqlangan",
-      "clients": "Mijozlar"
     },
     "foods": {
       "title": "Ovqatlar",
@@ -134,7 +123,6 @@
     "sidebar": {
       "dashboard": "Dashboard",
       "users": "Foydalanuvchilar",
-      "coaches": "Coachlar",
       "foods": "Ovqatlar",
       "foodCategories": "Ovqat kategoriyalari",
       "workouts": "Mashqlar",

@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import React from "react";
-import { get, isArray, join, trim } from "lodash";
+import { get, isArray, join, trim, filter, find, toNumber } from "lodash";
 import { z } from "zod";
 
 import {
@@ -119,19 +119,19 @@ export const getErrorMessage = (error, fallback) => {
   const dependencySummary = get(error, "response.data.dependencySummary");
   const baseMessage = isArray(message) ? join(message, ", ") : message;
 
-  return [baseMessage || fallback, dependencySummary].filter(Boolean).join(" ");
+  return filter([baseMessage || fallback, dependencySummary], Boolean).join(" ");
 };
 
 export const formatMoney = (value, currency = "UZS") =>
   value === null || value === undefined
     ? "-"
-    : `${Number(value).toLocaleString("uz-UZ", {
+    : `${toNumber(value).toLocaleString("uz-UZ", {
         maximumFractionDigits: 2,
       })} ${currency || "UZS"}`;
 
 export const budgetTierLabel = (value) =>
   get(
-    BUDGET_TIERS.find((item) => item.value === value),
+    find(BUDGET_TIERS, (item) => item.value === value),
     "label",
     "-",
   );

@@ -24,6 +24,8 @@ import {
 import { useProfileOverlay } from "@/modules/profile/hooks/use-profile-overlay";
 import { useAuthStore } from "@/store";
 
+import { includes, isArray } from "lodash";
+
 const DELETE_CONFIRMATION_TEXT = "DELETE";
 
 export const AccountDangerZone = () => {
@@ -39,7 +41,7 @@ export const AccountDangerZone = () => {
   const [isDeleting, setIsDeleting] = React.useState(false);
 
   const isSuperAdmin =
-    Array.isArray(roles) && roles.includes("SUPER_ADMIN");
+    isArray(roles) && includes(roles, "SUPER_ADMIN");
   const canConfirm = confirmationText === DELETE_CONFIRMATION_TEXT;
 
   const handleOpenChange = React.useCallback(

@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import React from "react";
-import { get, map } from "lodash";
+import { get, map, filter, isArray, reduce, toLower, toNumber, toPairs, trim } from "lodash";
 import { PlusIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,8 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { DrawerFooter } from "@/components/ui/drawer";
 
 const slugify = (text) =>
-  text
-    .toLowerCase()
+  toLower(text)
     .replace(/\s+/g, "-")
     .replace(/[^a-z0-9-]/g, "");
 
@@ -33,8 +32,11 @@ const emptyForm = {
 
 const parseFeatures = (features) => {
   if (!features || typeof features !== "object") return [];
-  if (Array.isArray(features)) return features;
-  return Object.entries(features).map(([key, value]) => ({ key, value: String(value) }));
+  if (isArray(features)) return features;
+  return map(
+    toPairs(features),
+    ([key, value]) => ({ key, value: String(value) }),
+  );
 };
 
 const PlanForm = ({ defaultValues, onSubmit, isSubmitting, submitLabel }) => {
@@ -106,7 +108,7 @@ const PlanForm = ({ defaultValues, onSubmit, isSubmitting, submitLabel }) => {
   const handleRemoveFeature = (index) => {
     setForm((current) => ({
       ...current,
-      features: current.features.filter((_, i) => i !== index),
+      features: filter(current.features, (_, i) => i !== index),
     }));
   };
 
@@ -116,23 +118,23 @@ const PlanForm = ({ defaultValues, onSubmit, isSubmitting, submitLabel }) => {
       name: form.name,
       description: form.description || undefined,
       type: form.type,
-      price: form.price ? Number(form.price) : 0,
+      price: form.price ? toNumber(form.price) : 0,
       originalPrice: form.originalPrice
-        ? Number(form.originalPrice)
+        ? toNumber(form.originalPrice)
         : undefined,
       discountPercent: form.discountPercent
-        ? Number(form.discountPercent)
+        ? toNumber(form.discountPercent)
         : undefined,
-      durationDays: form.durationDays ? Number(form.durationDays) : undefined,
-      trialDays: form.trialDays ? Number(form.trialDays) : undefined,
+      durationDays: form.durationDays ? toNumber(form.durationDays) : undefined,
+      trialDays: form.trialDays ? toNumber(form.trialDays) : undefined,
       maxFamilyMembers:
-        form.type === "FAMILY" ? Number(form.maxFamilyMembers) : undefined,
+        form.type === "FAMILY" ? toNumber(form.maxFamilyMembers) : undefined,
       autoRenewDefault: form.autoRenewDefault,
       isActive: form.isActive,
       features:
         form.features.length > 0
-          ? form.features.reduce((acc, f) => {
-              if (f.key.trim()) acc[f.key.trim()] = f.value;
+          ? reduce(form.features, (acc, f) => {
+              if (trim(f.key)) acc[trim(f.key)] = f.value;
               return acc;
             }, {})
           : undefined,
@@ -223,7 +225,7 @@ const PlanForm = ({ defaultValues, onSubmit, isSubmitting, submitLabel }) => {
         </div>
 
         {/* Original Price — show when discountPercent > 0 */}
-        {Number(form.discountPercent) > 0 ? (
+        {toNumber(form.discountPercent) > 0 ? (
           <div className="flex flex-col gap-2">
             <Label className="text-sm font-medium">
               Asl narxi (UZS, chegirmadan oldingi)
@@ -366,7 +368,6 @@ const PlanForm = ({ defaultValues, onSubmit, isSubmitting, submitLabel }) => {
           )}
         </div>
       </div>
-
       <DrawerFooter className="gap-2 border-t bg-muted/5 px-6 py-4">
         <Button onClick={handleSubmit} disabled={isSubmitting}>
           {submitLabel}

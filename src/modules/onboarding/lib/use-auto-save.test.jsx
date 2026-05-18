@@ -9,11 +9,9 @@ import {
 
 const putMock = vi.hoisted(() => vi.fn());
 
-vi.mock("@/hooks/api/use-api.js", () => ({
-  default: () => ({
-    request: {
-      put: putMock,
-    },
+vi.mock("@/hooks/api", () => ({
+  usePutQuery: () => ({
+    mutateAsync: putMock,
   }),
 }));
 
@@ -49,15 +47,9 @@ describe("useOnboardingAutoSave", () => {
     vi.useFakeTimers();
     putMock.mockResolvedValue({});
 
-    const { rerender } = render(
-      <AutoSaveProbe step="coach/category" debounceMs={5} type="coach" />,
-    );
-    rerender(
-      <AutoSaveProbe step="coach/experience" debounceMs={5} type="coach" />,
-    );
-    rerender(
-      <AutoSaveProbe step="coach/specialization" debounceMs={5} type="coach" />,
-    );
+    const { rerender } = render(<AutoSaveProbe step="user/name" debounceMs={5} />);
+    rerender(<AutoSaveProbe step="user/age" debounceMs={5} />);
+    rerender(<AutoSaveProbe step="user/goal" debounceMs={5} />);
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(4);
@@ -68,7 +60,7 @@ describe("useOnboardingAutoSave", () => {
       await vi.advanceTimersByTimeAsync(1);
     });
     expect(putMock).toHaveBeenCalledTimes(1);
-    expect(putMock.mock.calls[0][1].currentStep).toBe("specialization");
+    expect(putMock.mock.calls[0][0].attributes.currentStep).toBe("user/goal");
   });
 
   it("backs off and retries once when draft save is rate limited", async () => {
@@ -106,7 +98,7 @@ describe("useOnboardingAutoSave", () => {
     render(<AutoSaveProbe debounceMs={1} />);
 
     await waitFor(() => expect(putMock).toHaveBeenCalledTimes(1));
-    const payload = putMock.mock.calls[0][1].data;
+    const payload = putMock.mock.calls[0][0].attributes.data;
 
     expect(payload).toMatchObject({
       firstName: "Ali",

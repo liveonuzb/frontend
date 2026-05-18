@@ -9,6 +9,8 @@ import {
   PizzaIcon,
 } from "lucide-react";
 
+import { toNumber } from "lodash";
+
 /* Query keys reused across pages and drawers. */
 export const dailyReportQueryKey = (date) => ["report", "daily", date];
 export const rangeReportQueryKey = (days, endDate) => [
@@ -82,7 +84,7 @@ export const METRIC_META = {
     label: "Uyqu",
     color: "text-indigo-500",
     bgColor: "bg-indigo-500/10",
-    formatActual: (v) => `${Number(v).toFixed(1)} soat`,
+    formatActual: (v) => `${toNumber(v).toFixed(1)} soat`,
     formatGoal: (v) => `${Math.round(v)} soat`,
     unit: "soat",
   },

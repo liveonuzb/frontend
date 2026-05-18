@@ -17,6 +17,8 @@ import {
   APP_MODE_OPTIONS,
 } from "../api";
 
+import { filter, map, trim } from "lodash";
+
 const ITEMS_PER_PAGE = 10;
 const SORT_FIELDS = [
   "orderKey",
@@ -52,13 +54,13 @@ export const useAchievementFilters = () => {
     parseAsStringEnum(ADMIN_TEXT_OPERATORS).withDefault("contains"),
   );
   const [isNameFilterVisible, setIsNameFilterVisible] = React.useState(
-    () => nameFilter.trim() !== "",
+    () => trim(nameFilter) !== "",
   );
   const [categoryFilter, setCategoryFilter] = useQueryState(
     "category",
     parseAsStringEnum([
       "all",
-      ...ACHIEVEMENT_CATEGORY_OPTIONS.map((option) => option.value),
+      ...map(ACHIEVEMENT_CATEGORY_OPTIONS, (option) => option.value),
     ]).withDefault("all"),
   );
   const [categoryOperator, setCategoryOperator] = useQueryState(
@@ -69,7 +71,7 @@ export const useAchievementFilters = () => {
     "metric",
     parseAsStringEnum([
       "all",
-      ...ACHIEVEMENT_METRIC_OPTIONS.map((option) => option.value),
+      ...map(ACHIEVEMENT_METRIC_OPTIONS, (option) => option.value),
     ]).withDefault("all"),
   );
   const [metricOperator, setMetricOperator] = useQueryState(
@@ -142,7 +144,7 @@ export const useAchievementFilters = () => {
     [sortBy, sortDir],
   );
   const canReorder =
-    nameFilter.trim() === "" &&
+    trim(nameFilter) === "" &&
     nameOperator === "contains" &&
     categoryFilter === "all" &&
     categoryOperator === "is" &&
@@ -219,7 +221,7 @@ export const useAchievementFilters = () => {
   );
 
   const activeFilters = React.useMemo(() => {
-    return [
+    return filter([
       makeAdminTextActiveFilter({
         field: "name",
         value: nameFilter,
@@ -263,7 +265,7 @@ export const useAchievementFilters = () => {
         operator: translationsOperator,
         visible: visibleFilters.translations,
       }),
-    ].filter(Boolean);
+    ], Boolean);
   }, [
     categoryFilter,
     categoryOperator,

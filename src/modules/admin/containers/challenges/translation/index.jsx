@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
-import { filter, find, get, isArray, join, map, trim } from "lodash";
+import { filter, find, get, isArray, join, map, trim, forEach, fromPairs } from "lodash";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -62,24 +62,22 @@ const resolveCurrentLanguage = (activeLanguages, currentLanguage) =>
   get(activeLanguages, "0", FALLBACK_LANGUAGE);
 
 const buildDefaultValues = (item, languages) =>
-  Object.fromEntries(
-    map(languages, (language) => {
-      const code = get(language, "code");
-      return [
-        code,
-        {
-          title: get(item, `translations.${code}`, ""),
-          description: get(item, `descriptionTranslations.${code}`, ""),
-        },
-      ];
-    }),
-  );
+  fromPairs(map(languages, (language) => {
+    const code = get(language, "code");
+    return [
+      code,
+      {
+        title: get(item, `translations.${code}`, ""),
+        description: get(item, `descriptionTranslations.${code}`, ""),
+      },
+    ];
+  }));
 
 const buildPayload = (values, languages, currentLanguage) => {
   const translations = {};
   const descriptionTranslations = {};
 
-  languages.forEach((language) => {
+  forEach(languages, (language) => {
     const code = get(language, "code");
     const title = trim(get(values, `${code}.title`, ""));
     const description = trim(get(values, `${code}.description`, ""));

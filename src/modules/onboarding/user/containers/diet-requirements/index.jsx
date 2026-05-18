@@ -33,6 +33,8 @@ import { CatalogOptionList } from "../catalog-option-list.jsx";
 import { ONBOARDING_GRID_SCROLL_AREA_CLASS } from "../onboarding-scroll-area.js";
 import OnboardingSelectCard from "../../components/onboarding-select-card.jsx";
 
+import { filter, map, some, toNumber, trim, flatten } from "lodash";
+
 const STEP = "diet-requirements";
 const I18N_KEY = "onboarding.nutritionSteps.dietRequirements";
 const OPTIONS_KEY = "dietRequirements";
@@ -51,8 +53,8 @@ const extractOptions = (response) =>
 
 const mergeOptions = (...groups) => {
   const seen = new Set();
-  return groups.flat().filter((item) => {
-    const id = Number(item?.id);
+  return filter(flatten(groups), (item) => {
+    const id = toNumber(item?.id);
     if (!Number.isInteger(id) || id <= 0 || seen.has(id)) {
       return false;
     }
@@ -66,7 +68,7 @@ const optionLabel = (option, fallback, t) =>
   getDietRequirementLabel(option, fallback, t);
 
 const ensureEllipsis = (value) => {
-  const label = String(value ?? "").trim();
+  const label = trim(String(value ?? ""));
   if (!label) return "";
   return label.endsWith("…") ? label : `${label.replace(/\.\.\.$/, "")}…`;
 };
@@ -163,7 +165,7 @@ const Index = () => {
     [baseOptions, otherOptions],
   );
   const optionMap = React.useMemo(
-    () => new Map(allOptions.map((item) => [Number(item.id), item])),
+    () => new Map(map(allOptions, (item) => [toNumber(item.id), item])),
     [allOptions],
   );
   const selectedIdSet = React.useMemo(
@@ -175,25 +177,21 @@ const Index = () => {
     [oppositeIds],
   );
   const oppositeCustomKeySet = React.useMemo(
-    () => new Set(oppositeCustomChips.map((value) => normalizeChipKey(value))),
+    () => new Set(map(oppositeCustomChips, (value) => normalizeChipKey(value))),
     [oppositeCustomChips],
   );
   const cardOptions = React.useMemo(
-    () => baseOptions.filter((item) => !oppositeIdSet.has(Number(item.id))),
+    () => filter(baseOptions, (item) => !oppositeIdSet.has(toNumber(item.id))),
     [baseOptions, oppositeIdSet],
   );
   const drawerOptions = React.useMemo(
-    () => otherOptions.filter((item) => !oppositeIdSet.has(Number(item.id))),
+    () => filter(otherOptions, (item) => !oppositeIdSet.has(toNumber(item.id))),
     [oppositeIdSet, otherOptions],
   );
-  const exactMatch = allOptions.some(
-    (item) => normalizeChipKey(item.name) === searchKey,
-  );
-  const conflictsWithOppositeId = allOptions.some(
-    (item) =>
-      oppositeIdSet.has(Number(item.id)) &&
-      normalizeChipKey(item.name) === searchKey,
-  );
+  const exactMatch = some(allOptions, (item) => normalizeChipKey(item.name) === searchKey);
+  const conflictsWithOppositeId = some(allOptions, (item) =>
+    oppositeIdSet.has(toNumber(item.id)) &&
+    normalizeChipKey(item.name) === searchKey);
   const hasOppositeConflict =
     searchLabel.length >= 2 &&
     (conflictsWithOppositeId || oppositeCustomKeySet.has(searchKey));
@@ -206,10 +204,9 @@ const Index = () => {
 
   const commitFields = React.useCallback(
     (nextIds, nextCustom = customChips) => {
-      const normalizedIds = normalizeSelectedIds(nextIds).filter(
-        (id) => !oppositeIdSet.has(id),
-      );
-      const normalizedCustom = normalizeCustomChips(nextCustom).filter(
+      const normalizedIds = filter(normalizeSelectedIds(nextIds), (id) => !oppositeIdSet.has(id));
+      const normalizedCustom = filter(
+        normalizeCustomChips(nextCustom),
         (label) => !oppositeCustomKeySet.has(normalizeChipKey(label)),
       );
       const fields = {
@@ -228,14 +225,14 @@ const Index = () => {
 
   const toggleOption = React.useCallback(
     (item) => {
-      const id = Number(item?.id);
+      const id = toNumber(item?.id);
       if (!Number.isInteger(id) || id <= 0 || oppositeIdSet.has(id)) {
         return;
       }
 
       commitFields(
         selectedIdSet.has(id)
-          ? selectedIds.filter((value) => value !== id)
+          ? filter(selectedIds, (value) => value !== id)
           : [...selectedIds, id],
       );
     },
@@ -253,7 +250,7 @@ const Index = () => {
       const key = normalizeChipKey(label);
       commitFields(
         selectedIds,
-        customChips.filter((value) => normalizeChipKey(value) !== key),
+        filter(customChips, (value) => normalizeChipKey(value) !== key),
       );
     },
     [commitFields, customChips, selectedIds],
@@ -261,16 +258,16 @@ const Index = () => {
 
   const drawerSelectedItems = React.useMemo(
     () => [
-      ...selectedIds.map((id) => {
+      ...map(selectedIds, (id) => {
         const option = optionMap.get(id);
         return {
           key: `catalog-${id}`,
           label: optionLabel(option, `#${id}`, t),
           onRemove: () =>
-            commitFields(selectedIds.filter((value) => value !== id)),
+            commitFields(filter(selectedIds, (value) => value !== id)),
         };
       }),
-      ...customChips.map((label) => ({
+      ...map(customChips, (label) => ({
         key: `custom-${normalizeChipKey(label)}`,
         label,
         className:
@@ -338,7 +335,7 @@ const Index = () => {
         <OnboardingQuestion question={t(`${I18N_KEY}.title`)} />
         {selectedCount > 0 ? (
           <div className="mb-3 flex flex-wrap gap-2">
-            {selectedIds.map((id) => {
+            {map(selectedIds, (id) => {
               const option = optionMap.get(id);
               return (
                 <button
@@ -346,7 +343,7 @@ const Index = () => {
                   type="button"
                   className="inline-flex max-w-full items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                   onClick={() =>
-                    commitFields(selectedIds.filter((value) => value !== id))
+                    commitFields(filter(selectedIds, (value) => value !== id))
                   }
                 >
                   <span className="truncate">
@@ -356,7 +353,7 @@ const Index = () => {
                 </button>
               );
             })}
-            {customChips.map((label) => (
+            {map(customChips, (label) => (
               <button
                 key={`custom-${label}`}
                 type="button"
@@ -396,7 +393,7 @@ const Index = () => {
               selectedIdSet={selectedIdSet}
             >
               {(item) => {
-                const id = Number(item.id);
+                const id = toNumber(item.id);
                 const isActive = selectedIdSet.has(id);
 
                 return (
@@ -445,8 +442,8 @@ const Index = () => {
             />
           </div>
         ) : drawerOptions.length ? (
-          drawerOptions.map((item) => {
-            const id = Number(item.id);
+          map(drawerOptions, (item) => {
+            const id = toNumber(item.id);
             const isActive = selectedIdSet.has(id);
 
             return (
@@ -496,3 +493,4 @@ const Index = () => {
 };
 
 export default Index;
+

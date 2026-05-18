@@ -9,8 +9,8 @@ import {
   DrawerDescription,
   DrawerBody,
 } from "@/components/ui/drawer";
-import useGetQuery from "@/hooks/api/use-get-query";
-import usePostQuery from "@/hooks/api/use-post-query";
+import { useGetQuery } from "@/hooks/api";
+import { usePostQuery } from "@/hooks/api";
 import { useAuthStore } from "@/store";
 import { cn } from "@/lib/utils";
 import { getApiResponseData } from "@/lib/api-response";

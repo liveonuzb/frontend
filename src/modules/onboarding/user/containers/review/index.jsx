@@ -1,4 +1,4 @@
-import { isArray, join } from "lodash";
+import { isArray, join, filter, map } from "lodash";
 import React from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
@@ -70,7 +70,7 @@ const SummaryCard = ({ editLabel, icon: Icon, title, items, onEdit }) => (
       ) : null}
     </div>
     <div className="grid gap-2 text-sm">
-      {items.map(([label, value]) => (
+      {map(items, ([label, value]) => (
         <div key={label} className="flex items-start justify-between gap-3">
           <span className="text-muted-foreground">{label}</span>
           <span className="max-w-[58%] text-right font-semibold">
@@ -215,7 +215,7 @@ const Index = () => {
                 </p>
                 {hasBlockingErrors ? (
                   <ul className="mt-2 grid gap-1 text-xs font-semibold text-destructive">
-                    {blockingErrors.map((error) => (
+                    {map(blockingErrors, (error) => (
                       <li key={error}>{error}</li>
                     ))}
                   </ul>
@@ -236,7 +236,7 @@ const Index = () => {
                     {t("onboarding.review.recommendations.title")}
                   </p>
                   <ul className="mt-2 grid gap-1 text-xs font-semibold">
-                    {recommendations.map((recommendation) => (
+                    {map(recommendations, (recommendation) => (
                       <li key={recommendation}>{recommendation}</li>
                     ))}
                   </ul>
@@ -255,8 +255,7 @@ const Index = () => {
             items={[
               [
                 t("onboarding.review.fields.name"),
-                [onboardingState.firstName, onboardingState.lastName]
-                  .filter(Boolean)
+                filter([onboardingState.firstName, onboardingState.lastName], Boolean)
                   .join(" "),
               ],
               [

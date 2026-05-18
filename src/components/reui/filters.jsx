@@ -1,6 +1,6 @@
 "use client";
 /* eslint-disable react-refresh/only-export-components */
-import { map, filter, find, some, reduce, includes } from "lodash";
+import { map, filter, find, some, reduce, includes, isArray, toLower, take } from "lodash";
 import {
   createContext,
   useCallback,
@@ -104,7 +104,7 @@ export const DEFAULT_I18N = {
   placeholders: {
     enterField: (fieldType) => `Enter ${fieldType}...`,
     selectField: "Select...",
-    searchField: (fieldName) => `Search ${fieldName.toLowerCase()}...`,
+    searchField: (fieldName) => `Search ${toLower(fieldName)}...`,
     enterKey: "Enter key...",
     enterValue: "Enter value...",
   },
@@ -232,7 +232,7 @@ function FilterInput(
     // Hide validation error when user starts typing (any key except special keys)
     if (
       !isValid &&
-      ![
+      !includes([
         "Tab",
         "Escape",
         "Enter",
@@ -240,7 +240,7 @@ function FilterInput(
         "ArrowDown",
         "ArrowLeft",
         "ArrowRight",
-      ].includes(e.key)
+      ], e.key)
     ) {
       setIsValid(true)
       setValidationMessage("")
@@ -330,7 +330,7 @@ function FilterRemoveButton(
 
 // Helper functions to handle both flat and grouped field configurations
 const isFieldGroup = item => {
-  return "fields" in item && Array.isArray(item.fields);
+  return "fields" in item && isArray(item.fields);
 }
 
 // Helper function to check if a FilterFieldConfig is a group-level configuration
@@ -514,7 +514,7 @@ function SelectOptionsPopover(
   // Filter options based on search input
   const filteredSelectedOptions = selectedOptions // Keep all selected visible
   const filteredUnselectedOptions = filter(unselectedOptions, (opt) =>
-    opt.label.toLowerCase().includes(searchInput.toLowerCase()))
+    includes(toLower(opt.label), toLower(searchInput)))
 
   const allFilteredOptions = useMemo(
     () => [...filteredSelectedOptions, ...filteredUnselectedOptions],
@@ -570,9 +570,9 @@ function SelectOptionsPopover(
                 e.preventDefault()
                 const option = allFilteredOptions[highlightedIndex]
                 if (option) {
-                  const isSelected = effectiveValues.includes(option.value)
+                  const isSelected = includes(effectiveValues, option.value)
                   const next = isSelected
-                    ? (effectiveValues.filter((v) => v !== option.value))
+                    ? (filter(effectiveValues, (v) => v !== option.value))
                     : isMultiSelect
                       ? ([...effectiveValues, option.value])
                       : ([option.value])
@@ -737,7 +737,7 @@ function SelectOptionsPopover(
               <>
                 {selectedOptions.length > 0 && (
                   <div className="flex items-center -space-x-1.5">
-                    {map(selectedOptions.slice(0, 3), (option) => (
+                    {map(take(selectedOptions, 3), (option) => (
                       <div key={String(option.value)}>{option.icon}</div>
                     ))}
                   </div>
@@ -904,7 +904,7 @@ function FilterSubmenuContent(
       const isSelected = includes(currentValues, option.value)
       if (isSelected) return true
       if (!searchInput) return true
-      return option.label.toLowerCase().includes(searchInput.toLowerCase());
+      return includes(toLower(option.label), toLower(searchInput));
     }) || []);
   }, [field.options, searchInput, currentValues])
 
@@ -959,7 +959,7 @@ function FilterSubmenuContent(
                 e.preventDefault()
                 const option = filteredOptions[highlightedIndex]
                 if (option) {
-                  onToggle(option.value, currentValues.includes(option.value))
+                  onToggle(option.value, includes(currentValues, option.value))
                   if (!isMultiSelect) {
                     onBack?.()
                   }
@@ -1000,7 +1000,7 @@ function FilterSubmenuContent(
                 e.preventDefault()
                 const option = filteredOptions[highlightedIndex]
                 if (option) {
-                  onToggle(option.value, currentValues.includes(option.value))
+                  onToggle(option.value, includes(currentValues, option.value))
                   if (!isMultiSelect) {
                     onBack?.()
                   }
@@ -1091,7 +1091,7 @@ export function Filters(
 
     const handleKeyDown = (e) => {
       if (
-        e.key.toLowerCase() === shortcutKey.toLowerCase() &&
+        toLower(e.key) === toLower(shortcutKey) &&
         !addFilterOpen &&
         !(
           document.activeElement instanceof HTMLInputElement ||
@@ -1195,7 +1195,7 @@ export function Filters(
   const filteredFields = useMemo(() => {
     return filter(selectableFields, (f) =>
       !menuSearchInput ||
-      f.label?.toLowerCase().includes(menuSearchInput.toLowerCase()));
+      includes(toLower(f.label), toLower(menuSearchInput)));
   }, [selectableFields, menuSearchInput])
 
   useEffect(() => {

@@ -23,6 +23,8 @@ import { useGetQuery } from "@/hooks/api";
 import { useBreadcrumbStore } from "@/store";
 import { formatChallengeDateRange, getMetricMeta } from "../challenge-utils.js";
 
+import { isArray, map, toLower, toNumber } from "lodash";
+
 const StatCard = ({ label, value, icon: Icon }) => (
   <Card size="sm">
     <CardHeader>
@@ -55,10 +57,10 @@ export default function ChallengeReportContainer() {
   }, [setBreadcrumbs]);
 
   const stats = statsQuery.data?.data || {};
-  const history = Array.isArray(historyQuery.data?.data)
+  const history = isArray(historyQuery.data?.data)
     ? historyQuery.data.data
     : [];
-  const metricBreakdown = Array.isArray(stats.metricBreakdown)
+  const metricBreakdown = isArray(stats.metricBreakdown)
     ? stats.metricBreakdown
     : [];
   const isLoading = statsQuery.isLoading || historyQuery.isLoading;
@@ -75,7 +77,7 @@ export default function ChallengeReportContainer() {
 
         {isLoading ? (
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, index) => (
+            {map(Array.from({ length: 4 }), (_, index) => (
               <Skeleton key={index} className="h-32" />
             ))}
           </div>
@@ -83,22 +85,22 @@ export default function ChallengeReportContainer() {
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <StatCard
               label="Jami qatnashgan"
-              value={Number(stats.totalJoined || 0)}
+              value={toNumber(stats.totalJoined || 0)}
               icon={TrophyIcon}
             />
             <StatCard
               label="G'olib bo'lgan"
-              value={Number(stats.wonCount || 0)}
+              value={toNumber(stats.wonCount || 0)}
               icon={MedalIcon}
             />
             <StatCard
               label="Yakunlangan"
-              value={Number(stats.completedCount || 0)}
+              value={toNumber(stats.completedCount || 0)}
               icon={BarChart3Icon}
             />
             <StatCard
               label="Yig'ilgan XP"
-              value={Number(stats.xpEarned || 0).toLocaleString("uz-UZ")}
+              value={toNumber(stats.xpEarned || 0).toLocaleString("uz-UZ")}
               icon={ZapIcon}
             />
           </div>
@@ -127,7 +129,7 @@ export default function ChallengeReportContainer() {
                     Eng uzun seriya
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {Number(stats.longestCompletedStreak || 0)
+                  {toNumber(stats.longestCompletedStreak || 0)
                     ? `${stats.longestCompletedStreak} ta yakunlangan chellenj`
                     : "Seriya hali boshlanmagan"}
                 </p>
@@ -135,7 +137,7 @@ export default function ChallengeReportContainer() {
               <div className="rounded-xl border p-3">
                 <p className="text-sm font-medium">O'rtacha progress</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {Number(stats.averageProgress || 0)}% umumiy bajarilish
+                  {toNumber(stats.averageProgress || 0)}% umumiy bajarilish
                 </p>
               </div>
             </CardContent>
@@ -150,7 +152,7 @@ export default function ChallengeReportContainer() {
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
               {metricBreakdown.length ? (
-                metricBreakdown.map((item) => {
+                map(metricBreakdown, (item) => {
                   const meta = getMetricMeta(item.metricType);
                   return (
                     <div key={item.metricType} className="flex flex-col gap-2">
@@ -162,7 +164,7 @@ export default function ChallengeReportContainer() {
                           {item.percent}%
                         </span>
                       </div>
-                      <Progress value={Number(item.percent) || 0} className="h-2" />
+                      <Progress value={toNumber(item.percent) || 0} className="h-2" />
                     </div>
                   );
                 })
@@ -176,7 +178,7 @@ export default function ChallengeReportContainer() {
               <CardContent>
                 <p className="text-sm text-muted-foreground">
                 Siz ko'proq{" "}
-                {getMetricMeta(stats.topMetric.metricType).label.toLowerCase()}{" "}
+                {toLower(getMetricMeta(stats.topMetric.metricType).label)}{" "}
                 chellenjlarida qatnashasiz.
                 </p>
               </CardContent>
@@ -195,13 +197,13 @@ export default function ChallengeReportContainer() {
           <CardContent>
           {isLoading ? (
             <div className="space-y-3">
-              {Array.from({ length: 3 }).map((_, index) => (
+              {map(Array.from({ length: 3 }), (_, index) => (
                 <Skeleton key={index} className="h-20" />
               ))}
             </div>
           ) : history.length ? (
             <div className="divide-y divide-border/60">
-              {history.map((challenge) => (
+              {map(history, (challenge) => (
                 <button
                   key={challenge.id}
                   type="button"
@@ -221,10 +223,10 @@ export default function ChallengeReportContainer() {
                     <p className="text-sm font-black">
                       {challenge.rank
                         ? `${challenge.rank}-o'rin`
-                        : `${Math.round(Number(challenge.progress || 0))}%`}
+                        : `${Math.round(toNumber(challenge.progress || 0))}%`}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {Number(challenge.rewardXp || 0).toLocaleString("uz-UZ")}{" "}
+                      {toNumber(challenge.rewardXp || 0).toLocaleString("uz-UZ")}{" "}
                       XP
                     </p>
                   </div>

@@ -1,4 +1,4 @@
-import { map, filter } from "lodash";
+import { map, filter, trim } from "lodash";
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,7 +31,7 @@ const LiveStreamOverlay = ({
     };
 
     const handleSendComment = () => {
-        if (!comment.trim()) return;
+        if (!trim(comment)) return;
         setComments(prev => [...prev, { id: Date.now(), user: "Siz", text: comment }]);
         setComment("");
     };

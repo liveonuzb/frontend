@@ -3,6 +3,8 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { LabeledNumberField, StepSection } from "./form-fields.jsx";
 
+import { find, map, reduce, toNumber, take } from "lodash";
+
 const REWARD_MODES = [
   { value: "FIXED_XP", label: "Belgilangan XP" },
   { value: "PERCENT_OF_POOL", label: "Havuz foizi" },
@@ -13,22 +15,18 @@ const StepReward = ({ form, setForm }) => {
   const updatePlaceReward = (index, value) => {
     setForm((current) => ({
       ...current,
-      placeRewards: current.placeRewards.slice(0, 3).map((item, itemIndex) =>
-        itemIndex === index ? { ...item, value } : item,
-      ),
+      placeRewards: map(take(current.placeRewards, 3), (item, itemIndex) =>
+        itemIndex === index ? { ...item, value } : item),
     }));
   };
 
-  const activeMode = REWARD_MODES.find((item) => item.value === form.rewardMode);
-  const placeRewards = form.placeRewards.slice(0, 3);
-  const placeRewardTotal = placeRewards.reduce(
-    (sum, reward) => sum + (Number(reward.value) || 0),
-    0,
-  );
+  const activeMode = find(REWARD_MODES, (item) => item.value === form.rewardMode);
+  const placeRewards = take(form.placeRewards, 3);
+  const placeRewardTotal = reduce(placeRewards, (sum, reward) => sum + (toNumber(reward.value) || 0), 0);
   const isPlaceRewardOrderValid =
     placeRewards.length === 3 &&
-    Number(placeRewards[0]?.value) > Number(placeRewards[1]?.value) &&
-    Number(placeRewards[1]?.value) > Number(placeRewards[2]?.value);
+    toNumber(placeRewards[0]?.value) > toNumber(placeRewards[1]?.value) &&
+    toNumber(placeRewards[1]?.value) > toNumber(placeRewards[2]?.value);
   const poolPreview =
     form.rewardMode === "PERCENT_OF_POOL"
       ? Math.round((form.joinFeeXp * Math.max(1, form.maxParticipants || 1) * form.rewardPercent) / 100)
@@ -50,7 +48,7 @@ const StepReward = ({ form, setForm }) => {
           className="grid w-full grid-cols-1 gap-2 sm:grid-cols-3"
           spacing={2}
         >
-          {REWARD_MODES.map((mode) => (
+          {map(REWARD_MODES, (mode) => (
             <ToggleGroupItem
               key={mode.value}
               value={mode.value}
@@ -63,7 +61,6 @@ const StepReward = ({ form, setForm }) => {
           ))}
         </ToggleGroup>
       </div>
-
       {form.rewardMode === "FIXED_XP" ? (
         <LabeledNumberField
           label="Mukofot XP"
@@ -75,7 +72,6 @@ const StepReward = ({ form, setForm }) => {
           step={10}
         />
       ) : null}
-
       {form.rewardMode === "PERCENT_OF_POOL" ? (
         <LabeledNumberField
           label="Havuz foizi"
@@ -89,7 +85,6 @@ const StepReward = ({ form, setForm }) => {
           step={5}
         />
       ) : null}
-
       {form.rewardMode === "PLACE_XP" ? (
         <div className="space-y-3 rounded-lg border bg-muted/20 p-4">
           <div className="flex items-center justify-between gap-3">
@@ -111,7 +106,7 @@ const StepReward = ({ form, setForm }) => {
             </span>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
-            {placeRewards.map((reward, index) => (
+            {map(placeRewards, (reward, index) => (
               <LabeledNumberField
                 key={reward.place}
                 label={`${reward.place}-o'rin`}
@@ -135,7 +130,6 @@ const StepReward = ({ form, setForm }) => {
           </p>
         </div>
       ) : null}
-
       <div className="grid gap-3 sm:grid-cols-2">
         <LabeledNumberField
           label="Kirish narxi (XP)"
@@ -160,7 +154,6 @@ const StepReward = ({ form, setForm }) => {
           step={1}
         />
       </div>
-
       <div className={cn("rounded-lg border bg-card p-4")}>
         <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
           Preview
@@ -173,7 +166,7 @@ const StepReward = ({ form, setForm }) => {
             ? `Yakunlagan ishtirokchi ${form.rewardXp} XP oladi.`
             : form.rewardMode === "PERCENT_OF_POOL"
               ? `Taxminiy havuz mukofoti: ${poolPreview || 0} XP.`
-              : `XP havuzi ${placeRewards.map((reward) => `${reward.place}-o'rin ${reward.value}%`).join(", ")} bo'yicha bo'linadi.`}
+              : `XP havuzi ${map(placeRewards, (reward) => `${reward.place}-o'rin ${reward.value}%`).join(", ")} bo'yicha bo'linadi.`}
         </p>
       </div>
     </StepSection>

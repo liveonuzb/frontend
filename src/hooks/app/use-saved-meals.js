@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, find, map, trim, toLower, toNumber } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDeleteQuery, useGetQuery, usePatchQuery, usePostQuery } from "@/hooks/api";
 import {
@@ -17,7 +17,7 @@ const getPayload = (response) =>
 export { normalizeSavedMeal };
 
 const buildSavedMealPayload = (meal = {}) => ({
-  name: String(meal?.name || "").trim(),
+  name: trim(String(meal?.name || "")),
   source: meal?.source || null,
   imageUrl: meal?.imageUrl || null,
   ingredients: buildMealIngredientsPayload(meal?.ingredients),
@@ -33,7 +33,7 @@ export const useSavedMeals = (options = {}) => {
   });
 
   const items = React.useMemo(
-    () => getPayload(data)?.items?.map(normalizeSavedMeal) || [],
+    () => map(getPayload(data)?.items, normalizeSavedMeal) || [],
     [data],
   );
 
@@ -62,14 +62,15 @@ export const useSavedMealsActions = () => {
       const payload = buildSavedMealPayload(meal);
       const totals = getMealIngredientTotals(payload.ingredients);
       const currentItems =
-        getPayload(queryClient.getQueryData(SAVED_MEALS_QUERY_KEY))?.items?.map(
+        map(
+          getPayload(queryClient.getQueryData(SAVED_MEALS_QUERY_KEY))?.items,
           normalizeSavedMeal,
         ) || [];
-      const duplicate = currentItems.find((item) => {
+      const duplicate = find(currentItems, (item) => {
         const sameName =
-          item.name.trim().toLowerCase() === payload.name.trim().toLowerCase();
+          toLower(trim(item.name)) === toLower(trim(payload.name));
         const closeCalories =
-          Math.abs(Number(item.calories || 0) - Number(totals.calories || 0)) <=
+          Math.abs(toNumber(item.calories || 0) - toNumber(totals.calories || 0)) <=
           25;
         return sameName && closeCalories;
       });

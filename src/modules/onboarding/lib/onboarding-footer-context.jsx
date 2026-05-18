@@ -1,5 +1,7 @@
 import React from "react";
 
+import { forEach } from "lodash";
+
 /* eslint-disable react-refresh/only-export-components */
 
 /**
@@ -26,7 +28,7 @@ export const OnboardingFooterProvider = ({ children }) => {
     }
 
     contentRef.current = content;
-    listenersRef.current.forEach((fn) => fn());
+    forEach(listenersRef.current, (fn) => fn());
   }, []);
 
   const subscribe = React.useCallback((fn) => {

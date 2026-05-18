@@ -8,6 +8,8 @@ import en from "@/modules/landing/lib/locales/en.json";
 import ru from "@/modules/landing/lib/locales/ru.json";
 import uz from "@/modules/landing/lib/locales/uz.json";
 
+import { isArray, map } from "lodash";
+
 const localeMap = { en, ru, uz };
 const setCurrentLanguageMock = vi.hoisted(() => vi.fn());
 
@@ -113,9 +115,8 @@ describe("landing page", () => {
   it("does not render placeholder footer or social links", () => {
     renderLanding();
 
-    const hrefs = screen
-      .getAllByRole("link")
-      .map((link) => link.getAttribute("href"));
+    const hrefs = map(screen
+      .getAllByRole("link"), (link) => link.getAttribute("href"));
 
     expect(hrefs).not.toContain("#");
   });
@@ -133,12 +134,12 @@ describe("landing page", () => {
   it("emits FAQ, SoftwareApplication, and Organization structured data", () => {
     renderLanding();
 
-    const schemas = Array.from(
+    const schemas = map(Array.from(
       document.head.querySelectorAll('script[type="application/ld+json"]'),
-    ).map((script) => JSON.parse(script.textContent || "{}"));
+    ), (script) => JSON.parse(script.textContent || "{}"));
     const graphTypes = schemas.flatMap((schema) =>
-      Array.isArray(schema["@graph"])
-        ? schema["@graph"].map((entry) => entry["@type"])
+      isArray(schema["@graph"])
+        ? map(schema["@graph"], (entry) => entry["@type"])
         : [schema["@type"]],
     );
 

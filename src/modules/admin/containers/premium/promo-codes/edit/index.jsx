@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import React from "react";
 import { useParams } from "react-router";
-import { find, get, isArray, join } from "lodash";
+import { find, get, isArray, join, split, toNumber, trim } from "lodash";
 import { toast } from "sonner";
 import { PencilIcon } from "lucide-react";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
@@ -26,7 +26,7 @@ const PREMIUM_PROMO_CODES_PATH = "/admin/premium/promo-codes";
 const formatDateValue = (dateStr) => {
   if (!dateStr) return "";
   try {
-    return new Date(dateStr).toISOString().split("T")[0];
+    return split(new Date(dateStr).toISOString(), "T")[0];
   } catch {
     return "";
   }
@@ -76,7 +76,7 @@ const EditPromoCode = () => {
   const handleSave = React.useCallback(async () => {
     if (!canManageGrowth) return;
 
-    const code = form.code.trim();
+    const code = trim(form.code);
     if (!code) {
       toast.error("Promo kodni kiriting");
       return;
@@ -90,10 +90,10 @@ const EditPromoCode = () => {
       code,
       description: form.description || undefined,
       discountType: form.discountType,
-      discountValue: Number(form.discountValue),
-      maxUses: form.maxUses ? Number(form.maxUses) : null,
+      discountValue: toNumber(form.discountValue),
+      maxUses: form.maxUses ? toNumber(form.maxUses) : null,
       stackable: form.stackable,
-      minPlanPrice: form.minPlanPrice ? Number(form.minPlanPrice) : null,
+      minPlanPrice: form.minPlanPrice ? toNumber(form.minPlanPrice) : null,
       validFrom: form.validFrom || undefined,
       validTo: form.validTo || undefined,
       applicablePlanIds:

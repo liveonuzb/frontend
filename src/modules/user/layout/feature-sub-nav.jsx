@@ -3,6 +3,8 @@ import { NavLink, useLocation } from "react-router";
 import { cn } from "@/lib/utils";
 import { useMobileChromeHidden } from "@/hooks/app/use-mobile-chrome-hidden";
 
+import { map } from "lodash";
+
 const isItemActive = (pathname, item) => {
   if (item.match) {
     return item.match(pathname);
@@ -35,7 +37,7 @@ const FeatureSubNav = ({ items = [], className, mobile = false }) => {
                 items.length <= 4 && "min-w-full justify-between",
               )}
             >
-              {items.map((item) => {
+              {map(items, (item) => {
                 const active = isItemActive(pathname, item);
 
                 return (
@@ -63,7 +65,7 @@ const FeatureSubNav = ({ items = [], className, mobile = false }) => {
           className="rounded-[1.25rem] border bg-background/80 p-2 backdrop-blur"
         >
           <div className="flex flex-wrap items-center justify-start gap-2 overflow-x-auto no-scrollbar">
-            {items.map((item) => {
+            {map(items, (item) => {
               const active = isItemActive(pathname, item);
 
               return (

@@ -1,5 +1,5 @@
 import React from "react";
-import { get, trim } from "lodash";
+import { get, trim, toNumber } from "lodash";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import PageLoader from "@/components/page-loader/index.jsx";
@@ -37,7 +37,7 @@ const EditWorkoutPlanPage = () => {
       return null;
     }
 
-    const rawValue = Number(rawDay);
+    const rawValue = toNumber(rawDay);
     return Number.isInteger(rawValue) && rawValue >= 0 ? rawValue : null;
   }, [location.search]);
   const updatePlanMutation = useUpdateWorkoutPlan();

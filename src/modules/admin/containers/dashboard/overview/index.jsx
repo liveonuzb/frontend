@@ -25,7 +25,6 @@ import {
   HardDriveIcon,
   ServerIcon,
   SettingsIcon,
-  ShieldCheckIcon,
   StarIcon,
   TagIcon,
   TrendingUpIcon,
@@ -36,7 +35,7 @@ import {
 } from "lucide-react";
 import { useGetQuery } from "@/hooks/api";
 import { cn } from "@/lib/utils";
-import { get, sortBy } from "lodash";
+import { get, sortBy, includes, map, reduce, toUpper, split, take } from "lodash";
 import {
   Area,
   AreaChart,
@@ -59,20 +58,6 @@ const overviewCardConfig = [
     icon: UsersIcon,
     color: "text-blue-500",
     bg: "bg-blue-500/10",
-  },
-  {
-    key: "totalCoaches",
-    title: "Coachlar",
-    icon: ShieldCheckIcon,
-    color: "text-emerald-500",
-    bg: "bg-emerald-500/10",
-  },
-  {
-    key: "pendingCoaches",
-    title: "Kutilayotgan coachlar",
-    icon: Clock3Icon,
-    color: "text-yellow-500",
-    bg: "bg-yellow-500/10",
   },
   {
     key: "totalFoods",
@@ -177,8 +162,8 @@ const Index = () => {
   const metrics = dashboard.metrics ?? {};
   const recentActivities = dashboard.recentActivities ?? [];
   const recentAuditLogs = dashboard.recentAuditLogs ?? [];
-  const recentActivityPreview = recentActivities.slice(0, 4);
-  const recentAuditLogsPreview = recentAuditLogs.slice(0, 4);
+  const recentActivityPreview = take(recentActivities, 4);
+  const recentAuditLogsPreview = take(recentAuditLogs, 4);
   const premiumStats = dashboard.premium?.stats ?? {};
   const premiumPlans = dashboard.premium?.plans ?? [];
   const premiumTrend = dashboard.premium?.trend ?? [];
@@ -224,7 +209,7 @@ const Index = () => {
   ];
 
   const canReadAudit =
-    roles.includes("SUPER_ADMIN") || roles.includes("READONLY_ADMIN");
+    includes(roles, "SUPER_ADMIN") || includes(roles, "READONLY_ADMIN");
   const canUseReports =
     canReadSupport || canReadContent || canReadFinance || canManageContent;
   const quickActionItems = [
@@ -260,18 +245,6 @@ const Index = () => {
       : []),
   ];
   const pendingActions = [
-    ...(canReadSupport
-      ? [
-          {
-            label: "Coach tasdiqlash",
-            count: get(metrics, "pendingCoaches", 0),
-            icon: ShieldCheckIcon,
-            path: "/admin/coaches",
-            color: "text-yellow-600 dark:text-yellow-400",
-            bg: "bg-yellow-500/10",
-          },
-        ]
-      : []),
     {
       label: "Hal qilinmagan hisobotlar",
       count: 0,
@@ -282,10 +255,7 @@ const Index = () => {
     },
   ];
 
-  const totalPendingCount = pendingActions.reduce(
-    (sum, item) => sum + item.count,
-    0,
-  );
+  const totalPendingCount = reduce(pendingActions, (sum, item) => sum + item.count, 0);
 
   const apiIsHealthy = !isHealthError && get(health, "status") === "ok";
   const systemStatusItems = [
@@ -322,7 +292,7 @@ const Index = () => {
               <ZapIcon className="size-4 text-primary" />
               <span className="text-sm font-medium">Tezkor amallar</span>
             </div>
-            {quickActionItems.map((action) => (
+            {map(quickActionItems, (action) => (
               <Button
                 key={action.path}
                 variant={action.variant}
@@ -361,7 +331,7 @@ const Index = () => {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-              {quickHighlights.map((item) => (
+              {map(quickHighlights, (item) => (
                 <div
                   key={item.label}
                   className="rounded-2xl border border-border/60 bg-background/90 px-4 py-4 shadow-sm"
@@ -397,7 +367,7 @@ const Index = () => {
               )}
             </CardHeader>
             <CardContent className="flex-1 space-y-2.5">
-              {pendingActions.map((item) => (
+              {map(pendingActions, (item) => (
                 <Link
                   key={item.path}
                   to={item.path}
@@ -450,7 +420,7 @@ const Index = () => {
               )}
             </CardHeader>
             <CardContent className="flex-1 space-y-2.5">
-              {systemStatusItems.map((item) => (
+              {map(systemStatusItems, (item) => (
                 <div
                   key={item.label}
                   className="flex items-center gap-3 rounded-2xl border border-border/60 bg-muted/20 px-3 py-3"
@@ -491,7 +461,7 @@ const Index = () => {
 
         {/* Overview Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {overviewCardConfig.map((card) => (
+          {map(overviewCardConfig, (card) => (
             <Card key={card.key} className={dashboardCardClassName}>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -513,10 +483,6 @@ const Index = () => {
                 <p className="text-xs leading-5 text-muted-foreground/80">
                   {card.key === "totalUsers" &&
                     "Platformadagi barcha ro'yxatdan o'tgan foydalanuvchilar."}
-                  {card.key === "totalCoaches" &&
-                    "Ariza topshirgan yoki tasdiqlangan coachlar soni."}
-                  {card.key === "pendingCoaches" &&
-                    "Ko'rib chiqishni kutayotgan coach arizalari."}
                   {card.key === "totalFoods" &&
                     "Nutrition katalogidagi umumiy ovqat birliklari."}
                 </p>
@@ -527,7 +493,7 @@ const Index = () => {
 
         {/* Premium Overview */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {premiumOverviewCards.map((card) => (
+          {map(premiumOverviewCards, (card) => (
             <Card key={card.title} className={dashboardCardClassName}>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -556,7 +522,7 @@ const Index = () => {
 
         {/* Premium Plans */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          {premiumPlans.map((plan) => (
+          {map(premiumPlans, (plan) => (
             <Card key={plan.id} className={dashboardCardClassName}>
               <CardHeader className="gap-4">
                 <div className="flex items-center justify-between gap-3">
@@ -576,7 +542,7 @@ const Index = () => {
                   {formatUZS(plan.price)}
                 </p>
                 <div className="space-y-2 text-sm text-muted-foreground">
-                  {plan.features?.slice(0, 3).map((feature) => (
+                  {map(take(plan.features, 3), (feature) => (
                     <div
                       key={feature}
                       className="rounded-xl border border-border/60 bg-muted/25 px-3 py-2"
@@ -681,7 +647,7 @@ const Index = () => {
               </div>
             </CardHeader>
             <CardContent className="flex-1 max-h-[360px] space-y-2.5 overflow-y-auto pr-1">
-              {sortBy(topContentPlaceholder, "name").map((item, index) => (
+              {map(sortBy(topContentPlaceholder, "name"), (item, index) => (
                 <div
                   key={`${item.name}-${index}`}
                   className="flex items-center gap-3 rounded-2xl border border-border/60 bg-muted/20 px-3 py-2.5"
@@ -714,7 +680,7 @@ const Index = () => {
                   So'nggi faoliyat
                 </CardTitle>
                 <CardDescription>
-                  Yangi userlar va coach arizalaridagi o'zgarishlar
+                  Yangi userlar va platformadagi oxirgi o'zgarishlar
                 </CardDescription>
               </div>
               <Link
@@ -727,18 +693,14 @@ const Index = () => {
             <CardContent className="flex-1 max-h-[360px] space-y-3 overflow-y-auto pr-1">
               {recentActivityPreview.length > 0 ? (
                 <div className="space-y-2.5">
-                  {recentActivityPreview.map((activity) => (
+                  {map(recentActivityPreview, (activity) => (
                     <div
                       key={activity.id}
                       className="flex items-start gap-3 rounded-2xl border border-border/60 bg-muted/20 px-3 py-2.5"
                     >
                       <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
-                        {(activity.user ?? "?")
-                          .split(" ")
-                          .slice(0, 2)
-                          .map((part) => part[0] ?? "")
-                          .join("")
-                          .toUpperCase()}
+                        {toUpper(map(take(split((activity.user ?? "?"), " "), 2), (part) => part[0] ?? "")
+                          .join(""))}
                       </div>
                       <div className="min-w-0 space-y-0.5">
                         <p className="text-sm leading-5">
@@ -786,7 +748,7 @@ const Index = () => {
             <CardContent className="flex-1 max-h-[360px] space-y-3 overflow-y-auto pr-1">
               {recentAuditLogsPreview.length > 0 ? (
                 <div className="space-y-2.5">
-                  {recentAuditLogsPreview.map((item) => (
+                  {map(recentAuditLogsPreview, (item) => (
                     <div
                       key={item.id}
                       className="rounded-2xl border border-border/60 bg-muted/20 px-3 py-2.5"

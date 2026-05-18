@@ -1,5 +1,5 @@
 import React from "react";
-import { filter, map, size } from "lodash";
+import { filter, map, size, isArray, take } from "lodash";
 import { AwardIcon, LockIcon } from "lucide-react";
 import { Link } from "react-router";
 import { useGetQuery } from "@/hooks/api";
@@ -12,7 +12,7 @@ const AchievementsWidget = () => {
   });
 
   const payload = getApiResponseData(data, []);
-  const evaluated = Array.isArray(payload) ? payload : [];
+  const evaluated = isArray(payload) ? payload : [];
   const unlocked = filter(evaluated, { unlocked: true });
   const locked = filter(evaluated, { unlocked: false });
   const progress = size(unlocked);
@@ -56,7 +56,7 @@ const AchievementsWidget = () => {
               {item.icon || "🏆"}
             </div>
           ))}
-          {map(locked.slice(0, 4), (item) => (
+          {map(take(locked, 4), (item) => (
             <div
               key={item.id}
               className="flex size-10 items-center justify-center rounded-xl bg-muted/40 text-muted-foreground"

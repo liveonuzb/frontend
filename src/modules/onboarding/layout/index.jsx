@@ -1,40 +1,29 @@
 import React from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { get } from "lodash";
+import { get, includes, isArray, some } from "lodash";
 import { cn } from "@/lib/utils";
 import { normalizeUserOnboarding } from "@/lib/user-onboarding";
 import { useGetQuery } from "@/hooks/api";
 import { useAuthStore, useOnboardingStore } from "@/store";
 import { Check, ChevronLeft } from "lucide-react";
 import {
-  getCoachOnboardingPath,
   getOnboardingPathFromStep,
   getUserOnboardingPath,
 } from "@/lib/app-paths.js";
 import {
-  COACH_ONBOARDING_STEPS,
   ONBOARDING_STEPS,
   getStepIndex,
   getPrevStep,
-  isCoachOnboardingStep,
   isKnownOnboardingStep,
   normalizeUserOnboardingStep,
 } from "../constants";
-import { getCoachOnboardingStepIndex } from "../lib/resume";
 import {
   OnboardingFooterProvider,
   FooterSlot,
 } from "../lib/onboarding-footer-context";
 import { useDraftRestore } from "../lib/use-draft-restore";
 import { isMeaningfulUserDraftData } from "../lib/user-draft-data";
-
-const getPrevCoachStep = (step) => {
-  const steps = COACH_ONBOARDING_STEPS;
-  const idx = steps.indexOf(step);
-  if (idx > 0) return steps[idx - 1];
-  return null;
-};
 
 const USER_STEP_SECTION_KEYS = {
   name: "profile",
@@ -70,10 +59,7 @@ const DENSE_FOOTER_RESERVE_STEPS = new Set([
   "target-weight",
 ]);
 
-const getStepSectionKey = (step, isCoachStep) => {
-  if (isCoachStep) return "coach";
-  return USER_STEP_SECTION_KEYS[step] ?? "profile";
-};
+const getStepSectionKey = (step) => USER_STEP_SECTION_KEYS[step] ?? "profile";
 
 const OnboardingLayoutInner = () => {
   const { t } = useTranslation();
@@ -88,29 +74,22 @@ const OnboardingLayoutInner = () => {
     setLastVisitedPath,
   } = useOnboardingStore();
 
-  const isCoachScope = location.pathname.startsWith("/coach/onboarding");
   const routePath = location.pathname.replace(
-    /^\/(?:user|coach)\/onboarding\/?/,
+    /^\/user\/onboarding\/?/,
     "",
   );
-  const currentPath =
-    isCoachScope && routePath ? `coach/${routePath}` : routePath;
+  const currentPath = routePath;
   const isResultRoute =
-    !isCoachScope && ["result", "metabolism-result"].includes(currentPath);
+    includes(["result", "metabolism-result"], currentPath);
   const isMetabolismResultRoute = currentPath === "metabolism-result";
-  const isStandalonePostOnboardingRoute = [
+  const isStandalonePostOnboardingRoute = some([
     "personalizing",
     "metabolism-calculating",
-  ].some((path) => currentPath === path || currentPath.startsWith(`${path}/`));
+  ], (path) => currentPath === path || currentPath.startsWith(`${path}/`));
 
   const userCurrentStep = normalizeUserOnboardingStep(currentPath);
-  const isCoachStep = isCoachOnboardingStep(currentPath);
-  const currentStepIndex = isCoachStep
-    ? getCoachOnboardingStepIndex(currentPath)
-    : getStepIndex(userCurrentStep);
-  const totalSteps = isCoachStep
-    ? COACH_ONBOARDING_STEPS.length
-    : ONBOARDING_STEPS.length;
+  const currentStepIndex = getStepIndex(userCurrentStep);
+  const totalSteps = ONBOARDING_STEPS.length;
 
   const showProgress = currentStepIndex >= 0 || isResultRoute;
   const progress = isResultRoute
@@ -118,21 +97,16 @@ const OnboardingLayoutInner = () => {
     : showProgress
       ? (currentStepIndex + 1) / totalSteps
       : 0;
-  const isPostOnboardingRoute = [
+  const isPostOnboardingRoute = some([
     "personalizing",
     "metabolism-calculating",
     "result",
     "metabolism-result",
-  ].some((path) => currentPath === path || currentPath.startsWith(`${path}/`));
-  const { isLoading: isDraftLoading } = useDraftRestore(
-    isCoachScope ? "coach" : "user",
-    {
-      enabled: isAuthenticated && !isPostOnboardingRoute,
-    },
-  );
-  const rawPrevStep = isCoachStep
-    ? getPrevCoachStep(currentPath)
-    : getPrevStep(userCurrentStep);
+  ], (path) => currentPath === path || currentPath.startsWith(`${path}/`));
+  const { isLoading: isDraftLoading } = useDraftRestore("user", {
+    enabled: isAuthenticated && !isPostOnboardingRoute,
+  });
+  const rawPrevStep = getPrevStep(userCurrentStep);
   const prevStep = rawPrevStep;
   const returnToPath =
     typeof location.state?.returnTo === "string" ? location.state.returnTo : "";
@@ -143,14 +117,9 @@ const OnboardingLayoutInner = () => {
       : prevStep
         ? getOnboardingPathFromStep(prevStep)
         : currentStepIndex === 0
-          ? isCoachScope
-            ? getCoachOnboardingPath()
-            : getUserOnboardingPath()
+          ? getUserOnboardingPath()
           : null);
-  const stepSectionKey = getStepSectionKey(
-    isCoachStep ? currentPath : userCurrentStep,
-    isCoachStep,
-  );
+  const stepSectionKey = getStepSectionKey(userCurrentStep);
   const progressLabel =
     currentStepIndex >= 0
       ? t("onboarding.progress.label", {
@@ -181,9 +150,9 @@ const OnboardingLayoutInner = () => {
 
   React.useEffect(() => {
     if (isKnownOnboardingStep(currentPath)) {
-      setLastVisitedPath(isCoachStep ? currentPath : userCurrentStep);
+      setLastVisitedPath(userCurrentStep);
     }
-  }, [currentPath, isCoachStep, setLastVisitedPath, userCurrentStep]);
+  }, [currentPath, setLastVisitedPath, userCurrentStep]);
 
   React.useEffect(() => {
     const hasUserDraft = Boolean(
@@ -193,9 +162,7 @@ const OnboardingLayoutInner = () => {
     const userOnboarding = hasUserDraft
       ? null
       : normalizeUserOnboarding(get(data, "data.userOnboarding"));
-    const coachOnboarding = get(data, "data.coachOnboarding");
-
-    if (!userOnboarding && !coachOnboarding) {
+    if (!userOnboarding) {
       return;
     }
 
@@ -225,7 +192,7 @@ const OnboardingLayoutInner = () => {
       },
       goal: userOnboarding?.goal ?? "",
       weightGoal: userOnboarding?.weightGoal ?? "",
-      goals: Array.isArray(userOnboarding?.goals) ? userOnboarding.goals : [],
+      goals: isArray(userOnboarding?.goals) ? userOnboarding.goals : [],
       targetWeight: {
         value:
           userOnboarding?.targetWeight?.value !== null &&
@@ -262,101 +229,83 @@ const OnboardingLayoutInner = () => {
       budgetPeriod: userOnboarding?.budgetPeriod ?? "weekly",
       budgetCurrency: userOnboarding?.budgetCurrency ?? "UZS",
       workoutLocation: userOnboarding?.workoutLocation ?? "home",
-      equipmentIds: Array.isArray(userOnboarding?.equipmentIds)
+      equipmentIds: isArray(userOnboarding?.equipmentIds)
         ? userOnboarding.equipmentIds
         : [],
-      customEquipment: Array.isArray(userOnboarding?.customEquipment)
+      customEquipment: isArray(userOnboarding?.customEquipment)
         ? userOnboarding.customEquipment
         : [],
-      workoutBodyPartIds: Array.isArray(userOnboarding?.workoutBodyPartIds)
+      workoutBodyPartIds: isArray(userOnboarding?.workoutBodyPartIds)
         ? userOnboarding.workoutBodyPartIds
         : [],
-      customWorkoutBodyParts: Array.isArray(
-        userOnboarding?.customWorkoutBodyParts,
-      )
+      customWorkoutBodyParts: isArray(userOnboarding?.customWorkoutBodyParts)
         ? userOnboarding.customWorkoutBodyParts
         : [],
-      allergyIds: Array.isArray(userOnboarding?.allergyIds)
+      allergyIds: isArray(userOnboarding?.allergyIds)
         ? userOnboarding.allergyIds
-        : Array.isArray(userOnboarding?.allergyIngredientIds)
+        : isArray(userOnboarding?.allergyIngredientIds)
           ? userOnboarding.allergyIngredientIds
           : [],
-      allergyIngredientIds: Array.isArray(userOnboarding?.allergyIngredientIds)
+      allergyIngredientIds: isArray(userOnboarding?.allergyIngredientIds)
         ? userOnboarding.allergyIngredientIds
         : [],
-      customAllergies: Array.isArray(userOnboarding?.customAllergies)
+      customAllergies: isArray(userOnboarding?.customAllergies)
         ? userOnboarding.customAllergies
         : userOnboarding?.allergyOtherText
           ? [userOnboarding.allergyOtherText]
           : [],
-      dietRequirementIds: Array.isArray(userOnboarding?.dietRequirementIds)
+      dietRequirementIds: isArray(userOnboarding?.dietRequirementIds)
         ? userOnboarding.dietRequirementIds
         : [],
-      customDietRequirements: Array.isArray(
-        userOnboarding?.customDietRequirements,
-      )
+      customDietRequirements: isArray(userOnboarding?.customDietRequirements)
         ? userOnboarding.customDietRequirements
         : userOnboarding?.nutritionPreferenceOtherText
           ? [userOnboarding.nutritionPreferenceOtherText]
           : [],
-      preferredCuisineIds: Array.isArray(userOnboarding?.preferredCuisineIds)
+      preferredCuisineIds: isArray(userOnboarding?.preferredCuisineIds)
         ? userOnboarding.preferredCuisineIds
         : [],
-      customPreferredCuisines: Array.isArray(
-        userOnboarding?.customPreferredCuisines,
-      )
+      customPreferredCuisines: isArray(userOnboarding?.customPreferredCuisines)
         ? userOnboarding.customPreferredCuisines
         : [],
-      dislikedFoodIds: Array.isArray(userOnboarding?.dislikedFoodIds)
+      dislikedFoodIds: isArray(userOnboarding?.dislikedFoodIds)
         ? userOnboarding.dislikedFoodIds
         : [],
-      customDislikedFoods: Array.isArray(userOnboarding?.customDislikedFoods)
+      customDislikedFoods: isArray(userOnboarding?.customDislikedFoods)
         ? userOnboarding.customDislikedFoods
         : [],
-      preferredIngredientIds: Array.isArray(
-        userOnboarding?.preferredIngredientIds,
-      )
+      preferredIngredientIds: isArray(userOnboarding?.preferredIngredientIds)
         ? userOnboarding.preferredIngredientIds
         : [],
-      customPreferredIngredients: Array.isArray(
-        userOnboarding?.customPreferredIngredients,
-      )
+      customPreferredIngredients: isArray(userOnboarding?.customPreferredIngredients)
         ? userOnboarding.customPreferredIngredients
         : [],
-      dislikedIngredientIds: Array.isArray(
-        userOnboarding?.dislikedIngredientIds,
-      )
+      dislikedIngredientIds: isArray(userOnboarding?.dislikedIngredientIds)
         ? userOnboarding.dislikedIngredientIds
         : [],
-      customDislikedIngredients: Array.isArray(
-        userOnboarding?.customDislikedIngredients,
-      )
+      customDislikedIngredients: isArray(userOnboarding?.customDislikedIngredients)
         ? userOnboarding.customDislikedIngredients
         : userOnboarding?.dislikedOtherText
           ? [userOnboarding.dislikedOtherText]
           : [],
-      nutritionPreferenceKeys: Array.isArray(
-        userOnboarding?.nutritionPreferenceKeys,
-      )
+      nutritionPreferenceKeys: isArray(userOnboarding?.nutritionPreferenceKeys)
         ? userOnboarding.nutritionPreferenceKeys
         : [],
       allergyOtherText: userOnboarding?.allergyOtherText ?? "",
       dislikedOtherText: userOnboarding?.dislikedOtherText ?? "",
       nutritionPreferenceOtherText:
         userOnboarding?.nutritionPreferenceOtherText ?? "",
-      dietRestrictions: Array.isArray(userOnboarding?.dietRestrictions)
+      dietRestrictions: isArray(userOnboarding?.dietRestrictions)
         ? userOnboarding.dietRestrictions
         : [],
-      healthConstraints: Array.isArray(userOnboarding?.healthConstraints)
+      healthConstraints: isArray(userOnboarding?.healthConstraints)
         ? userOnboarding.healthConstraints
         : [],
-      customHealthConstraints: Array.isArray(
-        userOnboarding?.customHealthConstraints,
-      )
+      customHealthConstraints: isArray(userOnboarding?.customHealthConstraints)
         ? userOnboarding.customHealthConstraints
         : [],
       injurySeverity: userOnboarding?.injurySeverity ?? "",
-      forbiddenExercises: Array.isArray(userOnboarding?.forbiddenExercises)
+      forbiddenExercises: isArray(userOnboarding?.forbiddenExercises)
         ? userOnboarding.forbiddenExercises
         : [],
       medications: userOnboarding?.medications ?? "",
@@ -364,30 +313,6 @@ const OnboardingLayoutInner = () => {
       playsFootball: Boolean(userOnboarding?.playsFootball),
       cardioLevel: userOnboarding?.cardioLevel ?? "",
       notificationPreference: userOnboarding?.notificationPreference ?? "",
-      experience: coachOnboarding?.experience ?? "",
-      specializations: Array.isArray(coachOnboarding?.specializations)
-        ? coachOnboarding.specializations
-        : [],
-      certificationType: coachOnboarding?.certificationType ?? "",
-      certificationNumber: coachOnboarding?.certificationNumber ?? "",
-      certificateFiles: Array.isArray(coachOnboarding?.certificateFiles)
-        ? coachOnboarding.certificateFiles
-        : [],
-      coachLanguages: Array.isArray(coachOnboarding?.languages)
-        ? coachOnboarding.languages
-        : [],
-      coachCity: coachOnboarding?.city ?? "",
-      coachWorkMode: coachOnboarding?.workMode ?? "",
-      coachWorkplace: coachOnboarding?.workplace ?? "",
-      coachMonthlyPrice:
-        coachOnboarding?.monthlyPrice !== null &&
-        coachOnboarding?.monthlyPrice !== undefined
-          ? String(coachOnboarding.monthlyPrice)
-          : "",
-      coachBio: coachOnboarding?.bio ?? "",
-      coachAvatar: get(data, "data.coachProfileAvatar", "") ?? "",
-      wantsMarketplaceListing:
-        coachOnboarding?.wantsMarketplaceListing ?? false,
     });
   }, [data, isPostOnboardingRoute, setFields]);
 
@@ -402,11 +327,11 @@ const OnboardingLayoutInner = () => {
     !isStandalonePostOnboardingRoute &&
     !isMetabolismResultRoute;
   const hasCompactFooterReserve =
-    !isCoachStep && COMPACT_FOOTER_RESERVE_STEPS.has(userCurrentStep);
+    COMPACT_FOOTER_RESERVE_STEPS.has(userCurrentStep);
   const hasDenseFooterReserve =
-    !isCoachStep && DENSE_FOOTER_RESERVE_STEPS.has(userCurrentStep);
+    DENSE_FOOTER_RESERVE_STEPS.has(userCurrentStep);
   const hasTightFooterPadding =
-    !isCoachStep && TIGHT_FOOTER_PADDING_STEPS.has(userCurrentStep);
+    TIGHT_FOOTER_PADDING_STEPS.has(userCurrentStep);
 
   if (isDraftLoading && !isPostOnboardingRoute) {
     return (
@@ -537,7 +462,7 @@ const OnboardingLayoutInner = () => {
               : hasCompactFooterReserve
                 ? "pb-[calc(6rem+env(safe-area-inset-bottom))] sm:pb-[calc(6.5rem+env(safe-area-inset-bottom))]"
                 : "pb-[calc(8rem+env(safe-area-inset-bottom))] sm:pb-[calc(8.5rem+env(safe-area-inset-bottom))]",
-          isCoachStep ? "overflow-y-auto" : "overflow-x-hidden",
+          "overflow-x-hidden",
           hasFixedHeader && "pt-[88px]",
           isMetabolismResultRoute &&
             "bg-[radial-gradient(circle_at_50%_-12%,rgba(255,152,0,0.14),transparent_34%),linear-gradient(180deg,#090604_0%,#070503_52%,#050302_100%)]",

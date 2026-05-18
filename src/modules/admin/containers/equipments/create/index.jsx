@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import React from "react";
-import { get, find, trim } from "lodash";
+import { get, find, trim, filter, isArray, toUpper } from "lodash";
 import { useGetQuery, usePostQuery } from "@/hooks/api";
 import { useLanguageStore } from "@/store";
 import { Button } from "@/components/ui/button";
@@ -39,7 +39,7 @@ const EQUIPMENTS_LIST_PATH = "/admin/equipments/list";
 
 const getErrorMessage = (error, fallback) => {
   const message = get(error, "response.data.message");
-  if (Array.isArray(message)) {
+  if (isArray(message)) {
     return message.join(", ");
   }
   return message || fallback;
@@ -117,7 +117,7 @@ const CreateEquipment = () => {
   });
   const languages = get(languagesData, "data.data", []);
   const activeLanguages = React.useMemo(
-    () => languages.filter((l) => l.isActive),
+    () => filter(languages, (l) => l.isActive),
     [languages],
   );
   const currentLanguageMeta = React.useMemo(
@@ -131,7 +131,7 @@ const CreateEquipment = () => {
   const isCreating = createMutation.isPending;
 
   const handleSave = React.useCallback(async () => {
-    const trimmedName = form.name.trim();
+    const trimmedName = trim(form.name);
     if (!trimmedName) {
       toast.error("Jihoz nomini kiriting");
       return;
@@ -202,7 +202,7 @@ const CreateEquipment = () => {
                 {currentLanguageMeta?.flag
                   ? `${currentLanguageMeta.flag} `
                   : ""}
-                {currentLanguageMeta?.name ?? currentLanguage.toUpperCase()}
+                {currentLanguageMeta?.name ?? toUpper(currentLanguage)}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Shu drawer joriy tildagi nomni yangilaydi. Boshqa tillar uchun

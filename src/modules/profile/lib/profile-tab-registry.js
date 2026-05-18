@@ -1,3 +1,4 @@
+import { map } from "lodash";
 export const PROFILE_OVERVIEW_TAB = "overview";
 export const DEFAULT_PROFILE_TAB = "profile";
 
@@ -12,7 +13,7 @@ const PROFILE_TAB_REGISTRY = [
   { id: "referral" },
 ];
 
-export const PROFILE_TAB_IDS = PROFILE_TAB_REGISTRY.map(({ id }) => id);
+export const PROFILE_TAB_IDS = map(PROFILE_TAB_REGISTRY, ({ id }) => id);
 
 const PROFILE_TAB_ID_SET = new Set(PROFILE_TAB_IDS);
 

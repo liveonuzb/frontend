@@ -1,5 +1,5 @@
 import React from "react";
-import { find, get, map } from "lodash";
+import { find, get, map, toNumber, trim } from "lodash";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 import { APPROVAL_STATUS_OPTIONS } from "./workout-plan-utils.js";
 
@@ -35,7 +35,7 @@ export const usePlanFilters = () => {
     "approvalStatus",
     parseAsStringEnum([
       "all",
-      ...APPROVAL_STATUS_OPTIONS.map((option) => option.value),
+      ...map(APPROVAL_STATUS_OPTIONS, (option) => option.value),
     ]).withDefault("all"),
   );
   const [sortBy, setSortBy] = useQueryState(
@@ -116,7 +116,7 @@ export const usePlanFilters = () => {
   const activeFilters = React.useMemo(() => {
     const items = [];
 
-    if (search.trim()) {
+    if (trim(search)) {
       items.push({
         id: "q",
         field: "q",
@@ -244,15 +244,15 @@ export const usePlanFilters = () => {
     [setPageQuery, setSortBy, setSortDir, sorting],
   );
 
-  const currentPage = Math.max(1, Number(pageQuery) || 1);
+  const currentPage = Math.max(1, toNumber(pageQuery) || 1);
   const pageSize = Math.min(
     100,
-    Math.max(1, Number(pageSizeQuery) || ITEMS_PER_PAGE),
+    Math.max(1, toNumber(pageSizeQuery) || ITEMS_PER_PAGE),
   );
 
   const queryParams = React.useMemo(
     () => ({
-      ...(search.trim() ? { q: search.trim() } : {}),
+      ...(trim(search) ? { q: trim(search) } : {}),
       ...(statusFilter !== "all" ? { status: statusFilter } : {}),
       ...(difficultyFilter !== "all" ? { difficulty: difficultyFilter } : {}),
       ...(approvalStatusFilter !== "all"

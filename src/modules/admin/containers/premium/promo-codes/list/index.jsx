@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate, Outlet } from "react-router";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { get, isArray, join, toString } from "lodash";
+import { get, isArray, join, toString, toNumber, trim } from "lodash";
 import { toast } from "sonner";
 import { PlusIcon, RotateCcwIcon } from "lucide-react";
 import { useBreadcrumbStore } from "@/store";
@@ -57,7 +57,7 @@ const Index = () => {
   const deferredSearch = React.useDeferredValue(search);
   const queryParams = React.useMemo(
     () => ({
-      ...(deferredSearch.trim() ? { q: deferredSearch.trim() } : {}),
+      ...(trim(deferredSearch) ? { q: trim(deferredSearch) } : {}),
       ...(statusFilter !== "all" ? { status: statusFilter } : {}),
       page: currentPage,
       pageSize,
@@ -156,7 +156,7 @@ const Index = () => {
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => toString(get(row, "id")),
     manualPagination: true,
-    pageCount: Math.max(1, Number(get(meta, "totalPages", 1))),
+    pageCount: Math.max(1, toNumber(get(meta, "totalPages", 1))),
     onPaginationChange: (updater) => {
       const next =
         typeof updater === "function"

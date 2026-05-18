@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { useTelegram } from "@/hooks/use-telegram";
 
+import { includes } from "lodash";
+
 const ROOT_PATHS = ["/", "/user", "/user/home"];
 
 export function useTelegramBackButton() {
@@ -12,7 +14,7 @@ export function useTelegramBackButton() {
   useEffect(() => {
     if (!isTelegramWebApp) return;
 
-    const isRoot = ROOT_PATHS.includes(location.pathname);
+    const isRoot = includes(ROOT_PATHS, location.pathname);
 
     if (isRoot) {
       tg.BackButton.hide();

@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { isEqual } from "lodash";
+import { isEqual, map, toUpper, trim } from "lodash";
 import {
   AtSignIcon,
   CameraIcon,
@@ -53,12 +53,12 @@ const AVATAR_FILE_ACCEPT = Array.from(ACCEPTED_AVATAR_MIME_TYPES).join(",");
 
 const calcCompletionPct = (form) => {
   let pct = 0;
-  if (form.avatar?.trim()) pct += 20;
-  if (form.firstName?.trim()) pct += 10;
-  if (form.lastName?.trim()) pct += 10;
-  if (form.bio?.trim()) pct += 15;
-  if (form.username?.trim()) pct += 20;
-  if (form.phone?.trim()) pct += 25;
+  if (trim(form.avatar)) pct += 20;
+  if (trim(form.firstName)) pct += 10;
+  if (trim(form.lastName)) pct += 10;
+  if (trim(form.bio)) pct += 15;
+  if (trim(form.username)) pct += 20;
+  if (trim(form.phone)) pct += 25;
   return pct;
 };
 
@@ -84,7 +84,7 @@ const ProfileCompletionBar = ({ form }) => {
 };
 
 const validateUsername = (username) => {
-  const trimmed = username.trim().replace(/^@+/, "");
+  const trimmed = trim(username).replace(/^@+/, "");
   if (!trimmed) return null;
   if (trimmed.length < 3) return "Username kamida 3 ta belgi bo'lishi kerak.";
   if (trimmed.length > 30) return "Username 30 ta belgidan oshmasligi kerak.";
@@ -103,17 +103,17 @@ const createInitialForm = (user) => ({
 });
 
 const normalizeForm = (form) => ({
-  firstName: form.firstName.trim(),
-  lastName: form.lastName.trim(),
-  username: form.username.trim().replace(/^@+/, ""),
-  phone: form.phone.trim(),
-  bio: form.bio.trim(),
+  firstName: trim(form.firstName),
+  lastName: trim(form.lastName),
+  username: trim(form.username).replace(/^@+/, ""),
+  phone: trim(form.phone),
+  bio: trim(form.bio),
   avatar: form.avatar || "",
 });
 
 const getContactTypes = (t) => ({
   phone: {
-    label: t("profile.coach.phone"),
+    label: t("profile.user.phone", "Telefon"),
     changeTitle: t("profile.user.contactChange.phoneTitle"),
     placeholder: t("profile.user.contactChange.phonePlaceholder"),
     description: t("profile.user.contactChange.phoneDesc"),
@@ -132,7 +132,7 @@ const ContactRow = ({ icon: Icon, label, value, onClick, t }) => (
     </div>
     <div className="min-w-0 flex-1">
       <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="mt-1 truncate">{value || t("profile.coach.notProvided")}</p>
+      <p className="mt-1 truncate">{value || t("profile.user.notProvided", "Kiritilmagan")}</p>
     </div>
     <ChevronRightIcon className="size-5 text-muted-foreground" />
   </button>
@@ -197,11 +197,9 @@ export const UserProfileTab = ({ embedded = false }) => {
     [form.username],
   );
   const displayName =
-    `${form.firstName || ""} ${form.lastName || ""}`.trim() ||
+    trim(`${form.firstName || ""} ${form.lastName || ""}`) ||
     t("common.user", "Foydalanuvchi");
-  const initials = `${form.firstName?.[0] || "F"}${form.lastName?.[0] || ""}`
-    .trim()
-    .toUpperCase();
+  const initials = toUpper(trim(`${form.firstName?.[0] || "F"}${form.lastName?.[0] || ""}`));
 
   const handleChange = React.useCallback((key, value) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -312,7 +310,7 @@ export const UserProfileTab = ({ embedded = false }) => {
   }, [contactType, contactValue, requestPhoneChange]);
 
   const handleVerifyContactChange = React.useCallback(async () => {
-    if (otpCode.trim().length !== 6) {
+    if (trim(otpCode).length !== 6) {
       setOtpError(t("profile.user.contactChange.otpLengthError"));
       return;
     }
@@ -464,8 +462,8 @@ export const UserProfileTab = ({ embedded = false }) => {
                 </p>
                 <ContactRow
                   icon={PhoneIcon}
-                  label={t("profile.coach.phone")}
-                  value={user?.phone || t("profile.coach.notProvided")}
+                  label={t("profile.user.phone", "Telefon")}
+                  value={user?.phone || t("profile.user.notProvided", "Kiritilmagan")}
                   onClick={() => openContactDrawer("phone")}
                   t={t}
                 />
@@ -492,7 +490,6 @@ export const UserProfileTab = ({ embedded = false }) => {
             </Button>
           </DrawerFooter>
         </div>
-
         <Drawer
           open={contactDrawerOpen}
           onOpenChange={(open) => {
@@ -529,7 +526,6 @@ export const UserProfileTab = ({ embedded = false }) => {
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
-
         <Drawer
           open={otpDrawerOpen}
           onOpenChange={(open) => {
@@ -560,7 +556,7 @@ export const UserProfileTab = ({ embedded = false }) => {
                 containerClassName="justify-center"
               >
                 <div className="flex items-center justify-center gap-x-2">
-                  {Array.from({ length: 6 }).map((_, index) => (
+                  {map(Array.from({ length: 6 }), (_, index) => (
                     <InputOTPGroup key={index}>
                       <InputOTPSlot index={index} className="size-12" />
                     </InputOTPGroup>
@@ -691,7 +687,7 @@ export const UserProfileTab = ({ embedded = false }) => {
             {usernameError ? <FieldError>{usernameError}</FieldError> : null}
           </Field>
           <Field className="md:col-span-2">
-            <FieldLabel>{t("profile.coach.phone")}</FieldLabel>
+            <FieldLabel>{t("profile.user.phone", "Telefon")}</FieldLabel>
             <PhoneInput
               value={form.phone}
               defaultCountry="UZ"

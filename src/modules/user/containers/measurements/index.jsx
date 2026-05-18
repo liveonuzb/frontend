@@ -1,5 +1,5 @@
 import React from "react";
-import { filter, get, size } from "lodash";
+import { filter, get, size, map, toNumber } from "lodash";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBreadcrumbStore } from "@/store";
@@ -32,7 +32,7 @@ const Index = () => {
   const totalEntries = size(history);
   const trackedMeasurements = filter(
     measurementKeys,
-    (key) => Number(get(latest, key)) > 0,
+    (key) => toNumber(get(latest, key)) > 0,
   ).length;
   const latestWeight = get(latest, "weight", 0);
   const latestDate = get(latest, "date", null);
@@ -83,7 +83,7 @@ const Index = () => {
                 </div>
 
                 <div className="mt-5 grid grid-cols-2 gap-3">
-                  {[
+                  {map([
                     {
                       label: "Vazn",
                       value: latestWeight > 0 ? `${latestWeight} kg` : "—",
@@ -104,7 +104,7 @@ const Index = () => {
                       value: latestDate || "—",
                       hint: "oxirgi sana",
                     },
-                  ].map(({ label, value, hint }) => (
+                  ], ({ label, value, hint }) => (
                     <div
                       key={label}
                       className="rounded-[22px] border border-border/60 p-4"
@@ -163,7 +163,7 @@ const Index = () => {
                   <div className="space-y-4">
                     <Skeleton className="h-48 w-full rounded-[28px]" />
                     <div className="grid grid-cols-2 gap-3">
-                      {[0, 1, 2, 3].map((i) => (
+                      {map([0, 1, 2, 3], (i) => (
                         <Skeleton key={i} className="h-20 rounded-[22px]" />
                       ))}
                     </div>

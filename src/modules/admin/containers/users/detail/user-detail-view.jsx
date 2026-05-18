@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { get, includes, isArray, join, some, trim } from "lodash";
+import { get, includes, isArray, join, some, trim, filter, find, map, toNumber } from "lodash";
 import {
   ActivityIcon,
   ArrowLeftIcon,
@@ -175,7 +175,7 @@ const normalizeAdminUserDetailResponse = (response) => {
 const normalizeCollectionResponse = (response) => {
   const payload = unwrapAdminResponse(response);
 
-  if (Array.isArray(payload)) {
+  if (isArray(payload)) {
     return payload;
   }
 
@@ -205,7 +205,7 @@ const isPrivilegedUser = (user) =>
   );
 
 const getLatestPremiumSubscription = (items) =>
-  items.find((item) => item.status === "active") ?? items[0] ?? null;
+  find(items, (item) => item.status === "active") ?? items[0] ?? null;
 
 const EmptyState = ({ children }) => (
   <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-8 text-center text-sm text-muted-foreground">
@@ -268,7 +268,7 @@ const TimelineList = ({ events, meta, isLoading }) => (
       </div>
     ) : events.length ? (
       <div className="grid gap-3">
-        {events.map((event) => (
+        {map(events, (event) => (
           <TimelineEvent key={event.id} event={event} />
         ))}
       </div>
@@ -354,7 +354,7 @@ const TimelineFilter = ({ value, onValueChange, disabled }) => (
         <SelectValue placeholder="Timeline turi" />
       </SelectTrigger>
       <SelectContent>
-        {TIMELINE_OPTIONS.map((item) => (
+        {map(TIMELINE_OPTIONS, (item) => (
           <SelectItem key={item.value} value={item.value}>
             {item.label}
           </SelectItem>
@@ -553,7 +553,7 @@ const UserDetailView = ({ userId, surface = "page", onClose }) => {
   }, [blockCandidate, canBlockThisUser, invalidateUserQueries, updateMutation]);
 
   const handleCreateNote = React.useCallback(async () => {
-    const content = noteDraft.trim();
+    const content = trim(noteDraft);
 
     if (!canManageSupport || !content) return;
 
@@ -582,7 +582,7 @@ const UserDetailView = ({ userId, surface = "page", onClose }) => {
   }, []);
 
   const handleUpdateNote = React.useCallback(async () => {
-    const content = editingNoteContent.trim();
+    const content = trim(editingNoteContent);
 
     if (!canManageSupport || !editingNoteId || !content) return;
 
@@ -657,7 +657,7 @@ const UserDetailView = ({ userId, surface = "page", onClose }) => {
     if (!canManageGrowth || !extendDialog.subscriptionId) return;
 
     try {
-      const days = Number(extendDays);
+      const days = toNumber(extendDays);
       await premiumMutation.mutateAsync({
         url: `/admin/premium/subscriptions/${extendDialog.subscriptionId}/extend`,
         attributes: days ? { days } : {},
@@ -732,8 +732,7 @@ const UserDetailView = ({ userId, surface = "page", onClose }) => {
                 {isLoading ? "Foydalanuvchi yuklanmoqda" : displayName}
               </DrawerTitle>
               <DrawerDescription className="break-words">
-                {[get(user, "email"), get(user, "phone")]
-                  .filter(Boolean)
+                {filter([get(user, "email"), get(user, "phone")], Boolean)
                   .join(" - ") || "User support console"}
               </DrawerDescription>
             </>
@@ -743,8 +742,7 @@ const UserDetailView = ({ userId, surface = "page", onClose }) => {
                 {isLoading ? "Foydalanuvchi yuklanmoqda" : displayName}
               </h1>
               <p className="break-words text-sm text-muted-foreground">
-                {[get(user, "email"), get(user, "phone")]
-                  .filter(Boolean)
+                {filter([get(user, "email"), get(user, "phone")], Boolean)
                   .join(" - ") || userId}
               </p>
             </>
@@ -760,7 +758,7 @@ const UserDetailView = ({ userId, surface = "page", onClose }) => {
                 {premium.label}
               </Badge>
             ) : null}
-            {roles.map((role) => (
+            {map(roles, (role) => (
               <Badge
                 key={role}
                 variant="outline"
@@ -905,7 +903,6 @@ const UserDetailView = ({ userId, surface = "page", onClose }) => {
               label="Premium tugashi"
               value={get(user, "premium.endDate")}
             />
-            <InfoRow label="Coach status" value={get(user, "coachStatus")} />
             <InfoRow
               label="Public profile"
               value={String(get(user, "settings.profilePublic", "-"))}
@@ -1125,7 +1122,7 @@ const UserDetailView = ({ userId, surface = "page", onClose }) => {
           >
             {recentDailyLogs.length ? (
               <div className="grid gap-3">
-                {recentDailyLogs.map((log) => (
+                {map(recentDailyLogs, (log) => (
                   <RecentLogCard key={log.id} log={log} />
                 ))}
               </div>
@@ -1211,7 +1208,7 @@ const UserDetailView = ({ userId, surface = "page", onClose }) => {
           >
             {recentPayments.length ? (
               <div className="grid gap-3">
-                {recentPayments.map((payment) => (
+                {map(recentPayments, (payment) => (
                   <div
                     key={payment.id}
                     className="rounded-2xl border border-border/60 bg-muted/20 p-4"
@@ -1248,7 +1245,7 @@ const UserDetailView = ({ userId, surface = "page", onClose }) => {
         >
           {premiumHistory.length ? (
             <div className="grid gap-3 md:grid-cols-2">
-              {premiumHistory.map((subscription) => (
+              {map(premiumHistory, (subscription) => (
                 <div
                   key={subscription.id}
                   className="rounded-2xl border border-border/60 bg-muted/20 p-4"
@@ -1303,7 +1300,7 @@ const UserDetailView = ({ userId, surface = "page", onClose }) => {
               </div>
             ) : onboardingReports.length ? (
               <div className="grid gap-3">
-                {onboardingReports.map((report) => (
+                {map(onboardingReports, (report) => (
                   <ReportCard
                     key={report.id}
                     report={report}
@@ -1326,7 +1323,7 @@ const UserDetailView = ({ userId, surface = "page", onClose }) => {
               </div>
             ) : aiReports.length ? (
               <div className="grid gap-3">
-                {aiReports.map((report) => (
+                {map(aiReports, (report) => (
                   <ReportCard key={report.id} report={report} type="ai" />
                 ))}
               </div>
@@ -1365,7 +1362,7 @@ const UserDetailView = ({ userId, surface = "page", onClose }) => {
                   </span>
                   <Button
                     onClick={handleCreateNote}
-                    disabled={!noteDraft.trim() || createNoteMutation.isPending}
+                    disabled={!trim(noteDraft) || createNoteMutation.isPending}
                   >
                     {createNoteMutation.isPending ? (
                       <Loader2Icon
@@ -1387,7 +1384,7 @@ const UserDetailView = ({ userId, surface = "page", onClose }) => {
               </div>
             ) : notes.length ? (
               <div className="grid gap-3">
-                {notes.map((note) => (
+                {map(notes, (note) => (
                   <div
                     key={note.id}
                     className="rounded-2xl border border-border/60 bg-muted/20 p-4"
@@ -1445,7 +1442,7 @@ const UserDetailView = ({ userId, surface = "page", onClose }) => {
                           <Button
                             onClick={handleUpdateNote}
                             disabled={
-                              !editingNoteContent.trim() ||
+                              !trim(editingNoteContent) ||
                               updateNoteMutation.isPending
                             }
                           >
@@ -1483,7 +1480,7 @@ const UserDetailView = ({ userId, surface = "page", onClose }) => {
               variant="destructive"
               onClick={() => setSessionRevokeCandidate({ type: "all" })}
               disabled={
-                !sessions.some((session) => session.status === "active")
+                !some(sessions, (session) => session.status === "active")
               }
               className="gap-2"
             >
@@ -1515,7 +1512,7 @@ const UserDetailView = ({ userId, surface = "page", onClose }) => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sessions.map((session) => {
+                  {map(sessions, (session) => {
                     const sessionStatus = get(
                       sessionStatusConfig,
                       session.status,

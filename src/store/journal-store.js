@@ -1,4 +1,4 @@
-import { filter, some, reduce, map, uniq, round } from "lodash";
+import { filter, some, reduce, map, uniq, round, split } from "lodash";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
@@ -8,7 +8,7 @@ const useJournalStore = create()(
       entries: [],
 
       addEntry: (entry) => {
-        const today = new Date().toISOString().split("T")[0];
+        const today = split(new Date().toISOString(), "T")[0];
         const days = ["Yakshanba", "Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba"];
         const dayName = days[new Date().getDay()];
         set((state) => ({
@@ -49,7 +49,7 @@ const useJournalStore = create()(
         for (let i = 0; i < 365; i++) {
           const d = new Date(today);
           d.setDate(d.getDate() - i);
-          const key = d.toISOString().split("T")[0];
+          const key = split(d.toISOString(), "T")[0];
           if (some(entries, (e) => e.date === key)) {
             streak++;
           } else {

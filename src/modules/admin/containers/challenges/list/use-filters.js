@@ -1,5 +1,5 @@
 import React from "react";
-import { find, get } from "lodash";
+import { find, get, toNumber, trim } from "lodash";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -28,10 +28,10 @@ export const useChallengeFilters = () => {
     "pageSize",
     parseAsString.withDefault(String(DEFAULT_PAGE_SIZE)),
   );
-  const currentPage = Math.max(1, Number(pageQuery) || 1);
+  const currentPage = Math.max(1, toNumber(pageQuery) || 1);
   const pageSize = Math.min(
     100,
-    Math.max(1, Number(pageSizeQuery) || DEFAULT_PAGE_SIZE),
+    Math.max(1, toNumber(pageSizeQuery) || DEFAULT_PAGE_SIZE),
   );
 
   const filterFields = React.useMemo(
@@ -74,7 +74,7 @@ export const useChallengeFilters = () => {
   const activeFilters = React.useMemo(() => {
     const filters = [];
 
-    if (search.trim()) {
+    if (trim(search)) {
       filters.push({
         id: "q",
         field: "q",

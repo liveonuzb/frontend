@@ -1,5 +1,5 @@
 import React from "react";
-import { get, round, multiply } from "lodash";
+import { get, round, multiply, map, toPairs } from "lodash";
 import {
   Drawer,
   DrawerBody,
@@ -235,7 +235,7 @@ const FoodLogDrawer = ({
                     Minerallar
                   </div>
                   <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-                    {Object.entries(food.vitamins).map(([name, amount]) => (
+                    {map(toPairs(food.vitamins), ([name, amount]) => (
                       <div
                         key={name}
                         className="flex items-center justify-between text-xs"
@@ -258,8 +258,8 @@ const FoodLogDrawer = ({
           <div>
             {readOnly ? (
               <p className="text-sm text-muted-foreground">
-                Coach bu yerda faqat client log qilgan ma&apos;lumotlarni
-                ko&apos;ra oladi.
+                Bu ko&apos;rinishda faqat log qilingan ma&apos;lumotlar
+                ko&apos;rsatiladi.
               </p>
             ) : (
               <div

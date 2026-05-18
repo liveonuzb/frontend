@@ -13,10 +13,12 @@ import { ChevronRight } from "lucide-react";
 import PageAura from "../../components/page-aura.jsx";
 import { getOnboardingPersonIllustration } from "../../lib/illustration.js";
 import { getAgeTone } from "../../lib/tones.js";
-import useOnboardingBase from "@/hooks/app/use-onboarding-base";
+import { useOnboardingAssets } from "@/hooks/app/use-onboarding-base";
+
+import { toNumber } from "lodash";
 
 const getAgeProfile = (ageValue, t) => {
-  const ageNumber = Number(ageValue);
+  const ageNumber = toNumber(ageValue);
 
   if (!Number.isFinite(ageNumber) || ageNumber <= 24) {
     return {
@@ -42,7 +44,7 @@ const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { age, setField, gender, firstName } = useOnboardingStore();
-  const base = useOnboardingBase();
+  const { base, extension } = useOnboardingAssets();
 
   useOnboardingAutoSave("user", "age");
 
@@ -51,6 +53,7 @@ const Index = () => {
     gender,
     currentAge,
     base,
+    extension,
   );
   const tone = getAgeTone(currentAge);
   const profile = getAgeProfile(currentAge, t);

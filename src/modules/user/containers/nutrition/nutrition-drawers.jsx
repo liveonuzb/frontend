@@ -16,7 +16,6 @@ import {
   CopyIcon,
   PauseIcon,
   PencilIcon,
-  RefreshCwIcon,
   Trash2Icon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -34,6 +33,8 @@ import PlansDrawer from "./plans-drawer.jsx";
 import SavedMealsDrawer from "./saved-meals-drawer.jsx";
 import { ShoppingList } from "./shopping-list.jsx";
 import TemplateLibraryDrawer from "./template-library-drawer.jsx";
+
+import { filter, includes, trim } from "lodash";
 
 const getDrawerControl = (open, onOpenChange) => ({ open, onOpenChange });
 
@@ -54,7 +55,6 @@ export default function NutritionDrawers({
   groupDraftCount,
   handleActivatePlan,
   handleAiGenerated,
-  handleApplyCoachUpdate,
   handleArchiveCurrentPlan,
   handleConfirmAllInlineScans,
   handleConfirmInlineScan,
@@ -72,12 +72,9 @@ export default function NutritionDrawers({
   handleTemplateSelected,
   isActionDrawerOpen,
   isAIOpen,
-  isApplyingCoachUpdate,
   isArchivingPlan,
   isBuilderOpen,
   isCancelPlanOpen,
-  isCurrentPlanCoachAssigned,
-  isCurrentPlanUpdateAvailable,
   isDuplicatingPlan,
   isFilterDrawerOpen,
   isGoalWizardOpen,
@@ -151,7 +148,6 @@ export default function NutritionDrawers({
         isLoading={isMealPlanLoading}
         isFetching={isMealPlanFetching}
       />
-
       <PlansDrawer
         {...getDrawerControl(isPlansDrawerOpen, setIsPlansDrawerOpen)}
         isLoading={isMealPlanLoading}
@@ -172,16 +168,13 @@ export default function NutritionDrawers({
         onCreateAI={handleOpenAiGenerator}
         onCreateFromTemplate={handleOpenTemplateLibrary}
       />
-
       <TemplateLibraryDrawer
         {...getDrawerControl(isTemplateLibraryOpen, setIsTemplateLibraryOpen)}
         onSelectTemplate={handleTemplateSelected}
       />
-
       <GoalRecalculationDrawer
         {...getDrawerControl(isGoalWizardOpen, setIsGoalWizardOpen)}
       />
-
       <MealTransferDrawer
         {...getDrawerControl(Boolean(mealTransferContext), (nextOpen) => {
           if (!nextOpen) setMealTransferContext(null);
@@ -191,7 +184,6 @@ export default function NutritionDrawers({
         sourceMealType={mealTransferContext?.sourceMealType}
         onConfirm={handleConfirmMealTransfer}
       />
-
       <Drawer {...getDrawerControl(isAIOpen, setIsAIOpen)} direction="bottom">
         <NutritionDrawerContent size="sm">
           <AIGenerator
@@ -200,7 +192,6 @@ export default function NutritionDrawers({
           />
         </NutritionDrawerContent>
       </Drawer>
-
       <ActionDrawer
         {...getDrawerControl(isActionDrawerOpen, setIsActionDrawerOpen)}
         dateKey={dateKey}
@@ -210,7 +201,6 @@ export default function NutritionDrawers({
         disabled={!isOnline}
         onInlineCameraCapture={handleInlineCameraCapture}
       />
-
       <SavedMealsDrawer
         {...getDrawerControl(isSavedMealsOpen, setIsSavedMealsOpen)}
         dateKey={dateKey}
@@ -219,7 +209,6 @@ export default function NutritionDrawers({
         onAddMealsBatch={addMealsBatchAction}
         disabled={!isOnline}
       />
-
       <InlineScanReviewDrawer
         {...getDrawerControl(Boolean(selectedScan), (nextOpen) => {
           if (!nextOpen) {
@@ -238,7 +227,6 @@ export default function NutritionDrawers({
         groupDraftCount={groupDraftCount}
         isSaving={isSavingInlineScan}
       />
-
       <Drawer
         {...getDrawerControl(Boolean(duplicateMealPrompt), (nextOpen) => {
           if (nextOpen) return;
@@ -278,7 +266,6 @@ export default function NutritionDrawers({
           </DrawerFooter>
         </NutritionDrawerContent>
       </Drawer>
-
       <Drawer
         {...getDrawerControl(isPlanMetaOpen, setIsPlanMetaOpen)}
         direction="bottom"
@@ -319,7 +306,7 @@ export default function NutritionDrawers({
           <DrawerFooter>
             <Button
               onClick={handleSubmitPlanMeta}
-              disabled={!planMetaName.trim() || isSavingDraft}
+              disabled={!trim(planMetaName) || isSavingDraft}
             >
               {planMetaMode === "edit"
                 ? planMetaShouldOpenBuilder
@@ -333,7 +320,6 @@ export default function NutritionDrawers({
           </DrawerFooter>
         </NutritionDrawerContent>
       </Drawer>
-
       <Drawer
         {...getDrawerControl(isCancelPlanOpen, setIsCancelPlanOpen)}
         direction="bottom"
@@ -342,32 +328,10 @@ export default function NutritionDrawers({
           <DrawerHeader>
             <DrawerTitle>{currentPlan ? currentPlan.name : "Reja"}</DrawerTitle>
             <DrawerDescription>
-              {isCurrentPlanCoachAssigned
-                ? "Murabbiy yuborgan reja bilan ishlash usulini tanlang."
-                : "Reja bilan nima qilmoqchisiz?"}
+              Reja bilan nima qilmoqchisiz?
             </DrawerDescription>
           </DrawerHeader>
           <NutritionDrawerBody className="flex flex-col gap-3">
-            {isCurrentPlanCoachAssigned ? (
-              <div className="rounded-2xl border border-blue-500/15 bg-blue-500/5 px-4 py-3 text-sm text-muted-foreground">
-                Murabbiy yuborgan reja o&apos;z holicha saqlanadi. Uni
-                o&apos;zgartirish uchun nusxa olib, keyin tahrirlashingiz
-                mumkin.
-              </div>
-            ) : null}
-            {isCurrentPlanUpdateAvailable ? (
-              <Button
-                variant="outline"
-                className="w-full h-16 rounded-2xl justify-start items-center px-4 transition-all font-bold text-[15px] border-blue-500/20 bg-blue-500/5 text-blue-700 dark:text-blue-300 group"
-                disabled={isApplyingCoachUpdate}
-                onClick={handleApplyCoachUpdate}
-              >
-                <div className="size-10 rounded-full bg-blue-500/10 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
-                  <RefreshCwIcon className="size-5 text-blue-600 dark:text-blue-300" />
-                </div>
-                Yangilanishni qo&apos;llash
-              </Button>
-            ) : null}
             {currentPlan?.status === "active" && (
               <Button
                 variant="outline"
@@ -396,28 +360,20 @@ export default function NutritionDrawers({
               onClick={handleOpenBuilderManual}
             >
               <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
-                {isCurrentPlanCoachAssigned ? (
-                  <CopyIcon className="size-5 text-primary" />
-                ) : (
-                  <PencilIcon className="size-5 text-primary" />
-                )}
+                <PencilIcon className="size-5 text-primary" />
               </div>
-              {isCurrentPlanCoachAssigned
-                ? "Nusxalab tahrirlash"
-                : "Reja tarkibini tahrirlash"}
+              Reja tarkibini tahrirlash
             </Button>
-            {!isCurrentPlanCoachAssigned ? (
-              <Button
-                variant="outline"
-                className="w-full h-16 rounded-2xl justify-start items-center px-4 transition-all font-bold text-[15px] border-border/50 group"
-                onClick={() => onOpenPlanMetaEdit(false)}
-              >
-                <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
-                  <PencilIcon className="size-5 text-primary" />
-                </div>
-                Nomini o'zgartirish
-              </Button>
-            ) : null}
+            <Button
+              variant="outline"
+              className="w-full h-16 rounded-2xl justify-start items-center px-4 transition-all font-bold text-[15px] border-border/50 group"
+              onClick={() => onOpenPlanMetaEdit(false)}
+            >
+              <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+                <PencilIcon className="size-5 text-primary" />
+              </div>
+              Nomini o'zgartirish
+            </Button>
             <Button
               variant="outline"
               className="w-full h-16 rounded-2xl justify-start items-center px-4 transition-all font-bold text-[15px] border-border/50 group"
@@ -429,8 +385,7 @@ export default function NutritionDrawers({
               </div>
               Nusxalash
             </Button>
-            {currentPlan?.status !== "archived" &&
-            !isCurrentPlanCoachAssigned ? (
+            {currentPlan?.status !== "archived" ? (
               <Button
                 variant="outline"
                 className="w-full h-16 rounded-2xl justify-start items-center px-4 transition-all font-bold text-[15px] border-border/50 group"
@@ -443,29 +398,27 @@ export default function NutritionDrawers({
                 Arxivlash
               </Button>
             ) : null}
-            {!isCurrentPlanCoachAssigned ? (
-              <Button
-                variant="outline"
-                className="w-full h-16 rounded-2xl justify-start items-center px-4 hover:bg-destructive/5 hover:border-destructive/30 transition-all font-bold text-[15px] text-destructive border-border/50 group"
-                onClick={async () => {
-                  try {
-                    if (currentPlan?.id) {
-                      await removePlan(currentPlan.id);
-                      setSelectedPlanId(null);
-                    }
-                    setIsCancelPlanOpen(false);
-                    toast.success("Reja o'chirildi");
-                  } catch {
-                    toast.error("Rejani o'chirib bo'lmadi");
+            <Button
+              variant="outline"
+              className="w-full h-16 rounded-2xl justify-start items-center px-4 hover:bg-destructive/5 hover:border-destructive/30 transition-all font-bold text-[15px] text-destructive border-border/50 group"
+              onClick={async () => {
+                try {
+                  if (currentPlan?.id) {
+                    await removePlan(currentPlan.id);
+                    setSelectedPlanId(null);
                   }
-                }}
-              >
-                <div className="size-10 rounded-full bg-destructive/10 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
-                  <Trash2Icon className="size-5 text-destructive" />
-                </div>
-                Umuman o'chirish
-              </Button>
-            ) : null}
+                  setIsCancelPlanOpen(false);
+                  toast.success("Reja o'chirildi");
+                } catch {
+                  toast.error("Rejani o'chirib bo'lmadi");
+                }
+              }}
+            >
+              <div className="size-10 rounded-full bg-destructive/10 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+                <Trash2Icon className="size-5 text-destructive" />
+              </div>
+              Umuman o'chirish
+            </Button>
           </NutritionDrawerBody>
           <DrawerFooter className="mt-2">
             <Button
@@ -477,7 +430,6 @@ export default function NutritionDrawers({
           </DrawerFooter>
         </NutritionDrawerContent>
       </Drawer>
-
       <Drawer
         {...getDrawerControl(isFilterDrawerOpen, setIsFilterDrawerOpen)}
         direction="bottom"
@@ -495,8 +447,8 @@ export default function NutritionDrawers({
             onClearFilters={clearNutritionFilters}
             onToggleFilter={(key) =>
               setSourceFilters((current) =>
-                current.includes(key)
-                  ? current.filter((f) => f !== key)
+                includes(current, key)
+                  ? filter(current, (f) => f !== key)
                   : [...current, key],
               )
             }

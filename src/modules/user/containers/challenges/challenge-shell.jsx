@@ -3,6 +3,8 @@ import { useLocation } from "react-router";
 import FeatureModuleShell from "@/modules/user/layout/feature-module-shell.jsx";
 import { CHALLENGE_NAV_ITEMS } from "./challenge-nav-items.js";
 
+import { includes } from "lodash";
+
 const PRIMARY_TAB_PATHS = [
   "/user/challenges/home",
   "/user/challenges/my",
@@ -11,7 +13,7 @@ const PRIMARY_TAB_PATHS = [
 
 const ChallengeShell = () => {
   const { pathname } = useLocation();
-  const shouldHideTabs = !PRIMARY_TAB_PATHS.includes(pathname);
+  const shouldHideTabs = !includes(PRIMARY_TAB_PATHS, pathname);
 
   return (
     <FeatureModuleShell

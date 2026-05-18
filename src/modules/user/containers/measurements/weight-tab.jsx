@@ -9,12 +9,14 @@ import {
   filter,
   sortBy,
   map,
-  values,
+  values as lodashValues,
   keyBy,
   takeRight,
   get,
   max,
   min,
+  split,
+  toNumber,
 } from "lodash";
 
 import { AiInsightWidget } from "./ai-insight-widget";
@@ -71,14 +73,14 @@ export const WeightTab = ({
 
   const latest = getLatest();
   const currentW =
-    get(latest, "weight") || parseFloat(get(onboardingWeight, "value")) || 0;
-  const targetW = parseFloat(get(onboardingTarget, "value")) || 0;
+    get(latest, "weight") || toNumber(get(onboardingWeight, "value")) || 0;
+  const targetW = toNumber(get(onboardingTarget, "value")) || 0;
 
   const historyLen = get(history, "length", 0);
   const startW =
     historyLen >= 2
       ? get(history, `[${historyLen - 1}].weight`, currentW)
-      : parseFloat(get(onboardingWeight, "value")) || currentW;
+      : toNumber(get(onboardingWeight, "value")) || currentW;
 
   const progressRange = targetW > 0 ? Math.abs(startW - targetW) : 0;
   const progressDone =
@@ -86,7 +88,7 @@ export const WeightTab = ({
       ? max([0, min([1, Math.abs(startW - currentW) / progressRange])])
       : 0;
 
-  const heightCm = parseFloat(get(onboardingHeight, "value")) || 0;
+  const heightCm = toNumber(get(onboardingHeight, "value")) || 0;
   const heightM = heightCm / 100;
   const bmi =
     heightM > 0 && currentW > 0 ? currentW / (heightM * heightM) : null;
@@ -130,7 +132,7 @@ export const WeightTab = ({
       return saveOnboarding({
         url: "/user/measurements/height",
         attributes: {
-          value: Number(heightValue),
+          value: toNumber(heightValue),
           unit: "cm",
         },
       });
@@ -162,9 +164,9 @@ export const WeightTab = ({
     const sortedList = sortBy(withWeight, (h) => new Date(get(h, "date")));
     const uniqueDaysMap = keyBy(
       sortedList,
-      (h) => get(h, "date", "").split("T")[0],
+      (h) => split(get(h, "date", ""), "T")[0],
     );
-    const uniqueSorted = values(uniqueDaysMap);
+    const uniqueSorted = lodashValues(uniqueDaysMap);
 
     if (chartPeriod === "day") return takeRight(uniqueSorted, 7);
     if (chartPeriod === "week") return takeRight(uniqueSorted, 14);
@@ -173,7 +175,7 @@ export const WeightTab = ({
   };
 
   const chartData = map(getFilteredHistory(), (h) => ({
-    date: get(h, "date", "").split("T")[0].slice(5),
+    date: split(get(h, "date", ""), "T")[0].slice(5),
     weight: get(h, "weight"),
   }));
 
@@ -253,7 +255,6 @@ export const WeightTab = ({
   return (
     <div className="flex flex-col gap-4">
       <AiInsightWidget insight={getAIInsight()} />
-
       <CurrentWeightCard
         currentW={currentW}
         onOpenModal={() => {
@@ -264,7 +265,6 @@ export const WeightTab = ({
           setOpenWeightModal(true);
         }}
       />
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <GoalProgressCard
           startW={startW}
@@ -289,14 +289,12 @@ export const WeightTab = ({
           }}
         />
       </div>
-
       <WeightHistoryChart
         chartData={chartData}
         chartPeriod={chartPeriod}
         setChartPeriod={setChartPeriod}
         targetW={targetW}
       />
-
       <WeightInputDrawer
         open={openWeightModal}
         setOpen={setOpenWeightModal}
@@ -306,7 +304,6 @@ export const WeightTab = ({
         onSubmit={onWeightSubmit}
         onDelete={handleWeightDelete}
       />
-
       <GoalInputDrawer
         open={openGoalModal}
         setOpen={setOpenGoalModal}
@@ -315,7 +312,7 @@ export const WeightTab = ({
           try {
             await patchOnboarding({
               targetWeight: {
-                value: Number(get(d, "weight")),
+                value: toNumber(get(d, "weight")),
                 unit: "kg",
               },
             });
@@ -326,13 +323,12 @@ export const WeightTab = ({
           }
         }}
       />
-
       <HeightWeightDrawer
         open={openHeightWeightModal}
         setOpen={setOpenHeightWeightModal}
         form={heightForm}
         onSubmit={async (d) => {
-          const hVal = Number(get(d, "height"));
+          const hVal = toNumber(get(d, "height"));
           if (hVal > 0) {
             try {
               await patchHeight(hVal);
@@ -350,3 +346,6 @@ export const WeightTab = ({
     </div>
   );
 };
+
+
+

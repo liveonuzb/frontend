@@ -21,8 +21,7 @@
         "nutrition": "Nutrition",
         "health": "Health",
         "workout": "Workout",
-        "review": "Review",
-        "coach": "Coach profile"
+        "review": "Review"
       }
     },
     "skip": "Skip",
@@ -121,6 +120,10 @@
       "heroAlt": "{{value}} pace illustration",
       "imageAlt": "{{value}} illustration",
       "options": {
+        "1": {
+          "title": "Fast track",
+          "description": "Most aggressive pace. Better for short bursts."
+        },
         "025": {
           "title": "Easy rhythm",
           "description": "Small weekly changes with a lighter routine."
@@ -132,10 +135,6 @@
         "075": {
           "title": "Focused push",
           "description": "Noticeable weekly progress with more structure."
-        },
-        "1": {
-          "title": "Fast track",
-          "description": "Most aggressive pace. Better for short bursts."
         }
       }
     },
@@ -772,10 +771,10 @@
             "gain": "Build muscle"
           },
           "weeklyWeightChangeGoal": {
+            "1": "1 kg per week",
             "0.25": "0.25 kg per week",
             "0.5": "0.5 kg per week",
-            "0.75": "0.75 kg per week",
-            "1": "1 kg per week"
+            "0.75": "0.75 kg per week"
           },
           "mealsPerDay": {
             "2": "2 meals",
@@ -1037,171 +1036,6 @@
         "ru": "Russian",
         "en": "English"
       }
-    },
-    "coach": {
-      "common": {
-        "continue": "Continue",
-        "select": "Select"
-      },
-      "category": {
-        "question": "What type of coaching do you provide?",
-        "additional": "Additional directions",
-        "options": {
-          "fitness": "Fitness",
-          "yoga": "Yoga",
-          "boxing": "Boxing",
-          "football": "Football",
-          "swimming": "Swimming",
-          "tennis": "Tennis",
-          "basketball": "Basketball",
-          "martialArts": "Martial arts",
-          "running": "Running",
-          "gymnastics": "Gymnastics",
-          "dance": "Dance",
-          "cheerleading": "Cheerleading",
-          "skating": "Skating",
-          "cycling": "Cycling",
-          "climbing": "Climbing",
-          "other": "Other"
-        }
-      },
-      "experience": {
-        "question": "Select your experience",
-        "options": {
-          "beginner": {
-            "label": "Less than 1 year",
-            "description": "New to coaching or worked with a small number of clients."
-          },
-          "intermediate": {
-            "label": "1-3 years",
-            "description": "Stable experience and practical coaching processes."
-          },
-          "advanced": {
-            "label": "3-5 years",
-            "description": "Result-driven clients and an established method."
-          },
-          "expert": {
-            "label": "5+ years",
-            "description": "Broad experience, many results, and deep expertise."
-          }
-        },
-        "infoTitle": "Your profile will be ready quickly",
-        "infoDescription": "Experience is used in the coach dashboard and client-facing profile summary."
-      },
-      "specialization": {
-        "question": "Choose your specializations",
-        "customQuestion": "Enter your specializations",
-        "fieldLabel": "Specializations",
-        "placeholder": "Boxing, Football, Yoga, Fitness",
-        "description": "Separate specializations with commas or new lines.",
-        "customCount": "{{count}} specializations entered",
-        "emptyTitle": "No specializations found for this category.",
-        "emptyDescription": "Press Continue to move forward.",
-        "selectedCount": "{{count}} specializations selected"
-      },
-      "targetAudience": {
-        "question": "Which audience do you serve?",
-        "options": {
-          "children": "Children (6-12)",
-          "teenagers": "Teenagers (13-17)",
-          "beginners": "Beginners",
-          "intermediate": "Intermediate",
-          "advanced": "Advanced / Professional",
-          "seniors": "Seniors (60+)"
-        },
-        "selectedCount": "{{count}} audiences selected"
-      },
-      "availability": {
-        "question": "Set your weekly work schedule",
-        "dayOff": "Day off",
-        "start": "Start",
-        "end": "End",
-        "days": {
-          "monday": "Monday",
-          "tuesday": "Tuesday",
-          "wednesday": "Wednesday",
-          "thursday": "Thursday",
-          "friday": "Friday",
-          "saturday": "Saturday",
-          "sunday": "Sunday"
-        }
-      },
-      "certification": {
-        "question": "Certification details",
-        "fileFallback": "Certificate file",
-        "fileSizeError": "Each file must be 8MB or smaller.",
-        "uploadSuccess": "{{count}} certificate files uploaded",
-        "uploadFailedCount": "{{count}} files failed to upload",
-        "uploadError": "Failed to upload files.",
-        "statusLabel": "Certification status",
-        "statusPlaceholder": "Choose an option",
-        "noCertificate": "I do not have a certificate",
-        "hasCertificate": "I have a certificate",
-        "nameLabel": "Certificate name",
-        "namePlaceholder": "For example, UEFA C, Boxing Coach, NASM CPT",
-        "numberLabel": "Certificate number",
-        "filesLabel": "Certificate files",
-        "uploadButton": "Upload file",
-        "fileDescription": "JPG, PNG, or PDF. Each file can be up to 8MB.",
-        "requiredFile": "Upload at least one certificate file."
-      },
-      "bio": {
-        "question": "Write your coach bio",
-        "label": "Bio",
-        "placeholder": "I am a coach focused on healthy nutrition and weight management. I help clients build plans, accountability, and daily habits.",
-        "minHint": "Enter at least 10 characters.",
-        "infoTitle": "Keep it short, clear, and credible",
-        "infoDescription": "Two or three sentences about your experience, main direction, and client results are enough."
-      },
-      "pricing": {
-        "question": "Set your pricing and work format",
-        "workModeLabel": "Work format",
-        "workModes": {
-          "online": "Online",
-          "offline": "Offline",
-          "hybrid": "Hybrid"
-        },
-        "minPriceLabel": "Minimum monthly price",
-        "maxPriceLabel": "Maximum monthly price",
-        "cityLabel": "City",
-        "workplaceLabel": "Workplace"
-      },
-      "languages": {
-        "question": "Which languages do you work in?",
-        "helper": "Choose at least one language.",
-        "reachTitle": "Reach more users",
-        "reachDescription": "Language filters help matching users find your profile faster.",
-        "marketplaceTitle": "Marketplace signal",
-        "marketplaceDescription": "The right language choice improves your visibility."
-      },
-      "avatar": {
-        "question": "Upload your profile photo",
-        "imageOnlyError": "Only image files can be uploaded.",
-        "fileSizeError": "Image size must be 5MB or smaller.",
-        "uploadSuccess": "Profile photo uploaded.",
-        "uploadError": "Failed to upload image.",
-        "completeError": "Failed to complete onboarding.",
-        "successTitle": "Congratulations!",
-        "successDescription": "Your coach profile has been created successfully.",
-        "redirecting": "Redirecting to coach panel...",
-        "alt": "Profile photo",
-        "emptyLabel": "Upload photo",
-        "idleHint": "Click or drag an image here",
-        "replaceHint": "Click to change the image",
-        "pickLabel": "Choose image",
-        "replaceLabel": "Replace image",
-        "helper": "This image appears on your marketplace card. Optional — you can add it later."
-      }
-    },
-    "coachOnboarding": {
-      "experience": "Experience",
-      "specialization": "Specialization",
-      "certification": "Certifications",
-      "bio": "Bio",
-      "pricing": "Pricing",
-      "languages": "Languages",
-      "avatar": "Photo",
-      "marketplace": "Marketplace"
     },
     "vendorOnboarding": {
       "entry": "Get Started",

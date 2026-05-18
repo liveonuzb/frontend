@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, toNumber } from "lodash";
 import { useGetQuery } from "@/hooks/api";
 
 export const WORKOUT_WEATHER_QUERY_KEY = ["user", "workout", "weather", "today"];
@@ -31,27 +31,27 @@ const normalizeWeather = (payload = {}) => ({
   temperatureC:
     payload.temperatureC === undefined || payload.temperatureC === null
       ? null
-      : Number(payload.temperatureC),
+      : toNumber(payload.temperatureC),
   feelsLikeC:
     payload.feelsLikeC === undefined || payload.feelsLikeC === null
       ? null
-      : Number(payload.feelsLikeC),
+      : toNumber(payload.feelsLikeC),
   condition: payload.condition || defaultWeather.condition,
   humidity:
     payload.humidity === undefined || payload.humidity === null
       ? null
-      : Number(payload.humidity),
+      : toNumber(payload.humidity),
   windKph:
     payload.windKph === undefined || payload.windKph === null
       ? null
-      : Number(payload.windKph),
+      : toNumber(payload.windKph),
   aqi:
-    payload.aqi === undefined || payload.aqi === null ? null : Number(payload.aqi),
+    payload.aqi === undefined || payload.aqi === null ? null : toNumber(payload.aqi),
   aqiLabel: payload.aqiLabel || defaultWeather.aqiLabel,
   pm25:
     payload.pm25 === undefined || payload.pm25 === null
       ? null
-      : Number(payload.pm25),
+      : toNumber(payload.pm25),
   source: payload.source || defaultWeather.source,
   updatedAt: payload.updatedAt || null,
 });
@@ -79,8 +79,8 @@ export const useWorkoutWeatherToday = (options = {}) => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setCoordinates({
-          latitude: Number(position.coords.latitude),
-          longitude: Number(position.coords.longitude),
+          latitude: toNumber(position.coords.latitude),
+          longitude: toNumber(position.coords.longitude),
         });
         setLocationStatus("granted");
       },

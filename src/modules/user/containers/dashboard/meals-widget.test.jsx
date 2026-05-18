@@ -3,12 +3,12 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import MealsWidget from "./meals-widget.jsx";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 
 const openActionDrawer = vi.fn();
 
-vi.mock("@/hooks/api/use-get-query", () => ({
-  default: vi.fn(),
+vi.mock("@/hooks/api", () => ({
+  useGetQuery: vi.fn(),
 }));
 
 vi.mock("@/hooks/app/use-daily-tracking", () => ({

@@ -6,6 +6,8 @@ import {
   loadRunningPointQueue,
 } from "./running-offline-queue.js";
 
+import { map } from "lodash";
+
 const point = (sequence) => ({
   sequence,
   latitude: 41 + sequence / 1000,
@@ -23,7 +25,7 @@ describe("running offline queue", () => {
     enqueueRunningPoints("workout-1", [point(2), point(3)]);
 
     expect(
-      loadRunningPointQueue("workout-1").map((item) => item.sequence),
+      map(loadRunningPointQueue("workout-1"), (item) => item.sequence),
     ).toEqual([1, 2, 3]);
   });
 
@@ -49,7 +51,7 @@ describe("running offline queue", () => {
 
     expect(loadRunningPointQueue("workout-1")).toEqual([]);
     expect(
-      loadRunningPointQueue("workout-2").map((item) => item.sequence),
+      map(loadRunningPointQueue("workout-2"), (item) => item.sequence),
     ).toEqual([2]);
   });
 

@@ -6,6 +6,8 @@ import CreatePage from "./create/index.jsx";
 import EditPage from "./edit/index.jsx";
 import TranslationPage from "./translation/index.jsx";
 
+import { map } from "lodash";
+
 const mockNavigate = vi.fn();
 const mockPostMutateAsync = vi.fn();
 const mockPatchMutateAsync = vi.fn();
@@ -109,7 +111,7 @@ vi.mock("@/components/option-drawer-picker", () => ({
       value={value || ""}
       onChange={(event) => onChange(event.target.value)}
     >
-      {options.map((option) => (
+      {map(options, (option) => (
         <option key={option.value} value={option.value}>
           {option.label}
         </option>

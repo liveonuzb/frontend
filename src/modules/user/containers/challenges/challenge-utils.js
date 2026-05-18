@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { uz } from "date-fns/locale";
-import { find, get, keys } from "lodash";
+import { find, get, keys, toNumber } from "lodash";
 import {
   CheckCircle2Icon,
   CircleOffIcon,
@@ -148,7 +148,7 @@ export const getMyProgress = (challenge) => {
     get(challenge, "progress.percent") ??
     get(challenge, "myProgressPercentage") ??
     0;
-  return Math.max(0, Math.min(100, Number(raw) || 0));
+  return Math.max(0, Math.min(100, toNumber(raw) || 0));
 };
 
 export const getMyRankText = (challenge) => {

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { times, filter, map, round } from "lodash";
+import { times, filter, map, round, includes, trim, parseInt as lodashParseInt } from "lodash";
 import { cn } from "@/lib/utils";
 import {
     Check,
@@ -37,7 +37,20 @@ import {
     getChatAttachmentMetadata,
     isChatAttachmentExpired,
 } from "@/modules/chat/lib/chat-attachment-policy.js";
-import { downloadSessionCalendarInvite } from "@/components/coach-sessions/session-utils.js";
+
+const downloadSessionCalendarInvite = (metadata = {}) => {
+    const title = metadata.title || "LiveOn session";
+    const dateLabel = metadata.startsAt || metadata.date || "";
+    const blob = new Blob([`BEGIN:VCALENDAR\nVERSION:2.0\nSUMMARY:${title}\nDESCRIPTION:${dateLabel}\nEND:VCALENDAR`], {
+        type: "text/calendar;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "liveon-session.ics";
+    link.click();
+    URL.revokeObjectURL(url);
+};
 
 function formatVoiceDuration(seconds) {
     if (!seconds) return "0:00";
@@ -176,18 +189,15 @@ const InteractiveTask = ({
 };
 
 const BookingWidget = ({ metadata, activeChat, isMe }) => {
-    const { selectBookingSlot, cancelBooking, completeBooking } = useChatStore();
-    const { activeRole } = useAuthStore();
+    const { selectBookingSlot, cancelBooking } = useChatStore();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isCancelOpen, setIsCancelOpen] = useState(false);
     const [cancelReason, setCancelReason] = useState("");
     const isCancelled = metadata?.status === "cancelled";
     const isCompleted = metadata?.status === "completed";
     const isScheduled = metadata?.status === "scheduled";
-    const isCoach = activeRole === "COACH";
-    const canSelectSlot = !isCoach && !isMe && !isCancelled && !isCompleted;
+    const canSelectSlot = !isMe && !isCancelled && !isCompleted;
     const canCancel = Boolean(metadata?.bookingId) && !isCancelled && !isCompleted;
-    const canComplete = isCoach && isScheduled;
     const canExportCalendar = Boolean(metadata?.selectedSlot || metadata?.startsAt);
     const startLabel = (() => {
         if (metadata?.startsAt) {
@@ -201,7 +211,7 @@ const BookingWidget = ({ metadata, activeChat, isMe }) => {
                 }).format(parsed);
             }
         }
-        return [metadata?.date, metadata?.selectedSlot].filter(Boolean).join(" ");
+        return filter([metadata?.date, metadata?.selectedSlot], Boolean).join(" ");
     })();
 
     const handleSelectSlot = async (slotTime) => {
@@ -227,25 +237,10 @@ const BookingWidget = ({ metadata, activeChat, isMe }) => {
 
         try {
             setIsSubmitting(true);
-            await cancelBooking(activeChat, metadata.bookingId, cancelReason.trim());
+            await cancelBooking(activeChat, metadata.bookingId, trim(cancelReason));
             toast.success("Booking bekor qilindi");
             setIsCancelOpen(false);
             setCancelReason("");
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleComplete = async () => {
-        if (!metadata?.bookingId) {
-            toast.error("Booking ID topilmadi");
-            return;
-        }
-
-        try {
-            setIsSubmitting(true);
-            await completeBooking(activeChat, metadata.bookingId);
-            toast.success("Booking tugatildi");
         } finally {
             setIsSubmitting(false);
         }
@@ -277,7 +272,7 @@ const BookingWidget = ({ metadata, activeChat, isMe }) => {
                 </div>
             ) : (
                 <div className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-1.5 md:gap-2">
-                    {(metadata.slots || []).map((slot, i) => (
+                    {map((metadata.slots || []), (slot, i) => (
                         <button key={i} disabled={!canSelectSlot || isSubmitting || !metadata?.bookingId} onClick={() => handleSelectSlot(slot.time)} className="min-h-9 rounded-lg border bg-background p-1.5 text-[10px] font-medium transition-all hover:border-primary hover:text-primary disabled:opacity-50 md:p-2 md:text-xs">{slot.time}</button>
                     ))}
                 </div>
@@ -305,12 +300,6 @@ const BookingWidget = ({ metadata, activeChat, isMe }) => {
                     <Button size="sm" variant="outline" className="h-8 px-2 text-[10px]" onClick={() => downloadSessionCalendarInvite(metadata)}>
                         <DownloadIcon className="mr-1 size-3" />
                         Calendar
-                    </Button>
-                ) : null}
-                {canComplete ? (
-                    <Button size="sm" className="h-8 px-2 text-[10px]" onClick={handleComplete} disabled={isSubmitting}>
-                        <BadgeCheckIcon className="mr-1 size-3" />
-                        Tugatish
                     </Button>
                 ) : null}
                 {canCancel ? (
@@ -343,9 +332,8 @@ const HabitTrackerWidget = ({ metadata, msgId, activeChat, isMe, canInteract }) 
                     {progress}%
                 </Badge>
             </div>
-
             <div className="space-y-1.5">
-                {metadata.habits.map((habit, idx) => (
+                {map(metadata.habits, (habit, idx) => (
                     <button
                         key={idx}
                         disabled={!canInteract || !isMe}
@@ -394,7 +382,7 @@ const InvoiceWidget = ({
             </div>
             <div className={cn("p-3 md:p-4 rounded-xl border text-center space-y-1", metadata.status === "paid" ? "bg-green-500/10 border-green-500/20" : "bg-primary/5 border-primary/10")}>
                 <p className={cn("text-[10px] opacity-70 md:text-xs", contentWrapClass)}>{metadata.description}</p>
-                <p className="text-xl font-black md:text-2xl">{parseInt(metadata.amount).toLocaleString()} <span className="text-sm">UZS</span></p>
+                <p className="text-xl font-black md:text-2xl">{lodashParseInt(metadata.amount).toLocaleString()} <span className="text-sm">UZS</span></p>
             </div>
             {canInteract && !isMe && metadata.status === "pending" && (
                 <Button
@@ -529,7 +517,7 @@ const PollWidget = ({
                         onClick={() => canInteract && votePoll(activeChat, msg.id, i, currentUserId)}
                         className={cn(
                             "flex min-h-9 w-full min-w-0 items-center justify-between gap-2 rounded-lg border p-2 text-left text-[10px] disabled:cursor-default",
-                            opt.votes.includes(currentUserId) ? "bg-primary/20 border-primary" : "bg-muted/20 border-transparent",
+                            includes(opt.votes, currentUserId) ? "bg-primary/20 border-primary" : "bg-muted/20 border-transparent",
                             canInteract && "hover:border-primary/50",
                         )}
                     >
@@ -633,7 +621,6 @@ const MessageList = ({
     return (
         <div className="relative flex-1 space-y-1 overflow-y-auto p-3 pb-4 md:p-6 custom-scrollbar">
             {showConfetti && <Confetti numberOfPieces={150} recycle={false} gravity={0.3} style={{ position: 'fixed', inset: 0, zIndex: 100 }} />}
-
             {messagesCursors[activeChat] && (
                 <button
                     onClick={() => loadMoreMessages(activeChat)}
@@ -642,8 +629,7 @@ const MessageList = ({
                     Oldingi xabarlarni ko'rish
                 </button>
             )}
-
-            {messagesWithSeparators.map((item, index) => {
+            {map(messagesWithSeparators, (item, index) => {
                 if (item.type === "separator") return <div key={item.key} className="text-center my-3 md:my-4"><span className="text-[9px] md:text-[10px] text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-full uppercase tracking-widest">{item.label === "today" ? "Bugun" : item.label === "yesterday" ? "Kecha" : item.label}</span></div>;
                 const msg = item.msg;
                 const isMe = msg.sender?.id === currentUserId || msg.from === "me";
@@ -713,7 +699,10 @@ const MessageList = ({
                                 {msg.ttl && <FlameIcon className="size-2.5 text-orange-500 animate-pulse ml-1" />}
                             </div>
 
-                            {canUseReactions && reactionMsgId === msg.id && <div data-reaction-picker className={cn("absolute z-10 flex gap-1 bg-background border rounded-full px-1.5 py-1 shadow-lg -top-9", isMe ? "right-0" : "left-0")}>{["👍", "❤️", "🔥", "😂", "👏"].map(emoji => <button key={emoji} className="text-sm hover:scale-125 transition-transform" onClick={e => { e.stopPropagation(); handleReaction(msg.id, emoji); }}>{emoji}</button>)}</div>}
+                            {canUseReactions && reactionMsgId === msg.id && <div data-reaction-picker className={cn("absolute z-10 flex gap-1 bg-background border rounded-full px-1.5 py-1 shadow-lg -top-9", isMe ? "right-0" : "left-0")}>{map(
+                                ["👍", "❤️", "🔥", "😂", "👏"],
+                                emoji => <button key={emoji} className="text-sm hover:scale-125 transition-transform" onClick={e => { e.stopPropagation(); handleReaction(msg.id, emoji); }}>{emoji}</button>,
+                            )}</div>}
                             {deletingMsgId === msg.id && <DeleteConfirmation onDelete={handleDelete} onCancel={handleDeleteCancel} />}
                         </div>
                     </div>

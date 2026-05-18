@@ -1,5 +1,5 @@
 import React from "react";
-import { isArray, trim } from "lodash";
+import { isArray, trim, map } from "lodash";
 import { toast } from "sonner";
 import { PaletteIcon, PlusIcon, TagIcon } from "lucide-react";
 import { usePostQuery } from "@/hooks/api";
@@ -56,7 +56,7 @@ const CreateWorkoutCategory = () => {
   );
 
   const handleSave = React.useCallback(async () => {
-    const name = form.name.trim();
+    const name = trim(form.name);
     if (!name) {
       toast.error("Kategoriya nomini kiriting");
       return;
@@ -145,7 +145,7 @@ const CreateWorkoutCategory = () => {
               <Label className="text-sm font-medium">Badge style</Label>
               <div className="rounded-2xl border border-border/60 bg-muted/15 p-4">
                 <div className="flex flex-wrap gap-3">
-                  {CATEGORY_BADGE_PRESETS.map((option) => {
+                  {map(CATEGORY_BADGE_PRESETS, (option) => {
                     const isSelected =
                       form.colorMode === "preset" &&
                       form.presetColor === option.value;

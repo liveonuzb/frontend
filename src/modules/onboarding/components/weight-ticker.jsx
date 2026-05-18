@@ -1,5 +1,5 @@
 import React from "react";
-import { clamp } from "lodash";
+import { clamp, includes, map, split, toNumber } from "lodash";
 import {
   motion,
   useMotionValue,
@@ -16,15 +16,15 @@ const LABEL_SLOT = 18; // reserved slot (perpendicular axis) for number labels
 const NOTCH_AREA = 40; // reserved slot for the notch itself
 const WHEEL_SNAP_DEBOUNCE = 140;
 
-const getDecimals = (step) => step.toString().split(".")[1]?.length ?? 0;
+const getDecimals = (step) => split(step.toString(), ".")[1]?.length ?? 0;
 
 const toStepValue = (value, min, max, step) => {
-  const numeric = Number(value);
+  const numeric = toNumber(value);
   if (!Number.isFinite(numeric)) return min;
   const clamped = clamp(numeric, min, max);
   const snapped = Math.round((clamped - min) / step) * step + min;
   const decimals = getDecimals(step);
-  return Number(snapped.toFixed(decimals));
+  return toNumber(snapped.toFixed(decimals));
 };
 
 const isMultipleOf = (value, base) => {
@@ -93,7 +93,7 @@ export const WeightTicker = ({
         0,
         stepsCount - 1,
       );
-      const next = Number((idx * step + min).toFixed(decimals));
+      const next = toNumber((idx * step + min).toFixed(decimals));
       onChange?.(String(next));
     },
     [decimals, min, onChange, step, stepsCount],
@@ -119,9 +119,9 @@ export const WeightTicker = ({
         : ["ArrowLeft", "ArrowDown"];
       let nextValue = null;
 
-      if (incrementKeys.includes(event.key)) {
+      if (includes(incrementKeys, event.key)) {
         nextValue = resolvedValue + step;
-      } else if (decrementKeys.includes(event.key)) {
+      } else if (includes(decrementKeys, event.key)) {
         nextValue = resolvedValue - step;
       } else if (event.key === "PageUp") {
         nextValue = resolvedValue + majorStep;
@@ -253,7 +253,6 @@ export const WeightTicker = ({
             </span>
           </div>
         ) : null}
-
         <div
           className="relative"
           style={{
@@ -308,7 +307,7 @@ export const WeightTicker = ({
                 className="relative m-0 flex w-full list-none flex-col items-stretch p-0"
                 style={{ y: offset }}
               >
-                {items.map((i) => (
+                {map(items, (i) => (
                   <TickCell
                     key={i}
                     index={i}
@@ -348,7 +347,6 @@ export const WeightTicker = ({
           </span>
         </div>
       ) : null}
-
       <div
         className="relative w-full"
         style={{ height: LABEL_SLOT + NOTCH_AREA + 8 }}
@@ -399,7 +397,7 @@ export const WeightTicker = ({
               className="relative m-0 flex h-full list-none items-stretch p-0"
               style={{ x: offset }}
             >
-              {items.map((i) => (
+              {map(items, (i) => (
                 <TickCell
                   key={i}
                   index={i}

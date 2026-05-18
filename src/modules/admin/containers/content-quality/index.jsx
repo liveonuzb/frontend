@@ -1,5 +1,17 @@
 import React from "react";
-import { get } from "lodash";
+import {
+  get,
+  filter,
+  find,
+  includes,
+  isArray,
+  map,
+  reduce,
+  toLower,
+  toNumber,
+  trim,
+  take,
+} from "lodash";
 import { Link } from "react-router";
 import {
   AlertTriangleIcon,
@@ -106,12 +118,12 @@ const QualitySkeleton = () => (
       <Skeleton className="h-10 w-28 rounded-full" />
     </div>
     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-      {Array.from({ length: 5 }).map((_, index) => (
+      {map(Array.from({ length: 5 }), (_, index) => (
         <Skeleton key={index} className="h-32 rounded-lg" />
       ))}
     </div>
     <div className="grid gap-4 xl:grid-cols-2">
-      {Array.from({ length: 4 }).map((_, index) => (
+      {map(Array.from({ length: 4 }), (_, index) => (
         <Skeleton key={index} className="h-80 rounded-lg" />
       ))}
     </div>
@@ -129,7 +141,6 @@ const catalogListRoutes = {
   workoutMuscles: "/admin/workout-muscles",
   workoutBodyParts: "/admin/workout-body-parts",
   achievements: "/admin/achievements/list",
-  coachSpecializations: "/admin/coach-specializations/list",
   healthConstraints: "/admin/health-constraints/list",
   userGoals: "/admin/user-goals/list",
   challenges: "/admin/challenges/list",
@@ -156,7 +167,6 @@ const getIssueActionPath = ({ sectionKey, groupKey, issueId }) => {
       "ingredients",
       "cuisines",
       "achievements",
-      "coachSpecializations",
       "healthConstraints",
       "userGoals",
       "challenges",
@@ -212,7 +222,7 @@ const IssueList = ({ items = [], sectionKey, groupKey }) => {
 
   return (
     <div className="space-y-2">
-      {items.map((example) => {
+      {map(items, (example) => {
         const actionPath = getIssueActionPath({
           sectionKey,
           groupKey,
@@ -235,14 +245,14 @@ const IssueList = ({ items = [], sectionKey, groupKey }) => {
               </div>
               <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
                 {example.missingLanguages?.length
-                  ? example.missingLanguages.map((language) => (
+                  ? map(example.missingLanguages, (language) => (
                       <Badge key={language} variant="secondary">
                         {language}
                       </Badge>
                     ))
                   : null}
                 {example.missingModes?.length
-                  ? example.missingModes.map((mode) => (
+                  ? map(example.missingModes, (mode) => (
                       <Badge key={mode} variant="outline">
                         {mode}
                       </Badge>
@@ -275,9 +285,9 @@ const IssueList = ({ items = [], sectionKey, groupKey }) => {
 };
 
 const QualityGroup = ({ section, group, isExpanded, onToggle }) => {
-  const issueCount = Number(group.issueCount || 0);
-  const issues = Array.isArray(group.issues) ? group.issues : [];
-  const examples = Array.isArray(group.examples) ? group.examples : [];
+  const issueCount = toNumber(group.issueCount || 0);
+  const issues = isArray(group.issues) ? group.issues : [];
+  const examples = isArray(group.examples) ? group.examples : [];
   const visibleItems = isExpanded ? issues : examples;
   const canToggle = issues.length > examples.length;
 
@@ -325,21 +335,19 @@ const QualityGroup = ({ section, group, isExpanded, onToggle }) => {
 const matchesIssueSearch = (issue, search) => {
   if (!search) return true;
 
-  const haystack = [
+  const haystack = toLower(filter([
     issue.id,
     issue.name,
     issue.title,
-    ...(Array.isArray(issue.missingLanguages) ? issue.missingLanguages : []),
-    ...(Array.isArray(issue.missingModes) ? issue.missingModes : []),
+    ...(isArray(issue.missingLanguages) ? issue.missingLanguages : []),
+    ...(isArray(issue.missingModes) ? issue.missingModes : []),
     issue.budgetTier,
     issue.trackingType,
     issue.issue,
-  ]
-    .filter((item) => item !== null && item !== undefined)
-    .join(" ")
-    .toLowerCase();
+  ], (item) => item !== null && item !== undefined)
+    .join(" "));
 
-  return haystack.includes(search);
+  return includes(haystack, search);
 };
 
 const filterQualitySections = ({
@@ -348,23 +356,20 @@ const filterQualitySections = ({
   search,
   onlyIssues,
 }) => {
-  const normalizedSearch = search.trim().toLowerCase();
+  const normalizedSearch = toLower(trim(search));
 
-  return sections
-    .filter(
-      (section) => sectionFilter === "all" || section.key === sectionFilter,
-    )
-    .map((section) => {
-      const groups = section.groups
-        .map((group) => {
-          const issues = Array.isArray(group.issues) ? group.issues : [];
-          const filteredIssues = issues.filter((issue) =>
-            matchesIssueSearch(issue, normalizedSearch),
-          );
-          const filteredExamples = filteredIssues.slice(0, 6);
+  return filter(map(filter(
+    sections,
+    (section) => sectionFilter === "all" || section.key === sectionFilter,
+  ), (section) => {
+      const groups = filter(map(section.groups, (group) => {
+          const issues = isArray(group.issues) ? group.issues : [];
+          const filteredIssues = filter(issues, (issue) =>
+            matchesIssueSearch(issue, normalizedSearch));
+          const filteredExamples = take(filteredIssues, 6);
           const nextIssueCount = normalizedSearch
             ? filteredIssues.length
-            : Number(group.issueCount || 0);
+            : toNumber(group.issueCount || 0);
 
           return {
             ...group,
@@ -372,13 +377,12 @@ const filterQualitySections = ({
             issues: normalizedSearch ? filteredIssues : issues,
             examples: normalizedSearch ? filteredExamples : group.examples,
           };
-        })
-        .filter((group) => {
-          if (onlyIssues && Number(group.issueCount || 0) === 0) {
+        }), (group) => {
+          if (onlyIssues && toNumber(group.issueCount || 0) === 0) {
             return false;
           }
 
-          if (normalizedSearch && Number(group.issueCount || 0) === 0) {
+          if (normalizedSearch && toNumber(group.issueCount || 0) === 0) {
             return false;
           }
 
@@ -386,8 +390,7 @@ const filterQualitySections = ({
         });
 
       return { ...section, groups };
-    })
-    .filter((section) => section.groups.length > 0);
+    }), (section) => section.groups.length > 0);
 };
 
 const getContentQualityPayload = (response) => {
@@ -397,25 +400,20 @@ const getContentQualityPayload = (response) => {
     get(response, "data.data"),
     get(response, "data.data.data"),
   ];
-  const payload = candidates.find(
-    (candidate) => candidate?.summary || candidate?.sections,
-  );
+  const payload = find(candidates, (candidate) => candidate?.summary || candidate?.sections);
 
   return payload || {};
 };
 
 const getSummaryValue = (summary, key, sections) => {
-  const directValue = Number(summary?.[key]);
+  const directValue = toNumber(summary?.[key]);
   if (Number.isFinite(directValue) && directValue > 0) return directValue;
 
   const sectionKey = summarySectionByKey[key] || key;
-  const section = sections.find((item) => item.key === sectionKey);
+  const section = find(sections, (item) => item.key === sectionKey);
   if (!section) return Number.isFinite(directValue) ? directValue : 0;
 
-  return section.groups.reduce(
-    (total, group) => total + Number(group.issueCount || 0),
-    0,
-  );
+  return reduce(section.groups, (total, group) => total + toNumber(group.issueCount || 0), 0);
 };
 
 const downloadBlob = ({ blob, fileName }) => {
@@ -456,11 +454,11 @@ const Index = () => {
   const summary = React.useMemo(() => get(payload, "summary", {}), [payload]);
   const sections = React.useMemo(() => {
     const value = get(payload, "sections");
-    return Array.isArray(value) ? value : [];
+    return isArray(value) ? value : [];
   }, [payload]);
   const activeLanguages = React.useMemo(() => {
     const value = get(payload, "activeLanguages");
-    return Array.isArray(value) ? value : [];
+    return isArray(value) ? value : [];
   }, [payload]);
   const visibleSections = React.useMemo(
     () =>
@@ -469,15 +467,13 @@ const Index = () => {
   );
   const visibleIssueCount = React.useMemo(
     () =>
-      visibleSections.reduce(
-        (sectionTotal, section) =>
-          sectionTotal +
-          section.groups.reduce(
-            (groupTotal, group) => groupTotal + Number(group.issueCount || 0),
-            0,
-          ),
-        0,
-      ),
+      reduce(visibleSections, (sectionTotal, section) =>
+        sectionTotal +
+        reduce(
+          section.groups,
+          (groupTotal, group) => groupTotal + toNumber(group.issueCount || 0),
+          0,
+        ), 0),
     [visibleSections],
   );
   const toggleGroup = React.useCallback((key) => {
@@ -503,7 +499,7 @@ const Index = () => {
     } catch (error) {
       const message = error?.response?.data?.message;
       toast.error(
-        Array.isArray(message)
+        isArray(message)
           ? message.join(", ")
           : message || "Reportni yuklab bo'lmadi",
       );
@@ -536,7 +532,7 @@ const Index = () => {
               kamchiliklar.
             </p>
             <div className="mt-2 flex flex-wrap gap-1.5">
-              {activeLanguages.map((language) => (
+              {map(activeLanguages, (language) => (
                 <Badge key={language.code} variant="secondary">
                   {language.flag} {language.code}
                 </Badge>
@@ -568,9 +564,8 @@ const Index = () => {
           </Button>
         </div>
       </div>
-
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-        {summaryCards.map((card) => {
+        {map(summaryCards, (card) => {
           const value = getSummaryValue(summary, card.key, sections);
 
           return (
@@ -598,24 +593,17 @@ const Index = () => {
           );
         })}
       </div>
-
       <Card className="border-amber-200 bg-amber-50/50 shadow-sm">
         <CardContent className="flex items-start gap-3 p-4 text-amber-900">
           <AlertTriangleIcon className="mt-0.5 size-5 shrink-0" />
           <div>
             <p className="font-medium">
               Jami muammo:{" "}
-              {Number(summary.totalIssues || 0) ||
-                sections.reduce(
-                  (total, section) =>
-                    total +
-                    section.groups.reduce(
-                      (groupTotal, group) =>
-                        groupTotal + Number(group.issueCount || 0),
-                      0,
-                    ),
-                  0,
-                )}
+              {toNumber(summary.totalIssues || 0) ||
+                reduce(sections, (total, section) =>
+                  total +
+                  reduce(section.groups, (groupTotal, group) =>
+                    groupTotal + toNumber(group.issueCount || 0), 0), 0)}
             </p>
             <p className="text-sm text-amber-800">
               Bu sahifa data sifatini ko'rsatadi; tuzatishlar tegishli katalog
@@ -625,7 +613,6 @@ const Index = () => {
           </div>
         </CardContent>
       </Card>
-
       <Card className="border-border/60 shadow-sm">
         <CardContent className="flex flex-col gap-3 p-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="relative min-w-0 flex-1">
@@ -649,7 +636,7 @@ const Index = () => {
             ) : null}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {sectionFilterOptions.map((option) => (
+            {map(sectionFilterOptions, (option) => (
               <Button
                 key={option.value}
                 type="button"
@@ -676,10 +663,9 @@ const Index = () => {
           </div>
         </CardContent>
       </Card>
-
       <div className="grid gap-4 xl:grid-cols-2">
         {visibleSections.length ? (
-          visibleSections.map((section) => {
+          map(visibleSections, (section) => {
             const Icon = sectionIcons[section.key] || ClipboardCheckIcon;
 
             return (
@@ -692,7 +678,7 @@ const Index = () => {
                   <CardDescription>{section.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3 p-4">
-                  {section.groups.map((group) => {
+                  {map(section.groups, (group) => {
                     const groupKey = `${section.key}:${group.key}`;
 
                     return (

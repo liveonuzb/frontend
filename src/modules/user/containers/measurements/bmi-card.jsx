@@ -2,6 +2,8 @@ import React from "react";
 import { ChevronRightIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import { map, toNumber } from "lodash";
+
 // Scale: BMI 10 → 40 (30-unit range)
 const BMI_SCALE_MIN = 10;
 const BMI_SCALE_RANGE = 30;
@@ -93,7 +95,6 @@ export const BmiCard = ({ bmi, onOpenModal, heightCm, currentW }) => {
           }}
         />
       )}
-
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-5 pb-0 shrink-0 relative">
         <div className="flex items-center gap-2">
@@ -106,7 +107,6 @@ export const BmiCard = ({ bmi, onOpenModal, heightCm, currentW }) => {
         </div>
         <ChevronRightIcon className="size-4 text-muted-foreground/40 shrink-0" />
       </div>
-
       {bmi != null && meta ? (
         <div className="flex flex-col gap-4 px-5 pt-4 pb-5 flex-1 relative">
           {/* Hero row: big BMI number + category badge */}
@@ -147,7 +147,7 @@ export const BmiCard = ({ bmi, onOpenModal, heightCm, currentW }) => {
                   Vazn
                 </p>
                 <p className="text-sm font-black leading-tight">
-                  {currentW > 0 ? Number(currentW).toFixed(1) : "—"}
+                  {currentW > 0 ? toNumber(currentW).toFixed(1) : "—"}
                   <span className="text-[10px] font-semibold text-muted-foreground ml-0.5">
                     kg
                   </span>
@@ -179,7 +179,7 @@ export const BmiCard = ({ bmi, onOpenModal, heightCm, currentW }) => {
 
             {/* Segmented bar */}
             <div className="flex gap-[2px] h-2.5 w-full rounded-full overflow-hidden">
-              {ZONES.map((z, i) => (
+              {map(ZONES, (z, i) => (
                 <div
                   key={i}
                   className="h-full"
@@ -190,7 +190,7 @@ export const BmiCard = ({ bmi, onOpenModal, heightCm, currentW }) => {
 
             {/* Scale labels */}
             <div className="relative h-3.5">
-              {SCALE_LABELS.map(({ label, pct: lp }) => (
+              {map(SCALE_LABELS, ({ label, pct: lp }) => (
                 <span
                   key={label}
                   className="absolute text-[9px] font-semibold text-muted-foreground/60 -translate-x-1/2 top-0"
@@ -204,7 +204,7 @@ export const BmiCard = ({ bmi, onOpenModal, heightCm, currentW }) => {
         </div>
       ) : (
         /* Empty state */
-        <div className="flex flex-col items-center justify-center gap-3 px-5 pb-6 pt-4 text-center flex-1 relative">
+        (<div className="flex flex-col items-center justify-center gap-3 px-5 pb-6 pt-4 text-center flex-1 relative">
           <div className="size-14 rounded-2xl bg-muted/50 flex items-center justify-center">
             <span className="text-2xl">📏</span>
           </div>
@@ -219,7 +219,7 @@ export const BmiCard = ({ bmi, onOpenModal, heightCm, currentW }) => {
           <div className="text-[10px] font-semibold text-muted-foreground/60 border border-dashed border-border/50 rounded-full px-3 py-1">
             Bosing va kiriting →
           </div>
-        </div>
+        </div>)
       )}
     </div>
   );

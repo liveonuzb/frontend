@@ -20,6 +20,8 @@ import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-
 import PageAura from "../../components/page-aura.jsx";
 import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
 
+import { map, toNumber, trim } from "lodash";
+
 const tone = ONBOARDING_ACCENTS.green;
 const workoutCounts = [0, 1, 2, 3, 4, 5, 6, 7];
 const workoutExperiences = ["beginner", "intermediate", "advanced"];
@@ -39,7 +41,7 @@ const OptionGroup = ({ icon: Icon, label, options, value, onChange, tKey }) => (
       <p className="text-sm font-bold">{label}</p>
     </div>
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-      {options.map((option) => {
+      {map(options, (option) => {
         const active = String(value) === String(option);
         return (
           <button
@@ -100,7 +102,7 @@ const Index = () => {
   }, [completedUserOnboardingSteps, setFields]);
 
   const handleNext = React.useCallback(() => {
-    const workoutCount = Number(weeklyWorkoutCount);
+    const workoutCount = toNumber(weeklyWorkoutCount);
     if (
       !Number.isInteger(workoutCount) ||
       workoutCount < 0 ||
@@ -115,9 +117,9 @@ const Index = () => {
       return;
     }
 
-    const sleep = String(sleepHours ?? "").trim();
+    const sleep = trim(String(sleepHours ?? ""));
     if (sleep) {
-      const sleepNumber = Number(sleep);
+      const sleepNumber = toNumber(sleep);
       if (!Number.isFinite(sleepNumber) || sleepNumber < 0 || sleepNumber > 16) {
         setError(t("onboarding.lifestyle.errors.sleepHours"));
         return;
@@ -288,7 +290,7 @@ const Index = () => {
               </p>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              {[false, true].map((value) => {
+              {map([false, true], (value) => {
                 const active = Boolean(playsFootball) === value;
                 return (
                   <button

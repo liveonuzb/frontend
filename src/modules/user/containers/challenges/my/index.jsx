@@ -1,5 +1,5 @@
 import React from "react";
-import { get, includes, trim } from "lodash";
+import { get, includes, trim, filter, find, isArray, map, some } from "lodash";
 import { Link, useNavigate } from "react-router";
 import { CompassIcon, PlusIcon, TrophyIcon } from "lucide-react";
 import PageTransition from "@/components/page-transition";
@@ -75,16 +75,14 @@ export default function ChallengeMyContainer() {
   }, [setBreadcrumbs]);
 
   const challengeList = React.useMemo(
-    () => (Array.isArray(challenges) ? challenges : []),
+    () => (isArray(challenges) ? challenges : []),
     [challenges],
   );
 
   const myJoined = React.useMemo(
     () =>
-      challengeList.filter((challenge) => {
-        const joinedByParticipants = (challenge.participants || []).some(
-          (item) => item.userId === user?.id,
-        );
+      filter(challengeList, (challenge) => {
+        const joinedByParticipants = some((challenge.participants || []), (item) => item.userId === user?.id);
         const matchesStatus = filter === "ALL" || challenge.status === filter;
         return matchesStatus && Boolean(challenge.isJoined || joinedByParticipants);
       }),
@@ -93,7 +91,7 @@ export default function ChallengeMyContainer() {
 
   const myCreated = React.useMemo(
     () =>
-      challengeList.filter((challenge) => {
+      filter(challengeList, (challenge) => {
         const creatorId =
           get(challenge, "creator.id") || get(challenge, "creator.userId");
         const matchesStatus = filter === "ALL" || challenge.status === filter;
@@ -149,7 +147,7 @@ export default function ChallengeMyContainer() {
             onValueChange={(value) => value && setFilter(value)}
             className="min-w-max"
           >
-            {FILTERS.map((item) => (
+            {map(FILTERS, (item) => (
               <ToggleGroupItem
                 key={item.value}
                 value={item.value}
@@ -162,7 +160,7 @@ export default function ChallengeMyContainer() {
 
         {isLoading ? (
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {Array.from({ length: 4 }).map((_, index) => (
+            {map(Array.from({ length: 4 }), (_, index) => (
               <Skeleton key={index} className="aspect-[4/5]" />
             ))}
           </div>
@@ -174,7 +172,7 @@ export default function ChallengeMyContainer() {
               <h2 className="text-lg font-black">Qatnashayotganlarim</h2>
               {myJoined.length ? (
                 <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                  {myJoined.map((challenge) => (
+                  {map(myJoined, (challenge) => (
                     <ChallengeCard
                       key={challenge.id}
                       challenge={challenge}
@@ -194,7 +192,7 @@ export default function ChallengeMyContainer() {
                     <CardDescription>
                   {includes(["ACTIVE", "UPCOMING", "COMPLETED"], filter)
                     ? `${trim(
-                        FILTERS.find((item) => item.value === filter)?.label,
+                        find(FILTERS, (item) => item.value === filter)?.label,
                       )} holatida qatnashayotgan chellenj yo'q.`
                     : "Hali hech qanday chellenjga qatnashmayapsiz."}
                     </CardDescription>
@@ -207,7 +205,7 @@ export default function ChallengeMyContainer() {
               <h2 className="text-lg font-black">Yaratganlarim</h2>
               {myCreated.length ? (
                 <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                  {myCreated.map((challenge) => (
+                  {map(myCreated, (challenge) => (
                     <ChallengeCard
                       key={challenge.id}
                       challenge={challenge}

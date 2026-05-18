@@ -1,5 +1,5 @@
 import React, { memo } from "react";
-import { clamp, times } from "lodash";
+import { clamp, times, map } from "lodash";
 import { FlameIcon } from "lucide-react";
 
 const GaugeProgress = memo(
@@ -120,7 +120,7 @@ const GaugeProgress = memo(
           )}
 
           {/* Ticks */}
-          {ticks.map((t, i) => (
+          {map(ticks, (t, i) => (
             <line
               key={i}
               x1={t.x1}

@@ -1,3 +1,4 @@
+import { toNumber } from "lodash";
 const createTone = ({
   pageTint,
   border,
@@ -106,7 +107,7 @@ export const getGenderTone = (gender) => {
 };
 
 export const getAgeTone = (ageValue) => {
-  const age = Number(ageValue);
+  const age = toNumber(ageValue);
   if (!Number.isFinite(age)) return ONBOARDING_TONES.balanced;
   if (age <= 24) return ONBOARDING_TONES.young;
   if (age >= 50) return ONBOARDING_TONES.mature;
@@ -114,7 +115,7 @@ export const getAgeTone = (ageValue) => {
 };
 
 export const getHeightTone = (heightValue) => {
-  const height = Number(heightValue);
+  const height = toNumber(heightValue);
   if (!Number.isFinite(height)) return ONBOARDING_TONES.balanced;
   if (height < 160) return ONBOARDING_TONES.young;
   if (height < 180) return ONBOARDING_TONES.balanced;

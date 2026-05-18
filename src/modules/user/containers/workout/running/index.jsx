@@ -35,9 +35,11 @@ import { cn } from "@/lib/utils";
 import { useBreadcrumbStore } from "@/store";
 import RunMapPanel from "./components/run-map-panel.jsx";
 
+import { isArray, map, reduce, toNumber, filter, take } from "lodash";
+
 const weekDays = ["M", "T", "W", "T", "F", "S", "S"];
 
-const safeNumber = (value) => Number(value) || 0;
+const safeNumber = (value) => toNumber(value) || 0;
 
 const formatDistanceSubLabel = (meters = 0) => {
   const kilometers = safeNumber(meters) / 1000;
@@ -65,20 +67,17 @@ const getWeekStart = (date) => {
 const getWeeklyRuns = (sessions = []) => {
   const start = getWeekStart(new Date());
 
-  return weekDays.map((label, index) => {
+  return map(weekDays, (label, index) => {
     const dayStart = new Date(start);
     dayStart.setDate(start.getDate() + index);
     const dayEnd = new Date(dayStart);
     dayEnd.setDate(dayStart.getDate() + 1);
-    const runs = sessions.filter((session) => {
+    const runs = filter(sessions, (session) => {
       const startedAt = new Date(session.startedAt);
       return startedAt >= dayStart && startedAt < dayEnd;
     });
-    const distanceMeters = runs.reduce(
-      (total, session) =>
-        total + safeNumber(session.metrics?.distanceMeters ?? 0),
-      0,
-    );
+    const distanceMeters = reduce(runs, (total, session) =>
+      total + safeNumber(session.metrics?.distanceMeters ?? 0), 0);
 
     return {
       label,
@@ -166,7 +165,7 @@ const MetricCard = ({ item }) => {
 };
 
 const WeeklyPanel = ({ weeklyRuns, t }) => {
-  const totalRuns = weeklyRuns.reduce((total, day) => total + day.runs, 0);
+  const totalRuns = reduce(weeklyRuns, (total, day) => total + day.runs, 0);
 
   return (
     <RunningPanel className="p-6">
@@ -181,7 +180,7 @@ const WeeklyPanel = ({ weeklyRuns, t }) => {
         </p>
       </div>
       <div className="mt-8 grid grid-cols-7 gap-2 text-center">
-        {weeklyRuns.map((day, index) => (
+        {map(weeklyRuns, (day, index) => (
           <div key={`${day.label}-${index}`} className="space-y-3">
             <p className="text-base font-medium text-white/[0.58]">
               {day.label}
@@ -246,7 +245,7 @@ const RecentRunsPanel = ({ sessions, t }) => (
       </div>
     ) : (
       <div className="mt-6 space-y-3">
-        {sessions.slice(0, 3).map((session) => (
+        {map(take(sessions, 3), (session) => (
           <Link
             key={session.workoutSessionId}
             to={`/user/workout/running/${session.workoutSessionId}`}
@@ -312,7 +311,7 @@ const RunningPage = () => {
     ? {
         ...recoverySession,
         points: [
-          ...(Array.isArray(recoverySession.points)
+          ...(isArray(recoverySession.points)
             ? recoverySession.points
             : []),
           ...queuedActivePoints,
@@ -321,9 +320,9 @@ const RunningPage = () => {
     : null;
   const previewSession =
     activePreviewSession ?? latestSessionDetail ?? latestSession ?? null;
-  const recentSessions = sessions.slice(0, 3);
+  const recentSessions = take(sessions, 3);
   const weeklyRuns = getWeeklyRuns(sessions);
-  const previewPoints = Array.isArray(previewSession?.points)
+  const previewPoints = isArray(previewSession?.points)
     ? previewSession.points
     : [];
   const previewPolyline = previewSession?.route?.polyline ?? null;
@@ -552,7 +551,7 @@ const RunningPage = () => {
         </RunningPanel>
 
         <section className="mt-7 grid grid-cols-2 gap-3 sm:gap-5">
-          {metricCards(stats, t).map((item) => (
+          {map(metricCards(stats, t), (item) => (
             <MetricCard key={item.label} item={item} />
           ))}
         </section>

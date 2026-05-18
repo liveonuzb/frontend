@@ -1,5 +1,5 @@
 import React from "react";
-import { isEqual } from "lodash";
+import { isEqual, find, isArray, map, toNumber } from "lodash";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
@@ -79,7 +79,7 @@ const HealthTabSkeleton = () => (
         <Skeleton className="h-9 w-72 rounded-2xl" />
         <Skeleton className="h-5 w-full max-w-xl rounded-lg" />
         <div className="grid gap-2 sm:grid-cols-3">
-          {[0, 1, 2].map((item) => (
+          {map([0, 1, 2], (item) => (
             <Skeleton key={item} className="h-14 rounded-2xl" />
           ))}
         </div>
@@ -90,7 +90,7 @@ const HealthTabSkeleton = () => (
       <CardContent className="space-y-4 p-5">
         <Skeleton className="h-4 w-24 rounded-full" />
         <div className="flex gap-2">
-          {[0, 1, 2].map((item) => (
+          {map([0, 1, 2], (item) => (
             <Skeleton key={item} className="h-11 w-28 rounded-full" />
           ))}
         </div>
@@ -99,13 +99,13 @@ const HealthTabSkeleton = () => (
     </Card>
 
     <div className="grid gap-3 md:grid-cols-2">
-      {[0, 1, 2, 3].map((item) => (
+      {map([0, 1, 2, 3], (item) => (
         <Skeleton key={item} className="h-36 rounded-[24px]" />
       ))}
     </div>
 
     <div className="space-y-3">
-      {[0, 1, 2].map((item) => (
+      {map([0, 1, 2], (item) => (
         <Skeleton key={item} className="h-48 rounded-[28px]" />
       ))}
     </div>
@@ -421,7 +421,7 @@ const WeightTrendCard = ({ weightSummary, bars, goalTheme, t }) => {
 
           {bars.length ? (
             <div className="flex items-end gap-2">
-              {bars.map((bar) => (
+              {map(bars, (bar) => (
                 <div key={bar.date} className="flex flex-1 flex-col items-center gap-2">
                   <div className="flex h-24 items-end">
                     <motion.div
@@ -459,10 +459,10 @@ const WeightTrendCard = ({ weightSummary, bars, goalTheme, t }) => {
 };
 
 const HydrationCard = ({ waterSummary, periodDays, t }) => {
-  const completionRate = Number(waterSummary?.completionRate) || 0;
-  const averageMl = Number(waterSummary?.averageMl) || 0;
-  const daysGoalMet = Number(waterSummary?.daysGoalMet) || 0;
-  const daysTracked = Number(waterSummary?.daysTracked) || 0;
+  const completionRate = toNumber(waterSummary?.completionRate) || 0;
+  const averageMl = toNumber(waterSummary?.averageMl) || 0;
+  const daysGoalMet = toNumber(waterSummary?.daysGoalMet) || 0;
+  const daysTracked = toNumber(waterSummary?.daysTracked) || 0;
 
   return (
     <Card className="rounded-[28px] border-border/60 bg-card/80 shadow-sm">
@@ -524,8 +524,8 @@ const BodyChangesCard = ({ items, t }) => (
 
       {items.length ? (
         <div className="space-y-3">
-          {items.map((item) => {
-            const change = Number(item.metric?.change) || 0;
+          {map(items, (item) => {
+            const change = toNumber(item.metric?.change) || 0;
             const meta = CHANGE_META[item.id] || {
               label: item.id,
               unit: "",
@@ -663,22 +663,22 @@ const HealthTabContent = ({
 }) => {
   const goalTheme = GOAL_THEME[selectedPreset] ?? GOAL_THEME.lose;
   const selectedPresetMeta =
-    PRESET_OPTIONS.find((preset) => preset.id === selectedPreset) ??
+    find(PRESET_OPTIONS, (preset) => preset.id === selectedPreset) ??
     PRESET_OPTIONS[0];
   const recommendedMatchesCurrent =
     form.goal === selectedPreset &&
     isEqual(currentNumbers, recommendedNumbers) &&
-    Number(form.protein || 0) === Number(recommendedGoals.protein || 0) &&
-    Number(form.carbs || 0) === Number(recommendedGoals.carbs || 0) &&
-    Number(form.fat || 0) === Number(recommendedGoals.fat || 0) &&
-    Number(form.fiber || 0) === Number(recommendedGoals.fiber || 0) &&
-    Number(form.sleepHours || 0) === Number(recommendedGoals.sleepHours || 0) &&
-    Number(form.workoutMinutes || 0) ===
-      Number(recommendedGoals.workoutMinutes || 0);
+    toNumber(form.protein || 0) === toNumber(recommendedGoals.protein || 0) &&
+    toNumber(form.carbs || 0) === toNumber(recommendedGoals.carbs || 0) &&
+    toNumber(form.fat || 0) === toNumber(recommendedGoals.fat || 0) &&
+    toNumber(form.fiber || 0) === toNumber(recommendedGoals.fiber || 0) &&
+    toNumber(form.sleepHours || 0) === toNumber(recommendedGoals.sleepHours || 0) &&
+    toNumber(form.workoutMinutes || 0) ===
+      toNumber(recommendedGoals.workoutMinutes || 0);
   const statusDotClass = STATUS_DOT_CLASS[saveStatus];
   const healthSummary = healthReport?.summary ?? {};
   const waterSummary = waterAnalytics?.summary ?? {};
-  const hasTrackingData = Array.isArray(healthReport?.daily) && healthReport.daily.length > 0;
+  const hasTrackingData = isArray(healthReport?.daily) && healthReport.daily.length > 0;
   const actionItems = buildActionItems({
     goalPreset: selectedPreset,
     currentNumbers,
@@ -698,8 +698,8 @@ const HealthTabContent = ({
   );
   const weightBars = buildWeightTrendBars(healthReport?.weight?.trend ?? []);
   const bodyChanges = getBodyChangeHighlights(measurementsTrends, selectedPreset);
-  const trackedDays = Number(healthSummary?.daysTracked) || 0;
-  const caloriesGoalMet = Number(healthSummary?.caloriesGoalMet) || 0;
+  const trackedDays = toNumber(healthSummary?.daysTracked) || 0;
+  const caloriesGoalMet = toNumber(healthSummary?.caloriesGoalMet) || 0;
 
   return (
     <div className="space-y-4 pb-6">
@@ -825,7 +825,6 @@ const HealthTabContent = ({
           </div>
         </CardContent>
       </Card>
-
       <Card className="border-border/60 bg-card/80 shadow-sm">
         <CardContent className="space-y-5 p-5">
           <SectionHeader
@@ -839,7 +838,7 @@ const HealthTabContent = ({
           />
 
           <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {PRESET_OPTIONS.map((preset) => {
+            {map(PRESET_OPTIONS, (preset) => {
               const isActive = preset.id === selectedPreset;
 
               return (
@@ -886,7 +885,7 @@ const HealthTabContent = ({
                   className="rounded-full bg-background/80 px-3 text-xs text-muted-foreground"
                 >
                   {
-                    INTENSITY_OPTIONS.find((item) => item.id === selectedIntensity)
+                    find(INTENSITY_OPTIONS, (item) => item.id === selectedIntensity)
                       ?.label
                   }
                 </Badge>
@@ -909,7 +908,7 @@ const HealthTabContent = ({
                   className="[&_[data-slot=slider-range]]:bg-primary [&_[data-slot=slider-thumb]]:size-5 [&_[data-slot=slider-thumb]]:border-background [&_[data-slot=slider-thumb]]:bg-primary [&_[data-slot=slider-track]]:h-2.5 [&_[data-slot=slider-track]]:bg-muted"
                 />
                 <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-                  {INTENSITY_OPTIONS.map((item) => (
+                  {map(INTENSITY_OPTIONS, (item) => (
                     <span
                       key={item.id}
                       className={cn(
@@ -965,7 +964,6 @@ const HealthTabContent = ({
           </div>
         </CardContent>
       </Card>
-
       <section className="space-y-3">
         <SectionHeader
           eyebrow={t("profile.health.actionsEyebrow", {
@@ -981,12 +979,11 @@ const HealthTabContent = ({
         />
 
         <div className="grid gap-3 md:grid-cols-2">
-          {actionItems.map((item) => (
+          {map(actionItems, (item) => (
             <ActionCard key={item.id} item={item} />
           ))}
         </div>
       </section>
-
       <section className="space-y-3">
         <SectionHeader
           eyebrow={t("profile.health.targetsEyebrow", {
@@ -1113,7 +1110,6 @@ const HealthTabContent = ({
           />
         </div>
       </section>
-
       <section className="space-y-3">
         <SectionHeader
           eyebrow={t("profile.health.progressEyebrow", {
@@ -1128,7 +1124,7 @@ const HealthTabContent = ({
           })}
           action={
             <div className="flex items-center gap-1.5">
-              {PERIOD_OPTIONS.map((option) => (
+              {map(PERIOD_OPTIONS, (option) => (
                 <Button
                   key={option.value}
                   type="button"
@@ -1146,14 +1142,14 @@ const HealthTabContent = ({
 
         {insightsLoading ? (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-            {[0, 1, 2, 3, 4].map((item) => (
+            {map([0, 1, 2, 3, 4], (item) => (
               <Skeleton key={item} className="h-36 rounded-[22px]" />
             ))}
           </div>
         ) : hasTrackingData ? (
           <>
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-              {progressMetrics.map((item) => (
+              {map(progressMetrics, (item) => (
                 <ProgressCard key={item.id} item={item} />
               ))}
             </div>
@@ -1318,12 +1314,12 @@ export const HealthTab = ({ embedded = false }) => {
     vibrateSoft();
     setForm((current) => {
       const nextValue = clampMetricValue(
-        (Number(current[key]) || 0) + delta,
+        (toNumber(current[key]) || 0) + delta,
         min,
         max,
       );
 
-      if (nextValue === Number(current[key])) {
+      if (nextValue === toNumber(current[key])) {
         return current;
       }
 

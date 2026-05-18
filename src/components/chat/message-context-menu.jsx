@@ -8,14 +8,6 @@ import {
   PinIcon,
   CopyIcon,
   BookmarkIcon,
-  NotebookPenIcon,
-  ListTodoIcon,
-  ClipboardCheckIcon,
-  ReceiptTextIcon,
-  BanknoteIcon,
-  UtensilsIcon,
-  DumbbellIcon,
-  CalendarPlusIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isChatFeatureEnabled } from "@/modules/chat/lib/chat-feature-flags.js";
@@ -42,21 +34,9 @@ const baseMenuItems = [
   },
 ];
 
-const coachShortcutItems = [
-  { action: "coach:note", label: "Note yaratish", icon: NotebookPenIcon },
-  { action: "coach:task", label: "Task yaratish", icon: ListTodoIcon },
-  { action: "coach:check_in", label: "Check-in request", icon: ClipboardCheckIcon },
-  { action: "coach:invoice", label: "Invoice yaratish", icon: ReceiptTextIcon },
-  { action: "coach:payment_reminder", label: "Payment reminder", icon: BanknoteIcon },
-  { action: "coach:meal_feedback", label: "Meal feedback", icon: UtensilsIcon },
-  { action: "coach:workout_feedback", label: "Workout feedback", icon: DumbbellIcon },
-  { action: "coach:session_booking", label: "Session booking", icon: CalendarPlusIcon },
-];
-
 export default function MessageContextMenu({
   position,
   isMe,
-  canUseCoachActions = false,
   onAction,
   onClose,
 }) {
@@ -96,8 +76,6 @@ export default function MessageContextMenu({
       (!item.feature || isChatFeatureEnabled(item.feature)) &&
       (item.always || (item.meOnly && isMe))
   );
-  const visibleCoachItems = canUseCoachActions ? coachShortcutItems : [];
-
   const renderItem = (item) => {
     const Icon = item.icon;
     return (
@@ -135,12 +113,6 @@ export default function MessageContextMenu({
       aria-label="Xabar amallar menyusi"
     >
       {map(visibleBaseItems, renderItem)}
-      {visibleCoachItems.length > 0 && (
-        <>
-          <div className="my-1 h-px bg-border" />
-          {map(visibleCoachItems, renderItem)}
-        </>
-      )}
     </div>
   );
 }

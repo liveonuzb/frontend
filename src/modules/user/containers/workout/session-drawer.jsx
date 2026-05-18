@@ -20,6 +20,10 @@ import {
   size,
   isEmpty,
   join,
+  forEach,
+  toNumber,
+  values as lodashValues,
+  parseInt as lodashParseInt,
 } from "lodash";
 import { toast } from "sonner";
 import {
@@ -190,10 +194,10 @@ const ExerciseCard = ({
           trackingType,
           setIndex: i,
           done: true,
-          reps: parseInt(get(newSets, `[${i}].reps`)) || 0,
-          weight: parseFloat(get(newSets, `[${i}].weight`)) || 0,
-          durationSeconds: parseInt(get(newSets, `[${i}].durationSeconds`)) || 0,
-          distanceMeters: parseInt(get(newSets, `[${i}].distanceMeters`)) || 0,
+          reps: lodashParseInt(get(newSets, `[${i}].reps`)) || 0,
+          weight: toNumber(get(newSets, `[${i}].weight`)) || 0,
+          durationSeconds: lodashParseInt(get(newSets, `[${i}].durationSeconds`)) || 0,
+          distanceMeters: lodashParseInt(get(newSets, `[${i}].distanceMeters`)) || 0,
           rest: getExerciseRestSeconds(exercise),
         });
       }
@@ -207,10 +211,10 @@ const ExerciseCard = ({
           trackingType,
           setIndex: i,
           done: false,
-          reps: parseInt(get(newSets, `[${i}].reps`)) || 0,
-          weight: parseFloat(get(newSets, `[${i}].weight`)) || 0,
-          durationSeconds: parseInt(get(newSets, `[${i}].durationSeconds`)) || 0,
-          distanceMeters: parseInt(get(newSets, `[${i}].distanceMeters`)) || 0,
+          reps: lodashParseInt(get(newSets, `[${i}].reps`)) || 0,
+          weight: toNumber(get(newSets, `[${i}].weight`)) || 0,
+          durationSeconds: lodashParseInt(get(newSets, `[${i}].durationSeconds`)) || 0,
+          distanceMeters: lodashParseInt(get(newSets, `[${i}].distanceMeters`)) || 0,
           rest: getExerciseRestSeconds(exercise),
         });
       }
@@ -507,7 +511,6 @@ const ExerciseCard = ({
           </div>
         </div>
       </div>
-
       {isExpanded && (
         <div className="space-y-4 p-4 pt-3">
           <div
@@ -555,7 +558,7 @@ const ExerciseCard = ({
               {map(trackingFields, (field) => (
                 <NumberField
                   key={get(field, "key")}
-                  value={Number(get(set, get(field, "key"))) || undefined}
+                  value={toNumber(get(set, get(field, "key"))) || undefined}
                   onValueChange={(val) => updateSet(i, get(field, "key"), val)}
                   disabled={get(set, "done")}
                   min={get(field, "min")}
@@ -628,7 +631,7 @@ export default function SessionDrawer({
   const deferredSearch = useDeferredValue(toLower(trim(search)));
 
   const { data: exercisesData } = useGetQuery({
-    url: "/coach/exercises",
+    url: "/user/workout/plans/exercises",
     params: deferredSearch ? { search: deferredSearch } : undefined,
     queryProps: {
       queryKey: ["workout-exercises", "session-library", deferredSearch],
@@ -710,7 +713,7 @@ export default function SessionDrawer({
     if (!open) return;
     const initial = {};
     const prog = {};
-    schedule.forEach((day, idx) => {
+    forEach(schedule, (day, idx) => {
       initial[idx] = map(get(day, "exercises") || [], (ex) => {
         const matchedExercise = find(
           exerciseCatalog,
@@ -876,7 +879,7 @@ export default function SessionDrawer({
     const trackingType = normalizeWorkoutTrackingType(
       get(exercise, "trackingType"),
     );
-    const defaultSets = max([1, Number(get(exercise, "defaultSets") || 1)]);
+    const defaultSets = max([1, toNumber(get(exercise, "defaultSets") || 1)]);
     const newEx = {
       id: get(exercise, "id", null),
       name: get(exercise, "name"),
@@ -980,7 +983,7 @@ export default function SessionDrawer({
     const durationMinutes = max([1, Math.round(elapsed / 60)]);
     const estimatedCalories = Math.round(durationMinutes * 6.5);
     const effectiveDateKey = dateKey || getTodayKey();
-    const completedSetEntries = Object.values(completedSets);
+    const completedSetEntries = lodashValues(completedSets);
 
     if (get(completedSetEntries, "length") === 0) {
       toast.error("Kamida 1 ta setni bajarilgan deb belgilang");
@@ -1020,32 +1023,29 @@ export default function SessionDrawer({
             undefined,
           entries: map(completedExerciseSets, (set) => ({
             sets: 1,
-            reps: Number(get(set, "reps") || 0),
-            weight: Number(get(set, "weight") || 0),
-            durationSeconds: Number(get(set, "durationSeconds") || 0),
-            distanceMeters: Number(get(set, "distanceMeters") || 0),
+            reps: toNumber(get(set, "reps") || 0),
+            weight: toNumber(get(set, "weight") || 0),
+            durationSeconds: toNumber(get(set, "durationSeconds") || 0),
+            distanceMeters: toNumber(get(set, "distanceMeters") || 0),
           })),
         },
       ];
     });
 
-    const totalTrackedDurationSeconds = exerciseLogs.reduce(
-      (sum, item) =>
-        sum +
-        reduce(
-          get(item, "entries", []),
-          (entrySum, entry) =>
-            entrySum + Number(get(entry, "durationSeconds") || 0),
-          0,
-        ),
-      0,
-    );
+    const totalTrackedDurationSeconds = reduce(exerciseLogs, (sum, item) =>
+      sum +
+      reduce(
+        get(item, "entries", []),
+        (entrySum, entry) =>
+          entrySum + toNumber(get(entry, "durationSeconds") || 0),
+        0,
+      ), 0);
     let remainingDuration = durationMinutes;
     let remainingCalories = estimatedCalories;
     const workoutLogs = map(exerciseLogs, (item, index) => {
       const trackedDurationSeconds = reduce(
         get(item, "entries", []),
-        (sum, entry) => sum + Number(get(entry, "durationSeconds") || 0),
+        (sum, entry) => sum + toNumber(get(entry, "durationSeconds") || 0),
         0,
       );
       const explicitDurationMinutes =
@@ -1409,3 +1409,5 @@ export default function SessionDrawer({
     </Drawer>
   );
 }
+
+

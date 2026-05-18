@@ -1,5 +1,5 @@
 import React from "react";
-import { get, map } from "lodash";
+import { get, map, isArray, toNumber } from "lodash";
 import { BarChart3Icon, DropletIcon, CheckCircleIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -28,7 +28,7 @@ export default function WaterAnalyticsSection({ days = 7 }) {
       <div className="rounded-[28px] border bg-card p-5 shadow-sm sm:p-6">
         <Skeleton className="mb-4 h-5 w-32 rounded-lg" />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[0, 1, 2, 3].map((i) => (
+          {map([0, 1, 2, 3], (i) => (
             <Skeleton key={i} className="h-20 rounded-[18px]" />
           ))}
         </div>
@@ -42,8 +42,8 @@ export default function WaterAnalyticsSection({ days = 7 }) {
     ...EMPTY_ANALYTICS_SUMMARY,
     ...(get(analytics, "summary", {}) || {}),
   };
-  const daily = Array.isArray(analytics?.daily) ? analytics.daily : [];
-  const goalMl = Math.max(Number(analytics?.goalMl) || 0, 1);
+  const daily = isArray(analytics?.daily) ? analytics.daily : [];
+  const goalMl = Math.max(toNumber(analytics?.goalMl) || 0, 1);
 
   return (
     <section className="rounded-[28px] border bg-card p-5 shadow-sm sm:p-6">
@@ -58,7 +58,7 @@ export default function WaterAnalyticsSection({ days = 7 }) {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <StatBox
             label="O'rtacha"
-            value={`${Math.round((Number(summary.averageMl || 0) / 100)) / 10} L`}
+            value={`${Math.round((toNumber(summary.averageMl || 0) / 100)) / 10} L`}
             hint="kunlik"
           />
           <StatBox
@@ -85,7 +85,7 @@ export default function WaterAnalyticsSection({ days = 7 }) {
             </p>
             <div className="space-y-1.5">
               {map(daily, (day, index) => {
-                const totalMl = Number(day?.totalMl) || 0;
+                const totalMl = toNumber(day?.totalMl) || 0;
                 const dayKey =
                   typeof day?.date === "string" && day.date
                     ? day.date

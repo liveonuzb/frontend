@@ -1,8 +1,7 @@
 import React from "react";
 import { useNavigate, Outlet, useMatch } from "react-router";
 import {
-  chain,
-  filter as lodashFilter,
+  toPairs, filter as lodashFilter,
   find,
   findIndex,
   get,
@@ -14,6 +13,11 @@ import {
   pickBy,
   trim,
   values,
+  forEach,
+  fromPairs,
+  take,
+  toUpper,
+  toNumber,
 } from "lodash";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
 import {
@@ -70,7 +74,7 @@ const getMutationErrorMessage = (error, fallback) => {
   const dependencySummary = response?.dependencySummary;
   const baseMessage = isArray(message) ? message.join(", ") : message;
 
-  return [baseMessage || fallback, dependencySummary].filter(Boolean).join(" ");
+  return lodashFilter([baseMessage || fallback, dependencySummary], Boolean).join(" ");
 };
 
 const WORKOUTS_QUERY_KEY = ["admin-workouts"];
@@ -140,7 +144,7 @@ const Index = () => {
 
   const apiParams = React.useMemo(() => {
     const p = {};
-    Object.entries(queryParams).forEach(([key, value]) => {
+    forEach(toPairs(queryParams), ([key, value]) => {
       if (value === "" || value === null || value === undefined || value === "all") return;
       if (key === "pageSize") { p.pageSize = value; }
       else if (key === "q" || key === "search") { p.query = value; }
@@ -352,12 +356,7 @@ const Index = () => {
   );
   const selectedWorkoutIds = React.useMemo(
     () =>
-      chain(rowSelection)
-        .entries()
-        .filter(([, selected]) => Boolean(selected))
-        .map(([id]) => Number(id))
-        .filter((id) => Number.isInteger(id))
-        .value(),
+      lodashFilter(lodashMap(lodashFilter(toPairs(rowSelection), ([, selected]) => Boolean(selected)), ([id]) => toNumber(id)), (id) => Number.isInteger(id)),
     [rowSelection],
   );
   const selectedWorkoutCount = selectedWorkoutIds.length;
@@ -374,31 +373,27 @@ const Index = () => {
     if (!translatingWorkout) return;
 
     setTranslationForm(
-      Object.fromEntries(
-        lodashMap(activeLanguages, (language) => [
+      fromPairs(lodashMap(activeLanguages, (language) => [
+        language.code,
+        resolveLabel(
+          translatingWorkout?.translations,
+          translatingWorkout?.name ?? "",
           language.code,
-          resolveLabel(
-            translatingWorkout?.translations,
-            translatingWorkout?.name ?? "",
-            language.code,
-          ),
-        ]),
-      ),
+        ),
+      ])),
     );
   }, [activeLanguages, translatingWorkout]);
 
   const openTranslationsDrawer = (workout) => {
     setTranslationForm(
-      Object.fromEntries(
-        lodashMap(activeLanguages, (language) => [
+      fromPairs(lodashMap(activeLanguages, (language) => [
+        language.code,
+        resolveLabel(
+          workout?.translations,
+          workout?.name ?? "",
           language.code,
-          resolveLabel(
-            workout?.translations,
-            workout?.name ?? "",
-            language.code,
-          ),
-        ]),
-      ),
+        ),
+      ])),
     );
     navigate(`translate/${workout.id}`);
   };
@@ -410,12 +405,10 @@ const Index = () => {
       String(get(translationForm, currentLanguage, "")),
     );
     const cleanedTranslations = pickBy(
-      Object.fromEntries(
-        lodashMap(translationForm || {}, (value, code) => [
-          code,
-          trim(String(value ?? "")),
-        ]),
-      ),
+      fromPairs(lodashMap(translationForm || {}, (value, code) => [
+        code,
+        trim(String(value ?? "")),
+      ])),
       Boolean,
     );
     const payload = {
@@ -844,7 +837,6 @@ const Index = () => {
           </Button>
         </div>
       </div>
-
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <Filter
           filterFields={filterFields}
@@ -853,7 +845,6 @@ const Index = () => {
           className="flex-1"
         />
       </div>
-
       <DataGrid
         table={table}
         isLoading={isLoading}
@@ -886,7 +877,6 @@ const Index = () => {
           />
         </div>
       </DataGrid>
-
       {selectedWorkoutCount > 0 ? (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-4">
           <div className="pointer-events-auto flex w-full max-w-6xl flex-wrap items-center gap-2 rounded-2xl border bg-background/95 px-4 py-3 shadow-2xl backdrop-blur">
@@ -979,9 +969,7 @@ const Index = () => {
           </div>
         </div>
       ) : null}
-
       <Outlet />
-
       <Drawer
         open={Boolean(importPreview)}
         onOpenChange={(open) => {
@@ -999,19 +987,17 @@ const Index = () => {
             </DrawerDescription>
           </DrawerHeader>
           <div className="space-y-3 overflow-y-auto px-4 pb-4">
-            {(get(importPreview, "errors", []) ?? []).slice(0, 20).map(
-              (error, index) => (
-                <div
-                  key={`${error.rowNumber}-${index}`}
-                  className="rounded-xl border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm"
-                >
-                  <p className="font-medium">
-                    Row {error.rowNumber}: {error.name || error.id || "-"}
-                  </p>
-                  <p className="text-muted-foreground">{error.error}</p>
-                </div>
-              ),
-            )}
+            {lodashMap(take(get(importPreview, "errors", []) ?? [], 20), (error, index) => (
+              <div
+                key={`${error.rowNumber}-${index}`}
+                className="rounded-xl border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm"
+              >
+                <p className="font-medium">
+                  Row {error.rowNumber}: {error.name || error.id || "-"}
+                </p>
+                <p className="text-muted-foreground">{error.error}</p>
+              </div>
+            ))}
             {get(importPreview, "errors", []).length > 20 ? (
               <p className="text-xs text-muted-foreground">
                 Yana {get(importPreview, "errors", []).length - 20} ta xato
@@ -1026,7 +1012,6 @@ const Index = () => {
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
-
       <Drawer
         open={translationsDrawerOpen}
         onOpenChange={(open) => {
@@ -1072,7 +1057,7 @@ const Index = () => {
                       ? `${currentLanguageMeta.flag} `
                       : ""}
                     {currentLanguageMeta?.name ??
-                      currentLanguage.toUpperCase()}
+                      toUpper(currentLanguage)}
                     . Shu til qiymati saqlansa, asosiy nom ham yangilanadi.
                   </p>
                 </div>
@@ -1120,7 +1105,6 @@ const Index = () => {
           </div>
         </DrawerContent>
       </Drawer>
-
       <Drawer
         open={bulkCategoryDrawerOpen}
         onOpenChange={(open) => {
@@ -1196,7 +1180,6 @@ const Index = () => {
           </div>
         </DrawerContent>
       </Drawer>
-
       <DeleteAlert
         workout={workoutToDelete}
         open={Boolean(workoutToDelete)}
@@ -1204,7 +1187,6 @@ const Index = () => {
         onConfirm={handleDelete}
         isDeleting={isDeleting}
       />
-
       <HardDeleteAlert
         target={hardDeleteTarget}
         open={Boolean(hardDeleteTarget)}

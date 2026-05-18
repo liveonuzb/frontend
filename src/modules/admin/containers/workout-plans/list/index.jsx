@@ -1,6 +1,6 @@
 import React from "react";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { get, isEqual } from "lodash";
+import { get, isEqual, filter, isArray, keys, trim } from "lodash";
 import { toast } from "sonner";
 import { useMatch, useNavigate } from "react-router";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
@@ -126,16 +126,16 @@ const Index = () => {
   } = useWorkoutPlanTemplateMutations();
 
   const safeLanguages = React.useMemo(
-    () => (Array.isArray(languages) ? languages : []),
+    () => (isArray(languages) ? languages : []),
     [languages],
   );
   const safeTemplates = React.useMemo(
-    () => (Array.isArray(templates) ? templates : []),
+    () => (isArray(templates) ? templates : []),
     [templates],
   );
 
   const activeLanguages = React.useMemo(
-    () => safeLanguages.filter((language) => language.isActive !== false),
+    () => filter(safeLanguages, (language) => language.isActive !== false),
     [safeLanguages],
   );
   const languageCount = Math.max(activeLanguages.length, 1);
@@ -241,7 +241,7 @@ const Index = () => {
   );
 
   const handleContinueToBuilder = React.useCallback(() => {
-    const nextName = String(form.name ?? "").trim();
+    const nextName = trim(String(form.name ?? ""));
 
     if (!nextName) {
       toast.error("Reja nomini kiriting");
@@ -251,7 +251,7 @@ const Index = () => {
     setBuilderInitialData({
       id: editingTemplate?.id || `admin-workout-template-${Date.now()}`,
       name: nextName,
-      description: String(form.description ?? "").trim(),
+      description: trim(String(form.description ?? "")),
       difficulty: form.difficulty,
       days: editingTemplate?.days ?? 28,
       daysPerWeek: editingTemplate?.daysPerWeek ?? 0,
@@ -267,8 +267,8 @@ const Index = () => {
   const handleBuilderSave = React.useCallback(
     async (plan) => {
       const payload = {
-        name: String(plan.name ?? "").trim(),
-        description: String(plan.description ?? "").trim() || undefined,
+        name: trim(String(plan.name ?? "")),
+        description: trim(String(plan.description ?? "")) || undefined,
         difficulty: form.difficulty,
         days: plan.days,
         daysPerWeek: plan.daysPerWeek,
@@ -276,7 +276,7 @@ const Index = () => {
         source: "admin",
         isActive: form.isActive,
         approvalStatus: form.approvalStatus,
-        approvalReason: String(form.approvalReason ?? "").trim() || undefined,
+        approvalReason: trim(String(form.approvalReason ?? "")) || undefined,
       };
 
       try {
@@ -321,21 +321,21 @@ const Index = () => {
     const nextTitles = cleanTranslations(translationForm.titles);
     const nextDescriptions = cleanTranslations(translationForm.descriptions);
     const localizedName =
-      String(nextTitles[currentLanguage] ?? "").trim() ||
+      trim(String(nextTitles[currentLanguage] ?? "")) ||
       resolveText(
         translatingTemplate.translations,
         translatingTemplate.name,
         currentLanguage,
       );
     const localizedDescription =
-      String(nextDescriptions[currentLanguage] ?? "").trim() ||
+      trim(String(nextDescriptions[currentLanguage] ?? "")) ||
       resolveText(
         translatingTemplate.descriptionTranslations,
         translatingTemplate.description,
         currentLanguage,
       );
 
-    if (!Object.keys(nextTitles).length) {
+    if (!keys(nextTitles).length) {
       toast.error("Kamida bitta til uchun nom kiriting");
       return;
     }

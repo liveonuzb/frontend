@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { isEqual } from "lodash";
+import { isEqual, map, filter, toUpper } from "lodash";
 import {
   BellOffIcon,
   DownloadIcon,
@@ -92,7 +92,7 @@ const BlockedUsersSection = () => {
       <CardContent className="p-6">
         {isLoading ? (
           <div className="space-y-3">
-            {Array.from({ length: 2 }).map((_, i) => (
+            {map(Array.from({ length: 2 }), (_, i) => (
               <Skeleton key={i} className="h-16 rounded-2xl" />
             ))}
           </div>
@@ -105,14 +105,11 @@ const BlockedUsersSection = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            {blocked.map((entry) => {
-              const fullName = [entry.firstName, entry.lastName]
-                .filter(Boolean)
+            {map(blocked, (entry) => {
+              const fullName = filter([entry.firstName, entry.lastName], Boolean)
                 .join(" ");
-              const initials = [entry.firstName?.[0], entry.lastName?.[0]]
-                .filter(Boolean)
-                .join("")
-                .toUpperCase();
+              const initials = toUpper(filter([entry.firstName?.[0], entry.lastName?.[0]], Boolean)
+                .join(""));
               return (
                 <div
                   key={entry.id}
@@ -188,7 +185,7 @@ const MutedUsersSection = () => {
       <CardContent className="p-6">
         {isLoading ? (
           <div className="space-y-3">
-            {Array.from({ length: 2 }).map((_, i) => (
+            {map(Array.from({ length: 2 }), (_, i) => (
               <Skeleton key={i} className="h-16 rounded-2xl" />
             ))}
           </div>
@@ -201,14 +198,11 @@ const MutedUsersSection = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            {muted.map((entry) => {
-              const fullName = [entry.firstName, entry.lastName]
-                .filter(Boolean)
+            {map(muted, (entry) => {
+              const fullName = filter([entry.firstName, entry.lastName], Boolean)
                 .join(" ");
-              const initials = [entry.firstName?.[0], entry.lastName?.[0]]
-                .filter(Boolean)
-                .join("")
-                .toUpperCase();
+              const initials = toUpper(filter([entry.firstName?.[0], entry.lastName?.[0]], Boolean)
+                .join(""));
               return (
                 <div
                   key={entry.id}
@@ -313,7 +307,7 @@ const PrivacyTabContent = ({
       <CardTitle className="text-xl font-semibold">{t("profile.tabs.privacy")}</CardTitle>
     </CardHeader>
     <CardContent className="space-y-3 p-6">
-      {getPrivacyOptions(t).map((option) => {
+      {map(getPrivacyOptions(t), (option) => {
         const Icon = option.icon;
 
         return (

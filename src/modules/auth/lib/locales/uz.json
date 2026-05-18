@@ -10,7 +10,6 @@
       "benefitCalories": "Kaloriya va ovqatlanishni kuzating",
       "benefitWater": "Suv iste'molini nazorat qiling",
       "benefitWorkouts": "Sport mashg'ulotlarini rejalashtiring",
-      "benefitAiCoach": "AI murabbiy maslahatlaridan foydalaning",
       "copyright": "© 2026 LiveOn. Barcha huquqlar himoyalangan.",
       "panelBadge": "AI-reja 60 soniyada",
       "panelPill": "AI-reja 60 soniyada",
@@ -158,9 +157,6 @@
       "workoutLabel": "KEYINGI MASHG'ULOT",
       "workoutValue": "Yuqori tana · 42m",
       "workoutMeta": "19:00",
-      "coachLabel": "LIVEON AI",
-      "coachValue": "«Bugungi reja tayyor»",
-      "coachMeta": "hozir",
       "panelCopyright": "© 2026 LiveOn."
     },
     "signIn": {

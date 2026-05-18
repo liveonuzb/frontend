@@ -1,23 +1,24 @@
+import { filter, orderBy, toNumber } from "lodash";
 export const formatPremiumPrice = (value, locale = "uz-UZ") =>
-  new Intl.NumberFormat(locale).format(Number(value) || 0);
+  new Intl.NumberFormat(locale).format(toNumber(value) || 0);
 
 export const getShortestPremiumPlan = (plans = []) => {
-  const comparablePlans = plans.filter(
-    (plan) => Number(plan?.durationDays) > 0 && Number(plan?.price) > 0,
-  );
+  const comparablePlans = filter(plans, (plan) => toNumber(plan?.durationDays) > 0 && toNumber(plan?.price) > 0);
 
   if (!comparablePlans.length) {
     return null;
   }
 
-  return [...comparablePlans].sort(
-    (left, right) => Number(left.durationDays) - Number(right.durationDays),
+  return orderBy(
+    comparablePlans,
+    [(plan) => toNumber(plan.durationDays)],
+    ["asc"],
   )[0];
 };
 
 export const getPlanMonthlyEquivalent = (plan) => {
-  const durationDays = Number(plan?.durationDays) || 0;
-  const price = Number(plan?.price) || 0;
+  const durationDays = toNumber(plan?.durationDays) || 0;
+  const price = toNumber(plan?.price) || 0;
 
   if (durationDays <= 30 || price <= 0) {
     return null;
@@ -27,10 +28,10 @@ export const getPlanMonthlyEquivalent = (plan) => {
 };
 
 export const getPlanSavings = (plan, basePlan) => {
-  const planDurationDays = Number(plan?.durationDays) || 0;
-  const baseDurationDays = Number(basePlan?.durationDays) || 0;
-  const planPrice = Number(plan?.price) || 0;
-  const basePrice = Number(basePlan?.price) || 0;
+  const planDurationDays = toNumber(plan?.durationDays) || 0;
+  const baseDurationDays = toNumber(basePlan?.durationDays) || 0;
+  const planPrice = toNumber(plan?.price) || 0;
+  const basePrice = toNumber(basePlan?.price) || 0;
 
   if (
     !basePlan ||

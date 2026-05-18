@@ -1,10 +1,10 @@
-import { get, join, map, take } from "lodash";
+import { get, join, map, sortBy, take, filter, isArray, toNumber, toUpper, split } from "lodash";
 import React from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import useGetQuery from "@/hooks/api/use-get-query";
-import usePostQuery from "@/hooks/api/use-post-query";
+import { useGetQuery } from "@/hooks/api";
+import { usePostQuery } from "@/hooks/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,36 +49,32 @@ const formatShortDate = (value) => {
 
 const getInvitationItems = (response) => {
   const payload = getApiResponseData(response, []);
-  return Array.isArray(payload) ? payload : get(payload, "items", []);
+  return isArray(payload) ? payload : get(payload, "items", []);
 };
 
 const getInvitationSignature = (invitations) =>
-  invitations
-    .map((invitation) => invitation?.id)
-    .filter(Boolean)
-    .sort()
-    .join(":");
+  join(sortBy(filter(map(invitations, (invitation) => invitation?.id), Boolean)), ":");
 
 const getStorageKey = (userId, invitationSignature) =>
   `${STORAGE_PREFIX}:${userId || "guest"}:${invitationSignature || "none"}`;
 
 const readLastDismissedAt = (key) => {
   if (!key || typeof window === "undefined") return 0;
-  const value = Number(window.localStorage.getItem(key));
+  const value = toNumber(window.localStorage.getItem(key));
   return Number.isFinite(value) ? value : 0;
 };
 
 const getInitials = (name = "U") =>
-  join(
+  toUpper(join(
     take(
-      map(String(name || "U").split(" "), (part) => part[0]),
+      map(split(String(name || "U"), " "), (part) => part[0]),
       2,
     ),
     "",
-  ).toUpperCase();
+  ));
 
 const getRewardPreview = (challenge) =>
-  Number(challenge?.rewardDetails?.previewRewardXp ?? challenge?.rewardXp ?? 0);
+  toNumber(challenge?.rewardDetails?.previewRewardXp ?? challenge?.rewardXp ?? 0);
 
 const formatReward = (challenge) => {
   const rewardPreview = getRewardPreview(challenge);

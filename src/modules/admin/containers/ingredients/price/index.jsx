@@ -42,6 +42,8 @@ import {
   regionalPriceSchema,
 } from "../components/utils.jsx";
 
+import { find, map, some, toNumber } from "lodash";
+
 const PricePage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -87,8 +89,8 @@ const PricePage = () => {
   React.useEffect(() => {
     if (!item) return;
     form.reset({
-      priceAmount: Number(item.priceAmount) || 0,
-      priceUnit: PRICE_UNITS.some((unit) => unit.value === item.priceUnit)
+      priceAmount: toNumber(item.priceAmount) || 0,
+      priceUnit: some(PRICE_UNITS, (unit) => unit.value === item.priceUnit)
         ? item.priceUnit
         : "kg",
       currency: item.currency || "UZS",
@@ -98,7 +100,7 @@ const PricePage = () => {
 
   const regionKey = regionalForm.watch("regionKey");
   React.useEffect(() => {
-    const region = PRICE_REGIONS.find((option) => option.value === regionKey);
+    const region = find(PRICE_REGIONS, (option) => option.value === regionKey);
     if (region && regionalForm.getValues("regionName") !== region.label) {
       regionalForm.setValue("regionName", region.label, {
         shouldDirty: true,
@@ -414,7 +416,7 @@ const PricePage = () => {
                   </Form>
                   <div className="mt-5 space-y-2">
                     {regionalPrices.length ? (
-                      regionalPrices.map((price) => (
+                      map(regionalPrices, (price) => (
                         <div
                           key={price.id}
                           className="flex items-center justify-between gap-3 rounded-2xl border bg-background p-3"
@@ -423,9 +425,7 @@ const PricePage = () => {
                             <div className="truncate text-sm font-semibold">
                               {price.regionName} -{" "}
                               {
-                                PRICE_SEASONS.find(
-                                  (season) => season.value === price.season,
-                                )?.label
+                                find(PRICE_SEASONS, (season) => season.value === price.season)?.label
                               }
                             </div>
                             <div className="mt-1 text-xs text-muted-foreground">

@@ -3,14 +3,14 @@ import { render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import DailyReport from "./daily-report.jsx";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 
 vi.mock("@/components/page-transition", () => ({
   default: ({ children }) => <>{children}</>,
 }));
 
-vi.mock("@/hooks/api/use-get-query", () => ({
-  default: vi.fn(),
+vi.mock("@/hooks/api", () => ({
+  useGetQuery: vi.fn(),
 }));
 
 vi.mock("@/store/breadcrumb-store", () => ({

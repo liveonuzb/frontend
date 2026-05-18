@@ -237,14 +237,13 @@ const Index = () => {
   return (
     <div className="relative flex h-full min-h-0 max-h-full flex-1 flex-col overflow-hidden pt-3 md:pt-8  px-5">
       <PageAura tone={activeTone} />
-
       <div className="relative z-10 flex h-full min-h-0 w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
         <OnboardingQuestion
           question={t("onboarding.dietRestrictions.question")}
         />
 
         <motion.div
-          key={`diet-meta-${selectedRestrictions.map((item) => item.value).join("-") || "empty"}`}
+          key={`diet-meta-${map(selectedRestrictions, (item) => item.value).join("-") || "empty"}`}
           className={cn(
             "mx-auto mb-3 w-full max-w-[320px] rounded-[20px] border bg-background/85 px-3 py-2 text-center backdrop-blur md:mb-4 md:max-w-[420px] md:rounded-[24px] md:px-4 md:py-3",
             activeTone.border,

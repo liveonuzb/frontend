@@ -9,13 +9,15 @@ import {
   DrawerBody,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 import useHealthGoals from "@/hooks/app/use-health-goals";
 import { useAuthStore } from "@/store";
 import { getApiResponseData } from "@/lib/api-response";
 import { cn } from "@/lib/utils";
 import { normalizeDateKey } from "./query-helpers.js";
 import { dailyReportQueryKey, getYesterdayKey } from "../report/report-helpers.js";
+
+import { map, split } from "lodash";
 
 /* ─────────────────────────────────────────────
    DAILY REVIEW DRAWER (Dashboard-only)
@@ -34,7 +36,7 @@ const parseClock = (value, fallback) => {
     typeof value === "string" && /^\d{1,2}:\d{2}$/.test(value)
       ? value
       : fallback;
-  const [h, m] = source.split(":").map(Number);
+  const [h, m] = map(split(source, ":"), Number);
   return h * 60 + m;
 };
 

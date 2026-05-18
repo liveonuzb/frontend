@@ -1,3 +1,4 @@
+import { find, includes, split, toLower, toNumber, trim } from "lodash";
 export const CHAT_ATTACHMENT_POLICY_VERSION = "chat-attachment-v1";
 export const CHAT_ATTACHMENT_SIGNED_URL_TTL_SECONDS = 60 * 60;
 
@@ -94,7 +95,7 @@ export const CHAT_ATTACHMENT_ACCEPT = CHAT_ATTACHMENT_POLICIES
     .join(",");
 
 export const formatChatAttachmentSize = (bytes) => {
-    const size = Number(bytes || 0);
+    const size = toNumber(bytes || 0);
     if (size < 1024) return `${size} B`;
     if (size < MB) return `${(size / 1024).toFixed(1)} KB`;
     return `${(size / MB).toFixed(1)} MB`;
@@ -147,7 +148,7 @@ export const validateChatAttachment = (file) => {
         };
     }
 
-    if (extension && !policy.extensions.includes(extension)) {
+    if (extension && !includes(policy.extensions, extension)) {
         return {
             ok: false,
             message: "Fayl kengaytmasi MIME turi bilan mos kelmadi.",
@@ -165,15 +166,14 @@ export const validateChatAttachment = (file) => {
 };
 
 export const getPolicyForFile = (file) => {
-    const mimeType = String(file?.type || "").toLowerCase();
-    return CHAT_ATTACHMENT_POLICIES.find((policy) =>
-        policy.mimeTypes.includes(mimeType),
-    );
+    const mimeType = toLower(String(file?.type || ""));
+    return find(CHAT_ATTACHMENT_POLICIES, (policy) =>
+        includes(policy.mimeTypes, mimeType));
 };
 
 function getFileExtension(name) {
-    const normalized = String(name || "").trim().toLowerCase();
-    const fileName = normalized.split(/[\\/]/).pop() || "";
-    if (!fileName.includes(".")) return "";
-    return fileName.split(".").pop().replace(/[^a-z0-9]/g, "");
+    const normalized = toLower(trim(String(name || "")));
+    const fileName = split(normalized, /[\\/]/).pop() || "";
+    if (!includes(fileName, ".")) return "";
+    return split(fileName, ".").pop().replace(/[^a-z0-9]/g, "");
 }

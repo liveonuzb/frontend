@@ -3,10 +3,10 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import CalorieGaugeWidget from "./calorie-gauge-widget.jsx";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 
-vi.mock("@/hooks/api/use-get-query", () => ({
-  default: vi.fn(() => ({ data: null })),
+vi.mock("@/hooks/api", () => ({
+  useGetQuery: vi.fn(() => ({ data: null })),
 }));
 
 describe("Dashboard CalorieGaugeWidget", () => {

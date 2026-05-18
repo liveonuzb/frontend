@@ -2,7 +2,21 @@
 import React from "react";
 import { addDays, differenceInCalendarDays, format } from "date-fns";
 import { useParams } from "react-router";
-import { find, get, values } from "lodash";
+import {
+  find,
+  get,
+  values as lodashValues,
+  fromPairs,
+  isArray,
+  map,
+  reduce,
+  some,
+  toNumber,
+  trim,
+  filter,
+  toPairs,
+  take,
+} from "lodash";
 import { toast } from "sonner";
 import { ArrowLeftIcon, CheckCircle2Icon, LoaderCircleIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -72,27 +86,26 @@ const createInitialForm = () => ({
 
 const resolveText = (translations, fallback, language) => {
   if (translations && typeof translations === "object") {
-    const direct = String(get(translations, language, "")).trim();
+    const direct = trim(String(get(translations, language, "")));
     if (direct) return direct;
 
-    const uzText = String(get(translations, "uz", "")).trim();
+    const uzText = trim(String(get(translations, "uz", "")));
     if (uzText) return uzText;
 
-    const firstValue = find(values(translations), (value) =>
-      String(value ?? "").trim(),
+    const firstValue = find(lodashValues(translations), (value) =>
+      trim(String(value ?? "")),
     );
-    if (firstValue) return String(firstValue).trim();
+    if (firstValue) return trim(String(firstValue));
   }
 
-  return String(fallback ?? "").trim();
+  return trim(String(fallback ?? ""));
 };
 
 const cleanTranslations = (translations = {}) =>
-  Object.fromEntries(
-    Object.entries(translations)
-      .map(([code, value]) => [code, String(value ?? "").trim()])
-      .filter(([code, value]) => Boolean(code) && Boolean(value)),
-  );
+  fromPairs(filter(map(
+    toPairs(translations),
+    ([code, value]) => [code, trim(String(value ?? ""))],
+  ), ([code, value]) => Boolean(code) && Boolean(value)));
 
 const toInputDate = (value, fallback) => {
   const date = value ? new Date(value) : null;
@@ -105,25 +118,25 @@ const toIsoDate = (value, endOfDay = false) => {
 };
 
 const parsePlaceRewards = (value) => {
-  const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
-  return [1, 2, 3].map((place) => ({
+  const source = value && typeof value === "object" && !isArray(value) ? value : {};
+  return map([1, 2, 3], (place) => ({
     place,
-    value: Number(source[String(place)] ?? source[place]) || [50, 30, 20][place - 1],
+    value: toNumber(source[String(place)] ?? source[place]) || [50, 30, 20][place - 1],
   }));
 };
 
 const buildPlaceRewards = (items) =>
-  items.slice(0, 3).reduce((result, item) => {
-    if (Number(item.value) > 0) result[String(item.place)] = Number(item.value);
+  reduce(take(items, 3), (result, item) => {
+    if (toNumber(item.value) > 0) result[String(item.place)] = toNumber(item.value);
     return result;
   }, {});
 
 const validateStep = (stepKey, form) => {
-  if (stepKey === "basic" && !form.title.trim()) {
+  if (stepKey === "basic" && !trim(form.title)) {
     throw new Error("Musobaqa nomini kiriting");
   }
 
-  if (stepKey === "metric" && (!Number(form.metricTarget) || Number(form.metricTarget) <= 0)) {
+  if (stepKey === "metric" && (!toNumber(form.metricTarget) || toNumber(form.metricTarget) <= 0)) {
     throw new Error("Maqsad qiymati 0 dan katta bo'lishi kerak");
   }
 
@@ -139,12 +152,12 @@ const validateStep = (stepKey, form) => {
   }
 
   if (stepKey === "reward" && form.rewardMode === "PLACE_XP") {
-    const rewards = form.placeRewards.slice(0, 3).map((item) => Number(item.value) || 0);
-    const total = rewards.reduce((sum, value) => sum + value, 0);
-    if (Number(form.joinFeeXp) <= 0) {
+    const rewards = map(take(form.placeRewards, 3), (item) => toNumber(item.value) || 0);
+    const total = reduce(rewards, (sum, value) => sum + value, 0);
+    if (toNumber(form.joinFeeXp) <= 0) {
       throw new Error("O'rin bo'yicha mukofot uchun kirish narxi 0 dan katta bo'lishi kerak");
     }
-    if (rewards.length !== 3 || rewards.some((value) => value <= 0)) {
+    if (rewards.length !== 3 || some(rewards, (value) => value <= 0)) {
       throw new Error("1, 2 va 3-o'rin foizlari 0 dan katta bo'lishi kerak");
     }
     if (total !== 100) {
@@ -157,37 +170,37 @@ const validateStep = (stepKey, form) => {
 };
 
 const buildPayload = (form, currentLanguage) => {
-  const title = form.title.trim();
+  const title = trim(form.title);
   if (!title) throw new Error("Musobaqa nomini kiriting");
 
   const payload = {
     title,
-    description: form.description.trim() || undefined,
+    description: trim(form.description) || undefined,
     translations: cleanTranslations({
       ...(form.translations || {}),
       [currentLanguage]: title,
     }),
     descriptionTranslations: cleanTranslations({
       ...(form.descriptionTranslations || {}),
-      ...(form.description.trim() ? { [currentLanguage]: form.description.trim() } : {}),
+      ...(trim(form.description) ? { [currentLanguage]: trim(form.description) } : {}),
     }),
     status: form.status || "UPCOMING",
     metricType: form.metricType,
     metricAggregation: form.metricAggregation,
-    metricTarget: Number(form.metricTarget),
+    metricTarget: toNumber(form.metricTarget),
     startDate: toIsoDate(form.startDate),
     endDate: toIsoDate(form.endDate, true),
     rewardMode: form.rewardMode,
-    joinFeeXp: Number(form.joinFeeXp) || 0,
-    maxParticipants: Number(form.maxParticipants) || null,
+    joinFeeXp: toNumber(form.joinFeeXp) || 0,
+    maxParticipants: toNumber(form.maxParticipants) || null,
   };
 
   if (form.uploadedImageId) payload.imageId = form.uploadedImageId;
 
   if (form.rewardMode === "FIXED_XP") {
-    payload.rewardXp = Number(form.rewardXp) || 0;
+    payload.rewardXp = toNumber(form.rewardXp) || 0;
   } else if (form.rewardMode === "PERCENT_OF_POOL") {
-    payload.rewardPercent = Number(form.rewardPercent) || 0;
+    payload.rewardPercent = toNumber(form.rewardPercent) || 0;
   } else {
     payload.placeRewards = buildPlaceRewards(form.placeRewards);
   }
@@ -226,16 +239,16 @@ const challengeToForm = (challenge, currentLanguage) => {
       challenge?.metricAggregation ||
       base.metricAggregation,
     metricTarget:
-      Number(challenge?.metricDetails?.target ?? challenge?.metricTarget) || base.metricTarget,
+      toNumber(challenge?.metricDetails?.target ?? challenge?.metricTarget) || base.metricTarget,
     startDate,
     endDate,
     durationDays: durationDays > 0 ? durationDays : null,
     rewardMode: challenge?.rewardMode || rewardDetails.mode || base.rewardMode,
-    rewardXp: Number(challenge?.rewardXp ?? rewardDetails.fixedXp) || base.rewardXp,
-    rewardPercent: Number(challenge?.rewardPercent ?? rewardDetails.percent) || base.rewardPercent,
+    rewardXp: toNumber(challenge?.rewardXp ?? rewardDetails.fixedXp) || base.rewardXp,
+    rewardPercent: toNumber(challenge?.rewardPercent ?? rewardDetails.percent) || base.rewardPercent,
     placeRewards: parsePlaceRewards(challenge?.placeRewards || rewardDetails.placeRewards),
-    joinFeeXp: Number(challenge?.joinFeeXp) || 0,
-    maxParticipants: Number(challenge?.maxParticipants) || 0,
+    joinFeeXp: toNumber(challenge?.joinFeeXp) || 0,
+    maxParticipants: toNumber(challenge?.maxParticipants) || 0,
   };
 };
 
@@ -287,12 +300,12 @@ const ChallengeBasicStep = ({ form, setForm, onImageChange, onImageRemove }) => 
         className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4"
         spacing={2}
       >
-        {[
+        {map([
           ["UPCOMING", "Boshlanmagan"],
           ["ACTIVE", "Faol"],
           ["COMPLETED", "Yakunlangan"],
           ["CANCELLED", "Bekor qilingan"],
-        ].map(([value, label]) => (
+        ], ([value, label]) => (
           <ToggleGroupItem
             key={value}
             value={value}
@@ -488,7 +501,7 @@ const EditChallengePage = () => {
                 {STEPS[stepIndex].label} · {stepIndex + 1}/{STEPS.length}
               </p>
               <div className="mt-3 flex gap-1.5">
-                {STEPS.map((step, index) => (
+                {map(STEPS, (step, index) => (
                   <span
                     key={step.key}
                     className={cn(
@@ -538,3 +551,6 @@ const EditChallengePage = () => {
 };
 
 export default EditChallengePage;
+
+
+

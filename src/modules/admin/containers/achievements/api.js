@@ -1,4 +1,13 @@
-import { get, join } from "lodash";
+import {
+  get,
+  join,
+  isArray,
+  map,
+  toLower,
+  trim,
+  toPairs,
+  parseInt as lodashParseInt,
+} from "lodash";
 
 export const ADMIN_ACHIEVEMENTS_QUERY_KEY = ["admin", "achievements"];
 
@@ -25,13 +34,9 @@ export const ACHIEVEMENT_METRIC_LABELS = {
   CHALLENGE_JOINED: "Challenge joined",
 };
 
-export const ACHIEVEMENT_CATEGORY_OPTIONS = Object.entries(
-  ACHIEVEMENT_CATEGORY_LABELS,
-).map(([value, label]) => ({ value, label }));
+export const ACHIEVEMENT_CATEGORY_OPTIONS = map(toPairs(ACHIEVEMENT_CATEGORY_LABELS), ([value, label]) => ({ value, label }));
 
-export const ACHIEVEMENT_METRIC_OPTIONS = Object.entries(
-  ACHIEVEMENT_METRIC_LABELS,
-).map(([value, label]) => ({ value, label }));
+export const ACHIEVEMENT_METRIC_OPTIONS = map(toPairs(ACHIEVEMENT_METRIC_LABELS), ([value, label]) => ({ value, label }));
 
 export const APP_MODE_OPTIONS = [
   { value: "madagascar", label: "Madagascar" },
@@ -90,7 +95,7 @@ export const normalizeAchievementForm = (achievement = {}, language = "uz") => (
 });
 
 const parseIntField = (value, label, minimum = 0) => {
-  const parsed = Number.parseInt(String(value ?? "").trim(), 10);
+  const parsed = lodashParseInt(trim(String(value ?? "")), 10);
 
   if (!Number.isFinite(parsed) || parsed < minimum) {
     throw new Error(`${label} noto'g'ri kiritildi.`);
@@ -100,9 +105,9 @@ const parseIntField = (value, label, minimum = 0) => {
 };
 
 export const buildAchievementPayload = (formData, language = "uz") => {
-  const key = String(formData.key ?? "").trim().toLowerCase();
-  const name = String(formData.name ?? "").trim();
-  const description = String(formData.description ?? "").trim();
+  const key = toLower(trim(String(formData.key ?? "")));
+  const name = trim(String(formData.name ?? ""));
+  const description = trim(String(formData.description ?? ""));
 
   if (!name) {
     throw new Error("Achievement nomi kiritilishi shart.");
@@ -122,9 +127,9 @@ export const buildAchievementPayload = (formData, language = "uz") => {
     descriptionTranslations: {
       [language]: description,
     },
-    imageMadagascarUrl: String(formData.imageMadagascarUrl ?? "").trim(),
-    imageZenUrl: String(formData.imageZenUrl ?? "").trim(),
-    imageFocusUrl: String(formData.imageFocusUrl ?? "").trim(),
+    imageMadagascarUrl: trim(String(formData.imageMadagascarUrl ?? "")),
+    imageZenUrl: trim(String(formData.imageZenUrl ?? "")),
+    imageFocusUrl: trim(String(formData.imageFocusUrl ?? "")),
     category: formData.category,
     metric: formData.metric,
     threshold: parseIntField(formData.threshold, "Threshold", 1),
@@ -136,7 +141,7 @@ export const buildAchievementPayload = (formData, language = "uz") => {
 export const resolveAchievementApiErrorMessage = (error, fallback) => {
   const message = error?.response?.data?.message;
 
-  if (Array.isArray(message)) {
+  if (isArray(message)) {
     return join(message, ", ");
   }
 

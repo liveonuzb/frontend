@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, isArray, map, toNumber, trim, filter } from "lodash";
 import { toast } from "sonner";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { parseAsString, useQueryState } from "nuqs";
@@ -102,7 +102,7 @@ const formatTelegramUnixDate = (value) => {
     return "-";
   }
 
-  return formatDateTime(Number(value) * 1000);
+  return formatDateTime(toNumber(value) * 1000);
 };
 
 const formatBroadcastStatus = (status) => {
@@ -117,14 +117,14 @@ const formatBroadcastStatus = (status) => {
 };
 
 const getBroadcastProgress = (job) => {
-  const total = Number(job?.totalCount) || 0;
+  const total = toNumber(job?.totalCount) || 0;
   if (!total) return 0;
 
   const done =
-    (Number(job?.sentCount) || 0) +
-    (Number(job?.failedCount) || 0) +
-    (Number(job?.skippedCount) || 0) +
-    (Number(job?.suppressedCount) || 0);
+    (toNumber(job?.sentCount) || 0) +
+    (toNumber(job?.failedCount) || 0) +
+    (toNumber(job?.skippedCount) || 0) +
+    (toNumber(job?.suppressedCount) || 0);
 
   return Math.min(100, Math.round((done / total) * 100));
 };
@@ -135,7 +135,7 @@ const resolveUserName = (chat) => {
     user?.profile?.firstName || user?.onboarding?.firstName || chat.firstName;
   const lastName =
     user?.profile?.lastName || user?.onboarding?.lastName || chat.lastName;
-  const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
+  const fullName = trim(filter([firstName, lastName], Boolean).join(" "));
 
   return fullName || chat.username || chat.telegramId;
 };
@@ -177,8 +177,8 @@ const PlatformBotPage = () => {
   );
   const [broadcastPreview, setBroadcastPreview] = React.useState(null);
   const deferredSearch = React.useDeferredValue(search);
-  const currentPage = Math.max(1, Number(pageQuery) || 1);
-  const pageSize = Math.max(1, Number(pageSizeQuery) || DEFAULT_PAGE_SIZE);
+  const currentPage = Math.max(1, toNumber(pageQuery) || 1);
+  const pageSize = Math.max(1, toNumber(pageSizeQuery) || DEFAULT_PAGE_SIZE);
 
   React.useEffect(() => {
     setBreadcrumbs([
@@ -198,7 +198,7 @@ const PlatformBotPage = () => {
     () => ({
       limit: pageSize,
       offset: (currentPage - 1) * pageSize,
-      ...(deferredSearch.trim() ? { q: deferredSearch.trim() } : {}),
+      ...(trim(deferredSearch) ? { q: trim(deferredSearch) } : {}),
       ...(mutedFilter === "muted"
         ? { muted: true }
         : mutedFilter === "active"
@@ -244,10 +244,10 @@ const PlatformBotPage = () => {
     "recentBroadcastJobs",
     [],
   );
-  const recentBroadcastJobs = Array.isArray(recentBroadcastJobsPayload)
+  const recentBroadcastJobs = isArray(recentBroadcastJobsPayload)
     ? recentBroadcastJobsPayload
     : [];
-  const users = Array.isArray(usersPayload) ? usersPayload : [];
+  const users = isArray(usersPayload) ? usersPayload : [];
   const totalUsers = get(usersQuery.data, "data.meta.total", 0);
   const totalPages = get(usersQuery.data, "data.meta.totalPages", 1);
 
@@ -274,7 +274,7 @@ const PlatformBotPage = () => {
 
   const buildBroadcastPayload = React.useCallback(
     (includeText = true) => {
-      const activeWithinDays = Number(broadcastOptions.activeWithinDays);
+      const activeWithinDays = toNumber(broadcastOptions.activeWithinDays);
       const scheduledAtDate = broadcastOptions.scheduledAt
         ? new Date(broadcastOptions.scheduledAt)
         : null;
@@ -284,7 +284,7 @@ const PlatformBotPage = () => {
           : undefined;
 
       return {
-        ...(includeText ? { text: broadcastText.trim() } : {}),
+        ...(includeText ? { text: trim(broadcastText) } : {}),
         dryRun: Boolean(broadcastOptions.dryRun),
         includeMuted: Boolean(broadcastOptions.includeMuted),
         linkedOnly: Boolean(broadcastOptions.linkedOnly),
@@ -325,7 +325,7 @@ const PlatformBotPage = () => {
   const handleBroadcast = async () => {
     if (!canManageGrowth) return;
 
-    if (!broadcastText.trim()) {
+    if (!trim(broadcastText)) {
       toast.error("Xabar matnini kiriting.");
       return;
     }
@@ -444,13 +444,13 @@ const PlatformBotPage = () => {
         typeof updater === "function"
           ? updater({ pageIndex: currentPage - 1, pageSize })
           : updater;
-      const nextPageSize = Number(get(next, "pageSize")) || pageSize;
+      const nextPageSize = toNumber(get(next, "pageSize")) || pageSize;
 
       React.startTransition(() => {
         void setPageQuery(
           String(
             nextPageSize === pageSize
-              ? Number(get(next, "pageIndex", 0)) + 1
+              ? toNumber(get(next, "pageIndex", 0)) + 1
               : 1,
           ),
         );
@@ -650,9 +650,9 @@ const PlatformBotPage = () => {
                           disabled={
                             broadcastMutation.isPending ||
                             !canManageGrowth ||
-                            !broadcastText.trim() ||
+                            !trim(broadcastText) ||
                             !broadcastPreview ||
-                            Number(broadcastPreview.total ?? 0) === 0
+                            toNumber(broadcastPreview.total ?? 0) === 0
                           }
                         >
                           <SendIcon data-icon="inline-start" />
@@ -798,7 +798,7 @@ const PlatformBotPage = () => {
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             {recentBroadcastJobs.length ? (
-              recentBroadcastJobs.map((job) => (
+              map(recentBroadcastJobs, (job) => (
                 <div key={job.id} className="rounded-md border p-3">
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">

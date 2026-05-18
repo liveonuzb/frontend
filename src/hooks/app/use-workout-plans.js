@@ -1,5 +1,5 @@
 import React from "react";
-import { find, filter, get, some } from "lodash";
+import { find, filter, get, some, fromPairs, isArray, map, toNumber, toPairs } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useDeleteQuery,
@@ -36,28 +36,23 @@ const sanitizeJsonPayload = (value) => {
     return value;
   }
 
-  if (Array.isArray(value)) {
-    return value.map((item) =>
-      item === undefined ? null : sanitizeJsonPayload(item),
-    );
+  if (isArray(value)) {
+    return map(value, (item) =>
+      item === undefined ? null : sanitizeJsonPayload(item));
   }
 
   if (typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value)
-        .filter(([, item]) => item !== undefined)
-        .map(([key, item]) => [key, sanitizeJsonPayload(item)]),
-    );
+    return fromPairs(map(filter(toPairs(value), ([, item]) => item !== undefined), ([key, item]) => [key, sanitizeJsonPayload(item)]));
   }
 
   return String(value);
 };
 
 const countDaysPerWeek = (schedule = []) =>
-  Array.isArray(schedule)
+  isArray(schedule)
     ? filter(
         schedule,
-        (day) => Array.isArray(day?.exercises) && day.exercises.length > 0,
+        (day) => isArray(day?.exercises) && day.exercises.length > 0,
       ).length
     : 0;
 
@@ -66,7 +61,7 @@ const normalizePlan = (plan) => {
     return null;
   }
 
-  const schedule = Array.isArray(plan.schedule) ? plan.schedule : [];
+  const schedule = isArray(plan.schedule) ? plan.schedule : [];
 
   return {
     ...plan,
@@ -74,18 +69,18 @@ const normalizePlan = (plan) => {
     description: plan.description || "",
     coverImageUrl: plan.coverImageUrl || null,
     difficulty: plan.difficulty || "O'rta",
-    days: Number(plan.days ?? 28) || 28,
+    days: toNumber(plan.days ?? 28) || 28,
     daysPerWeek:
-      Number(plan.daysPerWeek ?? countDaysPerWeek(schedule)) ||
+      toNumber(plan.daysPerWeek ?? countDaysPerWeek(schedule)) ||
       countDaysPerWeek(schedule),
     schedule,
     generationMeta: plan.generationMeta ?? null,
-    dayProgress: Array.isArray(plan.dayProgress)
-      ? plan.dayProgress.map((item) => ({
-          dayIndex: Number(item?.dayIndex ?? 0) || 0,
+    dayProgress: isArray(plan.dayProgress)
+      ? map(plan.dayProgress, (item) => ({
+          dayIndex: toNumber(item?.dayIndex ?? 0) || 0,
           completed: Boolean(item?.completed),
           completedAt: item?.completedAt ?? null,
-          exerciseCount: Number(item?.exerciseCount ?? 0) || 0,
+          exerciseCount: toNumber(item?.exerciseCount ?? 0) || 0,
         }))
       : [],
     startDate: plan.startDate ?? null,
@@ -119,11 +114,11 @@ const normalizeTemplate = (plan) => {
 };
 
 export const normalizeWorkoutPlansState = (payload = {}) => {
-  const items = Array.isArray(payload.items)
-    ? filter(payload.items.map(normalizePlan), Boolean)
+  const items = isArray(payload.items)
+    ? filter(map(payload.items, normalizePlan), Boolean)
     : [];
-  const templates = Array.isArray(payload.templates)
-    ? filter(payload.templates.map(normalizeTemplate), Boolean)
+  const templates = isArray(payload.templates)
+    ? filter(map(payload.templates, normalizeTemplate), Boolean)
     : [];
   const activePlanId = payload.activePlanId ?? null;
   const draftPlanId = payload.draftPlanId ?? null;
@@ -144,14 +139,14 @@ export const buildWorkoutPlanPayload = (plan = {}) => ({
   days:
     plan.days === undefined || plan.days === null || plan.days === ""
       ? undefined
-      : Number(plan.days),
+      : toNumber(plan.days),
   daysPerWeek:
     plan.daysPerWeek === undefined ||
     plan.daysPerWeek === null ||
     plan.daysPerWeek === ""
       ? undefined
-      : Number(plan.daysPerWeek),
-  schedule: sanitizeJsonPayload(Array.isArray(plan.schedule) ? plan.schedule : []),
+      : toNumber(plan.daysPerWeek),
+  schedule: sanitizeJsonPayload(isArray(plan.schedule) ? plan.schedule : []),
   generationMeta:
     plan.generationMeta === undefined
       ? undefined
@@ -294,7 +289,7 @@ export const useWorkoutExerciseCategories = (options = {}) => {
   return {
     ...query,
     data,
-    categories: Array.isArray(categories) ? categories : [],
+    categories: isArray(categories) ? categories : [],
   };
 };
 
@@ -321,7 +316,7 @@ export const useWorkoutExercises = (params = {}, options = {}) => {
   return {
     ...query,
     data,
-    exercises: Array.isArray(exercises) ? exercises : [],
+    exercises: isArray(exercises) ? exercises : [],
   };
 };
 

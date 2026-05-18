@@ -3,11 +3,11 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import WorkoutWidget from "./workout-widget.jsx";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 import { useRunningStatsSummary } from "@/hooks/app/use-running-sessions";
 
-vi.mock("@/hooks/api/use-get-query", () => ({
-  default: vi.fn(),
+vi.mock("@/hooks/api", () => ({
+  useGetQuery: vi.fn(),
 }));
 
 vi.mock("@/hooks/app/use-running-sessions", () => ({

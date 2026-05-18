@@ -8,6 +8,8 @@ import {
   buildSavedMealQuickAddPayload,
 } from "./nutrition-quick-adds.js";
 
+import { map } from "lodash";
+
 const savedMeals = [
   {
     id: "saved-1",
@@ -68,7 +70,7 @@ describe("nutrition quick add helpers", () => {
       limit: 6,
     });
 
-    expect(quickAdds.map((item) => item.id)).toEqual([
+    expect(map(quickAdds, (item) => item.id)).toEqual([
       "saved:saved-1",
       "saved:saved-2",
       "catalog:12",

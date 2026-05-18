@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, filter, find, isArray, map, toNumber, trim, keys } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangleIcon,
@@ -68,11 +68,11 @@ const unwrapAiResponse = (response, fallback) => {
   let payload = get(response, "data", response);
 
   for (let index = 0; index < 4; index += 1) {
-    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    if (!payload || typeof payload !== "object" || isArray(payload)) {
       break;
     }
 
-    const keys = Object.keys(payload).filter((key) => key !== "meta");
+    const keys = filter(keys(payload), (key) => key !== "meta");
     if (!hasOwn(payload, "data") || keys.length !== 1) {
       break;
     }
@@ -83,16 +83,16 @@ const unwrapAiResponse = (response, fallback) => {
   return payload ?? fallback;
 };
 
-const toArray = (value) => (Array.isArray(value) ? value : []);
+const toArray = (value) => (isArray(value) ? value : []);
 
 const numberOrNull = (value) => {
   if (value === "" || value === null || value === undefined) return null;
-  const numeric = Number(value);
+  const numeric = toNumber(value);
   return Number.isFinite(numeric) ? numeric : null;
 };
 
 const formatUsd = (value) =>
-  `$${Number(value ?? 0).toLocaleString("en-US", {
+  `$${toNumber(value ?? 0).toLocaleString("en-US", {
     maximumFractionDigits: 6,
   })}`;
 
@@ -198,7 +198,7 @@ const Index = () => {
 
   const handlePromptChange = (feature, key, value) => {
     const active = get(
-      promptSettings.find((item) => get(item, "feature") === feature),
+      find(promptSettings, (item) => get(item, "feature") === feature),
       "active",
       {},
     );
@@ -215,12 +215,12 @@ const Index = () => {
   const handleSavePrompt = async (feature) => {
     if (!canManageSettings) return;
     const active = get(
-      promptSettings.find((item) => get(item, "feature") === feature),
+      find(promptSettings, (item) => get(item, "feature") === feature),
       "active",
       {},
     );
     const form = promptDrafts[feature] ?? normalizePromptForm(active);
-    if (!form.systemPrompt?.trim()) {
+    if (!trim(form.systemPrompt)) {
       toast.error("System prompt bo'sh bo'lmasligi kerak");
       return;
     }
@@ -232,8 +232,8 @@ const Index = () => {
           ...form,
           temperature: numberOrNull(form.temperature),
           maxOutputTokens: numberOrNull(form.maxOutputTokens),
-          inputTokenCostPer1M: Number(form.inputTokenCostPer1M ?? 0),
-          outputTokenCostPer1M: Number(form.outputTokenCostPer1M ?? 0),
+          inputTokenCostPer1M: toNumber(form.inputTokenCostPer1M ?? 0),
+          outputTokenCostPer1M: toNumber(form.outputTokenCostPer1M ?? 0),
         },
       });
       setPromptDrafts((prev) => {
@@ -342,7 +342,7 @@ const Index = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {featureAnalytics.map((item) => (
+                      {map(featureAnalytics, (item) => (
                         <TableRow key={item.feature}>
                           <TableCell>
                             {FEATURE_LABELS[item.feature] ?? item.feature}
@@ -360,7 +360,7 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="prompts" className="grid gap-5 xl:grid-cols-2">
-              {promptSettings.map((item) => {
+              {map(promptSettings, (item) => {
                 const feature = get(item, "feature");
                 const active = get(item, "active", {});
                 const form = promptDrafts[feature] ?? normalizePromptForm(active);
@@ -470,7 +470,7 @@ const Index = () => {
                       </div>
                       <Separator />
                       <div className="flex flex-col gap-2">
-                        {toArray(get(item, "versions", [])).map((version) => (
+                        {map(toArray(get(item, "versions", [])), (version) => (
                           <div
                             key={version.id}
                             className="flex flex-col gap-2 rounded-xl border bg-muted/20 p-3 text-sm md:flex-row md:items-center md:justify-between"
@@ -517,7 +517,7 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="review" className="flex flex-col gap-3">
-              {reviewQueue.map((log) => (
+              {map(reviewQueue, (log) => (
                 <Card key={log.id} size="sm" className="py-6">
                   <CardContent className="grid gap-3 md:grid-cols-[1fr_auto]">
                     <div className="flex flex-col gap-1">
@@ -591,7 +591,7 @@ const Index = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {generationLogs.map((log) => (
+                      {map(generationLogs, (log) => (
                         <TableRow key={log.id}>
                           <TableCell>
                             {FEATURE_LABELS[log.feature] ?? log.feature}

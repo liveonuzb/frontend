@@ -1,5 +1,5 @@
 import React from "react";
-import { get, map, size, filter as lodashFilter, toString, trim } from "lodash";
+import { get, map, size, filter as lodashFilter, toString, trim, values as lodashValues } from "lodash";
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import ActionsMenu from "./actions-menu.jsx";
 const countFilledTranslations = (translations = {}) =>
   size(
     lodashFilter(
-      Object.values(translations),
+      lodashValues(translations),
       (value) => typeof value === "string" && trim(value).length > 0,
     ),
   );
@@ -249,3 +249,6 @@ export const useColumns = ({
     ],
   );
 };
+
+
+

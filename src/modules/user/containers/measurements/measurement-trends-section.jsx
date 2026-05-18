@@ -1,5 +1,5 @@
 import React from "react";
-import { map, entries, get } from "lodash";
+import { map, entries, get, filter } from "lodash";
 import { TrendingUpIcon, TrendingDownIcon, MinusIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGetQuery } from "@/hooks/api";
@@ -40,7 +40,7 @@ export default function MeasurementTrendsSection({ days = 90 }) {
       <div className="space-y-3">
         <Skeleton className="h-6 w-40 rounded-lg" />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {[0, 1, 2, 3, 4, 5].map((i) => (
+          {map([0, 1, 2, 3, 4, 5], (i) => (
             <Skeleton key={i} className="h-24 rounded-[18px]" />
           ))}
         </div>
@@ -50,9 +50,7 @@ export default function MeasurementTrendsSection({ days = 90 }) {
 
   if (!trends) return null;
 
-  const activeTrends = entries(trends).filter(
-    ([, v]) => v && v.last !== null,
-  );
+  const activeTrends = filter(entries(trends), ([, v]) => v && v.last !== null);
 
   if (activeTrends.length === 0) return null;
 

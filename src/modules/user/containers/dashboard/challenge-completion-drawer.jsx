@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, find, isArray, map, orderBy, some, toNumber, filter } from "lodash";
 import { ArrowRightIcon, MedalIcon, PartyPopperIcon, TrophyIcon } from "lucide-react";
 import { useNavigate } from "react-router";
 import {
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 import { getApiResponseData } from "@/lib/api-response";
 import { useAuthStore } from "@/store";
 import { DASHBOARD_CHALLENGES_QUERY_KEY } from "./query-helpers.js";
@@ -26,35 +26,39 @@ const storageKey = (userId, challengeId) =>
 
 const getChallengeItems = (response) => {
   const payload = getApiResponseData(response, []);
-  return Array.isArray(payload) ? payload : get(payload, "items", []);
+  return isArray(payload) ? payload : get(payload, "items", []);
 };
 
 const isJoinedChallenge = (challenge, userId) =>
   Boolean(challenge?.isJoined) ||
-  (Array.isArray(challenge?.participants) &&
-    challenge.participants.some((participant) => participant.userId === userId));
+  (isArray(challenge?.participants) &&
+    some(challenge.participants, (participant) => participant.userId === userId));
 
 const resolveRank = (challenge, userId) => {
   const directRank = get(challenge, "myRank") || get(challenge, "myProgress.rank");
-  if (directRank) return Number(directRank);
+  if (directRank) return toNumber(directRank);
 
-  const participants = Array.isArray(challenge?.participants)
+  const participants = isArray(challenge?.participants)
     ? [...challenge.participants]
     : [];
-  const ranking = participants
-    .sort((left, right) => {
-      const metricDiff = Number(right?.metricValue ?? 0) - Number(left?.metricValue ?? 0);
-      if (metricDiff !== 0) return metricDiff;
-      return Number(right?.progress ?? 0) - Number(left?.progress ?? 0);
-    })
-    .map((participant, index) => ({ ...participant, rank: index + 1 }));
+  const ranking = map(
+    orderBy(
+      participants,
+      [
+        (participant) => toNumber(participant?.metricValue ?? 0),
+        (participant) => toNumber(participant?.progress ?? 0),
+      ],
+      ["desc", "desc"],
+    ),
+    (participant, index) => ({ ...participant, rank: index + 1 }),
+  );
 
-  return ranking.find((participant) => participant.userId === userId)?.rank ?? null;
+  return find(ranking, (participant) => participant.userId === userId)?.rank ?? null;
 };
 
 const resolveReward = (challenge) => {
   const details = challenge?.rewardDetails || {};
-  const rewardXp = Number(details.previewRewardXp ?? challenge?.rewardXp ?? 0);
+  const rewardXp = toNumber(details.previewRewardXp ?? challenge?.rewardXp ?? 0);
   if (rewardXp > 0) return `${rewardXp.toLocaleString("uz-UZ")} XP`;
   if (details.mode === "PERCENT_OF_POOL") return `${details.percent || 0}% pool`;
   if (details.mode === "PLACE_XP") return "Top o'rin mukofoti";
@@ -62,10 +66,10 @@ const resolveReward = (challenge) => {
 };
 
 const findCompletedChallenge = (challenges, userId) =>
-  challenges
-    .filter((challenge) => challenge?.status === "COMPLETED" && isJoinedChallenge(challenge, userId))
-    .sort((left, right) => new Date(right.endDate).getTime() - new Date(left.endDate).getTime())
-    .find((challenge) => {
+  find(orderBy(filter(
+    challenges,
+    (challenge) => challenge?.status === "COMPLETED" && isJoinedChallenge(challenge, userId),
+  ), [(challenge) => new Date(challenge.endDate).getTime()], ["desc"]), (challenge) => {
       if (typeof window === "undefined") return true;
       return window.localStorage.getItem(storageKey(userId, challenge.id)) !== "1";
     }) || null;

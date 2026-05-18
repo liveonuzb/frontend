@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, map, toNumber, trim, toPairs } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   BellRingIcon,
@@ -47,13 +47,6 @@ import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 
 const NOTIFICATIONS_QUERY_KEY = ["admin", "notifications"];
 
-const REMINDER_STATUS_TO_API = {
-  open: "OPEN",
-  done: "DONE",
-  snoozed: "SNOOZED",
-  cancelled: "CANCELLED",
-};
-
 const TEMPLATE_LABELS = {
   waterReminder: "Water reminder",
   mealReminder: "Meal reminder",
@@ -62,7 +55,7 @@ const TEMPLATE_LABELS = {
 };
 
 const formatNumber = (value) =>
-  new Intl.NumberFormat("uz-UZ").format(Number(value ?? 0));
+  new Intl.NumberFormat("uz-UZ").format(toNumber(value ?? 0));
 
 const Metric = ({ label, value, hint }) => (
   <Card size="sm" className="py-6">
@@ -79,8 +72,6 @@ const Index = () => {
   const { setBreadcrumbs } = useBreadcrumbStore();
   const queryClient = useQueryClient();
   const [period, setPeriod] = React.useState("30");
-  const [reminderStatus, setReminderStatus] = React.useState("all");
-  const [reminderSearch, setReminderSearch] = React.useState("");
   const [userId, setUserId] = React.useState("");
   const [selectedUserId, setSelectedUserId] = React.useState("");
   const [templatesDraft, setTemplatesDraft] = React.useState(null);
@@ -102,23 +93,6 @@ const Index = () => {
   const templatesQuery = useGetQuery({
     url: "/admin/notifications/templates",
     queryProps: { queryKey: [...NOTIFICATIONS_QUERY_KEY, "templates"] },
-  });
-  const remindersQuery = useGetQuery({
-    url: "/admin/notifications/reminders",
-    params: {
-      status: reminderStatus,
-      q: reminderSearch || undefined,
-      page: 1,
-      pageSize: 30,
-    },
-    queryProps: {
-      queryKey: [
-        ...NOTIFICATIONS_QUERY_KEY,
-        "reminders",
-        reminderStatus,
-        reminderSearch,
-      ],
-    },
   });
   const preferencesQuery = useGetQuery({
     url: `/admin/notifications/users/${selectedUserId}/preferences`,
@@ -144,7 +118,6 @@ const Index = () => {
   const templates =
     templatesDraft ??
     get(templatesQuery.data, "data.data.notificationTemplates", {});
-  const reminders = get(remindersQuery.data, "data.data", []);
   const preferencesPayload = get(preferencesQuery.data, "data.data", {});
   const preferences = get(preferencesPayload, "preferences", []);
   const quietHours = get(preferencesPayload, "quietHours", {
@@ -156,7 +129,6 @@ const Index = () => {
   const refresh = () => {
     overviewQuery.refetch();
     templatesQuery.refetch();
-    remindersQuery.refetch();
     if (selectedUserId) preferencesQuery.refetch();
   };
 
@@ -202,19 +174,6 @@ const Index = () => {
     }
   };
 
-  const updateReminderStatus = async (reminder, status) => {
-    if (!canManageSupport) return;
-    try {
-      await mutation.mutateAsync({
-        url: `/admin/notifications/reminders/${reminder.id}`,
-        attributes: { status: REMINDER_STATUS_TO_API[status] },
-      });
-      toast.success("Reminder status yangilandi");
-    } catch {
-      toast.error("Reminder statusini yangilab bo'lmadi");
-    }
-  };
-
   return (
     <PageTransition>
       <div className="flex flex-col gap-6">
@@ -225,8 +184,8 @@ const Index = () => {
               Notification & Reminder Management
             </h1>
             <p className="max-w-3xl text-sm text-muted-foreground">
-              Templates, user preferences, quiet hours, coach reminders va
-              reminder health monitoringi.
+              Templates, user preferences, quiet hours va reminder health
+              monitoringi.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -258,7 +217,6 @@ const Index = () => {
             <TabsList className="h-auto flex-wrap">
               <TabsTrigger value="templates">Templates</TabsTrigger>
               <TabsTrigger value="preferences">User Preferences</TabsTrigger>
-              <TabsTrigger value="reminders">Coach Reminders</TabsTrigger>
               <TabsTrigger value="health">Reminder Health</TabsTrigger>
             </TabsList>
 
@@ -305,7 +263,7 @@ const Index = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="grid gap-4 md:grid-cols-2">
-                  {Object.entries(TEMPLATE_LABELS).map(([key, label]) => (
+                  {map(toPairs(TEMPLATE_LABELS), ([key, label]) => (
                     <div key={key} className="flex flex-col gap-2">
                       <Label>{label}</Label>
                       <Textarea
@@ -345,8 +303,8 @@ const Index = () => {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setSelectedUserId(userId.trim())}
-                      disabled={!userId.trim()}
+                      onClick={() => setSelectedUserId(trim(userId))}
+                      disabled={!trim(userId)}
                     >
                       <SearchIcon data-icon="inline-start" />
                       Load
@@ -418,15 +376,15 @@ const Index = () => {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {preferences.map((preference) => (
+                            {map(preferences, (preference) => (
                               <TableRow key={preference.type}>
                                 <TableCell>{preference.type}</TableCell>
-                                {[
+                                {map([
                                   "inAppEnabled",
                                   "pushEnabled",
                                   "emailEnabled",
                                   "digestEnabled",
-                                ].map((key) => (
+                                ], (key) => (
                                   <TableCell key={key}>
                                     <Switch
                                       checked={Boolean(preference[key])}
@@ -452,122 +410,6 @@ const Index = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="reminders" className="flex flex-col gap-4">
-              <Card className="py-6">
-                <CardHeader>
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                      <CardTitle>Coach client reminders</CardTitle>
-                      <CardDescription>
-                        Coach-owned reminders statusini admin sifatida ko'rish
-                        va boshqarish.
-                      </CardDescription>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Input
-                        value={reminderSearch}
-                        onChange={(event) =>
-                          setReminderSearch(event.target.value)
-                        }
-                        placeholder="Coach, client yoki reminder"
-                        className="w-72"
-                      />
-                      <Select
-                        value={reminderStatus}
-                        onValueChange={setReminderStatus}
-                      >
-                        <SelectTrigger className="w-36">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="open">Open</SelectItem>
-                            <SelectItem value="overdue">Overdue</SelectItem>
-                            <SelectItem value="snoozed">Snoozed</SelectItem>
-                            <SelectItem value="done">Done</SelectItem>
-                            <SelectItem value="cancelled">Cancelled</SelectItem>
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Reminder</TableHead>
-                        <TableHead>Coach</TableHead>
-                        <TableHead>Client</TableHead>
-                        <TableHead>Due</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {reminders.map((reminder) => (
-                        <TableRow key={reminder.id}>
-                          <TableCell>
-                            <div className="flex flex-col gap-1">
-                              <span className="font-medium">
-                                {reminder.title}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {reminder.note || reminder.source}
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {get(reminder, "coach.displayName", "-")}
-                          </TableCell>
-                          <TableCell>
-                            {get(reminder, "client.displayName", "-")}
-                          </TableCell>
-                          <TableCell>
-                            {reminder.dueAt
-                              ? new Date(reminder.dueAt).toLocaleString("uz-UZ")
-                              : "-"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{reminder.status}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Select
-                              value={reminder.status}
-                              onValueChange={(nextStatus) =>
-                                updateReminderStatus(reminder, nextStatus)
-                              }
-                              disabled={!canManageSupport}
-                            >
-                              <SelectTrigger className="w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectGroup>
-                                  <SelectItem value="open">Open</SelectItem>
-                                  <SelectItem value="snoozed">Snoozed</SelectItem>
-                                  <SelectItem value="done">Done</SelectItem>
-                                  <SelectItem value="cancelled">
-                                    Cancelled
-                                  </SelectItem>
-                                </SelectGroup>
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                  {remindersQuery.isLoading ? (
-                    <div className="flex justify-center py-8">
-                      <Spinner className="text-muted-foreground" />
-                    </div>
-                  ) : null}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
             <TabsContent value="health" className="grid gap-4 lg:grid-cols-2">
               <Card className="py-6">
                 <CardHeader>
@@ -577,7 +419,7 @@ const Index = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-2">
-                  {get(overview, "categories", []).map((item) => (
+                  {map(get(overview, "categories", []), (item) => (
                     <div
                       key={item.category}
                       className="flex items-center justify-between rounded-xl border p-3"
@@ -596,7 +438,7 @@ const Index = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-2">
-                  {get(overview, "deliveries", []).map((item) => (
+                  {map(get(overview, "deliveries", []), (item) => (
                     <div
                       key={item.status}
                       className="flex items-center justify-between rounded-xl border p-3"

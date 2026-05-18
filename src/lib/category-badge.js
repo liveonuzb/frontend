@@ -1,4 +1,4 @@
-import { find } from "lodash";
+import { find, trim, parseInt as lodashParseInt } from "lodash";
 export const DEFAULT_CATEGORY_BADGE_CLASS =
   "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700";
 
@@ -79,7 +79,7 @@ export const CATEGORY_BADGE_PRESETS = [
 ];
 
 const normalizeHex = (hex) => {
-  const value = String(hex ?? "").trim();
+  const value = trim(String(hex ?? ""));
   if (!value) {
     return "#64748b";
   }
@@ -96,7 +96,7 @@ const normalizeHex = (hex) => {
 
 const hexToRgb = (hex) => {
   const normalized = normalizeHex(hex).replace("#", "");
-  const parsed = Number.parseInt(normalized, 16);
+  const parsed = lodashParseInt(normalized, 16);
 
   if (Number.isNaN(parsed)) {
     return { r: 100, g: 116, b: 139 };

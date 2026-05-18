@@ -1,7 +1,6 @@
 import React from "react";
 import {
   CalendarIcon,
-  CheckCircleIcon,
   EyeIcon,
   GiftIcon,
   MoreVerticalIcon,
@@ -9,7 +8,6 @@ import {
   ShieldBanIcon,
   ShieldCheckIcon,
   TrashIcon,
-  XCircleIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,7 +30,6 @@ const UserActionsMenu = ({
   onCancelPremium,
   onBanToggle,
   onDelete,
-  onCoachStatusUpdate,
 }) => (
   <DropdownMenu>
     <DropdownMenuTrigger asChild>
@@ -45,25 +42,6 @@ const UserActionsMenu = ({
         <EyeIcon className="size-4" />
         Ko'rish
       </DropdownMenuItem>
-
-      {user.coachStatus === "pending" ? (
-        <>
-          <DropdownMenuItem
-            disabled={isUserActionPending}
-            onClick={() => onCoachStatusUpdate(user, "approved")}
-          >
-            <CheckCircleIcon className="size-4 text-green-500" />
-            Coachni tasdiqlash
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            disabled={isUserActionPending}
-            onClick={() => onCoachStatusUpdate(user, "rejected")}
-          >
-            <XCircleIcon className="size-4 text-red-500" />
-            Coachni rad etish
-          </DropdownMenuItem>
-        </>
-      ) : null}
 
       <DropdownMenuItem
         disabled={isUserActionPending || !canManageUser(user)}

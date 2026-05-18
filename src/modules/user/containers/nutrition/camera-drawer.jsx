@@ -65,6 +65,17 @@ import {
 } from "./meal-date-time-utils.js";
 import RecentMealsDrawer from "./recent-meals-drawer.jsx";
 
+import {
+  filter,
+  find,
+  forEach,
+  isArray,
+  map,
+  toNumber as lodashToNumber,
+  trim,
+  take,
+} from "lodash";
+
 const buildLoggedMealFromSavedMeal = (savedMeal, addedAt) => ({
   name: savedMeal.name,
   source: "saved-meal",
@@ -81,7 +92,7 @@ const buildLoggedMealFromSavedMeal = (savedMeal, addedAt) => ({
 });
 
 const toNumber = (value, fallback = 0) => {
-  const normalized = Number(value);
+  const normalized = lodashToNumber(value);
   return Number.isFinite(normalized) ? normalized : fallback;
 };
 
@@ -114,7 +125,7 @@ const barcodeMacroInputs = [
 const RecentMealsPill = ({ meals = [], isLoading = false, onOpen }) => {
   if (!isLoading && meals.length === 0) return null;
 
-  const previewMeals = meals.slice(0, 2);
+  const previewMeals = take(meals, 2);
 
   return (
     <div className="flex justify-center">
@@ -125,7 +136,7 @@ const RecentMealsPill = ({ meals = [], isLoading = false, onOpen }) => {
       >
         <span className="flex -space-x-2">
           {previewMeals.length > 0 ? (
-            previewMeals.map((meal) => (
+            map(previewMeals, (meal) => (
               <span
                 key={meal.id}
                 className="flex size-8 overflow-hidden rounded-full border-2 border-background bg-muted"
@@ -181,7 +192,7 @@ const ScanCameraView = ({
   const [isScanning, setIsScanning] = useState(false);
 
   const stopCamera = useCallback(() => {
-    streamRef.current?.getTracks().forEach((track) => track.stop());
+    forEach(streamRef.current?.getTracks(), (track) => track.stop());
     streamRef.current = null;
     if (videoRef.current) {
       videoRef.current.srcObject = null;
@@ -231,7 +242,7 @@ const ScanCameraView = ({
       .enumerateDevices?.()
       .then((devices) => {
         setHasMultipleCams(
-          devices.filter((device) => device.kind === "videoinput").length > 1,
+          filter(devices, (device) => device.kind === "videoinput").length > 1,
         );
       })
       .catch(() => {
@@ -634,7 +645,6 @@ const ResultView = ({
           </button>
         </div>
       ) : null}
-
       <div className="space-y-3">
         <MealDraftSummaryCard
           items={items}
@@ -646,10 +656,9 @@ const ResultView = ({
           }
         />
       </div>
-
       {items.length > 0 ? (
         <div className="space-y-3">
-          {items.map((item) => (
+          {map(items, (item) => (
             <MealDraftCard
               key={item.id}
               item={item}
@@ -734,21 +743,19 @@ const BarcodeLookupPanel = ({
             </p>
           </div>
         </div>
-
         <div className="mt-4 grid grid-cols-4 gap-2">
-          {[
+          {map([
             ["Kcal", foundMacros.cal],
             ["Oqsil", `${foundMacros.protein}g`],
             ["Uglevod", `${foundMacros.carbs}g`],
             ["Yog'", `${foundMacros.fat}g`],
-          ].map(([label, value]) => (
+          ], ([label, value]) => (
             <div key={label} className="rounded-2xl bg-muted/60 px-3 py-2 text-center">
               <p className="text-[10px] font-bold text-muted-foreground">{label}</p>
               <p className="text-sm font-black">{value}</p>
             </div>
           ))}
         </div>
-
         <div className="mt-5 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-bold text-muted-foreground">Miqdori</span>
@@ -765,7 +772,6 @@ const BarcodeLookupPanel = ({
             onValueChange={([value]) => onAmountChange(value)}
           />
         </div>
-
         <div className="mt-5 grid grid-cols-[auto_1fr] gap-2">
           <Button type="button" variant="outline" size="icon" onClick={onReset}>
             <RefreshCcwIcon className="size-4" />
@@ -791,7 +797,6 @@ const BarcodeLookupPanel = ({
           Barcode: {scannedCode || "noma'lum"}
         </p>
       </div>
-
       <div className="space-y-3">
         <Input
           placeholder="Ovqat nomi"
@@ -799,7 +804,7 @@ const BarcodeLookupPanel = ({
           onChange={(event) => onManualFieldChange("name", event.target.value)}
         />
         <div className="grid grid-cols-2 gap-2">
-          {barcodeMacroInputs.map((item) => (
+          {map(barcodeMacroInputs, (item) => (
             <label key={item.key} className="space-y-1">
               <span className="text-xs font-bold text-muted-foreground">
                 {item.label}
@@ -840,7 +845,6 @@ const BarcodeLookupPanel = ({
           </label>
         </div>
       </div>
-
       <div className="mt-5 grid grid-cols-[auto_1fr] gap-2">
         <Button type="button" variant="outline" size="icon" onClick={onReset}>
           <RefreshCcwIcon className="size-4" />
@@ -1007,7 +1011,7 @@ export default function CameraDrawer({
       const response = await analyzeMealImageDraft({
         imageUrl: uploadedImageUrl,
       });
-      const items = Array.isArray(response?.items) ? response.items : [];
+      const items = isArray(response?.items) ? response.items : [];
 
       setScannedItems(items);
       if (items.length === 0) {
@@ -1051,7 +1055,7 @@ export default function CameraDrawer({
 
   const handleBarcodeScan = useCallback(
     async (code) => {
-      const normalizedCode = String(code || "").trim();
+      const normalizedCode = trim(String(code || ""));
 
       if (!normalizedCode || barcodeStatus === "loading") {
         return;
@@ -1125,7 +1129,7 @@ export default function CameraDrawer({
   ]);
 
   const handleAddManualBarcodeFood = useCallback(async () => {
-    const name = barcodeManualFood.name.trim();
+    const name = trim(barcodeManualFood.name);
 
     if (!name) {
       toast.error("Ovqat nomini kiriting");
@@ -1166,7 +1170,7 @@ export default function CameraDrawer({
   const handleIngredientUpdate = useCallback(
     (draftId, ingredientId, ingredient) => {
       setScannedItems((current) =>
-        current.map((item) =>
+        map(current, (item) =>
           item.id === draftId
             ? {
                 ...item,
@@ -1176,8 +1180,7 @@ export default function CameraDrawer({
                   ingredient,
                 ),
               }
-            : item,
-        ),
+            : item),
       );
     },
     [],
@@ -1185,50 +1188,47 @@ export default function CameraDrawer({
 
   const handleIngredientRemove = useCallback((draftId, ingredientId) => {
     setScannedItems((current) =>
-      current.map((item) =>
+      map(current, (item) =>
         item.id === draftId
           ? {
               ...item,
               ingredients: removeMealIngredient(item.ingredients, ingredientId),
             }
-          : item,
-      ),
+          : item),
     );
   }, []);
 
   const handleIngredientAdd = useCallback((draftId, ingredient) => {
     setScannedItems((current) =>
-      current.map((item) =>
+      map(current, (item) =>
         item.id === draftId
           ? {
               ...item,
               ingredients: addMealIngredient(item.ingredients, ingredient),
             }
-          : item,
-      ),
+          : item),
     );
   }, []);
 
   const handleRemoveItem = useCallback((draftId) => {
-    setScannedItems((current) => current.filter((item) => item.id !== draftId));
+    setScannedItems((current) => filter(current, (item) => item.id !== draftId));
   }, []);
 
   const handleConfirmItem = useCallback((draftId) => {
     setScannedItems((current) =>
-      current.map((item) =>
+      map(current, (item) =>
         item.id === draftId
           ? {
               ...item,
               reviewNeeded: false,
-              ingredients: Array.isArray(item.ingredients)
-                ? item.ingredients.map((ingredient) => ({
+              ingredients: isArray(item.ingredients)
+                ? map(item.ingredients, (ingredient) => ({
                     ...ingredient,
                     reviewNeeded: false,
                   }))
                 : [],
             }
-          : item,
-      ),
+          : item),
     );
   }, []);
 
@@ -1287,9 +1287,7 @@ export default function CameraDrawer({
   ]);
 
   const handleCopyRecentMeal = useCallback(async () => {
-    const selectedMeal = recentMeals.find(
-      (meal) => meal.id === selectedRecentMealId,
-    );
+    const selectedMeal = find(recentMeals, (meal) => meal.id === selectedRecentMealId);
 
     if (!selectedMeal || isCopyingRecentMeal) return;
 

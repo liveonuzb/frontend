@@ -1,7 +1,8 @@
+import { some, split } from "lodash";
 export const normalizeRoutePath = (path = "") => {
   if (!path) return "";
 
-  const normalized = String(path).split("?")[0].replace(/\/+$/, "");
+  const normalized = split(String(path), "?")[0].replace(/\/+$/, "");
   return normalized || "/";
 };
 
@@ -21,7 +22,7 @@ export const isNavItemActive = (pathname, item, items = []) => {
     return false;
   }
 
-  return !items.some((candidate) => {
+  return !some(items, (candidate) => {
     if (candidate === item) return false;
 
     const candidateMatchPath = getNavMatchPath(candidate);

@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, filter, isArray, toNumber, map, toPairs } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
 import { config } from "@/config.js";
 import {
@@ -48,29 +48,21 @@ const normalizeRunningSession = (session) => {
     endedAt: session.endedAt ?? null,
     metrics: {
       distanceMeters:
-        Number(
-          get(session, "metrics.distanceMeters", session.distanceMeters ?? 0),
-        ) || 0,
+        toNumber(get(session, "metrics.distanceMeters", session.distanceMeters ?? 0)) || 0,
       durationSeconds:
-        Number(
-          get(session, "metrics.durationSeconds", session.durationSeconds ?? 0),
-        ) || 0,
+        toNumber(get(session, "metrics.durationSeconds", session.durationSeconds ?? 0)) || 0,
       movingDurationSeconds:
-        Number(
-          get(
-            session,
-            "metrics.movingDurationSeconds",
-            session.movingDurationSeconds ?? 0,
-          ),
-        ) || 0,
+        toNumber(get(
+          session,
+          "metrics.movingDurationSeconds",
+          session.movingDurationSeconds ?? 0,
+        )) || 0,
       caloriesBurned:
-        Number(
-          get(
-            session,
-            "metrics.caloriesBurned",
-            session.caloriesBurned ?? session.estimatedCalories ?? 0,
-          ),
-        ) || 0,
+        toNumber(get(
+          session,
+          "metrics.caloriesBurned",
+          session.caloriesBurned ?? session.estimatedCalories ?? 0,
+        )) || 0,
       averagePaceSecondsPerKm: get(
         session,
         "metrics.averagePaceSecondsPerKm",
@@ -124,24 +116,20 @@ const normalizeRunningSession = (session) => {
       heightCm: get(session, "bodyMetrics.heightCm", session.heightCm ?? null),
       weightKg: get(session, "bodyMetrics.weightKg", session.weightKg ?? null),
     },
-    splits: Array.isArray(session.splits) ? session.splits : [],
-    points: Array.isArray(session.points)
-      ? session.points
-          .map((point) => ({
+    splits: isArray(session.splits) ? session.splits : [],
+    points: isArray(session.points)
+      ? filter(map(session.points, (point) => ({
             ...point,
-            sequence: Number(point?.sequence ?? 0) || 0,
-            latitude: Number(point?.latitude),
-            longitude: Number(point?.longitude),
+            sequence: toNumber(point?.sequence ?? 0) || 0,
+            latitude: toNumber(point?.latitude),
+            longitude: toNumber(point?.longitude),
             accuracy:
               point?.accuracy === undefined || point?.accuracy === null
                 ? null
-                : Number(point.accuracy),
-          }))
-          .filter(
-            (point) =>
-              Number.isFinite(point.latitude) &&
-              Number.isFinite(point.longitude),
-          )
+                : toNumber(point.accuracy),
+          })), (point) =>
+      Number.isFinite(point.latitude) &&
+      Number.isFinite(point.longitude))
       : [],
   };
 };
@@ -184,7 +172,8 @@ export const useRunningActiveSession = (options = {}) => {
 export const useRunningSessions = (params = {}, options = {}) => {
   const enabled = useRunningQueryEnabled(options.enabled ?? true);
   const queryString = new URLSearchParams(
-    Object.entries(params).filter(
+    filter(
+      toPairs(params),
       ([, value]) => value !== undefined && value !== null && value !== "",
     ),
   ).toString();
@@ -204,9 +193,9 @@ export const useRunningSessions = (params = {}, options = {}) => {
   );
   const items = React.useMemo(
     () =>
-      Array.isArray(responseData)
+      isArray(responseData)
         ? responseData
-        : Array.isArray(responseData?.data)
+        : isArray(responseData?.data)
           ? responseData.data
           : [],
     [responseData],
@@ -214,9 +203,7 @@ export const useRunningSessions = (params = {}, options = {}) => {
   const sessions = React.useMemo(() => {
     const seenSessionIds = new Set();
 
-    return items
-      .map(normalizeRunningSession)
-      .filter((session) => {
+    return filter(map(items, normalizeRunningSession), (session) => {
         if (!session) {
           return false;
         }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router";
-import { get, isArray, isEqual, join, trim } from "lodash";
+import { get, isArray, isEqual, join, trim, map, includes } from "lodash";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,6 @@ import {
 
 const ROLE_OPTIONS = [
   { value: "USER", label: "User", disabled: true },
-  { value: "COACH", label: "Coach" },
   { value: "SUPER_ADMIN", label: "Super Admin" },
   { value: "CONTENT_MANAGER", label: "Content manager" },
   { value: "SUPPORT", label: "Support" },
@@ -37,7 +36,6 @@ const ROLE_OPTIONS = [
   { value: "READONLY_ADMIN", label: "Readonly admin" },
   { value: "ADMIN", label: "Admin" },
   { value: "MODERATOR", label: "Moderator" },
-  { value: "COACH_MANAGER", label: "Coach manager" },
   { value: "NUTRITION_MANAGER", label: "Nutrition manager" },
   { value: "WORKOUT_MANAGER", label: "Workout manager" },
 ];
@@ -141,7 +139,7 @@ const EditUser = () => {
             </DrawerTitle>
             <DrawerDescription>
               {user
-                ? `${get(user, "firstName", "")} ${get(user, "lastName", "")}`.trim()
+                ? trim(`${get(user, "firstName", "")} ${get(user, "lastName", "")}`)
                 : "Foydalanuvchi"}{" "}
               ma'lumotlarini o'zgartiring
             </DrawerDescription>
@@ -203,13 +201,13 @@ const EditUser = () => {
               <div className="flex flex-col gap-3">
                 <Label className="text-xs font-bold">Rollar</Label>
                 <div className="flex flex-wrap gap-4">
-                  {ROLE_OPTIONS.map((option) => (
+                  {map(ROLE_OPTIONS, (option) => (
                     <label
                       key={option.value}
                       className="flex items-center gap-2 text-sm"
                     >
                       <Checkbox
-                        checked={form.roles.includes(option.value)}
+                        checked={includes(form.roles, option.value)}
                         disabled={option.disabled}
                         onCheckedChange={(checked) =>
                           setForm((c) => ({

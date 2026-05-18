@@ -1,3 +1,4 @@
+import { toNumber } from "lodash";
 const YOUNG_AGE_MAX = 24;
 const OLD_AGE_MIN = 50;
 
@@ -11,7 +12,7 @@ const MIN_TIER = 1;
 const MAX_TIER = 5;
 
 const resolveAgeVariant = (ageValue) => {
-  const ageNumber = Number(ageValue);
+  const ageNumber = toNumber(ageValue);
 
   if (!Number.isFinite(ageNumber)) return "";
   if (ageNumber <= YOUNG_AGE_MAX) return "young";
@@ -35,7 +36,7 @@ const buildTierFromProgress = (value, min, max) => {
 };
 
 const resolveHeightTier = (gender, heightValue) => {
-  const heightNumber = Number(heightValue);
+  const heightNumber = toNumber(heightValue);
   if (!Number.isFinite(heightNumber)) return DEFAULT_TIER;
 
   const range =
@@ -49,8 +50,8 @@ const resolveHeightTier = (gender, heightValue) => {
 };
 
 const resolveBmiTier = (weightValue, heightValue) => {
-  const weightNumber = Number(weightValue);
-  const heightNumber = Number(heightValue);
+  const weightNumber = toNumber(weightValue);
+  const heightNumber = toNumber(heightValue);
 
   if (
     !Number.isFinite(weightNumber) ||
@@ -71,8 +72,8 @@ const resolveBmiTier = (weightValue, heightValue) => {
 };
 
 export const calculateOnboardingBmi = (weightValue, heightValue) => {
-  const weightNumber = Number(weightValue);
-  const heightNumber = Number(heightValue);
+  const weightNumber = toNumber(weightValue);
+  const heightNumber = toNumber(heightValue);
 
   if (
     !Number.isFinite(weightNumber) ||
@@ -168,16 +169,21 @@ export const getOnboardingBmiMeta = (weightValue, heightValue, t) => {
 };
 
 const DEFAULT_BASE = "/madagascar/onboarding";
+const DEFAULT_EXTENSION = "webp";
+
+const buildAssetPath = (base, name, extension = DEFAULT_EXTENSION) =>
+  `${base}/${name}.${extension}`;
 
 const buildIllustrationPath = (
   gender,
   ageValue,
   tier = DEFAULT_TIER,
   base = DEFAULT_BASE,
+  extension = DEFAULT_EXTENSION,
 ) => {
   if (!gender) {
     return {
-      src: `${base}/curious.webp`,
+      src: buildAssetPath(base, "curious", extension),
       alt: "Onboarding illustration",
     };
   }
@@ -187,7 +193,7 @@ const buildIllustrationPath = (
   const variantPrefix = ageVariant ? `${gender}-${ageVariant}` : gender;
 
   return {
-    src: `${base}/${variantPrefix}-${normalizedTier}.webp`,
+    src: buildAssetPath(base, `${variantPrefix}-${normalizedTier}`, extension),
     alt: `${variantPrefix} illustration`,
   };
 };
@@ -196,24 +202,30 @@ export const getOnboardingPersonIllustration = (
   gender,
   ageValue,
   base = DEFAULT_BASE,
-) => buildIllustrationPath(gender, ageValue, DEFAULT_TIER, base);
+  extension = DEFAULT_EXTENSION,
+) => buildIllustrationPath(gender, ageValue, DEFAULT_TIER, base, extension);
 
 export const getOnboardingTierIllustration = (
   gender,
   ageValue,
   tier,
   base = DEFAULT_BASE,
-) => buildIllustrationPath(gender, ageValue, tier, base);
+  extension = DEFAULT_EXTENSION,
+) => buildIllustrationPath(gender, ageValue, tier, base, extension);
 
 export const getOnboardingHeightIllustration = (
   gender,
   ageValue,
   heightValue,
+  base = DEFAULT_BASE,
+  extension = DEFAULT_EXTENSION,
 ) =>
   buildIllustrationPath(
     gender,
     ageValue,
     resolveHeightTier(gender, heightValue),
+    base,
+    extension,
   );
 
 export const getOnboardingWeightIllustration = (
@@ -221,15 +233,19 @@ export const getOnboardingWeightIllustration = (
   ageValue,
   weightValue,
   heightValue,
+  base = DEFAULT_BASE,
+  extension = DEFAULT_EXTENSION,
 ) =>
   buildIllustrationPath(
     gender,
     ageValue,
     resolveBmiTier(weightValue, heightValue),
+    base,
+    extension,
   );
 
 export const getOnboardingIllustrationHeight = (heightValue) => {
-  const heightNumber = Number(heightValue);
+  const heightNumber = toNumber(heightValue);
   if (!Number.isFinite(heightNumber)) {
     return 320;
   }

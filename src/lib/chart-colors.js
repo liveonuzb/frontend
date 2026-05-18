@@ -1,3 +1,4 @@
+import { trim } from "lodash";
 /**
  * Chart color utilities for Recharts integration.
  * Reads --chart-1 through --chart-5 CSS custom properties from :root
@@ -25,7 +26,7 @@ export function getChartColors() {
   const colors = []
 
   for (let i = 1; i <= 5; i++) {
-    const value = styles.getPropertyValue(`--chart-${i}`).trim()
+    const value = trim(styles.getPropertyValue(`--chart-${i}`))
     if (value) {
       colors.push(value)
     }

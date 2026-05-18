@@ -1,4 +1,4 @@
-import { get } from "lodash";
+import { get, toNumber } from "lodash";
 
 export const isOutdoorRunningSession = (session) =>
   get(session, "activityType") === "OUTDOOR_RUN" ||
@@ -6,17 +6,15 @@ export const isOutdoorRunningSession = (session) =>
   get(session, "source") === "running";
 
 export const getWorkoutSessionDistanceMeters = (session) =>
-  Number(
+  toNumber(get(
+    session,
+    "distanceMeters",
     get(
       session,
-      "distanceMeters",
-      get(
-        session,
-        "metrics.distanceMeters",
-        get(session, "exerciseSummaries[0].distanceMeters", 0),
-      ),
+      "metrics.distanceMeters",
+      get(session, "exerciseSummaries[0].distanceMeters", 0),
     ),
-  ) || 0;
+  )) || 0;
 
 export const getWorkoutSessionPaceSecondsPerKm = (session) => {
   const explicitPace = get(
@@ -29,13 +27,13 @@ export const getWorkoutSessionPaceSecondsPerKm = (session) => {
     ),
   );
 
-  const numericPace = Number(explicitPace);
+  const numericPace = toNumber(explicitPace);
   if (Number.isFinite(numericPace) && numericPace > 0) {
     return numericPace;
   }
 
   const distanceKm = getWorkoutSessionDistanceMeters(session) / 1000;
-  const durationSeconds = Number(get(session, "durationSeconds", 0)) || 0;
+  const durationSeconds = toNumber(get(session, "durationSeconds", 0)) || 0;
   if (distanceKm <= 0 || durationSeconds <= 0) {
     return null;
   }

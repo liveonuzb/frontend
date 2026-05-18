@@ -30,6 +30,8 @@ import {
   toNumber,
 } from "./meal-ingredients.js";
 
+import { map, toNumber as lodashToNumber, trim } from "lodash";
+
 const emptyIngredient = {
   id: "",
   name: "",
@@ -60,7 +62,7 @@ const macroFields = [
 ];
 
 const getSliderMax = (grams) =>
-  Math.max(300, Math.ceil((Math.max(1, Number(grams) || 100) * 2) / 10) * 10);
+  Math.max(300, Math.ceil((Math.max(1, lodashToNumber(grams) || 100) * 2) / 10) * 10);
 
 const createEmptyIngredientDraft = () =>
   normalizeIngredientForEdit({
@@ -122,7 +124,7 @@ export default function IngredientEditDrawer({
   }, []);
 
   const handleAnalyze = React.useCallback(async () => {
-    const name = draft.name.trim();
+    const name = trim(draft.name);
     if (!name) {
       toast.error("Ingredient nomini yozing.");
       return;
@@ -155,7 +157,7 @@ export default function IngredientEditDrawer({
   }, [analyzeIngredient, draft.grams, draft.name]);
 
   const handleSave = React.useCallback(() => {
-    const name = draft.name.trim();
+    const name = trim(draft.name);
     if (!name) {
       toast.error("Ingredient nomini yozing.");
       return;
@@ -205,7 +207,7 @@ export default function IngredientEditDrawer({
                 variant="ghost"
                 size="icon"
                 onClick={handleAnalyze}
-                disabled={isAnalyzingIngredient || !draft.name.trim()}
+                disabled={isAnalyzingIngredient || !trim(draft.name)}
                 className="absolute top-1/2 right-1 size-10 -translate-y-1/2 rounded-full"
                 aria-label="AI bilan aniqlash"
               >
@@ -246,7 +248,7 @@ export default function IngredientEditDrawer({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            {macroFields.map(([key, label, step, maximumFractionDigits]) => (
+            {map(macroFields, ([key, label, step, maximumFractionDigits]) => (
               <label key={key} className="space-y-1.5">
                 <span className="text-xs font-medium text-muted-foreground">
                   {label}
@@ -273,7 +275,7 @@ export default function IngredientEditDrawer({
           <Button
             type="button"
             onClick={handleSave}
-            disabled={!draft.name.trim()}
+            disabled={!trim(draft.name)}
           >
             {isAddMode ? "Qo'shish" : "Saqlash"}
           </Button>

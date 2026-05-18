@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, isArray } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePatchQuery, usePostFileQuery, usePostQuery } from "@/hooks/api";
 import { useAuthStore } from "@/store";
@@ -48,7 +48,7 @@ const mergeUserSettings = (user, patch = {}) => {
 export const getRequestErrorMessage = (error, fallbackMessage) => {
   const message = get(error, "response.data.message");
 
-  if (Array.isArray(message)) {
+  if (isArray(message)) {
     return message[0] ?? fallbackMessage;
   }
 

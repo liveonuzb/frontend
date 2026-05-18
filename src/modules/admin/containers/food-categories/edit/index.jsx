@@ -1,6 +1,6 @@
 import React from "react";
 import { useParams } from "react-router";
-import { find, get, isArray, join, map, trim } from "lodash";
+import { find, get, isArray, join, map, trim, values as lodashValues } from "lodash";
 import { toast } from "sonner";
 import { PaletteIcon, PencilIcon, TagIcon } from "lucide-react";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
@@ -36,7 +36,7 @@ const resolveLabel = (translations, fallback, language) => {
     const uz = get(translations, "uz");
     if (typeof uz === "string" && trim(uz)) return trim(uz);
     const first = find(
-      Object.values(translations),
+      lodashValues(translations),
       (v) => typeof v === "string" && trim(v),
     );
     if (typeof first === "string" && trim(first)) return trim(first);
@@ -118,7 +118,7 @@ const EditFoodCategory = () => {
   );
 
   const handleSave = React.useCallback(async () => {
-    const name = form.name.trim();
+    const name = trim(form.name);
     if (!name) {
       toast.error("Kategoriya nomini kiriting");
       return;
@@ -296,3 +296,6 @@ const EditFoodCategory = () => {
 };
 
 export default EditFoodCategory;
+
+
+

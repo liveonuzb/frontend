@@ -5,7 +5,7 @@ import { useAuthStore } from "@/store";
 
 /**
  * ProtectedRoute — rolga asoslangan himoya
- * @param {string[]} allowedRoles - ruxsat etilgan rollar ["ADMIN", "COACH", "USER"]
+ * @param {string[]} allowedRoles - ruxsat etilgan rollar ["ADMIN", "USER"]
  * @param {string} redirectTo - ruxsat bo'lmaganda yo'naltirish
  * @param {React.ReactNode} children
  */

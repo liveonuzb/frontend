@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate, Outlet } from "react-router";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { filter as lodashFilter, find, get, toString, values } from "lodash";
+import { filter as lodashFilter, find, get, toString, values as lodashValues, toNumber, trim } from "lodash";
 import { toast } from "sonner";
 import { PlusIcon, RotateCcwIcon } from "lucide-react";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
@@ -27,20 +27,20 @@ import {
 
 const resolveLocalizedText = (translations, fallback, language) => {
   if (translations && typeof translations === "object") {
-    const direct = String(translations?.[language] ?? "").trim();
+    const direct = trim(String(translations?.[language] ?? ""));
     if (direct) return direct;
 
-    const uzText = String(translations?.uz ?? "").trim();
+    const uzText = trim(String(translations?.uz ?? ""));
     if (uzText) return uzText;
 
     const firstValue = find(
-      values(translations),
-      (value) => String(value ?? "").trim().length > 0,
+      lodashValues(translations),
+      (value) => trim(String(value ?? "")).length > 0,
     );
-    if (firstValue) return String(firstValue).trim();
+    if (firstValue) return trim(String(firstValue));
   }
 
-  return String(fallback ?? "").trim();
+  return trim(String(fallback ?? ""));
 };
 
 const Index = () => {
@@ -76,7 +76,7 @@ const Index = () => {
   const deferredSearch = React.useDeferredValue(search);
   const queryParams = React.useMemo(
     () => ({
-      ...(deferredSearch.trim() ? { q: deferredSearch.trim() } : {}),
+      ...(trim(deferredSearch) ? { q: trim(deferredSearch) } : {}),
       ...(typeFilter !== "all" ? { type: typeFilter } : {}),
       ...(statusFilter !== "all" ? { status: statusFilter } : {}),
       page: currentPage,
@@ -161,7 +161,7 @@ const Index = () => {
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => toString(get(row, "id")),
     manualPagination: true,
-    pageCount: Math.max(1, Number(get(meta, "totalPages", 1))),
+    pageCount: Math.max(1, toNumber(get(meta, "totalPages", 1))),
     onPaginationChange: (updater) => {
       const next =
         typeof updater === "function"
@@ -259,3 +259,6 @@ const Index = () => {
 };
 
 export default Index;
+
+
+

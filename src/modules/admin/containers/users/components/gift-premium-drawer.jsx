@@ -1,5 +1,5 @@
 import React from "react";
-import { get, isArray, join } from "lodash";
+import { get, isArray, join, filter, toNumber, trim } from "lodash";
 import { GiftIcon, Loader2Icon } from "lucide-react";
 import { toast } from "sonner";
 import { usePostQuery } from "@/hooks/api";
@@ -53,7 +53,7 @@ const GiftPremiumDrawer = ({
   );
 
   const displayName =
-    `${get(user, "firstName", "")} ${get(user, "lastName", "")}`.trim() ||
+    trim(`${get(user, "firstName", "")} ${get(user, "lastName", "")}`) ||
     get(user, "email") ||
     "Foydalanuvchi";
 
@@ -68,8 +68,8 @@ const GiftPremiumDrawer = ({
         url: `/admin/users/${user.id}/gift-premium`,
         attributes: {
           planSlug: selectedSlug,
-          days: daysOverride ? Number(daysOverride) : undefined,
-          note: note.trim() || undefined,
+          days: daysOverride ? toNumber(daysOverride) : undefined,
+          note: trim(note) || undefined,
         },
       });
       toast.success(
@@ -143,12 +143,11 @@ const GiftPremiumDrawer = ({
           valueKey="slug"
           labelKey="name"
           getOptionDescription={(plan) =>
-            [
+            filter([
               get(typeLabelMap, plan.type, plan.type),
               formatPrice(plan.price),
               plan.durationDays ? `${plan.durationDays} kun` : null,
-            ]
-              .filter(Boolean)
+            ], Boolean)
               .join(" · ")
           }
           title="Premium plan tanlang"
@@ -165,7 +164,6 @@ const GiftPremiumDrawer = ({
           </p>
         ) : null}
       </div>
-
       {/* Days override */}
       <div className="space-y-2">
         <Label htmlFor="gift-days">Kunlar soni (ixtiyoriy)</Label>
@@ -182,7 +180,6 @@ const GiftPremiumDrawer = ({
           onChange={(e) => setDaysOverride(e.target.value)}
         />
       </div>
-
       {/* Note */}
       <div className="space-y-2">
         <Label htmlFor="gift-note">Izoh (ixtiyoriy)</Label>

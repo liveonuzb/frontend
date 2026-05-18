@@ -1,6 +1,8 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
+import { map } from "lodash";
+
 const WEEKDAY_LABELS = ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Yak"];
 const MONTH_LABELS = [
   "Yan",
@@ -122,7 +124,7 @@ const StrippedCalendar = ({
         className,
       )}
     >
-      {days.map((day) => {
+      {map(days, (day) => {
         const isSelected = sameDay(day, date);
         const isToday = sameDay(day, today);
         const isFirstOfMonth = day.getDate() === 1;

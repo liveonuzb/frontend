@@ -1,5 +1,5 @@
 import React from "react";
-import { get, map } from "lodash";
+import { get, map, filter, isArray, take, toNumber } from "lodash";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -8,7 +8,6 @@ import {
   ActivityIcon,
   ArrowRightIcon,
   BadgeCheckIcon,
-  BotIcon,
   BrainCircuitIcon,
   CalendarDaysIcon,
   CheckCircle2Icon,
@@ -47,7 +46,7 @@ import { useOnboardingFooter } from "@/modules/onboarding/lib/onboarding-footer-
 import PageAura from "../../components/page-aura.jsx";
 import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
 import { useAuthStore } from "@/store";
-import useOnboardingBase from "@/hooks/app/use-onboarding-base";
+import { useOnboardingAssets } from "@/hooks/app/use-onboarding-base";
 
 const LATEST_REPORT_QUERY_KEY = (language) => [
   "onboarding-report",
@@ -74,10 +73,10 @@ const getLanguageLabel = (language, t) => {
   return t("onboarding.report.languages.uz");
 };
 
-const getReportLoadingScenes = (base) => [
+const getReportLoadingScenes = (asset) => [
   {
     key: "collecting",
-    imageSrc: `${base}/report-1.webp`,
+    imageSrc: asset("report-1"),
     imageClassName: "object-[50%_35%]",
     glowClassName: "from-cyan-400/24 via-emerald-300/12 to-transparent",
     orbitClassName: "border-cyan-300/35",
@@ -104,7 +103,7 @@ const getReportLoadingScenes = (base) => [
   },
   {
     key: "analyzing",
-    imageSrc: `${base}/report-2.webp`,
+    imageSrc: asset("report-2"),
     imageClassName: "object-[50%_38%]",
     glowClassName: "from-indigo-400/22 via-sky-300/12 to-transparent",
     orbitClassName: "border-indigo-300/35",
@@ -131,7 +130,7 @@ const getReportLoadingScenes = (base) => [
   },
   {
     key: "planning",
-    imageSrc: `${base}/report-3.webp`,
+    imageSrc: asset("report-3"),
     imageClassName: "object-[50%_42%]",
     glowClassName: "from-amber-300/24 via-lime-300/12 to-transparent",
     orbitClassName: "border-amber-300/40",
@@ -158,7 +157,7 @@ const getReportLoadingScenes = (base) => [
   },
   {
     key: "finalizing",
-    imageSrc: `${base}/report-4.webp`,
+    imageSrc: asset("report-4"),
     imageClassName: "object-[50%_44%]",
     glowClassName: "from-yellow-300/28 via-orange-300/16 to-transparent",
     orbitClassName: "border-yellow-300/45",
@@ -206,7 +205,7 @@ const formatDateTime = (value, locale) => {
 };
 
 const ReportLoadingState = ({ slides, activeStage, t }) => {
-  const base = useOnboardingBase();
+  const { asset } = useOnboardingAssets();
 
   return (
     <div className="relative flex h-full min-h-0 flex-1 items-center justify-center overflow-hidden px-3 py-3 md:px-6 md:py-5">
@@ -296,7 +295,7 @@ const ReportLoadingState = ({ slides, activeStage, t }) => {
                           slide.imageClassName,
                         )}
                         onError={(event) => {
-                          event.currentTarget.src = `${base}/report-1.webp`;
+                          event.currentTarget.src = asset("report-1");
                         }}
                         animate={{ y: [0, -10, 0], scale: [1, 1.015, 1] }}
                         transition={{
@@ -397,18 +396,18 @@ const ReportErrorState = ({ title, description, onRetry, onDashboard, t }) => {
 };
 
 const ReportContent = ({ report, onStartPlan, t, locale }) => {
-  const base = useOnboardingBase();
+  const { asset } = useOnboardingAssets();
   const snapshot = get(report, "inputSnapshot", {});
   const targets = get(snapshot, "targets", {});
   const analytics = get(snapshot, "analytics", {});
-  const daysTracked = Number(get(analytics, "daysTracked", 0)) || 0;
+  const daysTracked = toNumber(get(analytics, "daysTracked", 0)) || 0;
   const confidenceScore = Math.min(96, 72 + Math.min(daysTracked, 8) * 3);
   const bmiValue = get(report, "report.bodySummary.bmiValue") || "—";
   const bmiLabel = get(report, "report.bodySummary.bmiLabel") || "—";
-  const calories = Number(get(targets, "calories", 0)) || 0;
-  const protein = Number(get(targets, "protein", 0)) || 0;
-  const waterMl = Number(get(targets, "waterMl", 0)) || 0;
-  const sleepHours = Number(get(targets, "sleepHours", 0)) || 0;
+  const calories = toNumber(get(targets, "calories", 0)) || 0;
+  const protein = toNumber(get(targets, "protein", 0)) || 0;
+  const waterMl = toNumber(get(targets, "waterMl", 0)) || 0;
+  const sleepHours = toNumber(get(targets, "sleepHours", 0)) || 0;
   const weightStatus =
     get(report, "report.bodySummary.weightStatus") ||
     get(report, "report.hero.highlight") ||
@@ -455,7 +454,7 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
     },
   ];
 
-  const statHighlights = scoreCards.map(({ label, value, detail }) => ({
+  const statHighlights = map(scoreCards, ({ label, value, detail }) => ({
     label,
     value,
     detail,
@@ -492,28 +491,28 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
     {
       key: "nutrition",
       title: t("onboarding.report.sections.nutrition"),
-      image: `${base}/report-1.webp`,
+      image: asset("report-1"),
       Icon: SaladIcon,
       section: get(report, "report.nutritionGuidance"),
     },
     {
       key: "water",
       title: t("onboarding.report.sections.water"),
-      image: `${base}/report-2.webp`,
+      image: asset("report-2"),
       Icon: DropletsIcon,
       section: get(report, "report.hydrationGuidance"),
     },
     {
       key: "workout",
       title: t("onboarding.report.sections.workout"),
-      image: `${base}/report-3.webp`,
+      image: asset("report-3"),
       Icon: DumbbellIcon,
       section: get(report, "report.movementGuidance"),
     },
     {
       key: "sleep",
       title: t("onboarding.report.sections.sleep"),
-      image: `${base}/report-4.webp`,
+      image: asset("report-4"),
       Icon: MoonIcon,
       section: {
         summary: t("onboarding.report.sleepSummary"),
@@ -523,20 +522,20 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
     {
       key: "progress",
       title: t("onboarding.report.sections.progress"),
-      image: `${base}/report-1.webp`,
+      image: asset("report-1"),
       Icon: TrendingUpIcon,
       section: get(report, "report.goalInterpretation"),
     },
   ];
 
-  const whyItems = [
+  const whyItems = filter([
     get(report, "report.bodySummary.bmiLabel"),
     get(report, "report.hydrationGuidance.bullets.0"),
     daysTracked > 0
       ? t("onboarding.report.trackingAvailable")
       : t("onboarding.report.needTracking"),
-  ].filter(Boolean);
-  const actionItems = get(report, "report.actionPlan.items", []).slice(0, 7);
+  ], Boolean);
+  const actionItems = take(get(report, "report.actionPlan.items", []), 7);
 
   return (
     <div className="relative flex min-h-0 flex-1 overflow-y-auto bg-[#F8FAF7] px-3 py-3 pb-24 sm:px-4 sm:py-5 sm:pb-28 md:px-8 md:py-8 md:pb-8">
@@ -544,7 +543,6 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
         <div className="absolute -left-24 top-10 size-72 rounded-full bg-[#E68A00]/10 blur-3xl" />
         <div className="absolute right-0 top-1/4 size-80 rounded-full bg-emerald-200/30 blur-3xl" />
       </div>
-
       <div className="relative z-10 mx-auto w-full max-w-6xl space-y-4 md:space-y-6">
         <motion.div
           className="hidden items-center gap-2 overflow-x-auto pb-1 sm:flex"
@@ -552,7 +550,7 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
         >
-          {trackerItems.map((item, index) => (
+          {map(trackerItems, (item, index) => (
             <React.Fragment key={item}>
               <div className="flex shrink-0 items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-bold text-[#111827] shadow-sm ring-1 ring-[#E68A00]/12">
                 <span className="flex size-6 items-center justify-center rounded-full bg-[#E68A00] text-[11px] text-white">
@@ -606,7 +604,7 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
             </div>
 
             <div className="grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-4">
-              {statHighlights.map(({ label, value, detail }, index) => (
+              {map(statHighlights, ({ label, value, detail }, index) => (
                 <motion.div
                   key={label}
                   className="rounded-[18px] bg-[#F8FAF7] p-3 ring-1 ring-slate-200 sm:rounded-[24px] sm:p-4"
@@ -666,7 +664,7 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
               </div>
             </motion.div>
             <motion.img
-              src={`${base}/report-1.webp`}
+              src={asset("report-1")}
               alt=""
               className="absolute bottom-0 left-1/2 h-[250px] w-[200px] -translate-x-1/2 object-contain drop-shadow-[0_30px_60px_rgba(15,23,42,0.18)] sm:h-[370px] sm:w-[280px] lg:h-[470px] lg:w-[350px]"
               animate={{ y: [0, -10, 0], scale: [1, 1.015, 1] }}
@@ -692,7 +690,7 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
 
         <div className="grid gap-3 md:gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-            {targetCards.map(({ label, value, unit, Icon }) => (
+            {map(targetCards, ({ label, value, unit, Icon }) => (
               <div
                 key={label}
                 className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-5"
@@ -729,7 +727,7 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
               <HeartPulseIcon className="size-6 text-[#E68A00] sm:size-7" />
             </div>
             <div className="mt-4 space-y-2.5 sm:mt-5 sm:space-y-3">
-              {whyItems.map((item) => (
+              {map(whyItems, (item) => (
                 <div
                   key={item}
                   className="flex items-start gap-2.5 rounded-xl bg-[#F8FAF7] px-3 py-2.5 sm:gap-3 sm:py-3"
@@ -762,7 +760,7 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 md:gap-4 xl:grid-cols-5">
-            {sectionCards.map(({ key, title, image, Icon, section }, index) => (
+            {map(sectionCards, ({ key, title, image, Icon, section }, index) => (
               <motion.div
                 key={key}
                 className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 sm:rounded-[28px]"
@@ -778,7 +776,7 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
                     alt=""
                     className="absolute bottom-0 left-1/2 h-32 w-28 -translate-x-1/2 object-contain sm:h-44 sm:w-36"
                     onError={(event) => {
-                      event.currentTarget.src = `${base}/report-1.webp`;
+                      event.currentTarget.src = asset("report-1");
                     }}
                   />
                   <div className="absolute left-3 top-3 flex size-8 items-center justify-center rounded-xl bg-white text-[#E68A00] shadow-sm sm:left-4 sm:top-4 sm:size-10">
@@ -793,9 +791,7 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
                     {get(section, "summary")}
                   </p>
                   <div className="mt-3 space-y-1.5 sm:mt-4 sm:space-y-2">
-                    {get(section, "bullets", [])
-                      .slice(0, 2)
-                      .map((bullet) => (
+                    {map(take(get(section, "bullets", []), 2), (bullet) => (
                         <div key={bullet} className="flex items-start gap-2">
                           <CheckCircle2Icon className="mt-1 size-3.5 shrink-0 text-green-600" />
                           <p className="line-clamp-2 text-[11px] font-medium leading-4 text-[#64748B] sm:text-xs sm:leading-5">
@@ -830,7 +826,7 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
             </Button>
           </div>
           <div className="mt-4 grid gap-2 sm:mt-5 sm:gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {actionItems.map((item, index) => (
+            {map(actionItems, (item, index) => (
               <div
                 key={`${index}-${item}`}
                 className="flex gap-2.5 rounded-2xl bg-white/8 p-2.5 ring-1 ring-white/10 sm:gap-3 sm:rounded-3xl sm:p-4"
@@ -875,20 +871,20 @@ const ReportContentSkeleton = () => {
               <Skeleton className="h-5 w-full" />
               <Skeleton className="h-5 w-5/6" />
               <div className="grid gap-3 md:grid-cols-4">
-                {Array.from({ length: 4 }).map((_, index) => (
+                {map(Array.from({ length: 4 }), (_, index) => (
                   <Skeleton key={index} className="h-28 rounded-[28px]" />
                 ))}
               </div>
             </CardContent>
           </Card>
           <div className="grid gap-4 lg:grid-cols-2">
-            {Array.from({ length: 4 }).map((_, index) => (
+            {map(Array.from({ length: 4 }), (_, index) => (
               <Skeleton key={index} className="h-60 rounded-[28px]" />
             ))}
           </div>
         </div>
         <div className="space-y-4">
-          {Array.from({ length: 4 }).map((_, index) => (
+          {map(Array.from({ length: 4 }), (_, index) => (
             <Skeleton key={index} className="h-52 rounded-[28px]" />
           ))}
         </div>
@@ -902,7 +898,7 @@ const Index = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
-  const base = useOnboardingBase();
+  const { asset } = useOnboardingAssets();
   const onboardingCompleted = useAuthStore(
     (state) => state.onboardingCompleted,
   );
@@ -935,7 +931,7 @@ const Index = () => {
 
   const loadingSlides = React.useMemo(
     () =>
-      getReportLoadingScenes(base).map((scene, index) => ({
+      map(getReportLoadingScenes(asset), (scene, index) => ({
         ...scene,
         step: t(`onboarding.report.loadingSlides.${scene.key}.step`, {
           defaultValue: t("onboarding.report.stepLabel", { index: index + 1 }),
@@ -949,7 +945,7 @@ const Index = () => {
           defaultValue: [],
         }),
       })),
-    [t],
+    [asset, t],
   );
 
   /*
@@ -1007,7 +1003,7 @@ const Index = () => {
           const message =
             get(error, "response.data.message") ||
             t("onboarding.report.generateError");
-          toast.error(Array.isArray(message) ? message.join(", ") : message);
+          toast.error(isArray(message) ? message.join(", ") : message);
         }
 
         throw error;

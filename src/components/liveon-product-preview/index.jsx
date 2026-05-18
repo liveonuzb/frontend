@@ -21,6 +21,8 @@ import { cn } from "@/lib/utils";
 import { MoodWidgetView } from "@/modules/user/containers/dashboard/mood-widget.jsx";
 import WorkoutWidget from "@/modules/user/containers/dashboard/workout-widget.jsx";
 
+import { filter, map } from "lodash";
+
 const PREVIEW_INTERVAL_MS = 4500;
 
 const tr = (t, prefix, key) => t(`${prefix}.${key}`);
@@ -354,7 +356,7 @@ function ProductPreviewSlider({
           </div>
 
           <div className="mt-4 flex items-center justify-center gap-2">
-            {slides.map((slide, index) => {
+            {map(slides, (slide, index) => {
               const isActive = index === activeIndex;
 
               return (
@@ -476,12 +478,10 @@ function PlanBuilderPreviewSlide({ compact, preview, slide }) {
   return (
     <>
       <PreviewHeader compact={compact} slide={slide} />
-
       <div className={cn("grid gap-3 xl:grid-cols-2", compact && "xl:grid-cols-1")}>
         <MealPlanBuilderPreview preview={preview} />
         <WorkoutPlanBuilderPreview preview={preview} />
       </div>
-
       <div className={cn("mt-3 rounded-2xl border p-3", previewSurface)}>
         <div className="mb-3 flex items-center gap-2">
           <ShoppingBasketIcon className="size-4 text-teal-600" />
@@ -500,7 +500,7 @@ function PlanBuilderPreviewSlide({ compact, preview, slide }) {
           {preview.builderSearchPlaceholder}
         </div>
         <div className="flex flex-wrap gap-2">
-          {preview.builderLibraryItems.map((item) => (
+          {map(preview.builderLibraryItems, (item) => (
             <span
               key={item}
               className={cn(
@@ -573,7 +573,6 @@ function ProgressPreviewSlide({ compact, preview, slide }) {
   return (
     <>
       <PreviewHeader compact={compact} slide={slide} />
-
       <div className={cn("grid gap-3 xl:grid-cols-[0.9fr_1.1fr]", compact && "xl:grid-cols-1")}>
         <WorkoutWidget
           activePlan={{
@@ -611,7 +610,6 @@ function ProgressPreviewSlide({ compact, preview, slide }) {
           <MiniProgressChart preview={preview} />
         </div>
       </div>
-
       <div
         className={cn(
           "mt-3 rounded-2xl border p-3.5 2xl:mt-4 2xl:p-4",
@@ -619,7 +617,7 @@ function ProgressPreviewSlide({ compact, preview, slide }) {
         )}
       >
         <div className="space-y-2.5">
-          {preview.progressInsights.map((item) => (
+          {map(preview.progressInsights, (item) => (
             <div key={item} className="flex items-center gap-2">
               <CheckCircle2Icon className="size-4 shrink-0 text-teal-600" />
               <span className="text-sm font-medium text-slate-600 dark:text-white/70">
@@ -649,9 +647,8 @@ export function MealPlanBuilderPreview({ compact = false, preview }) {
           {preview.builderReadyLabel}
         </span>
       </div>
-
       <div className={cn("space-y-2", compact && "space-y-2.5")}>
-        {(compact ? preview.meals : preview.builderMealColumns).map((item) => (
+        {map((compact ? preview.meals : preview.builderMealColumns), (item) => (
           <BuilderColumnPreview
             actionLabel={preview.builderAddLabel}
             compact={compact}
@@ -680,9 +677,8 @@ export function WorkoutPlanBuilderPreview({ preview }) {
         </div>
         <RepeatIcon className="size-4 text-slate-400 dark:text-white/45" />
       </div>
-
       <div className="space-y-2">
-        {preview.builderWorkoutDays.map((day) => (
+        {map(preview.builderWorkoutDays, (day) => (
           <BuilderColumnPreview
             actionLabel={preview.builderAddLabel}
             icon={DumbbellIcon}
@@ -707,7 +703,7 @@ function BuilderColumnPreview({
   const meta = compact ? item.calories : item.meta || item.focus;
   const rows = compact
     ? [item.description]
-    : item.items || [item.description].filter(Boolean);
+    : item.items || filter([item.description], Boolean);
 
   return (
     <div className={cn("rounded-2xl px-3 py-2.5", previewSubtleSurface)}>
@@ -732,7 +728,7 @@ function BuilderColumnPreview({
         ) : null}
       </div>
       <div className="mt-2 space-y-1.5">
-        {rows.map((row) => (
+        {map(rows, (row) => (
           <p
             className="truncate rounded-xl bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 dark:bg-white/[0.07] dark:text-white/70"
             key={row}
@@ -772,7 +768,7 @@ function MiniProgressChart({ preview }) {
           previewSubtleSurface,
         )}
       >
-        {bars.map((bar, index) => (
+        {map(bars, (bar, index) => (
           <div
             key={`${bar}-${index}`}
             className={cn(

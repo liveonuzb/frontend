@@ -51,12 +51,14 @@ import useProfileSettings, {
 import { useAuthStore } from "@/store";
 import useApi from "@/hooks/api/use-api";
 
+import { includes, map, toLower, take } from "lodash";
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const OtpInput = ({ value, onChange }) => (
   <InputOTP maxLength={6} value={value} onChange={onChange} containerClassName="justify-center">
     <div className="flex items-center justify-center gap-x-2">
-      {Array.from({ length: 6 }).map((_, index) => (
+      {map(Array.from({ length: 6 }), (_, index) => (
         <InputOTPGroup key={index}>
           <InputOTPSlot index={index} className="size-12" />
         </InputOTPGroup>
@@ -67,12 +69,12 @@ const OtpInput = ({ value, onChange }) => (
 
 const parseDevice = (ua) => {
   if (!ua) return { label: "Noma'lum qurilma", Icon: MonitorIcon };
-  const lower = ua.toLowerCase();
+  const lower = toLower(ua);
   if (
-    lower.includes("android") ||
-    lower.includes("iphone") ||
-    lower.includes("ipad") ||
-    lower.includes("mobile")
+    includes(lower, "android") ||
+    includes(lower, "iphone") ||
+    includes(lower, "ipad") ||
+    includes(lower, "mobile")
   )
     return { label: "Mobil qurilma", Icon: SmartphoneIcon };
   return { label: "Kompyuter", Icon: MonitorIcon };
@@ -367,7 +369,6 @@ const TwoFactorSection = ({ t }) => {
           )}
         </CardContent>
       </Card>
-
       {/* Setup Drawer */}
       <Drawer open={setupOpen} onOpenChange={setSetupOpen} direction="bottom">
         <DrawerContent>
@@ -385,7 +386,7 @@ const TwoFactorSection = ({ t }) => {
             {backupCodes ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-2">
-                  {backupCodes.map((code, i) => (
+                  {map(backupCodes, (code, i) => (
                     <div
                       key={i}
                       className="rounded-xl border bg-muted/40 px-3 py-2 text-center font-mono text-sm font-semibold tracking-wider"
@@ -461,7 +462,6 @@ const TwoFactorSection = ({ t }) => {
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
-
       {/* Disable Drawer */}
       <Drawer open={disableOpen} onOpenChange={setDisableOpen} direction="bottom">
         <DrawerContent>
@@ -492,7 +492,6 @@ const TwoFactorSection = ({ t }) => {
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
-
       {/* Regen Backup Codes Drawer */}
       <Drawer open={regenOpen} onOpenChange={setRegenOpen} direction="bottom">
         <DrawerContent>
@@ -508,7 +507,7 @@ const TwoFactorSection = ({ t }) => {
             {newBackupCodes ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-2">
-                  {newBackupCodes.map((code, i) => (
+                  {map(newBackupCodes, (code, i) => (
                     <div
                       key={i}
                       className="rounded-xl border bg-muted/40 px-3 py-2 text-center font-mono text-sm font-semibold tracking-wider"
@@ -612,7 +611,7 @@ const ActiveSessionsSection = ({ handleLogout, isLoggingOut, t }) => {
           </div>
         ) : (
           <div className="space-y-2">
-            {sessions.map((session) => {
+            {map(sessions, (session) => {
               const { label, Icon } = parseDevice(session.userAgent);
               const isCurrent = session.id === currentSessionId;
               return (
@@ -717,7 +716,7 @@ const SecurityActivitySection = ({ t }) => {
       <CardContent className="space-y-2 p-6">
         {isLoading ? (
           <div className="space-y-2">
-            {[0, 1, 2].map((i) => (
+            {map([0, 1, 2], (i) => (
               <Skeleton key={i} className="h-14 w-full rounded-xl" />
             ))}
           </div>
@@ -726,7 +725,7 @@ const SecurityActivitySection = ({ t }) => {
             Faoliyat tarixi yo&apos;q
           </div>
         ) : (
-          items.slice(0, 10).map((item) => {
+          map(take(items, 10), (item) => {
             const config = ACTIVITY_CONFIG[item.type] ?? {
               label: item.type,
               Icon: ShieldIcon,

@@ -21,6 +21,8 @@ import {
   NutritionDrawerContent,
 } from "./nutrition-drawer-layout.jsx";
 
+import { map, take } from "lodash";
+
 const GOAL_FILTERS = [
   { value: "all", label: "Barchasi" },
   { value: "lose_weight", label: "Vazn yo'qotish" },
@@ -81,13 +83,13 @@ export default function TemplateLibraryDrawer({
         <DrawerHeader>
           <DrawerTitle>Shablon kutubxonasi</DrawerTitle>
           <DrawerDescription>
-            Murabbiylar tayyorlagan rejadan boshlang
+            Tayyor ovqatlanish rejasidan boshlang
           </DrawerDescription>
         </DrawerHeader>
 
         <NutritionDrawerBody className="space-y-4 pb-5">
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {GOAL_FILTERS.map((filter) => (
+            {map(GOAL_FILTERS, (filter) => (
               <Button
                 key={filter.value}
                 type="button"
@@ -108,7 +110,7 @@ export default function TemplateLibraryDrawer({
 
           <div className="max-h-[55vh] space-y-3 overflow-y-auto pr-1">
             {isBusy ? (
-              [0, 1, 2].map((item) => <TemplateSkeleton key={item} />)
+              map([0, 1, 2], (item) => <TemplateSkeleton key={item} />)
             ) : isError ? (
               <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
                 Shablonlarni yuklab bo'lmadi.
@@ -124,7 +126,7 @@ export default function TemplateLibraryDrawer({
                 </p>
               </div>
             ) : (
-              templates.map((template) => {
+              map(templates, (template) => {
                 const isPending = pendingTemplateId === template.id;
 
                 return (
@@ -153,13 +155,10 @@ export default function TemplateLibraryDrawer({
                             {template.daysWithMeals || 0} kun ·{" "}
                             {template.mealsCount || 0} ta ovqat
                           </span>
-                          {template.coach?.name ? (
-                            <span>{template.coach.name}</span>
-                          ) : null}
                         </div>
                         {template.tags.length > 0 ? (
                           <div className="mt-3 flex flex-wrap gap-1.5">
-                            {template.tags.slice(0, 4).map((tag) => (
+                            {map(take(template.tags, 4), (tag) => (
                               <Badge key={tag} variant="outline">
                                 {tag}
                               </Badge>

@@ -1,13 +1,12 @@
 import React, { memo, useState } from "react";
 import { motion } from "framer-motion";
-import { get, round, multiply } from "lodash";
+import { get, round, multiply, includes, isArray, map } from "lodash";
 import { cn } from "@/lib/utils.js";
 import {
   CheckCircle2Icon,
   CheckIcon,
   InfoIcon,
   Loader2Icon,
-  MessageCircleIcon,
   PlusIcon,
   RefreshCwIcon,
   Trash2Icon,
@@ -60,7 +59,6 @@ const MealCard = memo(
     const [portionOpen, setPortionOpen] = useState(false);
     const [cameraOpen, setCameraOpen] = useState(false);
     const [ingredientsOpen, setIngredientsOpen] = useState(false);
-    const [coachFeedbackOpen, setCoachFeedbackOpen] = useState(false);
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
     const isConsumed = get(food, "isConsumed", false);
@@ -73,15 +71,8 @@ const MealCard = memo(
     const emoji = get(food, "emoji", "🍽️");
     const image = get(food, "image", null);
     const ingredients = get(food, "ingredients", []);
-    const coachFeedback = Array.isArray(get(food, "coachFeedback", []))
-      ? get(food, "coachFeedback", [])
-      : [];
-    const hasCoachFeedback = coachFeedback.length > 0;
-    const isCoachApproved =
-      get(food, "coachApproved", false) ||
-      get(food, "source", null) === "coach-meal-plan";
     const hasIngredientBreakdown =
-      Array.isArray(ingredients) && ingredients.length > 0;
+      isArray(ingredients) && ingredients.length > 0;
     const sourceMeta = getNutritionSourceMeta(
       get(food, "source", null),
       get(food, "isFromPlanLinked", false) ? "meal-plan" : "manual",
@@ -99,7 +90,7 @@ const MealCard = memo(
       };
     }, []);
 
-    if (["scanning", "draft", "error"].includes(scanStatus)) {
+    if (includes(["scanning", "draft", "error"], scanStatus)) {
       const scanImage = get(food, "image", null);
       const scanTitle =
         scanStatus === "scanning"
@@ -513,27 +504,8 @@ const MealCard = memo(
                       {unit}
                     </span>
                   )}
-                  {hasCoachFeedback ? (
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-1 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 transition-colors hover:bg-amber-500/25 dark:text-amber-300"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setCoachFeedbackOpen(true);
-                      }}
-                    >
-                      <MessageCircleIcon className="size-3" />
-                      Coach izohi
-                    </button>
-                  ) : null}
-                  {isCoachApproved ? (
-                    <span className="inline-flex items-center gap-1 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
-                      <CheckCircle2Icon className="size-3" />
-                      Coach tasdiqlagan
-                    </span>
-                  ) : null}
                   <div className="flex items-center gap-1.5">
-                    {MACROS.map(({ key, color }) => (
+                    {map(MACROS, ({ key, color }) => (
                       <span
                         key={key}
                         className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground"
@@ -663,43 +635,6 @@ const MealCard = memo(
             </CardContent>
           </Card>
         </motion.div>
-
-        <Dialog open={coachFeedbackOpen} onOpenChange={setCoachFeedbackOpen}>
-          <DialogContent className="max-w-md rounded-2xl">
-            <DialogHeader>
-              <DialogTitle>Coach izohi</DialogTitle>
-              <DialogDescription>{food.name}</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-3">
-              {coachFeedback.map((feedback) => (
-                <div
-                  key={feedback.id}
-                  className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-bold">
-                        {feedback.coach?.name || "Coach"}
-                      </p>
-                      {feedback.title ? (
-                        <p className="mt-0.5 text-xs font-semibold text-amber-700 dark:text-amber-300">
-                          {feedback.title}
-                        </p>
-                      ) : null}
-                    </div>
-                    <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">
-                      {feedback.createdAt || feedback.contextDate || ""}
-                    </span>
-                  </div>
-                  <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">
-                    {feedback.message}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </DialogContent>
-        </Dialog>
-
         <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
           <DialogContent className="max-w-sm rounded-2xl">
             <DialogHeader>
@@ -729,7 +664,6 @@ const MealCard = memo(
             </div>
           </DialogContent>
         </Dialog>
-
         <FoodLogDrawer
           food={food}
           mealType={mealType}
@@ -754,7 +688,6 @@ const MealCard = memo(
           }
           readOnly={readOnly}
         />
-
         {hasIngredientBreakdown ? (
           <MealIngredientsEditorDrawer
             open={ingredientsOpen}
@@ -773,7 +706,6 @@ const MealCard = memo(
             onConfirm={handlePortionConfirm}
           />
         )}
-
         <CameraLogDrawer
           food={food}
           open={cameraOpen}

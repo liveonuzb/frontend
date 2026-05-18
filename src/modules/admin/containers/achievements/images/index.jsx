@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router";
-import { get, isArray, join } from "lodash";
+import { get, isArray, join, find, map } from "lodash";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -57,7 +57,7 @@ const AchievementImagesPage = () => {
   const selectedField =
     IMAGE_FIELD_BY_MODE[selectedMode] || IMAGE_FIELD_BY_MODE.madagascar;
   const selectedLabel =
-    APP_MODE_OPTIONS.find((option) => option.value === selectedMode)?.label ||
+    find(APP_MODE_OPTIONS, (option) => option.value === selectedMode)?.label ||
     "Madagascar";
 
   const form = useForm({
@@ -144,7 +144,7 @@ const AchievementImagesPage = () => {
                 className="flex flex-col gap-4"
               >
                 <div className="grid grid-cols-3 gap-2">
-                  {APP_MODE_OPTIONS.map((mode) => (
+                  {map(APP_MODE_OPTIONS, (mode) => (
                     <button
                       type="button"
                       key={mode.value}

@@ -1,10 +1,10 @@
 import React from "react";
-import { get } from "lodash";
+import { get, trim } from "lodash";
 import { AdminConfirmDialog } from "@/modules/admin/components/admin-confirm-dialog.jsx";
 
 export const DeleteAlert = ({ user, open, onOpenChange, onConfirm }) => {
   const displayName =
-    `${get(user, "firstName", "")} ${get(user, "lastName", "")}`.trim() ||
+    trim(`${get(user, "firstName", "")} ${get(user, "lastName", "")}`) ||
     "Nomsiz foydalanuvchi";
 
   return (

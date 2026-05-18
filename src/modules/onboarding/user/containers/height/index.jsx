@@ -16,9 +16,12 @@ import {
   getOnboardingPersonIllustration,
 } from "../../lib/illustration.js";
 import { getHeightTone } from "../../lib/tones.js";
+import { useOnboardingAssets } from "@/hooks/app/use-onboarding-base";
+
+import { toNumber } from "lodash";
 
 const getHeightProfile = (heightValue, t) => {
-  const heightNumber = Number(heightValue);
+  const heightNumber = toNumber(heightValue);
 
   if (!Number.isFinite(heightNumber) || heightNumber < 160) {
     return {
@@ -44,11 +47,17 @@ const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { height, setField, gender, age, firstName } = useOnboardingStore();
+  const { base, extension } = useOnboardingAssets();
 
   useOnboardingAutoSave("user", "height");
 
   const currentHeight = height?.value || "170";
-  const illustration = getOnboardingPersonIllustration(gender, age);
+  const illustration = getOnboardingPersonIllustration(
+    gender,
+    age,
+    base,
+    extension,
+  );
   const tone = getHeightTone(currentHeight);
   const profile = getHeightProfile(currentHeight, t);
   const illustrationHeight = getOnboardingIllustrationHeight(currentHeight);

@@ -1,5 +1,5 @@
 import React from "react";
-import { isEqual } from "lodash";
+import { isEqual, map } from "lodash";
 import { useTranslation } from "react-i18next";
 import {
   BellIcon,
@@ -30,13 +30,9 @@ import { TimePicker } from "@/components/ui/time-picker";
 import useProfileSettings, {
   getRequestErrorMessage,
 } from "@/hooks/app/use-profile-settings";
-import {
-  useCoachNotificationPreferences,
-  useQuietHours,
-} from "@/hooks/app/use-notifications";
+import { useQuietHours } from "@/hooks/app/use-notifications";
 import useMe from "@/hooks/app/use-me";
 import useUserTelegram from "@/hooks/app/use-user-telegram";
-import { useAuthStore } from "@/store";
 
 const openTelegramLink = (url) => {
   if (!url) return;
@@ -113,56 +109,9 @@ const createInitialForm = (settings) => {
   };
 };
 
-const COACH_NOTIFICATION_LABELS = {
-  COACH_PAYMENT_DUE: {
-    title: "To'lov muddati",
-    description: "Mijoz to'lovi yaqinlashganda signal.",
-  },
-  COACH_PAYMENT_OVERDUE: {
-    title: "Kechikkan to'lov",
-    description: "To'lov muddati o'tganda yuqori prioritet signal.",
-  },
-  COACH_CHECK_IN_SUBMITTED: {
-    title: "Check-in yuborildi",
-    description: "Mijoz haftalik check-in topshirganda.",
-  },
-  COACH_SESSION_REMINDER: {
-    title: "Sessiya eslatmasi",
-    description: "Rejalashtirilgan sessiya boshlanishidan oldin.",
-  },
-  COACH_COURSE_PURCHASE: {
-    title: "Kurs xaridi",
-    description: "Telegramdan yangi kurs to'lov cheki kelganda.",
-  },
-  COACH_BOT_ERROR: {
-    title: "Bot xatosi",
-    description: "Telegram bot ishlovida xatolik bo'lganda.",
-  },
-  WEEKLY_CHECK_IN: {
-    title: "Weekly check-in",
-    description: "Kutilayotgan yoki kechikkan weekly check-inlar.",
-  },
-  COACH_FEEDBACK: {
-    title: "Feedback",
-    description: "Mijoz feedback oqimi bo'yicha signal.",
-  },
-  COACH_TASK: {
-    title: "Vazifa",
-    description: "Coach vazifalari va progress signallari.",
-  },
-  COACH_PLAN_UPDATE: {
-    title: "Plan update",
-    description: "Meal/workout plan yangilanish holatlari.",
-  },
-  COACH_CONNECTED: {
-    title: "Coach ulanishi",
-    description: "Coach-client aloqasi bo'yicha yangilanishlar.",
-  },
-};
-
 const NotificationsSettingsForm = ({ form, setForm, t }) => (
   <div className="space-y-3">
-    {getNotificationOptions(t).map((option) => {
+    {map(getNotificationOptions(t), (option) => {
       const Icon = option.icon;
 
       return (
@@ -348,7 +297,6 @@ const TelegramConnectCard = ({ t }) => {
 export const NotificationSettingsDrawer = ({
   open,
   onOpenChange,
-  isCoach = false,
 }) => {
   const { t } = useTranslation();
   const { settings, saveNotificationSettings, isSavingNotifications } =
@@ -358,25 +306,6 @@ export const NotificationSettingsDrawer = ({
     [settings],
   );
   const [form, setForm] = React.useState(initialForm);
-  const {
-    preferences: coachPreferences,
-    updatePreferences: updateCoachPreferences,
-    isUpdating: isUpdatingCoachPreferences,
-  } = useCoachNotificationPreferences({
-    enabled: open && isCoach,
-  });
-  const initialCoachPrefsForm = React.useMemo(
-    () =>
-      coachPreferences.map((preference) => ({
-        type: preference.type,
-        inAppEnabled: preference.inAppEnabled ?? true,
-        pushEnabled: preference.pushEnabled ?? true,
-        emailEnabled: preference.emailEnabled ?? false,
-        digestEnabled: preference.digestEnabled ?? false,
-      })),
-    [coachPreferences],
-  );
-  const [coachPrefsForm, setCoachPrefsForm] = React.useState([]);
   const {
     quietHours,
     updateQuietHours,
@@ -398,10 +327,6 @@ export const NotificationSettingsDrawer = ({
   }, [initialForm]);
 
   React.useEffect(() => {
-    setCoachPrefsForm(initialCoachPrefsForm);
-  }, [initialCoachPrefsForm]);
-
-  React.useEffect(() => {
     setQhEnabled(quietHours.enabled ?? false);
     setQhStart(quietHours.start ?? "22:00");
     setQhEnd(quietHours.end ?? "08:00");
@@ -409,8 +334,6 @@ export const NotificationSettingsDrawer = ({
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const isDirty = !isEqual(form, initialForm);
-  const isCoachPrefsDirty =
-    isCoach && !isEqual(coachPrefsForm, initialCoachPrefsForm);
   const isQuietHoursDirty =
     qhEnabled !== (quietHours.enabled ?? false) ||
     qhStart !== (quietHours.start ?? "22:00") ||
@@ -420,9 +343,6 @@ export const NotificationSettingsDrawer = ({
     try {
       await Promise.all([
         isDirty ? saveNotificationSettings(form) : Promise.resolve(),
-        isCoach && isCoachPrefsDirty
-          ? updateCoachPreferences(coachPrefsForm)
-          : Promise.resolve(),
         isQuietHoursDirty
           ? updateQuietHours({
               enabled: qhEnabled,
@@ -439,10 +359,7 @@ export const NotificationSettingsDrawer = ({
       );
     }
   }, [
-    coachPrefsForm,
     form,
-    isCoach,
-    isCoachPrefsDirty,
     isDirty,
     isQuietHoursDirty,
     onOpenChange,
@@ -451,22 +368,8 @@ export const NotificationSettingsDrawer = ({
     qhStart,
     saveNotificationSettings,
     t,
-    updateCoachPreferences,
     updateQuietHours,
   ]);
-
-  const updateCoachPreferenceField = React.useCallback((type, field, value) => {
-    setCoachPrefsForm((current) =>
-      current.map((preference) =>
-        preference.type === type
-          ? {
-              ...preference,
-              [field]: value,
-            }
-          : preference,
-      ),
-    );
-  }, []);
 
   return (
     <Drawer direction="bottom" open={open} onOpenChange={onOpenChange}>
@@ -480,64 +383,6 @@ export const NotificationSettingsDrawer = ({
         <DrawerBody className="space-y-6">
           <TelegramConnectCard t={t} />
           <NotificationsSettingsForm form={form} setForm={setForm} t={t} />
-
-          {isCoach && coachPrefsForm.length > 0 ? (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <BellIcon className="size-4 text-primary" />
-                <p className="text-sm font-semibold">
-                  Coach notification center
-                </p>
-              </div>
-              {coachPrefsForm.map((preference) => {
-                const labels = COACH_NOTIFICATION_LABELS[preference.type] ?? {
-                  title: preference.type,
-                  description: "Coach notification turi.",
-                };
-
-                return (
-                  <Card key={preference.type}>
-                    <CardContent className="space-y-4 p-4">
-                      <div>
-                        <p className="font-semibold">{labels.title}</p>
-                        <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                          {labels.description}
-                        </p>
-                      </div>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2">
-                          <span className="text-sm">Feed’da ko'rsatish</span>
-                          <Switch
-                            checked={preference.inAppEnabled}
-                            onCheckedChange={(checked) =>
-                              updateCoachPreferenceField(
-                                preference.type,
-                                "inAppEnabled",
-                                checked,
-                              )
-                            }
-                          />
-                        </div>
-                        <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2">
-                          <span className="text-sm">Daily digest</span>
-                          <Switch
-                            checked={preference.digestEnabled}
-                            onCheckedChange={(checked) =>
-                              updateCoachPreferenceField(
-                                preference.type,
-                                "digestEnabled",
-                                checked,
-                              )
-                            }
-                          />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          ) : null}
 
           <div className="space-y-3">
             <div className="flex items-center gap-2">
@@ -580,15 +425,13 @@ export const NotificationSettingsDrawer = ({
           <Button
             type="button"
             disabled={
-              (!isDirty && !isCoachPrefsDirty && !isQuietHoursDirty) ||
+              (!isDirty && !isQuietHoursDirty) ||
               isSavingNotifications ||
-              isUpdatingCoachPreferences ||
               isUpdatingQuietHours
             }
             onClick={handleSave}
           >
             {isSavingNotifications ||
-            isUpdatingCoachPreferences ||
             isUpdatingQuietHours
               ? t("profile.general.saving")
               : t("profile.general.save")}
@@ -601,8 +444,6 @@ export const NotificationSettingsDrawer = ({
 
 export const NotificationsTab = ({ embedded = false }) => {
   const { t } = useTranslation();
-  const activeRole = useAuthStore((state) => state.activeRole);
-  const isCoach = activeRole === "COACH";
   const [settingsOpen, setSettingsOpen] = React.useState(false);
 
   return (
@@ -644,7 +485,6 @@ export const NotificationsTab = ({ embedded = false }) => {
       <NotificationSettingsDrawer
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
-        isCoach={isCoach}
       />
     </>
   );

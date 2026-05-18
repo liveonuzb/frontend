@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { isEqual } from "lodash";
+import { isEqual, find, map } from "lodash";
 import {
   LayoutPanelLeftIcon,
   MonitorIcon,
@@ -80,7 +80,7 @@ const AppearanceTabContent = ({
         <Field>
           <FieldLabel>{t("profile.appearance.theme.title")}</FieldLabel>
           <div className="grid gap-4 md:grid-cols-2">
-            {THEME_OPTIONS.map((option) => {
+            {map(THEME_OPTIONS, (option) => {
               const Icon = option.icon;
               const isActive = form.theme === option.value;
 
@@ -148,7 +148,7 @@ const AppearanceTabContent = ({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {FONT_SIZE_OPTIONS.map((option) => (
+                {map(FONT_SIZE_OPTIONS, (option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
@@ -172,7 +172,7 @@ const AppearanceTabContent = ({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {SIDEBAR_OPTIONS.map((option) => (
+                {map(SIDEBAR_OPTIONS, (option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
@@ -196,9 +196,7 @@ const AppearanceTabContent = ({
                   <p className="font-semibold">{t("profile.appearance.fontSize.title")}</p>
                   <p className="text-sm text-muted-foreground">
                     {
-                      FONT_SIZE_OPTIONS.find(
-                        (item) => item.value === form.fontSize,
-                      )?.label
+                      find(FONT_SIZE_OPTIONS, (item) => item.value === form.fontSize)?.label
                     }
                   </p>
                 </div>
@@ -212,9 +210,7 @@ const AppearanceTabContent = ({
                   <p className="font-semibold">{t("profile.appearance.sidebar.title")}</p>
                   <p className="text-sm text-muted-foreground">
                     {
-                      SIDEBAR_OPTIONS.find(
-                        (item) => item.value === form.sidebarState,
-                      )?.label
+                      find(SIDEBAR_OPTIONS, (item) => item.value === form.sidebarState)?.label
                     }
                   </p>
                 </div>

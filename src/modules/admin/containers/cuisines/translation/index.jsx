@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router";
-import { get, trim } from "lodash";
+import { get, trim, filter, find, fromPairs, map, values as lodashValues } from "lodash";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -42,9 +42,7 @@ const TranslationPage = () => {
   });
   const languages = React.useMemo(
     () =>
-      get(languagesData, "data.data", []).filter(
-        (language) => language.isActive,
-      ),
+      filter(get(languagesData, "data.data", []), (language) => language.isActive),
     [languagesData],
   );
   const form = useForm({
@@ -55,12 +53,10 @@ const TranslationPage = () => {
   React.useEffect(() => {
     if (item) {
       form.reset(
-        Object.fromEntries(
-          languages.map((language) => [
-            language.code,
-            get(item, `translations.${language.code}`, ""),
-          ]),
-        ),
+        fromPairs(map(languages, (language) => [
+          language.code,
+          get(item, `translations.${language.code}`, ""),
+        ])),
       );
     }
   }, [form, item, languages]);
@@ -71,7 +67,7 @@ const TranslationPage = () => {
       url: `/admin/cuisines/${id}`,
       attributes: {
         translations: values,
-        name: trim(Object.values(values).find(Boolean) || item?.name || ""),
+        name: trim(find(lodashValues(values), Boolean) || item?.name || ""),
       },
     });
     toast.success("Tarjimalar saqlandi");
@@ -137,3 +133,6 @@ const TranslationPage = () => {
 };
 
 export default TranslationPage;
+
+
+

@@ -39,12 +39,14 @@ import { getMealConfig } from "@/modules/user/lib/meal-config";
 import SmartAddSheet from "./smart-add-sheet.jsx";
 import { buildNutritionQuickAdds } from "./nutrition-quick-adds.js";
 
+import { filter, reduce, split, toNumber, trim } from "lodash";
+
 const toIsoByDateKeyAndTimeHint = (dateKey, timeHint) => {
   if (!dateKey || !timeHint || timeHint.hour == null || timeHint.minute == null) {
     return null;
   }
-  const safeHour = Math.max(0, Math.min(23, Number(timeHint.hour) || 0));
-  const safeMinute = Math.max(0, Math.min(59, Number(timeHint.minute) || 0));
+  const safeHour = Math.max(0, Math.min(23, toNumber(timeHint.hour) || 0));
+  const safeMinute = Math.max(0, Math.min(59, toNumber(timeHint.minute) || 0));
   return new Date(
     `${dateKey}T${String(safeHour).padStart(2, "0")}:${String(safeMinute).padStart(2, "0")}:00`,
   ).toISOString();
@@ -54,7 +56,7 @@ const shiftDateKeyByDays = (dateKey, offsetDays) => {
   if (!dateKey || typeof offsetDays !== "number") return dateKey;
   const baseDate = new Date(`${dateKey}T12:00:00`);
   baseDate.setDate(baseDate.getDate() + offsetDays);
-  return baseDate.toISOString().split("T")[0];
+  return split(baseDate.toISOString(), "T")[0];
 };
 
 const formatDateKeyLabel = (dateKey) => {
@@ -200,16 +202,13 @@ const ActionDrawer = ({
 
   const transcriptConfidence = useMemo(() => {
     if (!transcriptConfidenceScores.length) return null;
-    const total = transcriptConfidenceScores.reduce(
-      (sum, v) => sum + (Number(v) || 0),
-      0,
-    );
-    return Number((total / transcriptConfidenceScores.length).toFixed(2));
+    const total = reduce(transcriptConfidenceScores, (sum, v) => sum + (toNumber(v) || 0), 0);
+    return toNumber((total / transcriptConfidenceScores.length).toFixed(2));
   }, [transcriptConfidenceScores]);
 
   const pushAudioTranscriptHistory = useCallback(
     async (transcript, mealTypeVal, loggedAt) => {
-      const safe = String(transcript || "").trim();
+      const safe = trim(String(transcript || ""));
       if (!safe) return;
       await saveHistoryItem({
         transcript: safe,
@@ -222,12 +221,12 @@ const ActionDrawer = ({
 
   const handleRemoveAudioTranscriptSegment = useCallback((index) => {
     setTranscriptSegments((current) => {
-      const next = current.filter((_, i) => i !== index);
+      const next = filter(current, (_, i) => i !== index);
       setTranscriptText(next.join("\n"));
       return next;
     });
     setTranscriptConfidenceScores((current) =>
-      current.filter((_, i) => i !== index),
+      filter(current, (_, i) => i !== index),
     );
   }, [
     setTranscriptConfidenceScores,
@@ -236,7 +235,7 @@ const ActionDrawer = ({
   ]);
 
   const handleUseAudioTranscriptHistory = useCallback((historyItem) => {
-    const transcript = String(historyItem?.transcript || "").trim();
+    const transcript = trim(String(historyItem?.transcript || ""));
     if (!transcript) return;
     setTranscriptText(transcript);
     setTranscriptSegments([transcript]);
@@ -258,7 +257,7 @@ const ActionDrawer = ({
   ]);
 
   const handleUseTextTranscriptHistory = useCallback((historyItem) => {
-    const transcript = String(historyItem?.transcript || "").trim();
+    const transcript = trim(String(historyItem?.transcript || ""));
     if (!transcript) return;
     setTranscriptText(transcript);
     setTranscriptSegments([]);
@@ -399,7 +398,6 @@ const ActionDrawer = ({
           />
         </NutritionDrawerContent>
       </Drawer>
-
       {/* CameraDrawer — has its own Drawer wrapper */}
       <CameraDrawer
         open={activeNested === "camera"}
@@ -428,7 +426,6 @@ const ActionDrawer = ({
           onCloseAll?.();
         }}
       />
-
       {/* AudioAddDrawer */}
       <Drawer
         open={activeNested === "audio"}
@@ -445,7 +442,7 @@ const ActionDrawer = ({
               suggestedDateHint,
               transcriptConfidenceValue,
             ) => {
-              const safeTranscript = String(transcript || "").trim();
+              const safeTranscript = trim(String(transcript || ""));
               const resolvedMealType = suggestedMealType || selectedMealType;
               const resolvedLoggedAt = toIsoByDateKeyAndTimeHint(
                 selectedDateKey,
@@ -456,8 +453,7 @@ const ActionDrawer = ({
                   ? shiftDateKeyByDays(selectedDateKey, suggestedDateHint.offsetDays)
                   : null;
               setTranscriptText((current) =>
-                [String(current || "").trim(), safeTranscript]
-                  .filter(Boolean)
+                filter([trim(String(current || "")), safeTranscript], Boolean)
                   .join("\n"),
               );
               setInputSource("audio");
@@ -487,7 +483,6 @@ const ActionDrawer = ({
           />
         </NutritionDrawerContent>
       </Drawer>
-
       {/* Transcript drawers */}
       <Drawer
         open={activeNested === "text" || isCameraTextFlow}
@@ -545,7 +540,7 @@ const ActionDrawer = ({
               transcriptHistory={audioTranscriptHistory}
               onUseHistory={handleUseTextTranscriptHistory}
               onContinue={() => {
-                const safeTranscript = String(transcriptText || "").trim();
+                const safeTranscript = trim(String(transcriptText || ""));
                 if (safeTranscript) {
                   void pushAudioTranscriptHistory(
                     safeTranscript,
@@ -569,7 +564,6 @@ const ActionDrawer = ({
           )}
         </NutritionDrawerContent>
       </Drawer>
-
       {/* ManualAddDrawer (Catalog) */}
       <Drawer
         open={activeNested === "catalog"}
@@ -595,7 +589,6 @@ const ActionDrawer = ({
           />
         </NutritionDrawerContent>
       </Drawer>
-
       {/* AiMealDraftDrawer */}
       <Drawer
         open={activeNested === "ai-draft" || isCameraAiDraftFlow}
@@ -640,7 +633,6 @@ const ActionDrawer = ({
           />
         </NutritionDrawerContent>
       </Drawer>
-
       <MealDateTimeDrawer
         open={mealTimeOpen}
         onOpenChange={setMealTimeOpen}

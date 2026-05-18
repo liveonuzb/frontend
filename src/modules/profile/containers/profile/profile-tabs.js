@@ -18,6 +18,8 @@ import { PremiumTab } from "./tabs/premium-tab";
 import { ReferralTab } from "./tabs/referral-tab";
 import { PROFILE_TAB_IDS } from "@/modules/profile/lib/profile-tab-registry";
 
+import { map, some } from "lodash";
+
 const PROFILE_TAB_DEFINITIONS = [
   {
     id: "profile",
@@ -78,10 +80,10 @@ const PROFILE_TAB_DEFINITIONS = [
 ];
 
 if (import.meta.env.DEV) {
-  const registryIds = PROFILE_TAB_DEFINITIONS.map(({ id }) => id);
+  const registryIds = map(PROFILE_TAB_DEFINITIONS, ({ id }) => id);
   const hasRegistryMismatch =
     registryIds.length !== PROFILE_TAB_IDS.length ||
-    registryIds.some((id, index) => id !== PROFILE_TAB_IDS[index]);
+    some(registryIds, (id, index) => id !== PROFILE_TAB_IDS[index]);
 
   if (hasRegistryMismatch) {
     throw new Error("Profile tab registry is out of sync with profile tabs.");
@@ -89,7 +91,8 @@ if (import.meta.env.DEV) {
 }
 
 export const getProfileTabs = (t) =>
-  PROFILE_TAB_DEFINITIONS.map(
+  map(
+    PROFILE_TAB_DEFINITIONS,
     ({ id, labelKey, descriptionKey, icon, component }) => ({
       id,
       label: t(labelKey),

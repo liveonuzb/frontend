@@ -19,6 +19,8 @@ import {
 } from "@/hooks/app/use-workout-plans";
 import useWorkoutWeatherToday from "@/hooks/app/use-workout-weather";
 
+import { find, some } from "lodash";
+
 vi.mock("@/components/page-transition", () => ({
   default: ({ children }) => <>{children}</>,
 }));
@@ -311,11 +313,9 @@ describe("WorkoutDashboardPage", () => {
 
     const mapPanels = screen.getAllByTestId("workout-home-real-running-map");
     expect(
-      mapPanels.some(
-        (panel) =>
-          panel.getAttribute("data-polyline") === "encoded-feed-route" &&
-          panel.getAttribute("data-point-count") === "2",
-      ),
+      some(mapPanels, (panel) =>
+        panel.getAttribute("data-polyline") === "encoded-feed-route" &&
+        panel.getAttribute("data-point-count") === "2"),
     ).toBe(true);
     expect(screen.queryByAltText("Morning Run")).not.toBeInTheDocument();
   });
@@ -399,13 +399,10 @@ describe("WorkoutDashboardPage", () => {
     });
 
     const router = renderPage();
-    const startMap = screen
-      .getAllByTestId("workout-home-real-running-map")
-      .find(
-        (panel) =>
-          panel.getAttribute("data-empty-label") ===
-          "Yugurishni boshlanganda xarita shu yerda ko'rinadi",
-      );
+    const startMap = find(screen
+      .getAllByTestId("workout-home-real-running-map"), (panel) =>
+      panel.getAttribute("data-empty-label") ===
+      "Yugurishni boshlanganda xarita shu yerda ko'rinadi");
 
     expect(screen.queryByTestId("workout-home-fake-route-svg")).not.toBeInTheDocument();
     expect(startMap).toHaveAttribute(

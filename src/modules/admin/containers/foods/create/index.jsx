@@ -1,5 +1,5 @@
 import React from "react";
-import { find, get, isArray, startsWith, toNumber, trim } from "lodash";
+import { find, get, isArray, startsWith, toNumber, trim, filter, map, toUpper } from "lodash";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -78,9 +78,9 @@ const NUTRITION_MODES = [
 const resolveCategoryLabel = (translations, fallback, language) => {
   if (translations && typeof translations === "object") {
     const val = get(translations, language, "");
-    if (val && String(val).trim()) return String(val).trim();
+    if (val && trim(String(val))) return trim(String(val));
     const uz = get(translations, "uz", "");
-    if (uz && String(uz).trim()) return String(uz).trim();
+    if (uz && trim(String(uz))) return trim(String(uz));
   }
   return fallback;
 };
@@ -180,7 +180,7 @@ const FoodFormDrawer = ({
           <DrawerTitle className="text-lg font-bold">Yangi ovqat</DrawerTitle>
           <DrawerDescription className="mt-1">
             {currentLanguageMeta?.flag ? `${currentLanguageMeta.flag} ` : ""}
-            {currentLanguageMeta?.name ?? currentLanguage.toUpperCase()} tilida
+            {currentLanguageMeta?.name ?? toUpper(currentLanguage)} tilida
             ma&apos;lumot kiriting
           </DrawerDescription>
         </DrawerHeader>
@@ -207,7 +207,7 @@ const FoodFormDrawer = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Nomi ({currentLanguage.toUpperCase()}){" "}
+                      Nomi ({toUpper(currentLanguage)}){" "}
                       <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
@@ -347,11 +347,11 @@ const FoodFormDrawer = ({
                 )}
               />
 
-              {[
+              {map([
                 ["protein", "Protein (g)"],
                 ["carbs", "Uglevod (g)"],
                 ["fat", "Yog' (g)"],
-              ].map(([name, label]) => (
+              ], ([name, label]) => (
                 <FormField
                   key={name}
                   control={form.control}
@@ -556,12 +556,12 @@ const CreateFoodPage = () => {
   const languages = get(languagesData, "data.data", []);
 
   const activeLanguages = React.useMemo(
-    () => (languages || []).filter((language) => language.isActive),
+    () => filter((languages || []), (language) => language.isActive),
     [languages],
   );
 
   const currentLanguageMeta = React.useMemo(
-    () => activeLanguages.find((language) => language.code === currentLanguage),
+    () => find(activeLanguages, (language) => language.code === currentLanguage),
     [activeLanguages, currentLanguage],
   );
 

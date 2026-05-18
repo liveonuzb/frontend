@@ -46,22 +46,6 @@ vi.mock("@/store", () => ({
   useChatStore: () => chatStoreMock,
 }));
 
-vi.mock("@/hooks/app/use-coach", () => ({
-  useCoachClientDetail: () => ({
-    detail: null,
-    createWeeklyCheckIn: vi.fn(),
-    createFeedback: vi.fn(),
-    createTask: vi.fn(),
-    isCreatingWeeklyCheckIn: false,
-    isCreatingFeedback: false,
-    isCreatingTask: false,
-  }),
-  useCoachClientNotes: () => ({
-    createNote: vi.fn(),
-    isCreatingNote: false,
-  }),
-}));
-
 vi.mock("@/components/chat/message-context-menu", () => ({
   default: () => null,
 }));
@@ -71,10 +55,6 @@ vi.mock("@/components/chat/media-upload-dialog", () => ({
 }));
 
 vi.mock("@/components/chat/forward-dialog", () => ({
-  default: () => null,
-}));
-
-vi.mock("../../components/ChatActionShortcutDialog", () => ({
   default: () => null,
 }));
 

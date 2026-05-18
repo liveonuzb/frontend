@@ -1,6 +1,6 @@
 import React from "react";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
-import { map as lodashMap, trim, toNumber, isObject, find } from "lodash";
+import { map as lodashMap, trim, toNumber, isObject, find, values as lodashValues } from "lodash";
 
 const FOOD_SORT_FIELDS = [
   "orderKey",
@@ -22,7 +22,7 @@ const resolveLabel = (translations, fallback, language) => {
     const uz = trim(String(translations?.uz ?? ""));
     if (uz) return uz;
 
-    const first = find(Object.values(translations), (value) =>
+    const first = find(lodashValues(translations), (value) =>
       trim(String(value)),
     );
     if (first) return trim(String(first));
@@ -180,7 +180,7 @@ export const useWorkoutFilters = ({ categories, currentLanguage }) => {
   const activeFilters = React.useMemo(() => {
     const items = [];
 
-    if (search.trim()) {
+    if (trim(search)) {
       items.push({
         id: "q",
         field: "q",
@@ -257,24 +257,24 @@ export const useWorkoutFilters = ({ categories, currentLanguage }) => {
   const handleFiltersChange = React.useCallback(
     (nextFilters) => {
       const nextSearch =
-        nextFilters.find((filter) => filter.field === "q")?.values?.[0] ?? "";
+        find(nextFilters, (filter) => filter.field === "q")?.values?.[0] ?? "";
       const nextCategory =
-        nextFilters.find((filter) => filter.field === "category")
+        find(nextFilters, (filter) => filter.field === "category")
           ?.values?.[0] ?? "all";
       const nextStatus =
-        nextFilters.find((filter) => filter.field === "status")?.values?.[0] ??
+        find(nextFilters, (filter) => filter.field === "status")?.values?.[0] ??
         "all";
       const nextOnboarding =
-        nextFilters.find((filter) => filter.field === "onboarding")
+        find(nextFilters, (filter) => filter.field === "onboarding")
           ?.values?.[0] ?? "all";
       const nextHasImage =
-        nextFilters.find((filter) => filter.field === "hasImage")
+        find(nextFilters, (filter) => filter.field === "hasImage")
           ?.values?.[0] ?? "all";
       const nextTranslations =
-        nextFilters.find((filter) => filter.field === "translations")
+        find(nextFilters, (filter) => filter.field === "translations")
           ?.values?.[0] ?? "all";
       const nextDuplicates =
-        nextFilters.find((filter) => filter.field === "duplicates")
+        find(nextFilters, (filter) => filter.field === "duplicates")
           ?.values?.[0] ?? "all";
       React.startTransition(() => {
         void setSearch(nextSearch);
@@ -379,3 +379,6 @@ export const useWorkoutFilters = ({ categories, currentLanguage }) => {
     handleSortingChange,
   };
 };
+
+
+

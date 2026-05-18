@@ -1,5 +1,5 @@
 import React from "react";
-import { times } from "lodash";
+import { times, split } from "lodash";
 import { ClockIcon } from "lucide-react";
 import {
   Drawer,
@@ -24,7 +24,7 @@ const MINUTES = times(60, (i) => ({
 
 function parseTime(value) {
   if (!value) return { hour: "09", minute: "00" };
-  const [h = "09", m = "00"] = String(value).split(":");
+  const [h = "09", m = "00"] = split(String(value), ":");
   return { hour: h.padStart(2, "0"), minute: m.padStart(2, "0") };
 }
 

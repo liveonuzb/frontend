@@ -30,6 +30,8 @@ import {
   unwrapApiData,
 } from "../lib/personalization.js";
 
+import { map, toNumber } from "lodash";
+
 const tone = ONBOARDING_ACCENTS.green;
 
 const modeConfig = {
@@ -138,7 +140,7 @@ const LoadingShell = ({
                 />
 
                 <div className="grid gap-1.5 sm:gap-2">
-                  {config.checklist.map((item, index) => {
+                  {map(config.checklist, (item, index) => {
                     const completed =
                       clampProgress(progress) >=
                       Math.round(((index + 1) / config.checklist.length) * 100);
@@ -173,7 +175,7 @@ const LoadingShell = ({
                   <div className="space-y-3 rounded-2xl border border-destructive/20 bg-destructive/5 p-3">
                     {visibleIssues.length > 0 ? (
                       <div className="space-y-1 text-xs font-medium text-destructive">
-                        {visibleIssues.map((item) => (
+                        {map(visibleIssues, (item) => (
                           <p key={item}>- {item}</p>
                         ))}
                       </div>
@@ -223,7 +225,7 @@ export const PersonalizingContainer = () => {
     ? job?.status === "COMPLETED"
     : statusQuery.isSuccess;
   const isFailed = job?.status === "FAILED" || statusQuery.isError;
-  const hasServerProgress = Number.isFinite(Number(job?.progress));
+  const hasServerProgress = Number.isFinite(toNumber(job?.progress));
   const resolvedProgress = clampProgress(
     hasServerProgress ? job?.progress : progress,
   );

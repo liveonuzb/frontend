@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { CameraIcon, XIcon, LoaderIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import { includes } from "lodash";
+
 const stopScannerSafely = async (scanner) => {
     if (!scanner) return;
 
@@ -22,8 +24,9 @@ const stopScannerSafely = async (scanner) => {
         await scanner.stop();
     } catch (error) {
         if (
-            !String(error?.message || error).includes(
-                "Cannot stop, scanner is not running or paused"
+            !includes(
+                String(error?.message || error),
+                "Cannot stop, scanner is not running or paused",
             )
         ) {
             // html5-qrcode can throw during camera teardown races; keep UI alive.

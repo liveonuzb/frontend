@@ -39,6 +39,8 @@ import {
 } from "./utils.jsx";
 import UserGoalImagePicker from "./user-goal-image-picker.jsx";
 
+import { toUpper } from "lodash";
+
 const UserGoalFormDrawer = ({ mode }) => {
   const { id } = useParams();
   const close = useAdminDrawerCloseNavigation("/admin/user-goals/list");
@@ -152,7 +154,7 @@ const UserGoalFormDrawer = ({ mode }) => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>
-                          Nomi ({currentLanguage.toUpperCase()})
+                          Nomi ({toUpper(currentLanguage)})
                         </FormLabel>
                         <FormControl>
                           <Input {...field} />

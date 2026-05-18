@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import PageTransition from "@/components/page-transition";
 import useApi from "@/hooks/api/use-api.js";
-import { get } from "lodash";
+import { get, filter, find, includes, isArray, map, take } from "lodash";
 import { useBreadcrumbStore } from "@/store";
 import {
   DownloadIcon,
@@ -89,7 +89,7 @@ const Index = () => {
   const { setBreadcrumbs } = useBreadcrumbStore();
   const { request } = useApi();
   const visibleReports = React.useMemo(
-    () => reports.filter((report) => hasCapability(report.capability)),
+    () => filter(reports, (report) => hasCapability(report.capability)),
     [hasCapability],
   );
 
@@ -175,7 +175,7 @@ const Index = () => {
       } catch (error) {
         const message = error?.response?.data?.message;
         toast.error(
-          Array.isArray(message)
+          isArray(message)
             ? message.join(", ")
             : message || "Job natijasini yuklab bo'lmadi",
         );
@@ -187,7 +187,7 @@ const Index = () => {
   );
 
   const handleExport = React.useCallback(async (id) => {
-    const report = reports.find((item) => item.id === id);
+    const report = find(reports, (item) => item.id === id);
     if (!report || !hasCapability(report.capability)) return;
 
     try {
@@ -208,14 +208,14 @@ const Index = () => {
       }
 
       toast.success(
-        ["users", "premium-users", "foods"].includes(id)
+        includes(["users", "premium-users", "foods"], id)
           ? "Hisobot job sifatida boshlandi"
           : "Hisobot yuklab olindi",
       );
     } catch (error) {
       const message = error?.response?.data?.message;
       toast.error(
-        Array.isArray(message)
+        isArray(message)
           ? message.join(", ")
           : message || "Hisobotni yuklab bo'lmadi",
       );
@@ -239,7 +239,7 @@ const Index = () => {
     } catch (error) {
       const message = error?.response?.data?.message;
       toast.error(
-        Array.isArray(message)
+        isArray(message)
           ? message.join(", ")
           : message || "Revenue hisobotni yuklab bo'lmadi",
       );
@@ -261,9 +261,8 @@ const Index = () => {
           </p>
         </div>
       </div>
-
       <div className="grid gap-4 xl:grid-cols-2">
-        {visibleReports.map((report) => (
+        {map(visibleReports, (report) => (
           <Card key={report.id}>
             <CardHeader className="py-6">
               <div className="flex items-start justify-between gap-4">
@@ -314,7 +313,7 @@ const Index = () => {
               </div>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2 pb-6">
-              {revenueRanges.map((range) => (
+              {map(revenueRanges, (range) => (
                 <Button
                   key={range.value}
                   variant={revenueRange === range.value ? "default" : "outline"}
@@ -328,7 +327,6 @@ const Index = () => {
           </Card>
         ) : null}
       </div>
-
       <Card>
         <CardHeader className="py-6">
           <div className="flex items-start justify-between gap-4">
@@ -358,7 +356,7 @@ const Index = () => {
         </CardHeader>
         <CardContent className="space-y-3 pb-6">
           {jobs.length ? (
-            jobs.slice(0, 8).map((job) => {
+            map(take(jobs, 8), (job) => {
               const canDownload =
                 job?.result?.hasDownload || job?.result?.hasFailedRows;
               return (

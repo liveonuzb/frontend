@@ -1,5 +1,5 @@
 import React from "react";
-import { isArray, trim } from "lodash";
+import { isArray, trim, filter, forEach, map, toLower, includes } from "lodash";
 import { Label } from "@/components/ui/label";
 import {
   Combobox,
@@ -32,18 +32,16 @@ export function CatalogMultiSelectCombobox({
 
   const selectedValues = React.useMemo(
     () =>
-      (isArray(values) ? values : [])
-        .map((value) => trim(String(value)))
-        .filter(Boolean),
+      filter(map((isArray(values) ? values : []), (value) => trim(String(value))), Boolean),
     [values],
   );
 
   const normalizedOptions = React.useMemo(() => {
     const baseOptions = isArray(options) ? options : [];
-    const knownValues = new Set(baseOptions.map((option) => option.value));
+    const knownValues = new Set(map(baseOptions, (option) => option.value));
     const nextOptions = [...baseOptions];
 
-    selectedValues.forEach((value) => {
+    forEach(selectedValues, (value) => {
       if (!knownValues.has(value)) {
         nextOptions.push(fallbackOption(value));
         knownValues.add(value);
@@ -54,28 +52,25 @@ export function CatalogMultiSelectCombobox({
   }, [options, selectedValues]);
 
   const optionMap = React.useMemo(
-    () => new Map(normalizedOptions.map((option) => [option.value, option])),
+    () => new Map(map(normalizedOptions, (option) => [option.value, option])),
     [normalizedOptions],
   );
 
   const items = React.useMemo(
-    () => normalizedOptions.map((option) => option.value),
+    () => map(normalizedOptions, (option) => option.value),
     [normalizedOptions],
   );
 
   const filteredItems = React.useMemo(() => {
-    const normalizedQuery = trim(deferredQuery).toLowerCase();
+    const normalizedQuery = toLower(trim(deferredQuery));
 
     if (!normalizedQuery) {
       return items;
     }
 
-    return items.filter((item) => {
+    return filter(items, (item) => {
       const option = optionMap.get(item) ?? fallbackOption(item);
-      return (
-        option.label.toLowerCase().includes(normalizedQuery) ||
-        option.value.toLowerCase().includes(normalizedQuery)
-      );
+      return (includes(toLower(option.label), normalizedQuery) || includes(toLower(option.value), normalizedQuery));
     });
   }, [deferredQuery, items, optionMap]);
 
@@ -97,7 +92,6 @@ export function CatalogMultiSelectCombobox({
           <p className="text-xs text-muted-foreground">{description}</p>
         ) : null}
       </div>
-
       {items.length ? (
         <Combobox
           inline
@@ -118,7 +112,7 @@ export function CatalogMultiSelectCombobox({
             <ComboboxValue>
               {(nextValues) => (
                 <>
-                  {nextValues.map((item) => (
+                  {map(nextValues, (item) => (
                     <ComboboxChip key={item}>
                       {optionMap.get(item)?.label ?? item}
                     </ComboboxChip>

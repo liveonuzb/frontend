@@ -1,5 +1,5 @@
 import React from "react";
-import { filter, find, get } from "lodash";
+import { filter, find, get, fromPairs, trim, values as lodashValues, map } from "lodash";
 import { Globe2Icon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -10,26 +10,26 @@ import { APPROVAL_STATUS_OPTIONS } from "./workout-plan-utils.js";
 
 function resolveText(translations, fallback, language) {
   if (translations && typeof translations === "object") {
-    const direct = String(get(translations, language, "")).trim();
+    const direct = trim(String(get(translations, language, "")));
     if (direct) return direct;
 
-    const uzText = String(get(translations, "uz", "")).trim();
+    const uzText = trim(String(get(translations, "uz", "")));
     if (uzText) return uzText;
 
-    const firstValue = find(Object.values(translations), (value) =>
-      String(value ?? "").trim(),
+    const firstValue = find(lodashValues(translations), (value) =>
+      trim(String(value ?? "")),
     );
     if (firstValue) {
-      return String(firstValue).trim();
+      return trim(String(firstValue));
     }
   }
 
-  return String(fallback ?? "").trim();
+  return trim(String(fallback ?? ""));
 }
 
 function countFilledTranslations(translations = {}) {
-  return filter(Object.values(translations), (value) =>
-    String(value ?? "").trim(),
+  return filter(lodashValues(translations), (value) =>
+    trim(String(value ?? "")),
   ).length;
 }
 
@@ -42,9 +42,7 @@ function formatDate(value) {
 }
 
 const ITEMS_PER_PAGE = 10;
-const APPROVAL_STATUS_LABELS = Object.fromEntries(
-  APPROVAL_STATUS_OPTIONS.map((option) => [option.value, option.label]),
-);
+const APPROVAL_STATUS_LABELS = fromPairs(map(APPROVAL_STATUS_OPTIONS, (option) => [option.value, option.label]));
 
 function getApprovalBadgeClass(status) {
   switch (status) {
@@ -255,3 +253,6 @@ export const useColumns = ({
     ],
   );
 };
+
+
+

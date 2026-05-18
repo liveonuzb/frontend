@@ -6,13 +6,27 @@ import { api } from "@/hooks/api/use-api.js";
 import { config } from "@/config.js";
 import { getApiResponseData } from "@/lib/api-response.js";
 import useAuthStore from "./auth-store";
-import { map, filter, find, findIndex, some, includes, reduce, join, toPairs } from "lodash";
+import {
+    map,
+    filter,
+    find,
+    findIndex,
+    some,
+    includes,
+    reduce,
+    join,
+    toPairs,
+    forEach,
+    isArray,
+    toLower,
+    trim,
+} from "lodash";
 
 const formatChatMessage = (message, currentUserId) => ({
     ...message,
     // Normalize type to lowercase so MessageList checks (e.g. "image", "voice") always match
     // regardless of whether the value came from Prisma enum (uppercase) or frontend (lowercase)
-    type: message.type ? String(message.type).toLowerCase() : "text",
+    type: message.type ? toLower(String(message.type)) : "text",
     from: message?.sender?.id === currentUserId ? "me" : "other",
     time: new Date(message.createdAt).toLocaleTimeString("uz", {
         hour: "2-digit",
@@ -295,7 +309,7 @@ const useChatStore = create(
                     // Backend returns { data: rooms[], nextCursor }
                     // ResponseWrapperInterceptor wraps it as: { data: { data: rooms[], nextCursor }, meta: {...} }
                     const payload = response.data?.data ?? response.data ?? {};
-                    const rawRooms = Array.isArray(payload)
+                    const rawRooms = isArray(payload)
                         ? payload
                         : (payload?.data ?? []);
                     const rooms = map(rawRooms, room => ({
@@ -305,7 +319,7 @@ const useChatStore = create(
                     }));
 
                     const pinnedMap = {};
-                    rooms.forEach(r => {
+                    forEach(rooms, r => {
                         pinnedMap[r.id] = r.pinnedMessages || [];
                     });
 
@@ -324,7 +338,7 @@ const useChatStore = create(
                     const myId = useAuthStore.getState().user?.id;
                     // ResponseWrapperInterceptor: { data: { data: msgs[], nextCursor }, meta: {...} }
                     const payload = response.data?.data ?? response.data ?? {};
-                    const rawMsgs = Array.isArray(payload) ? payload : (payload?.data ?? []);
+                    const rawMsgs = isArray(payload) ? payload : (payload?.data ?? []);
                     const nextCursor = payload?.nextCursor ?? null;
                     const msgs = map(rawMsgs, (message) =>
                         formatChatMessage(message, myId),
@@ -352,7 +366,7 @@ const useChatStore = create(
                     const myId = useAuthStore.getState().user?.id;
                     // ResponseWrapperInterceptor: { data: { data: msgs[], nextCursor }, meta: {...} }
                     const payload = response.data?.data ?? response.data ?? {};
-                    const rawMsgs = Array.isArray(payload) ? payload : (payload?.data ?? []);
+                    const rawMsgs = isArray(payload) ? payload : (payload?.data ?? []);
                     const nextCursor = payload?.nextCursor ?? null;
                     const olderMsgs = map(rawMsgs, (message) =>
                         formatChatMessage(message, myId),
@@ -432,7 +446,7 @@ const useChatStore = create(
                 } catch (error) {
                     const message =
                         error?.response?.data?.message || "Xabar yuborishda xatolik";
-                    const errorMessage = Array.isArray(message) ? join(message, ", ") : message;
+                    const errorMessage = isArray(message) ? join(message, ", ") : message;
                     toast.error(errorMessage);
                     set((state) => ({
                         messages: {
@@ -503,7 +517,7 @@ const useChatStore = create(
                 } catch (error) {
                     const message =
                         error?.response?.data?.message || "Xabar yuborishda xatolik";
-                    const errorMessage = Array.isArray(message) ? join(message, ", ") : message;
+                    const errorMessage = isArray(message) ? join(message, ", ") : message;
                     toast.error(errorMessage);
                     set((state) => ({
                         messages: {
@@ -558,7 +572,7 @@ const useChatStore = create(
                 } catch (error) {
                     const message =
                         error?.response?.data?.message || "Fayl linkini yangilab bo'lmadi";
-                    toast.error(Array.isArray(message) ? join(message, ", ") : message);
+                    toast.error(isArray(message) ? join(message, ", ") : message);
                     throw error;
                 }
             },
@@ -610,7 +624,7 @@ const useChatStore = create(
                     }));
                     const message =
                         error?.response?.data?.message || "Xabarni o'chirishda xatolik";
-                    toast.error(Array.isArray(message) ? join(message, ", ") : message);
+                    toast.error(isArray(message) ? join(message, ", ") : message);
                     throw error;
                 }
             },
@@ -700,7 +714,7 @@ const useChatStore = create(
                     }));
                     const message =
                         error?.response?.data?.message || "Xabarni tahrirlashda xatolik";
-                    toast.error(Array.isArray(message) ? join(message, ", ") : message);
+                    toast.error(isArray(message) ? join(message, ", ") : message);
                     throw error;
                 }
             },
@@ -796,14 +810,14 @@ const useChatStore = create(
 
             getAISuggestions: (lastMessage) => {
                 if (!lastMessage) return [];
-                const text = lastMessage.toLowerCase();
-                if (text.includes("qornim ochdi") || text.includes("ovqat")) {
+                const text = toLower(lastMessage);
+                if (includes(text, "qornim ochdi") || includes(text, "ovqat")) {
                     return ["Salat taklif qilish 🥗", "Suv ichishni eslatish 💧", "Rejani ko'rish 📋"];
                 }
-                if (text.includes("tayyorman") || text.includes("boshlaymiz")) {
+                if (includes(text, "tayyorman") || includes(text, "boshlaymiz")) {
                     return ["Video yuborish 🎥", "Omad tilash ✨", "Vazifa berish 🎯"];
                 }
-                if (text.includes("rahmat") || text.includes("tushundim")) {
+                if (includes(text, "rahmat") || includes(text, "tushundim")) {
                     return ["Arzimaydi 😊", "Davom etamiz 💪", "Savollar bormi? 🤔"];
                 }
                 return ["Yaxshi 👍", "Tushunarli 👌", "Keyingisi ➡️"];
@@ -848,7 +862,7 @@ const useChatStore = create(
                     const msg = { ...chatMsgs[idx], metadata: { ...chatMsgs[idx].metadata } };
                     const options = [...msg.metadata.options];
 
-                    options.forEach(opt => {
+                    forEach(options, opt => {
                         opt.votes = filter(opt.votes, v => v !== userId);
                     });
 
@@ -911,7 +925,7 @@ const useChatStore = create(
                 } catch (error) {
                     const message =
                         error?.response?.data?.message || "Booking yuborishda xatolik";
-                    toast.error(Array.isArray(message) ? join(message, ", ") : message);
+                    toast.error(isArray(message) ? join(message, ", ") : message);
                     throw error;
                 }
             },
@@ -930,7 +944,7 @@ const useChatStore = create(
                 } catch (error) {
                     const message =
                         error?.response?.data?.message || "Slotni band qilishda xatolik";
-                    toast.error(Array.isArray(message) ? join(message, ", ") : message);
+                    toast.error(isArray(message) ? join(message, ", ") : message);
                     throw error;
                 }
             },
@@ -948,7 +962,7 @@ const useChatStore = create(
                 } catch (error) {
                     const message =
                         error?.response?.data?.message || "Bookingni bekor qilishda xatolik";
-                    toast.error(Array.isArray(message) ? join(message, ", ") : message);
+                    toast.error(isArray(message) ? join(message, ", ") : message);
                     throw error;
                 }
             },
@@ -965,7 +979,7 @@ const useChatStore = create(
                 } catch (error) {
                     const message =
                         error?.response?.data?.message || "Bookingni tugatishda xatolik";
-                    toast.error(Array.isArray(message) ? join(message, ", ") : message);
+                    toast.error(isArray(message) ? join(message, ", ") : message);
                     throw error;
                 }
             },
@@ -1049,7 +1063,7 @@ const useChatStore = create(
             },
 
             searchGlobalMessages: async (query, options = {}) => {
-                const normalizedQuery = query.trim();
+                const normalizedQuery = trim(query);
                 if (!normalizedQuery) {
                     set({
                         messageSearchResults: [],
@@ -1063,11 +1077,11 @@ const useChatStore = create(
 
                 const state = get();
                 const fallbackResults = [];
-                const q = normalizedQuery.toLowerCase();
+                const q = toLower(normalizedQuery);
 
-                toPairs(state.messages).forEach(([chatId, msgs]) => {
-                    msgs.forEach(m => {
-                        if (m.text && m.text.toLowerCase().includes(q)) {
+                forEach(toPairs(state.messages), ([chatId, msgs]) => {
+                    forEach(msgs, m => {
+                        if (m.text && includes(toLower(m.text), q)) {
                             const entity = find(state.contacts, c => c.id == chatId);
                             fallbackResults.push({
                                 chatId,
@@ -1106,7 +1120,7 @@ const useChatStore = create(
                         },
                     });
                     const payload = getApiResponseData(response, {});
-                    const serverResults = Array.isArray(payload)
+                    const serverResults = isArray(payload)
                         ? payload
                         : payload.data || payload.items || [];
                     const formattedResults = map(serverResults, (result) => ({
@@ -1193,10 +1207,8 @@ const useChatStore = create(
             setCustomWallpaper: (imageUrl) => set({ customWallpaper: imageUrl }),
             reorderChats: (orderedIds) => {
                 const contacts = get().contacts;
-                const reordered = orderedIds
-                    .map(id => contacts.find(c => c.id === id))
-                    .filter(Boolean);
-                const remaining = contacts.filter(c => !orderedIds.includes(c.id));
+                const reordered = filter(map(orderedIds, id => find(contacts, c => c.id === id)), Boolean);
+                const remaining = filter(contacts, c => !includes(orderedIds, c.id));
                 set({ contacts: [...reordered, ...remaining] });
             },
 
@@ -1222,7 +1234,7 @@ const useChatStore = create(
             },
 
             getUnreadCount: (roomId) => {
-                const contact = get().contacts.find(c => c.id === roomId);
+                const contact = find(get().contacts, c => c.id === roomId);
                 return contact?.unreadCount ?? 0;
             },
             

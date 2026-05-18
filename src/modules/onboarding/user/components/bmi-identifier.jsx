@@ -2,6 +2,8 @@ import React from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+import { toNumber } from "lodash";
+
 export const BmiIdentifier = ({
   meta,
   heightValue,
@@ -11,7 +13,7 @@ export const BmiIdentifier = ({
 }) => {
   if (!meta) return null;
 
-  const numericHeight = Number(heightValue);
+  const numericHeight = toNumber(heightValue);
   const hasHeight = Number.isFinite(numericHeight) && numericHeight > 0;
 
   return (

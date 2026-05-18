@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { filter, reduce, take } from "lodash";
+import { filter, reduce, take, forEach, parseInt as lodashParseInt } from "lodash";
 
 const useWorkoutStore = create()(
     persist(
@@ -20,7 +20,7 @@ const useWorkoutStore = create()(
 
                     // 2. Check for Personal Records (PRs)
                     const newPRs = { ...state.personalRecords };
-                    workout.exercises.forEach((ex) => {
+                    forEach(workout.exercises, (ex) => {
                         if (ex.weight && ex.reps) {
                             const currentPR = newPRs[ex.name]?.weight || 0;
                             if (ex.weight > currentPR) {
@@ -50,7 +50,7 @@ const useWorkoutStore = create()(
                 return {
                     count: weeklyWorkouts.length,
                     calories: reduce(weeklyWorkouts, (acc, w) => acc + w.calories, 0),
-                    duration: reduce(weeklyWorkouts, (acc, w) => acc + parseInt(w.duration), 0),
+                    duration: reduce(weeklyWorkouts, (acc, w) => acc + lodashParseInt(w.duration), 0),
                 };
             }
         }),

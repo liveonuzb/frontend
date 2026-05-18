@@ -56,12 +56,11 @@ import {
 import { cn } from "@/lib/utils";
 import RunMapPanel from "../components/run-map-panel.jsx";
 
+import { filter, map, reduce, split, toNumber, takeRight } from "lodash";
+
 const getMaxPointSequence = (points = []) =>
-  points.reduce(
-    (maxSequence, point) =>
-      Math.max(maxSequence, Number(point?.sequence ?? 0) || 0),
-    0,
-  );
+  reduce(points, (maxSequence, point) =>
+    Math.max(maxSequence, toNumber(point?.sequence ?? 0) || 0), 0);
 
 const GPS_STATUS = {
   waiting: "waiting",
@@ -102,16 +101,16 @@ const getGpsStatusLabel = (status, t) => {
 };
 
 const formatPrimaryRunningPace = (secondsPerKm) =>
-  Number(secondsPerKm) > 0
+  toNumber(secondsPerKm) > 0
     ? formatRunningPace(secondsPerKm).replace(/\s*\/km$/, "")
     : "0:00";
 
 const formatPrimaryRunningDistance = (meters = 0) =>
-  (Math.max(0, Number(meters) || 0) / 1000).toFixed(2);
+  (Math.max(0, toNumber(meters) || 0) / 1000).toFixed(2);
 
 const formatPrimaryRunningDuration = (seconds = 0) => {
-  const parts = formatRunningClockDuration(seconds).split(":");
-  return `${Number(parts[0]) || 0}:${parts[1]}:${parts[2]}`;
+  const parts = split(formatRunningClockDuration(seconds), ":");
+  return `${toNumber(parts[0]) || 0}:${parts[1]}:${parts[2]}`;
 };
 
 const primaryMetricCards = (metrics, elapsedSeconds, t) => [
@@ -234,7 +233,7 @@ const RunningLivePage = () => {
   const applyAcceptedSequence = React.useCallback((result) => {
     sequenceRef.current = Math.max(
       sequenceRef.current,
-      Number(result?.lastAcceptedSequence ?? 0) || 0,
+      toNumber(result?.lastAcceptedSequence ?? 0) || 0,
     );
   }, []);
 
@@ -317,9 +316,10 @@ const RunningLivePage = () => {
       try {
         const result = await appendPoints(workoutSessionId, points);
         applyAcceptedSequence(result);
-        const acceptedSequence = Number(result?.lastAcceptedSequence ?? 0) || 0;
-        const remaining = loadRunningPointQueue(workoutSessionId).filter(
-          (point) => Number(point.sequence) > acceptedSequence,
+        const acceptedSequence = toNumber(result?.lastAcceptedSequence ?? 0) || 0;
+        const remaining = filter(
+          loadRunningPointQueue(workoutSessionId),
+          (point) => toNumber(point.sequence) > acceptedSequence,
         );
         saveRunningPointQueue(workoutSessionId, remaining);
         setQueuedCount(remaining.length);
@@ -328,7 +328,7 @@ const RunningLivePage = () => {
         );
         syncFailureCountRef.current = 0;
         nextSyncAtRef.current = Date.now() + RUNNING_POINT_SYNC_INTERVAL_MS;
-        return { ok: true, accepted: Number(result?.acceptedCount ?? 0) || 0 };
+        return { ok: true, accepted: toNumber(result?.acceptedCount ?? 0) || 0 };
       } catch (error) {
         syncFailureCountRef.current += 1;
         const headers = error?.response?.headers ?? {};
@@ -360,7 +360,7 @@ const RunningLivePage = () => {
     const queuedPoints = loadRunningPointQueue(workoutSessionId);
     sequenceRef.current = Math.max(
       sequenceRef.current,
-      Number(effectiveActiveSession?.lastAcceptedSequence ?? 0) || 0,
+      toNumber(effectiveActiveSession?.lastAcceptedSequence ?? 0) || 0,
       getMaxPointSequence(queuedPoints),
     );
     setQueuedCount(queuedPoints.length);
@@ -411,7 +411,7 @@ const RunningLivePage = () => {
           sourceTimestamp: new Date(position.timestamp).toISOString(),
         };
 
-        setLivePoints((currentPoints) => [...currentPoints, point].slice(-500));
+        setLivePoints((currentPoints) => takeRight([...currentPoints, point], 500));
         persistIncomingPoints([point]);
         void syncRunningPoints();
       },
@@ -596,10 +596,10 @@ const RunningLivePage = () => {
     setFinishOpen(false);
     setFinishRetryMessage("");
     stopGpsTracking();
-    const finalPoints = dedupeRunningPoints([
+    const finalPoints = takeRight(dedupeRunningPoints([
       ...loadRunningPointQueue(workoutSessionId),
       ...livePoints,
-    ]).slice(-600);
+    ]), 600);
     const finalPointSequence =
       Math.max(sequenceRef.current, getMaxPointSequence(finalPoints)) ||
       undefined;
@@ -663,26 +663,24 @@ const RunningLivePage = () => {
       <div className="flex min-h-[100dvh] w-full flex-col overflow-hidden bg-background text-foreground">
         <section className="relative z-20 bg-background px-4 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-6 sm:pb-3 md:px-8">
           <div className="mx-auto grid w-full max-w-[1120px] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2 text-center sm:gap-5">
-            {primaryMetricCards(metrics, elapsedSeconds, t).map(
-              (item, index) => (
-                <React.Fragment key={item.label}>
-                  <div className="min-w-0">
-                    <p className="whitespace-nowrap text-[1.55rem] font-semibold leading-none tabular-nums tracking-normal text-foreground min-[390px]:text-[1.7rem] sm:text-[2.15rem] lg:text-[2.65rem]">
-                      {item.value}
-                    </p>
-                    <p className="mt-2 whitespace-nowrap text-[0.6rem] font-medium uppercase tracking-normal text-muted-foreground sm:text-xs lg:text-sm">
-                      {item.label}
-                    </p>
-                  </div>
-                  {index < 2 ? (
-                    <div
-                      className="mb-3 h-10 w-px bg-border sm:h-12 lg:h-14"
-                      aria-hidden="true"
-                    />
-                  ) : null}
-                </React.Fragment>
-              ),
-            )}
+            {map(primaryMetricCards(metrics, elapsedSeconds, t), (item, index) => (
+              <React.Fragment key={item.label}>
+                <div className="min-w-0">
+                  <p className="whitespace-nowrap text-[1.55rem] font-semibold leading-none tabular-nums tracking-normal text-foreground min-[390px]:text-[1.7rem] sm:text-[2.15rem] lg:text-[2.65rem]">
+                    {item.value}
+                  </p>
+                  <p className="mt-2 whitespace-nowrap text-[0.6rem] font-medium uppercase tracking-normal text-muted-foreground sm:text-xs lg:text-sm">
+                    {item.label}
+                  </p>
+                </div>
+                {index < 2 ? (
+                  <div
+                    className="mb-3 h-10 w-px bg-border sm:h-12 lg:h-14"
+                    aria-hidden="true"
+                  />
+                ) : null}
+              </React.Fragment>
+            ))}
           </div>
           <div className="mt-1 flex justify-center text-muted-foreground">
             <ChevronDownIcon className="size-4" aria-hidden="true" />

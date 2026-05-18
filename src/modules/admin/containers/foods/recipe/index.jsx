@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router";
-import { get, isArray, join, map, toNumber, trim } from "lodash";
+import { get, isArray, join, map, toNumber, trim, filter } from "lodash";
 import { PlusIcon, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
@@ -88,12 +88,10 @@ const FoodRecipeDrawer = () => {
       const response = await mutation.mutateAsync({
         url: `/admin/foods/${id}/recipe`,
         attributes: {
-          ingredients: rows
-            .filter((row) => row.ingredientId && Number(row.grams) > 0)
-            .map((row) => ({
-              ingredientId: Number(row.ingredientId),
-              grams: Number(row.grams),
-              orderKey: row.orderKey ? Number(row.orderKey) : undefined,
+          ingredients: map(filter(rows, (row) => row.ingredientId && toNumber(row.grams) > 0), (row) => ({
+              ingredientId: toNumber(row.ingredientId),
+              grams: toNumber(row.grams),
+              orderKey: row.orderKey ? toNumber(row.orderKey) : undefined,
             })),
         },
       });
@@ -151,11 +149,10 @@ const FoodRecipeDrawer = () => {
                           value={row.ingredientId}
                           onChange={(value) =>
                             setRows((current) =>
-                              current.map((item, itemIndex) =>
+                              map(current, (item, itemIndex) =>
                                 itemIndex === index
                                   ? { ...item, ingredientId: value }
-                                  : item,
-                              ),
+                                  : item),
                             )
                           }
                           url="/admin/ingredients"
@@ -186,11 +183,10 @@ const FoodRecipeDrawer = () => {
                           value={row.grams}
                           onChange={(value) =>
                             setRows((current) =>
-                              current.map((item, itemIndex) =>
+                              map(current, (item, itemIndex) =>
                                 itemIndex === index
                                   ? { ...item, grams: value }
-                                  : item,
-                              ),
+                                  : item),
                             )
                           }
                         />
@@ -201,9 +197,7 @@ const FoodRecipeDrawer = () => {
                         size="icon"
                         onClick={() =>
                           setRows((current) =>
-                            current.filter(
-                              (_, itemIndex) => itemIndex !== index,
-                            ),
+                            filter(current, (_, itemIndex) => itemIndex !== index),
                           )
                         }
                       >

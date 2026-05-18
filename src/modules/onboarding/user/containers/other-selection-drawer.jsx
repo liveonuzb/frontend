@@ -14,6 +14,8 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import OnboardingSelectCard from "../components/onboarding-select-card.jsx";
 
+import { map } from "lodash";
+
 const OtherSelectionCard = ({
   open,
   tone,
@@ -40,7 +42,7 @@ const OtherSelectionSelectedItems = ({ items, title }) => {
     <div className="rounded-2xl border border-border/70 bg-muted/30 p-3">
       <p className="text-xs font-semibold text-muted-foreground">{title}</p>
       <div className="mt-2 flex flex-wrap gap-2">
-        {items.map((item) => (
+        {map(items, (item) => (
           <button
             key={item.key}
             type="button"

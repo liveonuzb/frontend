@@ -2,7 +2,6 @@ import { isArray, keys } from "lodash";
 import { useEffect, useRef } from "react";
 import { useGetQuery } from "@/hooks/api";
 import { useOnboardingStore } from "@/store";
-import { mapCoachOnboardingDraftToStoreFields } from "./coach-onboarding-dto";
 import { getOnboardingDraftApiPath } from "./onboarding-api-paths";
 import {
   isMeaningfulUserDraftData,
@@ -15,32 +14,6 @@ import {
  */
 function isUserStoreEmpty(state) {
   return !isMeaningfulUserDraftData(pickActiveUserDraftData(state));
-}
-
-/**
- * Checks whether the coach-level onboarding fields in the local store
- * are all at their initial (empty) values.
- */
-function isCoachStoreEmpty(state) {
-  return (
-    !state.experience &&
-    !state.coachCategory &&
-    (!isArray(state.coachCategories) || state.coachCategories.length === 0) &&
-    (!isArray(state.targetAudience) || state.targetAudience.length === 0) &&
-    (!isArray(state.specializations) || state.specializations.length === 0) &&
-    !state.certificationType &&
-    !state.certificationNumber &&
-    (!isArray(state.certificateFiles) || state.certificateFiles.length === 0) &&
-    (!isArray(state.coachLanguages) || state.coachLanguages.length === 0) &&
-    !state.coachCity &&
-    !state.coachWorkMode &&
-    !state.coachWorkplace &&
-    !state.coachMonthlyPrice &&
-    !state.coachMinMonthlyPrice &&
-    !state.coachMaxMonthlyPrice &&
-    !state.coachBio &&
-    !state.coachAvatar
-  );
 }
 
 /**
@@ -137,16 +110,6 @@ function mergeUserDraft(serverData, setFields) {
   }
 }
 
-function mergeCoachDraft(serverData, setFields) {
-  if (!serverData) return;
-
-  const fields = mapCoachOnboardingDraftToStoreFields(serverData);
-
-  if (keys(fields).length > 0) {
-    setFields(fields);
-  }
-}
-
 function mergeVendorDraft(serverData, roleType, setVendorDraft) {
   if (!serverData) return;
 
@@ -185,7 +148,7 @@ function mergeVendorDraft(serverData, roleType, setVendorDraft) {
  * into the local Zustand store if the local store is empty.
  * Enables cross-device resume.
  *
- * @param {string} type - "user" | "coach" | "gym" | "shop" | "food"
+ * @param {string} type - onboarding type
  * @param {object} options
  * @param {boolean} options.enabled - whether to fetch the draft (default true)
  */
@@ -212,10 +175,6 @@ export function useDraftRestore(type, { enabled = true } = {}) {
     if (type === "user") {
       if (isUserStoreEmpty(state) && isMeaningfulUserDraftData(draftData)) {
         mergeUserDraft(draftData, setFields);
-      }
-    } else if (type === "coach") {
-      if (isCoachStoreEmpty(state)) {
-        mergeCoachDraft(draftData, setFields);
       }
     } else {
       // Vendor types: gym, shop, food

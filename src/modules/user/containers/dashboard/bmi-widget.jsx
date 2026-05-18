@@ -1,8 +1,8 @@
 import React from "react";
-import { get } from "lodash";
+import { get, map } from "lodash";
 import { useNavigate } from "react-router";
 import { ChevronRightIcon } from "lucide-react";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 import { getApiResponseData } from "@/lib/api-response";
 import { normalizeUserOnboarding } from "@/lib/user-onboarding";
 import { cn } from "@/lib/utils";
@@ -175,7 +175,6 @@ export default function BmiWidget({
           }}
         />
       ) : null}
-
       <div className="relative flex shrink-0 items-center justify-between px-5 pb-0 pt-5">
         <div className="flex items-center gap-2">
           <span className="flex size-7 items-center justify-center rounded-lg bg-blue-500/12 text-sm leading-none">
@@ -187,7 +186,6 @@ export default function BmiWidget({
         </div>
         <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/40" />
       </div>
-
       {bmi !== null && meta ? (
         <div className="relative flex flex-1 flex-col gap-4 px-5 pb-5 pt-4">
           <div className="flex items-start justify-between gap-2">
@@ -255,7 +253,7 @@ export default function BmiWidget({
             </div>
 
             <div className="flex h-2.5 w-full gap-[2px] overflow-hidden rounded-full">
-              {ZONES.map((zone, index) => (
+              {map(ZONES, (zone, index) => (
                 <div
                   key={index}
                   className="h-full transition-opacity duration-500"
@@ -269,7 +267,7 @@ export default function BmiWidget({
             </div>
 
             <div className="relative h-3.5">
-              {SCALE_LABELS.map(({ label, pct: labelPct }) => (
+              {map(SCALE_LABELS, ({ label, pct: labelPct }) => (
                 <span
                   key={label}
                   className="absolute top-0 -translate-x-1/2 text-[9px] font-semibold text-muted-foreground/60"

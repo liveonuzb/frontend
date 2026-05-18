@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { entries, find, includes, some } from "lodash";
+import { entries, find, includes, some, forEach, toLower, toNumber, trim } from "lodash";
 import {
   DrawerBody,
   DrawerFooter,
@@ -25,23 +25,23 @@ const fmt = (s) =>
   `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
 const detectMeal = (v) => {
-  const n = String(v || "").toLowerCase();
-  if (!n.trim()) return null;
+  const n = toLower(String(v || ""));
+  if (!trim(n)) return null;
   return find(entries(MEAL_TYPE_HINTS), ([, kw]) => some(kw, (k) => includes(n, k)))?.[0] || null;
 };
 
 const detectTimeHint = (value) => {
-  const text = String(value || "").toLowerCase();
+  const text = toLower(String(value || ""));
 
-  if (!text.trim()) {
+  if (!trim(text)) {
     return null;
   }
 
   const colonMatch = text.match(/\b([01]?\d|2[0-3])[:.]([0-5]\d)\b/);
   if (colonMatch) {
     return {
-      hour: Number(colonMatch[1]),
-      minute: Number(colonMatch[2]),
+      hour: toNumber(colonMatch[1]),
+      minute: toNumber(colonMatch[2]),
       label: `${String(colonMatch[1]).padStart(2, "0")}:${colonMatch[2]}`,
     };
   }
@@ -50,9 +50,9 @@ const detectTimeHint = (value) => {
     /\b(?:soat|saat|час)\s*([01]?\d|2[0-3])(?:[:.]([0-5]\d))?\b/,
   );
   if (explicitHourMatch) {
-    const minute = explicitHourMatch[2] ? Number(explicitHourMatch[2]) : 0;
+    const minute = explicitHourMatch[2] ? toNumber(explicitHourMatch[2]) : 0;
     return {
-      hour: Number(explicitHourMatch[1]),
+      hour: toNumber(explicitHourMatch[1]),
       minute,
       label: `${String(explicitHourMatch[1]).padStart(2, "0")}:${String(minute).padStart(2, "0")}`,
     };
@@ -62,16 +62,16 @@ const detectTimeHint = (value) => {
 };
 
 const detectDateHint = (value) => {
-  const text = String(value || "").toLowerCase();
+  const text = toLower(String(value || ""));
 
-  if (!text.trim()) {
+  if (!trim(text)) {
     return null;
   }
 
   if (
-    text.includes("kecha") ||
-    text.includes("yesterday") ||
-    text.includes("вчера")
+    includes(text, "kecha") ||
+    includes(text, "yesterday") ||
+    includes(text, "вчера")
   ) {
     return {
       offsetDays: -1,
@@ -80,9 +80,9 @@ const detectDateHint = (value) => {
   }
 
   if (
-    text.includes("bugun") ||
-    text.includes("today") ||
-    text.includes("сегодня")
+    includes(text, "bugun") ||
+    includes(text, "today") ||
+    includes(text, "сегодня")
   ) {
     return {
       offsetDays: 0,
@@ -103,7 +103,7 @@ const AUDIO_MIME_CANDIDATES = [
 
 const getSupportedMimeType = () => {
   if (typeof MediaRecorder === "undefined") return "";
-  return AUDIO_MIME_CANDIDATES.find((m) => MediaRecorder.isTypeSupported(m)) || "";
+  return find(AUDIO_MIME_CANDIDATES, (m) => MediaRecorder.isTypeSupported(m)) || "";
 };
 
 /* ───────── Custom Native Hook ───────── */
@@ -130,7 +130,7 @@ function useNativeAudioRecorder(options = {}) {
       timerRef.current = null;
     }
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
+      forEach(streamRef.current.getTracks(), (track) => track.stop());
       streamRef.current = null;
       setActiveStream(null);
     }
@@ -248,9 +248,9 @@ const AudioAddDrawer = ({ onClose, onTranscriptReady }) => {
 
     try {
       const mime = blob.type || "audio/webm";
-      const ext = mime.includes("mp4")
+      const ext = includes(mime, "mp4")
         ? "mp4"
-        : mime.includes("ogg")
+        : includes(mime, "ogg")
         ? "ogg"
         : "webm";
       const file = new File([blob], `meal-note.${ext}`, {
@@ -260,10 +260,10 @@ const AudioAddDrawer = ({ onClose, onTranscriptReady }) => {
       const result = await fnTranscribe.current(file);
       const transcript =
         typeof result === "string"
-          ? String(result).trim()
-          : String(result?.transcript || "").trim();
-      const confidence = Number.isFinite(Number(result?.confidence))
-        ? Number(result.confidence)
+          ? trim(String(result))
+          : trim(String(result?.transcript || ""));
+      const confidence = Number.isFinite(toNumber(result?.confidence))
+        ? toNumber(result.confidence)
         : null;
 
       if (deadRef.current) {

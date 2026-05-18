@@ -11,15 +11,16 @@ import { useOnboardingAutoSave } from "@/modules/onboarding/lib/use-auto-save";
 import { ChevronRight } from "lucide-react";
 import PageAura from "../../components/page-aura.jsx";
 import { getGenderTone, ONBOARDING_TONES } from "../../lib/tones.js";
-import useAppModeTheme from "@/hooks/app/use-app-mode-theme";
+import { useOnboardingAssets } from "@/hooks/app/use-onboarding-base";
 import OnboardingSelectCard from "../../components/onboarding-select-card.jsx";
+
+import { find, map } from "lodash";
 
 const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { gender, setFields } = useOnboardingStore();
-  const modeTheme = useAppModeTheme();
-  const base = modeTheme.assets.onboardingBase;
+  const { asset, curious } = useOnboardingAssets();
 
   useOnboardingAutoSave("user", "gender");
 
@@ -28,21 +29,21 @@ const Index = () => {
       value: "male",
       label: t("onboarding.gender.male"),
       description: t("onboarding.gender.maleDescription"),
-      image: `${base}/male-2.webp`,
+      image: asset("male-2"),
     },
     {
       value: "female",
       label: t("onboarding.gender.female"),
       description: t("onboarding.gender.femaleDescription"),
-      image: `${base}/female-2.webp`,
+      image: asset("female-2"),
     },
   ];
 
-  const selectedGender = genders.find((item) => item.value === gender) ?? null;
+  const selectedGender = find(genders, (item) => item.value === gender) ?? null;
   const tone = selectedGender
     ? getGenderTone(selectedGender.value)
     : ONBOARDING_TONES.neutral;
-  const heroImage = selectedGender?.image ?? modeTheme.assets.curious;
+  const heroImage = selectedGender?.image ?? curious;
 
   const handleSelect = (value) => {
     if (value === gender) {
@@ -84,7 +85,6 @@ const Index = () => {
   return (
     <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8">
       <PageAura tone={tone} />
-
       <div className="relative z-10 flex h-full min-h-0 w-full flex-1 flex-col md:mx-auto md:max-w-4xl">
         <OnboardingQuestion question={t("onboarding.gender.question")} />
 
@@ -129,7 +129,7 @@ const Index = () => {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          {genders.map((item) => {
+          {map(genders, (item) => {
             const isActive = gender === item.value;
             const itemTone = getGenderTone(item.value);
 

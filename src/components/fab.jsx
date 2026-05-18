@@ -1,4 +1,4 @@
-import { some, reduce, values, isArray } from "lodash";
+import { some, reduce, values as lodashValues, isArray, split } from "lodash";
 import React from "react";
 import { createPortal } from "react-dom";
 import {
@@ -21,7 +21,7 @@ import useHealthGoals from "@/hooks/app/use-health-goals";
 import useMeasurements from "@/hooks/app/use-measurements";
 import { useAddMealOverlayStore } from "@/store";
 
-const getTodayKey = () => new Date().toISOString().split("T")[0];
+const getTodayKey = () => split(new Date().toISOString(), "T")[0];
 const FAB_VISIBLE_PATHS = [
   "/user/dashboard",
   "/user/nutrition",
@@ -137,7 +137,7 @@ const FloatingActionButton = () => {
   const consumedCalories = React.useMemo(() => {
     const meals = dayData?.meals || {};
     return reduce(
-      values(meals),
+      lodashValues(meals),
       (sectionSum, foods) => {
         return (
           sectionSum +
@@ -264,3 +264,6 @@ const FloatingActionButton = () => {
 };
 
 export default FloatingActionButton;
+
+
+

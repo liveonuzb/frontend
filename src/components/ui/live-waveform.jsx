@@ -1,4 +1,4 @@
-import { forEach, map } from "lodash";
+import { forEach, map, slice } from "lodash";
 import { useEffect, useRef } from "react";
 
 import { cn } from "@/lib/utils"
@@ -315,7 +315,7 @@ export const LiveWaveform = ({
             // For static mode, update bars in place
             const startFreq = Math.floor(dataArray.length * 0.05)
             const endFreq = Math.floor(dataArray.length * 0.4)
-            const relevantData = dataArray.slice(startFreq, endFreq)
+            const relevantData = slice(dataArray, startFreq, endFreq)
 
             const barCount = Math.floor(rect.width / (barWidth + barGap))
             const halfCount = Math.floor(barCount / 2)
@@ -341,7 +341,7 @@ export const LiveWaveform = ({
             let sum = 0
             const startFreq = Math.floor(dataArray.length * 0.05)
             const endFreq = Math.floor(dataArray.length * 0.4)
-            const relevantData = dataArray.slice(startFreq, endFreq)
+            const relevantData = slice(dataArray, startFreq, endFreq)
 
             for (let i = 0; i < relevantData.length; i++) {
               sum += relevantData[i]

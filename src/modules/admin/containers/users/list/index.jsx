@@ -3,7 +3,7 @@ import { useNavigate, Outlet } from "react-router";
 import { PlusIcon, UsersIcon } from "lucide-react";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { toast } from "sonner";
-import { get, includes, some, isArray, join } from "lodash";
+import { get, includes, some, isArray, join, trim, values as lodashValues } from "lodash";
 import { Button } from "@/components/ui/button";
 import {
   AdminListDataGrid,
@@ -51,8 +51,6 @@ const Index = () => {
     statusOperator,
     premiumFilter,
     premiumOperator,
-    coachStatusFilter,
-    coachStatusOperator,
     sortBy,
     sortDir,
     sorting,
@@ -81,16 +79,11 @@ const Index = () => {
           trim: true,
         },
       ]),
-      ...(deferredSearch.trim() ? { q: deferredSearch.trim() } : {}),
+      ...(trim(deferredSearch) ? { q: trim(deferredSearch) } : {}),
       ...buildAdminFilterParams([
         { key: "role", value: roleFilter, operator: roleOperator },
         { key: "status", value: statusFilter, operator: statusOperator },
         { key: "premium", value: premiumFilter, operator: premiumOperator },
-        {
-          key: "coachStatus",
-          value: coachStatusFilter,
-          operator: coachStatusOperator,
-        },
       ]),
       sortBy,
       sortDir,
@@ -98,8 +91,6 @@ const Index = () => {
       pageSize,
     }),
     [
-      coachStatusFilter,
-      coachStatusOperator,
       currentPage,
       deferredName,
       deferredSearch,
@@ -126,7 +117,7 @@ const Index = () => {
     url: "/admin/users",
     params: queryParams,
     queryProps: {
-      queryKey: ["admin-users", ...Object.values(queryParams)],
+      queryKey: ["admin-users", ...lodashValues(queryParams)],
     },
   });
 
@@ -148,15 +139,10 @@ const Index = () => {
       queryKey: ["admin-users"],
     });
 
-  const { mutateAsync: updateCoachStatus, isPending: isUpdatingCoachStatus } =
-    usePatchQuery({
-      queryKey: ["admin-users"],
-    });
-
   const totalCount = get(meta, "total", 0);
 
   const isUserActionPending =
-    isUpdating || isDeleting || isExtending || isUpdatingCoachStatus;
+    isUpdating || isDeleting || isExtending;
 
   // --- Delete ---
   const [deleteCandidate, setDeleteCandidate] = React.useState(null);
@@ -210,7 +196,7 @@ const Index = () => {
     refetch,
   ]);
 
-  // --- View / Edit / Gift / Ban / CoachStatus / CancelPremium ---
+  // --- View / Edit / Gift / Ban / CancelPremium ---
   const [giftUser, setGiftUser] = React.useState(null);
   const [blockCandidate, setBlockCandidate] = React.useState(null);
 
@@ -240,7 +226,7 @@ const Index = () => {
   const handleGiftOpen = React.useCallback(
     (user) => {
       if (!canGiftPremium(user)) {
-        toast.error("Premium faqat oddiy user yoki coach accountga beriladi");
+        toast.error("Premium faqat oddiy user accountga beriladi");
         return;
       }
       setGiftUser(user);
@@ -285,7 +271,7 @@ const Index = () => {
     } catch (error) {
       const message = get(error, "response.data.message");
       toast.error(
-        Array.isArray(message)
+        isArray(message)
           ? message.join(", ")
           : message || "Statusni yangilab bo'lmadi",
       );
@@ -310,7 +296,7 @@ const Index = () => {
       } catch (error) {
         const message = get(error, "response.data.message");
         toast.error(
-          Array.isArray(message)
+          isArray(message)
             ? message.join(", ")
             : message || "Premiumni uzaytirib bo'lmadi",
         );
@@ -322,32 +308,6 @@ const Index = () => {
   const handleCancelPremium = React.useCallback(() => {
     toast.info("Premium bekor qilish flowi hali tayyor emas");
   }, []);
-
-  const handleCoachStatusUpdate = React.useCallback(
-    async (user, nextStatus) => {
-      if (!canManageSupport) return;
-
-      try {
-        await updateCoachStatus({
-          url: `/admin/coaches/${user.id}/status`,
-          attributes: { status: nextStatus },
-        });
-        toast.success(
-          nextStatus === "approved"
-            ? `${user.firstName ?? "User"} coach sifatida tasdiqlandi`
-            : `${user.firstName ?? "User"} coach arizasi rad etildi`,
-        );
-      } catch (error) {
-        const message = get(error, "response.data.message");
-        toast.error(
-          Array.isArray(message)
-            ? message.join(", ")
-            : message || "Coach holatini yangilab bo'lmadi",
-        );
-      }
-    },
-    [canManageSupport, updateCoachStatus],
-  );
 
   const columns = useColumns({
     currentPage,
@@ -366,7 +326,6 @@ const Index = () => {
     onCancelPremium: handleCancelPremium,
     onBanToggle: handleBanToggle,
     onDelete: setDeleteCandidate,
-    onCoachStatusUpdate: handleCoachStatusUpdate,
   });
 
   const table = useReactTable({
@@ -457,3 +416,5 @@ const Index = () => {
 };
 
 export default Index;
+
+

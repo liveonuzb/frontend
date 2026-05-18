@@ -1,5 +1,17 @@
 import React from "react";
-import { get, clamp, find } from "lodash";
+import {
+  get,
+  clamp,
+  find,
+  filter,
+  map,
+  some,
+  split,
+  toLower,
+  toNumber,
+  trim,
+  slice,
+} from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -38,7 +50,7 @@ export const setMealDuplicateConfirmHandler = (handler) => {
   };
 };
 
-export const getTodayKey = () => new Date().toISOString().split("T")[0];
+export const getTodayKey = () => split(new Date().toISOString(), "T")[0];
 
 export { createEmptyDayData, normalizeDateKey, normalizeDayData };
 
@@ -117,21 +129,16 @@ const buildMealPatchPayload = (mealType, patch = {}) => {
 };
 
 const normalizeMealDuplicateName = (value) =>
-  String(value || "")
-    .trim()
-    .toLowerCase();
+  toLower(trim(String(value || "")));
 
 const isDuplicateMeal = (currentMeals = [], nextMeal = {}) =>
-  currentMeals.some((meal) => {
+  some(currentMeals, (meal) => {
     if (nextMeal.savedMealId && meal.savedMealId === nextMeal.savedMealId) {
       return true;
     }
 
-    return (
-      normalizeMealDuplicateName(meal.name) ===
-        normalizeMealDuplicateName(nextMeal.name) &&
-      Number(meal.grams ?? 0) === Number(nextMeal.grams ?? 0)
-    );
+    return (normalizeMealDuplicateName(meal.name) ===
+      normalizeMealDuplicateName(nextMeal.name) && toNumber(meal.grams ?? 0) === toNumber(nextMeal.grams ?? 0));
   });
 
 const confirmDuplicateMeal = async (context) => {
@@ -178,7 +185,7 @@ export const useDailyTrackingHistory = (params = {}) => {
         params.mealType && params.mealType !== "all"
           ? params.mealType
           : undefined,
-      q: params.q?.trim() || undefined,
+      q: trim(params.q) || undefined,
     }),
     [params.endDate, params.mealType, params.q, params.startDate],
   );
@@ -194,9 +201,8 @@ export const useDailyTrackingHistory = (params = {}) => {
 
   const days = React.useMemo(
     () =>
-      get(data, "data.data.days", get(data, "data.days", [])).map((day) =>
-        normalizeDayData(day),
-      ),
+      map(get(data, "data.data.days", get(data, "data.days", [])), (day) =>
+        normalizeDayData(day)),
     [data],
   );
 
@@ -213,63 +219,6 @@ export const useDailyTrackingHistory = (params = {}) => {
   };
 };
 
-const normalizeMealFeedback = (item = {}) => ({
-  id: item.id,
-  mealItemId: item.mealItemId ?? null,
-  title: item.title ?? "",
-  message: item.message ?? "",
-  contextDate: item.contextDate ?? null,
-  createdAt: item.createdAt ?? null,
-  coach: {
-    id: item.coach?.id ?? null,
-    name: item.coach?.name ?? "Coach",
-    avatar: item.coach?.avatar ?? null,
-  },
-});
-
-export const useDailyTrackingMealFeedback = (params = {}) => {
-  const queryParams = React.useMemo(
-    () => ({
-      startDate: params.startDate || undefined,
-      endDate: params.endDate || undefined,
-      mealItemId: params.mealItemId || undefined,
-    }),
-    [params.endDate, params.mealItemId, params.startDate],
-  );
-
-  const { data, ...query } = useGetQuery({
-    url: "/daily-tracking/meal-feedback",
-    params: queryParams,
-    queryProps: {
-      queryKey: ["daily-tracking", "meal-feedback", queryParams],
-      enabled: params.enabled ?? true,
-    },
-  });
-
-  const items = React.useMemo(
-    () =>
-      get(data, "data.data.items", get(data, "data.items", [])).map(
-        normalizeMealFeedback,
-      ),
-    [data],
-  );
-
-  const byMealId = React.useMemo(() => {
-    const grouped = {};
-    items.forEach((item) => {
-      if (!item.mealItemId) return;
-      grouped[item.mealItemId] = [...(grouped[item.mealItemId] || []), item];
-    });
-    return grouped;
-  }, [items]);
-
-  return {
-    ...query,
-    data,
-    items,
-    byMealId,
-  };
-};
 
 export const useDailyTrackingActions = () => {
   const queryClient = useQueryClient();
@@ -362,7 +311,7 @@ export const useDailyTrackingActions = () => {
         return getCachedDayData(queryClient, dateKey);
       }
 
-      const entriesToRemove = dayData.waterLog.slice(safeCount).reverse();
+      const entriesToRemove = slice(dayData.waterLog, safeCount).reverse();
       for (const entry of entriesToRemove) {
         await deleteMutation.mutateAsync({
           url: `/daily-tracking/${dateKey}/water/${entry.id}`,
@@ -452,9 +401,7 @@ export const useDailyTrackingActions = () => {
   const addMealsBatch = React.useCallback(
     async (date = getTodayKey(), items = []) => {
       const dateKey = normalizeDateKey(date);
-      const payloadItems = items
-        .filter((item) => item?.mealType && item?.food)
-        .map((item) => buildMealPayload(item.mealType, item.food));
+      const payloadItems = map(filter(items, (item) => item?.mealType && item?.food), (item) => buildMealPayload(item.mealType, item.food));
 
       if (payloadItems.length === 0) {
         return getCachedDayData(queryClient, dateKey);
@@ -470,7 +417,7 @@ export const useDailyTrackingActions = () => {
         syncGamificationState(),
       ];
 
-      if (payloadItems.some((item) => item.savedMealId)) {
+      if (some(payloadItems, (item) => item.savedMealId)) {
         invalidations.push(
           queryClient.invalidateQueries({ queryKey: SAVED_MEALS_QUERY_KEY }),
         );
@@ -525,9 +472,7 @@ export const useDailyTrackingActions = () => {
         ...previousDayData,
         meals: {
           ...previousDayData.meals,
-          [mealType]: (previousDayData.meals?.[mealType] || []).filter(
-            (item) => item.id !== foodId,
-          ),
+          [mealType]: filter((previousDayData.meals?.[mealType] || []), (item) => item.id !== foodId),
         },
       });
 
@@ -621,10 +566,10 @@ export const useDailyTrackingActions = () => {
       const dayData = getCachedDayData(queryClient, date);
       return updateSummary(date, {
         workoutMinutes:
-          (Number(dayData.workoutMinutes) || 0) + (Number(minutes) || 0),
+          (toNumber(dayData.workoutMinutes) || 0) + (toNumber(minutes) || 0),
         burnedCalories:
-          (Number(dayData.burnedCalories) || 0) +
-          (Number(burnedCalories) || 0),
+          (toNumber(dayData.burnedCalories) || 0) +
+          (toNumber(burnedCalories) || 0),
       });
     },
     [queryClient, updateSummary],

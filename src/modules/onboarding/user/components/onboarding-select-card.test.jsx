@@ -5,6 +5,8 @@ import { describe, expect, it, vi } from "vitest";
 import { ONBOARDING_ACCENTS } from "../lib/tones.js";
 import OnboardingSelectCard from "./onboarding-select-card.jsx";
 
+import { forEach } from "lodash";
+
 describe("OnboardingSelectCard", () => {
   it("renders row cards with pressed state and selected indicator", () => {
     render(
@@ -97,7 +99,7 @@ describe("OnboardingSelectCard", () => {
   it("keeps visible focus ring styles on every card variant", () => {
     const variants = ["row", "image", "compact", "drawer"];
 
-    variants.forEach((variant) => {
+    forEach(variants, (variant) => {
       const { unmount } = render(
         <OnboardingSelectCard
           title={`${variant} option`}

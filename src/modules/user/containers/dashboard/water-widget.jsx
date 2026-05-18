@@ -1,10 +1,10 @@
 import React from "react";
-import { get } from "lodash";
+import { get, toNumber } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import useGetQuery from "@/hooks/api/use-get-query";
-import usePostQuery from "@/hooks/api/use-post-query";
+import { useGetQuery } from "@/hooks/api";
+import { usePostQuery } from "@/hooks/api";
 import AnimatedWaterWidget from "@/components/animated-water-widget";
 import { invalidateGamificationQueries } from "@/modules/user/lib/gamification-query-keys";
 import {
@@ -51,8 +51,8 @@ export default function WaterWidget({
       getGoalsStateFromResponses({ goalsResponse: goalsData, user: null }),
     [goalsData, goalsStateOverride],
   );
-  const cupSize = Number(get(goals, "cupSize", 250) || 250);
-  const waterGoalMl = Number(get(goals, "waterMl", 2500) || 2500);
+  const cupSize = toNumber(get(goals, "cupSize", 250) || 250);
+  const waterGoalMl = toNumber(get(goals, "waterMl", 2500) || 2500);
   const waterConsumedMl = React.useMemo(
     () => calculateWaterConsumedMl(dayData, cupSize),
     [cupSize, dayData],

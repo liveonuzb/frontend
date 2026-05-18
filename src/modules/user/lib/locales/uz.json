@@ -4,7 +4,6 @@
       "title": "Bosh sahifa",
       "greeting": "Salom, {{name}}!",
       "quote": "Kun motivatsiyasi",
-      "coachInvitation": "Murabbiy taklifi",
       "accept": "Qabul qilish",
       "decline": "Rad etish",
       "breadcrumbs": {
@@ -249,7 +248,6 @@
     "payments": {
       "title": "To'lovlar",
       "source": {
-        "coach": "Murabbiy",
         "subscription": "Obuna"
       },
       "method": {
@@ -267,7 +265,6 @@
     },
     "marketplace": {
       "title": "Marketplace",
-      "coaches": "Murabbiylar",
       "searchPlaceholder": "Qidirish...",
       "noResults": "Hech narsa topilmadi"
     },

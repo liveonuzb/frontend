@@ -1,10 +1,11 @@
+import { orderBy, toNumber, slice, take } from "lodash";
 export const RUNNING_POINT_QUEUE_MAX_SIZE = 600;
 export const RUNNING_POINT_BATCH_MAX_SIZE = 24;
 export const RUNNING_POINT_SYNC_INTERVAL_MS = 5000;
 export const RUNNING_POINT_SYNC_MAX_BACKOFF_MS = 30000;
 
 const toFiniteNumber = (value) => {
-  const number = Number(value);
+  const number = toNumber(value);
   return Number.isFinite(number) ? number : null;
 };
 
@@ -38,9 +39,7 @@ export const dedupeRunningPoints = (points = []) => {
     bySequence.set(point.sequence, point);
   }
 
-  return [...bySequence.values()].sort(
-    (left, right) => left.sequence - right.sequence,
-  );
+  return orderBy(Array.from(bySequence.values()), ["sequence"], ["asc"]);
 };
 
 export const trimRunningPointQueue = (points = []) => {
@@ -50,11 +49,11 @@ export const trimRunningPointQueue = (points = []) => {
     return uniquePoints;
   }
 
-  return uniquePoints.slice(uniquePoints.length - RUNNING_POINT_QUEUE_MAX_SIZE);
+  return slice(uniquePoints, uniquePoints.length - RUNNING_POINT_QUEUE_MAX_SIZE);
 };
 
 export const buildRunningPointBatch = (points = []) =>
-  dedupeRunningPoints(points).slice(0, RUNNING_POINT_BATCH_MAX_SIZE);
+  take(dedupeRunningPoints(points), RUNNING_POINT_BATCH_MAX_SIZE);
 
 export const parseRetryAfterMs = (headers = {}) => {
   const value =
@@ -62,7 +61,7 @@ export const parseRetryAfterMs = (headers = {}) => {
     headers["Retry-After"] ??
     headers["retry-after-short"] ??
     headers["Retry-After-Short"];
-  const seconds = Number(value);
+  const seconds = toNumber(value);
 
   return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : null;
 };
@@ -77,7 +76,7 @@ export const computeRunningSyncBackoffMs = ({
     return Math.min(retryAfterMs, RUNNING_POINT_SYNC_MAX_BACKOFF_MS);
   }
 
-  const exponent = Math.max(0, Number(failureCount) - 1);
+  const exponent = Math.max(0, toNumber(failureCount) - 1);
   const computed = 1000 * 2 ** exponent;
 
   return Math.min(computed, RUNNING_POINT_SYNC_MAX_BACKOFF_MS);

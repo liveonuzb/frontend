@@ -2,42 +2,39 @@ import React from "react";
 import { useNavigate } from "react-router";
 import {
   HeartIcon,
-  UserIcon,
   DumbbellIcon,
   UtensilsIcon,
   Trash2Icon,
 } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useBreadcrumbStore } from "@/store";
 import PageTransition from "@/components/page-transition";
-import { useFavorites } from "@/hooks/app/use-favorites";
-import useApi from "@/hooks/api/use-api";
+import { useDeleteQuery, useGetQuery } from "@/hooks/api";
+
+import { map } from "lodash";
+
+const FAVORITES_QUERY_KEY = ["me", "favorites"];
 
 const ENTITY_TYPES = [
   { value: null, label: "Barchasi" },
-  { value: "COACH", label: "Murabbiylar", Icon: UserIcon },
   { value: "WORKOUT_PLAN", label: "Mashg'ulotlar", Icon: DumbbellIcon },
   { value: "MEAL_PLAN", label: "Ovqat rejalari", Icon: UtensilsIcon },
 ];
 
 const ENTITY_ROUTES = {
-  COACH: (id) => `/user/u/${id}`,
   WORKOUT_PLAN: () => `/user/workout`,
   MEAL_PLAN: () => `/user/nutrition`,
 };
 
 const ENTITY_ICONS = {
-  COACH: UserIcon,
   WORKOUT_PLAN: DumbbellIcon,
   MEAL_PLAN: UtensilsIcon,
 };
 
 const ENTITY_LABELS = {
-  COACH: "Murabbiy",
   WORKOUT_PLAN: "Mashg'ulot rejasi",
   MEAL_PLAN: "Ovqat rejasi",
 };
@@ -84,8 +81,6 @@ const FavoriteItem = ({ item, onRemove, isRemoving }) => {
 
 const FavoritesContainer = () => {
   const { setBreadcrumbs } = useBreadcrumbStore();
-  const { request } = useApi();
-  const queryClient = useQueryClient();
   const [activeType, setActiveType] = React.useState(null);
   const [removingKey, setRemovingKey] = React.useState(null);
 
@@ -96,21 +91,33 @@ const FavoritesContainer = () => {
     ]);
   }, [setBreadcrumbs]);
 
-  const { items, isLoading } = useFavorites(activeType);
+  const favoriteParams = activeType ? { type: activeType } : {};
+  const { data, isLoading } = useGetQuery({
+    url: "/users/me/favorites",
+    params: favoriteParams,
+    queryProps: {
+      queryKey: [...FAVORITES_QUERY_KEY, activeType ?? "all"],
+    },
+  });
+  const items = React.useMemo(() => data?.data?.items ?? [], [data]);
+  const deleteFavoriteMutation = useDeleteQuery({
+    queryKey: FAVORITES_QUERY_KEY,
+  });
 
   const handleRemove = React.useCallback(async (entityType, entityId) => {
     const key = `${entityType}:${entityId}`;
     setRemovingKey(key);
     try {
-      await request.delete(`/users/me/favorites/${entityType}/${entityId}`);
-      queryClient.invalidateQueries({ queryKey: ["me", "favorites"] });
+      await deleteFavoriteMutation.mutateAsync({
+        url: `/users/me/favorites/${entityType}/${entityId}`,
+      });
       toast.success("Sevimlilardan olib tashlandi");
     } catch {
       toast.error("Xatolik yuz berdi");
     } finally {
       setRemovingKey(null);
     }
-  }, [request, queryClient]);
+  }, [deleteFavoriteMutation]);
 
   return (
     <PageTransition>
@@ -123,14 +130,14 @@ const FavoritesContainer = () => {
           <div>
             <h1 className="text-xl font-bold">Sevimlilar</h1>
             <p className="text-sm text-muted-foreground">
-              Saqlagan murabbiylar, zallar va rejalar
+              Saqlagan zallar va rejalar
             </p>
           </div>
         </div>
 
         {/* Type filter */}
         <div className="flex flex-wrap gap-2">
-          {ENTITY_TYPES.map((t) => (
+          {map(ENTITY_TYPES, (t) => (
             <button
               key={String(t.value)}
               type="button"
@@ -150,7 +157,7 @@ const FavoritesContainer = () => {
         {/* List */}
         {isLoading ? (
           <div className="space-y-3">
-            {[0, 1, 2].map((i) => (
+            {map([0, 1, 2], (i) => (
               <Skeleton key={i} className="h-16 rounded-2xl" />
             ))}
           </div>
@@ -160,13 +167,13 @@ const FavoritesContainer = () => {
             <div>
               <p className="font-semibold text-muted-foreground">Sevimlilar yo&apos;q</p>
             <p className="mt-1 text-sm text-muted-foreground/70">
-                Murabbiy yoki reja sahifasida ❤️ tugmasini bosing
+                Reja sahifasida ❤️ tugmasini bosing
               </p>
             </div>
           </div>
         ) : (
           <div className="space-y-2">
-            {items.map((item) => (
+            {map(items, (item) => (
               <FavoriteItem
                 key={item.id}
                 item={item}

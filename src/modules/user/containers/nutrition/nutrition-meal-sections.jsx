@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import MealSection from "./meal-section.jsx";
 
+import { map, values as lodashValues, toPairs } from "lodash";
+
 export default function NutritionMealSections({
   mealConfig,
   mealFilter,
@@ -19,7 +21,6 @@ export default function NutritionMealSections({
   activeFilterCount = 0,
   setIsFilterDrawerOpen,
   filteredMealSections,
-  mealFeedbackById = {},
   activeMealType,
   setSelectedMealTypeForAdd,
   setIsActionDrawerOpen,
@@ -41,7 +42,7 @@ export default function NutritionMealSections({
 }) {
   const [isSelectionMode, setIsSelectionMode] = React.useState(false);
   const [selectedItems, setSelectedItems] = React.useState({});
-  const selectedList = React.useMemo(() => Object.values(selectedItems), [selectedItems]);
+  const selectedList = React.useMemo(() => lodashValues(selectedItems), [selectedItems]);
 
   const clearSelection = React.useCallback(() => {
     setSelectedItems({});
@@ -107,7 +108,7 @@ export default function NutritionMealSections({
             >
               Barchasi
             </Button>
-            {Object.entries(mealConfig).map(([type, config]) => (
+            {map(toPairs(mealConfig), ([type, config]) => (
               <Button
                 key={type}
                 type="button"
@@ -156,9 +157,8 @@ export default function NutritionMealSections({
           </div>
         </div>
       </div>
-
       {filteredMealSections.length > 0 ? (
-        filteredMealSections.map(([type, section]) => (
+        map(filteredMealSections, ([type, section]) => (
           <MealSection
             key={type}
             type={type}
@@ -166,7 +166,6 @@ export default function NutritionMealSections({
             time={section.time}
             items={section.foods || []}
             plannedItems={section.plannedItems || []}
-            mealFeedbackById={mealFeedbackById}
             onRemove={handleRemoveFood}
             onAdd={() => {
               setSelectedMealTypeForAdd(type);
@@ -223,3 +222,5 @@ export default function NutritionMealSections({
     </>
   );
 }
+
+

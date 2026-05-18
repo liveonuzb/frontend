@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { useLanguageStore, useAppModeStore } from "@/store";
 import useAppModeTheme from "@/hooks/app/use-app-mode-theme";
 
+import { find, map } from "lodash";
+
 const LANGUAGES = [
   {
     code: "uz",
@@ -51,7 +53,7 @@ const SelectLanguagePage = () => {
   const modeTheme = useAppModeTheme();
   const [selected, setSelected] = useState(currentLanguage || "uz");
 
-  const active = LANGUAGES.find((l) => l.code === selected) ?? LANGUAGES[0];
+  const active = find(LANGUAGES, (l) => l.code === selected) ?? LANGUAGES[0];
   const returnTo = location.state?.returnTo;
 
   const handleContinue = () => {
@@ -95,7 +97,6 @@ const SelectLanguagePage = () => {
           transition={{ duration: 0.36, ease: "easeOut" }}
         />
       </div>
-
       <div className="relative z-10 mx-auto flex h-full w-full max-w-lg flex-1 flex-col justify-center">
         <div className="flex flex-col items-center text-center">
           <img
@@ -112,7 +113,7 @@ const SelectLanguagePage = () => {
         </div>
 
         <div className="mt-6 flex flex-col gap-3 md:mt-10 md:gap-4">
-          {LANGUAGES.map((lang) => {
+          {map(LANGUAGES, (lang) => {
             const isActive = selected === lang.code;
             return (
               <motion.button

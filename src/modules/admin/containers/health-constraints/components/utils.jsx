@@ -1,4 +1,4 @@
-import { get, isArray, join, trim } from "lodash";
+import { get, isArray, join, trim, filter, find } from "lodash";
 import { z } from "zod";
 
 export const QUERY_KEY = ["admin", "health-constraints"];
@@ -84,12 +84,12 @@ export const getErrorMessage = (error, fallback) => {
   const dependencySummary = get(error, "response.data.dependencySummary");
   const baseMessage = isArray(message) ? join(message, ", ") : message;
 
-  return [baseMessage || fallback, dependencySummary].filter(Boolean).join(" ");
+  return filter([baseMessage || fallback, dependencySummary], Boolean).join(" ");
 };
 
 export const optionLabel = (options, value) =>
   get(
-    options.find((option) => option.value === value),
+    find(options, (option) => option.value === value),
     "label",
     value || "-",
   );

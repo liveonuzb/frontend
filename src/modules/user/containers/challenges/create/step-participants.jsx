@@ -7,10 +7,12 @@ import FriendsPickerDrawer from "../friends-picker-drawer.jsx";
 import { getMetricMeta } from "../challenge-utils.js";
 import { StepSection } from "./form-fields.jsx";
 
+import { filter, map, split, toNumber, toUpper, trim } from "lodash";
+
 const getInitials = (name) => {
-  const parts = String(name ?? "").trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return String(name ?? "?").slice(0, 2).toUpperCase();
+  const parts = split(trim(String(name ?? "")), /\s+/);
+  if (parts.length >= 2) return toUpper((parts[0][0] + parts[1][0]));
+  return toUpper(String(name ?? "?").slice(0, 2));
 };
 
 const StepParticipants = ({ form, setForm }) => {
@@ -20,7 +22,7 @@ const StepParticipants = ({ form, setForm }) => {
   const handleFriendsConfirm = (friends) => {
     setForm((current) => ({
       ...current,
-      participants: friends.map((friend) => friend.id),
+      participants: map(friends, (friend) => friend.id),
       participantObjects: friends,
     }));
   };
@@ -28,10 +30,8 @@ const StepParticipants = ({ form, setForm }) => {
   const removeParticipant = (id) => {
     setForm((current) => ({
       ...current,
-      participants: current.participants.filter((item) => item !== id),
-      participantObjects: current.participantObjects.filter(
-        (item) => item.id !== id,
-      ),
+      participants: filter(current.participants, (item) => item !== id),
+      participantObjects: filter(current.participantObjects, (item) => item.id !== id),
     }));
   };
 
@@ -53,7 +53,7 @@ const StepParticipants = ({ form, setForm }) => {
           </Button>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          {form.participantObjects.map((friend) => (
+          {map(form.participantObjects, (friend) => (
             <div key={friend.id} className="flex flex-col items-center gap-1">
               <div className="relative">
                 <div className="flex size-12 items-center justify-center rounded-full bg-primary text-sm font-black text-primary-foreground">
@@ -68,7 +68,7 @@ const StepParticipants = ({ form, setForm }) => {
                 </button>
               </div>
               <span className="max-w-[56px] truncate text-xs text-muted-foreground">
-                {String(friend.name ?? "").split(" ")[0]}
+                {split(String(friend.name ?? ""), " ")[0]}
               </span>
             </div>
           ))}
@@ -79,7 +79,6 @@ const StepParticipants = ({ form, setForm }) => {
           ) : null}
         </div>
       </div>
-
       <button
         type="button"
         onClick={() =>
@@ -109,17 +108,15 @@ const StepParticipants = ({ form, setForm }) => {
           Chellenj qoidalarini qabul qilaman
         </span>
       </button>
-
       <Card>
         <CardContent className="space-y-2 p-4">
           <p className="text-sm font-medium">{form.title || "Yangi chellenj"}</p>
           <p className="text-sm text-muted-foreground">
-            {Number(form.metricTarget || 0).toLocaleString()} {metric.shortUnit} ·{" "}
+            {toNumber(form.metricTarget || 0).toLocaleString()} {metric.shortUnit} ·{" "}
             {form.durationDays || "custom"} kun
           </p>
         </CardContent>
       </Card>
-
       <FriendsPickerDrawer
         open={friendsOpen}
         onOpenChange={setFriendsOpen}

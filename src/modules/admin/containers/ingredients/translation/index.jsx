@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router";
-import { get, map, trim } from "lodash";
+import { get, map, trim, filter, find, fromPairs, values as lodashValues } from "lodash";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -44,9 +44,7 @@ const TranslationPage = () => {
     url: "/admin/languages",
     queryProps: { queryKey: ["admin", "languages"] },
   });
-  const languages = get(languagesData, "data.data", []).filter(
-    (language) => language.isActive,
-  );
+  const languages = filter(get(languagesData, "data.data", []), (language) => language.isActive);
   const form = useForm({
     resolver: zodResolver(z.object({}).catchall(z.string().optional())),
     defaultValues: {},
@@ -55,12 +53,10 @@ const TranslationPage = () => {
   React.useEffect(() => {
     if (item) {
       form.reset(
-        Object.fromEntries(
-          languages.map((language) => [
-            language.code,
-            get(item, `translations.${language.code}`, ""),
-          ]),
-        ),
+        fromPairs(map(languages, (language) => [
+          language.code,
+          get(item, `translations.${language.code}`, ""),
+        ])),
       );
     }
   }, [form, item, languagesData]);
@@ -71,7 +67,7 @@ const TranslationPage = () => {
       url: `/admin/ingredients/${id}`,
       attributes: {
         translations: values,
-        name: trim(Object.values(values).find(Boolean) || item?.name || ""),
+        name: trim(find(lodashValues(values), Boolean) || item?.name || ""),
       },
     });
     toast.success("Tarjimalar saqlandi");
@@ -141,3 +137,6 @@ const TranslationPage = () => {
 };
 
 export default TranslationPage;
+
+
+

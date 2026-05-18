@@ -24,6 +24,8 @@ import {
 import { toast } from "sonner";
 import { MEAL_TYPE_OPTIONS } from "@/modules/user/lib/meal-config";
 
+import { map, orderBy, reduce, take, toPairs, isArray, toNumber } from "lodash";
+
 const mealTypeOptions = [
   { value: "all", label: "Barcha bo'limlar" },
   ...MEAL_TYPE_OPTIONS,
@@ -38,23 +40,20 @@ const getDefaultStartDate = () => {
 };
 
 const flattenMeals = (day) =>
-  Object.entries(day?.meals || {}).flatMap(([mealType, items]) =>
-    (Array.isArray(items) ? items : []).map((item) => ({
+  toPairs(day?.meals || {}).flatMap(([mealType, items]) =>
+    map((isArray(items) ? items : []), (item) => ({
       ...item,
       mealType,
     })),
   );
 
 const getDayTotals = (meals) =>
-  meals.reduce(
-    (totals, meal) => ({
-      calories: totals.calories + Number(meal.cal || 0),
-      protein: totals.protein + Number(meal.protein || 0),
-      carbs: totals.carbs + Number(meal.carbs || 0),
-      fat: totals.fat + Number(meal.fat || 0),
-    }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0 },
-  );
+  reduce(meals, (totals, meal) => ({
+    calories: totals.calories + toNumber(meal.cal || 0),
+    protein: totals.protein + toNumber(meal.protein || 0),
+    carbs: totals.carbs + toNumber(meal.carbs || 0),
+    fat: totals.fat + toNumber(meal.fat || 0),
+  }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
 const formatDateLabel = (dateKey) =>
   new Date(`${dateKey}T12:00:00`).toLocaleDateString("uz-UZ", {
@@ -129,7 +128,7 @@ const NutritionHistoryPage = () => {
               <SelectValue placeholder="Meal type" />
             </SelectTrigger>
             <SelectContent>
-              {mealTypeOptions.map((option) => (
+              {map(mealTypeOptions, (option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
@@ -147,7 +146,6 @@ const NutritionHistoryPage = () => {
           </div>
         </div>
       </div>
-
       {isLoading ? (
         <div className="grid min-h-[260px] place-items-center rounded-[1.75rem] border bg-card">
           <div className="text-center">
@@ -182,12 +180,13 @@ const NutritionHistoryPage = () => {
               Yangilanmoqda...
             </div>
           ) : null}
-          {days.map((day) => {
+          {map(days, (day) => {
             const meals = flattenMeals(day);
             const totals = getDayTotals(meals);
-            const topMeals = [...meals]
-              .sort((left, right) => Number(right.cal || 0) - Number(left.cal || 0))
-              .slice(0, 3);
+            const topMeals = take(
+              orderBy(meals, [(meal) => toNumber(meal.cal || 0)], ["desc"]),
+              3,
+            );
 
             return (
               <article
@@ -217,7 +216,7 @@ const NutritionHistoryPage = () => {
                   </div>
 
                   <div className="flex flex-wrap gap-2 md:max-w-xl md:justify-end">
-                    {topMeals.map((meal) => (
+                    {map(topMeals, (meal) => (
                       <span
                         key={`${day.date}-${meal.mealType}-${meal.id}`}
                         className="inline-flex max-w-full items-center gap-2 rounded-2xl bg-muted px-3 py-2 text-xs font-bold"

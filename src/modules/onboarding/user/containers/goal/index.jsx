@@ -1,4 +1,4 @@
-import { get, isArray, map } from "lodash";
+import { get, isArray, map, filter, find } from "lodash";
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";
@@ -15,7 +15,7 @@ import {
   getOnboardingOptionsPath,
   getOnboardingOptionsQueryKey,
 } from "@/modules/onboarding/lib/onboarding-options";
-import useOnboardingBase from "@/hooks/app/use-onboarding-base";
+import { useOnboardingAssets } from "@/hooks/app/use-onboarding-base";
 import PageAura from "../../components/page-aura.jsx";
 import OnboardingSelectCard from "../../components/onboarding-select-card.jsx";
 
@@ -37,9 +37,9 @@ const getDefaultGoals = (t) => [
   },
 ];
 
-const goalToneByKey = (base) => ({
+const goalToneByKey = (asset) => ({
   lose: {
-    image: `${base}/lose.webp`,
+    image: asset("lose"),
     accent: "from-rose-500/18 via-orange-400/10 to-transparent",
     border: "border-rose-500/20",
     pageTint: "from-rose-500/12 via-orange-400/8 to-transparent",
@@ -48,7 +48,7 @@ const goalToneByKey = (base) => ({
       "from-rose-500 to-orange-500 hover:from-rose-500/90 hover:to-orange-500/90 text-white shadow-[0_18px_44px_rgba(244,63,94,0.24)]",
   },
   maintain: {
-    image: `${base}/maintain.webp`,
+    image: asset("maintain"),
     accent: "from-emerald-500/18 via-teal-400/10 to-transparent",
     border: "border-emerald-500/20",
     pageTint: "from-emerald-500/12 via-teal-400/8 to-transparent",
@@ -57,7 +57,7 @@ const goalToneByKey = (base) => ({
       "from-emerald-500 to-teal-500 hover:from-emerald-500/90 hover:to-teal-500/90 text-white shadow-[0_18px_44px_rgba(16,185,129,0.24)]",
   },
   gain: {
-    image: `${base}/gain.webp`,
+    image: asset("gain"),
     accent: "from-sky-500/18 via-indigo-400/10 to-transparent",
     border: "border-sky-500/20",
     pageTint: "from-sky-500/12 via-indigo-400/8 to-transparent",
@@ -71,7 +71,7 @@ const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { goal, weightGoal, setFields } = useOnboardingStore();
-  const base = useOnboardingBase();
+  const { asset } = useOnboardingAssets();
 
   useOnboardingAutoSave("user", "goal");
 
@@ -80,42 +80,38 @@ const Index = () => {
     queryProps: { queryKey: getOnboardingOptionsQueryKey("goals") },
   });
   const apiGoals = get(data, "data.data", get(data, "data", []));
-  const toneMap = React.useMemo(() => goalToneByKey(base), [base]);
+  const toneMap = React.useMemo(() => goalToneByKey(asset), [asset]);
   const defaultGoals = React.useMemo(() => getDefaultGoals(t), [t]);
   const goals = React.useMemo(() => {
     const source =
       isArray(apiGoals) && apiGoals.length ? apiGoals : defaultGoals;
-    const weightGoals = source.filter(
-      (item) => (item.goalType || "weight") === "weight",
-    );
-    return (weightGoals.length ? weightGoals : defaultGoals).map(
-      (item, index) => {
-        const tone =
-          toneMap[item.key] ??
-          toneMap[["lose", "maintain", "gain"][index % 3]] ??
-          toneMap.maintain;
-        return {
-          value: item.key,
-          label: item.name,
-          title: item.name,
-          description: item.description || "",
-          calculationMode: item.calculationMode || item.key,
-          ...tone,
-          image: item.imageUrl || tone.image,
-        };
-      },
-    );
+    const weightGoals = filter(source, (item) => (item.goalType || "weight") === "weight");
+    return map((weightGoals.length ? weightGoals : defaultGoals), (item, index) => {
+      const tone =
+        toneMap[item.key] ??
+        toneMap[["lose", "maintain", "gain"][index % 3]] ??
+        toneMap.maintain;
+      return {
+        value: item.key,
+        label: item.name,
+        title: item.name,
+        description: item.description || "",
+        calculationMode: item.calculationMode || item.key,
+        ...tone,
+        image: item.imageUrl || tone.image,
+      };
+    });
   }, [apiGoals, defaultGoals, toneMap]);
 
   const selectedGoal =
-    goals.find((item) => item.value === weightGoal) ??
-    goals.find((item) => item.calculationMode === goal) ??
+    find(goals, (item) => item.value === weightGoal) ??
+    find(goals, (item) => item.calculationMode === goal) ??
     goals[1] ??
     goals[0];
   const hasSelection = Boolean(weightGoal || goal);
 
   const handleSelect = (value) => {
-    const primary = goals.find((item) => item.value === value);
+    const primary = find(goals, (item) => item.value === value);
     setFields({
       weightGoal: value,
       goal: primary?.calculationMode || value,

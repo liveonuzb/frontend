@@ -1,13 +1,11 @@
 import { useEffect, useRef } from "react";
-import { debounce } from "lodash";
-import useApi from "@/hooks/api/use-api.js";
+import { debounce, toLower, toNumber } from "lodash";
+import { usePutQuery } from "@/hooks/api";
 import { useOnboardingStore } from "@/store";
-import {
-  buildCoachOnboardingPayload,
-  normalizeOnboardingStepForApi,
-} from "./coach-onboarding-dto";
 import { getOnboardingDraftApiPath } from "./onboarding-api-paths";
 import { pickActiveUserDraftData } from "./user-draft-data";
+
+const normalizeOnboardingStepForApi = (_type, step) => step;
 
 /**
  * Extracts draft data from the onboarding store based on onboarding type.
@@ -15,10 +13,6 @@ import { pickActiveUserDraftData } from "./user-draft-data";
 function extractDraftData(state, type) {
   if (type === "user") {
     return pickActiveUserDraftData(state);
-  }
-
-  if (type === "coach") {
-    return buildCoachOnboardingPayload(state);
   }
 
   // Vendor types: gym, shop, food
@@ -35,30 +29,6 @@ function buildSelector(type) {
     return pickActiveUserDraftData;
   }
 
-  if (type === "coach") {
-    return (s) => ({
-      coachCategory: s.coachCategory,
-      coachCategories: s.coachCategories,
-      targetAudience: s.targetAudience,
-      availability: s.availability,
-      experience: s.experience,
-      specializations: s.specializations,
-      certificationType: s.certificationType,
-      certificationNumber: s.certificationNumber,
-      certificateFiles: s.certificateFiles,
-      coachLanguages: s.coachLanguages,
-      coachCity: s.coachCity,
-      coachWorkMode: s.coachWorkMode,
-      coachWorkplace: s.coachWorkplace,
-      coachMonthlyPrice: s.coachMonthlyPrice,
-      coachMinMonthlyPrice: s.coachMinMonthlyPrice,
-      coachMaxMonthlyPrice: s.coachMaxMonthlyPrice,
-      coachBio: s.coachBio,
-      coachAvatar: s.coachAvatar,
-      wantsMarketplaceListing: s.wantsMarketplaceListing,
-    });
-  }
-
   // Vendor types: gym, shop, food
   return (s) => s.vendorDrafts?.[type];
 }
@@ -72,7 +42,7 @@ function getAutoSaveQueue(type) {
     autoSaveQueues.set(key, {
       type: key,
       step: null,
-      request: null,
+      putDraft: null,
       debounceMs: null,
       debouncedSave: null,
       pending: false,
@@ -93,16 +63,16 @@ function getResponseHeader(error, name) {
   const headers = error?.response?.headers;
   if (!headers) return null;
   if (typeof headers.get === "function") {
-    return headers.get(name) ?? headers.get(name.toLowerCase());
+    return headers.get(name) ?? headers.get(toLower(name));
   }
-  return headers[name] ?? headers[name.toLowerCase()] ?? null;
+  return headers[name] ?? headers[toLower(name)] ?? null;
 }
 
 function getRateLimitRetryDelayMs(error) {
   if (getResponseStatus(error) !== 429) return null;
 
   const retryAfter = getResponseHeader(error, "Retry-After");
-  const retryAfterSeconds = Number(retryAfter);
+  const retryAfterSeconds = toNumber(retryAfter);
   if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
     return Math.min(60000, Math.round(retryAfterSeconds * 1000));
   }
@@ -117,7 +87,7 @@ function getAutoSaveErrorMessage(error) {
 async function flushDraftSaveQueue(type, allowRetry = true) {
   const queue = getAutoSaveQueue(type);
 
-  if (!queue.pending || !queue.request) return;
+  if (!queue.pending || !queue.putDraft) return;
   if (queue.inFlight) {
     queue.needsFlush = true;
     return;
@@ -133,9 +103,12 @@ async function flushDraftSaveQueue(type, allowRetry = true) {
 
   try {
     setDraftSaveStatus?.("saving");
-    await queue.request.put(getOnboardingDraftApiPath(queue.type), {
-      data,
-      currentStep,
+    await queue.putDraft({
+      url: getOnboardingDraftApiPath(queue.type),
+      attributes: {
+        data,
+        currentStep,
+      },
     });
     setDraftSaveStatus?.("saved", {
       lastSavedAt: new Date().toISOString(),
@@ -168,11 +141,11 @@ async function flushDraftSaveQueue(type, allowRetry = true) {
   }
 }
 
-function scheduleDraftSave({ type, step, request, debounceMs }) {
+function scheduleDraftSave({ type, step, putDraft, debounceMs }) {
   const queue = getAutoSaveQueue(type);
   queue.type = type;
   queue.step = step;
-  queue.request = request;
+  queue.putDraft = putDraft;
   queue.pending = true;
 
   if (queue.retryTimer) {
@@ -210,10 +183,10 @@ export function __resetOnboardingAutoSaveQueuesForTest() {
  * Hook that subscribes to the Zustand onboarding store and auto-saves
  * draft data to the server when relevant state changes.
  *
- * Uses raw axios instead of usePutQuery to avoid React Query re-renders
- * and query invalidation that caused loading spinners on every keystroke.
+ * Uses usePutQuery without a query key to avoid query invalidation that
+ * caused loading spinners on every keystroke.
  *
- * @param {string} type - "user" | "coach" | "gym" | "shop" | "food"
+ * @param {string} type - onboarding type
  * @param {string} step - current step identifier (e.g. "name", "gender", "profile")
  * @param {object} options
  * @param {number} options.debounceMs - debounce delay in ms (default 5000)
@@ -224,7 +197,7 @@ export function useOnboardingAutoSave(
   step,
   { debounceMs = 5000, enabled = true } = {},
 ) {
-  const { request } = useApi();
+  const { mutateAsync: putDraft } = usePutQuery({});
 
   const enabledRef = useRef(enabled);
   const stepRef = useRef(step);
@@ -255,7 +228,7 @@ export function useOnboardingAutoSave(
         scheduleDraftSave({
           type: typeRef.current,
           step: stepRef.current,
-          request,
+          putDraft,
           debounceMs,
         });
       },
@@ -267,7 +240,7 @@ export function useOnboardingAutoSave(
     return () => {
       unsubscribe();
     };
-  }, [enabled, type, debounceMs, request]);
+  }, [enabled, type, debounceMs, putDraft]);
 
   // Also save when the step changes (user navigated forward/back)
   useEffect(() => {
@@ -275,8 +248,8 @@ export function useOnboardingAutoSave(
     scheduleDraftSave({
       type: typeRef.current,
       step: stepRef.current,
-      request,
+      putDraft,
       debounceMs,
     });
-  }, [step, enabled, debounceMs, request]);
+  }, [step, enabled, debounceMs, putDraft]);
 }

@@ -1,5 +1,5 @@
 import React from "react";
-import { get, find, map, filter } from "lodash";
+import { get, find, map, filter, isArray } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useDeleteQuery,
@@ -29,7 +29,7 @@ const normalizePlan = (plan) => {
     weeklyKanban:
       plan.weeklyKanban &&
       typeof plan.weeklyKanban === "object" &&
-      !Array.isArray(plan.weeklyKanban)
+      !isArray(plan.weeklyKanban)
         ? plan.weeklyKanban
         : {},
     startDate: plan.startDate ?? null,
@@ -52,21 +52,20 @@ const normalizeTemplate = (template) => {
     weeklyKanban:
       template.weeklyKanban &&
       typeof template.weeklyKanban === "object" &&
-      !Array.isArray(template.weeklyKanban)
+      !isArray(template.weeklyKanban)
         ? template.weeklyKanban
         : {},
-    tags: Array.isArray(template.tags) ? template.tags : [],
+    tags: isArray(template.tags) ? template.tags : [],
     goal: template.goal || "maintenance",
     mealCount: template.mealCount ?? null,
     mealsCount: template.mealsCount ?? 0,
     daysWithMeals: template.daysWithMeals ?? 0,
-    coach: template.coach ?? null,
     updatedAt: template.updatedAt ?? null,
   };
 };
 
 const normalizeMealPlanState = (payload = {}) => {
-  const plans = Array.isArray(payload.plans)
+  const plans = isArray(payload.plans)
     ? filter(map(payload.plans, normalizePlan), Boolean)
     : [];
   const activePlan =
@@ -91,7 +90,7 @@ const buildMealPlanPayload = (plan = {}) => ({
   weeklyKanban:
     plan.weeklyKanban &&
     typeof plan.weeklyKanban === "object" &&
-    !Array.isArray(plan.weeklyKanban)
+    !isArray(plan.weeklyKanban)
       ? plan.weeklyKanban
       : {},
   source: plan.source,
@@ -152,10 +151,6 @@ export const useMealPlan = (options = {}) => {
     mutationProps,
   });
   const archivePlanMutation = usePostQuery({
-    queryKey: MEAL_PLAN_QUERY_KEY,
-    mutationProps,
-  });
-  const applyCoachUpdateMutation = usePostQuery({
     queryKey: MEAL_PLAN_QUERY_KEY,
     mutationProps,
   });
@@ -289,21 +284,6 @@ export const useMealPlan = (options = {}) => {
     [archivePlanMutation, mealPlanState, queryClient],
   );
 
-  const applyCoachUpdate = React.useCallback(
-    async (planId) => {
-      if (!planId) {
-        return mealPlanState;
-      }
-
-      const response = await applyCoachUpdateMutation.mutateAsync({
-        url: `/meal-plans/me/${planId}/apply-coach-update`,
-        attributes: {},
-      });
-      return syncMealPlanCache(queryClient, response);
-    },
-    [applyCoachUpdateMutation, mealPlanState, queryClient],
-  );
-
   const removePlan = React.useCallback(
     async (planId) => {
       if (!planId) {
@@ -327,7 +307,6 @@ export const useMealPlan = (options = {}) => {
     renamePlan,
     duplicatePlan,
     archivePlan,
-    applyCoachUpdate,
     pausePlan,
     removePlan,
     isSavingDraft: createDraftMutation.isPending || updatePlanMutation.isPending,
@@ -336,7 +315,6 @@ export const useMealPlan = (options = {}) => {
     isRenamingPlan: renamePlanMutation.isPending,
     isDuplicatingPlan: duplicatePlanMutation.isPending,
     isArchivingPlan: archivePlanMutation.isPending,
-    isApplyingCoachUpdate: applyCoachUpdateMutation.isPending,
     isPausingPlan: pausePlanMutation.isPending,
     isRemovingPlan: deletePlanMutation.isPending,
   };
@@ -355,14 +333,14 @@ export const useMealPlanTemplates = (options = {}) => {
   });
 
   const payload = get(data, "data.data", get(data, "data", {}));
-  const templates = Array.isArray(payload.items)
+  const templates = isArray(payload.items)
     ? filter(map(payload.items, normalizeTemplate), Boolean)
     : [];
 
   return {
     ...query,
     templates,
-    goals: Array.isArray(payload.goals) ? payload.goals : [],
+    goals: isArray(payload.goals) ? payload.goals : [],
     meta: payload.meta ?? {},
   };
 };

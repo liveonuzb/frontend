@@ -1,5 +1,5 @@
 import React from "react";
-import { get, map, sumBy } from "lodash";
+import { get, map, sumBy, toNumber } from "lodash";
 import { NavLink, useLocation } from "react-router";
 import { cn } from "@/lib/utils";
 import { isNavItemActive } from "@/lib/navigation";
@@ -18,7 +18,7 @@ const MobileNav = ({ hidden = false }) => {
   const totalUnread = React.useMemo(
     () =>
       sumBy(contacts, (contact) =>
-        Math.max(0, Number(get(contact, "unreadCount", 0)) || 0),
+        Math.max(0, toNumber(get(contact, "unreadCount", 0)) || 0),
       ),
     [contacts],
   );
@@ -56,7 +56,7 @@ const MobileNav = ({ hidden = false }) => {
       <div className="flex justify-between items-center bg-secondary/70 backdrop-blur-md border border-border/40 shadow-2xl rounded-full px-2 py-1.5 gap-0.5">
         {map(items, (item = {}) => {
           const isActive = isNavItemActive(pathname, item, items);
-          const itemUnreadCount = Number(get(item, "unreadCount", 0)) || 0;
+          const itemUnreadCount = toNumber(get(item, "unreadCount", 0)) || 0;
           const label = get(item, "label", "");
           const ariaLabel =
             itemUnreadCount > 0

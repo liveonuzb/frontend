@@ -54,6 +54,8 @@ import {
   SERVING_UNITS,
 } from "./utils.jsx";
 
+import { isArray, map, toNumber, toUpper } from "lodash";
+
 const IngredientFormDrawer = ({ mode }) => {
   const { id } = useParams();
   const closeAdminDrawer = useAdminDrawerCloseNavigation(
@@ -101,13 +103,13 @@ const IngredientFormDrawer = ({ mode }) => {
     if (item) {
       form.reset({
         name: resolveLabel(item.translations, item.name, currentLanguage),
-        calories: Number(item.calories) || 0,
-        protein: Number(item.protein) || 0,
-        carbs: Number(item.carbs) || 0,
-        fat: Number(item.fat) || 0,
+        calories: toNumber(item.calories) || 0,
+        protein: toNumber(item.protein) || 0,
+        carbs: toNumber(item.carbs) || 0,
+        fat: toNumber(item.fat) || 0,
         servingUnit: item.servingUnit || "g",
-        dietaryTags: Array.isArray(item.dietaryTags) ? item.dietaryTags : [],
-        allergenTags: Array.isArray(item.allergenTags) ? item.allergenTags : [],
+        dietaryTags: isArray(item.dietaryTags) ? item.dietaryTags : [],
+        allergenTags: isArray(item.allergenTags) ? item.allergenTags : [],
         isAllergic: Boolean(item.isAllergic),
         isOnboarding: item.isOnboarding !== false,
       });
@@ -214,7 +216,7 @@ const IngredientFormDrawer = ({ mode }) => {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>
-                            Nomi ({currentLanguage.toUpperCase()})
+                            Nomi ({toUpper(currentLanguage)})
                           </FormLabel>
                           <FormControl>
                             <Input {...field} />
@@ -223,7 +225,7 @@ const IngredientFormDrawer = ({ mode }) => {
                         </FormItem>
                       )}
                     />
-                    {["calories", "protein", "carbs", "fat"].map((name) => (
+                    {map(["calories", "protein", "carbs", "fat"], (name) => (
                       <FormField
                         key={name}
                         control={form.control}

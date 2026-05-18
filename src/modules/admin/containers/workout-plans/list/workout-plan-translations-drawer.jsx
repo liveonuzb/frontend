@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner.jsx";
 
+import { map, toUpper } from "lodash";
+
 export function WorkoutPlanTranslationsDrawer({
   open,
   onOpenChange,
@@ -38,7 +40,7 @@ export function WorkoutPlanTranslationsDrawer({
           </div>
         ) : (
           <div className="space-y-4 overflow-y-auto px-4 pb-4 no-scrollbar sm:px-6">
-            {activeLanguages.map((language) => (
+            {map(activeLanguages, (language) => (
               <div
                 key={language.code}
                 className="space-y-3 rounded-2xl border bg-card p-4"
@@ -48,7 +50,7 @@ export function WorkoutPlanTranslationsDrawer({
                   <div>
                     <p className="font-medium">{language.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {language.code.toUpperCase()}
+                      {toUpper(language.code)}
                     </p>
                   </div>
                 </div>

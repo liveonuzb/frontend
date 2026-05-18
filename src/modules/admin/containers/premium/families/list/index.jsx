@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { get, toString } from "lodash";
+import { get, toString, trim } from "lodash";
 import { useBreadcrumbStore } from "@/store";
 import { useGetQuery } from "@/hooks/api";
 import {
@@ -34,7 +34,7 @@ const Index = () => {
   const deferredSearch = React.useDeferredValue(search);
   const queryParams = React.useMemo(
     () => ({
-      ...(deferredSearch.trim() ? { search: deferredSearch.trim() } : {}),
+      ...(trim(deferredSearch) ? { search: trim(deferredSearch) } : {}),
       page: currentPage,
       pageSize,
     }),

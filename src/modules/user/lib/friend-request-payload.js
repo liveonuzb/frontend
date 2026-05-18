@@ -1,6 +1,7 @@
+import { trim } from "lodash";
 export const buildFriendRequestPayload = ({ targetUserId, message } = {}) => {
-  const normalizedTargetUserId = String(targetUserId ?? "").trim();
-  const normalizedMessage = String(message ?? "").trim();
+  const normalizedTargetUserId = trim(String(targetUserId ?? ""));
+  const normalizedMessage = trim(String(message ?? ""));
   const payload = {
     targetUserId: normalizedTargetUserId,
   };

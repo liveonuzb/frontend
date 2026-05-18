@@ -1,8 +1,8 @@
 import React from "react";
-import { get } from "lodash";
+import { get, find } from "lodash";
 import { FlameIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 import {
   DASHBOARD_ME_QUERY_KEY,
   getUserFromResponse,
@@ -28,7 +28,7 @@ const StreakWidget = ({ streak, longestStreak, trackedDays }) => {
     longestStreak ?? get(user, "longestStreak", resolvedStreak);
   const resolvedTrackedDays = trackedDays ?? get(user, "trackedDays", 0);
   const nextMilestone =
-    STREAK_MILESTONES.find((m) => m > resolvedStreak) || resolvedStreak + 10;
+    find(STREAK_MILESTONES, (m) => m > resolvedStreak) || resolvedStreak + 10;
   const progressToNext =
     nextMilestone > 0
       ? Math.min(100, Math.round((resolvedStreak / nextMilestone) * 100))

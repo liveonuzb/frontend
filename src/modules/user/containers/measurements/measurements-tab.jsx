@@ -16,7 +16,7 @@ import { z } from "zod";
 import { Form } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { get, reduce, map, entries, max } from "lodash";
+import { get, reduce, map, entries, max, split, toNumber } from "lodash";
 import { InteractiveBodyModel } from "./interactive-body-model";
 
 export const measurementTypes = [
@@ -35,7 +35,7 @@ const measurementsSchema = z.object(
       acc[get(m, "id")] = z.coerce
         .string()
         .optional()
-        .transform((val) => (val === "" ? undefined : Number(val)))
+        .transform((val) => (val === "" ? undefined : toNumber(val)))
         .refine((val) => val === undefined || val >= 0, {
           message: "Noto'g'ri qiymat",
         });
@@ -158,7 +158,7 @@ export const MeasurementsTab = ({
     link.href = url;
     link.setAttribute(
       "download",
-      `liveon_measurements_${new Date().toISOString().split("T")[0]}.csv`,
+      `liveon_measurements_${split(new Date().toISOString(), "T")[0]}.csv`,
     );
     document.body.appendChild(link);
     link.click();

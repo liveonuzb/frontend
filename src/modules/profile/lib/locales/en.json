@@ -4,8 +4,6 @@
     "navUser": {
       "home": "Home",
       "profile": "Profile",
-      "coachCabinet": "Coach Cabinet",
-      "becomeCoach": "Become a Coach",
       "payment": "Payments",
       "notifications": "Notifications",
       "upgradePro": "Upgrade to Pro",
@@ -21,10 +19,6 @@
       "ADMIN": {
         "label": "Admin",
         "description": "System Management"
-      },
-      "COACH": {
-        "label": "Coach",
-        "description": "Coach Panel"
       },
       "USER": {
         "label": "User",
@@ -59,46 +53,6 @@
       "badge": "AI report",
       "action": "Open report"
     },
-    "coach": {
-      "myCoach": "My Coach",
-      "connectedAt": "Connected on: {{date}}",
-      "notSpecified": "Not specified yet",
-      "email": "Email",
-      "phone": "Phone",
-      "notProvided": "Not provided",
-      "specializations": {
-        "title": "Specialization",
-        "weightLoss": "Weight Loss",
-        "muscleGain": "Muscle Gain",
-        "nutrition": "Nutrition",
-        "yoga": "Yoga",
-        "cardio": "Cardio",
-        "strength": "Strength",
-        "rehab": "Rehabilitation",
-        "general": "General Fitness"
-      },
-      "experience": {
-        "title": "Experience Level",
-        "beginner": "Beginner (1-2 years)",
-        "intermediate": "Intermediate (3-5 years)",
-        "advanced": "Advanced (5-10 years)",
-        "expert": "Expert (10+ years)"
-      },
-      "workMode": {
-        "title": "Work Mode",
-        "online": "Online",
-        "offline": "Offline (Gym)",
-        "hybrid": "Hybrid"
-      },
-      "negotiable": "Negotiable",
-      "currency": "som",
-      "priceTitle": "Monthly Service Price",
-      "city": "City",
-      "cityPlaceholder": "Tashkent",
-      "workplace": "Workplace",
-      "bioPlaceholder": "Write about yourself, your achievements and your coaching style...",
-      "saveSuccess": "Coach profile saved."
-    },
     "tabs": {
       "profile": "Profile",
       "general": "Language",
@@ -108,9 +62,7 @@
       "privacy": "Privacy",
       "security": "Security",
       "premium": "Premium",
-      "referral": "Referrals",
-      "coachProfile": "Coach Profile",
-      "findCoach": "Find Coach"
+      "referral": "Referrals"
     },
     "language": {
       "title": "Language",
@@ -452,35 +404,11 @@
       "statusCompleted": "Completed",
       "referralRegistration": "Referral bonus",
       "referralSubscription": "Subscription commission",
-      "coachClientNew": "Coach bonus (new)",
-      "coachClientExisting": "Coach bonus",
       "challengeReward": "Challenge reward",
       "adminGrant": "Admin grant",
       "xpSpend": "XP spend",
       "withdrawalTx": "Withdrawal",
       "invitedBy": "You were invited by {{name}}!"
-    },
-    "findCoach": {
-      "subtitle": "Choose the right coach for you and reach results faster",
-      "searchPlaceholder": "Search by name or specialization...",
-      "yourCoach": "Your Coach",
-      "active": "Active",
-      "connectedDate": "Connected on: {{date}}",
-      "needOtherTitle": "Need another coach?",
-      "needOtherDesc": "You can disconnect from your current coach and find a new one.",
-      "clients": "clients",
-      "bioFallback": "Professional fitness coach with {{exp}} years of experience. Individual approach for each client.",
-      "connect": "Connect",
-      "noResults": "No coaches found",
-      "requestTitle": "Partnership Request",
-      "requestSubtitle": "Do you want to start working with {{name}}?",
-      "professionalCoach": "Professional Coach",
-      "messageLabel": "Message to coach (optional)",
-      "messagePlaceholder": "Write briefly about your goals and yourself...",
-      "requestHint": "After sending the request, the coach will review it and contact you.",
-      "sendRequest": "Send Request",
-      "requestSuccess": "Partnership request sent!",
-      "requestError": "Failed to send request"
     },
     "premiumReminder": {
       "title": "Unlock more possibilities with Premium",

@@ -36,28 +36,3 @@ Container `80` portda ishlaydi va healthcheck endpoint:
 /health
 ```
 
-## Coolify sozlamalari
-
-Coolify'da frontendni deploy qilish uchun:
-
-1. Repository ulang.
-2. `Build Pack` sifatida `Dockerfile` tanlang.
-3. `Base Directory` ni `frontend` qiling.
-4. `Port` ni `80` qiling.
-5. Quyidagi environment variable'ni kiriting:
-
-```env
-VITE_API_BASE_URL=https://api.your-domain.com/api/v1
-```
-
-Build server uchun amaliy tavsiya:
-
-- Frontend build bosqichi og'ir. Coolify builder/server'da kamida `2 GB RAM` bo'lishi kerak.
-- `1 GB RAM` atrofida `vite build` OOM (`SIGKILL` yoki `heap out of memory`) bilan yiqilishi mumkin.
-- Runtime container uchun xotira talabi build'dan ancha past.
-
-## Runtime env qanday ishlaydi
-
-`VITE_API_BASE_URL` endi runtime'da container start bo'lganda `app-config.js` orqali yoziladi. Shu sabab Coolify'da env o'zgarsa, frontend image'ni qayta build qilmasdan ham to'g'ri qiymatni o'qiydi.
-
-Agar frontend va backend bitta domain ortida reverse proxy bilan ishlasa, `VITE_API_BASE_URL` ni bo'sh qoldirib `/api/v1` proxylash mumkin.

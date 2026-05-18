@@ -1,12 +1,12 @@
 import React from "react";
-import { compact, join, map, take } from "lodash";
+import { compact, join, map, take, split, toUpper, trim } from "lodash";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
 const resolveInitials = (name) => {
-  const parts = take(compact(String(name ?? "").trim().split(/\s+/)), 2);
+  const parts = take(compact(split(trim(String(name ?? "")), /\s+/)), 2);
   if (!parts.length) return "U";
-  return join(map(parts, (part) => part[0]?.toUpperCase() ?? ""), "");
+  return join(map(parts, (part) => toUpper(part[0]) ?? ""), "");
 };
 
 export default function PersonRow({ person, description, right, className }) {

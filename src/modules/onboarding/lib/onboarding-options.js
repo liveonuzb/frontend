@@ -1,3 +1,4 @@
+import { filter, find, isArray, keys } from "lodash";
 const RESOURCE_BY_OPTIONS_KEY = {
   allergies: "allergies",
   dietRequirements: "diet-requirements",
@@ -24,7 +25,7 @@ export const getOnboardingOptionsQueryKey = (
   "onboarding",
   "options",
   getOnboardingOptionsResource(resourceOrOptionsKey),
-  ...parts.filter((part) => part !== undefined && part !== null),
+  ...filter(parts, (part) => part !== undefined && part !== null),
 ];
 
 export const normalizeOnboardingOptionsResponse = (
@@ -33,7 +34,7 @@ export const normalizeOnboardingOptionsResponse = (
 ) => {
   const body = response?.data?.data ?? response?.data ?? response ?? null;
 
-  if (Array.isArray(body)) {
+  if (isArray(body)) {
     return body;
   }
 
@@ -41,12 +42,13 @@ export const normalizeOnboardingOptionsResponse = (
     return [];
   }
 
-  const optionsKey = Object.keys(RESOURCE_BY_OPTIONS_KEY).find(
+  const optionsKey = find(
+    keys(RESOURCE_BY_OPTIONS_KEY),
     (key) => RESOURCE_BY_OPTIONS_KEY[key] === resourceOrOptionsKey,
   );
   const directValues = body?.[resourceOrOptionsKey];
   const mappedValues = optionsKey ? body?.[optionsKey] : undefined;
-  const values = Array.isArray(directValues) ? directValues : mappedValues;
+  const values = isArray(directValues) ? directValues : mappedValues;
 
-  return Array.isArray(values) ? values : [];
+  return isArray(values) ? values : [];
 };

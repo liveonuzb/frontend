@@ -1,11 +1,12 @@
 import { usePostQuery } from "@/hooks/api";
-import { normalizeOnboardingStepForApi } from "./coach-onboarding-dto";
 import { getOnboardingValidateStepApiPath } from "./onboarding-api-paths";
+
+const normalizeOnboardingStepForApi = (_type, step) => step;
 
 /**
  * Hook for validating onboarding step on server.
  *
- * @param {string} type - "user" | "coach" | "gym" | "shop" | "food"
+ * @param {string} type - onboarding type
  */
 export function useStepValidation(type) {
   const { mutateAsync: validate, isPending } = usePostQuery();

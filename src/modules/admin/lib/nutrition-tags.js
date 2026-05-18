@@ -1,3 +1,4 @@
+import { map } from "lodash";
 export const DIETARY_TAG_OPTIONS = [
   { value: "halal", label: "Halol" },
   { value: "lactose-free", label: "Laktozasiz" },
@@ -13,7 +14,7 @@ export const ALLERGEN_TAG_OPTIONS = [
 ];
 
 const OPTION_LABELS = new Map(
-  [...DIETARY_TAG_OPTIONS, ...ALLERGEN_TAG_OPTIONS].map((item) => [
+  map([...DIETARY_TAG_OPTIONS, ...ALLERGEN_TAG_OPTIONS], (item) => [
     item.value,
     item.label,
   ]),

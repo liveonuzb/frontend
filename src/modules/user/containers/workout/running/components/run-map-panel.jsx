@@ -6,6 +6,8 @@ import { loadMapProvider } from "@/lib/maps";
 import { resolveTheme } from "@/lib/user-preferences";
 import { cn } from "@/lib/utils";
 
+import { filter, forEach, map, reduce, toNumber, values as lodashValues } from "lodash";
+
 const DEFAULT_CENTER = [69.240562, 41.311081];
 const SVG_SIZE = 360;
 const SVG_PADDING = 54;
@@ -91,18 +93,16 @@ const decodeGooglePolyline = (polyline) => {
 };
 
 const normalizePointCoordinates = (points = []) =>
-  points
-    .map((point) => {
-      const latitude = Number(point?.latitude);
-      const longitude = Number(point?.longitude);
+  filter(map(points, (point) => {
+      const latitude = toNumber(point?.latitude);
+      const longitude = toNumber(point?.longitude);
 
       if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
         return null;
       }
 
       return [roundCoordinate(longitude), roundCoordinate(latitude)];
-    })
-    .filter(Boolean);
+    }), Boolean);
 
 const getRouteCoordinates = ({ points = [], polyline = null }) => {
   const pointCoordinates = normalizePointCoordinates(points);
@@ -119,13 +119,10 @@ const getRouteCenter = (coordinates) => {
     return DEFAULT_CENTER;
   }
 
-  const totals = coordinates.reduce(
-    (acc, [longitude, latitude]) => ({
-      longitude: acc.longitude + longitude,
-      latitude: acc.latitude + latitude,
-    }),
-    { longitude: 0, latitude: 0 },
-  );
+  const totals = reduce(coordinates, (acc, [longitude, latitude]) => ({
+    longitude: acc.longitude + longitude,
+    latitude: acc.latitude + latitude,
+  }), { longitude: 0, latitude: 0 });
 
   return [
     roundCoordinate(totals.longitude / coordinates.length),
@@ -138,8 +135,8 @@ const projectCoordinates = (coordinates) => {
     return [];
   }
 
-  const longitudes = coordinates.map(([longitude]) => longitude);
-  const latitudes = coordinates.map(([, latitude]) => latitude);
+  const longitudes = map(coordinates, ([longitude]) => longitude);
+  const latitudes = map(coordinates, ([, latitude]) => latitude);
   const minLongitude = Math.min(...longitudes);
   const maxLongitude = Math.max(...longitudes);
   const minLatitude = Math.min(...latitudes);
@@ -148,7 +145,7 @@ const projectCoordinates = (coordinates) => {
   const latitudeSpan = maxLatitude - minLatitude;
   const drawableSize = SVG_SIZE - SVG_PADDING * 2;
 
-  return coordinates.map(([longitude, latitude]) => {
+  return map(coordinates, ([longitude, latitude]) => {
     const x =
       longitudeSpan > 0
         ? SVG_PADDING +
@@ -165,10 +162,10 @@ const projectCoordinates = (coordinates) => {
 };
 
 const getSvgPathPoints = (points) =>
-  points.map(([x, y]) => `${x},${y}`).join(" ");
+  map(points, ([x, y]) => `${x},${y}`).join(" ");
 
 const normalizeQualityScore = (score) => {
-  const numericScore = Number(score);
+  const numericScore = toNumber(score);
 
   if (!Number.isFinite(numericScore) || numericScore <= 0) {
     return null;
@@ -501,7 +498,8 @@ const fitRouteBounds = ({ map, maplibregl, coordinates, center }) => {
     return;
   }
 
-  const bounds = coordinates.reduce(
+  const bounds = reduce(
+    coordinates,
     (nextBounds, coordinate) => nextBounds.extend(coordinate),
     new maplibregl.LngLatBounds(coordinates[0], coordinates[0]),
   );
@@ -725,7 +723,7 @@ const MapLibreRouteMap = ({
       if (handleMapError) {
         mapRef.current?.off?.("error", handleMapError);
       }
-      Object.values(markerRefs.current).forEach((marker) => marker?.remove());
+      forEach(lodashValues(markerRefs.current), (marker) => marker?.remove());
       markerRefs.current = {
         start: null,
         end: null,
@@ -1062,3 +1060,6 @@ const RunMapPanel = ({
 };
 
 export default RunMapPanel;
+
+
+

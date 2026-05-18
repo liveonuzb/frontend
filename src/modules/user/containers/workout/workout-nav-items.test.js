@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { map } from "lodash";
+
 describe("WORKOUT_NAV_ITEMS", () => {
   it("hides the Running tab when the running feature flag is disabled", async () => {
     vi.resetModules();
@@ -11,7 +13,7 @@ describe("WORKOUT_NAV_ITEMS", () => {
 
     const { WORKOUT_NAV_ITEMS } = await import("./workout-nav-items.js");
 
-    expect(WORKOUT_NAV_ITEMS.map((item) => item.label)).not.toContain(
+    expect(map(WORKOUT_NAV_ITEMS, (item) => item.label)).not.toContain(
       "Running",
     );
   });
@@ -26,6 +28,6 @@ describe("WORKOUT_NAV_ITEMS", () => {
 
     const { WORKOUT_NAV_ITEMS } = await import("./workout-nav-items.js");
 
-    expect(WORKOUT_NAV_ITEMS.map((item) => item.label)).toContain("Running");
+    expect(map(WORKOUT_NAV_ITEMS, (item) => item.label)).toContain("Running");
   });
 });

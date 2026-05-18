@@ -1,4 +1,4 @@
-import { find, map, filter, values, get, isArray, max } from "lodash";
+import { find, map, filter, values as lodashValues, get, isArray, max, toNumber } from "lodash";
 import {
   getWorkoutDefaultSetCount,
   getWorkoutExerciseSummary,
@@ -18,7 +18,7 @@ const formatPrimitive = (value) => {
 
   if (typeof value === "object") {
     const firstValue = find(
-      values(value),
+      lodashValues(value),
       (item) => item !== undefined && item !== null && item !== "",
     );
     return firstValue !== undefined ? String(firstValue) : "";
@@ -87,9 +87,9 @@ const countScheduleDays = (schedule = []) =>
 
 const getTargetWorkoutCount = (plan) => {
   const planDaysPerWeek =
-    Number(get(plan, "daysPerWeek") ?? 0) ||
+    toNumber(get(plan, "daysPerWeek") ?? 0) ||
     countScheduleDays(get(plan, "schedule"));
-  const totalDays = Number(get(plan, "days") ?? 28) || 28;
+  const totalDays = toNumber(get(plan, "days") ?? 28) || 28;
 
   if (planDaysPerWeek > 0) {
     return max([1, Math.ceil((totalDays / 7) * planDaysPerWeek)]);
@@ -104,11 +104,11 @@ export const deriveWorkoutPlanMetrics = (plan) => {
   }
 
   const normalizedDaysPerWeek =
-    Number(plan.daysPerWeek ?? 0) || countScheduleDays(plan.schedule);
-  const completedWorkouts = max([0, Number(plan.completedWorkouts ?? 0) || 0]);
+    toNumber(plan.daysPerWeek ?? 0) || countScheduleDays(plan.schedule);
+  const completedWorkouts = max([0, toNumber(plan.completedWorkouts ?? 0) || 0]);
 
   const progress = plan.progress
-    ? max([0, Math.min(100, Math.round(Number(plan.progress)))])
+    ? max([0, Math.min(100, Math.round(toNumber(plan.progress)))])
     : (() => {
         const targetWorkoutCount = getTargetWorkoutCount(plan);
         return targetWorkoutCount > 0
@@ -141,15 +141,15 @@ export const deriveWorkoutPlanMetrics = (plan) => {
 export const normalizePlanDayProgress = (dayProgress = [], schedule = []) => {
   const normalizedSchedule = isArray(schedule) ? schedule : [];
 
-  return normalizedSchedule.map((day, dayIndex) => {
-    const matched = find(dayProgress, (item) => Number(item?.dayIndex) === dayIndex);
+  return map(normalizedSchedule, (day, dayIndex) => {
+    const matched = find(dayProgress, (item) => toNumber(item?.dayIndex) === dayIndex);
     const exerciseCount = isArray(get(day, "exercises")) ? get(day, "exercises.length") : 0;
 
     return {
       dayIndex,
       completed: Boolean(get(matched, "completed")),
       completedAt: get(matched, "completedAt", null),
-      exerciseCount: Number(get(matched, "exerciseCount") ?? exerciseCount) || exerciseCount,
+      exerciseCount: toNumber(get(matched, "exerciseCount") ?? exerciseCount) || exerciseCount,
     };
   });
 };
@@ -200,3 +200,6 @@ export const getNextStartableDayIndex = (plan) => {
 
   return firstWorkoutDayIndex;
 };
+
+
+

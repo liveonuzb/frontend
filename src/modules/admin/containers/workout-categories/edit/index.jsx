@@ -1,6 +1,6 @@
 import React from "react";
 import { useParams } from "react-router";
-import { find, get, isArray, trim } from "lodash";
+import { find, get, isArray, trim, map, values as lodashValues } from "lodash";
 import { toast } from "sonner";
 import { PaletteIcon, PencilIcon, TagIcon } from "lucide-react";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
@@ -36,7 +36,7 @@ const resolveLabel = (translations, fallback, language) => {
     if (direct) return direct;
     const uz = trim(String(get(translations, "uz", "")));
     if (uz) return uz;
-    const first = find(Object.values(translations), (v) => trim(String(v)));
+    const first = find(lodashValues(translations), (v) => trim(String(v)));
     if (first) return trim(String(first));
   }
   return fallback;
@@ -167,7 +167,7 @@ const EditWorkoutCategoryFields = ({
           <Label className="text-sm font-medium">Badge style</Label>
           <div className="rounded-2xl border border-border/60 bg-muted/15 p-4">
             <div className="flex flex-wrap gap-3">
-              {CATEGORY_BADGE_PRESETS.map((option) => {
+              {map(CATEGORY_BADGE_PRESETS, (option) => {
                 const isSelected =
                   form.colorMode === "preset" &&
                   form.presetColor === option.value;
@@ -250,7 +250,6 @@ const EditWorkoutCategoryFields = ({
           </div>
         </div>
       </div>
-
       <DrawerFooter className="gap-2 border-t bg-muted/5 px-6 py-4">
         <Button onClick={handleSave} disabled={isUpdating || isLoading}>
           Saqlash
@@ -331,3 +330,6 @@ const EditWorkoutCategory = () => {
 };
 
 export default EditWorkoutCategory;
+
+
+

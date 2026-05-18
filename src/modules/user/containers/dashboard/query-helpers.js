@@ -13,6 +13,7 @@ import {
   some,
   sumBy,
   take,
+  toNumber,
 } from "lodash";
 import { getApiResponseData } from "@/lib/api-response";
 import { normalizeUserOnboarding } from "@/lib/user-onboarding";
@@ -31,12 +32,6 @@ export const DASHBOARD_CHALLENGE_INVITATIONS_QUERY_KEY = [
   "dashboard",
   "challenge-invitations",
 ];
-export const DASHBOARD_COACH_INVITATIONS_QUERY_KEY = [
-  "me",
-  "coach-invitations",
-];
-export const DASHBOARD_COACH_FEEDBACK_QUERY_KEY = ["me", "coach-feedback"];
-export const DASHBOARD_COACH_TASKS_QUERY_KEY = ["me", "coach-tasks"];
 export const DASHBOARD_WEEKLY_CHECK_INS_QUERY_KEY = [
   "user",
   "weekly-check-ins",
@@ -186,7 +181,7 @@ export const getUserFromResponse = (response) =>
   getApiResponseData(response, null);
 
 export const toFiniteNumber = (value, fallback = 0) => {
-  const number = Number(value);
+  const number = toNumber(value);
   return Number.isFinite(number) ? number : fallback;
 };
 
@@ -208,7 +203,7 @@ export const firstFiniteNumber = (values = [], fallback = 0) =>
         return result;
       }
 
-      const number = Number(value);
+      const number = toNumber(value);
       return Number.isFinite(number) ? { found: true, value: number } : result;
     },
     { found: false, value: fallback },
@@ -412,7 +407,7 @@ const getChallengeStatusWeight = (status) => {
 };
 
 const clampProgress = (value) => {
-  const numeric = Number(value ?? 0);
+  const numeric = toNumber(value ?? 0);
 
   if (!Number.isFinite(numeric)) {
     return 0;
@@ -483,8 +478,8 @@ export const buildCommunityChallenge = ({
     orderBy(
       participants,
       [
-        (participant) => Number(get(participant, "metricValue", 0)),
-        (participant) => Number(get(participant, "progress", 0)),
+        (participant) => toNumber(get(participant, "metricValue", 0)),
+        (participant) => toNumber(get(participant, "progress", 0)),
       ],
       ["desc", "desc"],
     ),
@@ -510,17 +505,13 @@ export const buildCommunityChallenge = ({
     get(challenge, "metricType") ??
     "STEPS";
   const metricUnit = challengeMetricUnits[metricType] ?? "birlik";
-  const metricTarget = Number(
-    get(challenge, "metricDetails.target") ??
-      get(challenge, "metricTarget") ??
-      0,
-  );
+  const metricTarget = toNumber(get(challenge, "metricDetails.target") ??
+    get(challenge, "metricTarget") ??
+    0);
   const progress = clampProgress(
     get(challenge, "myProgress", get(myEntry, "progress", 0)),
   );
-  const myMetricValue = Number(
-    get(challenge, "myMetricValue", get(myEntry, "metricValue", 0)),
-  );
+  const myMetricValue = toNumber(get(challenge, "myMetricValue", get(myEntry, "metricValue", 0)));
 
   const startDate = get(challenge, "startDate")
     ? new Date(get(challenge, "startDate"))
@@ -568,7 +559,7 @@ export const buildCommunityChallenge = ({
     friendParticipant: sharedFriendEntry
       ? {
           name: friendNameById.get(get(sharedFriendEntry, "userId")),
-          metricValue: Number(get(sharedFriendEntry, "metricValue", 0)),
+          metricValue: toNumber(get(sharedFriendEntry, "metricValue", 0)),
           metricUnit,
         }
       : null,
@@ -606,7 +597,7 @@ export const buildFriendActivities = ({
 
     const sorted = orderBy(
       participants,
-      [(participant) => Number(get(participant, "metricValue", 0))],
+      [(participant) => toNumber(get(participant, "metricValue", 0))],
       ["desc"],
     );
     const metricType =
@@ -631,11 +622,11 @@ export const buildFriendActivities = ({
         challengeTitle: get(challenge, "title", "Challenge"),
         challengeId: get(challenge, "id"),
         rank: index + 1,
-        metricValue: Number(get(participant, "metricValue", 0)),
+        metricValue: toNumber(get(participant, "metricValue", 0)),
         metricUnit,
         progress: Math.min(
           100,
-          Math.round(Number(get(participant, "progress", 0))),
+          Math.round(toNumber(get(participant, "progress", 0))),
         ),
         status: get(challenge, "status", "ACTIVE"),
       });

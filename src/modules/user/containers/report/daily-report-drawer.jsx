@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 import { getApiResponseData } from "@/lib/api-response";
 import MetricCard from "./components/metric-card.jsx";
 import ScoreCircle from "./components/score-circle.jsx";
@@ -22,6 +22,8 @@ import {
   getYesterdayKey,
   METRIC_META,
 } from "./report-helpers.js";
+
+import { map } from "lodash";
 
 const isDateKey = (value) =>
   typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
@@ -172,7 +174,7 @@ export default function DailyReportDrawer() {
 
           {hasData ? (
             <div className="grid gap-3">
-              {trackedKeys.map((key) => {
+              {map(trackedKeys, (key) => {
                 const meta = METRIC_META[key];
                 if (!meta) return null;
                 const item = key === "fastFood" ? metrics?.fastFood : metrics?.[key];

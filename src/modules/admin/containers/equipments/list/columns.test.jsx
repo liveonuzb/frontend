@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 
 import { useColumns } from "./columns.jsx";
 
+import { find } from "lodash";
+
 vi.mock("@/components/ui/switch", () => ({
   Switch: ({ checked, onCheckedChange }) => (
     <button
@@ -61,7 +63,7 @@ const renderEquipmentSwitch = (accessorKey, equipmentOverrides = {}) => {
       setEquipmentToDelete: vi.fn(),
       ...handlers,
     });
-    const column = columns.find((item) => item.accessorKey === accessorKey);
+    const column = find(columns, (item) => item.accessorKey === accessorKey);
 
     return (
       <div>

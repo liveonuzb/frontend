@@ -1,12 +1,24 @@
-import { values, toPairs, map, filter, find, compact, join } from "lodash";
-const normalizeText = (value) => String(value ?? "").trim();
+import {
+  values as lodashValues,
+  toPairs,
+  map,
+  filter,
+  find,
+  compact,
+  join,
+  fromPairs,
+  isArray,
+  trim,
+  toLower,
+} from "lodash";
+const normalizeText = (value) => trim(String(value ?? ""));
 
 export const resolveTranslatedLocationLabel = (
   translations,
   fallback,
   language,
 ) => {
-  if (translations && typeof translations === "object" && !Array.isArray(translations)) {
+  if (translations && typeof translations === "object" && !isArray(translations)) {
     const direct = normalizeText(translations[language]);
     if (direct) {
       return direct;
@@ -17,7 +29,7 @@ export const resolveTranslatedLocationLabel = (
       return uz;
     }
 
-    const firstVal = find(values(translations), (value) => typeof value === "string" && normalizeText(value));
+    const firstVal = find(lodashValues(translations), (value) => typeof value === "string" && normalizeText(value));
     if (typeof firstVal === "string" && normalizeText(firstVal)) {
       return normalizeText(firstVal);
     }
@@ -27,15 +39,13 @@ export const resolveTranslatedLocationLabel = (
 };
 
 export const cleanLocationTranslations = (translations = {}) =>
-  Object.fromEntries(
-    filter(
-      map(toPairs(translations), ([key, value]) => [normalizeText(key).toLowerCase(), normalizeText(value)]),
-      ([key, value]) => Boolean(key) && Boolean(value),
-    ),
-  );
+  fromPairs(filter(
+    map(toPairs(translations), ([key, value]) => [toLower(normalizeText(key)), normalizeText(value)]),
+    ([key, value]) => Boolean(key) && Boolean(value),
+  ));
 
 export const countFilledLocationTranslations = (translations = {}) =>
-  filter(values(translations), (value) => typeof value === "string" && normalizeText(value)).length;
+  filter(lodashValues(translations), (value) => typeof value === "string" && normalizeText(value)).length;
 
 const localizeNodes = (nodes = [], language, parentPath = []) =>
   map(nodes, (node) => {
@@ -91,3 +101,6 @@ export const getTranslatedBranchLocationLabel = (branch, language) => {
 
   return join(compact([city, district, region, country]), ", ");
 };
+
+
+

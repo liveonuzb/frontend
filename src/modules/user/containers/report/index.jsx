@@ -39,6 +39,8 @@ import {
 } from "@/hooks/app/use-user-ai-reports";
 import { useBreadcrumbStore } from "@/store";
 
+import { isArray, map, some, toNumber } from "lodash";
+
 const todayKey = () => new Date().toISOString().slice(0, 10);
 
 const formatDate = (value) => {
@@ -66,7 +68,7 @@ const formatDateTime = (value) => {
 const resolveApiErrorMessage = (error, fallback) => {
   const message = error?.response?.data?.message;
 
-  if (Array.isArray(message)) {
+  if (isArray(message)) {
     return message.join(", ");
   }
 
@@ -96,7 +98,7 @@ const ReportSkeleton = () => (
 const SectionCard = ({ sectionKey, title, icon: Icon, section }) => {
   if (!section) return null;
 
-  const bullets = Array.isArray(section.bullets) ? section.bullets : [];
+  const bullets = isArray(section.bullets) ? section.bullets : [];
 
   return (
     <Card size="sm" className="rounded-xl">
@@ -116,7 +118,7 @@ const SectionCard = ({ sectionKey, title, icon: Icon, section }) => {
         ) : null}
         {bullets.length ? (
           <ul className="grid gap-2 text-sm">
-            {bullets.map((item, index) => (
+            {map(bullets, (item, index) => (
               <li
                 key={`${sectionKey}-${index}`}
                 className="flex gap-2 leading-5 text-muted-foreground"
@@ -158,7 +160,7 @@ const ReportDetail = ({ report, isLoading }) => {
 
   const body = report.report ?? {};
   const summary = body.summary;
-  const nextActions = Array.isArray(body.nextActions) ? body.nextActions : [];
+  const nextActions = isArray(body.nextActions) ? body.nextActions : [];
 
   return (
     <div className="grid gap-4">
@@ -185,9 +187,9 @@ const ReportDetail = ({ report, isLoading }) => {
               {summary.summary}
             </p>
           ) : null}
-          {Array.isArray(summary?.bullets) && summary.bullets.length ? (
+          {isArray(summary?.bullets) && summary.bullets.length ? (
             <div className="grid gap-2">
-              {summary.bullets.map((item, index) => (
+              {map(summary.bullets, (item, index) => (
                 <div key={index} className="flex gap-2 text-sm text-muted-foreground">
                   <CheckCircle2Icon className="mt-0.5 size-4 shrink-0 text-primary" />
                   <span>{item}</span>
@@ -207,9 +209,8 @@ const ReportDetail = ({ report, isLoading }) => {
           </div>
         </CardContent>
       </Card>
-
       <div className="grid gap-4 md:grid-cols-2">
-        {sectionConfig.map(([key, label, Icon]) => (
+        {map(sectionConfig, ([key, label, Icon]) => (
           <SectionCard
             key={key}
             sectionKey={key}
@@ -219,7 +220,6 @@ const ReportDetail = ({ report, isLoading }) => {
           />
         ))}
       </div>
-
       {nextActions.length ? (
         <Card className="rounded-xl">
           <CardHeader>
@@ -229,7 +229,7 @@ const ReportDetail = ({ report, isLoading }) => {
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-2">
-            {nextActions.map((item, index) => (
+            {map(nextActions, (item, index) => (
               <div key={index} className="flex gap-2 text-sm">
                 <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
                   {index + 1}
@@ -240,7 +240,6 @@ const ReportDetail = ({ report, isLoading }) => {
           </CardContent>
         </Card>
       ) : null}
-
       {body.disclaimer ? (
         <p className="text-xs leading-5 text-muted-foreground">{body.disclaimer}</p>
       ) : null}
@@ -275,7 +274,7 @@ const HistoryList = ({ items, activeId, onSelect, isLoading }) => {
       </CardHeader>
       <CardContent className="grid gap-2">
         {items.length ? (
-          items.map((item) => (
+          map(items, (item) => (
             <button
               key={item.id}
               type="button"
@@ -365,11 +364,9 @@ const Index = () => {
   const selectedAccess = periodAccess.get(selectedPeriod);
   const isSelectedLocked = Boolean(selectedAccess?.locked);
   const quota = limits?.quota ?? {};
-  const selectedHasTodayCache = historyItems.some(
-    (item) =>
-      item.period === selectedPeriod && String(item.createdAt || "").startsWith(todayKey()),
-  );
-  const noQuota = !selectedHasTodayCache && Number(quota.remaining ?? 0) <= 0;
+  const selectedHasTodayCache = some(historyItems, (item) =>
+    item.period === selectedPeriod && String(item.createdAt || "").startsWith(todayKey()));
+  const noQuota = !selectedHasTodayCache && toNumber(quota.remaining ?? 0) <= 0;
   const isGenerateDisabled =
     limitsLoading ||
     generateMutation.isPending ||
@@ -455,7 +452,7 @@ const Index = () => {
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-              {USER_AI_REPORT_PERIODS.map((item) => {
+              {map(USER_AI_REPORT_PERIODS, (item) => {
                 const access = periodAccess.get(item.period);
                 const locked = Boolean(access?.locked);
                 const selected = selectedPeriod === item.period;

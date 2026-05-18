@@ -23,6 +23,8 @@ import ReportPage from "@/modules/onboarding/user/pages/report/index.jsx";
 import PersonalizingPage from "@/modules/onboarding/user/pages/personalizing/index.jsx";
 import PersonalizationResultPage from "@/modules/onboarding/user/pages/result/index.jsx";
 
+import { map, toPairs } from "lodash";
+
 const activeStepElements = {
   name: <NamePage />,
   gender: <GenderPage />,
@@ -54,11 +56,12 @@ export const renderUserOnboardingRoutes = () => (
   <>
     <Route index element={<EntryPage />} />
 
-    {ONBOARDING_STEPS.map((step) => (
+    {map(ONBOARDING_STEPS, (step) => (
       <Route key={step} path={step} element={activeStepElements[step]} />
     ))}
 
-    {Object.entries(LEGACY_USER_ONBOARDING_STEP_REDIRECTS).map(
+    {map(
+      toPairs(LEGACY_USER_ONBOARDING_STEP_REDIRECTS),
       ([step, targetStep]) => (
         <Route
           key={step}
@@ -77,7 +80,7 @@ export const renderUserOnboardingRoutes = () => (
     />
     <Route path="metabolism-result" element={<PersonalizationResultPage />} />
 
-    {Object.entries(postMetabolismLegacyRedirects).map(([path, target]) => (
+    {map(toPairs(postMetabolismLegacyRedirects), ([path, target]) => (
       <Route
         key={path}
         path={path}

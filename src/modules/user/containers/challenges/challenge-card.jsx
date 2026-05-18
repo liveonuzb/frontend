@@ -1,5 +1,5 @@
 import React from "react";
-import { get, includes, some } from "lodash";
+import { get, includes, some, toNumber } from "lodash";
 import {
   Clock3Icon,
   EyeIcon,
@@ -52,15 +52,13 @@ const ChallengeCard = ({
         (participant) => participant.userId === userId,
       ),
   );
-  const maxParticipants = Number(get(challenge, "maxParticipants", 0)) || null;
+  const maxParticipants = toNumber(get(challenge, "maxParticipants", 0)) || null;
   const isFull = Boolean(maxParticipants && participantCount >= maxParticipants);
   const isJoinClosed = includes(["COMPLETED", "CANCELLED"], challenge.status);
-  const joinFeeXp = Number(get(challenge, "joinFeeXp", 0));
+  const joinFeeXp = toNumber(get(challenge, "joinFeeXp", 0));
   const metricType =
     get(challenge, "metricDetails.type") || challenge.metricType || "STEPS";
-  const metricTarget = Number(
-    get(challenge, "metricDetails.target") ?? challenge.metricTarget ?? 0,
-  );
+  const metricTarget = toNumber(get(challenge, "metricDetails.target") ?? challenge.metricTarget ?? 0);
   const metricMeta = getMetricMeta(metricType);
   const progress = getMyProgress(challenge);
 

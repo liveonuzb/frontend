@@ -21,8 +21,7 @@
         "nutrition": "Ovqatlanish",
         "health": "Sog'liq",
         "workout": "Mashg'ulot",
-        "review": "Tekshiruv",
-        "coach": "Coach profil"
+        "review": "Tekshiruv"
       }
     },
     "skip": "O'tkazib yuborish",
@@ -121,6 +120,10 @@
       "heroAlt": "{{value}} sur'at rasmi",
       "imageAlt": "{{value}} rasmi",
       "options": {
+        "1": {
+          "title": "Tez yo'l",
+          "description": "Eng agressiv sur'at. Qisqa muddatli bosqichlar uchun yaxshiroq."
+        },
         "025": {
           "title": "Yengil ritm",
           "description": "Yengilroq tartib bilan kichik haftalik o'zgarishlar."
@@ -132,10 +135,6 @@
         "075": {
           "title": "Fokuslangan harakat",
           "description": "Ko'proq tuzilma bilan sezilarli haftalik progress."
-        },
-        "1": {
-          "title": "Tez yo'l",
-          "description": "Eng agressiv sur'at. Qisqa muddatli bosqichlar uchun yaxshiroq."
         }
       }
     },
@@ -772,10 +771,10 @@
             "gain": "Mushak yig'ish"
           },
           "weeklyWeightChangeGoal": {
+            "1": "Haftasiga 1 kg",
             "0.25": "Haftasiga 0.25 kg",
             "0.5": "Haftasiga 0.5 kg",
-            "0.75": "Haftasiga 0.75 kg",
-            "1": "Haftasiga 1 kg"
+            "0.75": "Haftasiga 0.75 kg"
           },
           "mealsPerDay": {
             "2": "2 mahal",
@@ -1037,171 +1036,6 @@
         "ru": "Русский",
         "en": "English"
       }
-    },
-    "coach": {
-      "common": {
-        "continue": "Davom etish",
-        "select": "Tanlash"
-      },
-      "category": {
-        "question": "Qaysi yo'nalishda murabbiylik qilasiz?",
-        "additional": "Qo'shimcha yo'nalishlar",
-        "options": {
-          "fitness": "Fitness",
-          "yoga": "Yoga",
-          "boxing": "Boks",
-          "football": "Futbol",
-          "swimming": "Suzish",
-          "tennis": "Tennis",
-          "basketball": "Basketbol",
-          "martialArts": "Jang san'ati",
-          "running": "Yugurish",
-          "gymnastics": "Gimnastika",
-          "dance": "Raqs",
-          "cheerleading": "Cheerleading",
-          "skating": "Muz uchish",
-          "cycling": "Velosiped",
-          "climbing": "Toqqa chiqish",
-          "other": "Boshqa"
-        }
-      },
-      "experience": {
-        "question": "Tajribangizni belgilang",
-        "options": {
-          "beginner": {
-            "label": "1 yildan kam",
-            "description": "Yangi boshlayotgan yoki kam sonli mijozlar bilan ishlagan."
-          },
-          "intermediate": {
-            "label": "1-3 yil",
-            "description": "Barqaror tajriba va amaliy coaching jarayonlari bor."
-          },
-          "advanced": {
-            "label": "3-5 yil",
-            "description": "Natijador klientlar va shakllangan metodika mavjud."
-          },
-          "expert": {
-            "label": "5+ yil",
-            "description": "Keng tajriba, ko'plab natijalar va chuqur ekspertiza."
-          }
-        },
-        "infoTitle": "Profilingiz tez tayyor bo'ladi",
-        "infoDescription": "Tajriba darajasi coach kabinetida va mijozlarga ko'rinadigan profil summarysida ishlatiladi."
-      },
-      "specialization": {
-        "question": "Yo'nalishlaringizni tanlang",
-        "customQuestion": "Yo'nalishlaringizni kiriting",
-        "fieldLabel": "Yo'nalishlar",
-        "placeholder": "Boks, Football, Yoga, Fitness",
-        "description": "Yo'nalishlarni vergul yoki yangi qatordan ajrating.",
-        "customCount": "{{count}} ta yo'nalish kiritildi",
-        "emptyTitle": "Bu kategoriya uchun yo'nalishlar topilmadi.",
-        "emptyDescription": "Davom etish tugmasini bosing.",
-        "selectedCount": "{{count}} ta yo'nalish tanlandi"
-      },
-      "targetAudience": {
-        "question": "Qaysi auditoriyaga xizmat ko'rsatasiz?",
-        "options": {
-          "children": "Bolalar (6-12 yosh)",
-          "teenagers": "O'smirlar (13-17 yosh)",
-          "beginners": "Boshlang'ich",
-          "intermediate": "O'rta daraja",
-          "advanced": "Ilg'or / Professional",
-          "seniors": "Kattalar (60+)"
-        },
-        "selectedCount": "{{count}} ta auditoriya tanlandi"
-      },
-      "availability": {
-        "question": "Haftalik ish jadvalingizni belgilang",
-        "dayOff": "Dam olish",
-        "start": "Boshlanish",
-        "end": "Tugash",
-        "days": {
-          "monday": "Dushanba",
-          "tuesday": "Seshanba",
-          "wednesday": "Chorshanba",
-          "thursday": "Payshanba",
-          "friday": "Juma",
-          "saturday": "Shanba",
-          "sunday": "Yakshanba"
-        }
-      },
-      "certification": {
-        "question": "Sertifikat ma'lumotlari",
-        "fileFallback": "Sertifikat fayli",
-        "fileSizeError": "Har bir fayl 8MB dan katta bo'lmasligi kerak.",
-        "uploadSuccess": "{{count}} ta sertifikat fayli yuklandi",
-        "uploadFailedCount": "{{count}} ta faylni yuklab bo'lmadi",
-        "uploadError": "Fayllarni yuklab bo'lmadi.",
-        "statusLabel": "Sertifikat holati",
-        "statusPlaceholder": "Variantni tanlang",
-        "noCertificate": "Sertifikatim yo'q",
-        "hasCertificate": "Sertifikatim bor",
-        "nameLabel": "Sertifikat nomi",
-        "namePlaceholder": "Masalan, UEFA C, Boxing Coach, NASM CPT",
-        "numberLabel": "Sertifikat raqami",
-        "filesLabel": "Sertifikat fayllari",
-        "uploadButton": "Fayl yuklash",
-        "fileDescription": "JPG, PNG yoki PDF. Har bir fayl maksimum 8MB.",
-        "requiredFile": "Kamida bitta sertifikat fayli yuklang."
-      },
-      "bio": {
-        "question": "Coach bio yozing",
-        "label": "Bio",
-        "placeholder": "Men sog'lom ovqatlanish va vazn boshqaruvi bo'yicha murabbiyman. Mijozlarimga reja, nazorat va kundalik odatlarni shakllantirishda yordam beraman.",
-        "minHint": "Kamida 10 ta belgi kiriting.",
-        "infoTitle": "Qisqa, aniq va ishonchli yozing",
-        "infoDescription": "Tajriba, asosiy yo'nalish va clientlarga bera oladigan natijangizni 2-3 gapda yozish kifoya."
-      },
-      "pricing": {
-        "question": "Narx va ish uslubingizni belgilang",
-        "workModeLabel": "Ishlash formati",
-        "workModes": {
-          "online": "Online",
-          "offline": "Offline",
-          "hybrid": "Hybrid"
-        },
-        "minPriceLabel": "Minimal narx (oyiga)",
-        "maxPriceLabel": "Maksimal narx (oyiga)",
-        "cityLabel": "Shahar",
-        "workplaceLabel": "Ish joyi"
-      },
-      "languages": {
-        "question": "Qaysi tillarda ishlaysiz?",
-        "helper": "Kamida bitta til tanlang.",
-        "reachTitle": "Ko'proq userga chiqing",
-        "reachDescription": "Tillar bo'yicha filter ishlaydi, mos userlar profilingizni tezroq topadi.",
-        "marketplaceTitle": "Marketplace uchun signal",
-        "marketplaceDescription": "To'g'ri til tanlovi sizning ko'rinishingizni oshiradi."
-      },
-      "avatar": {
-        "question": "Profil rasmingizni yuklang",
-        "imageOnlyError": "Faqat rasm fayl yuklash mumkin.",
-        "fileSizeError": "Rasm hajmi 5MB dan katta bo'lmasligi kerak.",
-        "uploadSuccess": "Profil rasmi yuklandi.",
-        "uploadError": "Rasmni yuklab bo'lmadi.",
-        "completeError": "Onboardingni yakunlab bo'lmadi.",
-        "successTitle": "Tabriklaymiz!",
-        "successDescription": "Sizning coach profilingiz muvaffaqiyatli yaratildi.",
-        "redirecting": "Coach paneliga yo'naltirilmoqda...",
-        "alt": "Profil rasmi",
-        "emptyLabel": "Rasm yuklash",
-        "idleHint": "Rasmni bosing yoki tortib tashlang",
-        "replaceHint": "Rasmni o'zgartirish uchun bosing",
-        "pickLabel": "Rasm tanlash",
-        "replaceLabel": "Rasmni almashtirish",
-        "helper": "Marketplace kartasida ko'rinadigan rasm. Ixtiyoriy — keyinroq qo'shishingiz mumkin."
-      }
-    },
-    "coachOnboarding": {
-      "experience": "Tajriba",
-      "specialization": "Ixtisoslashuv",
-      "certification": "Sertifikatlar",
-      "bio": "Bio",
-      "pricing": "Narxlar",
-      "languages": "Tillar",
-      "avatar": "Rasm",
-      "marketplace": "Marketplace"
     },
     "vendorOnboarding": {
       "entry": "Boshlash",

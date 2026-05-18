@@ -5,13 +5,16 @@ import {
   map,
   split,
   join,
-  size,
-  slice,
   find,
   toUpper,
   filter,
-  values,
+  values as lodashValues,
   isEmpty,
+  includes,
+  isArray,
+  keys,
+  toNumber,
+  trim,
 } from "lodash";
 import {
   CheckIcon,
@@ -37,7 +40,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import GamificationBadges from "@/components/gamification-badges";
 import { Progress } from "@/components/ui/progress";
-import CoachConnectionDetailsDrawer from "@/components/coach-connection-details-drawer";
 import {
   useBreadcrumbStore,
   useAuthStore,
@@ -89,14 +91,13 @@ const getProfileIdentity = (user) => {
   const lastName = get(user, "lastName", "");
   const username = get(user, "username", "");
 
-  const displayName = `${firstName} ${lastName}`.trim() || username || "User";
+  const displayName = trim(`${firstName} ${lastName}`) || username || "User";
 
-  const initials = join(
+  const initials = toUpper(join(
     map(split(displayName, " "), (part) => get(part, "[0]", "")),
     "",
   )
-    .slice(0, 2)
-    .toUpperCase();
+    .slice(0, 2));
 
   return { displayName, initials };
 };
@@ -121,30 +122,11 @@ const getPremiumLabel = (user, t) => {
   return t("profile.premium.status.free");
 };
 
-const getCoachConnectionSummary = (user) => {
-  const coach = get(user, "coachConnection.coach");
-
-  if (!get(coach, "id")) {
-    return null;
-  }
-
-  return {
-    id: coach.id,
-    name: get(coach, "name", "Coach"),
-    avatar: get(coach, "avatar"),
-    email: get(coach, "email"),
-    phone: get(coach, "phone"),
-    status: get(user, "coachConnection.status"),
-    specializations: get(coach, "specializations", []),
-    connectedAt: get(user, "coachConnection.connectedAt"),
-  };
-};
-
 const getNotificationSettingsCount = (settings) => {
   const source = settings ?? {};
 
   return filter(
-    values({
+    lodashValues({
       emailMarketing: source.emailMarketing ?? true,
       emailWorkout: source.emailWorkout ?? true,
       pushMeal: source.pushMeal ?? true,
@@ -153,113 +135,6 @@ const getNotificationSettingsCount = (settings) => {
     }),
     Boolean,
   ).length;
-};
-
-const formatConnectedDate = (value, t) => {
-  if (!value) {
-    return t("profile.coach.notSpecified");
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return t("profile.coach.notSpecified");
-  }
-
-  return new Intl.DateTimeFormat(t("common.locale", "uz-UZ"), {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(date);
-};
-
-const CoachConnectionCard = ({ coachConnection, onOpenDetails }) => {
-  const { t } = useTranslation();
-  if (!coachConnection) {
-    return null;
-  }
-
-  const initials = join(
-    map(split(get(coachConnection, "name", ""), " "), (part) =>
-      get(part, "[0]", ""),
-    ),
-    "",
-  )
-    .slice(0, 2)
-    .toUpperCase();
-
-  return (
-    <Card className="overflow-hidden py-6">
-      <CardContent className="space-y-4 p-6">
-        <div className="flex items-start gap-4">
-          <Avatar className="size-12 border">
-            <AvatarImage
-              src={get(coachConnection, "avatar")}
-              alt={get(coachConnection, "name")}
-            />
-            <AvatarFallback>{initials}</AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 space-y-1">
-            <div className="inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-              {t("profile.coach.myCoach")}
-            </div>
-            <div className="text-base font-semibold">
-              {get(coachConnection, "name")}
-            </div>
-            <div className="text-sm text-muted-foreground">
-              {t("profile.coach.connectedAt", {
-                date: formatConnectedDate(
-                  get(coachConnection, "connectedAt"),
-                  t,
-                ),
-              })}
-            </div>
-          </div>
-        </div>
-
-        {size(get(coachConnection, "specializations")) > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {map(
-              slice(get(coachConnection, "specializations"), 0, 4),
-              (item) => (
-                <div
-                  key={item}
-                  className="rounded-full border px-3 py-1 text-xs text-muted-foreground"
-                >
-                  {item}
-                </div>
-              ),
-            )}
-          </div>
-        ) : null}
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-2xl border px-4 py-3">
-            <div className="text-xs text-muted-foreground">
-              {t("profile.coach.email")}
-            </div>
-            <div className="mt-1 text-sm font-medium">
-              {get(coachConnection, "email", t("profile.coach.notProvided"))}
-            </div>
-          </div>
-          <div className="rounded-2xl border px-4 py-3">
-            <div className="text-xs text-muted-foreground">
-              {t("profile.coach.phone")}
-            </div>
-            <div className="mt-1 text-sm font-medium">
-              {get(coachConnection, "phone", t("profile.coach.notProvided"))}
-            </div>
-          </div>
-        </div>
-
-        {onOpenDetails ? (
-          <Button type="button" variant="outline" onClick={onOpenDetails}>
-            {t("profile.viewDetails")}
-          </Button>
-        ) : null}
-      </CardContent>
-    </Card>
-  );
 };
 
 const SettingsItem = ({
@@ -319,7 +194,7 @@ const InlinePremiumItem = ({ tab, value, onClick }) => (
   />
 );
 
-const InlineNotificationsItem = ({ tab, value, isCoach }) => {
+const InlineNotificationsItem = ({ tab, value }) => {
   const [open, setOpen] = React.useState(false);
 
   return (
@@ -334,7 +209,6 @@ const InlineNotificationsItem = ({ tab, value, isCoach }) => {
         <NotificationSettingsDrawer
           open={open}
           onOpenChange={setOpen}
-          isCoach={isCoach}
         />
       ) : null}
     </>
@@ -423,7 +297,7 @@ const InlineLangItem = ({
         value={
           resolvedLang
             ? `${resolvedLang.flag} ${resolvedLang.name}`
-            : currentLang.toUpperCase()
+            : toUpper(currentLang)
         }
         onClick={() => setOpen(true)}
       />
@@ -523,8 +397,6 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
   const navigate = useNavigate();
   const { closeProfile } = useProfileOverlay();
   const { displayName, initials } = getProfileIdentity(user);
-  const coachConnection = getCoachConnectionSummary(user);
-  const [isCoachDetailsOpen, setIsCoachDetailsOpen] = React.useState(false);
   const setCurrentLanguage = useLanguageStore(
     (state) => state.setCurrentLanguage,
   );
@@ -536,31 +408,30 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
   const roles = useAuthStore((state) => state.roles);
   const activeRole = useAuthStore((state) => state.activeRole);
   const setActiveRole = useAuthStore((state) => state.setActiveRole);
-  const isCoach = Array.isArray(roles) && roles.includes("COACH");
   const activeLanguages = React.useMemo(() => {
     const source = languages.length ? languages : FALLBACK_LANGUAGES;
-    return source.filter((l) => l.isActive !== false);
+    return filter(source, (l) => l.isActive !== false);
   }, [languages]);
   const { i18n } = useTranslation();
   const currentLang = i18n.language || "uz";
   const availableRoles = React.useMemo(() => {
-    const configuredRoles = Object.keys(ROLE_CONFIG);
-    const nextRoles = new Set(Array.isArray(roles) ? roles : []);
+    const configuredRoles = keys(ROLE_CONFIG);
+    const nextRoles = new Set(isArray(roles) ? roles : []);
     nextRoles.add("USER");
-    return configuredRoles.filter((role) => nextRoles.has(role));
+    return filter(configuredRoles, (role) => nextRoles.has(role));
   }, [roles]);
   const currentRole = React.useMemo(() => {
-    if (activeRole && availableRoles.includes(activeRole)) {
+    if (activeRole && includes(availableRoles, activeRole)) {
       return activeRole;
     }
 
     return availableRoles[0] ?? "USER";
   }, [activeRole, availableRoles]);
-  const xp = Number(user?.xp) || 0;
-  const level = Number(user?.level) || 1;
+  const xp = toNumber(user?.xp) || 0;
+  const level = toNumber(user?.level) || 1;
   const levelProgress = Math.max(
     0,
-    Math.min(100, Number(user?.levelProgress) || 0),
+    Math.min(100, toNumber(user?.levelProgress) || 0),
   );
   const levelRemaining = Math.max(0, 100 - levelProgress);
   const streakDays = 3;
@@ -735,20 +606,6 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
         </Card>
       ) : null}
 
-      <CoachConnectionCard
-        coachConnection={coachConnection}
-        onOpenDetails={
-          coachConnection ? () => setIsCoachDetailsOpen(true) : undefined
-        }
-      />
-
-      {isCoachDetailsOpen ? (
-        <CoachConnectionDetailsDrawer
-          open={isCoachDetailsOpen}
-          onOpenChange={setIsCoachDetailsOpen}
-          coachConnection={coachConnection}
-        />
-      ) : null}
       <InlineModeItem />
       {map(SETTINGS_GROUPS, (group, index) => (
         <SettingsGroupCard
@@ -768,7 +625,7 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
             }
             onTabChange(tabId);
           }}
-          user={{ ...user, _isCoach: isCoach }}
+          user={user}
           t={t}
           valueResolver={(tabId) =>
             getOverviewValue(tabId, user, completion, t)
@@ -811,7 +668,6 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
                 <InlineNotificationsItem
                   key="notifications-item"
                   tab={tab}
-                  isCoach={isCoach}
                   value={`${getNotificationSettingsCount(settings)} yoqilgan`}
                 />
               );
@@ -862,14 +718,6 @@ const getCompletionTone = (completion) => {
 const SettingsSidebar = ({ activeTab, completion, onTabChange, user }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const coachConnection = getCoachConnectionSummary(user);
-  const [isCoachDetailsOpen, setIsCoachDetailsOpen] = React.useState(false);
-  const roles = useAuthStore((state) => state.roles);
-  const isCoach = Array.isArray(roles) && roles.includes("COACH");
-  const enrichedUser = React.useMemo(
-    () => ({ ...user, _isCoach: isCoach }),
-    [user, isCoach],
-  );
 
   const handleTabChange = React.useCallback(
     (tabId) => {
@@ -898,7 +746,7 @@ const SettingsSidebar = ({ activeTab, completion, onTabChange, user }) => {
           items={group}
           activeTab={activeTab}
           onTabChange={handleTabChange}
-          user={enrichedUser}
+          user={user}
           t={t}
         />
       ))}
@@ -925,12 +773,6 @@ const SettingsSidebar = ({ activeTab, completion, onTabChange, user }) => {
           </div>
         </CardContent>
       </Card>
-      <CoachConnectionCard
-        coachConnection={coachConnection}
-        onOpenDetails={
-          coachConnection ? () => setIsCoachDetailsOpen(true) : undefined
-        }
-      />
       <OnboardingHealthReportCard
         compact
         title={t("profile.healthReport.title")}
@@ -938,11 +780,6 @@ const SettingsSidebar = ({ activeTab, completion, onTabChange, user }) => {
         badge={t("profile.healthReport.badge")}
         actionLabel={t("profile.healthReport.action")}
         onAction={openHealthReport}
-      />
-      <CoachConnectionDetailsDrawer
-        open={isCoachDetailsOpen}
-        onOpenChange={setIsCoachDetailsOpen}
-        coachConnection={coachConnection}
       />
     </aside>
   );
@@ -958,7 +795,7 @@ const Index = ({ embedded = false }) => {
   const rawRequestedTab = searchParams.get("tab");
   const requestedProfileTab = normalizeProfileContentTab(rawRequestedTab);
   const requestedTab = embedded ? activeProfileTab : requestedProfileTab;
-  const activeConfig = tabs.find((tab) => tab.id === requestedTab) ?? null;
+  const activeConfig = find(tabs, (tab) => tab.id === requestedTab) ?? null;
   const ActiveTab = activeConfig?.component ?? null;
   const completion = getProfileCompletion(user);
 

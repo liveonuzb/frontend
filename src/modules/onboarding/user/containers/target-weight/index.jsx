@@ -18,6 +18,9 @@ import {
   getOnboardingWeightIllustration,
 } from "../../lib/illustration.js";
 import PageAura from "../../components/page-aura.jsx";
+import { useOnboardingAssets } from "@/hooks/app/use-onboarding-base";
+
+import { toNumber } from "lodash";
 
 const Index = () => {
   const { t } = useTranslation();
@@ -32,6 +35,7 @@ const Index = () => {
     height,
     firstName,
   } = useOnboardingStore();
+  const { base, extension } = useOnboardingAssets();
 
   useOnboardingAutoSave("user", "target-weight");
 
@@ -42,6 +46,8 @@ const Index = () => {
     age,
     currentVal,
     height?.value,
+    base,
+    extension,
   );
   const illustrationHeight = getOnboardingIllustrationHeight(height?.value);
   const validationError = getTargetWeightValidationError({
@@ -52,13 +58,13 @@ const Index = () => {
   });
 
   const diff = currentWeight?.value
-    ? Math.abs(Number(currentVal) - Number(currentWeight.value)).toFixed(1)
+    ? Math.abs(toNumber(currentVal) - toNumber(currentWeight.value)).toFixed(1)
     : null;
 
   const getMessage = () => {
     if (!currentVal || !currentWeight?.value) return null;
-    const target = Number(currentVal);
-    const current = Number(currentWeight.value);
+    const target = toNumber(currentVal);
+    const current = toNumber(currentWeight.value);
     if (goal === "lose" && target < current) {
       return t("onboarding.targetWeight.messages.lose", { value: diff });
     }

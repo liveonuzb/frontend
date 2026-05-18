@@ -21,6 +21,8 @@ import {
   useStartRunningSession,
 } from "./use-running-sessions.js";
 
+import { map } from "lodash";
+
 const createQueryClient = () =>
   new QueryClient({
     defaultOptions: {
@@ -30,11 +32,11 @@ const createQueryClient = () =>
   });
 
 const createWrapper = (queryClient) =>
-  function Wrapper({ children }) {
+  (function Wrapper({ children }) {
     return (
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
-  };
+  });
 
 describe("use-running-sessions", () => {
   let queryClient;
@@ -216,7 +218,7 @@ describe("use-running-sessions", () => {
       wrapper: createWrapper(queryClient),
     });
 
-    expect(result.current.sessions.map((session) => session.workoutSessionId)).toEqual([
+    expect(map(result.current.sessions, (session) => session.workoutSessionId)).toEqual([
       "workout-1",
       "workout-2",
     ]);

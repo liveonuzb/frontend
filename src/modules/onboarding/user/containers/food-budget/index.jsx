@@ -12,6 +12,8 @@ import PageAura from "../../components/page-aura.jsx";
 import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
 import OnboardingSelectCard from "../../components/onboarding-select-card.jsx";
 
+import { map } from "lodash";
+
 const tone = ONBOARDING_ACCENTS.amber;
 const budgetTiers = ["low", "medium", "high"];
 
@@ -104,7 +106,6 @@ const Index = () => {
   return (
     <div className="relative flex h-full min-h-0 max-h-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8">
       <PageAura tone={tone} />
-
       <div className="relative z-10 flex h-full min-h-0 w-full flex-1 flex-col">
         <OnboardingQuestion question={t("onboarding.foodBudget.title")} />
         <div className="mx-auto mt-2 w-full rounded-2xl border bg-background/85 px-4 py-3 text-sm font-medium leading-6 text-muted-foreground md:max-w-2xl">
@@ -113,7 +114,7 @@ const Index = () => {
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto py-4">
           <div className="flex min-h-full flex-col justify-center gap-3 md:mx-auto md:max-w-2xl md:gap-4">
-            {budgetTiers.map((tier, index) => {
+            {map(budgetTiers, (tier, index) => {
               const active = foodBudgetTier === tier;
               return (
                 <OnboardingSelectCard

@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/hooks/api/use-api";
 
+import { find } from "lodash";
+
 export const USER_AI_REPORT_PERIODS = [
   { period: "weekly", label: "Haftalik", shortLabel: "7 kun", days: 7 },
   { period: "monthly", label: "Oylik", shortLabel: "30 kun", days: 30 },
@@ -14,7 +16,7 @@ export const USER_AI_REPORT_QUERY_KEY = ["user", "ai-reports"];
 const unwrapResponse = (response) => response?.data?.data ?? response?.data ?? null;
 
 export const getUserAiReportPeriodLabel = (period) =>
-  USER_AI_REPORT_PERIODS.find((item) => item.period === period)?.label ?? period;
+  find(USER_AI_REPORT_PERIODS, (item) => item.period === period)?.label ?? period;
 
 export const useUserAiReportLimits = () =>
   useQuery({

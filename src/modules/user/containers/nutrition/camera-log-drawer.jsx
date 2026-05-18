@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { get, round } from "lodash";
+import { get, round, filter, forEach, map, toPairs } from "lodash";
 import {
   Drawer,
   DrawerBody,
@@ -59,7 +59,7 @@ const CameraView = ({ onCapture, onBack }) => {
   const [hasMultipleCams, setHasMultipleCams] = useState(false);
 
   const startCamera = useCallback(async (facingMode) => {
-    streamRef.current?.getTracks().forEach((t) => t.stop());
+    forEach(streamRef.current?.getTracks(), (t) => t.stop());
     setReady(false);
     setFlashOn(false);
     try {
@@ -89,7 +89,7 @@ const CameraView = ({ onCapture, onBack }) => {
       .enumerateDevices?.()
       .then((devices) => {
         setHasMultipleCams(
-          devices.filter((d) => d.kind === "videoinput").length > 1,
+          filter(devices, (d) => d.kind === "videoinput").length > 1,
         );
       })
       .catch(() => {
@@ -99,7 +99,7 @@ const CameraView = ({ onCapture, onBack }) => {
     startCamera("environment");
 
     return () => {
-      streamRef.current?.getTracks().forEach((t) => t.stop());
+      forEach(streamRef.current?.getTracks(), (t) => t.stop());
     };
   }, [startCamera]);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -128,7 +128,7 @@ const CameraView = ({ onCapture, onBack }) => {
     canvas.width = videoRef.current.videoWidth;
     canvas.height = videoRef.current.videoHeight;
     canvas.getContext("2d").drawImage(videoRef.current, 0, 0);
-    streamRef.current?.getTracks().forEach((t) => t.stop());
+    forEach(streamRef.current?.getTracks(), (t) => t.stop());
     onCapture(canvas.toDataURL("image/jpeg", 0.85));
   };
 
@@ -145,9 +145,8 @@ const CameraView = ({ onCapture, onBack }) => {
         className="w-full h-full object-cover"
         style={{ transform: facing === "user" ? "scaleX(-1)" : "none" }}
       />
-
       {/* Corner guides */}
-      {["tl", "tr", "bl", "br"].map((c) => (
+      {map(["tl", "tr", "bl", "br"], (c) => (
         <div
           key={c}
           className={cn(
@@ -163,7 +162,6 @@ const CameraView = ({ onCapture, onBack }) => {
           )}
         />
       ))}
-
       {/* Close */}
       <button
         onClick={onBack}
@@ -171,7 +169,6 @@ const CameraView = ({ onCapture, onBack }) => {
       >
         <XIcon className="size-4" />
       </button>
-
       {/* Flash */}
       {hasFlash && (
         <button
@@ -188,7 +185,6 @@ const CameraView = ({ onCapture, onBack }) => {
           )}
         </button>
       )}
-
       {/* Bottom bar */}
       <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-10">
         {/* Camera switch */}
@@ -293,7 +289,6 @@ const PreviewView = ({ food, imageUrl, onRetake, onSave, isConsumed }) => {
           <RefreshCwIcon className="size-4" />
         </button>
       </div>
-
       {/* Gauge */}
       <div className="flex flex-col items-center">
         <GaugeProgress
@@ -341,7 +336,6 @@ const PreviewView = ({ food, imageUrl, onRetake, onSave, isConsumed }) => {
           </div>
         </div>
       </div>
-
       {/* Slider */}
       <div className="space-y-1 mb-2">
         <div className="flex justify-between items-center px-1">
@@ -361,7 +355,6 @@ const PreviewView = ({ food, imageUrl, onRetake, onSave, isConsumed }) => {
           onValueChange={([v]) => setGrams(v)}
         />
       </div>
-
       {/* Vitamins */}
       {food?.vitamins && (
         <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 space-y-3 mt-2">
@@ -369,7 +362,7 @@ const PreviewView = ({ food, imageUrl, onRetake, onSave, isConsumed }) => {
             <CalculatorIcon className="size-3" /> Vitaminlar va Minerallar
           </div>
           <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-            {Object.entries(food.vitamins).map(([name, amount]) => (
+            {map(toPairs(food.vitamins), ([name, amount]) => (
               <div
                 key={name}
                 className="flex items-center justify-between text-xs"
@@ -383,7 +376,6 @@ const PreviewView = ({ food, imageUrl, onRetake, onSave, isConsumed }) => {
           </div>
         </div>
       )}
-
       {/* Footer buttons */}
       <div className="space-y-3 pt-4">
         <Button variant="outline" className="w-full" onClick={onRetake}>

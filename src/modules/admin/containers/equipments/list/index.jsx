@@ -9,6 +9,11 @@ import {
   size,
   trim,
   toString,
+  fromPairs,
+  isArray,
+  toNumber,
+  values as lodashValues,
+  toPairs,
 } from "lodash";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
 import {
@@ -64,7 +69,7 @@ const resolveLabel = (translations, fallback, language) => {
     }
 
     const first = find(
-      Object.values(translations),
+      lodashValues(translations),
       (value) => typeof value === "string" && trim(value),
     );
     if (typeof first === "string" && trim(first)) {
@@ -78,25 +83,24 @@ const resolveLabel = (translations, fallback, language) => {
 const countFilledTranslations = (translations = {}) =>
   size(
     lodashFilter(
-      Object.values(translations),
+      lodashValues(translations),
       (value) => typeof value === "string" && trim(value).length > 0,
     ),
   );
 
 const getErrorMessage = (error, fallback) => {
   const message = get(error, "response.data.message");
-  if (Array.isArray(message)) {
+  if (isArray(message)) {
     return message.join(", ");
   }
   return message || fallback;
 };
 
 const cleanTranslations = (translations = {}) =>
-  Object.fromEntries(
-    Object.entries(translations)
-      .map(([key, value]) => [key.trim(), String(value ?? "").trim()])
-      .filter(([key, value]) => Boolean(key) && Boolean(value)),
-  );
+  fromPairs(lodashFilter(map(
+    toPairs(translations),
+    ([key, value]) => [trim(key), trim(String(value ?? ""))],
+  ), ([key, value]) => Boolean(key) && Boolean(value)));
 
 const Index = () => {
   const navigate = useNavigate();
@@ -136,8 +140,8 @@ const Index = () => {
   const deferredSearch = React.useDeferredValue(search);
   const queryParams = React.useMemo(
     () => ({
-      ...(deferredSearch.trim() ? { q: deferredSearch.trim() } : {}),
-      ...((deferredSearch.trim() ||
+      ...(trim(deferredSearch) ? { q: trim(deferredSearch) } : {}),
+      ...((trim(deferredSearch) ||
         searchOperator === "empty" ||
         searchOperator === "not_empty") &&
       searchOperator !== "contains"
@@ -294,7 +298,7 @@ const Index = () => {
   }, [setBreadcrumbs]);
 
   const activeLanguages = React.useMemo(
-    () => languages.filter((language) => language.isActive),
+    () => lodashFilter(languages, (language) => language.isActive),
     [languages],
   );
 
@@ -304,26 +308,24 @@ const Index = () => {
 
     setTranslatingEquipment(equipment);
     setTranslationForm(
-      Object.fromEntries(
-        activeLanguages.map((language) => [
+      fromPairs(map(activeLanguages, (language) => [
+        language.code,
+        resolveLabel(
+          equipment?.translations,
+          equipment?.name ?? "",
           language.code,
-          resolveLabel(
-            equipment?.translations,
-            equipment?.name ?? "",
-            language.code,
-          ),
-        ]),
-      ),
+        ),
+      ])),
     );
   }, [activeLanguages, translatingEquipmentData]);
 
   const currentLanguageMeta = React.useMemo(
-    () => activeLanguages.find((language) => language.code === currentLanguage),
+    () => find(activeLanguages, (language) => language.code === currentLanguage),
     [activeLanguages, currentLanguage],
   );
 
   React.useEffect(() => {
-    const totalPages = Math.max(1, Number(get(meta, "totalPages")) || 1);
+    const totalPages = Math.max(1, toNumber(get(meta, "totalPages")) || 1);
     if (currentPage > totalPages) {
       void setPageQuery(String(totalPages));
     }
@@ -335,16 +337,14 @@ const Index = () => {
     (equipment) => {
       setTranslatingEquipment(equipment);
       setTranslationForm(
-        Object.fromEntries(
-          activeLanguages.map((language) => [
+        fromPairs(map(activeLanguages, (language) => [
+          language.code,
+          resolveLabel(
+            equipment?.translations,
+            equipment?.name ?? "",
             language.code,
-            resolveLabel(
-              equipment?.translations,
-              equipment?.name ?? "",
-              language.code,
-            ),
-          ]),
-        ),
+          ),
+        ])),
       );
       navigate(`translate/${equipment.id}`);
     },
@@ -485,9 +485,8 @@ const Index = () => {
         return;
       }
 
-      const dataIds = equipments.map((equipment) =>
-        String(equipment.id),
-      );
+      const dataIds = map(equipments, (equipment) =>
+        String(equipment.id));
       const oldIndex = dataIds.indexOf(active.id);
       const newIndex = dataIds.indexOf(over.id);
 
@@ -680,3 +679,6 @@ const Index = () => {
 };
 
 export default Index;
+
+
+

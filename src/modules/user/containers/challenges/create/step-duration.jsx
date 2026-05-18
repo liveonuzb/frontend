@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { StepSection } from "./form-fields.jsx";
 
+import { map } from "lodash";
+
 const DURATION_OPTIONS = [7, 14, 30];
 const formatDateInput = (date) => format(date, "yyyy-MM-dd");
 
@@ -32,7 +34,7 @@ const StepDuration = ({ form, setForm }) => {
       description="Boshlanish sanasi va challenge qancha davom etishini belgilang."
     >
       <div className="grid grid-cols-3 gap-2">
-        {DURATION_OPTIONS.map((days) => (
+        {map(DURATION_OPTIONS, (days) => (
           <button
             key={days}
             type="button"

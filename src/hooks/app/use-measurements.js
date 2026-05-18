@@ -1,5 +1,5 @@
 import React from "react";
-import { get, filter, find, map, orderBy, findIndex } from "lodash";
+import { get, filter, find, map, orderBy, findIndex, includes, split } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDeleteQuery, useGetQuery, usePostQuery } from "@/hooks/api";
 import { getApiResponseData } from "@/lib/api-response";
@@ -24,9 +24,9 @@ export const DEFAULT_MEASUREMENTS = {
 const normalizeDateKey = (value) => {
   if (!value) return "";
   if (typeof value === "string") {
-    return value.includes("T") ? value.split("T")[0] : value;
+    return includes(value, "T") ? split(value, "T")[0] : value;
   }
-  return value.toISOString().split("T")[0];
+  return split(value.toISOString(), "T")[0];
 };
 
 export const normalizeMeasurementEntry = (entry = {}) => ({

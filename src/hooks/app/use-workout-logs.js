@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, filter, isArray, map, toNumber } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useDeleteQuery,
@@ -26,24 +26,24 @@ const resolveResponseData = (response, fallback = null) =>
 
 const normalizeWorkoutEntry = (entry = {}) => ({
   id: entry.id,
-  sets: Number(entry.sets ?? 1) || 1,
-  reps: Number(entry.reps ?? 0) || 0,
-  weight: Number(entry.weight ?? 0) || 0,
-  durationSeconds: Number(entry.durationSeconds ?? 0) || 0,
-  distanceMeters: Number(entry.distanceMeters ?? 0) || 0,
-  durationMinutes: Number(entry.durationMinutes ?? 0) || 0,
-  burnedCalories: Number(entry.burnedCalories ?? 0) || 0,
+  sets: toNumber(entry.sets ?? 1) || 1,
+  reps: toNumber(entry.reps ?? 0) || 0,
+  weight: toNumber(entry.weight ?? 0) || 0,
+  durationSeconds: toNumber(entry.durationSeconds ?? 0) || 0,
+  distanceMeters: toNumber(entry.distanceMeters ?? 0) || 0,
+  durationMinutes: toNumber(entry.durationMinutes ?? 0) || 0,
+  burnedCalories: toNumber(entry.burnedCalories ?? 0) || 0,
   addedAt: entry.addedAt ?? null,
 });
 
 const normalizeWorkoutSummary = (summary = {}) => ({
-  totalSets: Number(summary.totalSets ?? 0) || 0,
-  maxReps: Number(summary.maxReps ?? 0) || 0,
-  maxWeight: Number(summary.maxWeight ?? 0) || 0,
-  totalDurationSeconds: Number(summary.totalDurationSeconds ?? 0) || 0,
-  totalDurationMinutes: Number(summary.totalDurationMinutes ?? 0) || 0,
-  totalDistanceMeters: Number(summary.totalDistanceMeters ?? 0) || 0,
-  totalBurnedCalories: Number(summary.totalBurnedCalories ?? 0) || 0,
+  totalSets: toNumber(summary.totalSets ?? 0) || 0,
+  maxReps: toNumber(summary.maxReps ?? 0) || 0,
+  maxWeight: toNumber(summary.maxWeight ?? 0) || 0,
+  totalDurationSeconds: toNumber(summary.totalDurationSeconds ?? 0) || 0,
+  totalDurationMinutes: toNumber(summary.totalDurationMinutes ?? 0) || 0,
+  totalDistanceMeters: toNumber(summary.totalDistanceMeters ?? 0) || 0,
+  totalBurnedCalories: toNumber(summary.totalBurnedCalories ?? 0) || 0,
 });
 
 export const normalizeWorkoutLog = (log = {}) => {
@@ -51,8 +51,8 @@ export const normalizeWorkoutLog = (log = {}) => {
     return null;
   }
 
-  const entries = Array.isArray(log.entries)
-    ? log.entries.map(normalizeWorkoutEntry)
+  const entries = isArray(log.entries)
+    ? map(log.entries, normalizeWorkoutEntry)
     : [];
   const summary = normalizeWorkoutSummary(log.summary);
 
@@ -66,7 +66,7 @@ export const normalizeWorkoutLog = (log = {}) => {
     planDayIndex:
       log.planDayIndex === undefined || log.planDayIndex === null
         ? null
-        : Number(log.planDayIndex),
+        : toNumber(log.planDayIndex),
     planDayKey: log.planDayKey ?? null,
     exercise: {
       id: get(log, "exercise.id", null),
@@ -94,7 +94,7 @@ export const normalizeWorkoutLog = (log = {}) => {
 };
 
 const normalizeWorkoutLogList = (payload) =>
-  Array.isArray(payload) ? payload.map(normalizeWorkoutLog).filter(Boolean) : [];
+  isArray(payload) ? filter(map(payload, normalizeWorkoutLog), Boolean) : [];
 
 const invalidateWorkoutLogQueries = async (
   queryClient,

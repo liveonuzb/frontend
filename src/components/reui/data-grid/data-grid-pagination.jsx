@@ -1,4 +1,4 @@
-import { map, clamp } from "lodash";
+import { map, clamp, toNumber } from "lodash";
 import React from "react";
 import { useDataGrid } from "@/components/reui/data-grid/data-grid"
 
@@ -133,7 +133,7 @@ function DataGridPagination(props) {
             <Select
               value={`${pageSize}`}
               onValueChange={(value) => {
-                const newPageSize = Number(value)
+                const newPageSize = toNumber(value)
                 table.setPageSize(newPageSize)
               }}>
               <SelectTrigger className="w-18" size="sm">

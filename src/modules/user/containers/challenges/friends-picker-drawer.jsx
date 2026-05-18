@@ -1,5 +1,5 @@
 import React from "react";
-import { map, includes } from "lodash";
+import { map, includes, filter, some, split, toUpper, trim } from "lodash";
 import { SearchIcon, UserIcon, CheckIcon } from "lucide-react";
 import { useGetQuery } from "@/hooks/api";
 import { getFriendItems } from "@/modules/user/lib/friends-response";
@@ -34,9 +34,9 @@ const getAvatarColor = (str) => {
 };
 
 const getInitials = (name) => {
-  const parts = String(name ?? "").trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return String(name ?? "?").slice(0, 2).toUpperCase();
+  const parts = split(trim(String(name ?? "")), /\s+/);
+  if (parts.length >= 2) return toUpper((parts[0][0] + parts[1][0]));
+  return toUpper(String(name ?? "?").slice(0, 2));
 };
 
 /**
@@ -58,7 +58,7 @@ export default function FriendsPickerDrawer({
   const [localSelectedObjects, setLocalSelectedObjects] = React.useState(
     () => [],
   );
-  const deferredSearch = React.useDeferredValue(search.trim());
+  const deferredSearch = React.useDeferredValue(trim(search));
 
   const { data, isLoading } = useGetQuery({
     url: "/users/me/friends",
@@ -74,11 +74,11 @@ export default function FriendsPickerDrawer({
   const toggle = (friend) => {
     const id = friend.id;
     setLocalSelected((prev) =>
-      includes(prev, id) ? prev.filter((x) => x !== id) : [...prev, id],
+      includes(prev, id) ? filter(prev, (x) => x !== id) : [...prev, id],
     );
     setLocalSelectedObjects((prev) => {
-      const exists = prev.some((f) => f.id === id);
-      return exists ? prev.filter((f) => f.id !== id) : [...prev, friend];
+      const exists = some(prev, (f) => f.id === id);
+      return exists ? filter(prev, (f) => f.id !== id) : [...prev, friend];
     });
   };
 
@@ -116,7 +116,7 @@ export default function FriendsPickerDrawer({
           {/* List */}
           {isLoading ? (
             <div className="flex flex-col gap-2">
-              {Array.from({ length: 6 }).map((_, i) => (
+              {map(Array.from({ length: 6 }), (_, i) => (
                 <div
                   key={i}
                   className="flex items-center gap-3 rounded-2xl border p-3"

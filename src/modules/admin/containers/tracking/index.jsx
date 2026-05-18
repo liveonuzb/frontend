@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, map, toNumber } from "lodash";
 import {
   ActivityIcon,
   BarChart3Icon,
@@ -43,7 +43,7 @@ import { useBreadcrumbStore } from "@/store";
 const TRACKING_QUERY_KEY = ["admin", "tracking"];
 
 const formatNumber = (value) =>
-  new Intl.NumberFormat("uz-UZ").format(Number(value ?? 0));
+  new Intl.NumberFormat("uz-UZ").format(toNumber(value ?? 0));
 
 const Metric = ({ icon: Icon, label, value, hint }) => (
   <Card size="sm">
@@ -261,7 +261,7 @@ const Index = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {users.map((item) => (
+                      {map(users, (item) => (
                         <TableRow key={item.user.id}>
                           <TableCell>
                             <div className="flex flex-col gap-1">
@@ -339,7 +339,7 @@ const Index = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {trends.map((item) => (
+                      {map(trends, (item) => (
                         <TableRow key={item.date}>
                           <TableCell>{item.date}</TableCell>
                           <TableCell>{formatNumber(item.logs)}</TableCell>

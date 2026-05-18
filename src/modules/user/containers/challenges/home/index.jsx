@@ -1,5 +1,5 @@
 import React from "react";
-import { get, includes, trim } from "lodash";
+import { get, includes, trim, filter, isArray, map, toLower, some } from "lodash";
 import { Link, useNavigate } from "react-router";
 import {
   ArrowRightIcon,
@@ -152,37 +152,32 @@ export default function ChallengeHomeContainer() {
   }, [setBreadcrumbs]);
 
   const challengeList = React.useMemo(
-    () => (Array.isArray(challenges) ? challenges : []),
+    () => (isArray(challenges) ? challenges : []),
     [challenges],
   );
   const pendingInvitations = React.useMemo(
     () =>
-      (Array.isArray(challengeInvitations) ? challengeInvitations : []).filter(
+      filter(
+        (isArray(challengeInvitations) ? challengeInvitations : []),
         (inv) => get(inv, "status") === "PENDING",
       ),
     [challengeInvitations],
   );
   const joinedChallenges = React.useMemo(
     () =>
-      challengeList.filter((challenge) => {
-        const participant = (challenge.participants || []).some(
-          (item) => item.userId === user?.id,
-        );
+      filter(challengeList, (challenge) => {
+        const participant = some((challenge.participants || []), (item) => item.userId === user?.id);
         return Boolean(challenge.isJoined || participant);
       }),
     [challengeList, user?.id],
   );
-  const activeChallenges = joinedChallenges.filter(
-    (challenge) => challenge.status === "ACTIVE",
-  );
-  const completedChallenges = joinedChallenges.filter(
-    (challenge) => challenge.status === "COMPLETED",
-  );
+  const activeChallenges = filter(joinedChallenges, (challenge) => challenge.status === "ACTIVE");
+  const completedChallenges = filter(joinedChallenges, (challenge) => challenge.status === "COMPLETED");
   const latestCompleted = completedChallenges[0];
 
   const filteredChallenges = React.useMemo(() => {
-    const q = trim(deferredSearch).toLowerCase();
-    return challengeList.filter((challenge) => {
+    const q = toLower(trim(deferredSearch));
+    return filter(challengeList, (challenge) => {
       if (challenge.status === "CANCELLED") return false;
       const metricType =
         get(challenge, "metricDetails.type") || challenge.metricType;
@@ -192,14 +187,11 @@ export default function ChallengeHomeContainer() {
         metricType === filter;
       if (!matchesFilter) return false;
       if (!q) return true;
-      return (
-        includes(String(get(challenge, "title", "")).toLowerCase(), q) ||
-        includes(String(get(challenge, "description", "")).toLowerCase(), q) ||
-        includes(
-          String(get(challenge, "creator.profile.firstName", "")).toLowerCase(),
-          q,
-        )
-      );
+      return (includes(toLower(String(get(challenge, "title", ""))), q) ||
+      includes(toLower(String(get(challenge, "description", ""))), q) || includes(
+        toLower(String(get(challenge, "creator.profile.firstName", ""))),
+        q,
+      ));
     });
   }, [challengeList, deferredSearch, filter]);
 
@@ -245,11 +237,9 @@ export default function ChallengeHomeContainer() {
           <StatCard
             label="G'olib"
             value={
-              completedChallenges.filter(
-                (challenge) =>
-                  get(challenge, "myRank") === 1 ||
-                  get(challenge, "myProgress.rank") === 1,
-              ).length
+              filter(completedChallenges, (challenge) =>
+                get(challenge, "myRank") === 1 ||
+                get(challenge, "myProgress.rank") === 1).length
             }
           />
         </div>
@@ -271,13 +261,13 @@ export default function ChallengeHomeContainer() {
           </div>
           {isLoading ? (
             <div className="flex gap-3 overflow-hidden">
-              {Array.from({ length: 2 }).map((_, index) => (
+              {map(Array.from({ length: 2 }), (_, index) => (
                 <Skeleton key={index} className="h-44 w-[280px] shrink-0" />
               ))}
             </div>
           ) : activeChallenges.length ? (
             <div className="flex gap-3 overflow-x-auto pb-1 no-scrollbar">
-              {activeChallenges.map((challenge) => (
+              {map(activeChallenges, (challenge) => (
                 <ActiveChallengeTile
                   key={challenge.id}
                   challenge={challenge}
@@ -371,7 +361,7 @@ export default function ChallengeHomeContainer() {
                 onValueChange={(value) => value && setFilter(value)}
                 className="min-w-max"
               >
-                {FILTERS.map((item) => (
+                {map(FILTERS, (item) => (
                   <ToggleGroupItem key={item.value} value={item.value}>
                     {item.label}
                   </ToggleGroupItem>
@@ -382,13 +372,13 @@ export default function ChallengeHomeContainer() {
 
           {isLoading ? (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, index) => (
+              {map(Array.from({ length: 6 }), (_, index) => (
                 <Skeleton key={index} className="aspect-[4/5]" />
               ))}
             </div>
           ) : filteredChallenges.length ? (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {filteredChallenges.map((challenge) => (
+              {map(filteredChallenges, (challenge) => (
                 <ChallengeCard
                   key={challenge.id}
                   challenge={challenge}

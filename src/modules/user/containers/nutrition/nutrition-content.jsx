@@ -10,7 +10,6 @@ import {
   setMealDuplicateConfirmHandler,
   useDailyTrackingActions,
   useDailyTrackingDay,
-  useDailyTrackingMealFeedback,
 } from "@/hooks/app/use-daily-tracking";
 import useFoodCatalog, {
   enrichTrackedMealItem,
@@ -35,6 +34,26 @@ import {
   buildMealPayloadFromDraft,
   getDraftNutritionPreview,
 } from "./meal-draft-review-utils.js";
+
+import {
+  filter,
+  find,
+  forEach,
+  isArray,
+  map,
+  orderBy,
+  reduce,
+  some,
+  split,
+  toLower,
+  toNumber,
+  trim,
+  values as lodashValues,
+  includes,
+  keys,
+  toPairs,
+  flatten,
+} from "lodash";
 
 const NutritionErrorFallback = () => (
   <div className="flex min-h-[55vh] items-center justify-center px-4">
@@ -70,8 +89,7 @@ const WEEK_DAYS = [
 ];
 
 const normalizeWeekdayKey = (value) =>
-  String(value || "")
-    .toLowerCase()
+  toLower(String(value || ""))
     .replaceAll("’", "'")
     .replaceAll(/[^a-z\u0400-\u04ff]+/g, "");
 
@@ -81,25 +99,19 @@ const getPlanInsights = (plan) => {
       ? plan.weeklyKanban
       : {};
 
-  const dayColumns = Object.values(weeklyKanban).filter((value) =>
-    Array.isArray(value),
-  );
+  const dayColumns = filter(lodashValues(weeklyKanban), (value) =>
+    isArray(value));
 
-  const filledDays = dayColumns.filter((columns) =>
-    columns.some(
-      (column) => Array.isArray(column?.items) && column.items.length > 0,
-    ),
-  ).length;
+  const filledDays = filter(dayColumns, (columns) =>
+    some(
+      columns,
+      (column) => isArray(column?.items) && column.items.length > 0,
+    )).length;
 
-  const totalItems = dayColumns.reduce((sum, columns) => {
-    return (
-      sum +
-      columns.reduce((columnSum, column) => {
-        return (
-          columnSum + (Array.isArray(column?.items) ? column.items.length : 0)
-        );
-      }, 0)
-    );
+  const totalItems = reduce(dayColumns, (sum, columns) => {
+    return (sum + reduce(columns, (columnSum, column) => {
+      return (columnSum + (isArray(column?.items) ? column.items.length : 0));
+    }, 0));
   }, 0);
 
   return {
@@ -136,14 +148,6 @@ const getPlanStatusMeta = (status) => {
 };
 
 const getPlanSourceMeta = (source) => {
-  if (source === "coach") {
-    return {
-      label: "Murabbiy reja",
-      badgeClassName:
-        "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-300",
-    };
-  }
-
   if (source === "ai") {
     return {
       label: "AI reja",
@@ -160,9 +164,7 @@ const getPlanSourceMeta = (source) => {
 };
 
 const normalizeSearchText = (value) =>
-  String(value || "")
-    .trim()
-    .toLowerCase();
+  toLower(trim(String(value || "")));
 
 const getMealDateKey = (food, fallbackDateKey) => {
   const value = food?.addedAt || food?.createdAt || food?.date || fallbackDateKey;
@@ -208,13 +210,11 @@ const NutritionContent = ({ entryView = "home" }) => {
     startPlan,
     duplicatePlan,
     archivePlan,
-    applyCoachUpdate,
     pausePlan,
     removePlan,
     isSavingDraft,
     isDuplicatingPlan,
     isArchivingPlan,
-    isApplyingCoachUpdate,
   } = useMealPlan();
 
   const [selectedPlanId, setSelectedPlanId] = React.useState(null);
@@ -225,7 +225,7 @@ const NutritionContent = ({ entryView = "home" }) => {
       return;
     }
 
-    if (selectedPlanId && plans.some((plan) => plan.id === selectedPlanId)) {
+    if (selectedPlanId && some(plans, (plan) => plan.id === selectedPlanId)) {
       return;
     }
 
@@ -237,13 +237,10 @@ const NutritionContent = ({ entryView = "home" }) => {
       return null;
     }
 
-    return (
-      plans.find((plan) => plan.id === selectedPlanId) ||
-      activePlan ||
-      draftPlan ||
-      plans[0] ||
-      null
-    );
+    return (find(plans, (plan) => plan.id === selectedPlanId) ||
+    activePlan ||
+    draftPlan ||
+    plans[0] || null);
   }, [activePlan, draftPlan, plans, selectedPlanId]);
   const isGoalLoadingState =
     user?.onboardingCompleted &&
@@ -274,27 +271,23 @@ const NutritionContent = ({ entryView = "home" }) => {
   }, [goalSource, isGoalLoadingState, user?.onboardingCompleted]);
 
   const planInsightsMap = React.useMemo(() => {
-    return plans.reduce((acc, plan) => {
+    return reduce(plans, (acc, plan) => {
       acc[plan.id] = getPlanInsights(plan);
       return acc;
     }, {});
   }, [plans]);
   const orderedPlans = React.useMemo(() => {
-    return [...plans].sort((left, right) => {
-      const leftPriority =
-        left.status === "active" ? 0 : left.status === "draft" ? 1 : 2;
-      const rightPriority =
-        right.status === "active" ? 0 : right.status === "draft" ? 1 : 2;
+    const getStatusPriority = (plan) =>
+      plan.status === "active" ? 0 : plan.status === "draft" ? 1 : 2;
 
-      if (leftPriority !== rightPriority) {
-        return leftPriority - rightPriority;
-      }
-
-      return (
-        new Date(right.updatedAt || right.createdAt || 0).getTime() -
-        new Date(left.updatedAt || left.createdAt || 0).getTime()
-      );
-    });
+    return orderBy(
+      plans,
+      [
+        getStatusPriority,
+        (plan) => new Date(plan.updatedAt || plan.createdAt || 0).getTime(),
+      ],
+      ["asc", "desc"],
+    );
   }, [plans]);
 
   const weeklyKanban = React.useMemo(
@@ -346,7 +339,7 @@ const NutritionContent = ({ entryView = "home" }) => {
     }
 
     const requestedPlan =
-      (state.planId && plans.find((plan) => plan.id === state.planId)) || null;
+      (state.planId && find(plans, (plan) => plan.id === state.planId)) || null;
     const fallbackPlan = activePlan || draftPlan || plans[0] || null;
     const targetPlan = requestedPlan || fallbackPlan;
 
@@ -403,9 +396,6 @@ const NutritionContent = ({ entryView = "home" }) => {
   const [isSavingInlineScan, setIsSavingInlineScan] = React.useState(false);
   const [duplicateMealPrompt, setDuplicateMealPrompt] = React.useState(null);
   const isPremiumActive = true;
-  const isCurrentPlanCoachAssigned = currentPlan?.source === "coach";
-  const isCurrentPlanUpdateAvailable =
-    currentPlan?.syncStatus === "update_available";
 
   const openPremiumForAi = React.useCallback(() => {
     toast("AI generator premium tarifda ochiladi.");
@@ -466,16 +456,15 @@ const NutritionContent = ({ entryView = "home" }) => {
       const weeklyKanban =
         template?.weeklyKanban &&
         typeof template.weeklyKanban === "object" &&
-        !Array.isArray(template.weeklyKanban)
+        !isArray(template.weeklyKanban)
           ? template.weeklyKanban
           : {};
       const mealCount =
         template?.mealCount ||
         Math.max(
           1,
-          ...Object.values(weeklyKanban).map((day) =>
-            Array.isArray(day) ? day.length : 0,
-          ),
+          ...map(lodashValues(weeklyKanban), (day) =>
+            isArray(day) ? day.length : 0),
         );
 
       try {
@@ -489,11 +478,9 @@ const NutritionContent = ({ entryView = "home" }) => {
         });
         const nextPlan =
           nextState?.draftPlan ||
-          nextState?.plans?.find(
-            (plan) =>
-              plan.status === "draft" &&
-              plan.name?.startsWith(template?.title || template?.name || ""),
-          ) ||
+          find(nextState?.plans, (plan) =>
+            plan.status === "draft" &&
+            plan.name?.startsWith(template?.title || template?.name || "")) ||
           nextState?.plans?.[0] ||
           null;
 
@@ -526,11 +513,6 @@ const NutritionContent = ({ entryView = "home" }) => {
   }, [schedulePlanMetaDrawerOpen]);
 
   const handleOpenBuilderManual = () => {
-    if (isCurrentPlanCoachAssigned) {
-      void handleDuplicateCurrentPlan(true);
-      return;
-    }
-
     setIsCancelPlanOpen(false);
     if (!currentPlan) {
       openPlanMetaCreateDrawer();
@@ -619,8 +601,8 @@ const NutritionContent = ({ entryView = "home" }) => {
   );
 
   const handleSubmitPlanMeta = React.useCallback(async () => {
-    const safeName = planMetaName.trim();
-    const safeDescription = planMetaDescription.trim() || null;
+    const safeName = trim(planMetaName);
+    const safeDescription = trim(planMetaDescription) || null;
 
     if (!safeName) {
       return;
@@ -640,7 +622,7 @@ const NutritionContent = ({ entryView = "home" }) => {
           source: currentPlan.source || "manual",
         });
         const updatedPlan =
-          nextState?.plans?.find((plan) => plan.id === currentPlan.id) ||
+          find(nextState?.plans, (plan) => plan.id === currentPlan.id) ||
           nextState?.activePlan ||
           nextState?.draftPlan ||
           null;
@@ -669,7 +651,8 @@ const NutritionContent = ({ entryView = "home" }) => {
       });
       const nextPlan =
         nextState?.draftPlan ||
-        nextState?.plans?.find(
+        find(
+          nextState?.plans,
           (plan) => plan.status === "draft" && plan.name === safeName,
         ) ||
         nextState?.plans?.[0] ||
@@ -711,12 +694,10 @@ const NutritionContent = ({ entryView = "home" }) => {
       try {
         const nextState = await duplicatePlan(currentPlan.id);
         const duplicatedPlan =
-          nextState?.plans?.find(
-            (plan) =>
-              plan.id !== currentPlan.id &&
-              plan.status === "draft" &&
-              plan.name?.startsWith(currentPlan.name || ""),
-          ) || nextState?.draftPlan;
+          find(nextState?.plans, (plan) =>
+            plan.id !== currentPlan.id &&
+            plan.status === "draft" &&
+            plan.name?.startsWith(currentPlan.name || "")) || nextState?.draftPlan;
 
         if (duplicatedPlan?.id) {
           setSelectedPlanId(duplicatedPlan.id);
@@ -728,15 +709,11 @@ const NutritionContent = ({ entryView = "home" }) => {
           setIsPlansDrawerOpen(false);
           setBuilderInitialData(duplicatedPlan.weeklyKanban || {});
           setIsBuilderOpen(true);
-          toast.success("Murabbiy rejasi nusxalanib, tahrirlash uchun ochildi");
+          toast.success("Reja nusxalanib, tahrirlash uchun ochildi");
           return;
         }
 
-        toast.success(
-          currentPlan.source === "coach"
-            ? "Murabbiy rejasi nusxalandi"
-            : "Reja nusxalandi",
-        );
+        toast.success("Reja nusxalandi");
       } catch {
         toast.error("Rejani nusxalab bo'lmadi");
       }
@@ -754,7 +731,7 @@ const NutritionContent = ({ entryView = "home" }) => {
       const nextSelectable =
         nextState?.activePlan ||
         nextState?.draftPlan ||
-        nextState?.plans?.find((plan) => plan.id !== currentPlan.id) ||
+        find(nextState?.plans, (plan) => plan.id !== currentPlan.id) ||
         null;
 
       setSelectedPlanId(nextSelectable?.id || currentPlan.id);
@@ -765,21 +742,7 @@ const NutritionContent = ({ entryView = "home" }) => {
     }
   }, [archivePlan, currentPlan]);
 
-  const handleApplyCoachUpdate = React.useCallback(async () => {
-    if (!currentPlan?.id) {
-      return;
-    }
-
-    try {
-      await applyCoachUpdate(currentPlan.id);
-      setIsCancelPlanOpen(false);
-      toast.success("Murabbiy yangilanishi qo'llandi");
-    } catch {
-      toast.error("Yangilanishni qo'llab bo'lmadi");
-    }
-  }, [applyCoachUpdate, currentPlan]);
-
-  const dateKey = date.toISOString().split("T")[0];
+  const dateKey = split(date.toISOString(), "T")[0];
   const todayKey = getTodayKey();
   const isPastDate = dateKey < todayKey;
   const dateQueryKey = React.useMemo(() => {
@@ -802,16 +765,12 @@ const NutritionContent = ({ entryView = "home" }) => {
   const yesterdayKey = React.useMemo(() => {
     const yesterday = new Date(date);
     yesterday.setDate(yesterday.getDate() - 1);
-    return yesterday.toISOString().split("T")[0];
+    return split(yesterday.toISOString(), "T")[0];
   }, [date]);
   const {
     dayData,
     isLoading: isDayLoading,
   } = useDailyTrackingDay(dateKey);
-  const { byMealId: mealFeedbackById } = useDailyTrackingMealFeedback({
-    startDate: dateKey,
-    endDate: dateKey,
-  });
   const { foodMap } = useFoodCatalog();
   const { analyzeMealImageDraft, uploadMealCapture } = useFoodScan();
   const { refetch: refetchYesterday } = useDailyTrackingDay(yesterdayKey, {
@@ -826,14 +785,14 @@ const NutritionContent = ({ entryView = "home" }) => {
       return 0;
     }
 
-    return Math.max(0, Math.round(Number(dayData.burnedCalories) || 0));
+    return Math.max(0, Math.round(toNumber(dayData.burnedCalories) || 0));
   }, [dateKey, dayData.burnedCalories, todayKey, workoutCalorieAdjustmentEnabled]);
   const effectiveGoals = React.useMemo(
     () =>
       workoutCalorieAdjustment > 0
         ? {
             ...goals,
-            calories: Number(goals.calories || 0) + workoutCalorieAdjustment,
+            calories: toNumber(goals.calories || 0) + workoutCalorieAdjustment,
           }
         : goals,
     [goals, workoutCalorieAdjustment],
@@ -844,7 +803,7 @@ const NutritionContent = ({ entryView = "home" }) => {
       return;
     }
 
-    const baseCalories = Number(goals.calories || 0);
+    const baseCalories = toNumber(goals.calories || 0);
     const toastKey = `${dateKey}:${baseCalories}:${workoutCalorieAdjustment}`;
     const storageKey = "liveon:nutrition:workout-calorie-adjustment-toast:v1";
 
@@ -868,18 +827,14 @@ const NutritionContent = ({ entryView = "home" }) => {
 
   const meals = React.useMemo(
     () => ({
-      breakfast: dayData.meals.breakfast.map((item) =>
-        enrichTrackedMealItem(item, foodMap),
-      ),
-      lunch: dayData.meals.lunch.map((item) =>
-        enrichTrackedMealItem(item, foodMap),
-      ),
-      dinner: dayData.meals.dinner.map((item) =>
-        enrichTrackedMealItem(item, foodMap),
-      ),
-      snack: dayData.meals.snack.map((item) =>
-        enrichTrackedMealItem(item, foodMap),
-      ),
+      breakfast: map(dayData.meals.breakfast, (item) =>
+        enrichTrackedMealItem(item, foodMap)),
+      lunch: map(dayData.meals.lunch, (item) =>
+        enrichTrackedMealItem(item, foodMap)),
+      dinner: map(dayData.meals.dinner, (item) =>
+        enrichTrackedMealItem(item, foodMap)),
+      snack: map(dayData.meals.snack, (item) =>
+        enrichTrackedMealItem(item, foodMap)),
     }),
     [dayData.meals, foodMap],
   );
@@ -889,11 +844,10 @@ const NutritionContent = ({ entryView = "home" }) => {
       const scanId = scan.id;
 
       setPendingScans((current) =>
-        current.map((item) =>
+        map(current, (item) =>
           item.id === scanId
             ? { ...item, status: "scanning", error: null }
-            : item,
-        ),
+            : item),
       );
 
       try {
@@ -902,17 +856,14 @@ const NutritionContent = ({ entryView = "home" }) => {
         const response = await analyzeMealImageDraft({
           imageUrl: uploadedImageUrl,
         });
-        const draftItems = (Array.isArray(response?.items)
-          ? response.items
-          : []
-        ).map((item) => ({
+        const draftItems = map((isArray(response?.items) ? response.items : []), (item) => ({
           ...item,
           imageUrl: uploadedImageUrl || scan.imageDataUrl,
         }));
 
         if (draftItems.length === 0) {
           setPendingScans((current) =>
-            current.map((item) =>
+            map(current, (item) =>
               item.id === scanId
                 ? {
                     ...item,
@@ -920,8 +871,7 @@ const NutritionContent = ({ entryView = "home" }) => {
                     status: "error",
                     error: "AI bu rasm uchun draft tayyorlay olmadi.",
                   }
-                : item,
-            ),
+                : item),
           );
           return;
         }
@@ -932,7 +882,7 @@ const NutritionContent = ({ entryView = "home" }) => {
               return [item];
             }
 
-            return draftItems.map((draftItem, index) => ({
+            return map(draftItems, (draftItem, index) => ({
               ...item,
               id: index === 0 ? scanId : `${scanId}-${index + 1}`,
               groupId: item.groupId || scanId,
@@ -945,7 +895,7 @@ const NutritionContent = ({ entryView = "home" }) => {
         );
       } catch (error) {
         setPendingScans((current) =>
-          current.map((item) =>
+          map(current, (item) =>
             item.id === scanId
               ? {
                   ...item,
@@ -954,8 +904,7 @@ const NutritionContent = ({ entryView = "home" }) => {
                     error?.response?.data?.message ||
                     "Ovqatni AI orqali aniqlab bo'lmadi",
                 }
-              : item,
-          ),
+              : item),
         );
       }
     },
@@ -986,41 +935,36 @@ const NutritionContent = ({ entryView = "home" }) => {
   );
 
   const pendingScanFoodsByType = React.useMemo(() => {
-    return pendingScans.reduce(
-      (acc, scan) => {
-        const preview = scan.item ? getDraftNutritionPreview(scan.item) : {};
-        const food = {
-          id: scan.id,
-          status: scan.status,
-          source: "camera",
-          name: scan.item?.title || "",
-          cal: preview.calories || 0,
-          protein: preview.protein || 0,
-          carbs: preview.carbs || 0,
-          fat: preview.fat || 0,
-          image: scan.imageUrl || scan.imageDataUrl,
-          error: scan.error,
-          scanId: scan.id,
-        };
-        const mealType = scan.mealType || "breakfast";
-        acc[mealType] = [...(acc[mealType] || []), food];
-        return acc;
-      },
-      { breakfast: [], lunch: [], dinner: [], snack: [] },
-    );
+    return reduce(pendingScans, (acc, scan) => {
+      const preview = scan.item ? getDraftNutritionPreview(scan.item) : {};
+      const food = {
+        id: scan.id,
+        status: scan.status,
+        source: "camera",
+        name: scan.item?.title || "",
+        cal: preview.calories || 0,
+        protein: preview.protein || 0,
+        carbs: preview.carbs || 0,
+        fat: preview.fat || 0,
+        image: scan.imageUrl || scan.imageDataUrl,
+        error: scan.error,
+        scanId: scan.id,
+      };
+      const mealType = scan.mealType || "breakfast";
+      acc[mealType] = [...(acc[mealType] || []), food];
+      return acc;
+    }, { breakfast: [], lunch: [], dinner: [], snack: [] });
   }, [pendingScans]);
 
   const selectedScan = React.useMemo(
-    () => pendingScans.find((scan) => scan.id === selectedScanId) || null,
+    () => find(pendingScans, (scan) => scan.id === selectedScanId) || null,
     [pendingScans, selectedScanId],
   );
   const selectedScanDraftGroup = React.useMemo(() => {
     if (!selectedScan) return [];
     const groupId = selectedScan.groupId || selectedScan.id;
-    return pendingScans.filter(
-      (scan) =>
-        (scan.groupId || scan.id) === groupId && scan.status === "draft",
-    );
+    return filter(pendingScans, (scan) =>
+      (scan.groupId || scan.id) === groupId && scan.status === "draft");
   }, [pendingScans, selectedScan]);
 
   React.useEffect(() => {
@@ -1039,19 +983,16 @@ const NutritionContent = ({ entryView = "home" }) => {
     ]);
   }, [entryView, setBreadcrumbs]);
 
-  const allFoods = Object.values(meals).flat();
-  const totals = allFoods.reduce(
-    (acc, f) => {
-      const qty = f.qty ?? 1;
-      return {
-        calories: acc.calories + (f.cal ?? 0) * qty,
-        protein: acc.protein + (f.protein ?? 0) * qty,
-        carbs: acc.carbs + (f.carbs ?? 0) * qty,
-        fat: acc.fat + (f.fat ?? 0) * qty,
-      };
-    },
-    { calories: 0, protein: 0, carbs: 0, fat: 0 },
-  );
+  const allFoods = flatten(lodashValues(meals));
+  const totals = reduce(allFoods, (acc, f) => {
+    const qty = f.qty ?? 1;
+    return {
+      calories: acc.calories + (f.cal ?? 0) * qty,
+      protein: acc.protein + (f.protein ?? 0) * qty,
+      carbs: acc.carbs + (f.carbs ?? 0) * qty,
+      fat: acc.fat + (f.fat ?? 0) * qty,
+    };
+  }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
   const roundedTotals = {
     calories: Math.round(totals.calories),
     protein: Math.round(totals.protein),
@@ -1059,17 +1000,14 @@ const NutritionContent = ({ entryView = "home" }) => {
     fat: Math.round(totals.fat),
   };
   const waterConsumedMl = React.useMemo(() => {
-    const cupSize = Number(goals.cupSize || 250);
-    const waterLog = Array.isArray(dayData.waterLog) ? dayData.waterLog : [];
+    const cupSize = toNumber(goals.cupSize || 250);
+    const waterLog = isArray(dayData.waterLog) ? dayData.waterLog : [];
 
     if (waterLog.length > 0) {
-      return waterLog.reduce(
-        (sum, entry) => sum + Number(entry?.amountMl || cupSize || 0),
-        0,
-      );
+      return reduce(waterLog, (sum, entry) => sum + toNumber(entry?.amountMl || cupSize || 0), 0);
     }
 
-    return Number(dayData.waterCups || 0) * cupSize;
+    return toNumber(dayData.waterCups || 0) * cupSize;
   }, [dayData.waterCups, dayData.waterLog, goals.cupSize]);
 
   const handleRemoveFood = async (type, food) => {
@@ -1094,7 +1032,7 @@ const NutritionContent = ({ entryView = "home" }) => {
 
   const handleBulkRemoveFoods = React.useCallback(
     async (selectedItems) => {
-      if (!Array.isArray(selectedItems) || selectedItems.length === 0) {
+      if (!isArray(selectedItems) || selectedItems.length === 0) {
         return;
       }
 
@@ -1181,22 +1119,23 @@ const NutritionContent = ({ entryView = "home" }) => {
       return [];
     }
 
-    if (Array.isArray(weeklyKanban[selectedDay])) {
+    if (isArray(weeklyKanban[selectedDay])) {
       return weeklyKanban[selectedDay];
     }
 
     const normalizedSelectedDay = normalizeWeekdayKey(selectedDay);
-    const matchedKey = Object.keys(weeklyKanban).find(
+    const matchedKey = find(
+      keys(weeklyKanban),
       (key) => normalizeWeekdayKey(key) === normalizedSelectedDay,
     );
 
-    return matchedKey && Array.isArray(weeklyKanban[matchedKey])
+    return matchedKey && isArray(weeklyKanban[matchedKey])
       ? weeklyKanban[matchedKey]
       : [];
   }, [selectedDay, weeklyKanban]);
 
   const getMealKey = (type) => {
-    return MEAL_LABEL_TO_TYPE[type] || String(type || "").toLowerCase();
+    return MEAL_LABEL_TO_TYPE[type] || toLower(String(type || ""));
   };
 
   const getActiveMealType = () => {
@@ -1213,23 +1152,22 @@ const NutritionContent = ({ entryView = "home" }) => {
   // Har bir meal type uchun rejalashtirilgan ovqatlar (kanban dan)
   const plannedByType = React.useMemo(() => {
     const result = {};
-    currentDayPlan.forEach((col) => {
+    forEach(currentDayPlan, (col) => {
       const key = getMealKey(col.type);
       if (key) {
         result[key] = [
           ...(result[key] || []),
-          ...(col.items || []).map((item, idx) => ({
+          ...map((col.items || []), (item, idx) => ({
             ...item,
             // Ensure stable ID so duplicate-prevention works correctly
             id: item.id || `plan-${col.type}-${item.name}-${idx}`,
             colType: col.type,
-            coachApproved: currentPlan?.source === "coach",
           })),
         ];
       }
     });
     return result;
-  }, [currentDayPlan, currentPlan?.source]);
+  }, [currentDayPlan]);
 
   const handleTogglePlanned = async (typeKey, food) => {
     try {
@@ -1245,8 +1183,7 @@ const NutritionContent = ({ entryView = "home" }) => {
       await addMealAction(dateKey, typeKey, {
         ...foodToLog,
         addedFromPlan: true,
-        source:
-          currentPlan?.source === "coach" ? "coach-meal-plan" : "meal-plan",
+        source: "meal-plan",
       });
     } catch {
       toast.error("Ovqat rejasini yangilab bo'lmadi");
@@ -1260,8 +1197,7 @@ const NutritionContent = ({ entryView = "home" }) => {
         await addMealAction(dateKey, typeKey, {
           ...food,
           addedFromPlan: true,
-          source:
-            currentPlan?.source === "coach" ? "coach-meal-plan" : "meal-plan",
+          source: "meal-plan",
           grams: payload.grams ?? food.grams,
           cal: macros.cal ?? food.cal,
           protein: macros.protein ?? food.protein,
@@ -1274,7 +1210,7 @@ const NutritionContent = ({ entryView = "home" }) => {
         toast.error("Ovqatni log qilib bo'lmadi");
       }
     },
-    [addMealAction, currentPlan?.source, dateKey],
+    [addMealAction, dateKey],
   );
 
   const handleCopyFromYesterday = React.useCallback(
@@ -1290,7 +1226,7 @@ const NutritionContent = ({ entryView = "home" }) => {
         }
 
         const currentBarcodes = new Set(
-          meals[mealType].map((f) => f.barcode || f.id),
+          map(meals[mealType], (f) => f.barcode || f.id),
         );
         let addedCount = 0;
 
@@ -1323,7 +1259,7 @@ const NutritionContent = ({ entryView = "home" }) => {
       const nextCurrentPlan =
         (currentPlan?.status === "active"
           ? nextState?.activePlan
-          : nextState?.plans?.find((plan) => plan.id === currentPlan?.id) ||
+          : find(nextState?.plans, (plan) => plan.id === currentPlan?.id) ||
             nextState?.draftPlan) || null;
       if (nextCurrentPlan?.id) {
         setSelectedPlanId(nextCurrentPlan.id);
@@ -1338,7 +1274,7 @@ const NutritionContent = ({ entryView = "home" }) => {
 
   const sortedMealSections = React.useMemo(() => {
     if (currentDayPlan.length === 0) {
-      return Object.entries(MEAL_CONFIG).map(([type, config]) => [
+      return map(toPairs(MEAL_CONFIG), ([type, config]) => [
         type,
         {
           ...config,
@@ -1352,7 +1288,7 @@ const NutritionContent = ({ entryView = "home" }) => {
       ]);
     }
 
-    const plannedSections = currentDayPlan.reduce((acc, col) => {
+    const plannedSections = reduce(currentDayPlan, (acc, col) => {
       const key = getMealKey(col.type);
       const config = MEAL_CONFIG[key];
 
@@ -1374,14 +1310,12 @@ const NutritionContent = ({ entryView = "home" }) => {
       return acc;
     }, {});
 
-    const loggedOnlyKeys = MEAL_TYPES.filter(
-      (key) =>
-        !plannedSections[key] &&
-        ((meals[key] || []).length > 0 ||
-          (pendingScanFoodsByType[key] || []).length > 0),
-    );
+    const loggedOnlyKeys = filter(MEAL_TYPES, (key) =>
+      !plannedSections[key] &&
+      ((meals[key] || []).length > 0 ||
+        (pendingScanFoodsByType[key] || []).length > 0));
 
-    return [...Object.keys(plannedSections), ...loggedOnlyKeys].map((key) => [
+    return map([...keys(plannedSections), ...loggedOnlyKeys], (key) => [
       key,
       plannedSections[key] || {
         ...MEAL_CONFIG[key],
@@ -1405,24 +1339,21 @@ const NutritionContent = ({ entryView = "home" }) => {
 
     const matchesSearch = (food) => {
       if (!searchTerm) return true;
-      return [
+      return some(filter([
         food?.name,
         food?.title,
         food?.description,
         food?.barcode,
-        ...(Array.isArray(food?.ingredients)
-          ? food.ingredients.map((ingredient) => ingredient?.name)
+        ...(isArray(food?.ingredients)
+          ? map(food.ingredients, (ingredient) => ingredient?.name)
           : []),
-      ]
-        .filter(Boolean)
-        .some((value) =>
-          String(value).toLowerCase().includes(searchTerm),
-        );
+      ], Boolean), (value) =>
+          includes(toLower(String(value)), searchTerm));
     };
 
     const matchesCalories = (food) => {
       if (!hasCalorieFilter) return true;
-      const calories = Math.round(Number(food?.cal ?? food?.calories ?? 0));
+      const calories = Math.round(toNumber(food?.cal ?? food?.calories ?? 0));
       return calories >= minCalories && calories <= maxCalories;
     };
 
@@ -1441,32 +1372,23 @@ const NutritionContent = ({ entryView = "home" }) => {
     const matchesAdvancedFilters = (food) =>
       matchesSearch(food) && matchesCalories(food) && matchesDateRange(food);
 
-    return sortedMealSections.reduce((sections, [type, section]) => {
+    return reduce(sortedMealSections, (sections, [type, section]) => {
       if (mealFilter !== "all" && type !== mealFilter) {
         return sections;
       }
 
       const isActiveSource = (src) => {
         if (sourceFilters.length === 0) return true;
-        if (src === "coach-meal-plan") {
-          return (
-            sourceFilters.includes("coach-meal-plan") ||
-            sourceFilters.includes("meal-plan")
-          );
-        }
-        return sourceFilters.includes(src);
+        return includes(sourceFilters, src);
       };
 
-      const filteredFoods = (section.foods || []).filter(
-        (food) =>
-          isActiveSource(food.source || "manual") &&
-          matchesAdvancedFilters(food),
-      );
+      const filteredFoods = filter((section.foods || []), (food) =>
+        isActiveSource(food.source || "manual") &&
+        matchesAdvancedFilters(food));
 
       const filteredPlannedItems = isActiveSource("meal-plan")
-        ? (section.plannedItems || []).filter((food) =>
-            matchesAdvancedFilters(food),
-          )
+        ? filter((section.plannedItems || []), (food) =>
+            matchesAdvancedFilters(food))
         : [];
 
       if (
@@ -1561,7 +1483,7 @@ const NutritionContent = ({ entryView = "home" }) => {
 
   const handleRetryScan = React.useCallback(
     (food) => {
-      const scan = pendingScans.find((item) => item.id === food?.scanId);
+      const scan = find(pendingScans, (item) => item.id === food?.scanId);
       if (!scan) return;
       void processInlineScan(scan);
     },
@@ -1569,7 +1491,7 @@ const NutritionContent = ({ entryView = "home" }) => {
   );
 
   const handleRemoveScan = React.useCallback((scanId) => {
-    setPendingScans((current) => current.filter((scan) => scan.id !== scanId));
+    setPendingScans((current) => filter(current, (scan) => scan.id !== scanId));
     setSelectedScanId((current) => (current === scanId ? null : current));
   }, []);
 
@@ -1590,12 +1512,12 @@ const NutritionContent = ({ entryView = "home" }) => {
               name: draft.title || "Ovqat",
               source: "camera",
               qty: 1,
-              grams: Math.max(0, Number(draft.manualGramsOverride) || 0),
-              cal: Math.max(0, Number(manualNutrition.calories) || 0),
-              protein: Math.max(0, Number(manualNutrition.protein) || 0),
-              carbs: Math.max(0, Number(manualNutrition.carbs) || 0),
-              fat: Math.max(0, Number(manualNutrition.fat) || 0),
-              fiber: Math.max(0, Number(manualNutrition.fiber) || 0),
+              grams: Math.max(0, toNumber(draft.manualGramsOverride) || 0),
+              cal: Math.max(0, toNumber(manualNutrition.calories) || 0),
+              protein: Math.max(0, toNumber(manualNutrition.protein) || 0),
+              carbs: Math.max(0, toNumber(manualNutrition.carbs) || 0),
+              fat: Math.max(0, toNumber(manualNutrition.fat) || 0),
+              fiber: Math.max(0, toNumber(manualNutrition.fiber) || 0),
               image: selectedScan.imageUrl || selectedScan.imageDataUrl,
             }
           : buildMealPayloadFromDraft(draft, {
@@ -1609,7 +1531,7 @@ const NutritionContent = ({ entryView = "home" }) => {
           mealPayload,
         );
         setPendingScans((current) =>
-          current.filter((scan) => scan.id !== selectedScan.id),
+          filter(current, (scan) => scan.id !== selectedScan.id),
         );
         setSelectedScanId(null);
         toast.success(`${draft.title || "Ovqat"} qo'shildi`);
@@ -1640,9 +1562,9 @@ const NutritionContent = ({ entryView = "home" }) => {
         );
       }
 
-      const idsToRemove = new Set(selectedScanDraftGroup.map((scan) => scan.id));
+      const idsToRemove = new Set(map(selectedScanDraftGroup, (scan) => scan.id));
       setPendingScans((current) =>
-        current.filter((scan) => !idsToRemove.has(scan.id)),
+        filter(current, (scan) => !idsToRemove.has(scan.id)),
       );
       setSelectedScanId(null);
       toast.success(`${selectedScanDraftGroup.length} ta ovqat qo'shildi`);
@@ -1680,7 +1602,7 @@ const NutritionContent = ({ entryView = "home" }) => {
     goals: effectiveGoals,
     roundedTotals,
     waterConsumedMl,
-    waterGoalMl: Number(effectiveGoals.waterMl || 2500),
+    waterGoalMl: toNumber(effectiveGoals.waterMl || 2500),
     calorieGoalMeta,
     isGoalLoadingState,
     mealConfig: MEAL_CONFIG,
@@ -1692,7 +1614,6 @@ const NutritionContent = ({ entryView = "home" }) => {
     activeNutritionFilterCount,
     setIsFilterDrawerOpen,
     filteredMealSections,
-    mealFeedbackById,
     activeMealType,
     setSelectedMealTypeForAdd,
     setIsActionDrawerOpen,
@@ -1769,7 +1690,6 @@ const NutritionContent = ({ entryView = "home" }) => {
         groupDraftCount={selectedScanDraftGroup.length}
         handleActivatePlan={handleActivatePlan}
         handleAiGenerated={handleAiGenerated}
-        handleApplyCoachUpdate={handleApplyCoachUpdate}
         handleArchiveCurrentPlan={handleArchiveCurrentPlan}
         handleConfirmAllInlineScans={handleConfirmAllInlineScans}
         handleConfirmInlineScan={handleConfirmInlineScan}
@@ -1787,12 +1707,9 @@ const NutritionContent = ({ entryView = "home" }) => {
         handleTemplateSelected={handleTemplateSelected}
         isActionDrawerOpen={isActionDrawerOpen}
         isAIOpen={isAIOpen}
-        isApplyingCoachUpdate={isApplyingCoachUpdate}
         isArchivingPlan={isArchivingPlan}
         isBuilderOpen={isBuilderOpen}
         isCancelPlanOpen={isCancelPlanOpen}
-        isCurrentPlanCoachAssigned={isCurrentPlanCoachAssigned}
-        isCurrentPlanUpdateAvailable={isCurrentPlanUpdateAvailable}
         isDuplicatingPlan={isDuplicatingPlan}
         isFilterDrawerOpen={isFilterDrawerOpen}
         isGoalWizardOpen={isGoalWizardOpen}

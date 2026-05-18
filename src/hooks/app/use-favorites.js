@@ -3,6 +3,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useGetQuery } from "@/hooks/api";
 import useApi from "@/hooks/api/use-api";
 
+import { map } from "lodash";
+
 const FAVORITES_KEY = ["me", "favorites"];
 
 export const useFavorites = (entityType) => {
@@ -14,7 +16,7 @@ export const useFavorites = (entityType) => {
   });
 
   const items = React.useMemo(() => data?.data?.items ?? [], [data]);
-  const favoriteIds = React.useMemo(() => new Set(items.map((f) => f.entityId)), [items]);
+  const favoriteIds = React.useMemo(() => new Set(map(items, (f) => f.entityId)), [items]);
 
   return { items, favoriteIds, isLoading, refetch };
 };

@@ -45,6 +45,8 @@ import { NutritionDrawerContent } from "./nutrition-drawer-layout.jsx";
 import { Drawer } from "@/components/ui/drawer";
 import { getMealConfig } from "@/modules/user/lib/meal-config";
 
+import { filter, map, some, toLower, toNumber, includes, toPairs, trim } from "lodash";
+
 const calcMacros = (food, amount) => {
   const isUnit = food?.unit && food.unit !== "g" && food.unit !== "ml";
   const factor = isUnit ? amount / (food.defaultAmount || 1) : amount / 100;
@@ -114,7 +116,7 @@ export default function ManualAddDrawer({
     ) {
       return null;
     }
-    return Number(selectedTabKey);
+    return toNumber(selectedTabKey);
   }, [selectedTabKey]);
 
   const {
@@ -132,7 +134,7 @@ export default function ManualAddDrawer({
 
   const foods = useMemo(
     () =>
-      categoryFoods.map((food) => ({
+      map(categoryFoods, (food) => ({
         ...food,
         isFavorite: favoriteIdSet.has(food.catalogFoodId),
       })),
@@ -140,23 +142,19 @@ export default function ManualAddDrawer({
   );
 
   const filteredFavorites = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
+    const normalizedSearch = toLower(trim(search));
     if (!normalizedSearch) return favorites;
-    return favorites.filter(
-      (food) =>
-        food.name.toLowerCase().includes(normalizedSearch) ||
-        food.originalName?.toLowerCase().includes(normalizedSearch),
-    );
+    return filter(favorites, (food) =>
+      includes(toLower(food.name), normalizedSearch) ||
+      includes(toLower(food.originalName), normalizedSearch));
   }, [favorites, search]);
 
   const filteredRecentFoods = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
+    const normalizedSearch = toLower(trim(search));
     if (!normalizedSearch) return recentFoods;
-    return recentFoods.filter(
-      (food) =>
-        food.name.toLowerCase().includes(normalizedSearch) ||
-        food.originalName?.toLowerCase().includes(normalizedSearch),
-    );
+    return filter(recentFoods, (food) =>
+      includes(toLower(food.name), normalizedSearch) ||
+      includes(toLower(food.originalName), normalizedSearch));
   }, [recentFoods, search]);
 
   const tabEntries = useMemo(() => {
@@ -179,7 +177,7 @@ export default function ManualAddDrawer({
     }
     return [
       ...entries,
-      ...categories.map((category) => ({
+      ...map(categories, (category) => ({
         key: String(category.id),
         label: category.label,
         count: null,
@@ -193,7 +191,7 @@ export default function ManualAddDrawer({
       setSelectedTabKey(null);
       return;
     }
-    if (!selectedTabKey || !tabEntries.some((entry) => entry.key === selectedTabKey)) {
+    if (!selectedTabKey || !some(tabEntries, (entry) => entry.key === selectedTabKey)) {
       setSelectedTabKey(tabEntries[0].key);
     }
   }, [selectedTabKey, tabEntries]);
@@ -283,7 +281,7 @@ export default function ManualAddDrawer({
         </div>
 
         <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-2 mask-edges -mx-4 px-4 pt-1">
-          {tabEntries.map((entry) => (
+          {map(tabEntries, (entry) => (
             <button
               key={entry.key}
               type="button"
@@ -321,7 +319,6 @@ export default function ManualAddDrawer({
           ))}
         </div>
       </DrawerHeader>
-
       <DrawerBody className="p-0">
         <ScrollArea className="h-full px-4">
           {isLoading ? (
@@ -379,13 +376,11 @@ export default function ManualAddDrawer({
           ) : tabFoods.length > 0 ? (
             <div className="space-y-3 pb-8">
               <AnimatePresence initial={false}>
-                {tabFoods.map((food) => {
-                  const isAdded = currentMealFoods.some(
-                    (entry) =>
-                      (entry.barcode && food.barcode && entry.barcode === food.barcode) ||
-                      entry.id === food.id ||
-                      (!entry.barcode && !food.barcode && entry.name === food.name),
-                  );
+                {map(tabFoods, (food) => {
+                  const isAdded = some(currentMealFoods, (entry) =>
+                    (entry.barcode && food.barcode && entry.barcode === food.barcode) ||
+                    entry.id === food.id ||
+                    (!entry.barcode && !food.barcode && entry.name === food.name));
                   return (
                     <motion.div
                       layout
@@ -505,7 +500,6 @@ export default function ManualAddDrawer({
           )}
         </ScrollArea>
       </DrawerBody>
-
       {/* Portion editor drawer */}
       <Drawer
         open={!!editingFood}
@@ -598,7 +592,7 @@ export default function ManualAddDrawer({
                     <CalculatorIcon className="size-3" /> Vitaminlar va Minerallar
                   </div>
                   <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-                    {Object.entries(editingFood.vitamins).map(([name, amount]) => (
+                    {map(toPairs(editingFood.vitamins), ([name, amount]) => (
                       <div key={name} className="flex items-center justify-between text-xs">
                         <span className="text-muted-foreground font-medium">{name}</span>
                         <span className="font-black text-foreground">{amount}</span>

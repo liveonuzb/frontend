@@ -12,6 +12,13 @@ import {
   join,
   toString,
   trim,
+  fromPairs,
+  includes,
+  toLower,
+  toNumber,
+  values as lodashValues,
+  toPairs,
+  slice,
 } from "lodash";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
 import { useGetQuery } from "@/hooks/api";
@@ -81,7 +88,7 @@ const resolveLabel = (translations, fallback, language) => {
     }
 
     const first = find(
-      Object.values(translations),
+      lodashValues(translations),
       (value) => typeof value === "string" && trim(value),
     );
     if (typeof first === "string" && trim(first)) {
@@ -95,28 +102,26 @@ const resolveLabel = (translations, fallback, language) => {
 const countFilledTranslations = (translations = {}) =>
   size(
     lodashFilter(
-      Object.values(translations),
+      lodashValues(translations),
       (value) => typeof value === "string" && trim(value).length > 0,
     ),
   );
 
 const cleanTranslations = (translations = {}) =>
-  Object.fromEntries(
-    lodashFilter(
-      map(Object.entries(translations), ([key, value]) => [
-        trim(key),
-        trim(toString(value)),
-      ]),
-      ([key, value]) => Boolean(key) && Boolean(value),
-    ),
-  );
+  fromPairs(lodashFilter(
+    map(toPairs(translations), ([key, value]) => [
+      trim(key),
+      trim(toString(value)),
+    ]),
+    ([key, value]) => Boolean(key) && Boolean(value),
+  ));
 
 const getErrorMessage = (error, fallback) => {
   const message = get(error, "response.data.message");
   const dependencySummary = get(error, "response.data.dependencySummary");
   const baseMessage = isArray(message) ? join(message, ", ") : message;
 
-  return [baseMessage || fallback, dependencySummary].filter(Boolean).join(" ");
+  return lodashFilter([baseMessage || fallback, dependencySummary], Boolean).join(" ");
 };
 
 const createFormFromItem = (item, language) => ({
@@ -272,7 +277,7 @@ const LocalizedCatalogManager = ({
 
     const nextTotalPages = Math.max(
       1,
-      Number(get(effectiveMeta, "totalPages")) || 1,
+      toNumber(get(effectiveMeta, "totalPages")) || 1,
     );
     if (currentPage > nextTotalPages) {
       void setPageQuery(String(nextTotalPages));
@@ -297,23 +302,21 @@ const LocalizedCatalogManager = ({
 
     setTranslatingItem(routeItem);
     setTranslationForm(
-      Object.fromEntries(
-        map(activeLanguages, (language) => [
+      fromPairs(map(activeLanguages, (language) => [
+        get(language, "code"),
+        resolveLabel(
+          get(routeItem, "translations"),
+          get(routeItem, "name", ""),
           get(language, "code"),
-          resolveLabel(
-            get(routeItem, "translations"),
-            get(routeItem, "name", ""),
-            get(language, "code"),
-          ),
-        ]),
-      ),
+        ),
+      ])),
     );
   }, [activeLanguages, routeItem, routeMode]);
 
   const filteredItems = React.useMemo(() => {
     if (serverSide) return effectiveItems;
 
-    const searchValue = deferredSearch.trim().toLowerCase();
+    const searchValue = toLower(trim(deferredSearch));
 
     return lodashFilter(effectiveItems, (item) => {
       const localizedName = resolveLabel(
@@ -323,8 +326,8 @@ const LocalizedCatalogManager = ({
       );
       const matchesSearch =
         !searchValue ||
-        localizedName.toLowerCase().includes(searchValue) ||
-        get(item, "name", "").toLowerCase().includes(searchValue);
+        includes(toLower(localizedName), searchValue) ||
+        includes(toLower(get(item, "name", "")), searchValue);
       const matchesStatus =
         statusFilter === "all" ||
         (statusFilter === "active"
@@ -370,16 +373,16 @@ const LocalizedCatalogManager = ({
     if (serverSide) return filteredItems;
 
     const start = (currentPage - 1) * pageSize;
-    return filteredItems.slice(start, start + pageSize);
+    return slice(filteredItems, start, start + pageSize);
   }, [currentPage, filteredItems, pageSize, serverSide]);
 
   const totalPages = Math.max(
     1,
-    Number(get(effectiveMeta, "totalPages")) ||
+    toNumber(get(effectiveMeta, "totalPages")) ||
       Math.ceil(filteredItems.length / pageSize),
   );
   const recordCount =
-    Number(get(effectiveMeta, "total")) || filteredItems.length;
+    toNumber(get(effectiveMeta, "total")) || filteredItems.length;
 
   const openCreateDrawer = React.useCallback(() => {
     if (!canManageContent) return;
@@ -403,16 +406,14 @@ const LocalizedCatalogManager = ({
       if (!canManageContent) return;
       setTranslatingItem(item);
       setTranslationForm(
-        Object.fromEntries(
-          map(activeLanguages, (language) => [
+        fromPairs(map(activeLanguages, (language) => [
+          get(language, "code"),
+          resolveLabel(
+            get(item, "translations"),
+            get(item, "name", ""),
             get(language, "code"),
-            resolveLabel(
-              get(item, "translations"),
-              get(item, "name", ""),
-              get(language, "code"),
-            ),
-          ]),
-        ),
+          ),
+        ])),
       );
       navigate(`${route}/translate/${get(item, "id")}`);
     },
@@ -422,7 +423,7 @@ const LocalizedCatalogManager = ({
   const submitDrawer = React.useCallback(async () => {
     if (!canManageContent) return;
 
-    const trimmedName = form.name.trim();
+    const trimmedName = trim(form.name);
 
     if (!trimmedName) {
       toast.error(`${singularLabel} nomini kiriting`);
@@ -782,8 +783,8 @@ const LocalizedCatalogManager = ({
       try {
         await reorderItems({
           movedId: get(moved, "id"),
-          prevId: prevId ? Number(prevId) : undefined,
-          nextId: nextId ? Number(nextId) : undefined,
+          prevId: prevId ? toNumber(prevId) : undefined,
+          nextId: nextId ? toNumber(nextId) : undefined,
         });
         toast.success("Tartib yangilandi");
         if (effectiveRefetch) {
@@ -925,3 +926,6 @@ const LocalizedCatalogManager = ({
 };
 
 export default LocalizedCatalogManager;
+
+
+

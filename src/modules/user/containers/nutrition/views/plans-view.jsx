@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { BookOpenIcon, SparklesIcon, PencilIcon } from "lucide-react";
 import NutritionPlansList from "../nutrition-plans-list.jsx";
 
+import { filter, map } from "lodash";
+
 export default function NutritionPlansView({
   orderedPlans,
   currentPlan,
@@ -19,23 +21,17 @@ export default function NutritionPlansView({
 }) {
   const [planFilter, setPlanFilter] = React.useState("all");
   const filteredPlans = React.useMemo(() => {
-    if (planFilter === "coach") {
-      return orderedPlans.filter((plan) => plan.source === "coach");
-    }
-
     if (planFilter === "all") {
       return orderedPlans;
     }
 
-    return orderedPlans.filter((plan) => plan.status === planFilter);
+    return filter(orderedPlans, (plan) => plan.status === planFilter);
   }, [orderedPlans, planFilter]);
-  const hasCoachPlans = orderedPlans.some((plan) => plan.source === "coach");
   const filterOptions = [
     { key: "all", label: "Barchasi" },
     { key: "active", label: "Faol" },
     { key: "draft", label: "Qoralama" },
     { key: "archived", label: "Arxiv" },
-    { key: "coach", label: "Murabbiy" },
   ];
 
   return (
@@ -64,7 +60,6 @@ export default function NutritionPlansView({
           </Button>
         </div>
       </div>
-
       {currentPlan ? (
         <div className="rounded-3xl border border-primary/20 bg-primary/5 p-5">
           <p className="text-xs font-bold uppercase tracking-wider text-primary">
@@ -73,24 +68,12 @@ export default function NutritionPlansView({
           <h2 className="mt-2 text-xl font-black">{currentPlan.name}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {currentPlan.status === "active" ? "Ishlatilmoqda" : "Tanlangan"} •{" "}
-            {currentPlan.source === "coach"
-              ? "Murabbiy"
-              : currentPlan.source === "ai"
-                ? "AI"
-                : "Manual"}
+            {currentPlan.source === "ai" ? "AI" : "Manual"}
           </p>
         </div>
       ) : null}
-
-      {hasCoachPlans ? (
-        <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 px-4 py-3 text-sm font-semibold text-blue-800 dark:text-blue-200">
-          Murabbiy yuborgan rejalar alohida saqlanadi. O&apos;zgartirish uchun
-          nusxalab tahrirlang.
-        </div>
-      ) : null}
-
       <div className="flex gap-2 overflow-x-auto pb-1">
-        {filterOptions.map((option) => (
+        {map(filterOptions, (option) => (
           <Button
             key={option.key}
             type="button"
@@ -102,7 +85,6 @@ export default function NutritionPlansView({
           </Button>
         ))}
       </div>
-
       <div className="space-y-3">
         <NutritionPlansList
           orderedPlans={filteredPlans}

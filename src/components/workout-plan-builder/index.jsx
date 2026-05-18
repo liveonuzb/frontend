@@ -16,6 +16,10 @@ import {
   fromPairs,
   values,
   flatMap,
+  includes,
+  keys,
+  toPairs,
+  trim,
 } from "lodash";
 import useIsMobile from "@/hooks/utils/use-mobile.js";
 import { cn } from "@/lib/utils.js";
@@ -88,7 +92,7 @@ const WorkoutPlanBuilder = ({
   const [isSidebarOpen, setIsSidebarOpen] = useState(
     () => window.innerWidth >= 768,
   );
-  const deferredSearch = useDeferredValue(search.trim());
+  const deferredSearch = useDeferredValue(trim(search));
   const {
     categories: workoutCategories,
     isLoading: isCategoriesLoading,
@@ -96,9 +100,7 @@ const WorkoutPlanBuilder = ({
   const categories = useMemo(
     () => [
       "all",
-      ...map(workoutCategories, (category) => get(category, "name")).filter(
-        Boolean,
-      ),
+      ...filter(map(workoutCategories, (category) => get(category, "name")), Boolean),
     ],
     [workoutCategories],
   );
@@ -176,7 +178,7 @@ const WorkoutPlanBuilder = ({
 
   useEffect(() => {
     if (selectedGroup === "all" || categories.length <= 1) return;
-    if (!categories.includes(selectedGroup)) {
+    if (!includes(categories, selectedGroup)) {
       setSelectedGroup("all");
     }
   }, [categories, selectedGroup]);
@@ -262,7 +264,7 @@ const WorkoutPlanBuilder = ({
   const handleKanbanChange = useCallback(
     (newMap) => {
       if (!lockWeekDays) {
-        const newKeyOrder = Object.keys(newMap);
+        const newKeyOrder = keys(newMap);
         setTrainDays((prev) =>
           filter(
             map(newKeyOrder, (id) => find(prev, (d) => get(d, "id") === id)),
@@ -272,7 +274,7 @@ const WorkoutPlanBuilder = ({
       }
       setExercisesByDay(() => {
         const updated = {};
-        for (const [dayId, exercises] of Object.entries(newMap)) {
+        for (const [dayId, exercises] of toPairs(newMap)) {
           updated[dayId] = exercises;
         }
         return updated;
@@ -300,7 +302,7 @@ const WorkoutPlanBuilder = ({
   );
 
   const handleSave = useCallback(() => {
-    if (!planName.trim()) {
+    if (!trim(planName)) {
       toast.error(t("components.workoutPlanBuilder.toasts.nameRequired"));
       return;
     }

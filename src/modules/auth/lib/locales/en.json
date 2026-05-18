@@ -10,7 +10,6 @@
       "benefitCalories": "Track calories and nutrition",
       "benefitWater": "Monitor your water intake",
       "benefitWorkouts": "Plan your workouts",
-      "benefitAiCoach": "Use AI coach recommendations",
       "copyright": "© 2026 LiveOn. All rights reserved.",
       "panelBadge": "AI plan in 60 seconds",
       "panelPill": "AI plan in 60 seconds",
@@ -158,9 +157,6 @@
       "workoutLabel": "NEXT WORKOUT",
       "workoutValue": "Upper body · 42m",
       "workoutMeta": "7:00 PM",
-      "coachLabel": "LIVEON AI",
-      "coachValue": "“Today's plan is ready”",
-      "coachMeta": "now",
       "panelCopyright": "© 2026 LiveOn."
     },
     "signIn": {

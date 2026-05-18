@@ -13,6 +13,8 @@ import {
   formatRunningPace,
 } from "@/lib/running-metrics";
 
+import { map, toNumber } from "lodash";
+
 const runDateFormatter = new Intl.DateTimeFormat("uz-UZ", {
   day: "2-digit",
   month: "long",
@@ -20,7 +22,7 @@ const runDateFormatter = new Intl.DateTimeFormat("uz-UZ", {
 });
 
 const formatGpsQuality = (score, t) => {
-  const numericScore = Number(score);
+  const numericScore = toNumber(score);
   if (!Number.isFinite(numericScore) || numericScore <= 0) {
     return t(
       "user.workout.running.history.noGpsQuality",
@@ -32,7 +34,7 @@ const formatGpsQuality = (score, t) => {
 };
 
 const formatRunningCalories = (calories = 0) =>
-  `${Math.round(Math.max(0, Number(calories) || 0))} kcal`;
+  `${Math.round(Math.max(0, toNumber(calories) || 0))} kcal`;
 
 const RunningHistoryPage = () => {
   const { t } = useTranslation();
@@ -113,7 +115,7 @@ const RunningHistoryPage = () => {
           </Card>
         ) : (
           <div className="space-y-3">
-            {sessions.map((session) => (
+            {map(sessions, (session) => (
               <Link
                 key={session.workoutSessionId}
                 to={`/user/workout/running/${session.workoutSessionId}`}

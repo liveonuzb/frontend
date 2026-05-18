@@ -60,8 +60,8 @@ describe("DataGrid", () => {
     window.history.pushState(null, "", "/");
   });
 
-  it("shows coach grid toolbar with saved views and column visibility", () => {
-    window.history.pushState(null, "", "/coach/payments");
+  it("shows grid toolbar with saved views and column visibility", () => {
+    window.history.pushState(null, "", "/admin/payments");
 
     render(<TestGrid data={[{ name: "Ali" }, { name: "Vali" }]} />);
 
@@ -72,7 +72,7 @@ describe("DataGrid", () => {
   });
 
   it("shows a clear empty state", () => {
-    window.history.pushState(null, "", "/coach/payments");
+    window.history.pushState(null, "", "/admin/payments");
 
     render(<TestGrid data={[]} />);
 

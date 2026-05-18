@@ -7,7 +7,6 @@ import PageTransition from "@/components/page-transition";
 import StrippedCalendar from "@/components/stripped-calendar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import ConnectedCoachBanner from "./connected-coach-banner.jsx";
 import CalorieGaugeWidget from "./calorie-gauge-widget.jsx";
 import MealsWidget from "./meals-widget.jsx";
 import WaterWidget from "./water-widget.jsx";
@@ -15,8 +14,6 @@ import MoodWidget from "./mood-widget.jsx";
 import BmiWidget from "./bmi-widget.jsx";
 import WeightWidget from "./weight-widget.jsx";
 import WorkoutWidget from "./workout-widget.jsx";
-import CoachInvitationsSection from "./coach-invitations-section.jsx";
-import CoachActivitySection from "./coach-activity-section.jsx";
 import MoodReminderDrawer from "./mood-reminder-drawer.jsx";
 import StreakReminderDrawer from "./streak-reminder-drawer.jsx";
 import StreakRestoreDrawer from "./streak-restore-drawer.jsx";
@@ -179,10 +176,7 @@ const DashboardContainer = () => {
                 onRetry={refetchDashboard}
               />
             ) : null}
-            <ConnectedCoachBanner user={user} />
-            <CoachInvitationsSection />
             <ChallengeInvitationsSection />
-            <CoachActivitySection user={user} />
             <div className="grid grid-cols-1 gap-4">
               <div
                 data-testid="dashboard-top-card-row"

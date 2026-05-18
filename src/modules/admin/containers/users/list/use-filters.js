@@ -12,12 +12,13 @@ import {
   makeAdminTextActiveFilter,
 } from "@/modules/admin/components/admin-filter-utils.js";
 
+import { filter, trim } from "lodash";
+
 const DEFAULT_PAGE_SIZE = 10;
 
 const ROLE_OPTIONS = [
   { value: "all", label: "Barcha rollar" },
   { value: "USER", label: "User" },
-  { value: "COACH", label: "Coach" },
   { value: "SUPER_ADMIN", label: "Super Admin" },
   { value: "CONTENT_MANAGER", label: "Content manager" },
   { value: "SUPPORT", label: "Support" },
@@ -41,14 +42,6 @@ const PREMIUM_OPTIONS = [
   { value: "cancelled", label: "Bekor qilingan" },
 ];
 
-const COACH_STATUS_OPTIONS = [
-  { value: "all", label: "Barcha coach status" },
-  { value: "none", label: "Coach emas" },
-  { value: "pending", label: "Kutilmoqda" },
-  { value: "approved", label: "Tasdiqlangan" },
-  { value: "rejected", label: "Rad etilgan" },
-];
-
 export const useUserFilters = () => {
   const [nameFilter, setNameFilter] = useQueryState(
     "name",
@@ -59,7 +52,7 @@ export const useUserFilters = () => {
     parseAsStringEnum(ADMIN_TEXT_OPERATORS).withDefault("contains"),
   );
   const [isNameFilterVisible, setIsNameFilterVisible] = React.useState(
-    () => nameFilter.trim() !== "",
+    () => trim(nameFilter) !== "",
   );
 
   const [search, setSearch] = useQueryState(
@@ -67,7 +60,7 @@ export const useUserFilters = () => {
     parseAsString.withDefault(""),
   );
   const [isSearchVisible, setIsSearchVisible] = React.useState(
-    () => search.trim() !== "",
+    () => trim(search) !== "",
   );
 
   const [roleFilter, setRoleFilter] = useQueryState(
@@ -75,7 +68,6 @@ export const useUserFilters = () => {
     parseAsStringEnum([
       "all",
       "USER",
-      "COACH",
       "SUPER_ADMIN",
       "CONTENT_MANAGER",
       "SUPPORT",
@@ -115,26 +107,10 @@ export const useUserFilters = () => {
     parseAsStringEnum(ADMIN_SELECT_OPERATORS).withDefault("is"),
   );
 
-  const [coachStatusFilter, setCoachStatusFilter] = useQueryState(
-    "coachStatus",
-    parseAsStringEnum([
-      "all",
-      "none",
-      "pending",
-      "approved",
-      "rejected",
-    ]).withDefault("all"),
-  );
-  const [coachStatusOperator, setCoachStatusOperator] = useQueryState(
-    "coachStatusOp",
-    parseAsStringEnum(ADMIN_SELECT_OPERATORS).withDefault("is"),
-  );
-
   const [visibleFilters, setVisibleFilters] = React.useState(() => ({
     role: roleFilter !== "all",
     status: statusFilter !== "all",
     premium: premiumFilter !== "all",
-    coachStatus: coachStatusFilter !== "all",
   }));
 
   const [pageQuery, setPageQuery] = useQueryState(
@@ -210,19 +186,12 @@ export const useUserFilters = () => {
         defaultOperator: "is",
         options: PREMIUM_OPTIONS,
       },
-      {
-        label: "Coach status",
-        key: "coachStatus",
-        type: "select",
-        defaultOperator: "is",
-        options: COACH_STATUS_OPTIONS,
-      },
     ],
     [],
   );
 
   const activeFilters = React.useMemo(() => {
-    return [
+    return filter([
       makeAdminTextActiveFilter({
         field: "name",
         value: nameFilter,
@@ -253,16 +222,8 @@ export const useUserFilters = () => {
         operator: premiumOperator,
         visible: visibleFilters.premium,
       }),
-      makeAdminSelectActiveFilter({
-        field: "coachStatus",
-        value: coachStatusFilter,
-        operator: coachStatusOperator,
-        visible: visibleFilters.coachStatus,
-      }),
-    ].filter(Boolean);
+    ], Boolean);
   }, [
-    coachStatusFilter,
-    coachStatusOperator,
     isNameFilterVisible,
     isSearchVisible,
     nameFilter,
@@ -289,7 +250,6 @@ export const useUserFilters = () => {
           role: isVisible("role"),
           status: isVisible("status"),
           premium: isVisible("premium"),
-          coachStatus: isVisible("coachStatus"),
         });
 
         void setNameFilter(getValue("name", ""));
@@ -301,14 +261,10 @@ export const useUserFilters = () => {
         void setStatusOperator(getOperator("status", "is"));
         void setPremiumFilter(getValue("premium", "all"));
         void setPremiumOperator(getOperator("premium", "is"));
-        void setCoachStatusFilter(getValue("coachStatus", "all"));
-        void setCoachStatusOperator(getOperator("coachStatus", "is"));
         void setPageQuery("1");
       });
     },
     [
-      setCoachStatusFilter,
-      setCoachStatusOperator,
       setNameFilter,
       setNameOperator,
       setPageQuery,
@@ -354,8 +310,6 @@ export const useUserFilters = () => {
     statusOperator,
     premiumFilter,
     premiumOperator,
-    coachStatusFilter,
-    coachStatusOperator,
     sortBy,
     sortDir,
     sorting,

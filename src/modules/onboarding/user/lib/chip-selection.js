@@ -1,14 +1,15 @@
+import { filter, isArray, reduce, some, toNumber, trim, map } from "lodash";
 export const normalizeChipLabel = (value) =>
-  String(value ?? "").replace(/\s+/g, " ").trim();
+  trim(String(value ?? "").replace(/\s+/g, " "));
 
 export const normalizeChipKey = (value) =>
   normalizeChipLabel(value).toLocaleLowerCase("uz-UZ");
 
 export const normalizeCustomChips = (values = []) => {
-  if (!Array.isArray(values)) return [];
+  if (!isArray(values)) return [];
 
   const seen = new Set();
-  return values.reduce((acc, value) => {
+  return reduce(values, (acc, value) => {
     const label = normalizeChipLabel(value);
     const key = normalizeChipKey(label);
 
@@ -24,15 +25,15 @@ export const normalizeCustomChips = (values = []) => {
 
 export const hasChipLabel = (values = [], label) => {
   const key = normalizeChipKey(label);
-  return values.some((value) => normalizeChipKey(value) === key);
+  return some(values, (value) => normalizeChipKey(value) === key);
 };
 
 export const toPositiveId = (value) => {
-  const id = Number(value);
+  const id = toNumber(value);
   return Number.isInteger(id) && id > 0 ? id : null;
 };
 
 export const normalizeSelectedIds = (values = []) =>
-  Array.isArray(values)
-    ? Array.from(new Set(values.map(toPositiveId).filter((value) => value !== null)))
+  isArray(values)
+    ? Array.from(new Set(filter(map(values, toPositiveId), (value) => value !== null)))
     : [];

@@ -6,7 +6,7 @@ import { getOnboardingDraftApiPath } from "./onboarding-api-paths";
 /**
  * Hook for auto-saving onboarding draft to server.
  *
- * @param {string} type - "user" | "coach" | "gym" | "shop" | "food"
+ * @param {string} type - onboarding type
  * @param {object} options
  * @param {number} options.debounceMs - debounce delay (default 3000)
  * @param {boolean} options.enabled - enable auto-save (default true)

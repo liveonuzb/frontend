@@ -1,12 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import React from "react";
-import {
-  get,
-  isObject,
-  map as lodashMap,
-  trim,
-  find,
-} from "lodash";
+import { get, isObject, map as lodashMap, trim, find, values as lodashValues } from "lodash";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -48,7 +42,7 @@ const resolveLabel = (translations, fallback, language) => {
     const uz = trim(String(get(translations, "uz", "")));
     if (uz) return uz;
 
-    const first = find(Object.values(translations), (value) =>
+    const first = find(lodashValues(translations), (value) =>
       trim(String(value)),
     );
     if (first) return trim(String(first));
@@ -326,3 +320,6 @@ const useColumns = ({
 };
 
 export default useColumns;
+
+
+

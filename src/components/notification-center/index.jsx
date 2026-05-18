@@ -1,6 +1,21 @@
 /* eslint-disable react-refresh/only-export-components */
 import React from "react";
-import { sumBy, values } from "lodash";
+import {
+  sumBy,
+  values as lodashValues,
+  filter,
+  forEach,
+  includes,
+  isArray,
+  map,
+  orderBy,
+  reduce,
+  split,
+  toLower,
+  toNumber,
+  trim,
+  flatten,
+} from "lodash";
 import {
   BanknoteIcon,
   BellIcon,
@@ -12,7 +27,6 @@ import {
   FlameIcon,
   GiftIcon,
   GlassWaterIcon,
-  MessageSquareIcon,
   TargetIcon,
   TrophyIcon,
   TrendingUpIcon,
@@ -36,17 +50,13 @@ import {
   getTodayKey,
   useDailyTrackingDay,
 } from "@/hooks/app/use-daily-tracking";
-import {
-  useCoachNotificationsFeed,
-  useUserNotificationsFeed,
-} from "@/hooks/app/use-notifications";
+import { useUserNotificationsFeed } from "@/hooks/app/use-notifications";
 import {
   useAuthStore,
   useGamificationStore,
   useNotificationsStore,
 } from "@/store";
 import { PROFILE_SETTINGS_DEFAULTS } from "@/hooks/app/use-profile-settings";
-import { useProfileOverlay } from "@/modules/profile/hooks/use-profile-overlay";
 
 const LazyNotificationSettingsDrawer = React.lazy(() =>
   import("@/modules/profile/containers/profile/tabs/notifications-tab.jsx").then(
@@ -63,7 +73,7 @@ const formatTimeLabel = (value) => {
 
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return typeof value === "string" && value.trim() ? value : "Hozir";
+    return typeof value === "string" && trim(value) ? value : "Hozir";
   }
 
   const diffMs = Date.now() - date.getTime();
@@ -105,8 +115,6 @@ const resolveNotificationPresentation = (notification) => {
       return { icon: UserPlusIcon, color: "text-emerald-500" };
     case "friend_request_outgoing_summary":
       return { icon: ClockIcon, color: "text-cyan-500" };
-    case "coach_invitation":
-      return { icon: UserPlusIcon, color: "text-blue-500" };
     case "weekly_check_in":
     case "checkin_overdue":
       return {
@@ -114,35 +122,18 @@ const resolveNotificationPresentation = (notification) => {
         color: severity === "high" ? "text-red-500" : "text-violet-500",
       };
     case "check_in_submitted":
-    case "coach_check_in_submitted":
       return { icon: CalendarIcon, color: "text-emerald-500" };
-    case "coach_session_reminder":
     case "session_reminder":
       return { icon: ClockIcon, color: "text-cyan-500" };
-    case "coach_feedback":
-      return { icon: MessageSquareIcon, color: "text-violet-500" };
-    case "coach_task":
-      return {
-        icon: TargetIcon,
-        color: severity === "high" ? "text-red-500" : "text-cyan-500",
-      };
-    case "coach_plan_update":
     case "plan_update_pending":
       return { icon: UtensilsIcon, color: "text-orange-500" };
-    case "coach_connected":
-      return { icon: MessageSquareIcon, color: "text-emerald-500" };
-    case "coach_payment_due":
-    case "coach_payment_overdue":
     case "payment_overdue":
-    case "client_payment":
       return {
         icon: BanknoteIcon,
         color: severity === "high" ? "text-red-500" : "text-amber-500",
       };
-    case "coach_course_purchase":
     case "course_purchase":
       return { icon: CrownIcon, color: "text-emerald-500" };
-    case "coach_bot_error":
     case "bot_error":
       return { icon: BellIcon, color: "text-red-500" };
     case "premium_expiring":
@@ -153,24 +144,15 @@ const resolveNotificationPresentation = (notification) => {
       return { icon: TrophyIcon, color: "text-amber-500" };
     case "referral_reward":
       return { icon: GiftIcon, color: "text-emerald-500" };
-    case "client_request":
-      return { icon: UserPlusIcon, color: "text-blue-500" };
     case "sent_invitations_summary":
       return { icon: ClockIcon, color: "text-cyan-500" };
-    case "inactive_client":
-      return { icon: TrendingUpIcon, color: "text-orange-500" };
-    case "marketplace_review":
-      return {
-        icon: BellIcon,
-        color: severity === "medium" ? "text-orange-500" : "text-emerald-500",
-      };
     default:
       return { icon: BellIcon, color: "text-muted-foreground" };
   }
 };
 
 const normalizeFeedNotifications = (items = []) =>
-  items.map((notification) => {
+  map(items, (notification) => {
     const presentation = resolveNotificationPresentation(notification);
 
     return {
@@ -186,7 +168,7 @@ const normalizeFeedNotifications = (items = []) =>
 const mergeNotifications = (...groups) => {
   const itemsById = new Map();
 
-  groups.flat().forEach((item) => {
+  forEach(flatten(groups), (item) => {
     if (!item?.id) {
       return;
     }
@@ -196,62 +178,11 @@ const mergeNotifications = (...groups) => {
     }
   });
 
-  return Array.from(itemsById.values()).sort((left, right) => {
-    const leftTime = new Date(left.createdAt || 0).getTime();
-    const rightTime = new Date(right.createdAt || 0).getTime();
-    return rightTime - leftTime;
-  });
-};
-
-const useCoachNotifications = (roleKey, options = {}) => {
-  const enabled = options.enabled ?? true;
-  const {
-    items,
-    hasMore,
-    loadMore,
-    markNotificationRead,
-    markAllNotificationsRead,
-    isUpdatingNotificationState,
-  } = useCoachNotificationsFeed({ enabled });
-
-  return React.useMemo(() => {
-    const notifications =
-      normalizeFeedNotifications(items).length > 0
-        ? normalizeFeedNotifications(items)
-        : [
-            {
-              id: `${roleKey}:empty`,
-              icon: ClockIcon,
-              title: "Hozircha bildirishnoma yo'q",
-              message:
-                "Coach jarayonlari bo'yicha signal va yangilanishlar shu yerda ko'rinadi.",
-              time: "",
-              read: true,
-              color: "text-muted-foreground",
-              category: "system",
-              createdAt: new Date(0).toISOString(),
-              source: "local",
-            },
-          ];
-
-    return {
-      notifications,
-      hasMore,
-      loadMore,
-      markNotificationRead,
-      markAllNotificationsRead,
-      isUpdatingNotificationState,
-    };
-  }, [
-    enabled,
-    hasMore,
-    isUpdatingNotificationState,
-    items,
-    loadMore,
-    markAllNotificationsRead,
-    markNotificationRead,
-    roleKey,
-  ]);
+  return orderBy(
+    Array.from(itemsById.values()),
+    [(item) => new Date(item.createdAt || 0).getTime()],
+    ["desc"],
+  );
 };
 
 const useUserNotifications = (roleKey, options = {}) => {
@@ -285,18 +216,15 @@ const useUserNotifications = (roleKey, options = {}) => {
       ...PROFILE_SETTINGS_DEFAULTS,
       ...(user?.settings ?? {}),
     };
-    const mealCount = values(dayData.meals ?? {}).reduce(
-      (count, items) => count + items.length,
-      0,
-    );
-    const waterGoalMl = Number(goals.waterMl) || 0;
-    const cupSize = Number(goals.cupSize) || 250;
+    const mealCount = reduce(lodashValues(dayData.meals ?? {}), (count, items) => count + items.length, 0);
+    const waterGoalMl = toNumber(goals.waterMl) || 0;
+    const cupSize = toNumber(goals.cupSize) || 250;
     const waterConsumedMl =
-      Array.isArray(dayData.waterLog) && dayData.waterLog.length > 0
-        ? sumBy(dayData.waterLog, (entry) => Number(entry.amountMl) || cupSize)
-        : (Number(dayData.waterCups) || 0) * cupSize;
-    const stepGoal = Number(goals.steps) || 0;
-    const workoutGoal = Number(goals.workoutMinutes) || 0;
+      isArray(dayData.waterLog) && dayData.waterLog.length > 0
+        ? sumBy(dayData.waterLog, (entry) => toNumber(entry.amountMl) || cupSize)
+        : (toNumber(dayData.waterCups) || 0) * cupSize;
+    const stepGoal = toNumber(goals.steps) || 0;
+    const workoutGoal = toNumber(goals.workoutMinutes) || 0;
     const currentHour = new Date().getHours();
     const progressNotifications = [];
 
@@ -378,13 +306,13 @@ const useUserNotifications = (roleKey, options = {}) => {
       settings.pushProgress &&
       stepGoal > 0 &&
       currentHour >= 18 &&
-      (Number(dayData.steps) || 0) < stepGoal
+      (toNumber(dayData.steps) || 0) < stepGoal
     ) {
       progressNotifications.push({
         id: `${roleKey}:steps:${getTodayKey()}`,
         icon: TargetIcon,
         title: "Qadam maqsadi qolmoqda",
-        message: `${Number(dayData.steps) || 0} / ${stepGoal.toLocaleString("en-US")} qadam bajarildi.`,
+        message: `${toNumber(dayData.steps) || 0} / ${stepGoal.toLocaleString("en-US")} qadam bajarildi.`,
         time: "Bugun",
         read: false,
         color: "text-emerald-500",
@@ -399,13 +327,13 @@ const useUserNotifications = (roleKey, options = {}) => {
       settings.pushProgress &&
       workoutGoal > 0 &&
       currentHour >= 17 &&
-      (Number(dayData.workoutMinutes) || 0) < workoutGoal
+      (toNumber(dayData.workoutMinutes) || 0) < workoutGoal
     ) {
       progressNotifications.push({
         id: `${roleKey}:workout:${getTodayKey()}`,
         icon: DumbbellIcon,
         title: "Mashg'ulot hali yopilmadi",
-        message: `${Number(dayData.workoutMinutes) || 0} / ${workoutGoal} daqiqa mashg'ulot yozilgan.`,
+        message: `${toNumber(dayData.workoutMinutes) || 0} / ${workoutGoal} daqiqa mashg'ulot yozilgan.`,
         time: "Bugun",
         read: false,
         color: "text-violet-500",
@@ -475,7 +403,6 @@ const NOTIFICATION_FILTERS = [
   { value: "unread", label: "O'qilmagan" },
   { value: "friends", label: "Do'stlar" },
   { value: "challenge", label: "Challenge" },
-  { value: "coach", label: "Coach" },
   { value: "payment", label: "To'lov" },
   { value: "progress", label: "Progress" },
 ];
@@ -487,36 +414,27 @@ const resolveNotificationCategory = (notification) => {
 
   const id = String(notification?.id || "");
 
-  if (id.includes(":friend-request")) {
+  if (includes(id, ":friend-request")) {
     return "friends";
   }
 
-  if (id.includes(":challenge-")) {
+  if (includes(id, ":challenge-")) {
     return "challenge";
   }
 
   if (
-    id.includes(":coach-payment:") ||
-    id.includes(":premium-") ||
-    id.includes(":payout:")
+    includes(id, ":premium-") ||
+    includes(id, ":payout:")
   ) {
     return "payment";
   }
 
   if (
-    id.includes(":coach-") ||
-    id.includes(":client:") ||
-    id.includes(":session:")
-  ) {
-    return "coach";
-  }
-
-  if (
-    id.includes(":water:") ||
-    id.includes(":meal") ||
-    id.includes(":steps:") ||
-    id.includes(":workout:") ||
-    id.includes(":streak")
+    includes(id, ":water:") ||
+    includes(id, ":meal") ||
+    includes(id, ":steps:") ||
+    includes(id, ":workout:") ||
+    includes(id, ":streak")
   ) {
     return "progress";
   }
@@ -526,14 +444,9 @@ const resolveNotificationCategory = (notification) => {
 
 export const useNotificationCenterModel = () => {
   const navigate = useNavigate();
-  const { openProfile } = useProfileOverlay();
   const activeRole = useAuthStore((state) => state.activeRole);
   const isUser = activeRole === "USER";
-  const isCoach = activeRole === "COACH";
-  const roleKey = String(activeRole || "USER").toLowerCase();
-  const coachNotificationsFeed = useCoachNotifications(roleKey, {
-    enabled: isCoach,
-  });
+  const roleKey = toLower(String(activeRole || "USER"));
   const userNotificationsFeed = useUserNotifications(roleKey, {
     enabled: isUser,
   });
@@ -560,9 +473,7 @@ export const useNotificationCenterModel = () => {
     }),
     [roleKey],
   );
-  const activeFeed = isCoach
-    ? coachNotificationsFeed
-    : isUser
+  const activeFeed = isUser
       ? userNotificationsFeed
       : adminNotifications;
   const notifications = activeFeed.notifications;
@@ -590,32 +501,16 @@ export const useNotificationCenterModel = () => {
         }
       }
 
-      if (notification.id.includes(":coach-connected:")) {
-        openProfile();
-        return;
-      }
-
-      if (notification.id.includes(":coach-plan-update:")) {
-        navigate("/user/nutrition", {
-          state: {
-            openMealPlansDrawer: true,
-            planFilter: "coach",
-            planId: notification.id.split(":").pop(),
-          },
-        });
-        return;
-      }
-
-      if (notification.id.includes(":weekly-check-in:")) {
+      if (includes(notification.id, ":weekly-check-in:")) {
         navigate("/user/dashboard", {
           state: {
-            openWeeklyCheckInId: notification.id.split(":").pop(),
+            openWeeklyCheckInId: split(notification.id, ":").pop(),
           },
         });
         return;
       }
 
-      if (notification.id.includes(":challenge-invitation:")) {
+      if (includes(notification.id, ":challenge-invitation:")) {
         navigate(notification.target || "/user/challenges");
         return;
       }
@@ -624,19 +519,17 @@ export const useNotificationCenterModel = () => {
         navigate(notification.target);
       }
     },
-    [activeFeed, markRead, navigate, openProfile],
+    [activeFeed, markRead, navigate],
   );
 
   React.useEffect(() => {
     setInitialNotifications(notifications);
   }, [notifications, setInitialNotifications]);
 
-  const unreadCount = storedNotifications.filter(
-    (notification) => !notification.read,
-  ).length;
+  const unreadCount = filter(storedNotifications, (notification) => !notification.read).length;
   const filteredNotifications = React.useMemo(
     () =>
-      storedNotifications.filter((notification) => {
+      filter(storedNotifications, (notification) => {
         if (activeFilter === "all") {
           return true;
         }
@@ -730,9 +623,8 @@ export const NotificationFeedPanel = ({
           </button>
         ) : null}
       </div>
-
       <div className="flex items-center gap-2 overflow-x-auto py-3">
-        {NOTIFICATION_FILTERS.map((filter) => (
+        {map(NOTIFICATION_FILTERS, (filter) => (
           <button
             key={filter.value}
             type="button"
@@ -748,14 +640,13 @@ export const NotificationFeedPanel = ({
           </button>
         ))}
       </div>
-
       <div
         className={cn(
           "min-h-0 flex-1 space-y-2 overflow-y-auto pr-1",
           contentClassName,
         )}
       >
-        {filteredNotifications.map((notification) => (
+        {map(filteredNotifications, (notification) => (
           <button
             key={notification.id}
             type="button"
@@ -810,7 +701,6 @@ export const NotificationFeedPanel = ({
           </div>
         ) : null}
       </div>
-
       {showSettingsAction && onOpenSettings ? (
         <div className="pt-3">
           <Button
@@ -831,7 +721,7 @@ const NotificationCenter = ({ className, ...props }) => {
   const [open, setOpen] = React.useState(false);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const activeRole = useAuthStore((state) => state.activeRole);
-  const canOpenSettings = activeRole === "USER" || activeRole === "COACH";
+  const canOpenSettings = activeRole === "USER";
   const model = useNotificationCenterModel();
 
   return (
@@ -892,7 +782,6 @@ const NotificationCenter = ({ className, ...props }) => {
           <LazyNotificationSettingsDrawer
             open={settingsOpen}
             onOpenChange={setSettingsOpen}
-            isCoach={activeRole === "COACH"}
           />
         </React.Suspense>
       ) : null}
@@ -901,3 +790,4 @@ const NotificationCenter = ({ className, ...props }) => {
 };
 
 export default NotificationCenter;
+

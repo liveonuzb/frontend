@@ -1,8 +1,8 @@
 import React from "react";
-import { find, get, isArray } from "lodash";
+import { find, get, isArray, toNumber } from "lodash";
 import { Link } from "react-router";
 import { ArrowRightIcon, DumbbellIcon, RouteIcon } from "lucide-react";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 import { useRunningStatsSummary } from "@/hooks/app/use-running-sessions";
 import { getApiResponseData } from "@/lib/api-response";
 import { formatRunningDistance } from "@/lib/running-metrics";
@@ -50,8 +50,8 @@ export default function WorkoutWidget({
     );
   }, [activePlanOverride, payload, plans]);
   const hasRunningStats =
-    Number(get(runningStats, "totalRuns", 0)) > 0 ||
-    Number(get(runningStats, "totalDistanceMeters", 0)) > 0;
+    toNumber(get(runningStats, "totalRuns", 0)) > 0 ||
+    toNumber(get(runningStats, "totalDistanceMeters", 0)) > 0;
   const runningSummary = hasRunningStats ? (
     interactive ? (
       <Link
@@ -65,7 +65,7 @@ export default function WorkoutWidget({
           <span className="min-w-0">
             <span className="block text-[11px] font-bold leading-tight">Running</span>
             <span className="block text-[10px] text-muted-foreground">
-              {Number(get(runningStats, "totalRuns", 0))} runs
+              {toNumber(get(runningStats, "totalRuns", 0))} runs
             </span>
           </span>
         </span>
@@ -82,7 +82,7 @@ export default function WorkoutWidget({
           <span className="min-w-0">
             <span className="block text-[11px] font-bold leading-tight">Running</span>
             <span className="block text-[10px] text-muted-foreground">
-              {Number(get(runningStats, "totalRuns", 0))} runs
+              {toNumber(get(runningStats, "totalRuns", 0))} runs
             </span>
           </span>
         </span>

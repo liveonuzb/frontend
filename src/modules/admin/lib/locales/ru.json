@@ -3,14 +3,11 @@
     "dashboard": {
       "title": "Панель администратора",
       "totalUsers": "Пользователи",
-      "totalCoaches": "Тренеры",
-      "pendingCoaches": "Ожидающие тренеры",
       "totalFoods": "База продуктов",
       "registrationTrend": "Динамика регистраций",
       "recentSubscriptions": "Последние подписки",
       "recentActivity": "Последняя активность",
       "pendingActions": "Ожидающие действия",
-      "pendingCoachVerifications": "Верификация тренеров",
       "unresolvedReports": "Нерешённые отчёты",
       "quickActions": "Быстрые действия",
       "newUser": "Новый пользователь",
@@ -50,14 +47,6 @@
       "sessions": "Сессии",
       "subscription": "Подписка",
       "assignSubscription": "Назначить подписку"
-    },
-    "coaches": {
-      "title": "Тренеры",
-      "approve": "Одобрить",
-      "reject": "Отклонить",
-      "pending": "Ожидание",
-      "approved": "Одобрен",
-      "clients": "Клиенты"
     },
     "foods": {
       "title": "Продукты",
@@ -134,7 +123,6 @@
     "sidebar": {
       "dashboard": "Панель",
       "users": "Пользователи",
-      "coaches": "Тренеры",
       "foods": "Продукты",
       "foodCategories": "Категории продуктов",
       "workouts": "Упражнения",

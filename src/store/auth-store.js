@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { includes } from "lodash";
+import { includes, find, isArray } from "lodash";
 import { normalizeRoles } from "@/lib/roles";
 
 const defaultRoles = [];
@@ -11,7 +11,6 @@ const rolePriority = [
   "FINANCE",
   "GROWTH",
   "READONLY_ADMIN",
-  "COACH",
   "USER",
 ];
 
@@ -20,7 +19,7 @@ const getNextActiveRole = (roles, currentRole) => {
     return currentRole;
   }
 
-  const prioritizedRole = rolePriority.find((role) => includes(roles, role));
+  const prioritizedRole = find(rolePriority, (role) => includes(roles, role));
   if (prioritizedRole) {
     return prioritizedRole;
   }
@@ -173,7 +172,7 @@ const useAuthStore = create()(
       },
 
       initializeUser: (userData) => {
-        const hasUserRoles = Array.isArray(userData?.roles);
+        const hasUserRoles = isArray(userData?.roles);
         const nextRoles = normalizeRoles(
           hasUserRoles ? userData.roles : get().roles,
         );

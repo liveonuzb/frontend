@@ -1,5 +1,5 @@
 "use client";
-import { filter, map, includes } from "lodash";
+import { filter, map, includes, toLower } from "lodash";
 import { useMemo, useState } from "react"
 
 import { cn } from "@/lib/utils"
@@ -28,7 +28,7 @@ function DataGridColumnFilter(
   const filteredOptions = useMemo(() => {
     if (!searchQuery) return options
     return filter(options, (option) =>
-      includes(option.label.toLowerCase(), searchQuery.toLowerCase()));
+      includes(toLower(option.label), toLower(searchQuery)));
   }, [options, searchQuery])
 
   return (

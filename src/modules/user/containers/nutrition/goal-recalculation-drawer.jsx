@@ -25,6 +25,8 @@ import {
   NutritionDrawerContent,
 } from "./nutrition-drawer-layout.jsx";
 
+import { map, toNumber as lodashToNumber } from "lodash";
+
 const STEPS = [
   "Joriy vazn",
   "Maqsadli vazn",
@@ -51,7 +53,7 @@ const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 const roundToStep = (value, step) => Math.round(value / step) * step;
 
 const toNumber = (value, fallback) => {
-  const number = Number(value);
+  const number = lodashToNumber(value);
   return Number.isFinite(number) && number > 0 ? number : fallback;
 };
 
@@ -204,7 +206,7 @@ export default function GoalRecalculationDrawer({ open, onOpenChange }) {
 
         <NutritionDrawerBody className="space-y-5 pb-5">
           <div className="grid grid-cols-4 gap-2">
-            {STEPS.map((label, index) => (
+            {map(STEPS, (label, index) => (
               <button
                 key={label}
                 type="button"
@@ -266,7 +268,7 @@ export default function GoalRecalculationDrawer({ open, onOpenChange }) {
                 <SelectValue placeholder="Faollik darajasi" />
               </SelectTrigger>
               <SelectContent>
-                {ACTIVITY_OPTIONS.map((option) => (
+                {map(ACTIVITY_OPTIONS, (option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
@@ -285,7 +287,7 @@ export default function GoalRecalculationDrawer({ open, onOpenChange }) {
                   <SelectValue placeholder="Ovqatlanish uslubi" />
                 </SelectTrigger>
                 <SelectContent>
-                  {EATING_STYLE_OPTIONS.map((option) => (
+                  {map(EATING_STYLE_OPTIONS, (option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>

@@ -3,6 +3,8 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import CalorieGaugeWidget from "./calorie-gauge-widget.jsx";
 
+import { toLower } from "lodash";
+
 describe("CalorieGaugeWidget", () => {
   it("renders the SVG gauge without hiding it on mobile breakpoints", () => {
     render(
@@ -15,7 +17,7 @@ describe("CalorieGaugeWidget", () => {
 
     const gauge = screen.getByRole("img", { name: "Bugungi calorie gauge" });
 
-    expect(gauge.tagName.toLowerCase()).toBe("svg");
+    expect(toLower(gauge.tagName)).toBe("svg");
     expect(gauge.parentElement).not.toHaveClass("hidden");
   });
 });

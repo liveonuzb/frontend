@@ -1,3 +1,4 @@
+import { trim } from "lodash";
 const fallbackBaseURL = import.meta.env.DEV
   ? "http://localhost:3000/api/v1"
   : "/api/v1";
@@ -6,27 +7,27 @@ const runtimeConfig = window.__APP_CONFIG__ ?? {};
 
 const runtimeBaseURL =
   typeof runtimeConfig.VITE_API_BASE_URL === "string"
-    ? runtimeConfig.VITE_API_BASE_URL.trim()
+    ? trim(runtimeConfig.VITE_API_BASE_URL)
     : "";
 
 const runtimeMapStyleUrl =
   typeof runtimeConfig.VITE_MAP_STYLE_URL === "string"
-    ? runtimeConfig.VITE_MAP_STYLE_URL.trim()
+    ? trim(runtimeConfig.VITE_MAP_STYLE_URL)
     : "";
 
 const runtimeMapStyleUrlLight =
   typeof runtimeConfig.VITE_MAP_STYLE_URL_LIGHT === "string"
-    ? runtimeConfig.VITE_MAP_STYLE_URL_LIGHT.trim()
+    ? trim(runtimeConfig.VITE_MAP_STYLE_URL_LIGHT)
     : "";
 
 const runtimeMapStyleUrlDark =
   typeof runtimeConfig.VITE_MAP_STYLE_URL_DARK === "string"
-    ? runtimeConfig.VITE_MAP_STYLE_URL_DARK.trim()
+    ? trim(runtimeConfig.VITE_MAP_STYLE_URL_DARK)
     : "";
 
 const runtimeRunningFeatureEnabled =
   typeof runtimeConfig.VITE_RUNNING_FEATURE_ENABLED === "string"
-    ? runtimeConfig.VITE_RUNNING_FEATURE_ENABLED.trim()
+    ? trim(runtimeConfig.VITE_RUNNING_FEATURE_ENABLED)
     : "";
 
 const resolveBooleanFlag = (value, fallback = true) => {

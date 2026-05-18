@@ -4,6 +4,8 @@ import useLanguageStore from "@/store/language-store";
 import { config } from "@/config.js";
 import { normalizeApiPath } from "./normalize-api-path.js";
 
+import { some, includes } from "lodash";
+
 let refreshPromise = null;
 
 const AUTH_RETRY_BYPASS_PATHS = [
@@ -15,7 +17,7 @@ const AUTH_RETRY_BYPASS_PATHS = [
 
 export const shouldSkipAuthRetry = (url) => {
   const path = String(url || "");
-  return AUTH_RETRY_BYPASS_PATHS.some((authPath) => path.includes(authPath));
+  return some(AUTH_RETRY_BYPASS_PATHS, (authPath) => includes(path, authPath));
 };
 
 /* ================= AXIOS INSTANCE ================= */

@@ -1,12 +1,12 @@
 import React from "react";
-import { get } from "lodash";
+import { get, toNumber } from "lodash";
 import { Badge } from "@/components/ui/badge";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import ActionsMenu from "./actions-menu.jsx";
 
 const formatPrice = (price) => {
   if (!price && price !== 0) return "-";
-  return Number(price).toLocaleString("uz-UZ") + " UZS";
+  return toNumber(price).toLocaleString("uz-UZ") + " UZS";
 };
 
 export const useColumns = ({ canManage, handleToggleActive, onEdit, onDelete }) => {
@@ -63,7 +63,7 @@ export const useColumns = ({ canManage, handleToggleActive, onEdit, onDelete }) 
           const price = get(plan, "price");
           const originalPrice = get(plan, "originalPrice");
 
-          if (originalPrice && Number(originalPrice) > Number(price)) {
+          if (originalPrice && toNumber(originalPrice) > toNumber(price)) {
             return (
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground line-through">

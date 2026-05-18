@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import React from "react";
-import { get, isArray, trim } from "lodash";
+import { get, isArray, trim, map } from "lodash";
 import {
   MoreHorizontalIcon,
   PencilIcon,
@@ -103,7 +103,7 @@ const MealPlanFormDrawer = ({ mode, template, open, onOpenChange }) => {
       );
       setGoal(template?.goal || "maintenance");
       setDietaryTags(
-        Array.isArray(template?.dietaryTags) ? template.dietaryTags : [],
+        isArray(template?.dietaryTags) ? template.dietaryTags : [],
       );
       setIsActive(template?.isActive !== false);
       setWeeklyKanban(template?.weeklyKanban || {});
@@ -301,7 +301,7 @@ const ListPage = () => {
   });
   const deleteMutation = useDeleteQuery({ queryKey: QUERY_KEY });
   const templates = getPayload(data);
-  const items = Array.isArray(templates) ? templates : [];
+  const items = isArray(templates) ? templates : [];
 
   React.useEffect(() => {
     setBreadcrumbs([{ url: "/admin/meal-plans/list", title: "Meal plans" }]);
@@ -355,21 +355,19 @@ const ListPage = () => {
           ) : null}
         </div>
       </div>
-
       <Input
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder="Meal plan qidirish"
         className="max-w-sm"
       />
-
       {isLoading ? (
         <div className="rounded-2xl border p-6 text-sm text-muted-foreground">
           Yuklanmoqda...
         </div>
       ) : items.length ? (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {items.map((template) => (
+          {map(items, (template) => (
             <article
               key={template.id}
               className="rounded-2xl border bg-card p-4 shadow-sm"
@@ -423,7 +421,7 @@ const ListPage = () => {
                 <Badge variant="outline">
                   {template.totalMeals ?? 0} meals
                 </Badge>
-                {(template.dietaryTags ?? []).map((tag) => (
+                {map((template.dietaryTags ?? []), (tag) => (
                   <Badge key={tag} variant="outline">
                     {tagLabel(tag)}
                   </Badge>
@@ -437,7 +435,6 @@ const ListPage = () => {
           Meal plan shabloni topilmadi.
         </div>
       )}
-
       <MealPlanFormDrawer
         mode={drawerState.mode}
         template={drawerState.template}

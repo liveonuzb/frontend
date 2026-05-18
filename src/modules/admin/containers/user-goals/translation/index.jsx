@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router";
-import { get, trim } from "lodash";
+import { get, trim, filter, find, fromPairs, map, values as lodashValues, toPairs } from "lodash";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -41,9 +41,7 @@ const TranslationPage = () => {
   });
   const languages = React.useMemo(
     () =>
-      get(languagesData, "data.data", []).filter(
-        (language) => language.isActive,
-      ),
+      filter(get(languagesData, "data.data", []), (language) => language.isActive),
     [languagesData],
   );
   const form = useForm({
@@ -55,45 +53,39 @@ const TranslationPage = () => {
   React.useEffect(() => {
     if (!item) return;
     form.reset(
-      Object.fromEntries(
-        languages.map((language) => [
-          language.code,
-          {
-            name: get(item, `translations.${language.code}`, ""),
-            description: get(
-              item,
-              `descriptionTranslations.${language.code}`,
-              "",
-            ),
-          },
-        ]),
-      ),
+      fromPairs(map(languages, (language) => [
+        language.code,
+        {
+          name: get(item, `translations.${language.code}`, ""),
+          description: get(
+            item,
+            `descriptionTranslations.${language.code}`,
+            "",
+          ),
+        },
+      ])),
     );
   }, [form, item, languages]);
 
   const close = () => navigate("/admin/user-goals/list");
 
   const onSubmit = async (values) => {
-    const translations = Object.fromEntries(
-      Object.entries(values).map(([language, value]) => [
-        language,
-        value?.name || "",
-      ]),
-    );
-    const descriptionTranslations = Object.fromEntries(
-      Object.entries(values).map(([language, value]) => [
-        language,
-        value?.description || "",
-      ]),
-    );
+    const translations = fromPairs(map(toPairs(values), ([language, value]) => [
+      language,
+      value?.name || "",
+    ]));
+    const descriptionTranslations = fromPairs(map(toPairs(values), ([language, value]) => [
+      language,
+      value?.description || "",
+    ]));
     await mutation.mutateAsync({
       url: `/admin/user-goals/${id}`,
       attributes: {
         translations,
         descriptionTranslations,
-        name: trim(Object.values(translations).find(Boolean) || item?.name || ""),
+        name: trim(find(lodashValues(translations), Boolean) || item?.name || ""),
         description: trim(
-          Object.values(descriptionTranslations).find(Boolean) ||
+          find(lodashValues(descriptionTranslations), Boolean) ||
             item?.description ||
             "",
         ),
@@ -163,3 +155,6 @@ const TranslationPage = () => {
 };
 
 export default TranslationPage;
+
+
+

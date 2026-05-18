@@ -10,6 +10,8 @@ import {
   metabolismChecklist,
 } from "../lib/personalization.js";
 
+import { every, map, filter } from "lodash";
+
 const getQueryResultMock = vi.hoisted(() => vi.fn());
 const postQueryResultMock = vi.hoisted(() => vi.fn());
 const navigateMock = vi.hoisted(() => vi.fn());
@@ -70,9 +72,7 @@ describe("PersonalizingContainer", () => {
 
   it("maps metabolism progress into completed, active, and pending states", () => {
     const stepStates = buildLoadingStepStates(50, metabolismChecklist);
-    const completedKeys = stepStates
-      .filter((step) => step.status === "completed")
-      .map((step) => step.key);
+    const completedKeys = map(filter(stepStates, (step) => step.status === "completed"), (step) => step.key);
 
     expect(completedKeys).toEqual(["bmrFormula", "metabolicAge"]);
     expect(stepStates[2]).toMatchObject({
@@ -85,7 +85,8 @@ describe("PersonalizingContainer", () => {
     });
 
     expect(
-      buildLoadingStepStates(100, metabolismChecklist).every(
+      every(
+        buildLoadingStepStates(100, metabolismChecklist),
         (step) => step.status === "completed",
       ),
     ).toBe(true);

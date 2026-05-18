@@ -12,6 +12,8 @@ import PageAura from "../../components/page-aura.jsx";
 import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
 import OnboardingSelectCard from "../../components/onboarding-select-card.jsx";
 
+import { find, map } from "lodash";
+
 const getOptions = (t) => [
   {
     value: "2",
@@ -52,7 +54,7 @@ const Index = () => {
 
   useOnboardingAutoSave("user", "meal-frequency");
   const selectedOption =
-    options.find((option) => option.value === mealFrequency) ?? options[1];
+    find(options, (option) => option.value === mealFrequency) ?? options[1];
   const hasSelection = Boolean(mealFrequency);
 
   const handleSelect = (value) => {
@@ -85,13 +87,12 @@ const Index = () => {
   return (
     <div className="relative flex h-full min-h-0 max-h-full flex-1 flex-col overflow-hidden px-5 pt-3 md:pt-8">
       <PageAura tone={selectedOption.tone} />
-
       <div className="relative z-10 flex h-full min-h-0 w-full flex-1 flex-col">
         <OnboardingQuestion question={t("onboarding.mealFrequency.question")} />
 
         <div className="min-h-0 flex-1 overflow-y-auto py-4">
           <div className="flex min-h-full flex-col justify-center gap-3 md:mx-auto md:max-w-2xl md:gap-4">
-            {options.map((option, index) => {
+            {map(options, (option, index) => {
               const isActive = mealFrequency === option.value;
 
               return (

@@ -22,6 +22,8 @@ import {
   updateMealIngredient,
 } from "./meal-ingredients.js";
 
+import { map } from "lodash";
+
 const MacroSummary = ({ totals, grams }) => (
   <div className="rounded-3xl border bg-card p-3">
     <div className="flex items-center justify-between gap-3">
@@ -213,7 +215,7 @@ const MealIngredientsEditorDrawer = ({
 
               {normalizedIngredients.length ? (
                 <div className="space-y-2">
-                  {normalizedIngredients.map((ingredient) => (
+                  {map(normalizedIngredients, (ingredient) => (
                     <IngredientRow
                       key={ingredient.id}
                       ingredient={ingredient}
@@ -241,7 +243,6 @@ const MealIngredientsEditorDrawer = ({
           </DrawerFooter>
         </NutritionDrawerContent>
       </Drawer>
-
       <IngredientEditDrawer
         open={Boolean(ingredientEditor)}
         mode={ingredientEditor?.mode || "edit"}

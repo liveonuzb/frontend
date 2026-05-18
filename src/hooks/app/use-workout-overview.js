@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, isArray, toNumber } from "lodash";
 import { useGetQuery } from "@/hooks/api";
 
 export const WORKOUT_OVERVIEW_QUERY_KEY = ["user", "workout", "overview"];
@@ -20,16 +20,16 @@ const resolveResponseData = (response, fallback = defaultWorkoutOverview) =>
 
 const normalizeWorkoutOverview = (payload = {}) => ({
   weeklyStats: {
-    count: Number(payload.weeklyStats?.count ?? 0) || 0,
-    calories: Number(payload.weeklyStats?.calories ?? 0) || 0,
-    duration: Number(payload.weeklyStats?.duration ?? 0) || 0,
+    count: toNumber(payload.weeklyStats?.count ?? 0) || 0,
+    calories: toNumber(payload.weeklyStats?.calories ?? 0) || 0,
+    duration: toNumber(payload.weeklyStats?.duration ?? 0) || 0,
   },
   personalRecordCount:
-    Number(payload.personalRecordCount ?? payload.personalRecords?.length ?? 0) || 0,
-  personalRecords: Array.isArray(payload.personalRecords)
+    toNumber(payload.personalRecordCount ?? payload.personalRecords?.length ?? 0) || 0,
+  personalRecords: isArray(payload.personalRecords)
     ? payload.personalRecords
     : [],
-  recentWorkoutDays: Array.isArray(payload.recentWorkoutDays)
+  recentWorkoutDays: isArray(payload.recentWorkoutDays)
     ? payload.recentWorkoutDays
     : [],
 });

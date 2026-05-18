@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAppModeStore, APP_MODES } from "@/store";
 
+import { find, map } from "lodash";
+
 const MODES = [
   {
     value: APP_MODES.FOCUS,
@@ -63,7 +65,7 @@ const SelectModePage = () => {
   const { mode, setMode } = useAppModeStore();
   const [selected, setSelected] = useState(mode || MODES[0].value);
 
-  const active = MODES.find((m) => m.value === selected) ?? MODES[0];
+  const active = find(MODES, (m) => m.value === selected) ?? MODES[0];
   const returnTo = location.state?.returnTo;
 
   const handleContinue = () => {
@@ -109,7 +111,6 @@ const SelectModePage = () => {
           transition={{ duration: 0.4, ease: "easeOut", delay: 0.04 }}
         />
       </div>
-
       <div className="relative z-10 mx-auto flex h-full w-full max-w-lg flex-1 flex-col justify-center">
         <div className="flex flex-col items-center text-center">
           <h1 className="text-2xl font-bold leading-tight md:text-3xl">
@@ -139,7 +140,7 @@ const SelectModePage = () => {
         </div>
 
         <div className="flex flex-col gap-2.5 md:gap-3">
-          {MODES.map((item) => {
+          {map(MODES, (item) => {
             const isActive = selected === item.value;
             return (
               <motion.button

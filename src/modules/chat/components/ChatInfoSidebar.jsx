@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { filter, find, some, toPairs } from "lodash";
+import { filter, some, toPairs, map, split } from "lodash";
 import { Button } from "@/components/ui/button";
 import {
     XIcon,
@@ -25,20 +25,11 @@ import {
     ChevronRightIcon,
     CalendarIcon as LucideCalendar,
     ArrowLeftIcon,
-    StickyNoteIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDailyTrackingDay, getTodayKey } from "@/hooks/app/use-daily-tracking";
 import { useChatStore } from "@/store";
-import {
-    useCoachClientDetail,
-    useCoachClients,
-    useCoachClientSummary,
-    COACH_CLIENTS_QUERY_KEY,
-} from "@/hooks/app/use-coach";
-import { usePatchQuery } from "@/hooks/api";
-import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useProfileOverlay } from "@/modules/profile/hooks/use-profile-overlay";
@@ -57,99 +48,11 @@ const PAYMENT_LABELS = {
     current: "Joyida",
 };
 
-const parseDate = (value) => {
-    if (!value) return null;
-    const parsed = new Date(value);
-    return Number.isNaN(parsed.getTime()) ? null : parsed;
-};
-
-const formatContextDate = (value) => {
-    const parsed = parseDate(value);
-    if (!parsed) return value || "-";
-
-    return new Intl.DateTimeFormat("uz-UZ", {
-        day: "2-digit",
-        month: "short",
-    }).format(parsed);
-};
-
-const countByStatus = (items = [], status) =>
-    filter(items, item => String(item.status || "").toLowerCase() === status).length;
-
-const resolveLastCoachAction = (detail) => {
-    const feedback = detail?.feedback?.[0];
-    if (feedback) {
-        return {
-            label: feedback.title || feedback.message || "Feedback",
-            date: feedback.createdAt,
-        };
-    }
-
-    const task = detail?.tasks?.[0];
-    if (task) return { label: task.title, date: task.createdAt };
-
-    const checkIn = detail?.weeklyCheckIns?.[0];
-    if (checkIn) return { label: checkIn.title, date: checkIn.createdAt };
-
-    return null;
-};
-
-const resolveLatestMeasurement = (measurements = []) =>
-    measurements.length > 0 ? measurements[measurements.length - 1] : null;
-
-const buildClientContext = (detail, summary, client) => {
-    const weeklyCheckIns = detail?.weeklyCheckIns ?? [];
-    const tasks = detail?.tasks ?? [];
-    const payment =
-        summary?.payment ??
-        detail?.overview?.paymentSummary ??
-        client?.paymentSummary ??
-        null;
-    const risk = summary?.risk ?? client?.risk ?? null;
-    const taskSummary = summary?.tasks ?? {
-        open: countByStatus(tasks, "open"),
-        overdue: countByStatus(tasks, "overdue"),
-    };
-    const checkInSummary = summary?.checkIns ?? {
-        missed: countByStatus(weeklyCheckIns, "overdue"),
-        pending: countByStatus(weeklyCheckIns, "pending"),
-        submittedLast30Days: countByStatus(weeklyCheckIns, "submitted"),
-    };
-    const activeMealPlan =
-        summary?.adherence?.nutrition?.activePlan?.name ??
-        detail?.overview?.activeMealPlan?.name ??
-        detail?.overview?.activeMealPlan?.title ??
-        detail?.assignedTemplates?.find(item => item.type === "MEAL")?.title ??
-        null;
-    const activeWorkoutPlan =
-        summary?.adherence?.workout?.activePlan?.name ??
-        detail?.overview?.activeWorkoutPlan?.name ??
-        detail?.overview?.activeWorkoutPlan?.title ??
-        detail?.assignedTemplates?.find(item => item.type === "WORKOUT")?.title ??
-        null;
-    const latestMeasurement = resolveLatestMeasurement(detail?.measurements ?? []);
-    const latestLog = detail?.dailyLogs?.[0] ?? null;
-
-    return {
-        payment,
-        risk,
-        taskSummary,
-        checkInSummary,
-        activeMealPlan,
-        activeWorkoutPlan,
-        latestMeasurement,
-        latestLog,
-        nextAction: summary?.nextAction ?? null,
-        lastCoachAction: resolveLastCoachAction(detail),
-    };
-};
-
 const ChatInfoSidebar = ({
     activeEntity,
     onClose,
     chatMessages = [],
     lastSeenText,
-    isCoach = false,
 }) => {
     const canUseMuteBlock = isChatFeatureEnabled("muteBlockControls");
     const canUseChatMaintenance = isChatFeatureEnabled("chatMaintenance");
@@ -160,55 +63,13 @@ const ChatInfoSidebar = ({
         isChatMuted,
         isChatBlocked,
     } = useChatStore();
-    const { clients } = useCoachClients();
-    const updateClientMutation = usePatchQuery({
-        queryKey: COACH_CLIENTS_QUERY_KEY,
-    });
     const { openProfile } = useProfileOverlay();
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [selectedMeal, setSelectedMeal] = useState(null);
     const isMuted = canUseMuteBlock && isChatMuted(activeChat);
     const isBlocked = canUseMuteBlock && isChatBlocked(activeChat);
 
-    const clientId =
-        activeEntity?.otherParticipant?.id ?? activeEntity?.clientId ?? null;
-    const { detail, isLoading: isClientDetailLoading } = useCoachClientDetail(
-        clientId,
-        isCoach && Boolean(clientId),
-    );
-    const { summary: rawClientSummary } = useCoachClientSummary(
-        clientId,
-        isCoach && Boolean(clientId),
-    );
-    const clientSummary = rawClientSummary?.data ?? rawClientSummary;
-
-    // Notepad state
-    const client = find(
-        clients,
-        c => c.id === clientId || c.id === activeChat || `g${c.id}` === activeChat,
-    );
-    const [localNotes, setLocalNotes] = useState(client?.notes || "");
-
-    const context = React.useMemo(
-        () => buildClientContext(detail, clientSummary, client),
-        [client, clientSummary, detail],
-    );
-
-    const handleSaveNotes = async () => {
-        if (client) {
-            try {
-                await updateClientMutation.mutateAsync({
-                    url: `/coach/clients/${client.id}/notes`,
-                    attributes: { notes: localNotes },
-                });
-                toast.success("Eslatma saqlandi");
-            } catch {
-                toast.error("Xatolik yuz berdi");
-            }
-        }
-    };
-
-    const dateKey = selectedDate.toISOString().split("T")[0];
+    const dateKey = split(selectedDate.toISOString(), "T")[0];
     const isToday = dateKey === getTodayKey();
     const displayDate = isToday ? "Bugun" : selectedDate.toLocaleDateString("uz-UZ", { day: 'numeric', month: 'long' });
 
@@ -283,7 +144,6 @@ const ChatInfoSidebar = ({
                     </div>
                 </div>
             )}
-
             {/* Header */}
             <div className="p-4 border-b flex items-center justify-between shrink-0 bg-background z-10">
                 <h3 className="font-bold text-sm">Ma'lumot</h3>
@@ -291,7 +151,6 @@ const ChatInfoSidebar = ({
                     <XIcon className="size-4" />
                 </Button>
             </div>
-
             {/* Content Scroll Area */}
             <div className="flex-1 overflow-y-auto custom-scrollbar">
                 {/* Profile Info */}
@@ -349,120 +208,9 @@ const ChatInfoSidebar = ({
                     </div>
                 </div>}
 
-                {isCoach && clientId && (
-                    <div className="p-4 border-b space-y-3">
-                        <div className="flex items-center justify-between">
-                            <h5 className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">
-                                Client context
-                            </h5>
-                            {context.nextAction?.priority && (
-                                <Badge variant="outline" className="h-5 text-[9px] capitalize">
-                                    {context.nextAction.priority}
-                                </Badge>
-                            )}
-                        </div>
-
-                        {isClientDetailLoading ? (
-                            <div className="space-y-2">
-                                <div className="h-10 rounded-xl bg-muted animate-pulse" />
-                                <div className="h-10 rounded-xl bg-muted animate-pulse" />
-                            </div>
-                        ) : (
-                            <>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <ContextMetric
-                                        label="Risk"
-                                        value={
-                                            context.risk
-                                                ? `${RISK_LABELS[context.risk.level] || context.risk.level} · ${context.risk.score ?? 0}`
-                                                : "-"
-                                        }
-                                        tone={context.risk?.level === "high" ? "danger" : context.risk?.level === "medium" ? "warning" : "neutral"}
-                                    />
-                                    <ContextMetric
-                                        label="To'lov"
-                                        value={
-                                            context.payment
-                                                ? PAYMENT_LABELS[context.payment.status] || context.payment.label || context.payment.status
-                                                : "-"
-                                        }
-                                        hint={formatContextDate(context.payment?.dueDate)}
-                                        tone={context.payment?.status === "overdue" ? "danger" : "neutral"}
-                                    />
-                                    <ContextMetric
-                                        label="Check-in"
-                                        value={`${context.checkInSummary.pending ?? 0} pending`}
-                                        hint={`${context.checkInSummary.missed ?? 0} missed`}
-                                        tone={context.checkInSummary.missed > 0 ? "danger" : "neutral"}
-                                    />
-                                    <ContextMetric
-                                        label="Task"
-                                        value={`${context.taskSummary.open ?? 0} open`}
-                                        hint={`${context.taskSummary.overdue ?? 0} overdue`}
-                                        tone={context.taskSummary.overdue > 0 ? "danger" : "neutral"}
-                                    />
-                                </div>
-
-                                <div className="space-y-1.5">
-                                    <ContextLine label="Meal plan" value={context.activeMealPlan || "-"} />
-                                    <ContextLine label="Workout" value={context.activeWorkoutPlan || "-"} />
-                                    <ContextLine
-                                        label="Measurement"
-                                        value={
-                                            context.latestMeasurement
-                                                ? `${context.latestMeasurement.weight || "-"} kg · ${formatContextDate(context.latestMeasurement.date)}`
-                                                : "-"
-                                        }
-                                    />
-                                    <ContextLine
-                                        label="Recent log"
-                                        value={
-                                            context.latestLog
-                                                ? `${context.latestLog.calories || 0} kcal · ${context.latestLog.workoutMinutes || 0} min`
-                                                : "-"
-                                        }
-                                    />
-                                    <ContextLine
-                                        label="Last action"
-                                        value={
-                                            context.lastCoachAction
-                                                ? `${context.lastCoachAction.label} · ${formatContextDate(context.lastCoachAction.date)}`
-                                                : "-"
-                                        }
-                                    />
-                                </div>
-                            </>
-                        )}
-                    </div>
-                )}
-
                 {/* AI Summary Section */}
                 <div className="p-4 border-b bg-primary/5 space-y-3">
                     {/* ... (existing AI Summary code) ... */}
-                </div>
-
-                {/* Coach's Private Notepad */}
-                <div className="p-4 border-b space-y-3 bg-amber-500/[0.02]">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <StickyNoteIcon className="size-4 text-amber-500" />
-                            <h5 className="text-[11px] font-black uppercase tracking-wider text-amber-600">Shaxsiy Eslatma</h5>
-                        </div>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 text-[9px] px-2 font-black border border-amber-500/20 text-amber-600 hover:bg-amber-50"
-                            onClick={handleSaveNotes}
-                        >
-                            SAQLASH
-                        </Button>
-                    </div>
-                    <textarea
-                        className="w-full min-h-[80px] p-2.5 rounded-xl border border-amber-500/10 bg-background text-[11px] leading-relaxed resize-none focus:ring-2 focus:ring-amber-500/20 outline-none placeholder:italic"
-                        placeholder="Mijoz haqida faqat o'zingiz ko'radigan eslatmalar yozing (jarohatlar, qiziqishlar)..."
-                        value={localNotes}
-                        onChange={e => setLocalNotes(e.target.value)}
-                    />
                 </div>
 
                 {/* Date Navigator */}
@@ -522,7 +270,7 @@ const ChatInfoSidebar = ({
 
                         <TabsContent value="meals" className="mt-4 space-y-6 px-2 pb-4">
                             {hasAnyMeals ? (
-                                toPairs(dayData.meals).map(([type, items]) => {
+                                map(toPairs(dayData.meals), ([type, items]) => {
                                     if (items.length === 0) return null;
                                     const { icon: Icon, label, color, bg } = mealIcons[type];
                                     return (
@@ -534,7 +282,7 @@ const ChatInfoSidebar = ({
                                                 <h5 className="text-[11px] font-black uppercase tracking-wider opacity-70">{label}</h5>
                                             </div>
                                             <div className="space-y-2">
-                                                {items.map((meal, idx) => (
+                                                {map(items, (meal, idx) => (
                                                     <div
                                                         key={idx}
                                                         onClick={() => setSelectedMeal(meal)}
@@ -561,7 +309,7 @@ const ChatInfoSidebar = ({
                         <TabsContent value="media" className="mt-2">
                             {media.length > 0 ? (
                                 <div className="grid grid-cols-3 gap-1 p-1">
-                                    {media.map((m, i) => (
+                                    {map(media, (m, i) => (
                                         <div key={i} className="aspect-square rounded-md overflow-hidden bg-muted cursor-pointer hover:opacity-80 transition-opacity border">
                                             <img loading="lazy" src={m.mediaUrl} alt="media" className="w-full h-full object-cover" />
                                         </div>
@@ -573,7 +321,7 @@ const ChatInfoSidebar = ({
                         <TabsContent value="files" className="mt-2">
                             {files.length > 0 ? (
                                 <div className="space-y-1">
-                                    {files.map((f, i) => (
+                                    {map(files, (f, i) => (
                                         <div key={i} className="flex items-center gap-3 p-2 hover:bg-muted rounded-lg cursor-pointer truncate border-b border-transparent last:border-0">
                                             <div className="size-8 rounded bg-primary/10 flex items-center justify-center shrink-0"><FileTextIcon className="size-4 text-primary" /></div>
                                             <div className="min-w-0">
@@ -589,7 +337,7 @@ const ChatInfoSidebar = ({
                         <TabsContent value="links" className="mt-2">
                             {links.length > 0 ? (
                                 <div className="space-y-1">
-                                    {links.map((l, i) => (
+                                    {map(links, (l, i) => (
                                         <div key={i} className="flex items-center gap-3 p-2 hover:bg-muted rounded-lg cursor-pointer truncate">
                                             <div className="size-8 rounded bg-blue-500/10 flex items-center justify-center shrink-0"><LinkIcon className="size-4 text-blue-500" /></div>
                                             <div className="min-w-0">
@@ -604,7 +352,6 @@ const ChatInfoSidebar = ({
                     </Tabs>
                 </div>
             </div>
-
             {canUseChatMaintenance && (
                 <div className="p-4 border-t bg-background shrink-0 z-10 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
                     <Button

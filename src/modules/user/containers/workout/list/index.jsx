@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import { get, filter, isArray, map, orderBy, split, toNumber, take } from "lodash";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import {
@@ -72,7 +72,7 @@ const getDateKey = (value = new Date()) => {
     return null;
   }
 
-  return date.toISOString().split("T")[0];
+  return split(date.toISOString(), "T")[0];
 };
 
 const getWorkoutDayDateKey = (item) => {
@@ -155,12 +155,10 @@ const buildNextWorkouts = (activePlan, now = new Date()) => {
   const nextStartableDayIndex = getNextStartableDayIndex(activePlan);
   const firstWorkoutDayIndex = getFirstWorkoutDayIndex(schedule);
   const completedDayIndexes = new Set(
-    (Array.isArray(get(activePlan, "dayProgress"))
-      ? get(activePlan, "dayProgress")
-      : []
-    )
-      .filter((item) => Boolean(get(item, "completed")))
-      .map((item) => Number(get(item, "dayIndex"))),
+    map(filter(
+      (isArray(get(activePlan, "dayProgress")) ? get(activePlan, "dayProgress") : []),
+      (item) => Boolean(get(item, "completed")),
+    ), (item) => toNumber(get(item, "dayIndex"))),
   );
   const nextIncompleteDayIndex = schedule.findIndex(
     (day, dayIndex) =>
@@ -186,15 +184,12 @@ const buildNextWorkouts = (activePlan, now = new Date()) => {
         })()
       : today;
 
-  return schedule
-    .map((day, dayIndex) => ({ day, dayIndex }))
-    .filter(
-      ({ day, dayIndex }) =>
-        dayIndex >= Math.max(0, startDayIndex) &&
-        get(day, "exercises", []).length > 0,
-    )
-    .slice(0, 3)
-    .map(({ day, dayIndex }, index) => {
+  return map(take(
+    filter(map(schedule, (day, dayIndex) => ({ day, dayIndex })), ({ day, dayIndex }) =>
+      dayIndex >= Math.max(0, startDayIndex) &&
+      get(day, "exercises", []).length > 0),
+    3,
+  ), ({ day, dayIndex }, index) => {
       const recommendedDate = addDays(
         initialRecommendedDate,
         dayIndex - Math.max(0, startDayIndex),
@@ -216,10 +211,10 @@ const buildNextWorkouts = (activePlan, now = new Date()) => {
 };
 
 const formatNumber = (value = 0) =>
-  new Intl.NumberFormat("en-US").format(Math.round(Number(value) || 0));
+  new Intl.NumberFormat("en-US").format(Math.round(toNumber(value) || 0));
 
 const formatMetricDuration = (seconds = 0) => {
-  const totalSeconds = Math.max(0, Number(seconds) || 0);
+  const totalSeconds = Math.max(0, toNumber(seconds) || 0);
   if (totalSeconds <= 0) {
     return "0:00";
   }
@@ -227,7 +222,7 @@ const formatMetricDuration = (seconds = 0) => {
 };
 
 const formatPace = (secondsPerKm) => {
-  const pace = Number(secondsPerKm);
+  const pace = toNumber(secondsPerKm);
   if (!Number.isFinite(pace) || pace <= 0) {
     return "--";
   }
@@ -241,12 +236,12 @@ const formatPace = (secondsPerKm) => {
 };
 
 const formatTemperature = (value) =>
-  Number.isFinite(Number(value)) ? `${Math.round(Number(value))}°C` : "--";
+  Number.isFinite(toNumber(value)) ? `${Math.round(toNumber(value))}°C` : "--";
 
-const clampMetric = (value) => Math.max(0, Number(value) || 0);
+const clampMetric = (value) => Math.max(0, toNumber(value) || 0);
 
 const clampPercent = (value) =>
-  Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+  Math.max(0, Math.min(100, Math.round(toNumber(value) || 0)));
 
 const EMPTY_WEATHER = {
   location: "Tashkent",
@@ -260,26 +255,24 @@ const EMPTY_WEATHER = {
 };
 
 const getRunningMetrics = (session) => ({
-  distanceMeters: Number(get(session, "metrics.distanceMeters", 0)) || 0,
-  durationSeconds: Number(get(session, "metrics.durationSeconds", 0)) || 0,
-  caloriesBurned: Number(get(session, "metrics.caloriesBurned", 0)) || 0,
+  distanceMeters: toNumber(get(session, "metrics.distanceMeters", 0)) || 0,
+  durationSeconds: toNumber(get(session, "metrics.durationSeconds", 0)) || 0,
+  caloriesBurned: toNumber(get(session, "metrics.caloriesBurned", 0)) || 0,
   averagePaceSecondsPerKm: get(session, "metrics.averagePaceSecondsPerKm"),
 });
 
 const getWorkoutDurationSeconds = (session) =>
-  Number(get(session, "durationSeconds")) ||
-  Number(get(session, "elapsedSeconds")) ||
-  Number(get(session, "durationMinutes", 0)) * 60 ||
+  toNumber(get(session, "durationSeconds")) ||
+  toNumber(get(session, "elapsedSeconds")) ||
+  toNumber(get(session, "durationMinutes", 0)) * 60 ||
   0;
 
 const getWorkoutCalories = (session) =>
-  Number(
-    get(
-      session,
-      "burnedCalories",
-      get(session, "caloriesBurned", get(session, "calories", 0)),
-    ),
-  ) || 0;
+  toNumber(get(
+    session,
+    "burnedCalories",
+    get(session, "caloriesBurned", get(session, "calories", 0)),
+  )) || 0;
 
 const getActivityTimestamp = (activity) =>
   Date.parse(activity.sortDate || activity.endedAt || activity.startedAt || "") || 0;
@@ -305,7 +298,7 @@ const formatActivityTime = (value) => {
 };
 
 const buildActivityFeed = (workoutSessions = [], runningSessions = []) => {
-  const workoutItems = workoutSessions.slice(0, 4).map((session, index) => {
+  const workoutItems = map(take(workoutSessions, 4), (session, index) => {
     const sessionId = get(session, "id", null);
 
     return {
@@ -327,17 +320,17 @@ const buildActivityFeed = (workoutSessions = [], runningSessions = []) => {
         { icon: FlameIcon, label: `${formatNumber(getWorkoutCalories(session))} kcal` },
         {
           icon: HeartPulseIcon,
-          label: `${Number(get(session, "averageHeartRate", 0)) || 145} bpm`,
+          label: `${toNumber(get(session, "averageHeartRate", 0)) || 145} bpm`,
         },
       ],
     };
   });
 
-  const runningItems = runningSessions.slice(0, 4).map((session, index) => {
+  const runningItems = map(take(runningSessions, 4), (session, index) => {
     const metrics = getRunningMetrics(session);
     const workoutSessionId =
       get(session, "workoutSessionId") || get(session, "id") || null;
-    const routePoints = Array.isArray(get(session, "points"))
+    const routePoints = isArray(get(session, "points"))
       ? get(session, "points")
       : [];
 
@@ -365,9 +358,14 @@ const buildActivityFeed = (workoutSessions = [], runningSessions = []) => {
     };
   });
 
-  return [...workoutItems, ...runningItems]
-    .sort((left, right) => getActivityTimestamp(right) - getActivityTimestamp(left))
-    .slice(0, 3);
+  return take(
+    orderBy(
+      [...workoutItems, ...runningItems],
+      [getActivityTimestamp],
+      ["desc"],
+    ),
+    3,
+  );
 };
 
 function ProgressBar({ value, className }) {
@@ -413,14 +411,14 @@ function TodayWorkoutHero({
   const image = hasWorkout
     ? item.image
     : getPlanImage(activePlan || WORKOUT_RECOMMENDED_PLANS[0]);
-  const workoutCount = Number(get(weeklyStats, "count", 0)) || 0;
-  const durationSeconds = (Number(get(weeklyStats, "duration", 0)) || 0) * 60;
-  const calories = Number(get(weeklyStats, "calories", 0)) || 0;
+  const workoutCount = toNumber(get(weeklyStats, "count", 0)) || 0;
+  const durationSeconds = (toNumber(get(weeklyStats, "duration", 0)) || 0) * 60;
+  const calories = toNumber(get(weeklyStats, "calories", 0)) || 0;
   const progress = clampPercent(
     get(activePlan, "progress", get(activePlan, "completionPercent", 0)),
   );
-  const currentWeek = Number(get(activePlan, "currentWeek", 2)) || 2;
-  const currentDay = Number(get(activePlan, "currentDay", 3)) || 3;
+  const currentWeek = toNumber(get(activePlan, "currentWeek", 2)) || 2;
+  const currentDay = toNumber(get(activePlan, "currentDay", 3)) || 3;
   const todayFocus =
     get(activePlan, "todayWorkout.title") ||
     get(item, "title") ||
@@ -564,7 +562,7 @@ function RunningActivityCard({ activeSession, onPrimary }) {
   const session = activeSession ?? null;
   const metrics = getRunningMetrics(session);
   const isActive = Boolean(activeSession);
-  const routePoints = Array.isArray(get(session, "points"))
+  const routePoints = isArray(get(session, "points"))
     ? get(session, "points")
     : [];
   const routePolyline = get(session, "route.polyline", null);
@@ -713,7 +711,7 @@ function NoPlanDiscoverySection({
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            {quickLinks.map((item) => {
+            {map(quickLinks, (item) => {
               const Icon = item.icon;
               return (
                 <button
@@ -751,7 +749,7 @@ function NoPlanDiscoverySection({
         </div>
 
         <div className="grid gap-3 md:grid-cols-3">
-          {WORKOUT_RECOMMENDED_PLANS.slice(0, 3).map((plan) => (
+          {map(take(WORKOUT_RECOMMENDED_PLANS, 3), (plan) => (
             <button
               key={plan.id}
               type="button"
@@ -901,16 +899,16 @@ function WeatherCard({ weather, isLoading, isError, locationStatus }) {
           <div>
             <p className="text-muted-foreground">Shamol</p>
             <p className="mt-1 font-black">
-              {Number.isFinite(Number(weatherData.windKph))
-                ? `${Math.round(Number(weatherData.windKph))} km/h`
+              {Number.isFinite(toNumber(weatherData.windKph))
+                ? `${Math.round(toNumber(weatherData.windKph))} km/h`
                 : "--"}
             </p>
           </div>
           <div>
             <p className="text-muted-foreground">Namlik</p>
             <p className="mt-1 font-black">
-              {Number.isFinite(Number(weatherData.humidity))
-                ? `${Math.round(Number(weatherData.humidity))}%`
+              {Number.isFinite(toNumber(weatherData.humidity))
+                ? `${Math.round(toNumber(weatherData.humidity))}%`
                 : "--"}
             </p>
           </div>
@@ -962,7 +960,7 @@ function WeeklyStatsCard({
       </CardHeader>
       <CardContent className="grid gap-6">
         <div className="grid grid-cols-7 gap-2">
-          {days.map((day) => (
+          {map(days, (day) => (
             <div key={`${day.label}-${day.day}`} className="text-center">
               <p className="text-sm font-semibold text-muted-foreground">
                 {day.label}
@@ -999,7 +997,7 @@ function WeeklyStatsCard({
           <div>
             <p className="text-sm text-muted-foreground">Vaqt</p>
             <p className="mt-1 text-xl font-black">
-              {formatMetricDuration((Number(get(weeklyStats, "duration", 0)) || 0) * 60)}
+              {formatMetricDuration((toNumber(get(weeklyStats, "duration", 0)) || 0) * 60)}
             </p>
           </div>
           <div>
@@ -1091,7 +1089,8 @@ function AchievementsCard({ personalRecordCount }) {
           </div>
         ) : (
           <>
-            {[TrophyIcon, MedalIcon, TargetIcon, CalendarCheck2Icon].map(
+            {map(
+              [TrophyIcon, MedalIcon, TargetIcon, CalendarCheck2Icon],
               (Icon, index) => (
                 <div
                   key={index}
@@ -1131,7 +1130,7 @@ function RecentActivitiesCard({ activities, onOpenHistory, onOpenActivity }) {
             keyin ular shu yerda ko‘rinadi.
           </div>
         ) : null}
-        {activities.map((activity) => (
+        {map(activities, (activity) => (
           <div
             key={`${activity.type}-${activity.id}`}
             role="button"
@@ -1193,7 +1192,7 @@ function RecentActivitiesCard({ activities, onOpenHistory, onOpenActivity }) {
                 </div>
               </div>
               <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted-foreground">
-                {activity.metrics.map((metric, index) => {
+                {map(activity.metrics, (metric, index) => {
                   const Icon = metric.icon;
                   return (
                     <span key={index} className="inline-flex items-center gap-1.5">
@@ -1255,22 +1254,20 @@ const WorkoutDashboardPage = () => {
 
   const completedDates = React.useMemo(
     () =>
-      Array.isArray(get(workoutOverview, "recentWorkoutDays"))
-        ? workoutOverview.recentWorkoutDays
-            .map((item) => getWorkoutDayDateKey(item))
-            .filter(Boolean)
+      isArray(get(workoutOverview, "recentWorkoutDays"))
+        ? filter(map(workoutOverview.recentWorkoutDays, (item) => getWorkoutDayDateKey(item)), Boolean)
         : [],
     [workoutOverview],
   );
 
   const targetWorkouts =
-    Number(get(activePlan, "daysPerWeek")) ||
-    Number(get(workoutOverview, "weeklyStats.target")) ||
+    toNumber(get(activePlan, "daysPerWeek")) ||
+    toNumber(get(workoutOverview, "weeklyStats.target")) ||
     4;
   const completedWorkouts = Math.min(
     targetWorkouts,
-    Number(get(workoutOverview, "weeklyStats.count")) ||
-      Number(get(activePlan, "completedWorkouts")) ||
+    toNumber(get(workoutOverview, "weeklyStats.count")) ||
+      toNumber(get(activePlan, "completedWorkouts")) ||
       0,
   );
 

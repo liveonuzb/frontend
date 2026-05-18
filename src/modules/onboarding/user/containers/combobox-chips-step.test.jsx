@@ -15,6 +15,8 @@ import PreferredIngredients from "./preferred-ingredients";
 import WorkoutBodyParts from "./workout-body-parts";
 import WorkoutEquipment from "./workout-equipment";
 
+import { forEach, includes, map, split } from "lodash";
+
 const mockUseGetQuery = vi.hoisted(() => vi.fn());
 
 vi.mock("react-i18next", () => ({
@@ -84,7 +86,7 @@ const otherOptions = {
   equipment: [{ id: 61, name: "Kettlebell", isOnboarding: false }],
 };
 
-const resourceFromUrl = (url) => String(url).split("/").pop();
+const resourceFromUrl = (url) => split(String(url), "/").pop();
 
 const setupOnboardingOptionsMock = () => {
   mockUseGetQuery.mockImplementation(({ url, params } = {}) => {
@@ -153,7 +155,7 @@ describe("onboarding catalog card containers", () => {
       ],
     ];
 
-    cases.forEach(([Component, title]) => {
+    forEach(cases, ([Component, title]) => {
       useOnboardingStore.getState().reset();
       const { unmount } = render(<Component />);
 
@@ -169,7 +171,7 @@ describe("onboarding catalog card containers", () => {
     render(<DietRequirements />);
     render(<WorkoutBodyParts />);
 
-    const requestedUrls = mockUseGetQuery.mock.calls.map(([config]) => config.url);
+    const requestedUrls = map(mockUseGetQuery.mock.calls, ([config]) => config.url);
 
     expect(requestedUrls).toContain("/user/onboarding/options/allergies");
     expect(requestedUrls).toContain("/user/onboarding/options/diet-requirements");
@@ -207,9 +209,9 @@ describe("onboarding catalog card containers", () => {
     expect(useOnboardingStore.getState().allergyIngredientIds).toEqual([]);
     expect(useOnboardingStore.getState().customAllergies).toEqual([]);
     expect(
-      useOnboardingStore
+      includes(useOnboardingStore
         .getState()
-        .completedUserOnboardingSteps.includes("allergies"),
+        .completedUserOnboardingSteps, "allergies"),
     ).toBe(true);
 
     unmount();
@@ -266,10 +268,10 @@ describe("onboarding catalog card containers", () => {
 
     const buttons = screen.getAllByRole("button");
     const otherIndex = buttons.findIndex((button) =>
-      button.textContent?.includes("onboarding.chipSelect.otherTitle"),
+      includes(button.textContent, "onboarding.chipSelect.otherTitle"),
     );
     const firstOptionIndex = buttons.findIndex((button) =>
-      button.textContent?.includes("Rice"),
+      includes(button.textContent, "Rice"),
     );
 
     expect(otherIndex).toBeGreaterThanOrEqual(0);

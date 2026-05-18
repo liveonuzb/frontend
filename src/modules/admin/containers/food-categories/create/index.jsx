@@ -56,7 +56,7 @@ const CreateFoodCategory = () => {
   );
 
   const handleSave = React.useCallback(async () => {
-    const name = form.name.trim();
+    const name = trim(form.name);
     if (!name) {
       toast.error("Kategoriya nomini kiriting");
       return;

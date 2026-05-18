@@ -1,5 +1,5 @@
 import React from "react";
-import { filter, round } from "lodash";
+import { filter, round, find, forEach, map, slice } from "lodash";
 import {
   SparklesIcon,
   ScaleIcon,
@@ -73,7 +73,7 @@ const pickFoodsForMeal = (pool, targetCal, dayIdx, mealIdx) => {
   if (!pool.length) return [];
 
   const offset = (dayIdx * 5 + mealIdx * 3) % pool.length;
-  const rotated = [...pool.slice(offset), ...pool.slice(0, offset)];
+  const rotated = [...slice(pool, offset), ...slice(pool, 0, offset)];
 
   const picked = [];
   let cumCal = 0;
@@ -134,8 +134,8 @@ const generateWeeklyKanban = (foods, goal, targetCal, mealsPerDay) => {
 
   const kanban = {};
 
-  WEEK_DAYS.forEach((day, dayIdx) => {
-    kanban[day] = mealTemplates.map((meal, mealIdx) => ({
+  forEach(WEEK_DAYS, (day, dayIdx) => {
+    kanban[day] = map(mealTemplates, (meal, mealIdx) => ({
       id: makeId(),
       type: meal.type,
       time: meal.time,
@@ -157,11 +157,11 @@ const AiGeneratorDrawer = ({ open, onOpenChange, foods = [], onGenerate }) => {
   const [mealsPerDay, setMealsPerDay] = React.useState(3);
   const [generating, setGenerating] = React.useState(false);
 
-  const selectedGoal = GOALS.find((g) => g.value === goal);
+  const selectedGoal = find(GOALS, (g) => g.value === goal);
 
   const handleGoalChange = React.useCallback((val) => {
     setGoal(val);
-    const g = GOALS.find((x) => x.value === val);
+    const g = find(GOALS, (x) => x.value === val);
     if (g) setCalories(g.defaultCal);
   }, []);
 
@@ -201,7 +201,7 @@ const AiGeneratorDrawer = ({ open, onOpenChange, foods = [], onGenerate }) => {
           <div className="space-y-2">
             <Label>Maqsad</Label>
             <div className="grid grid-cols-3 gap-2">
-              {GOALS.map(({ value, label, icon: Icon }) => (
+              {map(GOALS, ({ value, label, icon: Icon }) => (
                 <button
                   key={value}
                   type="button"
@@ -248,10 +248,10 @@ const AiGeneratorDrawer = ({ open, onOpenChange, foods = [], onGenerate }) => {
           <div className="space-y-2">
             <Label>Kunlik ovqatlar soni</Label>
             <div className="grid grid-cols-2 gap-2">
-              {[
+              {map([
                 { n: 3, desc: "Asosiy" },
                 { n: 5, desc: "+ gazaklar" },
-              ].map(({ n, desc }) => (
+              ], ({ n, desc }) => (
                 <button
                   key={n}
                   type="button"

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useLayoutEffect } from "react";
-import { toPairs } from "lodash";
+import { toPairs, map } from "lodash";
 import { CalculatorIcon } from "lucide-react";
 import { Button } from "@/components/ui/button.jsx";
 import { Slider } from "@/components/ui/slider.jsx";
@@ -141,7 +141,7 @@ const PortionEditorDrawer = ({
                   <CalculatorIcon className="size-3" /> Vitaminlar va Minerallar
                 </div>
                 <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-                  {toPairs(food.vitamins).map(([name, amount]) => (
+                  {map(toPairs(food.vitamins), ([name, amount]) => (
                     <div
                       key={name}
                       className="flex items-center justify-between text-xs"

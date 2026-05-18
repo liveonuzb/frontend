@@ -8,8 +8,10 @@ import {
   getPlanSavings,
 } from "./plan-option-utils.js";
 
+import { filter, isArray, map, take } from "lodash";
+
 const getPlanFeatures = (plan) =>
-  Array.isArray(plan?.features) ? plan.features.filter(Boolean) : [];
+  isArray(plan?.features) ? filter(plan.features, Boolean) : [];
 
 const PremiumPlanOption = React.forwardRef(function PremiumPlanOption(
   {
@@ -35,7 +37,7 @@ const PremiumPlanOption = React.forwardRef(function PremiumPlanOption(
 ) {
   const monthlyEquivalent = getPlanMonthlyEquivalent(plan);
   const savings = getPlanSavings(plan, basePlan);
-  const features = getPlanFeatures(plan).slice(0, compact ? 0 : 4);
+  const features = take(getPlanFeatures(plan), compact ? 0 : 4);
   const indicatorActive = isSelected || isCurrent;
   const Wrapper = interactive ? "button" : "div";
   const badgeText = isCurrent
@@ -165,7 +167,7 @@ const PremiumPlanOption = React.forwardRef(function PremiumPlanOption(
 
             {!compact && features.length ? (
               <div className="mt-4 flex flex-wrap gap-2">
-                {features.map((feature) => (
+                {map(features, (feature) => (
                   <span
                     key={feature}
                     className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-muted-foreground"

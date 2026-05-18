@@ -1,5 +1,5 @@
 import React from "react";
-import { filter, map, size } from "lodash";
+import { filter, map, size, isArray, toUpper, split, trim, take } from "lodash";
 import { useNavigate } from "react-router";
 import {
   ActivityIcon,
@@ -8,7 +8,7 @@ import {
   UsersIcon,
   ZapIcon,
 } from "lucide-react";
-import useGetQuery from "@/hooks/api/use-get-query";
+import { useGetQuery } from "@/hooks/api";
 import { getApiResponseData } from "@/lib/api-response";
 import { getFriendItems } from "@/modules/user/lib/friends-response";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -23,19 +23,14 @@ import {
 } from "./query-helpers.js";
 
 const resolveInitials = (value) =>
-  String(value ?? "")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => (part[0] ?? "").toUpperCase())
+  map(take(filter(split(trim(String(value ?? "")), /\s+/), Boolean), 2), (part) => toUpper((part[0] ?? "")))
     .join("") || "U";
 
 const RANK_COLORS = ["text-amber-500", "text-slate-400", "text-orange-600"];
 
 const getChallengeItems = (response) => {
   const payload = getApiResponseData(response, []);
-  return Array.isArray(payload) ? payload : (payload?.items ?? []);
+  return isArray(payload) ? payload : (payload?.items ?? []);
 };
 
 const FriendActivityFeed = ({
@@ -91,12 +86,12 @@ const FriendActivityFeed = ({
   );
   const friendsWithNoChallenge = React.useMemo(() => {
     const activeInChallenges = new Set(
-      activitiesFromChallenges.map((activity) => activity.uid),
+      map(activitiesFromChallenges, (activity) => activity.uid),
     );
-    return filter(
+    return take(filter(
       friends,
       (friend) => !activeInChallenges.has(friend.id),
-    ).slice(0, 3);
+    ), 3);
   }, [activitiesFromChallenges, friends]);
   const handleAddFriend = React.useCallback(() => {
     if (onAddFriend) {
@@ -116,7 +111,6 @@ const FriendActivityFeed = ({
   return (
     <div className="group relative h-full overflow-hidden rounded-[28px] border border-[rgb(var(--accent-rgb)/0.15)] bg-gradient-to-br from-[rgb(var(--accent-rgb)/0.08)] via-card to-card px-5 py-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[rgb(var(--accent-rgb)/0.30)] hover:shadow-xl hover:shadow-[rgb(var(--accent-rgb)/0.05)]">
       <div className="absolute inset-x-8 top-0 h-24 rounded-full bg-[rgb(var(--accent-rgb)/0.08)] blur-3xl transition-opacity group-hover:opacity-90" />
-
       <div className="relative flex h-full flex-col">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -160,7 +154,7 @@ const FriendActivityFeed = ({
             </div>
           ) : size(activitiesFromChallenges) === 0 ? (
             <div className="space-y-2">
-              {map(friends.slice(0, 4), (friend) => (
+              {map(take(friends, 4), (friend) => (
                 <div
                   key={friend.id}
                   className="flex items-center gap-3 rounded-xl px-1 py-1.5"

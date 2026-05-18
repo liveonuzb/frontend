@@ -1,5 +1,5 @@
 import React from "react";
-import { find, values } from "lodash";
+import { find, values as lodashValues, trim } from "lodash";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,21 +14,21 @@ import {
 const resolveLabel = (translations, fallback, language) => {
   if (translations && typeof translations === "object") {
     const direct = translations[language];
-    if (typeof direct === "string" && direct.trim()) {
-      return direct.trim();
+    if (typeof direct === "string" && trim(direct)) {
+      return trim(direct);
     }
 
     const uz = translations.uz;
-    if (typeof uz === "string" && uz.trim()) {
-      return uz.trim();
+    if (typeof uz === "string" && trim(uz)) {
+      return trim(uz);
     }
 
     const first = find(
-      values(translations),
-      (value) => typeof value === "string" && value.trim(),
+      lodashValues(translations),
+      (value) => typeof value === "string" && trim(value),
     );
-    if (typeof first === "string" && first.trim()) {
-      return first.trim();
+    if (typeof first === "string" && trim(first)) {
+      return trim(first);
     }
   }
 
@@ -70,3 +70,6 @@ export const DeleteAlert = ({
     </AlertDialog>
   );
 };
+
+
+
