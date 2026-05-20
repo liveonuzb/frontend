@@ -3,8 +3,6 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import RewardReminderDrawer from "./reward-reminder-drawer.jsx";
 
-import { assign } from "lodash";
-
 const {
   navigateMock,
   markNotificationReadMock,
@@ -27,9 +25,12 @@ const {
 
   useAddMealOverlayStoreMock.getState = () => addMealOverlayState;
 
-  const useAddMealOverlayStoreExport = assign((...args) => useAddMealOverlayStoreMock(...args), {
-    getState: () => useAddMealOverlayStoreMock.getState(),
-  });
+  const useAddMealOverlayStoreExport = Object.assign(
+    (...args) => useAddMealOverlayStoreMock(...args),
+    {
+      getState: () => useAddMealOverlayStoreMock.getState(),
+    },
+  );
 
   return {
     navigateMock,

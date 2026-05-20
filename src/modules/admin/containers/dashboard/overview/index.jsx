@@ -23,8 +23,11 @@ import {
   FileClockIcon,
   FileDownIcon,
   HardDriveIcon,
+  MousePointerClickIcon,
+  RotateCcwIcon,
   ServerIcon,
   SettingsIcon,
+  Share2Icon,
   StarIcon,
   TagIcon,
   TrendingUpIcon,
@@ -167,6 +170,11 @@ const Index = () => {
   const premiumStats = dashboard.premium?.stats ?? {};
   const premiumPlans = dashboard.premium?.plans ?? [];
   const premiumTrend = dashboard.premium?.trend ?? [];
+  const growthFunnel = dashboard.growthFunnel ?? {};
+  const growthEvents = growthFunnel.events ?? {};
+  const retention = dashboard.retention ?? {};
+  const activeUsers = retention.activeUsers ?? {};
+  const referrals = dashboard.referrals ?? {};
   const premiumOverviewCards = [
     {
       title: "Faol premium",
@@ -207,9 +215,45 @@ const Index = () => {
       value: metrics.totalLanguages ?? 0,
     },
   ];
+  const launchFunnelCards = [
+    {
+      label: "Landing CTA",
+      value: growthEvents.landingCtaClicked ?? 0,
+      description: "Landingdan boshlangan intent",
+    },
+    {
+      label: "Signup started",
+      value: growthEvents.signupStarted ?? 0,
+      description: "Ro'yxatdan o'tish oqimi",
+    },
+    {
+      label: "OTP verified",
+      value: growthEvents.otpVerified ?? 0,
+      description: "Telefon tasdiqlangan userlar",
+    },
+    {
+      label: "AI plan ready",
+      value: growthEvents.personalizationSucceeded ?? 0,
+      description: "Personalizatsiya yakunlangan",
+    },
+    {
+      label: "Checkout opened",
+      value: growthEvents.premiumCheckoutOpened ?? 0,
+      description: "Premium intent",
+    },
+    {
+      label: "Payment success",
+      value: growthEvents.premiumCheckoutSucceeded ?? 0,
+      description: "Webhook orqali tasdiqlangan",
+    },
+  ];
+  const retentionCards = [
+    { label: "D1 active", value: activeUsers.day1 ?? 0 },
+    { label: "D3 active", value: activeUsers.day3 ?? 0 },
+    { label: "D7 active", value: activeUsers.day7 ?? 0 },
+  ];
 
-  const canReadAudit =
-    includes(roles, "SUPER_ADMIN") || includes(roles, "READONLY_ADMIN");
+  const canReadAudit = includes(roles, "SUPER_ADMIN");
   const canUseReports =
     canReadSupport || canReadContent || canReadFinance || canManageContent;
   const quickActionItems = [
@@ -518,6 +562,111 @@ const Index = () => {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* Launch Growth */}
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.4fr_1fr]">
+          <Card className={dashboardCardClassName}>
+            <CardHeader className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <MousePointerClickIcon className="size-4" />
+                  Launch funnel
+                </CardTitle>
+                <CardDescription>
+                  So'nggi {growthFunnel.rangeDays ?? 30} kunlik onboarding va monetizatsiya oqimi
+                </CardDescription>
+              </div>
+              <Badge variant="secondary">
+                {growthFunnel.onboardingCompletionRate ?? 0}% onboarding
+              </Badge>
+            </CardHeader>
+            <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {map(launchFunnelCards, (item) => (
+                <div
+                  key={item.label}
+                  className="rounded-2xl border border-border/60 bg-muted/20 p-4"
+                >
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {item.label}
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold tracking-tight">
+                    {isLoading ? "..." : item.value}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground/80">
+                    {item.description}
+                  </p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+            <Card className={dashboardCardClassName}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <RotateCcwIcon className="size-4" />
+                  Retention
+                </CardTitle>
+                <CardDescription>
+                  Tracking qilgan aktiv userlar
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-3 gap-2">
+                {map(retentionCards, (item) => (
+                  <div
+                    key={item.label}
+                    className="rounded-2xl border border-border/60 bg-muted/20 p-3 text-center"
+                  >
+                    <p className="text-[11px] font-medium text-muted-foreground">
+                      {item.label}
+                    </p>
+                    <p className="mt-2 text-xl font-semibold">
+                      {isLoading ? "..." : item.value}
+                    </p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card className={dashboardCardClassName}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Share2Icon className="size-4" />
+                  Referral activation
+                </CardTitle>
+                <CardDescription>
+                  Referral ro'yxatdan o'tishlari va aktivlashuvi
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-3 gap-2">
+                <div className="rounded-2xl border border-border/60 bg-muted/20 p-3 text-center">
+                  <p className="text-[11px] font-medium text-muted-foreground">
+                    Total
+                  </p>
+                  <p className="mt-2 text-xl font-semibold">
+                    {isLoading ? "..." : referrals.total ?? 0}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-border/60 bg-muted/20 p-3 text-center">
+                  <p className="text-[11px] font-medium text-muted-foreground">
+                    Active
+                  </p>
+                  <p className="mt-2 text-xl font-semibold">
+                    {isLoading ? "..." : referrals.active ?? 0}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-border/60 bg-muted/20 p-3 text-center">
+                  <p className="text-[11px] font-medium text-muted-foreground">
+                    Rate
+                  </p>
+                  <p className="mt-2 text-xl font-semibold">
+                    {isLoading ? "..." : `${referrals.activationRate ?? 0}%`}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Premium Plans */}

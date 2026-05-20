@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,21 +18,27 @@ export const DeleteAlert = ({
   onConfirm,
   isDeleting,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Mashg'ulotni trashga yuborish</AlertDialogTitle>
+          <AlertDialogTitle>
+            {t("admin.workouts.delete.moveToTrashTitle")}
+          </AlertDialogTitle>
           <AlertDialogDescription>
             {workout
-              ? `"${workout.name}" trashga yuboriladi va keyin tiklash mumkin bo'ladi.`
+              ? t("admin.workouts.delete.moveToTrashDescription", {
+                  name: workout.name,
+                })
               : ""}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
+          <AlertDialogCancel>{t("admin.common.cancel")}</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm} disabled={isDeleting}>
-            Trashga yuborish
+            {t("admin.workouts.delete.moveToTrashAction")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -46,24 +53,32 @@ export const HardDeleteAlert = ({
   onConfirm,
   isDeleting,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Butunlay o'chirish</AlertDialogTitle>
+          <AlertDialogTitle>
+            {t("admin.workouts.delete.hardDeleteTitle")}
+          </AlertDialogTitle>
           <AlertDialogDescription>
             {target?.ids?.length === 1
-              ? `"${target?.label ?? "Mashg'ulot"}" butunlay o'chiriladi va qayta tiklab bo'lmaydi.`
-              : `${target?.ids?.length ?? 0} ta mashg'ulot butunlay o'chiriladi va qayta tiklab bo'lmaydi.`}
+              ? t("admin.workouts.delete.hardDeleteSingleDescription", {
+                  name: target?.label ?? t("admin.workouts.delete.workoutFallback"),
+                })
+              : t("admin.workouts.delete.hardDeleteManyDescription", {
+                  count: target?.ids?.length ?? 0,
+                })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
+          <AlertDialogCancel>{t("admin.common.cancel")}</AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             disabled={isDeleting}
           >
-            Butunlay o'chirish
+            {t("admin.workouts.delete.hardDeleteAction")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

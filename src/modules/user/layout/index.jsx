@@ -4,6 +4,7 @@ import { Navigate, Outlet, NavLink, useLocation } from "react-router";
 import {
   FileTextIcon,
   LayoutDashboardIcon,
+  MedalIcon,
   UtensilsIcon,
   RulerIcon,
   DumbbellIcon,
@@ -171,6 +172,11 @@ const Index = () => {
         to: "/user/challenges",
         label: "Musobaqalar",
         icon: TrophyIcon,
+      },
+      {
+        to: "/user/leaderboard",
+        label: "Reyting",
+        icon: MedalIcon,
       },
       {
         to: "/user/friends",

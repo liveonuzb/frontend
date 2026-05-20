@@ -4,6 +4,7 @@ import React, {
   useCallback,
   useDeferredValue,
 } from "react";
+import { useTranslation } from "react-i18next";
 import {
   map,
   filter,
@@ -153,6 +154,7 @@ const ExerciseCard = ({
   onRemove,
   onProgressChange,
 }) => {
+  const { t } = useTranslation();
   const [sets, setSets] = useState(() => normalizeExerciseSets(exercise));
 
   const [isExpanded, setIsExpanded] = useState(true);
@@ -160,7 +162,7 @@ const ExerciseCard = ({
   const trackingType = normalizeWorkoutTrackingType(
     get(exercise, "trackingType"),
   );
-  const trackingFields = getWorkoutTrackingFields(trackingType);
+  const trackingFields = getWorkoutTrackingFields(trackingType, t);
   const setGridClass =
     size(trackingFields) === 1
       ? "grid grid-cols-[36px_1fr_40px] items-center gap-3 rounded-2xl border bg-background p-3 sm:grid-cols-[44px_1fr_48px]"
@@ -315,7 +317,7 @@ const ExerciseCard = ({
                       {get(exercise, "name")}
                     </DialogTitle>
                     <DialogDescription>
-                      Mashqni to'g'ri bajarish bo'yicha ko'rsatma
+                      {t("user.workout.legacySession.exerciseGuide")}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-6 pt-4">
@@ -330,14 +332,16 @@ const ExerciseCard = ({
                     ) : (
                       <div className="aspect-video w-full bg-muted rounded-2xl border-dashed border-2 flex items-center justify-center text-muted-foreground flex-col">
                         <SparklesIcon className="size-8 mb-2 opacity-50" />
-                        <p className="text-sm font-medium">Mashq rasmi yo'q</p>
+                        <p className="text-sm font-medium">
+                          {t("user.workout.legacySession.noExerciseImage")}
+                        </p>
                       </div>
                     )}
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-primary/5 p-3 rounded-2xl border border-primary/10">
                         <h4 className="font-black text-[10px] uppercase tracking-widest text-primary mb-2">
-                          Asosiy muskullar
+                          {t("user.workout.legacySession.primaryMuscles")}
                         </h4>
                         <div className="flex flex-wrap gap-1">
                           {size(get(details, "targetMuscles")) > 0
@@ -355,7 +359,7 @@ const ExerciseCard = ({
                       </div>
                       <div className="bg-muted/30 p-3 rounded-2xl border border-border/50">
                         <h4 className="font-black text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
-                          Inventar
+                          {t("user.workout.legacySession.equipment")}
                         </h4>
                         <div className="flex flex-col gap-3">
                           {size(get(details, "equipmentImages")) > 0 && (
@@ -392,7 +396,7 @@ const ExerciseCard = ({
                           </div>
                           <div>
                             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mb-0.5">
-                              Maqsadli mushaklar
+                              {t("user.workout.legacySession.targetMuscles")}
                             </p>
                             <div className="flex flex-wrap gap-1.5">
                               {map(get(details, "targetMuscles", []), (muscle) => (
@@ -406,7 +410,7 @@ const ExerciseCard = ({
                               ))}
                               {isEmpty(get(details, "targetMuscles")) && (
                                 <span className="text-xs font-bold text-foreground/40">
-                                  Noma'lum
+                                  {t("user.workout.legacySession.unknown")}
                                 </span>
                               )}
                             </div>
@@ -436,10 +440,11 @@ const ExerciseCard = ({
                           </div>
                           <div>
                             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mb-0.5">
-                              Jihozlar
+                              {t("user.workout.legacySession.equipment")}
                             </p>
                             <p className="text-xs font-bold text-foreground">
-                              {join(get(details, "equipments", []), ", ") || "Zarur emas"}
+                              {join(get(details, "equipments", []), ", ") ||
+                                t("user.workout.legacySession.noEquipmentRequired")}
                             </p>
                           </div>
                         </div>
@@ -450,7 +455,7 @@ const ExerciseCard = ({
                           <span className="flex size-6 items-center justify-center rounded-lg bg-primary/10 text-primary">
                             <CheckIcon className="size-3.5" />
                           </span>
-                          Bajarish texnikasi
+                          {t("user.workout.legacySession.technique")}
                         </h4>
                         <div className="space-y-3 pl-1">
                           {size(get(details, "instructions")) > 0 ? (
@@ -466,7 +471,7 @@ const ExerciseCard = ({
                             ))
                           ) : (
                             <p className="text-xs text-muted-foreground italic pl-8">
-                              Yo'riqnoma mavjud emas
+                              {t("user.workout.legacySession.noInstructions")}
                             </p>
                           )}
                         </div>
@@ -477,13 +482,20 @@ const ExerciseCard = ({
               </Dialog>
             </div>
             <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
-              <span>{getWorkoutExerciseSummary(exercise)}</span>
+              <span>{getWorkoutExerciseSummary(exercise, t)}</span>
               {get(exercise, "rest") ? (
-                <span>• {get(exercise, "rest")}s dam</span>
+                <span>
+                  •{" "}
+                  {t("user.workout.legacySession.restSeconds", {
+                    seconds: get(exercise, "rest"),
+                  })}
+                </span>
               ) : null}
               {!isExpanded && doneCount > 0 && (
                 <span className="rounded-full border bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-                  {doneCount} yakunlangan
+                  {t("user.workout.legacySession.completedSets", {
+                    count: doneCount,
+                  })}
                 </span>
               )}
             </p>
@@ -587,7 +599,7 @@ const ExerciseCard = ({
           <div>
             <Button variant="outline" className="w-full" onClick={addSet}>
               <PlusIcon className="mr-2 size-4" />
-              Yana set qo'shish
+              {t("user.workout.legacySession.addSet")}
             </Button>
           </div>
         </div>
@@ -604,6 +616,7 @@ export default function SessionDrawer({
   initialDayIdx = 0,
   dateKey,
 }) {
+  const { t } = useTranslation();
   const { createLog, isPending: isSavingSession } = useCreateWorkoutLog();
   const planSchedule = get(plan, "schedule");
   const scheduleSource = React.useMemo(
@@ -695,7 +708,7 @@ export default function SessionDrawer({
   }, [exerciseItems]);
 
   const restTimer = useRestTimer(() => {
-    toast.success("Dam olish vaqti tugadi! Keyingi setga tayyorlaning 💪", {
+    toast.success(t("user.workout.legacySession.restFinished"), {
       duration: 4000,
     });
     try {
@@ -1104,13 +1117,16 @@ export default function SessionDrawer({
     } catch (error) {
       toast.error(
         get(error, "response.data.message") ||
-          "Mashg'ulot logini saqlashda xatolik yuz berdi",
+          t("user.workout.legacySession.saveLogError"),
       );
       return;
     }
 
-    toast.success(`Mashg'ulot yakunlandi! 🎉`, {
-      description: `${durationMinutes} daqiqada ${estimatedCalories} kcal yoqdingiz. Ma'lumotlar saqlandi.`,
+    toast.success(t("user.workout.legacySession.workoutCompleted"), {
+      description: t("user.workout.legacySession.workoutCompletedDescription", {
+        duration: durationMinutes,
+        calories: estimatedCalories,
+      }),
     });
   };
 
@@ -1130,7 +1146,7 @@ export default function SessionDrawer({
             <div className="relative flex-1">
               <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
               <Input
-                placeholder="Mashq qidirish..."
+                placeholder={t("user.workout.legacySession.searchExercise")}
                 className="pl-12"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -1172,11 +1188,13 @@ export default function SessionDrawer({
                   <p className="truncate font-semibold">{ex.name}</p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {ex.groupLabel || ex.category || "General"} ·{" "}
-                    {getWorkoutExerciseSummary(ex)}
+                    {getWorkoutExerciseSummary(ex, t)}
                   </p>
                 </div>
                 {addedNames.has(ex.name) ? (
-                  <Badge variant="outline">Qo'shilgan</Badge>
+                  <Badge variant="outline">
+                    {t("user.workout.legacySession.added")}
+                  </Badge>
                 ) : (
                   <PlusIcon className="size-5 text-muted-foreground" />
                 )}
@@ -1184,7 +1202,7 @@ export default function SessionDrawer({
             ))}
             {size(filteredLibrary) === 0 && (
               <p className="text-center text-muted-foreground py-10">
-                Hech narsa topilmadi
+                {t("user.workout.legacySession.noResults")}
               </p>
             )}
           </div>
@@ -1195,7 +1213,7 @@ export default function SessionDrawer({
             <div className="flex-1">
               <div className="mb-3 flex items-center justify-between">
                 <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                  Jarayon
+                  {t("user.workout.legacySession.progress")}
                 </span>
                 <span className="text-sm font-black text-primary">
                   {Math.round(overallProgress)}%
@@ -1214,7 +1232,7 @@ export default function SessionDrawer({
                 </span>
               </p>
               <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Setlar
+                {t("user.workout.legacySession.sets")}
               </p>
             </div>
           </div>
@@ -1224,17 +1242,19 @@ export default function SessionDrawer({
               <div className="size-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-5">
                 <DumbbellIcon className="size-10 text-muted-foreground/50" />
               </div>
-              <h3 className="font-bold text-xl mb-2">Mashqlar yo'q</h3>
+              <h3 className="font-bold text-xl mb-2">
+                {t("user.workout.legacySession.noExercises")}
+              </h3>
               <p className="text-muted-foreground text-base max-w-sm mx-auto mb-8">
-                Sizda bu kun uchun mashqlar belgilanmagan. Kutubxonadan kerakli
-                mashqlarni qo&apos;lda tanlang.
+                {t("user.workout.legacySession.noExercisesDescription")}
               </p>
               <div className="flex justify-center">
                 <Button
                   onClick={() => setIsAddingExercise(true)}
                   variant="outline"
                 >
-                  <SearchIcon className="size-5 mr-2" /> Mashq izlash
+                  <SearchIcon className="size-5 mr-2" />
+                  {t("user.workout.legacySession.searchExerciseAction")}
                 </Button>
               </div>
             </div>
@@ -1260,7 +1280,7 @@ export default function SessionDrawer({
                 onClick={() => setIsAddingExercise(true)}
               >
                 <PlusIcon className="mr-2 size-4" />
-                Boshqa mashq qo'shish
+                {t("user.workout.legacySession.addAnotherExercise")}
               </Button>
             </>
           )}
@@ -1283,7 +1303,8 @@ export default function SessionDrawer({
                 <span>{formatTime(elapsed)}</span>
                 <span className="opacity-30">|</span>
                 <Badge variant="secondary" className="h-4 px-1.5 text-[9px]">
-                  {doneCurrentSets}/{totalCurrentSets} Sets
+                  {doneCurrentSets}/{totalCurrentSets}{" "}
+                  {t("user.workout.legacySession.sets")}
                 </Badge>
               </div>
             </div>
@@ -1301,7 +1322,9 @@ export default function SessionDrawer({
         <DrawerBody className="space-y-6 px-6 py-4">
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between text-sm font-bold">
-              <span className="text-muted-foreground">Sessiya natijasi</span>
+              <span className="text-muted-foreground">
+                {t("user.workout.legacySession.sessionResult")}
+              </span>
               <span className="text-primary">{Math.round(overallProgress)}%</span>
             </div>
             <Progress value={overallProgress} className="h-2 rounded-full" />
@@ -1327,7 +1350,8 @@ export default function SessionDrawer({
                   >
                     <p className="text-xs font-black">{get(day, "day")}</p>
                     <p className="max-w-32 truncate text-[11px]">
-                      {get(day, "focus") || "Erkin kun"}
+                      {get(day, "focus") ||
+                        t("user.workout.legacySession.freeDay")}
                     </p>
                   </button>
                 );
@@ -1350,7 +1374,7 @@ export default function SessionDrawer({
                 </div>
                 <div>
                   <p className="text-xs font-bold text-primary-foreground/80 uppercase tracking-widest mb-0.5">
-                    Dam olish vaqti
+                    {t("user.workout.legacySession.restTime")}
                   </p>
                   <p className="text-3xl font-black tabular-nums leading-none tracking-tight">
                     {formatTime(get(restTimer, "seconds"))}
@@ -1387,12 +1411,12 @@ export default function SessionDrawer({
             {isAddingExercise ? (
               <>
                 <ChevronLeftIcon className="mr-2 size-4" />
-                Sessiyaga qaytish
+                {t("user.workout.legacySession.backToSession")}
               </>
             ) : (
               <>
                 <PlusIcon className="mr-2 size-4" />
-                Mashq qo'shish
+                {t("user.workout.legacySession.addExercise")}
               </>
             )}
           </Button>
@@ -1402,12 +1426,10 @@ export default function SessionDrawer({
             onClick={handleFinish}
             disabled={isSavingSession}
           >
-            Mashg'ulotni yakunlash
+            {t("user.workout.legacySession.finishWorkout")}
           </Button>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
   );
 }
-
-

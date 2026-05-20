@@ -1,4 +1,6 @@
 import React from "react";
+import "@/lib/i18n";
+import i18n from "@/lib/i18n";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,6 +13,7 @@ import {
   useRunningActiveSession,
   useRunningSessions,
   useRunningStatsSummary,
+  useStartRunningSession,
 } from "@/hooks/app/use-running-sessions";
 import {
   useWorkoutCatalog,
@@ -57,6 +60,7 @@ vi.mock("@/hooks/app/use-running-sessions", () => ({
   useRunningActiveSession: vi.fn(),
   useRunningSessions: vi.fn(),
   useRunningStatsSummary: vi.fn(),
+  useStartRunningSession: vi.fn(),
 }));
 
 vi.mock("@/hooks/app/use-workout-plans", async (importOriginal) => {
@@ -144,7 +148,8 @@ const renderPage = () => {
 };
 
 describe("WorkoutDashboardPage", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("uz");
     useWorkoutOverview.mockReturnValue({
       overview: {
         weeklyStats: {
@@ -189,6 +194,12 @@ describe("WorkoutDashboardPage", () => {
         totalCaloriesBurned: 0,
       },
     });
+    useStartRunningSession.mockReturnValue({
+      startRunningSession: vi.fn().mockResolvedValue({
+        workoutSessionId: "run-new",
+      }),
+      isPending: false,
+    });
     useWorkoutWeatherToday.mockReturnValue({
       weather: {
         location: "Tashkent",
@@ -224,6 +235,27 @@ describe("WorkoutDashboardPage", () => {
     expect(
       screen.queryByPlaceholderText("Workout, plan yoki mashg'ulot qidirish..."),
     ).not.toBeInTheDocument();
+  });
+
+  it("uses the required Russian no-plan hero labels", async () => {
+    await i18n.changeLanguage("ru");
+
+    renderPage();
+
+    expect(
+      screen.getByRole("heading", { name: "Тренировка сегодня" }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText("Выбрать план").length).toBeGreaterThan(0);
+    expect(screen.getByText("Создать свой план")).toBeInTheDocument();
+    expect(screen.getByText("НЕТ АКТИВНОГО ПЛАНА")).toBeInTheDocument();
+  });
+
+  it("keeps today's workout hero media readable in light and dark themes", () => {
+    renderPage();
+
+    expect(screen.getByTestId("today-workout-hero-media-scrim")).toHaveClass(
+      "workout-media-contrast-scrim",
+    );
   });
 
   it("shows active running state and resumes the live session", () => {
@@ -353,7 +385,7 @@ describe("WorkoutDashboardPage", () => {
     const router = renderPage();
 
     fireEvent.click(screen.getByRole("button", { name: /morning run/i }));
-    expect(router.state.location.pathname).toBe("/user/workout/running/run-1");
+    expect(router.state.location.pathname).toBe("/user/workout/history/run-1");
 
     await act(async () => {
       await router.navigate("/user/workout");
@@ -364,7 +396,15 @@ describe("WorkoutDashboardPage", () => {
     );
   });
 
-  it("shows a start-running widget in recent activity when no run is active", () => {
+  it("starts a new run from the home running shortcut", async () => {
+    const startRunningSession = vi.fn().mockResolvedValue({
+      workoutSessionId: "run-new",
+    });
+
+    useStartRunningSession.mockReturnValue({
+      startRunningSession,
+      isPending: false,
+    });
     useRunningSessions.mockReturnValue({
       sessions: [
         {
@@ -424,7 +464,11 @@ describe("WorkoutDashboardPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /yugurishni boshlash/i }));
 
-    expect(router.state.location.pathname).toBe("/user/workout/running");
+    expect(startRunningSession).toHaveBeenCalledWith({
+      source: "home",
+    });
+    await screen.findByText("Running live");
+    expect(router.state.location.pathname).toBe("/user/workout/running/live/run-new");
   });
 
   it("renders the running activity card with active route data when a run is in progress", () => {
@@ -719,12 +763,53 @@ describe("WorkoutDashboardPage", () => {
 
     const router = renderPage();
 
-    const heroCta = screen.getByRole("button", {
-      name: /start today's workout/i,
-    });
+    const heroCta = screen.getAllByRole("button", {
+      name: /bugungi workoutni boshlash/i,
+    })[0];
 
     expect(heroCta).toBeTruthy();
     fireEvent.click(heroCta);
+
+    expect(router.state.location.pathname).toBe(
+      "/user/workout/plans/plan-1/days/1/session",
+    );
+  });
+
+  it("renders a sticky today workout CTA for mobile priority access", () => {
+    const planStart = new Date();
+    planStart.setDate(planStart.getDate() - 1);
+
+    useWorkoutPlan.mockReturnValue({
+      plans: [],
+      activePlan: {
+        id: "plan-1",
+        status: "active",
+        startDate: planStart.toISOString(),
+        daysPerWeek: 3,
+        schedule: [
+          { title: "Day 1", exercises: [{ name: "Squat" }] },
+          { title: "Day 2", exercises: [{ name: "Bench" }] },
+        ],
+        dayProgress: [
+          { dayIndex: 0, completed: true, exerciseCount: 1 },
+          { dayIndex: 1, completed: false, exerciseCount: 1 },
+        ],
+      },
+      startPlan: vi.fn(),
+    });
+
+    const router = renderPage();
+
+    expect(screen.getByTestId("today-workout-sticky-cta")).toHaveTextContent(
+      "Day 2",
+    );
+
+    fireEvent.click(
+      within(screen.getByTestId("today-workout-sticky-cta")).getByRole(
+        "button",
+        { name: /bugungi workoutni boshlash/i },
+      ),
+    );
 
     expect(router.state.location.pathname).toBe(
       "/user/workout/plans/plan-1/days/1/session",
@@ -772,6 +857,45 @@ describe("WorkoutDashboardPage", () => {
     expect(within(achievementsCard).getByText("+12")).toBeInTheDocument();
   });
 
+  it("shows workout streak and recovery widgets in the right rail", () => {
+    useWorkoutOverview.mockReturnValue({
+      overview: {
+        weeklyStats: {
+          count: 3,
+          calories: 900,
+          duration: 120,
+        },
+        streak: {
+          currentDays: 4,
+          bestDays: 9,
+        },
+        recovery: {
+          status: "good",
+          score: 86,
+          recommendation: "Keep the current training rhythm.",
+        },
+        recentWorkoutDays: [],
+      },
+    });
+
+    renderPage();
+
+    const streakCard = screen
+      .getByText("Seriya")
+      .closest('[data-slot="card"]');
+    const recoveryCard = screen
+      .getByText("Tiklanish")
+      .closest('[data-slot="card"]');
+
+    expect(within(streakCard).getByText("4 kun")).toBeInTheDocument();
+    expect(within(streakCard).getByText("Eng yaxshi: 9 kun")).toBeInTheDocument();
+    expect(within(recoveryCard).getByText("Yaxshi")).toBeInTheDocument();
+    expect(within(recoveryCard).getByText("86%")).toBeInTheDocument();
+    expect(
+      within(recoveryCard).getByText("Keep the current training rhythm."),
+    ).toBeInTheDocument();
+  });
+
   it("renders next workout recommendations without fake fixed time and opens selected day", () => {
     const planStart = new Date();
     planStart.setDate(planStart.getDate() - 1);
@@ -800,11 +924,11 @@ describe("WorkoutDashboardPage", () => {
     const router = renderPage();
 
     expect(screen.queryByText(/17:00/)).not.toBeInTheDocument();
-    expect(screen.getByText("Day 2")).toBeInTheDocument();
+    expect(screen.getAllByText("Day 2").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Bugun").length).toBeGreaterThan(0);
 
     fireEvent.click(
-      screen.getByRole("button", { name: /start today's workout/i }),
+      screen.getAllByRole("button", { name: /bugungi workoutni boshlash/i })[0],
     );
 
     expect(router.state.location.pathname).toBe(

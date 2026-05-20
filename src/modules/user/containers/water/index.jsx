@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getMoodMeta } from "@/lib/mood";
+import { triggerTelegramHapticFeedback } from "@/lib/telegram-haptics";
 import PageTransition from "@/components/page-transition";
 import AnimatedWaterWidget from "@/components/animated-water-widget";
 import EmptyState from "@/components/empty-state";
@@ -188,7 +189,9 @@ const Index = () => {
     try {
       setIsSavingWater(true);
       await addWaterCup(dateKey, amount);
+      triggerTelegramHapticFeedback("success");
     } catch {
+      triggerTelegramHapticFeedback("error");
       toast.error("Suvni saqlab bo'lmadi");
     } finally {
       setIsSavingWater(false);
@@ -201,6 +204,7 @@ const Index = () => {
     try {
       setIsSavingWater(true);
       await removeLastWaterCup(dateKey);
+      triggerTelegramHapticFeedback("success");
       toast.info("Suv olib tashlandi", {
         action: {
           label: "Qaytarish (Undo)",
@@ -213,6 +217,7 @@ const Index = () => {
         duration: 4000,
       });
     } catch {
+      triggerTelegramHapticFeedback("error");
       toast.error("Suvni o'chirib bo'lmadi");
     } finally {
       setIsSavingWater(false);
@@ -223,7 +228,9 @@ const Index = () => {
     try {
       setIsSavingWater(true);
       await setWaterCups(dateKey, cupIndex + 1, cupSize);
+      triggerTelegramHapticFeedback("success");
     } catch {
+      triggerTelegramHapticFeedback("error");
       toast.error("Suv holatini yangilab bo'lmadi");
     } finally {
       setIsSavingWater(false);
@@ -243,10 +250,14 @@ const Index = () => {
 
   const handleRemoveEntry = async (index) => {
     const entry = nth(waterLog, index);
-    if (isNil(entry)) return;
+    if (isNil(entry)) {
+      triggerTelegramHapticFeedback("warning");
+      return;
+    }
     try {
       setIsSavingWater(true);
       await removeWaterLogEntry(dateKey, index);
+      triggerTelegramHapticFeedback("success");
       toast.info("Suv qaydi o'chirildi", {
         action: {
           label: "Qaytarish (Undo)",
@@ -261,6 +272,7 @@ const Index = () => {
         duration: 4000,
       });
     } catch {
+      triggerTelegramHapticFeedback("error");
       toast.error("Suv qaydini o'chirib bo'lmadi");
     } finally {
       setIsSavingWater(false);

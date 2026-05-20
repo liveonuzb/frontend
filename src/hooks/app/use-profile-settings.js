@@ -1,7 +1,8 @@
 import React from "react";
-import { get, isArray } from "lodash";
+import { get } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePatchQuery, usePostFileQuery, usePostQuery } from "@/hooks/api";
+import { getApiErrorMessage } from "@/lib/api-response";
 import { useAuthStore } from "@/store";
 
 export const ME_QUERY_KEY = ["me"];
@@ -45,15 +46,7 @@ const mergeUserSettings = (user, patch = {}) => {
   };
 };
 
-export const getRequestErrorMessage = (error, fallbackMessage) => {
-  const message = get(error, "response.data.message");
-
-  if (isArray(message)) {
-    return message[0] ?? fallbackMessage;
-  }
-
-  return typeof message === "string" ? message : fallbackMessage;
-};
+export const getRequestErrorMessage = getApiErrorMessage;
 
 const IMAGE_DATA_URL_PATTERN = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/;
 const IMAGE_EXTENSION_BY_MIME = {

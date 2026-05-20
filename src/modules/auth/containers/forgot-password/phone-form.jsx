@@ -57,8 +57,7 @@ const PhoneForm = () => {
           });
           clearPasswordReset();
           toast.success(
-            get(responseData, "message") ||
-              t("auth.forgotPassword.resetCodeSent"),
+            t("auth.forgotPassword.neutralResetCodeSent"),
             {
               description: getOtpToastDescription(responseData, t),
             },
@@ -100,7 +99,6 @@ const PhoneForm = () => {
                 autoFocus={phoneAutoFocus.autoFocus}
               />
               <FieldError
-                className={"absolute -bottom-6"}
                 errors={
                   get(fieldState, "error") ? [get(fieldState, "error")] : []
                 }

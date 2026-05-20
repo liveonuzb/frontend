@@ -1,5 +1,5 @@
 import React from "react";
-import { get, isArray, map, toNumber, trim, filter } from "lodash";
+import { find, get, isArray, map, toNumber, trim, filter } from "lodash";
 import { toast } from "sonner";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { parseAsString, useQueryState } from "nuqs";
@@ -11,6 +11,7 @@ import {
   MegaphoneIcon,
   RefreshCwIcon,
   SendIcon,
+  XCircleIcon,
 } from "lucide-react";
 import { useBreadcrumbStore } from "@/store";
 import { useGetQuery, usePostQuery } from "@/hooks/api";
@@ -71,6 +72,11 @@ import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 
 const ADMIN_PLATFORM_BOT_QUERY_KEY = ["admin", "platform-bot"];
 const ADMIN_PLATFORM_BOT_USERS_QUERY_KEY = ["admin", "platform-bot", "users"];
+const ADMIN_PLATFORM_BOT_TEMPLATE_QUERY_KEY = [
+  "admin",
+  "platform-bot",
+  "campaign-templates",
+];
 const DEFAULT_PAGE_SIZE = 25;
 const DEFAULT_BROADCAST_OPTIONS = {
   languageCode: "all",
@@ -79,6 +85,9 @@ const DEFAULT_BROADCAST_OPTIONS = {
   dryRun: false,
   activeWithinDays: "",
   scheduledAt: "",
+  experimentKey: "",
+  variantKey: "",
+  holdoutPercent: "",
 };
 
 const formatDateTime = (value) => {
@@ -105,12 +114,19 @@ const formatTelegramUnixDate = (value) => {
   return formatDateTime(toNumber(value) * 1000);
 };
 
+const formatStarsAmount = (value) =>
+  `${new Intl.NumberFormat("uz-UZ", {
+    maximumFractionDigits: 0,
+  }).format(toNumber(value) || 0)} XTR`;
+
 const formatBroadcastStatus = (status) => {
   const labels = {
+    PENDING_APPROVAL: "Tasdiq kutilmoqda",
     QUEUED: "Navbatda",
     RUNNING: "Yuborilmoqda",
     COMPLETED: "Yakunlangan",
     FAILED: "Xato",
+    REJECTED: "Rad etilgan",
   };
 
   return labels[status] || status || "-";
@@ -139,6 +155,24 @@ const resolveUserName = (chat) => {
 
   return fullName || chat.username || chat.telegramId;
 };
+
+const maskPhone = (value) => {
+  const phone = trim(value);
+  if (!phone) return "";
+  if (phone.includes("*")) return phone;
+
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length < 7) return phone;
+
+  const visiblePrefix = digits.slice(0, 3);
+  const visibleSuffix = digits.slice(-4);
+  const maskLength = Math.max(4, digits.length - visiblePrefix.length - 4);
+
+  return `${phone.startsWith("+") ? "+" : ""}${visiblePrefix}${"*".repeat(maskLength)}${visibleSuffix}`;
+};
+
+const resolveUserContact = (chat) =>
+  chat.user?.email || maskPhone(chat.user?.phone) || "-";
 
 const StatCard = ({ label, value, description }) => (
   <Card className="py-6">
@@ -176,6 +210,7 @@ const PlatformBotPage = () => {
     DEFAULT_BROADCAST_OPTIONS,
   );
   const [broadcastPreview, setBroadcastPreview] = React.useState(null);
+  const [selectedTemplateId, setSelectedTemplateId] = React.useState("none");
   const deferredSearch = React.useDeferredValue(search);
   const currentPage = Math.max(1, toNumber(pageQuery) || 1);
   const pageSize = Math.max(1, toNumber(pageSizeQuery) || DEFAULT_PAGE_SIZE);
@@ -216,6 +251,13 @@ const PlatformBotPage = () => {
     },
   });
 
+  const campaignTemplatesQuery = useGetQuery({
+    url: "/admin/platform-bot/campaign-templates",
+    queryProps: {
+      queryKey: ADMIN_PLATFORM_BOT_TEMPLATE_QUERY_KEY,
+    },
+  });
+
   const webhookMutation = usePostQuery({
     queryKey: ADMIN_PLATFORM_BOT_QUERY_KEY,
     listKey: ADMIN_PLATFORM_BOT_USERS_QUERY_KEY,
@@ -228,6 +270,10 @@ const PlatformBotPage = () => {
     listKey: ADMIN_PLATFORM_BOT_USERS_QUERY_KEY,
   });
 
+  const approvalMutation = usePostQuery({
+    queryKey: ADMIN_PLATFORM_BOT_QUERY_KEY,
+  });
+
   const statusPayload = React.useMemo(
     () => getApiResponseData(statusQuery.data, {}),
     [statusQuery.data],
@@ -236,9 +282,23 @@ const PlatformBotPage = () => {
     () => getApiResponseData(usersQuery.data, {}),
     [usersQuery.data],
   );
+  const campaignTemplatesPayload = React.useMemo(
+    () => getApiResponseData(campaignTemplatesQuery.data, {}),
+    [campaignTemplatesQuery.data],
+  );
   const webhookInfo = get(statusPayload, "webhookInfo", null);
   const health = get(statusPayload, "health", {});
   const stats = get(statusPayload, "stats", {});
+  const coachStats = get(stats, "coachRemindersToday", {});
+  const coachStatsDescription = `${get(coachStats, "sent", 0)} sent / ${get(
+    coachStats,
+    "skipped",
+    0,
+  )} skipped / ${get(coachStats, "failed", 0)} failed / ${get(
+    coachStats,
+    "suppressed",
+    0,
+  )} suppressed`;
   const recentBroadcastJobsPayload = get(
     statusPayload,
     "recentBroadcastJobs",
@@ -247,6 +307,20 @@ const PlatformBotPage = () => {
   const recentBroadcastJobs = isArray(recentBroadcastJobsPayload)
     ? recentBroadcastJobsPayload
     : [];
+  const supportInbox = get(statusPayload, "supportInbox", {});
+  const supportTicketsPayload = get(supportInbox, "tickets", []);
+  const supportTickets = isArray(supportTicketsPayload)
+    ? supportTicketsPayload
+    : [];
+  const telegramStarsPayments = get(statusPayload, "telegramStarsPayments", {});
+  const campaignTemplatesData = get(campaignTemplatesPayload, "data", []);
+  const campaignTemplates = isArray(campaignTemplatesData)
+    ? campaignTemplatesData
+    : [];
+  const selectedCampaignTemplate = React.useMemo(
+    () => find(campaignTemplates, { id: selectedTemplateId }) || null,
+    [campaignTemplates, selectedTemplateId],
+  );
   const users = isArray(usersPayload) ? usersPayload : [];
   const totalUsers = get(usersQuery.data, "data.meta.total", 0);
   const totalPages = get(usersQuery.data, "data.meta.totalPages", 1);
@@ -272,9 +346,34 @@ const PlatformBotPage = () => {
     }));
   }, []);
 
+  const handleCampaignTemplateSelect = React.useCallback(
+    (templateId) => {
+      setSelectedTemplateId(templateId);
+      setBroadcastPreview(null);
+
+      if (templateId === "none") {
+        return;
+      }
+
+      const template = find(campaignTemplates, { id: templateId });
+      if (!template) {
+        return;
+      }
+
+      setBroadcastText(template.text || "");
+      setBroadcastOptions((current) => ({
+        ...current,
+        languageCode: template.languageCode || current.languageCode,
+        linkedOnly: true,
+      }));
+    },
+    [campaignTemplates],
+  );
+
   const buildBroadcastPayload = React.useCallback(
     (includeText = true) => {
       const activeWithinDays = toNumber(broadcastOptions.activeWithinDays);
+      const holdoutPercent = toNumber(broadcastOptions.holdoutPercent);
       const scheduledAtDate = broadcastOptions.scheduledAt
         ? new Date(broadcastOptions.scheduledAt)
         : null;
@@ -294,15 +393,39 @@ const PlatformBotPage = () => {
         ...(Number.isFinite(activeWithinDays) && activeWithinDays > 0
           ? { activeWithinDays }
           : {}),
+        ...(trim(broadcastOptions.experimentKey)
+          ? { experimentKey: trim(broadcastOptions.experimentKey) }
+          : {}),
+        ...(trim(broadcastOptions.variantKey)
+          ? { variantKey: trim(broadcastOptions.variantKey) }
+          : {}),
+        ...(Number.isFinite(holdoutPercent) && holdoutPercent > 0
+          ? { holdoutPercent }
+          : {}),
         ...(scheduledAt ? { scheduledAt } : {}),
+        ...(selectedCampaignTemplate
+          ? {
+              campaignKey: selectedCampaignTemplate.campaignKey,
+              journeyKey: selectedCampaignTemplate.journeyKey,
+              journeyStepKey: selectedCampaignTemplate.journeyStepKey,
+              campaignMetadata: {
+                templateId: selectedCampaignTemplate.id,
+                templateTitle: selectedCampaignTemplate.title,
+                templateLanguageCode: selectedCampaignTemplate.languageCode,
+                edited:
+                  trim(broadcastText) !== trim(selectedCampaignTemplate.text),
+              },
+            }
+          : {}),
       };
     },
-    [broadcastOptions, broadcastText],
+    [broadcastOptions, broadcastText, selectedCampaignTemplate],
   );
 
   const resetBroadcastForm = React.useCallback(() => {
     setBroadcastText("");
     setBroadcastPreview(null);
+    setSelectedTemplateId("none");
     setBroadcastOptions(DEFAULT_BROADCAST_OPTIONS);
   }, []);
 
@@ -348,6 +471,32 @@ const PlatformBotPage = () => {
     }
   };
 
+  const handleApproveBroadcast = async (jobId) => {
+    if (!canManageGrowth || !jobId) return;
+
+    try {
+      await approvalMutation.mutateAsync({
+        url: `/admin/platform-bot/broadcast-jobs/${jobId}/approve`,
+      });
+      toast.success("Broadcast job tasdiqlandi.");
+    } catch {
+      toast.error("Broadcast job tasdiqlanmadi.");
+    }
+  };
+
+  const handleRejectBroadcast = async (jobId) => {
+    if (!canManageGrowth || !jobId) return;
+
+    try {
+      await approvalMutation.mutateAsync({
+        url: `/admin/platform-bot/broadcast-jobs/${jobId}/reject`,
+      });
+      toast.success("Broadcast job rad etildi.");
+    } catch {
+      toast.error("Broadcast job rad etilmadi.");
+    }
+  };
+
   const columns = React.useMemo(
     () => [
       {
@@ -360,7 +509,7 @@ const PlatformBotPage = () => {
             <div className="flex min-w-[220px] flex-col gap-1">
               <span className="font-medium">{resolveUserName(chat)}</span>
               <span className="text-xs text-muted-foreground">
-                {chat.user?.email || chat.user?.phone || "-"}
+                {resolveUserContact(chat)}
               </span>
             </div>
           );
@@ -414,7 +563,7 @@ const PlatformBotPage = () => {
       {
         accessorKey: "phone",
         header: "Telefon",
-        cell: (info) => info.getValue() || "-",
+        cell: (info) => maskPhone(info.getValue()) || "-",
         size: 150,
         meta: { skeleton: adminListSkeletons.text },
       },
@@ -508,6 +657,26 @@ const PlatformBotPage = () => {
                     </SheetDescription>
                   </SheetHeader>
                   <div className="flex flex-col gap-4 px-6">
+                    <div className="flex flex-col gap-2">
+                      <Label>Template</Label>
+                      <Select
+                        value={selectedTemplateId}
+                        onValueChange={handleCampaignTemplateSelect}
+                        disabled={campaignTemplatesQuery.isLoading}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Template" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Shablonsiz</SelectItem>
+                          {map(campaignTemplates, (template) => (
+                            <SelectItem key={template.id} value={template.id}>
+                              {template.title} · {template.languageCode}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <Textarea
                       value={broadcastText}
                       onChange={(event) => {
@@ -559,6 +728,57 @@ const PlatformBotPage = () => {
                             )
                           }
                           placeholder="Masalan: 30"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="broadcast-experiment-key">
+                          Experiment
+                        </Label>
+                        <Input
+                          id="broadcast-experiment-key"
+                          value={broadcastOptions.experimentKey}
+                          onChange={(event) =>
+                            updateBroadcastOption(
+                              "experimentKey",
+                              event.target.value,
+                            )
+                          }
+                          placeholder="onboarding-copy"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="broadcast-variant-key">Variant</Label>
+                        <Input
+                          id="broadcast-variant-key"
+                          value={broadcastOptions.variantKey}
+                          onChange={(event) =>
+                            updateBroadcastOption(
+                              "variantKey",
+                              event.target.value,
+                            )
+                          }
+                          placeholder="variant-a"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="broadcast-holdout-percent">
+                          Holdout %
+                        </Label>
+                        <Input
+                          id="broadcast-holdout-percent"
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={broadcastOptions.holdoutPercent}
+                          onChange={(event) =>
+                            updateBroadcastOption(
+                              "holdoutPercent",
+                              event.target.value,
+                            )
+                          }
+                          placeholder="10"
                         />
                       </div>
                     </div>
@@ -685,12 +905,49 @@ const PlatformBotPage = () => {
           ) : null}
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <StatCard label="Jami chatlar" value={stats.totalChats} />
           <StatCard label="Linked userlar" value={stats.linkedChats} />
           <StatCard label="Faol 7 kun" value={stats.activeChats7d} />
           <StatCard label="Muted chatlar" value={stats.mutedChats} />
           <StatCard label="Bugungi reminderlar" value={stats.remindersToday} />
+          <StatCard
+            label="Bugungi coach loop"
+            value={get(coachStats, "total", 0)}
+            description={coachStatsDescription}
+          />
+          <StatCard
+            label="Stars subscription"
+            value={get(telegramStarsPayments, "subscriptions.active", 0)}
+            description={`${get(
+              telegramStarsPayments,
+              "subscriptions.expired",
+              0,
+            )} expired / ${get(
+              telegramStarsPayments,
+              "subscriptions.cancelled",
+              0,
+            )} cancelled`}
+          />
+          <StatCard
+            label="Stars payment"
+            value={formatStarsAmount(
+              get(telegramStarsPayments, "completed.amount", 0),
+            )}
+            description={`${get(
+              telegramStarsPayments,
+              "completed.count",
+              0,
+            )} paid / ${get(
+              telegramStarsPayments,
+              "pending.count",
+              0,
+            )} pending / ${get(
+              telegramStarsPayments,
+              "refunded.count",
+              0,
+            )} refunded`}
+          />
         </div>
 
         <Card className="py-6">
@@ -801,9 +1058,11 @@ const PlatformBotPage = () => {
               map(recentBroadcastJobs, (job) => (
                 <div key={job.id} className="rounded-md border p-3">
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       {job.status === "COMPLETED" ? (
                         <CheckCircle2Icon className="size-4 text-emerald-600" />
+                      ) : job.status === "FAILED" || job.status === "REJECTED" ? (
+                        <XCircleIcon className="size-4 text-destructive" />
                       ) : (
                         <ClockIcon className="size-4 text-muted-foreground" />
                       )}
@@ -813,10 +1072,98 @@ const PlatformBotPage = () => {
                       {job.dryRun ? (
                         <Badge variant="outline">Dry-run</Badge>
                       ) : null}
+                      {job.campaignKey ? (
+                        <Badge variant="secondary">
+                          {job.campaignKey}
+                          {job.journeyStepKey ? `:${job.journeyStepKey}` : ""}
+                        </Badge>
+                      ) : null}
+                      {job.experimentKey ? (
+                        <Badge variant="outline">
+                          {job.experimentKey}
+                          {job.variantKey ? `:${job.variantKey}` : ""}
+                          {job.holdoutPercent
+                            ? ` · ${job.holdoutPercent}% holdout`
+                            : ""}
+                        </Badge>
+                      ) : null}
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {formatDateTime(job.createdAt)}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {canManageGrowth &&
+                      job.status === "PENDING_APPROVAL" ? (
+                        <>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                type="button"
+                                size="sm"
+                                disabled={approvalMutation.isPending}
+                              >
+                                <CheckCircle2Icon data-icon="inline-start" />
+                                Approve
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Broadcastni tasdiqlash
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Job tasdiqlangandan keyin navbatga tushadi va
+                                  schedule vaqti kelgan bo'lsa yuboriladi.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>
+                                  Bekor qilish
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleApproveBroadcast(job.id)}
+                                >
+                                  Tasdiqlash
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                disabled={approvalMutation.isPending}
+                              >
+                                <XCircleIcon data-icon="inline-start" />
+                                Reject
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Broadcastni rad etish
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Job rad etiladi va Telegramga yuborilmaydi.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>
+                                  Bekor qilish
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleRejectBroadcast(job.id)}
+                                >
+                                  Rad etish
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </>
+                      ) : null}
+                      <span className="text-xs text-muted-foreground">
+                        {formatDateTime(job.createdAt)}
+                      </span>
+                    </div>
                   </div>
                   <Progress value={getBroadcastProgress(job)} />
                   <div className="mt-2 grid gap-2 text-xs text-muted-foreground sm:grid-cols-5">
@@ -826,6 +1173,20 @@ const PlatformBotPage = () => {
                     <span>Suppressed: {job.suppressedCount ?? 0}</span>
                     <span>Skipped: {job.skippedCount ?? 0}</span>
                   </div>
+                  {job.conversions ? (
+                    <div className="mt-2 grid gap-2 rounded-md bg-muted/40 p-2 text-xs sm:grid-cols-4">
+                      <span>
+                        Open app: {get(job, "conversions.openApp", 0)}
+                      </span>
+                      <span>
+                        Water: {get(job, "conversions.waterLog", 0)}
+                      </span>
+                      <span>Meal: {get(job, "conversions.mealLog", 0)}</span>
+                      <span>
+                        Workout: {get(job, "conversions.workoutDone", 0)}
+                      </span>
+                    </div>
+                  ) : null}
                   {job.error ? (
                     <p className="mt-2 text-xs text-destructive">{job.error}</p>
                   ) : null}
@@ -834,6 +1195,53 @@ const PlatformBotPage = () => {
             ) : (
               <p className="text-sm text-muted-foreground">
                 Broadcast joblar hali yaratilmagan.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="py-6">
+          <CardHeader>
+            <div>
+              <CardTitle>Telegram support inbox</CardTitle>
+              <CardDescription>
+                Botdagi /support yoki Yordam orqali ochilgan so'rovlar.
+              </CardDescription>
+            </div>
+            <CardAction>
+              <Badge variant="secondary">
+                {get(supportInbox, "openCount", 0)} open
+              </Badge>
+            </CardAction>
+          </CardHeader>
+          <CardContent className="grid gap-3">
+            {supportTickets.length ? (
+              map(supportTickets, (ticket) => (
+                <div key={ticket.id} className="rounded-md border p-3">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-medium">
+                        {get(ticket, "user.profile.firstName") ||
+                          ticket.user?.email ||
+                          ticket.user?.phone ||
+                          ticket.telegramId}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Telegram ID: {ticket.telegramId}
+                      </p>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDateTime(ticket.createdAt)}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {ticket.message || "Message kiritilmagan."}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Open support ticketlar yo'q.
               </p>
             )}
           </CardContent>

@@ -1,6 +1,7 @@
 {
   "common": {
     "loading": "Loading...",
+    "done": "Done",
     "actions": {
       "save": "Save",
       "saving": "Saving...",
@@ -110,7 +111,10 @@
         "closeLabel": "Close Builder",
         "title": "Workout Plan Builder",
         "description": "Manage weekly workout structure and exercises.",
-        "addDay": "Day"
+        "addDay": "Day",
+        "editMetaLabel": "Edit plan details",
+        "editMode": "Edit mode",
+        "addFirstExercise": "Add the first exercise"
       },
       "footer": {
         "savePlan": "Save Plan"
@@ -141,6 +145,11 @@
         "descriptionPlaceholder": "Plan goal or a short note...",
         "continue": "Continue",
         "cancel": "Cancel"
+      },
+      "metaDrawer": {
+        "title": "Plan details",
+        "descriptionPlaceholder": "Plan description",
+        "save": "Save"
       },
       "desktop": {
         "searchPlaceholder": "Search exercises...",
@@ -228,6 +237,79 @@
         "minDays": "Add at least 1 day",
         "addDayFirst": "Add a day first"
       }
+    }
+  },
+  "store": {
+    "chat": {
+      "errors": {
+        "sendMessage": "Failed to send message",
+        "refreshAttachment": "Could not refresh file link",
+        "deleteMessage": "Could not delete message",
+        "editMessage": "Could not edit message",
+        "sendBooking": "Could not send booking",
+        "selectBookingSlot": "Could not book the slot",
+        "cancelBooking": "Could not cancel booking",
+        "completeBooking": "Could not complete booking",
+        "searchUnavailable": "Server search is temporarily unavailable"
+      },
+      "sender": {
+        "me": "You",
+        "unknown": "Unknown"
+      },
+      "forward": {
+        "image": "📷 Image",
+        "file": "📎 File",
+        "voice": "🎙️ Voice message",
+        "message": "Forwarded message"
+      },
+      "aiSuggestions": {
+        "food": {
+          "salad": "Suggest salad 🥗",
+          "water": "Remind to drink water 💧",
+          "plan": "View plan 📋"
+        },
+        "workout": {
+          "video": "Send video 🎥",
+          "goodLuck": "Wish good luck ✨",
+          "task": "Assign task 🎯"
+        },
+        "thanks": {
+          "welcome": "You're welcome 😊",
+          "continue": "Let's continue 💪",
+          "questions": "Any questions? 🤔"
+        },
+        "default": {
+          "good": "Good 👍",
+          "understood": "Understood 👌",
+          "next": "Next ➡️"
+        }
+      },
+      "messages": {
+        "sharedContent": "Shared {{type}}: {{title}}",
+        "poll": "Poll: {{question}}",
+        "task": "Task: {{title}}",
+        "invoice": "Invoice: {{description}}",
+        "habitTracker": "Habits: {{title}}"
+      },
+      "invoice": {
+        "unavailable": "Invoice payment is not connected to a real payment provider yet"
+      },
+      "bookmarks": {
+        "removed": "Removed from bookmarks",
+        "saved": "Saved to bookmarks"
+      },
+      "live": {
+        "started": "Live stream started! 🎥"
+      },
+      "summary": {
+        "unavailable": "This chat analysis is not ready yet."
+      },
+      "stories": {
+        "added": "Story added successfully! ✨"
+      }
+    },
+    "gamification": {
+      "xpSpent": "XP spent"
     }
   }
 }

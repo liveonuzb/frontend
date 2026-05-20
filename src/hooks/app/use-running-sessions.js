@@ -8,9 +8,13 @@ import {
   usePatchQuery,
   usePostQuery,
 } from "@/hooks/api";
+import { trackCampaignConversion } from "@/lib/analytics.js";
 import { WORKOUT_LOGS_QUERY_KEY } from "@/hooks/app/use-workout-logs";
 import { WORKOUT_OVERVIEW_QUERY_KEY } from "@/hooks/app/use-workout-overview";
-import { WORKOUT_SESSION_HISTORY_QUERY_KEY } from "@/hooks/app/use-workout-sessions";
+import {
+  WORKOUT_SESSION_HISTORY_QUERY_KEY,
+  WORKOUT_SESSION_HISTORY_SUMMARY_QUERY_KEY,
+} from "@/hooks/app/use-workout-sessions";
 import { useAuthStore } from "@/store";
 
 export const RUNNING_SESSIONS_QUERY_KEY = ["user", "workout", "running"];
@@ -48,21 +52,29 @@ const normalizeRunningSession = (session) => {
     endedAt: session.endedAt ?? null,
     metrics: {
       distanceMeters:
-        toNumber(get(session, "metrics.distanceMeters", session.distanceMeters ?? 0)) || 0,
+        toNumber(
+          get(session, "metrics.distanceMeters", session.distanceMeters ?? 0),
+        ) || 0,
       durationSeconds:
-        toNumber(get(session, "metrics.durationSeconds", session.durationSeconds ?? 0)) || 0,
+        toNumber(
+          get(session, "metrics.durationSeconds", session.durationSeconds ?? 0),
+        ) || 0,
       movingDurationSeconds:
-        toNumber(get(
-          session,
-          "metrics.movingDurationSeconds",
-          session.movingDurationSeconds ?? 0,
-        )) || 0,
+        toNumber(
+          get(
+            session,
+            "metrics.movingDurationSeconds",
+            session.movingDurationSeconds ?? 0,
+          ),
+        ) || 0,
       caloriesBurned:
-        toNumber(get(
-          session,
-          "metrics.caloriesBurned",
-          session.caloriesBurned ?? session.estimatedCalories ?? 0,
-        )) || 0,
+        toNumber(
+          get(
+            session,
+            "metrics.caloriesBurned",
+            session.caloriesBurned ?? session.estimatedCalories ?? 0,
+          ),
+        ) || 0,
       averagePaceSecondsPerKm: get(
         session,
         "metrics.averagePaceSecondsPerKm",
@@ -118,7 +130,8 @@ const normalizeRunningSession = (session) => {
     },
     splits: isArray(session.splits) ? session.splits : [],
     points: isArray(session.points)
-      ? filter(map(session.points, (point) => ({
+      ? filter(
+          map(session.points, (point) => ({
             ...point,
             sequence: toNumber(point?.sequence ?? 0) || 0,
             latitude: toNumber(point?.latitude),
@@ -127,9 +140,10 @@ const normalizeRunningSession = (session) => {
               point?.accuracy === undefined || point?.accuracy === null
                 ? null
                 : toNumber(point.accuracy),
-          })), (point) =>
-      Number.isFinite(point.latitude) &&
-      Number.isFinite(point.longitude))
+          })),
+          (point) =>
+            Number.isFinite(point.latitude) && Number.isFinite(point.longitude),
+        )
       : [],
   };
 };
@@ -141,6 +155,9 @@ const invalidateRunningQueries = async (queryClient) => {
     queryClient.invalidateQueries({ queryKey: RUNNING_STATS_QUERY_KEY }),
     queryClient.invalidateQueries({
       queryKey: WORKOUT_SESSION_HISTORY_QUERY_KEY,
+    }),
+    queryClient.invalidateQueries({
+      queryKey: WORKOUT_SESSION_HISTORY_SUMMARY_QUERY_KEY,
     }),
     queryClient.invalidateQueries({ queryKey: WORKOUT_LOGS_QUERY_KEY }),
     queryClient.invalidateQueries({ queryKey: WORKOUT_OVERVIEW_QUERY_KEY }),
@@ -204,22 +221,22 @@ export const useRunningSessions = (params = {}, options = {}) => {
     const seenSessionIds = new Set();
 
     return filter(map(items, normalizeRunningSession), (session) => {
-        if (!session) {
-          return false;
-        }
+      if (!session) {
+        return false;
+      }
 
-        const sessionId = session.workoutSessionId || session.runningSessionId;
-        if (!sessionId) {
-          return true;
-        }
-
-        if (seenSessionIds.has(sessionId)) {
-          return false;
-        }
-
-        seenSessionIds.add(sessionId);
+      const sessionId = session.workoutSessionId || session.runningSessionId;
+      if (!sessionId) {
         return true;
-      });
+      }
+
+      if (seenSessionIds.has(sessionId)) {
+        return false;
+      }
+
+      seenSessionIds.add(sessionId);
+      return true;
+    });
   }, [items]);
 
   return {
@@ -287,7 +304,7 @@ export const useStartRunningSession = () => {
   const startRunningSession = React.useCallback(
     async (payload = {}) => {
       const response = await mutateAsync({
-        url: "/user/workout/running/start",
+        url: "/user/workout/start-run",
         attributes: payload,
       });
       await invalidateRunningQueries(queryClient);
@@ -316,6 +333,10 @@ export const useBeginRunningSession = () => {
       await invalidateRunningQueries(queryClient);
       await queryClient.invalidateQueries({
         queryKey: getRunningSessionDetailQueryKey(workoutSessionId),
+      });
+      void trackCampaignConversion("workout_done", {
+        workoutSessionId,
+        workoutType: "running",
       });
       return normalizeRunningSession(resolveResponseData(response, null));
     },

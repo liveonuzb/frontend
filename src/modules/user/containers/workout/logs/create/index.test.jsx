@@ -1,4 +1,6 @@
 import React from "react";
+import "@/lib/i18n";
+import i18n from "@/lib/i18n";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -76,7 +78,8 @@ const renderPage = (initialEntry = "/user/workout/logs/create") => {
 };
 
 describe("CreateWorkoutLogPage", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("uz");
     vi.clearAllMocks();
     createLogMock.mockResolvedValue({});
     useCreateWorkoutLog.mockReturnValue({

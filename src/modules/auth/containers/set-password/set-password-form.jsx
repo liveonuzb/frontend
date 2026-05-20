@@ -17,6 +17,7 @@ import {
   getPostAuthRoute,
 } from "@/modules/auth/lib/auth-utils";
 import { useAuthMobileAutoFocus } from "@/modules/auth/lib/mobile-keyboard";
+import { applyStrongPasswordPolicy } from "@/modules/auth/lib/password-policy.js";
 import { useAuthStore } from "@/store";
 
 const SetPasswordForm = () => {
@@ -31,7 +32,7 @@ const SetPasswordForm = () => {
       password: z
         .string()
         .min(1, t("auth.validation.passwordRequired"))
-        .min(6, t("auth.validation.passwordMin")),
+        .pipe(applyStrongPasswordPolicy(z.string(), t)),
       confirmPassword: z
         .string()
         .min(1, t("auth.validation.confirmPasswordRequired")),
@@ -143,7 +144,6 @@ const SetPasswordForm = () => {
                 {...field}
               />
               <FieldError
-                className={"absolute -bottom-6"}
                 errors={
                   get(fieldState, "error") ? [get(fieldState, "error")] : []
                 }

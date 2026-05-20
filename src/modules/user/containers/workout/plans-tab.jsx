@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { DrawerBody, DrawerFooter } from "@/components/ui/drawer";
 import { useLanguageStore } from "@/store";
 import { cn } from "@/lib/utils";
+import { WORKOUT_PLAN_STATUS } from "@/hooks/app/use-workout-plans";
 import {
   CalendarIcon,
   CheckIcon,
@@ -55,7 +56,11 @@ export default function PlansTab({
   const userPlans = React.useMemo(() => {
     const getStatusPriority = (plan) => {
       const status = get(plan, "status");
-      return status === "active" ? 0 : status === "draft" ? 1 : 2;
+      return status === WORKOUT_PLAN_STATUS.active
+        ? 0
+        : status === WORKOUT_PLAN_STATUS.draft
+          ? 1
+          : 2;
     };
 
     return orderBy(
@@ -106,9 +111,9 @@ export default function PlansTab({
                         <div className="min-w-0 flex-1">
                           <div className="mb-2 flex flex-wrap items-center gap-2">
                             <Badge variant="outline" className="capitalize">
-                              {get(plan, "status") === "draft"
+                              {get(plan, "status") === WORKOUT_PLAN_STATUS.draft
                                 ? "Qoralama"
-                                : get(plan, "status") === "active"
+                                : get(plan, "status") === WORKOUT_PLAN_STATUS.active
                                   ? "Faol"
                                   : get(plan, "status")}
                             </Badge>

@@ -1,5 +1,5 @@
 import React from "react";
-import { Navigate, Route, Routes } from "react-router";
+import { Navigate, Route, Routes, useParams } from "react-router";
 import ListPage from "./list";
 import WorkoutHistoryPage from "./history";
 import WorkoutHistoryDetailPage from "./history/detail";
@@ -13,12 +13,20 @@ import EditWorkoutPlanPage from "./plans/edit";
 import CreateWorkoutLogPage from "./logs/create";
 import EditWorkoutLogPage from "./logs/edit";
 import WorkoutExercisesPage from "./exercises";
-import RunningPage from "./running";
+import WorkoutReportPage from "./report";
 import RunningLivePage from "./running/live";
-import RunningHistoryPage from "./running/history";
-import RunningDetailPage from "./running/detail";
 import WorkoutShell from "./workout-shell";
-import { config } from "@/config.js";
+
+const DeprecatedRunningDetailRedirect = () => {
+  const { workoutSessionId } = useParams();
+
+  return (
+    <Navigate
+      to={`/user/workout/history/${workoutSessionId}`}
+      replace
+    />
+  );
+};
 
 const Index = () => {
   return (
@@ -26,7 +34,7 @@ const Index = () => {
       <Route element={<WorkoutShell />}>
         <Route index element={<Navigate to="home" replace />} />
         <Route path="home" element={<ListPage />} />
-        <Route path="report" element={<WorkoutHistoryPage />} />
+        <Route path="report" element={<WorkoutReportPage />} />
         <Route
           path="report/:sessionId"
           element={<WorkoutHistoryDetailPage />}
@@ -52,23 +60,27 @@ const Index = () => {
         />
         <Route path="plans/:planId" element={<WorkoutPlanDetailPage />} />
         <Route path="plans/edit/:planId" element={<EditWorkoutPlanPage />} />
-        {config.runningFeatureEnabled ? (
-          <>
-            <Route path="running" element={<RunningPage />} />
-            <Route path="running/live" element={<RunningLivePage />} />
-            <Route
-              path="running/live/:workoutSessionId"
-              element={<RunningLivePage />}
-            />
-            <Route path="running/history" element={<RunningHistoryPage />} />
-            <Route
-              path="running/:workoutSessionId"
-              element={<RunningDetailPage />}
-            />
-          </>
-        ) : (
-          <Route path="running/*" element={<Navigate to="../home" replace />} />
-        )}
+        <Route
+          path="running"
+          element={<Navigate to="/user/workout/home" replace />}
+        />
+        <Route path="running/live" element={<RunningLivePage />} />
+        <Route
+          path="running/live/:workoutSessionId"
+          element={<RunningLivePage />}
+        />
+        <Route
+          path="running/history"
+          element={<Navigate to="/user/workout/history" replace />}
+        />
+        <Route
+          path="running/:workoutSessionId"
+          element={<DeprecatedRunningDetailRedirect />}
+        />
+        <Route
+          path="running/*"
+          element={<Navigate to="/user/workout/home" replace />}
+        />
         <Route path="exercises" element={<WorkoutExercisesPage />} />
         <Route path="logs/create" element={<CreateWorkoutLogPage />} />
         <Route path="logs/edit/:logGroupId" element={<EditWorkoutLogPage />} />

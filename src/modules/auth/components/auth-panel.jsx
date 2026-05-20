@@ -51,12 +51,17 @@ function AuthKeyboardHidden({
   );
 }
 
-function AuthHeader({ title, children }) {
+function AuthHeader({ title, description, children }) {
   return (
     <div className="flex flex-col items-start gap-3 text-left">
       <h1 className="text-2xl font-semibold leading-tight text-slate-950 dark:text-white">
         {title}
       </h1>
+      {description ? (
+        <FieldDescription className="text-sm leading-6 text-slate-500 dark:text-white/62">
+          {description}
+        </FieldDescription>
+      ) : null}
       {children}
     </div>
   );

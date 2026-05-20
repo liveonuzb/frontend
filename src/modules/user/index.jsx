@@ -44,6 +44,9 @@ const PublicProfilePage = lazy(
 const AchievementsPage = lazy(
   () => import("@/modules/user/pages/achievements/index.jsx"),
 );
+const LeaderboardPage = lazy(
+  () => import("@/modules/user/pages/leaderboard/index.jsx"),
+);
 
 const FavoritesPage = lazy(
   () => import("@/modules/user/pages/favorites/index.jsx"),
@@ -224,6 +227,16 @@ const Index = () => {
             <Suspense fallback={<PageLoader />}>
               <ErrorBoundary>
                 <AchievementsPage />
+              </ErrorBoundary>
+            </Suspense>
+          }
+        />
+        <Route
+          path="leaderboard"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <ErrorBoundary>
+                <LeaderboardPage />
               </ErrorBoundary>
             </Suspense>
           }

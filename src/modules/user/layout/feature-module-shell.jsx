@@ -11,6 +11,8 @@ const FeatureModuleShell = ({
   className,
   contentClassName,
   navClassName,
+  navAriaLabel,
+  navVariant,
   hideDesktopNav = false,
   hideMobileNav = false,
 }) => {
@@ -22,7 +24,12 @@ const FeatureModuleShell = ({
     <div className={cn("flex min-h-full flex-col gap-y-5", className)}>
       {!shouldHideDesktopNav ? (
         <div className="mb-4 hidden md:block">
-          <FeatureSubNav items={items} className={navClassName} />
+          <FeatureSubNav
+            items={items}
+            className={navClassName}
+            ariaLabel={navAriaLabel}
+            variant={navVariant}
+          />
         </div>
       ) : null}
       {!shouldHideMobileNav ? (
@@ -30,6 +37,8 @@ const FeatureModuleShell = ({
           items={items}
           mobile
           className={cn("md:hidden", navClassName)}
+          ariaLabel={navAriaLabel}
+          variant={navVariant}
         />
       ) : null}
       <div className={cn("flex-1", contentClassName)}>

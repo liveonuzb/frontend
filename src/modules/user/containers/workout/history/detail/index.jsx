@@ -1,5 +1,6 @@
 import React from "react";
-import { get, map, isArray, toNumber } from "lodash";
+import { useTranslation } from "react-i18next";
+import { filter, get, isArray, map, size, toNumber } from "lodash";
 import { useNavigate, useParams } from "react-router";
 import {
   ArrowLeftIcon,
@@ -42,18 +43,40 @@ const formatDateTime = (value) => {
   }).format(date);
 };
 
-const formatDuration = (seconds) => {
+const formatDuration = (seconds, t) => {
   const totalMinutes = Math.max(0, Math.round((toNumber(seconds) || 0) / 60));
-  return `${totalMinutes} daqiqa`;
+  return t("user.workout.historyDetail.durationValue", {
+    count: totalMinutes,
+  });
 };
 
 const getRenderableExercises = (session) => {
   const detailedExercises = isArray(get(session, "exercises"))
     ? get(session, "exercises")
     : [];
+  const skippedExercises = isArray(get(session, "skippedExercises"))
+    ? get(session, "skippedExercises")
+    : [];
+  const skippedRenderableExercises = map(skippedExercises, (exercise, index) => ({
+    key:
+      get(exercise, "exerciseKey") ||
+      get(exercise, "id") ||
+      get(exercise, "exerciseName") ||
+      get(exercise, "name") ||
+      `skipped-${index}`,
+    name: get(exercise, "exerciseName") || get(exercise, "name"),
+    equipment: get(exercise, "equipment"),
+    completedSets: get(exercise, "completedSets", 0),
+    totalSets: get(exercise, "totalSets", 0),
+    totalReps: get(exercise, "totalReps", 0),
+    totalVolumeKg: get(exercise, "totalVolumeKg", 0),
+    distanceMeters: get(exercise, "distanceMeters", 0),
+    skipped: true,
+    sets: isArray(get(exercise, "sets")) ? get(exercise, "sets") : [],
+  }));
 
   if (detailedExercises.length > 0) {
-    return map(detailedExercises, (exercise, index) => ({
+    const renderableExercises = map(detailedExercises, (exercise, index) => ({
       key:
         get(exercise, "id") ||
         get(exercise, "exerciseKey") ||
@@ -69,26 +92,37 @@ const getRenderableExercises = (session) => {
       skipped: Boolean(get(exercise, "skipped")),
       sets: isArray(get(exercise, "sets")) ? get(exercise, "sets") : [],
     }));
+    const renderedKeys = new Set(map(renderableExercises, (item) => get(item, "key")));
+    const missingSkippedExercises = filter(
+      skippedRenderableExercises,
+      (item) => !renderedKeys.has(get(item, "key")),
+    );
+
+    return [...renderableExercises, ...missingSkippedExercises];
   }
 
-  return map(get(session, "exerciseSummaries", []), (item, index) => ({
-    key:
-      get(item, "exerciseKey") ||
-      get(item, "exerciseName") ||
-      `summary-${index}`,
-    name: get(item, "exerciseName"),
-    equipment: null,
-    completedSets: get(item, "completedSets", 0),
-    totalSets: get(item, "completedSets", 0),
-    totalReps: get(item, "totalReps", 0),
-    totalVolumeKg: get(item, "totalVolumeKg", 0),
-    distanceMeters: get(item, "distanceMeters", 0),
-    skipped: false,
-    sets: [],
-  }));
+  return [
+    ...map(get(session, "exerciseSummaries", []), (item, index) => ({
+      key:
+        get(item, "exerciseKey") ||
+        get(item, "exerciseName") ||
+        `summary-${index}`,
+      name: get(item, "exerciseName"),
+      equipment: null,
+      completedSets: get(item, "completedSets", 0),
+      totalSets: get(item, "completedSets", 0),
+      totalReps: get(item, "totalReps", 0),
+      totalVolumeKg: get(item, "totalVolumeKg", 0),
+      distanceMeters: get(item, "distanceMeters", 0),
+      skipped: false,
+      sets: [],
+    })),
+    ...skippedRenderableExercises,
+  ];
 };
 
 const SessionHistoryDetailPage = () => {
+  const { t } = useTranslation();
   const { sessionId } = useParams();
   const navigate = useNavigate();
   const { setBreadcrumbs } = useBreadcrumbStore();
@@ -97,12 +131,21 @@ const SessionHistoryDetailPage = () => {
 
   React.useEffect(() => {
     setBreadcrumbs([
-      { url: "/user", title: "Bosh sahifa" },
-      { url: "/user/workout", title: "Workout" },
-      { url: "/user/workout/history", title: "Tarix" },
-      { url: `/user/workout/history/${sessionId}`, title: "Session" },
+      { url: "/user", title: t("user.workout.plansList.breadcrumbs.home") },
+      {
+        url: "/user/workout",
+        title: t("user.workout.plansList.breadcrumbs.workout"),
+      },
+      {
+        url: "/user/workout/history",
+        title: t("user.workout.history.breadcrumb"),
+      },
+      {
+        url: `/user/workout/history/${sessionId}`,
+        title: t("user.workout.historyDetail.session"),
+      },
     ]);
-  }, [sessionId, setBreadcrumbs]);
+  }, [sessionId, setBreadcrumbs, t]);
 
   const relatedPlanPath = React.useMemo(() => {
     const planId = get(session, "planId");
@@ -126,6 +169,10 @@ const SessionHistoryDetailPage = () => {
     () => getRenderableExercises(session),
     [session],
   );
+  const skippedExerciseCount = Math.max(
+    toNumber(get(session, "skippedExerciseCount", 0)) || 0,
+    size(filter(renderableExercises, (item) => get(item, "skipped"))),
+  );
   const isRunning = isOutdoorRunningSession(session);
   const distanceMeters = getWorkoutSessionDistanceMeters(session);
   const paceSecondsPerKm = getWorkoutSessionPaceSecondsPerKm(session);
@@ -139,15 +186,17 @@ const SessionHistoryDetailPage = () => {
       <PageTransition mode="slide-up">
         <Card>
           <CardHeader>
-            <CardTitle>Workout session topilmadi</CardTitle>
+            <CardTitle>{t("user.workout.historyDetail.notFoundTitle")}</CardTitle>
             <CardDescription>
-              Tanlangan mashg'ulot tafsilotlarini olishda xatolik yuz berdi.
+              {t("user.workout.historyDetail.notFoundDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex gap-3">
-            <Button onClick={() => refetch()}>Qayta urinish</Button>
+            <Button onClick={() => refetch()}>
+              {t("user.workout.historyDetail.retry")}
+            </Button>
             <Button variant="outline" onClick={() => navigate("/user/workout/history")}>
-              Tarixga qaytish
+              {t("user.workout.historyDetail.backToHistory")}
             </Button>
           </CardContent>
         </Card>
@@ -160,19 +209,14 @@ const SessionHistoryDetailPage = () => {
       <PageTransition mode="slide-up">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
           <TrackingPageHeader
-            title={get(session, "focus") || "Outdoor run"}
-            subtitle="Yakunlangan running session tafsilotlari va GPS metrikalari."
+            title={get(session, "focus") || t("user.workout.historyDetail.outdoorRun")}
+            subtitle={t("user.workout.historyDetail.runningSubtitle")}
             hideTitleOnMobile={false}
             actions={
-              <>
-                <Button variant="outline" onClick={() => navigate("/user/workout/history")}>
-                  <ArrowLeftIcon data-icon="inline-start" />
-                  Tarix
-                </Button>
-                <Button onClick={() => navigate(`/user/workout/running/${sessionId}`)}>
-                  Running detail
-                </Button>
-              </>
+              <Button variant="outline" onClick={() => navigate("/user/workout/history")}>
+                <ArrowLeftIcon data-icon="inline-start" />
+                {t("user.workout.historyDetail.history")}
+              </Button>
             }
           />
 
@@ -184,15 +228,15 @@ const SessionHistoryDetailPage = () => {
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="outline">
                         <RouteIcon />
-                        Running
+                        {t("user.workout.historyDetail.running")}
                       </Badge>
                       <Badge variant="secondary">
                         <CheckCircle2Icon />
-                        Yakunlandi
+                        {t("user.workout.historyDetail.completed")}
                       </Badge>
                     </div>
                     <CardTitle className="text-2xl font-black">
-                      GPS running session
+                      {t("user.workout.historyDetail.gpsRunningSession")}
                     </CardTitle>
                     <CardDescription>
                       {formatDateTime(get(session, "endedAt"))}
@@ -205,7 +249,7 @@ const SessionHistoryDetailPage = () => {
                     </p>
                     <p className="inline-flex items-center gap-2">
                       <TimerIcon className="size-4" />
-                      {formatDuration(get(session, "durationSeconds"))}
+                      {formatDuration(get(session, "durationSeconds"), t)}
                     </p>
                     <p className="inline-flex items-center gap-2">
                       <FlameIcon className="size-4" />
@@ -217,10 +261,12 @@ const SessionHistoryDetailPage = () => {
                 {previousSessionId ? (
                   <Card className="rounded-[2rem]">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-base font-black">Oldingi session</CardTitle>
-                      <CardDescription>
-                        Avvalgi workout tafsilotlarini ham ko'rishingiz mumkin.
-                      </CardDescription>
+                    <CardTitle className="text-base font-black">
+                      {t("user.workout.historyDetail.previousSession")}
+                    </CardTitle>
+                    <CardDescription>
+                      {t("user.workout.historyDetail.previousDescription")}
+                    </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <Button
@@ -228,7 +274,7 @@ const SessionHistoryDetailPage = () => {
                         className="w-full"
                         onClick={() => navigate(`/user/workout/history/${previousSessionId}`)}
                       >
-                        Oldingi sessionni ochish
+                        {t("user.workout.historyDetail.openPrevious")}
                       </Button>
                     </CardContent>
                   </Card>
@@ -238,32 +284,40 @@ const SessionHistoryDetailPage = () => {
           >
             <Card className="rounded-[2rem]">
               <CardHeader>
-                <CardTitle>Running summary</CardTitle>
+                <CardTitle>{t("user.workout.historyDetail.runningSummary")}</CardTitle>
                 <CardDescription>
-                  Umumiy masofa, vaqt, pace va kaloriya ko'rsatkichlari.
+                  {t("user.workout.historyDetail.runningSummaryDescription")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-3xl bg-muted/30 p-5">
-                  <p className="text-xs text-muted-foreground">Masofa</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("user.workout.historyDetail.distance")}
+                  </p>
                   <p className="mt-2 text-2xl font-black">
                     {formatRunningDistance(distanceMeters)}
                   </p>
                 </div>
                 <div className="rounded-3xl bg-muted/30 p-5">
-                  <p className="text-xs text-muted-foreground">Davomiyligi</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("user.workout.historyDetail.duration")}
+                  </p>
                   <p className="mt-2 text-2xl font-black">
-                    {formatDuration(get(session, "durationSeconds"))}
+                    {formatDuration(get(session, "durationSeconds"), t)}
                   </p>
                 </div>
                 <div className="rounded-3xl bg-muted/30 p-5">
-                  <p className="text-xs text-muted-foreground">Pace</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("user.workout.historyDetail.pace")}
+                  </p>
                   <p className="mt-2 text-2xl font-black">
                     {formatRunningPace(paceSecondsPerKm)}
                   </p>
                 </div>
                 <div className="rounded-3xl bg-muted/30 p-5">
-                  <p className="text-xs text-muted-foreground">Calories</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("user.workout.historyDetail.calories")}
+                  </p>
                   <p className="mt-2 text-2xl font-black">
                     {get(session, "estimatedCalories", 0)} kcal
                   </p>
@@ -280,17 +334,23 @@ const SessionHistoryDetailPage = () => {
     <PageTransition mode="slide-up">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <TrackingPageHeader
-          title={get(session, "focus") || get(session, "planName") || "Workout"}
-          subtitle="Yakunlangan session tafsilotlari va bajarilgan mashqlar."
+          title={
+            get(session, "focus") ||
+            get(session, "planName") ||
+            t("user.workout.historyDetail.workout")
+          }
+          subtitle={t("user.workout.historyDetail.workoutSubtitle")}
           hideTitleOnMobile={false}
           actions={
             <>
               <Button variant="outline" onClick={() => navigate("/user/workout/history")}>
                 <ArrowLeftIcon data-icon="inline-start" />
-                Tarix
+                {t("user.workout.historyDetail.history")}
               </Button>
               {relatedPlanPath ? (
-                <Button onClick={() => navigate(relatedPlanPath)}>Plan kuni</Button>
+                <Button onClick={() => navigate(relatedPlanPath)}>
+                  {t("user.workout.historyDetail.planDay")}
+                </Button>
               ) : null}
             </>
           }
@@ -303,15 +363,18 @@ const SessionHistoryDetailPage = () => {
                 <CardHeader className="pb-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="outline">
-                      Day {(toNumber(get(session, "planDayIndex")) || 0) + 1}
+                      {t("user.workout.historyDetail.dayBadge", {
+                        day: (toNumber(get(session, "planDayIndex")) || 0) + 1,
+                      })}
                     </Badge>
                     <Badge variant="secondary">
                       <CheckCircle2Icon />
-                      Yakunlandi
+                      {t("user.workout.historyDetail.completed")}
                     </Badge>
                   </div>
                   <CardTitle className="text-2xl font-black">
-                    {get(session, "planName") || "Workout plan"}
+                    {get(session, "planName") ||
+                      t("user.workout.historyDetail.workoutPlan")}
                   </CardTitle>
                   <CardDescription>
                     {formatDateTime(get(session, "endedAt"))}
@@ -320,29 +383,49 @@ const SessionHistoryDetailPage = () => {
                 <CardContent className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="rounded-3xl bg-muted/30 p-4">
-                      <p className="text-xs text-muted-foreground">Davomiyligi</p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("user.workout.historyDetail.duration")}
+                      </p>
                       <p className="mt-2 text-xl font-black">
-                        {formatDuration(get(session, "durationSeconds"))}
+                        {formatDuration(get(session, "durationSeconds"), t)}
                       </p>
                     </div>
                     <div className="rounded-3xl bg-muted/30 p-4">
-                      <p className="text-xs text-muted-foreground">Calories</p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("user.workout.historyDetail.calories")}
+                      </p>
                       <p className="mt-2 text-xl font-black">
                         {get(session, "estimatedCalories", 0)} kcal
                       </p>
                     </div>
                     <div className="rounded-3xl bg-muted/30 p-4">
-                      <p className="text-xs text-muted-foreground">Setlar</p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("user.workout.historyDetail.sets")}
+                      </p>
                       <p className="mt-2 text-xl font-black">
                         {get(session, "completedSets", 0)}/{get(session, "totalSets", 0)}
                       </p>
                     </div>
                     <div className="rounded-3xl bg-muted/30 p-4">
-                      <p className="text-xs text-muted-foreground">Volume</p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("user.workout.historyDetail.volume")}
+                      </p>
                       <p className="mt-2 text-xl font-black">
                         {get(session, "totalVolumeKg", 0)} kg
                       </p>
                     </div>
+                    {skippedExerciseCount > 0 ? (
+                      <div className="rounded-3xl bg-muted/30 p-4">
+                        <p className="text-xs text-muted-foreground">
+                          {t("user.workout.historyDetail.skipped")}
+                        </p>
+                        <p className="mt-2 text-xl font-black">
+                          {t("user.workout.historyDetail.skippedCount", {
+                            count: skippedExerciseCount,
+                          })}
+                        </p>
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className="space-y-2 text-sm text-muted-foreground">
@@ -352,7 +435,7 @@ const SessionHistoryDetailPage = () => {
                     </p>
                     <p className="inline-flex items-center gap-2">
                       <TimerIcon className="size-4" />
-                      {formatDuration(get(session, "durationSeconds"))}
+                      {formatDuration(get(session, "durationSeconds"), t)}
                     </p>
                     <p className="inline-flex items-center gap-2">
                       <FlameIcon className="size-4" />
@@ -365,9 +448,11 @@ const SessionHistoryDetailPage = () => {
               {previousSessionId ? (
                 <Card className="rounded-[2rem]">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-black">Oldingi session</CardTitle>
+                    <CardTitle className="text-base font-black">
+                      {t("user.workout.historyDetail.previousSession")}
+                    </CardTitle>
                     <CardDescription>
-                      Avvalgi workout tafsilotlarini ham ko'rishingiz mumkin.
+                      {t("user.workout.historyDetail.previousDescription")}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -376,7 +461,7 @@ const SessionHistoryDetailPage = () => {
                       className="w-full"
                       onClick={() => navigate(`/user/workout/history/${previousSessionId}`)}
                     >
-                      Oldingi sessionni ochish
+                      {t("user.workout.historyDetail.openPrevious")}
                     </Button>
                   </CardContent>
                 </Card>
@@ -386,9 +471,9 @@ const SessionHistoryDetailPage = () => {
         >
           <Card className="rounded-[2rem]">
             <CardHeader>
-              <CardTitle>Bajarilgan mashqlar</CardTitle>
+              <CardTitle>{t("user.workout.historyDetail.completedExercises")}</CardTitle>
               <CardDescription>
-                Session davomida log qilingan mashqlar va umumiy yuklama.
+                {t("user.workout.historyDetail.completedDescription")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -404,14 +489,20 @@ const SessionHistoryDetailPage = () => {
                     <div className="min-w-0 flex-1">
                       <p className="text-base font-black">{get(item, "name")}</p>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {get(item, "equipment") || "Bodyweight"}
+                        {get(item, "equipment") ||
+                          t("user.workout.historyDetail.bodyweight")}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-2">
                         <Badge variant="outline">
-                          {get(item, "completedSets", 0)}/{get(item, "totalSets", 0)} set
+                          {t("user.workout.historyDetail.setCount", {
+                            completed: get(item, "completedSets", 0),
+                            total: get(item, "totalSets", 0),
+                          })}
                         </Badge>
                         <Badge variant="outline">
-                          {get(item, "totalReps", 0)} reps
+                          {t("user.workout.historyDetail.repsCount", {
+                            count: get(item, "totalReps", 0),
+                          })}
                         </Badge>
                         {toNumber(get(item, "distanceMeters", 0)) > 0 ? (
                           <Badge variant="outline">
@@ -419,7 +510,9 @@ const SessionHistoryDetailPage = () => {
                           </Badge>
                         ) : null}
                         {get(item, "skipped") ? (
-                          <Badge variant="secondary">Skipped</Badge>
+                          <Badge variant="secondary">
+                            {t("user.workout.historyDetail.skippedBadge")}
+                          </Badge>
                         ) : null}
                       </div>
                     </div>
@@ -439,9 +532,17 @@ const SessionHistoryDetailPage = () => {
                           className="grid grid-cols-[28px_repeat(4,minmax(0,1fr))] items-center gap-2 rounded-2xl bg-muted/30 px-3 py-2 text-sm"
                         >
                           <span className="font-black">{toNumber(get(set, "setIndex", 0)) + 1}</span>
-                          <span>{get(set, "reps", 0)} reps</span>
+                          <span>
+                            {t("user.workout.historyDetail.repsCount", {
+                              count: get(set, "reps", 0),
+                            })}
+                          </span>
                           <span>{get(set, "weight", 0)} kg</span>
-                          <span>{get(set, "durationSeconds", 0)} sec</span>
+                          <span>
+                            {t("user.workout.historyDetail.secondsCount", {
+                              count: get(set, "durationSeconds", 0),
+                            })}
+                          </span>
                           <span>{get(set, "distanceMeters", 0)} m</span>
                         </div>
                       ))}

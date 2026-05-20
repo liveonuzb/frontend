@@ -1,6 +1,7 @@
 {
   "common": {
     "loading": "Yuklanmoqda...",
+    "done": "Tayyor",
     "actions": {
       "save": "Saqlash",
       "saving": "Saqlanmoqda...",
@@ -110,7 +111,10 @@
         "closeLabel": "Konstruktorni yopish",
         "title": "Mashg'ulot rejasi konstruktori",
         "description": "Haftalik mashg'ulot tuzilmasi va mashqlarni boshqaring.",
-        "addDay": "Kun"
+        "addDay": "Kun",
+        "editMetaLabel": "Plan ma'lumotlarini tahrirlash",
+        "editMode": "Tahrirlash rejimi",
+        "addFirstExercise": "Birinchi mashqni qo'shing"
       },
       "footer": {
         "savePlan": "Rejani saqlash"
@@ -141,6 +145,11 @@
         "descriptionPlaceholder": "Reja maqsadi yoki qisqa izoh...",
         "continue": "Davom etish",
         "cancel": "Bekor qilish"
+      },
+      "metaDrawer": {
+        "title": "Plan ma'lumotlari",
+        "descriptionPlaceholder": "Reja tavsifi",
+        "save": "Saqlash"
       },
       "desktop": {
         "searchPlaceholder": "Mashq qidirish...",
@@ -228,6 +237,79 @@
         "minDays": "Kamida 1 ta kun qo'shing",
         "addDayFirst": "Avval kun qo'shing"
       }
+    }
+  },
+  "store": {
+    "chat": {
+      "errors": {
+        "sendMessage": "Xabar yuborishda xatolik",
+        "refreshAttachment": "Fayl linkini yangilab bo'lmadi",
+        "deleteMessage": "Xabarni o'chirishda xatolik",
+        "editMessage": "Xabarni tahrirlashda xatolik",
+        "sendBooking": "Booking yuborishda xatolik",
+        "selectBookingSlot": "Slotni band qilishda xatolik",
+        "cancelBooking": "Bookingni bekor qilishda xatolik",
+        "completeBooking": "Bookingni tugatishda xatolik",
+        "searchUnavailable": "Server qidiruv vaqtincha ishlamadi"
+      },
+      "sender": {
+        "me": "Siz",
+        "unknown": "Noma'lum"
+      },
+      "forward": {
+        "image": "📷 Rasm",
+        "file": "📎 Fayl",
+        "voice": "🎙️ Ovozli xabar",
+        "message": "Forward qilingan xabar"
+      },
+      "aiSuggestions": {
+        "food": {
+          "salad": "Salat taklif qilish 🥗",
+          "water": "Suv ichishni eslatish 💧",
+          "plan": "Rejani ko'rish 📋"
+        },
+        "workout": {
+          "video": "Video yuborish 🎥",
+          "goodLuck": "Omad tilash ✨",
+          "task": "Vazifa berish 🎯"
+        },
+        "thanks": {
+          "welcome": "Arzimaydi 😊",
+          "continue": "Davom etamiz 💪",
+          "questions": "Savollar bormi? 🤔"
+        },
+        "default": {
+          "good": "Yaxshi 👍",
+          "understood": "Tushunarli 👌",
+          "next": "Keyingisi ➡️"
+        }
+      },
+      "messages": {
+        "sharedContent": "Shared {{type}}: {{title}}",
+        "poll": "So'rovnoma: {{question}}",
+        "task": "Vazifa: {{title}}",
+        "invoice": "Invoice: {{description}}",
+        "habitTracker": "Odatlar: {{title}}"
+      },
+      "invoice": {
+        "unavailable": "Invoice to'lovi hali real payment providerga ulanmagan"
+      },
+      "bookmarks": {
+        "removed": "Xatcho'pdan olib tashlandi",
+        "saved": "Xatcho'pga saqlandi"
+      },
+      "live": {
+        "started": "Jonli efir boshlandi! 🎥"
+      },
+      "summary": {
+        "unavailable": "Ushbu suhbat tahlili hali tayyor emas."
+      },
+      "stories": {
+        "added": "Hikoya muvaffaqiyatli qo'shildi! ✨"
+      }
+    },
+    "gamification": {
+      "xpSpent": "XP sarflandi"
     }
   }
 }

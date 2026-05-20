@@ -20,6 +20,7 @@ const NutritionShell = () => {
   return (
     <FeatureModuleShell
       items={NUTRITION_NAV_ITEMS}
+      navVariant="nutrition"
       hideMobileNav={shouldHideTabs}
       hideDesktopNav={shouldHideTabs}
     />

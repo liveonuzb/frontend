@@ -81,6 +81,7 @@ import { cn } from "@/lib/utils";
 import { applyTheme, resolveTheme } from "@/lib/user-preferences";
 import { getPostAuthRoute } from "@/modules/auth/lib/auth-utils.js";
 import { useAppModeStore, useAuthStore, useLanguageStore } from "@/store";
+import { trackLaunchEvent } from "@/lib/analytics.js";
 import { isArray, map, toLower } from "lodash";
 const LANGUAGES = [
   {
@@ -199,6 +200,10 @@ const useLandingContent = (language) => {
 };
 const trackLandingEvent = (event, payload = {}) => {
   if (typeof window === "undefined") return;
+  void trackLaunchEvent(event, {
+    source: "landing",
+    properties: payload
+  });
   window.dispatchEvent(
     new CustomEvent("liveon:analytics", {
       detail: { event, payload, source: "landing" }

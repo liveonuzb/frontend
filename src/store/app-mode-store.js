@@ -10,7 +10,7 @@ export const APP_MODES = {
 const useAppModeStore = create()(
   persist(
     (set) => ({
-      mode: APP_MODES.MADAGASCAR,
+      mode: "",
       setMode: (mode) => set({ mode }),
       resetMode: () => set({ mode: APP_MODES.MADAGASCAR }),
     }),

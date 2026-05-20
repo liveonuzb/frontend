@@ -1,4 +1,6 @@
 import React from "react";
+import "@/lib/i18n";
+import i18n from "@/lib/i18n";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import {
   createMemoryRouter,
@@ -128,7 +130,8 @@ const renderPage = (initialEntry) => {
 };
 
 describe("CreateWorkoutPlanPage", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("uz");
     createPlanMock.mockReset();
     generatePlanMock.mockReset();
     uploadMock.mockReset();
@@ -227,6 +230,46 @@ describe("CreateWorkoutPlanPage", () => {
     );
   });
 
+  it("shows backend validation details when draft creation fails", async () => {
+    createPlanMock.mockRejectedValue({
+      response: {
+        data: {
+          error: {
+            message: "Validation failed",
+            details: [{ message: "difficulty must be one of canonical values" }],
+          },
+        },
+      },
+    });
+
+    renderPage({ pathname: "/user/workout/plans/create" });
+
+    fireEvent.change(screen.getByLabelText("Plan nomi"), {
+      target: { value: "Upper day" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create" }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "difficulty must be one of canonical values",
+      );
+    });
+  });
+
+  it("shows an inline name validation error and does not create a blank plan", () => {
+    renderPage({ pathname: "/user/workout/plans/create" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Create" }));
+
+    expect(screen.getByText("Reja nomini kiriting")).toBeInTheDocument();
+    expect(createPlanMock).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getAllByRole("button", { name: "AI bilan yaratish" })[0]);
+
+    expect(screen.getByText("Reja nomini kiriting")).toBeInTheDocument();
+    expect(generatePlanMock).not.toHaveBeenCalled();
+  });
+
   it("uploads a custom cover and includes coverImageUrl in the manual save payload", async () => {
     uploadMock.mockResolvedValue({
       data: {
@@ -251,7 +294,7 @@ describe("CreateWorkoutPlanPage", () => {
     await waitFor(() => {
       expect(uploadMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          url: "/user/media/upload",
+          url: "/user/media/workout-plan-covers",
         }),
       );
     });
@@ -270,6 +313,23 @@ describe("CreateWorkoutPlanPage", () => {
         "/user/workout/plans/edit/plan-cover",
       );
     });
+  });
+
+  it("shows an inline cover upload error when file upload fails", async () => {
+    uploadMock.mockRejectedValue(new Error("upload failed"));
+
+    renderPage({ pathname: "/user/workout/plans/create" });
+
+    fireEvent.change(document.querySelector('input[type="file"]'), {
+      target: {
+        files: [new File(["cover"], "cover.jpg", { type: "image/jpeg" })],
+      },
+    });
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Rasm yuklab bo'lmadi");
+    });
+    expect(screen.getByText("Rasm yuklab bo'lmadi")).toBeInTheDocument();
   });
 
   it("runs AI setup through equipment, muscle group, 1RM, generate, and save", async () => {
@@ -338,6 +398,41 @@ describe("CreateWorkoutPlanPage", () => {
         }),
       );
     });
+  });
+
+  it("shows an inline equipment validation error before AI generation", async () => {
+    renderPage({ pathname: "/user/workout/plans/create" });
+
+    fireEvent.change(screen.getByLabelText("Plan nomi"), {
+      target: { value: "Equipment validation" },
+    });
+    fireEvent.click(screen.getAllByRole("button", { name: "AI bilan yaratish" })[0]);
+    fireEvent.click(await screen.findByRole("button", { name: "Keyingi" }));
+    fireEvent.click(await screen.findByText("Barbell"));
+    fireEvent.click(screen.getByText("Dumbbell"));
+    fireEvent.click(screen.getByRole("button", { name: "Keyingi" }));
+
+    expect(await screen.findByText("Kamida bitta jihoz tanlang")).toBeInTheDocument();
+    expect(generatePlanMock).not.toHaveBeenCalled();
+  });
+
+  it("shows an inline muscle validation error before AI generation", async () => {
+    renderPage({ pathname: "/user/workout/plans/create" });
+
+    fireEvent.change(screen.getByLabelText("Plan nomi"), {
+      target: { value: "Muscle validation" },
+    });
+    fireEvent.click(screen.getAllByRole("button", { name: "AI bilan yaratish" })[0]);
+    fireEvent.click(await screen.findByText("Uskunasiz"));
+    fireEvent.click(screen.getByRole("button", { name: "Keyingi" }));
+    fireEvent.click(await screen.findByText("Chest"));
+    fireEvent.click(screen.getByText("Back"));
+    fireEvent.click(screen.getByRole("button", { name: "Keyingi" }));
+
+    expect(
+      await screen.findByText("Kamida bitta muscle group tanlang"),
+    ).toBeInTheDocument();
+    expect(generatePlanMock).not.toHaveBeenCalled();
   });
 
   it("keeps the AI generator retryable after a generation failure", async () => {

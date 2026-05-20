@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,21 +19,25 @@ export const DeleteAlert = ({
   onConfirm,
   isDeleting,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            Workout shablonini o'chirasizmi?
+            {t("admin.workoutPlans.delete.title")}
           </AlertDialogTitle>
           <AlertDialogDescription>
             {template
-              ? `"${template.name}" userdagi tayyor shablonlardan ham yo'qoladi.`
+              ? t("admin.workoutPlans.delete.description", {
+                  name: template.name,
+                })
               : ""}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
+          <AlertDialogCancel>{t("admin.common.cancel")}</AlertDialogCancel>
           <AlertDialogAction
             className={cn(
               "bg-destructive text-destructive-foreground hover:bg-destructive/90",
@@ -40,7 +45,7 @@ export const DeleteAlert = ({
             )}
             onClick={onConfirm}
           >
-            O'chirish
+            {t("admin.common.delete")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -159,6 +159,11 @@
       "workoutMeta": "19:00",
       "panelCopyright": "© 2026 LiveOn."
     },
+    "telegramAuth": {
+      "errorTitle": "Telegram orqali kirib bo'lmadi",
+      "errorDescription": "Sessiya muddati tugagan bo'lishi mumkin. Telegramdan qayta oching yoki yana urinib ko'ring.",
+      "retry": "Qayta urinish"
+    },
     "signIn": {
       "title": "Xush kelibsiz",
       "subtitle": "LiveOn hisobingizga kiring",
@@ -185,6 +190,7 @@
       "forgotPassword": "Parolni unutdingizmi?",
       "loginButton": "Kirish",
       "loggingIn": "Kirilmoqda...",
+      "nextActionLoggingIn": "Hisobingiz tekshirilmoqda. Kirish tugagach sizni kerakli sahifaga yo'naltiramiz.",
       "noAccount": "Hisobingiz yo'qmi?",
       "signUpLink": "Ro'yxatdan o'ting",
       "continueWith": "Yoki davom eting",
@@ -194,11 +200,21 @@
       "privacyLink": "Maxfiylik siyosati",
       "termsEnd": "ga rozilik bildirasiz.",
       "success": "Muvaffaqiyatli kirildi.",
-      "error": "Kirish amalga oshmadi."
+      "error": "Kirish amalga oshmadi.",
+      "twoFactorTitle": "2FA kodini kiriting",
+      "twoFactorSubtitle": "Authenticator ilovasidagi 6 xonali kodni kiriting.",
+      "twoFactorSubtitleWithPhone": "{{phone}} uchun authenticator ilovasidagi 6 xonali kodni kiriting.",
+      "twoFactorCodeLabel": "2FA kodi",
+      "twoFactorCodeHint": "Authenticator ilovasidagi 6 xonali kod yoki 8 belgili zaxira kodni kiriting.",
+      "twoFactorVerifyButton": "Tasdiqlash",
+      "twoFactorVerifying": "Tekshirilmoqda...",
+      "twoFactorSuccess": "Muvaffaqiyatli kirildi.",
+      "twoFactorError": "2FA kodini tasdiqlab bo'lmadi."
     },
     "signUp": {
       "title": "Hisob yarating",
       "subtitle": "Bepul ro'yxatdan o'ting va boshlang",
+      "nextActionSendingOtp": "Hisob yaratilmoqda. Keyingi qadamda telefon raqamingizni OTP kod bilan tasdiqlaysiz.",
       "emailTab": "Email",
       "phoneTab": "Telefon",
       "emailLabel": "Email",
@@ -234,6 +250,7 @@
       "rememberPassword": "Parolni eslaysizmi?",
       "backToSignIn": "Kirish sahifasiga qaytish",
       "resetCodeSent": "Parolni tiklash kodi yuborildi.",
+      "neutralResetCodeSent": "Agar bu telefon raqamga account ochilgan bo'lsa, tiklash kodi yuborildi.",
       "error": "Parolni tiklash kodini yuborib bo'lmadi."
     },
     "otpVerify": {
@@ -241,12 +258,16 @@
       "titleReset": "Kodni tasdiqlang",
       "subtitleWithId": "{{identity}} ga yuborilgan 6 xonali kodni kiriting",
       "subtitleDefault": "Telefonga yuborilgan 6 xonali kodni kiriting",
+      "codeLabel": "Tasdiqlash kodi",
       "verifyButton": "Tasdiqlash",
       "verifying": "Tasdiqlanmoqda...",
       "didntReceive": "Kod kelmadimi?",
       "resend": "Qayta yuborish",
       "resending": "Yuborilmoqda...",
       "resendIn": "Qayta yuborish ({{s}}s)",
+      "expiresIn": "Kod {{s}} sekund ichida eskiradi.",
+      "expired": "Kod muddati tugadi. Yangi kod yuboring.",
+      "expiryHint": "Kod muddati tugasa, yangi kod yuborishingiz mumkin.",
       "backToSignIn": "Kirish sahifasiga qaytish",
       "sessionMissing": "Tasdiqlash sessiyasi topilmadi.",
       "phoneSessionMissing": "Telefon tasdiqlash sessiyasi topilmadi.",
@@ -284,13 +305,15 @@
       "emailRequired": "Email majburiy",
       "emailInvalid": "Email formati noto'g'ri",
       "passwordRequired": "Parol majburiy",
-      "passwordMin": "Parol kamida 6 ta belgidan iborat bo'lishi kerak",
+      "passwordMin": "Parol kamida 8 ta belgidan iborat bo'lishi kerak",
+      "passwordComplexity": "Parolda katta harf, kichik harf, raqam va belgi bo'lishi kerak",
       "confirmPasswordRequired": "Parolni tasdiqlash majburiy",
       "passwordsNoMatch": "Parollar mos kelmadi",
       "phoneRequired": "Telefon raqam majburiy",
       "phoneInvalid": "Telefon +998-##-###-##-## formatida bo'lik kerak",
       "otpMin": "6 ta raqamni kiriting",
-      "otpMax": "OTP 6 ta raqamdan iborat bo'lishi kerak"
+      "otpMax": "OTP 6 ta raqamdan iborat bo'lishi kerak",
+      "otpOrBackup": "6 xonali OTP yoki 8 belgili zaxira kodni kiriting"
     }
   }
 }

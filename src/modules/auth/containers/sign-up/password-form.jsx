@@ -19,6 +19,8 @@ import {
   getOtpToastDescription,
 } from "@/modules/auth/lib/auth-utils.js";
 import { submitOnEnter } from "@/modules/auth/lib/submit-on-enter";
+import { trackLaunchEvent } from "@/lib/analytics.js";
+import { applyStrongPasswordPolicy } from "@/modules/auth/lib/password-policy.js";
 
 const PasswordForm = ({ phone, referralCode }) => {
   const { t } = useTranslation();
@@ -36,7 +38,7 @@ const PasswordForm = ({ phone, referralCode }) => {
       password: z
         .string()
         .min(1, t("auth.validation.passwordRequired"))
-        .min(6, t("auth.validation.passwordMin")),
+        .pipe(applyStrongPasswordPolicy(z.string(), t)),
       confirmPassword: z
         .string()
         .min(1, t("auth.validation.confirmPasswordRequired")),
@@ -61,6 +63,14 @@ const PasswordForm = ({ phone, referralCode }) => {
   };
 
   const onSubmit = async (values) => {
+    void trackLaunchEvent("signup_started", {
+      source: "auth",
+      properties: {
+        hasReferralCode: Boolean(
+          referralCode || get(authPhoneFlow, "referralCode"),
+        ),
+      },
+    });
     const attributes = {
       phone,
       password: get(values, "password"),
@@ -78,6 +88,12 @@ const PasswordForm = ({ phone, referralCode }) => {
       {
         onSuccess: (response) => {
           const responseData = getAuthResponseData(response);
+          void trackLaunchEvent("signup_otp_sent", {
+            source: "auth",
+            properties: {
+              hasReferralCode: Boolean(nextReferralCode),
+            },
+          });
           setPendingVerification({
             channel: "phone",
             purpose: "VERIFY_ACCOUNT",
@@ -95,6 +111,12 @@ const PasswordForm = ({ phone, referralCode }) => {
           navigate("/auth/otp-verify", { replace: true });
         },
         onError: (error) => {
+          void trackLaunchEvent("signup_failed", {
+            source: "auth",
+            properties: {
+              hasReferralCode: Boolean(nextReferralCode),
+            },
+          });
           toast.error(getAuthErrorMessage(error, t("auth.signUp.error")));
         },
       },
@@ -172,6 +194,15 @@ const PasswordForm = ({ phone, referralCode }) => {
           ? t("auth.signIn.creatingAccount")
           : t("auth.signIn.createPasswordButton")}
       </AuthSubmitButton>
+      {(isSubmitting || isPending) && (
+        <p
+          role="status"
+          aria-live="polite"
+          className="-mt-4 text-center text-sm text-muted-foreground"
+        >
+          {t("auth.signUp.nextActionSendingOtp")}
+        </p>
+      )}
 
       <Button
         type="button"

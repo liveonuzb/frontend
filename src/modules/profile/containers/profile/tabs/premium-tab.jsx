@@ -40,6 +40,7 @@ import { useGetQuery } from "@/hooks/api";
 import useApi from "@/hooks/api/use-api";
 import usePremium from "@/hooks/app/use-premium";
 import { getRequestErrorMessage } from "@/hooks/app/use-profile-settings";
+import { trackLaunchEvent } from "@/lib/analytics.js";
 import { cn } from "@/lib/utils";
 import GiftPremiumDrawer from "@/modules/user/components/gift-premium-drawer.jsx";
 
@@ -128,7 +129,7 @@ const PLAN_FEATURES = [
   { label: "Kunlik kuzatuv (Suv, Ovqat, Mashq)", free: true, premium: true, family: true },
   { label: "Do'stlar tarmog'i va challenge", free: true, premium: true, family: true },
   { label: "Discover (Zallar va ovqatlar)", free: true, premium: true, family: true },
-  { label: "AI ovqat tahlili (kamera orqali)", free: false, premium: true, family: true },
+  { label: "AI ovqat tahlili (kuniga 3 ta bepul)", free: true, premium: true, family: true },
   { label: "Cheksiz ovqat logi", free: false, premium: true, family: true },
   { label: "Premium Leaderboard", free: false, premium: true, family: true },
   { label: "Haftalik sog'liq hisoboti (PDF)", free: false, premium: true, family: true },
@@ -400,6 +401,13 @@ export const PremiumTab = () => {
     }
 
     try {
+      void trackLaunchEvent("premium_checkout_opened", {
+        source: "premium",
+        properties: {
+          planCode: activePlan.code,
+          paymentMethod: selectedPaymentMethod,
+        },
+      });
       const response = await startPremiumCheckout({
         planCode: activePlan.code,
         paymentMethod: selectedPaymentMethod,
@@ -407,15 +415,38 @@ export const PremiumTab = () => {
 
       if (response?.redirect) {
         setCheckoutOpen(false);
+        void trackLaunchEvent("premium_checkout_session_created", {
+          source: "premium",
+          properties: {
+            planCode: activePlan.code,
+            paymentMethod: selectedPaymentMethod,
+            redirect: true,
+          },
+        });
         toast.success(t("profile.premium.checkoutOpened"));
         return;
       }
 
       setCheckoutOpen(false);
+      void trackLaunchEvent("premium_checkout_succeeded", {
+        source: "premium",
+        properties: {
+          planCode: activePlan.code,
+          paymentMethod: selectedPaymentMethod,
+          redirect: false,
+        },
+      });
       toast.success(
         get(response, "data.message", t("profile.premium.activationSuccess")),
       );
     } catch (error) {
+      void trackLaunchEvent("premium_checkout_failed", {
+        source: "premium",
+        properties: {
+          planCode: activePlan.code,
+          paymentMethod: selectedPaymentMethod,
+        },
+      });
       toast.error(
         getRequestErrorMessage(error, t("profile.premium.activationError")),
       );

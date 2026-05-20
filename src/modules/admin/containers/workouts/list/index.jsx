@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, Outlet, useMatch } from "react-router";
 import {
   toPairs, filter as lodashFilter,
@@ -95,6 +96,7 @@ const resolveLabel = (translations, fallback, language) => {
 };
 
 const Index = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const navigateAdminDrawer = useAdminDrawerListNavigation();
   const { request } = useApi();
@@ -309,9 +311,9 @@ const Index = () => {
   React.useEffect(() => {
     setBreadcrumbs([
       { url: "/admin", title: "Admin" },
-      { url: "/admin/workouts", title: "Mashg'ulotlar bazasi" },
+      { url: "/admin/workouts", title: t("admin.workouts.list.title") },
     ]);
-  }, [setBreadcrumbs]);
+  }, [setBreadcrumbs, t]);
 
   const canReorder =
     trim(search) === "" &&
@@ -421,7 +423,7 @@ const Index = () => {
         url: `/admin/workouts/${translatingWorkout.id}`,
         attributes: payload,
       });
-      toast.success("Tarjimalar yangilandi");
+      toast.success(t("admin.workouts.messages.translationsUpdated"));
       setTranslationForm({});
       navigate("/admin/workouts/list");
     } catch (error) {
@@ -429,7 +431,7 @@ const Index = () => {
       toast.error(
         isArray(message)
           ? message.join(", ")
-          : message || "Tarjimalarni saqlab bo'lmadi",
+          : message || t("admin.workouts.messages.translationSaveError"),
       );
     }
   };
@@ -441,14 +443,14 @@ const Index = () => {
       await deleteMutation.mutateAsync({
         url: `/admin/workouts/${workoutToDelete.id}`,
       });
-      toast.success("Mashg'ulot trashga yuborildi");
+      toast.success(t("admin.workouts.messages.movedToTrash"));
       setWorkoutToDelete(null);
     } catch (error) {
       const message = error?.response?.data?.message;
       toast.error(
         isArray(message)
           ? message.join(", ")
-          : message || "O'chirib bo'lmadi",
+          : message || t("admin.workouts.messages.deleteError"),
       );
     }
   };
@@ -465,13 +467,13 @@ const Index = () => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      toast.success("Mashg'ulotlar Excel faylga eksport qilindi");
+      toast.success(t("admin.workouts.messages.exported"));
     } catch (error) {
       const message = error?.response?.data?.message;
       toast.error(
         isArray(message)
           ? message.join(", ")
-          : message || "Excel eksport qilib bo'lmadi",
+          : message || t("admin.workouts.messages.exportError"),
       );
     } finally {
       setIsExporting(false);
@@ -492,14 +494,17 @@ const Index = () => {
           setImportPreview(get(result, "preview"));
           const firstError = get(result, "preview.errors.0.error");
           toast.error(
-            `${invalidCount} ta qatorda xato bor. ${firstError || "Import boshlanmadi."}`,
+            t("admin.workouts.messages.importPreviewError", {
+              count: invalidCount,
+              error: firstError || t("admin.workouts.messages.importNotStarted"),
+            }),
           );
           return;
         }
 
         const importedCount = get(result, "result.importedCount", 0);
         toast.success(
-          `${importedCount} ta mashg'ulot Excel orqali import qilindi`,
+          t("admin.workouts.messages.imported", { count: importedCount }),
         );
         void queryClient.invalidateQueries({ queryKey: WORKOUTS_QUERY_KEY });
       } catch (error) {
@@ -507,7 +512,7 @@ const Index = () => {
         toast.error(
           isArray(message)
             ? message.join(", ")
-            : message || "Excel import qilib bo'lmadi",
+            : message || t("admin.workouts.messages.importError"),
         );
       } finally {
         setIsImporting(false);
@@ -525,15 +530,15 @@ const Index = () => {
       });
       toast.success(
         workout.isActive
-          ? "Mashg'ulot nofaol qilindi"
-          : "Mashg'ulot faollashtirildi",
+          ? t("admin.workouts.messages.deactivated")
+          : t("admin.workouts.messages.activated"),
       );
     } catch (error) {
       const message = error?.response?.data?.message;
       toast.error(
         isArray(message)
           ? message.join(", ")
-          : message || "Statusni o'zgartirib bo'lmadi",
+          : message || t("admin.workouts.messages.statusUpdateError"),
       );
     }
   };
@@ -546,14 +551,14 @@ const Index = () => {
       });
       toast.success(
         workout.isOnboarding
-          ? "Mashg'ulot onboarding ro'yxatidan olindi"
-          : "Mashg'ulot onboarding ro'yxatiga qo'shildi",
+          ? t("admin.workouts.messages.removedFromOnboarding")
+          : t("admin.workouts.messages.addedToOnboarding"),
       );
     } catch (error) {
       toast.error(
         getMutationErrorMessage(
           error,
-          "Onboarding holatini o'zgartirib bo'lmadi",
+          t("admin.workouts.messages.onboardingUpdateError"),
         ),
       );
     }
@@ -565,13 +570,13 @@ const Index = () => {
         url: `/admin/workouts/${workout.id}/restore`,
         attributes: {},
       });
-      toast.success("Mashg'ulot trashdan tiklandi");
+      toast.success(t("admin.workouts.messages.restored"));
     } catch (error) {
       const message = error?.response?.data?.message;
       toast.error(
         isArray(message)
           ? message.join(", ")
-          : message || "Mashg'ulotni tiklab bo'lmadi",
+          : message || t("admin.workouts.messages.restoreError"),
       );
     }
   };
@@ -588,8 +593,12 @@ const Index = () => {
       });
       toast.success(
         nextIsActive
-          ? `${selectedWorkoutIds.length} ta mashg'ulot faollashtirildi`
-          : `${selectedWorkoutIds.length} ta mashg'ulot nofaol qilindi`,
+          ? t("admin.workouts.messages.bulkActivated", {
+              count: selectedWorkoutIds.length,
+            })
+          : t("admin.workouts.messages.bulkDeactivated", {
+              count: selectedWorkoutIds.length,
+            }),
       );
       setRowSelection({});
     } catch (error) {
@@ -597,7 +606,7 @@ const Index = () => {
       toast.error(
         isArray(message)
           ? message.join(", ")
-          : message || "Tanlangan mashg'ulotlarni yangilab bo'lmadi",
+          : message || t("admin.workouts.messages.bulkStatusError"),
       );
     }
   };
@@ -610,7 +619,9 @@ const Index = () => {
         attributes: { ids: selectedWorkoutIds },
       });
       toast.success(
-        `${selectedWorkoutIds.length} ta mashg'ulot trashdan tiklandi`,
+        t("admin.workouts.messages.bulkRestored", {
+          count: selectedWorkoutIds.length,
+        }),
       );
       setRowSelection({});
     } catch (error) {
@@ -618,7 +629,7 @@ const Index = () => {
       toast.error(
         isArray(message)
           ? message.join(", ")
-          : message || "Tanlangan mashg'ulotlarni tiklab bo'lmadi",
+          : message || t("admin.workouts.messages.bulkRestoreError"),
       );
     }
   };
@@ -631,7 +642,9 @@ const Index = () => {
         attributes: { ids: selectedWorkoutIds },
       });
       toast.success(
-        `${selectedWorkoutIds.length} ta mashg'ulot trashga yuborildi`,
+        t("admin.workouts.messages.bulkMovedToTrash", {
+          count: selectedWorkoutIds.length,
+        }),
       );
       setRowSelection({});
     } catch (error) {
@@ -639,14 +652,14 @@ const Index = () => {
       toast.error(
         isArray(message)
           ? message.join(", ")
-          : message || "Tanlangan mashg'ulotlarni trashga yuborib bo'lmadi",
+          : message || t("admin.workouts.messages.bulkTrashError"),
       );
     }
   };
 
   const handleBulkAssignCategories = async () => {
     if (!selectedWorkoutIds.length || !bulkCategoryIds.length) {
-      toast.error("Kamida bitta kategoriya tanlang");
+      toast.error(t("admin.workouts.messages.selectCategoryRequired"));
       return;
     }
     try {
@@ -658,7 +671,9 @@ const Index = () => {
         },
       });
       toast.success(
-        `${selectedWorkoutIds.length} ta mashg'ulotga kategoriyalar biriktirildi`,
+        t("admin.workouts.messages.categoriesAssigned", {
+          count: selectedWorkoutIds.length,
+        }),
       );
       setBulkCategoryDrawerOpen(false);
       setBulkCategoryIds([]);
@@ -668,7 +683,7 @@ const Index = () => {
       toast.error(
         isArray(message)
           ? message.join(", ")
-          : message || "Kategoriyalarni biriktirib bo'lmadi",
+          : message || t("admin.workouts.messages.categoriesAssignError"),
       );
     }
   };
@@ -682,8 +697,10 @@ const Index = () => {
       });
       toast.success(
         hardDeleteTarget.ids.length === 1
-          ? "Mashg'ulot butunlay o'chirildi"
-          : `${hardDeleteTarget.ids.length} ta mashg'ulot butunlay o'chirildi`,
+          ? t("admin.workouts.messages.hardDeleted")
+          : t("admin.workouts.messages.hardDeletedMany", {
+              count: hardDeleteTarget.ids.length,
+            }),
       );
       setHardDeleteTarget(null);
       setRowSelection({});
@@ -691,7 +708,7 @@ const Index = () => {
       toast.error(
         getMutationErrorMessage(
           error,
-          "Mashg'ulotlarni butunlay o'chirib bo'lmadi",
+          t("admin.workouts.messages.hardDeleteError"),
         ),
       );
     }
@@ -781,7 +798,7 @@ const Index = () => {
       toast.error(
         isArray(message)
           ? message.join(", ")
-          : message || "Tartibni saqlab bo'lmadi",
+          : message || t("admin.workouts.messages.reorderError"),
       );
     }
   };
@@ -791,10 +808,10 @@ const Index = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Mashg'ulotlar bazasi
+            {t("admin.workouts.list.title")}
           </h1>
           <p className="text-muted-foreground">
-            Mashg'ulotlar, tarkib va rasmlarni boshqaring
+            {t("admin.workouts.list.subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -812,7 +829,9 @@ const Index = () => {
             className="gap-1.5"
           >
             <UploadIcon className="size-4" />
-            {isImporting ? "Import..." : "Excel import"}
+            {isImporting
+              ? t("admin.workouts.list.importing")
+              : t("admin.workouts.list.importExcel")}
           </Button>
           <Button
             variant="outline"
@@ -821,7 +840,9 @@ const Index = () => {
             className="gap-1.5"
           >
             <DownloadIcon className="size-4" />
-            {isExporting ? "Export..." : "Excel export"}
+            {isExporting
+              ? t("admin.workouts.list.exporting")
+              : t("admin.workouts.list.exportExcel")}
           </Button>
           <Button
             variant="outline"
@@ -881,7 +902,9 @@ const Index = () => {
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-4">
           <div className="pointer-events-auto flex w-full max-w-6xl flex-wrap items-center gap-2 rounded-2xl border bg-background/95 px-4 py-3 shadow-2xl backdrop-blur">
             <Badge variant="secondary">
-              {selectedWorkoutCount} ta tanlandi
+              {t("admin.workouts.list.selectedCount", {
+                count: selectedWorkoutCount,
+              })}
             </Badge>
             {lifecycleFilter === "trash" ? (
               <>
@@ -892,7 +915,7 @@ const Index = () => {
                   onClick={() => void handleBulkRestore()}
                 >
                   <RotateCcwIcon className="size-4" />
-                  Tiklash
+                  {t("admin.workouts.list.restore")}
                 </Button>
                 {canHardDelete ? (
                   <Button
@@ -907,7 +930,7 @@ const Index = () => {
                     }
                   >
                     <Trash2Icon className="size-4" />
-                    Butunlay o'chirish
+                    {t("admin.workouts.delete.hardDeleteAction")}
                   </Button>
                 ) : null}
               </>
@@ -921,7 +944,7 @@ const Index = () => {
                   onClick={() => setBulkCategoryDrawerOpen(true)}
                 >
                   <TagIcon className="size-4" />
-                  Kategoriya biriktirish
+                  {t("admin.workouts.list.assignCategory")}
                 </Button>
                 <Button
                   size="sm"
@@ -929,7 +952,7 @@ const Index = () => {
                   disabled={isBulkUpdatingStatus}
                   onClick={() => void handleBulkStatus(true)}
                 >
-                  Faollashtirish
+                  {t("admin.workouts.list.activate")}
                 </Button>
                 <Button
                   size="sm"
@@ -938,7 +961,7 @@ const Index = () => {
                   disabled={isBulkUpdatingStatus}
                   onClick={() => void handleBulkStatus(false)}
                 >
-                  Nofaol qilish
+                  {t("admin.workouts.list.deactivate")}
                 </Button>
                 <Button
                   size="sm"
@@ -948,7 +971,7 @@ const Index = () => {
                   onClick={() => void handleBulkTrash()}
                 >
                   <Trash2Icon className="size-4" />
-                  Trashga yuborish
+                  {t("admin.workouts.delete.moveToTrashAction")}
                 </Button>
               </>
             ) : null}
@@ -964,7 +987,7 @@ const Index = () => {
               }
               onClick={() => setRowSelection({})}
             >
-              Bekor qilish
+              {t("admin.common.cancel")}
             </Button>
           </div>
         </div>
@@ -979,11 +1002,12 @@ const Index = () => {
       >
         <DrawerContent className="mx-auto max-h-[85vh] max-w-3xl overflow-hidden">
           <DrawerHeader>
-            <DrawerTitle>Excel import validation preview</DrawerTitle>
+            <DrawerTitle>{t("admin.workouts.list.importPreviewTitle")}</DrawerTitle>
             <DrawerDescription>
-              {get(importPreview, "totalRows", 0)} qatordan{" "}
-              {get(importPreview, "invalidCount", 0)} tasida xato bor. Xatolarni
-              tuzatib faylni qayta yuklang.
+              {t("admin.workouts.list.importPreviewDescription", {
+                total: get(importPreview, "totalRows", 0),
+                invalid: get(importPreview, "invalidCount", 0),
+              })}
             </DrawerDescription>
           </DrawerHeader>
           <div className="space-y-3 overflow-y-auto px-4 pb-4">
@@ -1000,14 +1024,15 @@ const Index = () => {
             ))}
             {get(importPreview, "errors", []).length > 20 ? (
               <p className="text-xs text-muted-foreground">
-                Yana {get(importPreview, "errors", []).length - 20} ta xato
-                yashirildi.
+                {t("admin.workouts.list.hiddenErrors", {
+                  count: get(importPreview, "errors", []).length - 20,
+                })}
               </p>
             ) : null}
           </div>
           <DrawerFooter>
             <Button variant="outline" onClick={() => setImportPreview(null)}>
-              Yopish
+              {t("admin.common.close")}
             </Button>
           </DrawerFooter>
         </DrawerContent>
@@ -1027,11 +1052,10 @@ const Index = () => {
             <DrawerHeader>
               <DrawerTitle className="flex items-center gap-2">
                 <GlobeIcon className="size-5" />
-                Tarjimalarni boshqarish
+                {t("admin.workouts.translations.title")}
               </DrawerTitle>
               <DrawerDescription>
-                Barcha faol tillar shu yerdan tahrirlanadi. Istasangiz joriy
-                locale nomini ham shu drawerda yangilashingiz mumkin.
+                {t("admin.workouts.translations.description")}
               </DrawerDescription>
             </DrawerHeader>
 
@@ -1049,16 +1073,16 @@ const Index = () => {
                           translatingWorkout.name,
                           currentLanguage,
                         )
-                      : "Mashg'ulot"}
+                      : t("admin.workouts.delete.workoutFallback")}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Joriy til:{" "}
+                    {t("admin.workouts.form.currentLanguage")}{" "}
                     {currentLanguageMeta?.flag
                       ? `${currentLanguageMeta.flag} `
                       : ""}
                     {currentLanguageMeta?.name ??
                       toUpper(currentLanguage)}
-                    . Shu til qiymati saqlansa, asosiy nom ham yangilanadi.
+                    {t("admin.workouts.translations.currentLanguageNote")}
                   </p>
                 </div>
 
@@ -1071,7 +1095,7 @@ const Index = () => {
                           {language.name}
                           {language.code === currentLanguage ? (
                             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-                              Asosiy
+                              {t("admin.workouts.translations.primary")}
                             </span>
                           ) : null}
                         </Label>
@@ -1083,7 +1107,9 @@ const Index = () => {
                               [language.code]: event.target.value,
                             }))
                           }
-                          placeholder={`${language.name} tilidagi tarjima`}
+                          placeholder={t("admin.workouts.translations.placeholder", {
+                            language: language.name,
+                          })}
                         />
                       </div>
                     ))}
@@ -1099,7 +1125,7 @@ const Index = () => {
                   isUpdating || isTranslatingLoading || !activeLanguages.length
                 }
               >
-                Tarjimalarni saqlash
+                {t("admin.workouts.translations.save")}
               </Button>
             </DrawerFooter>
           </div>
@@ -1120,11 +1146,12 @@ const Index = () => {
             <DrawerHeader>
               <DrawerTitle className="flex items-center gap-2">
                 <TagIcon className="size-5" />
-                Bulk kategoriya biriktirish
+                {t("admin.workouts.bulkCategories.title")}
               </DrawerTitle>
               <DrawerDescription>
-                Tanlangan {selectedWorkoutCount} ta mashg'ulotga qo'shimcha
-                kategoriyalar biriktiriladi.
+                {t("admin.workouts.bulkCategories.description", {
+                  count: selectedWorkoutCount,
+                })}
               </DrawerDescription>
             </DrawerHeader>
 
@@ -1164,7 +1191,7 @@ const Index = () => {
                 ))
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  Faol kategoriyalar topilmadi.
+                  {t("admin.workouts.bulkCategories.empty")}
                 </p>
               )}
             </div>
@@ -1174,7 +1201,7 @@ const Index = () => {
                 onClick={() => void handleBulkAssignCategories()}
                 disabled={!bulkCategoryIds.length || isAssigningCategories}
               >
-                Kategoriyalarni biriktirish
+                {t("admin.workouts.bulkCategories.submit")}
               </Button>
             </DrawerFooter>
           </div>

@@ -1,4 +1,5 @@
 import React, { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   filter,
   get,
@@ -33,6 +34,7 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { ALL_EXERCISES } from "@/data/exercises.mock";
+import { triggerTelegramHapticFeedback } from "@/lib/telegram-haptics";
 import {
   NumberField,
   NumberFieldDecrement,
@@ -46,6 +48,10 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { getTodayKey } from "@/hooks/app/use-daily-tracking";
+import {
+  useTelegramMainButton,
+  useTelegramSecondaryButton,
+} from "@/hooks/use-telegram-buttons";
 import { useWorkoutExercises } from "@/hooks/app/use-workout-plans";
 import { normalizeExerciseSets } from "./utils";
 import {
@@ -148,6 +154,7 @@ const buildWorkoutLogPayload = ({
   selectedTrackingType,
   sets,
   trackingFields,
+  sessionNameFallback,
 }) => {
   const validSets = filter(sets, (set) =>
     some(
@@ -178,7 +185,7 @@ const buildWorkoutLogPayload = ({
     source: get(initialLog, "source") || "quick-log",
     name: get(selectedExercise, "name"),
     exerciseId: get(selectedExercise, "id", null) || undefined,
-    sessionName: get(initialLog, "sessionName") || "Alohida mashq",
+    sessionName: get(initialLog, "sessionName") || sessionNameFallback,
     trackingType: selectedTrackingType,
     imageUrl: get(selectedExercise, "imageUrl", null) || undefined,
     entries: map(validSets, (set, index) => {
@@ -227,6 +234,7 @@ export default function WorkoutLogDrawer({
   onSave,
   isSubmitting = false,
 }) {
+  const { t } = useTranslation();
   const [step, setStep] = useState(
     initialExercise || initialLog ? "log" : "select",
   );
@@ -240,7 +248,7 @@ export default function WorkoutLogDrawer({
   const selectedTrackingType = normalizeWorkoutTrackingType(
     get(selectedExercise, "trackingType"),
   );
-  const trackingFields = getWorkoutTrackingFields(selectedTrackingType);
+  const trackingFields = getWorkoutTrackingFields(selectedTrackingType, t);
   const setGridClass =
     trackingFields.length === 1
       ? "grid grid-cols-[36px_1fr_40px] items-center gap-3 rounded-2xl border bg-background p-3 sm:grid-cols-[44px_1fr_48px]"
@@ -362,22 +370,44 @@ export default function WorkoutLogDrawer({
       selectedTrackingType,
       sets,
       trackingFields,
+      sessionNameFallback: t("user.workout.logDrawer.singleExercise"),
     });
 
     if (!payload) {
-      toast.error("Kamida 1 ta to'g'ri set kiriting");
+      triggerTelegramHapticFeedback("warning");
+      toast.error(t("user.workout.logDrawer.validation.validSetRequired"));
       return;
     }
 
     try {
       await onSave(payload);
+      triggerTelegramHapticFeedback("success");
     } catch (error) {
+      triggerTelegramHapticFeedback("error");
       toast.error(
         get(error, "response.data.message") ||
-          "Mashq logini saqlashda xatolik yuz berdi",
+          t("user.workout.logDrawer.toasts.saveError"),
       );
     }
   };
+
+  useTelegramMainButton({
+    text: initialLog
+      ? t("user.workout.logDrawer.actions.save")
+      : t("user.workout.logDrawer.actions.saveLog"),
+    isVisible: open && step === "log",
+    isEnabled: !isSubmitting,
+    isLoading: isSubmitting,
+    onClick: handleSave,
+  });
+
+  useTelegramSecondaryButton({
+    text: t("user.workout.logDrawer.actions.cancel"),
+    isVisible: open,
+    isEnabled: !isSubmitting,
+    isLoading: false,
+    onClick: () => onOpenChange(false),
+  });
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
@@ -396,20 +426,20 @@ export default function WorkoutLogDrawer({
           <DrawerHeader>
             <DrawerTitle>
               {initialLog
-                ? "Logni tahrirlash"
+                ? t("user.workout.logDrawer.editTitle")
                 : get(selectedExercise, "name")
                   ? get(selectedExercise, "name")
-                  : "Tezkor log"}
+                  : t("user.workout.logDrawer.quickLogTitle")}
             </DrawerTitle>
             <DrawerDescription>
               {step === "select"
-                ? "Mashqni tanlang va setlarni kiriting"
-                : "Setlar bo'yicha mashq logini to'ldiring"}
+                ? t("user.workout.logDrawer.selectDescription")
+                : t("user.workout.logDrawer.logDescription")}
             </DrawerDescription>
             {step === "select" ? (
               <InputGroup>
                 <InputGroupInput
-                  placeholder="Mashq qidirish..."
+                  placeholder={t("user.workout.logDrawer.searchPlaceholder")}
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                 />
@@ -417,7 +447,9 @@ export default function WorkoutLogDrawer({
                   <SearchIcon />
                 </InputGroupAddon>
                 <InputGroupAddon align="inline-end">
-                  {filteredExercises.length} results
+                  {t("user.workout.logDrawer.resultsCount", {
+                    count: filteredExercises.length,
+                  })}
                 </InputGroupAddon>
               </InputGroup>
             ) : null}
@@ -430,7 +462,7 @@ export default function WorkoutLogDrawer({
               isExercisesLoading ? (
                 <div className="flex min-h-40 flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
                   <LoaderCircleIcon className="size-5 animate-spin" />
-                  Mashqlar yuklanmoqda...
+                  {t("user.workout.logDrawer.loadingExercises")}
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -451,8 +483,8 @@ export default function WorkoutLogDrawer({
                         <p className="mt-1 text-sm text-muted-foreground">
                           {get(exercise, "groupLabel") ||
                             get(exercise, "category") ||
-                            "General"}{" "}
-                          · {getWorkoutExerciseSummary(exercise)}
+                            t("user.workout.logDrawer.general")}{" "}
+                          · {getWorkoutExerciseSummary(exercise, t)}
                         </p>
                       </div>
                       <PlusIcon className="size-5 text-muted-foreground" />
@@ -461,7 +493,7 @@ export default function WorkoutLogDrawer({
 
                   {!filteredExercises.length ? (
                     <div className="flex min-h-32 items-center justify-center rounded-2xl border border-dashed px-4 text-sm text-muted-foreground">
-                      Mashq topilmadi
+                      {t("user.workout.logDrawer.empty")}
                     </div>
                   ) : null}
                 </div>
@@ -476,7 +508,7 @@ export default function WorkoutLogDrawer({
                   }
                 >
                   <span className="text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Set
+                    {t("user.workout.logDrawer.set")}
                   </span>
                   {map(trackingFields, (field) => (
                     <span
@@ -522,7 +554,9 @@ export default function WorkoutLogDrawer({
                       variant="ghost"
                       onClick={() => removeSet(index)}
                       disabled={sets.length === 1}
-                      aria-label={`${index + 1}-setni olib tashlash`}
+                      aria-label={t("user.workout.logDrawer.removeSetAria", {
+                        index: index + 1,
+                      })}
                     >
                       <Trash2Icon className="size-4" />
                     </Button>
@@ -531,7 +565,7 @@ export default function WorkoutLogDrawer({
 
                 <Button variant="outline" className="w-full" onClick={addSet}>
                   <PlusIcon className="mr-2 size-4" />
-                  Yana set qo'shish
+                  {t("user.workout.logDrawer.addSet")}
                 </Button>
               </div>
             )}
@@ -544,7 +578,9 @@ export default function WorkoutLogDrawer({
               {isSubmitting ? (
                 <LoaderCircleIcon className="mr-2 size-4 animate-spin" />
               ) : null}
-              {initialLog ? "Saqlash" : "Logni saqlash"}
+              {initialLog
+                ? t("user.workout.logDrawer.actions.save")
+                : t("user.workout.logDrawer.actions.saveLog")}
             </Button>
           ) : null}
           <Button
@@ -552,7 +588,7 @@ export default function WorkoutLogDrawer({
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
           >
-            Bekor qilish
+            {t("user.workout.logDrawer.actions.cancel")}
           </Button>
         </DrawerFooter>
       </DrawerContent>

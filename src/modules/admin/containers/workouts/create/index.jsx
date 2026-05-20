@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   chain,
   filter as lodashFilter,
@@ -54,6 +55,7 @@ import {
   WORKOUT_TRACKING_OPTIONS,
   WORKOUT_TRACKING_TYPES,
 } from "@/lib/workout-tracking";
+import { getApiErrorMessage } from "@/lib/api-response";
 import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 
 const emptyForm = {
@@ -102,9 +104,11 @@ const ImageUploadPreview = ({
   onChange,
   onRemove,
   isRemoving,
-  label = "Rasm",
+  label,
 }) => {
+  const { t } = useTranslation();
   const [preview, setPreview] = React.useState(null);
+  const resolvedLabel = label || t("admin.workouts.form.image");
 
   React.useEffect(() => {
     if (!file) {
@@ -148,12 +152,12 @@ const ImageUploadPreview = ({
           <img
             loading="lazy"
             src={displayUrl}
-            alt="Preview"
+            alt={resolvedLabel}
             className="size-full object-cover"
           />
           <div className="absolute inset-x-0 bottom-0 top-1/2 flex items-center justify-center bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity group-hover:opacity-100 z-20">
             <span className="text-[10px] font-medium text-white shadow-sm mt-4">
-              O&apos;zgartirish
+              {t("admin.workouts.form.changeImage")}
             </span>
           </div>
           <Button
@@ -169,7 +173,7 @@ const ImageUploadPreview = ({
       ) : (
         <div className="flex flex-col items-center justify-center gap-1.5 text-muted-foreground">
           <UploadIcon className="size-4" />
-          <span className="text-[10px] font-medium">{label}</span>
+          <span className="text-[10px] font-medium">{resolvedLabel}</span>
         </div>
       )}
     </div>
@@ -324,6 +328,7 @@ const WORKOUTS_QUERY_KEY = ["admin-workouts"];
 const WORKOUTS_LIST_PATH = "/admin/workouts/list";
 
 const CreateWorkoutPage = () => {
+  const { t } = useTranslation();
   const closeAdminDrawer = useAdminDrawerCloseNavigation(WORKOUTS_LIST_PATH);
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
 
@@ -440,13 +445,10 @@ const CreateWorkoutPage = () => {
         url: "/admin/workouts",
         attributes: finalPayload,
       });
-      toast.success("Mashg'ulot yaratildi");
+      toast.success(t("admin.workouts.form.createSuccess"));
       closeAdminDrawer();
     } catch (error) {
-      const message = error?.response?.data?.message;
-      toast.error(
-        isArray(message) ? message.join(", ") : message || "Saqlab bo'lmadi",
-      );
+      toast.error(getApiErrorMessage(error, t("admin.workouts.form.saveError")));
     }
   };
 
@@ -464,18 +466,17 @@ const CreateWorkoutPage = () => {
         <DrawerHeader>
           <DrawerTitle className="flex items-center gap-2">
             <PlusIcon className="size-5" />
-            Yangi mashg&apos;ulot
+            {t("admin.workouts.form.createTitle")}
           </DrawerTitle>
           <DrawerDescription>
-            Joriy til uchun asosiy ma&apos;lumotlarni kiriting. Qo&apos;shimcha
-            tarjimalar alohida drawerda boshqariladi.
+            {t("admin.workouts.form.createDescription")}
           </DrawerDescription>
         </DrawerHeader>
 
         <DrawerBody className="space-y-5">
           <div className="rounded-2xl border px-4 py-3 text-sm">
             <p className="font-medium">
-              Joriy til:{" "}
+              {t("admin.workouts.form.currentLanguage")}{" "}
               {currentLanguageMeta?.flag ? `${currentLanguageMeta.flag} ` : ""}
               {currentLanguageMeta?.name ?? toUpper(currentLanguage)}
             </p>
@@ -483,7 +484,9 @@ const CreateWorkoutPage = () => {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label>Nomi ({toUpper(currentLanguage)}) *</Label>
+              <Label>
+                {t("admin.workouts.form.name")} ({toUpper(currentLanguage)}) *
+              </Label>
               <Input
                 value={form.name}
                 onChange={(event) =>
@@ -492,15 +495,15 @@ const CreateWorkoutPage = () => {
                     name: event.target.value,
                   }))
                 }
-                placeholder="Masalan: Bench Press"
+                placeholder={t("admin.workouts.form.namePlaceholder")}
               />
             </div>
 
             <div className="flex items-center justify-between rounded-2xl border px-4 py-3">
               <div>
-                <Label>Status</Label>
+                <Label>{t("admin.common.status")}</Label>
                 <p className="text-xs text-muted-foreground">
-                  Faol bo&apos;lsa katalogda ko&apos;rinadi.
+                  {t("admin.workouts.form.statusDescription")}
                 </p>
               </div>
               <Switch
@@ -515,9 +518,9 @@ const CreateWorkoutPage = () => {
             </div>
             <div className="flex items-center justify-between rounded-2xl border px-4 py-3">
               <div>
-                <Label>Onboardingda ko'rsatish</Label>
+                <Label>{t("admin.workouts.form.showOnboarding")}</Label>
                 <p className="text-xs text-muted-foreground">
-                  Yoqilgan bo'lsa user onboarding mashq ro'yxatida ko'rinadi.
+                  {t("admin.workouts.form.showOnboardingDescription")}
                 </p>
               </div>
               <Switch
@@ -533,7 +536,7 @@ const CreateWorkoutPage = () => {
           </div>
 
           <div className="space-y-3">
-            <Label>Media</Label>
+            <Label>{t("admin.workouts.form.media")}</Label>
             <div className="flex items-start gap-4">
               <ImageUploadPreview
                 file={form.imageFile}
@@ -563,7 +566,7 @@ const CreateWorkoutPage = () => {
                       youtubeUrl: event.target.value,
                     }))
                   }
-                  placeholder="YouTube havolasi"
+                  placeholder={t("admin.workouts.form.youtubePlaceholder")}
                   type="url"
                 />
               </div>
@@ -571,7 +574,7 @@ const CreateWorkoutPage = () => {
           </div>
 
           <div className="space-y-2">
-            <Label>Kategoriyalar *</Label>
+            <Label>{t("admin.workouts.form.categories")} *</Label>
             <div className="flex flex-wrap gap-2">
               {lodashMap(categories, (category) => (
                 <Button
@@ -607,7 +610,7 @@ const CreateWorkoutPage = () => {
 
           <div className="grid gap-4 rounded-2xl border px-4 py-4 md:grid-cols-2">
             <div className="space-y-2 md:col-span-2">
-              <Label>Log turi</Label>
+              <Label>{t("admin.workouts.form.trackingType")}</Label>
               <Select
                 value={form.trackingType}
                 onValueChange={(value) =>
@@ -618,7 +621,9 @@ const CreateWorkoutPage = () => {
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Log turini tanlang" />
+                  <SelectValue
+                    placeholder={t("admin.workouts.form.trackingTypePlaceholder")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {lodashMap(WORKOUT_TRACKING_OPTIONS, (option) => (
@@ -631,7 +636,7 @@ const CreateWorkoutPage = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>Default setlar</Label>
+              <Label>{t("admin.workouts.form.defaultSets")}</Label>
               <InlineNumberField
                 value={form.defaultSets}
                 onChange={(value) =>
@@ -643,7 +648,7 @@ const CreateWorkoutPage = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>Dam olish (sek)</Label>
+              <Label>{t("admin.workouts.form.restSeconds")}</Label>
               <InlineNumberField
                 value={form.defaultRestSeconds}
                 onChange={(value) =>
@@ -659,7 +664,7 @@ const CreateWorkoutPage = () => {
 
             {some(trackingFields, (field) => field.key === "reps") ? (
               <div className="space-y-2">
-                <Label>Default takror</Label>
+                <Label>{t("admin.workouts.form.defaultReps")}</Label>
                 <InlineNumberField
                   value={form.defaultReps}
                   onChange={(value) =>
@@ -673,7 +678,7 @@ const CreateWorkoutPage = () => {
 
             {some(trackingFields, (field) => field.key === "durationSeconds") ? (
               <div className="space-y-2">
-                <Label>Default vaqt (sek)</Label>
+                <Label>{t("admin.workouts.form.defaultDuration")}</Label>
                 <InlineNumberField
                   value={form.defaultDurationSeconds}
                   onChange={(value) =>
@@ -690,7 +695,7 @@ const CreateWorkoutPage = () => {
 
             {some(trackingFields, (field) => field.key === "distanceMeters") ? (
               <div className="space-y-2">
-                <Label>Default masofa (m)</Label>
+                <Label>{t("admin.workouts.form.defaultDistance")}</Label>
                 <InlineNumberField
                   value={form.defaultDistanceMeters}
                   onChange={(value) =>
@@ -707,19 +712,19 @@ const CreateWorkoutPage = () => {
           </div>
 
           <CatalogMultiSelectCombobox
-            label="Asosiy muskullar"
-            description="Mushak katalogidan bir yoki bir nechtasini tanlang."
+            label={t("admin.workouts.form.primaryMuscles")}
+            description={t("admin.workouts.form.musclesDescription")}
             options={muscleOptions}
             values={form.targetMuscles}
             onChange={(vals) =>
               setForm((current) => ({ ...current, targetMuscles: vals }))
             }
-            emptyText="Avval mushak katalogini to'ldiring."
+            emptyText={t("admin.workouts.form.musclesEmpty")}
           />
 
           <CatalogMultiSelectCombobox
-            label="Yordamchi muskullar"
-            description="Shu katalogdan qo'shimcha mushak guruhlarini tanlang."
+            label={t("admin.workouts.form.secondaryMuscles")}
+            description={t("admin.workouts.form.secondaryMusclesDescription")}
             options={muscleOptions}
             values={form.secondaryMuscles}
             onChange={(vals) =>
@@ -728,45 +733,45 @@ const CreateWorkoutPage = () => {
                 secondaryMuscles: vals,
               }))
             }
-            emptyText="Avval mushak katalogini to'ldiring."
+            emptyText={t("admin.workouts.form.musclesEmpty")}
           />
 
           <CatalogMultiSelectCombobox
-            label="Tana qismlari"
-            description="Tana qismi katalogidan tanlang."
+            label={t("admin.workouts.form.bodyParts")}
+            description={t("admin.workouts.form.bodyPartsDescription")}
             options={bodyPartOptions}
             values={form.bodyParts}
             onChange={(vals) =>
               setForm((current) => ({ ...current, bodyParts: vals }))
             }
-            emptyText="Avval tana qismlari katalogini to'ldiring."
+            emptyText={t("admin.workouts.form.bodyPartsEmpty")}
           />
 
           <CatalogMultiSelectCombobox
-            label="Inventarlar"
-            description="Workout equipment katalogidan tanlang."
+            label={t("admin.workouts.form.equipment")}
+            description={t("admin.workouts.form.equipmentDescription")}
             options={equipmentOptions}
             values={form.equipments}
             onChange={(vals) =>
               setForm((current) => ({ ...current, equipments: vals }))
             }
-            emptyText="Avval workout equipment katalogini to'ldiring."
+            emptyText={t("admin.workouts.form.equipmentEmpty")}
           />
 
           <ArrayField
-            label="Instructions"
-            description="+ tugmasi bilan qadamlarni ko'paytiring."
+            label={t("admin.workouts.form.instructions")}
+            description={t("admin.workouts.form.instructionsDescription")}
             values={form.instructions}
             onChange={(vals) =>
               setForm((current) => ({ ...current, instructions: vals }))
             }
-            placeholder="Qadamni kiriting"
+            placeholder={t("admin.workouts.form.instructionPlaceholder")}
           />
         </DrawerBody>
 
         <DrawerFooter>
           <Button onClick={handleSave} disabled={isCreating}>
-            Yaratish
+            {t("admin.common.create")}
           </Button>
         </DrawerFooter>
       </DrawerContent>
@@ -775,6 +780,3 @@ const CreateWorkoutPage = () => {
 };
 
 export default CreateWorkoutPage;
-
-
-

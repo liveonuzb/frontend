@@ -14,6 +14,7 @@ import { getAuthErrorMessage } from "@/modules/auth/lib/auth-utils.js";
 import { useAuthMobileAutoFocus } from "@/modules/auth/lib/mobile-keyboard";
 import { useTranslation } from "react-i18next";
 import { get, isEqual } from "lodash";
+import { applyStrongPasswordPolicy } from "@/modules/auth/lib/password-policy.js";
 
 const isResetSessionExpired = (expiresAtValue) => {
   if (!expiresAtValue) {
@@ -40,7 +41,7 @@ const ResetPasswordForm = () => {
       password: z
         .string()
         .min(1, t("auth.validation.passwordRequired"))
-        .min(6, t("auth.validation.passwordMin")),
+        .pipe(applyStrongPasswordPolicy(z.string(), t)),
       confirmPassword: z
         .string()
         .min(1, t("auth.validation.confirmPasswordRequired")),
@@ -140,7 +141,6 @@ const ResetPasswordForm = () => {
               />
               <PasswordStrength password={field.value} />
               <FieldError
-                className={"absolute"}
                 errors={
                   get(fieldState, "error") ? [get(fieldState, "error")] : []
                 }
@@ -167,7 +167,6 @@ const ResetPasswordForm = () => {
                 {...field}
               />
               <FieldError
-                className={"absolute -bottom-6"}
                 errors={
                   get(fieldState, "error") ? [get(fieldState, "error")] : []
                 }

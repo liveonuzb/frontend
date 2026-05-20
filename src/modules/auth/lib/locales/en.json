@@ -159,6 +159,11 @@
       "workoutMeta": "7:00 PM",
       "panelCopyright": "© 2026 LiveOn."
     },
+    "telegramAuth": {
+      "errorTitle": "Could not sign in with Telegram",
+      "errorDescription": "Your session may have expired. Reopen from Telegram or try again.",
+      "retry": "Try again"
+    },
     "signIn": {
       "title": "Welcome back",
       "subtitle": "Login to your LiveOn account",
@@ -185,6 +190,7 @@
       "forgotPassword": "Forgot your password?",
       "loginButton": "Login",
       "loggingIn": "Logging in...",
+      "nextActionLoggingIn": "We are checking your account. You will be redirected as soon as login finishes.",
       "noAccount": "Don't have an account?",
       "signUpLink": "Sign up",
       "continueWith": "Or continue with",
@@ -194,11 +200,21 @@
       "privacyLink": "Privacy Policy",
       "termsEnd": ".",
       "success": "Logged in successfully.",
-      "error": "Login failed."
+      "error": "Login failed.",
+      "twoFactorTitle": "Enter your 2FA code",
+      "twoFactorSubtitle": "Enter the 6-digit code from your authenticator app.",
+      "twoFactorSubtitleWithPhone": "Enter the 6-digit code from your authenticator app for {{phone}}.",
+      "twoFactorCodeLabel": "2FA code",
+      "twoFactorCodeHint": "Enter the 6-digit code from your authenticator app or an 8-character backup code.",
+      "twoFactorVerifyButton": "Verify",
+      "twoFactorVerifying": "Verifying...",
+      "twoFactorSuccess": "Logged in successfully.",
+      "twoFactorError": "Could not verify 2FA code."
     },
     "signUp": {
       "title": "Create an account",
       "subtitle": "Sign up for free and get started",
+      "nextActionSendingOtp": "We are creating your account. Next, you will verify your phone number with an OTP code.",
       "emailTab": "Email",
       "phoneTab": "Phone",
       "emailLabel": "Email",
@@ -234,6 +250,7 @@
       "rememberPassword": "Remember your password?",
       "backToSignIn": "Back to sign in",
       "resetCodeSent": "Reset code sent.",
+      "neutralResetCodeSent": "If an account exists for this phone number, a reset code has been sent.",
       "error": "Failed to send password reset code."
     },
     "otpVerify": {
@@ -241,12 +258,16 @@
       "titleReset": "Verify reset code",
       "subtitleWithId": "Enter the 6-digit code sent to {{identity}}",
       "subtitleDefault": "Enter the 6-digit code sent to your phone",
+      "codeLabel": "Verification code",
       "verifyButton": "Verify",
       "verifying": "Verifying...",
       "didntReceive": "Didn't receive a code?",
       "resend": "Resend",
       "resending": "Sending...",
       "resendIn": "Resend in {{s}}s",
+      "expiresIn": "Code expires in {{s}}s.",
+      "expired": "This code has expired. Send a new code.",
+      "expiryHint": "You can send a new code after this one expires.",
       "backToSignIn": "Back to sign in",
       "sessionMissing": "Verification session not found.",
       "phoneSessionMissing": "Phone verification session not found.",
@@ -284,13 +305,15 @@
       "emailRequired": "Email is required",
       "emailInvalid": "Invalid email format",
       "passwordRequired": "Password is required",
-      "passwordMin": "Password must be at least 6 characters",
+      "passwordMin": "Password must be at least 8 characters",
+      "passwordComplexity": "Password must include uppercase, lowercase, number, and symbol",
       "confirmPasswordRequired": "Confirm password is required",
       "passwordsNoMatch": "Passwords do not match",
       "phoneRequired": "Phone number is required",
       "phoneInvalid": "Phone must match +998-##-###-##-##",
       "otpMin": "Please enter all 6 digits",
-      "otpMax": "OTP must be 6 digits"
+      "otpMax": "OTP must be 6 digits",
+      "otpOrBackup": "Enter a 6-digit OTP or an 8-character backup code"
     }
   }
 }

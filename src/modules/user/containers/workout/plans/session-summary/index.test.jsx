@@ -1,7 +1,9 @@
 import React from "react";
+import "@/lib/i18n";
+import i18n from "@/lib/i18n";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import WorkoutPlanSessionSummaryPage from "./index.jsx";
 
 vi.mock("@/components/page-transition", () => ({
@@ -31,7 +33,14 @@ const summaryState = {
     completedSets: 6,
     exerciseCount: 3,
     completedExerciseCount: 3,
+    skippedExerciseCount: 1,
     totalVolumeKg: 840,
+    skippedExercises: [
+      {
+        exerciseKey: "lunge-1",
+        exerciseName: "Lunge",
+      },
+    ],
     exerciseSummaries: [
       {
         exerciseKey: "sumo-0",
@@ -70,6 +79,10 @@ const renderPage = (initialEntry) => {
 };
 
 describe("WorkoutPlanSessionSummaryPage", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("uz");
+  });
+
   it("renders the session summary payload from route state", () => {
     renderPage({
       pathname: "/user/workout/plans/plan-1/days/0/session/summary",
@@ -80,6 +93,9 @@ describe("WorkoutPlanSessionSummaryPage", () => {
     expect(screen.getByText("18 daqiqa")).toBeInTheDocument();
     expect(screen.getByText("117 kcal")).toBeInTheDocument();
     expect(screen.getByText("Sumo Squat")).toBeInTheDocument();
+    expect(screen.getByText("O'tkazilgan mashqlar")).toBeInTheDocument();
+    expect(screen.getByText("1 o'tkazildi")).toBeInTheDocument();
+    expect(screen.getByText("Lunge")).toBeInTheDocument();
   });
 
   it("navigates back to day detail", () => {

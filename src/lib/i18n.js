@@ -24,9 +24,9 @@ import adminUz from "@/modules/admin/lib/locales/uz.json";
 import adminEn from "@/modules/admin/lib/locales/en.json";
 import adminRu from "@/modules/admin/lib/locales/ru.json";
 
-import onboardingUz from "@/modules/onboarding/lib/locales/uz.json";
-import onboardingEn from "@/modules/onboarding/lib/locales/en.json";
-import onboardingRu from "@/modules/onboarding/lib/locales/ru.json";
+import onboardingUz from "@/modules/user-onboarding/lib/locales/uz.json";
+import onboardingEn from "@/modules/user-onboarding/lib/locales/en.json";
+import onboardingRu from "@/modules/user-onboarding/lib/locales/ru.json";
 
 import landingUz from "@/modules/landing/lib/locales/uz.json";
 import landingEn from "@/modules/landing/lib/locales/en.json";

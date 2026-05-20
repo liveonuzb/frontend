@@ -1,6 +1,7 @@
 {
   "common": {
     "loading": "Загрузка...",
+    "done": "Готово",
     "actions": {
       "save": "Сохранить",
       "saving": "Сохранение...",
@@ -110,7 +111,10 @@
         "closeLabel": "Закрыть конструктор",
         "title": "Конструктор тренировок",
         "description": "Управляйте структурой тренировок на неделю.",
-        "addDay": "День"
+        "addDay": "День",
+        "editMetaLabel": "Редактировать данные плана",
+        "editMode": "Режим редактирования",
+        "addFirstExercise": "Добавьте первое упражнение"
       },
       "footer": {
         "savePlan": "Сохранить план"
@@ -141,6 +145,11 @@
         "descriptionPlaceholder": "Цель плана или короткая заметка...",
         "continue": "Продолжить",
         "cancel": "Отмена"
+      },
+      "metaDrawer": {
+        "title": "Данные плана",
+        "descriptionPlaceholder": "Описание плана",
+        "save": "Сохранить"
       },
       "desktop": {
         "searchPlaceholder": "Поиск упражнений...",
@@ -228,6 +237,79 @@
         "minDays": "Добавьте хотя бы 1 день",
         "addDayFirst": "Сначала добавьте день"
       }
+    }
+  },
+  "store": {
+    "chat": {
+      "errors": {
+        "sendMessage": "Не удалось отправить сообщение",
+        "refreshAttachment": "Не удалось обновить ссылку на файл",
+        "deleteMessage": "Не удалось удалить сообщение",
+        "editMessage": "Не удалось отредактировать сообщение",
+        "sendBooking": "Не удалось отправить бронирование",
+        "selectBookingSlot": "Не удалось забронировать слот",
+        "cancelBooking": "Не удалось отменить бронирование",
+        "completeBooking": "Не удалось завершить бронирование",
+        "searchUnavailable": "Поиск на сервере временно недоступен"
+      },
+      "sender": {
+        "me": "Вы",
+        "unknown": "Неизвестно"
+      },
+      "forward": {
+        "image": "📷 Изображение",
+        "file": "📎 Файл",
+        "voice": "🎙️ Голосовое сообщение",
+        "message": "Пересланное сообщение"
+      },
+      "aiSuggestions": {
+        "food": {
+          "salad": "Предложить салат 🥗",
+          "water": "Напомнить выпить воды 💧",
+          "plan": "Посмотреть план 📋"
+        },
+        "workout": {
+          "video": "Отправить видео 🎥",
+          "goodLuck": "Пожелать удачи ✨",
+          "task": "Назначить задачу 🎯"
+        },
+        "thanks": {
+          "welcome": "Пожалуйста 😊",
+          "continue": "Продолжим 💪",
+          "questions": "Есть вопросы? 🤔"
+        },
+        "default": {
+          "good": "Хорошо 👍",
+          "understood": "Понятно 👌",
+          "next": "Далее ➡️"
+        }
+      },
+      "messages": {
+        "sharedContent": "Поделились {{type}}: {{title}}",
+        "poll": "Опрос: {{question}}",
+        "task": "Задача: {{title}}",
+        "invoice": "Счет: {{description}}",
+        "habitTracker": "Привычки: {{title}}"
+      },
+      "invoice": {
+        "unavailable": "Оплата счета еще не подключена к реальному платежному провайдеру"
+      },
+      "bookmarks": {
+        "removed": "Удалено из закладок",
+        "saved": "Сохранено в закладки"
+      },
+      "live": {
+        "started": "Прямой эфир начался! 🎥"
+      },
+      "summary": {
+        "unavailable": "Анализ этого чата еще не готов."
+      },
+      "stories": {
+        "added": "История успешно добавлена! ✨"
+      }
+    },
+    "gamification": {
+      "xpSpent": "XP списаны"
     }
   }
 }

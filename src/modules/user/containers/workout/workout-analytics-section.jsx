@@ -1,15 +1,21 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { map } from "lodash";
 import { Badge } from "@/components/ui/badge";
 import { Clock3Icon, TrophyIcon } from "lucide-react";
 
-const formatDuration = (minutes) => {
-  if (!minutes) return "0 daq";
+const formatDuration = (minutes, t) => {
+  if (!minutes) return t("user.workout.analytics.durationMinutes", { count: 0 });
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  if (h > 0 && m > 0) return `${h} soat ${m} daq`;
-  if (h > 0) return `${h} soat`;
-  return `${m} daq`;
+  if (h > 0 && m > 0) {
+    return t("user.workout.analytics.durationHoursMinutes", {
+      hours: h,
+      minutes: m,
+    });
+  }
+  if (h > 0) return t("user.workout.analytics.durationHours", { count: h });
+  return t("user.workout.analytics.durationMinutes", { count: m });
 };
 
 const formatCompactWorkoutDate = (value) => {
@@ -29,37 +35,43 @@ export default function WorkoutAnalyticsSection({
   recentWorkoutDays,
   topPersonalRecords,
 }) {
+  const { t } = useTranslation();
+
   return (
     <section className="rounded-[28px] border bg-card p-5 shadow-sm sm:p-6">
       <div className="space-y-5">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-            Tahlil
+            {t("user.workout.analytics.eyebrow")}
           </p>
           <h2 className="mt-2 text-xl font-black tracking-tight">
-            So&apos;nggi faollik va rekordlar
+            {t("user.workout.analytics.title")}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Oxirgi mashg&apos;ulot kunlari va kuchli natijalaringiz bir joyda.
+            {t("user.workout.analytics.subtitle")}
           </p>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-[22px] border border-border/60 p-4">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              7 kun
+              {t("user.workout.analytics.sevenDays")}
             </p>
             <p className="mt-2 text-xl font-black">{weeklyStats.count}</p>
-            <p className="mt-1 text-xs text-muted-foreground">mashq kuni</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t("user.workout.analytics.workoutDays")}
+            </p>
           </div>
           <div className="rounded-[22px] border border-border/60 p-4">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              Hajm
+              {t("user.workout.analytics.volume")}
             </p>
             <p className="mt-2 text-xl font-black">
-              {formatDuration(weeklyStats.duration)}
+              {formatDuration(weeklyStats.duration, t)}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">jami vaqt</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t("user.workout.analytics.totalTime")}
+            </p>
           </div>
           <div className="rounded-[22px] border border-border/60 p-4">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -67,7 +79,7 @@ export default function WorkoutAnalyticsSection({
             </p>
             <p className="mt-2 text-xl font-black">{personalRecordCount}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              saqlangan rekord
+              {t("user.workout.analytics.savedRecord")}
             </p>
           </div>
         </div>
@@ -76,7 +88,7 @@ export default function WorkoutAnalyticsSection({
           <div className="flex items-center gap-2">
             <Clock3Icon className="size-4 text-primary" aria-hidden="true" />
             <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-muted-foreground">
-              Oxirgi Sessiyalar
+              {t("user.workout.analytics.recentSessions")}
             </h3>
           </div>
 
@@ -95,13 +107,13 @@ export default function WorkoutAnalyticsSection({
                       {day.logCount} log &bull; {day.calories} kcal
                     </p>
                   </div>
-                  <Badge variant="outline">{formatDuration(day.duration)}</Badge>
+                  <Badge variant="outline">{formatDuration(day.duration, t)}</Badge>
                 </div>
               ))}
             </div>
           ) : (
             <div className="rounded-[22px] border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-              Hali workout tarixidan yig&apos;ilgan sessiyalar yo&apos;q.
+              {t("user.workout.analytics.noSessions")}
             </div>
           )}
         </div>
@@ -110,7 +122,7 @@ export default function WorkoutAnalyticsSection({
           <div className="flex items-center gap-2">
             <TrophyIcon className="size-4 text-primary" aria-hidden="true" />
             <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-muted-foreground">
-              Kuchli Natijalar
+              {t("user.workout.analytics.topResults")}
             </h3>
           </div>
 
@@ -142,7 +154,7 @@ export default function WorkoutAnalyticsSection({
             </div>
           ) : (
             <div className="rounded-[22px] border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-              Hali set loglardan PR shakllanmagan.
+              {t("user.workout.analytics.noPr")}
             </div>
           )}
         </div>

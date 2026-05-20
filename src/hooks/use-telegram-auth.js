@@ -2,9 +2,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTelegram } from "@/hooks/use-telegram";
 import { useAuthStore } from "@/store";
 import { api } from "@/hooks/api/use-api";
+import { getAuthResponseData } from "@/modules/auth/lib/auth-utils.js";
+import {
+  rememberTelegramCampaignAttribution,
+  trackLaunchEvent,
+} from "@/lib/analytics.js";
+import { buildTelegramAttributionProperties } from "@/lib/telegram-start-param.js";
 
 export function useTelegramAuth() {
-  const { isTelegramWebApp, initData } = useTelegram();
+  const { isTelegramWebApp, initData, startParam } = useTelegram();
   const { isAuthenticated, completeAuthentication } = useAuthStore();
   const attemptedRef = useRef(false);
   const [attempt, setAttempt] = useState(0);
@@ -29,8 +35,13 @@ export function useTelegramAuth() {
 
     api
       .post("/auth/login/telegram", { initData })
-      .then(({ data }) => {
-        completeAuthentication(data);
+      .then((response) => {
+        completeAuthentication(getAuthResponseData(response));
+        rememberTelegramCampaignAttribution(startParam);
+        void trackLaunchEvent("telegram_miniapp_opened", {
+          source: "telegram",
+          properties: buildTelegramAttributionProperties(startParam),
+        });
       })
       .catch((error) => {
         setError(error);
@@ -42,6 +53,7 @@ export function useTelegramAuth() {
     attempt,
     isTelegramWebApp,
     initData,
+    startParam,
     isAuthenticated,
     completeAuthentication,
   ]);

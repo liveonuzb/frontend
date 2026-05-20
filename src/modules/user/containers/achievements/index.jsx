@@ -283,9 +283,9 @@ const useXpHistory = () => {
   const [page, setPage] = React.useState(0);
   const limit = 20;
   const { data, isLoading } = useGetQuery({
-    url: "/gamification/xp/history",
+    url: "/user/gamification/xp/history",
     params: { limit, offset: page * limit },
-    queryProps: { queryKey: ["gamification", "xp-history", page] },
+    queryProps: { queryKey: ["user", "gamification", "xp-history", page] },
   });
   const payload = getApiResponseData(data, {});
   const items = payload?.items ?? [];
@@ -377,18 +377,21 @@ const AchievementsPage = () => {
   }, [setBreadcrumbs]);
 
   const { data: categoriesData } = useGetQuery({
-    url: "/gamification/achievements/categories",
-    queryProps: { queryKey: ["gamification", "achievement-categories"] },
+    url: "/user/gamification/achievements/categories",
+    queryProps: {
+      queryKey: ["user", "gamification", "achievement-categories"],
+    },
   });
 
   const { data: achievementsData, isLoading } = useGetQuery({
-    url: "/gamification/achievements",
+    url: "/user/gamification/achievements",
     params: {
       mode: currentMode,
       ...(selectedCategory ? { category: selectedCategory } : {}),
     },
     queryProps: {
       queryKey: [
+        "user",
         "gamification",
         "achievements",
         selectedCategory ?? "all",

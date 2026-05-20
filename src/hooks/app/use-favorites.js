@@ -16,9 +16,67 @@ export const useFavorites = (entityType) => {
   });
 
   const items = React.useMemo(() => data?.data?.items ?? [], [data]);
-  const favoriteIds = React.useMemo(() => new Set(map(items, (f) => f.entityId)), [items]);
+  const favoriteIds = React.useMemo(
+    () => new Set(map(items, (f) => String(f.entityId))),
+    [items],
+  );
 
   return { items, favoriteIds, isLoading, refetch };
+};
+
+export const useFavoriteActions = (entityType) => {
+  const { request } = useApi();
+  const queryClient = useQueryClient();
+  const [pendingEntityId, setPendingEntityId] = React.useState(null);
+
+  const invalidateFavorites = React.useCallback(
+    (entityId) => {
+      queryClient.invalidateQueries({ queryKey: [...FAVORITES_KEY, entityType] });
+      queryClient.invalidateQueries({ queryKey: [...FAVORITES_KEY, "all"] });
+      queryClient.invalidateQueries({
+        queryKey: [...FAVORITES_KEY, "check", entityType, entityId],
+      });
+    },
+    [entityType, queryClient],
+  );
+
+  const toggleFavorite = React.useCallback(
+    async (entityId, isFavorite) => {
+      const normalizedEntityId = String(entityId || "");
+
+      if (!entityType || !normalizedEntityId || pendingEntityId) {
+        return;
+      }
+
+      setPendingEntityId(normalizedEntityId);
+
+      try {
+        if (isFavorite) {
+          await request.delete(`/users/me/favorites/${entityType}/${normalizedEntityId}`);
+        } else {
+          await request.post("/users/me/favorites", {
+            entityType,
+            entityId: normalizedEntityId,
+          });
+        }
+
+        invalidateFavorites(normalizedEntityId);
+      } finally {
+        setPendingEntityId(null);
+      }
+    },
+    [entityType, invalidateFavorites, pendingEntityId, request],
+  );
+
+  const isPendingFor = React.useCallback(
+    (entityId) => pendingEntityId === String(entityId || ""),
+    [pendingEntityId],
+  );
+
+  return {
+    toggleFavorite,
+    isPendingFor,
+  };
 };
 
 export const useFavoriteToggle = (entityType, entityId) => {

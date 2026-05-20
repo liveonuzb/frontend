@@ -7,8 +7,10 @@ import { getApiResponseData } from "@/lib/api-response";
 
 const AchievementsWidget = () => {
   const { data } = useGetQuery({
-    url: "/gamification/achievements",
-    queryProps: { queryKey: ["gamification", "achievements", "all"] },
+    url: "/user/gamification/achievements",
+    queryProps: {
+      queryKey: ["user", "gamification", "achievements", "all"],
+    },
   });
 
   const payload = getApiResponseData(data, []);

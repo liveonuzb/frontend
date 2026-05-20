@@ -1,11 +1,14 @@
+import WorkoutMediaFallback from "@/modules/user/containers/workout/workout-media-fallback.jsx";
+
 const WorkoutImageCell = ({ workout }) => {
   if (workout?.imageUrl) {
     return (
       <div className="size-10 overflow-hidden rounded-xl border">
-        <img loading="lazy"
+        <WorkoutMediaFallback
           src={workout.imageUrl}
           alt={workout.name}
-          className="size-full object-cover"
+          compact
+          label="Workout media mavjud emas"
         />
       </div>
     );
@@ -13,15 +16,20 @@ const WorkoutImageCell = ({ workout }) => {
 
   if (workout?.youtubeUrl) {
     return (
-      <div className="flex size-10 items-center justify-center rounded-xl bg-red-50 text-[10px] text-red-500 font-bold border border-red-100">
-        YT
+      <div className="size-10 overflow-hidden rounded-xl border border-red-100 bg-red-50 text-red-500">
+        <WorkoutMediaFallback
+          variant="video"
+          compact
+          label="Workout videosi mavjud"
+          fallbackClassName="bg-red-50 text-red-500"
+        />
       </div>
     );
   }
 
   return (
-    <div className="size-10 rounded-xl bg-muted border flex items-center justify-center text-xs text-muted-foreground">
-      No
+    <div className="size-10 overflow-hidden rounded-xl border bg-muted">
+      <WorkoutMediaFallback compact label="Workout media mavjud emas" />
     </div>
   );
 };

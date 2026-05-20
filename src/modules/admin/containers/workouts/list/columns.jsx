@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { get, isObject, map as lodashMap, trim, find, values as lodashValues } from "lodash";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -68,6 +69,8 @@ const useColumns = ({
   setWorkoutToDelete,
   setHardDeleteTarget,
 }) => {
+  const { t } = useTranslation();
+
   return React.useMemo(
     () => [
       {
@@ -98,14 +101,14 @@ const useColumns = ({
       },
       {
         id: "image",
-        header: "Rasm/Video",
+        header: t("admin.workouts.columns.media"),
         cell: (info) => <WorkoutImageCell workout={info.row.original} />,
         meta: { skeleton: adminListSkeletons.image },
         size: 72,
       },
       {
         id: "mediaReview",
-        header: "Media status",
+        header: t("admin.workouts.columns.mediaStatus"),
         meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => {
           const media = get(info.row.original, "mediaReview", {});
@@ -123,13 +126,17 @@ const useColumns = ({
                 variant={imageStatus === "ready" ? "secondary" : "outline"}
                 className="h-5 px-1.5 text-[10px]"
               >
-                Image: {imageStatus}
+                {t("admin.workouts.columns.imageStatus", {
+                  status: imageStatus,
+                })}
               </Badge>
               <Badge
                 variant={videoStatus === "review" ? "destructive" : "outline"}
                 className="h-5 px-1.5 text-[10px]"
               >
-                Video: {videoStatus}
+                {t("admin.workouts.columns.videoStatus", {
+                  status: videoStatus,
+                })}
               </Badge>
               <Badge
                 variant={
@@ -147,7 +154,10 @@ const useColumns = ({
       {
         accessorKey: "name",
         header: ({ column }) => (
-          <DataGridColumnHeader column={column} title="Mashg'ulot" />
+          <DataGridColumnHeader
+            column={column}
+            title={t("admin.workouts.columns.workout")}
+          />
         ),
         enableSorting: true,
         meta: { skeleton: adminListSkeletons.avatarText },
@@ -165,7 +175,7 @@ const useColumns = ({
       },
       {
         accessorKey: "equipments",
-        header: "Inventar",
+        header: t("admin.workouts.columns.equipment"),
         meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => (
           <div className="flex flex-wrap gap-1 max-w-[150px]">
@@ -184,7 +194,7 @@ const useColumns = ({
       },
       {
         accessorKey: "categoryIds",
-        header: "Kategoriyalar",
+        header: t("admin.workouts.columns.categories"),
         meta: { skeleton: adminListSkeletons.badge },
         cell: (info) => (
           <div className="flex flex-wrap gap-1">
@@ -213,7 +223,7 @@ const useColumns = ({
       },
       {
         id: "translations",
-        header: "Tarjimalar",
+        header: t("admin.workoutPlans.columns.translations"),
         meta: { skeleton: adminListSkeletons.translations },
         cell: (info) => {
           const translations = get(info, "row.original.translations", {});
@@ -240,7 +250,10 @@ const useColumns = ({
       {
         accessorKey: "isOnboarding",
         header: ({ column }) => (
-          <CenteredColumnHeader column={column} title="Onboardingda" />
+          <CenteredColumnHeader
+            column={column}
+            title={t("admin.workouts.columns.onboarding")}
+          />
         ),
         enableSorting: true,
         meta: SWITCH_COLUMN_META,
@@ -262,7 +275,7 @@ const useColumns = ({
       {
         accessorKey: "isActive",
         header: ({ column }) => (
-          <CenteredColumnHeader column={column} title="Status" />
+          <CenteredColumnHeader column={column} title={t("admin.common.status")} />
         ),
         enableSorting: true,
         meta: SWITCH_COLUMN_META,
@@ -315,11 +328,9 @@ const useColumns = ({
       openTranslationsDrawer,
       setWorkoutToDelete,
       setHardDeleteTarget,
+      t,
     ],
   );
 };
 
 export default useColumns;
-
-
-

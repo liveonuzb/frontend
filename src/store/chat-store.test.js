@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { localStorageMock } = vi.hoisted(() => {
+const { localStorageMock, tMock } = vi.hoisted(() => {
   const storage = {
     store: {},
     getItem(key) {
@@ -22,7 +22,15 @@ const { localStorageMock } = vi.hoisted(() => {
     configurable: true,
   });
 
-  return { localStorageMock: storage };
+  const translations = {
+    "store.chat.errors.sendMessage": "Failed to send message",
+    "store.chat.invoice.unavailable":
+      "Invoice payment is not connected to a real payment provider yet",
+  };
+
+  const t = vi.fn((key, options = {}) => translations[key] ?? options.defaultValue ?? key);
+
+  return { localStorageMock: storage, tMock: t };
 });
 
 const { ioMock } = vi.hoisted(() => ({
@@ -47,6 +55,13 @@ vi.mock("@/hooks/api/use-api.js", () => ({
 vi.mock("sonner", () => ({
   toast: {
     error: vi.fn(),
+    success: vi.fn(),
+  },
+}));
+
+vi.mock("@/lib/i18n", () => ({
+  default: {
+    t: tMock,
   },
 }));
 
@@ -144,10 +159,10 @@ describe("getChatSocketConnectionConfig", () => {
         id: expect.stringMatching(/^temp-/),
         text: "Yo'qoldi",
         status: "failed",
-        errorMessage: "Xabar yuborishda xatolik",
+        errorMessage: "Failed to send message",
       }),
     ]);
-    expect(toast.error).toHaveBeenCalledWith("Xabar yuborishda xatolik");
+    expect(toast.error).toHaveBeenCalledWith("Failed to send message");
   });
 
   it("retries a failed message and replaces it with the persisted message", async () => {
@@ -257,7 +272,7 @@ describe("getChatSocketConnectionConfig", () => {
       "pending",
     );
     expect(toast.error).toHaveBeenCalledWith(
-      "Invoice to'lovi hali real payment providerga ulanmagan",
+      "Invoice payment is not connected to a real payment provider yet",
     );
   });
 

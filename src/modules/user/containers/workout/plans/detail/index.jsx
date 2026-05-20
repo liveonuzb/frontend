@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { get, map, size, isArray, reduce, toNumber } from "lodash";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
@@ -61,6 +62,8 @@ const WEEK_DAYS = [
 ];
 
 const PlanSourceBadge = ({ plan }) => {
+  const { t } = useTranslation();
+
   if (get(plan, "source") === "ai") {
     return (
       <Badge variant="secondary">
@@ -70,7 +73,7 @@ const PlanSourceBadge = ({ plan }) => {
     );
   }
 
-  return <Badge variant="outline">Manual</Badge>;
+  return <Badge variant="outline">{t("user.workout.planDetail.manual")}</Badge>;
 };
 
 const getTotalExerciseCount = (schedule = []) =>
@@ -89,6 +92,7 @@ const DayCard = ({
   isLocked,
   onSelect,
 }) => {
+  const { t } = useTranslation();
   const exerciseCount = size(get(day, "exercises", []));
 
   return (
@@ -106,22 +110,30 @@ const DayCard = ({
         </span>
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-base font-black">Day {index + 1}</p>
-          {isToday ? <Badge variant="secondary">Bugun</Badge> : null}
-          {isCompleted ? <Badge variant="outline">Bajarilgan</Badge> : null}
-          {isLocked ? <Badge variant="outline">Locked</Badge> : null}
+            <p className="text-base font-black">
+              {t("user.workout.planDetail.dayTitle", { day: index + 1 })}
+            </p>
+          {isToday ? <Badge variant="secondary">{t("user.workout.planDetail.today")}</Badge> : null}
+          {isCompleted ? <Badge variant="outline">{t("user.workout.planDetail.completed")}</Badge> : null}
+          {isLocked ? <Badge variant="outline">{t("user.workout.planDetail.locked")}</Badge> : null}
           </div>
           <p className="mt-1 truncate text-base font-bold">
-            {get(day, "title") || get(day, "focus") || get(day, "day") || "Workout"}
+            {get(day, "title") ||
+              get(day, "focus") ||
+              get(day, "day") ||
+              t("user.workout.title")}
           </p>
           <p className="mt-1 truncate text-sm text-muted-foreground">
-            {get(day, "subtitle") || `${exerciseCount} mashq`}
+            {get(day, "subtitle") ||
+              t("user.workout.planDetail.exerciseCountUz", {
+                count: exerciseCount,
+              })}
           </p>
         </div>
       </div>
       <div className="flex items-center gap-3">
         <span className="hidden text-sm text-muted-foreground sm:inline">
-          {get(day, "duration") || "45-60 min"}
+          {get(day, "duration") || t("user.workout.planDetail.defaultDuration")}
         </span>
         <ChevronRightIcon className="text-muted-foreground transition group-hover:text-primary" />
       </div>
@@ -130,6 +142,7 @@ const DayCard = ({
 };
 
 const WorkoutPlanDetailPage = () => {
+  const { t } = useTranslation();
   const { planId } = useParams();
   const navigate = useNavigate();
   const { setBreadcrumbs } = useBreadcrumbStore();
@@ -161,15 +174,15 @@ const WorkoutPlanDetailPage = () => {
 
   React.useEffect(() => {
     setBreadcrumbs([
-      { url: "/user", title: "Bosh sahifa" },
-      { url: "/user/workout", title: "Workout" },
-      { url: "/user/workout/plans", title: "Mening rejalarim" },
+      { url: "/user", title: t("user.dashboard.title") },
+      { url: "/user/workout", title: t("user.workout.title") },
+      { url: "/user/workout/plans", title: t("user.workout.dayDetail.myPlans") },
       {
         url: `/user/workout/plans/${planId}`,
-        title: get(plan, "name", "Plan"),
+        title: get(plan, "name", t("user.workout.dayDetail.planFallback")),
       },
     ]);
-  }, [plan, planId, setBreadcrumbs]);
+  }, [plan, planId, setBreadcrumbs, t]);
 
   const handleSelectDay = (index) => {
     navigate(`/user/workout/plans/${planId}/days/${index}`);
@@ -182,12 +195,16 @@ const WorkoutPlanDetailPage = () => {
 
     try {
       await startPlan(plan);
-      toast.success(`"${get(plan, "name", "Workout reja")}" boshlandi`);
+      toast.success(
+        t("user.workout.planDetail.startSuccess", {
+          name: get(plan, "name", t("user.workout.planDetail.planFallbackUz")),
+        }),
+      );
       navigate("/user/workout/home");
     } catch (error) {
       toast.error(
         get(error, "response.data.message") ||
-          "Rejani boshlashda xatolik yuz berdi",
+          t("user.workout.planDetail.startError"),
       );
     }
   };
@@ -199,12 +216,12 @@ const WorkoutPlanDetailPage = () => {
 
     try {
       await deletePlanMutation.deletePlan(get(plan, "id"));
-      toast.success("Workout reja o'chirildi");
+      toast.success(t("user.workout.planDetail.deleteSuccess"));
       navigate("/user/workout/plans", { replace: true });
     } catch (error) {
       toast.error(
         get(error, "response.data.message") ||
-          "Workout rejani o'chirib bo'lmadi",
+          t("user.workout.planDetail.deleteError"),
       );
     }
   };
@@ -218,21 +235,23 @@ const WorkoutPlanDetailPage = () => {
       <PageTransition mode="slide-up">
         <div className="flex flex-col gap-6">
           <TrackingPageHeader
-            title="Workout reja"
-            subtitle="Workout plan ichki sahifasi."
+            title={t("user.workout.planDetail.errorHeaderTitle")}
+            subtitle={t("user.workout.planDetail.errorHeaderSubtitle")}
             hideTitleOnMobile={false}
           />
           <Card>
             <CardHeader>
-              <CardTitle>Workout reja topilmadi</CardTitle>
+              <CardTitle>{t("user.workout.planDetail.notFoundTitle")}</CardTitle>
               <CardDescription>
-                Reja o'chirilgan yoki sizda unga ruxsat yo'q.
+                {t("user.workout.planDetail.notFoundDescription")}
               </CardDescription>
             </CardHeader>
             <CardFooter className="gap-2">
-              <Button onClick={() => refetch()}>Qayta urinish</Button>
+              <Button onClick={() => refetch()}>
+                {t("user.workout.planDetail.retry")}
+              </Button>
               <Button variant="outline" onClick={() => navigate("/user/workout/plans")}>
-                Rejalarga qaytish
+                {t("user.workout.planDetail.backToPlans")}
               </Button>
             </CardFooter>
           </Card>
@@ -249,11 +268,11 @@ const WorkoutPlanDetailPage = () => {
   const workoutDuration =
     get(plan, "todayWorkout.duration") ||
     get(schedule, "[0].duration") ||
-    "45-60 min";
-  const goalTitle = get(plan, "goal", "Build muscle and strength");
+    t("user.workout.planDetail.defaultDuration");
+  const goalTitle = get(plan, "goal", t("user.workout.planDetail.defaultGoal"));
   const goalDescription =
     get(plan, "goalDescription") ||
-    "Focus on progressive overload, compound movements, and proper recovery to maximize muscle growth.";
+    t("user.workout.planDetail.defaultGoalDescription");
   const included = get(plan, "included", {});
   const totalWorkouts =
     toNumber(get(included, "workouts")) ||
@@ -271,7 +290,7 @@ const WorkoutPlanDetailPage = () => {
             {coverImageUrl ? (
               <img
                 src={coverImageUrl}
-                alt={get(plan, "name", "Workout reja")}
+                alt={get(plan, "name", t("user.workout.dayDetail.planImageAlt"))}
                 className="absolute inset-y-0 right-0 h-full w-full object-cover opacity-70 md:w-[46%] dark:opacity-75"
                 loading="lazy"
               />
@@ -280,22 +299,39 @@ const WorkoutPlanDetailPage = () => {
             <div className="relative z-10 max-w-3xl">
               <div className="flex flex-wrap items-center gap-3">
                 <h1 className="text-4xl font-black tracking-tight">
-                  {get(plan, "name", "Muscle Gain Plan")}
+                  {get(plan, "name", t("user.workout.planDetail.defaultPlanName"))}
                 </h1>
                 <Badge className="rounded-full bg-primary/10 text-primary">
-                  {durationWeeks} WEEKS PLAN
+                  {t("user.workout.planDetail.weeksPlan", {
+                    count: durationWeeks,
+                  })}
                 </Badge>
                 <PlanSourceBadge plan={plan} />
               </div>
               <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground">
                 {get(plan, "description") ||
-                  "A structured 8-week program designed to build lean muscle, increase strength, and improve overall fitness."}
+                  t("user.workout.planDetail.defaultDescription")}
               </p>
               <div className="mt-7 grid gap-3 sm:grid-cols-3">
                 {map([
-                  [CalendarDaysIcon, durationWeeks, "Weeks", "Total duration"],
-                  [CalendarDaysIcon, daysPerWeek, "Days / week", "Recommended"],
-                  [Clock3Icon, workoutDuration, "Min / workout", "Estimated time"],
+                  [
+                    CalendarDaysIcon,
+                    durationWeeks,
+                    t("user.workout.planDetail.weeks"),
+                    t("user.workout.planDetail.totalDuration"),
+                  ],
+                  [
+                    CalendarDaysIcon,
+                    daysPerWeek,
+                    t("user.workout.planDetail.daysPerWeek"),
+                    t("user.workout.planDetail.recommended"),
+                  ],
+                  [
+                    Clock3Icon,
+                    workoutDuration,
+                    t("user.workout.planDetail.minPerWorkout"),
+                    t("user.workout.planDetail.estimatedTime"),
+                  ],
                 ], ([Icon, value, label, caption]) => (
                   <div
                     key={`${label}-${value}`}
@@ -325,7 +361,9 @@ const WorkoutPlanDetailPage = () => {
                 <TargetIcon className="size-8" />
               </span>
               <div>
-                <p className="text-sm font-black text-muted-foreground">Goal</p>
+                <p className="text-sm font-black text-muted-foreground">
+                  {t("user.workout.planDetail.goal")}
+                </p>
                 <h2 className="mt-1 text-2xl font-black">{goalTitle}</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
                   {goalDescription}
@@ -335,7 +373,9 @@ const WorkoutPlanDetailPage = () => {
           </section>
 
           <section className="workout-glass-card rounded-[1.5rem] border p-5 sm:p-6">
-            <h2 className="text-2xl font-black">This week</h2>
+            <h2 className="text-2xl font-black">
+              {t("user.workout.planDetail.thisWeek")}
+            </h2>
             {size(schedule) > 0 ? (
               <div className="mt-5 grid gap-3">
                 {map(schedule, (day, index) => (
@@ -353,7 +393,9 @@ const WorkoutPlanDetailPage = () => {
             ) : (
               <div className="mt-5 rounded-3xl border border-dashed bg-muted/20 px-5 py-10 text-center">
                 <CalendarDaysIcon className="mx-auto text-muted-foreground" />
-                <p className="mt-3 font-semibold">Schedule hali to'ldirilmagan</p>
+                <p className="mt-3 font-semibold">
+                  {t("user.workout.planDetail.emptySchedule")}
+                </p>
               </div>
             )}
             <Button
@@ -363,18 +405,40 @@ const WorkoutPlanDetailPage = () => {
               disabled={isStartingPlan}
             >
               <PlayIcon data-icon="inline-start" />
-              Start This Plan
+              {t("user.workout.planDetail.startThisPlan")}
             </Button>
           </section>
 
           <section className="workout-glass-card rounded-[1.5rem] border p-5 sm:p-6">
-            <h2 className="text-2xl font-black">Included</h2>
+            <h2 className="text-2xl font-black">
+              {t("user.workout.planDetail.included")}
+            </h2>
             <div className="mt-5 grid gap-4 sm:grid-cols-4">
               {map([
-                [CalendarDaysIcon, totalWorkouts, "Workouts", "Structured sessions"],
-                [DumbbellIcon, totalExercises, "Exercises", "Variety of movements"],
-                [BarChart3Icon, "Progress", "tracking", "Track your improvement"],
-                [SparklesIcon, "AI", "tips", "Personalized guidance"],
+                [
+                  CalendarDaysIcon,
+                  totalWorkouts,
+                  t("user.workout.planDetail.workouts"),
+                  t("user.workout.planDetail.structuredSessions"),
+                ],
+                [
+                  DumbbellIcon,
+                  totalExercises,
+                  t("user.workout.planDetail.exercises"),
+                  t("user.workout.planDetail.movementVariety"),
+                ],
+                [
+                  BarChart3Icon,
+                  t("user.workout.planDetail.progress"),
+                  t("user.workout.planDetail.tracking"),
+                  t("user.workout.planDetail.trackImprovement"),
+                ],
+                [
+                  SparklesIcon,
+                  "AI",
+                  t("user.workout.planDetail.tips"),
+                  t("user.workout.planDetail.personalizedGuidance"),
+                ],
               ], ([Icon, value, label, caption]) => (
                 <div key={`${value}-${label}`} className="rounded-2xl border border-slate-900/10 bg-white/45 p-4 dark:border-white/10 dark:bg-white/[0.04]">
                   <Icon className="size-6 text-primary" />
@@ -389,72 +453,92 @@ const WorkoutPlanDetailPage = () => {
 
         <aside className="flex min-w-0 flex-col gap-4 xl:sticky xl:top-4 xl:self-start">
           <div className="workout-glass-card rounded-3xl p-5">
-            <h3 className="text-lg font-black">Difficulty level</h3>
+            <h3 className="text-lg font-black">
+              {t("user.workout.planDetail.difficultyLevel")}
+            </h3>
             <div className="mt-5 flex items-center gap-4">
               <span className="grid size-16 place-items-center rounded-full bg-primary/10 text-primary">
                 <BarChart3Icon className="size-8" />
               </span>
               <div>
                 <p className="text-xl font-black text-primary">
-                  {get(plan, "difficulty", "Intermediate")}
+                  {get(plan, "difficulty", t("user.workout.planDetail.intermediate"))}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Suitable for those with some workout experience.
+                  {t("user.workout.planDetail.difficultyDescription")}
                 </p>
               </div>
             </div>
           </div>
 
           <div className="workout-glass-card rounded-3xl p-5">
-            <h3 className="text-lg font-black">Calories estimate</h3>
+            <h3 className="text-lg font-black">
+              {t("user.workout.planDetail.caloriesEstimate")}
+            </h3>
             <div className="mt-5 flex items-center gap-4">
               <span className="grid size-16 place-items-center rounded-full bg-primary/10 text-primary">
                 <FlameIcon className="size-8" />
               </span>
               <div>
-                <p className="text-xl font-black">2,800 kcal / week</p>
+                <p className="text-xl font-black">
+                  {t("user.workout.planDetail.caloriesPerWeek")}
+                </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Estimated average calorie burn per week.
+                  {t("user.workout.planDetail.caloriesDescription")}
                 </p>
               </div>
             </div>
           </div>
 
           <div className="workout-glass-card rounded-3xl p-5">
-            <h3 className="text-lg font-black">Equipment needed</h3>
+            <h3 className="text-lg font-black">
+              {t("user.workout.planDetail.equipmentNeeded")}
+            </h3>
             <div className="mt-5 flex items-center gap-4">
               <span className="grid size-16 place-items-center rounded-full bg-green-500/10 text-green-500">
                 <DumbbellIcon className="size-8" />
               </span>
               <div>
-                <p className="text-xl font-black text-green-500">Gym Required</p>
+                <p className="text-xl font-black text-green-500">
+                  {t("user.workout.planDetail.gymRequired")}
+                </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Dumbbells, Barbell, Bench, Cable Machine, Pull-up Bar
+                  {t("user.workout.planDetail.equipmentList")}
                 </p>
               </div>
             </div>
           </div>
 
           <div className="workout-glass-card rounded-3xl p-5">
-            <h3 className="text-lg font-black">Weekly completion preview</h3>
+            <h3 className="text-lg font-black">
+              {t("user.workout.planDetail.weeklyPreview")}
+            </h3>
             <div className="mt-5 grid grid-cols-[96px_1fr] items-center gap-5">
               <div className="grid size-24 place-items-center rounded-full border border-primary/30 bg-primary/5 text-center">
                 <div>
                   <p className="text-2xl font-black text-primary">0%</p>
-                  <p className="text-xs text-muted-foreground">Completed</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("user.workout.planDetail.completedPreview")}
+                  </p>
                 </div>
               </div>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between gap-3">
-                  <span className="text-muted-foreground">Workouts</span>
+                  <span className="text-muted-foreground">
+                    {t("user.workout.planDetail.workouts")}
+                  </span>
                   <span className="font-black">0 / {daysPerWeek}</span>
                 </div>
                 <div className="flex justify-between gap-3">
-                  <span className="text-muted-foreground">Exercises</span>
+                  <span className="text-muted-foreground">
+                    {t("user.workout.planDetail.exercises")}
+                  </span>
                   <span className="font-black">0 / {Math.max(1, totalExercises)}</span>
                 </div>
                 <div className="flex justify-between gap-3">
-                  <span className="text-muted-foreground">Time</span>
+                  <span className="text-muted-foreground">
+                    {t("user.workout.planDetail.time")}
+                  </span>
                   <span className="font-black">0 / 4 hrs</span>
                 </div>
               </div>
@@ -468,7 +552,7 @@ const WorkoutPlanDetailPage = () => {
               onClick={() => navigate(`/user/workout/plans/edit/${get(plan, "id")}`)}
             >
               <PencilIcon data-icon="inline-start" />
-              Tahrirlash
+              {t("user.workout.planDetail.edit")}
             </Button>
             <Button
               variant="outline"
@@ -476,7 +560,7 @@ const WorkoutPlanDetailPage = () => {
               onClick={() => setDeleteOpen(true)}
             >
               <Trash2Icon data-icon="inline-start" />
-              O'chirish
+              {t("user.workout.planDetail.delete")}
             </Button>
           </div>
         </aside>
@@ -484,22 +568,25 @@ const WorkoutPlanDetailPage = () => {
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Workout rejani o'chirasizmi?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("user.workout.planDetail.deleteConfirmTitle")}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              "{get(plan, "name")}" rejasi butunlay o'chiriladi. Bu amalni ortga
-              qaytarib bo'lmaydi.
+              {t("user.workout.planDetail.deleteConfirmDescription", {
+                name: get(plan, "name"),
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deletePlanMutation.isPending}>
-              Bekor qilish
+              {t("user.workout.planDetail.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
               disabled={deletePlanMutation.isPending}
               onClick={handleDelete}
             >
-              O'chirish
+              {t("user.workout.planDetail.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

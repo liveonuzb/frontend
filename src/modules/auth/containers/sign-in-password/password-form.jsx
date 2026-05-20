@@ -24,7 +24,11 @@ const PasswordForm = ({ phone }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { clearAuthPhoneFlow, completeAuthentication } = useAuthStore();
+  const {
+    clearAuthPhoneFlow,
+    completeAuthentication,
+    setTwoFactorChallenge,
+  } = useAuthStore();
   const { mutateAsync, isPending } = usePostQuery();
 
   const schema = z.object({
@@ -57,7 +61,24 @@ const PasswordForm = ({ phone }) => {
       {
         onSuccess: (response) => {
           const responseData = getAuthResponseData(response);
-          completeAuthentication(responseData);
+
+          if (
+            get(responseData, "twoFactorRequired") &&
+            get(responseData, "twoFactorToken")
+          ) {
+            setTwoFactorChallenge({
+              phone,
+              twoFactorToken: get(responseData, "twoFactorToken"),
+            });
+            navigate("/auth/sign-in/2fa", { replace: true });
+            return;
+          }
+
+          if (!completeAuthentication(responseData)) {
+            toast.error(t("auth.signIn.error"));
+            return;
+          }
+
           clearAuthPhoneFlow();
           queryClient.setQueryData(["me"], { data: get(responseData, "user") });
           toast.success(
@@ -124,6 +145,15 @@ const PasswordForm = ({ phone }) => {
           ? t("auth.signIn.loggingIn")
           : t("auth.signIn.loginButton")}
       </AuthSubmitButton>
+      {(isSubmitting || isPending) && (
+        <p
+          role="status"
+          aria-live="polite"
+          className="-mt-4 text-center text-sm text-muted-foreground"
+        >
+          {t("auth.signIn.nextActionLoggingIn")}
+        </p>
+      )}
 
       <Button
         type="button"

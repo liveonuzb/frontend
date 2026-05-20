@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   Drawer,
   DrawerContent,
@@ -24,13 +25,15 @@ export function WorkoutPlanTranslationsDrawer({
   isLoading,
   onSave,
 }) {
+  const { t } = useTranslation();
+
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>Workout shablon tarjimalari</DrawerTitle>
+          <DrawerTitle>{t("admin.workoutPlans.translations.title")}</DrawerTitle>
           <DrawerDescription>
-            Nom va tavsifni barcha faol tillar uchun alohida boshqaring.
+            {t("admin.workoutPlans.translations.description")}
           </DrawerDescription>
         </DrawerHeader>
 
@@ -56,7 +59,7 @@ export function WorkoutPlanTranslationsDrawer({
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Nomi</Label>
+                  <Label>{t("admin.workoutPlans.translations.name")}</Label>
                   <Input
                     value={translationForm.titles?.[language.code] || ""}
                     onChange={(event) =>
@@ -68,12 +71,12 @@ export function WorkoutPlanTranslationsDrawer({
                         },
                       }))
                     }
-                    placeholder="Tarjima qilingan nom"
+                    placeholder={t("admin.workoutPlans.translations.namePlaceholder")}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Tavsif</Label>
+                  <Label>{t("admin.workoutPlans.translations.planDescription")}</Label>
                   <Textarea
                     value={translationForm.descriptions?.[language.code] || ""}
                     onChange={(event) =>
@@ -85,7 +88,7 @@ export function WorkoutPlanTranslationsDrawer({
                         },
                       }))
                     }
-                    placeholder="Tarjima qilingan tavsif"
+                    placeholder={t("admin.workoutPlans.translations.descriptionPlaceholder")}
                     className="min-h-24"
                   />
                 </div>
@@ -96,7 +99,7 @@ export function WorkoutPlanTranslationsDrawer({
 
         <DrawerFooter>
           <Button onClick={onSave} disabled={isSaving || isLoading}>
-            Tarjimalarni saqlash
+            {t("admin.workoutPlans.translations.save")}
           </Button>
         </DrawerFooter>
       </DrawerContent>

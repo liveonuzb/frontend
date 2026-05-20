@@ -21,21 +21,25 @@ const FAVORITES_QUERY_KEY = ["me", "favorites"];
 const ENTITY_TYPES = [
   { value: null, label: "Barchasi" },
   { value: "WORKOUT_PLAN", label: "Mashg'ulotlar", Icon: DumbbellIcon },
+  { value: "EXERCISE", label: "Mashqlar", Icon: DumbbellIcon },
   { value: "MEAL_PLAN", label: "Ovqat rejalari", Icon: UtensilsIcon },
 ];
 
 const ENTITY_ROUTES = {
   WORKOUT_PLAN: () => `/user/workout`,
+  EXERCISE: () => `/user/workout/exercises`,
   MEAL_PLAN: () => `/user/nutrition`,
 };
 
 const ENTITY_ICONS = {
   WORKOUT_PLAN: DumbbellIcon,
+  EXERCISE: DumbbellIcon,
   MEAL_PLAN: UtensilsIcon,
 };
 
 const ENTITY_LABELS = {
   WORKOUT_PLAN: "Mashg'ulot rejasi",
+  EXERCISE: "Mashq",
   MEAL_PLAN: "Ovqat rejasi",
 };
 

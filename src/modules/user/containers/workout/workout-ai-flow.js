@@ -1,22 +1,62 @@
 import { get, map, toNumber, trim } from "lodash";
 
 export const WORKOUT_GOALS = [
-  { value: "muscle_building", label: "Mushak qurish" },
-  { value: "fat_loss", label: "Yog' yoqish" },
-  { value: "strength", label: "Kuch oshirish" },
-  { value: "general_fitness", label: "Umumiy fitness" },
+  {
+    value: "muscle_building",
+    label: "Mushak qurish",
+    labelKey: "user.workout.planCreate.goals.muscleBuilding",
+  },
+  {
+    value: "fat_loss",
+    label: "Yog' yoqish",
+    labelKey: "user.workout.planCreate.goals.fatLoss",
+  },
+  {
+    value: "strength",
+    label: "Kuch oshirish",
+    labelKey: "user.workout.planCreate.goals.strength",
+  },
+  {
+    value: "general_fitness",
+    label: "Umumiy fitness",
+    labelKey: "user.workout.planCreate.goals.generalFitness",
+  },
 ];
 
 export const WORKOUT_LEVELS = [
-  { value: "beginner", label: "Beginner" },
-  { value: "intermediate", label: "Intermediate" },
-  { value: "advanced", label: "Advanced" },
+  {
+    value: "beginner",
+    label: "Beginner",
+    labelKey: "user.workout.planCreate.levels.beginner",
+  },
+  {
+    value: "intermediate",
+    label: "Intermediate",
+    labelKey: "user.workout.planCreate.levels.intermediate",
+  },
+  {
+    value: "advanced",
+    label: "Advanced",
+    labelKey: "user.workout.planCreate.levels.advanced",
+  },
 ];
 
 export const EQUIPMENT_MODES = [
-  { value: "bodyweight", label: "Uskunasiz" },
-  { value: "with_equipment", label: "Uskuna bilan" },
-  { value: "gym", label: "Gym" },
+  {
+    value: "bodyweight",
+    label: "Uskunasiz",
+    labelKey: "user.workout.planCreate.equipmentModes.bodyweight",
+  },
+  {
+    value: "with_equipment",
+    label: "Uskuna bilan",
+    labelKey: "user.workout.planCreate.equipmentModes.withEquipment",
+  },
+  {
+    value: "gym",
+    label: "Gym",
+    labelKey: "user.workout.planCreate.equipmentModes.gym",
+  },
 ];
 
 export const calculateOneRepMax = (weightKg, reps) => {

@@ -41,11 +41,14 @@ const initialState = {
   latestPlanGenerationJobId: null,
   pendingVerification: null,
   authPhoneFlow: null,
+  twoFactorChallenge: null,
   passwordReset: null,
   isHydrated: false,
 };
 
 const authStorageKey = "auth-storage";
+const AUTH_FLOW_TTL_MS = 15 * 60 * 1000;
+const PASSWORD_RESET_FLOW_TTL_MS = 10 * 60 * 1000;
 const noopAuthStorage = {
   getItem: () => null,
   setItem: () => undefined,
@@ -66,13 +69,32 @@ const getAuthStorage = () => {
   return window.sessionStorage;
 };
 
+const getFallbackExpiresAt = (expiresAt, ttlMs) =>
+  expiresAt ?? new Date(Date.now() + ttlMs).toISOString();
+
+const isFutureTimestamp = (value) => {
+  if (!value) {
+    return false;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return false;
+  }
+
+  return date.getTime() > Date.now();
+};
+
+const keepFreshFlowState = (payload) =>
+  payload && isFutureTimestamp(payload.expiresAt) ? payload : null;
+
 const sanitizePendingVerification = (payload) =>
   payload
     ? {
         channel: payload.channel ?? null,
         purpose: payload.purpose ?? null,
         phone: payload.phone ?? null,
-        expiresAt: payload.expiresAt ?? null,
+        expiresAt: getFallbackExpiresAt(payload.expiresAt, AUTH_FLOW_TTL_MS),
       }
     : null;
 
@@ -82,6 +104,7 @@ const sanitizeAuthPhoneFlow = (payload) =>
         phone: payload.phone,
         flow: payload.flow,
         referralCode: payload.referralCode ?? null,
+        expiresAt: getFallbackExpiresAt(payload.expiresAt, AUTH_FLOW_TTL_MS),
       }
     : null;
 
@@ -89,8 +112,20 @@ const sanitizePasswordReset = (payload) =>
   payload
     ? {
         resetToken: payload.resetToken ?? null,
-        expiresAt: payload.expiresAt ?? null,
+        expiresAt: getFallbackExpiresAt(
+          payload.expiresAt,
+          PASSWORD_RESET_FLOW_TTL_MS,
+        ),
         phone: payload.phone ?? null,
+      }
+    : null;
+
+const sanitizeTwoFactorChallenge = (payload) =>
+  payload
+    ? {
+        twoFactorToken: payload.twoFactorToken ?? null,
+        phone: payload.phone ?? null,
+        expiresAt: getFallbackExpiresAt(payload.expiresAt, AUTH_FLOW_TTL_MS),
       }
     : null;
 
@@ -106,6 +141,10 @@ const persistAuthState = (state) => ({
   onboardingNextPath: state.onboardingNextPath,
   latestPersonalizationJobId: state.latestPersonalizationJobId,
   latestPlanGenerationJobId: state.latestPlanGenerationJobId,
+  pendingVerification: keepFreshFlowState(state.pendingVerification),
+  authPhoneFlow: keepFreshFlowState(state.authPhoneFlow),
+  twoFactorChallenge: keepFreshFlowState(state.twoFactorChallenge),
+  passwordReset: keepFreshFlowState(state.passwordReset),
 });
 
 const useAuthStore = create()(
@@ -146,6 +185,22 @@ const useAuthStore = create()(
       },
 
       completeAuthentication: (authData) => {
+        if (
+          !authData?.accessToken ||
+          !authData?.refreshToken ||
+          !authData?.user
+        ) {
+          set(() => ({
+            isAuthenticated: false,
+            token: null,
+            refreshToken: null,
+            user: null,
+            roles: [],
+            activeRole: null,
+          }));
+          return false;
+        }
+
         const nextRoles = normalizeRoles(
           authData?.roles ?? authData?.user?.roles,
         );
@@ -167,8 +222,10 @@ const useAuthStore = create()(
             authData?.user?.latestPlanGenerationJobId ?? null,
           pendingVerification: null,
           authPhoneFlow: null,
+          twoFactorChallenge: null,
           passwordReset: null,
         }));
+        return true;
       },
 
       initializeUser: (userData) => {
@@ -288,6 +345,18 @@ const useAuthStore = create()(
         }));
       },
 
+      setTwoFactorChallenge: (payload) => {
+        set(() => ({
+          twoFactorChallenge: sanitizeTwoFactorChallenge(payload),
+        }));
+      },
+
+      clearTwoFactorChallenge: () => {
+        set(() => ({
+          twoFactorChallenge: null,
+        }));
+      },
+
       setPasswordReset: (payload) => {
         set(() => ({
           passwordReset: sanitizePasswordReset(payload),
@@ -319,7 +388,17 @@ const useAuthStore = create()(
           return initialState;
         }
 
-        return persistedState;
+        return {
+          ...persistedState,
+          pendingVerification: keepFreshFlowState(
+            persistedState?.pendingVerification,
+          ),
+          authPhoneFlow: keepFreshFlowState(persistedState?.authPhoneFlow),
+          twoFactorChallenge: keepFreshFlowState(
+            persistedState?.twoFactorChallenge,
+          ),
+          passwordReset: keepFreshFlowState(persistedState?.passwordReset),
+        };
       },
     },
   ),

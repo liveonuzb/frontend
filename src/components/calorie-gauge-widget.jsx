@@ -309,7 +309,7 @@ export default function CalorieGaugeWidget({
           </div>
         </div>
 
-        <div className="hidden flex-1 items-center justify-center md:flex">
+        <div className="flex flex-1 items-center justify-center">
           <svg
             role="img"
             aria-label={gaugeAriaLabel}

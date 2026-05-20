@@ -94,12 +94,16 @@ const renderPage = (
         element: <RunningLivePage />,
       },
       {
-        path: "/user/workout/running/:workoutSessionId",
-        element: <div>Run detail</div>,
+        path: "/user/workout/running/live",
+        element: <RunningLivePage />,
       },
       {
-        path: "/user/workout/running",
-        element: <div>Running home</div>,
+        path: "/user/workout/history/:workoutSessionId",
+        element: <div>Workout history detail</div>,
+      },
+      {
+        path: "/user/workout/home",
+        element: <div>Workout home</div>,
       },
     ],
     { initialEntries },
@@ -403,7 +407,19 @@ describe("RunningLivePage", () => {
       );
     });
     expect(clearRunningPointQueue).toHaveBeenCalledWith("workout-1");
-    expect(await screen.findByText("Run detail")).toBeInTheDocument();
+    expect(await screen.findByText("Workout history detail")).toBeInTheDocument();
+  });
+
+  it("returns to Workout Home when the live route has no active session id", async () => {
+    useRunningActiveSession.mockReturnValue({
+      activeSession: null,
+    });
+
+    renderPage(["/user/workout/running/live"]);
+
+    fireEvent.click(screen.getByRole("button", { name: /yugurishni boshlashga qaytish/i }));
+
+    expect(await screen.findByText("Workout home")).toBeInTheDocument();
   });
 
   it("ignores stale GPS callbacks during finish after tracking is stopped", async () => {

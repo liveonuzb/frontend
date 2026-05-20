@@ -32,11 +32,11 @@ const createQueryClient = () =>
   });
 
 const createWrapper = (queryClient) =>
-  (function Wrapper({ children }) {
+  function Wrapper({ children }) {
     return (
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
-  });
+  };
 
 describe("use-running-sessions", () => {
   let queryClient;
@@ -99,7 +99,7 @@ describe("use-running-sessions", () => {
     });
 
     expect(mutateAsync).toHaveBeenCalledWith({
-      url: "/user/workout/running/start",
+      url: "/user/workout/start-run",
       attributes: {
         clientSessionId: "client-run-1",
       },
@@ -172,12 +172,9 @@ describe("use-running-sessions", () => {
       isLoading: false,
     });
 
-    const { result } = renderHook(
-      () => useRunningSessionDetail("workout-1"),
-      {
-        wrapper: createWrapper(queryClient),
-      },
-    );
+    const { result } = renderHook(() => useRunningSessionDetail("workout-1"), {
+      wrapper: createWrapper(queryClient),
+    });
 
     expect(result.current.session.points).toEqual([
       expect.objectContaining({
@@ -218,9 +215,8 @@ describe("use-running-sessions", () => {
       wrapper: createWrapper(queryClient),
     });
 
-    expect(map(result.current.sessions, (session) => session.workoutSessionId)).toEqual([
-      "workout-1",
-      "workout-2",
-    ]);
+    expect(
+      map(result.current.sessions, (session) => session.workoutSessionId),
+    ).toEqual(["workout-1", "workout-2"]);
   });
 });

@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils.js";
 import {
   CheckCircle2Icon,
   CheckIcon,
+  Clock3Icon,
   InfoIcon,
   Loader2Icon,
   PlusIcon,
@@ -79,6 +80,23 @@ const MealCard = memo(
     );
     const scanStatus = get(food, "status", null);
     const canSelect = isConsumed && !readOnly;
+    const isOverConsumed =
+      isConsumed &&
+      grams != null &&
+      defaultAmount != null &&
+      grams > defaultAmount;
+    const statusLabel = isConsumed
+      ? isOverConsumed
+        ? "Maqsaddan yuqori"
+        : "Yakunlandi"
+      : isFromPlan
+        ? "Rejada"
+        : "Qo'shilmagan";
+    const statusClassName = isConsumed
+      ? isOverConsumed
+        ? "bg-red-500/10 text-red-700 dark:text-red-300"
+        : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+      : "bg-muted text-muted-foreground";
     const longPressTimerRef = React.useRef(null);
     const longPressTriggeredRef = React.useRef(false);
 
@@ -221,12 +239,6 @@ const MealCard = memo(
         </motion.div>
       );
     }
-
-    const isOverConsumed =
-      isConsumed &&
-      grams != null &&
-      defaultAmount != null &&
-      grams > defaultAmount;
 
     const handleEat = () => {
       if (readOnly) return;
@@ -391,7 +403,7 @@ const MealCard = memo(
             tabIndex={0}
             aria-label={`${food.name} ovqat kartasi`}
             className={cn(
-              "relative overflow-hidden transition-all duration-300",
+              "relative overflow-hidden rounded-2xl transition-all duration-300",
               isConsumed && "cursor-pointer",
               !isConsumed && "bg-muted/30 border-border/50",
               isConsumed &&
@@ -412,7 +424,7 @@ const MealCard = memo(
               {/* Avatar */}
               <div
                 className={cn(
-                  "relative shrink-0 size-24 md:size-24  overflow-hidden flex items-center justify-center border-r transition-all duration-300",
+                  "relative shrink-0 size-24 overflow-hidden flex items-center justify-center border-r transition-all duration-300",
                   isConsumed && !isOverConsumed
                     ? "border-green-500/20 bg-green-500/10"
                     : isConsumed && isOverConsumed
@@ -429,6 +441,25 @@ const MealCard = memo(
                 ) : (
                   <span className="text-xl leading-none">{emoji}</span>
                 )}
+                <div className="absolute inset-x-2 bottom-2 z-10 flex justify-center">
+                  <span
+                    className={cn(
+                      "inline-flex max-w-full items-center gap-1 rounded-full bg-background/90 px-2 py-1 text-[9px] font-black shadow-sm backdrop-blur",
+                      isConsumed
+                        ? isOverConsumed
+                          ? "text-red-600"
+                          : "text-emerald-700 dark:text-emerald-300"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {isConsumed ? (
+                      <CheckCircle2Icon className="size-3" />
+                    ) : (
+                      <Clock3Icon className="size-3" />
+                    )}
+                    <span className="truncate">{statusLabel}</span>
+                  </span>
+                </div>
 
                 {isConsumed && (
                   <motion.div
@@ -436,7 +467,7 @@ const MealCard = memo(
                     animate={{ scale: 1, opacity: 1 }}
                     className={cn(
                       "absolute inset-0 flex items-center justify-center",
-                      isOverConsumed ? "bg-red-500/20" : "bg-green-500/20",
+                      isOverConsumed ? "bg-red-500/10" : "bg-green-500/10",
                     )}
                   >
                     <div
@@ -472,10 +503,10 @@ const MealCard = memo(
               </div>
 
               {/* Info */}
-              <div className="flex-1 min-w-0 px-3 py-2.5 flex flex-col justify-center gap-0.5">
+              <div className="flex-1 min-w-0 px-3 py-3 flex flex-col justify-center gap-1.5">
                 <p
                   className={cn(
-                    "text-[13px] font-bold truncate leading-snug",
+                    "text-sm font-black truncate leading-snug",
                     isConsumed ? "text-foreground" : "text-foreground/80",
                   )}
                 >
@@ -485,7 +516,15 @@ const MealCard = memo(
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span
                     className={cn(
-                      "inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold",
+                      "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-black",
+                      statusClassName,
+                    )}
+                  >
+                    {statusLabel}
+                  </span>
+                  <span
+                    className={cn(
+                      "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold",
                       sourceMeta.tone,
                     )}
                   >
@@ -494,7 +533,7 @@ const MealCard = memo(
                   {grams != null && (
                     <span
                       className={cn(
-                        "inline-flex items-center text-[10px] font-bold rounded px-1 py-0.5",
+                        "inline-flex items-center text-[10px] font-bold rounded-full px-2 py-0.5",
                         isConsumed
                           ? "bg-green-500/10 text-green-700 dark:text-green-400"
                           : "bg-muted text-muted-foreground",
@@ -504,11 +543,12 @@ const MealCard = memo(
                       {unit}
                     </span>
                   )}
-                  <div className="flex items-center gap-1.5">
-                    {map(MACROS, ({ key, color }) => (
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {map(MACROS, ({ key, color }) => (
                       <span
                         key={key}
-                        className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground"
+                        className="flex items-center gap-1 rounded-full bg-muted/50 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground"
                       >
                         <span
                           className={cn(
@@ -520,13 +560,12 @@ const MealCard = memo(
                           {get(food, key, 0)}g
                         </span>
                       </span>
-                    ))}
-                  </div>
+                  ))}
                 </div>
               </div>
 
               {/* Right: kcal + action button */}
-              <div className="shrink-0 flex flex-col items-end justify-center gap-2 px-3 py-2.5 border-l border-border/20">
+              <div className="shrink-0 flex min-w-[92px] flex-col items-end justify-center gap-2 px-3 py-3 border-l border-border/20">
                 <span
                   className={cn(
                     "text-[15px] font-black tabular-nums leading-none whitespace-nowrap",

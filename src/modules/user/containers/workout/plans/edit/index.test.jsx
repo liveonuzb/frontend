@@ -1,4 +1,6 @@
 import React from "react";
+import "@/lib/i18n";
+import i18n from "@/lib/i18n";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import {
   createMemoryRouter,
@@ -39,6 +41,8 @@ vi.mock("@/components/workout-plan-builder", () => ({
     onSave,
     asPage,
     title,
+    onDirtyChange,
+    onClose,
   }) => (
     <div data-testid="builder" data-as-page={String(asPage)}>
       <div data-testid="builder-title">{title}</div>
@@ -69,6 +73,8 @@ vi.mock("@/components/workout-plan-builder", () => ({
       >
         save-builder
       </button>
+      <button onClick={() => onDirtyChange?.(true)}>mark-builder-dirty</button>
+      <button onClick={() => onClose?.()}>close-builder</button>
     </div>
   ),
 }));
@@ -147,7 +153,8 @@ const renderPage = (initialEntry) => {
 };
 
 describe("EditWorkoutPlanPage", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("uz");
     updatePlanMock.mockReset();
     activatePlanMock.mockReset();
     refetchMock.mockReset();
@@ -279,6 +286,26 @@ describe("EditWorkoutPlanPage", () => {
     });
 
     expect(callOrder).toEqual(["update", "activate"]);
+    await waitFor(() => {
+      expect(screen.getByTestId("location")).toHaveTextContent(
+        "/user/workout/plans/plan-1",
+      );
+    });
+  });
+
+  it("prompts before leaving when builder changes are unsaved", async () => {
+    renderPage({ pathname: "/user/workout/plans/edit/plan-1" });
+
+    fireEvent.click(screen.getByText("mark-builder-dirty"));
+    fireEvent.click(screen.getByText("close-builder"));
+
+    expect(screen.getByText("O'zgarishlar saqlanmagan")).toBeInTheDocument();
+    expect(screen.getByTestId("location")).toHaveTextContent(
+      "/user/workout/plans/edit/plan-1",
+    );
+
+    fireEvent.click(screen.getByText("Chiqib ketish"));
+
     await waitFor(() => {
       expect(screen.getByTestId("location")).toHaveTextContent(
         "/user/workout/plans/plan-1",

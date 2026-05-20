@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   get,
   map,
@@ -26,13 +27,25 @@ import {
   PlusIcon,
   SearchIcon,
   TimerIcon,
+  WifiOffIcon,
   XIcon,
 } from "lucide-react";
 import PageLoader from "@/components/page-loader/index.jsx";
 import PageTransition from "@/components/page-transition";
+import {
+  UnsavedChangesAlert,
+  useUnsavedChangesGuard,
+} from "@/modules/admin/components/unsaved-changes-guard.jsx";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Drawer,
   DrawerBody,
@@ -49,7 +62,6 @@ import {
   NumberFieldDecrement,
   NumberFieldIncrement,
 } from "@/components/reui/number-field";
-import { getTodayKey } from "@/hooks/app/use-daily-tracking";
 import {
   useWorkoutPlanDetail,
   useWorkoutExerciseCategories,
@@ -73,6 +85,8 @@ import {
   getExerciseRestSeconds,
   normalizeExerciseSets,
 } from "../../utils";
+
+const REMOTE_DRAFT_RETRY_DELAY_MS = 1200;
 
 const parseDayIndex = (value) => {
   const parsed = toNumber(value);
@@ -155,26 +169,31 @@ const useRestTimer = (onComplete) => {
     setRunning(true);
   }, []);
 
-  const restore = React.useCallback(({ seconds: savedSeconds, endsAt: savedEndsAt }) => {
-    const parsedEndsAt = savedEndsAt ? new Date(savedEndsAt).getTime() : null;
-    const fallbackSeconds = Math.max(0, toNumber(savedSeconds) || 0);
-    const remainingSeconds = Number.isFinite(parsedEndsAt)
-      ? Math.max(0, Math.ceil((parsedEndsAt - Date.now()) / 1000))
-      : fallbackSeconds;
+  const restore = React.useCallback(
+    ({ seconds: savedSeconds, endsAt: savedEndsAt }) => {
+      const parsedEndsAt = savedEndsAt ? new Date(savedEndsAt).getTime() : null;
+      const fallbackSeconds = Math.max(0, toNumber(savedSeconds) || 0);
+      const remainingSeconds = Number.isFinite(parsedEndsAt)
+        ? Math.max(0, Math.ceil((parsedEndsAt - Date.now()) / 1000))
+        : fallbackSeconds;
 
-    if (remainingSeconds <= 0) {
-      setRunning(false);
-      setSeconds(0);
-      setEndsAt(null);
-      return;
-    }
+      if (remainingSeconds <= 0) {
+        setRunning(false);
+        setSeconds(0);
+        setEndsAt(null);
+        return;
+      }
 
-    setRunning(true);
-    setSeconds(remainingSeconds);
-    setEndsAt(
-      Number.isFinite(parsedEndsAt) ? parsedEndsAt : Date.now() + remainingSeconds * 1000,
-    );
-  }, []);
+      setRunning(true);
+      setSeconds(remainingSeconds);
+      setEndsAt(
+        Number.isFinite(parsedEndsAt)
+          ? parsedEndsAt
+          : Date.now() + remainingSeconds * 1000,
+      );
+    },
+    [],
+  );
 
   return {
     seconds,
@@ -231,19 +250,21 @@ const buildSessionReplacementExercise = (exercise) => ({
   name: get(exercise, "name"),
   imageUrl: get(exercise, "imageUrl", null),
   equipment:
-    get(exercise, "equipments[0]") || get(exercise, "equipment") || get(exercise, "category"),
+    get(exercise, "equipments[0]") ||
+    get(exercise, "equipment") ||
+    get(exercise, "category"),
   category: get(exercise, "category", ""),
   trackingType: normalizeWorkoutTrackingType(get(exercise, "trackingType")),
   defaultSets: get(exercise, "defaultSets", 3),
   defaultReps: get(exercise, "defaultReps", null),
   defaultDurationSeconds: get(exercise, "defaultDurationSeconds", null),
   defaultDistanceMeters: get(exercise, "defaultDistanceMeters", null),
-  rest: get(exercise, "defaultRest") || get(exercise, "defaultRestSeconds") || 60,
+  rest:
+    get(exercise, "defaultRest") || get(exercise, "defaultRestSeconds") || 60,
   sets: normalizeExerciseSets({
     ...exercise,
-    sets: Array.from(
-      { length: get(exercise, "defaultSets", 3) },
-      () => createWorkoutSetTemplate(exercise),
+    sets: Array.from({ length: get(exercise, "defaultSets", 3) }, () =>
+      createWorkoutSetTemplate(exercise),
     ),
   }),
   skipped: false,
@@ -252,8 +273,28 @@ const buildSessionReplacementExercise = (exercise) => ({
 const getSessionDraftStorageKey = (planId, dayIndex) =>
   `liveon:workout-session:${planId}:${dayIndex}`;
 
+const getSessionCompletionKeyStorageKey = (planId, dayIndex) =>
+  `liveon:workout-session-completion:${planId}:${dayIndex}`;
+
 const getSessionSummaryStorageKey = (planId, dayIndex) =>
   `liveon:workout-session-summary:${planId}:${dayIndex}`;
+
+const getLocalDateKey = (timestamp = Date.now()) => {
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
+
+const getClientTimeZone = () => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
+};
 
 const readSessionDraft = (storageKey) => {
   if (typeof window === "undefined") {
@@ -293,6 +334,45 @@ const clearSessionDraft = (storageKey) => {
   window.localStorage.removeItem(storageKey);
 };
 
+const createSessionCompletionKey = (planId, dayIndex) => {
+  const randomPart =
+    typeof window !== "undefined" &&
+    window.crypto &&
+    typeof window.crypto.randomUUID === "function"
+      ? window.crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+  return `${planId}:${dayIndex}:${randomPart}`;
+};
+
+const readOrCreateSessionCompletionKey = (storageKey, planId, dayIndex) => {
+  if (typeof window === "undefined") {
+    return createSessionCompletionKey(planId, dayIndex);
+  }
+
+  const existingKey = window.localStorage.getItem(storageKey);
+  if (existingKey) {
+    return existingKey;
+  }
+
+  const nextKey = createSessionCompletionKey(planId, dayIndex);
+  try {
+    window.localStorage.setItem(storageKey, nextKey);
+  } catch {
+    // Ignore storage quota issues; the key still protects the current request.
+  }
+
+  return nextKey;
+};
+
+const clearSessionCompletionKey = (storageKey) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(storageKey);
+};
+
 const writeSessionSummary = (planId, dayIndex, payload) => {
   if (typeof window === "undefined") {
     return;
@@ -308,6 +388,87 @@ const writeSessionSummary = (planId, dayIndex, payload) => {
   }
 };
 
+const resolveSessionNumber = (source, key, fallback) => {
+  const rawValue = get(source, key);
+
+  if (rawValue === undefined || rawValue === null || rawValue === "") {
+    return fallback;
+  }
+
+  const value = toNumber(rawValue);
+  return Number.isFinite(value) ? value : fallback;
+};
+
+const buildCompletedSessionSummaryPayload = (completedSession, fallback) => {
+  const sessionId = get(completedSession, "id");
+
+  if (!sessionId) {
+    return fallback;
+  }
+
+  const durationSeconds = resolveSessionNumber(
+    completedSession,
+    "durationSeconds",
+    0,
+  );
+  const responseExerciseSummaries = get(completedSession, "exerciseSummaries");
+
+  return {
+    ...fallback,
+    sessionId,
+    planId: get(completedSession, "planId") || fallback.planId,
+    dayIndex: resolveSessionNumber(
+      completedSession,
+      "planDayIndex",
+      fallback.dayIndex,
+    ),
+    planName: get(completedSession, "planName") || fallback.planName,
+    focus: get(completedSession, "focus") || fallback.focus,
+    durationMinutes:
+      durationSeconds > 0
+        ? max([0, Math.round(durationSeconds / 60)])
+        : fallback.durationMinutes,
+    estimatedCalories: resolveSessionNumber(
+      completedSession,
+      "estimatedCalories",
+      fallback.estimatedCalories,
+    ),
+    totalSets: resolveSessionNumber(
+      completedSession,
+      "totalSets",
+      fallback.totalSets,
+    ),
+    completedSets: resolveSessionNumber(
+      completedSession,
+      "completedSets",
+      fallback.completedSets,
+    ),
+    exerciseCount: resolveSessionNumber(
+      completedSession,
+      "exerciseCount",
+      fallback.exerciseCount,
+    ),
+    completedExerciseCount: resolveSessionNumber(
+      completedSession,
+      "completedExerciseCount",
+      fallback.completedExerciseCount,
+    ),
+    totalVolumeKg: resolveSessionNumber(
+      completedSession,
+      "totalVolumeKg",
+      fallback.totalVolumeKg,
+    ),
+    exerciseSummaries: isArray(responseExerciseSummaries)
+      ? responseExerciseSummaries
+      : fallback.exerciseSummaries,
+    completedAt:
+      get(completedSession, "endedAt") ||
+      get(completedSession, "updatedAt") ||
+      get(completedSession, "createdAt") ||
+      fallback.completedAt,
+  };
+};
+
 const toTimestamp = (value) => {
   const parsed = new Date(value).getTime();
   return Number.isFinite(parsed) ? parsed : null;
@@ -320,26 +481,33 @@ const getSetValue = (set, key) => {
 
 const getCompletedSetEntries = (exercises) =>
   exercises.flatMap((exercise) =>
-    filter(map(get(exercise, "sets", []), (set, setIndex) =>
-      get(set, "done")
-        ? {
-            exerciseKey: get(exercise, "_id"),
-            exerciseName: get(exercise, "name"),
-            exerciseId: get(exercise, "id", null),
-            imageUrl: get(exercise, "imageUrl", null),
-            trackingType: normalizeWorkoutTrackingType(get(exercise, "trackingType")),
-            setIndex,
-            reps: getSetValue(set, "reps"),
-            weight: getSetValue(set, "weight"),
-            durationSeconds: getSetValue(set, "durationSeconds"),
-            distanceMeters: getSetValue(set, "distanceMeters"),
-          }
-        : null,
-    ), Boolean),
+    filter(
+      map(get(exercise, "sets", []), (set, setIndex) =>
+        get(set, "done")
+          ? {
+              exerciseKey: get(exercise, "_id"),
+              exerciseName: get(exercise, "name"),
+              exerciseCatalogId: toExerciseCatalogId(exercise),
+              imageUrl: get(exercise, "imageUrl", null),
+              trackingType: normalizeWorkoutTrackingType(
+                get(exercise, "trackingType"),
+              ),
+              setIndex,
+              reps: getSetValue(set, "reps"),
+              weight: getSetValue(set, "weight"),
+              durationSeconds: getSetValue(set, "durationSeconds"),
+              distanceMeters: getSetValue(set, "distanceMeters"),
+            }
+          : null,
+      ),
+      Boolean,
+    ),
   );
 
 const toExerciseCatalogId = (exercise) => {
-  const candidate = toNumber(get(exercise, "exerciseId") ?? get(exercise, "id"));
+  const candidate = toNumber(
+    get(exercise, "exerciseId") ?? get(exercise, "id"),
+  );
   return Number.isInteger(candidate) && candidate > 0 ? candidate : undefined;
 };
 
@@ -350,6 +518,7 @@ const SessionDurationDrawer = ({
   sessionStartTime,
   onSave,
 }) => {
+  const { t } = useTranslation();
   const [mode, setMode] = React.useState("auto");
   const [startValue, setStartValue] = React.useState("");
   const [endValue, setEndValue] = React.useState("");
@@ -372,8 +541,12 @@ const SessionDurationDrawer = ({
 
   const handleSave = () => {
     if (mode === "manual") {
-      if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {
-        toast.error("Boshlanish va tugash vaqtini tekshiring");
+      if (
+        !Number.isFinite(startMs) ||
+        !Number.isFinite(endMs) ||
+        endMs <= startMs
+      ) {
+        toast.error(t("user.workout.session.durationInvalid"));
         return;
       }
 
@@ -388,7 +561,9 @@ const SessionDurationDrawer = ({
       <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-md">
         <DrawerHeader className="px-6 pb-2 pt-5">
           <div className="flex items-start justify-between gap-4">
-            <DrawerTitle className="text-2xl font-black">Duration</DrawerTitle>
+            <DrawerTitle className="text-2xl font-black">
+              {t("user.workout.session.durationTitle")}
+            </DrawerTitle>
             <p className="text-2xl font-black tabular-nums text-primary">
               {formatTimer(mode === "manual" ? manualDuration : elapsed, {
                 long: true,
@@ -399,16 +574,24 @@ const SessionDurationDrawer = ({
         <DrawerBody className="space-y-5 px-6 pb-2">
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-3xl border border-primary/25 bg-primary p-4 text-primary-foreground shadow-sm">
-              <p className="text-sm font-semibold text-primary-foreground/80">Start</p>
+              <p className="text-sm font-semibold text-primary-foreground/80">
+                {t("user.workout.session.start")}
+              </p>
               <p className="mt-2 text-xl font-black tabular-nums">
-                {formatLocalTime(mode === "manual" && Number.isFinite(startMs) ? startMs : sessionStartTime)}
+                {formatLocalTime(
+                  mode === "manual" && Number.isFinite(startMs)
+                    ? startMs
+                    : sessionStartTime,
+                )}
               </p>
               <p className="mt-1 text-sm font-medium text-primary-foreground/80">
-                Bugun
+                {t("user.workout.session.today")}
               </p>
             </div>
             <div className="rounded-3xl border bg-muted/50 p-4">
-              <p className="text-sm font-semibold text-muted-foreground">End</p>
+              <p className="text-sm font-semibold text-muted-foreground">
+                {t("user.workout.session.end")}
+              </p>
               <p className="mt-2 text-xl font-black tabular-nums">
                 {formatLocalTime(
                   mode === "manual" && Number.isFinite(endMs)
@@ -416,12 +599,16 @@ const SessionDurationDrawer = ({
                     : sessionStartTime + elapsed * 1000,
                 )}
               </p>
-              <p className="mt-1 text-sm font-medium text-muted-foreground">Bugun</p>
+              <p className="mt-1 text-sm font-medium text-muted-foreground">
+                {t("user.workout.session.today")}
+              </p>
             </div>
           </div>
 
           <div className="rounded-3xl border bg-muted/30 p-4">
-            <p className="text-base font-black">Start time</p>
+            <p className="text-base font-black">
+              {t("user.workout.session.startTime")}
+            </p>
             <div className="mt-4 grid grid-cols-2 overflow-hidden rounded-2xl border bg-background">
               <button
                 type="button"
@@ -431,8 +618,10 @@ const SessionDurationDrawer = ({
                 )}
                 onClick={() => setMode("auto")}
               >
-                <CheckIcon className={cn("size-4", mode !== "auto" && "opacity-30")} />
-                Auto
+                <CheckIcon
+                  className={cn("size-4", mode !== "auto" && "opacity-30")}
+                />
+                {t("user.workout.session.auto")}
               </button>
               <button
                 type="button"
@@ -442,7 +631,7 @@ const SessionDurationDrawer = ({
                 )}
                 onClick={() => setMode("manual")}
               >
-                Manual
+                {t("user.workout.session.manual")}
               </button>
             </div>
           </div>
@@ -450,7 +639,9 @@ const SessionDurationDrawer = ({
           {mode === "manual" ? (
             <div className="grid gap-3">
               <label className="space-y-1.5">
-                <span className="text-sm font-semibold">Boshlanish vaqti</span>
+                <span className="text-sm font-semibold">
+                  {t("user.workout.session.startDateTime")}
+                </span>
                 <Input
                   type="datetime-local"
                   value={startValue}
@@ -458,7 +649,9 @@ const SessionDurationDrawer = ({
                 />
               </label>
               <label className="space-y-1.5">
-                <span className="text-sm font-semibold">Tugash vaqti</span>
+                <span className="text-sm font-semibold">
+                  {t("user.workout.session.endDateTime")}
+                </span>
                 <Input
                   type="datetime-local"
                   value={endValue}
@@ -469,17 +662,21 @@ const SessionDurationDrawer = ({
           ) : (
             <div className="rounded-3xl border border-dashed bg-muted/20 px-5 py-8 text-center">
               <p className="text-base font-black text-muted-foreground">
-                Manual tanlasangiz vaqtni o'zgartira olasiz
+                {t("user.workout.session.manualHint")}
               </p>
             </div>
           )}
         </DrawerBody>
         <DrawerFooter className="grid grid-cols-2 gap-3 px-6 pb-6">
-          <Button variant="secondary" size="lg" onClick={() => onOpenChange(false)}>
-            Bekor qilish
+          <Button
+            variant="secondary"
+            size="lg"
+            onClick={() => onOpenChange(false)}
+          >
+            {t("user.workout.session.cancel")}
           </Button>
           <Button size="lg" onClick={handleSave}>
-            Saqlash
+            {t("user.workout.session.save")}
           </Button>
         </DrawerFooter>
       </DrawerContent>
@@ -496,9 +693,12 @@ const SessionExerciseCard = ({
   onAddSet,
   onOpenActions,
 }) => {
+  const { t } = useTranslation();
   const sets = get(exercise, "sets", []);
   const doneCount = filter(sets, (set) => get(set, "done")).length;
-  const trackingType = normalizeWorkoutTrackingType(get(exercise, "trackingType"));
+  const trackingType = normalizeWorkoutTrackingType(
+    get(exercise, "trackingType"),
+  );
   const fields = getWorkoutTrackingFields(trackingType);
   const hasImage = Boolean(get(exercise, "imageUrl"));
 
@@ -530,7 +730,12 @@ const SessionExerciseCard = ({
               {get(exercise, "name")} · {getExerciseEquipment(exercise)}
             </span>
             <span className="mt-1 block text-base font-medium text-muted-foreground">
-              {get(exercise, "skipped") ? "Skipped" : `${doneCount}/${size(sets)} Done`}
+              {get(exercise, "skipped")
+                ? t("user.workout.session.skipped")
+                : t("user.workout.session.doneCount", {
+                    done: doneCount,
+                    total: size(sets),
+                  })}
             </span>
           </span>
         </button>
@@ -538,7 +743,9 @@ const SessionExerciseCard = ({
           type="button"
           className="mt-2 text-muted-foreground"
           onClick={onOpenActions}
-          aria-label={`${get(exercise, "name")} actions`}
+          aria-label={t("user.workout.session.exerciseActionsAria", {
+            name: get(exercise, "name"),
+          })}
         >
           <MoreVerticalIcon className="size-5" />
         </button>
@@ -560,13 +767,18 @@ const SessionExerciseCard = ({
                 onClick={() => onToggleSet(setIndex)}
                 className={cn(
                   "flex size-7 items-center justify-center rounded-full border bg-background",
-                  get(set, "done") && "border-primary bg-primary text-primary-foreground",
+                  get(set, "done") &&
+                    "border-primary bg-primary text-primary-foreground",
                 )}
-                aria-label={`Set ${setIndex + 1}`}
+                aria-label={t("user.workout.session.setAria", {
+                  index: setIndex + 1,
+                })}
               >
                 {get(set, "done") ? <CheckIcon className="size-4" /> : null}
               </button>
-              <span className="text-center text-lg font-black">{setIndex + 1}</span>
+              <span className="text-center text-lg font-black">
+                {setIndex + 1}
+              </span>
               {map(fields, (field) => (
                 <div
                   key={get(field, "key")}
@@ -590,9 +802,9 @@ const SessionExerciseCard = ({
                     {get(field, "key") === "weight"
                       ? "KG"
                       : get(field, "key") === "reps"
-                        ? "Reps"
+                        ? t("user.workout.session.repsUnit")
                         : get(field, "key") === "durationSeconds"
-                          ? "Sec"
+                          ? t("user.workout.session.secondsUnit")
                           : "M"}
                   </span>
                 </div>
@@ -607,7 +819,7 @@ const SessionExerciseCard = ({
             onClick={onAddSet}
           >
             <PlusIcon data-icon="inline-start" />
-            Add a set
+            {t("user.workout.session.addSet")}
           </Button>
         </div>
       ) : null}
@@ -616,14 +828,18 @@ const SessionExerciseCard = ({
 };
 
 const WorkoutPlanSessionPage = () => {
+  const { t } = useTranslation();
   const { planId, dayIndex: dayIndexParam } = useParams();
   const navigate = useNavigate();
   const dayIndex = parseDayIndex(dayIndexParam);
-  const { plan: rawPlan, isLoading, isError, refetch } = useWorkoutPlanDetail(
-    planId,
-    { enabled: Boolean(planId) },
-  );
-  const { finishSession, isPending: isSavingSession } = useFinishWorkoutSession();
+  const {
+    plan: rawPlan,
+    isLoading,
+    isError,
+    refetch,
+  } = useWorkoutPlanDetail(planId, { enabled: Boolean(planId) });
+  const { finishSession, isPending: isSavingSession } =
+    useFinishWorkoutSession();
   const { categories: workoutCategories } = useWorkoutExerciseCategories({
     enabled: Boolean(planId),
   });
@@ -648,30 +864,65 @@ const WorkoutPlanSessionPage = () => {
     updateProgress: updateWorkoutSessionProgress,
     isPending: isUpdatingWorkoutSessionProgress,
   } = useUpdateWorkoutSessionProgress();
-  const plan = React.useMemo(() => deriveWorkoutPlanMetrics(rawPlan), [rawPlan]);
+  const plan = React.useMemo(
+    () => deriveWorkoutPlanMetrics(rawPlan),
+    [rawPlan],
+  );
   const schedule = isArray(get(plan, "schedule")) ? get(plan, "schedule") : [];
   const selectedDay = dayIndex >= 0 ? get(schedule, `[${dayIndex}]`) : null;
   const sessionDraftStorageKey = React.useMemo(
     () => getSessionDraftStorageKey(planId, dayIndex),
     [dayIndex, planId],
   );
+  const sessionCompletionKeyStorageKey = React.useMemo(
+    () => getSessionCompletionKeyStorageKey(planId, dayIndex),
+    [dayIndex, planId],
+  );
   const [exercises, setExercises] = React.useState([]);
   const [expandedExerciseId, setExpandedExerciseId] = React.useState(null);
   const [timerStartedAt, setTimerStartedAt] = React.useState(() => Date.now());
-  const [sessionStartTime, setSessionStartTime] = React.useState(() => Date.now());
+  const [sessionStartTime, setSessionStartTime] = React.useState(() =>
+    Date.now(),
+  );
   const [elapsed, setElapsed] = React.useState(0);
   const [durationDrawerOpen, setDurationDrawerOpen] = React.useState(false);
   const [serverSessionId, setServerSessionId] = React.useState(null);
   const [remoteDraftPersistenceEnabled, setRemoteDraftPersistenceEnabled] =
     React.useState(true);
+  const [remoteDraftSyncStatus, setRemoteDraftSyncStatus] =
+    React.useState("idle");
+  const [remoteDraftRetryToken, setRemoteDraftRetryToken] = React.useState(0);
+  const [isFinishingSession, setIsFinishingSession] = React.useState(false);
   const restoredDraftRef = React.useRef(null);
   const startRequestKeyRef = React.useRef(null);
   const failedStartRequestKeyRef = React.useRef(null);
+  const finishInFlightRef = React.useRef(false);
+  const remoteDraftRetryTimeoutRef = React.useRef(null);
   const restTimer = useRestTimer(() => {
-    toast.success("Dam olish vaqti tugadi", {
-      description: "Keyingi setga tayyorlaning.",
+    toast.success(t("user.workout.session.restCompleteTitle"), {
+      description: t("user.workout.session.restCompleteDescription"),
     });
   });
+  const clearRemoteDraftRetry = React.useCallback(() => {
+    if (remoteDraftRetryTimeoutRef.current) {
+      window.clearTimeout(remoteDraftRetryTimeoutRef.current);
+      remoteDraftRetryTimeoutRef.current = null;
+    }
+  }, []);
+  const scheduleRemoteDraftRetry = React.useCallback(() => {
+    clearRemoteDraftRetry();
+    remoteDraftRetryTimeoutRef.current = window.setTimeout(() => {
+      remoteDraftRetryTimeoutRef.current = null;
+      setRemoteDraftRetryToken((current) => current + 1);
+    }, REMOTE_DRAFT_RETRY_DELAY_MS);
+  }, [clearRemoteDraftRetry]);
+
+  React.useEffect(
+    () => () => {
+      clearRemoteDraftRetry();
+    },
+    [clearRemoteDraftRetry],
+  );
 
   /*
    * Session restore/start effects initialize local workout draft state from
@@ -701,17 +952,23 @@ const WorkoutPlanSessionPage = () => {
       size(draftExercises) > 0;
 
     if (shouldRestore) {
-      const restoredExercises = normalizeRestoredSessionExercises(draftExercises);
+      const restoredExercises =
+        normalizeRestoredSessionExercises(draftExercises);
       const restoredServerSessionId = get(draft, "id") || null;
       setServerSessionId(restoredServerSessionId);
       setRemoteDraftPersistenceEnabled(Boolean(restoredServerSessionId));
+      setRemoteDraftSyncStatus(
+        restoredServerSessionId ? "synced" : "local-only",
+      );
       const restoredElapsed = Math.max(0, toNumber(get(draft, "elapsed")) || 0);
       const restoredStartTime =
-        toNumber(get(draft, "sessionStartTime")) || Date.now() - restoredElapsed * 1000;
+        toNumber(get(draft, "sessionStartTime")) ||
+        Date.now() - restoredElapsed * 1000;
 
       setExercises(restoredExercises);
       setExpandedExerciseId(
-        get(draft, "expandedExerciseId") || get(restoredExercises, "[0]._id", null),
+        get(draft, "expandedExerciseId") ||
+          get(restoredExercises, "[0]._id", null),
       );
       setSessionStartTime(restoredStartTime);
       setTimerStartedAt(Date.now() - restoredElapsed * 1000);
@@ -723,7 +980,7 @@ const WorkoutPlanSessionPage = () => {
 
       if (restoredDraftRef.current !== sessionDraftStorageKey) {
         restoredDraftRef.current = sessionDraftStorageKey;
-        toast.info("Oldingi workout sessiyasi tiklandi");
+        toast.info(t("user.workout.session.restoredToast"));
       }
 
       return;
@@ -739,6 +996,7 @@ const WorkoutPlanSessionPage = () => {
     const remoteSessionId = get(remoteDraft, "id") || null;
     setServerSessionId(remoteSessionId);
     setRemoteDraftPersistenceEnabled(Boolean(remoteSessionId) || !remoteDraft);
+    setRemoteDraftSyncStatus(remoteSessionId ? "synced" : "idle");
     restTimer.stop();
     restoredDraftRef.current = null;
     clearSessionDraft(sessionDraftStorageKey);
@@ -761,6 +1019,8 @@ const WorkoutPlanSessionPage = () => {
     if (get(remoteDraft, "id")) {
       setServerSessionId(get(remoteDraft, "id"));
       setRemoteDraftPersistenceEnabled(true);
+      setRemoteDraftSyncStatus("synced");
+      clearRemoteDraftRetry();
       startRequestKeyRef.current = requestKey;
       failedStartRequestKeyRef.current = null;
       return;
@@ -780,16 +1040,29 @@ const WorkoutPlanSessionPage = () => {
         if (get(draft, "id")) {
           setServerSessionId(get(draft, "id"));
           setRemoteDraftPersistenceEnabled(true);
+          setRemoteDraftSyncStatus("synced");
+          clearRemoteDraftRetry();
         } else {
           setRemoteDraftPersistenceEnabled(false);
+          setRemoteDraftSyncStatus("local-only");
+          clearRemoteDraftRetry();
         }
         failedStartRequestKeyRef.current = null;
       })
       .catch(() => {
         failedStartRequestKeyRef.current = requestKey;
         setRemoteDraftPersistenceEnabled(false);
+        setRemoteDraftSyncStatus("local-only");
+        clearRemoteDraftRetry();
       });
-  }, [dayIndex, planId, remoteDraft, selectedDay, startSession]);
+  }, [
+    clearRemoteDraftRetry,
+    dayIndex,
+    planId,
+    remoteDraft,
+    selectedDay,
+    startSession,
+  ]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   React.useEffect(() => {
@@ -817,7 +1090,9 @@ const WorkoutPlanSessionPage = () => {
         elapsed,
         expandedExerciseId,
         restSecondsRemaining: restTimer.seconds,
-        restEndsAt: restTimer.endsAt ? new Date(restTimer.endsAt).toISOString() : null,
+        restEndsAt: restTimer.endsAt
+          ? new Date(restTimer.endsAt).toISOString()
+          : null,
         exercises,
         savedAt: Date.now(),
       };
@@ -835,7 +1110,9 @@ const WorkoutPlanSessionPage = () => {
             elapsedSeconds: elapsed,
             expandedExerciseId,
             restSecondsRemaining: restTimer.seconds,
-            restEndsAt: restTimer.endsAt ? new Date(restTimer.endsAt).toISOString() : null,
+            restEndsAt: restTimer.endsAt
+              ? new Date(restTimer.endsAt).toISOString()
+              : null,
             exercises,
           }),
         )
@@ -843,12 +1120,17 @@ const WorkoutPlanSessionPage = () => {
             if (get(draft, "id")) {
               setServerSessionId(get(draft, "id"));
               setRemoteDraftPersistenceEnabled(true);
+              setRemoteDraftSyncStatus("synced");
+              clearRemoteDraftRetry();
             } else {
               setRemoteDraftPersistenceEnabled(false);
+              setRemoteDraftSyncStatus("local-only");
+              clearRemoteDraftRetry();
             }
           })
           .catch(() => {
-            setRemoteDraftPersistenceEnabled(false);
+            setRemoteDraftSyncStatus("failed");
+            scheduleRemoteDraftRetry();
           });
       }
     };
@@ -869,10 +1151,13 @@ const WorkoutPlanSessionPage = () => {
     isUpdatingWorkoutSessionProgress,
     planId,
     remoteDraftPersistenceEnabled,
+    remoteDraftRetryToken,
     selectedDay,
     serverSessionId,
     sessionDraftStorageKey,
     sessionStartTime,
+    clearRemoteDraftRetry,
+    scheduleRemoteDraftRetry,
     updateWorkoutSessionProgress,
     restTimer.endsAt,
     restTimer.seconds,
@@ -881,7 +1166,9 @@ const WorkoutPlanSessionPage = () => {
   const totalSets = reduce(
     exercises,
     (total, exercise) =>
-      get(exercise, "skipped") ? total : total + size(get(exercise, "sets", [])),
+      get(exercise, "skipped")
+        ? total
+        : total + size(get(exercise, "sets", [])),
     0,
   );
   const doneSets = reduce(
@@ -889,13 +1176,28 @@ const WorkoutPlanSessionPage = () => {
     (total, exercise) =>
       get(exercise, "skipped")
         ? total
-        : total + filter(get(exercise, "sets", []), (set) => get(set, "done")).length,
+        : total +
+          filter(get(exercise, "sets", []), (set) => get(set, "done")).length,
     0,
   );
   const allDone = totalSets > 0 && doneSets === totalSets;
-  const focus = get(selectedDay, "focus") || get(selectedDay, "day") || get(plan, "name");
-  const selectedExercise = find(exercises, (exercise) => get(exercise, "_id") === expandedExerciseId);
-  const actionExercise = find(exercises, (exercise) => get(exercise, "_id") === exerciseActionsId);
+  const isFinishSubmitting = isSavingSession || isFinishingSession;
+  const sessionLeaveGuard = useUnsavedChangesGuard({
+    when: Boolean(selectedDay) && size(exercises) > 0 && !isFinishSubmitting,
+  });
+  const showRemoteDraftBanner =
+    size(exercises) > 0 &&
+    (!remoteDraftPersistenceEnabled || remoteDraftSyncStatus === "failed");
+  const focus =
+    get(selectedDay, "focus") || get(selectedDay, "day") || get(plan, "name");
+  const selectedExercise = find(
+    exercises,
+    (exercise) => get(exercise, "_id") === expandedExerciseId,
+  );
+  const actionExercise = find(
+    exercises,
+    (exercise) => get(exercise, "_id") === exerciseActionsId,
+  );
 
   const updateSet = (exerciseId, setIndex, field, value) => {
     setExercises((current) =>
@@ -905,7 +1207,10 @@ const WorkoutPlanSessionPage = () => {
               ...exercise,
               sets: map(get(exercise, "sets", []), (set, index) =>
                 index === setIndex
-                  ? { ...set, [field]: value === undefined ? "" : String(value) }
+                  ? {
+                      ...set,
+                      [field]: value === undefined ? "" : String(value),
+                    }
                   : set,
               ),
             }
@@ -954,7 +1259,10 @@ const WorkoutPlanSessionPage = () => {
       map(current, (exercise) => {
         if (get(exercise, "_id") !== exerciseId) return exercise;
         const sets = get(exercise, "sets", []);
-        const nextSet = createWorkoutSetTemplate(exercise, sets[size(sets) - 1]);
+        const nextSet = createWorkoutSetTemplate(
+          exercise,
+          sets[size(sets) - 1],
+        );
 
         return {
           ...exercise,
@@ -992,8 +1300,8 @@ const WorkoutPlanSessionPage = () => {
     setExerciseActionsId(null);
     toast.success(
       get(actionExercise, "skipped")
-        ? "Mashq qayta faollashtirildi"
-        : "Mashq skip qilindi",
+        ? t("user.workout.session.exerciseResumedToast")
+        : t("user.workout.session.exerciseSkippedToast"),
     );
   };
 
@@ -1018,7 +1326,7 @@ const WorkoutPlanSessionPage = () => {
     setReplaceSearch("");
     setReplaceCategory(null);
     restTimer.stop();
-    toast.success("Mashq almashtirildi");
+    toast.success(t("user.workout.session.exerciseReplacedToast"));
   };
 
   const toggleAllForExpanded = () => {
@@ -1061,7 +1369,9 @@ const WorkoutPlanSessionPage = () => {
       if (get(exercise, "skipped")) {
         continue;
       }
-      const index = get(exercise, "sets", []).findIndex((set) => !get(set, "done"));
+      const index = get(exercise, "sets", []).findIndex(
+        (set) => !get(set, "done"),
+      );
       if (index >= 0) {
         nextExerciseId = get(exercise, "_id");
         nextSetIndex = index;
@@ -1082,23 +1392,40 @@ const WorkoutPlanSessionPage = () => {
   };
 
   const handleFinish = async () => {
-    const completedSetEntries = getCompletedSetEntries(exercises);
-
-    if (size(completedSetEntries) === 0) {
-      toast.error("Kamida 1 ta setni bajarilgan deb belgilang");
+    if (finishInFlightRef.current || isSavingSession) {
       return;
     }
 
+    const completedSetEntries = getCompletedSetEntries(exercises);
+
+    if (size(completedSetEntries) === 0) {
+      toast.error(t("user.workout.session.noCompletedSetError"));
+      return;
+    }
+
+    finishInFlightRef.current = true;
+    setIsFinishingSession(true);
+
     const durationMinutes = max([1, Math.round(elapsed / 60)]);
     const estimatedCalories = Math.round(durationMinutes * 6.5);
+    const finishedAt = sessionStartTime + elapsed * 1000;
+    const localDate = getLocalDateKey(finishedAt);
+    const timezone = getClientTimeZone();
     const totalVolumeKg = reduce(
       completedSetEntries,
-      (total, set) => total + toNumber(get(set, "reps") || 0) * toNumber(get(set, "weight") || 0),
+      (total, set) =>
+        total +
+        toNumber(get(set, "reps") || 0) * toNumber(get(set, "weight") || 0),
       0,
     );
-    const completedExerciseCount = filter(exercises, (exercise) =>
-      !get(exercise, "skipped") && some(get(exercise, "sets", []), (set) => get(set, "done"))).length;
-    const exerciseSummaries = filter(map(exercises, (exercise) => {
+    const completedExerciseCount = filter(
+      exercises,
+      (exercise) =>
+        !get(exercise, "skipped") &&
+        some(get(exercise, "sets", []), (set) => get(set, "done")),
+    ).length;
+    const exerciseSummaries = filter(
+      map(exercises, (exercise) => {
         if (get(exercise, "skipped")) {
           return null;
         }
@@ -1116,17 +1443,28 @@ const WorkoutPlanSessionPage = () => {
           exerciseKey: get(exercise, "_id"),
           exerciseName: get(exercise, "name"),
           completedSets: size(completedSets),
-          totalReps: reduce(completedSets, (total, set) => total + toNumber(get(set, "reps") || 0), 0),
-          totalVolumeKg: reduce(completedSets, (total, set) =>
-            total +
-            toNumber(get(set, "reps") || 0) * toNumber(get(set, "weight") || 0), 0),
+          totalReps: reduce(
+            completedSets,
+            (total, set) => total + toNumber(get(set, "reps") || 0),
+            0,
+          ),
+          totalVolumeKg: reduce(
+            completedSets,
+            (total, set) =>
+              total +
+              toNumber(get(set, "reps") || 0) *
+                toNumber(get(set, "weight") || 0),
+            0,
+          ),
           distanceMeters: reduce(
             completedSets,
             (total, set) => total + toNumber(get(set, "distanceMeters") || 0),
             0,
           ),
         };
-      }), Boolean);
+      }),
+      Boolean,
+    );
     const exerciseLogs = exercises.flatMap((exercise) => {
       if (get(exercise, "skipped")) return [];
 
@@ -1137,15 +1475,22 @@ const WorkoutPlanSessionPage = () => {
 
       if (size(completedExerciseSets) === 0) return [];
 
+      const exerciseCatalogId = toExerciseCatalogId(exercise);
+      const customExerciseKey = exerciseCatalogId
+        ? null
+        : get(completedExerciseSets, "[0].exerciseId") ??
+          get(exercise, "exerciseId") ??
+          get(exercise, "id") ??
+          get(exercise, "_id") ??
+          null;
+
       return [
         {
-          date: getTodayKey(),
+          date: localDate,
           source: "session",
           name: get(exercise, "name"),
-          exerciseId:
-            get(completedExerciseSets, "[0].exerciseId") ??
-            get(exercise, "id") ??
-            undefined,
+          exerciseCatalogId,
+          ...(customExerciseKey ? { exerciseId: String(customExerciseKey) } : {}),
           planId: get(plan, "id") ?? undefined,
           planDayIndex: dayIndex,
           planDayKey:
@@ -1153,7 +1498,9 @@ const WorkoutPlanSessionPage = () => {
             get(selectedDay, "focus") ||
             `Day ${dayIndex + 1}`,
           sessionName:
-            get(plan, "name") || get(selectedDay, "focus") || "Mashg'ulot sessiyasi",
+            get(plan, "name") ||
+            get(selectedDay, "focus") ||
+            "Mashg'ulot sessiyasi",
           trackingType:
             get(completedExerciseSets, "[0].trackingType") ??
             get(exercise, "trackingType") ??
@@ -1201,9 +1548,13 @@ const WorkoutPlanSessionPage = () => {
           (total, set) => total + toNumber(get(set, "reps") || 0),
           0,
         ),
-        totalVolumeKg: reduce(completedExerciseSets, (total, set) =>
-          total +
-          toNumber(get(set, "reps") || 0) * toNumber(get(set, "weight") || 0), 0),
+        totalVolumeKg: reduce(
+          completedExerciseSets,
+          (total, set) =>
+            total +
+            toNumber(get(set, "reps") || 0) * toNumber(get(set, "weight") || 0),
+          0,
+        ),
         distanceMeters: reduce(
           completedExerciseSets,
           (total, set) => total + toNumber(get(set, "distanceMeters") || 0),
@@ -1230,11 +1581,16 @@ const WorkoutPlanSessionPage = () => {
       if (index === size(exerciseLogs) - 1) {
         return {
           ...item,
-          entries: map(get(item, "entries", []), (entry, entryIndex, entries) => ({
-            ...entry,
-            durationMinutes: entryIndex === size(entries) - 1 ? remainingDuration : 0,
-            burnedCalories: entryIndex === size(entries) - 1 ? remainingCalories : 0,
-          })),
+          entries: map(
+            get(item, "entries", []),
+            (entry, entryIndex, entries) => ({
+              ...entry,
+              durationMinutes:
+                entryIndex === size(entries) - 1 ? remainingDuration : 0,
+              burnedCalories:
+                entryIndex === size(entries) - 1 ? remainingCalories : 0,
+            }),
+          ),
         };
       }
 
@@ -1251,21 +1607,34 @@ const WorkoutPlanSessionPage = () => {
 
       return {
         ...item,
-        entries: map(get(item, "entries", []), (entry, entryIndex, entries) => ({
-          ...entry,
-          durationMinutes: entryIndex === size(entries) - 1 ? itemDuration : 0,
-          burnedCalories: entryIndex === size(entries) - 1 ? itemCalories : 0,
-        })),
+        entries: map(
+          get(item, "entries", []),
+          (entry, entryIndex, entries) => ({
+            ...entry,
+            durationMinutes:
+              entryIndex === size(entries) - 1 ? itemDuration : 0,
+            burnedCalories: entryIndex === size(entries) - 1 ? itemCalories : 0,
+          }),
+        ),
       };
     });
 
-    try {
-      await finishSession(planId, dayIndex, {
-        planName: get(plan, "name") || "Workout plan",
-        focus,
-        startedAt: new Date(sessionStartTime).toISOString(),
-        endedAt: new Date(sessionStartTime + elapsed * 1000).toISOString(),
-        durationSeconds: elapsed,
+  const completionKey = readOrCreateSessionCompletionKey(
+    sessionCompletionKeyStorageKey,
+    planId,
+    dayIndex,
+  );
+
+  try {
+    const completedSession = await finishSession(planId, dayIndex, {
+      completionKey,
+      planName: get(plan, "name") || t("user.workout.session.workoutPlan"),
+      focus,
+      localDate,
+      timezone,
+      startedAt: new Date(sessionStartTime).toISOString(),
+      endedAt: new Date(finishedAt).toISOString(),
+      durationSeconds: elapsed,
         estimatedCalories,
         totalVolumeKg,
         totalSets,
@@ -1278,10 +1647,11 @@ const WorkoutPlanSessionPage = () => {
       });
       restTimer.stop();
       clearSessionDraft(sessionDraftStorageKey);
-      const summaryPayload = {
+      clearSessionCompletionKey(sessionCompletionKeyStorageKey);
+      const localSummaryPayload = {
         planId,
         dayIndex,
-        planName: get(plan, "name") || "Workout plan",
+        planName: get(plan, "name") || t("user.workout.session.workoutPlan"),
         focus,
         durationMinutes,
         estimatedCalories,
@@ -1293,21 +1663,36 @@ const WorkoutPlanSessionPage = () => {
         exerciseSummaries,
         completedAt: new Date().toISOString(),
       };
+      const summaryPayload = buildCompletedSessionSummaryPayload(
+        completedSession,
+        localSummaryPayload,
+      );
       writeSessionSummary(planId, dayIndex, summaryPayload);
-      toast.success("Mashg'ulot yakunlandi", {
-        description: `${durationMinutes} daqiqa, ${estimatedCalories} kcal.`,
+      toast.success(t("user.workout.session.finishSuccess"), {
+        description: t("user.workout.session.finishSuccessDescription", {
+          minutes: summaryPayload.durationMinutes,
+          calories: summaryPayload.estimatedCalories,
+        }),
       });
-      navigate(`/user/workout/plans/${planId}/days/${dayIndex}/session/summary`, {
-        replace: true,
-        state: {
-          summary: summaryPayload,
-        },
+      sessionLeaveGuard.runWithoutGuard(() => {
+        navigate(
+          `/user/workout/plans/${planId}/days/${dayIndex}/session/summary`,
+          {
+            replace: true,
+            state: {
+              summary: summaryPayload,
+            },
+          },
+        );
       });
     } catch (error) {
       toast.error(
         get(error, "response.data.message") ||
-          "Mashg'ulot logini saqlashda xatolik yuz berdi",
+          t("user.workout.session.finishError"),
       );
+    } finally {
+      finishInFlightRef.current = false;
+      setIsFinishingSession(false);
     }
   };
 
@@ -1324,30 +1709,43 @@ const WorkoutPlanSessionPage = () => {
               variant="ghost"
               size="icon"
               className="mt-1 rounded-full"
-              onClick={() => navigate(`/user/workout/plans/${planId}/days/${dayIndex}`)}
-              aria-label="Ortga"
+              onClick={() =>
+                navigate(`/user/workout/plans/${planId}/days/${dayIndex}`)
+              }
+              aria-label={t("user.workout.session.back")}
             >
               <ArrowLeftIcon />
             </Button>
             <div className="min-w-0 flex-1">
               <p className="truncate text-base font-semibold">
-                Day {dayIndex + 1}-Workout session
+                {t("user.workout.session.daySessionTitle", {
+                  day: dayIndex + 1,
+                })}
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Reja ma'lumotlari yuklanmadi
+                {t("user.workout.session.planLoadError")}
               </p>
             </div>
           </header>
           <main className="flex flex-1 flex-col px-3 py-4">
             <Card>
               <CardHeader>
-                <CardTitle>Workout reja topilmadi</CardTitle>
-                <CardDescription>Reja o'chirilgan yoki sizda unga ruxsat yo'q.</CardDescription>
+                <CardTitle>
+                  {t("user.workout.session.planNotFoundTitle")}
+                </CardTitle>
+                <CardDescription>
+                  {t("user.workout.session.planNotFoundDescription")}
+                </CardDescription>
               </CardHeader>
               <CardFooter className="gap-2">
-                <Button onClick={() => refetch()}>Qayta urinish</Button>
-                <Button variant="outline" onClick={() => navigate("/user/workout/plans")}>
-                  Rejalarga qaytish
+                <Button onClick={() => refetch()}>
+                  {t("user.workout.session.retry")}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/user/workout/plans")}
+                >
+                  {t("user.workout.session.backToPlans")}
                 </Button>
               </CardFooter>
             </Card>
@@ -1362,13 +1760,18 @@ const WorkoutPlanSessionPage = () => {
       <PageTransition mode="slide-up">
         <Card>
           <CardHeader>
-            <CardTitle>Workout kuni topilmadi</CardTitle>
-            <CardDescription>Tanlangan kun bu reja schedule ro'yxatida mavjud emas.</CardDescription>
+            <CardTitle>{t("user.workout.session.dayNotFoundTitle")}</CardTitle>
+            <CardDescription>
+              {t("user.workout.session.dayNotFoundDescription")}
+            </CardDescription>
           </CardHeader>
           <CardFooter>
-            <Button variant="outline" onClick={() => navigate(`/user/workout/plans/${planId}`)}>
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/user/workout/plans/${planId}`)}
+            >
               <ArrowLeftIcon data-icon="inline-start" />
-              Plan sahifasiga qaytish
+              {t("user.workout.session.backToPlan")}
             </Button>
           </CardFooter>
         </Card>
@@ -1378,20 +1781,32 @@ const WorkoutPlanSessionPage = () => {
 
   return (
     <PageTransition mode="slide-up">
-      <div className="relative mx-auto flex min-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col bg-muted/30 pb-24 md:rounded-[2rem] md:ring-1 md:ring-border">
+      <div
+        data-testid="workout-session-shell"
+        className="relative mx-auto flex min-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col bg-muted/30 pb-36 md:rounded-[2rem] md:pb-24 md:ring-1 md:ring-border"
+      >
         <header className="sticky top-0 z-20 flex items-start gap-3 border-b bg-background/95 px-4 py-4 backdrop-blur md:rounded-t-[2rem]">
           <Button
             variant="ghost"
             size="icon"
             className="mt-1 rounded-full"
-            onClick={() => navigate(`/user/workout/plans/${planId}/days/${dayIndex}`)}
-            aria-label="Ortga"
+            onClick={() =>
+              sessionLeaveGuard.requestLeave(() =>
+                sessionLeaveGuard.runWithoutGuard(() =>
+                  navigate(`/user/workout/plans/${planId}/days/${dayIndex}`),
+                ),
+              )
+            }
+            aria-label={t("user.workout.session.back")}
           >
             <ArrowLeftIcon />
           </Button>
           <div className="min-w-0 flex-1">
             <p className="truncate text-base font-semibold">
-              Day {dayIndex + 1}-{focus}
+              {t("user.workout.session.dayFocusTitle", {
+                day: dayIndex + 1,
+                focus,
+              })}
             </p>
             <div className="mt-0.5 flex items-center gap-2">
               <p className="text-4xl font-black tabular-nums leading-none">
@@ -1402,7 +1817,7 @@ const WorkoutPlanSessionPage = () => {
                 size="icon"
                 className="size-8 rounded-full text-muted-foreground"
                 onClick={() => setDurationDrawerOpen(true)}
-                aria-label="Duration edit"
+                aria-label={t("user.workout.session.durationEditAria")}
               >
                 <PencilIcon className="size-4" />
               </Button>
@@ -1413,7 +1828,27 @@ const WorkoutPlanSessionPage = () => {
           </Badge>
         </header>
 
-        <main className="flex flex-1 flex-col gap-3 px-3 py-4">
+        <main
+          data-testid="workout-session-content"
+          className="flex flex-1 flex-col gap-3 px-3 pb-8 pt-4"
+        >
+          {showRemoteDraftBanner ? (
+            <div
+              role="status"
+              className="flex items-start gap-3 rounded-3xl border border-amber-300/60 bg-amber-50 px-4 py-3 text-amber-950 dark:border-amber-500/40 dark:bg-amber-950/40 dark:text-amber-100"
+            >
+              <WifiOffIcon className="mt-0.5 size-5 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-black">
+                  {t("user.workout.session.localOnlyTitle")}
+                </p>
+                <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">
+                  {t("user.workout.session.localOnlyDescription")}
+                </p>
+              </div>
+            </div>
+          ) : null}
+
           {size(exercises) > 0 ? (
             map(exercises, (exercise) => (
               <SessionExerciseCard
@@ -1422,13 +1857,17 @@ const WorkoutPlanSessionPage = () => {
                 expanded={expandedExerciseId === get(exercise, "_id")}
                 onToggle={() =>
                   setExpandedExerciseId((current) =>
-                    current === get(exercise, "_id") ? null : get(exercise, "_id"),
+                    current === get(exercise, "_id")
+                      ? null
+                      : get(exercise, "_id"),
                   )
                 }
                 onUpdateSet={(setIndex, field, value) =>
                   updateSet(get(exercise, "_id"), setIndex, field, value)
                 }
-                onToggleSet={(setIndex) => toggleSet(get(exercise, "_id"), setIndex)}
+                onToggleSet={(setIndex) =>
+                  toggleSet(get(exercise, "_id"), setIndex)
+                }
                 onAddSet={() => addSet(get(exercise, "_id"))}
                 onOpenActions={() => setExerciseActionsId(get(exercise, "_id"))}
               />
@@ -1436,9 +1875,9 @@ const WorkoutPlanSessionPage = () => {
           ) : (
             <Card className="rounded-3xl">
               <CardHeader>
-                <CardTitle>Mashqlar yo'q</CardTitle>
+                <CardTitle>{t("user.workout.session.noExercisesTitle")}</CardTitle>
                 <CardDescription>
-                  Bu workout kuni uchun avval rejaga mashqlar qo'shing.
+                  {t("user.workout.session.noExercisesDescription")}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -1446,8 +1885,9 @@ const WorkoutPlanSessionPage = () => {
         </main>
 
         <div
+          data-testid="workout-session-rest-timer"
           className={cn(
-            "pointer-events-none fixed inset-x-0 bottom-20 z-30 px-4 transition-all duration-300 md:absolute md:bottom-[5.75rem]",
+            "pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] z-30 px-4 transition-all duration-300 md:absolute md:bottom-[5.75rem]",
             restTimer.running
               ? "translate-y-0 opacity-100"
               : "translate-y-3 opacity-0",
@@ -1460,7 +1900,7 @@ const WorkoutPlanSessionPage = () => {
               </div>
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-muted-foreground">
-                  Dam olish vaqti
+                  {t("user.workout.session.restTimerTitle")}
                 </p>
                 <p className="text-2xl font-black tabular-nums">
                   {formatTimer(restTimer.seconds)}
@@ -1480,7 +1920,7 @@ const WorkoutPlanSessionPage = () => {
                 size="icon"
                 className="rounded-2xl"
                 onClick={restTimer.stop}
-                aria-label="Rest timer stop"
+                aria-label={t("user.workout.session.restTimerStopAria")}
               >
                 <XIcon className="size-5" />
               </Button>
@@ -1488,7 +1928,10 @@ const WorkoutPlanSessionPage = () => {
           </div>
         </div>
 
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 px-4 py-3 backdrop-blur md:absolute md:rounded-b-[2rem]">
+        <div
+          data-testid="workout-session-bottom-actions"
+          className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur md:absolute md:rounded-b-[2rem] md:pb-3"
+        >
           <div className="mx-auto grid max-w-3xl grid-cols-[76px_1fr] gap-3">
             <Button
               variant="secondary"
@@ -1497,14 +1940,16 @@ const WorkoutPlanSessionPage = () => {
               disabled={!selectedExercise || get(selectedExercise, "skipped")}
             >
               <CheckIcon className="size-5" />
-              ALL
+              {t("user.workout.session.completeAll")}
             </Button>
             <Button
               className="h-14 rounded-2xl text-base font-black"
               onClick={logNextSet}
-              disabled={isSavingSession || size(exercises) === 0}
+              disabled={isFinishSubmitting || size(exercises) === 0}
             >
-              {allDone ? "MASHG'ULOTNI YAKUNLASH" : "LOG NEXT SET"}
+              {allDone
+                ? t("user.workout.session.finishWorkout")
+                : t("user.workout.session.logNextSet")}
             </Button>
           </div>
         </div>
@@ -1529,7 +1974,8 @@ const WorkoutPlanSessionPage = () => {
           <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-md">
             <DrawerHeader className="px-6 pb-3 pt-5">
               <DrawerTitle className="text-xl font-black">
-                {get(actionExercise, "name") || "Mashq"}
+                {get(actionExercise, "name") ||
+                  t("user.workout.session.exerciseFallback")}
               </DrawerTitle>
             </DrawerHeader>
             <DrawerBody className="space-y-3 px-6 pb-2">
@@ -1539,7 +1985,9 @@ const WorkoutPlanSessionPage = () => {
                 className="w-full justify-start rounded-3xl"
                 onClick={() => skipExercise(exerciseActionsId)}
               >
-                {get(actionExercise, "skipped") ? "Skip bekor qilish" : "Mashqni skip qilish"}
+                {get(actionExercise, "skipped")
+                  ? t("user.workout.session.undoSkip")
+                  : t("user.workout.session.skipExercise")}
               </Button>
               <Button
                 variant="secondary"
@@ -1547,12 +1995,16 @@ const WorkoutPlanSessionPage = () => {
                 className="w-full justify-start rounded-3xl"
                 onClick={() => setReplaceDrawerOpen(true)}
               >
-                Mashqni almashtirish
+                {t("user.workout.session.replaceExercise")}
               </Button>
             </DrawerBody>
             <DrawerFooter className="px-6 pb-6">
-              <Button variant="outline" size="lg" onClick={() => setExerciseActionsId(null)}>
-                Yopish
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => setExerciseActionsId(null)}
+              >
+                {t("user.workout.session.close")}
               </Button>
             </DrawerFooter>
           </DrawerContent>
@@ -1571,7 +2023,9 @@ const WorkoutPlanSessionPage = () => {
         >
           <DrawerContent className="mx-auto flex max-h-[85dvh] data-[vaul-drawer-direction=bottom]:md:max-w-lg">
             <DrawerHeader className="px-6 pb-3 pt-5">
-              <DrawerTitle className="text-xl font-black">Mashqni almashtirish</DrawerTitle>
+              <DrawerTitle className="text-xl font-black">
+                {t("user.workout.session.replaceExercise")}
+              </DrawerTitle>
             </DrawerHeader>
             <DrawerBody className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-6 pb-2">
               <div className="relative">
@@ -1579,7 +2033,7 @@ const WorkoutPlanSessionPage = () => {
                 <Input
                   value={replaceSearch}
                   onChange={(event) => setReplaceSearch(event.target.value)}
-                  placeholder="Mashq qidirish..."
+                  placeholder={t("user.workout.session.searchExercise")}
                   className="rounded-2xl pl-10"
                 />
               </div>
@@ -1590,13 +2044,17 @@ const WorkoutPlanSessionPage = () => {
                   className="rounded-full"
                   onClick={() => setReplaceCategory(null)}
                 >
-                  Barchasi
+                  {t("user.workout.session.all")}
                 </Button>
                 {map(workoutCategories, (category) => (
                   <Button
                     key={get(category, "id")}
                     type="button"
-                    variant={replaceCategory === get(category, "id") ? "default" : "secondary"}
+                    variant={
+                      replaceCategory === get(category, "id")
+                        ? "default"
+                        : "secondary"
+                    }
                     className="rounded-full"
                     onClick={() => setReplaceCategory(get(category, "id"))}
                   >
@@ -1630,7 +2088,9 @@ const WorkoutPlanSessionPage = () => {
                           {get(exercise, "name")}
                         </span>
                         <span className="block truncate text-sm text-muted-foreground">
-                          {get(exercise, "category") || get(exercise, "equipments[0]") || "General"}
+                          {get(exercise, "category") ||
+                            get(exercise, "equipments[0]") ||
+                            t("user.workout.session.general")}
                         </span>
                       </span>
                     </button>
@@ -1638,9 +2098,11 @@ const WorkoutPlanSessionPage = () => {
                   {size(replacementExercises) === 0 ? (
                     <Card className="rounded-3xl">
                       <CardHeader>
-                        <CardTitle>Mos mashq topilmadi</CardTitle>
+                        <CardTitle>
+                          {t("user.workout.session.noReplacementTitle")}
+                        </CardTitle>
                         <CardDescription>
-                          Qidiruv yoki kategoriya filtrini o'zgartirib ko'ring.
+                          {t("user.workout.session.noReplacementDescription")}
                         </CardDescription>
                       </CardHeader>
                     </Card>
@@ -1649,12 +2111,24 @@ const WorkoutPlanSessionPage = () => {
               </div>
             </DrawerBody>
             <DrawerFooter className="px-6 pb-6">
-              <Button variant="outline" size="lg" onClick={() => setReplaceDrawerOpen(false)}>
-                Bekor qilish
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => setReplaceDrawerOpen(false)}
+              >
+                {t("user.workout.session.cancel")}
               </Button>
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
+
+        <UnsavedChangesAlert
+          open={sessionLeaveGuard.confirmOpen}
+          onCancel={sessionLeaveGuard.cancelLeave}
+          onConfirm={sessionLeaveGuard.confirmLeave}
+          title={t("user.workout.session.unsavedTitle")}
+          description={t("user.workout.session.unsavedDescription")}
+        />
       </div>
     </PageTransition>
   );

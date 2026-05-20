@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { get, trim, toNumber } from "lodash";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
@@ -6,6 +7,10 @@ import PageLoader from "@/components/page-loader/index.jsx";
 import PageTransition from "@/components/page-transition";
 import WorkoutPlanBuilder from "@/components/workout-plan-builder";
 import { Button } from "@/components/ui/button";
+import {
+  UnsavedChangesAlert,
+  useUnsavedChangesGuard,
+} from "@/modules/admin/components/unsaved-changes-guard.jsx";
 import {
   Card,
   CardDescription,
@@ -22,6 +27,7 @@ import { useBreadcrumbStore } from "@/store";
 import { resolveWorkoutPlanRouteState } from "../../workout-plan-flow";
 
 const EditWorkoutPlanPage = () => {
+  const { t } = useTranslation();
   const { planId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -55,11 +61,15 @@ const EditWorkoutPlanPage = () => {
   const [metaDescription, setMetaDescription] = React.useState(
     get(effectivePlan, "description", ""),
   );
+  const [isBuilderDirty, setBuilderDirty] = React.useState(false);
   const isSaving = updatePlanMutation.isPending || activatePlanMutation.isPending;
   const isCreatedDraft = Boolean(routeState.shouldActivateOnSave);
   const isMetaDirty =
     trim(metaName) !== trim(get(effectivePlan, "name", "")) ||
     trim(metaDescription) !== trim(get(effectivePlan, "description", ""));
+  const unsavedChanges = useUnsavedChangesGuard({
+    when: (isMetaDirty || isBuilderDirty) && !isSaving,
+  });
 
   /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
@@ -84,30 +94,17 @@ const EditWorkoutPlanPage = () => {
     ]);
   }, [effectivePlan, planId, setBreadcrumbs]);
 
-  React.useEffect(() => {
-    if (!isMetaDirty) {
-      return undefined;
-    }
-
-    const handleBeforeUnload = (event) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, [isMetaDirty]);
-
   const handleBack = React.useCallback(() => {
-    navigate(
-      isCreatedDraft || !get(effectivePlan, "id")
-        ? "/user/workout/plans"
-        : `/user/workout/plans/${get(effectivePlan, "id")}`,
-    );
-  }, [effectivePlan, isCreatedDraft, navigate]);
+    unsavedChanges.requestLeave(() => {
+      unsavedChanges.runWithoutGuard(() => {
+        navigate(
+          isCreatedDraft || !get(effectivePlan, "id")
+            ? "/user/workout/plans"
+            : `/user/workout/plans/${get(effectivePlan, "id")}`,
+        );
+      });
+    });
+  }, [effectivePlan, isCreatedDraft, navigate, unsavedChanges]);
 
   const handleBuilderSave = React.useCallback(
     async (nextPlan) => {
@@ -133,7 +130,10 @@ const EditWorkoutPlanPage = () => {
           ? `"${get(updatedPlan, "name", "Workout reja")}" yaratildi`
           : `"${get(updatedPlan, "name", "Workout reja")}" yangilandi`,
       );
-      navigate(`/user/workout/plans/${planId}`, { replace: true });
+      setBuilderDirty(false);
+      unsavedChanges.runWithoutGuard(() => {
+        navigate(`/user/workout/plans/${planId}`, { replace: true });
+      });
     },
     [
       activatePlanMutation,
@@ -142,6 +142,7 @@ const EditWorkoutPlanPage = () => {
       metaName,
       navigate,
       planId,
+      unsavedChanges,
       updatePlanMutation,
     ],
   );
@@ -155,15 +156,17 @@ const EditWorkoutPlanPage = () => {
       <PageTransition mode="slide-up">
         <Card>
           <CardHeader>
-            <CardTitle>Workout reja topilmadi</CardTitle>
+            <CardTitle>{t("user.workout.planDetail.notFoundTitle")}</CardTitle>
             <CardDescription>
-              Reja o'chirilgan yoki sizda unga ruxsat yo'q.
+              {t("user.workout.planDetail.notFoundDescription")}
             </CardDescription>
           </CardHeader>
           <CardFooter className="gap-2">
-            <Button onClick={() => refetch()}>Qayta urinish</Button>
+            <Button onClick={() => refetch()}>
+              {t("user.workout.planDetail.retry")}
+            </Button>
             <Button variant="outline" onClick={() => navigate("/user/workout/plans")}>
-              Rejalarga qaytish
+              {t("user.workout.planDetail.backToPlans")}
             </Button>
           </CardFooter>
         </Card>
@@ -190,11 +193,17 @@ const EditWorkoutPlanPage = () => {
             setMetaName(name);
             setMetaDescription(description);
           }}
+          onDirtyChange={setBuilderDirty}
           initialSelectedDayIndex={initialSelectedDayIndex}
           isSaving={isSaving}
           submitLabel={isSaving ? "Saqlanmoqda..." : "Saqlash"}
           title={metaName || get(effectivePlan, "name") || "Workout plan builder"}
           description="Tahrirlash rejimi"
+        />
+        <UnsavedChangesAlert
+          open={unsavedChanges.confirmOpen}
+          onCancel={unsavedChanges.cancelLeave}
+          onConfirm={unsavedChanges.confirmLeave}
         />
       </div>
     </PageTransition>

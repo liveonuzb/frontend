@@ -11,6 +11,65 @@ import { getApiResponseData } from "@/lib/api-response";
 import { WORKOUT_OVERVIEW_QUERY_KEY } from "@/hooks/app/use-workout-overview";
 
 export const WORKOUT_PLANS_QUERY_KEY = ["user", "workout", "plans"];
+export const WORKOUT_EXERCISES_QUERY_KEY = ["user", "workout", "exercises"];
+export const CUSTOM_WORKOUT_EXERCISES_QUERY_KEY = [
+  "user",
+  "workout",
+  "custom-exercises",
+];
+export const WORKOUT_PLAN_DIFFICULTY = {
+  beginner: "beginner",
+  intermediate: "intermediate",
+  advanced: "advanced",
+};
+export const WORKOUT_PLAN_STATUS = {
+  active: "active",
+  draft: "draft",
+  archived: "archived",
+  template: "template",
+};
+
+const WORKOUT_PLAN_DIFFICULTY_ALIASES = {
+  beginner: WORKOUT_PLAN_DIFFICULTY.beginner,
+  "boshlang'ich": WORKOUT_PLAN_DIFFICULTY.beginner,
+  boshlangich: WORKOUT_PLAN_DIFFICULTY.beginner,
+  "начальный": WORKOUT_PLAN_DIFFICULTY.beginner,
+  intermediate: WORKOUT_PLAN_DIFFICULTY.intermediate,
+  "o'rta": WORKOUT_PLAN_DIFFICULTY.intermediate,
+  orta: WORKOUT_PLAN_DIFFICULTY.intermediate,
+  средний: WORKOUT_PLAN_DIFFICULTY.intermediate,
+  advanced: WORKOUT_PLAN_DIFFICULTY.advanced,
+  yuqori: WORKOUT_PLAN_DIFFICULTY.advanced,
+  продвинутый: WORKOUT_PLAN_DIFFICULTY.advanced,
+};
+
+export const normalizeWorkoutPlanDifficulty = (
+  value,
+  fallback = WORKOUT_PLAN_DIFFICULTY.intermediate,
+) => {
+  if (value === undefined || value === null || value === "") {
+    return fallback;
+  }
+
+  const normalized = String(value).trim().toLowerCase();
+
+  return WORKOUT_PLAN_DIFFICULTY_ALIASES[normalized] ?? fallback;
+};
+
+export const normalizeWorkoutPlanStatus = (
+  value,
+  fallback = WORKOUT_PLAN_STATUS.draft,
+) => {
+  if (value === undefined || value === null || value === "") {
+    return fallback;
+  }
+
+  const normalized = String(value).trim().toLowerCase();
+
+  return Object.values(WORKOUT_PLAN_STATUS).includes(normalized)
+    ? normalized
+    : fallback;
+};
 
 export const getWorkoutPlanDetailQueryKey = (planId) => [
   "user",
@@ -68,7 +127,8 @@ const normalizePlan = (plan) => {
     name: plan.name || "Mening workout rejam",
     description: plan.description || "",
     coverImageUrl: plan.coverImageUrl || null,
-    difficulty: plan.difficulty || "O'rta",
+    difficulty: normalizeWorkoutPlanDifficulty(plan.difficulty),
+    status: normalizeWorkoutPlanStatus(plan.status),
     days: toNumber(plan.days ?? 28) || 28,
     daysPerWeek:
       toNumber(plan.daysPerWeek ?? countDaysPerWeek(schedule)) ||
@@ -99,7 +159,7 @@ const normalizeTemplate = (plan) => {
 
   return {
     ...normalized,
-    status: plan.status || "template",
+    status: normalizeWorkoutPlanStatus(plan.status, WORKOUT_PLAN_STATUS.template),
     isTemplate: Boolean(plan.isTemplate ?? true),
     translations:
       plan.translations && typeof plan.translations === "object"
@@ -135,7 +195,7 @@ export const buildWorkoutPlanPayload = (plan = {}) => ({
   name: plan.name,
   description: plan.description,
   coverImageUrl: plan.coverImageUrl,
-  difficulty: plan.difficulty,
+  difficulty: normalizeWorkoutPlanDifficulty(plan.difficulty, undefined),
   days:
     plan.days === undefined || plan.days === null || plan.days === ""
       ? undefined
@@ -171,6 +231,63 @@ const invalidateWorkoutPlanQueries = async (
       : []),
   ]);
 };
+
+const invalidateWorkoutExerciseQueries = async (queryClient) => {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: WORKOUT_EXERCISES_QUERY_KEY }),
+    queryClient.invalidateQueries({
+      queryKey: CUSTOM_WORKOUT_EXERCISES_QUERY_KEY,
+    }),
+    queryClient.invalidateQueries({ queryKey: ["user", "workout", "catalog"] }),
+  ]);
+};
+
+export const buildCustomExercisePayload = (exercise = {}) => ({
+  name: exercise.name,
+  description: exercise.description,
+  trackingType: exercise.trackingType || "REPS_WEIGHT",
+  defaultSets:
+    exercise.defaultSets === undefined ||
+    exercise.defaultSets === null ||
+    exercise.defaultSets === ""
+      ? undefined
+      : toNumber(exercise.defaultSets),
+  defaultReps:
+    exercise.defaultReps === undefined ||
+    exercise.defaultReps === null ||
+    exercise.defaultReps === ""
+      ? undefined
+      : toNumber(exercise.defaultReps),
+  defaultDurationSeconds:
+    exercise.defaultDurationSeconds === undefined ||
+    exercise.defaultDurationSeconds === null ||
+    exercise.defaultDurationSeconds === ""
+      ? undefined
+      : toNumber(exercise.defaultDurationSeconds),
+  defaultDistanceMeters:
+    exercise.defaultDistanceMeters === undefined ||
+    exercise.defaultDistanceMeters === null ||
+    exercise.defaultDistanceMeters === ""
+      ? undefined
+      : toNumber(exercise.defaultDistanceMeters),
+  defaultRestSeconds:
+    exercise.defaultRestSeconds === undefined ||
+    exercise.defaultRestSeconds === null ||
+    exercise.defaultRestSeconds === ""
+      ? undefined
+      : toNumber(exercise.defaultRestSeconds),
+  equipment: exercise.equipment,
+  equipments: isArray(exercise.equipments) ? exercise.equipments : [],
+  targetMuscles: isArray(exercise.targetMuscles) ? exercise.targetMuscles : [],
+  bodyParts: isArray(exercise.bodyParts) ? exercise.bodyParts : [],
+  secondaryMuscles: isArray(exercise.secondaryMuscles)
+    ? exercise.secondaryMuscles
+    : [],
+  instructions: isArray(exercise.instructions) ? exercise.instructions : [],
+  imageUrl: exercise.imageUrl,
+  videoUrl: exercise.videoUrl || exercise.youtubeUrl,
+  visibility: exercise.visibility || "private",
+});
 
 export const useWorkoutPlans = (options = {}) => {
   const enabled = options.enabled ?? true;
@@ -298,25 +415,175 @@ export const useWorkoutExercises = (params = {}, options = {}) => {
   const queryParams = React.useMemo(
     () => ({
       ...(params.categoryId ? { categoryId: params.categoryId } : {}),
+      ...(params.equipmentId ? { equipmentId: params.equipmentId } : {}),
+      ...(params.muscleId ? { muscleId: params.muscleId } : {}),
       ...(params.query ? { query: params.query } : {}),
+      ...(params.limit ? { limit: params.limit } : {}),
+      ...(params.cursor ? { cursor: params.cursor } : {}),
+      ...(params.source ? { source: params.source } : {}),
+      ...(params.sort ? { sort: params.sort } : {}),
     }),
-    [params.categoryId, params.query],
+    [
+      params.categoryId,
+      params.cursor,
+      params.equipmentId,
+      params.limit,
+      params.muscleId,
+      params.query,
+      params.source,
+      params.sort,
+    ],
   );
   const { data, ...query } = useGetQuery({
     url: "/user/workout/plans/exercises",
     params: queryParams,
     queryProps: {
-      queryKey: ["user", "workout", "exercises", queryParams],
+      queryKey: [...WORKOUT_EXERCISES_QUERY_KEY, queryParams],
       enabled,
     },
   });
 
-  const exercises = React.useMemo(() => getApiResponseData(data, []), [data]);
+  const exercisePayload = React.useMemo(
+    () => getApiResponseData(data, []),
+    [data],
+  );
+  const exercises = React.useMemo(
+    () =>
+      isArray(exercisePayload)
+        ? exercisePayload
+        : isArray(get(exercisePayload, "data"))
+          ? get(exercisePayload, "data")
+          : [],
+    [exercisePayload],
+  );
+  const meta = React.useMemo(
+    () =>
+      get(
+        data,
+        "data.meta",
+        get(data, "data.data.meta", get(exercisePayload, "meta", {})),
+      ),
+    [data, exercisePayload],
+  );
 
   return {
     ...query,
     data,
     exercises: isArray(exercises) ? exercises : [],
+    meta,
+  };
+};
+
+export const useCustomWorkoutExercises = (params = {}, options = {}) => {
+  const enabled = options.enabled ?? true;
+  const queryParams = React.useMemo(
+    () => ({
+      ...(params.query ? { query: params.query } : {}),
+      ...(params.limit ? { limit: params.limit } : {}),
+      ...(params.cursor ? { cursor: params.cursor } : {}),
+    }),
+    [params.cursor, params.limit, params.query],
+  );
+  const { data, ...query } = useGetQuery({
+    url: "/user/workout/plans/custom-exercises",
+    params: queryParams,
+    queryProps: {
+      queryKey: [...CUSTOM_WORKOUT_EXERCISES_QUERY_KEY, queryParams],
+      enabled,
+    },
+  });
+  const exercisePayload = React.useMemo(
+    () => getApiResponseData(data, []),
+    [data],
+  );
+
+  return {
+    ...query,
+    data,
+    exercises: isArray(get(exercisePayload, "data"))
+      ? get(exercisePayload, "data")
+      : [],
+    meta: get(exercisePayload, "meta", {}),
+  };
+};
+
+export const useCreateCustomWorkoutExercise = () => {
+  const queryClient = useQueryClient();
+  const mutation = usePostQuery({
+    mutationProps: {
+      onSuccess: async () => {
+        await invalidateWorkoutExerciseQueries(queryClient);
+      },
+    },
+  });
+
+  const createExercise = React.useCallback(
+    async (exercise) => {
+      const response = await mutation.mutateAsync({
+        url: "/user/workout/plans/custom-exercises",
+        attributes: buildCustomExercisePayload(exercise),
+      });
+
+      return getApiResponseData(response, null);
+    },
+    [mutation],
+  );
+
+  return {
+    ...mutation,
+    createExercise,
+  };
+};
+
+export const useUpdateCustomWorkoutExercise = () => {
+  const queryClient = useQueryClient();
+  const mutation = usePatchQuery({
+    mutationProps: {
+      onSuccess: async () => {
+        await invalidateWorkoutExerciseQueries(queryClient);
+      },
+    },
+  });
+
+  const updateExercise = React.useCallback(
+    async (exerciseId, exercise) => {
+      const response = await mutation.mutateAsync({
+        url: `/user/workout/plans/custom-exercises/${exerciseId}`,
+        attributes: buildCustomExercisePayload(exercise),
+      });
+
+      return getApiResponseData(response, null);
+    },
+    [mutation],
+  );
+
+  return {
+    ...mutation,
+    updateExercise,
+  };
+};
+
+export const useDeleteCustomWorkoutExercise = () => {
+  const queryClient = useQueryClient();
+  const mutation = useDeleteQuery({
+    mutationProps: {
+      onSuccess: async () => {
+        await invalidateWorkoutExerciseQueries(queryClient);
+      },
+    },
+  });
+
+  const deleteExercise = React.useCallback(
+    async (exerciseId) =>
+      mutation.mutateAsync({
+        url: `/user/workout/plans/custom-exercises/${exerciseId}`,
+      }),
+    [mutation],
+  );
+
+  return {
+    ...mutation,
+    deleteExercise,
   };
 };
 

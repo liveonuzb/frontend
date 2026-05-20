@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { get, filter, isArray, map, orderBy, split, toNumber, take } from "lodash";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -27,11 +28,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import useWorkoutOverview from "@/hooks/app/use-workout-overview";
 import useWorkoutPlan from "@/hooks/app/use-workout-plan";
+import { WORKOUT_PLAN_STATUS } from "@/hooks/app/use-workout-plans";
 import { useWorkoutSessionHistory } from "@/hooks/app/use-workout-sessions";
 import {
   useRunningActiveSession,
   useRunningSessions,
   useRunningStatsSummary,
+  useStartRunningSession,
 } from "@/hooks/app/use-running-sessions";
 import useWorkoutWeatherToday from "@/hooks/app/use-workout-weather";
 import RunMapPanel from "../running/components/run-map-panel.jsx";
@@ -100,32 +103,40 @@ const addDays = (date, days) => {
   return nextDate;
 };
 
-const formatWorkoutRecommendationLabel = (date, now = new Date()) => {
+const formatWorkoutRecommendationLabel = (date, now = new Date(), t, language = "uz") => {
   const targetDate = toStartOfDay(date);
   const today = toStartOfDay(now);
 
   if (!targetDate || !today) {
-    return "Tavsiya etiladi";
+    return t("user.workout.dashboard.date.recommended");
   }
 
   const diffDays = Math.round((targetDate - today) / 86400000);
 
   if (diffDays === 0) {
-    return "Bugun";
+    return t("user.workout.dashboard.date.today");
   }
 
   if (diffDays === 1) {
-    return "Ertaga";
+    return t("user.workout.dashboard.date.tomorrow");
   }
 
-  return new Intl.DateTimeFormat("uz-UZ", {
+  return new Intl.DateTimeFormat(language, {
     day: "numeric",
     month: "short",
   }).format(targetDate);
 };
 
-const getWeekDays = (completedDates = []) => {
-  const labels = ["Ya", "Du", "Se", "Ch", "Pa", "Ju", "Sh"];
+const getWeekDays = (completedDates = [], t) => {
+  const labels = [
+    t("user.workout.dashboard.weekdays.sun"),
+    t("user.workout.dashboard.weekdays.mon"),
+    t("user.workout.dashboard.weekdays.tue"),
+    t("user.workout.dashboard.weekdays.wed"),
+    t("user.workout.dashboard.weekdays.thu"),
+    t("user.workout.dashboard.weekdays.fri"),
+    t("user.workout.dashboard.weekdays.sat"),
+  ];
   const today = new Date();
   const start = new Date(today);
   start.setDate(today.getDate() - ((today.getDay() + 2) % 7));
@@ -150,7 +161,7 @@ const getPlanImage = (plan, index = 0) =>
   get(plan, "image") ||
   [IMAGE_SET.athlete, IMAGE_SET.athleteAlt, IMAGE_SET.dumbbell][index % 3];
 
-const buildNextWorkouts = (activePlan, now = new Date()) => {
+const buildNextWorkouts = (activePlan, now = new Date(), t, language) => {
   const schedule = get(activePlan, "schedule", []);
   const nextStartableDayIndex = getNextStartableDayIndex(activePlan);
   const firstWorkoutDayIndex = getFirstWorkoutDayIndex(schedule);
@@ -199,8 +210,11 @@ const buildNextWorkouts = (activePlan, now = new Date()) => {
         id: `${get(activePlan, "id", "active")}-${dayIndex}`,
         dayIndex,
         isStartable: !isWorkoutDayLocked(activePlan, dayIndex),
-        title: get(day, "title") || get(day, "name") || `Day ${dayIndex + 1}`,
-        time: formatWorkoutRecommendationLabel(recommendedDate, now),
+        title:
+          get(day, "title") ||
+          get(day, "name") ||
+          t("user.workout.dashboard.date.dayNumber", { day: dayIndex + 1 }),
+        time: formatWorkoutRecommendationLabel(recommendedDate, now, t, language),
         image:
           get(day, "exercises[0].imageUrl") ||
           get(day, "exercises[0].image") ||
@@ -277,27 +291,27 @@ const getWorkoutCalories = (session) =>
 const getActivityTimestamp = (activity) =>
   Date.parse(activity.sortDate || activity.endedAt || activity.startedAt || "") || 0;
 
-const formatActivityTime = (value) => {
+const formatActivityTime = (value, t, language = "uz") => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return "Bugun";
+    return t("user.workout.dashboard.date.today");
   }
 
   const todayKey = getDateKey(new Date());
   const dateKey = getDateKey(date);
-  const time = new Intl.DateTimeFormat("uz-UZ", {
+  const time = new Intl.DateTimeFormat(language, {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
 
   if (dateKey === todayKey) {
-    return `Bugun, ${time}`;
+    return t("user.workout.dashboard.date.todayAt", { time });
   }
 
-  return `Kecha, ${time}`;
+  return t("user.workout.dashboard.date.yesterdayAt", { time });
 };
 
-const buildActivityFeed = (workoutSessions = [], runningSessions = []) => {
+const buildActivityFeed = (workoutSessions = [], runningSessions = [], t) => {
   const workoutItems = map(take(workoutSessions, 4), (session, index) => {
     const sessionId = get(session, "id", null);
 
@@ -308,8 +322,8 @@ const buildActivityFeed = (workoutSessions = [], runningSessions = []) => {
         get(session, "title") ||
         get(session, "planDayTitle") ||
         get(session, "planName") ||
-        "Full Body Strength",
-      subtitle: "Workout",
+        t("user.workout.dashboard.activity.defaultWorkoutTitle"),
+      subtitle: t("user.workout.dashboard.activity.workout"),
       image: get(session, "image") || get(session, "imageUrl") || IMAGE_SET.dumbbell,
       href: sessionId
         ? `/user/workout/history/${sessionId}`
@@ -337,11 +351,11 @@ const buildActivityFeed = (workoutSessions = [], runningSessions = []) => {
     return {
       id: workoutSessionId || `run-${index}`,
       type: "running",
-      title: get(session, "title") || "Morning Run",
-      subtitle: "Yugurish",
+      title: get(session, "title") || t("user.workout.dashboard.activity.defaultRunTitle"),
+      subtitle: t("user.workout.dashboard.activity.running"),
       href: workoutSessionId
-        ? `/user/workout/running/${workoutSessionId}`
-        : "/user/workout/running/history",
+        ? `/user/workout/history/${workoutSessionId}`
+        : "/user/workout/history",
       routePoints,
       routePolyline: get(session, "route.polyline", get(session, "polyline", null)),
       routeQualityScore: get(
@@ -400,14 +414,19 @@ function TodayWorkoutHero({
   onOpen,
   onCreate,
   onCreatePlan,
+  t,
 }) {
   const hasActivePlan = Boolean(activePlan);
   const hasWorkout = Boolean(item);
   const title = hasWorkout
     ? item.title
     : hasActivePlan
-      ? get(activePlan, "todayWorkout.title", get(activePlan, "name", "Push Day"))
-      : "Workout reja tanlang";
+      ? get(
+          activePlan,
+          "todayWorkout.title",
+          get(activePlan, "name", t("user.workout.dashboard.hero.defaultWorkout")),
+        )
+      : t("user.workout.dashboard.hero.choosePlanTitle");
   const image = hasWorkout
     ? item.image
     : getPlanImage(activePlan || WORKOUT_RECOMMENDED_PLANS[0]);
@@ -422,7 +441,7 @@ function TodayWorkoutHero({
   const todayFocus =
     get(activePlan, "todayWorkout.title") ||
     get(item, "title") ||
-    "Chest + Triceps";
+    t("user.workout.dashboard.hero.defaultFocus");
 
   return (
     <Card className="workout-glass-card overflow-hidden p-0">
@@ -433,11 +452,14 @@ function TodayWorkoutHero({
           className="absolute inset-y-0 right-0 h-full w-full object-cover opacity-75 md:w-[52%] dark:opacity-80"
           loading="lazy"
         />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_36%,rgb(var(--accent-rgb)/0.26),transparent_26%),linear-gradient(90deg,color-mix(in_srgb,var(--color-background)_98%,transparent)_0%,color-mix(in_srgb,var(--color-background)_92%,transparent)_42%,color-mix(in_srgb,var(--color-background)_25%,transparent)_100%)] dark:bg-[radial-gradient(circle_at_72%_34%,rgb(var(--accent-rgb)/0.32),transparent_28%),linear-gradient(90deg,color-mix(in_srgb,var(--color-background)_98%,transparent)_0%,color-mix(in_srgb,var(--color-background)_88%,transparent)_44%,color-mix(in_srgb,var(--color-background)_18%,transparent)_100%)]" />
+        <div
+          data-testid="today-workout-hero-media-scrim"
+          className="workout-media-contrast-scrim absolute inset-0 bg-[radial-gradient(circle_at_70%_36%,rgb(var(--accent-rgb)/0.24),transparent_26%),linear-gradient(90deg,color-mix(in_srgb,var(--color-background)_99%,transparent)_0%,color-mix(in_srgb,var(--color-background)_94%,transparent)_46%,color-mix(in_srgb,var(--color-background)_42%,transparent)_100%)] dark:bg-[radial-gradient(circle_at_72%_34%,rgb(var(--accent-rgb)/0.28),transparent_28%),linear-gradient(90deg,color-mix(in_srgb,var(--color-background)_99%,transparent)_0%,color-mix(in_srgb,var(--color-background)_92%,transparent)_48%,color-mix(in_srgb,var(--color-background)_36%,transparent)_100%)]"
+        />
         <div className="relative z-10 flex h-full max-w-3xl flex-col gap-5 sm:gap-7">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-black tracking-normal md:text-3xl">
-              Bugungi mashg'ulot
+              {t("user.workout.dashboard.hero.title")}
             </h1>
             <Badge
               variant="secondary"
@@ -448,7 +470,9 @@ function TodayWorkoutHero({
                   : "border-primary/25 bg-primary/10 text-primary",
               )}
             >
-              {hasActivePlan ? "ACTIVE PLAN" : "NO ACTIVE PLAN"}
+              {hasActivePlan
+                ? t("user.workout.dashboard.hero.activeBadge")
+                : t("user.workout.dashboard.hero.noActiveBadge")}
             </Badge>
           </div>
 
@@ -458,27 +482,32 @@ function TodayWorkoutHero({
 
           <div>
             <p className="text-sm font-semibold text-muted-foreground">
-              {hasActivePlan ? "Bugun" : "Reja holati"}
+              {hasActivePlan
+                ? t("user.workout.dashboard.date.today")
+                : t("user.workout.dashboard.hero.statusLabel")}
             </p>
             <h2 className="mt-1 text-3xl font-black leading-tight md:text-4xl">
               {hasActivePlan ? (
                 <>
-                  Today is <span className="text-primary">{title}</span>
+                  {t("user.workout.dashboard.hero.todayIsPrefix")}{" "}
+                  <span className="text-primary">{title}</span>
                 </>
               ) : (
                 <>
-                  Workout <span className="text-primary">reja tanlang</span>
+                  {t("user.workout.dashboard.hero.choosePlanPrefix")}{" "}
+                  <span className="text-primary">
+                    {t("user.workout.dashboard.hero.choosePlanHighlight")}
+                  </span>
                 </>
               )}
             </h2>
             {hasActivePlan ? (
               <p className="mt-2 max-w-md text-sm text-muted-foreground">
-                Maqsadlaringizga yaqinlashish uchun bugun kuch bilan oldinga!
+                {t("user.workout.dashboard.hero.activeDescription")}
               </p>
             ) : (
               <p className="mt-2 max-w-md text-sm text-muted-foreground">
-                Hozircha sizda faol workout rejasi yo'q. Reja tanlaganingizdan
-                so'ng, keyingi mashg'ulotingiz shu yerda ko'rinadi.
+                {t("user.workout.dashboard.hero.noActiveDescription")}
               </p>
             )}
           </div>
@@ -488,10 +517,17 @@ function TodayWorkoutHero({
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-lg font-black">
-                    {get(activePlan, "name", "Muscle Gain Plan")}
+                    {get(
+                      activePlan,
+                      "name",
+                      t("user.workout.dashboard.hero.defaultPlanName"),
+                    )}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Week {currentWeek} / Day {currentDay}
+                    {t("user.workout.dashboard.hero.weekDay", {
+                      week: currentWeek,
+                      day: currentDay,
+                    })}
                   </p>
                 </div>
                 <p className="text-sm font-black text-primary">{progress}%</p>
@@ -500,7 +536,9 @@ function TodayWorkoutHero({
                 <ProgressBar value={progress || 68} />
               </div>
               <p className="mt-3 text-sm text-muted-foreground">
-                Today: {todayFocus}
+                {t("user.workout.dashboard.hero.todayFocus", {
+                  focus: todayFocus,
+                })}
               </p>
             </div>
           ) : null}
@@ -509,24 +547,24 @@ function TodayWorkoutHero({
             <MetricPill
               icon={Clock3Icon}
               value={hasActivePlan ? formatMetricDuration(durationSeconds || 92700) : "00:00:00"}
-              label="Davomiylik"
+              label={t("user.workout.dashboard.metrics.duration")}
               tone="text-muted-foreground"
             />
             <MetricPill
               icon={FlameIcon}
               value={hasActivePlan ? formatNumber(calories || 782) : "0"}
-              label="Kaloriya"
+              label={t("user.workout.dashboard.metrics.calories")}
             />
             <MetricPill
               icon={HeartPulseIcon}
               value={hasActivePlan ? (workoutCount > 0 ? "145" : "145") : "--"}
-              label="O'rtacha puls"
+              label={t("user.workout.dashboard.metrics.averagePulse")}
               tone="text-red-500"
             />
             <MetricPill
               icon={TargetIcon}
               value={hasActivePlan ? `${Math.max(40, Math.min(100, workoutCount * 20))}%` : "0%"}
-              label="Samaradorlik"
+              label={t("user.workout.dashboard.metrics.efficiency")}
             />
           </div>
 
@@ -538,7 +576,9 @@ function TodayWorkoutHero({
               onClick={hasActivePlan ? onOpen : onCreate}
             >
               <PlayIcon data-icon="inline-start" />
-              {hasActivePlan ? "Start Today's Workout" : "Reja tanlash"}
+              {hasActivePlan
+                ? t("user.workout.dashboard.hero.startToday")
+                : t("user.workout.dashboard.hero.choosePlan")}
             </Button>
             {!hasActivePlan ? (
               <Button
@@ -548,7 +588,7 @@ function TodayWorkoutHero({
                 className="rounded-2xl border-white/10 bg-white/10"
                 onClick={onCreatePlan}
               >
-                O'z rejangizni yaratish
+                {t("user.workout.dashboard.hero.createOwnPlan")}
               </Button>
             ) : null}
           </div>
@@ -558,7 +598,49 @@ function TodayWorkoutHero({
   );
 }
 
-function RunningActivityCard({ activeSession, onPrimary }) {
+function TodayWorkoutStickyCta({
+  item,
+  hasActivePlan,
+  onStart,
+  onOpenPlans,
+  t,
+}) {
+  const title = hasActivePlan
+    ? get(item, "title", t("user.workout.dashboard.hero.title"))
+    : t("user.workout.dashboard.hero.choosePlanTitle");
+
+  return (
+    <div
+      data-testid="today-workout-sticky-cta"
+      className="fixed inset-x-3 bottom-3 z-40 rounded-3xl border bg-background/95 p-3 shadow-2xl backdrop-blur xl:hidden"
+    >
+      <div className="flex items-center gap-3">
+        <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+          <DumbbellIcon className="size-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-bold uppercase text-muted-foreground">
+            {t("user.workout.dashboard.sticky.eyebrow")}
+          </p>
+          <p className="truncate text-sm font-black">{title}</p>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          className="shrink-0 rounded-2xl"
+          onClick={hasActivePlan ? onStart : onOpenPlans}
+        >
+          <PlayIcon data-icon="inline-start" />
+          {hasActivePlan
+            ? t("user.workout.dashboard.sticky.start")
+            : t("user.workout.dashboard.hero.choosePlan")}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function RunningActivityCard({ activeSession, onPrimary, t, language }) {
   const session = activeSession ?? null;
   const metrics = getRunningMetrics(session);
   const isActive = Boolean(activeSession);
@@ -578,8 +660,8 @@ function RunningActivityCard({ activeSession, onPrimary }) {
         qualityScore={routeQualityScore}
         emptyLabel={
           session
-            ? "GPS nuqtalar kutilmoqda"
-            : "Yugurishni boshlanganda xarita shu yerda ko'rinadi"
+            ? t("user.workout.dashboard.running.mapWaiting")
+            : t("user.workout.dashboard.running.mapEmpty")
         }
         showQuality={Boolean(session)}
         className="absolute inset-0 opacity-20 md:inset-y-0 md:left-auto md:right-0 md:w-[54%] md:opacity-100"
@@ -588,7 +670,9 @@ function RunningActivityCard({ activeSession, onPrimary }) {
       <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-r from-card via-card/95 to-card/65 md:to-card/10" />
       <CardContent className="relative z-10 flex min-h-[260px] max-w-3xl flex-col gap-6 p-8">
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-2xl font-black">So'nggi faoliyat</h2>
+          <h2 className="text-2xl font-black">
+            {t("user.workout.dashboard.running.title")}
+          </h2>
           <Badge
             variant="secondary"
             className={cn(
@@ -598,7 +682,7 @@ function RunningActivityCard({ activeSession, onPrimary }) {
                 : "bg-green-500/10 text-green-600",
             )}
           >
-            Yugurish
+            {t("user.workout.dashboard.activity.running")}
           </Badge>
         </div>
 
@@ -611,46 +695,47 @@ function RunningActivityCard({ activeSession, onPrimary }) {
             <MetricPill
               icon={RouteIcon}
               value={formatRunningDistance(metrics.distanceMeters)}
-              label="Masofa"
+              label={t("user.workout.dashboard.metrics.distance")}
               tone="text-green-600"
             />
             <MetricPill
               icon={Clock3Icon}
               value={formatMetricDuration(metrics.durationSeconds)}
-              label="Davomiylik"
+              label={t("user.workout.dashboard.metrics.duration")}
               tone="text-muted-foreground"
             />
             <MetricPill
               icon={GaugeIcon}
               value={formatPace(metrics.averagePaceSecondsPerKm)}
-              label="O'rtacha temp"
+              label={t("user.workout.dashboard.metrics.averagePace")}
               tone="text-primary"
             />
             <MetricPill
               icon={FlameIcon}
               value={formatNumber(metrics.caloriesBurned)}
-              label="Kaloriya"
+              label={t("user.workout.dashboard.metrics.calories")}
               tone="text-primary"
             />
           </div>
         ) : (
           <p className="max-w-md text-sm text-muted-foreground">
-            Hali yugurish sessiyasi yo‘q. Running dashboard orqali birinchi
-            outdoor mashg‘ulotni boshlang.
+            {t("user.workout.dashboard.running.noSessionDescription")}
           </p>
         )}
 
         <div className="mt-auto flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
           <span className="inline-flex items-center gap-2">
             <MapPinIcon className="size-4" />
-            Toshkent, O'zbekiston
+            {t("user.workout.dashboard.running.location")}
           </span>
           {isActive ? (
-            <span>{formatActivityTime(get(session, "startedAt"))}</span>
+            <span>{formatActivityTime(get(session, "startedAt"), t, language)}</span>
           ) : null}
           <Button className="ml-auto rounded-2xl" onClick={onPrimary}>
             <PlayIcon data-icon="inline-start" />
-            {isActive ? "Davom ettirish" : "Yugurishni boshlash"}
+            {isActive
+              ? t("user.workout.dashboard.running.continue")
+              : t("user.workout.dashboard.running.start")}
           </Button>
         </div>
       </CardContent>
@@ -663,32 +748,33 @@ function NoPlanDiscoverySection({
   onOpenRunning,
   onOpenExercises,
   onOpenReport,
+  t,
 }) {
   const quickLinks = [
     {
-      label: "Reja tanlash",
-      description: "Hamkor planlar",
+      label: t("user.workout.dashboard.discovery.planLabel"),
+      description: t("user.workout.dashboard.discovery.planDescription"),
       icon: CalendarCheck2Icon,
       onClick: onOpenPlans,
       tone: "text-primary bg-primary/10",
     },
     {
-      label: "Yugurish",
-      description: "Outdoor mashqlar",
+      label: t("user.workout.dashboard.discovery.runningLabel"),
+      description: t("user.workout.dashboard.discovery.runningDescription"),
       icon: RouteIcon,
       onClick: onOpenRunning,
       tone: "text-green-500 bg-green-500/10",
     },
     {
-      label: "Mashqlar",
-      description: "Barcha mashqlar",
+      label: t("user.workout.dashboard.discovery.exercisesLabel"),
+      description: t("user.workout.dashboard.discovery.exercisesDescription"),
       icon: DumbbellIcon,
       onClick: onOpenExercises,
       tone: "text-blue-500 bg-blue-500/10",
     },
     {
-      label: "Hisobot",
-      description: "Statistikalar",
+      label: t("user.workout.dashboard.discovery.reportLabel"),
+      description: t("user.workout.dashboard.discovery.reportDescription"),
       icon: GaugeIcon,
       onClick: onOpenReport,
       tone: "text-purple-500 bg-purple-500/10",
@@ -737,13 +823,15 @@ function NoPlanDiscoverySection({
 
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="text-xl font-black">Tavsiya etilgan rejalar</h2>
+            <h2 className="text-xl font-black">
+              {t("user.workout.dashboard.discovery.recommendedTitle")}
+            </h2>
             <p className="text-sm text-muted-foreground">
-              Maqsadingizga mos reja tanlang va yo'lingizni boshlang
+              {t("user.workout.dashboard.discovery.recommendedSubtitle")}
             </p>
           </div>
           <Button variant="ghost" className="rounded-full text-primary" onClick={onOpenPlans}>
-            Barchasini ko'rish
+            {t("user.workout.dashboard.common.viewAll")}
             <ArrowRightIcon data-icon="inline-end" />
           </Button>
         </div>
@@ -765,13 +853,16 @@ function NoPlanDiscoverySection({
               <span className="flex min-w-0 flex-col p-4">
                 <span className="truncate text-sm font-black">{plan.name}</span>
                 <span className="mt-1 text-xs text-muted-foreground">
-                  {plan.durationWeeks} hafta • {plan.level}
+                  {t("user.workout.dashboard.discovery.durationWeeks", {
+                    count: plan.durationWeeks,
+                  })}{" "}
+                  • {plan.level}
                 </span>
                 <span className="mt-2 line-clamp-2 text-xs text-muted-foreground">
                   {plan.description}
                 </span>
                 <span className="mt-auto inline-flex w-fit rounded-full border border-primary/25 px-4 py-1 text-xs font-black text-primary">
-                  Tanlash
+                  {t("user.workout.dashboard.discovery.select")}
                 </span>
               </span>
             </button>
@@ -782,7 +873,7 @@ function NoPlanDiscoverySection({
   );
 }
 
-function TodaySummaryCard({ weeklyStats, runningStats, activeSession }) {
+function TodaySummaryCard({ weeklyStats, runningStats, activeSession, t }) {
   const activeRunningMetrics = getRunningMetrics(activeSession);
   const activeRunCount = activeSession?.workoutSessionId ? 1 : 0;
   const calories =
@@ -802,7 +893,7 @@ function TodaySummaryCard({ weeklyStats, runningStats, activeSession }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Bugun</CardTitle>
+        <CardTitle>{t("user.workout.dashboard.todaySummary.title")}</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-6">
         <div className="grid gap-6 sm:grid-cols-[160px_1fr] sm:items-center">
@@ -828,7 +919,7 @@ function TodaySummaryCard({ weeklyStats, runningStats, activeSession }) {
             <div>
               <div className="mb-2 flex items-center justify-between text-sm">
                 <span className="font-semibold text-muted-foreground">
-                  Maqsad
+                  {t("user.workout.dashboard.todaySummary.goal")}
                 </span>
                 <span>{formatNumber(DAILY_CALORIE_GOAL)} kcal</span>
               </div>
@@ -837,7 +928,7 @@ function TodaySummaryCard({ weeklyStats, runningStats, activeSession }) {
             <div>
               <div className="mb-2 flex items-center justify-between text-sm">
                 <span className="font-semibold text-muted-foreground">
-                  Faollik
+                  {t("user.workout.dashboard.todaySummary.activity")}
                 </span>
                 <span>{activityPercent}%</span>
               </div>
@@ -846,16 +937,20 @@ function TodaySummaryCard({ weeklyStats, runningStats, activeSession }) {
           </div>
         </div>
         <div className="grid grid-cols-3 gap-4">
-          <MetricPill icon={RouteIcon} value="--" label="Qadamlar" />
+          <MetricPill
+            icon={RouteIcon}
+            value="--"
+            label={t("user.workout.dashboard.todaySummary.steps")}
+          />
           <MetricPill
             icon={MapPinIcon}
             value={formatRunningDistance(distanceMeters)}
-            label="Masofa"
+            label={t("user.workout.dashboard.metrics.distance")}
           />
           <MetricPill
             icon={Clock3Icon}
             value={formatMetricDuration(durationSeconds)}
-            label="Faol vaqt"
+            label={t("user.workout.dashboard.todaySummary.activeTime")}
           />
         </div>
       </CardContent>
@@ -863,18 +958,22 @@ function TodaySummaryCard({ weeklyStats, runningStats, activeSession }) {
   );
 }
 
-function WeatherCard({ weather, isLoading, isError, locationStatus }) {
-  const weatherData = weather ?? EMPTY_WEATHER;
+function WeatherCard({ weather, isLoading, isError, locationStatus, t }) {
+  const weatherData = weather ?? {
+    ...EMPTY_WEATHER,
+    condition: t("user.workout.dashboard.weather.loadingCondition"),
+    aqiLabel: t("user.workout.dashboard.weather.unknownAqi"),
+  };
   const isFallbackLocation = locationStatus === "fallback";
   const location =
     isFallbackLocation && weatherData.location === "Current location"
-      ? "Tashkent"
+      ? t("user.workout.dashboard.weather.fallbackLocation")
       : weatherData.location;
 
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between gap-4">
-        <CardTitle>Bugungi ob-havo</CardTitle>
+        <CardTitle>{t("user.workout.dashboard.weather.title")}</CardTitle>
         <CloudSunIcon className="size-5 text-primary" />
       </CardHeader>
       <CardContent className="grid gap-5">
@@ -884,7 +983,9 @@ function WeatherCard({ weather, isLoading, isError, locationStatus }) {
               {isLoading ? "--" : formatTemperature(weatherData.temperatureC)}
             </p>
             <p className="mt-1 text-sm font-medium text-muted-foreground">
-              {isError ? "Ob-havo vaqtincha mavjud emas" : weatherData.condition}
+              {isError
+                ? t("user.workout.dashboard.weather.unavailable")
+                : weatherData.condition}
             </p>
           </div>
           <div className="grid size-16 place-items-center rounded-full bg-primary/10 text-primary">
@@ -916,7 +1017,9 @@ function WeatherCard({ weather, isLoading, isError, locationStatus }) {
         <div className="rounded-2xl border bg-muted/30 p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm text-muted-foreground">Havo sifati</p>
+              <p className="text-sm text-muted-foreground">
+                {t("user.workout.dashboard.weather.airQuality")}
+              </p>
               <p className="mt-1 text-2xl font-black">
                 AQI {weatherData.aqi ?? "--"}
               </p>
@@ -942,10 +1045,11 @@ function WeeklyStatsCard({
   weeklyStats,
   runningStats,
   onOpenHistory,
+  t,
 }) {
   const days = React.useMemo(
-    () => getWeekDays(completedDates),
-    [completedDates],
+    () => getWeekDays(completedDates, t),
+    [completedDates, t],
   );
   const progress =
     target > 0 ? Math.min(100, Math.round((completed / target) * 100)) : 0;
@@ -953,9 +1057,9 @@ function WeeklyStatsCard({
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between gap-4">
-        <CardTitle>Haftalik statistika</CardTitle>
+        <CardTitle>{t("user.workout.dashboard.weekly.title")}</CardTitle>
         <Button variant="ghost" className="rounded-full" onClick={onOpenHistory}>
-          Barchasini ko'rish
+          {t("user.workout.dashboard.common.viewAll")}
         </Button>
       </CardHeader>
       <CardContent className="grid gap-6">
@@ -983,7 +1087,10 @@ function WeeklyStatsCard({
         <div className="border-t pt-5">
           <div className="mb-3 flex items-center justify-between gap-3">
             <p className="font-black">
-              {completed}/{target} mashg'ulot
+              {t("user.workout.dashboard.weekly.progress", {
+                completed,
+                target,
+              })}
             </p>
             <p className="font-black">{progress}%</p>
           </div>
@@ -991,23 +1098,31 @@ function WeeklyStatsCard({
         </div>
         <div className="grid grid-cols-4 gap-4 text-center">
           <div>
-            <p className="text-sm text-muted-foreground">Mashg'ulotlar</p>
+            <p className="text-sm text-muted-foreground">
+              {t("user.workout.dashboard.weekly.workouts")}
+            </p>
             <p className="mt-1 text-xl font-black">{completed}</p>
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Vaqt</p>
+            <p className="text-sm text-muted-foreground">
+              {t("user.workout.dashboard.weekly.time")}
+            </p>
             <p className="mt-1 text-xl font-black">
               {formatMetricDuration((toNumber(get(weeklyStats, "duration", 0)) || 0) * 60)}
             </p>
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Kaloriya</p>
+            <p className="text-sm text-muted-foreground">
+              {t("user.workout.dashboard.metrics.calories")}
+            </p>
             <p className="mt-1 text-xl font-black">
               {formatNumber(get(weeklyStats, "calories", 0))}
             </p>
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Masofa</p>
+            <p className="text-sm text-muted-foreground">
+              {t("user.workout.dashboard.metrics.distance")}
+            </p>
             <p className="mt-1 text-xl font-black">
               {formatRunningDistance(get(runningStats, "totalDistanceMeters", 0))}
             </p>
@@ -1018,7 +1133,7 @@ function WeeklyStatsCard({
   );
 }
 
-function GoalsCard({ weeklyStats, runningStats }) {
+function GoalsCard({ weeklyStats, runningStats, t }) {
   const calories = clampMetric(get(weeklyStats, "calories", 0));
   const calorieProgress = clampPercent((calories / DAILY_CALORIE_GOAL) * 100);
   const distanceMeters = clampMetric(get(runningStats, "totalDistanceMeters", 0));
@@ -1029,9 +1144,9 @@ function GoalsCard({ weeklyStats, runningStats }) {
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between gap-4">
-        <CardTitle>Maqsadlar</CardTitle>
+        <CardTitle>{t("user.workout.dashboard.goals.title")}</CardTitle>
         <Button variant="ghost" className="rounded-full">
-          Tahrirlash
+          {t("user.workout.dashboard.goals.edit")}
         </Button>
       </CardHeader>
       <CardContent className="grid gap-5">
@@ -1040,7 +1155,9 @@ function GoalsCard({ weeklyStats, runningStats }) {
             <FlameIcon className="size-6" />
           </div>
           <div>
-            <p className="font-semibold">Kaloriya maqsadi</p>
+            <p className="font-semibold">
+              {t("user.workout.dashboard.goals.calorieGoal")}
+            </p>
             <p className="text-lg font-black">
               {formatNumber(calories)} / {formatNumber(DAILY_CALORIE_GOAL)} kcal
             </p>
@@ -1055,7 +1172,9 @@ function GoalsCard({ weeklyStats, runningStats }) {
             <RouteIcon className="size-6" />
           </div>
           <div>
-            <p className="font-semibold">Haftalik masofa</p>
+            <p className="font-semibold">
+              {t("user.workout.dashboard.goals.weeklyDistance")}
+            </p>
             <p className="text-lg font-black">
               {formatRunningDistance(distanceMeters)} / 40 km
             </p>
@@ -1070,22 +1189,22 @@ function GoalsCard({ weeklyStats, runningStats }) {
   );
 }
 
-function AchievementsCard({ personalRecordCount }) {
+function AchievementsCard({ personalRecordCount, t }) {
   const achievementCount = clampMetric(personalRecordCount);
 
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between gap-4">
-        <CardTitle>Yutuqlar</CardTitle>
+        <CardTitle>{t("user.workout.dashboard.achievements.title")}</CardTitle>
         <Button variant="ghost" className="rounded-full">
-          Barchasini ko'rish
+          {t("user.workout.dashboard.common.viewAll")}
         </Button>
       </CardHeader>
       <CardContent className="flex flex-wrap items-center gap-4">
         {achievementCount <= 0 ? (
           <div className="flex min-h-14 items-center gap-3 rounded-2xl border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
             <TrophyIcon className="size-5 text-primary" aria-hidden="true" />
-            <span>Hali yutuqlar yo'q</span>
+            <span>{t("user.workout.dashboard.achievements.empty")}</span>
           </div>
         ) : (
           <>
@@ -1117,17 +1236,78 @@ function AchievementsCard({ personalRecordCount }) {
   );
 }
 
-function RecentActivitiesCard({ activities, onOpenHistory, onOpenActivity }) {
+function StreakCard({ streak, t }) {
+  const currentDays = clampMetric(get(streak, "currentDays", 0));
+  const bestDays = clampMetric(get(streak, "bestDays", currentDays));
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between gap-4">
+        <CardTitle>{t("user.workout.dashboard.streak.title")}</CardTitle>
+        <div className="grid size-10 place-items-center rounded-full bg-primary/10 text-primary">
+          <FlameIcon className="size-5" />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <p className="text-3xl font-black">
+          {t("user.workout.dashboard.streak.days", { count: currentDays })}
+        </p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {t("user.workout.dashboard.streak.best", { count: bestDays })}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function RecoveryCard({ recovery, t }) {
+  const status = get(recovery, "status", "no_data");
+  const score = clampPercent(get(recovery, "score", 0));
+  const recommendation =
+    get(recovery, "recommendation") ||
+    t("user.workout.dashboard.recovery.fallbackRecommendation");
+  const statusLabel = t(`user.workout.dashboard.recovery.status.${status}`, {
+    defaultValue: t("user.workout.dashboard.recovery.status.no_data"),
+  });
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between gap-4">
+        <CardTitle>{t("user.workout.dashboard.recovery.title")}</CardTitle>
+        <div className="grid size-10 place-items-center rounded-full bg-green-500/10 text-green-600">
+          <HeartPulseIcon className="size-5" />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-end justify-between gap-3">
+          <p className="text-xl font-black text-green-600">{statusLabel}</p>
+          <p className="text-lg font-black">{score}%</p>
+        </div>
+        <div className="mt-3">
+          <ProgressBar value={score} className="bg-green-500" />
+        </div>
+        <p className="mt-3 text-sm text-muted-foreground">{recommendation}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function RecentActivitiesCard({
+  activities,
+  onOpenHistory,
+  onOpenActivity,
+  t,
+  language,
+}) {
   return (
     <Card className="overflow-hidden p-0">
       <CardHeader className="px-8 pt-8">
-        <CardTitle>So'nggi mashg'ulotlar</CardTitle>
+        <CardTitle>{t("user.workout.dashboard.recent.title")}</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         {activities.length === 0 ? (
           <div className="px-8 py-10 text-sm text-muted-foreground">
-            Hali mashg‘ulot tarixi yo‘q. Workout yoki running boshlaganingizdan
-            keyin ular shu yerda ko‘rinadi.
+            {t("user.workout.dashboard.recent.empty")}
           </div>
         ) : null}
         {map(activities, (activity) => (
@@ -1152,7 +1332,7 @@ function RecentActivitiesCard({ activities, onOpenHistory, onOpenActivity }) {
                   points={activity.routePoints}
                   polyline={activity.routePolyline}
                   qualityScore={activity.routeQualityScore}
-                  emptyLabel="Route data kutilmoqda"
+                  emptyLabel={t("user.workout.dashboard.recent.routeWaiting")}
                   showQuality={Boolean(
                     activity.routePolyline || activity.routePoints?.length,
                   )}
@@ -1204,7 +1384,7 @@ function RecentActivitiesCard({ activities, onOpenHistory, onOpenActivity }) {
               </div>
             </div>
             <div className="hidden text-right text-sm text-muted-foreground sm:block">
-              <p>{formatActivityTime(activity.sortDate)}</p>
+              <p>{formatActivityTime(activity.sortDate, t, language)}</p>
               <MoreHorizontalIcon className="ml-auto mt-3 size-5" />
             </div>
           </div>
@@ -1214,7 +1394,7 @@ function RecentActivitiesCard({ activities, onOpenHistory, onOpenActivity }) {
           className="flex w-full items-center justify-center gap-2 border-t px-6 py-4 text-sm font-black text-primary transition-colors hover:bg-muted/40"
           onClick={onOpenHistory}
         >
-          Barchasini ko'rish
+          {t("user.workout.dashboard.common.viewAll")}
           <ArrowRightIcon className="size-4" />
         </button>
       </CardContent>
@@ -1223,6 +1403,7 @@ function RecentActivitiesCard({ activities, onOpenHistory, onOpenActivity }) {
 }
 
 const WorkoutDashboardPage = () => {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const { overview: workoutOverview } = useWorkoutOverview();
@@ -1231,6 +1412,7 @@ const WorkoutDashboardPage = () => {
   const { activeSession } = useRunningActiveSession();
   const { sessions: runningSessions } = useRunningSessions({ limit: 4 });
   const { stats: runningStats = {} } = useRunningStatsSummary();
+  const { startRunningSession } = useStartRunningSession();
   const {
     weather,
     isLoading: isWeatherLoading,
@@ -1243,13 +1425,13 @@ const WorkoutDashboardPage = () => {
   );
   const hasActivePlan = Boolean(activePlan);
   const nextWorkouts = React.useMemo(
-    () => buildNextWorkouts(activePlan),
-    [activePlan],
+    () => buildNextWorkouts(activePlan, new Date(), t, i18n.resolvedLanguage),
+    [activePlan, i18n.resolvedLanguage, t],
   );
   const featuredWorkout = nextWorkouts[0] ?? null;
   const activities = React.useMemo(
-    () => buildActivityFeed(sessionHistory, runningSessions),
-    [runningSessions, sessionHistory],
+    () => buildActivityFeed(sessionHistory, runningSessions, t),
+    [runningSessions, sessionHistory, t],
   );
 
   const completedDates = React.useMemo(
@@ -1273,10 +1455,10 @@ const WorkoutDashboardPage = () => {
 
   React.useEffect(() => {
     setBreadcrumbs([
-      { url: "/user", title: "Bosh sahifa" },
-      { url: "/user/workout", title: "Workout" },
+      { url: "/user", title: t("user.dashboard.breadcrumbs.home") },
+      { url: "/user/workout", title: t("user.workout.title") },
     ]);
-  }, [setBreadcrumbs]);
+  }, [setBreadcrumbs, t]);
 
   const openPlans = React.useCallback(() => {
     navigate("/user/workout/plans");
@@ -1317,7 +1499,10 @@ const WorkoutDashboardPage = () => {
       }
 
       try {
-        if (get(activePlan, "status") !== "active" && get(activePlan, "id")) {
+        if (
+          get(activePlan, "status") !== WORKOUT_PLAN_STATUS.active &&
+          get(activePlan, "id")
+        ) {
           await startPlan(activePlan);
         }
 
@@ -1352,25 +1537,40 @@ const WorkoutDashboardPage = () => {
       } catch (error) {
         toast.error(
           get(error, "response.data.message") ||
-            "Sessiyani boshlashda xatolik yuz berdi",
+            t("user.workout.dashboard.toast.startSessionError"),
         );
       }
     },
-    [activePlan, navigate, startPlan],
+    [activePlan, navigate, startPlan, t],
   );
 
-  const handleRunningPrimary = React.useCallback(() => {
+  const handleRunningPrimary = React.useCallback(async () => {
     if (activeSession?.workoutSessionId) {
       navigate(`/user/workout/running/live/${activeSession.workoutSessionId}`);
       return;
     }
 
-    navigate("/user/workout/running");
-  }, [activeSession, navigate]);
+    try {
+      const session = await startRunningSession({ source: "home" });
+      const workoutSessionId = get(session, "workoutSessionId", get(session, "id"));
+
+      if (workoutSessionId) {
+        navigate(`/user/workout/running/live/${workoutSessionId}`);
+        return;
+      }
+
+      navigate("/user/workout/history");
+    } catch (error) {
+      toast.error(
+        get(error, "response.data.message") ||
+          t("user.workout.dashboard.toast.startRunError"),
+      );
+    }
+  }, [activeSession, navigate, startRunningSession, t]);
 
   return (
     <PageTransition mode="slide-up">
-      <div className="workout-page-surface mx-auto flex w-full max-w-[1600px] flex-col gap-6 pb-4">
+      <div className="workout-page-surface mx-auto flex w-full max-w-[1600px] flex-col gap-6 pb-28 xl:pb-4">
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_520px]">
           <main className="flex min-w-0 flex-col gap-6">
             <TodayWorkoutHero
@@ -1380,6 +1580,7 @@ const WorkoutDashboardPage = () => {
               onOpen={() => handleStartSession(featuredWorkout)}
               onCreate={openPlans}
               onCreatePlan={createPlan}
+              t={t}
             />
             {!hasActivePlan ? (
               <NoPlanDiscoverySection
@@ -1387,16 +1588,21 @@ const WorkoutDashboardPage = () => {
                 onOpenRunning={handleRunningPrimary}
                 onOpenExercises={openExercises}
                 onOpenReport={openReport}
+                t={t}
               />
             ) : null}
             <RunningActivityCard
               activeSession={activeSession}
               onPrimary={handleRunningPrimary}
+              t={t}
+              language={i18n.resolvedLanguage}
             />
             <RecentActivitiesCard
               activities={activities}
               onOpenHistory={openHistory}
               onOpenActivity={openActivity}
+              t={t}
+              language={i18n.resolvedLanguage}
             />
           </main>
 
@@ -1405,12 +1611,14 @@ const WorkoutDashboardPage = () => {
               weeklyStats={get(workoutOverview, "weeklyStats", {})}
               runningStats={runningStats}
               activeSession={activeSession}
+              t={t}
             />
             <WeatherCard
               weather={weather}
               isLoading={isWeatherLoading || locationStatus === "requesting"}
               isError={isWeatherError}
               locationStatus={locationStatus}
+              t={t}
             />
             <WeeklyStatsCard
               completed={completedWorkouts}
@@ -1419,16 +1627,33 @@ const WorkoutDashboardPage = () => {
               weeklyStats={get(workoutOverview, "weeklyStats", {})}
               runningStats={runningStats}
               onOpenHistory={openHistory}
+              t={t}
             />
             <GoalsCard
               weeklyStats={get(workoutOverview, "weeklyStats", {})}
               runningStats={runningStats}
+              t={t}
             />
             <AchievementsCard
               personalRecordCount={get(workoutOverview, "personalRecordCount", 0)}
+              t={t}
             />
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+              <StreakCard streak={get(workoutOverview, "streak", {})} t={t} />
+              <RecoveryCard
+                recovery={get(workoutOverview, "recovery", {})}
+                t={t}
+              />
+            </div>
           </aside>
         </div>
+        <TodayWorkoutStickyCta
+          item={featuredWorkout}
+          hasActivePlan={hasActivePlan}
+          onStart={() => handleStartSession(featuredWorkout)}
+          onOpenPlans={openPlans}
+          t={t}
+        />
       </div>
     </PageTransition>
   );

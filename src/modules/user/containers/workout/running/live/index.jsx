@@ -615,7 +615,7 @@ const RunningLivePage = () => {
       clearActiveRunningSession();
       clearRunningPointQueue(workoutSessionId);
       navigate(
-        `/user/workout/running/${session?.workoutSessionId ?? workoutSessionId}`,
+        `/user/workout/history/${session?.workoutSessionId ?? workoutSessionId}`,
       );
     };
 
@@ -646,7 +646,7 @@ const RunningLivePage = () => {
             <CardTitle>Faol yugurish yo'q</CardTitle>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => navigate("/user/workout/running")}>
+            <Button onClick={() => navigate("/user/workout/home")}>
               {t(
                 "user.workout.running.live.backToStart",
                 "Yugurishni boshlashga qaytish",

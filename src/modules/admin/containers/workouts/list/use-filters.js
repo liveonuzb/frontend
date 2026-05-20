@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 import { map as lodashMap, trim, toNumber, isObject, find, values as lodashValues } from "lodash";
 
@@ -32,6 +33,7 @@ const resolveLabel = (translations, fallback, language) => {
 };
 
 export const useWorkoutFilters = ({ categories, currentLanguage }) => {
+  const { t } = useTranslation();
   const [search, setSearch] = useQueryState("q", parseAsString.withDefault(""));
   const [categoryFilter, setCategoryFilter] = useQueryState(
     "category",
@@ -96,19 +98,19 @@ export const useWorkoutFilters = ({ categories, currentLanguage }) => {
   const filterFields = React.useMemo(
     () => [
       {
-        label: "Qidiruv",
+        label: t("admin.common.search"),
         key: "q",
         type: "text",
         defaultOperator: "contains",
-        placeholder: "Mashg'ulot qidirish",
+        placeholder: t("admin.workouts.filters.searchPlaceholder"),
       },
       {
-        label: "Kategoriya",
+        label: t("admin.workouts.filters.category"),
         key: "category",
         type: "select",
         defaultOperator: "is",
         options: [
-          { value: "all", label: "Barcha kategoriyalar" },
+          { value: "all", label: t("admin.workouts.filters.allCategories") },
           ...lodashMap(categories, (category) => ({
             value: String(category.id),
             label: resolveLabel(
@@ -120,61 +122,61 @@ export const useWorkoutFilters = ({ categories, currentLanguage }) => {
         ],
       },
       {
-        label: "Status",
+        label: t("admin.common.status"),
         key: "status",
         type: "select",
         defaultOperator: "is",
         options: [
-          { value: "all", label: "Barchasi" },
-          { value: "active", label: "Faol" },
-          { value: "inactive", label: "Nofaol" },
+          { value: "all", label: t("admin.common.all") },
+          { value: "active", label: t("admin.common.active") },
+          { value: "inactive", label: t("admin.common.inactive") },
         ],
       },
       {
-        label: "Onboardingda ko'rsatish",
+        label: t("admin.workouts.filters.showOnboarding"),
         key: "onboarding",
         type: "select",
         defaultOperator: "is",
         options: [
-          { value: "all", label: "Barchasi" },
-          { value: "yes", label: "Onboarding uchun" },
-          { value: "no", label: "Qo'shimcha" },
+          { value: "all", label: t("admin.common.all") },
+          { value: "yes", label: t("admin.workouts.filters.forOnboarding") },
+          { value: "no", label: t("admin.workouts.filters.extra") },
         ],
       },
       {
-        label: "YouTube Link",
+        label: t("admin.workouts.filters.youtubeLink"),
         key: "hasImage",
         type: "select",
         defaultOperator: "is",
         options: [
-          { value: "all", label: "Barchasi" },
-          { value: "yes", label: "Havola bilan" },
-          { value: "no", label: "Havolasiz" },
+          { value: "all", label: t("admin.common.all") },
+          { value: "yes", label: t("admin.workouts.filters.withLink") },
+          { value: "no", label: t("admin.workouts.filters.withoutLink") },
         ],
       },
       {
-        label: "Tarjima holati",
+        label: t("admin.workoutPlans.filters.translationStatus"),
         key: "translations",
         type: "select",
         defaultOperator: "is",
         options: [
-          { value: "all", label: "Barchasi" },
-          { value: "complete", label: "To'liq" },
-          { value: "missing", label: "Kam tarjimali" },
+          { value: "all", label: t("admin.common.all") },
+          { value: "complete", label: t("admin.workoutPlans.filters.complete") },
+          { value: "missing", label: t("admin.workoutPlans.filters.missing") },
         ],
       },
       {
-        label: "Dublikatlar",
+        label: t("admin.workouts.filters.duplicates"),
         key: "duplicates",
         type: "select",
         defaultOperator: "is",
         options: [
-          { value: "all", label: "Barchasi" },
-          { value: "only", label: "Faqat dublikatlar" },
+          { value: "all", label: t("admin.common.all") },
+          { value: "only", label: t("admin.workouts.filters.onlyDuplicates") },
         ],
       },
     ],
-    [categories, currentLanguage],
+    [categories, currentLanguage, t],
   );
 
   const activeFilters = React.useMemo(() => {
@@ -379,6 +381,5 @@ export const useWorkoutFilters = ({ categories, currentLanguage }) => {
     handleSortingChange,
   };
 };
-
 
 

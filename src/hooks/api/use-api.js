@@ -1,10 +1,12 @@
 import axios from "axios";
+import { toast } from "sonner";
 import useAuthStore from "@/store/auth-store";
 import useLanguageStore from "@/store/language-store";
 import { config } from "@/config.js";
+import { queryClient } from "@/providers/query";
 import { normalizeApiPath } from "./normalize-api-path.js";
 
-import { some, includes } from "lodash";
+import { get, some, includes } from "lodash";
 
 let refreshPromise = null;
 
@@ -24,6 +26,7 @@ export const shouldSkipAuthRetry = (url) => {
 const api = axios.create({
   baseURL: config.baseURL,
   withCredentials: true,
+  timeout: 15000,
 });
 
 /* ================= REQUEST INTERCEPTOR ================= */
@@ -55,6 +58,10 @@ api.interceptors.response.use(
     const originalRequest = error.config;
     const status = error.response?.status;
 
+    if (status === 403) {
+      handleForbiddenResponse();
+    }
+
     if (
       status === 401 &&
       originalRequest &&
@@ -85,7 +92,7 @@ api.interceptors.response.use(
   },
 );
 
-async function refreshAccessToken() {
+export async function refreshAccessToken() {
   const { completeAuthentication, logout, refreshToken } = useAuthStore.getState();
 
   if (!refreshToken) {
@@ -105,12 +112,13 @@ async function refreshAccessToken() {
         },
       )
       .then((res) => {
-        const accessToken = res.data?.accessToken;
+        const responseData = get(res, "data.data", {});
+        const accessToken = responseData.accessToken;
 
         if (accessToken) {
           completeAuthentication({
-            ...res.data,
-            refreshToken: res.data?.refreshToken || refreshToken,
+            ...responseData,
+            refreshToken: responseData.refreshToken || refreshToken,
           });
         }
 
@@ -131,7 +139,14 @@ async function refreshAccessToken() {
 function forceLogout() {
   const { logout } = useAuthStore.getState();
   logout();
-  window.location.href = "/auth/sign-in";
+  queryClient.clear();
+  window.location.assign("/auth/sign-in");
+}
+
+export function handleForbiddenResponse() {
+  toast.error("Bu amal uchun ruxsat yo'q.", {
+    id: "global-forbidden",
+  });
 }
 
 const useApi = () => ({

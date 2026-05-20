@@ -10,7 +10,13 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils.js";
 import { Button } from "@/components/ui/button.jsx";
-import { ChevronDownIcon, CopyIcon, PlusIcon } from "lucide-react";
+import {
+  CheckCircle2Icon,
+  ChevronDownIcon,
+  Clock3Icon,
+  CopyIcon,
+  PlusIcon,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton.jsx";
 import EmptyState from "@/components/empty-state/index.jsx";
 import { map, sumBy, isEmpty, filter, forEach } from "lodash";
@@ -143,6 +149,12 @@ const MealSection = ({
   }, [items, plannedItems]);
 
   const currentKcal = Math.round(sumBy(items, (f) => (f.cal ?? 0) * (f.qty ?? 1)));
+  const statusMeta = isActive
+    ? { label: "Hozir", className: "bg-primary/10 text-primary", icon: Clock3Icon }
+    : allSectionItems.length > 0
+      ? { label: "Yakunlandi", className: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300", icon: CheckCircle2Icon }
+      : { label: "Kutilmoqda", className: "bg-muted text-muted-foreground", icon: Clock3Icon };
+  const StatusIcon = statusMeta.icon;
   const shouldVirtualize = allSectionItems.length >= 20;
   const rowVirtualizer = useVirtualizer({
     count: allSectionItems.length,
@@ -193,7 +205,7 @@ const MealSection = ({
   return (
     <Card
       className={cn(
-        "overflow-hidden transition-all duration-300 py-6",
+        "overflow-hidden rounded-2xl border bg-card py-5 shadow-sm transition-all duration-300",
         isActive &&
           "border-primary/40 ring-2 ring-primary/20 shadow-md shadow-primary/5",
       )}
@@ -202,41 +214,43 @@ const MealSection = ({
         className="cursor-pointer select-none"
         onClick={() => setIsOpen((o) => !o)}
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <span className="text-2xl leading-none">{config.emoji}</span>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-2xl leading-none">
+              {config.emoji}
+            </span>
             <div>
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-[15px] font-bold leading-none">
+              <div className="flex flex-wrap items-center gap-2">
+                <CardTitle className="text-base font-black leading-none">
                   {config.label}
                 </CardTitle>
-                {isActive && (
-                  <span className="flex items-center gap-1 text-[10px] font-black text-primary uppercase tracking-wider">
-                    <span className="size-1.5 rounded-full bg-primary animate-pulse" />
-                    Hozir
-                  </span>
-                )}
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black",
+                    statusMeta.className,
+                  )}
+                >
+                  <StatusIcon className="size-3" />
+                  {statusMeta.label}
+                </span>
               </div>
               <span className="text-[11px] text-muted-foreground font-medium mt-0.5 block">
-                {config.label} • {currentKcal} kcal • {allSectionItems.length} ta ovqat • {displayTime}
+                {displayTime} • {allSectionItems.length} ta ovqat
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
-            {currentKcal > 0 && (
-              <span className="text-sm font-black tabular-nums text-foreground/80">
+          <div className="flex shrink-0 items-center gap-2.5">
+            <span className="text-right text-sm font-black tabular-nums text-foreground/80">
+              {currentKcal > 0 ? (
+                <>
                 {currentKcal}
                 <span className="text-[10px] font-bold text-muted-foreground/60 ml-0.5 uppercase">
                   kcal
                 </span>
-              </span>
-            )}
-            {allSectionItems.length > 0 && (
-              <span className="text-[10px] font-bold bg-muted text-muted-foreground rounded-full px-2 py-0.5">
-                {allSectionItems.length}
-              </span>
-            )}
+                </>
+              ) : "0 kcal"}
+            </span>
             <ChevronDownIcon
               className={cn(
                 "size-4 text-muted-foreground transition-transform duration-300",

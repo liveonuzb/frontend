@@ -41,10 +41,12 @@ describe("workout-plan-flow", () => {
     ).toEqual({
       name: "Full body",
       description: "Beginner split",
-      difficulty: "O'rta",
+      coverImageUrl: undefined,
+      difficulty: "intermediate",
       days: 28,
       daysPerWeek: 4,
       schedule: [{ day: "Dushanba", exercises: [] }],
+      generationMeta: undefined,
       source: "template",
       startDate: undefined,
     });

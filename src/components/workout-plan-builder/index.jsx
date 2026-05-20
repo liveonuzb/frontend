@@ -4,6 +4,7 @@ import React, {
   useCallback,
   useEffect,
   useDeferredValue,
+  useRef,
 } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -20,6 +21,7 @@ import {
   keys,
   toPairs,
   trim,
+  isEqual,
 } from "lodash";
 import useIsMobile from "@/hooks/utils/use-mobile.js";
 import { cn } from "@/lib/utils.js";
@@ -69,11 +71,14 @@ const WorkoutPlanBuilder = ({
   onMetaSave = null,
   initialSelectedDayIndex = null,
   asPage = false,
+  onDirtyChange = null,
 }) => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const planSource = initialPlan || initialData || null;
   const isActive = asPage || open;
+  const baselinePlanRef = useRef(null);
+  const skipNextDirtyReportRef = useRef(false);
 
   // Plan meta state
   const [planName, setPlanName] = useState("");
@@ -132,27 +137,31 @@ const WorkoutPlanBuilder = ({
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!isActive) return;
+    let nextDays = [];
+    let nextExercises = {};
+    let nextPlanName = "";
+    let nextPlanDescription = "";
+    let nextSelectedDayId = null;
+
     if (planSource) {
       const { days, exercises } = initFromPlan(planSource, libraryExercises, {
         lockWeekDays,
       });
-      setTrainDays(days);
-      setExercisesByDay(exercises);
-      setPlanName(get(planSource, "name", ""));
-      setPlanDescription(get(planSource, "description", ""));
+      nextDays = days;
+      nextExercises = exercises;
+      nextPlanName = get(planSource, "name", "");
+      nextPlanDescription = get(planSource, "description", "");
       const requestedDayId =
         typeof initialSelectedDayIndex === "number" && initialSelectedDayIndex >= 0
           ? get(days, `[${initialSelectedDayIndex}].id`, null)
           : null;
-      setSelectedDayId(requestedDayId || get(days, "[0].id", null));
+      nextSelectedDayId = requestedDayId || get(days, "[0].id", null);
     } else if (lockWeekDays) {
       const days = buildWeekDaySkeleton();
       const exercises = fromPairs(map(days, (day) => [get(day, "id"), []]));
-      setTrainDays(days);
-      setExercisesByDay(exercises);
-      setPlanName("");
-      setPlanDescription("");
-      setSelectedDayId(get(days, "[0].id", null));
+      nextDays = days;
+      nextExercises = exercises;
+      nextSelectedDayId = get(days, "[0].id", null);
     } else {
       // Numbered-day mode: seed with 3 starter days ("1-kun", "2-kun", "3-kun")
       // so the user has something to drop exercises into. They can add or
@@ -161,12 +170,26 @@ const WorkoutPlanBuilder = ({
         t("components.workoutPlanBuilder.dayName", { count: n }),
       );
       const exercises = fromPairs(map(days, (day) => [get(day, "id"), []]));
-      setTrainDays(days);
-      setExercisesByDay(exercises);
-      setPlanName("");
-      setPlanDescription("");
-      setSelectedDayId(get(days, "[0].id", null));
+      nextDays = days;
+      nextExercises = exercises;
+      nextSelectedDayId = get(days, "[0].id", null);
     }
+
+    baselinePlanRef.current = buildSavePlan({
+      planSource,
+      planName: nextPlanName,
+      planDescription: nextPlanDescription,
+      trainDays: nextDays,
+      exercisesByDay: nextExercises,
+    });
+    skipNextDirtyReportRef.current = true;
+    onDirtyChange?.(false);
+
+    setTrainDays(nextDays);
+    setExercisesByDay(nextExercises);
+    setPlanName(nextPlanName);
+    setPlanDescription(nextPlanDescription);
+    setSelectedDayId(nextSelectedDayId);
   }, [isActive, planSource, lockWeekDays, t, initialSelectedDayIndex]);
 
   useEffect(() => {
@@ -183,6 +206,33 @@ const WorkoutPlanBuilder = ({
     }
   }, [categories, selectedGroup]);
   /* eslint-enable react-hooks/set-state-in-effect */
+
+  useEffect(() => {
+    if (!isActive || !baselinePlanRef.current || !onDirtyChange) return;
+
+    if (skipNextDirtyReportRef.current) {
+      skipNextDirtyReportRef.current = false;
+      return;
+    }
+
+    const currentPlan = buildSavePlan({
+      planSource,
+      planName,
+      planDescription,
+      trainDays,
+      exercisesByDay,
+    });
+
+    onDirtyChange(!isEqual(currentPlan, baselinePlanRef.current));
+  }, [
+    exercisesByDay,
+    isActive,
+    onDirtyChange,
+    planDescription,
+    planName,
+    planSource,
+    trainDays,
+  ]);
 
   // ─── Filtered exercises for library ─────────────────────────────────────
   const filteredExercises = useMemo(
@@ -347,7 +397,7 @@ const WorkoutPlanBuilder = ({
         onClose={onClose}
         lockWeekDays={lockWeekDays}
         title={planName || title}
-        description={description || "Tahrirlash rejimi"}
+        description={description || t("components.workoutPlanBuilder.header.editMode")}
         asPage={asPage}
         onEditMeta={() => setMetaDrawerOpen(true)}
         onOpenMobileLibrary={() => setMobileLibraryOpen(true)}

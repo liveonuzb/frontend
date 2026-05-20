@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { some, take, split } from "lodash";
+import i18n from "@/lib/i18n";
 
 const LEVEL_THRESHOLDS = [
   0, 500, 1000, 1500, 2000, 3000, 4000, 5500, 7000, 9000, 11000, 13500,
@@ -21,14 +22,17 @@ const computeNextLevelXP = (level) =>
 
 const todayKey = () => split(new Date().toISOString(), "T")[0];
 
+const tStore = (key, defaultValue, options = {}) =>
+  i18n.t(`store.${key}`, { defaultValue, ...options });
+
 const initialState = {
-  xp: 2450,
-  streak: 42,
-  longestStreak: 58,
+  xp: null,
+  streak: null,
+  longestStreak: null,
   lastActiveDate: null,
   earnedBadges: [],
   xpLog: [],
-  leaderboardRank: 4,
+  leaderboardRank: null,
 };
 
 const useGamificationStore = create()(
@@ -73,7 +77,7 @@ const useGamificationStore = create()(
             [
               {
                 id: Date.now(),
-                activity: "XP sarflandi",
+                activity: tStore("gamification.xpSpent", "XP sarflandi"),
                 xp: -amount,
                 timestamp: new Date().toISOString(),
               },

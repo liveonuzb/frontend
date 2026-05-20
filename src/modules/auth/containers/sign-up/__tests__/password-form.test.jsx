@@ -44,9 +44,11 @@ describe("SignUp PasswordForm", () => {
     const mutateAsync = vi.fn(async (_payload, options) => {
       options.onSuccess({
         data: {
-          phone: "+998901234567",
-          otpCode: "123456",
-          expiresAt: "2026-05-03T12:00:00.000Z",
+          data: {
+            phone: "+998901234567",
+            otpCode: "123456",
+            expiresAt: "2026-05-03T12:00:00.000Z",
+          },
         },
       });
     });
@@ -68,12 +70,12 @@ describe("SignUp PasswordForm", () => {
     );
 
     fireEvent.change(screen.getByLabelText("auth.signIn.newPasswordLabel"), {
-      target: { value: "secret123" },
+      target: { value: "Password123!" },
     });
     fireEvent.change(
       screen.getByLabelText("auth.signIn.confirmPasswordLabel"),
       {
-        target: { value: "secret123" },
+        target: { value: "Password123!" },
       },
     );
     fireEvent.click(
@@ -94,5 +96,38 @@ describe("SignUp PasswordForm", () => {
       expiresAt: "2026-05-03T12:00:00.000Z",
     });
     expect(authState.clearAuthPhoneFlow).not.toHaveBeenCalled();
+  });
+
+  it("announces that OTP verification is the next action while creating account", async () => {
+    const mutateAsync = vi.fn(() => new Promise(() => {}));
+    vi.mocked(usePostQuery).mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    });
+
+    render(
+      <MemoryRouter>
+        <PasswordForm phone="+998901234567" />
+      </MemoryRouter>,
+    );
+
+    fireEvent.change(screen.getByLabelText("auth.signIn.newPasswordLabel"), {
+      target: { value: "Password123!" },
+    });
+    fireEvent.change(
+      screen.getByLabelText("auth.signIn.confirmPasswordLabel"),
+      {
+        target: { value: "Password123!" },
+      },
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "auth.signIn.createPasswordButton",
+      }),
+    );
+
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "auth.signUp.nextActionSendingOtp",
+    );
   });
 });

@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { get } from "lodash";
 import { useLocation, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
@@ -6,6 +7,7 @@ import WorkoutLogDrawer from "../../workout-log-drawer.jsx";
 import { useCreateWorkoutLog } from "@/hooks/app/use-workout-logs";
 
 const CreateWorkoutLogPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -26,10 +28,10 @@ const CreateWorkoutLogPage = () => {
   const handleSave = React.useCallback(
     async (payload) => {
       await createLog(payload);
-      toast.success("Workout log saqlandi");
+      toast.success(t("user.workout.logPages.createSuccess"));
       closeRoute();
     },
-    [closeRoute, createLog],
+    [closeRoute, createLog, t],
   );
 
   return (

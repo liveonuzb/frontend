@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/drawer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import GamificationBadges from "@/components/gamification-badges";
+import GamificationBadges from "@/modules/user/components/gamification-badges";
 import { Progress } from "@/components/ui/progress";
 import {
   useBreadcrumbStore,

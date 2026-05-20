@@ -1,44 +1,43 @@
-import { get, join, trim, some, filter, isArray, map } from "lodash";
+import { get, some, toLower } from "lodash";
 import { config } from "@/config.js";
+import { getApiErrorMessage } from "@/lib/api-response.js";
 import {
   canAccessUserDashboard,
   getPostOnboardingPath,
   getUserOnboardingPath,
 } from "@/lib/app-paths.js";
 
-const normalizeAuthErrorMessage = (message) => {
-  if (isArray(message)) {
-    const messages = filter(map(
-      message,
-      (item) => (typeof item === "string" ? item : get(item, "message")),
-    ), (item) => typeof item === "string" && trim(item));
+const SENSITIVE_AUTH_ERROR_PATTERNS = [
+  "prisma",
+  "sql",
+  "database",
+  "public.",
+  "stack",
+  "invocation",
+  "does not exist",
+  "p20",
+  " at ",
+];
 
-    return messages.length > 0 ? join(messages, ", ") : null;
-  }
-
-  if (typeof message === "string" && trim(message)) {
-    return message;
-  }
-
-  return null;
+const isSensitiveAuthErrorMessage = (message) => {
+  const normalizedMessage = toLower(String(message || ""));
+  return some(SENSITIVE_AUTH_ERROR_PATTERNS, (pattern) =>
+    normalizedMessage.includes(pattern),
+  );
 };
 
 export const getAuthErrorMessage = (error, fallbackMessage) => {
-  const message =
-    normalizeAuthErrorMessage(get(error, "response.data.error.details")) ??
-    normalizeAuthErrorMessage(get(error, "response.data.error.message")) ??
-    normalizeAuthErrorMessage(get(error, "response.data.message")) ??
-    normalizeAuthErrorMessage(get(error, "message"));
+  const message = getApiErrorMessage(error, fallbackMessage);
 
-  if (message) {
-    return message;
+  if (message !== fallbackMessage && isSensitiveAuthErrorMessage(message)) {
+    return fallbackMessage;
   }
 
-  return fallbackMessage;
+  return message;
 };
 
 export const getAuthResponseData = (response) => {
-  return get(response, "data.data") ?? get(response, "data") ?? response;
+  return get(response, "data.data");
 };
 
 export const getOtpToastDescription = (responseData, t) => {

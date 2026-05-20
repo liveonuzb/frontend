@@ -68,7 +68,7 @@ const BuilderHeader = memo(({
               type="button"
               onClick={onEditMeta}
               className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              aria-label="Plan ma'lumotlarini tahrirlash"
+              aria-label={t("components.workoutPlanBuilder.header.editMetaLabel")}
             >
               <PencilIcon className="size-4" />
             </button>
@@ -76,13 +76,13 @@ const BuilderHeader = memo(({
         </div>
       </TitleWrapper>
       <DescriptionWrapper className="text-sm text-muted-foreground text-center md:text-start">
-        {description || "Tahrirlash rejimi"}
+        {description || t("components.workoutPlanBuilder.header.editMode")}
       </DescriptionWrapper>
 
       {!hasDays && onOpenMobileLibrary ? (
         <div className="mt-4 flex flex-col items-center gap-3 rounded-3xl border border-dashed bg-muted/20 px-4 py-6 text-center">
           <p className="text-sm font-semibold text-foreground">
-            Birinchi mashqni qo'shing
+            {t("components.workoutPlanBuilder.header.addFirstExercise")}
           </p>
           <Button
             type="button"
@@ -96,7 +96,7 @@ const BuilderHeader = memo(({
             }}
           >
             <PlusIcon data-icon="inline-start" />
-            Mashq qo'shish
+            {t("components.workoutPlanBuilder.mobile.addExercise")}
           </Button>
         </div>
       ) : null}

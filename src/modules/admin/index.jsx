@@ -226,7 +226,7 @@ const Index = () => {
         <Route
           path="audit-logs"
           element={renderAdminRoute(AuditLogsPage, {
-            roles: ["SUPER_ADMIN", "READONLY_ADMIN"],
+            roles: ["SUPER_ADMIN"],
           })}
         />
         <Route

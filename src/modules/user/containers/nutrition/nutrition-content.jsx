@@ -196,6 +196,7 @@ const NutritionContent = ({ entryView = "home" }) => {
   const {
     addMeal: addMealAction,
     addMealsBatch: addMealsBatchAction,
+    addWaterCup,
     removeMeal: removeMealAction,
     patchMeal,
   } = useDailyTrackingActions();
@@ -1594,6 +1595,18 @@ const NutritionContent = ({ entryView = "home" }) => {
     [addMealAction, todayKey],
   );
 
+  const handleAddWaterCup = React.useCallback(
+    async () => {
+      try {
+        await addWaterCup(date, 250);
+        toast.success("250 ml suv qo'shildi");
+      } catch {
+        toast.error("Suvni qo'shib bo'lmadi");
+      }
+    },
+    [addWaterCup, date],
+  );
+
   const sharedViewProps = {
     date,
     setDate,
@@ -1619,6 +1632,7 @@ const NutritionContent = ({ entryView = "home" }) => {
     setIsActionDrawerOpen,
     setIsSavedMealsOpen,
     setIsPlansDrawerOpen,
+    onAddWaterCup: handleAddWaterCup,
     onOpenGoalWizard: () => setIsGoalWizardOpen(true),
     handleRemoveFood,
     handleBulkRemoveFoods,

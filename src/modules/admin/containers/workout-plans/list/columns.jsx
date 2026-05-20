@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { filter, find, get, fromPairs, trim, values as lodashValues, map } from "lodash";
 import { Globe2Icon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -33,10 +34,10 @@ function countFilledTranslations(translations = {}) {
   ).length;
 }
 
-function formatDate(value) {
+function formatDate(value, language = "uz") {
   if (!value) return "—";
 
-  return new Intl.DateTimeFormat("uz-UZ", {
+  return new Intl.DateTimeFormat(language, {
     dateStyle: "medium",
   }).format(new Date(value));
 }
@@ -62,11 +63,15 @@ export const useColumns = ({
   currentPage,
   languageCount,
   isSaving,
+  canAssignTemplates,
   onToggleStatus,
+  openAssignDrawer,
   openEditDrawer,
   openTranslationsDrawer,
   setDeleteCandidate,
 }) => {
+  const { t, i18n } = useTranslation();
+
   return React.useMemo(
     () => [
       {
@@ -79,7 +84,10 @@ export const useColumns = ({
       {
         accessorKey: "name",
         header: ({ column }) => (
-          <DataGridColumnHeader column={column} title="Workout shablon" />
+          <DataGridColumnHeader
+            column={column}
+            title={t("admin.workoutPlans.columns.template")}
+          />
         ),
         enableSorting: true,
         meta: { skeleton: adminListSkeletons.avatarText },
@@ -100,7 +108,8 @@ export const useColumns = ({
             <div className="min-w-0">
               <div className="font-medium">{localizedName}</div>
               <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
-                {localizedDescription || "Ta'rif kiritilmagan"}
+                {localizedDescription ||
+                  t("admin.workoutPlans.columns.noDescription")}
               </div>
             </div>
           );
@@ -110,7 +119,10 @@ export const useColumns = ({
       {
         accessorKey: "difficulty",
         header: ({ column }) => (
-          <DataGridColumnHeader column={column} title="Qiyinchilik" />
+          <DataGridColumnHeader
+            column={column}
+            title={t("admin.workoutPlans.columns.difficulty")}
+          />
         ),
         enableSorting: true,
         meta: { skeleton: adminListSkeletons.badge },
@@ -122,7 +134,10 @@ export const useColumns = ({
       {
         accessorKey: "daysPerWeek",
         header: ({ column }) => (
-          <DataGridColumnHeader column={column} title="Reja" />
+          <DataGridColumnHeader
+            column={column}
+            title={t("admin.workoutPlans.columns.plan")}
+          />
         ),
         enableSorting: true,
         meta: { skeleton: adminListSkeletons.badge },
@@ -130,9 +145,21 @@ export const useColumns = ({
           const template = info.row.original;
           return (
             <div className="flex flex-wrap gap-1.5">
-              <Badge variant="outline">{template.daysPerWeek} kun/hafta</Badge>
-              <Badge variant="outline">{template.days} kun</Badge>
-              <Badge variant="outline">{template.totalExercises} mashq</Badge>
+              <Badge variant="outline">
+                {t("admin.workoutPlans.columns.daysPerWeek", {
+                  count: template.daysPerWeek,
+                })}
+              </Badge>
+              <Badge variant="outline">
+                {t("admin.workoutPlans.columns.days", {
+                  count: template.days,
+                })}
+              </Badge>
+              <Badge variant="outline">
+                {t("admin.workoutPlans.columns.exercises", {
+                  count: template.totalExercises,
+                })}
+              </Badge>
             </div>
           );
         },
@@ -141,7 +168,10 @@ export const useColumns = ({
       {
         accessorKey: "approvalStatus",
         header: ({ column }) => (
-          <DataGridColumnHeader column={column} title="Approval" />
+          <DataGridColumnHeader
+            column={column}
+            title={t("admin.workoutPlans.form.approval")}
+          />
         ),
         enableSorting: true,
         meta: { skeleton: adminListSkeletons.badge },
@@ -164,7 +194,7 @@ export const useColumns = ({
       },
       {
         accessorKey: "translations",
-        header: "Tarjimalar",
+        header: t("admin.workoutPlans.columns.translations"),
         meta: { skeleton: adminListSkeletons.translations },
         cell: (info) => {
           const template = info.row.original;
@@ -180,11 +210,17 @@ export const useColumns = ({
               <div className="flex items-center gap-2">
                 <Globe2Icon className="size-3.5 text-primary" />
                 <span>
-                  Nom: {titleCount}/{languageCount}
+                  {t("admin.workoutPlans.columns.translationNames", {
+                    count: titleCount,
+                    total: languageCount,
+                  })}
                 </span>
               </div>
               <div className="text-muted-foreground">
-                Tavsif: {descriptionCount}/{languageCount}
+                {t("admin.workoutPlans.columns.translationDescriptions", {
+                  count: descriptionCount,
+                  total: languageCount,
+                })}
               </div>
             </div>
           );
@@ -194,7 +230,7 @@ export const useColumns = ({
       {
         accessorKey: "isActive",
         header: ({ column }) => (
-          <DataGridColumnHeader column={column} title="Status" />
+          <DataGridColumnHeader column={column} title={t("admin.common.status")} />
         ),
         enableSorting: true,
         meta: { skeleton: adminListSkeletons.status },
@@ -216,11 +252,14 @@ export const useColumns = ({
       {
         accessorKey: "updatedAt",
         header: ({ column }) => (
-          <DataGridColumnHeader column={column} title="Yangilangan" />
+          <DataGridColumnHeader
+            column={column}
+            title={t("admin.common.updatedAt")}
+          />
         ),
         enableSorting: true,
         meta: { skeleton: adminListSkeletons.text },
-        cell: (info) => formatDate(info.getValue()),
+        cell: (info) => formatDate(info.getValue(), i18n.resolvedLanguage),
         size: 140,
       },
       {
@@ -236,6 +275,8 @@ export const useColumns = ({
               onEdit={openEditDrawer}
               onDelete={setDeleteCandidate}
               onTranslations={openTranslationsDrawer}
+              onAssign={openAssignDrawer}
+              canAssign={canAssignTemplates}
             />
           </div>
         ),
@@ -244,15 +285,16 @@ export const useColumns = ({
     [
       currentLanguage,
       currentPage,
+      i18n.resolvedLanguage,
       isSaving,
       languageCount,
+      canAssignTemplates,
       onToggleStatus,
+      openAssignDrawer,
       openEditDrawer,
       openTranslationsDrawer,
       setDeleteCandidate,
+      t,
     ],
   );
 };
-
-
-

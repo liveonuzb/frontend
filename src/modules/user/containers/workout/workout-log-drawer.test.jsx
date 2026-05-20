@@ -1,4 +1,6 @@
 import React from "react";
+import "@/lib/i18n";
+import i18n from "@/lib/i18n";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { toast } from "sonner";
@@ -59,7 +61,8 @@ const exerciseCatalog = [
 ];
 
 describe("WorkoutLogDrawer", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("uz");
     vi.clearAllMocks();
     useWorkoutExercises.mockReturnValue({
       exercises: [

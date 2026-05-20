@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router";
 import { AlertTriangleIcon, RefreshCwIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import PageLoader from "@/components/page-loader/index.jsx";
 import { useAuthStore, useLanguageStore, useAppModeStore } from "@/store";
 import ProtectedRoute from "@/components/protected-route";
@@ -16,13 +17,17 @@ import {
   canAccessUserDashboard,
   getPostOnboardingPath,
 } from "@/lib/app-paths.js";
-
-import { some } from "lodash";
+import { resolveTelegramStartParamRoute } from "@/lib/telegram-start-param.js";
+import {
+  ADMIN_ROLES,
+  getPreAuthRedirectPath,
+  shouldShowTelegramAuthLoader,
+} from "./route-guards.js";
 
 const AuthModule = lazy(() => import("@/modules/auth/index.jsx"));
 const LandingModule = lazy(() => import("@/modules/landing/index.jsx"));
 const UserOnboardingModule = lazy(
-  () => import("@/modules/onboarding/user/index.jsx"),
+  () => import("@/modules/user-onboarding/index.jsx"),
 );
 const AdminModule = lazy(() => import("@/modules/admin/index.jsx"));
 const UserModule = lazy(() => import("@/modules/user/index.jsx"));
@@ -36,43 +41,45 @@ const renderRouteElement = (element) => (
 );
 
 const TelegramAuthError = ({ error, onRetry }) => (
-  <div className="flex min-h-svh items-center justify-center bg-background px-6">
-    <div className="flex w-full max-w-sm flex-col items-center gap-4 text-center">
-      <div className="flex size-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-        <AlertTriangleIcon className="size-6" />
-      </div>
-      <div className="space-y-1">
-        <h1 className="text-lg font-semibold">
-          Telegram orqali kirib bo'lmadi
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {getAuthErrorMessage(
-            error,
-            "Sessiya muddati tugagan bo'lishi mumkin. Telegramdan qayta oching yoki yana urinib ko'ring.",
-          )}
-        </p>
-      </div>
-      <Button type="button" onClick={onRetry}>
-        <RefreshCwIcon data-icon="inline-start" />
-        Qayta urinish
-      </Button>
-    </div>
-  </div>
+  <TelegramAuthErrorContent error={error} onRetry={onRetry} />
 );
 
-const ADMIN_ROLES = [
-  "SUPER_ADMIN",
-  "CONTENT_MANAGER",
-  "SUPPORT",
-  "FINANCE",
-  "GROWTH",
-  "READONLY_ADMIN",
-];
+const TelegramAuthErrorContent = ({ error, onRetry }) => {
+  const { t } = useTranslation();
+  const fallbackMessage = t("auth.telegramAuth.errorDescription");
+
+  return (
+    <div className="flex min-h-svh items-center justify-center bg-background px-6">
+      <div className="flex w-full max-w-sm flex-col items-center gap-4 text-center">
+        <div className="flex size-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+          <AlertTriangleIcon className="size-6" />
+        </div>
+        <div className="space-y-1">
+          <h1 className="text-lg font-semibold">
+            {t("auth.telegramAuth.errorTitle")}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {getAuthErrorMessage(error, fallbackMessage)}
+          </p>
+        </div>
+        <Button type="button" onClick={onRetry}>
+          <RefreshCwIcon data-icon="inline-start" />
+          {t("auth.telegramAuth.retry")}
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 const Index = () => {
-  const { isAuthenticated, onboardingCompleted, onboardingFlowStatus, user } =
-    useAuthStore();
-  const { isTelegramWebApp } = useTelegram();
+  const {
+    isAuthenticated,
+    onboardingCompleted,
+    onboardingFlowStatus,
+    user,
+    isHydrated,
+  } = useAuthStore();
+  const { isTelegramWebApp, startParam } = useTelegram();
   const passwordSetupRequired = Boolean(user?.passwordSetupRequired);
   const hasSelectedLanguage = useLanguageStore(
     (state) => state.hasSelectedLanguage,
@@ -81,8 +88,21 @@ const Index = () => {
   const location = useLocation();
   const { telegramAuthError, retryTelegramAuth } = useTelegramAuth();
   useTelegramBackButton();
+  const telegramStartRoute = resolveTelegramStartParamRoute(startParam);
 
-  if (isTelegramWebApp && !isAuthenticated) {
+  if (isHydrated === false) {
+    return <PageLoader />;
+  }
+
+  if (shouldShowTelegramAuthLoader({
+    isAuthenticated,
+    isTelegramWebApp,
+    telegramAuthError,
+  })) {
+    return <PageLoader />;
+  }
+
+  if (isTelegramWebApp && !isAuthenticated && telegramAuthError) {
     if (telegramAuthError) {
       return (
         <TelegramAuthError
@@ -92,34 +112,32 @@ const Index = () => {
       );
     }
 
-    return <PageLoader />;
   }
 
   // Pre-auth onboarding flow: language -> mode -> auth -> onboarding.
   // Authenticated Telegram WebApp users must be allowed to finish password setup
   // before any public language/mode redirect can run.
-  if (!isAuthenticated && !isTelegramWebApp) {
-    const referralPaths = ["/r/", "/ref/"];
-    const isReferralPath = some(referralPaths, (path) =>
-      location.pathname.startsWith(path));
-    const isLandingPath = location.pathname === "/";
+  const preAuthRedirectPath = getPreAuthRedirectPath({
+    isAuthenticated,
+    isTelegramWebApp,
+    hasSelectedLanguage,
+    appMode,
+    pathname: location.pathname,
+  });
 
-    if (!isReferralPath && !isLandingPath) {
-      if (
-        !hasSelectedLanguage &&
-        location.pathname !== "/auth/select-language"
-      ) {
-        return <Navigate to="/auth/select-language" replace />;
-      }
-      if (
-        hasSelectedLanguage &&
-        !appMode &&
-        location.pathname !== "/auth/select-mode" &&
-        location.pathname !== "/auth/select-language"
-      ) {
-        return <Navigate to="/auth/select-mode" replace />;
-      }
-    }
+  if (preAuthRedirectPath) {
+    return <Navigate to={preAuthRedirectPath} replace />;
+  }
+
+  if (
+    isAuthenticated &&
+    isTelegramWebApp &&
+    !passwordSetupRequired &&
+    telegramStartRoute &&
+    location.pathname !== telegramStartRoute &&
+    canAccessUserDashboard(onboardingFlowStatus, onboardingCompleted)
+  ) {
+    return <Navigate to={telegramStartRoute} replace />;
   }
 
   return (
@@ -133,7 +151,7 @@ const Index = () => {
         element={renderRouteElement(<ReferralRedirectPage />)}
       />
       <Route
-        path="/"
+        path="/*"
         element={
           isAuthenticated ? (
             <Navigate to={getPostAuthRoute(user)} replace />

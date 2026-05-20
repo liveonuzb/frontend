@@ -1,13 +1,19 @@
 export const ME_QUERY_KEY = ["me"];
 export const GAMIFICATION_ACHIEVEMENTS_QUERY_KEY = [
+  "user",
   "gamification",
   "achievements",
 ];
 export const GAMIFICATION_ACHIEVEMENT_CATEGORIES_QUERY_KEY = [
+  "user",
   "gamification",
   "achievement-categories",
 ];
-export const GAMIFICATION_XP_HISTORY_QUERY_KEY = ["gamification", "xp-history"];
+export const GAMIFICATION_XP_HISTORY_QUERY_KEY = [
+  "user",
+  "gamification",
+  "xp-history",
+];
 export const USER_NOTIFICATIONS_QUERY_KEY = ["me", "notifications"];
 
 export const invalidateGamificationQueries = async (queryClient) =>

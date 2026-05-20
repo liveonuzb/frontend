@@ -1,7 +1,13 @@
 import React from "react";
-import { get, filter, isArray, toNumber, toPairs } from "lodash";
+import { get, isArray, toNumber } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
-import { useDeleteQuery, useGetQuery, usePostQuery, usePutQuery } from "@/hooks/api";
+import {
+  useDeleteQuery,
+  useGetQuery,
+  usePostQuery,
+  usePutQuery,
+} from "@/hooks/api";
+import { trackCampaignConversion } from "@/lib/analytics.js";
 import { WORKOUT_LOGS_QUERY_KEY } from "@/hooks/app/use-workout-logs";
 import { WORKOUT_OVERVIEW_QUERY_KEY } from "@/hooks/app/use-workout-overview";
 import { WORKOUT_PLANS_QUERY_KEY } from "@/hooks/app/use-workout-plans";
@@ -20,7 +26,21 @@ export const getWorkoutSessionProgressQueryKey = (sessionId) => [
   sessionId,
 ];
 
-export const WORKOUT_SESSION_HISTORY_QUERY_KEY = ["user", "workout", "session-history"];
+export const WORKOUT_SESSION_HISTORY_QUERY_KEY = [
+  "user",
+  "workout",
+  "session-history",
+];
+export const WORKOUT_SESSION_HISTORY_SUMMARY_QUERY_KEY = [
+  "user",
+  "workout",
+  "session-history-summary",
+];
+export const WORKOUT_SESSION_REPORT_QUERY_KEY = [
+  "user",
+  "workout",
+  "session-report",
+];
 export const getWorkoutSessionHistoryItemQueryKey = (sessionId) => [
   ...WORKOUT_SESSION_HISTORY_QUERY_KEY,
   sessionId,
@@ -60,7 +80,11 @@ export const useWorkoutSessionDraft = (planId, dayIndex, options = {}) => {
     url: `/user/workout/sessions/${planId}/days/${dayIndex}`,
     queryProps: {
       queryKey: getWorkoutSessionDraftQueryKey(planId, dayIndex),
-      enabled: Boolean(planId) && Number.isInteger(dayIndex) && dayIndex >= 0 && enabled,
+      enabled:
+        Boolean(planId) &&
+        Number.isInteger(dayIndex) &&
+        dayIndex >= 0 &&
+        enabled,
       staleTime: 15000,
     },
   });
@@ -115,7 +139,9 @@ export const useSaveWorkoutSessionDraft = () => {
         url: `/user/workout/sessions/${planId}/days/${dayIndex}`,
         attributes: payload,
       });
-      const normalized = normalizeWorkoutSessionDraft(resolveResponseData(response));
+      const normalized = normalizeWorkoutSessionDraft(
+        resolveResponseData(response),
+      );
       await queryClient.setQueryData(
         getWorkoutSessionDraftQueryKey(planId, dayIndex),
         response,
@@ -142,10 +168,15 @@ export const useUpdateWorkoutSessionProgress = () => {
         attributes: payload,
       });
 
-      const normalized = normalizeWorkoutSessionDraft(resolveResponseData(response));
+      const normalized = normalizeWorkoutSessionDraft(
+        resolveResponseData(response),
+      );
       if (normalized?.planId && Number.isInteger(normalized?.planDayIndex)) {
         await queryClient.setQueryData(
-          getWorkoutSessionDraftQueryKey(normalized.planId, normalized.planDayIndex),
+          getWorkoutSessionDraftQueryKey(
+            normalized.planId,
+            normalized.planDayIndex,
+          ),
           response,
         );
       }
@@ -205,9 +236,18 @@ export const useFinishWorkoutSession = () => {
         queryClient.invalidateQueries({ queryKey: WORKOUT_LOGS_QUERY_KEY }),
         queryClient.invalidateQueries({ queryKey: WORKOUT_OVERVIEW_QUERY_KEY }),
         queryClient.invalidateQueries({ queryKey: WORKOUT_PLANS_QUERY_KEY }),
-        queryClient.invalidateQueries({ queryKey: WORKOUT_SESSION_HISTORY_QUERY_KEY }),
+        queryClient.invalidateQueries({
+          queryKey: WORKOUT_SESSION_HISTORY_QUERY_KEY,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: WORKOUT_SESSION_HISTORY_SUMMARY_QUERY_KEY,
+        }),
       ]);
 
+      void trackCampaignConversion("workout_done", {
+        planId,
+        dayIndex,
+      });
       return resolveResponseData(response, null);
     },
     [mutation, queryClient],
@@ -219,27 +259,37 @@ export const useFinishWorkoutSession = () => {
   };
 };
 
-const hasHistoryQueryParams = (value = {}) =>
-  Object.prototype.hasOwnProperty.call(value, "limit") ||
-  Object.prototype.hasOwnProperty.call(value, "cursor");
+const HISTORY_QUERY_PARAM_KEYS = [
+  "cursor",
+  "dateFrom",
+  "dateTo",
+  "limit",
+  "period",
+  "status",
+  "type",
+];
 
-export const useWorkoutSessionHistory = (paramsOrOptions = {}, maybeOptions = {}) => {
+const hasHistoryQueryParams = (value = {}) =>
+  HISTORY_QUERY_PARAM_KEYS.some((key) =>
+    Object.prototype.hasOwnProperty.call(value, key),
+  );
+
+const hasReportQueryParams = (value = {}) =>
+  Object.prototype.hasOwnProperty.call(value, "period") ||
+  Object.prototype.hasOwnProperty.call(value, "comparisonPeriod");
+
+export const useWorkoutSessionHistory = (
+  paramsOrOptions = {},
+  maybeOptions = {},
+) => {
   const params = hasHistoryQueryParams(paramsOrOptions) ? paramsOrOptions : {};
   const options = hasHistoryQueryParams(paramsOrOptions)
     ? maybeOptions
     : paramsOrOptions;
   const enabled = options.enabled ?? true;
-  const queryString = new URLSearchParams(
-    filter(
-      toPairs(params),
-      ([, value]) => value !== undefined && value !== null && value !== "",
-    ),
-  ).toString();
-  const url = queryString
-    ? `/user/workout/sessions/history?${queryString}`
-    : "/user/workout/sessions/history";
   const { data, ...query } = useGetQuery({
-    url,
+    url: "/user/workout/sessions/history",
+    params,
     queryProps: {
       queryKey: [...WORKOUT_SESSION_HISTORY_QUERY_KEY, params],
       enabled,
@@ -256,7 +306,32 @@ export const useWorkoutSessionHistory = (paramsOrOptions = {}, maybeOptions = {}
     ...query,
     data,
     sessions,
-    meta: responseData?.meta ?? null,
+    meta: responseData?.meta ?? get(data, "data.meta", null),
+  };
+};
+
+export const useWorkoutSessionHistorySummary = (
+  paramsOrOptions = {},
+  maybeOptions = {},
+) => {
+  const params = hasHistoryQueryParams(paramsOrOptions) ? paramsOrOptions : {};
+  const options = hasHistoryQueryParams(paramsOrOptions)
+    ? maybeOptions
+    : paramsOrOptions;
+  const enabled = options.enabled ?? true;
+  const { data, ...query } = useGetQuery({
+    url: "/user/workout/sessions/history/summary",
+    params,
+    queryProps: {
+      queryKey: [...WORKOUT_SESSION_HISTORY_SUMMARY_QUERY_KEY, params],
+      enabled,
+    },
+  });
+
+  return {
+    ...query,
+    data,
+    summary: resolveResponseData(data, null),
   };
 };
 
@@ -274,5 +349,27 @@ export const useWorkoutSessionHistoryItem = (sessionId, options = {}) => {
     ...query,
     data,
     session: resolveResponseData(data, null),
+  };
+};
+
+export const useWorkoutReport = (paramsOrOptions = {}, maybeOptions = {}) => {
+  const params = hasReportQueryParams(paramsOrOptions) ? paramsOrOptions : {};
+  const options = hasReportQueryParams(paramsOrOptions)
+    ? maybeOptions
+    : paramsOrOptions;
+  const enabled = options.enabled ?? true;
+  const { data, ...query } = useGetQuery({
+    url: "/user/workout/report",
+    params,
+    queryProps: {
+      queryKey: [...WORKOUT_SESSION_REPORT_QUERY_KEY, params],
+      enabled,
+    },
+  });
+
+  return {
+    ...query,
+    data,
+    report: resolveResponseData(data, null),
   };
 };

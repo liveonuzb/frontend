@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   GlobeIcon,
   MoreVerticalIcon,
@@ -22,10 +23,17 @@ const WorkoutActionsMenu = ({
   onHardDelete,
   canHardDelete = false,
   onTranslations,
-}) => (
-  <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-      <Button variant="ghost" size="icon-sm" aria-label="Amallar">
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={t("admin.common.actions")}
+        >
         <MoreVerticalIcon className="size-4" />
       </Button>
     </DropdownMenuTrigger>
@@ -34,7 +42,7 @@ const WorkoutActionsMenu = ({
         <>
           <DropdownMenuItem onClick={() => onRestore(workout)}>
             <RotateCcwIcon className="size-4 text-emerald-600" />
-            Tiklash
+            {t("admin.workouts.list.restore")}
           </DropdownMenuItem>
           {canHardDelete ? (
             <DropdownMenuItem
@@ -47,7 +55,7 @@ const WorkoutActionsMenu = ({
               }
             >
               <Trash2Icon className="size-4" />
-              Butunlay o'chirish
+              {t("admin.workouts.delete.hardDeleteAction")}
             </DropdownMenuItem>
           ) : null}
         </>
@@ -55,23 +63,24 @@ const WorkoutActionsMenu = ({
         <>
           <DropdownMenuItem onClick={() => onTranslations(workout)}>
             <GlobeIcon className="size-4" />
-            Tarjimalar
+            {t("admin.workouts.translations.title")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onEdit(workout)}>
             <PencilIcon className="size-4" />
-            Tahrirlash
+            {t("admin.common.edit")}
           </DropdownMenuItem>
           <DropdownMenuItem
             variant="destructive"
             onClick={() => onDelete(workout)}
           >
             <Trash2Icon className="size-4" />
-            O'chirish
+            {t("admin.common.delete")}
           </DropdownMenuItem>
         </>
       )}
     </DropdownMenuContent>
-  </DropdownMenu>
-);
+    </DropdownMenu>
+  );
+};
 
 export default WorkoutActionsMenu;

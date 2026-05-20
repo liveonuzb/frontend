@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import AuthSubmitButton from "@/modules/auth/components/auth-submit-button";
-import { Field, FieldError } from "@/components/ui/field";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "@/components/ui/field";
 import {
   InputOTP,
   InputOTPGroup,
@@ -21,11 +26,26 @@ import {
   getOtpToastDescription,
   getPostAuthRoute,
 } from "@/modules/auth/lib/auth-utils.js";
+import { getApiRetryAfterSeconds } from "@/lib/api-response.js";
 import { useAuthMobileAutoFocus } from "@/modules/auth/lib/mobile-keyboard";
 import { useTranslation } from "react-i18next";
 import { get } from "lodash";
+import { trackLaunchEvent } from "@/lib/analytics.js";
 
 const RESEND_COOLDOWN = 60;
+
+const getSecondsUntil = (expiresAt) => {
+  if (!expiresAt) {
+    return null;
+  }
+
+  const timestamp = new Date(expiresAt).getTime();
+  if (Number.isNaN(timestamp)) {
+    return null;
+  }
+
+  return Math.max(0, Math.ceil((timestamp - Date.now()) / 1000));
+};
 
 const OtpForm = () => {
   const navigate = useNavigate();
@@ -39,7 +59,14 @@ const OtpForm = () => {
   } = useAuthStore();
   const otpAutoFocus = useAuthMobileAutoFocus();
 
-  const [countdown, setCountdown] = useState(RESEND_COOLDOWN);
+  const [expiryCountdown, setExpiryCountdown] = useState(() =>
+    getSecondsUntil(get(pendingVerification, "expiresAt")),
+  );
+  const [countdown, setCountdown] = useState(() =>
+    getSecondsUntil(get(pendingVerification, "expiresAt")) === 0
+      ? 0
+      : RESEND_COOLDOWN,
+  );
 
   const startCountdown = useCallback(() => {
     setCountdown(RESEND_COOLDOWN);
@@ -59,6 +86,22 @@ const OtpForm = () => {
     return () => clearInterval(timer);
   }, [countdown]);
 
+  useEffect(() => {
+    const updateExpiryCountdown = () => {
+      const nextExpiryCountdown = getSecondsUntil(
+        get(pendingVerification, "expiresAt"),
+      );
+      setExpiryCountdown(nextExpiryCountdown);
+      if (nextExpiryCountdown === 0) {
+        setCountdown(0);
+      }
+    };
+
+    updateExpiryCountdown();
+    const timer = setInterval(updateExpiryCountdown, 1000);
+    return () => clearInterval(timer);
+  }, [pendingVerification]);
+
   const schema = z.object({
     otp: z
       .string()
@@ -76,6 +119,14 @@ const OtpForm = () => {
   });
 
   const onSubmit = async (values) => {
+    if (expiryCountdown === 0) {
+      setError("otp", {
+        type: "expired",
+        message: t("auth.otpVerify.expired"),
+      });
+      return;
+    }
+
     if (!pendingVerification) {
       toast.error(t("auth.otpVerify.sessionMissing"));
       navigate("/auth/sign-in", { replace: true });
@@ -104,6 +155,12 @@ const OtpForm = () => {
           const verification = pendingVerification;
 
           if (get(verification, "purpose") === "VERIFY_ACCOUNT") {
+            void trackLaunchEvent("otp_verified", {
+              source: "auth",
+              properties: {
+                purpose: "VERIFY_ACCOUNT",
+              },
+            });
             completeAuthentication(responseData);
             queryClient.setQueryData(["me"], {
               data: get(responseData, "user"),
@@ -135,6 +192,12 @@ const OtpForm = () => {
           navigate("/auth/reset-password", { replace: true });
         },
         onError: (error) => {
+          void trackLaunchEvent("otp_failed", {
+            source: "auth",
+            properties: {
+              purpose: get(pendingVerification, "purpose"),
+            },
+          });
           const message = getAuthErrorMessage(error, t("auth.otpVerify.error"));
           toast.error(message);
           setError("otp", { type: "server", message });
@@ -187,6 +250,10 @@ const OtpForm = () => {
           startCountdown();
         },
         onError: (error) => {
+          const retryAfterSeconds = getApiRetryAfterSeconds(error);
+          if (retryAfterSeconds !== null) {
+            setCountdown(retryAfterSeconds);
+          }
           toast.error(
             getAuthErrorMessage(error, t("auth.otpVerify.resendError")),
           );
@@ -195,17 +262,26 @@ const OtpForm = () => {
     );
   };
 
-  const isResendDisabled = countdown > 0 || isResendingOtp;
+  const isOtpExpired = expiryCountdown === 0;
+  const isResendDisabled = (!isOtpExpired && countdown > 0) || isResendingOtp;
   const isSubmitting = get(formState, "isSubmitting");
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (getSecondsUntil(get(pendingVerification, "expiresAt")) === 0) {
+      setCountdown(0);
+      return;
+    }
+
     startCountdown();
-  }, [startCountdown]);
+  }, [pendingVerification, startCountdown]);
 
   return (
     <form className={"flex flex-col gap-8"} onSubmit={handleSubmit(onSubmit)}>
       <Field>
+        <FieldLabel htmlFor="verification-code" className="sr-only">
+          {t("auth.otpVerify.codeLabel")}
+        </FieldLabel>
         <Controller
           name="otp"
           control={control}
@@ -213,10 +289,13 @@ const OtpForm = () => {
             <div className={"relative"}>
               <InputOTP
                 id="verification-code"
+                aria-describedby="verification-code-hint verification-code-error"
+                aria-invalid={Boolean(get(fieldState, "error"))}
                 maxLength={6}
                 value={get(field, "value")}
                 onChange={get(field, "onChange")}
                 onComplete={handleSubmit(onSubmit)}
+                disabled={isOtpExpired}
                 ref={(node) => {
                   field.ref(node);
                   otpAutoFocus.ref(node);
@@ -246,7 +325,7 @@ const OtpForm = () => {
               </InputOTP>
               <div className={"flex justify-center"}>
                 <FieldError
-                  className={"absolute -bottom-6"}
+                  id="verification-code-error"
                   errors={
                     get(fieldState, "error") ? [get(fieldState, "error")] : []
                   }
@@ -257,10 +336,24 @@ const OtpForm = () => {
         />
       </Field>
 
+      <FieldDescription
+        id="verification-code-hint"
+        aria-live="polite"
+        className={`text-center text-sm ${
+          isOtpExpired ? "text-destructive" : "text-muted-foreground"
+        }`}
+      >
+        {isOtpExpired
+          ? t("auth.otpVerify.expired")
+          : expiryCountdown !== null
+            ? t("auth.otpVerify.expiresIn", { s: expiryCountdown })
+            : t("auth.otpVerify.expiryHint")}
+      </FieldDescription>
+
       <Field>
         <AuthSubmitButton
           type="submit"
-          disabled={isSubmitting || isPending}
+          disabled={isOtpExpired || isSubmitting || isPending}
           className={"mt-5 md:mt-8"}
         >
           {isSubmitting || isPending
@@ -279,7 +372,7 @@ const OtpForm = () => {
         >
           {isResendingOtp
             ? t("auth.otpVerify.resending")
-            : countdown > 0
+            : !isOtpExpired && countdown > 0
               ? t("auth.otpVerify.resendIn", { s: countdown })
               : t("auth.otpVerify.resend")}
         </button>

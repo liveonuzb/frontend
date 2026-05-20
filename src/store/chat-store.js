@@ -5,1275 +5,1418 @@ import { io } from "socket.io-client";
 import { api } from "@/hooks/api/use-api.js";
 import { config } from "@/config.js";
 import { getApiResponseData } from "@/lib/api-response.js";
+import i18n from "@/lib/i18n";
 import useAuthStore from "./auth-store";
 import {
-    map,
-    filter,
-    find,
-    findIndex,
-    some,
-    includes,
-    reduce,
-    join,
-    toPairs,
-    forEach,
-    isArray,
-    toLower,
-    trim,
+  map,
+  filter,
+  find,
+  findIndex,
+  some,
+  includes,
+  reduce,
+  join,
+  toPairs,
+  forEach,
+  isArray,
+  toLower,
+  trim,
 } from "lodash";
 
+const tStore = (key, defaultValue, options = {}) =>
+  i18n.t(`store.${key}`, { defaultValue, ...options });
+
 const formatChatMessage = (message, currentUserId) => ({
-    ...message,
-    // Normalize type to lowercase so MessageList checks (e.g. "image", "voice") always match
-    // regardless of whether the value came from Prisma enum (uppercase) or frontend (lowercase)
-    type: message.type ? toLower(String(message.type)) : "text",
-    from: message?.sender?.id === currentUserId ? "me" : "other",
-    time: new Date(message.createdAt).toLocaleTimeString("uz", {
-        hour: "2-digit",
-        minute: "2-digit",
-    }),
-    status: message.isRead ? "read" : "sent",
+  ...message,
+  // Normalize type to lowercase so MessageList checks (e.g. "image", "voice") always match
+  // regardless of whether the value came from Prisma enum (uppercase) or frontend (lowercase)
+  type: message.type ? toLower(String(message.type)) : "text",
+  from: message?.sender?.id === currentUserId ? "me" : "other",
+  time: new Date(message.createdAt).toLocaleTimeString("uz", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }),
+  status: message.isRead ? "read" : "sent",
 });
 
 const upsertRoomMessage = (currentMessages, nextMessage, currentUserId) => {
-    const formattedMessage = formatChatMessage(nextMessage, currentUserId);
-    const optimisticIdx =
-        formattedMessage.from === "me"
-            ? findIndex(
-                  currentMessages,
-                  (message) =>
-                      String(message.id || "").startsWith("temp-") &&
-                      message.text === formattedMessage.text,
-              )
-            : -1;
-    const existingIdx = findIndex(currentMessages, (message) => message.id === formattedMessage.id);
+  const formattedMessage = formatChatMessage(nextMessage, currentUserId);
+  const optimisticIdx =
+    formattedMessage.from === "me"
+      ? findIndex(
+          currentMessages,
+          (message) =>
+            String(message.id || "").startsWith("temp-") &&
+            message.text === formattedMessage.text,
+        )
+      : -1;
+  const existingIdx = findIndex(
+    currentMessages,
+    (message) => message.id === formattedMessage.id,
+  );
 
-    if (existingIdx !== -1) {
-        const nextMessages = [...currentMessages];
-        nextMessages[existingIdx] = {
-            ...nextMessages[existingIdx],
-            ...formattedMessage,
-        };
-        return nextMessages;
-    }
-
-    if (optimisticIdx !== -1) {
-        const nextMessages = [...currentMessages];
-        nextMessages[optimisticIdx] = {
-            ...nextMessages[optimisticIdx],
-            ...formattedMessage,
-        };
-        return nextMessages;
-    }
-
-    return [...currentMessages, formattedMessage];
-};
-
-const replaceRoomMessageById = (currentMessages, messageId, nextMessage, currentUserId) => {
-    const formattedMessage = formatChatMessage(nextMessage, currentUserId);
-    const existingIdx = findIndex(
-        currentMessages,
-        (message) => message.id === messageId || message.id === formattedMessage.id,
-    );
-
-    if (existingIdx === -1) {
-        return upsertRoomMessage(currentMessages, nextMessage, currentUserId);
-    }
-
+  if (existingIdx !== -1) {
     const nextMessages = [...currentMessages];
-    nextMessages[existingIdx] = formattedMessage;
+    nextMessages[existingIdx] = {
+      ...nextMessages[existingIdx],
+      ...formattedMessage,
+    };
     return nextMessages;
+  }
+
+  if (optimisticIdx !== -1) {
+    const nextMessages = [...currentMessages];
+    nextMessages[optimisticIdx] = {
+      ...nextMessages[optimisticIdx],
+      ...formattedMessage,
+    };
+    return nextMessages;
+  }
+
+  return [...currentMessages, formattedMessage];
 };
 
-const syncRoomLastMessage = (contacts, roomId, message, incrementUnread = false) =>
-    map(contacts, (contact) =>
-        contact.id === roomId
-            ? {
-                  ...contact,
-                  lastMessage: {
-                      text: message.text,
-                      createdAt: message.createdAt,
-                  },
-                  unreadCount: incrementUnread
-                      ? (contact.unreadCount || 0) + 1
-                      : contact.unreadCount,
-              }
-            : contact,
-    );
+const replaceRoomMessageById = (
+  currentMessages,
+  messageId,
+  nextMessage,
+  currentUserId,
+) => {
+  const formattedMessage = formatChatMessage(nextMessage, currentUserId);
+  const existingIdx = findIndex(
+    currentMessages,
+    (message) => message.id === messageId || message.id === formattedMessage.id,
+  );
+
+  if (existingIdx === -1) {
+    return upsertRoomMessage(currentMessages, nextMessage, currentUserId);
+  }
+
+  const nextMessages = [...currentMessages];
+  nextMessages[existingIdx] = formattedMessage;
+  return nextMessages;
+};
+
+const syncRoomLastMessage = (
+  contacts,
+  roomId,
+  message,
+  incrementUnread = false,
+) =>
+  map(contacts, (contact) =>
+    contact.id === roomId
+      ? {
+          ...contact,
+          lastMessage: {
+            text: message.text,
+            createdAt: message.createdAt,
+          },
+          unreadCount: incrementUnread
+            ? (contact.unreadCount || 0) + 1
+            : contact.unreadCount,
+        }
+      : contact,
+  );
 
 const syncBookingResponseMessage = (set, chatId, message, currentUserId) => {
-    if (!message?.id) return;
+  if (!message?.id) return;
 
-    set((state) => ({
-        messages: {
-            ...state.messages,
-            [chatId]: upsertRoomMessage(
-                state.messages[chatId] || [],
-                message,
-                currentUserId,
-            ),
-        },
-        contacts: syncRoomLastMessage(state.contacts, chatId, message, false),
-    }));
+  set((state) => ({
+    messages: {
+      ...state.messages,
+      [chatId]: upsertRoomMessage(
+        state.messages[chatId] || [],
+        message,
+        currentUserId,
+      ),
+    },
+    contacts: syncRoomLastMessage(state.contacts, chatId, message, false),
+  }));
 };
 
 export const getChatSocketConnectionConfig = (baseURL) => {
-    const normalizedBaseURL = String(baseURL || "").replace(/\/+$/, "");
-    const apiPrefix = normalizedBaseURL.match(/(\/api\/v\d+)$/)?.[1] || "/api/v1";
+  const normalizedBaseURL = String(baseURL || "").replace(/\/+$/, "");
+  const apiPrefix = normalizedBaseURL.match(/(\/api\/v\d+)$/)?.[1] || "/api/v1";
 
-    return {
-        socketUrl: normalizedBaseURL.replace(/\/api\/v\d+$/, ""),
-        socketPath: `${apiPrefix}/socket.io`,
-    };
+  return {
+    socketUrl: normalizedBaseURL.replace(/\/api\/v\d+$/, ""),
+    socketPath: `${apiPrefix}/socket.io`,
+  };
 };
 
 const useChatStore = create(
-    persist(
-        (set, get) => ({
-            socket: null,
-            contacts: [], // This will be our rooms
-            groups: [],
-            messages: {}, // roomId -> [messages]
-            messagesCursors: {}, // roomId -> nextCursor
-            typingUsers: {},
-            readReceipts: {},
-            pinnedMessages: {},
-            lastSeen: {},
-            bookmarks: [],
-            activeLive: null,
-            activeWallpaper: "default",
-            customWallpaper: null,
-            scheduledMessages: [],
-            folders: [],
-            pinnedChats: [],
-            chatOrder: null,
-            mutedChats: [],
-            blockedChats: [],
+  persist(
+    (set, get) => ({
+      socket: null,
+      contacts: [], // This will be our rooms
+      groups: [],
+      messages: {}, // roomId -> [messages]
+      messagesCursors: {}, // roomId -> nextCursor
+      typingUsers: {},
+      readReceipts: {},
+      pinnedMessages: {},
+      lastSeen: {},
+      bookmarks: [],
+      activeLive: null,
+      activeWallpaper: "default",
+      customWallpaper: null,
+      scheduledMessages: [],
+      folders: [],
+      pinnedChats: [],
+      chatOrder: null,
+      mutedChats: [],
+      blockedChats: [],
+      messageSearchResults: [],
+      messageSearchCursor: null,
+      messageSearchQuery: "",
+      isSearchingMessages: false,
+      messageSearchError: null,
+      isLoading: false,
+      library: [], // Added missing library
+      activeRoomId: null,
+
+      initSocket: () => {
+        const { token } = useAuthStore.getState();
+        if (!token || get().socket) return;
+
+        const { socketUrl, socketPath } = getChatSocketConnectionConfig(
+          config.baseURL,
+        );
+
+        const socket = io(socketUrl, {
+          auth: { token },
+          path: socketPath,
+          // Start with HTTP long-polling so the chat still connects
+          // behind proxies/CDNs that do not fully support immediate
+          // websocket upgrades, then upgrade when possible.
+          transports: ["polling", "websocket"],
+        });
+
+        socket.on("connect", () => {
+          console.log("Chat socket connected ✅");
+        });
+
+        socket.on("connect_error", (err) => {
+          console.error("Socket connection error ❌", err);
+        });
+
+        socket.on("newMessage", (message) => {
+          const { roomId, sender } = message;
+          if (!roomId) {
+            console.warn("Received message without roomId", message);
+            return;
+          }
+
+          const myId = useAuthStore.getState().user?.id;
+          const isFromMe = sender.id === myId;
+          const isActiveRoom = roomId === get().activeRoomId;
+
+          set((state) => {
+            return {
+              messages: {
+                ...state.messages,
+                [roomId]: upsertRoomMessage(
+                  state.messages[roomId] || [],
+                  message,
+                  myId,
+                ),
+              },
+            };
+          });
+
+          // Update room last message in contacts; only increment unread when not from me and not currently viewing
+          set((state) => ({
+            contacts: syncRoomLastMessage(
+              state.contacts,
+              roomId,
+              message,
+              !isFromMe && !isActiveRoom,
+            ),
+          }));
+        });
+
+        socket.on("messageUpdated", (message) => {
+          const roomId = message?.roomId;
+          if (!roomId) return;
+
+          const myId = useAuthStore.getState().user?.id;
+          set((state) => ({
+            messages: {
+              ...state.messages,
+              [roomId]: upsertRoomMessage(
+                state.messages[roomId] || [],
+                message,
+                myId,
+              ),
+            },
+            contacts: syncRoomLastMessage(
+              state.contacts,
+              roomId,
+              message,
+              false,
+            ),
+          }));
+        });
+
+        socket.on("messagesRead", ({ roomId }) => {
+          set((state) => ({
+            messages: {
+              ...state.messages,
+              [roomId]: map(state.messages[roomId] || [], (m) =>
+                m.from === "me" ? { ...m, status: "read" } : m,
+              ),
+            },
+          }));
+        });
+
+        socket.on("messagePinned", ({ roomId, messageId }) => {
+          set((state) => {
+            const roomMsgs = state.messages[roomId] || [];
+            const msgToPin = find(roomMsgs, (m) => m.id === messageId);
+            if (!msgToPin) return state;
+
+            const currentPins = state.pinnedMessages[roomId] || [];
+            if (some(currentPins, (p) => p.id === messageId)) return state;
+
+            return {
+              pinnedMessages: {
+                ...state.pinnedMessages,
+                [roomId]: [msgToPin, ...currentPins],
+              },
+            };
+          });
+        });
+
+        socket.on("messageUnpinned", ({ roomId, messageId }) => {
+          set((state) => {
+            const currentPins = state.pinnedMessages[roomId] || [];
+            return {
+              pinnedMessages: {
+                ...state.pinnedMessages,
+                [roomId]: messageId
+                  ? filter(currentPins, (p) => p.id !== messageId)
+                  : [],
+              },
+            };
+          });
+        });
+
+        socket.on("userTyping", ({ roomId, userId, isTyping }) => {
+          if (userId === useAuthStore.getState().user?.id) return;
+          set((state) => ({
+            typingUsers: { ...state.typingUsers, [roomId]: isTyping },
+          }));
+        });
+
+        socket.on("roomCreated", () => {
+          get().fetchRooms();
+        });
+
+        set({ socket });
+      },
+
+      disconnectSocket: () => {
+        const { socket } = get();
+        if (socket) {
+          socket.disconnect();
+          set({ socket: null });
+        }
+      },
+
+      fetchRooms: async () => {
+        set({ isLoading: true });
+        try {
+          const response = await api.get("/chat/rooms");
+          // Backend returns { data: rooms[], nextCursor }
+          // ResponseWrapperInterceptor wraps it as: { data: { data: rooms[], nextCursor }, meta: {...} }
+          const payload = response.data?.data ?? response.data ?? {};
+          const rawRooms = isArray(payload) ? payload : (payload?.data ?? []);
+          const rooms = map(rawRooms, (room) => ({
+            ...room,
+            chatId: room.id, // Compatibility
+            unreadCount: room.unreadCount ?? 0,
+          }));
+
+          const pinnedMap = {};
+          forEach(rooms, (r) => {
+            pinnedMap[r.id] = r.pinnedMessages || [];
+          });
+
+          set({
+            contacts: rooms,
+            pinnedMessages: { ...get().pinnedMessages, ...pinnedMap },
+          });
+        } catch (error) {
+          console.error("Failed to fetch rooms", error);
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      fetchMessages: async (chatId) => {
+        if (!chatId) return;
+        try {
+          const response = await api.get(`/chat/rooms/${chatId}/messages`);
+          const myId = useAuthStore.getState().user?.id;
+          // ResponseWrapperInterceptor: { data: { data: msgs[], nextCursor }, meta: {...} }
+          const payload = response.data?.data ?? response.data ?? {};
+          const rawMsgs = isArray(payload) ? payload : (payload?.data ?? []);
+          const nextCursor = payload?.nextCursor ?? null;
+          const msgs = map(rawMsgs, (message) =>
+            formatChatMessage(message, myId),
+          );
+          set((state) => ({
+            messages: { ...state.messages, [chatId]: msgs },
+            messagesCursors: { ...state.messagesCursors, [chatId]: nextCursor },
+          }));
+
+          // Join room via socket
+          if (get().socket) {
+            get().socket.emit("joinRoom", { roomId: chatId });
+            get().markAsRead(chatId);
+          }
+        } catch (error) {
+          console.error("Failed to fetch messages", error);
+        }
+      },
+
+      loadMoreMessages: async (chatId) => {
+        const cursor = get().messagesCursors[chatId];
+        if (!cursor) return; // No more pages
+        try {
+          const response = await api.get(`/chat/rooms/${chatId}/messages`, {
+            params: { cursor },
+          });
+          const myId = useAuthStore.getState().user?.id;
+          // ResponseWrapperInterceptor: { data: { data: msgs[], nextCursor }, meta: {...} }
+          const payload = response.data?.data ?? response.data ?? {};
+          const rawMsgs = isArray(payload) ? payload : (payload?.data ?? []);
+          const nextCursor = payload?.nextCursor ?? null;
+          const olderMsgs = map(rawMsgs, (message) =>
+            formatChatMessage(message, myId),
+          );
+          set((state) => ({
+            messages: {
+              ...state.messages,
+              [chatId]: [...olderMsgs, ...(state.messages[chatId] ?? [])],
+            },
+            messagesCursors: { ...state.messagesCursors, [chatId]: nextCursor },
+          }));
+        } catch (e) {
+          console.error("loadMoreMessages error", e);
+        }
+      },
+
+      sendMessage: async (
+        roomId,
+        text,
+        mediaUrl = null,
+        type = "text",
+        metadata = null,
+        replyToId = null,
+      ) => {
+        const myId = useAuthStore.getState().user?.id;
+
+        // Create optimistic message
+        const optimisticMsg = {
+          id: `temp-${Date.now()}`,
+          roomId,
+          text,
+          type,
+          mediaUrl,
+          metadata: metadata || null,
+          replyToId,
+          sender: { id: myId },
+          from: "me",
+          time: new Date().toLocaleTimeString("uz", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          createdAt: new Date().toISOString(),
+          status: "sending",
+        };
+
+        // Add to local state immediately
+        set((state) => ({
+          messages: {
+            ...state.messages,
+            [roomId]: [...(state.messages[roomId] || []), optimisticMsg],
+          },
+        }));
+
+        try {
+          // Persist through HTTP so messages are not silently dropped when
+          // the realtime socket is flaky behind a production proxy.
+          const response = await api.post(`/chat/rooms/${roomId}/messages`, {
+            text,
+            type,
+            metadata,
+            mediaUrl,
+            replyToId,
+          });
+          const message = getApiResponseData(response, null);
+
+          if (message?.id) {
+            set((state) => ({
+              messages: {
+                ...state.messages,
+                [roomId]: replaceRoomMessageById(
+                  state.messages[roomId] || [],
+                  optimisticMsg.id,
+                  message,
+                  myId,
+                ),
+              },
+              contacts: syncRoomLastMessage(
+                state.contacts,
+                roomId,
+                message,
+                false,
+              ),
+            }));
+            return message;
+          }
+          return null;
+        } catch (error) {
+          const message =
+            error?.response?.data?.message ||
+            tStore("chat.errors.sendMessage", "Xabar yuborishda xatolik");
+          const errorMessage = isArray(message) ? join(message, ", ") : message;
+          toast.error(errorMessage);
+          set((state) => ({
+            messages: {
+              ...state.messages,
+              [roomId]: map(state.messages[roomId] || [], (m) =>
+                m.id === optimisticMsg.id
+                  ? { ...m, status: "failed", errorMessage }
+                  : m,
+              ),
+            },
+          }));
+          return null;
+        }
+      },
+
+      retryMessage: async (roomId, messageId) => {
+        const myId = useAuthStore.getState().user?.id;
+        const failedMessage = find(
+          get().messages[roomId] || [],
+          (message) => message.id === messageId && message.status === "failed",
+        );
+
+        if (!failedMessage) return null;
+
+        set((state) => ({
+          messages: {
+            ...state.messages,
+            [roomId]: map(state.messages[roomId] || [], (message) =>
+              message.id === messageId
+                ? { ...message, status: "sending", errorMessage: null }
+                : message,
+            ),
+          },
+        }));
+
+        try {
+          const response = await api.post(`/chat/rooms/${roomId}/messages`, {
+            text: failedMessage.text,
+            type: failedMessage.type || "text",
+            metadata: failedMessage.metadata || null,
+            mediaUrl: failedMessage.mediaUrl || null,
+            replyToId:
+              failedMessage.replyToId || failedMessage.replyTo?.id || null,
+          });
+          const message = getApiResponseData(response, null);
+
+          if (message?.id) {
+            set((state) => ({
+              messages: {
+                ...state.messages,
+                [roomId]: replaceRoomMessageById(
+                  state.messages[roomId] || [],
+                  messageId,
+                  message,
+                  myId,
+                ),
+              },
+              contacts: syncRoomLastMessage(
+                state.contacts,
+                roomId,
+                message,
+                false,
+              ),
+            }));
+            return message;
+          }
+
+          return null;
+        } catch (error) {
+          const message =
+            error?.response?.data?.message ||
+            tStore("chat.errors.sendMessage", "Xabar yuborishda xatolik");
+          const errorMessage = isArray(message) ? join(message, ", ") : message;
+          toast.error(errorMessage);
+          set((state) => ({
+            messages: {
+              ...state.messages,
+              [roomId]: map(state.messages[roomId] || [], (m) =>
+                m.id === messageId
+                  ? { ...m, status: "failed", errorMessage }
+                  : m,
+              ),
+            },
+          }));
+          return null;
+        }
+      },
+
+      refreshAttachmentUrl: async (chatId, messageId) => {
+        try {
+          const response = await api.get(
+            `/chat/rooms/${chatId}/messages/${messageId}/attachment-url`,
+          );
+          const payload = getApiResponseData(response, response?.data);
+
+          if (!payload?.url) {
+            throw new Error("Attachment URL response invalid");
+          }
+
+          set((state) => ({
+            messages: {
+              ...state.messages,
+              [chatId]: map(state.messages[chatId] || [], (message) =>
+                message.id === messageId
+                  ? {
+                      ...message,
+                      mediaUrl: payload.url,
+                      metadata: {
+                        ...(message.metadata || {}),
+                        attachment: {
+                          ...(message.metadata?.attachment || {}),
+                          objectKey:
+                            payload.objectKey ||
+                            message.metadata?.attachment?.objectKey,
+                          signedUrlExpiresAt: payload.expiresAt,
+                        },
+                      },
+                    }
+                  : message,
+              ),
+            },
+          }));
+
+          return payload;
+        } catch (error) {
+          const message =
+            error?.response?.data?.message ||
+            tStore(
+              "chat.errors.refreshAttachment",
+              "Fayl linkini yangilab bo'lmadi",
+            );
+          toast.error(isArray(message) ? join(message, ", ") : message);
+          throw error;
+        }
+      },
+
+      setTyping: (roomId, isTyping) => {
+        const { socket } = get();
+        if (socket) {
+          socket.emit("typing", { roomId, isTyping });
+        }
+      },
+
+      addReaction: (chatId, msgId, emoji) => {
+        set((state) => {
+          const chatMsgs = [...(state.messages[chatId] || [])];
+          const idx = findIndex(chatMsgs, (m) => m.id === msgId);
+          if (idx === -1) return state;
+          const msg = chatMsgs[idx];
+          const hasReaction = includes(msg.reactions || [], emoji);
+          chatMsgs[idx] = {
+            ...msg,
+            reactions: hasReaction
+              ? filter(msg.reactions, (r) => r !== emoji)
+              : [...(msg.reactions || []), emoji],
+          };
+          return {
+            messages: { ...state.messages, [chatId]: chatMsgs },
+          };
+        });
+      },
+
+      deleteMessage: async (chatId, msgId) => {
+        const previousMessages = get().messages[chatId] || [];
+
+        set((state) => ({
+          messages: {
+            ...state.messages,
+            [chatId]: filter(
+              state.messages[chatId] || [],
+              (m) => m.id !== msgId,
+            ),
+          },
+        }));
+
+        try {
+          await api.delete(`/chat/rooms/${chatId}/messages/${msgId}`);
+        } catch (error) {
+          set((state) => ({
+            messages: {
+              ...state.messages,
+              [chatId]: previousMessages,
+            },
+          }));
+          const message =
+            error?.response?.data?.message ||
+            tStore("chat.errors.deleteMessage", "Xabarni o'chirishda xatolik");
+          toast.error(isArray(message) ? join(message, ", ") : message);
+          throw error;
+        }
+      },
+
+      forwardMessage: async (fromChatId, msgId, toChatId) => {
+        const state = get();
+        const chatMsgs = state.messages[fromChatId] || [];
+        const original = find(chatMsgs, (m) => m.id === msgId);
+        if (!original) return;
+
+        const senderName =
+          original.from === "me"
+            ? tStore("chat.sender.me", "Siz")
+            : original.sender?.name || tStore("chat.sender.unknown", "Noma'lum");
+        const fallbackText =
+          original.type === "image"
+            ? tStore("chat.forward.image", "📷 Rasm")
+            : original.type === "file"
+              ? tStore("chat.forward.file", "📎 Fayl")
+              : original.type === "voice" || original.type === "audio"
+                ? tStore("chat.forward.voice", "🎙️ Ovozli xabar")
+                : tStore(
+                    "chat.forward.message",
+                    "Forward qilingan xabar",
+                  );
+
+        const sentMessage = await get().sendMessage(
+          toChatId,
+          original.text || fallbackText,
+          original.mediaUrl || null,
+          original.type || "text",
+          {
+            ...(original.metadata || {}),
+            forwardedFrom: senderName,
+            originalMessageId: msgId,
+            originalRoomId: fromChatId,
+          },
+        );
+        if (!sentMessage) {
+          throw new Error("Forward message failed");
+        }
+      },
+
+      editMessage: async (chatId, msgId, newText) => {
+        const previousMessages = get().messages[chatId] || [];
+
+        set((state) => {
+          const chatMsgs = [...(state.messages[chatId] || [])];
+          const idx = findIndex(chatMsgs, (m) => m.id === msgId);
+          if (idx === -1) return state;
+          chatMsgs[idx] = {
+            ...chatMsgs[idx],
+            text: newText,
+            editedAt: new Date().toISOString(),
+          };
+          return {
+            messages: { ...state.messages, [chatId]: chatMsgs },
+          };
+        });
+
+        try {
+          const response = await api.patch(
+            `/chat/rooms/${chatId}/messages/${msgId}`,
+            { text: newText },
+          );
+          const myId = useAuthStore.getState().user?.id;
+          const message = getApiResponseData(response, null);
+
+          if (message?.id) {
+            set((state) => ({
+              messages: {
+                ...state.messages,
+                [chatId]: upsertRoomMessage(
+                  state.messages[chatId] || [],
+                  message,
+                  myId,
+                ),
+              },
+              contacts: syncRoomLastMessage(
+                state.contacts,
+                chatId,
+                message,
+                false,
+              ),
+            }));
+          }
+        } catch (error) {
+          set((state) => ({
+            messages: {
+              ...state.messages,
+              [chatId]: previousMessages,
+            },
+          }));
+          const message =
+            error?.response?.data?.message ||
+            tStore("chat.errors.editMessage", "Xabarni tahrirlashda xatolik");
+          toast.error(isArray(message) ? join(message, ", ") : message);
+          throw error;
+        }
+      },
+
+      replyToMessage: (chatId, text, replyToMsg, mediaUrl = null) => {
+        const msg = {
+          id: `reply-${Date.now()}`,
+          from: "me",
+          text,
+          time: new Date().toLocaleTimeString("uz", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          reactions: [],
+          replyTo: {
+            id: replyToMsg.id,
+            text: replyToMsg.text,
+            from: replyToMsg.from,
+          },
+          ...(mediaUrl && { mediaUrl, type: "image" }),
+        };
+        set((state) => ({
+          messages: {
+            ...state.messages,
+            [chatId]: [...(state.messages[chatId] || []), msg],
+          },
+        }));
+      },
+
+      createGroup: (name, memberIds) => {
+        const group = {
+          id: `g${Date.now()}`,
+          name,
+          avatar: "\u{1F465}",
+          members: memberIds,
+          isGroup: true,
+          chatId: `g${Date.now()}`,
+        };
+        set((state) => ({
+          groups: [...state.groups, group],
+          contacts: [...state.contacts, group],
+          messages: { ...state.messages, [group.id]: [] },
+        }));
+        return group.id;
+      },
+
+      getPinnedMessage: (chatId) => {
+        const state = get();
+        const pins = state.pinnedMessages[chatId] || [];
+        return pins[0] || null; // Latest pin
+      },
+
+      getPinnedMessages: (chatId) => {
+        const state = get();
+        return state.pinnedMessages[chatId] || [];
+      },
+
+      pinMessage: (chatId, msgId) => {
+        const { socket } = get();
+        if (socket) {
+          socket.emit("pinMessage", { roomId: chatId, messageId: msgId });
+        }
+
+        set((state) => {
+          const roomMsgs = state.messages[chatId] || [];
+          const msgToPin = find(roomMsgs, (m) => m.id === msgId);
+          if (!msgToPin) return state;
+
+          const currentPins = state.pinnedMessages[chatId] || [];
+          if (some(currentPins, (p) => p.id === msgId)) return state;
+
+          return {
+            pinnedMessages: {
+              ...state.pinnedMessages,
+              [chatId]: [msgToPin, ...currentPins],
+            },
+          };
+        });
+      },
+
+      unpinMessage: (chatId, msgId = null) => {
+        const { socket } = get();
+        if (socket) {
+          socket.emit("unpinMessage", { roomId: chatId, messageId: msgId });
+        }
+        set((state) => {
+          const currentPins = state.pinnedMessages[chatId] || [];
+          return {
+            pinnedMessages: {
+              ...state.pinnedMessages,
+              [chatId]: msgId ? filter(currentPins, (p) => p.id !== msgId) : [],
+            },
+          };
+        });
+      },
+
+      getAISuggestions: (lastMessage) => {
+        if (!lastMessage) return [];
+        const text = toLower(lastMessage);
+        if (includes(text, "qornim ochdi") || includes(text, "ovqat")) {
+          return [
+            tStore("chat.aiSuggestions.food.salad", "Salat taklif qilish 🥗"),
+            tStore("chat.aiSuggestions.food.water", "Suv ichishni eslatish 💧"),
+            tStore("chat.aiSuggestions.food.plan", "Rejani ko'rish 📋"),
+          ];
+        }
+        if (includes(text, "tayyorman") || includes(text, "boshlaymiz")) {
+          return [
+            tStore("chat.aiSuggestions.workout.video", "Video yuborish 🎥"),
+            tStore("chat.aiSuggestions.workout.goodLuck", "Omad tilash ✨"),
+            tStore("chat.aiSuggestions.workout.task", "Vazifa berish 🎯"),
+          ];
+        }
+        if (includes(text, "rahmat") || includes(text, "tushundim")) {
+          return [
+            tStore("chat.aiSuggestions.thanks.welcome", "Arzimaydi 😊"),
+            tStore("chat.aiSuggestions.thanks.continue", "Davom etamiz 💪"),
+            tStore("chat.aiSuggestions.thanks.questions", "Savollar bormi? 🤔"),
+          ];
+        }
+        return [
+          tStore("chat.aiSuggestions.default.good", "Yaxshi 👍"),
+          tStore("chat.aiSuggestions.default.understood", "Tushunarli 👌"),
+          tStore("chat.aiSuggestions.default.next", "Keyingisi ➡️"),
+        ];
+      },
+
+      sendSharedContent: (chatId, type, contentId, title, description) => {
+        get().sendMessage(
+          chatId,
+          tStore("chat.messages.sharedContent", "Shared {{type}}: {{title}}", {
+            type,
+            title,
+          }),
+          null,
+          "shared_content",
+          {
+            contentType: type,
+            contentId,
+            title,
+            description,
+          },
+        );
+      },
+
+      sendPoll: (chatId, question, options) => {
+        get().sendMessage(
+          chatId,
+          tStore("chat.messages.poll", "So'rovnoma: {{question}}", {
+            question,
+          }),
+          null,
+          "poll",
+          {
+            question,
+            options: map(options, (opt) => ({ text: opt, votes: [] })),
+            totalVotes: 0,
+          },
+        );
+      },
+
+      votePoll: (chatId, msgId, optionIndex, userId) => {
+        // Keep local update for immediate feedback, but should ideally be a socket event too
+        set((state) => {
+          const chatMsgs = [...(state.messages[chatId] || [])];
+          const idx = findIndex(chatMsgs, (m) => m.id === msgId);
+          if (idx === -1 || chatMsgs[idx].type !== "poll") return state;
+
+          const msg = {
+            ...chatMsgs[idx],
+            metadata: { ...chatMsgs[idx].metadata },
+          };
+          const options = [...msg.metadata.options];
+
+          forEach(options, (opt) => {
+            opt.votes = filter(opt.votes, (v) => v !== userId);
+          });
+
+          options[optionIndex].votes.push(userId);
+          msg.metadata.options = options;
+          msg.metadata.totalVotes = reduce(
+            options,
+            (acc, curr) => acc + curr.votes.length,
+            0,
+          );
+
+          chatMsgs[idx] = msg;
+          return { messages: { ...state.messages, [chatId]: chatMsgs } };
+        });
+      },
+
+      sendTask: (chatId, title, goal, unit) => {
+        get().sendMessage(
+          chatId,
+          tStore("chat.messages.task", "Vazifa: {{title}}", { title }),
+          null,
+          "task",
+          {
+            title,
+            goal,
+            unit,
+            current: 0,
+            completed: false,
+          },
+        );
+      },
+
+      updateTaskProgress: (chatId, msgId, increment) => {
+        set((state) => {
+          const chatMsgs = [...(state.messages[chatId] || [])];
+          const idx = findIndex(chatMsgs, (m) => m.id === msgId);
+          if (idx === -1 || chatMsgs[idx].type !== "task") return state;
+
+          const msg = {
+            ...chatMsgs[idx],
+            metadata: { ...chatMsgs[idx].metadata },
+          };
+          msg.metadata.current = Math.min(
+            msg.metadata.goal,
+            msg.metadata.current + increment,
+          );
+          if (msg.metadata.current >= msg.metadata.goal) {
+            msg.metadata.completed = true;
+          }
+
+          chatMsgs[idx] = msg;
+          return { messages: { ...state.messages, [chatId]: chatMsgs } };
+        });
+      },
+
+      sendBooking: async (
+        chatId,
+        title,
+        date,
+        slots,
+        durationMinutes = 60,
+        note = null,
+      ) => {
+        const myId = useAuthStore.getState().user?.id;
+        try {
+          const response = await api.post(`/chat/rooms/${chatId}/bookings`, {
+            title,
+            date,
+            slots,
+            durationMinutes,
+            note,
+          });
+          const payload = getApiResponseData(response, response?.data);
+          const message = payload?.message;
+          syncBookingResponseMessage(set, chatId, message, myId);
+          return payload;
+        } catch (error) {
+          const message =
+            error?.response?.data?.message ||
+            tStore("chat.errors.sendBooking", "Booking yuborishda xatolik");
+          toast.error(isArray(message) ? join(message, ", ") : message);
+          throw error;
+        }
+      },
+
+      selectBookingSlot: async (chatId, bookingId, slotTime) => {
+        const myId = useAuthStore.getState().user?.id;
+        try {
+          const response = await api.post(
+            `/chat/rooms/${chatId}/bookings/${bookingId}/select`,
+            { slotTime },
+          );
+          const payload = getApiResponseData(response, response?.data);
+          const message = payload?.message;
+          syncBookingResponseMessage(set, chatId, message, myId);
+          return payload;
+        } catch (error) {
+          const message =
+            error?.response?.data?.message ||
+            tStore("chat.errors.selectBookingSlot", "Slotni band qilishda xatolik");
+          toast.error(isArray(message) ? join(message, ", ") : message);
+          throw error;
+        }
+      },
+
+      cancelBooking: async (chatId, bookingId, reason = "") => {
+        const myId = useAuthStore.getState().user?.id;
+        try {
+          const response = await api.post(
+            `/chat/rooms/${chatId}/bookings/${bookingId}/cancel`,
+            { reason },
+          );
+          const payload = getApiResponseData(response, response?.data);
+          syncBookingResponseMessage(set, chatId, payload?.message, myId);
+          return payload;
+        } catch (error) {
+          const message =
+            error?.response?.data?.message ||
+            tStore("chat.errors.cancelBooking", "Bookingni bekor qilishda xatolik");
+          toast.error(isArray(message) ? join(message, ", ") : message);
+          throw error;
+        }
+      },
+
+      completeBooking: async (chatId, bookingId) => {
+        const myId = useAuthStore.getState().user?.id;
+        try {
+          const response = await api.post(
+            `/chat/rooms/${chatId}/bookings/${bookingId}/complete`,
+          );
+          const payload = getApiResponseData(response, response?.data);
+          syncBookingResponseMessage(set, chatId, payload?.message, myId);
+          return payload;
+        } catch (error) {
+          const message =
+            error?.response?.data?.message ||
+            tStore("chat.errors.completeBooking", "Bookingni tugatishda xatolik");
+          toast.error(isArray(message) ? join(message, ", ") : message);
+          throw error;
+        }
+      },
+
+      sendInvoice: (chatId, amount, description) => {
+        get().sendMessage(
+          chatId,
+          tStore("chat.messages.invoice", "Invoice: {{description}}", {
+            description,
+          }),
+          null,
+          "invoice",
+          {
+            amount,
+            description,
+            status: "pending",
+          },
+        );
+      },
+
+      payInvoice: (chatId, msgId) => {
+        const invoice = find(
+          get().messages[chatId] || [],
+          (message) => message.id === msgId && message.type === "invoice",
+        );
+        if (!invoice) return false;
+
+        toast.error(
+          tStore(
+            "chat.invoice.unavailable",
+            "Invoice to'lovi hali real payment providerga ulanmagan",
+          ),
+        );
+        return false;
+      },
+
+      sendHabitTracker: (chatId, title, habits) => {
+        get().sendMessage(
+          chatId,
+          tStore("chat.messages.habitTracker", "Odatlar: {{title}}", {
+            title,
+          }),
+          null,
+          "habit_tracker",
+          {
+            title,
+            habits: map(habits, (h) => ({ label: h, checked: false })),
+          },
+        );
+      },
+
+      updateHabitStatus: (chatId, msgId, habitIndex) => {
+        set((state) => {
+          const chatMsgs = [...(state.messages[chatId] || [])];
+          const idx = findIndex(chatMsgs, (m) => m.id === msgId);
+          if (idx === -1 || chatMsgs[idx].type !== "habit_tracker")
+            return state;
+
+          const msg = {
+            ...chatMsgs[idx],
+            metadata: { ...chatMsgs[idx].metadata },
+          };
+          const habits = [...msg.metadata.habits];
+          habits[habitIndex] = {
+            ...habits[habitIndex],
+            checked: !habits[habitIndex].checked,
+          };
+          msg.metadata.habits = habits;
+
+          chatMsgs[idx] = msg;
+          return { messages: { ...state.messages, [chatId]: chatMsgs } };
+        });
+      },
+
+      toggleBookmark: (chatId, msgId) => {
+        const state = get();
+        const chatMsgs = state.messages[chatId] || [];
+        const msg = find(chatMsgs, (m) => m.id === msgId);
+        if (!msg) return;
+
+        const exists = find(state.bookmarks, (b) => b.msgId === msgId);
+        if (exists) {
+          set({ bookmarks: filter(state.bookmarks, (b) => b.msgId !== msgId) });
+          toast.success(
+            tStore("chat.bookmarks.removed", "Xatcho'pdan olib tashlandi"),
+          );
+        } else {
+          set({
+            bookmarks: [
+              ...state.bookmarks,
+              {
+                chatId,
+                msgId,
+                text: msg.text,
+                time: msg.time,
+                senderName:
+                  msg.from === "me"
+                    ? tStore("chat.sender.me", "Siz")
+                    : find(state.contacts, (c) => c.id === chatId)?.name ||
+                      tStore("chat.sender.unknown", "Noma'lum"),
+              },
+            ],
+          });
+          toast.success(tStore("chat.bookmarks.saved", "Xatcho'pga saqlandi"));
+        }
+      },
+
+      searchGlobalMessages: async (query, options = {}) => {
+        const normalizedQuery = trim(query);
+        if (!normalizedQuery) {
+          set({
             messageSearchResults: [],
             messageSearchCursor: null,
             messageSearchQuery: "",
-            isSearchingMessages: false,
             messageSearchError: null,
-            isLoading: false,
-            library: [], // Added missing library
-            activeRoomId: null,
-
-            initSocket: () => {
-                const { token } = useAuthStore.getState();
-                if (!token || get().socket) return;
-
-                const { socketUrl, socketPath } = getChatSocketConnectionConfig(config.baseURL);
-
-                const socket = io(socketUrl, {
-                    auth: { token },
-                    path: socketPath,
-                    // Start with HTTP long-polling so the chat still connects
-                    // behind proxies/CDNs that do not fully support immediate
-                    // websocket upgrades, then upgrade when possible.
-                    transports: ["polling", "websocket"],
-                });
-
-                socket.on("connect", () => {
-                    console.log("Chat socket connected ✅");
-                });
-
-                socket.on("connect_error", (err) => {
-                    console.error("Socket connection error ❌", err);
-                });
-
-                socket.on("newMessage", (message) => {
-                    const { roomId, sender } = message;
-                    if (!roomId) {
-                        console.warn("Received message without roomId", message);
-                        return;
-                    }
-
-                    const myId = useAuthStore.getState().user?.id;
-                    const isFromMe = sender.id === myId;
-                    const isActiveRoom = roomId === get().activeRoomId;
-
-                    set((state) => {
-                        return {
-                            messages: {
-                                ...state.messages,
-                                [roomId]: upsertRoomMessage(
-                                    state.messages[roomId] || [],
-                                    message,
-                                    myId,
-                                ),
-                            },
-                        };
-                    });
-
-                    // Update room last message in contacts; only increment unread when not from me and not currently viewing
-                    set((state) => ({
-                        contacts: syncRoomLastMessage(
-                            state.contacts,
-                            roomId,
-                            message,
-                            !isFromMe && !isActiveRoom,
-                        ),
-                    }));
-                });
-
-                socket.on("messageUpdated", (message) => {
-                    const roomId = message?.roomId;
-                    if (!roomId) return;
-
-                    const myId = useAuthStore.getState().user?.id;
-                    set((state) => ({
-                        messages: {
-                            ...state.messages,
-                            [roomId]: upsertRoomMessage(
-                                state.messages[roomId] || [],
-                                message,
-                                myId,
-                            ),
-                        },
-                        contacts: syncRoomLastMessage(
-                            state.contacts,
-                            roomId,
-                            message,
-                            false,
-                        ),
-                    }));
-                });
-
-                socket.on("messagesRead", ({ roomId }) => {
-                    set((state) => ({
-                        messages: {
-                            ...state.messages,
-                            [roomId]: map(state.messages[roomId] || [], m =>
-                                m.from === "me" ? { ...m, status: "read" } : m
-                            )
-                        }
-                    }));
-                });
-
-                socket.on("messagePinned", ({ roomId, messageId }) => {
-                    set((state) => {
-                        const roomMsgs = state.messages[roomId] || [];
-                        const msgToPin = find(roomMsgs, m => m.id === messageId);
-                        if (!msgToPin) return state;
-
-                        const currentPins = state.pinnedMessages[roomId] || [];
-                        if (some(currentPins, p => p.id === messageId)) return state;
-
-                        return {
-                            pinnedMessages: {
-                                ...state.pinnedMessages,
-                                [roomId]: [msgToPin, ...currentPins],
-                            },
-                        };
-                    });
-                });
-
-                socket.on("messageUnpinned", ({ roomId, messageId }) => {
-                    set((state) => {
-                        const currentPins = state.pinnedMessages[roomId] || [];
-                        return {
-                            pinnedMessages: {
-                                ...state.pinnedMessages,
-                                [roomId]: messageId ? filter(currentPins, p => p.id !== messageId) : [],
-                            },
-                        };
-                    });
-                });
-
-                socket.on("userTyping", ({ roomId, userId, isTyping }) => {
-                    if (userId === useAuthStore.getState().user?.id) return;
-                    set((state) => ({
-                        typingUsers: { ...state.typingUsers, [roomId]: isTyping },
-                    }));
-                });
-
-                socket.on("roomCreated", () => {
-                    get().fetchRooms();
-                });
-
-                set({ socket });
-            },
-
-            disconnectSocket: () => {
-                const { socket } = get();
-                if (socket) {
-                    socket.disconnect();
-                    set({ socket: null });
-                }
-            },
-
-            fetchRooms: async () => {
-                set({ isLoading: true });
-                try {
-                    const response = await api.get("/chat/rooms");
-                    // Backend returns { data: rooms[], nextCursor }
-                    // ResponseWrapperInterceptor wraps it as: { data: { data: rooms[], nextCursor }, meta: {...} }
-                    const payload = response.data?.data ?? response.data ?? {};
-                    const rawRooms = isArray(payload)
-                        ? payload
-                        : (payload?.data ?? []);
-                    const rooms = map(rawRooms, room => ({
-                        ...room,
-                        chatId: room.id, // Compatibility
-                        unreadCount: room.unreadCount ?? 0,
-                    }));
-
-                    const pinnedMap = {};
-                    forEach(rooms, r => {
-                        pinnedMap[r.id] = r.pinnedMessages || [];
-                    });
-
-                    set({ contacts: rooms, pinnedMessages: { ...get().pinnedMessages, ...pinnedMap } });
-                } catch (error) {
-                    console.error("Failed to fetch rooms", error);
-                } finally {
-                    set({ isLoading: false });
-                }
-            },
-
-            fetchMessages: async (chatId) => {
-                if (!chatId) return;
-                try {
-                    const response = await api.get(`/chat/rooms/${chatId}/messages`);
-                    const myId = useAuthStore.getState().user?.id;
-                    // ResponseWrapperInterceptor: { data: { data: msgs[], nextCursor }, meta: {...} }
-                    const payload = response.data?.data ?? response.data ?? {};
-                    const rawMsgs = isArray(payload) ? payload : (payload?.data ?? []);
-                    const nextCursor = payload?.nextCursor ?? null;
-                    const msgs = map(rawMsgs, (message) =>
-                        formatChatMessage(message, myId),
-                    );
-                    set((state) => ({
-                        messages: { ...state.messages, [chatId]: msgs },
-                        messagesCursors: { ...state.messagesCursors, [chatId]: nextCursor },
-                    }));
-
-                    // Join room via socket
-                    if (get().socket) {
-                        get().socket.emit("joinRoom", { roomId: chatId });
-                        get().markAsRead(chatId);
-                    }
-                } catch (error) {
-                    console.error("Failed to fetch messages", error);
-                }
-            },
-
-            loadMoreMessages: async (chatId) => {
-                const cursor = get().messagesCursors[chatId];
-                if (!cursor) return; // No more pages
-                try {
-                    const response = await api.get(`/chat/rooms/${chatId}/messages`, { params: { cursor } });
-                    const myId = useAuthStore.getState().user?.id;
-                    // ResponseWrapperInterceptor: { data: { data: msgs[], nextCursor }, meta: {...} }
-                    const payload = response.data?.data ?? response.data ?? {};
-                    const rawMsgs = isArray(payload) ? payload : (payload?.data ?? []);
-                    const nextCursor = payload?.nextCursor ?? null;
-                    const olderMsgs = map(rawMsgs, (message) =>
-                        formatChatMessage(message, myId),
-                    );
-                    set((state) => ({
-                        messages: {
-                            ...state.messages,
-                            [chatId]: [...olderMsgs, ...(state.messages[chatId] ?? [])],
-                        },
-                        messagesCursors: { ...state.messagesCursors, [chatId]: nextCursor },
-                    }));
-                } catch (e) {
-                    console.error('loadMoreMessages error', e);
-                }
-            },
-
-            sendMessage: async (roomId, text, mediaUrl = null, type = "text", metadata = null, replyToId = null) => {
-                const myId = useAuthStore.getState().user?.id;
-                
-                // Create optimistic message
-                const optimisticMsg = {
-                    id: `temp-${Date.now()}`,
-                    roomId,
-                    text,
-                    type,
-                    mediaUrl,
-                    metadata: metadata || null,
-                    replyToId,
-                    sender: { id: myId },
-                    from: "me",
-                    time: new Date().toLocaleTimeString("uz", { hour: "2-digit", minute: "2-digit" }),
-                    createdAt: new Date().toISOString(),
-                    status: "sending"
-                };
-
-                // Add to local state immediately
-                set((state) => ({
-                    messages: {
-                        ...state.messages,
-                        [roomId]: [...(state.messages[roomId] || []), optimisticMsg],
-                    },
-                }));
-
-                try {
-                    // Persist through HTTP so messages are not silently dropped when
-                    // the realtime socket is flaky behind a production proxy.
-                    const response = await api.post(`/chat/rooms/${roomId}/messages`, {
-                        text,
-                        type,
-                        metadata,
-                        mediaUrl,
-                        replyToId,
-                    });
-                    const message = getApiResponseData(response, null);
-
-                    if (message?.id) {
-                        set((state) => ({
-                            messages: {
-                                ...state.messages,
-                                [roomId]: replaceRoomMessageById(
-                                    state.messages[roomId] || [],
-                                    optimisticMsg.id,
-                                    message,
-                                    myId,
-                                ),
-                            },
-                            contacts: syncRoomLastMessage(
-                                state.contacts,
-                                roomId,
-                                message,
-                                false,
-                            ),
-                        }));
-                        return message;
-                    }
-                    return null;
-                } catch (error) {
-                    const message =
-                        error?.response?.data?.message || "Xabar yuborishda xatolik";
-                    const errorMessage = isArray(message) ? join(message, ", ") : message;
-                    toast.error(errorMessage);
-                    set((state) => ({
-                        messages: {
-                            ...state.messages,
-                            [roomId]: map(state.messages[roomId] || [], (m) =>
-                                m.id === optimisticMsg.id
-                                    ? { ...m, status: "failed", errorMessage }
-                                    : m,
-                            ),
-                        },
-                    }));
-                    return null;
-                }
-            },
-
-            retryMessage: async (roomId, messageId) => {
-                const myId = useAuthStore.getState().user?.id;
-                const failedMessage = find(
-                    get().messages[roomId] || [],
-                    (message) => message.id === messageId && message.status === "failed",
-                );
-
-                if (!failedMessage) return null;
-
-                set((state) => ({
-                    messages: {
-                        ...state.messages,
-                        [roomId]: map(state.messages[roomId] || [], (message) =>
-                            message.id === messageId
-                                ? { ...message, status: "sending", errorMessage: null }
-                                : message,
-                        ),
-                    },
-                }));
-
-                try {
-                    const response = await api.post(`/chat/rooms/${roomId}/messages`, {
-                        text: failedMessage.text,
-                        type: failedMessage.type || "text",
-                        metadata: failedMessage.metadata || null,
-                        mediaUrl: failedMessage.mediaUrl || null,
-                        replyToId: failedMessage.replyToId || failedMessage.replyTo?.id || null,
-                    });
-                    const message = getApiResponseData(response, null);
-
-                    if (message?.id) {
-                        set((state) => ({
-                            messages: {
-                                ...state.messages,
-                                [roomId]: replaceRoomMessageById(
-                                    state.messages[roomId] || [],
-                                    messageId,
-                                    message,
-                                    myId,
-                                ),
-                            },
-                            contacts: syncRoomLastMessage(
-                                state.contacts,
-                                roomId,
-                                message,
-                                false,
-                            ),
-                        }));
-                        return message;
-                    }
-
-                    return null;
-                } catch (error) {
-                    const message =
-                        error?.response?.data?.message || "Xabar yuborishda xatolik";
-                    const errorMessage = isArray(message) ? join(message, ", ") : message;
-                    toast.error(errorMessage);
-                    set((state) => ({
-                        messages: {
-                            ...state.messages,
-                            [roomId]: map(state.messages[roomId] || [], (m) =>
-                                m.id === messageId
-                                    ? { ...m, status: "failed", errorMessage }
-                                    : m,
-                            ),
-                        },
-                    }));
-                    return null;
-                }
-            },
-
-            refreshAttachmentUrl: async (chatId, messageId) => {
-                try {
-                    const response = await api.get(
-                        `/chat/rooms/${chatId}/messages/${messageId}/attachment-url`,
-                    );
-                    const payload = getApiResponseData(response, response?.data);
-
-                    if (!payload?.url) {
-                        throw new Error("Attachment URL response invalid");
-                    }
-
-                    set((state) => ({
-                        messages: {
-                            ...state.messages,
-                            [chatId]: map(state.messages[chatId] || [], (message) =>
-                                message.id === messageId
-                                    ? {
-                                          ...message,
-                                          mediaUrl: payload.url,
-                                          metadata: {
-                                              ...(message.metadata || {}),
-                                              attachment: {
-                                                  ...(message.metadata?.attachment || {}),
-                                                  objectKey:
-                                                      payload.objectKey ||
-                                                      message.metadata?.attachment?.objectKey,
-                                                  signedUrlExpiresAt: payload.expiresAt,
-                                              },
-                                          },
-                                      }
-                                    : message,
-                            ),
-                        },
-                    }));
-
-                    return payload;
-                } catch (error) {
-                    const message =
-                        error?.response?.data?.message || "Fayl linkini yangilab bo'lmadi";
-                    toast.error(isArray(message) ? join(message, ", ") : message);
-                    throw error;
-                }
-            },
-
-            setTyping: (roomId, isTyping) => {
-                const { socket } = get();
-                if (socket) {
-                    socket.emit("typing", { roomId, isTyping });
-                }
-            },
-
-            addReaction: (chatId, msgId, emoji) => {
-                set((state) => {
-                    const chatMsgs = [...(state.messages[chatId] || [])];
-                    const idx = findIndex(chatMsgs, (m) => m.id === msgId);
-                    if (idx === -1) return state;
-                    const msg = chatMsgs[idx];
-                    const hasReaction = includes(msg.reactions || [], emoji);
-                    chatMsgs[idx] = {
-                        ...msg,
-                        reactions: hasReaction
-                            ? filter(msg.reactions, (r) => r !== emoji)
-                            : [...(msg.reactions || []), emoji],
-                    };
-                    return {
-                        messages: { ...state.messages, [chatId]: chatMsgs },
-                    };
-                });
-            },
-
-            deleteMessage: async (chatId, msgId) => {
-                const previousMessages = get().messages[chatId] || [];
-
-                set((state) => ({
-                    messages: {
-                        ...state.messages,
-                        [chatId]: filter(state.messages[chatId] || [], (m) => m.id !== msgId),
-                    },
-                }));
-
-                try {
-                    await api.delete(`/chat/rooms/${chatId}/messages/${msgId}`);
-                } catch (error) {
-                    set((state) => ({
-                        messages: {
-                            ...state.messages,
-                            [chatId]: previousMessages,
-                        },
-                    }));
-                    const message =
-                        error?.response?.data?.message || "Xabarni o'chirishda xatolik";
-                    toast.error(isArray(message) ? join(message, ", ") : message);
-                    throw error;
-                }
-            },
-
-            forwardMessage: async (fromChatId, msgId, toChatId) => {
-                const state = get();
-                const chatMsgs = state.messages[fromChatId] || [];
-                const original = find(chatMsgs, (m) => m.id === msgId);
-                if (!original) return;
-
-                const senderName = original.from === "me" ? "Siz" : (original.sender?.name || "Noma'lum");
-                const fallbackText =
-                    original.type === "image"
-                        ? "📷 Rasm"
-                        : original.type === "file"
-                          ? "📎 Fayl"
-                          : original.type === "voice" || original.type === "audio"
-                            ? "🎙️ Ovozli xabar"
-                            : "Forward qilingan xabar";
-
-                const sentMessage = await get().sendMessage(
-                    toChatId,
-                    original.text || fallbackText,
-                    original.mediaUrl || null,
-                    original.type || "text",
-                    {
-                        ...(original.metadata || {}),
-                        forwardedFrom: senderName,
-                        originalMessageId: msgId,
-                        originalRoomId: fromChatId,
-                    },
-                );
-                if (!sentMessage) {
-                    throw new Error("Forward message failed");
-                }
-            },
-
-            editMessage: async (chatId, msgId, newText) => {
-                const previousMessages = get().messages[chatId] || [];
-
-                set((state) => {
-                    const chatMsgs = [...(state.messages[chatId] || [])];
-                    const idx = findIndex(chatMsgs, (m) => m.id === msgId);
-                    if (idx === -1) return state;
-                    chatMsgs[idx] = {
-                        ...chatMsgs[idx],
-                        text: newText,
-                        editedAt: new Date().toISOString(),
-                    };
-                    return {
-                        messages: { ...state.messages, [chatId]: chatMsgs },
-                    };
-                });
-
-                try {
-                    const response = await api.patch(
-                        `/chat/rooms/${chatId}/messages/${msgId}`,
-                        { text: newText },
-                    );
-                    const myId = useAuthStore.getState().user?.id;
-                    const message = getApiResponseData(response, null);
-
-                    if (message?.id) {
-                        set((state) => ({
-                            messages: {
-                                ...state.messages,
-                                [chatId]: upsertRoomMessage(
-                                    state.messages[chatId] || [],
-                                    message,
-                                    myId,
-                                ),
-                            },
-                            contacts: syncRoomLastMessage(
-                                state.contacts,
-                                chatId,
-                                message,
-                                false,
-                            ),
-                        }));
-                    }
-                } catch (error) {
-                    set((state) => ({
-                        messages: {
-                            ...state.messages,
-                            [chatId]: previousMessages,
-                        },
-                    }));
-                    const message =
-                        error?.response?.data?.message || "Xabarni tahrirlashda xatolik";
-                    toast.error(isArray(message) ? join(message, ", ") : message);
-                    throw error;
-                }
-            },
-
-            replyToMessage: (chatId, text, replyToMsg, mediaUrl = null) => {
-                const msg = {
-                    id: `reply-${Date.now()}`,
-                    from: "me",
-                    text,
-                    time: new Date().toLocaleTimeString("uz", { hour: "2-digit", minute: "2-digit" }),
-                    reactions: [],
-                    replyTo: {
-                        id: replyToMsg.id,
-                        text: replyToMsg.text,
-                        from: replyToMsg.from,
-                    },
-                    ...(mediaUrl && { mediaUrl, type: "image" }),
-                };
-                set((state) => ({
-                    messages: {
-                        ...state.messages,
-                        [chatId]: [...(state.messages[chatId] || []), msg],
-                    },
-                }));
-            },
-
-            createGroup: (name, memberIds) => {
-                const group = {
-                    id: `g${Date.now()}`,
-                    name,
-                    avatar: "\u{1F465}",
-                    members: memberIds,
-                    isGroup: true,
-                    chatId: `g${Date.now()}`
-                };
-                set((state) => ({
-                    groups: [...state.groups, group],
-                    contacts: [...state.contacts, group],
-                    messages: { ...state.messages, [group.id]: [] },
-                }));
-                return group.id;
-            },
-
-            getPinnedMessage: (chatId) => {
-                const state = get();
-                const pins = state.pinnedMessages[chatId] || [];
-                return pins[0] || null; // Latest pin
-            },
-
-            getPinnedMessages: (chatId) => {
-                const state = get();
-                return state.pinnedMessages[chatId] || [];
-            },
-
-            pinMessage: (chatId, msgId) => {
-                const { socket } = get();
-                if (socket) {
-                    socket.emit("pinMessage", { roomId: chatId, messageId: msgId });
-                }
-                
-                set((state) => {
-                    const roomMsgs = state.messages[chatId] || [];
-                    const msgToPin = find(roomMsgs, m => m.id === msgId);
-                    if (!msgToPin) return state;
-
-                    const currentPins = state.pinnedMessages[chatId] || [];
-                    if (some(currentPins, p => p.id === msgId)) return state;
-
-                    return {
-                        pinnedMessages: {
-                            ...state.pinnedMessages,
-                            [chatId]: [msgToPin, ...currentPins],
-                        },
-                    };
-                });
-            },
-
-            unpinMessage: (chatId, msgId = null) => {
-                const { socket } = get();
-                if (socket) {
-                    socket.emit("unpinMessage", { roomId: chatId, messageId: msgId });
-                }
-                set((state) => {
-                    const currentPins = state.pinnedMessages[chatId] || [];
-                    return {
-                        pinnedMessages: {
-                            ...state.pinnedMessages,
-                            [chatId]: msgId ? filter(currentPins, p => p.id !== msgId) : [],
-                        },
-                    };
-                });
-            },
-
-            getAISuggestions: (lastMessage) => {
-                if (!lastMessage) return [];
-                const text = toLower(lastMessage);
-                if (includes(text, "qornim ochdi") || includes(text, "ovqat")) {
-                    return ["Salat taklif qilish 🥗", "Suv ichishni eslatish 💧", "Rejani ko'rish 📋"];
-                }
-                if (includes(text, "tayyorman") || includes(text, "boshlaymiz")) {
-                    return ["Video yuborish 🎥", "Omad tilash ✨", "Vazifa berish 🎯"];
-                }
-                if (includes(text, "rahmat") || includes(text, "tushundim")) {
-                    return ["Arzimaydi 😊", "Davom etamiz 💪", "Savollar bormi? 🤔"];
-                }
-                return ["Yaxshi 👍", "Tushunarli 👌", "Keyingisi ➡️"];
-            },
-
-            sendSharedContent: (chatId, type, contentId, title, description) => {
-                get().sendMessage(
-                    chatId, 
-                    `Shared ${type}: ${title}`, 
-                    null, 
-                    "shared_content", 
-                    {
-                        contentType: type,
-                        contentId,
-                        title,
-                        description
-                    }
-                );
-            },
-
-            sendPoll: (chatId, question, options) => {
-                get().sendMessage(
-                    chatId, 
-                    `So'rovnoma: ${question}`, 
-                    null, 
-                    "poll", 
-                    {
-                        question,
-                        options: map(options, opt => ({ text: opt, votes: [] })),
-                        totalVotes: 0
-                    }
-                );
-            },
-
-            votePoll: (chatId, msgId, optionIndex, userId) => {
-                // Keep local update for immediate feedback, but should ideally be a socket event too
-                set((state) => {
-                    const chatMsgs = [...(state.messages[chatId] || [])];
-                    const idx = findIndex(chatMsgs, m => m.id === msgId);
-                    if (idx === -1 || chatMsgs[idx].type !== "poll") return state;
-
-                    const msg = { ...chatMsgs[idx], metadata: { ...chatMsgs[idx].metadata } };
-                    const options = [...msg.metadata.options];
-
-                    forEach(options, opt => {
-                        opt.votes = filter(opt.votes, v => v !== userId);
-                    });
-
-                    options[optionIndex].votes.push(userId);
-                    msg.metadata.options = options;
-                    msg.metadata.totalVotes = reduce(options, (acc, curr) => acc + curr.votes.length, 0);
-
-                    chatMsgs[idx] = msg;
-                    return { messages: { ...state.messages, [chatId]: chatMsgs } };
-                });
-            },
-
-            sendTask: (chatId, title, goal, unit) => {
-                get().sendMessage(
-                    chatId,
-                    `Vazifa: ${title}`,
-                    null,
-                    "task",
-                    {
-                        title,
-                        goal,
-                        unit,
-                        current: 0,
-                        completed: false
-                    }
-                );
-            },
-
-            updateTaskProgress: (chatId, msgId, increment) => {
-                set((state) => {
-                    const chatMsgs = [...(state.messages[chatId] || [])];
-                    const idx = findIndex(chatMsgs, m => m.id === msgId);
-                    if (idx === -1 || chatMsgs[idx].type !== "task") return state;
-
-                    const msg = { ...chatMsgs[idx], metadata: { ...chatMsgs[idx].metadata } };
-                    msg.metadata.current = Math.min(msg.metadata.goal, msg.metadata.current + increment);
-                    if (msg.metadata.current >= msg.metadata.goal) {
-                        msg.metadata.completed = true;
-                    }
-
-                    chatMsgs[idx] = msg;
-                    return { messages: { ...state.messages, [chatId]: chatMsgs } };
-                });
-            },
-
-            sendBooking: async (chatId, title, date, slots, durationMinutes = 60, note = null) => {
-                const myId = useAuthStore.getState().user?.id;
-                try {
-                    const response = await api.post(`/chat/rooms/${chatId}/bookings`, {
-                        title,
-                        date,
-                        slots,
-                        durationMinutes,
-                        note,
-                    });
-                    const payload = getApiResponseData(response, response?.data);
-                    const message = payload?.message;
-                    syncBookingResponseMessage(set, chatId, message, myId);
-                    return payload;
-                } catch (error) {
-                    const message =
-                        error?.response?.data?.message || "Booking yuborishda xatolik";
-                    toast.error(isArray(message) ? join(message, ", ") : message);
-                    throw error;
-                }
-            },
-
-            selectBookingSlot: async (chatId, bookingId, slotTime) => {
-                const myId = useAuthStore.getState().user?.id;
-                try {
-                    const response = await api.post(
-                        `/chat/rooms/${chatId}/bookings/${bookingId}/select`,
-                        { slotTime },
-                    );
-                    const payload = getApiResponseData(response, response?.data);
-                    const message = payload?.message;
-                    syncBookingResponseMessage(set, chatId, message, myId);
-                    return payload;
-                } catch (error) {
-                    const message =
-                        error?.response?.data?.message || "Slotni band qilishda xatolik";
-                    toast.error(isArray(message) ? join(message, ", ") : message);
-                    throw error;
-                }
-            },
-
-            cancelBooking: async (chatId, bookingId, reason = "") => {
-                const myId = useAuthStore.getState().user?.id;
-                try {
-                    const response = await api.post(
-                        `/chat/rooms/${chatId}/bookings/${bookingId}/cancel`,
-                        { reason },
-                    );
-                    const payload = getApiResponseData(response, response?.data);
-                    syncBookingResponseMessage(set, chatId, payload?.message, myId);
-                    return payload;
-                } catch (error) {
-                    const message =
-                        error?.response?.data?.message || "Bookingni bekor qilishda xatolik";
-                    toast.error(isArray(message) ? join(message, ", ") : message);
-                    throw error;
-                }
-            },
-
-            completeBooking: async (chatId, bookingId) => {
-                const myId = useAuthStore.getState().user?.id;
-                try {
-                    const response = await api.post(
-                        `/chat/rooms/${chatId}/bookings/${bookingId}/complete`,
-                    );
-                    const payload = getApiResponseData(response, response?.data);
-                    syncBookingResponseMessage(set, chatId, payload?.message, myId);
-                    return payload;
-                } catch (error) {
-                    const message =
-                        error?.response?.data?.message || "Bookingni tugatishda xatolik";
-                    toast.error(isArray(message) ? join(message, ", ") : message);
-                    throw error;
-                }
-            },
-
-            sendInvoice: (chatId, amount, description) => {
-                get().sendMessage(
-                    chatId,
-                    `Invoice: ${description}`,
-                    null,
-                    "invoice",
-                    {
-                        amount,
-                        description,
-                        status: "pending"
-                    }
-                );
-            },
-
-            payInvoice: (chatId, msgId) => {
-                const invoice = find(
-                    get().messages[chatId] || [],
-                    (message) => message.id === msgId && message.type === "invoice",
-                );
-                if (!invoice) return false;
-
-                toast.error("Invoice to'lovi hali real payment providerga ulanmagan");
-                return false;
-            },
-
-            sendHabitTracker: (chatId, title, habits) => {
-                get().sendMessage(
-                    chatId,
-                    `Odatlar: ${title}`,
-                    null,
-                    "habit_tracker",
-                    {
-                        title,
-                        habits: map(habits, h => ({ label: h, checked: false })),
-                    }
-                );
-            },
-
-            updateHabitStatus: (chatId, msgId, habitIndex) => {
-                set((state) => {
-                    const chatMsgs = [...(state.messages[chatId] || [])];
-                    const idx = findIndex(chatMsgs, m => m.id === msgId);
-                    if (idx === -1 || chatMsgs[idx].type !== "habit_tracker") return state;
-
-                    const msg = { ...chatMsgs[idx], metadata: { ...chatMsgs[idx].metadata } };
-                    const habits = [...msg.metadata.habits];
-                    habits[habitIndex] = { ...habits[habitIndex], checked: !habits[habitIndex].checked };
-                    msg.metadata.habits = habits;
-
-                    chatMsgs[idx] = msg;
-                    return { messages: { ...state.messages, [chatId]: chatMsgs } };
-                });
-            },
-
-            toggleBookmark: (chatId, msgId) => {
-                const state = get();
-                const chatMsgs = state.messages[chatId] || [];
-                const msg = find(chatMsgs, m => m.id === msgId);
-                if (!msg) return;
-
-                const exists = find(state.bookmarks, b => b.msgId === msgId);
-                if (exists) {
-                    set({ bookmarks: filter(state.bookmarks, b => b.msgId !== msgId) });
-                    toast.success("Xatcho'pdan olib tashlandi");
-                } else {
-                    set({
-                        bookmarks: [...state.bookmarks, {
-                            chatId,
-                            msgId,
-                            text: msg.text,
-                            time: msg.time,
-                            senderName: msg.from === "me" ? "Siz" : (find(state.contacts, c => c.id === chatId)?.name || "Noma'lum")
-                        }]
-                    });
-                    toast.success("Xatcho'pga saqlandi");
-                }
-            },
-
-            searchGlobalMessages: async (query, options = {}) => {
-                const normalizedQuery = trim(query);
-                if (!normalizedQuery) {
-                    set({
-                        messageSearchResults: [],
-                        messageSearchCursor: null,
-                        messageSearchQuery: "",
-                        messageSearchError: null,
-                        isSearchingMessages: false,
-                    });
-                    return [];
-                }
-
-                const state = get();
-                const fallbackResults = [];
-                const q = toLower(normalizedQuery);
-
-                forEach(toPairs(state.messages), ([chatId, msgs]) => {
-                    forEach(msgs, m => {
-                        if (m.text && includes(toLower(m.text), q)) {
-                            const entity = find(state.contacts, c => c.id == chatId);
-                            fallbackResults.push({
-                                chatId,
-                                msgId: m.id,
-                                text: m.text,
-                                time: m.time,
-                                senderName: entity?.name || "Noma'lum",
-                                avatar: entity?.avatar || "👤"
-                            });
-                        }
-                    });
-                });
-
-                set({
-                    isSearchingMessages: true,
-                    messageSearchQuery: normalizedQuery,
-                    messageSearchError: null,
-                });
-
-                try {
-                    const response = await api.get("/chat/messages/search", {
-                        params: {
-                            q: normalizedQuery,
-                            limit: options.limit ?? 20,
-                            ...(options.cursor ? { cursor: options.cursor } : {}),
-                            ...(options.roomId ? { roomId: options.roomId } : {}),
-                            ...(options.participantUserId
-                                ? { participantUserId: options.participantUserId }
-                                : {}),
-                            ...(options.senderId ? { senderId: options.senderId } : {}),
-                            ...(options.type ? { type: options.type } : {}),
-                            ...(options.pinnedOnly ? { pinnedOnly: true } : {}),
-                            ...(options.mediaOnly ? { mediaOnly: true } : {}),
-                            ...(options.dateFrom ? { dateFrom: options.dateFrom } : {}),
-                            ...(options.dateTo ? { dateTo: options.dateTo } : {}),
-                        },
-                    });
-                    const payload = getApiResponseData(response, {});
-                    const serverResults = isArray(payload)
-                        ? payload
-                        : payload.data || payload.items || [];
-                    const formattedResults = map(serverResults, (result) => ({
-                        chatId: result.chatId,
-                        msgId: result.msgId,
-                        text: result.text,
-                        type: result.type,
-                        createdAt: result.createdAt,
-                        time: result.createdAt
-                            ? new Date(result.createdAt).toLocaleTimeString("uz", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                              })
-                            : "",
-                        senderName:
-                            result.roomName || result.senderName || "Noma'lum",
-                        avatar: result.avatar || "👤",
-                        isPinned: Boolean(result.isPinned),
-                    }));
-
-                    set((current) => ({
-                        messageSearchResults: options.cursor
-                            ? [...current.messageSearchResults, ...formattedResults]
-                            : formattedResults,
-                        messageSearchCursor: payload.nextCursor || null,
-                        isSearchingMessages: false,
-                    }));
-
-                    return formattedResults;
-                } catch (error) {
-                    console.error("Failed to search messages", error);
-                    set({
-                        messageSearchResults: fallbackResults,
-                        messageSearchCursor: null,
-                        messageSearchError: "Server qidiruv vaqtincha ishlamadi",
-                        isSearchingMessages: false,
-                    });
-                    return fallbackResults;
-                }
-            },
-
-            // --- Simplified compatibility methods ---
-            startLive: (chatId, hostName) => {
-                set({ activeLive: { chatId, hostName, viewers: 1, startTime: Date.now() } });
-                toast.success("Jonli efir boshlandi! 🎥");
-            },
-
-            endLive: () => set({ activeLive: null }),
-
-            togglePinChat: (chatId) => {
-                set((state) => {
-                    const isPinned = includes(state.pinnedChats, chatId);
-                    const newPinned = isPinned
-                        ? filter(state.pinnedChats, id => id !== chatId)
-                        : [chatId, ...state.pinnedChats];
-                    return { pinnedChats: newPinned };
-                });
-            },
-
-            toggleMuteChat: (chatId) => {
-                set((state) => {
-                    const isMuted = includes(state.mutedChats, chatId);
-                    const mutedChats = isMuted
-                        ? filter(state.mutedChats, (id) => id !== chatId)
-                        : [...state.mutedChats, chatId];
-                    return { mutedChats };
-                });
-            },
-
-            toggleBlockChat: (chatId) => {
-                set((state) => {
-                    const isBlocked = includes(state.blockedChats, chatId);
-                    const blockedChats = isBlocked
-                        ? filter(state.blockedChats, (id) => id !== chatId)
-                        : [...state.blockedChats, chatId];
-                    return { blockedChats };
-                });
-            },
-
-            isChatMuted: (chatId) => includes(get().mutedChats, chatId),
-            isChatBlocked: (chatId) => includes(get().blockedChats, chatId),
-
-            setWallpaper: (wallpaperName) => set({ activeWallpaper: wallpaperName }),
-            setCustomWallpaper: (imageUrl) => set({ customWallpaper: imageUrl }),
-            reorderChats: (orderedIds) => {
-                const contacts = get().contacts;
-                const reordered = filter(map(orderedIds, id => find(contacts, c => c.id === id)), Boolean);
-                const remaining = filter(contacts, c => !includes(orderedIds, c.id));
-                set({ contacts: [...reordered, ...remaining] });
-            },
-
-            // AI Features (keeping them as mock for now but could be connected)
-            getChatSummary: () => "Ushbu suhbat tahlili hali tayyor emas.",
-            getLiveActivity: () => null,
-
-            markAsRead: (chatId) => {
-                const { socket } = get();
-                if (socket && chatId) {
-                    socket.emit("markAsRead", { roomId: chatId });
-                }
-                set((state) => ({
-                    activeRoomId: chatId,
-                    readReceipts: {
-                        ...state.readReceipts,
-                        [chatId]: new Date().toISOString(),
-                    },
-                    contacts: map(state.contacts, c =>
-                        c.id === chatId ? { ...c, unreadCount: 0 } : c
-                    ),
-                }));
-            },
-
-            getUnreadCount: (roomId) => {
-                const contact = find(get().contacts, c => c.id === roomId);
-                return contact?.unreadCount ?? 0;
-            },
-            
-            stories: [],
-            viewStory: (storyId) => {
-                set((state) => ({
-                    stories: map(state.stories, s => s.id === storyId ? { ...s, viewed: true } : s)
-                }));
-            },
-            addStory: (userName, avatar, content, type = "image") => {
-                const newStory = {
-                    id: Date.now(),
-                    userId: "me",
-                    userName,
-                    avatar,
-                    content,
-                    type,
-                    timestamp: Date.now(),
-                    viewed: false
-                };
-                set((state) => ({
-                    stories: [newStory, ...state.stories]
-                }));
-                toast.success("Hikoya muvaffaqiyatli qo'shildi! ✨");
-            },
-        }),
-        { 
-            name: "chat-storage",
-            partialize: (state) => ({
-                pinnedChats: state.pinnedChats,
-                mutedChats: state.mutedChats,
-                blockedChats: state.blockedChats,
-                activeWallpaper: state.activeWallpaper,
-                customWallpaper: state.customWallpaper,
-                bookmarks: state.bookmarks,
-                folders: state.folders,
-            }),
+            isSearchingMessages: false,
+          });
+          return [];
         }
-    )
+
+        const state = get();
+        const fallbackResults = [];
+        const q = toLower(normalizedQuery);
+
+        forEach(toPairs(state.messages), ([chatId, msgs]) => {
+          forEach(msgs, (m) => {
+            if (m.text && includes(toLower(m.text), q)) {
+              const entity = find(state.contacts, (c) => c.id == chatId);
+              fallbackResults.push({
+                chatId,
+                msgId: m.id,
+                text: m.text,
+                time: m.time,
+                senderName: entity?.name || tStore("chat.sender.unknown", "Noma'lum"),
+                avatar: entity?.avatar || "👤",
+              });
+            }
+          });
+        });
+
+        set({
+          isSearchingMessages: true,
+          messageSearchQuery: normalizedQuery,
+          messageSearchError: null,
+        });
+
+        try {
+          const response = await api.get("/chat/messages/search", {
+            params: {
+              q: normalizedQuery,
+              limit: options.limit ?? 20,
+              ...(options.cursor ? { cursor: options.cursor } : {}),
+              ...(options.roomId ? { roomId: options.roomId } : {}),
+              ...(options.participantUserId
+                ? { participantUserId: options.participantUserId }
+                : {}),
+              ...(options.senderId ? { senderId: options.senderId } : {}),
+              ...(options.type ? { type: options.type } : {}),
+              ...(options.pinnedOnly ? { pinnedOnly: true } : {}),
+              ...(options.mediaOnly ? { mediaOnly: true } : {}),
+              ...(options.dateFrom ? { dateFrom: options.dateFrom } : {}),
+              ...(options.dateTo ? { dateTo: options.dateTo } : {}),
+            },
+          });
+          const payload = getApiResponseData(response, {});
+          const serverResults = isArray(payload)
+            ? payload
+            : payload.data || payload.items || [];
+          const formattedResults = map(serverResults, (result) => ({
+            chatId: result.chatId,
+            msgId: result.msgId,
+            text: result.text,
+            type: result.type,
+            createdAt: result.createdAt,
+            time: result.createdAt
+              ? new Date(result.createdAt).toLocaleTimeString("uz", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "",
+            senderName:
+              result.roomName ||
+              result.senderName ||
+              tStore("chat.sender.unknown", "Noma'lum"),
+            avatar: result.avatar || "👤",
+            isPinned: Boolean(result.isPinned),
+          }));
+
+          set((current) => ({
+            messageSearchResults: options.cursor
+              ? [...current.messageSearchResults, ...formattedResults]
+              : formattedResults,
+            messageSearchCursor: payload.nextCursor || null,
+            isSearchingMessages: false,
+          }));
+
+          return formattedResults;
+        } catch (error) {
+          console.error("Failed to search messages", error);
+          set({
+            messageSearchResults: fallbackResults,
+            messageSearchCursor: null,
+            messageSearchError: tStore(
+              "chat.errors.searchUnavailable",
+              "Server qidiruv vaqtincha ishlamadi",
+            ),
+            isSearchingMessages: false,
+          });
+          return fallbackResults;
+        }
+      },
+
+      // --- Simplified compatibility methods ---
+      startLive: (chatId, hostName) => {
+        set({
+          activeLive: { chatId, hostName, viewers: 1, startTime: Date.now() },
+        });
+        toast.success(tStore("chat.live.started", "Jonli efir boshlandi! 🎥"));
+      },
+
+      endLive: () => set({ activeLive: null }),
+
+      togglePinChat: (chatId) => {
+        set((state) => {
+          const isPinned = includes(state.pinnedChats, chatId);
+          const newPinned = isPinned
+            ? filter(state.pinnedChats, (id) => id !== chatId)
+            : [chatId, ...state.pinnedChats];
+          return { pinnedChats: newPinned };
+        });
+      },
+
+      toggleMuteChat: (chatId) => {
+        set((state) => {
+          const isMuted = includes(state.mutedChats, chatId);
+          const mutedChats = isMuted
+            ? filter(state.mutedChats, (id) => id !== chatId)
+            : [...state.mutedChats, chatId];
+          return { mutedChats };
+        });
+      },
+
+      toggleBlockChat: (chatId) => {
+        set((state) => {
+          const isBlocked = includes(state.blockedChats, chatId);
+          const blockedChats = isBlocked
+            ? filter(state.blockedChats, (id) => id !== chatId)
+            : [...state.blockedChats, chatId];
+          return { blockedChats };
+        });
+      },
+
+      isChatMuted: (chatId) => includes(get().mutedChats, chatId),
+      isChatBlocked: (chatId) => includes(get().blockedChats, chatId),
+
+      setWallpaper: (wallpaperName) => set({ activeWallpaper: wallpaperName }),
+      setCustomWallpaper: (imageUrl) => set({ customWallpaper: imageUrl }),
+      reorderChats: (orderedIds) => {
+        const contacts = get().contacts;
+        const reordered = filter(
+          map(orderedIds, (id) => find(contacts, (c) => c.id === id)),
+          Boolean,
+        );
+        const remaining = filter(contacts, (c) => !includes(orderedIds, c.id));
+        set({ contacts: [...reordered, ...remaining] });
+      },
+
+      // AI Features (keeping them as mock for now but could be connected)
+      getChatSummary: () =>
+        tStore(
+          "chat.summary.unavailable",
+          "Ushbu suhbat tahlili hali tayyor emas.",
+        ),
+      getLiveActivity: () => null,
+
+      markAsRead: (chatId) => {
+        const { socket } = get();
+        if (socket && chatId) {
+          socket.emit("markAsRead", { roomId: chatId });
+        }
+        set((state) => ({
+          activeRoomId: chatId,
+          readReceipts: {
+            ...state.readReceipts,
+            [chatId]: new Date().toISOString(),
+          },
+          contacts: map(state.contacts, (c) =>
+            c.id === chatId ? { ...c, unreadCount: 0 } : c,
+          ),
+        }));
+      },
+
+      getUnreadCount: (roomId) => {
+        const contact = find(get().contacts, (c) => c.id === roomId);
+        return contact?.unreadCount ?? 0;
+      },
+
+      stories: [],
+      viewStory: (storyId) => {
+        set((state) => ({
+          stories: map(state.stories, (s) =>
+            s.id === storyId ? { ...s, viewed: true } : s,
+          ),
+        }));
+      },
+      addStory: (userName, avatar, content, type = "image") => {
+        const newStory = {
+          id: Date.now(),
+          userId: "me",
+          userName,
+          avatar,
+          content,
+          type,
+          timestamp: Date.now(),
+          viewed: false,
+        };
+        set((state) => ({
+          stories: [newStory, ...state.stories],
+        }));
+        toast.success(
+          tStore("chat.stories.added", "Hikoya muvaffaqiyatli qo'shildi! ✨"),
+        );
+      },
+    }),
+    {
+      name: "chat-storage",
+      partialize: (state) => ({
+        pinnedChats: state.pinnedChats,
+        mutedChats: state.mutedChats,
+        blockedChats: state.blockedChats,
+        activeWallpaper: state.activeWallpaper,
+        customWallpaper: state.customWallpaper,
+        bookmarks: state.bookmarks,
+        folders: state.folders,
+      }),
+    },
+  ),
 );
 
 export default useChatStore;

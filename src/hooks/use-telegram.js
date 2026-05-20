@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { get } from "lodash";
 
 export function useTelegram() {
   const tg = window.Telegram?.WebApp;
@@ -10,8 +11,9 @@ export function useTelegram() {
   return {
     tg,
     isTelegramWebApp,
-    initData: tg?.initData || null,
-    user: tg?.initDataUnsafe?.user || null,
-    colorScheme: tg?.colorScheme || "light",
+    initData: get(tg, "initData") || null,
+    startParam: get(tg, "initDataUnsafe.start_param") || null,
+    user: get(tg, "initDataUnsafe.user") || null,
+    colorScheme: get(tg, "colorScheme") || "light",
   };
 }

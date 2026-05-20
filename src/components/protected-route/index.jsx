@@ -1,6 +1,7 @@
 import { some, includes } from "lodash";
 import React from "react";
 import { Navigate } from "react-router";
+import PageLoader from "@/components/page-loader/index.jsx";
 import { useAuthStore } from "@/store";
 
 /**
@@ -9,30 +10,38 @@ import { useAuthStore } from "@/store";
  * @param {string} redirectTo - ruxsat bo'lmaganda yo'naltirish
  * @param {React.ReactNode} children
  */
-const ProtectedRoute = ({ allowedRoles = [], redirectTo = "/user", children }) => {
-    const { roles, isAuthenticated, user } = useAuthStore();
+const ProtectedRoute = ({
+  allowedRoles = [],
+  redirectTo = "/user",
+  children,
+}) => {
+  const { roles, isAuthenticated, user, isHydrated } = useAuthStore();
 
-    if (!isAuthenticated) {
-        return <Navigate to="/auth/sign-in" replace />;
-    }
+  if (isHydrated === false) {
+    return <PageLoader />;
+  }
 
-    if (user?.passwordSetupRequired) {
-        return <Navigate to="/auth/set-password" replace />;
-    }
+  if (!isAuthenticated) {
+    return <Navigate to="/auth/sign-in" replace />;
+  }
 
-    // If no roles specified, allow all authenticated users
-    if (allowedRoles.length === 0) {
-        return children;
-    }
+  if (user?.passwordSetupRequired) {
+    return <Navigate to="/auth/set-password" replace />;
+  }
 
-    // Check if user has at least one of the allowed roles
-    const hasAccess = some(allowedRoles, (role) => includes(roles, role));
-
-    if (!hasAccess) {
-        return <Navigate to={redirectTo} replace />;
-    }
-
+  // If no roles specified, allow all authenticated users
+  if (allowedRoles.length === 0) {
     return children;
+  }
+
+  // Check if user has at least one of the allowed roles
+  const hasAccess = some(allowedRoles, (role) => includes(roles, role));
+
+  if (!hasAccess) {
+    return <Navigate to={redirectTo} replace />;
+  }
+
+  return children;
 };
 
 export default ProtectedRoute;

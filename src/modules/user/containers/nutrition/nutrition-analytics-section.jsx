@@ -34,6 +34,10 @@ const PERIOD_OPTIONS = [
   { value: 30, label: "30 kun" },
 ];
 
+export const NUTRITION_REPORT_EXPORT_EVENT = "nutrition-report-export";
+export const NUTRITION_REPORT_TOGGLE_COMPARISON_EVENT =
+  "nutrition-report-toggle-comparison";
+
 const MACRO_SERIES = [
   { key: "Oqsil (g)", goalKey: "protein", label: "Oqsil", color: "#ef4444" },
   { key: "Uglevod (g)", goalKey: "carbs", label: "Uglevod", color: "#f59e0b" },
@@ -54,6 +58,12 @@ const AXIS_TICK = { fontSize: 10, fill: "hsl(var(--muted-foreground))" };
 const GRID_STROKE = "hsl(var(--border))";
 const CALORIE_CHART_MARGIN = { top: 4, right: 4, left: -24, bottom: 0 };
 const MACRO_CHART_MARGIN = { top: 4, right: 8, left: -24, bottom: 0 };
+const REPORT_CARD_CLASS =
+  "border-primary/10 bg-card/95 shadow-sm shadow-primary/5";
+const REPORT_PANEL_CLASS =
+  "border-primary/10 bg-background/60 shadow-sm shadow-primary/5";
+const REPORT_CONTROL_FOCUS_CLASS =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 const getSourceLabel = (source) =>
   SOURCE_META[source]?.label || SOURCE_META.manual.label;
@@ -255,7 +265,7 @@ const formatSignedCalories = (value) => {
 };
 
 const HighlightCard = React.memo(({ icon: Icon, label, title, description, tone }) => (
-  <div className="rounded-2xl border bg-card px-4 py-3">
+  <div className={cn("rounded-2xl border px-4 py-3", REPORT_CARD_CLASS)}>
     <div className="flex items-center gap-2">
       <span className={cn("grid size-8 place-items-center rounded-full", tone)}>
         <Icon className="size-4" />
@@ -290,7 +300,7 @@ CustomTooltip.displayName = "CustomTooltip";
 const StatBadge = React.memo(({ label, value, goal, unit, color }) => {
   const pct = goal > 0 ? Math.min(100, Math.round((value / goal) * 100)) : 0;
   return (
-    <div className="rounded-2xl border bg-card px-4 py-3 space-y-1.5">
+    <div className={cn("rounded-2xl border px-4 py-3 space-y-1.5", REPORT_CARD_CLASS)}>
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className={cn("text-xl font-black", color)}>
         {value}
@@ -316,7 +326,7 @@ const SourceBreakdownChart = React.memo(({ sourceChartData, topSource }) => {
   if (sourceChartData.length === 0) return null;
 
   return (
-    <div className="grid gap-4 rounded-2xl border bg-muted/15 p-4 lg:grid-cols-[220px_1fr]">
+    <div className={cn("grid gap-4 rounded-2xl border p-4 lg:grid-cols-[220px_1fr]", REPORT_PANEL_CLASS)}>
       <div className="h-48">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -354,7 +364,7 @@ const SourceBreakdownChart = React.memo(({ sourceChartData, topSource }) => {
           {map(sourceChartData, (item, index) => (
             <div
               key={item.name}
-              className="flex items-center justify-between rounded-xl border bg-card px-3 py-2"
+              className={cn("flex items-center justify-between rounded-xl border px-3 py-2", REPORT_CARD_CLASS)}
             >
               <span className="flex min-w-0 items-center gap-2 text-sm font-semibold">
                 <span
@@ -430,7 +440,7 @@ CalorieBarChart.displayName = "CalorieBarChart";
 
 const WeekComparisonChart = React.memo(
   ({ comparisonChartData, averageCaloriesDelta }) => (
-    <div className="space-y-3 rounded-2xl border bg-muted/15 p-4">
+    <div className={cn("space-y-3 rounded-2xl border p-4", REPORT_PANEL_CLASS)}>
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-bold text-foreground">
@@ -517,6 +527,7 @@ const MacroTrendChart = React.memo(
                   onClick={() => onToggleMacro(macro.key)}
                   className={cn(
                     "rounded-xl border px-2.5 py-1 text-xs font-medium transition-colors",
+                    REPORT_CONTROL_FOCUS_CLASS,
                     active
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border text-muted-foreground hover:text-foreground",
@@ -595,7 +606,7 @@ const MacroTrendCards = React.memo(({ chartData }) => {
           : 0;
 
         return (
-          <div key={item.key} className="rounded-2xl border bg-card px-4 py-3">
+          <div key={item.key} className={cn("rounded-2xl border px-4 py-3", REPORT_CARD_CLASS)}>
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
@@ -819,6 +830,29 @@ export default function NutritionAnalyticsSection() {
     });
   }, []);
 
+  React.useEffect(() => {
+    const handleExternalExport = () => handleExportCsv();
+    const handleExternalComparisonToggle = () =>
+      setComparisonEnabled((value) => !value);
+
+    window.addEventListener(NUTRITION_REPORT_EXPORT_EVENT, handleExternalExport);
+    window.addEventListener(
+      NUTRITION_REPORT_TOGGLE_COMPARISON_EVENT,
+      handleExternalComparisonToggle,
+    );
+
+    return () => {
+      window.removeEventListener(
+        NUTRITION_REPORT_EXPORT_EVENT,
+        handleExternalExport,
+      );
+      window.removeEventListener(
+        NUTRITION_REPORT_TOGGLE_COMPARISON_EVENT,
+        handleExternalComparisonToggle,
+      );
+    };
+  }, [handleExportCsv]);
+
   if (isLoading) {
     return <ChartSkeleton />;
   }
@@ -826,7 +860,7 @@ export default function NutritionAnalyticsSection() {
   if (daily.length === 0) return null;
 
   return (
-    <div className="rounded-[28px] border bg-card p-5 shadow-sm sm:p-6 space-y-5">
+    <div className={cn("rounded-[28px] border p-5 sm:p-6 space-y-5", REPORT_CARD_CLASS)}>
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
@@ -837,7 +871,11 @@ export default function NutritionAnalyticsSection() {
           <button
             type="button"
             onClick={handleExportCsv}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-transparent px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-xl border border-border bg-transparent px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground",
+              REPORT_CONTROL_FOCUS_CLASS,
+            )}
+            aria-label="Nutrition report CSV eksport qilish"
           >
             <DownloadIcon className="size-3.5" />
             CSV
@@ -852,6 +890,7 @@ export default function NutritionAnalyticsSection() {
               }}
               className={cn(
                 "rounded-xl border px-2.5 py-1 text-xs font-medium transition-colors",
+                REPORT_CONTROL_FOCUS_CLASS,
                 rangeMode === "preset" && days === opt.value
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-border bg-transparent text-muted-foreground hover:text-foreground",
@@ -865,6 +904,7 @@ export default function NutritionAnalyticsSection() {
             onClick={() => setRangeMode("custom")}
             className={cn(
               "rounded-xl border px-2.5 py-1 text-xs font-medium transition-colors",
+              REPORT_CONTROL_FOCUS_CLASS,
               rangeMode === "custom"
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-border bg-transparent text-muted-foreground hover:text-foreground",
@@ -877,6 +917,7 @@ export default function NutritionAnalyticsSection() {
             onClick={() => setComparisonEnabled((value) => !value)}
             className={cn(
               "rounded-xl border px-2.5 py-1 text-xs font-medium transition-colors",
+              REPORT_CONTROL_FOCUS_CLASS,
               comparisonEnabled
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-border bg-transparent text-muted-foreground hover:text-foreground",
@@ -887,10 +928,11 @@ export default function NutritionAnalyticsSection() {
         </div>
       </div>
       {rangeMode === "custom" ? (
-        <div className="space-y-2 rounded-2xl border bg-muted/20 p-3">
+        <div className={cn("space-y-2 rounded-2xl border p-3", REPORT_PANEL_CLASS)}>
           <div className="grid gap-2 sm:grid-cols-2">
             <input
               type="date"
+              aria-label="Hisobot boshlanish sanasi"
               value={customRange.start}
               max={customRange.end || undefined}
               onChange={(event) =>
@@ -899,10 +941,14 @@ export default function NutritionAnalyticsSection() {
                   start: event.target.value,
                 }))
               }
-              className="h-10 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary"
+              className={cn(
+                "h-10 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary",
+                REPORT_CONTROL_FOCUS_CLASS,
+              )}
             />
             <input
               type="date"
+              aria-label="Hisobot tugash sanasi"
               value={customRange.end}
               min={customRange.start || undefined}
               onChange={(event) =>
@@ -911,7 +957,10 @@ export default function NutritionAnalyticsSection() {
                   end: event.target.value,
                 }))
               }
-              className="h-10 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary"
+              className={cn(
+                "h-10 rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary",
+                REPORT_CONTROL_FOCUS_CLASS,
+              )}
             />
           </div>
           {!hasValidCustomRange ? (
@@ -937,7 +986,7 @@ export default function NutritionAnalyticsSection() {
           unit="g"
           color="text-blue-500"
         />
-        <div className="rounded-2xl border bg-card px-4 py-3 space-y-1.5">
+        <div className={cn("rounded-2xl border px-4 py-3 space-y-1.5", REPORT_CARD_CLASS)}>
           <p className="text-xs text-muted-foreground">Maqsad bajarildi</p>
           <p className="text-xl font-black text-emerald-500">
             {summary.caloriesGoalMet ?? 0}
@@ -950,7 +999,7 @@ export default function NutritionAnalyticsSection() {
             </span>
           </div>
         </div>
-        <div className="rounded-2xl border bg-card px-4 py-3 space-y-1.5">
+        <div className={cn("rounded-2xl border px-4 py-3 space-y-1.5", REPORT_CARD_CLASS)}>
           <p className="text-xs text-muted-foreground">Kuzatilgan kunlar</p>
           <p className="text-xl font-black text-primary">
             {summary.daysTracked ?? 0}

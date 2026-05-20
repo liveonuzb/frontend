@@ -18,7 +18,7 @@ export const normalizeRoles = (roles) => {
       map(roles, (role) => {
         const normalizedRole =
           typeof role === "string" ? role : role?.name || role?.role;
-        return normalizedRole === "ADMIN" ? "SUPER_ADMIN" : normalizedRole;
+        return normalizedRole;
       }),
     ),
     (role) => includes(ACTIVE_ROLES, role),

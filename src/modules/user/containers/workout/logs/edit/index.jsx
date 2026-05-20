@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { get } from "lodash";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
@@ -10,6 +11,7 @@ import {
 } from "@/hooks/app/use-workout-logs";
 
 const EditWorkoutLogPage = () => {
+  const { t } = useTranslation();
   const { logGroupId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -35,17 +37,17 @@ const EditWorkoutLogPage = () => {
       return;
     }
 
-    toast.error("Workout log topilmadi");
+    toast.error(t("user.workout.logPages.notFound"));
     closeRoute();
-  }, [closeRoute, effectiveLog, isLoading, logGroupId]);
+  }, [closeRoute, effectiveLog, isLoading, logGroupId, t]);
 
   const handleSave = React.useCallback(
     async (payload) => {
       await updateLog(logGroupId, payload);
-      toast.success("Workout log yangilandi");
+      toast.success(t("user.workout.logPages.updateSuccess"));
       closeRoute();
     },
-    [closeRoute, logGroupId, updateLog],
+    [closeRoute, logGroupId, t, updateLog],
   );
 
   if (isLoading && !effectiveLog) {

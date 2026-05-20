@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { find, get, map, toNumber, trim } from "lodash";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 import { APPROVAL_STATUS_OPTIONS } from "./workout-plan-utils.js";
@@ -18,6 +19,7 @@ const SORT_DIRECTIONS = ["asc", "desc"];
 const ITEMS_PER_PAGE = 10;
 
 export const usePlanFilters = () => {
+  const { t } = useTranslation();
   const [search, setSearch] = useQueryState("q", parseAsString.withDefault(""));
   const [statusFilter, setStatusFilter] = useQueryState(
     "status",
@@ -58,30 +60,30 @@ export const usePlanFilters = () => {
   const filterFields = React.useMemo(
     () => [
       {
-        label: "Qidiruv",
+        label: t("admin.common.search"),
         key: "q",
         type: "text",
         defaultOperator: "contains",
-        placeholder: "Workout shablon qidirish",
+        placeholder: t("admin.workoutPlans.filters.searchPlaceholder"),
       },
       {
-        label: "Status",
+        label: t("admin.common.status"),
         key: "status",
         type: "select",
         defaultOperator: "is",
         options: [
-          { value: "all", label: "Barchasi" },
-          { value: "active", label: "Faol" },
-          { value: "inactive", label: "Nofaol" },
+          { value: "all", label: t("admin.common.all") },
+          { value: "active", label: t("admin.common.active") },
+          { value: "inactive", label: t("admin.common.inactive") },
         ],
       },
       {
-        label: "Qiyinchilik",
+        label: t("admin.workoutPlans.columns.difficulty"),
         key: "difficulty",
         type: "select",
         defaultOperator: "is",
         options: [
-          { value: "all", label: "Barcha darajalar" },
+          { value: "all", label: t("admin.workoutPlans.filters.allLevels") },
           ...map(DIFFICULTY_OPTIONS, (option) => ({
             value: option,
             label: option,
@@ -89,28 +91,28 @@ export const usePlanFilters = () => {
         ],
       },
       {
-        label: "Approval",
+        label: t("admin.workoutPlans.form.approval"),
         key: "approvalStatus",
         type: "select",
         defaultOperator: "is",
         options: [
-          { value: "all", label: "Barchasi" },
+          { value: "all", label: t("admin.common.all") },
           ...APPROVAL_STATUS_OPTIONS,
         ],
       },
       {
-        label: "Tarjima holati",
+        label: t("admin.workoutPlans.filters.translationStatus"),
         key: "translations",
         type: "select",
         defaultOperator: "is",
         options: [
-          { value: "all", label: "Barchasi" },
-          { value: "complete", label: "To'liq" },
-          { value: "missing", label: "Kam tarjimali" },
+          { value: "all", label: t("admin.common.all") },
+          { value: "complete", label: t("admin.workoutPlans.filters.complete") },
+          { value: "missing", label: t("admin.workoutPlans.filters.missing") },
         ],
       },
     ],
-    [],
+    [t],
   );
 
   const activeFilters = React.useMemo(() => {

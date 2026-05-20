@@ -1,7 +1,8 @@
 import React from "react";
+import "@/lib/i18n";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import WorkoutPlanSessionPage from "./index.jsx";
 import {
   useWorkoutExerciseCategories,
@@ -94,7 +95,9 @@ const replacementExerciseList = [
   },
 ];
 
-const renderPage = (initialEntry = "/user/workout/plans/plan-1/days/0/session") => {
+const renderPage = (
+  initialEntry = "/user/workout/plans/plan-1/days/0/session",
+) => {
   const router = createMemoryRouter(
     [
       {
@@ -119,6 +122,10 @@ const renderPage = (initialEntry = "/user/workout/plans/plan-1/days/0/session") 
 };
 
 describe("WorkoutPlanSessionPage", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
     vi.useRealTimers();
     window.localStorage.clear();
@@ -163,7 +170,22 @@ describe("WorkoutPlanSessionPage", () => {
     expect(screen.getByText("Day 1-Legs")).toBeInTheDocument();
     expect(screen.getByText("Sumo Squat · Barbell")).toBeInTheDocument();
     expect(screen.getByText("0/2 Done")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "LOG NEXT SET" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "LOG NEXT SET" }),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps mobile session controls inside the safe area without covering content", () => {
+    renderPage();
+
+    expect(screen.getByTestId("workout-session-shell")).toHaveClass("pb-36");
+    expect(screen.getByTestId("workout-session-content")).toHaveClass("pb-8");
+    expect(screen.getByTestId("workout-session-rest-timer")).toHaveClass(
+      "bottom-[calc(env(safe-area-inset-bottom)+5.75rem)]",
+    );
+    expect(screen.getByTestId("workout-session-bottom-actions")).toHaveClass(
+      "pb-[calc(env(safe-area-inset-bottom)+0.75rem)]",
+    );
   });
 
   it("renders the page loader while the plan is loading", () => {
@@ -192,8 +214,12 @@ describe("WorkoutPlanSessionPage", () => {
     expect(screen.getByText("Workout reja topilmadi")).toBeInTheDocument();
     expect(screen.getByText("Day 1-Workout session")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Ortga" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Qayta urinish" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Rejalarga qaytish" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Qayta urinish" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Rejalarga qaytish" }),
+    ).toBeInTheDocument();
   });
 
   it("shows an invalid day state with navigation back to the plan", () => {
@@ -267,6 +293,44 @@ describe("WorkoutPlanSessionPage", () => {
     expect(updateProgressMock).not.toHaveBeenCalled();
   }, 8000);
 
+  it("shows a local-only banner and retries remote draft sync after a transient progress failure", async () => {
+    useWorkoutSessionDraft.mockReturnValue({
+      draft: {
+        id: "server-session-1",
+        planId: "plan-1",
+        planDayIndex: 0,
+        exercises: [],
+        lastSyncedAt: new Date().toISOString(),
+      },
+    });
+    updateProgressMock
+      .mockRejectedValueOnce(new Error("network down"))
+      .mockResolvedValue({ id: "server-session-1" });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(updateProgressMock).toHaveBeenCalledTimes(1);
+    });
+
+    expect(
+      screen.getByText("Progress vaqtincha faqat qurilmada saqlanmoqda."),
+    ).toBeInTheDocument();
+
+    await waitFor(
+      () => {
+        expect(updateProgressMock).toHaveBeenCalledTimes(2);
+      },
+      { timeout: 3000 },
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText("Progress vaqtincha faqat qurilmada saqlanmoqda."),
+      ).not.toBeInTheDocument();
+    });
+  }, 6000);
+
   it("logs the next set from the sticky action", async () => {
     renderPage();
 
@@ -297,6 +361,31 @@ describe("WorkoutPlanSessionPage", () => {
     });
 
     expect(screen.getByText("+15s")).toBeInTheDocument();
+  });
+
+  it("asks for confirmation before leaving an active workout session", async () => {
+    const router = renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText("Sumo Squat · Barbell")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Ortga" }));
+
+    expect(
+      screen.getByText("Workout sessiyasi tugallanmagan"),
+    ).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe(
+      "/user/workout/plans/plan-1/days/0/session",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Chiqib ketish" }));
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(
+        "/user/workout/plans/plan-1/days/0",
+      );
+    });
   });
 
   it("can skip the selected exercise from the action drawer", async () => {
@@ -340,7 +429,9 @@ describe("WorkoutPlanSessionPage", () => {
     expect(
       screen.getByRole("button", { name: /mashg'ulotni yakunlash/i }),
     ).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /mashg'ulotni yakunlash/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /mashg'ulotni yakunlash/i }),
+    );
 
     await waitFor(() => {
       expect(finishSessionMock).toHaveBeenCalledWith(
@@ -349,6 +440,8 @@ describe("WorkoutPlanSessionPage", () => {
         expect.objectContaining({
           planName: "Leg Power",
           focus: "Legs",
+          localDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+          timezone: expect.any(String),
           exerciseCount: 1,
           completedExerciseCount: 1,
           logs: [
@@ -361,6 +454,11 @@ describe("WorkoutPlanSessionPage", () => {
         }),
       );
     });
+    const finishPayload = finishSessionMock.mock.calls[0][2];
+    expect(finishPayload.logs[0]).toMatchObject({
+      exerciseCatalogId: 7,
+    });
+    expect(finishPayload.logs[0]).not.toHaveProperty("exerciseId");
 
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(
@@ -369,7 +467,109 @@ describe("WorkoutPlanSessionPage", () => {
     });
   });
 
+  it("uses the persisted completed session response for the summary route state", async () => {
+    finishSessionMock.mockResolvedValue({
+      id: "completed-session-1",
+      planId: "plan-1",
+      planDayIndex: 0,
+      planName: "Persisted Leg Power",
+      focus: "Persisted Legs",
+      durationSeconds: 1500,
+      estimatedCalories: 222,
+      totalSets: 2,
+      completedSets: 2,
+      exerciseCount: 1,
+      completedExerciseCount: 1,
+      totalVolumeKg: 840,
+      exerciseSummaries: [
+        {
+          exerciseKey: "7-0",
+          exerciseName: "Sumo Squat",
+          completedSets: 2,
+          totalReps: 30,
+          totalVolumeKg: 840,
+        },
+      ],
+      endedAt: "2026-05-19T10:30:00.000Z",
+    });
+    const router = renderPage();
+
+    fireEvent.click(screen.getByText("LOG NEXT SET"));
+    fireEvent.click(screen.getByText("LOG NEXT SET"));
+    fireEvent.click(
+      screen.getByRole("button", { name: /mashg'ulotni yakunlash/i }),
+    );
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(
+        "/user/workout/plans/plan-1/days/0/session/summary",
+      );
+    });
+
+    expect(router.state.location.state.summary).toMatchObject({
+      sessionId: "completed-session-1",
+      planName: "Persisted Leg Power",
+      focus: "Persisted Legs",
+      durationMinutes: 25,
+      estimatedCalories: 222,
+      totalSets: 2,
+      completedSets: 2,
+      totalVolumeKg: 840,
+      completedAt: "2026-05-19T10:30:00.000Z",
+    });
+  });
+
+  it("sends a stable completion key when finishing a workout", async () => {
+    renderPage();
+
+    fireEvent.click(screen.getByText("LOG NEXT SET"));
+    fireEvent.click(screen.getByText("LOG NEXT SET"));
+    fireEvent.click(
+      screen.getByRole("button", { name: /mashg'ulotni yakunlash/i }),
+    );
+
+    await waitFor(() => {
+      expect(finishSessionMock).toHaveBeenCalledWith(
+        "plan-1",
+        0,
+        expect.objectContaining({
+          completionKey: expect.stringMatching(/^plan-1:0:/),
+        }),
+      );
+    });
+  });
+
+  it("submits workout finish only once when the finish button is clicked repeatedly", async () => {
+    let resolveFinish;
+    finishSessionMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveFinish = resolve;
+        }),
+    );
+
+    renderPage();
+
+    fireEvent.click(screen.getByText("LOG NEXT SET"));
+    fireEvent.click(screen.getByText("LOG NEXT SET"));
+
+    const finishButton = screen.getByRole("button", {
+      name: /mashg'ulotni yakunlash/i,
+    });
+    fireEvent.click(finishButton);
+    fireEvent.click(finishButton);
+
+    expect(finishSessionMock).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(finishButton).toBeDisabled();
+    });
+
+    resolveFinish({ id: "completed-session-1" });
+  });
+
   it("restores saved session progress from local storage on refresh", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-04-29T08:00:00.000Z"));
     window.localStorage.setItem(
       "liveon:workout-session:plan-1:0",
       JSON.stringify({
@@ -378,7 +578,7 @@ describe("WorkoutPlanSessionPage", () => {
         sessionStartTime: Date.now() - 45000,
         elapsed: 45,
         expandedExerciseId: "7-0",
-        restSecondsRemaining: 28,
+        restSecondsRemaining: 999,
         restEndsAt: new Date(Date.now() + 28000).toISOString(),
         exercises: [
           {
@@ -401,5 +601,6 @@ describe("WorkoutPlanSessionPage", () => {
     expect(screen.getByText("1/2 Done")).toBeInTheDocument();
     expect(screen.getAllByDisplayValue("28").length).toBeGreaterThan(0);
     expect(screen.getByText("Dam olish vaqti")).toBeInTheDocument();
+    expect(screen.getByText("00:28")).toBeInTheDocument();
   });
 });

@@ -21,6 +21,7 @@ import {
   usePostQuery,
   usePutQuery,
 } from "@/hooks/api";
+import { trackCampaignConversion } from "@/lib/analytics.js";
 import { FOODS_QUICK_ADD_QUERY_KEY } from "@/hooks/app/use-food-catalog";
 import { SAVED_MEALS_QUERY_KEY } from "@/hooks/app/use-saved-meals";
 import { invalidateGamificationQueries } from "@/modules/user/lib/gamification-query-keys";
@@ -252,12 +253,14 @@ export const useDailyTrackingActions = () => {
 
   const addWaterCup = React.useCallback(
     async (date = getTodayKey(), amountMl = 250) => {
+      const dateKey = normalizeDateKey(date);
       const response = await postMutation.mutateAsync({
-        url: `/daily-tracking/${normalizeDateKey(date)}/water`,
+        url: `/daily-tracking/${dateKey}/water`,
         attributes: { amountMl },
       });
       const dayData = syncResponse(response);
       await syncGamificationState();
+      void trackCampaignConversion("water_log", { date: dateKey, amountMl });
       return dayData;
     },
     [postMutation, syncGamificationState, syncResponse],
@@ -388,6 +391,11 @@ export const useDailyTrackingActions = () => {
           );
         }
         await Promise.all(invalidations);
+        void trackCampaignConversion("meal_log", {
+          date: dateKey,
+          mealType,
+          source: food?.source ?? null,
+        });
         return dayData;
       } catch (error) {
         queryClient.setQueryData(queryKey, previousQueryData);
@@ -424,6 +432,10 @@ export const useDailyTrackingActions = () => {
       }
 
       await Promise.all(invalidations);
+      void trackCampaignConversion("meal_log", {
+        date: dateKey,
+        mealCount: payloadItems.length,
+      });
       return dayData;
     },
     [postMutation, queryClient, syncGamificationState, syncResponse],

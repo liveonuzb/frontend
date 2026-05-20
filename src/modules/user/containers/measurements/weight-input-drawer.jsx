@@ -17,7 +17,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { map, get } from "lodash";
-import { WeightPicker } from "@/modules/onboarding/components/weight-picker";
+import { WeightPicker } from "@/components/weight-picker";
 
 export const WeightInputDrawer = ({
   open,

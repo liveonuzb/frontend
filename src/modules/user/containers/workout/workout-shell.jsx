@@ -1,29 +1,30 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router";
 import FeatureModuleShell from "@/modules/user/layout/feature-module-shell.jsx";
 import { WORKOUT_NAV_ITEMS } from "./workout-nav-items.js";
 
-import { filter, includes } from "lodash";
+import { includes, map, get } from "lodash";
 
 const PRIMARY_TAB_PATHS = [
   "/user/workout/home",
   "/user/workout/plans",
-  "/user/workout/running",
-  "/user/workout/running/history",
   "/user/workout/exercises",
-  "/user/workout/report",
   "/user/workout/history",
+  "/user/workout/report",
 ];
 
 const WorkoutShell = () => {
+  const { t } = useTranslation();
   const { pathname } = useLocation();
   const shouldHideTabs = !includes(PRIMARY_TAB_PATHS, pathname);
   const navItems = React.useMemo(
     () =>
-      pathname.startsWith("/user/workout/running")
-        ? filter(WORKOUT_NAV_ITEMS, (item) => item.to !== "/user/workout/report")
-        : WORKOUT_NAV_ITEMS,
-    [pathname],
+      map(WORKOUT_NAV_ITEMS, (item) => ({
+        ...item,
+        label: get(item, "labelKey") ? t(get(item, "labelKey")) : item.label,
+      })),
+    [t],
   );
 
   return (
@@ -31,6 +32,10 @@ const WorkoutShell = () => {
       items={navItems}
       className="workout-module-shell"
       navClassName="workout-subnav"
+      navAriaLabel={t(
+        "user.workout.nav.ariaLabel",
+        "Workout module sections",
+      )}
       hideMobileNav={shouldHideTabs}
       hideDesktopNav={shouldHideTabs}
     />

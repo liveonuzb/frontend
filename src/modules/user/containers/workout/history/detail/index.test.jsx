@@ -1,4 +1,6 @@
 import React from "react";
+import "@/lib/i18n";
+import i18n from "@/lib/i18n";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -63,7 +65,8 @@ const renderPage = (initialEntry = "/user/workout/history/session-1") => {
 };
 
 describe("SessionHistoryDetailPage", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("uz");
     useWorkoutSessionHistoryItem.mockReturnValue({
       session: {
         id: "session-1",
@@ -77,6 +80,7 @@ describe("SessionHistoryDetailPage", () => {
         totalVolumeKg: 840,
         totalSets: 6,
         completedSets: 6,
+        skippedExerciseCount: 1,
         exerciseSummaries: [
           {
             exerciseKey: "squat-1",
@@ -85,6 +89,12 @@ describe("SessionHistoryDetailPage", () => {
             totalReps: 30,
             totalVolumeKg: 840,
             distanceMeters: 0,
+          },
+        ],
+        skippedExercises: [
+          {
+            exerciseKey: "lunge-1",
+            exerciseName: "Lunge",
           },
         ],
         exercises: [
@@ -134,6 +144,58 @@ describe("SessionHistoryDetailPage", () => {
     expect(screen.getAllByText("840 kg").length).toBeGreaterThan(0);
     expect(screen.getByText("Barbell")).toBeInTheDocument();
     expect(screen.getByText("10 reps")).toBeInTheDocument();
+    expect(screen.getByText("O'tkazilgan")).toBeInTheDocument();
+    expect(screen.getByText("1 ta")).toBeInTheDocument();
+  });
+
+  it("renders skipped exercises from the completed session summary fallback", () => {
+    useWorkoutSessionHistoryItem.mockReturnValue({
+      session: {
+        id: "session-1",
+        planId: "plan-1",
+        planDayIndex: 0,
+        planName: "Leg Power",
+        focus: "Legs",
+        endedAt: new Date().toISOString(),
+        durationSeconds: 1500,
+        estimatedCalories: 180,
+        totalVolumeKg: 840,
+        totalSets: 6,
+        completedSets: 3,
+        skippedExerciseCount: 1,
+        exerciseSummaries: [
+          {
+            exerciseKey: "squat-1",
+            exerciseName: "Squat",
+            completedSets: 3,
+            totalReps: 30,
+            totalVolumeKg: 840,
+            distanceMeters: 0,
+          },
+        ],
+        skippedExercises: [
+          {
+            exerciseKey: "lunge-1",
+            exerciseName: "Lunge",
+            completedSets: 0,
+            totalSets: 3,
+            totalReps: 0,
+            totalVolumeKg: 0,
+            distanceMeters: 0,
+          },
+        ],
+        exercises: [],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    renderPage();
+
+    expect(screen.getByText("Squat")).toBeInTheDocument();
+    expect(screen.getByText("Lunge")).toBeInTheDocument();
+    expect(screen.getByText("Skipped")).toBeInTheDocument();
   });
 
   it("navigates back to history", () => {
@@ -152,7 +214,7 @@ describe("SessionHistoryDetailPage", () => {
     expect(router.state.location.pathname).toBe("/user/workout/plans/plan-1/days/0");
   });
 
-  it("renders outdoor run metrics and links to the running detail page", () => {
+  it("renders outdoor run metrics inside unified history detail", () => {
     useWorkoutSessionHistoryItem.mockReturnValue({
       session: {
         id: "run-session-1",
@@ -188,10 +250,10 @@ describe("SessionHistoryDetailPage", () => {
     expect(screen.getByText("6:00 /km")).toBeInTheDocument();
     expect(screen.queryByText("Bajarilgan mashqlar")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByText("Running detail"));
-
-    expect(router.state.location.pathname).toBe("/user/workout/running/run-session-1");
-    expect(screen.getByTestId("running-detail-route")).toBeInTheDocument();
+    expect(screen.queryByText("Running detail")).not.toBeInTheDocument();
+    expect(router.state.location.pathname).toBe(
+      "/user/workout/history/run-session-1",
+    );
   });
 
   it("loads the report detail alias by session id", () => {

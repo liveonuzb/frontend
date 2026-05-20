@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { get, map, size, uniq, filter, isArray, toNumber } from "lodash";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
@@ -30,6 +31,7 @@ import {
   useActivateWorkoutPlan,
   useRegenerateWorkoutPlanDay,
   useWorkoutPlanDetail,
+  WORKOUT_PLAN_STATUS,
 } from "@/hooks/app/use-workout-plans";
 import { cn } from "@/lib/utils";
 import { useBreadcrumbStore } from "@/store";
@@ -47,7 +49,7 @@ const parseDayIndex = (value) => {
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : -1;
 };
 
-const getDayEquipments = (exercises = []) => {
+const getDayEquipments = (exercises = [], fallback = "Default") => {
   const equipmentNames = uniq(
     exercises.flatMap((exercise) => {
       const equipments = isArray(get(exercise, "equipments"))
@@ -58,7 +60,7 @@ const getDayEquipments = (exercises = []) => {
     }),
   );
 
-  return equipmentNames.length > 0 ? equipmentNames.join(", ") : "Default";
+  return equipmentNames.length > 0 ? equipmentNames.join(", ") : fallback;
 };
 
 const getBenchmarkText = (generationMeta) =>
@@ -66,15 +68,19 @@ const getBenchmarkText = (generationMeta) =>
     ? `${get(generationMeta, "benchmark.oneRepMaxKg")} kg`
     : "-";
 
-const getExerciseEquipment = (exercise) =>
+const getExerciseEquipment = (exercise, fallback = "Bodyweight") =>
   get(exercise, "equipment") ||
   get(exercise, "equipments[0]") ||
   get(exercise, "category") ||
-  "Bodyweight";
+  fallback;
 
 const ExerciseRow = ({ exercise, onOpen }) => {
+  const { t } = useTranslation();
   const hasImage = Boolean(get(exercise, "imageUrl"));
-  const equipment = getExerciseEquipment(exercise);
+  const equipment = getExerciseEquipment(
+    exercise,
+    t("user.workout.dayDetail.bodyweight"),
+  );
 
   return (
     <button
@@ -102,21 +108,36 @@ const ExerciseRow = ({ exercise, onOpen }) => {
           {getExerciseDisplaySummary(exercise)}
         </span>
       </span>
-      <Badge variant="secondary">{getExerciseSetCount(exercise)} set</Badge>
+      <Badge variant="secondary">
+        {t("user.workout.dayDetail.setCount", {
+          count: getExerciseSetCount(exercise),
+        })}
+      </Badge>
     </button>
   );
 };
 
-const FocusVisual = ({ focus }) => (
+const FocusVisual = ({ focus }) => {
+  const { t } = useTranslation();
+
+  return (
   <div className="flex size-24 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
     <div className="flex size-16 items-center justify-center rounded-full border border-primary/20 bg-background/70">
       <TargetIcon />
     </div>
-    <span className="sr-only">{focus || "Workout"} focus visual</span>
+    <span className="sr-only">
+      {t("user.workout.dayDetail.focusVisual", {
+        focus: focus || t("user.workout.title"),
+      })}
+    </span>
   </div>
-);
+  );
+};
 
-const WorkoutRegenerateOverlay = ({ progress }) => (
+const WorkoutRegenerateOverlay = ({ progress }) => {
+  const { t } = useTranslation();
+
+  return (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/96 px-6 backdrop-blur-sm">
     <div className="flex w-full max-w-md flex-col items-center gap-8 text-center">
       <div className="flex size-20 items-center justify-center rounded-full bg-primary/10">
@@ -124,10 +145,10 @@ const WorkoutRegenerateOverlay = ({ progress }) => (
       </div>
       <div className="space-y-2">
         <h2 className="text-3xl font-black tracking-tight">
-          AI yangi mashg'ulotlarni tayyorlamoqda...
+          {t("user.workout.dayDetail.regenerateTitle")}
         </h2>
         <p className="text-sm text-muted-foreground">
-          Shu kun uchun mashqlar qayta tuzilmoqda.
+          {t("user.workout.dayDetail.regenerateDescription")}
         </p>
       </div>
       <div className="relative flex size-52 items-center justify-center rounded-full">
@@ -141,13 +162,15 @@ const WorkoutRegenerateOverlay = ({ progress }) => (
         <div className="relative text-5xl font-black">{progress}%</div>
       </div>
       <Button className="w-full" size="lg" disabled>
-        PLEASE WAIT...
+        {t("user.workout.dayDetail.pleaseWait")}
       </Button>
     </div>
   </div>
-);
+  );
+};
 
 const WorkoutPlanDayDetailPage = () => {
+  const { t } = useTranslation();
   const { planId, dayIndex: dayIndexParam } = useParams();
   const navigate = useNavigate();
   const { setBreadcrumbs } = useBreadcrumbStore();
@@ -179,7 +202,8 @@ const WorkoutPlanDayDetailPage = () => {
   const isLocked = isWorkoutDayLocked(plan, dayIndex);
   const generationMeta = get(plan, "generationMeta");
   const benchmarkText = getBenchmarkText(generationMeta);
-  const focus = get(selectedDay, "focus") || get(selectedDay, "day") || "Workout";
+  const focus =
+    get(selectedDay, "focus") || get(selectedDay, "day") || t("user.workout.title");
   const coverImageUrl = get(plan, "coverImageUrl");
 
   /* eslint-disable react-hooks/set-state-in-effect */
@@ -201,29 +225,29 @@ const WorkoutPlanDayDetailPage = () => {
 
   React.useEffect(() => {
     setBreadcrumbs([
-      { url: "/user", title: "Bosh sahifa" },
-      { url: "/user/workout", title: "Workout" },
-      { url: "/user/workout/plans", title: "Mening rejalarim" },
+      { url: "/user", title: t("user.dashboard.title") },
+      { url: "/user/workout", title: t("user.workout.title") },
+      { url: "/user/workout/plans", title: t("user.workout.dayDetail.myPlans") },
       {
         url: `/user/workout/plans/${planId}`,
-        title: get(plan, "name", "Plan"),
+        title: get(plan, "name", t("user.workout.dayDetail.planFallback")),
       },
       {
         url: `/user/workout/plans/${planId}/days/${dayIndex}`,
-        title: `DAY ${dayIndex + 1}`,
+        title: t("user.workout.dayDetail.dayTitle", { day: dayIndex + 1 }),
       },
     ]);
-  }, [dayIndex, plan, planId, setBreadcrumbs]);
+  }, [dayIndex, plan, planId, setBreadcrumbs, t]);
 
   const handleStart = async () => {
     if (!get(plan, "id")) return;
     if (isLocked) {
-      toast.error("Avval oldingi kun mashg'ulotini yakunlang");
+      toast.error(t("user.workout.dayDetail.lockedStartError"));
       return;
     }
 
     try {
-      if (get(plan, "status") !== "active") {
+      if (get(plan, "status") !== WORKOUT_PLAN_STATUS.active) {
         await activatePlanMutation.activatePlan(get(plan, "id"), plan);
       }
 
@@ -231,7 +255,7 @@ const WorkoutPlanDayDetailPage = () => {
     } catch (error) {
       toast.error(
         get(error, "response.data.message") ||
-          "Rejani boshlashda xatolik yuz berdi",
+          t("user.workout.dayDetail.startError"),
       );
     }
   };
@@ -250,7 +274,7 @@ const WorkoutPlanDayDetailPage = () => {
       setIsRegenerateOverlayOpen(true);
       await regenerateDayMutation.regenerateDay(get(plan, "id"), dayIndex, {});
       setRegenerateProgress(100);
-      toast.success("Kun mashqlari yangilandi");
+      toast.success(t("user.workout.dayDetail.regenerateSuccess"));
       window.setTimeout(() => {
         setIsRegenerateOverlayOpen(false);
       }, 250);
@@ -259,7 +283,7 @@ const WorkoutPlanDayDetailPage = () => {
       setRegenerateProgress(0);
       toast.error(
         get(error, "response.data.message") ||
-          "Kun mashqlarini yangilab bo'lmadi",
+          t("user.workout.dayDetail.regenerateError"),
       );
     }
   };
@@ -278,30 +302,32 @@ const WorkoutPlanDayDetailPage = () => {
               size="icon"
               className="rounded-full"
               onClick={() => navigate(`/user/workout/plans/${planId}`)}
-              aria-label="Planga qaytish"
+              aria-label={t("user.workout.dayDetail.backToPlan")}
             >
               <ArrowLeftIcon />
             </Button>
             <div className="min-w-0">
               <h1 className="text-3xl font-black tracking-normal">
-                DAY {dayIndex + 1}
+                {t("user.workout.dayDetail.dayTitle", { day: dayIndex + 1 })}
               </h1>
               <p className="text-sm text-muted-foreground">
-                Workout kuni tafsilotlari
+                {t("user.workout.dayDetail.subtitle")}
               </p>
             </div>
           </header>
           <Card>
             <CardHeader>
-              <CardTitle>Workout reja topilmadi</CardTitle>
+              <CardTitle>{t("user.workout.dayDetail.planNotFoundTitle")}</CardTitle>
               <CardDescription>
-                Reja o'chirilgan yoki sizda unga ruxsat yo'q.
+                {t("user.workout.dayDetail.planNotFoundDescription")}
               </CardDescription>
             </CardHeader>
             <CardFooter className="gap-2">
-              <Button onClick={() => refetch()}>Qayta urinish</Button>
+              <Button onClick={() => refetch()}>
+                {t("user.workout.dayDetail.retry")}
+              </Button>
               <Button variant="outline" onClick={() => navigate("/user/workout/plans")}>
-                Rejalarga qaytish
+                {t("user.workout.dayDetail.backToPlans")}
               </Button>
             </CardFooter>
           </Card>
@@ -315,9 +341,9 @@ const WorkoutPlanDayDetailPage = () => {
       <PageTransition mode="slide-up">
         <Card>
           <CardHeader>
-            <CardTitle>Workout kuni topilmadi</CardTitle>
+            <CardTitle>{t("user.workout.dayDetail.dayNotFoundTitle")}</CardTitle>
             <CardDescription>
-              Tanlangan kun bu reja schedule ro'yxatida mavjud emas.
+              {t("user.workout.dayDetail.dayNotFoundDescription")}
             </CardDescription>
           </CardHeader>
           <CardFooter>
@@ -326,7 +352,7 @@ const WorkoutPlanDayDetailPage = () => {
               onClick={() => navigate(`/user/workout/plans/${planId}`)}
             >
               <ArrowLeftIcon data-icon="inline-start" />
-              Plan sahifasiga qaytish
+              {t("user.workout.dayDetail.backToPlanPage")}
             </Button>
           </CardFooter>
         </Card>
@@ -341,7 +367,7 @@ const WorkoutPlanDayDetailPage = () => {
           {coverImageUrl ? (
             <img
               src={coverImageUrl}
-              alt={get(plan, "name", "Workout reja")}
+              alt={get(plan, "name", t("user.workout.dayDetail.planImageAlt"))}
               className="absolute inset-0 size-full object-cover"
             />
           ) : (
@@ -356,7 +382,7 @@ const WorkoutPlanDayDetailPage = () => {
               size="icon"
               className="rounded-full bg-background/85"
               onClick={() => navigate(`/user/workout/plans/${planId}`)}
-              aria-label="Planga qaytish"
+              aria-label={t("user.workout.dayDetail.backToPlan")}
             >
               <ArrowLeftIcon />
             </Button>
@@ -366,7 +392,7 @@ const WorkoutPlanDayDetailPage = () => {
                 size="icon"
                 className="rounded-full bg-background/85"
                 onClick={() => navigate(`/user/workout/plans/edit/${planId}`)}
-                aria-label="Rejani tahrirlash"
+                aria-label={t("user.workout.dayDetail.editPlan")}
               >
                 <PencilIcon />
               </Button>
@@ -374,7 +400,7 @@ const WorkoutPlanDayDetailPage = () => {
                 variant="secondary"
                 size="icon"
                 className="rounded-full bg-background/85"
-                aria-label="Ko'proq"
+                aria-label={t("user.workout.dayDetail.more")}
               >
                 <MoreVerticalIcon />
               </Button>
@@ -386,7 +412,7 @@ const WorkoutPlanDayDetailPage = () => {
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <h1 className="text-5xl font-black tracking-normal md:text-6xl">
-                DAY {dayIndex + 1}
+                {t("user.workout.dayDetail.dayTitle", { day: dayIndex + 1 })}
               </h1>
               <Badge variant="secondary" className="mt-3 text-base font-black">
                 {focus}
@@ -399,8 +425,15 @@ const WorkoutPlanDayDetailPage = () => {
             <div className="flex items-center gap-3 border-b px-5 py-5 sm:border-b-0 sm:border-r">
               <DumbbellIcon className="text-primary" />
               <div>
-                <p className="text-sm text-muted-foreground">Equipment</p>
-                <p className="text-lg font-black">{getDayEquipments(exercises)}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("user.workout.dayDetail.equipment")}
+                </p>
+                <p className="text-lg font-black">
+                  {getDayEquipments(
+                    exercises,
+                    t("user.workout.dayDetail.defaultEquipment"),
+                  )}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3 px-5 py-5">
@@ -416,10 +449,14 @@ const WorkoutPlanDayDetailPage = () => {
 
           <section className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-2xl font-black">{size(exercises)} exercises</h2>
+              <h2 className="text-2xl font-black">
+                {t("user.workout.dayDetail.exerciseCount", {
+                  count: size(exercises),
+                })}
+              </h2>
               <Badge variant="outline">
                 <CalendarDaysIcon />
-                {get(selectedDay, "day", "Workout kuni")}
+                {get(selectedDay, "day", t("user.workout.dayDetail.workoutDay"))}
               </Badge>
             </div>
 
@@ -436,9 +473,9 @@ const WorkoutPlanDayDetailPage = () => {
             ) : (
               <Card>
                 <CardHeader>
-                  <CardTitle>Bu kunda mashq yo'q</CardTitle>
+                  <CardTitle>{t("user.workout.dayDetail.noExercisesTitle")}</CardTitle>
                   <CardDescription>
-                    Rejani tahrirlab ushbu kunga mashqlar qo'shing.
+                    {t("user.workout.dayDetail.noExercisesDescription")}
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -452,7 +489,9 @@ const WorkoutPlanDayDetailPage = () => {
               disabled={activatePlanMutation.isPending || isLocked}
             >
               <PlayIcon data-icon="inline-start" />
-              {isLocked ? "Locked" : "START"}
+              {isLocked
+                ? t("user.workout.dayDetail.locked")
+                : t("user.workout.dayDetail.start")}
             </Button>
             {get(plan, "source") === "ai" ? (
               <Button
@@ -462,7 +501,7 @@ const WorkoutPlanDayDetailPage = () => {
                 disabled={regenerateDayMutation.isPending}
               >
                 <RotateCcwIcon data-icon="inline-start" />
-                Regenerate
+                {t("user.workout.dayDetail.regenerate")}
               </Button>
             ) : null}
             <Button
@@ -471,12 +510,12 @@ const WorkoutPlanDayDetailPage = () => {
               onClick={() => navigate(`/user/workout/plans/edit/${planId}?day=${dayIndex}`)}
             >
               <PencilIcon data-icon="inline-start" />
-              Edit
+              {t("user.workout.dayDetail.edit")}
             </Button>
           </div>
           {isLocked ? (
             <p className="text-sm text-muted-foreground">
-              Keyingi kunni boshlashdan oldin oldingi workout kunlarini yakunlang.
+              {t("user.workout.dayDetail.lockedHint")}
             </p>
           ) : null}
         </main>

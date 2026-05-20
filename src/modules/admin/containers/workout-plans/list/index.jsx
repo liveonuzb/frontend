@@ -1,10 +1,11 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { get, isEqual, filter, isArray, keys, trim } from "lodash";
 import { toast } from "sonner";
 import { useMatch, useNavigate } from "react-router";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
-import { useGetQuery } from "@/hooks/api";
+import { useGetQuery, usePostQuery } from "@/hooks/api";
 import PageTransition from "@/components/page-transition";
 import WorkoutPlanBuilder from "@/components/workout-plan-builder";
 import {
@@ -22,6 +23,8 @@ import {
   UnsavedChangesAlert,
   useUnsavedChangesGuard,
 } from "@/modules/admin/components/unsaved-changes-guard.jsx";
+import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
+import { AssignWorkoutTemplateDrawer } from "./assign-workout-template-drawer.jsx";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
 import { usePlanFilters } from "./use-filters.js";
@@ -41,8 +44,12 @@ import {
   resolveText,
 } from "./workout-plan-utils.js";
 
+const WORKOUT_ASSIGNMENTS_QUERY_KEY = ["admin", "workout-assignments"];
+
 const Index = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+  const { canManageContent } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const createMatch = useMatch("/admin/workout-plans/create");
@@ -52,6 +59,7 @@ const Index = () => {
   const translatingTemplateId = get(translateMatch, "params.id");
   const formDrawerOpen = Boolean(createMatch || editingTemplateId);
   const translationsDrawerOpen = Boolean(translatingTemplateId);
+  const [assigningTemplate, setAssigningTemplate] = React.useState(null);
   const { data: languagesData } = useGetQuery({
     url: "/admin/languages",
     queryProps: { queryKey: ["admin", "languages"] },
@@ -116,6 +124,19 @@ const Index = () => {
       enabled: Boolean(translatingTemplateId),
     },
   });
+  const { data: assignableUsersData, isLoading: isAssignableUsersLoading } =
+    useGetQuery({
+      url: "/admin/workout-assignments/users",
+      params: { limit: 50 },
+      queryProps: {
+        queryKey: [
+          ...WORKOUT_ASSIGNMENTS_QUERY_KEY,
+          "users",
+          assigningTemplate?.id,
+        ],
+        enabled: Boolean(assigningTemplate?.id && canManageContent),
+      },
+    });
 
   const {
     createTemplate,
@@ -124,6 +145,11 @@ const Index = () => {
     isSaving,
     updateTemplate,
   } = useWorkoutPlanTemplateMutations();
+  const { mutateAsync: assignWorkoutTemplate, isPending: isAssigningWorkout } =
+    usePostQuery({
+      queryKey: WORKOUT_ASSIGNMENTS_QUERY_KEY,
+      listKey: WORKOUT_PLAN_TEMPLATES_QUERY_KEY,
+    });
 
   const safeLanguages = React.useMemo(
     () => (isArray(languages) ? languages : []),
@@ -133,6 +159,15 @@ const Index = () => {
     () => (isArray(templates) ? templates : []),
     [templates],
   );
+  const assignableUsers = React.useMemo(() => {
+    const responseData = get(assignableUsersData, "data.data", []);
+
+    if (isArray(responseData)) {
+      return responseData;
+    }
+
+    return get(responseData, "data", []);
+  }, [assignableUsersData]);
 
   const activeLanguages = React.useMemo(
     () => filter(safeLanguages, (language) => language.isActive !== false),
@@ -154,9 +189,9 @@ const Index = () => {
   React.useEffect(() => {
     setBreadcrumbs([
       { url: "/admin", title: "Admin" },
-      { url: "/admin/workout-plans", title: "Workout rejalari" },
+      { url: "/admin/workout-plans", title: t("admin.workoutPlans.title") },
     ]);
-  }, [setBreadcrumbs]);
+  }, [setBreadcrumbs, t]);
 
   React.useEffect(() => {
     if (!createMatch) return;
@@ -239,12 +274,22 @@ const Index = () => {
     },
     [activeLanguages, navigate],
   );
+  const openAssignDrawer = React.useCallback(
+    (template) => {
+      if (!canManageContent) {
+        return;
+      }
+
+      setAssigningTemplate(template);
+    },
+    [canManageContent],
+  );
 
   const handleContinueToBuilder = React.useCallback(() => {
     const nextName = trim(String(form.name ?? ""));
 
     if (!nextName) {
-      toast.error("Reja nomini kiriting");
+      toast.error(t("admin.workoutPlans.messages.nameRequired"));
       return;
     }
 
@@ -282,10 +327,10 @@ const Index = () => {
       try {
         if (editingTemplate?.id) {
           await updateTemplate(editingTemplate.id, payload);
-          toast.success("Workout shabloni yangilandi");
+          toast.success(t("admin.workoutPlans.messages.updated"));
         } else {
           await createTemplate(payload);
-          toast.success("Workout shabloni yaratildi");
+          toast.success(t("admin.workoutPlans.messages.created"));
         }
 
         setBuilderOpen(false);
@@ -295,7 +340,7 @@ const Index = () => {
         toast.error(
           resolveErrorMessage(
             error,
-            "Workout shablonini saqlashda xatolik yuz berdi",
+            t("admin.workoutPlans.messages.saveError"),
           ),
         );
       }
@@ -336,7 +381,7 @@ const Index = () => {
       );
 
     if (!keys(nextTitles).length) {
-      toast.error("Kamida bitta til uchun nom kiriting");
+      toast.error(t("admin.workoutPlans.messages.translationNameRequired"));
       return;
     }
 
@@ -347,13 +392,13 @@ const Index = () => {
         translations: nextTitles,
         descriptionTranslations: nextDescriptions,
       });
-      toast.success("Tarjimalar yangilandi");
+      toast.success(t("admin.workoutPlans.messages.translationsUpdated"));
       setTranslatingTemplate(null);
       setTranslationForm({ titles: {}, descriptions: {} });
       navigate("/admin/workout-plans");
     } catch (error) {
       toast.error(
-        resolveErrorMessage(error, "Tarjimalarni saqlashda xatolik yuz berdi"),
+        resolveErrorMessage(error, t("admin.workoutPlans.messages.translationSaveError")),
       );
     }
   }, [
@@ -371,13 +416,13 @@ const Index = () => {
 
     try {
       await deleteTemplate(deleteCandidate.id);
-      toast.success("Workout shabloni o'chirildi");
+      toast.success(t("admin.workoutPlans.messages.deleted"));
       setDeleteCandidate(null);
     } catch (error) {
       toast.error(
         resolveErrorMessage(
           error,
-          "Workout shablonini o'chirishda xatolik yuz berdi",
+          t("admin.workoutPlans.messages.deleteError"),
         ),
       );
     }
@@ -387,14 +432,38 @@ const Index = () => {
     async (template) => {
       try {
         await updateTemplate(template.id, { isActive: !template.isActive });
-        toast.success("Status yangilandi");
+        toast.success(t("admin.workoutPlans.messages.statusUpdated"));
       } catch (error) {
         toast.error(
-          resolveErrorMessage(error, "Statusni yangilashda xatolik yuz berdi"),
+          resolveErrorMessage(error, t("admin.workoutPlans.messages.statusUpdateError")),
         );
       }
     },
     [updateTemplate],
+  );
+  const handleAssignWorkout = React.useCallback(
+    async (payload) => {
+      if (!canManageContent) {
+        return;
+      }
+
+      try {
+        await assignWorkoutTemplate({
+          url: "/admin/workout-assignments",
+          attributes: payload,
+        });
+        toast.success(t("admin.workoutPlans.messages.assigned"));
+        setAssigningTemplate(null);
+      } catch (error) {
+        toast.error(
+          resolveErrorMessage(
+            error,
+            t("admin.workoutPlans.messages.assignError"),
+          ),
+        );
+      }
+    },
+    [assignWorkoutTemplate, canManageContent],
   );
 
   const columns = useColumns({
@@ -402,7 +471,9 @@ const Index = () => {
     currentPage,
     languageCount,
     isSaving,
+    canAssignTemplates: canManageContent,
     onToggleStatus: handleToggleStatus,
+    openAssignDrawer,
     openEditDrawer,
     openTranslationsDrawer,
     setDeleteCandidate,
@@ -443,19 +514,18 @@ const Index = () => {
               variant="outline"
               className="border-primary/20 bg-primary/10 text-primary"
             >
-              Admin template'lar
+              {t("admin.workoutPlans.list.badge")}
             </Badge>
             <h1 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">
-              Workout shablonlari
+              {t("admin.workoutPlans.list.title")}
             </h1>
             <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-              Admin yaratgan workout rejalari user tarafidagi
+              {t("admin.workoutPlans.list.subtitlePrefix")}
               <span className="font-medium text-foreground">
                 {" "}
-                Tayyor shablonlar{" "}
+                {t("admin.workoutPlans.list.subtitleHighlight")}{" "}
               </span>
-              bo'limiga chiqadi. Asosiy ma'lumotni avval yaratasiz, tarjimalar
-              esa alohida amalda boshqariladi.
+              {t("admin.workoutPlans.list.subtitleSuffix")}
             </p>
           </div>
 
@@ -472,7 +542,7 @@ const Index = () => {
             </Button>
             <Button onClick={openCreateDrawer}>
               <PlusIcon className="mr-2 size-4" />
-              Yangi shablon
+              {t("admin.workoutPlans.list.create")}
             </Button>
           </div>
         </section>
@@ -540,6 +610,20 @@ const Index = () => {
         isSaving={isSaving}
         isLoading={isTranslatingTemplateLoading}
         onSave={handleTranslationSave}
+      />
+
+      <AssignWorkoutTemplateDrawer
+        open={Boolean(assigningTemplate)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAssigningTemplate(null);
+          }
+        }}
+        template={assigningTemplate}
+        users={assignableUsers}
+        isLoadingUsers={isAssignableUsersLoading}
+        isAssigning={isAssigningWorkout}
+        onAssign={handleAssignWorkout}
       />
 
       <WorkoutPlanBuilder

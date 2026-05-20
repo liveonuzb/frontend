@@ -1,7 +1,9 @@
 import React from "react";
+import "@/lib/i18n";
+import i18n from "@/lib/i18n";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import WorkoutShell from "./workout-shell.jsx";
 
 const renderShell = (initialEntry) => {
@@ -28,21 +30,42 @@ const renderShell = (initialEntry) => {
 };
 
 describe("WorkoutShell", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
+  });
+
   it("shows top tabs on workout home", () => {
     renderShell("/user/workout/home");
 
     expect(screen.getAllByText("Home").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Plans").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Running").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Exercises").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("History").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Report").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Running")).not.toBeInTheDocument();
     expect(screen.getByText("Workout Home")).toBeInTheDocument();
   });
 
-  it("shows top tabs on the running workout tab", () => {
+  it("exposes workout tabs as labelled navigation with the active page", () => {
+    renderShell("/user/workout/plans");
+
+    const navSurfaces = screen.getAllByRole("navigation", {
+      name: "Workout module sections",
+    });
+
+    expect(navSurfaces.length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("link", { name: "Plans" })[0]).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(screen.queryByRole("link", { name: "Running" })).not.toBeInTheDocument();
+  });
+
+  it("hides top tabs on the deprecated running workout tab", () => {
     renderShell("/user/workout/running");
 
-    expect(screen.getAllByText("Running").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Running")).not.toBeInTheDocument();
+    expect(screen.queryByText("Home")).not.toBeInTheDocument();
     expect(screen.getByText("Workout Running")).toBeInTheDocument();
   });
 
@@ -57,14 +80,15 @@ describe("WorkoutShell", () => {
   it("shows top tabs on primary history list route", () => {
     renderShell("/user/workout/history");
 
-    expect(screen.getAllByText("Report").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("History").length).toBeGreaterThan(0);
     expect(screen.getByText("Workout History")).toBeInTheDocument();
   });
 
-  it("shows top tabs on running history list route", () => {
+  it("hides top tabs on deprecated running history routes", () => {
     renderShell("/user/workout/running/history");
 
-    expect(screen.getAllByText("Running").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Running")).not.toBeInTheDocument();
+    expect(screen.queryByText("Home")).not.toBeInTheDocument();
     expect(screen.getByText("Running History")).toBeInTheDocument();
   });
 

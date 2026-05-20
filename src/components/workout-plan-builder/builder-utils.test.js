@@ -66,6 +66,105 @@ describe("workout plan builder utils", () => {
     ]);
   });
 
+  it("builds a backend schedule contract with stable day and exercise metadata", () => {
+    const trainDays = [
+      {
+        id: "day-client-1",
+        name: "Day 1",
+        dayKey: "day-1",
+        focus: "Chest",
+      },
+    ];
+    const exercisesByDay = {
+      "day-client-1": [
+        {
+          id: "ex-client-1",
+          exerciseId: 7,
+          name: "Bench Press",
+          trackingType: "REPS_WEIGHT",
+          defaultSets: 3,
+          defaultReps: 12,
+          defaultDurationSeconds: 0,
+          defaultDistanceMeters: 0,
+          rest: 90,
+          sets: [{ reps: 12, weight: 40, restSeconds: 90 }],
+        },
+      ],
+    };
+
+    const savedPlan = buildSavePlan({
+      planSource: { id: "plan-1", days: 28, daysPerWeek: 1 },
+      planName: "Upper split",
+      planDescription: "Strength plan",
+      trainDays,
+      exercisesByDay,
+    });
+
+    expect(savedPlan.schedule).toEqual([
+      expect.objectContaining({
+        day: "Day 1",
+        dayKey: "day-1",
+        orderIndex: 0,
+        focus: "Chest",
+        exercises: [
+          expect.objectContaining({
+            exerciseId: 7,
+            orderIndex: 0,
+            trackingType: "REPS_WEIGHT",
+            defaultSets: 3,
+            defaultReps: 12,
+            defaultRestSeconds: 90,
+            sets: [{ reps: 12, weight: 40, restSeconds: 90 }],
+          }),
+        ],
+      }),
+    ]);
+  });
+
+  it("keeps custom exercise ids separate from numeric catalog exercise ids", () => {
+    const trainDays = [
+      {
+        id: "day-client-1",
+        name: "Day 1",
+        dayKey: "day-1",
+        focus: "Legs",
+      },
+    ];
+    const exercisesByDay = {
+      "day-client-1": [
+        {
+          id: "ex-client-1",
+          exerciseId: null,
+          customExerciseId: "custom-1",
+          source: "custom",
+          isCustom: true,
+          name: "Backyard sled push",
+          trackingType: "DISTANCE_ONLY",
+          defaultSets: 4,
+          defaultDistanceMeters: 200,
+          rest: 90,
+          sets: [{ distanceMeters: 200, restSeconds: 90 }],
+        },
+      ],
+    };
+
+    const savedPlan = buildSavePlan({
+      planSource: { id: "plan-1", days: 28, daysPerWeek: 1 },
+      planName: "Custom plan",
+      planDescription: "",
+      trainDays,
+      exercisesByDay,
+    });
+
+    expect(savedPlan.schedule[0].exercises[0]).toMatchObject({
+      exerciseId: null,
+      customExerciseId: "custom-1",
+      source: "custom",
+      isCustom: true,
+      name: "Backyard sled push",
+    });
+  });
+
   it("keeps exercise search and category filtering predictable", () => {
     const library = [
       { name: "Bench Press", category: "Chest" },

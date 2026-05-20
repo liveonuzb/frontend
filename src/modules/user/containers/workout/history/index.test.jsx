@@ -1,9 +1,13 @@
 import React from "react";
+import "@/lib/i18n";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import SessionHistoryPage from "./index.jsx";
-import { useWorkoutSessionHistory } from "@/hooks/app/use-workout-sessions";
+import {
+  useWorkoutSessionHistory,
+  useWorkoutSessionHistorySummary,
+} from "@/hooks/app/use-workout-sessions";
 import { useWorkoutPlans } from "@/hooks/app/use-workout-plans";
 
 vi.mock("@/components/page-transition", () => ({
@@ -14,11 +18,23 @@ vi.mock("@/components/page-loader/index.jsx", () => ({
   default: () => <div data-testid="page-loader">Loading</div>,
 }));
 
+vi.mock("../running/components/run-map-panel.jsx", () => ({
+  default: ({ polyline, qualityScore, emptyLabel }) => (
+    <div
+      data-testid="history-running-map"
+      data-polyline={polyline ?? ""}
+      data-quality={qualityScore ?? ""}
+      data-empty-label={emptyLabel ?? ""}
+    />
+  ),
+}));
+
 vi.mock("@/hooks/app/use-workout-sessions", async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual,
     useWorkoutSessionHistory: vi.fn(),
+    useWorkoutSessionHistorySummary: vi.fn(),
   };
 });
 
@@ -127,6 +143,9 @@ describe("SessionHistoryPage", () => {
           estimatedCalories: 320,
           distanceMeters: 5000,
           averagePaceSecondsPerKm: 360,
+          averageHeartRate: 162,
+          gpsQualityScore: 0.91,
+          routePolyline: "encoded-history-route",
           exerciseSummaries: [
             {
               exerciseKey: "outdoor-run",
@@ -138,9 +157,26 @@ describe("SessionHistoryPage", () => {
           ],
         },
       ],
+      meta: {
+        hasMore: false,
+        limit: 10,
+        nextCursor: null,
+      },
       isLoading: false,
       isError: false,
       refetch: vi.fn(),
+    });
+    useWorkoutSessionHistorySummary.mockReturnValue({
+      summary: {
+        totalSessions: 4,
+        totalDurationSeconds: 5400,
+        totalCalories: 1010,
+        totalVolumeKg: 1460,
+        totalDistanceMeters: 5000,
+        streakDays: 2,
+      },
+      isLoading: false,
+      isError: false,
     });
     useWorkoutPlans.mockReturnValue({
       items: [
@@ -181,7 +217,7 @@ describe("SessionHistoryPage", () => {
     expect(screen.getByTestId("history-detail-route")).toBeInTheDocument();
   });
 
-  it("routes outdoor runs to the running detail page with run metrics", () => {
+  it("routes outdoor runs to the unified history detail page with run metrics", () => {
     const router = renderPage();
 
     expect(screen.getByText("Outdoor run")).toBeInTheDocument();
@@ -191,8 +227,19 @@ describe("SessionHistoryPage", () => {
 
     fireEvent.click(screen.getByText("Outdoor run"));
 
-    expect(router.state.location.pathname).toBe("/user/workout/running/run-session-1");
-    expect(screen.getByTestId("running-detail-route")).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/user/workout/history/run-session-1");
+    expect(screen.getByTestId("history-detail-route")).toBeInTheDocument();
+  });
+
+  it("renders running rows with map thumbnail, pulse, and route quality", () => {
+    renderPage();
+
+    const mapPreview = screen.getByTestId("history-running-map");
+
+    expect(mapPreview).toHaveAttribute("data-polyline", "encoded-history-route");
+    expect(mapPreview).toHaveAttribute("data-quality", "0.91");
+    expect(screen.getByText("162 bpm")).toBeInTheDocument();
+    expect(screen.getAllByText("91/100").length).toBeGreaterThan(0);
   });
 
   it("filters sessions by selected period and shows streak", () => {
@@ -204,6 +251,139 @@ describe("SessionHistoryPage", () => {
 
     expect(screen.queryByText("Chest")).not.toBeInTheDocument();
     expect(screen.getByText("Core")).toBeInTheDocument();
+  });
+
+  it("requests server-filtered history and summary when period or type changes", () => {
+    renderPage();
+
+    expect(useWorkoutSessionHistory).toHaveBeenLastCalledWith({
+      limit: 10,
+      period: "all",
+      status: "completed",
+      type: "all",
+    });
+    expect(useWorkoutSessionHistorySummary).toHaveBeenLastCalledWith({
+      period: "all",
+      status: "completed",
+      type: "all",
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Running" }));
+
+    expect(useWorkoutSessionHistory).toHaveBeenLastCalledWith({
+      limit: 10,
+      period: "all",
+      status: "completed",
+      type: "running",
+    });
+    expect(useWorkoutSessionHistorySummary).toHaveBeenLastCalledWith({
+      period: "all",
+      status: "completed",
+      type: "running",
+    });
+  });
+
+  it("passes date range filters to history and summary queries", () => {
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText("Boshlanish sanasi"), {
+      target: { value: "2026-05-01" },
+    });
+    fireEvent.change(screen.getByLabelText("Tugash sanasi"), {
+      target: { value: "2026-05-20" },
+    });
+
+    expect(useWorkoutSessionHistory).toHaveBeenLastCalledWith({
+      dateFrom: "2026-05-01",
+      dateTo: "2026-05-20",
+      limit: 10,
+      period: "all",
+      status: "completed",
+      type: "all",
+    });
+    expect(useWorkoutSessionHistorySummary).toHaveBeenLastCalledWith({
+      dateFrom: "2026-05-01",
+      dateTo: "2026-05-20",
+      period: "all",
+      status: "completed",
+      type: "all",
+    });
+  });
+
+  it("moves through cursor pagination with previous and next controls", () => {
+    useWorkoutSessionHistory.mockImplementation((params = {}) => ({
+      sessions: [
+        {
+          id: params.cursor ? "session-page-2" : "session-page-1",
+          planName: "Leg Power",
+          focus: params.cursor ? "Second page" : "First page",
+          endedAt: new Date().toISOString(),
+          durationSeconds: 1200,
+          estimatedCalories: 180,
+          totalVolumeKg: 600,
+          totalSets: 4,
+          completedSets: 4,
+          completedExerciseCount: 2,
+          exerciseSummaries: [],
+        },
+      ],
+      meta: params.cursor
+        ? { hasMore: false, limit: 10, nextCursor: null }
+        : { hasMore: true, limit: 10, nextCursor: "session-page-1" },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    }));
+
+    renderPage();
+
+    expect(screen.getByText("First page")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Keyingi" }));
+
+    expect(useWorkoutSessionHistory).toHaveBeenLastCalledWith({
+      cursor: "session-page-1",
+      limit: 10,
+      period: "all",
+      status: "completed",
+      type: "all",
+    });
+    expect(screen.getByText("Second page")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Oldingi" }));
+
+    expect(useWorkoutSessionHistory).toHaveBeenLastCalledWith({
+      limit: 10,
+      period: "all",
+      status: "completed",
+      type: "all",
+    });
+  });
+
+  it("exports the currently visible history rows as CSV", () => {
+    const createObjectURL = vi.fn(() => "blob:history");
+    const revokeObjectURL = vi.fn();
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => {});
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: createObjectURL,
+    });
+    Object.defineProperty(URL, "revokeObjectURL", {
+      configurable: true,
+      value: revokeObjectURL,
+    });
+
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /eksport/i }));
+
+    expect(createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
+    expect(click).toHaveBeenCalled();
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:history");
+
+    click.mockRestore();
   });
 
   it("shows missed workouts and monthly summary", () => {

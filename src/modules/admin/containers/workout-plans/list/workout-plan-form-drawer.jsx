@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   Drawer,
   DrawerContent,
@@ -37,18 +38,19 @@ export function WorkoutPlanFormDrawer({
   onContinue,
   onCancel,
 }) {
+  const { t } = useTranslation();
+
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>
             {editingTemplate
-              ? "Workout shablonini tahrirlash"
-              : "Yangi workout shablon"}
+              ? t("admin.workoutPlans.form.editTitle")
+              : t("admin.workoutPlans.form.createTitle")}
           </DrawerTitle>
           <DrawerDescription>
-            Asosiy ma'lumotlarni kiriting. Tarjimalar keyin alohida amalda
-            qo'shiladi.
+            {t("admin.workoutPlans.form.description")}
           </DrawerDescription>
         </DrawerHeader>
 
@@ -60,7 +62,9 @@ export function WorkoutPlanFormDrawer({
           <div className="grid gap-4 px-4 pb-4 sm:px-6">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="workout-plan-name">Reja nomi</Label>
+                <Label htmlFor="workout-plan-name">
+                  {t("admin.workoutPlans.form.name")}
+                </Label>
                 <Input
                   id="workout-plan-name"
                   value={form.name}
@@ -70,12 +74,14 @@ export function WorkoutPlanFormDrawer({
                       name: event.target.value,
                     }))
                   }
-                  placeholder="Masalan: Yog' yoqish uchun 4 haftalik plan"
+                  placeholder={t("admin.workoutPlans.form.namePlaceholder")}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="workout-plan-description">Tavsif</Label>
+                <Label htmlFor="workout-plan-description">
+                  {t("admin.workoutPlans.form.planDescription")}
+                </Label>
                 <Textarea
                   id="workout-plan-description"
                   value={form.description}
@@ -85,7 +91,7 @@ export function WorkoutPlanFormDrawer({
                       description: event.target.value,
                     }))
                   }
-                  placeholder="Shablon haqida qisqa tavsif"
+                  placeholder={t("admin.workoutPlans.form.descriptionPlaceholder")}
                   className="min-h-28"
                 />
               </div>
@@ -93,7 +99,7 @@ export function WorkoutPlanFormDrawer({
 
             <div className="space-y-4 rounded-3xl border bg-muted/20 p-4">
               <div className="space-y-2">
-                <Label>Qiyinchilik</Label>
+                  <Label>{t("admin.workoutPlans.form.difficulty")}</Label>
                 <Select
                   value={form.difficulty}
                   onValueChange={(value) =>
@@ -104,7 +110,9 @@ export function WorkoutPlanFormDrawer({
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Qiyinchilikni tanlang" />
+                    <SelectValue
+                      placeholder={t("admin.workoutPlans.form.difficultyPlaceholder")}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {map(DIFFICULTY_OPTIONS, (option) => (
@@ -118,9 +126,11 @@ export function WorkoutPlanFormDrawer({
 
               <div className="flex items-center justify-between rounded-2xl border bg-background px-4 py-3">
                 <div>
-                  <p className="font-medium">Userga ko'rsatish</p>
+                  <p className="font-medium">
+                    {t("admin.workoutPlans.form.showToUsers")}
+                  </p>
                   <p className="text-sm text-muted-foreground">
-                    Faqat tasdiqlangan va faol shablonlar userga chiqadi.
+                    {t("admin.workoutPlans.form.showToUsersDescription")}
                   </p>
                 </div>
                 <Switch
@@ -136,7 +146,7 @@ export function WorkoutPlanFormDrawer({
 
               <div className="grid gap-3 sm:grid-cols-[220px_1fr]">
                 <div className="space-y-2">
-                  <Label>Approval</Label>
+                  <Label>{t("admin.workoutPlans.form.approval")}</Label>
                   <Select
                     value={form.approvalStatus}
                     onValueChange={(value) =>
@@ -147,7 +157,9 @@ export function WorkoutPlanFormDrawer({
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Approval status" />
+                      <SelectValue
+                        placeholder={t("admin.workoutPlans.form.approvalPlaceholder")}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {map(APPROVAL_STATUS_OPTIONS, (option) => (
@@ -161,7 +173,7 @@ export function WorkoutPlanFormDrawer({
 
                 <div className="space-y-2">
                   <Label htmlFor="workout-plan-approval-reason">
-                    Review izohi
+                    {t("admin.workoutPlans.form.reviewNote")}
                   </Label>
                   <Input
                     id="workout-plan-approval-reason"
@@ -172,21 +184,22 @@ export function WorkoutPlanFormDrawer({
                         approvalReason: event.target.value,
                       }))
                     }
-                    placeholder="Masalan: AI uchun tasdiqlandi"
+                    placeholder={t("admin.workoutPlans.form.reviewNotePlaceholder")}
                   />
                 </div>
               </div>
 
               <div className="rounded-2xl border bg-background p-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Preview
+                  {t("admin.workoutPlans.form.preview")}
                 </p>
                 <p className="mt-3 text-lg font-black">
-                  {trim(String(form.name ?? "")) || "Nomi kiritilmagan"}
+                  {trim(String(form.name ?? "")) ||
+                    t("admin.workoutPlans.form.emptyName")}
                 </p>
                 <p className="mt-2 text-sm text-muted-foreground">
                   {trim(String(form.description ?? "")) ||
-                    "Tavsif kiritilmagan"}
+                    t("admin.workoutPlans.form.emptyDescription")}
                 </p>
               </div>
             </div>
@@ -195,10 +208,10 @@ export function WorkoutPlanFormDrawer({
 
         <DrawerFooter>
           <Button onClick={onContinue} disabled={isSaving || isLoading}>
-            Builderga o'tish
+            {t("admin.workoutPlans.form.continueToBuilder")}
           </Button>
           <Button variant="outline" onClick={onCancel}>
-            Bekor qilish
+            {t("admin.common.cancel")}
           </Button>
         </DrawerFooter>
       </DrawerContent>

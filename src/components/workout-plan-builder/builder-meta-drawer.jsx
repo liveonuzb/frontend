@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { trim } from "lodash";
 import { toast } from "sonner";
 import { SaveIcon } from "lucide-react";
@@ -26,6 +27,7 @@ const BuilderMetaDrawer = ({
   description,
   onSave,
 }) => {
+  const { t } = useTranslation();
   const [draftName, setDraftName] = React.useState(name || "");
   const [draftDescription, setDraftDescription] = React.useState(
     description || "",
@@ -44,7 +46,7 @@ const BuilderMetaDrawer = ({
     const normalizedName = trim(draftName);
 
     if (!normalizedName) {
-      toast.error("Reja nomini kiriting");
+      toast.error(t("components.workoutPlanBuilder.toasts.nameRequired"));
       return;
     }
 
@@ -59,37 +61,43 @@ const BuilderMetaDrawer = ({
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>Plan ma'lumotlari</DrawerTitle>
+          <DrawerTitle>
+            {t("components.workoutPlanBuilder.metaDrawer.title")}
+          </DrawerTitle>
         </DrawerHeader>
         <DrawerBody>
           <FieldGroup className="gap-4">
             <Field>
-              <FieldLabel htmlFor="builder-plan-name">Plan nomi</FieldLabel>
+              <FieldLabel htmlFor="builder-plan-name">
+                {t("components.workoutPlanBuilder.meta.nameLabel")}
+              </FieldLabel>
               <Input
                 id="builder-plan-name"
                 value={draftName}
                 onChange={(event) => setDraftName(event.target.value)}
-                placeholder="Masalan: Upper Body Day"
+                placeholder={t("components.workoutPlanBuilder.meta.namePlaceholder")}
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="builder-plan-description">Izoh</FieldLabel>
+              <FieldLabel htmlFor="builder-plan-description">
+                {t("components.workoutPlanBuilder.meta.descriptionLabel")}
+              </FieldLabel>
               <Textarea
                 id="builder-plan-description"
                 value={draftDescription}
                 onChange={(event) => setDraftDescription(event.target.value)}
-                placeholder="Reja tavsifi"
+                placeholder={t("components.workoutPlanBuilder.metaDrawer.descriptionPlaceholder")}
               />
             </Field>
           </FieldGroup>
         </DrawerBody>
         <DrawerFooter className="sm:flex-row">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Bekor qilish
+            {t("components.workoutPlanBuilder.meta.cancel")}
           </Button>
           <Button onClick={handleSave}>
             <SaveIcon data-icon="inline-start" />
-            Saqlash
+            {t("components.workoutPlanBuilder.metaDrawer.save")}
           </Button>
         </DrawerFooter>
       </DrawerContent>

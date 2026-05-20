@@ -301,15 +301,8 @@ const NavGroup = ({ label, items }) => {
   );
 };
 
-const CONTENT_ROLES = ["SUPER_ADMIN", "CONTENT_MANAGER", "READONLY_ADMIN"];
-const ADMIN_ROLES = [
-  "SUPER_ADMIN",
-  "CONTENT_MANAGER",
-  "SUPPORT",
-  "FINANCE",
-  "GROWTH",
-  "READONLY_ADMIN",
-];
+const CONTENT_ROLES = ["SUPER_ADMIN"];
+const ADMIN_ROLES = ["SUPER_ADMIN"];
 
 const canSeeNavItem = (roles, item, permissions) => {
   if (item.capability) {

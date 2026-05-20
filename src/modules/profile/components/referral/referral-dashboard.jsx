@@ -41,6 +41,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useGetQuery, usePatchQuery, usePostQuery } from "@/hooks/api";
+import { useTelegram } from "@/hooks/use-telegram";
 import { getApiResponseData } from "@/lib/api-response";
 import { useAuthStore } from "@/store";
 
@@ -49,6 +50,9 @@ import { useAuthStore } from "@/store";
 // ---------------------------------------------------------------------------
 const MIN_WITHDRAWAL = 10000;
 const XP_PAGE_SIZE = 20;
+
+const buildTelegramShareUrl = (url, text) =>
+    `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
 
 // ---------------------------------------------------------------------------
 // QR mini renderer (decorative)
@@ -444,6 +448,7 @@ function getReferralStatusConfig(status) {
 export const ReferralDashboard = ({ variant = "tab" }) => {
     const { t } = useTranslation();
     const user = useAuthStore((s) => s.user);
+    const { tg, isTelegramWebApp } = useTelegram();
 
     // UI state
     const [copied, setCopied] = useState(false);
@@ -519,6 +524,11 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
         (referralCode
             ? `https://liveon.uz/join?ref=${encodeURIComponent(referralCode)}`
             : "");
+    const telegramReferralLink = get(profile, "telegramReferralLink", "");
+    const inviteLink =
+        isTelegramWebApp && telegramReferralLink
+            ? telegramReferralLink
+            : referralLink;
     const xpBalance = get(profile, "xpBalance", 0);
     const totalXpEarned = get(profile, "totalXpEarned", 0);
     const totalReferrals = get(profile, "totalReferrals", 0);
@@ -537,14 +547,21 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
     };
 
     const handleCopyLink = () => {
-        navigator.clipboard.writeText(referralLink);
+        navigator.clipboard.writeText(inviteLink);
         toast.success(t("profile.referral.linkCopied"));
     };
 
     const handleShare = async () => {
+        const shareText = t("profile.referral.shareText", "LiveOn ilovasiga qo'shiling!");
+
+        if (isTelegramWebApp && telegramReferralLink && typeof tg?.openTelegramLink === "function") {
+            tg.openTelegramLink(buildTelegramShareUrl(telegramReferralLink, shareText));
+            return;
+        }
+
         if (navigator.share) {
             try {
-                await navigator.share({ title: "LiveOn", text: t("profile.referral.shareText", "LiveOn ilovasiga qo'shiling!"), url: referralLink });
+                await navigator.share({ title: "LiveOn", text: shareText, url: inviteLink });
             } catch { /* user cancelled */ }
         } else {
             handleCopyLink();
@@ -655,14 +672,14 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
                                 </Button>
                             </div>
 
-                            {referralLink && (
+                            {inviteLink && (
                                 <div className="mt-3">
                                     <label className="mb-2 block text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                                         {t("profile.referral.yourLink", "Referral link")}
                                     </label>
                                     <div className="rounded-xl border bg-muted/30 px-4 py-3">
                                         <p className="select-all break-all text-xs font-medium text-muted-foreground">
-                                            {referralLink}
+                                            {inviteLink}
                                         </p>
                                     </div>
                                 </div>

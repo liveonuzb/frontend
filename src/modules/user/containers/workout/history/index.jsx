@@ -1,12 +1,17 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { get, map, orderBy, sumBy, filter, forEach, split, toNumber, isArray, toUpper } from "lodash";
 import { useNavigate } from "react-router";
 import {
   ArrowLeftIcon,
   CalendarDaysIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   CheckCircle2Icon,
+  DownloadIcon,
   DumbbellIcon,
   FlameIcon,
+  HeartPulseIcon,
   HistoryIcon,
   RouteIcon,
   TimerIcon,
@@ -17,8 +22,12 @@ import { TrackingPageHeader } from "@/components/tracking-page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useWorkoutPlans } from "@/hooks/app/use-workout-plans";
-import { useWorkoutSessionHistory } from "@/hooks/app/use-workout-sessions";
+import {
+  useWorkoutSessionHistory,
+  useWorkoutSessionHistorySummary,
+} from "@/hooks/app/use-workout-sessions";
 import {
   formatRunningClockDuration,
   formatRunningDistance,
@@ -30,6 +39,7 @@ import {
   isOutdoorRunningSession,
 } from "@/lib/workout-session-metrics";
 import { useBreadcrumbStore } from "@/store";
+import RunMapPanel from "../running/components/run-map-panel.jsx";
 
 const formatDateTime = (value) => {
   const date = new Date(value);
@@ -44,15 +54,15 @@ const formatDateTime = (value) => {
   }).format(date);
 };
 
-const formatDuration = (seconds) => {
+const formatDuration = (seconds, t) => {
   const totalMinutes = Math.max(0, Math.round((toNumber(seconds) || 0) / 60));
-  return `${totalMinutes} daqiqa`;
+  return t("user.workout.history.minutesValue", { count: totalMinutes });
 };
 
-const formatSessionDuration = (session) =>
+const formatSessionDuration = (session, t) =>
   isOutdoorRunningSession(session)
     ? formatRunningClockDuration(get(session, "durationSeconds"))
-    : formatDuration(get(session, "durationSeconds"));
+    : formatDuration(get(session, "durationSeconds"), t);
 
 const getDateKey = (value) => {
   const date = new Date(value);
@@ -136,10 +146,166 @@ const calculateCurrentStreak = (sessions) => {
 };
 
 const PERIODS = [
-  { key: "all", label: "Barchasi" },
-  { key: "7d", label: "7 kun" },
-  { key: "30d", label: "30 kun" },
+  { key: "all", labelKey: "user.workout.history.periodAll" },
+  { key: "7d", labelKey: "user.workout.history.period7d" },
+  { key: "30d", labelKey: "user.workout.history.period30d" },
 ];
+
+const TYPE_FILTERS = [
+  { key: "all", labelKey: "user.workout.history.typeAll" },
+  { key: "running", labelKey: "user.workout.history.typeRunning" },
+  { key: "strength", labelKey: "user.workout.history.typeStrength" },
+];
+
+const HISTORY_PAGE_LIMIT = 10;
+
+const compactParams = (params) =>
+  Object.fromEntries(
+    Object.entries(params).filter(
+      ([, value]) => value !== undefined && value !== null && value !== "",
+    ),
+  );
+
+const isMatchingType = (session, type) => {
+  if (type === "running") {
+    return isOutdoorRunningSession(session);
+  }
+
+  if (type === "strength") {
+    return !isOutdoorRunningSession(session);
+  }
+
+  return true;
+};
+
+const isWithinDateRange = (value, dateRange) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+
+  if (dateRange.from) {
+    const from = new Date(`${dateRange.from}T00:00:00.000`);
+    if (!Number.isNaN(from.getTime()) && date < from) {
+      return false;
+    }
+  }
+
+  if (dateRange.to) {
+    const to = new Date(`${dateRange.to}T23:59:59.999`);
+    if (!Number.isNaN(to.getTime()) && date > to) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+const escapeCsvCell = (value) => {
+  const text = String(value ?? "");
+  return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+};
+
+const getExportSessionTitle = (session) =>
+  get(session, "focus") ||
+  get(session, "planName") ||
+  get(session, "runningSession.momentTitle") ||
+  "Workout";
+
+const normalizeRouteQualityScore = (score) => {
+  const numericScore = toNumber(score);
+  if (!Number.isFinite(numericScore) || numericScore <= 0) {
+    return null;
+  }
+
+  return Math.min(
+    100,
+    Math.round(numericScore <= 1 ? numericScore * 100 : numericScore),
+  );
+};
+
+const getWorkoutSessionRoutePolyline = (session) =>
+  get(
+    session,
+    "routePolyline",
+    get(
+      session,
+      "runningSession.route.polyline",
+      get(session, "route.polyline", null),
+    ),
+  );
+
+const getWorkoutSessionRoutePoints = (session) => {
+  const points = get(session, "points", get(session, "runningSession.points", []));
+  return isArray(points) ? points : [];
+};
+
+const getWorkoutSessionRouteQualityScore = (session) =>
+  get(
+    session,
+    "gpsQualityScore",
+    get(
+      session,
+      "metrics.gpsQualityScore",
+      get(session, "runningSession.metrics.gpsQualityScore", null),
+    ),
+  );
+
+const getWorkoutSessionAveragePulse = (session) => {
+  const pulse = get(
+    session,
+    "averageHeartRate",
+    get(
+      session,
+      "avgHeartRate",
+      get(
+        session,
+        "metrics.averageHeartRate",
+        get(session, "runningSession.metrics.averageHeartRate", null),
+      ),
+    ),
+  );
+  const numericPulse = toNumber(pulse);
+  return Number.isFinite(numericPulse) && numericPulse > 0
+    ? Math.round(numericPulse)
+    : null;
+};
+
+const getRouteQualityToneKey = (score) => {
+  if (score === null) return "user.workout.history.routeUnknown";
+  if (score >= 80) return "user.workout.history.routeExcellent";
+  if (score >= 50) return "user.workout.history.routeNeedsReview";
+  return "user.workout.history.routeWeak";
+};
+
+export const buildWorkoutHistoryCsv = (sessions) => {
+  const headers = [
+    "id",
+    "title",
+    "type",
+    "endedAt",
+    "durationSeconds",
+    "calories",
+    "distanceMeters",
+    "paceSecondsPerKm",
+    "totalVolumeKg",
+    "status",
+  ];
+  const rows = map(sessions, (session) => [
+    get(session, "id", ""),
+    getExportSessionTitle(session),
+    isOutdoorRunningSession(session) ? "running" : "strength",
+    get(session, "endedAt", ""),
+    toNumber(get(session, "durationSeconds", 0)) || 0,
+    toNumber(get(session, "estimatedCalories", 0)) || 0,
+    getWorkoutSessionDistanceMeters(session),
+    getWorkoutSessionPaceSecondsPerKm(session) ?? "",
+    toNumber(get(session, "totalVolumeKg", 0)) || 0,
+    get(session, "status", "completed"),
+  ]);
+
+  return [headers, ...rows]
+    .map((row) => row.map(escapeCsvCell).join(","))
+    .join("\n");
+};
 
 const buildMonthlyBuckets = (sessions, monthsCount = 6) => {
   const now = new Date();
@@ -224,43 +390,150 @@ const calculateMissedWorkouts = (plans = []) => {
 };
 
 const SessionHistoryPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { setBreadcrumbs } = useBreadcrumbStore();
-  const { sessions, isLoading, isError, refetch } = useWorkoutSessionHistory();
   const { items: workoutPlans } = useWorkoutPlans();
   const [period, setPeriod] = React.useState("all");
+  const [typeFilter, setTypeFilter] = React.useState("all");
+  const [dateRange, setDateRange] = React.useState({ from: "", to: "" });
+  const [cursorStack, setCursorStack] = React.useState([]);
+  const currentCursor = cursorStack[cursorStack.length - 1] ?? "";
+  const pageNumber = cursorStack.length + 1;
+  const historyParams = React.useMemo(
+    () =>
+      compactParams({
+        cursor: currentCursor,
+        dateFrom: dateRange.from,
+        dateTo: dateRange.to,
+        limit: HISTORY_PAGE_LIMIT,
+        period,
+        status: "completed",
+        type: typeFilter,
+      }),
+    [currentCursor, dateRange.from, dateRange.to, period, typeFilter],
+  );
+  const summaryParams = React.useMemo(
+    () =>
+      compactParams({
+        dateFrom: dateRange.from,
+        dateTo: dateRange.to,
+        period,
+        status: "completed",
+        type: typeFilter,
+      }),
+    [dateRange.from, dateRange.to, period, typeFilter],
+  );
+  const { sessions, meta, isLoading, isError, refetch } =
+    useWorkoutSessionHistory(historyParams);
+  const { summary } = useWorkoutSessionHistorySummary(summaryParams);
+  const canGoPrevious = cursorStack.length > 0;
+  const canGoNext = Boolean(get(meta, "hasMore") && get(meta, "nextCursor"));
+
+  const resetPagination = React.useCallback(() => {
+    setCursorStack([]);
+  }, []);
+
+  const handlePeriodChange = React.useCallback((nextPeriod) => {
+    setPeriod(nextPeriod);
+    resetPagination();
+  }, [resetPagination]);
+
+  const handleTypeChange = React.useCallback((nextType) => {
+    setTypeFilter(nextType);
+    resetPagination();
+  }, [resetPagination]);
+
+  const handleDateRangeChange = React.useCallback(
+    (field, value) => {
+      setDateRange((current) => ({
+        ...current,
+        [field]: value,
+      }));
+      resetPagination();
+    },
+    [resetPagination],
+  );
+
+  const handleNextPage = React.useCallback(() => {
+    const nextCursor = get(meta, "nextCursor");
+    if (!nextCursor) return;
+    setCursorStack((current) => [...current, nextCursor]);
+  }, [meta]);
+
+  const handlePreviousPage = React.useCallback(() => {
+    setCursorStack((current) => current.slice(0, -1));
+  }, []);
 
   React.useEffect(() => {
     setBreadcrumbs([
-      { url: "/user", title: "Bosh sahifa" },
-      { url: "/user/workout", title: "Workout" },
-      { url: "/user/workout/history", title: "Tarix" },
+      { url: "/user", title: t("user.dashboard.title") },
+      { url: "/user/workout", title: t("user.workout.title") },
+      { url: "/user/workout/history", title: t("user.workout.history.breadcrumb") },
     ]);
-  }, [setBreadcrumbs]);
+  }, [setBreadcrumbs, t]);
 
   const filteredSessions = React.useMemo(() => {
-    if (period === "7d") {
-      return filter(sessions, (item) => isWithinLastDays(get(item, "endedAt"), 7));
-    }
+    const typeSessions = filter(sessions, (item) =>
+      isMatchingType(item, typeFilter),
+    );
+    const dateSessions = filter(typeSessions, (item) =>
+      isWithinDateRange(get(item, "endedAt"), dateRange),
+    );
 
     if (period === "30d") {
-      return filter(sessions, (item) => isWithinLastDays(get(item, "endedAt"), 30));
+      return filter(dateSessions, (item) => isWithinLastDays(get(item, "endedAt"), 30));
     }
 
-    return sessions;
-  }, [period, sessions]);
+    if (period === "7d") {
+      return filter(dateSessions, (item) => isWithinLastDays(get(item, "endedAt"), 7));
+    }
+
+    return dateSessions;
+  }, [dateRange, period, sessions, typeFilter]);
+
+  const downloadHistoryCsv = React.useCallback(() => {
+    if (filteredSessions.length === 0) return;
+
+    const csv = buildWorkoutHistoryCsv(filteredSessions);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `workout-history-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }, [filteredSessions]);
 
   const overview = React.useMemo(
-    () => ({
-      totalSessions: filteredSessions.length,
-      totalMinutes: Math.round(
-        sumBy(filteredSessions, (item) => toNumber(item.durationSeconds || 0)) / 60,
-      ),
-      totalCalories: sumBy(filteredSessions, (item) => toNumber(item.estimatedCalories || 0)),
-      totalVolumeKg: sumBy(filteredSessions, (item) => toNumber(item.totalVolumeKg || 0)),
-      streak: calculateCurrentStreak(sessions),
-    }),
-    [filteredSessions, sessions],
+    () => {
+      const fallbackDurationSeconds = sumBy(filteredSessions, (item) =>
+        toNumber(item.durationSeconds || 0),
+      );
+
+      return {
+        totalSessions:
+          toNumber(get(summary, "totalSessions")) || filteredSessions.length,
+        totalMinutes: Math.round(
+          (toNumber(get(summary, "totalDurationSeconds")) ||
+            fallbackDurationSeconds) / 60,
+        ),
+        totalCalories:
+          toNumber(get(summary, "totalCalories")) ||
+          sumBy(filteredSessions, (item) =>
+            toNumber(item.estimatedCalories || 0),
+          ),
+        totalVolumeKg:
+          toNumber(get(summary, "totalVolumeKg")) ||
+          sumBy(filteredSessions, (item) => toNumber(item.totalVolumeKg || 0)),
+        streak:
+          toNumber(get(summary, "streakDays")) ||
+          calculateCurrentStreak(sessions),
+      };
+    },
+    [filteredSessions, sessions, summary],
   );
   const monthlyBuckets = React.useMemo(() => buildMonthlyBuckets(sessions), [sessions]);
   const missedSummary = React.useMemo(
@@ -277,15 +550,17 @@ const SessionHistoryPage = () => {
       <PageTransition mode="slide-up">
         <Card>
           <CardHeader>
-            <CardTitle>Workout tarixi yuklanmadi</CardTitle>
+            <CardTitle>{t("user.workout.history.errorTitle")}</CardTitle>
             <CardDescription>
-              Session tarixini olishda xatolik yuz berdi.
+              {t("user.workout.history.errorDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex gap-3">
-            <Button onClick={() => refetch()}>Qayta urinish</Button>
+            <Button onClick={() => refetch()}>
+              {t("user.workout.history.retry")}
+            </Button>
             <Button variant="outline" onClick={() => navigate("/user/workout")}>
-              Workout sahifasi
+              {t("user.workout.history.workoutPage")}
             </Button>
           </CardContent>
         </Card>
@@ -295,83 +570,150 @@ const SessionHistoryPage = () => {
 
   return (
     <PageTransition mode="slide-up">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
         <TrackingPageHeader
-          title="Workout tarixi"
-          subtitle="Yakunlangan mashg'ulotlar, davomiylik va yuklama."
+          title={t("user.workout.history.title")}
+          subtitle={t("user.workout.history.subtitle")}
           hideTitleOnMobile={false}
           actions={
-            <Button variant="outline" onClick={() => navigate("/user/workout")}>
-              <ArrowLeftIcon data-icon="inline-start" />
-              Workout
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={downloadHistoryCsv}
+                disabled={filteredSessions.length === 0}
+              >
+                <DownloadIcon data-icon="inline-start" />
+                {t("user.workout.history.export")}
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/user/workout")}>
+                <ArrowLeftIcon data-icon="inline-start" />
+                {t("user.workout.title")}
+              </Button>
+            </div>
           }
         />
 
-        {sessions.length === 0 ? (
+        <div className="flex flex-wrap items-end gap-3 rounded-3xl border bg-card/80 p-3 shadow-sm">
+          <div className="flex flex-wrap items-center gap-2">
+            {map(PERIODS, (item) => (
+              <Button
+                key={item.key}
+                type="button"
+                variant={period === item.key ? "default" : "secondary"}
+                className="rounded-full"
+                onClick={() => handlePeriodChange(item.key)}
+              >
+                {t(item.labelKey)}
+              </Button>
+            ))}
+          </div>
+          <span className="hidden h-8 w-px bg-border sm:inline-flex" />
+          <div className="flex flex-wrap items-center gap-2">
+            {map(TYPE_FILTERS, (item) => (
+              <Button
+                key={item.key}
+                type="button"
+                variant={typeFilter === item.key ? "default" : "secondary"}
+                className="rounded-full"
+                onClick={() => handleTypeChange(item.key)}
+              >
+                {t(item.labelKey)}
+              </Button>
+            ))}
+          </div>
+          <span className="hidden h-8 w-px bg-border lg:inline-flex" />
+          <label className="grid min-w-40 gap-1 text-xs font-semibold text-muted-foreground">
+            {t("user.workout.history.dateFrom")}
+            <Input
+              aria-label={t("user.workout.history.dateFrom")}
+              type="date"
+              value={dateRange.from}
+              onChange={(event) =>
+                handleDateRangeChange("from", event.target.value)
+              }
+              className="h-9 rounded-full"
+            />
+          </label>
+          <label className="grid min-w-40 gap-1 text-xs font-semibold text-muted-foreground">
+            {t("user.workout.history.dateTo")}
+            <Input
+              aria-label={t("user.workout.history.dateTo")}
+              type="date"
+              value={dateRange.to}
+              onChange={(event) =>
+                handleDateRangeChange("to", event.target.value)
+              }
+              className="h-9 rounded-full"
+            />
+          </label>
+        </div>
+
+        {filteredSessions.length === 0 ? (
           <Card>
             <CardHeader>
-              <CardTitle>Hali yakunlangan mashg'ulot yo'q</CardTitle>
+              <CardTitle>{t("user.workout.history.emptyTitle")}</CardTitle>
               <CardDescription>
-                Birinchi sessiyani yakunlaganingizdan keyin tarix shu yerda ko'rinadi.
+                {t("user.workout.history.emptyDescription")}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex gap-3">
               <Button onClick={() => navigate("/user/workout/plans")}>
-                Rejalarni ko'rish
+                {t("user.workout.history.viewPlans")}
               </Button>
               <Button variant="outline" onClick={() => navigate("/user/workout/plans/create")}>
-                Yangi plan yaratish
+                {t("user.workout.history.createPlan")}
               </Button>
             </CardContent>
           </Card>
         ) : (
           <>
-            <div className="flex flex-wrap gap-2">
-              {map(PERIODS, (item) => (
-                <Button
-                  key={item.key}
-                  type="button"
-                  variant={period === item.key ? "default" : "secondary"}
-                  className="rounded-full"
-                  onClick={() => setPeriod(item.key)}
-                >
-                  {item.label}
-                </Button>
-              ))}
-            </div>
-
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
               <Card className="rounded-3xl">
                 <CardContent className="p-5">
-                  <p className="text-xs text-muted-foreground">Sessiyalar</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("user.workout.history.sessions")}
+                  </p>
                   <p className="mt-2 text-3xl font-black">{overview.totalSessions}</p>
                 </CardContent>
               </Card>
               <Card className="rounded-3xl">
                 <CardContent className="p-5">
-                  <p className="text-xs text-muted-foreground">Davomiyligi</p>
-                  <p className="mt-2 text-3xl font-black">{overview.totalMinutes} min</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("user.workout.history.duration")}
+                  </p>
+                  <p className="mt-2 text-3xl font-black">
+                    {t("user.workout.history.minutesShort", {
+                      count: overview.totalMinutes,
+                    })}
+                  </p>
                 </CardContent>
               </Card>
               <Card className="rounded-3xl">
                 <CardContent className="p-5">
-                  <p className="text-xs text-muted-foreground">Calories</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("user.workout.history.calories")}
+                  </p>
                   <p className="mt-2 text-3xl font-black">{overview.totalCalories} kcal</p>
                 </CardContent>
               </Card>
               <Card className="rounded-3xl">
                 <CardContent className="p-5">
-                  <p className="text-xs text-muted-foreground">Volume</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("user.workout.history.volume")}
+                  </p>
                   <p className="mt-2 text-3xl font-black">{overview.totalVolumeKg} kg</p>
                 </CardContent>
               </Card>
               <Card className="rounded-3xl">
                 <CardContent className="p-5">
-                  <p className="text-xs text-muted-foreground">Streak</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("user.workout.history.streak")}
+                  </p>
                   <p className="mt-2 inline-flex items-center gap-2 text-3xl font-black">
                     <HistoryIcon className="size-5 text-primary" />
-                    {overview.streak} kun
+                    {t("user.workout.history.daysValue", {
+                      count: overview.streak,
+                    })}
                   </p>
                 </CardContent>
               </Card>
@@ -380,32 +722,40 @@ const SessionHistoryPage = () => {
             <div className="grid gap-4 xl:grid-cols-[1.15fr_1fr]">
               <Card className="rounded-[2rem]">
                 <CardHeader>
-                  <CardTitle>Ushbu oy</CardTitle>
+                  <CardTitle>{t("user.workout.history.thisMonth")}</CardTitle>
                   <CardDescription>
-                    Aktiv rejalardagi bajarilgan va o‘tkazib yuborilgan mashg‘ulotlar.
+                    {t("user.workout.history.thisMonthDescription")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-3 sm:grid-cols-4">
                   <div className="rounded-3xl bg-muted/30 p-4">
-                    <p className="text-xs text-muted-foreground">Rejalashtirilgan</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("user.workout.history.scheduled")}
+                    </p>
                     <p className="mt-2 text-2xl font-black">
                       {missedSummary.scheduledThisMonth}
                     </p>
                   </div>
                   <div className="rounded-3xl bg-muted/30 p-4">
-                    <p className="text-xs text-muted-foreground">Bajarilgan</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("user.workout.history.completed")}
+                    </p>
                     <p className="mt-2 text-2xl font-black">
                       {missedSummary.completedThisMonth}
                     </p>
                   </div>
                   <div className="rounded-3xl bg-muted/30 p-4">
-                    <p className="text-xs text-muted-foreground">Missed</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("user.workout.history.missed")}
+                    </p>
                     <p className="mt-2 text-2xl font-black">
                       {missedSummary.missedWorkouts}
                     </p>
                   </div>
                   <div className="rounded-3xl bg-muted/30 p-4">
-                    <p className="text-xs text-muted-foreground">Rate</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("user.workout.history.rate")}
+                    </p>
                     <p className="mt-2 text-2xl font-black">
                       {missedSummary.completionRate}%
                     </p>
@@ -415,9 +765,9 @@ const SessionHistoryPage = () => {
 
               <Card className="rounded-[2rem]">
                 <CardHeader>
-                  <CardTitle>Oylik ko‘rinish</CardTitle>
+                  <CardTitle>{t("user.workout.history.monthlyView")}</CardTitle>
                   <CardDescription>
-                    So‘nggi 6 oy bo‘yicha sessiya, kcal va volume dinamikasi.
+                    {t("user.workout.history.monthlyViewDescription")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -429,15 +779,22 @@ const SessionHistoryPage = () => {
                       <div className="min-w-0">
                         <p className="truncate font-black">{bucket.label}</p>
                         <p className="text-sm text-muted-foreground">
-                          {bucket.minutes} min · {bucket.calories} kcal
+                          {t("user.workout.history.monthlyBucketSummary", {
+                            minutes: bucket.minutes,
+                            calories: bucket.calories,
+                          })}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs text-muted-foreground">Sessiya</p>
+                        <p className="text-xs text-muted-foreground">
+                          {t("user.workout.history.session")}
+                        </p>
                         <p className="font-black">{bucket.sessions}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs text-muted-foreground">Volume</p>
+                        <p className="text-xs text-muted-foreground">
+                          {t("user.workout.history.volume")}
+                        </p>
                         <p className="font-black">{bucket.volume} kg</p>
                       </div>
                       <div className="text-right">
@@ -456,48 +813,89 @@ const SessionHistoryPage = () => {
                 const sessionId = get(session, "id");
                 const distanceMeters = getWorkoutSessionDistanceMeters(session);
                 const paceSecondsPerKm = getWorkoutSessionPaceSecondsPerKm(session);
+                const routePoints = getWorkoutSessionRoutePoints(session);
+                const routePolyline = getWorkoutSessionRoutePolyline(session);
+                const routeQualityScore = getWorkoutSessionRouteQualityScore(session);
+                const normalizedRouteQuality =
+                  normalizeRouteQualityScore(routeQualityScore);
+                const averagePulse = getWorkoutSessionAveragePulse(session);
+                const openSession = () => navigate(`/user/workout/history/${sessionId}`);
 
                 return (
-                  <button
+                  <div
                     key={sessionId}
-                    type="button"
-                    onClick={() =>
-                      navigate(
-                        isRunning
-                          ? `/user/workout/running/${sessionId}`
-                          : `/user/workout/history/${sessionId}`,
-                      )
-                    }
-                    className="w-full rounded-3xl border bg-card text-left shadow-sm transition hover:border-primary/40 hover:bg-primary/5"
+                    role="button"
+                    tabIndex={0}
+                    onClick={openSession}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openSession();
+                      }
+                    }}
+                    className="w-full cursor-pointer rounded-3xl border bg-card text-left shadow-sm outline-none transition hover:border-primary/40 hover:bg-primary/5 focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/25"
                   >
-                    <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="grid gap-4 px-5 py-5 lg:grid-cols-[168px_minmax(0,1fr)_minmax(250px,auto)] lg:items-start">
+                      <div className="h-28 overflow-hidden rounded-2xl bg-muted/40 lg:h-24">
+                        {isRunning ? (
+                          <RunMapPanel
+                            title={null}
+                            variant="preview"
+                            provider="none"
+                            points={routePoints}
+                            polyline={routePolyline}
+                            qualityScore={routeQualityScore}
+                            emptyLabel={t("user.workout.history.routeWaiting")}
+                            showQuality={false}
+                            className="h-full"
+                            surfaceClassName="h-full min-h-0 rounded-2xl md:h-full"
+                            labels={{
+                              loading: t("user.workout.history.routeLoading"),
+                              error: t("user.workout.history.routeUnavailable"),
+                              routePreviewLabel: t("user.workout.history.routePreview"),
+                            }}
+                          />
+                        ) : (
+                          <div className="grid h-full place-items-center bg-primary/5 text-primary">
+                            <DumbbellIcon className="size-8" aria-hidden="true" />
+                          </div>
+                        )}
+                      </div>
+
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <h2 className="text-lg font-black">
                             {get(session, "focus") ||
                               get(session, "planName") ||
-                              (isRunning ? "Outdoor run" : "Workout")}
+                              (isRunning
+                                ? t("user.workout.running.shared.outdoorRun")
+                                : t("user.workout.title"))}
                           </h2>
                           {isRunning ? (
                             <Badge variant="outline">
                               <RouteIcon />
-                              Running
+                              {t("user.workout.history.running")}
                             </Badge>
                           ) : (
                             <Badge variant="outline">
                               <DumbbellIcon />
-                              Day {(toNumber(get(session, "planDayIndex")) || 0) + 1}
+                              {t("user.workout.history.dayBadge", {
+                                day:
+                                  (toNumber(get(session, "planDayIndex")) || 0) +
+                                  1,
+                              })}
                             </Badge>
                           )}
                           <Badge variant="secondary">
                             <CheckCircle2Icon />
-                            Yakunlandi
+                            {t("user.workout.history.completedBadge")}
                           </Badge>
                         </div>
                         <p className="mt-1 text-sm text-muted-foreground">
                           {isRunning
-                            ? "GPS running session"
-                            : get(session, "planName") || "Workout plan"}
+                            ? t("user.workout.history.gpsRunningSession")
+                            : get(session, "planName") ||
+                              t("user.workout.session.workoutPlan")}
                         </p>
                         <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                           <span className="inline-flex items-center gap-1.5">
@@ -506,26 +904,49 @@ const SessionHistoryPage = () => {
                           </span>
                           <span className="inline-flex items-center gap-1.5">
                             <TimerIcon className="size-4" />
-                            {formatSessionDuration(session)}
+                            {formatSessionDuration(session, t)}
                           </span>
                           <span className="inline-flex items-center gap-1.5">
                             <FlameIcon className="size-4" />
                             {get(session, "estimatedCalories", 0)} kcal
                           </span>
+                          {isRunning ? (
+                            <>
+                              <span className="inline-flex items-center gap-1.5">
+                                <HeartPulseIcon className="size-4 text-rose-500" />
+                                {averagePulse
+                                  ? `${averagePulse} bpm`
+                                  : t("user.workout.history.noPulse")}
+                              </span>
+                              <span className="inline-flex items-center gap-1.5">
+                                <RouteIcon className="size-4 text-primary" />
+                                {t("user.workout.history.routeQuality")}{" "}
+                                <span className="font-bold text-foreground">
+                                  {normalizedRouteQuality === null
+                                    ? "--/100"
+                                    : `${normalizedRouteQuality}/100`}
+                                </span>
+                              </span>
+                            </>
+                          ) : null}
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-3 gap-3 sm:min-w-60">
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:min-w-64">
                         {isRunning ? (
                           <>
                             <div className="rounded-2xl bg-muted/30 px-3 py-3 text-center">
-                              <p className="text-xs text-muted-foreground">Masofa</p>
+                              <p className="text-xs text-muted-foreground">
+                                {t("user.workout.history.distance")}
+                              </p>
                               <p className="mt-1 font-black">
                                 {formatRunningDistance(distanceMeters)}
                               </p>
                             </div>
                             <div className="rounded-2xl bg-muted/30 px-3 py-3 text-center">
-                              <p className="text-xs text-muted-foreground">Vaqt</p>
+                              <p className="text-xs text-muted-foreground">
+                                {t("user.workout.history.time")}
+                              </p>
                               <p className="mt-1 font-black">
                                 {formatRunningClockDuration(
                                   get(session, "durationSeconds"),
@@ -533,28 +954,46 @@ const SessionHistoryPage = () => {
                               </p>
                             </div>
                             <div className="rounded-2xl bg-muted/30 px-3 py-3 text-center">
-                              <p className="text-xs text-muted-foreground">Pace</p>
+                              <p className="text-xs text-muted-foreground">
+                                {t("user.workout.history.pace")}
+                              </p>
                               <p className="mt-1 font-black">
                                 {formatRunningPace(paceSecondsPerKm)}
+                              </p>
+                            </div>
+                            <div className="rounded-2xl bg-primary/10 px-3 py-3 text-center text-primary sm:col-span-3">
+                              <p className="text-xs font-semibold">
+                                {t(getRouteQualityToneKey(normalizedRouteQuality))}
+                              </p>
+                              <p className="mt-1 font-black">
+                                {normalizedRouteQuality === null
+                                  ? "--/100"
+                                  : `${normalizedRouteQuality}/100`}
                               </p>
                             </div>
                           </>
                         ) : (
                           <>
                             <div className="rounded-2xl bg-muted/30 px-3 py-3 text-center">
-                              <p className="text-xs text-muted-foreground">Set</p>
+                              <p className="text-xs text-muted-foreground">
+                                {t("user.workout.history.set")}
+                              </p>
                               <p className="mt-1 font-black">
                                 {get(session, "completedSets", 0)}/{get(session, "totalSets", 0)}
                               </p>
                             </div>
                             <div className="rounded-2xl bg-muted/30 px-3 py-3 text-center">
-                              <p className="text-xs text-muted-foreground">Mashq</p>
+                              <p className="text-xs text-muted-foreground">
+                                {t("user.workout.history.exercise")}
+                              </p>
                               <p className="mt-1 font-black">
                                 {get(session, "completedExerciseCount", 0)}
                               </p>
                             </div>
                             <div className="rounded-2xl bg-muted/30 px-3 py-3 text-center">
-                              <p className="text-xs text-muted-foreground">Volume</p>
+                              <p className="text-xs text-muted-foreground">
+                                {t("user.workout.history.volume")}
+                              </p>
                               <p className="mt-1 font-black">
                                 {get(session, "totalVolumeKg", 0)} kg
                               </p>
@@ -563,9 +1002,35 @@ const SessionHistoryPage = () => {
                         )}
                       </div>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
+            </div>
+
+            <div className="flex flex-col gap-3 rounded-3xl border bg-card px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm font-semibold text-muted-foreground">
+                {t("user.workout.history.pageLabel", { page: pageNumber })}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!canGoPrevious}
+                  onClick={handlePreviousPage}
+                >
+                  <ChevronLeftIcon data-icon="inline-start" />
+                  {t("user.workout.history.previous")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!canGoNext}
+                  onClick={handleNextPage}
+                >
+                  {t("user.workout.history.next")}
+                  <ChevronRightIcon data-icon="inline-end" />
+                </Button>
+              </div>
             </div>
           </>
         )}

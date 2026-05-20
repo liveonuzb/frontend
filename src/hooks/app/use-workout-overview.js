@@ -13,6 +13,15 @@ const defaultWorkoutOverview = {
   personalRecordCount: 0,
   personalRecords: [],
   recentWorkoutDays: [],
+  streak: {
+    currentDays: 0,
+    bestDays: 0,
+  },
+  recovery: {
+    status: "no_data",
+    score: 0,
+    recommendation: "",
+  },
 };
 
 const resolveResponseData = (response, fallback = defaultWorkoutOverview) =>
@@ -25,19 +34,30 @@ const normalizeWorkoutOverview = (payload = {}) => ({
     duration: toNumber(payload.weeklyStats?.duration ?? 0) || 0,
   },
   personalRecordCount:
-    toNumber(payload.personalRecordCount ?? payload.personalRecords?.length ?? 0) || 0,
+    toNumber(
+      payload.personalRecordCount ?? payload.personalRecords?.length ?? 0,
+    ) || 0,
   personalRecords: isArray(payload.personalRecords)
     ? payload.personalRecords
     : [],
   recentWorkoutDays: isArray(payload.recentWorkoutDays)
     ? payload.recentWorkoutDays
     : [],
+  streak: {
+    currentDays: toNumber(payload.streak?.currentDays ?? 0) || 0,
+    bestDays: toNumber(payload.streak?.bestDays ?? 0) || 0,
+  },
+  recovery: {
+    status: payload.recovery?.status || "no_data",
+    score: toNumber(payload.recovery?.score ?? 0) || 0,
+    recommendation: payload.recovery?.recommendation || "",
+  },
 });
 
 export const useWorkoutOverview = (options = {}) => {
   const enabled = options.enabled ?? true;
   const { data, ...query } = useGetQuery({
-    url: "/user/workout/overview",
+    url: "/user/workout/dashboard",
     queryProps: {
       queryKey: WORKOUT_OVERVIEW_QUERY_KEY,
       enabled,
