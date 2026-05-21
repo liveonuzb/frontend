@@ -98,7 +98,7 @@ const defaultPlan = {
   ],
 };
 
-const renderPage = () => {
+const renderPage = (initialEntry = "/user/workout/plans/plan-1") => {
   const router = createMemoryRouter(
     [
       {
@@ -118,15 +118,15 @@ const renderPage = () => {
         element: <div data-testid="plans-route">Plans route</div>,
       },
       {
-        path: "/user/workout/home",
-        element: <div data-testid="workout-home-route">Workout home route</div>,
+        path: "/user/workout/overview",
+        element: <div data-testid="workout-overview-route">Workout overview route</div>,
       },
       {
         path: "/user/workout/plans/edit/:planId",
         element: <div data-testid="edit-route">Edit route</div>,
       },
     ],
-    { initialEntries: ["/user/workout/plans/plan-1"] },
+    { initialEntries: [initialEntry] },
   );
 
   render(<RouterProvider router={router} />);
@@ -152,8 +152,12 @@ describe("WorkoutPlanDetailPage", () => {
       isPending: false,
     });
     useWorkoutPlan.mockReturnValue({
+      plans: [defaultPlan],
+      templates: [],
       startPlan: startPlanMock,
       isStartingPlan: false,
+      isLoading: false,
+      isError: false,
     });
     useDeleteWorkoutPlan.mockReturnValue({
       deletePlan: deletePlanMock,
@@ -187,6 +191,33 @@ describe("WorkoutPlanDetailPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders backend progress in the detail preview instead of hardcoded zeros", () => {
+    useWorkoutPlanDetail.mockReturnValue({
+      plan: {
+        ...defaultPlan,
+        status: "active",
+        completedWorkouts: 1,
+        targetWorkouts: 4,
+        progress: 25,
+        todayWorkout: {
+          title: "Chest",
+          duration: "38 min",
+          calories: 210,
+          exercisesCount: 1,
+        },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: refetchMock,
+    });
+
+    renderPage();
+
+    expect(screen.getByText("25%")).toBeInTheDocument();
+    expect(screen.getByText("1 / 4")).toBeInTheDocument();
+    expect(screen.queryByText("0%")).not.toBeInTheDocument();
+  });
+
   it("navigates to a separate day detail page when a day is selected", async () => {
     const router = renderPage();
 
@@ -199,10 +230,13 @@ describe("WorkoutPlanDetailPage", () => {
     });
   });
 
-  it("activates the plan and navigates back to workout home", async () => {
+  it("activates the plan and opens the backend next workout session", async () => {
     startPlanMock.mockResolvedValue({
       ...defaultPlan,
       status: "active",
+      nextWorkout: {
+        dayIndex: 0,
+      },
     });
 
     const router = renderPage();
@@ -216,7 +250,7 @@ describe("WorkoutPlanDetailPage", () => {
 
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(
-        "/user/workout/home",
+        "/user/workout/plans/plan-1/days/0/session",
       );
     });
   });
@@ -240,6 +274,14 @@ describe("WorkoutPlanDetailPage", () => {
       isError: false,
       refetch: refetchMock,
     });
+    useWorkoutPlan.mockReturnValue({
+      plans: [],
+      templates: [],
+      startPlan: startPlanMock,
+      isStartingPlan: false,
+      isLoading: true,
+      isError: false,
+    });
 
     renderPage();
 
@@ -252,6 +294,14 @@ describe("WorkoutPlanDetailPage", () => {
       isLoading: false,
       isError: true,
       refetch: refetchMock,
+    });
+    useWorkoutPlan.mockReturnValue({
+      plans: [],
+      templates: [],
+      startPlan: startPlanMock,
+      isStartingPlan: false,
+      isLoading: false,
+      isError: false,
     });
 
     renderPage();
@@ -276,5 +326,42 @@ describe("WorkoutPlanDetailPage", () => {
     renderPage();
 
     expect(screen.getByText("Schedule hali to'ldirilmagan")).toBeInTheDocument();
+  });
+
+  it("renders a template plan detail from the plans list when the detail endpoint has no record", () => {
+    useWorkoutPlanDetail.mockReturnValue({
+      plan: null,
+      isLoading: false,
+      isError: true,
+      refetch: refetchMock,
+    });
+    useWorkoutPlan.mockReturnValue({
+      plans: [],
+      templates: [
+        {
+          ...defaultPlan,
+          id: "template-running",
+          name: "Running Starter Plan",
+          description: "Build a consistent running habit.",
+          status: "template",
+          source: "seed",
+          isTemplate: true,
+        },
+      ],
+      startPlan: startPlanMock,
+      isStartingPlan: false,
+      isLoading: false,
+      isError: false,
+    });
+
+    renderPage("/user/workout/plans/template-running");
+
+    expect(useWorkoutPlanDetail).toHaveBeenCalledWith(
+      "template-running",
+      expect.objectContaining({ enabled: true }),
+    );
+    expect(screen.getAllByText("Running Starter Plan").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Workout reja topilmadi")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /start this plan/i })).toBeInTheDocument();
   });
 });

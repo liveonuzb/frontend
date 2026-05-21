@@ -1,21 +1,29 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { Navigate, Route, Routes, useParams } from "react-router";
-import ListPage from "./list";
-import WorkoutHistoryPage from "./history";
-import WorkoutHistoryDetailPage from "./history/detail";
-import WorkoutPlansPage from "./plans";
-import WorkoutPlanDetailPage from "./plans/detail";
-import WorkoutPlanDayDetailPage from "./plans/day-detail";
-import WorkoutPlanSessionPage from "./plans/session";
-import WorkoutPlanSessionSummaryPage from "./plans/session-summary";
-import CreateWorkoutPlanPage from "./plans/create";
-import EditWorkoutPlanPage from "./plans/edit";
-import CreateWorkoutLogPage from "./logs/create";
-import EditWorkoutLogPage from "./logs/edit";
-import WorkoutExercisesPage from "./exercises";
-import WorkoutReportPage from "./report";
-import RunningLivePage from "./running/live";
+import PageLoader from "@/components/page-loader";
 import WorkoutShell from "./workout-shell";
+
+const ListPage = lazy(() => import("./list"));
+const WorkoutHistoryPage = lazy(() => import("./history"));
+const WorkoutHistoryDetailPage = lazy(() => import("./history/detail"));
+const WorkoutPlansPage = lazy(() => import("./plans"));
+const WorkoutPlanDetailPage = lazy(() => import("./plans/detail"));
+const WorkoutPlanDayDetailPage = lazy(() => import("./plans/day-detail"));
+const WorkoutPlanSessionPage = lazy(() => import("./plans/session"));
+const WorkoutPlanSessionSummaryPage = lazy(() =>
+  import("./plans/session-summary"),
+);
+const CreateWorkoutPlanPage = lazy(() => import("./plans/create"));
+const EditWorkoutPlanPage = lazy(() => import("./plans/edit"));
+const CreateWorkoutLogPage = lazy(() => import("./logs/create"));
+const EditWorkoutLogPage = lazy(() => import("./logs/edit"));
+const WorkoutExercisesPage = lazy(() => import("./exercises"));
+const WorkoutReportPage = lazy(() => import("./report"));
+const RunningLivePage = lazy(() => import("./running/live"));
+
+const withSuspense = (element) => (
+  <Suspense fallback={<PageLoader />}>{element}</Suspense>
+);
 
 const DeprecatedRunningDetailRedirect = () => {
   const { workoutSessionId } = useParams();
@@ -32,42 +40,55 @@ const Index = () => {
   return (
     <Routes>
       <Route element={<WorkoutShell />}>
-        <Route index element={<Navigate to="home" replace />} />
-        <Route path="home" element={<ListPage />} />
-        <Route path="report" element={<WorkoutReportPage />} />
+        <Route index element={<Navigate to="overview" replace />} />
+        <Route
+          path="home"
+          element={<Navigate to="/user/workout/overview" replace />}
+        />
+        <Route path="overview" element={withSuspense(<ListPage />)} />
+        <Route path="report" element={withSuspense(<WorkoutReportPage />)} />
         <Route
           path="report/:sessionId"
-          element={<WorkoutHistoryDetailPage />}
+          element={withSuspense(<WorkoutHistoryDetailPage />)}
         />
-        <Route path="history" element={<WorkoutHistoryPage />} />
+        <Route path="history" element={withSuspense(<WorkoutHistoryPage />)} />
         <Route
           path="history/:sessionId"
-          element={<WorkoutHistoryDetailPage />}
+          element={withSuspense(<WorkoutHistoryDetailPage />)}
         />
-        <Route path="plans" element={<WorkoutPlansPage />} />
-        <Route path="plans/create" element={<CreateWorkoutPlanPage />} />
+        <Route path="plans" element={withSuspense(<WorkoutPlansPage />)} />
+        <Route
+          path="plans/create"
+          element={withSuspense(<CreateWorkoutPlanPage />)}
+        />
         <Route
           path="plans/:planId/days/:dayIndex"
-          element={<WorkoutPlanDayDetailPage />}
+          element={withSuspense(<WorkoutPlanDayDetailPage />)}
         />
         <Route
           path="plans/:planId/days/:dayIndex/session"
-          element={<WorkoutPlanSessionPage />}
+          element={withSuspense(<WorkoutPlanSessionPage />)}
         />
         <Route
           path="plans/:planId/days/:dayIndex/session/summary"
-          element={<WorkoutPlanSessionSummaryPage />}
+          element={withSuspense(<WorkoutPlanSessionSummaryPage />)}
         />
-        <Route path="plans/:planId" element={<WorkoutPlanDetailPage />} />
-        <Route path="plans/edit/:planId" element={<EditWorkoutPlanPage />} />
+        <Route
+          path="plans/:planId"
+          element={withSuspense(<WorkoutPlanDetailPage />)}
+        />
+        <Route
+          path="plans/edit/:planId"
+          element={withSuspense(<EditWorkoutPlanPage />)}
+        />
         <Route
           path="running"
-          element={<Navigate to="/user/workout/home" replace />}
+          element={<Navigate to="/user/workout/overview" replace />}
         />
-        <Route path="running/live" element={<RunningLivePage />} />
+        <Route path="running/live" element={withSuspense(<RunningLivePage />)} />
         <Route
           path="running/live/:workoutSessionId"
-          element={<RunningLivePage />}
+          element={withSuspense(<RunningLivePage />)}
         />
         <Route
           path="running/history"
@@ -79,11 +100,17 @@ const Index = () => {
         />
         <Route
           path="running/*"
-          element={<Navigate to="/user/workout/home" replace />}
+          element={<Navigate to="/user/workout/overview" replace />}
         />
-        <Route path="exercises" element={<WorkoutExercisesPage />} />
-        <Route path="logs/create" element={<CreateWorkoutLogPage />} />
-        <Route path="logs/edit/:logGroupId" element={<EditWorkoutLogPage />} />
+        <Route path="exercises" element={withSuspense(<WorkoutExercisesPage />)} />
+        <Route
+          path="logs/create"
+          element={withSuspense(<CreateWorkoutLogPage />)}
+        />
+        <Route
+          path="logs/edit/:logGroupId"
+          element={withSuspense(<EditWorkoutLogPage />)}
+        />
       </Route>
     </Routes>
   );

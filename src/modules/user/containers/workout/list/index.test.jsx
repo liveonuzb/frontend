@@ -1,14 +1,17 @@
 import React from "react";
 import "@/lib/i18n";
 import i18n from "@/lib/i18n";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { toast } from "sonner";
 import WorkoutDashboardPage from "./index.jsx";
 import useWorkoutOverview from "@/hooks/app/use-workout-overview";
 import useWorkoutPlan from "@/hooks/app/use-workout-plan";
-import { useWorkoutSessionHistory } from "@/hooks/app/use-workout-sessions";
+import {
+  useActiveWorkoutSession,
+  useWorkoutSessionHistory,
+} from "@/hooks/app/use-workout-sessions";
 import {
   useRunningActiveSession,
   useRunningSessions,
@@ -22,7 +25,7 @@ import {
 } from "@/hooks/app/use-workout-plans";
 import useWorkoutWeatherToday from "@/hooks/app/use-workout-weather";
 
-import { find, some } from "lodash";
+import { some } from "lodash";
 
 vi.mock("@/components/page-transition", () => ({
   default: ({ children }) => <>{children}</>,
@@ -53,6 +56,7 @@ vi.mock("@/hooks/app/use-workout-plan", () => ({
 }));
 
 vi.mock("@/hooks/app/use-workout-sessions", () => ({
+  useActiveWorkoutSession: vi.fn(),
   useWorkoutSessionHistory: vi.fn(),
 }));
 
@@ -162,11 +166,38 @@ describe("WorkoutDashboardPage", () => {
     });
     useWorkoutPlan.mockReturnValue({
       plans: [],
+      templates: [
+        {
+          id: "template-muscle",
+          name: "Muscle Gain Plan",
+          description: "Build lean muscle from backend template.",
+          coverImageUrl: "https://cdn.example.com/muscle.jpg",
+          difficulty: "intermediate",
+          days: 56,
+          daysPerWeek: 4,
+          isTemplate: true,
+          status: "template",
+        },
+        {
+          id: "template-running",
+          name: "Running Starter Plan",
+          description: "Backend running starter template.",
+          coverImageUrl: "https://cdn.example.com/running.jpg",
+          difficulty: "beginner",
+          days: 28,
+          daysPerWeek: 3,
+          isTemplate: true,
+          status: "template",
+        },
+      ],
       activePlan: null,
       startPlan: vi.fn(),
     });
     useWorkoutSessionHistory.mockReturnValue({
       sessions: [],
+    });
+    useActiveWorkoutSession.mockReturnValue({
+      activeWorkoutSession: null,
     });
     useWorkoutCatalog.mockReturnValue({
       catalog: {
@@ -220,21 +251,53 @@ describe("WorkoutDashboardPage", () => {
     });
   });
 
-  it("renders the activity dashboard and removes catalog-heavy sections", () => {
+  it("renders the overview widgets and removes full-detail widgets", () => {
     renderPage();
 
-    expect(useWorkoutSessionHistory).toHaveBeenCalledWith({ limit: 6 });
+    expect(useWorkoutSessionHistory).toHaveBeenCalledWith({ limit: 1 });
     expect(screen.getByText("Bugungi mashg'ulot")).toBeInTheDocument();
+    expect(screen.getByText("Tavsiya etilgan rejalar")).toBeInTheDocument();
+    expect(screen.getByTestId("recommended-plans-scroll-row")).toHaveClass(
+      "overflow-x-auto",
+    );
+    expect(screen.getByText("Muscle Gain Plan")).toBeInTheDocument();
+    expect(screen.getByText("Running Starter Plan")).toBeInTheDocument();
     expect(screen.getByText("So'nggi faoliyat")).toBeInTheDocument();
     expect(screen.getByText("Bugungi ob-havo")).toBeInTheDocument();
     expect(screen.getByText("Haftalik statistika")).toBeInTheDocument();
-    expect(screen.getByText("Maqsadlar")).toBeInTheDocument();
-    expect(screen.getByText("Yutuqlar")).toBeInTheDocument();
+    expect(screen.queryByText("Maqsadlar")).not.toBeInTheDocument();
+    expect(screen.queryByText("Yutuqlar")).not.toBeInTheDocument();
+    expect(screen.queryByText("Seriya")).not.toBeInTheDocument();
+    expect(screen.queryByText("Tiklanish")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /barchasini ko'rish/i })).not.toBeInTheDocument();
     expect(screen.queryByText("Challenge")).not.toBeInTheDocument();
     expect(screen.queryByText("Body Focus")).not.toBeInTheDocument();
     expect(
       screen.queryByPlaceholderText("Workout, plan yoki mashg'ulot qidirish..."),
     ).not.toBeInTheDocument();
+  });
+
+  it("opens plans from the recommended plans row when no plan is active", () => {
+    const router = renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /Muscle Gain Plan/i }));
+
+    expect(router.state.location.pathname).toBe("/user/workout/plans");
+  });
+
+  it("does not render static recommended plan fallbacks when backend templates are empty", () => {
+    useWorkoutPlan.mockReturnValue({
+      plans: [],
+      templates: [],
+      activePlan: null,
+      startPlan: vi.fn(),
+    });
+
+    renderPage();
+
+    expect(screen.getByTestId("recommended-plans-empty")).toBeInTheDocument();
+    expect(screen.queryByText("Muscle Gain Plan")).not.toBeInTheDocument();
+    expect(screen.queryByText("Running Starter Plan")).not.toBeInTheDocument();
   });
 
   it("uses the required Russian no-plan hero labels", async () => {
@@ -253,6 +316,9 @@ describe("WorkoutDashboardPage", () => {
   it("keeps today's workout hero media readable in light and dark themes", () => {
     renderPage();
 
+    expect(screen.getByTestId("today-workout-hero")).toHaveClass(
+      "min-h-[260px]",
+    );
     expect(screen.getByTestId("today-workout-hero-media-scrim")).toHaveClass(
       "workout-media-contrast-scrim",
     );
@@ -279,6 +345,61 @@ describe("WorkoutDashboardPage", () => {
 
     expect(router.state.location.pathname).toBe(
       "/user/workout/running/live/run-active",
+    );
+  });
+
+  it("shows active workout session before the active plan and resumes that workout", () => {
+    const planStart = new Date();
+    planStart.setDate(planStart.getDate() - 1);
+
+    useWorkoutPlan.mockReturnValue({
+      plans: [],
+      activePlan: {
+        id: "plan-1",
+        status: "active",
+        startDate: planStart.toISOString(),
+        daysPerWeek: 3,
+        schedule: [
+          { title: "Day 1", exercises: [{ name: "Squat" }] },
+          { title: "Day 2", exercises: [{ name: "Bench" }] },
+        ],
+        dayProgress: [],
+      },
+      startPlan: vi.fn(),
+    });
+    useActiveWorkoutSession.mockReturnValue({
+      activeWorkoutSession: {
+        id: "draft-1",
+        planId: "plan-1",
+        planDayIndex: 1,
+        planDayKey: "Push Day",
+        sessionStartTime: "2026-05-20T06:00:00.000Z",
+        elapsedSeconds: 620,
+        exercises: [{ name: "Bench Press" }],
+      },
+    });
+    useRunningActiveSession.mockReturnValue({
+      activeSession: {
+        workoutSessionId: "run-active",
+        status: "active",
+        startedAt: "2026-05-20T05:00:00.000Z",
+        metrics: {
+          distanceMeters: 1200,
+          durationSeconds: 300,
+        },
+      },
+    });
+
+    const router = renderPage();
+
+    expect(screen.getAllByText("Push Day").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Day 2")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("recommended-plans-scroll-row")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /davom ettirish/i }));
+
+    expect(router.state.location.pathname).toBe(
+      "/user/workout/plans/plan-1/days/1/session",
     );
   });
 
@@ -352,7 +473,7 @@ describe("WorkoutDashboardPage", () => {
     expect(screen.queryByAltText("Morning Run")).not.toBeInTheDocument();
   });
 
-  it("opens running and workout detail pages from recent activity rows", async () => {
+  it("opens the latest running detail page from the activity row", () => {
     useWorkoutSessionHistory.mockReturnValue({
       sessions: [
         {
@@ -386,17 +507,34 @@ describe("WorkoutDashboardPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /morning run/i }));
     expect(router.state.location.pathname).toBe("/user/workout/history/run-1");
+  });
 
-    await act(async () => {
-      await router.navigate("/user/workout");
+  it("opens the latest workout detail page when it is the newest activity", () => {
+    useWorkoutSessionHistory.mockReturnValue({
+      sessions: [
+        {
+          id: "strength-1",
+          title: "Upper Body",
+          startedAt: "2026-05-15T01:00:00.000Z",
+          endedAt: "2026-05-15T01:45:00.000Z",
+          durationSeconds: 2700,
+          burnedCalories: 320,
+        },
+      ],
     });
+    useRunningSessions.mockReturnValue({
+      sessions: [],
+    });
+
+    const router = renderPage();
+
     fireEvent.click(screen.getByRole("button", { name: /upper body/i }));
     expect(router.state.location.pathname).toBe(
       "/user/workout/history/strength-1",
     );
   });
 
-  it("starts a new run from the home running shortcut", async () => {
+  it("does not show a standalone running shortcut on the simplified overview", () => {
     const startRunningSession = vi.fn().mockResolvedValue({
       workoutSessionId: "run-new",
     });
@@ -438,40 +576,13 @@ describe("WorkoutDashboardPage", () => {
       ],
     });
 
-    const router = renderPage();
-    const startMap = find(screen
-      .getAllByTestId("workout-home-real-running-map"), (panel) =>
-      panel.getAttribute("data-empty-label") ===
-      "Yugurishni boshlanganda xarita shu yerda ko'rinadi");
+    renderPage();
 
-    expect(screen.queryByTestId("workout-home-fake-route-svg")).not.toBeInTheDocument();
-    expect(startMap).toHaveAttribute(
-      "data-point-count",
-      "0",
-    );
-    expect(startMap).toHaveAttribute(
-      "data-polyline",
-      "",
-    );
-    expect(startMap).toHaveAttribute(
-      "data-empty-label",
-      "Yugurishni boshlanganda xarita shu yerda ko'rinadi",
-    );
-    expect(startMap).toHaveAttribute(
-      "data-variant",
-      "preview",
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: /yugurishni boshlash/i }));
-
-    expect(startRunningSession).toHaveBeenCalledWith({
-      source: "home",
-    });
-    await screen.findByText("Running live");
-    expect(router.state.location.pathname).toBe("/user/workout/running/live/run-new");
+    expect(screen.queryByRole("button", { name: /yugurishni boshlash/i })).not.toBeInTheDocument();
+    expect(startRunningSession).not.toHaveBeenCalled();
   });
 
-  it("renders the running activity card with active route data when a run is in progress", () => {
+  it("shows active run details in the hero when a run is in progress", () => {
     useRunningActiveSession.mockReturnValue({
       activeSession: {
         workoutSessionId: "run-active",
@@ -504,14 +615,9 @@ describe("WorkoutDashboardPage", () => {
 
     renderPage();
 
-    expect(screen.getByTestId("workout-home-real-running-map")).toHaveAttribute(
-      "data-point-count",
-      "2",
-    );
-    expect(screen.getByTestId("workout-home-real-running-map")).toHaveAttribute(
-      "data-polyline",
-      "encoded-route",
-    );
+    expect(screen.getAllByText("Faol yugurish").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("2.3 km").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("15:40").length).toBeGreaterThan(0);
   });
 
   it("renders weather and AQI fallback data for today's workout decision", () => {
@@ -612,35 +718,6 @@ describe("WorkoutDashboardPage", () => {
 
     expect(screen.getByText("2/4 mashg'ulot")).toBeInTheDocument();
     expect(screen.getAllByText("50%").length).toBeGreaterThan(0);
-  });
-
-  it("clamps goal progress percentages between zero and one hundred", () => {
-    useWorkoutOverview.mockReturnValue({
-      overview: {
-        weeklyStats: {
-          count: 0,
-          calories: -500,
-          duration: 0,
-        },
-        recentWorkoutDays: [],
-      },
-    });
-    useRunningStatsSummary.mockReturnValue({
-      stats: {
-        totalRuns: 8,
-        totalDistanceMeters: 100000,
-        totalDurationSeconds: 7200,
-        totalCaloriesBurned: 1200,
-      },
-    });
-
-    renderPage();
-
-    const goalsCard = screen.getByText("Maqsadlar").closest('[data-slot="card"]');
-
-    expect(within(goalsCard).queryByText(/-/)).not.toBeInTheDocument();
-    expect(within(goalsCard).getByText("0%")).toBeInTheDocument();
-    expect(within(goalsCard).getByText("100%")).toBeInTheDocument();
   });
 
   it("includes active running metrics in today's summary", () => {
@@ -775,6 +852,127 @@ describe("WorkoutDashboardPage", () => {
     );
   });
 
+  it("uses backend nextWorkout for dashboard hero and CTA target", async () => {
+    useWorkoutPlan.mockReturnValue({
+      plans: [],
+      activePlan: {
+        id: "plan-contract",
+        status: "active",
+        name: "Contract Plan",
+        progress: 40,
+        completedWorkouts: 2,
+        targetWorkouts: 5,
+        nextWorkout: {
+          planId: "plan-contract",
+          dayIndex: 2,
+          title: "Pull Day",
+          exerciseCount: 4,
+          duration: "35 min",
+          estimatedCalories: 220,
+          completed: false,
+          isStartable: true,
+        },
+        todayWorkout: {
+          dayIndex: 2,
+          title: "Pull Day",
+          exercisesCount: 4,
+          duration: "35 min",
+          calories: 220,
+        },
+        schedule: [
+          { title: "Push Day", exercises: [{ name: "Bench" }] },
+          { title: "Leg Day", exercises: [{ name: "Squat" }] },
+          { title: "Pull Day", exercises: [{ name: "Pull-up" }] },
+        ],
+        dayProgress: [
+          { dayIndex: 0, completed: false, exerciseCount: 1 },
+          { dayIndex: 1, completed: false, exerciseCount: 1 },
+          { dayIndex: 2, completed: false, exerciseCount: 1 },
+        ],
+      },
+      templates: [],
+      startPlan: vi.fn(),
+    });
+
+    const router = renderPage();
+
+    expect(screen.getAllByText("Pull Day").length).toBeGreaterThan(0);
+
+    fireEvent.click(
+      screen.getAllByRole("button", { name: /bugungi workoutni boshlash/i })[0],
+    );
+
+    expect(router.state.location.pathname).toBe(
+      "/user/workout/plans/plan-contract/days/2/session",
+    );
+  });
+
+  it("prefers the overview active plan snapshot over plans fallback data", () => {
+    useWorkoutOverview.mockReturnValue({
+      overview: {
+        weeklyStats: {
+          count: 1,
+          calories: 80,
+          duration: 20,
+        },
+        activePlan: {
+          id: "overview-plan",
+          status: "active",
+          name: "Overview Contract Plan",
+          progress: 48,
+          completedWorkouts: 12,
+          targetWorkouts: 25,
+          nextWorkout: {
+            planId: "overview-plan",
+            dayIndex: 2,
+            title: "Canonical Pull Day",
+            exerciseCount: 5,
+            duration: "35 min",
+            estimatedCalories: 260,
+            completed: false,
+            isStartable: true,
+          },
+          todayWorkout: {
+            dayIndex: 2,
+            title: "Canonical Pull Day",
+            exercisesCount: 5,
+            calories: 260,
+          },
+          schedule: [
+            { title: "Push Day", exercises: [{ name: "Bench" }] },
+            { title: "Leg Day", exercises: [{ name: "Squat" }] },
+            { title: "Canonical Pull Day", exercises: [{ name: "Row" }] },
+          ],
+          dayProgress: [
+            { dayIndex: 0, completed: true, exerciseCount: 1 },
+            { dayIndex: 1, completed: true, exerciseCount: 1 },
+            { dayIndex: 2, completed: false, exerciseCount: 1 },
+          ],
+        },
+        recentWorkoutDays: [],
+      },
+    });
+    useWorkoutPlan.mockReturnValue({
+      plans: [],
+      activePlan: null,
+      templates: [],
+      startPlan: vi.fn(),
+    });
+
+    const router = renderPage();
+
+    expect(screen.getAllByText("Canonical Pull Day").length).toBeGreaterThan(0);
+    expect(screen.getByText("12/25 mashg'ulot")).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getAllByRole("button", { name: /bugungi workoutni boshlash/i })[0],
+    );
+
+    expect(router.state.location.pathname).toBe(
+      "/user/workout/plans/overview-plan/days/2/session",
+    );
+  });
+
   it("renders a sticky today workout CTA for mobile priority access", () => {
     const planStart = new Date();
     planStart.setDate(planStart.getDate() - 1);
@@ -822,78 +1020,6 @@ describe("WorkoutDashboardPage", () => {
     expect(screen.queryByText("Challenge")).not.toBeInTheDocument();
     expect(screen.queryByText("Body Focus")).not.toBeInTheDocument();
     expect(toast.info).not.toHaveBeenCalled();
-  });
-
-  it("shows an empty achievements state instead of a +0 badge", () => {
-    renderPage();
-
-    const achievementsCard = screen
-      .getByText("Yutuqlar")
-      .closest('[data-slot="card"]');
-
-    expect(within(achievementsCard).getByText("Hali yutuqlar yo'q")).toBeInTheDocument();
-    expect(within(achievementsCard).queryByText("+0")).not.toBeInTheDocument();
-  });
-
-  it("shows the remaining achievement count when there are many achievements", () => {
-    useWorkoutOverview.mockReturnValue({
-      overview: {
-        weeklyStats: {
-          count: 0,
-          calories: 0,
-          duration: 0,
-        },
-        personalRecordCount: 12,
-        recentWorkoutDays: [],
-      },
-    });
-
-    renderPage();
-
-    const achievementsCard = screen
-      .getByText("Yutuqlar")
-      .closest('[data-slot="card"]');
-
-    expect(within(achievementsCard).getByText("+12")).toBeInTheDocument();
-  });
-
-  it("shows workout streak and recovery widgets in the right rail", () => {
-    useWorkoutOverview.mockReturnValue({
-      overview: {
-        weeklyStats: {
-          count: 3,
-          calories: 900,
-          duration: 120,
-        },
-        streak: {
-          currentDays: 4,
-          bestDays: 9,
-        },
-        recovery: {
-          status: "good",
-          score: 86,
-          recommendation: "Keep the current training rhythm.",
-        },
-        recentWorkoutDays: [],
-      },
-    });
-
-    renderPage();
-
-    const streakCard = screen
-      .getByText("Seriya")
-      .closest('[data-slot="card"]');
-    const recoveryCard = screen
-      .getByText("Tiklanish")
-      .closest('[data-slot="card"]');
-
-    expect(within(streakCard).getByText("4 kun")).toBeInTheDocument();
-    expect(within(streakCard).getByText("Eng yaxshi: 9 kun")).toBeInTheDocument();
-    expect(within(recoveryCard).getByText("Yaxshi")).toBeInTheDocument();
-    expect(within(recoveryCard).getByText("86%")).toBeInTheDocument();
-    expect(
-      within(recoveryCard).getByText("Keep the current training rhythm."),
-    ).toBeInTheDocument();
   });
 
   it("renders next workout recommendations without fake fixed time and opens selected day", () => {

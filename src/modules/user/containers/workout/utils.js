@@ -86,6 +86,11 @@ const countScheduleDays = (schedule = []) =>
     : 0;
 
 const getTargetWorkoutCount = (plan) => {
+  const explicitTarget = toNumber(get(plan, "targetWorkouts"));
+  if (explicitTarget > 0) {
+    return explicitTarget;
+  }
+
   const planDaysPerWeek =
     toNumber(get(plan, "daysPerWeek") ?? 0) ||
     countScheduleDays(get(plan, "schedule"));
@@ -106,25 +111,17 @@ export const deriveWorkoutPlanMetrics = (plan) => {
   const normalizedDaysPerWeek =
     toNumber(plan.daysPerWeek ?? 0) || countScheduleDays(plan.schedule);
   const completedWorkouts = max([0, toNumber(plan.completedWorkouts ?? 0) || 0]);
+  const targetWorkouts = getTargetWorkoutCount(plan);
 
-  const progress = plan.progress
+  const progress = plan.progress !== undefined && plan.progress !== null
     ? max([0, Math.min(100, Math.round(toNumber(plan.progress)))])
     : (() => {
-        const targetWorkoutCount = getTargetWorkoutCount(plan);
-        return targetWorkoutCount > 0
+        return targetWorkouts > 0
           ? Math.max(
               0,
               Math.min(
                 100,
-                Math.round(
-                  (completedWorkouts /
-                    max([
-                      1,
-                      (plan.daysPerWeek || 3) *
-                        Math.ceil((plan.days || 28) / 7),
-                    ])) *
-                    100,
-                ),
+                Math.round((completedWorkouts / max([1, targetWorkouts])) * 100),
               ),
             )
           : 0;
@@ -133,6 +130,7 @@ export const deriveWorkoutPlanMetrics = (plan) => {
   return {
     ...plan,
     completedWorkouts,
+    targetWorkouts,
     progress,
     daysPerWeek: normalizedDaysPerWeek,
   };
@@ -149,6 +147,8 @@ export const normalizePlanDayProgress = (dayProgress = [], schedule = []) => {
       dayIndex,
       completed: Boolean(get(matched, "completed")),
       completedAt: get(matched, "completedAt", null),
+      skipped: Boolean(get(matched, "skipped")),
+      skippedAt: get(matched, "skippedAt", null),
       exerciseCount: toNumber(get(matched, "exerciseCount") ?? exerciseCount) || exerciseCount,
     };
   });
@@ -160,29 +160,41 @@ export const getFirstWorkoutDayIndex = (schedule = []) =>
     : -1;
 
 export const isWorkoutDayLocked = (plan, dayIndex) => {
-  if (!plan || dayIndex <= 0) {
+  const schedule = isArray(get(plan, "schedule")) ? get(plan, "schedule") : [];
+  if (!Number.isInteger(dayIndex) || dayIndex < 0 || dayIndex >= schedule.length) {
     return false;
   }
 
-  const dayProgress = normalizePlanDayProgress(get(plan, "dayProgress", []), get(plan, "schedule", []));
+  const dayProgress = normalizePlanDayProgress(get(plan, "dayProgress", []), schedule);
+  const exerciseCount = isArray(get(schedule[dayIndex], "exercises"))
+    ? get(schedule[dayIndex], "exercises.length")
+    : 0;
 
-  for (let index = 0; index < dayIndex; index += 1) {
-    const previousDay = dayProgress[index];
-    if (previousDay && previousDay.exerciseCount > 0 && !previousDay.completed) {
-      return true;
-    }
-  }
-
-  return false;
+  return (
+    exerciseCount > 0 &&
+    (Boolean(get(dayProgress[dayIndex], "completed")) ||
+      Boolean(get(dayProgress[dayIndex], "skipped")))
+  );
 };
 
 export const getNextStartableDayIndex = (plan) => {
   const schedule = isArray(get(plan, "schedule")) ? get(plan, "schedule") : [];
+  const backendNextDayIndex = toNumber(get(plan, "nextWorkout.dayIndex"));
+  if (
+    Number.isInteger(backendNextDayIndex) &&
+    backendNextDayIndex >= 0 &&
+    backendNextDayIndex < schedule.length
+  ) {
+    return backendNextDayIndex;
+  }
+
   const firstWorkoutDayIndex = getFirstWorkoutDayIndex(schedule);
 
   if (firstWorkoutDayIndex < 0) {
     return 0;
   }
+
+  const dayProgress = normalizePlanDayProgress(get(plan, "dayProgress", []), schedule);
 
   for (let dayIndex = firstWorkoutDayIndex; dayIndex < schedule.length; dayIndex += 1) {
     const exerciseCount = isArray(get(schedule[dayIndex], "exercises"))
@@ -193,13 +205,13 @@ export const getNextStartableDayIndex = (plan) => {
       continue;
     }
 
-    if (!isWorkoutDayLocked(plan, dayIndex)) {
+    if (
+      !get(dayProgress[dayIndex], "completed") &&
+      !get(dayProgress[dayIndex], "skipped")
+    ) {
       return dayIndex;
     }
   }
 
   return firstWorkoutDayIndex;
 };
-
-
-

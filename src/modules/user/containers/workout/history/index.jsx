@@ -548,7 +548,7 @@ const SessionHistoryPage = () => {
   if (isError) {
     return (
       <PageTransition mode="slide-up">
-        <Card>
+        <Card className="py-6">
           <CardHeader>
             <CardTitle>{t("user.workout.history.errorTitle")}</CardTitle>
             <CardDescription>
@@ -649,7 +649,7 @@ const SessionHistoryPage = () => {
         </div>
 
         {filteredSessions.length === 0 ? (
-          <Card>
+          <Card className="py-6">
             <CardHeader>
               <CardTitle>{t("user.workout.history.emptyTitle")}</CardTitle>
               <CardDescription>
@@ -668,7 +668,7 @@ const SessionHistoryPage = () => {
         ) : (
           <>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-              <Card className="rounded-3xl">
+              <Card className="rounded-3xl py-6">
                 <CardContent className="p-5">
                   <p className="text-xs text-muted-foreground">
                     {t("user.workout.history.sessions")}
@@ -676,7 +676,7 @@ const SessionHistoryPage = () => {
                   <p className="mt-2 text-3xl font-black">{overview.totalSessions}</p>
                 </CardContent>
               </Card>
-              <Card className="rounded-3xl">
+              <Card className="rounded-3xl py-6">
                 <CardContent className="p-5">
                   <p className="text-xs text-muted-foreground">
                     {t("user.workout.history.duration")}
@@ -688,7 +688,7 @@ const SessionHistoryPage = () => {
                   </p>
                 </CardContent>
               </Card>
-              <Card className="rounded-3xl">
+              <Card className="rounded-3xl py-6">
                 <CardContent className="p-5">
                   <p className="text-xs text-muted-foreground">
                     {t("user.workout.history.calories")}
@@ -696,7 +696,7 @@ const SessionHistoryPage = () => {
                   <p className="mt-2 text-3xl font-black">{overview.totalCalories} kcal</p>
                 </CardContent>
               </Card>
-              <Card className="rounded-3xl">
+              <Card className="rounded-3xl py-6">
                 <CardContent className="p-5">
                   <p className="text-xs text-muted-foreground">
                     {t("user.workout.history.volume")}
@@ -704,7 +704,7 @@ const SessionHistoryPage = () => {
                   <p className="mt-2 text-3xl font-black">{overview.totalVolumeKg} kg</p>
                 </CardContent>
               </Card>
-              <Card className="rounded-3xl">
+              <Card className="rounded-3xl py-6">
                 <CardContent className="p-5">
                   <p className="text-xs text-muted-foreground">
                     {t("user.workout.history.streak")}
@@ -720,7 +720,7 @@ const SessionHistoryPage = () => {
             </div>
 
             <div className="grid gap-4 xl:grid-cols-[1.15fr_1fr]">
-              <Card className="rounded-[2rem]">
+              <Card className="rounded-[2rem] py-6">
                 <CardHeader>
                   <CardTitle>{t("user.workout.history.thisMonth")}</CardTitle>
                   <CardDescription>
@@ -763,7 +763,7 @@ const SessionHistoryPage = () => {
                 </CardContent>
               </Card>
 
-              <Card className="rounded-[2rem]">
+              <Card className="rounded-[2rem] py-6">
                 <CardHeader>
                   <CardTitle>{t("user.workout.history.monthlyView")}</CardTitle>
                   <CardDescription>

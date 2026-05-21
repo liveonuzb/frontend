@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { get, map, size, isArray, reduce, toNumber } from "lodash";
+import { find, get, map, size, isArray, reduce, toNumber } from "lodash";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import {
@@ -47,9 +47,9 @@ import { cn } from "@/lib/utils";
 import { useBreadcrumbStore } from "@/store";
 import {
   deriveWorkoutPlanMetrics,
+  getNextStartableDayIndex,
   isWorkoutDayLocked,
 } from "../../utils";
-import { getFallbackWorkoutPlan } from "../../workout-showcase-data.js";
 
 const WEEK_DAYS = [
   "Yakshanba",
@@ -73,6 +73,10 @@ const PlanSourceBadge = ({ plan }) => {
     );
   }
 
+  if (get(plan, "isTemplate") || get(plan, "status") === "template") {
+    return <Badge variant="outline">Template</Badge>;
+  }
+
   return <Badge variant="outline">{t("user.workout.planDetail.manual")}</Badge>;
 };
 
@@ -83,6 +87,31 @@ const getTotalExerciseCount = (schedule = []) =>
       : [];
     return total + exercises.length;
   }, 0);
+
+const getEquipmentSummary = (schedule = []) => {
+  const equipmentSet = new Set();
+
+  schedule.forEach((day) => {
+    const exercises = isArray(get(day, "exercises"))
+      ? get(day, "exercises")
+      : [];
+
+    exercises.forEach((exercise) => {
+      if (isArray(get(exercise, "equipments"))) {
+        get(exercise, "equipments").forEach((item) => {
+          if (item) equipmentSet.add(String(item));
+        });
+      }
+
+      const equipment = get(exercise, "equipment");
+      if (equipment) {
+        equipmentSet.add(String(equipment));
+      }
+    });
+  });
+
+  return Array.from(equipmentSet).slice(0, 5);
+};
 
 const DayCard = ({
   day,
@@ -146,22 +175,36 @@ const WorkoutPlanDetailPage = () => {
   const { planId } = useParams();
   const navigate = useNavigate();
   const { setBreadcrumbs } = useBreadcrumbStore();
-  const fallbackPlan = React.useMemo(
-    () => getFallbackWorkoutPlan(planId),
-    [planId],
-  );
-  const { plan: rawPlan, isLoading, isError, refetch } = useWorkoutPlanDetail(
+  const {
+    plan: remotePlan,
+    isLoading,
+    refetch,
+  } = useWorkoutPlanDetail(
     planId,
     {
-      enabled: Boolean(planId) && !fallbackPlan,
+      enabled: Boolean(planId),
     },
   );
-  const { startPlan, isStartingPlan } = useWorkoutPlan();
+  const {
+    plans = [],
+    templates = [],
+    startPlan,
+    isStartingPlan,
+    isLoading: isPlansLoading = false,
+  } = useWorkoutPlan();
   const deletePlanMutation = useDeleteWorkoutPlan();
-  const sourcePlan = rawPlan || fallbackPlan;
+  const fallbackPlan = React.useMemo(
+    () =>
+      find(
+        [...plans, ...templates],
+        (item) => String(get(item, "id")) === String(planId),
+      ) || null,
+    [planId, plans, templates],
+  );
+  const rawPlan = remotePlan || fallbackPlan;
   const plan = React.useMemo(
-    () => deriveWorkoutPlanMetrics(sourcePlan),
-    [sourcePlan],
+    () => deriveWorkoutPlanMetrics(rawPlan),
+    [rawPlan],
   );
   const schedule = isArray(get(plan, "schedule"))
     ? get(plan, "schedule")
@@ -171,6 +214,8 @@ const WorkoutPlanDetailPage = () => {
   const dayProgress = isArray(get(plan, "dayProgress"))
     ? get(plan, "dayProgress")
     : [];
+  const isTemplatePlan =
+    Boolean(get(plan, "isTemplate")) || get(plan, "status") === "template";
 
   React.useEffect(() => {
     setBreadcrumbs([
@@ -194,13 +239,21 @@ const WorkoutPlanDetailPage = () => {
     }
 
     try {
-      await startPlan(plan);
+      const activatedPlan = await startPlan(plan);
+      const targetPlan = deriveWorkoutPlanMetrics(activatedPlan || plan);
+      const nextDayIndex = Number.isInteger(
+        toNumber(get(targetPlan, "nextWorkout.dayIndex")),
+      )
+        ? toNumber(get(targetPlan, "nextWorkout.dayIndex"))
+        : getNextStartableDayIndex(targetPlan);
       toast.success(
         t("user.workout.planDetail.startSuccess", {
           name: get(plan, "name", t("user.workout.planDetail.planFallbackUz")),
         }),
       );
-      navigate("/user/workout/home");
+      navigate(
+        `/user/workout/plans/${get(targetPlan, "id", get(plan, "id"))}/days/${Math.max(0, nextDayIndex)}/session`,
+      );
     } catch (error) {
       toast.error(
         get(error, "response.data.message") ||
@@ -210,7 +263,7 @@ const WorkoutPlanDetailPage = () => {
   };
 
   const handleDelete = async () => {
-    if (!get(plan, "id")) {
+    if (!get(plan, "id") || isTemplatePlan) {
       return;
     }
 
@@ -226,11 +279,11 @@ const WorkoutPlanDetailPage = () => {
     }
   };
 
-  if (isLoading && !plan && !fallbackPlan) {
+  if ((isLoading || isPlansLoading) && !plan) {
     return <PageLoader />;
   }
 
-  if ((isError && !fallbackPlan) || !plan) {
+  if (!plan) {
     return (
       <PageTransition mode="slide-up">
         <div className="flex flex-col gap-6">
@@ -239,7 +292,7 @@ const WorkoutPlanDetailPage = () => {
             subtitle={t("user.workout.planDetail.errorHeaderSubtitle")}
             hideTitleOnMobile={false}
           />
-          <Card>
+          <Card className="py-6">
             <CardHeader>
               <CardTitle>{t("user.workout.planDetail.notFoundTitle")}</CardTitle>
               <CardDescription>
@@ -275,12 +328,42 @@ const WorkoutPlanDetailPage = () => {
     t("user.workout.planDetail.defaultGoalDescription");
   const included = get(plan, "included", {});
   const totalWorkouts =
+    toNumber(get(plan, "targetWorkouts")) ||
     toNumber(get(included, "workouts")) ||
     Math.max(0, durationWeeks * daysPerWeek);
   const totalExercises =
     toNumber(get(included, "exercises")) ||
     toNumber(get(plan, "totalExercises")) ||
     getTotalExerciseCount(schedule);
+  const completedWorkouts = Math.min(
+    totalWorkouts,
+    toNumber(get(plan, "completedWorkouts")) || 0,
+  );
+  const progress = Math.max(
+    0,
+    Math.min(100, Math.round(toNumber(get(plan, "progress")) || 0)),
+  );
+  const completedExercises = reduce(
+    dayProgress,
+    (total, item) =>
+      total + (get(item, "completed") ? toNumber(get(item, "exerciseCount")) || 0 : 0),
+    0,
+  );
+  const estimatedCalories =
+    toNumber(get(plan, "todayWorkout.calories")) ||
+    toNumber(get(plan, "nextWorkout.estimatedCalories")) ||
+    toNumber(get(schedule, "[0].estimatedCalories")) ||
+    toNumber(get(schedule, "[0].calories")) ||
+    0;
+  const equipmentItems = getEquipmentSummary(schedule);
+  const equipmentLabel =
+    equipmentItems.length > 0
+      ? equipmentItems.join(", ")
+      : t("user.workout.planDetail.equipmentNotSpecified");
+  const equipmentTitle =
+    equipmentItems.length > 0
+      ? t("user.workout.planDetail.equipmentConfigured")
+      : t("user.workout.planDetail.equipmentFlexible");
 
   return (
     <PageTransition mode="slide-up">
@@ -481,7 +564,11 @@ const WorkoutPlanDetailPage = () => {
               </span>
               <div>
                 <p className="text-xl font-black">
-                  {t("user.workout.planDetail.caloriesPerWeek")}
+                  {estimatedCalories > 0
+                    ? t("user.workout.planDetail.caloriesPerWorkout", {
+                        calories: estimatedCalories,
+                      })
+                    : t("user.workout.planDetail.caloriesNotSpecified")}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {t("user.workout.planDetail.caloriesDescription")}
@@ -500,10 +587,10 @@ const WorkoutPlanDetailPage = () => {
               </span>
               <div>
                 <p className="text-xl font-black text-green-500">
-                  {t("user.workout.planDetail.gymRequired")}
+                  {equipmentTitle}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {t("user.workout.planDetail.equipmentList")}
+                  {equipmentLabel}
                 </p>
               </div>
             </div>
@@ -516,7 +603,7 @@ const WorkoutPlanDetailPage = () => {
             <div className="mt-5 grid grid-cols-[96px_1fr] items-center gap-5">
               <div className="grid size-24 place-items-center rounded-full border border-primary/30 bg-primary/5 text-center">
                 <div>
-                  <p className="text-2xl font-black text-primary">0%</p>
+                  <p className="text-2xl font-black text-primary">{progress}%</p>
                   <p className="text-xs text-muted-foreground">
                     {t("user.workout.planDetail.completedPreview")}
                   </p>
@@ -527,24 +614,27 @@ const WorkoutPlanDetailPage = () => {
                   <span className="text-muted-foreground">
                     {t("user.workout.planDetail.workouts")}
                   </span>
-                  <span className="font-black">0 / {daysPerWeek}</span>
+                  <span className="font-black">{completedWorkouts} / {totalWorkouts}</span>
                 </div>
                 <div className="flex justify-between gap-3">
                   <span className="text-muted-foreground">
                     {t("user.workout.planDetail.exercises")}
                   </span>
-                  <span className="font-black">0 / {Math.max(1, totalExercises)}</span>
+                  <span className="font-black">
+                    {Math.min(completedExercises, totalExercises)} / {Math.max(1, totalExercises)}
+                  </span>
                 </div>
                 <div className="flex justify-between gap-3">
                   <span className="text-muted-foreground">
                     {t("user.workout.planDetail.time")}
                   </span>
-                  <span className="font-black">0 / 4 hrs</span>
+                  <span className="font-black">{workoutDuration}</span>
                 </div>
               </div>
             </div>
           </div>
 
+          {!isTemplatePlan ? (
           <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
@@ -563,6 +653,7 @@ const WorkoutPlanDetailPage = () => {
               {t("user.workout.planDetail.delete")}
             </Button>
           </div>
+          ) : null}
         </aside>
       </div>
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>

@@ -46,7 +46,7 @@ const RunningHistoryPage = () => {
 
   if (isError) {
     return (
-        <Card>
+        <Card className="py-6">
           <CardHeader>
             <CardTitle>
               {t(
@@ -87,7 +87,7 @@ const RunningHistoryPage = () => {
         </div>
 
         {sessions.length === 0 ? (
-          <Card>
+          <Card className="py-6">
             <CardContent className="space-y-4 p-6">
               <div>
                 <p className="text-base font-semibold">
@@ -128,7 +128,7 @@ const RunningHistoryPage = () => {
                   },
                 )}
               >
-                <Card className="transition-colors hover:bg-muted/30">
+                <Card className="py-6 transition-colors hover:bg-muted/30">
                   <CardContent className="flex items-center justify-between gap-4 p-4">
                     <div className="flex min-w-0 items-center gap-3">
                       <div className="rounded-full bg-primary/10 p-2 text-primary">

@@ -98,7 +98,7 @@ const WorkoutPlanSessionSummaryPage = () => {
   if (!summary) {
     return (
       <PageTransition mode="slide-up">
-        <Card>
+        <Card className="py-6">
           <CardHeader>
             <CardTitle>
               {t("user.workout.sessionSummary.notFoundTitle")}
@@ -136,7 +136,7 @@ const WorkoutPlanSessionSummaryPage = () => {
   return (
     <PageTransition mode="slide-up">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
-        <Card className="overflow-hidden rounded-[2rem] border-0 shadow-sm ring-1 ring-border">
+        <Card className="overflow-hidden rounded-[2rem] border-0 py-6 shadow-sm ring-1 ring-border">
           <div className="bg-primary/10 px-5 py-6">
             <div className="flex items-start justify-between gap-3">
               <div className="space-y-2">

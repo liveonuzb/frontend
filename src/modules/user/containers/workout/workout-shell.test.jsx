@@ -12,6 +12,7 @@ const renderShell = (initialEntry) => {
       <Routes>
         <Route path="/user/workout/*" element={<WorkoutShell />}>
           <Route path="home" element={<div>Workout Home</div>} />
+          <Route path="overview" element={<div>Workout Overview</div>} />
           <Route path="plans" element={<div>Workout Plans</div>} />
           <Route
             path="plans/:planId/days/:dayIndex/session"
@@ -34,16 +35,17 @@ describe("WorkoutShell", () => {
     await i18n.changeLanguage("en");
   });
 
-  it("shows top tabs on workout home", () => {
-    renderShell("/user/workout/home");
+  it("shows top tabs on workout overview", () => {
+    renderShell("/user/workout/overview");
 
-    expect(screen.getAllByText("Home").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Overview").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Home")).not.toBeInTheDocument();
     expect(screen.getAllByText("Plans").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Exercises").length).toBeGreaterThan(0);
     expect(screen.getAllByText("History").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Report").length).toBeGreaterThan(0);
     expect(screen.queryByText("Running")).not.toBeInTheDocument();
-    expect(screen.getByText("Workout Home")).toBeInTheDocument();
+    expect(screen.getByText("Workout Overview")).toBeInTheDocument();
   });
 
   it("exposes workout tabs as labelled navigation with the active page", () => {
@@ -65,14 +67,14 @@ describe("WorkoutShell", () => {
     renderShell("/user/workout/running");
 
     expect(screen.queryByText("Running")).not.toBeInTheDocument();
-    expect(screen.queryByText("Home")).not.toBeInTheDocument();
+    expect(screen.queryByText("Overview")).not.toBeInTheDocument();
     expect(screen.getByText("Workout Running")).toBeInTheDocument();
   });
 
   it("hides top tabs on deep workout session route", () => {
     renderShell("/user/workout/plans/plan-1/days/0/session");
 
-    expect(screen.queryByText("Home")).not.toBeInTheDocument();
+    expect(screen.queryByText("Overview")).not.toBeInTheDocument();
     expect(screen.queryByText("Plans")).not.toBeInTheDocument();
     expect(screen.getByText("Workout Session")).toBeInTheDocument();
   });
@@ -88,14 +90,14 @@ describe("WorkoutShell", () => {
     renderShell("/user/workout/running/history");
 
     expect(screen.queryByText("Running")).not.toBeInTheDocument();
-    expect(screen.queryByText("Home")).not.toBeInTheDocument();
+    expect(screen.queryByText("Overview")).not.toBeInTheDocument();
     expect(screen.getByText("Running History")).toBeInTheDocument();
   });
 
   it("hides top tabs on running detail routes", () => {
     renderShell("/user/workout/running/workout-1");
 
-    expect(screen.queryByText("Home")).not.toBeInTheDocument();
+    expect(screen.queryByText("Overview")).not.toBeInTheDocument();
     expect(screen.queryByText("Running")).not.toBeInTheDocument();
     expect(screen.getByText("Running Detail")).toBeInTheDocument();
   });

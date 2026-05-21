@@ -597,7 +597,7 @@ const WorkoutExercisesPage = () => {
   React.useEffect(() => {
     setBreadcrumbs([
       { url: "/user", title: t("user.dashboard.title") },
-      { url: "/user/workout/home", title: t("user.workout.title") },
+      { url: "/user/workout/overview", title: t("user.workout.title") },
       {
         url: "/user/workout/exercises",
         title: t("user.workout.exerciseLibrary.breadcrumb"),
@@ -722,7 +722,7 @@ const WorkoutExercisesPage = () => {
             hideTitleOnMobile={false}
           />
 
-          <Card className="rounded-[1.75rem] border-destructive/30 bg-destructive/5">
+          <Card className="rounded-[1.75rem] border-destructive/30 bg-destructive/5 py-6">
             <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="space-y-1">
                 <h2 className="text-base font-black">
@@ -947,7 +947,7 @@ const WorkoutExercisesPage = () => {
                     setSelectedExercise(exercise);
                   }
                 }}
-                className="overflow-hidden rounded-[1.75rem] border transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="overflow-hidden rounded-[1.75rem] border py-6 transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 <CardContent
                   className={cn(

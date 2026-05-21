@@ -34,7 +34,7 @@ const MobileNav = ({ hidden = false }) => {
     { to: "/user/dashboard", icon: Home2, label: "Dashboard" },
     { to: "/user/nutrition/home", icon: Salad, label: "Ovqatlanish" },
     {
-      to: "/user/workout/home",
+      to: "/user/workout/overview",
       label: "Mashg'ulotlar",
       icon: DumbbellIcon,
     },

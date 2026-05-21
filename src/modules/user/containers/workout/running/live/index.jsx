@@ -641,12 +641,12 @@ const RunningLivePage = () => {
   if (!workoutSessionId) {
     return (
       <PageTransition mode="slide-up">
-        <Card>
+        <Card className="py-6">
           <CardHeader>
             <CardTitle>Faol yugurish yo'q</CardTitle>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => navigate("/user/workout/home")}>
+            <Button onClick={() => navigate("/user/workout/overview")}>
               {t(
                 "user.workout.running.live.backToStart",
                 "Yugurishni boshlashga qaytish",

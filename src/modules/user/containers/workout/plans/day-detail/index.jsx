@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { get, map, size, uniq, filter, isArray, toNumber } from "lodash";
+import { find, get, map, size, uniq, filter, isArray, toNumber } from "lodash";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import {
@@ -11,7 +11,9 @@ import {
   MoreVerticalIcon,
   PencilIcon,
   PlayIcon,
+  Repeat2Icon,
   RotateCcwIcon,
+  SkipForwardIcon,
   TargetIcon,
 } from "lucide-react";
 import PageLoader from "@/components/page-loader/index.jsx";
@@ -33,6 +35,10 @@ import {
   useWorkoutPlanDetail,
   WORKOUT_PLAN_STATUS,
 } from "@/hooks/app/use-workout-plans";
+import {
+  useSkipWorkoutSession,
+  useUndoSkipWorkoutSession,
+} from "@/hooks/app/use-workout-sessions";
 import { cn } from "@/lib/utils";
 import { useBreadcrumbStore } from "@/store";
 import WorkoutExerciseDetailDrawer from "../../workout-exercise-detail-drawer";
@@ -184,6 +190,8 @@ const WorkoutPlanDayDetailPage = () => {
   const { items: workoutLogs } = useWorkoutLogs({}, { enabled: Boolean(rawPlan) });
   const activatePlanMutation = useActivateWorkoutPlan();
   const regenerateDayMutation = useRegenerateWorkoutPlanDay();
+  const skipSessionMutation = useSkipWorkoutSession();
+  const undoSkipSessionMutation = useUndoSkipWorkoutSession();
   const [exerciseDrawerOpen, setExerciseDrawerOpen] = React.useState(false);
   const [selectedExercise, setSelectedExercise] = React.useState(null);
   const [isRegenerateOverlayOpen, setIsRegenerateOverlayOpen] = React.useState(false);
@@ -199,7 +207,18 @@ const WorkoutPlanDayDetailPage = () => {
   const exercises = isArray(get(selectedDay, "exercises"))
     ? get(selectedDay, "exercises")
     : [];
+  const selectedDayProgress = React.useMemo(
+    () =>
+      find(
+        isArray(get(plan, "dayProgress")) ? get(plan, "dayProgress") : [],
+        (item) => toNumber(get(item, "dayIndex")) === dayIndex,
+      ) ?? null,
+    [dayIndex, plan],
+  );
+  const isCompletedDay = Boolean(get(selectedDayProgress, "completed"));
+  const isSkippedDay = Boolean(get(selectedDayProgress, "skipped"));
   const isLocked = isWorkoutDayLocked(plan, dayIndex);
+  const canRedoAsExtra = isCompletedDay && !isSkippedDay;
   const generationMeta = get(plan, "generationMeta");
   const benchmarkText = getBenchmarkText(generationMeta);
   const focus =
@@ -241,21 +260,62 @@ const WorkoutPlanDayDetailPage = () => {
 
   const handleStart = async () => {
     if (!get(plan, "id")) return;
-    if (isLocked) {
-      toast.error(t("user.workout.dayDetail.lockedStartError"));
+    if (isSkippedDay) {
+      toast.error(t("user.workout.dayDetail.skippedStartError"));
       return;
     }
 
     try {
+      let activePlanId = planId;
       if (get(plan, "status") !== WORKOUT_PLAN_STATUS.active) {
-        await activatePlanMutation.activatePlan(get(plan, "id"), plan);
+        const activatedPlan = await activatePlanMutation.activatePlan(
+          get(plan, "id"),
+          plan,
+        );
+        activePlanId = get(activatedPlan, "id", planId);
       }
 
-      navigate(`/user/workout/plans/${planId}/days/${dayIndex}/session`);
+      navigate(
+        `/user/workout/plans/${activePlanId}/days/${dayIndex}/session${canRedoAsExtra ? "?mode=extra" : ""}`,
+      );
     } catch (error) {
       toast.error(
         get(error, "response.data.message") ||
           t("user.workout.dayDetail.startError"),
+      );
+    }
+  };
+
+  const handleSkipDay = async () => {
+    if (!get(plan, "id") || isLocked) {
+      return;
+    }
+
+    try {
+      await skipSessionMutation.skipSession(get(plan, "id"), dayIndex);
+      toast.success(t("user.workout.dayDetail.skipSuccess"));
+      navigate(`/user/workout/plans/${get(plan, "id")}`);
+    } catch (error) {
+      toast.error(
+        get(error, "response.data.message") ||
+          t("user.workout.dayDetail.skipError"),
+      );
+    }
+  };
+
+  const handleUndoSkipDay = async () => {
+    if (!get(plan, "id") || !isSkippedDay) {
+      return;
+    }
+
+    try {
+      await undoSkipSessionMutation.undoSkipSession(get(plan, "id"), dayIndex);
+      toast.success(t("user.workout.dayDetail.undoSkipSuccess"));
+      navigate(`/user/workout/plans/${get(plan, "id")}`);
+    } catch (error) {
+      toast.error(
+        get(error, "response.data.message") ||
+          t("user.workout.dayDetail.undoSkipError"),
       );
     }
   };
@@ -315,7 +375,7 @@ const WorkoutPlanDayDetailPage = () => {
               </p>
             </div>
           </header>
-          <Card>
+          <Card className="py-6">
             <CardHeader>
               <CardTitle>{t("user.workout.dayDetail.planNotFoundTitle")}</CardTitle>
               <CardDescription>
@@ -339,7 +399,7 @@ const WorkoutPlanDayDetailPage = () => {
   if (!selectedDay) {
     return (
       <PageTransition mode="slide-up">
-        <Card>
+        <Card className="py-6">
           <CardHeader>
             <CardTitle>{t("user.workout.dayDetail.dayNotFoundTitle")}</CardTitle>
             <CardDescription>
@@ -471,7 +531,7 @@ const WorkoutPlanDayDetailPage = () => {
                 ))}
               </div>
             ) : (
-              <Card>
+              <Card className="py-6">
                 <CardHeader>
                   <CardTitle>{t("user.workout.dayDetail.noExercisesTitle")}</CardTitle>
                   <CardDescription>
@@ -486,19 +546,52 @@ const WorkoutPlanDayDetailPage = () => {
             <Button
               className="w-full sm:flex-1"
               onClick={handleStart}
-              disabled={activatePlanMutation.isPending || isLocked}
+              disabled={
+                activatePlanMutation.isPending ||
+                skipSessionMutation.isPending ||
+                undoSkipSessionMutation.isPending ||
+                (isLocked && !canRedoAsExtra)
+              }
             >
-              <PlayIcon data-icon="inline-start" />
-              {isLocked
-                ? t("user.workout.dayDetail.locked")
-                : t("user.workout.dayDetail.start")}
+              {canRedoAsExtra ? (
+                <Repeat2Icon data-icon="inline-start" />
+              ) : (
+                <PlayIcon data-icon="inline-start" />
+              )}
+              {isSkippedDay
+                ? t("user.workout.dayDetail.skipped")
+                : canRedoAsExtra
+                  ? t("user.workout.dayDetail.redoExtra")
+                  : t("user.workout.dayDetail.start")}
             </Button>
+            {!isLocked ? (
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto"
+                onClick={handleSkipDay}
+                disabled={skipSessionMutation.isPending}
+              >
+                <SkipForwardIcon data-icon="inline-start" />
+                {t("user.workout.dayDetail.skipDay")}
+              </Button>
+            ) : null}
+            {isSkippedDay ? (
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto"
+                onClick={handleUndoSkipDay}
+                disabled={undoSkipSessionMutation.isPending}
+              >
+                <RotateCcwIcon data-icon="inline-start" />
+                {t("user.workout.dayDetail.undoSkip")}
+              </Button>
+            ) : null}
             {get(plan, "source") === "ai" ? (
               <Button
                 variant="outline"
                 className="w-full sm:w-auto"
                 onClick={handleRegenerate}
-                disabled={regenerateDayMutation.isPending}
+                disabled={regenerateDayMutation.isPending || isLocked}
               >
                 <RotateCcwIcon data-icon="inline-start" />
                 {t("user.workout.dayDetail.regenerate")}
@@ -508,6 +601,7 @@ const WorkoutPlanDayDetailPage = () => {
               variant="outline"
               className="w-full sm:w-auto"
               onClick={() => navigate(`/user/workout/plans/edit/${planId}?day=${dayIndex}`)}
+              disabled={isLocked}
             >
               <PencilIcon data-icon="inline-start" />
               {t("user.workout.dayDetail.edit")}
@@ -515,7 +609,9 @@ const WorkoutPlanDayDetailPage = () => {
           </div>
           {isLocked ? (
             <p className="text-sm text-muted-foreground">
-              {t("user.workout.dayDetail.lockedHint")}
+              {isSkippedDay
+                ? t("user.workout.dayDetail.skippedHint")
+                : t("user.workout.dayDetail.lockedHint")}
             </p>
           ) : null}
         </main>

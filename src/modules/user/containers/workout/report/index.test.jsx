@@ -1,5 +1,6 @@
 import React from "react";
 import "@/lib/i18n";
+import i18n from "@/lib/i18n";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -103,7 +104,8 @@ const renderPage = () =>
   );
 
 describe("WorkoutReportPage", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("ru");
     useWorkoutReport.mockReturnValue({
       report,
       isLoading: false,
@@ -127,6 +129,105 @@ describe("WorkoutReportPage", () => {
     expect(screen.getAllByTestId("pie-chart").length).toBeGreaterThan(0);
   });
 
+  it("does not show a fake comparison trend when the report has no backend trend data", () => {
+    renderPage();
+
+    expect(screen.queryByText("+ 20%")).not.toBeInTheDocument();
+  });
+
+  it("shows backend-provided comparison trends on metric cards", () => {
+    useWorkoutReport.mockReturnValue({
+      report: {
+        ...report,
+        trends: {
+          totalSessions: { percentageChange: 50 },
+          totalCalories: { percentageChange: -12 },
+        },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    renderPage();
+
+    expect(screen.getByText("+50%")).toBeInTheDocument();
+    expect(screen.getByText("-12%")).toBeInTheDocument();
+  });
+
+  it("renders localized recovery load guidance from structured backend state", () => {
+    useWorkoutReport.mockReturnValue({
+      report: {
+        ...report,
+        recovery: {
+          loadBalanceKey: "high",
+          recommendedRestDays: 2,
+          recentSessions: 6,
+          highIntensitySessions: 4,
+          loadScore: 92,
+        },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    renderPage();
+
+    expect(screen.getByText("Высокая нагрузка")).toBeInTheDocument();
+    expect(screen.getByText("2 дня восстановления")).toBeInTheDocument();
+    expect(
+      screen.getByText(/запланируйте восстановление/i),
+    ).toBeInTheDocument();
+  });
+
+  it("localizes report labels even when backend fallback labels are Russian", async () => {
+    await i18n.changeLanguage("uz");
+    useWorkoutReport.mockReturnValue({
+      report: {
+        ...report,
+        charts: {
+          ...report.charts,
+          intensityDistribution: [
+            { key: "low", label: "Низкая", sessions: 1, percentage: 20 },
+            { key: "moderate", label: "Умеренная", sessions: 2, percentage: 40 },
+            { key: "high", label: "Высокая", sessions: 2, percentage: 40 },
+          ],
+        },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    renderPage();
+
+    expect(screen.getByText("Mashg'ulot analitikasi")).toBeInTheDocument();
+    expect(screen.getByText("Yugurish vs Kuch")).toBeInTheDocument();
+    expect(screen.getByText("Past")).toBeInTheDocument();
+    expect(screen.getByText("O'rtacha")).toBeInTheDocument();
+    expect(screen.getByText("Yuqori")).toBeInTheDocument();
+    expect(screen.getByText("AI trener maslahati")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Yugurish va kuch mashg'ulotlari/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("AI совет тренера")).not.toBeInTheDocument();
+  });
+
+  it("exposes chart cards as labelled regions for assistive technology", () => {
+    renderPage();
+
+    expect(
+      screen.getByRole("region", { name: "Активность по неделям" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "Бег vs Силовые" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "Выполнение целей" }),
+    ).toBeInTheDocument();
+  });
+
   it("requests report data with comparison period controls", () => {
     renderPage();
 
@@ -135,7 +236,7 @@ describe("WorkoutReportPage", () => {
       period: "30d",
     });
 
-    fireEvent.change(screen.getByLabelText("Taqqoslash"), {
+    fireEvent.change(screen.getByLabelText("Сравнение"), {
       target: { value: "none" },
     });
 
@@ -162,7 +263,7 @@ describe("WorkoutReportPage", () => {
 
     renderPage();
 
-    fireEvent.click(screen.getByRole("button", { name: /eksport/i }));
+    fireEvent.click(screen.getByRole("button", { name: /экспорт/i }));
 
     expect(createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
     expect(click).toHaveBeenCalled();

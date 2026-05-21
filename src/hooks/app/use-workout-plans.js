@@ -1,5 +1,16 @@
 import React from "react";
-import { find, filter, get, some, fromPairs, isArray, map, toNumber, toPairs } from "lodash";
+import {
+  find,
+  filter,
+  fromPairs,
+  get,
+  isArray,
+  map,
+  some,
+  startsWith,
+  toNumber,
+  toPairs,
+} from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useDeleteQuery,
@@ -9,6 +20,14 @@ import {
 } from "@/hooks/api";
 import { getApiResponseData } from "@/lib/api-response";
 import { WORKOUT_OVERVIEW_QUERY_KEY } from "@/hooks/app/use-workout-overview";
+import {
+  WORKOUT_PLAN_DIFFICULTY,
+  WORKOUT_PLAN_STATUS,
+  normalizeWorkoutPlanDifficulty,
+  normalizeWorkoutPlanSnapshot,
+  normalizeWorkoutPlanStatus,
+  normalizeWorkoutPlansCollection,
+} from "./workout-state-normalizer.js";
 
 export const WORKOUT_PLANS_QUERY_KEY = ["user", "workout", "plans"];
 export const WORKOUT_EXERCISES_QUERY_KEY = ["user", "workout", "exercises"];
@@ -17,58 +36,11 @@ export const CUSTOM_WORKOUT_EXERCISES_QUERY_KEY = [
   "workout",
   "custom-exercises",
 ];
-export const WORKOUT_PLAN_DIFFICULTY = {
-  beginner: "beginner",
-  intermediate: "intermediate",
-  advanced: "advanced",
-};
-export const WORKOUT_PLAN_STATUS = {
-  active: "active",
-  draft: "draft",
-  archived: "archived",
-  template: "template",
-};
-
-const WORKOUT_PLAN_DIFFICULTY_ALIASES = {
-  beginner: WORKOUT_PLAN_DIFFICULTY.beginner,
-  "boshlang'ich": WORKOUT_PLAN_DIFFICULTY.beginner,
-  boshlangich: WORKOUT_PLAN_DIFFICULTY.beginner,
-  "начальный": WORKOUT_PLAN_DIFFICULTY.beginner,
-  intermediate: WORKOUT_PLAN_DIFFICULTY.intermediate,
-  "o'rta": WORKOUT_PLAN_DIFFICULTY.intermediate,
-  orta: WORKOUT_PLAN_DIFFICULTY.intermediate,
-  средний: WORKOUT_PLAN_DIFFICULTY.intermediate,
-  advanced: WORKOUT_PLAN_DIFFICULTY.advanced,
-  yuqori: WORKOUT_PLAN_DIFFICULTY.advanced,
-  продвинутый: WORKOUT_PLAN_DIFFICULTY.advanced,
-};
-
-export const normalizeWorkoutPlanDifficulty = (
-  value,
-  fallback = WORKOUT_PLAN_DIFFICULTY.intermediate,
-) => {
-  if (value === undefined || value === null || value === "") {
-    return fallback;
-  }
-
-  const normalized = String(value).trim().toLowerCase();
-
-  return WORKOUT_PLAN_DIFFICULTY_ALIASES[normalized] ?? fallback;
-};
-
-export const normalizeWorkoutPlanStatus = (
-  value,
-  fallback = WORKOUT_PLAN_STATUS.draft,
-) => {
-  if (value === undefined || value === null || value === "") {
-    return fallback;
-  }
-
-  const normalized = String(value).trim().toLowerCase();
-
-  return Object.values(WORKOUT_PLAN_STATUS).includes(normalized)
-    ? normalized
-    : fallback;
+export {
+  WORKOUT_PLAN_DIFFICULTY,
+  WORKOUT_PLAN_STATUS,
+  normalizeWorkoutPlanDifficulty,
+  normalizeWorkoutPlanStatus,
 };
 
 export const getWorkoutPlanDetailQueryKey = (planId) => [
@@ -107,88 +79,99 @@ const sanitizeJsonPayload = (value) => {
   return String(value);
 };
 
-const countDaysPerWeek = (schedule = []) =>
-  isArray(schedule)
-    ? filter(
-        schedule,
-        (day) => isArray(day?.exercises) && day.exercises.length > 0,
-      ).length
-    : 0;
+const normalizePlan = normalizeWorkoutPlanSnapshot;
 
-const normalizePlan = (plan) => {
-  if (!plan) {
-    return null;
+export const normalizeWorkoutPlansState = normalizeWorkoutPlansCollection;
+
+export const mergeActivatedWorkoutPlanState = (
+  payload = {},
+  activatedPlan,
+) => {
+  const state = normalizeWorkoutPlansState(payload);
+  const normalizedActivatedPlan = normalizePlan(activatedPlan);
+
+  if (!normalizedActivatedPlan?.id) {
+    return state;
   }
 
-  const schedule = isArray(plan.schedule) ? plan.schedule : [];
+  const activePlan = {
+    ...normalizedActivatedPlan,
+    status: WORKOUT_PLAN_STATUS.active,
+  };
+  const itemsWithoutActivatedPlan = filter(
+    state.items,
+    (plan) => plan.id !== activePlan.id,
+  );
+  const nextItems = [
+    activePlan,
+    ...map(itemsWithoutActivatedPlan, (plan) =>
+      plan.status === WORKOUT_PLAN_STATUS.active
+        ? {
+            ...plan,
+            status: WORKOUT_PLAN_STATUS.draft,
+            startDate: null,
+          }
+        : plan,
+    ),
+  ];
 
   return {
-    ...plan,
-    name: plan.name || "Mening workout rejam",
-    description: plan.description || "",
-    coverImageUrl: plan.coverImageUrl || null,
-    difficulty: normalizeWorkoutPlanDifficulty(plan.difficulty),
-    status: normalizeWorkoutPlanStatus(plan.status),
-    days: toNumber(plan.days ?? 28) || 28,
-    daysPerWeek:
-      toNumber(plan.daysPerWeek ?? countDaysPerWeek(schedule)) ||
-      countDaysPerWeek(schedule),
-    schedule,
-    generationMeta: plan.generationMeta ?? null,
-    dayProgress: isArray(plan.dayProgress)
-      ? map(plan.dayProgress, (item) => ({
-          dayIndex: toNumber(item?.dayIndex ?? 0) || 0,
-          completed: Boolean(item?.completed),
-          completedAt: item?.completedAt ?? null,
-          exerciseCount: toNumber(item?.exerciseCount ?? 0) || 0,
-        }))
-      : [],
-    startDate: plan.startDate ?? null,
-    createdAt: plan.createdAt ?? null,
-    updatedAt: plan.updatedAt ?? null,
-    source: plan.source || "manual",
+    ...state,
+    items: nextItems,
+    activePlanId: activePlan.id,
+    draftPlanId:
+      get(
+        find(nextItems, (plan) => plan.status === WORKOUT_PLAN_STATUS.draft),
+        "id",
+      ) ?? null,
   };
 };
 
-const normalizeTemplate = (plan) => {
-  const normalized = normalizePlan(plan);
+export const isTemplateActivationFallbackEligible = (error, plan = {}) => {
+  const status =
+    get(error, "response.status") ??
+    get(error, "response.data.statusCode") ??
+    get(error, "status");
+  const isTemplatePlan = Boolean(
+    plan?.isTemplate ||
+      plan?.source === "template" ||
+      startsWith(String(plan?.id ?? ""), "workout-template-"),
+  );
+  const hasPlanPayload = Boolean(
+    plan?.name || (isArray(plan?.schedule) && plan.schedule.length > 0),
+  );
 
-  if (!normalized) {
-    return null;
-  }
-
-  return {
-    ...normalized,
-    status: normalizeWorkoutPlanStatus(plan.status, WORKOUT_PLAN_STATUS.template),
-    isTemplate: Boolean(plan.isTemplate ?? true),
-    translations:
-      plan.translations && typeof plan.translations === "object"
-        ? plan.translations
-        : {},
-    descriptionTranslations:
-      plan.descriptionTranslations &&
-      typeof plan.descriptionTranslations === "object"
-        ? plan.descriptionTranslations
-        : {},
-  };
+  return Number(status) === 404 && isTemplatePlan && hasPlanPayload;
 };
 
-export const normalizeWorkoutPlansState = (payload = {}) => {
-  const items = isArray(payload.items)
-    ? filter(map(payload.items, normalizePlan), Boolean)
-    : [];
-  const templates = isArray(payload.templates)
-    ? filter(map(payload.templates, normalizeTemplate), Boolean)
-    : [];
-  const activePlanId = payload.activePlanId ?? null;
-  const draftPlanId = payload.draftPlanId ?? null;
+const buildWorkoutPlansCacheValue = (state) => ({
+  data: {
+    data: state,
+  },
+});
 
-  return {
-    items,
-    templates,
-    activePlanId,
-    draftPlanId,
-  };
+const syncActivatedWorkoutPlanCache = (queryClient, response) => {
+  const activatedPlan = normalizePlan(resolveResponseData(response));
+
+  if (!activatedPlan?.id) {
+    return activatedPlan;
+  }
+
+  queryClient.setQueryData(WORKOUT_PLANS_QUERY_KEY, (current) =>
+    buildWorkoutPlansCacheValue(
+      mergeActivatedWorkoutPlanState(resolveResponseData(current, {}), activatedPlan),
+    ),
+  );
+  queryClient.setQueryData(
+    getWorkoutPlanDetailQueryKey(activatedPlan.id),
+    {
+      data: {
+        data: activatedPlan,
+      },
+    },
+  );
+
+  return activatedPlan;
 };
 
 export const buildWorkoutPlanPayload = (plan = {}) => ({
@@ -672,6 +655,7 @@ export const useUpdateWorkoutPlan = () => {
 
 export const useActivateWorkoutPlan = () => {
   const queryClient = useQueryClient();
+  const createPlanMutation = useCreateWorkoutPlan();
   const mutation = usePostQuery({
     mutationProps: {
       onSuccess: async (_, variables) => {
@@ -684,19 +668,46 @@ export const useActivateWorkoutPlan = () => {
 
   const activatePlan = React.useCallback(
     async (planId, plan = {}) => {
-      const response = await mutation.mutateAsync({
-        url: `/user/workout/plans/${planId}/activate`,
-        attributes: buildWorkoutPlanPayload(plan),
-        planId,
-      });
+      const requestedPlan = {
+        ...plan,
+        id: plan?.id ?? planId,
+      };
+      const activateById = (targetPlanId, payload) =>
+        mutation.mutateAsync({
+          url: `/user/workout/plans/${targetPlanId}/activate`,
+          attributes: buildWorkoutPlanPayload(payload),
+          planId: targetPlanId,
+        });
 
-      return normalizePlan(resolveResponseData(response));
+      try {
+        const response = await activateById(planId, plan);
+
+        return syncActivatedWorkoutPlanCache(queryClient, response);
+      } catch (error) {
+        if (!isTemplateActivationFallbackEligible(error, requestedPlan)) {
+          throw error;
+        }
+
+        const createdPlan = await createPlanMutation.createPlan({
+          ...requestedPlan,
+          source: "template",
+        });
+
+        if (!createdPlan?.id) {
+          throw error;
+        }
+
+        const response = await activateById(createdPlan.id, createdPlan);
+
+        return syncActivatedWorkoutPlanCache(queryClient, response);
+      }
     },
-    [mutation],
+    [createPlanMutation, mutation, queryClient],
   );
 
   return {
     ...mutation,
+    isPending: mutation.isPending || createPlanMutation.isPending,
     activatePlan,
   };
 };
@@ -756,6 +767,37 @@ export const useDeleteWorkoutPlan = () => {
   return {
     ...mutation,
     deletePlan,
+  };
+};
+
+export const useDuplicateWorkoutPlan = () => {
+  const queryClient = useQueryClient();
+  const mutation = usePostQuery({
+    mutationProps: {
+      onSuccess: async (_, variables) => {
+        await invalidateWorkoutPlanQueries(queryClient, {
+          planId: variables?.planId,
+        });
+      },
+    },
+  });
+
+  const duplicatePlan = React.useCallback(
+    async (planId) => {
+      const response = await mutation.mutateAsync({
+        url: `/user/workout/plans/${planId}/duplicate`,
+        attributes: {},
+        planId,
+      });
+
+      return normalizePlan(resolveResponseData(response));
+    },
+    [mutation],
+  );
+
+  return {
+    ...mutation,
+    duplicatePlan,
   };
 };
 

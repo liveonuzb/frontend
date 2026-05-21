@@ -184,7 +184,7 @@ const SessionHistoryDetailPage = () => {
   if (isError || !session) {
     return (
       <PageTransition mode="slide-up">
-        <Card>
+        <Card className="py-6">
           <CardHeader>
             <CardTitle>{t("user.workout.historyDetail.notFoundTitle")}</CardTitle>
             <CardDescription>
@@ -223,7 +223,7 @@ const SessionHistoryDetailPage = () => {
           <TrackingPageLayout
             aside={
               <div className="space-y-4">
-                <Card className="rounded-[2rem]">
+                <Card className="rounded-[2rem] py-6">
                   <CardHeader className="pb-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="outline">
@@ -259,7 +259,7 @@ const SessionHistoryDetailPage = () => {
                 </Card>
 
                 {previousSessionId ? (
-                  <Card className="rounded-[2rem]">
+                  <Card className="rounded-[2rem] py-6">
                     <CardHeader className="pb-3">
                     <CardTitle className="text-base font-black">
                       {t("user.workout.historyDetail.previousSession")}
@@ -282,7 +282,7 @@ const SessionHistoryDetailPage = () => {
               </div>
             }
           >
-            <Card className="rounded-[2rem]">
+            <Card className="rounded-[2rem] py-6">
               <CardHeader>
                 <CardTitle>{t("user.workout.historyDetail.runningSummary")}</CardTitle>
                 <CardDescription>
@@ -359,7 +359,7 @@ const SessionHistoryDetailPage = () => {
         <TrackingPageLayout
           aside={
             <div className="space-y-4">
-              <Card className="rounded-[2rem]">
+              <Card className="rounded-[2rem] py-6">
                 <CardHeader className="pb-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="outline">
@@ -446,7 +446,7 @@ const SessionHistoryDetailPage = () => {
               </Card>
 
               {previousSessionId ? (
-                <Card className="rounded-[2rem]">
+                <Card className="rounded-[2rem] py-6">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base font-black">
                       {t("user.workout.historyDetail.previousSession")}
@@ -469,7 +469,7 @@ const SessionHistoryDetailPage = () => {
             </div>
           }
         >
-          <Card className="rounded-[2rem]">
+          <Card className="rounded-[2rem] py-6">
             <CardHeader>
               <CardTitle>{t("user.workout.historyDetail.completedExercises")}</CardTitle>
               <CardDescription>

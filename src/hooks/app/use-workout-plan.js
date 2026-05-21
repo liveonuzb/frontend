@@ -6,6 +6,7 @@ import {
   useActivateWorkoutPlan,
   useCreateWorkoutPlan,
   useDeleteWorkoutPlan,
+  useDuplicateWorkoutPlan,
   usePauseWorkoutPlan,
   usePersistedWorkoutPlan,
   useUpdateWorkoutPlan,
@@ -20,6 +21,7 @@ export const useWorkoutPlan = (options = {}) => {
   const activatePlanMutation = useActivateWorkoutPlan();
   const pausePlanMutation = usePauseWorkoutPlan();
   const deletePlanMutation = useDeleteWorkoutPlan();
+  const duplicatePlanMutation = useDuplicateWorkoutPlan();
 
   const isPersistedPlan = React.useCallback(
     (plan) => isPersistedWorkoutPlan(workoutPlanState.items, plan),
@@ -37,6 +39,16 @@ export const useWorkoutPlan = (options = {}) => {
 
   const startPlan = React.useCallback(
     async (plan) => {
+      if (plan?.isTemplate) {
+        return activatePlanMutation.activatePlan(
+          plan.id,
+          buildWorkoutPlanPayload({
+            ...plan,
+            source: "template",
+          }),
+        );
+      }
+
       if (!isPersistedPlan(plan)) {
         const createdState = await saveDraftPlan(plan);
         const latestDraft = createdState;
@@ -83,6 +95,17 @@ export const useWorkoutPlan = (options = {}) => {
     [deletePlanMutation, workoutPlanState],
   );
 
+  const duplicatePlan = React.useCallback(
+    async (planId) => {
+      if (!planId) {
+        return null;
+      }
+
+      return duplicatePlanMutation.duplicatePlan(planId);
+    },
+    [duplicatePlanMutation],
+  );
+
   return {
     ...workoutPlanState,
     plans: workoutPlanState.items,
@@ -101,11 +124,13 @@ export const useWorkoutPlan = (options = {}) => {
     startPlan,
     pausePlan,
     removePlan,
+    duplicatePlan,
     isSavingDraft:
       createDraftMutation.isPending || updatePlanMutation.isPending,
     isStartingPlan: activatePlanMutation.isPending,
     isPausingPlan: pausePlanMutation.isPending,
     isRemovingPlan: deletePlanMutation.isPending,
+    isDuplicatingPlan: duplicatePlanMutation.isPending,
   };
 };
 

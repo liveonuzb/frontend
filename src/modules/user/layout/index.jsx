@@ -149,17 +149,12 @@ const Index = () => {
         icon: LayoutDashboardIcon,
       },
       {
-        to: "/user/report",
-        label: "Report",
-        icon: FileTextIcon,
-      },
-      {
         to: "/user/nutrition/home",
         label: "Ovqatlanish",
         icon: UtensilsIcon,
       },
       {
-        to: "/user/workout/home",
+        to: "/user/workout/overview",
         label: "Mashg'ulotlar",
         icon: DumbbellIcon,
       },

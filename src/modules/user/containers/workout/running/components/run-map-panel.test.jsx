@@ -123,7 +123,7 @@ describe("RunMapPanel", () => {
       "https://tiles.openfreemap.org/styles/bright",
     );
     expect(mapInstances[0].options.attributionControl).toBe(false);
-    expect(mapInstances[0].addControl).toHaveBeenCalledTimes(1);
+    expect(mapInstances[0].addControl).not.toHaveBeenCalled();
     await waitFor(() => expect(mapInstances[0].fitBounds).toHaveBeenCalled());
     await waitFor(() =>
       expect(markerInstances.at(-1).setLngLat).toHaveBeenCalledWith([

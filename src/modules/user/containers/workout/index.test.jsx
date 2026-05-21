@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import WorkoutIndex from "./index.jsx";
 
 vi.mock("./list", () => ({
-  default: () => <div>Workout Home Page</div>,
+  default: () => <div>Workout Overview Page</div>,
 }));
 
 vi.mock("./history", () => ({
@@ -88,10 +88,22 @@ const renderWorkoutRoute = (initialEntry) => {
 };
 
 describe("Workout routing", () => {
-  it("redirects deprecated running landing route to Workout Home", async () => {
+  it("redirects workout index to Workout Overview", async () => {
+    renderWorkoutRoute("/user/workout");
+
+    expect(await screen.findByText("Workout Overview Page")).toBeInTheDocument();
+  });
+
+  it("redirects deprecated workout home deep link to Workout Overview", async () => {
+    renderWorkoutRoute("/user/workout/home");
+
+    expect(await screen.findByText("Workout Overview Page")).toBeInTheDocument();
+  });
+
+  it("redirects deprecated running landing route to Workout Overview", async () => {
     renderWorkoutRoute("/user/workout/running");
 
-    expect(await screen.findByText("Workout Home Page")).toBeInTheDocument();
+    expect(await screen.findByText("Workout Overview Page")).toBeInTheDocument();
     expect(screen.queryByText("Deprecated Running Page")).not.toBeInTheDocument();
   });
 

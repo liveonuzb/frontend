@@ -7,7 +7,9 @@ import { WORKOUT_NAV_ITEMS } from "./workout-nav-items.js";
 import { includes, map, get } from "lodash";
 
 const PRIMARY_TAB_PATHS = [
+  "/user/workout",
   "/user/workout/home",
+  "/user/workout/overview",
   "/user/workout/plans",
   "/user/workout/exercises",
   "/user/workout/history",

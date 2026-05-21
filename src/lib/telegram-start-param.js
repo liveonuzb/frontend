@@ -10,7 +10,7 @@ const ROUTE_BY_START_PARAM = {
   meal_plan: "/user/nutrition/home",
   meal: "/user/nutrition/home",
   nutrition: "/user/nutrition/home",
-  workout: "/user/workout/home",
+  workout: "/user/workout/overview",
   progress: "/user/measurements",
 };
 const ROUTE_START_PARAMS = [

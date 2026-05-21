@@ -154,7 +154,7 @@ const EditWorkoutPlanPage = () => {
   if (isError || !effectivePlan) {
     return (
       <PageTransition mode="slide-up">
-        <Card>
+        <Card className="py-6">
           <CardHeader>
             <CardTitle>{t("user.workout.planDetail.notFoundTitle")}</CardTitle>
             <CardDescription>

@@ -101,7 +101,7 @@
       "deleteConfirm": "Are you sure you want to delete this workout?",
       "nav": {
         "ariaLabel": "Workout module sections",
-        "home": "Home",
+        "home": "Overview",
         "plans": "Plans",
         "running": "Running",
         "exercises": "Exercises",
@@ -138,6 +138,12 @@
         "hero": {
           "title": "Today's workout",
           "activeBadge": "ACTIVE PLAN",
+          "activeSessionBadge": "ACTIVE SESSION",
+          "activeSessionLabel": "Continue workout",
+          "activeRunTitle": "Active run",
+          "activeWorkoutTitle": "Active workout",
+          "activeRunDescription": "You have an unfinished running session. Continue it to keep distance, pace, and route data.",
+          "activeWorkoutDescription": "You have an unfinished strength session. Continue from your current exercise.",
           "noActiveBadge": "NO ACTIVE PLAN",
           "statusLabel": "Plan status",
           "defaultWorkout": "Push Day",
@@ -187,6 +193,9 @@
           "reportDescription": "Statistics",
           "recommendedTitle": "Recommended plans",
           "recommendedSubtitle": "Choose a plan that fits your goal and start your path",
+          "loading": "Loading recommended plans...",
+          "empty": "No recommended workout plans are available yet.",
+          "retry": "Retry",
           "durationWeeks": "{{count}} weeks",
           "select": "Select"
         },
@@ -237,7 +246,7 @@
           }
         },
         "recent": {
-          "title": "Recent workouts",
+          "title": "Latest activity",
           "empty": "No workout history yet. Workouts and runs will appear here after you start them.",
           "routeWaiting": "Waiting for route data"
         },
@@ -315,9 +324,11 @@
           "session": "Session",
           "start": "Start",
           "edit": "Edit",
+          "duplicate": "Duplicate",
           "delete": "Delete",
           "viewPlan": "View plan",
           "continuePlan": "Continue plan",
+          "selectAsPlan": "Select as plan",
           "createPlan": "Create new plan",
           "cancel": "Cancel"
         },
@@ -383,6 +394,54 @@
           },
           "footer": "Start today and become your strongest version."
         },
+        "sections": {
+          "allPlans": "All plans",
+          "otherPlans": "Other plans"
+        },
+        "hero": {
+          "metrics": {
+            "distance": "km",
+            "time": "time",
+            "pace": "pace",
+            "kcal": "kcal",
+            "exercises": "exercises",
+            "duration": "duration",
+            "notSet": "Not set"
+          },
+          "noActive": {
+            "badge": "No active plan",
+            "title": "You do not have an active plan yet",
+            "description": "Choose a plan that fits your goal and start today.",
+            "goalFit": "Goal-fit plan",
+            "progress": "Step-by-step progress",
+            "results": "Track results",
+            "aiCta": "AI plan selection"
+          },
+          "activePlan": {
+            "badge": "Your active plan",
+            "title": "Today's workout is ready",
+            "description": "Get ready for {{title}} today.",
+            "progress": "Progress: {{completed}} / {{total}} days",
+            "startToday": "Start today's workout"
+          },
+          "activeWorkout": {
+            "badge": "Active workout",
+            "title": "Workout in progress",
+            "defaultTitle": "Current workout",
+            "description": "You have an unfinished workout. Continue it to keep your progress.",
+            "continue": "Continue workout"
+          },
+          "liveRun": {
+            "badge": "Running in progress",
+            "live": "Live",
+            "title": "Running in progress",
+            "description": "Continue your outdoor run or open the live screen to finish it.",
+            "continue": "Continue",
+            "finish": "Finish",
+            "mapEmpty": "Route points are waiting",
+            "mapLoading": "Route loading"
+          }
+        },
         "filters": {
           "all": "All",
           "strength": "Strength",
@@ -399,6 +458,8 @@
         "toasts": {
           "startSuccess": "\"{{name}}\" started",
           "startError": "Could not start the plan",
+          "duplicateSuccess": "Workout plan duplicated",
+          "duplicateError": "Could not duplicate the workout plan",
           "deleteSuccess": "Workout plan deleted",
           "deleteError": "Could not delete the workout plan"
         },
@@ -698,6 +759,7 @@
         "finishSuccess": "Workout completed",
         "finishSuccessDescription": "{{minutes}} minutes, {{calories}} kcal.",
         "finishError": "Could not save the workout log",
+        "activeSessionConflict": "Finish or discard the active workout session first.",
         "back": "Back",
         "daySessionTitle": "Day {{day}} - Workout session",
         "dayFocusTitle": "Day {{day}} - {{focus}}",
@@ -897,10 +959,20 @@
         "noExercisesTitle": "No exercises for this day",
         "noExercisesDescription": "Edit the plan and add exercises to this day.",
         "locked": "Locked",
+        "skipped": "Skipped",
         "start": "START",
+        "redoExtra": "REDO AS EXTRA SESSION",
+        "skipDay": "SKIP DAY",
+        "skipSuccess": "Workout day skipped",
+        "skipError": "Could not skip this workout day",
+        "undoSkip": "Undo skip",
+        "undoSkipSuccess": "Workout day restored",
+        "undoSkipError": "Could not restore this workout day",
+        "skippedStartError": "Skipped workout days cannot be started",
         "regenerate": "Regenerate",
         "edit": "Edit",
-        "lockedHint": "Complete previous workout days before starting the next day."
+        "lockedHint": "This workout day is already completed. You can review it or redo it as an extra session.",
+        "skippedHint": "This workout day was skipped and does not count toward progress."
       },
       "planDetail": {
         "manual": "Manual",
@@ -951,9 +1023,14 @@
         "difficultyDescription": "Suitable for those with some workout experience.",
         "caloriesEstimate": "Calories estimate",
         "caloriesPerWeek": "2,800 kcal / week",
+        "caloriesPerWorkout": "{{calories}} kcal / workout",
+        "caloriesNotSpecified": "Not specified",
         "caloriesDescription": "Estimated average calorie burn per week.",
         "equipmentNeeded": "Equipment needed",
         "gymRequired": "Gym Required",
+        "equipmentConfigured": "Configured",
+        "equipmentFlexible": "Flexible",
+        "equipmentNotSpecified": "Not specified",
         "equipmentList": "Dumbbells, Barbell, Bench, Cable Machine, Pull-up Bar",
         "weeklyPreview": "Weekly completion preview",
         "completedPreview": "Completed",
@@ -1095,12 +1172,45 @@
         "runVsStrength": "Run vs Strength",
         "running": "Run",
         "strength": "Strength",
+        "typeLabels": {
+          "OUTDOOR_RUN": "Run",
+          "STRENGTH": "Strength",
+          "FUNCTIONAL": "Functional"
+        },
         "distancePaceTrend": "Distance and pace trend (run)",
         "goalCompletion": "Goal completion",
         "distance": "Distance",
         "intensity": "Intensity distribution",
+        "intensityLabels": {
+          "low": "Low",
+          "moderate": "Moderate",
+          "high": "High"
+        },
         "recoveryLoad": "Recovery and load",
+        "recommendedRestDays": "{{count}} rest days",
+        "recoveryStates": {
+          "none": {
+            "label": "No data",
+            "recommendation": "Complete your first workout to unlock recovery guidance."
+          },
+          "low": {
+            "label": "Low load",
+            "recommendation": "Add one or two easy sessions this week before increasing intensity."
+          },
+          "balanced": {
+            "label": "Balanced load",
+            "recommendation": "Keep the current rhythm and leave space for recovery."
+          },
+          "high": {
+            "label": "High load",
+            "recommendation": "Plan recovery before adding more intensity."
+          }
+        },
         "coachAdvice": "AI coach advice",
+        "coachAdviceText": {
+          "mixedTraining": "Runs and strength sessions are combined in one report. Track pace, volume, and recovery together.",
+          "addCardio": "Add a run or cardio session alongside strength training so the report can show your load balance more clearly."
+        },
         "recentWorkouts": "Recent workouts",
         "showAll": "Show all",
         "allWorkouts": "All workouts",

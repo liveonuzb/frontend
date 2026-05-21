@@ -10,6 +10,10 @@ import {
   useRegenerateWorkoutPlanDay,
   useWorkoutPlanDetail,
 } from "@/hooks/app/use-workout-plans";
+import {
+  useSkipWorkoutSession,
+  useUndoSkipWorkoutSession,
+} from "@/hooks/app/use-workout-sessions";
 
 vi.mock("sonner", () => ({
   toast: {
@@ -48,8 +52,20 @@ vi.mock("@/hooks/app/use-workout-logs", () => ({
   useWorkoutLogs: vi.fn(),
 }));
 
+vi.mock("@/hooks/app/use-workout-sessions", async (importOriginal) => {
+  const actual = await importOriginal();
+
+  return {
+    ...actual,
+    useSkipWorkoutSession: vi.fn(),
+    useUndoSkipWorkoutSession: vi.fn(),
+  };
+});
+
 const activatePlanMock = vi.fn();
 const regenerateDayMock = vi.fn();
+const skipSessionMock = vi.fn();
+const undoSkipSessionMock = vi.fn();
 const refetchMock = vi.fn();
 
 const defaultPlan = {
@@ -118,6 +134,8 @@ describe("WorkoutPlanDayDetailPage", () => {
   beforeEach(() => {
     activatePlanMock.mockReset();
     regenerateDayMock.mockReset();
+    skipSessionMock.mockReset();
+    undoSkipSessionMock.mockReset();
     refetchMock.mockReset();
 
     useWorkoutPlanDetail.mockReturnValue({
@@ -142,6 +160,14 @@ describe("WorkoutPlanDayDetailPage", () => {
     });
     useRegenerateWorkoutPlanDay.mockReturnValue({
       regenerateDay: regenerateDayMock,
+      isPending: false,
+    });
+    useSkipWorkoutSession.mockReturnValue({
+      skipSession: skipSessionMock,
+      isPending: false,
+    });
+    useUndoSkipWorkoutSession.mockReturnValue({
+      undoSkipSession: undoSkipSessionMock,
       isPending: false,
     });
   });
@@ -235,6 +261,46 @@ describe("WorkoutPlanDayDetailPage", () => {
     expect(screen.getByTestId("session-route")).toBeInTheDocument();
   });
 
+  it("uses the created active plan id when starting a template day", async () => {
+    useWorkoutPlanDetail.mockReturnValue({
+      plan: {
+        ...defaultPlan,
+        id: "template-running",
+        name: "Running Starter Plan",
+        status: "template",
+        source: "seed",
+        isTemplate: true,
+      },
+      isLoading: false,
+      isError: false,
+      refetch: refetchMock,
+    });
+    activatePlanMock.mockResolvedValue({
+      ...defaultPlan,
+      id: "active-running-plan",
+      name: "Running Starter Plan",
+      status: "active",
+      source: "template",
+    });
+
+    const router = renderPage("/user/workout/plans/template-running/days/0");
+    fireEvent.click(screen.getByText("START"));
+
+    await waitFor(() => {
+      expect(activatePlanMock).toHaveBeenCalledWith(
+        "template-running",
+        expect.objectContaining({
+          name: "Running Starter Plan",
+        }),
+      );
+    });
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(
+        "/user/workout/plans/active-running-plan/days/0/session",
+      );
+    });
+  });
+
   it("navigates to edit route from the day detail action", async () => {
     const router = renderPage();
 
@@ -249,10 +315,11 @@ describe("WorkoutPlanDayDetailPage", () => {
     });
   });
 
-  it("blocks start when a previous workout day is incomplete", async () => {
+  it("allows opening an incomplete day even when a previous workout day is incomplete", async () => {
     useWorkoutPlanDetail.mockReturnValue({
       plan: {
         ...defaultPlan,
+        status: "active",
         dayProgress: [
           {
             dayIndex: 0,
@@ -288,13 +355,136 @@ describe("WorkoutPlanDayDetailPage", () => {
       refetch: refetchMock,
     });
 
-    renderPage("/user/workout/plans/plan-1/days/1");
+    const router = renderPage("/user/workout/plans/plan-1/days/1");
 
-    expect(screen.getByText("Locked")).toBeDisabled();
-    expect(
-      screen.getByText("Keyingi kunni boshlashdan oldin oldingi workout kunlarini yakunlang."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("START")).not.toBeDisabled();
+    fireEvent.click(screen.getByText("START"));
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(
+        "/user/workout/plans/plan-1/days/1/session",
+      );
+    });
     expect(activatePlanMock).not.toHaveBeenCalled();
+  });
+
+  it("allows a completed workout day to be redone as an extra session", async () => {
+    useWorkoutPlanDetail.mockReturnValue({
+      plan: {
+        ...defaultPlan,
+        status: "active",
+        dayProgress: [
+          {
+            dayIndex: 0,
+            completed: true,
+            completedAt: "2026-05-20T08:00:00.000Z",
+            exerciseCount: 1,
+          },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: refetchMock,
+    });
+
+    const router = renderPage("/user/workout/plans/plan-1/days/0");
+
+    expect(
+      screen.getByText(/yakunlangan|already completed|заверш/i),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByText("REDO AS EXTRA SESSION"));
+
+    await waitFor(() => {
+      expect(`${router.state.location.pathname}${router.state.location.search}`).toBe(
+        "/user/workout/plans/plan-1/days/0/session?mode=extra",
+      );
+    });
+  });
+
+  it("keeps a skipped workout day view-only", () => {
+    useWorkoutPlanDetail.mockReturnValue({
+      plan: {
+        ...defaultPlan,
+        status: "active",
+        dayProgress: [
+          {
+            dayIndex: 0,
+            completed: false,
+            completedAt: null,
+            skipped: true,
+            skippedAt: "2026-05-20T08:00:00.000Z",
+            exerciseCount: 1,
+          },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: refetchMock,
+    });
+
+    renderPage("/user/workout/plans/plan-1/days/0");
+
+    expect(screen.getByText("Skipped")).toBeDisabled();
+    expect(
+      screen.getAllByText(/o'tkazib yuborilgan|skipped|пропущен/i).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("restores a skipped workout day back into the plan queue", async () => {
+    useWorkoutPlanDetail.mockReturnValue({
+      plan: {
+        ...defaultPlan,
+        status: "active",
+        dayProgress: [
+          {
+            dayIndex: 0,
+            completed: false,
+            completedAt: null,
+            skipped: true,
+            skippedAt: "2026-05-20T08:00:00.000Z",
+            exerciseCount: 1,
+          },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: refetchMock,
+    });
+    undoSkipSessionMock.mockResolvedValue({
+      success: true,
+      restored: true,
+    });
+    const router = renderPage("/user/workout/plans/plan-1/days/0");
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /undo skip|skipni bekor qilish|отменить пропуск/i,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(undoSkipSessionMock).toHaveBeenCalledWith("plan-1", 0);
+    });
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/user/workout/plans/plan-1");
+    });
+  });
+
+  it("skips a pending workout day and returns to the plan detail", async () => {
+    skipSessionMock.mockResolvedValue({
+      id: "skipped-1",
+      status: "skipped",
+    });
+    const router = renderPage("/user/workout/plans/plan-1/days/0");
+
+    fireEvent.click(screen.getByText("SKIP DAY"));
+
+    await waitFor(() => {
+      expect(skipSessionMock).toHaveBeenCalledWith("plan-1", 0);
+    });
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/user/workout/plans/plan-1");
+    });
   });
 
   it("shows an empty exercise state for a day without exercises", () => {

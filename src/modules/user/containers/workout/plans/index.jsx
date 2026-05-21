@@ -19,7 +19,12 @@ import {
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import {
+  ActivityIcon,
+  BarChart3Icon,
+  CalendarDaysIcon,
   CheckIcon,
+  CopyIcon,
+  Clock3Icon,
   CrownIcon,
   DumbbellIcon,
   ArrowRightIcon,
@@ -27,7 +32,10 @@ import {
   MoreVerticalIcon,
   PlayIcon,
   PlusIcon,
+  RouteIcon,
   SparklesIcon,
+  SquareIcon,
+  TargetIcon,
   Trash2Icon,
   PencilIcon,
   EyeIcon,
@@ -54,15 +62,26 @@ import {
 } from "@/components/ui/dropdown-menu";
 import useWorkoutPlan from "@/hooks/app/use-workout-plan";
 import { useGetQuery } from "@/hooks/api";
+import { useRunningActiveSession } from "@/hooks/app/use-running-sessions";
+import { useActiveWorkoutSession } from "@/hooks/app/use-workout-sessions";
 import { useLanguageStore, useBreadcrumbStore } from "@/store";
 import { cn } from "@/lib/utils";
+import {
+  formatRunningDistance,
+  formatRunningDuration,
+  formatRunningPace,
+} from "@/lib/running-metrics";
 import {
   DASHBOARD_ME_QUERY_KEY,
   getUserFromResponse,
 } from "@/modules/user/containers/dashboard/query-helpers.js";
 import { WORKOUT_PLAN_STATUS } from "@/hooks/app/use-workout-plans";
-import { deriveWorkoutPlanMetrics } from "../utils";
-import { WORKOUT_RECOMMENDED_PLANS } from "../workout-showcase-data.js";
+import {
+  deriveWorkoutPlanMetrics,
+  getFirstWorkoutDayIndex,
+  getNextStartableDayIndex,
+} from "../utils";
+import RunMapPanel from "../running/components/run-map-panel.jsx";
 
 const resolveText = (translations, fallback, language) => {
   if (translations && typeof translations === "object") {
@@ -116,6 +135,13 @@ const COVER_GRADIENTS = [
   "from-sky-400 via-blue-500 to-indigo-600",
 ];
 
+const PLAN_IMAGE_FALLBACKS = [
+  "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=1200&q=80",
+  "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?auto=format&fit=crop&w=1200&q=80",
+  "https://images.unsplash.com/photo-1599058917212-d750089bc07e?auto=format&fit=crop&w=1200&q=80",
+  "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=1200&q=80",
+];
+
 const pickGradient = (key) => {
   const str = String(key ?? "default");
   let hash = 0;
@@ -125,30 +151,19 @@ const pickGradient = (key) => {
   return COVER_GRADIENTS[Math.abs(hash) % COVER_GRADIENTS.length];
 };
 
-const PlanCard = ({
-  plan,
-  isActive,
-  title,
-  description,
-  onView,
-  onStart,
-  onEdit,
-  onDelete,
-  isStartDisabled,
-  isEditable,
-  t,
-}) => {
-  const durationWeeks =
-    toNumber(get(plan, "durationWeeks")) ||
-    Math.max(1, Math.round((toNumber(get(plan, "days")) || 28) / 7));
-  const dayCount = get(plan, "daysPerWeek") || 0;
-  const level = get(
+const getDurationWeeks = (plan) =>
+  toNumber(get(plan, "durationWeeks")) ||
+  Math.max(1, Math.round((toNumber(get(plan, "days")) || 28) / 7));
+
+const getPlanLevel = (plan, t) =>
+  get(
     plan,
     "level",
     get(plan, "difficulty", t("user.workout.plansList.defaults.level")),
   );
-  const coverImageUrl = get(plan, "coverImageUrl");
-  const tags = isArray(get(plan, "tags"))
+
+const getPlanTags = (plan, t) =>
+  isArray(get(plan, "tags"))
     ? get(plan, "tags")
     : filter(
         [
@@ -159,14 +174,65 @@ const PlanCard = ({
         Boolean,
       );
 
+const PlanMetaItem = ({ icon: Icon, children, className }) => (
+  <span
+    className={cn(
+      "inline-flex min-w-0 items-center gap-1 text-xs font-medium text-muted-foreground",
+      className,
+    )}
+  >
+    <Icon className="size-3.5 shrink-0 text-primary" />
+    <span className="truncate">{children}</span>
+  </span>
+);
+
+const PlanTag = ({ children }) => (
+  <span className="rounded-full border border-slate-900/10 bg-white/70 px-2.5 py-1 text-[11px] font-medium text-muted-foreground dark:border-white/10 dark:bg-white/[0.06]">
+    {children}
+  </span>
+);
+
+const ProgressBar = ({ value, tone = "bg-primary" }) => (
+  <div className="h-2 overflow-hidden rounded-full bg-slate-900/10 dark:bg-white/10">
+    <div
+      className={cn("h-full rounded-full transition-all", tone)}
+      style={{ width: `${Math.max(0, Math.min(100, toNumber(value) || 0))}%` }}
+    />
+  </div>
+);
+
+const PlanRow = ({
+  plan,
+  isActive,
+  title,
+  description,
+  onView,
+  onStart,
+  onEdit,
+  onDuplicate,
+  onDelete,
+  isStartDisabled,
+  isDuplicateDisabled,
+  isEditable,
+  t,
+}) => {
+  const durationWeeks = getDurationWeeks(plan);
+  const dayCount = get(plan, "daysPerWeek") || 0;
+  const level = getPlanLevel(plan, t);
+  const coverImageUrl = get(plan, "coverImageUrl");
+  const tags = getPlanTags(plan, t);
+
   return (
-    <div className="workout-glass-card group relative grid min-h-[240px] overflow-hidden rounded-[1.6rem] border transition hover:-translate-y-0.5 hover:border-primary/45 md:grid-cols-[minmax(220px,42%)_1fr]">
+    <div
+      data-testid="plans-compact-row"
+      className="workout-glass-card group grid gap-3 overflow-hidden rounded-[1.15rem] border p-3 transition hover:-translate-y-0.5 hover:border-primary/35 sm:grid-cols-[190px_minmax(0,1fr)]"
+    >
       <button
         type="button"
         onClick={onView}
         aria-label={t("user.workout.plansList.viewPlanAria", { title })}
         className={cn(
-          "relative min-h-[220px] overflow-hidden bg-gradient-to-br text-left",
+          "relative min-h-[150px] overflow-hidden rounded-[0.9rem] bg-gradient-to-br text-left sm:min-h-[160px]",
           !coverImageUrl && pickGradient(get(plan, "id")),
         )}
       >
@@ -182,12 +248,12 @@ const PlanCard = ({
             <DumbbellIcon className="size-10 text-white/85" strokeWidth={2} />
           </div>
         )}
-        <div className="workout-media-contrast-scrim absolute inset-0 bg-gradient-to-r from-slate-950/55 via-slate-950/25 to-slate-950/70 dark:from-slate-950/70 dark:via-slate-950/35 dark:to-slate-950/80" />
+        <div className="workout-media-contrast-scrim absolute inset-0 bg-gradient-to-t from-slate-950/35 via-transparent to-transparent" />
       </button>
-      <div className="flex min-w-0 flex-col p-5 sm:p-7">
+      <div className="flex min-w-0 flex-col px-1 py-1 sm:px-2">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <div className="mb-3 flex flex-wrap items-center gap-2">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
               {get(plan, "badge") ? (
                 <Badge className="rounded-full bg-primary/10 text-primary">
                   {toUpper(String(get(plan, "badge")))}
@@ -201,9 +267,11 @@ const PlanCard = ({
               ) : null}
               <PlanSourceBadge plan={plan} t={t} />
             </div>
-            <h3 className="text-2xl font-black tracking-tight">{title}</h3>
+            <h3 className="truncate text-lg font-black tracking-tight sm:text-xl">
+              {title}
+            </h3>
             {description ? (
-              <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
+              <p className="mt-2 line-clamp-2 max-w-xl text-sm leading-5 text-muted-foreground">
                 {description}
               </p>
             ) : null}
@@ -235,6 +303,13 @@ const PlanCard = ({
                     <PencilIcon className="size-4" />
                     {t("user.workout.plansList.actions.edit")}
                   </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={onDuplicate}
+                    disabled={isDuplicateDisabled}
+                  >
+                    <CopyIcon className="size-4" />
+                    {t("user.workout.plansList.actions.duplicate")}
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem variant="destructive" onClick={onDelete}>
                     <Trash2Icon className="size-4" />
@@ -246,53 +321,34 @@ const PlanCard = ({
           </DropdownMenu>
         </div>
 
-        <div className="mt-6 grid gap-4 text-sm font-medium text-muted-foreground sm:grid-cols-3">
-          <span className="inline-flex items-center gap-1">
-            <CrownIcon className="size-4 text-primary" />
-            <span className="text-xl font-black text-foreground">
-              {durationWeeks}
-            </span>
-            {t("user.workout.plansList.metrics.weeks")}
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <DumbbellIcon className="size-4 text-primary" />
-            <span className="text-xl font-black text-foreground">
-              {dayCount}
-            </span>
-            {t("user.workout.plansList.metrics.daysPerWeek")}
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <FlameIcon className="size-4 text-primary" />
-            <span className="font-black text-foreground">{level}</span>
-          </span>
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+          <PlanMetaItem icon={CalendarDaysIcon}>
+            {durationWeeks} {t("user.workout.plansList.metrics.weeks")}
+          </PlanMetaItem>
+          <PlanMetaItem icon={DumbbellIcon}>
+            {dayCount} {t("user.workout.plansList.metrics.daysPerWeek")}
+          </PlanMetaItem>
+          <PlanMetaItem icon={FlameIcon}>{level}</PlanMetaItem>
         </div>
 
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap gap-2">
           {map(take(tags, 3), (tag) => (
-            <span
-              key={tag}
-              className="rounded-xl border border-slate-900/10 bg-white/45 px-3 py-1 text-xs font-medium text-muted-foreground dark:border-white/10 dark:bg-white/[0.04]"
-            >
-              {tag}
-            </span>
+            <PlanTag key={tag}>{tag}</PlanTag>
           ))}
         </div>
 
-        <div className="mt-auto flex flex-wrap gap-2 pt-6">
-          <Button className="rounded-2xl px-5" onClick={onView}>
+        <div className="mt-auto grid gap-2 pt-4 sm:grid-cols-2">
+          <Button variant="outline" className="rounded-xl" onClick={onView}>
             {t("user.workout.plansList.actions.viewPlan")}
-            <ArrowRightIcon data-icon="inline-end" />
           </Button>
           <Button
-            variant="outline"
-            className="rounded-2xl"
+            className="rounded-xl"
             onClick={onStart}
             disabled={isStartDisabled}
           >
-            <PlayIcon data-icon="inline-start" />
             {isActive
               ? t("user.workout.plansList.actions.continuePlan")
-              : t("user.workout.plansList.actions.start")}
+              : t("user.workout.plansList.actions.selectAsPlan")}
           </Button>
         </div>
       </div>
@@ -300,19 +356,468 @@ const PlanCard = ({
   );
 };
 
+const formatHeroDuration = (seconds = 0) => {
+  const totalSeconds = toNumber(seconds) || 0;
+  return totalSeconds > 0 ? formatRunningDuration(totalSeconds) : "42:00";
+};
+
+const formatHeroPace = (secondsPerKm) =>
+  formatRunningPace(secondsPerKm).replace(/\s*\/km$/, "");
+
+const getWorkoutDay = (plan, dayIndex = 0) =>
+  get(plan, `schedule[${Math.max(0, toNumber(dayIndex) || 0)}]`, null);
+
+const getWorkoutDayExerciseCount = (plan, dayIndex = 0) => {
+  const day = getWorkoutDay(plan, dayIndex);
+  return (
+    toNumber(get(plan, "nextWorkout.exerciseCount")) ||
+    size(get(day, "exercises", [])) ||
+    toNumber(get(plan, "todayWorkout.exercisesCount")) ||
+    toNumber(get(plan, "included.exercises")) ||
+    0
+  );
+};
+
+const getPlanTotalDays = (plan) =>
+  toNumber(get(plan, "targetWorkouts")) ||
+  toNumber(get(plan, "days")) ||
+  getDurationWeeks(plan) * 7;
+
+const getPlanCompletedDays = (plan) =>
+  toNumber(get(plan, "completedWorkouts")) ||
+  Math.round((toNumber(get(plan, "progress")) || 0) * getPlanTotalDays(plan) / 100) ||
+  toNumber(get(plan, "currentDay")) ||
+  0;
+
+const getPlanHeroImage = (plan, fallbackIndex = 0) =>
+  get(plan, "coverImageUrl") ||
+  PLAN_IMAGE_FALLBACKS[fallbackIndex % PLAN_IMAGE_FALLBACKS.length] ||
+  PLAN_IMAGE_FALLBACKS[0];
+
+const planMatchesFilter = (plan, filterKey) => {
+  if (filterKey === "all") {
+    return true;
+  }
+
+  const text = toLower(
+    [
+      get(plan, "category", ""),
+      get(plan, "focus", ""),
+      get(plan, "goal", ""),
+      get(plan, "name", ""),
+      get(plan, "description", ""),
+      ...(isArray(get(plan, "tags")) ? get(plan, "tags") : []),
+    ].join(" "),
+  );
+
+  if (filterKey === "running") {
+    return includes(text, "running") || includes(text, "run") || includes(text, "бег");
+  }
+
+  if (filterKey === "strength") {
+    return (
+      includes(text, "strength") ||
+      includes(text, "muscle") ||
+      includes(text, "сила")
+    );
+  }
+
+  if (filterKey === "weight-loss") {
+    return (
+      includes(text, "weight") ||
+      includes(text, "fat") ||
+      includes(text, "loss") ||
+      includes(text, "снижение")
+    );
+  }
+
+  if (filterKey === "home-workout") {
+    return includes(text, "home") || includes(text, "домаш");
+  }
+
+  if (filterKey === "recovery") {
+    return includes(text, "recovery") || includes(text, "mobility") || includes(text, "восстанов");
+  }
+
+  return includes(text, filterKey.replace("-", " "));
+};
+
+const getActiveWorkoutDurationSeconds = (session) =>
+  toNumber(get(session, "elapsedSeconds")) ||
+  toNumber(get(session, "durationSeconds")) ||
+  0;
+
+const HeroMetric = ({ icon: Icon, value, label, tone = "text-primary" }) => (
+  <div className="flex items-center gap-2">
+    <span className={cn("grid size-9 shrink-0 place-items-center rounded-full bg-white/70 shadow-sm dark:bg-white/10", tone)}>
+      <Icon className="size-4" />
+    </span>
+    <span>
+      <span className="block text-sm font-black text-foreground">{value}</span>
+      <span className="block text-xs font-medium text-muted-foreground">
+        {label}
+      </span>
+    </span>
+  </div>
+);
+
+const HeroFeature = ({ icon: Icon, children }) => (
+  <span className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
+    <Icon className="size-4 text-primary" />
+    {children}
+  </span>
+);
+
+const HeroImage = ({ src, alt, className }) =>
+  src ? (
+    <img
+      src={src}
+      alt={alt}
+      className={cn(
+        "absolute inset-y-0 right-0 hidden h-full w-[48%] object-cover md:block",
+        className,
+      )}
+      loading="lazy"
+    />
+  ) : null;
+
+const PlansStateHero = ({
+  activePlan,
+  recommendedPlan,
+  activeWorkoutSession,
+  activeRunningSession,
+  heroType,
+  nextDayIndex,
+  onCreatePlan,
+  onSelectRecommended,
+  onStartTodayWorkout,
+  onViewActivePlan,
+  onResumeWorkout,
+  onOpenRunningLive,
+  t,
+}) => {
+  if (heroType === "live-run") {
+    const metrics = get(activeRunningSession, "metrics", {});
+    const workoutSessionId = get(activeRunningSession, "workoutSessionId");
+    const points = get(activeRunningSession, "points", []);
+    const polyline = get(
+      activeRunningSession,
+      "route.polyline",
+      get(activeRunningSession, "routePolyline", null),
+    );
+
+    return (
+      <section
+        data-testid="plans-state-hero-live-run"
+        className="workout-glass-card relative overflow-hidden rounded-[1.35rem] border border-blue-500/20 bg-[linear-gradient(110deg,rgba(239,246,255,0.96),rgba(219,234,254,0.82))] p-4 sm:p-6 dark:bg-[linear-gradient(110deg,rgba(15,23,42,0.94),rgba(30,58,138,0.44))]"
+      >
+        <HeroImage
+          src={getPlanHeroImage(recommendedPlan, 1)}
+          alt={t("user.workout.plansList.hero.liveRun.title")}
+          className="opacity-80"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/92 to-background/20 dark:from-[#07111d] dark:via-[#07111d]/84 dark:to-[#07111d]/20" />
+        <div className="relative z-10 grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+          <div>
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <Badge className="rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-300">
+                {t("user.workout.plansList.hero.liveRun.badge")}
+              </Badge>
+              <Badge variant="secondary" className="rounded-full bg-blue-500/10 text-blue-600">
+                {t("user.workout.plansList.hero.liveRun.live")}
+              </Badge>
+            </div>
+            <h2 className="text-2xl font-black tracking-tight sm:text-3xl">
+              {t("user.workout.plansList.hero.liveRun.title")}
+            </h2>
+            <p className="mt-2 text-sm font-medium text-muted-foreground">
+              {t("user.workout.plansList.hero.liveRun.description")}
+            </p>
+            <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <HeroMetric
+                icon={RouteIcon}
+                value={formatRunningDistance(get(metrics, "distanceMeters", 0))}
+                label={t("user.workout.plansList.hero.metrics.distance")}
+                tone="text-blue-600"
+              />
+              <HeroMetric
+                icon={Clock3Icon}
+                value={formatHeroDuration(get(metrics, "durationSeconds", 0))}
+                label={t("user.workout.plansList.hero.metrics.time")}
+                tone="text-blue-600"
+              />
+              <HeroMetric
+                icon={ActivityIcon}
+                value={formatHeroPace(get(metrics, "averagePaceSecondsPerKm"))}
+                label={t("user.workout.plansList.hero.metrics.pace")}
+                tone="text-blue-600"
+              />
+              <HeroMetric
+                icon={FlameIcon}
+                value={toNumber(get(metrics, "caloriesBurned", 0)) || 0}
+                label={t("user.workout.plansList.hero.metrics.kcal")}
+                tone="text-blue-600"
+              />
+            </div>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <Button className="rounded-xl bg-blue-600 hover:bg-blue-700" onClick={onOpenRunningLive}>
+                <PlayIcon className="size-4" />
+                {t("user.workout.plansList.hero.liveRun.continue")}
+              </Button>
+              <Button variant="outline" className="rounded-xl bg-white/80" onClick={onOpenRunningLive}>
+                <SquareIcon className="size-4" />
+                {t("user.workout.plansList.hero.liveRun.finish")}
+              </Button>
+            </div>
+            {workoutSessionId ? (
+              <p className="sr-only">{workoutSessionId}</p>
+            ) : null}
+          </div>
+          <RunMapPanel
+            points={points}
+            polyline={polyline}
+            provider="none"
+            variant="preview"
+            showQuality={false}
+            emptyLabel={t("user.workout.plansList.hero.liveRun.mapEmpty")}
+            loadingLabel={t("user.workout.plansList.hero.liveRun.mapLoading")}
+            errorLabel={t("user.workout.plansList.hero.liveRun.mapEmpty")}
+            className="hidden min-h-[170px] lg:block"
+            surfaceClassName="min-h-[170px] rounded-[1rem]"
+          />
+        </div>
+      </section>
+    );
+  }
+
+  if (heroType === "active-workout") {
+    const title =
+      get(activeWorkoutSession, "planDayKey") ||
+      get(activeWorkoutSession, "title") ||
+      t("user.workout.plansList.hero.activeWorkout.defaultTitle");
+    const exerciseCount = size(get(activeWorkoutSession, "exercises", []));
+
+    return (
+      <section
+        data-testid="plans-state-hero-active-workout"
+        className="workout-glass-card relative overflow-hidden rounded-[1.35rem] border border-emerald-500/20 bg-[linear-gradient(110deg,rgba(236,253,245,0.96),rgba(220,252,231,0.78))] p-5 sm:p-6 dark:bg-[linear-gradient(110deg,rgba(7,17,29,0.94),rgba(20,83,45,0.34))]"
+      >
+        <HeroImage src={getPlanHeroImage(activePlan, 3)} alt={title} />
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/94 to-background/20 dark:from-[#07111d] dark:via-[#07111d]/86 dark:to-[#07111d]/20" />
+        <div className="relative z-10 max-w-2xl">
+          <Badge className="rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">
+            {t("user.workout.plansList.hero.activeWorkout.badge")}
+          </Badge>
+          <h2 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">
+            {t("user.workout.plansList.hero.activeWorkout.title")}
+          </h2>
+          <p className="mt-2 text-lg font-black">{title}</p>
+          <p className="mt-2 max-w-md text-sm text-muted-foreground">
+            {t("user.workout.plansList.hero.activeWorkout.description")}
+          </p>
+          <div className="mt-5 flex flex-wrap gap-5">
+            <HeroMetric
+              icon={DumbbellIcon}
+              value={exerciseCount || 1}
+              label={t("user.workout.plansList.hero.metrics.exercises")}
+              tone="text-emerald-600"
+            />
+            <HeroMetric
+              icon={Clock3Icon}
+              value={formatHeroDuration(getActiveWorkoutDurationSeconds(activeWorkoutSession))}
+              label={t("user.workout.plansList.hero.metrics.time")}
+              tone="text-emerald-600"
+            />
+          </div>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <Button className="rounded-xl bg-emerald-600 hover:bg-emerald-700" onClick={onResumeWorkout}>
+              <PlayIcon className="size-4" />
+              {t("user.workout.plansList.hero.activeWorkout.continue")}
+            </Button>
+            <Button variant="outline" className="rounded-xl bg-white/80" onClick={onViewActivePlan}>
+              {t("user.workout.plansList.actions.viewPlan")}
+            </Button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (heroType === "active-plan") {
+    const progress = toNumber(get(activePlan, "progress")) || 0;
+    const nextWorkout = get(activePlan, "nextWorkout") || {};
+    const todayWorkout = get(activePlan, "todayWorkout") || {};
+    const resolvedDayIndex =
+      toNumber(get(nextWorkout, "dayIndex")) >= 0
+        ? toNumber(get(nextWorkout, "dayIndex"))
+        : nextDayIndex;
+    const day = getWorkoutDay(activePlan, resolvedDayIndex);
+    const workoutTitle =
+      get(nextWorkout, "title") ||
+      get(activePlan, "todayWorkout.title") ||
+      get(day, "title") ||
+      get(day, "focus") ||
+      get(activePlan, "name");
+    const totalDays = getPlanTotalDays(activePlan);
+    const completedDays = Math.min(totalDays, getPlanCompletedDays(activePlan));
+    const exerciseCount =
+      toNumber(get(nextWorkout, "exerciseCount")) ||
+      toNumber(get(todayWorkout, "exercisesCount")) ||
+      getWorkoutDayExerciseCount(activePlan, resolvedDayIndex) ||
+      0;
+    const duration =
+      get(nextWorkout, "duration") ||
+      get(todayWorkout, "duration") ||
+      get(day, "duration") ||
+      t("user.workout.plansList.hero.metrics.notSet");
+    const calories =
+      toNumber(get(nextWorkout, "estimatedCalories")) ||
+      toNumber(get(todayWorkout, "calories")) ||
+      toNumber(get(day, "estimatedCalories")) ||
+      toNumber(get(day, "calories")) ||
+      0;
+
+    return (
+      <section
+        data-testid="plans-state-hero-active-plan"
+        className="workout-glass-card relative overflow-hidden rounded-[1.35rem] border border-emerald-500/20 bg-[linear-gradient(110deg,rgba(236,253,245,0.98),rgba(220,252,231,0.8))] p-5 sm:p-6 dark:bg-[linear-gradient(110deg,rgba(7,17,29,0.96),rgba(20,83,45,0.34))]"
+      >
+        <HeroImage src={getPlanHeroImage(activePlan, 3)} alt={workoutTitle} />
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/94 to-background/20 dark:from-[#07111d] dark:via-[#07111d]/86 dark:to-[#07111d]/20" />
+        <div className="relative z-10 max-w-2xl">
+          <Badge className="rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">
+            {t("user.workout.plansList.hero.activePlan.badge")}
+          </Badge>
+          <h2 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">
+            {t("user.workout.plansList.hero.activePlan.title")}
+          </h2>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <p className="text-lg font-black">{get(activePlan, "name")}</p>
+            <Badge className="rounded-full bg-emerald-500/10 text-emerald-600">
+              {t("user.workout.plansList.badges.active")}
+            </Badge>
+          </div>
+          <p className="mt-2 max-w-md text-sm text-muted-foreground">
+            {t("user.workout.plansList.hero.activePlan.description", {
+              title: workoutTitle,
+            })}
+          </p>
+          <div className="mt-5 flex flex-wrap gap-5">
+            <HeroMetric
+              icon={DumbbellIcon}
+              value={exerciseCount}
+              label={t("user.workout.plansList.hero.metrics.exercises")}
+              tone="text-emerald-600"
+            />
+            <HeroMetric
+              icon={Clock3Icon}
+              value={duration}
+              label={t("user.workout.plansList.hero.metrics.duration")}
+              tone="text-emerald-600"
+            />
+            <HeroMetric
+              icon={FlameIcon}
+              value={calories}
+              label={t("user.workout.plansList.hero.metrics.kcal")}
+              tone="text-emerald-600"
+            />
+          </div>
+          <div className="mt-5 max-w-lg">
+            <div className="mb-2 flex items-center justify-between gap-3 text-xs font-semibold">
+              <span>
+                {t("user.workout.plansList.hero.activePlan.progress", {
+                  completed: completedDays,
+                  total: totalDays,
+                })}
+              </span>
+              <span>{progress}%</span>
+            </div>
+            <ProgressBar value={progress} tone="bg-emerald-600" />
+          </div>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <Button className="rounded-xl bg-emerald-600 hover:bg-emerald-700" onClick={onStartTodayWorkout}>
+              <PlayIcon className="size-4" />
+              {t("user.workout.plansList.hero.activePlan.startToday")}
+            </Button>
+            <Button variant="outline" className="rounded-xl bg-white/80" onClick={onViewActivePlan}>
+              {t("user.workout.plansList.actions.viewPlan")}
+            </Button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section
+      data-testid="plans-state-hero-no-active"
+      className="workout-glass-card relative overflow-hidden rounded-[1.35rem] border border-primary/20 bg-[linear-gradient(110deg,rgba(255,247,237,0.98),rgba(255,237,213,0.72))] p-5 sm:p-7 dark:bg-[linear-gradient(110deg,rgba(7,17,29,0.96),rgba(67,34,10,0.38))]"
+    >
+      <HeroImage
+        src={getPlanHeroImage(recommendedPlan, 0)}
+        alt={t("user.workout.plansList.hero.noActive.title")}
+        className="opacity-85"
+      />
+      <div className="absolute inset-0 bg-gradient-to-r from-background via-background/94 to-background/20 dark:from-[#07111d] dark:via-[#07111d]/88 dark:to-[#07111d]/20" />
+      <div className="relative z-10 max-w-2xl">
+        <Badge className="rounded-full bg-primary/10 text-primary">
+          {t("user.workout.plansList.hero.noActive.badge")}
+        </Badge>
+        <h2 className="mt-4 text-2xl font-black tracking-tight sm:text-3xl">
+          {t("user.workout.plansList.hero.noActive.title")}
+        </h2>
+        <p className="mt-3 max-w-md text-base leading-7 text-muted-foreground">
+          {t("user.workout.plansList.hero.noActive.description")}
+        </p>
+        <div className="mt-5 flex flex-wrap gap-5">
+          <HeroFeature icon={TargetIcon}>
+            {t("user.workout.plansList.hero.noActive.goalFit")}
+          </HeroFeature>
+          <HeroFeature icon={BarChart3Icon}>
+            {t("user.workout.plansList.hero.noActive.progress")}
+          </HeroFeature>
+          <HeroFeature icon={CrownIcon}>
+            {t("user.workout.plansList.hero.noActive.results")}
+          </HeroFeature>
+        </div>
+        <div className="mt-7 grid gap-3 sm:grid-cols-[auto_auto] sm:justify-start">
+          <Button className="rounded-xl" onClick={onSelectRecommended}>
+            <SparklesIcon className="size-4" />
+            {t("user.workout.plansList.hero.noActive.aiCta")}
+          </Button>
+          <Button variant="outline" className="rounded-xl bg-white/80" onClick={onCreatePlan}>
+            <PlusIcon className="size-4" />
+            {t("user.workout.plansList.actions.createPlan")}
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const PlanSidebar = ({
   activePlan,
+  recommendedPlan,
   currentStreak,
   onCreatePlan,
   onContinuePlan,
   onStartRecommended,
   t,
 }) => {
-  const recommendedPlan = WORKOUT_RECOMMENDED_PLANS[0];
   const activeProgress =
     toNumber(
       get(activePlan, "progress", get(activePlan, "completionPercent", 0)),
     ) || 58;
+  const recommendedTitle = get(
+    recommendedPlan,
+    "name",
+    t("user.workout.plansList.sidebar.coachTitle"),
+  );
+  const recommendedDescription = get(
+    recommendedPlan,
+    "description",
+    t("user.workout.plansList.sidebar.coachDescription"),
+  );
   const benefits = ["structured", "trackProgress", "goals", "guidance"];
   const weekDays = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
   const streakCount = Math.max(0, toNumber(currentStreak) || 0);
@@ -328,8 +833,8 @@ const PlanSidebar = ({
         </div>
         <div className="relative mt-4 min-h-[172px] overflow-hidden rounded-[1.25rem] border border-primary/15 bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(255,243,232,0.72))] p-4 dark:bg-[linear-gradient(135deg,rgba(15,23,42,0.8),rgba(67,34,10,0.44))]">
           <img
-            src={recommendedPlan.coverImageUrl}
-            alt={t("user.workout.plansList.sidebar.coachTitle")}
+            src={getPlanHeroImage(recommendedPlan, 0)}
+            alt={recommendedTitle}
             className="absolute inset-y-0 right-0 h-full w-[46%] object-cover opacity-80"
             loading="lazy"
           />
@@ -338,11 +843,9 @@ const PlanSidebar = ({
             <p className="text-xs font-semibold text-muted-foreground">
               {t("user.workout.plansList.sidebar.coachLabel")}
             </p>
-            <h5 className="mt-2 text-base font-black">
-              {t("user.workout.plansList.sidebar.coachTitle")}
-            </h5>
+            <h5 className="mt-2 text-base font-black">{recommendedTitle}</h5>
             <p className="mt-2 text-xs leading-5 text-muted-foreground">
-              {t("user.workout.plansList.sidebar.coachDescription")}
+              {recommendedDescription}
             </p>
             <Button
               className="mt-4 rounded-2xl"
@@ -370,11 +873,7 @@ const PlanSidebar = ({
           <div className="mt-4">
             <div className="flex gap-3">
               <img
-                src={get(
-                  activePlan,
-                  "coverImageUrl",
-                  WORKOUT_RECOMMENDED_PLANS[3].coverImageUrl,
-                )}
+                src={getPlanHeroImage(activePlan, 3)}
                 alt={get(
                   activePlan,
                   "name",
@@ -527,9 +1026,13 @@ const WorkoutPlansPage = () => {
     activePlan,
     startPlan,
     removePlan,
+    duplicatePlan,
     isStartingPlan,
     isRemovingPlan,
+    isDuplicatingPlan,
   } = useWorkoutPlan();
+  const { activeSession: activeRunningSession } = useRunningActiveSession();
+  const { activeWorkoutSession } = useActiveWorkoutSession();
 
   // /users/me — for streak badge + premium flag.
   const { data: meData } = useGetQuery({
@@ -538,7 +1041,6 @@ const WorkoutPlansPage = () => {
   });
   const user = getUserFromResponse(meData);
   const currentStreak = get(user, "currentStreak", 0);
-  const isPremium = Boolean(get(user, "premium.isActive"));
 
   const [filterKey, setFilterKey] = React.useState("all");
   const [deletingPlan, setDeletingPlan] = React.useState(null);
@@ -546,6 +1048,11 @@ const WorkoutPlansPage = () => {
   const normalizedPlans = React.useMemo(
     () => map(plans, (plan) => deriveWorkoutPlanMetrics(plan)),
     [plans],
+  );
+
+  const normalizedActivePlan = React.useMemo(
+    () => deriveWorkoutPlanMetrics(activePlan),
+    [activePlan],
   );
 
   const normalizedTemplates = React.useMemo(
@@ -559,37 +1066,15 @@ const WorkoutPlansPage = () => {
       ),
     [templates],
   );
+  const primaryTemplate = normalizedTemplates[0] ?? null;
 
   const displayPlans = React.useMemo(() => {
-    const backendPlans = [...normalizedPlans, ...normalizedTemplates];
-    const knownKeys = new Set(
-      map(backendPlans, (plan) =>
-        toLower(String(get(plan, "id", get(plan, "name", "")))),
-      ),
-    );
-    const fallbackPlans = filter(WORKOUT_RECOMMENDED_PLANS, (plan) => {
-      const key = toLower(String(get(plan, "id", get(plan, "name", ""))));
-      const name = toLower(String(get(plan, "name", "")));
-      return !knownKeys.has(key) && !knownKeys.has(name);
-    });
-    const source =
-      backendPlans.length > 0
-        ? [...backendPlans, ...fallbackPlans]
-        : WORKOUT_RECOMMENDED_PLANS;
+    const source = [...normalizedPlans, ...normalizedTemplates];
 
     const filtered =
       filterKey === "all"
         ? source
-        : filter(source, (plan) => {
-            const category = toLower(String(get(plan, "category", "")));
-            const focus = toLower(String(get(plan, "focus", "")));
-            const name = toLower(String(get(plan, "name", "")));
-            return (
-              category === filterKey ||
-              includes(focus, filterKey.replace("-", " ")) ||
-              includes(name, filterKey.replace("-", " "))
-            );
-          });
+        : filter(source, (plan) => planMatchesFilter(plan, filterKey));
 
     return orderBy(
       filtered,
@@ -604,6 +1089,39 @@ const WorkoutPlansPage = () => {
       ["asc", "asc", "desc"],
     );
   }, [filterKey, normalizedPlans, normalizedTemplates]);
+
+  const nextActiveDayIndex = React.useMemo(() => {
+    if (!normalizedActivePlan) {
+      return 0;
+    }
+
+    const nextStartableDayIndex = getNextStartableDayIndex(normalizedActivePlan);
+    const firstWorkoutDayIndex = getFirstWorkoutDayIndex(
+      get(normalizedActivePlan, "schedule", []),
+    );
+
+    return nextStartableDayIndex >= 0
+      ? nextStartableDayIndex
+      : firstWorkoutDayIndex >= 0
+        ? firstWorkoutDayIndex
+        : 0;
+  }, [normalizedActivePlan]);
+
+  const heroType = React.useMemo(() => {
+    if (get(activeRunningSession, "workoutSessionId")) {
+      return "live-run";
+    }
+
+    if (get(activeWorkoutSession, "planId")) {
+      return "active-workout";
+    }
+
+    if (get(normalizedActivePlan, "id")) {
+      return "active-plan";
+    }
+
+    return "no-active";
+  }, [activeRunningSession, activeWorkoutSession, normalizedActivePlan]);
 
   React.useEffect(() => {
     setBreadcrumbs([
@@ -627,7 +1145,6 @@ const WorkoutPlansPage = () => {
           name: get(plan, "name", t("user.workout.plansList.defaults.plan")),
         }),
       );
-      navigate("/user/workout/home");
     } catch (error) {
       toast.error(
         get(error, "response.data.message") ||
@@ -650,47 +1167,86 @@ const WorkoutPlansPage = () => {
     }
   };
 
+  const handleDuplicatePlan = async (plan) => {
+    if (!get(plan, "id")) return;
+
+    try {
+      await duplicatePlan(get(plan, "id"));
+      toast.success(t("user.workout.plansList.toasts.duplicateSuccess"));
+    } catch (error) {
+      toast.error(
+        get(error, "response.data.message") ||
+          t("user.workout.plansList.toasts.duplicateError"),
+      );
+    }
+  };
+
   const goToCreate = () => navigate("/user/workout/plans/create");
+
+  const handleStartTodayWorkout = async () => {
+    if (!get(normalizedActivePlan, "id")) {
+      goToCreate();
+      return;
+    }
+
+    try {
+      if (
+        get(normalizedActivePlan, "status") !== WORKOUT_PLAN_STATUS.active &&
+        get(normalizedActivePlan, "id")
+      ) {
+        await startPlan(normalizedActivePlan);
+      }
+
+      navigate(
+        `/user/workout/plans/${get(normalizedActivePlan, "id")}/days/${nextActiveDayIndex}/session`,
+      );
+    } catch (error) {
+      toast.error(
+        get(error, "response.data.message") ||
+          t("user.workout.plansList.toasts.startError"),
+      );
+    }
+  };
+
+  const handleResumeWorkout = () => {
+    const planId = get(activeWorkoutSession, "planId");
+    const dayIndex = toNumber(get(activeWorkoutSession, "planDayIndex"));
+
+    if (planId && Number.isInteger(dayIndex) && dayIndex >= 0) {
+      navigate(`/user/workout/plans/${planId}/days/${dayIndex}/session`);
+      return;
+    }
+
+    if (get(normalizedActivePlan, "id")) {
+      navigate(`/user/workout/plans/${get(normalizedActivePlan, "id")}`);
+    }
+  };
+
+  const handleViewActivePlan = () => {
+    const planId =
+      get(activeWorkoutSession, "planId") || get(normalizedActivePlan, "id");
+
+    if (planId) {
+      navigate(`/user/workout/plans/${planId}`);
+      return;
+    }
+
+    goToCreate();
+  };
+
+  const handleOpenRunningLive = () => {
+    const workoutSessionId = get(activeRunningSession, "workoutSessionId");
+
+    if (workoutSessionId) {
+      navigate(`/user/workout/running/live/${workoutSessionId}`);
+    }
+  };
 
   return (
     <PageTransition mode="slide-up">
       <div className="workout-page-surface grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex min-w-0 flex-col gap-5">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
-                {t("user.workout.plansList.title")}
-              </h1>
-              <p className="mt-2 text-base text-muted-foreground">
-                {t("user.workout.plansList.subtitle")}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {currentStreak > 0 ? (
-                <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5">
-                  <FlameIcon className="size-4 text-primary" />
-                  <span className="text-sm font-bold tabular-nums text-primary">
-                    {currentStreak}
-                  </span>
-                  <span className="text-[11px] font-medium text-primary/80">
-                    {t("user.workout.plansList.dayStreak")}
-                  </span>
-                </div>
-              ) : null}
-              {isPremium ? (
-                <div className="flex items-center gap-1 rounded-full bg-amber-500/10 px-3 py-1.5">
-                  <CrownIcon className="size-4 text-amber-500" />
-                  <span className="text-xs font-bold text-amber-600">
-                    {t("user.workout.plansList.pro")}
-                  </span>
-                </div>
-              ) : null}
-              <Button onClick={goToCreate}>
-                <PlusIcon className="size-4" />
-                {t("user.workout.plansList.actions.createPlan")}
-              </Button>
-            </div>
-          </div>
+          <h1 className="sr-only">{t("user.workout.plansList.title")}</h1>
 
           <div className="flex flex-wrap gap-2">
             {map(PLAN_FILTERS, (filterOption) => {
@@ -713,8 +1269,31 @@ const WorkoutPlansPage = () => {
             })}
           </div>
 
+          <PlansStateHero
+            activePlan={normalizedActivePlan}
+            recommendedPlan={primaryTemplate}
+            activeWorkoutSession={activeWorkoutSession}
+            activeRunningSession={activeRunningSession}
+            heroType={heroType}
+            nextDayIndex={nextActiveDayIndex}
+            onCreatePlan={goToCreate}
+            onSelectRecommended={() =>
+              primaryTemplate ? handleStartPlan(primaryTemplate) : goToCreate()
+            }
+            onStartTodayWorkout={handleStartTodayWorkout}
+            onViewActivePlan={handleViewActivePlan}
+            onResumeWorkout={handleResumeWorkout}
+            onOpenRunningLive={handleOpenRunningLive}
+            t={t}
+          />
+
           {size(displayPlans) > 0 ? (
-            <div className="grid gap-5">
+            <div className="grid gap-3">
+              <h2 className="text-sm font-black">
+                {heroType === "no-active"
+                  ? t("user.workout.plansList.sections.allPlans")
+                  : t("user.workout.plansList.sections.otherPlans")}
+              </h2>
               {map(displayPlans, (plan) => {
                 const isTemplate = get(plan, "isTemplate");
                 const isActive = get(plan, "id") === get(activePlan, "id");
@@ -735,7 +1314,7 @@ const WorkoutPlansPage = () => {
                     t("user.workout.plansList.defaults.description");
 
                 return (
-                  <PlanCard
+                  <PlanRow
                     key={`${isTemplate ? "template" : "plan"}-${get(plan, "id")}`}
                     plan={plan}
                     isActive={isActive}
@@ -748,8 +1327,10 @@ const WorkoutPlansPage = () => {
                     onEdit={() =>
                       navigate(`/user/workout/plans/edit/${get(plan, "id")}`)
                     }
+                    onDuplicate={() => handleDuplicatePlan(plan)}
                     onDelete={() => setDeletingPlan(plan)}
                     isStartDisabled={isStartingPlan}
+                    isDuplicateDisabled={isDuplicatingPlan}
                     isEditable={!isTemplate}
                     t={t}
                   />
@@ -784,6 +1365,7 @@ const WorkoutPlansPage = () => {
         <aside className="lg:sticky lg:top-4 lg:self-start">
           <PlanSidebar
             activePlan={activePlan}
+            recommendedPlan={primaryTemplate}
             currentStreak={currentStreak}
             onCreatePlan={goToCreate}
             onContinuePlan={() =>
@@ -792,7 +1374,7 @@ const WorkoutPlansPage = () => {
                 : goToCreate()
             }
             onStartRecommended={() =>
-              handleStartPlan(WORKOUT_RECOMMENDED_PLANS[0])
+              primaryTemplate ? handleStartPlan(primaryTemplate) : goToCreate()
             }
             t={t}
           />

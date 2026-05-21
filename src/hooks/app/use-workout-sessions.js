@@ -41,6 +41,11 @@ export const WORKOUT_SESSION_REPORT_QUERY_KEY = [
   "workout",
   "session-report",
 ];
+export const WORKOUT_SESSION_ACTIVE_QUERY_KEY = [
+  "user",
+  "workout",
+  "active-session",
+];
 export const getWorkoutSessionHistoryItemQueryKey = (sessionId) => [
   ...WORKOUT_SESSION_HISTORY_QUERY_KEY,
   sessionId,
@@ -106,12 +111,13 @@ export const useStartWorkoutSession = () => {
   const mutation = usePostQuery();
 
   const startSession = React.useCallback(
-    async (planId, dayIndex) => {
+    async (planId, dayIndex, options = {}) => {
       const response = await mutation.mutateAsync({
         url: "/user/workout/sessions/start",
         attributes: {
           planId,
           dayIndex,
+          ...(options.mode ? { mode: options.mode } : {}),
         },
       });
       await queryClient.setQueryData(
@@ -126,6 +132,31 @@ export const useStartWorkoutSession = () => {
   return {
     ...mutation,
     startSession,
+  };
+};
+
+export const useActiveWorkoutSession = (options = {}) => {
+  const enabled = options.enabled ?? true;
+  const { data, ...query } = useGetQuery({
+    url: "/user/workout/sessions/active",
+    queryProps: {
+      queryKey: WORKOUT_SESSION_ACTIVE_QUERY_KEY,
+      enabled,
+    },
+  });
+
+  const activeWorkoutSession = React.useMemo(
+    () => {
+      const draft = resolveResponseData(data);
+      return draft?.id ? normalizeWorkoutSessionDraft(draft) : null;
+    },
+    [data],
+  );
+
+  return {
+    ...query,
+    data,
+    activeWorkoutSession,
   };
 };
 
@@ -218,6 +249,79 @@ export const useDeleteWorkoutSessionDraft = () => {
   };
 };
 
+export const useSkipWorkoutSession = () => {
+  const queryClient = useQueryClient();
+  const mutation = usePostQuery();
+
+  const skipSession = React.useCallback(
+    async (planId, dayIndex) => {
+      const response = await mutation.mutateAsync({
+        url: `/user/workout/sessions/${planId}/days/${dayIndex}/skip`,
+      });
+
+      queryClient.removeQueries({
+        queryKey: getWorkoutSessionDraftQueryKey(planId, dayIndex),
+      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: WORKOUT_OVERVIEW_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: WORKOUT_PLANS_QUERY_KEY }),
+        queryClient.invalidateQueries({
+          queryKey: WORKOUT_SESSION_ACTIVE_QUERY_KEY,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: WORKOUT_SESSION_HISTORY_QUERY_KEY,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: WORKOUT_SESSION_HISTORY_SUMMARY_QUERY_KEY,
+        }),
+      ]);
+
+      return resolveResponseData(response, null);
+    },
+    [mutation, queryClient],
+  );
+
+  return {
+    ...mutation,
+    skipSession,
+  };
+};
+
+export const useUndoSkipWorkoutSession = () => {
+  const queryClient = useQueryClient();
+  const mutation = useDeleteQuery();
+
+  const undoSkipSession = React.useCallback(
+    async (planId, dayIndex) => {
+      const response = await mutation.mutateAsync({
+        url: `/user/workout/sessions/${planId}/days/${dayIndex}/skip`,
+      });
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: WORKOUT_OVERVIEW_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: WORKOUT_PLANS_QUERY_KEY }),
+        queryClient.invalidateQueries({
+          queryKey: WORKOUT_SESSION_ACTIVE_QUERY_KEY,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: WORKOUT_SESSION_HISTORY_QUERY_KEY,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: WORKOUT_SESSION_HISTORY_SUMMARY_QUERY_KEY,
+        }),
+      ]);
+
+      return resolveResponseData(response, null);
+    },
+    [mutation, queryClient],
+  );
+
+  return {
+    ...mutation,
+    undoSkipSession,
+  };
+};
+
 export const useFinishWorkoutSession = () => {
   const queryClient = useQueryClient();
   const mutation = usePostQuery();
@@ -236,6 +340,9 @@ export const useFinishWorkoutSession = () => {
         queryClient.invalidateQueries({ queryKey: WORKOUT_LOGS_QUERY_KEY }),
         queryClient.invalidateQueries({ queryKey: WORKOUT_OVERVIEW_QUERY_KEY }),
         queryClient.invalidateQueries({ queryKey: WORKOUT_PLANS_QUERY_KEY }),
+        queryClient.invalidateQueries({
+          queryKey: WORKOUT_SESSION_ACTIVE_QUERY_KEY,
+        }),
         queryClient.invalidateQueries({
           queryKey: WORKOUT_SESSION_HISTORY_QUERY_KEY,
         }),

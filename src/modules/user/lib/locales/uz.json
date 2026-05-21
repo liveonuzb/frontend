@@ -101,7 +101,7 @@
       "deleteConfirm": "Mashg'ulotni o'chirishni tasdiqlaysizmi?",
       "nav": {
         "ariaLabel": "Mashg'ulot moduli bo'limlari",
-        "home": "Home",
+        "home": "Umumiy ko‘rinish",
         "plans": "Plans",
         "running": "Running",
         "exercises": "Exercises",
@@ -138,6 +138,12 @@
         "hero": {
           "title": "Bugungi mashg'ulot",
           "activeBadge": "FAOL REJA",
+          "activeSessionBadge": "FAOL SESSIYA",
+          "activeSessionLabel": "Mashg'ulotni davom ettirish",
+          "activeRunTitle": "Faol yugurish",
+          "activeWorkoutTitle": "Faol mashg'ulot",
+          "activeRunDescription": "Tugallanmagan yugurish sessiyangiz bor. Masofa, temp va route ma'lumotlarini saqlash uchun davom ettiring.",
+          "activeWorkoutDescription": "Tugallanmagan kuch mashg'ulotingiz bor. Joriy mashqdan davom ettiring.",
           "noActiveBadge": "FAOL REJA YO'Q",
           "statusLabel": "Reja holati",
           "defaultWorkout": "Push Day",
@@ -187,6 +193,9 @@
           "reportDescription": "Statistikalar",
           "recommendedTitle": "Tavsiya etilgan rejalar",
           "recommendedSubtitle": "Maqsadingizga mos reja tanlang va yo'lingizni boshlang",
+          "loading": "Tavsiya etilgan rejalar yuklanmoqda...",
+          "empty": "Hozircha tavsiya etilgan workout rejalari mavjud emas.",
+          "retry": "Qayta urinish",
           "durationWeeks": "{{count}} hafta",
           "select": "Tanlash"
         },
@@ -237,7 +246,7 @@
           }
         },
         "recent": {
-          "title": "So'nggi mashg'ulotlar",
+          "title": "So'nggi faoliyat",
           "empty": "Hali mashg'ulot tarixi yo'q. Workout yoki running boshlaganingizdan keyin ular shu yerda ko'rinadi.",
           "routeWaiting": "Route data kutilmoqda"
         },
@@ -315,9 +324,11 @@
           "session": "Sessiya",
           "start": "Boshlash",
           "edit": "Tahrirlash",
+          "duplicate": "Nusxalash",
           "delete": "O'chirish",
           "viewPlan": "Rejani ko'rish",
           "continuePlan": "Davom ettirish",
+          "selectAsPlan": "Plan sifatida tanlash",
           "createPlan": "Yangi plan yaratish",
           "cancel": "Bekor qilish"
         },
@@ -383,6 +394,54 @@
           },
           "footer": "Bugun boshlang va o'zingizning kuchliroq versiyangizga yaqinlashing."
         },
+        "sections": {
+          "allPlans": "Barcha rejalar",
+          "otherPlans": "Boshqa rejalar"
+        },
+        "hero": {
+          "metrics": {
+            "distance": "km",
+            "time": "vaqt",
+            "pace": "pace",
+            "kcal": "kcal",
+            "exercises": "mashq",
+            "duration": "davomiylik",
+            "notSet": "Belgilanmagan"
+          },
+          "noActive": {
+            "badge": "Active plan yo'q",
+            "title": "Sizda hali active plan yo'q",
+            "description": "Maqsadingizga mos reja tanlang va bugunoq boshlang.",
+            "goalFit": "Maqsadingizga mos reja",
+            "progress": "Bosqichma-bosqich progress",
+            "results": "Natijalarni kuzatish",
+            "aiCta": "AI bilan reja tanlash"
+          },
+          "activePlan": {
+            "badge": "Sizning active rejangiz",
+            "title": "Bugungi mashg'ulot tayyor",
+            "description": "Bugun {{title}} mashg'ulotiga tayyorlaning.",
+            "progress": "Progress: {{completed}} / {{total}} kun",
+            "startToday": "Bugungi mashg'ulotni boshlash"
+          },
+          "activeWorkout": {
+            "badge": "Active mashg'ulot",
+            "title": "Mashg'ulot davom etmoqda",
+            "defaultTitle": "Joriy mashg'ulot",
+            "description": "Tugallanmagan mashg'ulotingiz bor. Progressni saqlash uchun davom ettiring.",
+            "continue": "Mashg'ulotni davom ettirish"
+          },
+          "liveRun": {
+            "badge": "Yugurish davom etmoqda",
+            "live": "Live",
+            "title": "Yugurish davom etmoqda",
+            "description": "Outdoor yugurishni davom ettiring yoki tugatish uchun live ekranga o'ting.",
+            "continue": "Davom ettirish",
+            "finish": "Tugatish",
+            "mapEmpty": "Route nuqtalari kutilmoqda",
+            "mapLoading": "Route yuklanmoqda"
+          }
+        },
         "filters": {
           "all": "Barchasi",
           "strength": "Kuch",
@@ -399,6 +458,8 @@
         "toasts": {
           "startSuccess": "\"{{name}}\" boshlandi",
           "startError": "Rejani boshlashda xatolik yuz berdi",
+          "duplicateSuccess": "Workout reja nusxalandi",
+          "duplicateError": "Workout rejani nusxalab bo'lmadi",
           "deleteSuccess": "Workout reja o'chirildi",
           "deleteError": "Workout rejani o'chirib bo'lmadi"
         },
@@ -698,6 +759,7 @@
         "finishSuccess": "Mashg'ulot yakunlandi",
         "finishSuccessDescription": "{{minutes}} daqiqa, {{calories}} kcal.",
         "finishError": "Mashg'ulot logini saqlashda xatolik yuz berdi",
+        "activeSessionConflict": "Avval active workout sessiyasini yakunlang yoki bekor qiling.",
         "back": "Ortga",
         "daySessionTitle": "Day {{day}}-Workout session",
         "dayFocusTitle": "Day {{day}}-{{focus}}",
@@ -897,10 +959,20 @@
         "noExercisesTitle": "Bu kunda mashq yo'q",
         "noExercisesDescription": "Rejani tahrirlab ushbu kunga mashqlar qo'shing.",
         "locked": "Locked",
+        "skipped": "Skipped",
         "start": "START",
+        "redoExtra": "REDO AS EXTRA SESSION",
+        "skipDay": "SKIP DAY",
+        "skipSuccess": "Workout kuni o'tkazib yuborildi",
+        "skipError": "Workout kunini skip qilib bo'lmadi",
+        "undoSkip": "Skipni bekor qilish",
+        "undoSkipSuccess": "Workout kuni navbatga qaytarildi",
+        "undoSkipError": "Workout kunini qaytarib bo'lmadi",
+        "skippedStartError": "O'tkazib yuborilgan kunni boshlash mumkin emas",
         "regenerate": "Regenerate",
         "edit": "Edit",
-        "lockedHint": "Keyingi kunni boshlashdan oldin oldingi workout kunlarini yakunlang."
+        "lockedHint": "Bu workout kuni yakunlangan. Uni faqat ko'rib chiqish mumkin yoki extra session sifatida qayta bajarish mumkin.",
+        "skippedHint": "Bu workout kuni o'tkazib yuborilgan va progressga qo'shilmaydi."
       },
       "planDetail": {
         "manual": "Manual",
@@ -951,9 +1023,14 @@
         "difficultyDescription": "Suitable for those with some workout experience.",
         "caloriesEstimate": "Calories estimate",
         "caloriesPerWeek": "2,800 kcal / week",
+        "caloriesPerWorkout": "{{calories}} kcal / mashg'ulot",
+        "caloriesNotSpecified": "Belgilanmagan",
         "caloriesDescription": "Estimated average calorie burn per week.",
         "equipmentNeeded": "Equipment needed",
         "gymRequired": "Gym Required",
+        "equipmentConfigured": "Sozlangan",
+        "equipmentFlexible": "Moslashuvchan",
+        "equipmentNotSpecified": "Belgilanmagan",
         "equipmentList": "Dumbbells, Barbell, Bench, Cable Machine, Pull-up Bar",
         "weeklyPreview": "Weekly completion preview",
         "completedPreview": "Completed",
@@ -1066,8 +1143,8 @@
       },
       "report": {
         "breadcrumb": "Hisobot",
-        "title": "Аналитика тренировок",
-        "subtitle": "Ваш прогресс, тренировки и бег в одном отчете.",
+        "title": "Mashg'ulot analitikasi",
+        "subtitle": "Progress, mashg'ulotlar va yugurishlar bitta hisobotda.",
         "errorTitle": "Mashg'ulot hisoboti yuklanmadi",
         "errorDescription": "Mashg'ulot analitikasini qayta yuklab ko'ring.",
         "retry": "Qayta urinish",
@@ -1092,15 +1169,48 @@
         "weeklyActivity": "Haftalik aktivlik",
         "monthlySessions": "Oylik sessiyalar",
         "workoutTypes": "Mashg'ulot turlari",
-        "runVsStrength": "Бег vs Силовые",
+        "runVsStrength": "Yugurish vs Kuch",
         "running": "Yugurish",
         "strength": "Kuch",
+        "typeLabels": {
+          "OUTDOOR_RUN": "Yugurish",
+          "STRENGTH": "Kuch",
+          "FUNCTIONAL": "Funksional"
+        },
         "distancePaceTrend": "Masofa va pace trendi (yugurish)",
         "goalCompletion": "Maqsad bajarilishi",
         "distance": "Masofa",
         "intensity": "Intensivlik taqsimoti",
+        "intensityLabels": {
+          "low": "Past",
+          "moderate": "O'rtacha",
+          "high": "Yuqori"
+        },
         "recoveryLoad": "Tiklanish va yuklama",
-        "coachAdvice": "AI совет тренера",
+        "recommendedRestDays": "{{count}} kun tiklanish",
+        "recoveryStates": {
+          "none": {
+            "label": "Ma'lumot yo'q",
+            "recommendation": "Tiklanish tavsiyasini ko'rish uchun birinchi mashg'ulotni yakunlang."
+          },
+          "low": {
+            "label": "Past yuklama",
+            "recommendation": "Intensivlikni oshirishdan oldin haftaga 1-2 yengil sessiya qo'shing."
+          },
+          "balanced": {
+            "label": "Muvozanatli yuklama",
+            "recommendation": "Hozirgi ritmni saqlang va tiklanishga joy qoldiring."
+          },
+          "high": {
+            "label": "Yuqori yuklama",
+            "recommendation": "Yana intensivlik qo'shishdan oldin tiklanishni rejalang."
+          }
+        },
+        "coachAdvice": "AI trener maslahati",
+        "coachAdviceText": {
+          "mixedTraining": "Yugurish va kuch mashg'ulotlari bitta hisobotda jamlandi. Pace, hajm va tiklanishni birga kuzating.",
+          "addCardio": "Kuch mashg'ulotlariga yugurish yoki kardio qo'shing, shunda hisobot yuklama balansini aniqroq ko'rsatadi."
+        },
         "recentWorkouts": "So'nggi mashg'ulotlar",
         "showAll": "Hammasini ko'rish",
         "allWorkouts": "Barcha mashg'ulotlar",

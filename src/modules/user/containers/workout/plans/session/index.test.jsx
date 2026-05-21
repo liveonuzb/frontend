@@ -258,7 +258,19 @@ describe("WorkoutPlanSessionPage", () => {
     renderPage();
 
     await waitFor(() => {
-      expect(startSessionMock).toHaveBeenCalledWith("plan-1", 0);
+      expect(startSessionMock).toHaveBeenCalledWith("plan-1", 0, {
+        mode: "planned",
+      });
+    });
+  });
+
+  it("starts a completed workout day in extra mode from the query string", async () => {
+    renderPage("/user/workout/plans/plan-1/days/0/session?mode=extra");
+
+    await waitFor(() => {
+      expect(startSessionMock).toHaveBeenCalledWith("plan-1", 0, {
+        mode: "extra",
+      });
     });
   });
 
@@ -313,9 +325,11 @@ describe("WorkoutPlanSessionPage", () => {
       expect(updateProgressMock).toHaveBeenCalledTimes(1);
     });
 
-    expect(
-      screen.getByText("Progress vaqtincha faqat qurilmada saqlanmoqda."),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.getByText("Progress vaqtincha faqat qurilmada saqlanmoqda."),
+      ).toBeInTheDocument();
+    });
 
     await waitFor(
       () => {
@@ -444,6 +458,7 @@ describe("WorkoutPlanSessionPage", () => {
           timezone: expect.any(String),
           exerciseCount: 1,
           completedExerciseCount: 1,
+          mode: "planned",
           logs: [
             expect.objectContaining({
               planId: "plan-1",
@@ -463,6 +478,26 @@ describe("WorkoutPlanSessionPage", () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(
         "/user/workout/plans/plan-1/days/0/session/summary",
+      );
+    });
+  });
+
+  it("sends extra mode when finishing a redo workout session", async () => {
+    renderPage("/user/workout/plans/plan-1/days/0/session?mode=extra");
+
+    fireEvent.click(screen.getByText("LOG NEXT SET"));
+    fireEvent.click(screen.getByText("LOG NEXT SET"));
+    fireEvent.click(
+      screen.getByRole("button", { name: /mashg'ulotni yakunlash/i }),
+    );
+
+    await waitFor(() => {
+      expect(finishSessionMock).toHaveBeenCalledWith(
+        "plan-1",
+        0,
+        expect.objectContaining({
+          mode: "extra",
+        }),
       );
     });
   });

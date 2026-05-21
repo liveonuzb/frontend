@@ -70,34 +70,54 @@ export const buildWorkoutReportCsv = (report) => {
     .join("\n");
 };
 
-const formatDurationShort = (seconds) => {
+const DURATION_LABELS = {
+  en: { hour: "h", minute: "min" },
+  ru: { hour: "ч", minute: "мин" },
+  uz: { hour: "soat", minute: "daq" },
+};
+
+const getLanguageKey = (language = "ru") => String(language).split("-")[0];
+
+const formatDurationShort = (seconds, language = "ru") => {
   const totalSeconds = Math.max(0, toNumber(seconds) || 0);
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.round((totalSeconds % 3600) / 60);
+  const labels =
+    DURATION_LABELS[getLanguageKey(language)] ?? DURATION_LABELS.ru;
 
   if (hours > 0 && minutes > 0) {
-    return `${hours} ч ${minutes} мин`;
+    return `${hours} ${labels.hour} ${minutes} ${labels.minute}`;
   }
 
   if (hours > 0) {
-    return `${hours} ч`;
+    return `${hours} ${labels.hour}`;
   }
 
-  return `${minutes} мин`;
+  return `${minutes} ${labels.minute}`;
 };
 
-const formatNumber = (value) =>
-  new Intl.NumberFormat("ru-RU").format(Math.round(toNumber(value) || 0));
+const formatNumber = (value, language = "ru") =>
+  new Intl.NumberFormat(language).format(Math.round(toNumber(value) || 0));
+
+const formatTrend = (value) => {
+  const numericValue = toNumber(value);
+
+  if (!Number.isFinite(numericValue)) {
+    return null;
+  }
+
+  return `${numericValue > 0 ? "+" : ""}${numericValue}%`;
+};
 
 const MetricCard = ({ icon: Icon, label, value, trend }) => (
-  <Card className="rounded-[24px] border-border/70 bg-card/95 shadow-sm">
-    <CardContent className="flex items-center gap-4 p-5">
+  <Card className="rounded-[24px] border-border/70 bg-card/95 py-6 shadow-sm">
+    <CardContent className="flex h-full flex-col items-start gap-3 p-5">
       <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
         <Icon className="size-5" aria-hidden="true" />
       </div>
-      <div className="min-w-0">
-        <p className="truncate text-xs font-medium text-muted-foreground">{label}</p>
-        <p className="mt-1 truncate text-2xl font-black tracking-tight">{value}</p>
+      <div className="min-w-0 self-stretch">
+        <p className="text-xs font-medium leading-4 text-muted-foreground">{label}</p>
+        <p className="mt-1 text-2xl font-black tracking-tight">{value}</p>
         {trend ? <p className="mt-1 text-xs font-semibold text-green-600">{trend}</p> : null}
       </div>
     </CardContent>
@@ -105,7 +125,11 @@ const MetricCard = ({ icon: Icon, label, value, trend }) => (
 );
 
 const ChartCard = ({ title, action, children, className = "" }) => (
-  <Card className={`rounded-[24px] border-border/70 bg-card/95 shadow-sm ${className}`}>
+  <Card
+    role="region"
+    aria-label={typeof title === "string" ? title : undefined}
+    className={`rounded-[24px] border-border/70 bg-card/95 py-6 shadow-sm ${className}`}
+  >
     <CardHeader className="flex-row items-start justify-between gap-4 pb-3">
       <CardTitle className="text-base font-black">{title}</CardTitle>
       {action ? <div className="text-xs font-semibold text-primary">{action}</div> : null}
@@ -134,7 +158,7 @@ const ProgressRing = ({ value }) => {
 };
 
 const WorkoutReportPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const [period, setPeriod] = React.useState("30d");
   const [comparisonPeriod, setComparisonPeriod] = React.useState("previous");
@@ -152,9 +176,17 @@ const WorkoutReportPage = () => {
   }, [setBreadcrumbs, t]);
 
   const summary = get(report, "summary", {});
+  const trends = get(report, "trends", {});
+  const language = i18n.language || "ru";
+  const getTrend = React.useCallback(
+    (key) => formatTrend(get(trends, `${key}.percentageChange`)),
+    [trends],
+  );
   const typeDistribution = map(get(report, "typeDistribution", []), (item, index) => ({
-    name: get(item, "label", get(item, "type", "")),
-    value: toNumber(get(item, "sessions", 0)) || 0,
+    name: t(`user.workout.report.typeLabels.${get(item, "type", "")}`, {
+      defaultValue: get(item, "label", get(item, "name", get(item, "type", `type-${index}`))),
+    }),
+    value: toNumber(get(item, "sessions", get(item, "value", 0))) || 0,
     color: chartColors[index % chartColors.length],
     percentage: toNumber(get(item, "percentage", 0)) || 0,
   }));
@@ -163,6 +195,23 @@ const WorkoutReportPage = () => {
   const distancePaceTrend = get(report, "charts.distancePaceTrend", []);
   const intensityDistribution = get(report, "charts.intensityDistribution", []);
   const recentWorkouts = slice(get(report, "recentWorkouts", []), 0, 5);
+  const hasRunningDistance = toNumber(get(summary, "totalDistanceMeters", 0)) > 0;
+  const coachAdviceKey =
+    get(report, "coachAdvice.key") ??
+    (hasRunningDistance ? "mixedTraining" : "addCardio");
+  const recovery = get(report, "recovery", {});
+  const recoveryKey = get(recovery, "loadBalanceKey", "balanced");
+  const recommendedRestDays = toNumber(get(recovery, "recommendedRestDays", 0)) || 0;
+  const recoveryLabel = t(`user.workout.report.recoveryStates.${recoveryKey}.label`, {
+    defaultValue: get(recovery, "loadBalanceLabel", t("user.workout.report.recoveryStates.balanced.label", "Оптимальный")),
+  });
+  const recoveryRecommendation = t(
+    `user.workout.report.recoveryStates.${recoveryKey}.recommendation`,
+    {
+      defaultValue: get(recovery, "recommendation", ""),
+      restDays: recommendedRestDays,
+    },
+  );
   const downloadReportCsv = React.useCallback(() => {
     const csv = buildWorkoutReportCsv(report ?? {});
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -183,7 +232,7 @@ const WorkoutReportPage = () => {
   if (isError) {
     return (
       <PageTransition mode="slide-up">
-        <Card>
+        <Card className="py-6">
           <CardHeader>
             <CardTitle>{t("user.workout.report.errorTitle", "Не удалось загрузить отчет")}</CardTitle>
             <CardDescription>
@@ -252,44 +301,47 @@ const WorkoutReportPage = () => {
           <MetricCard
             icon={ActivityIcon}
             label={t("user.workout.report.sessions", "Сессии")}
-            value={formatNumber(get(summary, "totalSessions", 0))}
-            trend="+ 20%"
+            value={formatNumber(get(summary, "totalSessions", 0), language)}
+            trend={getTrend("totalSessions")}
           />
           <MetricCard
             icon={Clock3Icon}
             label={t("user.workout.report.totalDuration", "Общая длительность")}
-            value={formatDurationShort(get(summary, "totalDurationSeconds", 0))}
-            trend="+ 18%"
+            value={formatDurationShort(
+              get(summary, "totalDurationSeconds", 0),
+              language,
+            )}
+            trend={getTrend("totalDurationSeconds")}
           />
           <MetricCard
             icon={FlameIcon}
             label={t("user.workout.report.calories", "Калории")}
-            value={`${formatNumber(get(summary, "totalCalories", 0))} kcal`}
-            trend="+ 14%"
+            value={`${formatNumber(get(summary, "totalCalories", 0), language)} kcal`}
+            trend={getTrend("totalCalories")}
           />
           <MetricCard
             icon={RouteIcon}
             label={t("user.workout.report.totalDistance", "Общая дистанция")}
             value={formatRunningDistance(get(summary, "totalDistanceMeters", 0))}
-            trend="+ 26%"
+            trend={getTrend("totalDistanceMeters")}
           />
           <MetricCard
             icon={GaugeIcon}
             label={t("user.workout.report.averagePace", "Средний темп (бег)")}
             value={formatRunningPace(get(summary, "averagePaceSecondsPerKm"))}
-            trend="- 5%"
+            trend={getTrend("averagePaceSecondsPerKm")}
           />
           <MetricCard
             icon={BarChart3Icon}
             label={t("user.workout.report.volume", "Объем (нагрузка)")}
-            value={formatNumber(get(summary, "totalVolumeKg", 0))}
-            trend="+ 21%"
+            value={formatNumber(get(summary, "totalVolumeKg", 0), language)}
+            trend={getTrend("totalVolumeKg")}
           />
           <MetricCard
             icon={TrophyIcon}
             label={t("user.workout.report.streak", "Серия (дней)")}
-            value={formatNumber(get(summary, "streakDays", 0))}
-            trend="+ 2 дня"
+            value={formatNumber(get(summary, "streakDays", 0), language)}
+            trend={getTrend("streakDays")}
           />
         </div>
 
@@ -389,7 +441,10 @@ const WorkoutReportPage = () => {
                     {get(report, "runVsStrength.strength.sessions", 0)}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {formatDurationShort(get(report, "runVsStrength.strength.durationSeconds", 0))}
+                    {formatDurationShort(
+                      get(report, "runVsStrength.strength.durationSeconds", 0),
+                      language,
+                    )}
                   </p>
                 </div>
               </div>
@@ -430,8 +485,8 @@ const WorkoutReportPage = () => {
                 <div className="flex justify-between gap-4">
                   <span>{t("user.workout.report.calories", "Калории")}</span>
                   <strong>
-                    {formatNumber(get(report, "goals.calories.current", 0))} /{" "}
-                    {formatNumber(get(report, "goals.calories.target", 0))} kcal
+                    {formatNumber(get(report, "goals.calories.current", 0), language)} /{" "}
+                    {formatNumber(get(report, "goals.calories.target", 0), language)} kcal
                   </strong>
                 </div>
               </div>
@@ -440,12 +495,19 @@ const WorkoutReportPage = () => {
 
           <ChartCard title={t("user.workout.report.intensity", "Распределение интенсивности")}>
             <div className="space-y-3">
-              {map(intensityDistribution, (item) => (
-                <div key={get(item, "key")} className="space-y-1">
+              {map(intensityDistribution, (item, index) => (
+                <div
+                  key={get(item, "key", get(item, "label", get(item, "name", index)))}
+                  className="space-y-1"
+                >
                   <div className="flex items-center justify-between text-sm">
-                    <span>{get(item, "label")}</span>
+                    <span>
+                      {t(`user.workout.report.intensityLabels.${get(item, "key", "")}`, {
+                        defaultValue: get(item, "label", get(item, "name", "")),
+                      })}
+                    </span>
                     <span className="font-bold">
-                      {get(item, "sessions", 0)} ({get(item, "percentage", 0)}%)
+                      {get(item, "sessions", get(item, "value", 0))} ({get(item, "percentage", 0)}%)
                     </span>
                   </div>
                   <div className="h-2 rounded-full bg-muted">
@@ -462,27 +524,37 @@ const WorkoutReportPage = () => {
           <ChartCard title={t("user.workout.report.recoveryLoad", "Восстановление и нагрузка")}>
             <div className="space-y-3">
               <p className="text-2xl font-black text-green-700">
-                {get(report, "recovery.loadBalanceLabel", "Оптимальный")}
+                {recoveryLabel}
               </p>
+              {recommendedRestDays > 0 ? (
+                <p className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
+                  {t("user.workout.report.recommendedRestDays", {
+                    count: recommendedRestDays,
+                    defaultValue: "{{count}} дня восстановления",
+                  })}
+                </p>
+              ) : null}
               <p className="text-sm leading-6 text-muted-foreground">
-                {get(report, "recovery.recommendation", "")}
+                {recoveryRecommendation}
               </p>
             </div>
           </ChartCard>
 
-          <ChartCard title={get(report, "coachAdvice.title", t("user.workout.report.coachAdvice", "AI совет тренера"))}>
+          <ChartCard title={t("user.workout.report.coachAdvice", "AI coach advice")}>
             <div className="flex gap-4">
               <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                 <SparklesIcon className="size-5" aria-hidden="true" />
               </div>
               <p className="text-sm leading-6 text-muted-foreground">
-                {get(report, "coachAdvice.text", "")}
+                {t(`user.workout.report.coachAdviceText.${coachAdviceKey}`, {
+                  defaultValue: get(report, "coachAdvice.text", ""),
+                })}
               </p>
             </div>
           </ChartCard>
         </div>
 
-        <Card className="rounded-[24px] border-border/70 bg-card/95 shadow-sm">
+        <Card className="rounded-[24px] border-border/70 bg-card/95 py-6 shadow-sm">
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle className="text-base font-black">
               {t("user.workout.report.recentWorkouts", "Последние тренировки")}
@@ -513,7 +585,13 @@ const WorkoutReportPage = () => {
                   <p className="text-xs text-muted-foreground">
                     {isRunning
                       ? `${formatRunningDistance(get(session, "distanceMeters", 0))} · ${formatRunningPace(get(session, "averagePaceSecondsPerKm"))}`
-                      : `${formatDurationShort(get(session, "durationSeconds", 0))} · ${formatNumber(get(session, "estimatedCalories", 0))} kcal`}
+                      : `${formatDurationShort(
+                          get(session, "durationSeconds", 0),
+                          language,
+                        )} · ${formatNumber(
+                          get(session, "estimatedCalories", 0),
+                          language,
+                        )} kcal`}
                   </p>
                 </div>
               );

@@ -91,7 +91,7 @@ const getInitial = (name) => toUpper(trim(name).charAt(0)) || "U";
 
 const ResultCard = ({ children, className = "" }) => (
   <Card
-    className={`rounded-[1.35rem] border-primary/20 bg-background/95 shadow-sm ${className}`}
+    className={`rounded-[1.35rem] border-primary/20 bg-background/95 py-6 shadow-sm ${className}`}
   >
     <CardContent className="p-4 sm:p-6">{children}</CardContent>
   </Card>

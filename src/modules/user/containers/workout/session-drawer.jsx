@@ -267,7 +267,7 @@ const ExerciseCard = ({
   return (
     <Card
       className={cn(
-        "mb-4 overflow-hidden rounded-2xl border bg-background transition-all",
+        "mb-4 overflow-hidden rounded-2xl border bg-background py-6 transition-all",
         isAllDone && "border-primary/30 bg-primary/[0.03]",
       )}
     >

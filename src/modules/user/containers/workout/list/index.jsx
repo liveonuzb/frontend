@@ -1,11 +1,19 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { get, filter, isArray, map, orderBy, split, toNumber, take } from "lodash";
+import {
+  filter,
+  get,
+  includes,
+  isArray,
+  map,
+  orderBy,
+  split,
+  toNumber,
+  take,
+} from "lodash";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import {
-  ArrowRightIcon,
-  CalendarCheck2Icon,
   CheckCircle2Icon,
   Clock3Icon,
   CloudSunIcon,
@@ -14,13 +22,11 @@ import {
   GaugeIcon,
   HeartPulseIcon,
   MapPinIcon,
-  MedalIcon,
   MoreHorizontalIcon,
   PlayIcon,
   RouteIcon,
   TargetIcon,
   ThermometerSunIcon,
-  TrophyIcon,
 } from "lucide-react";
 import PageTransition from "@/components/page-transition";
 import { Badge } from "@/components/ui/badge";
@@ -29,12 +35,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import useWorkoutOverview from "@/hooks/app/use-workout-overview";
 import useWorkoutPlan from "@/hooks/app/use-workout-plan";
 import { WORKOUT_PLAN_STATUS } from "@/hooks/app/use-workout-plans";
-import { useWorkoutSessionHistory } from "@/hooks/app/use-workout-sessions";
+import {
+  useActiveWorkoutSession,
+  useWorkoutSessionHistory,
+} from "@/hooks/app/use-workout-sessions";
 import {
   useRunningActiveSession,
   useRunningSessions,
   useRunningStatsSummary,
-  useStartRunningSession,
 } from "@/hooks/app/use-running-sessions";
 import useWorkoutWeatherToday from "@/hooks/app/use-workout-weather";
 import RunMapPanel from "../running/components/run-map-panel.jsx";
@@ -48,9 +56,7 @@ import {
   deriveWorkoutPlanMetrics,
   getFirstWorkoutDayIndex,
   getNextStartableDayIndex,
-  isWorkoutDayLocked,
 } from "../utils";
-import { WORKOUT_RECOMMENDED_PLANS } from "../workout-showcase-data.js";
 
 const IMAGE_SET = {
   athlete:
@@ -59,15 +65,11 @@ const IMAGE_SET = {
     "https://images.unsplash.com/photo-1534367610401-9f5ed68180aa?auto=format&fit=crop&w=900&q=80",
   runner:
     "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?auto=format&fit=crop&w=900&q=80",
-  map:
-    "https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=900&q=80",
   dumbbell:
     "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=900&q=80",
 };
 
 const DAILY_CALORIE_GOAL = 2200;
-const WEEKLY_DISTANCE_GOAL_METERS = 40000;
-
 const getDateKey = (value = new Date()) => {
   const date = value instanceof Date ? value : new Date(value);
 
@@ -165,20 +167,23 @@ const buildNextWorkouts = (activePlan, now = new Date(), t, language) => {
   const schedule = get(activePlan, "schedule", []);
   const nextStartableDayIndex = getNextStartableDayIndex(activePlan);
   const firstWorkoutDayIndex = getFirstWorkoutDayIndex(schedule);
+  const backendNextWorkout = get(activePlan, "nextWorkout");
   const completedDayIndexes = new Set(
     map(filter(
       (isArray(get(activePlan, "dayProgress")) ? get(activePlan, "dayProgress") : []),
-      (item) => Boolean(get(item, "completed")),
+      (item) => Boolean(get(item, "completed")) || Boolean(get(item, "skipped")),
     ), (item) => toNumber(get(item, "dayIndex"))),
   );
   const nextIncompleteDayIndex = schedule.findIndex(
     (day, dayIndex) =>
       get(day, "exercises", []).length > 0 &&
-      !completedDayIndexes.has(dayIndex) &&
-      !isWorkoutDayLocked(activePlan, dayIndex),
+      !completedDayIndexes.has(dayIndex),
   );
+  const backendDayIndex = toNumber(get(backendNextWorkout, "dayIndex"));
   const startDayIndex =
-    nextIncompleteDayIndex >= 0
+    Number.isInteger(backendDayIndex) && backendDayIndex >= 0
+      ? backendDayIndex
+      : nextIncompleteDayIndex >= 0
       ? nextIncompleteDayIndex
       : nextStartableDayIndex >= 0
         ? nextStartableDayIndex
@@ -209,8 +214,9 @@ const buildNextWorkouts = (activePlan, now = new Date(), t, language) => {
       return {
         id: `${get(activePlan, "id", "active")}-${dayIndex}`,
         dayIndex,
-        isStartable: !isWorkoutDayLocked(activePlan, dayIndex),
+        isStartable: true,
         title:
+          (dayIndex === backendDayIndex ? get(backendNextWorkout, "title") : null) ||
           get(day, "title") ||
           get(day, "name") ||
           t("user.workout.dashboard.date.dayNumber", { day: dayIndex + 1 }),
@@ -378,7 +384,7 @@ const buildActivityFeed = (workoutSessions = [], runningSessions = [], t) => {
       [getActivityTimestamp],
       ["desc"],
     ),
-    3,
+    1,
   );
 };
 
@@ -407,6 +413,61 @@ function MetricPill({ icon: Icon, value, label, tone = "text-primary" }) {
   );
 }
 
+const buildActiveRunHeroItem = (session, t) => {
+  if (!session?.workoutSessionId) {
+    return null;
+  }
+
+  return {
+    id: session.workoutSessionId,
+    type: "active-run",
+    title: t("user.workout.dashboard.hero.activeRunTitle"),
+    startedAt: get(session, "startedAt"),
+    image: IMAGE_SET.runner,
+    metrics: getRunningMetrics(session),
+  };
+};
+
+const buildActiveWorkoutHeroItem = (session, t) => {
+  if (!session?.id || !session?.planId || !Number.isInteger(session?.planDayIndex)) {
+    return null;
+  }
+
+  return {
+    id: session.id,
+    type: "active-workout",
+    planId: session.planId,
+    dayIndex: session.planDayIndex,
+    title:
+      get(session, "planDayKey") ||
+      t("user.workout.dashboard.hero.activeWorkoutTitle"),
+    startedAt: get(session, "sessionStartTime"),
+    image: IMAGE_SET.dumbbell,
+    metrics: {
+      durationSeconds: toNumber(get(session, "elapsedSeconds", 0)) || 0,
+      exerciseCount: isArray(get(session, "exercises"))
+        ? get(session, "exercises").length
+        : 0,
+    },
+  };
+};
+
+const getLatestActiveHeroItem = (activeRun, activeWorkout, t) => {
+  const candidates = filter(
+    [
+      buildActiveRunHeroItem(activeRun, t),
+      buildActiveWorkoutHeroItem(activeWorkout, t),
+    ],
+    Boolean,
+  );
+
+  return orderBy(
+    candidates,
+    [(item) => Date.parse(get(item, "startedAt", "")) || 0],
+    ["desc"],
+  )[0] ?? null;
+};
+
 function TodayWorkoutHero({
   item,
   activePlan,
@@ -416,36 +477,58 @@ function TodayWorkoutHero({
   onCreatePlan,
   t,
 }) {
+  const heroType = get(item, "type", null);
+  const isActiveRun = heroType === "active-run";
+  const isActiveWorkout = heroType === "active-workout";
+  const hasActiveSession = isActiveRun || isActiveWorkout;
   const hasActivePlan = Boolean(activePlan);
-  const hasWorkout = Boolean(item);
-  const title = hasWorkout
-    ? item.title
-    : hasActivePlan
-      ? get(
-          activePlan,
-          "todayWorkout.title",
-          get(activePlan, "name", t("user.workout.dashboard.hero.defaultWorkout")),
-        )
-      : t("user.workout.dashboard.hero.choosePlanTitle");
-  const image = hasWorkout
-    ? item.image
-    : getPlanImage(activePlan || WORKOUT_RECOMMENDED_PLANS[0]);
+  const hasWorkout = Boolean(item) && !hasActiveSession;
+  const title = hasActiveSession
+    ? get(item, "title")
+    : hasWorkout
+      ? item.title
+      : hasActivePlan
+        ? get(
+            activePlan,
+            "todayWorkout.title",
+            get(activePlan, "name", t("user.workout.dashboard.hero.defaultWorkout")),
+          )
+        : t("user.workout.dashboard.hero.choosePlanTitle");
+  const image = hasActiveSession
+    ? get(item, "image", IMAGE_SET.athlete)
+    : hasWorkout
+      ? item.image
+      : getPlanImage(activePlan);
   const workoutCount = toNumber(get(weeklyStats, "count", 0)) || 0;
   const durationSeconds = (toNumber(get(weeklyStats, "duration", 0)) || 0) * 60;
   const calories = toNumber(get(weeklyStats, "calories", 0)) || 0;
   const progress = clampPercent(
     get(activePlan, "progress", get(activePlan, "completionPercent", 0)),
   );
-  const currentWeek = toNumber(get(activePlan, "currentWeek", 2)) || 2;
-  const currentDay = toNumber(get(activePlan, "currentDay", 3)) || 3;
-  const todayFocus =
-    get(activePlan, "todayWorkout.title") ||
-    get(item, "title") ||
-    t("user.workout.dashboard.hero.defaultFocus");
+  const nextWorkoutDayNumber =
+    Number.isInteger(toNumber(get(activePlan, "nextWorkout.dayIndex")))
+      ? toNumber(get(activePlan, "nextWorkout.dayIndex")) + 1
+      : 0;
+  const currentDay =
+    toNumber(get(activePlan, "currentDay")) || nextWorkoutDayNumber || 1;
+  const currentWeek =
+    toNumber(get(activePlan, "currentWeek")) ||
+    Math.max(1, Math.ceil(currentDay / Math.max(1, toNumber(get(activePlan, "daysPerWeek")) || 1)));
+  const todayFocus = hasActiveSession
+    ? title
+    : get(activePlan, "todayWorkout.title") ||
+      get(item, "title") ||
+      t("user.workout.dashboard.hero.defaultFocus");
+  const activeRunMetrics = get(item, "metrics", {});
+  const activeWorkoutMetrics = get(item, "metrics", {});
+  const shouldShowMetrics = hasActiveSession || hasActivePlan || hasWorkout;
 
   return (
     <Card className="workout-glass-card overflow-hidden p-0">
-      <div className="group relative min-h-[360px] w-full overflow-hidden p-5 text-left sm:p-8">
+      <div
+        data-testid="today-workout-hero"
+        className="group relative min-h-[260px] w-full overflow-hidden p-4 text-left sm:min-h-[300px] sm:p-6"
+      >
         <img
           src={image}
           alt={title}
@@ -456,38 +539,44 @@ function TodayWorkoutHero({
           data-testid="today-workout-hero-media-scrim"
           className="workout-media-contrast-scrim absolute inset-0 bg-[radial-gradient(circle_at_70%_36%,rgb(var(--accent-rgb)/0.24),transparent_26%),linear-gradient(90deg,color-mix(in_srgb,var(--color-background)_99%,transparent)_0%,color-mix(in_srgb,var(--color-background)_94%,transparent)_46%,color-mix(in_srgb,var(--color-background)_42%,transparent)_100%)] dark:bg-[radial-gradient(circle_at_72%_34%,rgb(var(--accent-rgb)/0.28),transparent_28%),linear-gradient(90deg,color-mix(in_srgb,var(--color-background)_99%,transparent)_0%,color-mix(in_srgb,var(--color-background)_92%,transparent)_48%,color-mix(in_srgb,var(--color-background)_36%,transparent)_100%)]"
         />
-        <div className="relative z-10 flex h-full max-w-3xl flex-col gap-5 sm:gap-7">
+        <div className="relative z-10 flex h-full max-w-3xl flex-col gap-4 sm:gap-5">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-black tracking-normal md:text-3xl">
+            <h1 className="text-xl font-black tracking-normal md:text-2xl">
               {t("user.workout.dashboard.hero.title")}
             </h1>
             <Badge
               variant="secondary"
               className={cn(
                 "rounded-full border px-4 py-1 text-[11px] font-black uppercase",
-                hasActivePlan
+                hasActiveSession || hasActivePlan
                   ? "border-primary/30 bg-primary/10 text-primary"
                   : "border-primary/25 bg-primary/10 text-primary",
               )}
             >
-              {hasActivePlan
+              {hasActiveSession
+                ? t("user.workout.dashboard.hero.activeSessionBadge")
+                : hasActivePlan
                 ? t("user.workout.dashboard.hero.activeBadge")
                 : t("user.workout.dashboard.hero.noActiveBadge")}
             </Badge>
           </div>
 
-          <div className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary sm:size-16">
-            <DumbbellIcon className="size-6 sm:size-8" />
+          <div className="grid size-10 place-items-center rounded-full bg-primary/10 text-primary sm:size-12">
+            <DumbbellIcon className="size-5 sm:size-6" />
           </div>
 
           <div>
             <p className="text-sm font-semibold text-muted-foreground">
-              {hasActivePlan
+              {hasActiveSession
+                ? t("user.workout.dashboard.hero.activeSessionLabel")
+                : hasActivePlan
                 ? t("user.workout.dashboard.date.today")
                 : t("user.workout.dashboard.hero.statusLabel")}
             </p>
-            <h2 className="mt-1 text-3xl font-black leading-tight md:text-4xl">
-              {hasActivePlan ? (
+            <h2 className="mt-1 text-2xl font-black leading-tight md:text-3xl">
+              {hasActiveSession ? (
+                <span className="text-primary">{title}</span>
+              ) : hasActivePlan ? (
                 <>
                   {t("user.workout.dashboard.hero.todayIsPrefix")}{" "}
                   <span className="text-primary">{title}</span>
@@ -501,7 +590,13 @@ function TodayWorkoutHero({
                 </>
               )}
             </h2>
-            {hasActivePlan ? (
+            {hasActiveSession ? (
+              <p className="mt-2 max-w-md text-sm text-muted-foreground">
+                {isActiveRun
+                  ? t("user.workout.dashboard.hero.activeRunDescription")
+                  : t("user.workout.dashboard.hero.activeWorkoutDescription")}
+              </p>
+            ) : hasActivePlan ? (
               <p className="mt-2 max-w-md text-sm text-muted-foreground">
                 {t("user.workout.dashboard.hero.activeDescription")}
               </p>
@@ -512,7 +607,7 @@ function TodayWorkoutHero({
             )}
           </div>
 
-          {hasActivePlan ? (
+          {hasActivePlan && !hasActiveSession ? (
             <div className="workout-glass-card max-w-lg rounded-3xl p-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -533,7 +628,7 @@ function TodayWorkoutHero({
                 <p className="text-sm font-black text-primary">{progress}%</p>
               </div>
               <div className="mt-3">
-                <ProgressBar value={progress || 68} />
+                <ProgressBar value={progress} />
               </div>
               <p className="mt-3 text-sm text-muted-foreground">
                 {t("user.workout.dashboard.hero.todayFocus", {
@@ -543,48 +638,101 @@ function TodayWorkoutHero({
             </div>
           ) : null}
 
-          <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-            <MetricPill
-              icon={Clock3Icon}
-              value={hasActivePlan ? formatMetricDuration(durationSeconds || 92700) : "00:00:00"}
-              label={t("user.workout.dashboard.metrics.duration")}
-              tone="text-muted-foreground"
-            />
-            <MetricPill
-              icon={FlameIcon}
-              value={hasActivePlan ? formatNumber(calories || 782) : "0"}
-              label={t("user.workout.dashboard.metrics.calories")}
-            />
-            <MetricPill
-              icon={HeartPulseIcon}
-              value={hasActivePlan ? (workoutCount > 0 ? "145" : "145") : "--"}
-              label={t("user.workout.dashboard.metrics.averagePulse")}
-              tone="text-red-500"
-            />
-            <MetricPill
-              icon={TargetIcon}
-              value={hasActivePlan ? `${Math.max(40, Math.min(100, workoutCount * 20))}%` : "0%"}
-              label={t("user.workout.dashboard.metrics.efficiency")}
-            />
-          </div>
+          {isActiveRun ? (
+            <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+              <MetricPill
+                icon={RouteIcon}
+                value={formatRunningDistance(get(activeRunMetrics, "distanceMeters", 0))}
+                label={t("user.workout.dashboard.metrics.distance")}
+                tone="text-green-600"
+              />
+              <MetricPill
+                icon={Clock3Icon}
+                value={formatMetricDuration(get(activeRunMetrics, "durationSeconds", 0))}
+                label={t("user.workout.dashboard.metrics.duration")}
+                tone="text-muted-foreground"
+              />
+              <MetricPill
+                icon={GaugeIcon}
+                value={formatPace(get(activeRunMetrics, "averagePaceSecondsPerKm"))}
+                label={t("user.workout.dashboard.metrics.averagePace")}
+              />
+              <MetricPill
+                icon={FlameIcon}
+                value={formatNumber(get(activeRunMetrics, "caloriesBurned", 0))}
+                label={t("user.workout.dashboard.metrics.calories")}
+              />
+            </div>
+          ) : isActiveWorkout ? (
+            <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+              <MetricPill
+                icon={Clock3Icon}
+                value={formatMetricDuration(get(activeWorkoutMetrics, "durationSeconds", 0))}
+                label={t("user.workout.dashboard.metrics.duration")}
+                tone="text-muted-foreground"
+              />
+              <MetricPill
+                icon={DumbbellIcon}
+                value={formatNumber(get(activeWorkoutMetrics, "exerciseCount", 0))}
+                label={t("user.workout.exercises")}
+              />
+              <MetricPill
+                icon={FlameIcon}
+                value={formatNumber(calories)}
+                label={t("user.workout.dashboard.metrics.calories")}
+              />
+              <MetricPill
+                icon={TargetIcon}
+                value="--"
+                label={t("user.workout.dashboard.metrics.efficiency")}
+              />
+            </div>
+          ) : shouldShowMetrics ? (
+            <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+              <MetricPill
+                icon={Clock3Icon}
+                value={hasActivePlan ? formatMetricDuration(durationSeconds || 92700) : "00:00:00"}
+                label={t("user.workout.dashboard.metrics.duration")}
+                tone="text-muted-foreground"
+              />
+              <MetricPill
+                icon={FlameIcon}
+                value={hasActivePlan ? formatNumber(calories || 782) : "0"}
+                label={t("user.workout.dashboard.metrics.calories")}
+              />
+              <MetricPill
+                icon={HeartPulseIcon}
+                value={hasActivePlan ? (workoutCount > 0 ? "145" : "145") : "--"}
+                label={t("user.workout.dashboard.metrics.averagePulse")}
+                tone="text-red-500"
+              />
+              <MetricPill
+                icon={TargetIcon}
+                value={hasActivePlan ? `${Math.max(40, Math.min(100, workoutCount * 20))}%` : "0%"}
+                label={t("user.workout.dashboard.metrics.efficiency")}
+              />
+            </div>
+          ) : null}
 
           <div className="mt-auto flex flex-wrap gap-3">
             <Button
               type="button"
-              size="xl"
-              className="rounded-2xl px-7"
-              onClick={hasActivePlan ? onOpen : onCreate}
+              size="lg"
+              className="rounded-2xl px-6"
+              onClick={hasActiveSession || hasActivePlan ? onOpen : onCreate}
             >
               <PlayIcon data-icon="inline-start" />
-              {hasActivePlan
+              {hasActiveSession
+                ? t("user.workout.dashboard.running.continue")
+                : hasActivePlan
                 ? t("user.workout.dashboard.hero.startToday")
                 : t("user.workout.dashboard.hero.choosePlan")}
             </Button>
-            {!hasActivePlan ? (
+            {!hasActivePlan && !hasActiveSession ? (
               <Button
                 type="button"
                 variant="outline"
-                size="xl"
+                size="lg"
                 className="rounded-2xl border-white/10 bg-white/10"
                 onClick={onCreatePlan}
               >
@@ -595,6 +743,97 @@ function TodayWorkoutHero({
         </div>
       </div>
     </Card>
+  );
+}
+
+function RecommendedPlansStrip({
+  plans = [],
+  onOpenPlans,
+  onRetry,
+  isLoading,
+  isError,
+  t,
+}) {
+  const visiblePlans = take(plans, 6);
+
+  return (
+    <section
+      aria-label={t("user.workout.dashboard.discovery.recommendedTitle")}
+      className="workout-glass-card rounded-2xl border bg-card/95 py-5"
+    >
+      <div className="flex items-end justify-between gap-3 px-5">
+        <div>
+          <h2 className="text-lg font-black">
+            {t("user.workout.dashboard.discovery.recommendedTitle")}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {t("user.workout.dashboard.discovery.recommendedSubtitle")}
+          </p>
+        </div>
+      </div>
+      <div
+        data-testid="recommended-plans-scroll-row"
+        className="mt-4 flex gap-3 overflow-x-auto px-5 pb-1 [scrollbar-width:thin]"
+      >
+        {visiblePlans.length === 0 ? (
+          <div
+            data-testid="recommended-plans-empty"
+            className="min-w-full rounded-2xl border border-dashed bg-background/55 px-5 py-6 text-sm text-muted-foreground"
+          >
+            <p className="font-semibold text-foreground">
+              {isLoading
+                ? t("user.workout.dashboard.discovery.loading")
+                : t("user.workout.dashboard.discovery.empty")}
+            </p>
+            {isError ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-3 rounded-xl"
+                onClick={onRetry}
+              >
+                {t("user.workout.dashboard.discovery.retry")}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+        {map(visiblePlans, (plan) => (
+          <button
+            key={plan.id}
+            type="button"
+            onClick={onOpenPlans}
+            className="group grid min-h-32 min-w-[280px] grid-cols-[104px_1fr] overflow-hidden rounded-2xl border bg-background/65 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-primary/35 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-w-[340px]"
+          >
+            <img
+              src={get(plan, "coverImageUrl")}
+              alt={get(plan, "name")}
+              className="h-full min-h-32 w-full object-cover"
+              loading="lazy"
+            />
+            <span className="flex min-w-0 flex-col p-4">
+              <span className="truncate text-sm font-black">
+                {get(plan, "name")}
+              </span>
+              <span className="mt-1 text-xs text-muted-foreground">
+                {t("user.workout.dashboard.discovery.durationWeeks", {
+                  count:
+                    get(plan, "durationWeeks") ||
+                    Math.max(1, Math.round((toNumber(get(plan, "days")) || 28) / 7)),
+                })}{" "}
+                • {get(plan, "level", get(plan, "difficulty", ""))}
+              </span>
+              <span className="mt-2 line-clamp-2 text-xs text-muted-foreground">
+                {get(plan, "description")}
+              </span>
+              <span className="mt-auto inline-flex w-fit rounded-full border border-primary/25 px-3 py-1 text-xs font-black text-primary">
+                {t("user.workout.dashboard.discovery.select")}
+              </span>
+            </span>
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -640,239 +879,6 @@ function TodayWorkoutStickyCta({
   );
 }
 
-function RunningActivityCard({ activeSession, onPrimary, t, language }) {
-  const session = activeSession ?? null;
-  const metrics = getRunningMetrics(session);
-  const isActive = Boolean(activeSession);
-  const routePoints = isArray(get(session, "points"))
-    ? get(session, "points")
-    : [];
-  const routePolyline = get(session, "route.polyline", null);
-  const routeQualityScore = get(session, "metrics.gpsQualityScore", null);
-
-  return (
-    <Card className="relative min-h-[260px] overflow-hidden p-0">
-      <RunMapPanel
-        title={null}
-        variant="preview"
-        points={routePoints}
-        polyline={routePolyline}
-        qualityScore={routeQualityScore}
-        emptyLabel={
-          session
-            ? t("user.workout.dashboard.running.mapWaiting")
-            : t("user.workout.dashboard.running.mapEmpty")
-        }
-        showQuality={Boolean(session)}
-        className="absolute inset-0 opacity-20 md:inset-y-0 md:left-auto md:right-0 md:w-[54%] md:opacity-100"
-        surfaceClassName="h-full min-h-0 rounded-none md:h-full"
-      />
-      <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-r from-card via-card/95 to-card/65 md:to-card/10" />
-      <CardContent className="relative z-10 flex min-h-[260px] max-w-3xl flex-col gap-6 p-8">
-        <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-2xl font-black">
-            {t("user.workout.dashboard.running.title")}
-          </h2>
-          <Badge
-            variant="secondary"
-            className={cn(
-              "rounded-full px-4 py-1",
-              isActive
-                ? "bg-primary/10 text-primary"
-                : "bg-green-500/10 text-green-600",
-            )}
-          >
-            {t("user.workout.dashboard.activity.running")}
-          </Badge>
-        </div>
-
-        <div className="grid size-16 place-items-center rounded-full bg-green-500/10 text-green-600">
-          <RouteIcon className="size-8" />
-        </div>
-
-        {session ? (
-          <div className="grid gap-5 sm:grid-cols-4">
-            <MetricPill
-              icon={RouteIcon}
-              value={formatRunningDistance(metrics.distanceMeters)}
-              label={t("user.workout.dashboard.metrics.distance")}
-              tone="text-green-600"
-            />
-            <MetricPill
-              icon={Clock3Icon}
-              value={formatMetricDuration(metrics.durationSeconds)}
-              label={t("user.workout.dashboard.metrics.duration")}
-              tone="text-muted-foreground"
-            />
-            <MetricPill
-              icon={GaugeIcon}
-              value={formatPace(metrics.averagePaceSecondsPerKm)}
-              label={t("user.workout.dashboard.metrics.averagePace")}
-              tone="text-primary"
-            />
-            <MetricPill
-              icon={FlameIcon}
-              value={formatNumber(metrics.caloriesBurned)}
-              label={t("user.workout.dashboard.metrics.calories")}
-              tone="text-primary"
-            />
-          </div>
-        ) : (
-          <p className="max-w-md text-sm text-muted-foreground">
-            {t("user.workout.dashboard.running.noSessionDescription")}
-          </p>
-        )}
-
-        <div className="mt-auto flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-          <span className="inline-flex items-center gap-2">
-            <MapPinIcon className="size-4" />
-            {t("user.workout.dashboard.running.location")}
-          </span>
-          {isActive ? (
-            <span>{formatActivityTime(get(session, "startedAt"), t, language)}</span>
-          ) : null}
-          <Button className="ml-auto rounded-2xl" onClick={onPrimary}>
-            <PlayIcon data-icon="inline-start" />
-            {isActive
-              ? t("user.workout.dashboard.running.continue")
-              : t("user.workout.dashboard.running.start")}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function NoPlanDiscoverySection({
-  onOpenPlans,
-  onOpenRunning,
-  onOpenExercises,
-  onOpenReport,
-  t,
-}) {
-  const quickLinks = [
-    {
-      label: t("user.workout.dashboard.discovery.planLabel"),
-      description: t("user.workout.dashboard.discovery.planDescription"),
-      icon: CalendarCheck2Icon,
-      onClick: onOpenPlans,
-      tone: "text-primary bg-primary/10",
-    },
-    {
-      label: t("user.workout.dashboard.discovery.runningLabel"),
-      description: t("user.workout.dashboard.discovery.runningDescription"),
-      icon: RouteIcon,
-      onClick: onOpenRunning,
-      tone: "text-green-500 bg-green-500/10",
-    },
-    {
-      label: t("user.workout.dashboard.discovery.exercisesLabel"),
-      description: t("user.workout.dashboard.discovery.exercisesDescription"),
-      icon: DumbbellIcon,
-      onClick: onOpenExercises,
-      tone: "text-blue-500 bg-blue-500/10",
-    },
-    {
-      label: t("user.workout.dashboard.discovery.reportLabel"),
-      description: t("user.workout.dashboard.discovery.reportDescription"),
-      icon: GaugeIcon,
-      onClick: onOpenReport,
-      tone: "text-purple-500 bg-purple-500/10",
-    },
-  ];
-
-  return (
-    <Card className="workout-glass-card">
-      <CardContent className="grid gap-6 p-5 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-900/10 pb-5 dark:border-white/10">
-          <div className="flex items-center gap-3">
-            <span className="grid size-12 place-items-center rounded-2xl bg-green-500/10 text-green-500">
-              <RouteIcon className="size-6" />
-            </span>
-            <div>
-              <h2 className="text-xl font-black">Tezkor kirish</h2>
-              <p className="text-sm text-muted-foreground">
-                Sevimli funksiyalaringizga tezda o'ting
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {map(quickLinks, (item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={item.onClick}
-                  className="flex min-w-32 items-center gap-3 rounded-2xl border border-slate-900/10 bg-white/55 px-4 py-3 text-left transition hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
-                >
-                  <span className={cn("grid size-9 place-items-center rounded-xl", item.tone)}>
-                    <Icon className="size-4" />
-                  </span>
-                  <span>
-                    <span className="block text-sm font-black">{item.label}</span>
-                    <span className="block text-xs text-muted-foreground">
-                      {item.description}
-                    </span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-black">
-              {t("user.workout.dashboard.discovery.recommendedTitle")}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              {t("user.workout.dashboard.discovery.recommendedSubtitle")}
-            </p>
-          </div>
-          <Button variant="ghost" className="rounded-full text-primary" onClick={onOpenPlans}>
-            {t("user.workout.dashboard.common.viewAll")}
-            <ArrowRightIcon data-icon="inline-end" />
-          </Button>
-        </div>
-
-        <div className="grid gap-3 md:grid-cols-3">
-          {map(take(WORKOUT_RECOMMENDED_PLANS, 3), (plan) => (
-            <button
-              key={plan.id}
-              type="button"
-              onClick={onOpenPlans}
-              className="group grid min-h-32 grid-cols-[112px_1fr] overflow-hidden rounded-3xl border border-slate-900/10 bg-white/55 text-left transition hover:-translate-y-0.5 hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:border-white/10 dark:bg-white/[0.04]"
-            >
-              <img
-                src={plan.coverImageUrl}
-                alt={plan.name}
-                className="h-full min-h-32 w-full object-cover"
-                loading="lazy"
-              />
-              <span className="flex min-w-0 flex-col p-4">
-                <span className="truncate text-sm font-black">{plan.name}</span>
-                <span className="mt-1 text-xs text-muted-foreground">
-                  {t("user.workout.dashboard.discovery.durationWeeks", {
-                    count: plan.durationWeeks,
-                  })}{" "}
-                  • {plan.level}
-                </span>
-                <span className="mt-2 line-clamp-2 text-xs text-muted-foreground">
-                  {plan.description}
-                </span>
-                <span className="mt-auto inline-flex w-fit rounded-full border border-primary/25 px-4 py-1 text-xs font-black text-primary">
-                  {t("user.workout.dashboard.discovery.select")}
-                </span>
-              </span>
-            </button>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 function TodaySummaryCard({ weeklyStats, runningStats, activeSession, t }) {
   const activeRunningMetrics = getRunningMetrics(activeSession);
   const activeRunCount = activeSession?.workoutSessionId ? 1 : 0;
@@ -891,7 +897,7 @@ function TodaySummaryCard({ weeklyStats, runningStats, activeSession, t }) {
     clampMetric(activeRunningMetrics.durationSeconds);
 
   return (
-    <Card>
+    <Card className="py-6">
       <CardHeader>
         <CardTitle>{t("user.workout.dashboard.todaySummary.title")}</CardTitle>
       </CardHeader>
@@ -971,7 +977,7 @@ function WeatherCard({ weather, isLoading, isError, locationStatus, t }) {
       : weatherData.location;
 
   return (
-    <Card>
+    <Card className="py-6">
       <CardHeader className="flex-row items-center justify-between gap-4">
         <CardTitle>{t("user.workout.dashboard.weather.title")}</CardTitle>
         <CloudSunIcon className="size-5 text-primary" />
@@ -1044,7 +1050,6 @@ function WeeklyStatsCard({
   completedDates,
   weeklyStats,
   runningStats,
-  onOpenHistory,
   t,
 }) {
   const days = React.useMemo(
@@ -1055,12 +1060,9 @@ function WeeklyStatsCard({
     target > 0 ? Math.min(100, Math.round((completed / target) * 100)) : 0;
 
   return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between gap-4">
+    <Card className="py-6">
+      <CardHeader>
         <CardTitle>{t("user.workout.dashboard.weekly.title")}</CardTitle>
-        <Button variant="ghost" className="rounded-full" onClick={onOpenHistory}>
-          {t("user.workout.dashboard.common.viewAll")}
-        </Button>
       </CardHeader>
       <CardContent className="grid gap-6">
         <div className="grid grid-cols-7 gap-2">
@@ -1133,184 +1135,26 @@ function WeeklyStatsCard({
   );
 }
 
-function GoalsCard({ weeklyStats, runningStats, t }) {
-  const calories = clampMetric(get(weeklyStats, "calories", 0));
-  const calorieProgress = clampPercent((calories / DAILY_CALORIE_GOAL) * 100);
-  const distanceMeters = clampMetric(get(runningStats, "totalDistanceMeters", 0));
-  const distanceProgress = clampPercent(
-    (distanceMeters / WEEKLY_DISTANCE_GOAL_METERS) * 100,
-  );
-
-  return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between gap-4">
-        <CardTitle>{t("user.workout.dashboard.goals.title")}</CardTitle>
-        <Button variant="ghost" className="rounded-full">
-          {t("user.workout.dashboard.goals.edit")}
-        </Button>
-      </CardHeader>
-      <CardContent className="grid gap-5">
-        <div className="grid grid-cols-[44px_1fr_auto] items-center gap-4">
-          <div className="grid size-11 place-items-center rounded-full bg-primary/10 text-primary">
-            <FlameIcon className="size-6" />
-          </div>
-          <div>
-            <p className="font-semibold">
-              {t("user.workout.dashboard.goals.calorieGoal")}
-            </p>
-            <p className="text-lg font-black">
-              {formatNumber(calories)} / {formatNumber(DAILY_CALORIE_GOAL)} kcal
-            </p>
-            <div className="mt-2">
-              <ProgressBar value={calorieProgress} />
-            </div>
-          </div>
-          <p className="font-semibold text-muted-foreground">{calorieProgress}%</p>
-        </div>
-        <div className="grid grid-cols-[44px_1fr_auto] items-center gap-4">
-          <div className="grid size-11 place-items-center rounded-full bg-green-500/10 text-green-600">
-            <RouteIcon className="size-6" />
-          </div>
-          <div>
-            <p className="font-semibold">
-              {t("user.workout.dashboard.goals.weeklyDistance")}
-            </p>
-            <p className="text-lg font-black">
-              {formatRunningDistance(distanceMeters)} / 40 km
-            </p>
-            <div className="mt-2">
-              <ProgressBar value={distanceProgress} className="bg-green-500" />
-            </div>
-          </div>
-          <p className="font-semibold text-muted-foreground">{distanceProgress}%</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function AchievementsCard({ personalRecordCount, t }) {
-  const achievementCount = clampMetric(personalRecordCount);
-
-  return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between gap-4">
-        <CardTitle>{t("user.workout.dashboard.achievements.title")}</CardTitle>
-        <Button variant="ghost" className="rounded-full">
-          {t("user.workout.dashboard.common.viewAll")}
-        </Button>
-      </CardHeader>
-      <CardContent className="flex flex-wrap items-center gap-4">
-        {achievementCount <= 0 ? (
-          <div className="flex min-h-14 items-center gap-3 rounded-2xl border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-            <TrophyIcon className="size-5 text-primary" aria-hidden="true" />
-            <span>{t("user.workout.dashboard.achievements.empty")}</span>
-          </div>
-        ) : (
-          <>
-            {map(
-              [TrophyIcon, MedalIcon, TargetIcon, CalendarCheck2Icon],
-              (Icon, index) => (
-                <div
-                  key={index}
-                  className={cn(
-                    "grid size-14 place-items-center rounded-full border text-primary shadow-sm",
-                    index === 1
-                      ? "bg-violet-500/10 text-violet-600"
-                      : index === 2
-                        ? "bg-amber-500/10 text-amber-600"
-                        : "bg-primary/10",
-                  )}
-                >
-                  <Icon className="size-7" />
-                </div>
-              ),
-            )}
-            <div className="grid size-14 place-items-center rounded-full border bg-background text-sm font-black">
-              +{achievementCount}
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function StreakCard({ streak, t }) {
-  const currentDays = clampMetric(get(streak, "currentDays", 0));
-  const bestDays = clampMetric(get(streak, "bestDays", currentDays));
-
-  return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between gap-4">
-        <CardTitle>{t("user.workout.dashboard.streak.title")}</CardTitle>
-        <div className="grid size-10 place-items-center rounded-full bg-primary/10 text-primary">
-          <FlameIcon className="size-5" />
-        </div>
-      </CardHeader>
-      <CardContent>
-        <p className="text-3xl font-black">
-          {t("user.workout.dashboard.streak.days", { count: currentDays })}
-        </p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {t("user.workout.dashboard.streak.best", { count: bestDays })}
-        </p>
-      </CardContent>
-    </Card>
-  );
-}
-
-function RecoveryCard({ recovery, t }) {
-  const status = get(recovery, "status", "no_data");
-  const score = clampPercent(get(recovery, "score", 0));
-  const recommendation =
-    get(recovery, "recommendation") ||
-    t("user.workout.dashboard.recovery.fallbackRecommendation");
-  const statusLabel = t(`user.workout.dashboard.recovery.status.${status}`, {
-    defaultValue: t("user.workout.dashboard.recovery.status.no_data"),
-  });
-
-  return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between gap-4">
-        <CardTitle>{t("user.workout.dashboard.recovery.title")}</CardTitle>
-        <div className="grid size-10 place-items-center rounded-full bg-green-500/10 text-green-600">
-          <HeartPulseIcon className="size-5" />
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-end justify-between gap-3">
-          <p className="text-xl font-black text-green-600">{statusLabel}</p>
-          <p className="text-lg font-black">{score}%</p>
-        </div>
-        <div className="mt-3">
-          <ProgressBar value={score} className="bg-green-500" />
-        </div>
-        <p className="mt-3 text-sm text-muted-foreground">{recommendation}</p>
-      </CardContent>
-    </Card>
-  );
-}
-
 function RecentActivitiesCard({
   activities,
-  onOpenHistory,
   onOpenActivity,
   t,
   language,
 }) {
+  const latestActivities = take(activities, 1);
+
   return (
     <Card className="overflow-hidden p-0">
       <CardHeader className="px-8 pt-8">
         <CardTitle>{t("user.workout.dashboard.recent.title")}</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        {activities.length === 0 ? (
+        {latestActivities.length === 0 ? (
           <div className="px-8 py-10 text-sm text-muted-foreground">
             {t("user.workout.dashboard.recent.empty")}
           </div>
         ) : null}
-        {map(activities, (activity) => (
+        {map(latestActivities, (activity) => (
           <div
             key={`${activity.type}-${activity.id}`}
             role="button"
@@ -1389,14 +1233,6 @@ function RecentActivitiesCard({
             </div>
           </div>
         ))}
-        <button
-          type="button"
-          className="flex w-full items-center justify-center gap-2 border-t px-6 py-4 text-sm font-black text-primary transition-colors hover:bg-muted/40"
-          onClick={onOpenHistory}
-        >
-          {t("user.workout.dashboard.common.viewAll")}
-          <ArrowRightIcon className="size-4" />
-        </button>
       </CardContent>
     </Card>
   );
@@ -1407,28 +1243,46 @@ const WorkoutDashboardPage = () => {
   const navigate = useNavigate();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const { overview: workoutOverview } = useWorkoutOverview();
-  const { sessions: sessionHistory } = useWorkoutSessionHistory({ limit: 6 });
-  const { activePlan: rawActivePlan, startPlan } = useWorkoutPlan();
+  const { sessions: sessionHistory } = useWorkoutSessionHistory({ limit: 1 });
+  const {
+    activePlan: rawActivePlan,
+    templates: workoutTemplates = [],
+    startPlan,
+    isLoading: arePlansLoading,
+    isError: arePlansError,
+    refetch: refetchPlans,
+  } = useWorkoutPlan();
   const { activeSession } = useRunningActiveSession();
-  const { sessions: runningSessions } = useRunningSessions({ limit: 4 });
+  const { activeWorkoutSession } = useActiveWorkoutSession();
+  const { sessions: runningSessions } = useRunningSessions({ limit: 1 });
   const { stats: runningStats = {} } = useRunningStatsSummary();
-  const { startRunningSession } = useStartRunningSession();
   const {
     weather,
     isLoading: isWeatherLoading,
     isError: isWeatherError,
     locationStatus,
   } = useWorkoutWeatherToday();
+  const overviewActivePlan = get(workoutOverview, "activePlan", null);
   const activePlan = React.useMemo(
-    () => deriveWorkoutPlanMetrics(rawActivePlan),
-    [rawActivePlan],
+    () => deriveWorkoutPlanMetrics(overviewActivePlan || rawActivePlan),
+    [overviewActivePlan, rawActivePlan],
   );
   const hasActivePlan = Boolean(activePlan);
   const nextWorkouts = React.useMemo(
     () => buildNextWorkouts(activePlan, new Date(), t, i18n.resolvedLanguage),
     [activePlan, i18n.resolvedLanguage, t],
   );
-  const featuredWorkout = nextWorkouts[0] ?? null;
+  const activeHeroItem = React.useMemo(
+    () => getLatestActiveHeroItem(activeSession, activeWorkoutSession, t),
+    [activeSession, activeWorkoutSession, t],
+  );
+  const featuredWorkout = activeHeroItem ?? nextWorkouts[0] ?? null;
+  const featuredWorkoutType = get(featuredWorkout, "type", null);
+  const hasActiveHeroSession = includes(
+    ["active-run", "active-workout"],
+    featuredWorkoutType,
+  );
+  const shouldShowRecommendedPlans = !hasActivePlan && !hasActiveHeroSession;
   const activities = React.useMemo(
     () => buildActivityFeed(sessionHistory, runningSessions, t),
     [runningSessions, sessionHistory, t],
@@ -1437,19 +1291,23 @@ const WorkoutDashboardPage = () => {
   const completedDates = React.useMemo(
     () =>
       isArray(get(workoutOverview, "recentWorkoutDays"))
-        ? filter(map(workoutOverview.recentWorkoutDays, (item) => getWorkoutDayDateKey(item)), Boolean)
+        ? filter(
+            map(workoutOverview.recentWorkoutDays, (item) => getWorkoutDayDateKey(item)),
+            Boolean,
+          )
         : [],
     [workoutOverview],
   );
 
   const targetWorkouts =
+    toNumber(get(activePlan, "targetWorkouts")) ||
     toNumber(get(activePlan, "daysPerWeek")) ||
     toNumber(get(workoutOverview, "weeklyStats.target")) ||
     4;
   const completedWorkouts = Math.min(
     targetWorkouts,
-    toNumber(get(workoutOverview, "weeklyStats.count")) ||
-      toNumber(get(activePlan, "completedWorkouts")) ||
+    toNumber(get(activePlan, "completedWorkouts")) ||
+      toNumber(get(workoutOverview, "weeklyStats.count")) ||
       0,
   );
 
@@ -1462,18 +1320,6 @@ const WorkoutDashboardPage = () => {
 
   const openPlans = React.useCallback(() => {
     navigate("/user/workout/plans");
-  }, [navigate]);
-
-  const openExercises = React.useCallback(() => {
-    navigate("/user/workout/exercises");
-  }, [navigate]);
-
-  const openReport = React.useCallback(() => {
-    navigate("/user/workout/report");
-  }, [navigate]);
-
-  const openHistory = React.useCallback(() => {
-    navigate("/user/workout/history");
   }, [navigate]);
 
   const openActivity = React.useCallback(
@@ -1521,16 +1367,6 @@ const WorkoutDashboardPage = () => {
               ? fallbackWorkoutDayIndex
               : 0;
 
-        if (
-          Number.isInteger(get(targetWorkout, "dayIndex")) &&
-          isWorkoutDayLocked(activePlan, resolvedDayIndex)
-        ) {
-          navigate(
-            `/user/workout/plans/${get(activePlan, "id")}/days/${resolvedDayIndex}`,
-          );
-          return;
-        }
-
         navigate(
           `/user/workout/plans/${get(activePlan, "id")}/days/${resolvedDayIndex}/session`,
         );
@@ -1544,29 +1380,32 @@ const WorkoutDashboardPage = () => {
     [activePlan, navigate, startPlan, t],
   );
 
-  const handleRunningPrimary = React.useCallback(async () => {
-    if (activeSession?.workoutSessionId) {
-      navigate(`/user/workout/running/live/${activeSession.workoutSessionId}`);
-      return;
-    }
+  const handleHeroPrimary = React.useCallback(() => {
+    const heroType = get(featuredWorkout, "type", null);
 
-    try {
-      const session = await startRunningSession({ source: "home" });
-      const workoutSessionId = get(session, "workoutSessionId", get(session, "id"));
+    if (heroType === "active-run") {
+      const workoutSessionId = get(featuredWorkout, "id", null);
 
       if (workoutSessionId) {
         navigate(`/user/workout/running/live/${workoutSessionId}`);
-        return;
       }
 
-      navigate("/user/workout/history");
-    } catch (error) {
-      toast.error(
-        get(error, "response.data.message") ||
-          t("user.workout.dashboard.toast.startRunError"),
-      );
+      return;
     }
-  }, [activeSession, navigate, startRunningSession, t]);
+
+    if (heroType === "active-workout") {
+      const planId = get(featuredWorkout, "planId", null);
+      const dayIndex = get(featuredWorkout, "dayIndex", null);
+
+      if (planId && Number.isInteger(dayIndex)) {
+        navigate(`/user/workout/plans/${planId}/days/${dayIndex}/session`);
+      }
+
+      return;
+    }
+
+    handleStartSession(featuredWorkout);
+  }, [featuredWorkout, handleStartSession, navigate]);
 
   return (
     <PageTransition mode="slide-up">
@@ -1577,29 +1416,23 @@ const WorkoutDashboardPage = () => {
               item={featuredWorkout}
               activePlan={activePlan}
               weeklyStats={get(workoutOverview, "weeklyStats", {})}
-              onOpen={() => handleStartSession(featuredWorkout)}
+              onOpen={handleHeroPrimary}
               onCreate={openPlans}
               onCreatePlan={createPlan}
               t={t}
             />
-            {!hasActivePlan ? (
-              <NoPlanDiscoverySection
-                onOpenPlans={openPlans}
-                onOpenRunning={handleRunningPrimary}
-                onOpenExercises={openExercises}
-                onOpenReport={openReport}
-                t={t}
-              />
-            ) : null}
-            <RunningActivityCard
-              activeSession={activeSession}
-              onPrimary={handleRunningPrimary}
+          {shouldShowRecommendedPlans ? (
+            <RecommendedPlansStrip
+              plans={workoutTemplates}
+              onOpenPlans={openPlans}
+              onRetry={refetchPlans}
+              isLoading={arePlansLoading}
+              isError={arePlansError}
               t={t}
-              language={i18n.resolvedLanguage}
             />
+          ) : null}
             <RecentActivitiesCard
               activities={activities}
-              onOpenHistory={openHistory}
               onOpenActivity={openActivity}
               t={t}
               language={i18n.resolvedLanguage}
@@ -1626,31 +1459,14 @@ const WorkoutDashboardPage = () => {
               completedDates={completedDates}
               weeklyStats={get(workoutOverview, "weeklyStats", {})}
               runningStats={runningStats}
-              onOpenHistory={openHistory}
               t={t}
             />
-            <GoalsCard
-              weeklyStats={get(workoutOverview, "weeklyStats", {})}
-              runningStats={runningStats}
-              t={t}
-            />
-            <AchievementsCard
-              personalRecordCount={get(workoutOverview, "personalRecordCount", 0)}
-              t={t}
-            />
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-              <StreakCard streak={get(workoutOverview, "streak", {})} t={t} />
-              <RecoveryCard
-                recovery={get(workoutOverview, "recovery", {})}
-                t={t}
-              />
-            </div>
           </aside>
         </div>
         <TodayWorkoutStickyCta
           item={featuredWorkout}
-          hasActivePlan={hasActivePlan}
-          onStart={() => handleStartSession(featuredWorkout)}
+          hasActivePlan={hasActiveHeroSession || hasActivePlan}
+          onStart={handleHeroPrimary}
           onOpenPlans={openPlans}
           t={t}
         />

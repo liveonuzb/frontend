@@ -1,25 +1,22 @@
-import {
-  BarChart3Icon,
-  ClipboardListIcon,
-  DumbbellIcon,
-  HistoryIcon,
-  HouseIcon,
-} from "lucide-react";
+import { DumbbellIcon } from "lucide-react";
+import { ChartCircle, Chart1, ClipboardText, Clock } from "iconsax-reactjs";
 
 export const WORKOUT_NAV_ITEMS = [
   {
-    to: "/user/workout/home",
-    label: "Home",
+    to: "/user/workout/overview",
+    label: "Overview",
     labelKey: "user.workout.nav.home",
-    icon: HouseIcon,
+    icon: ChartCircle,
     match: (pathname) =>
-      pathname === "/user/workout" || pathname.startsWith("/user/workout/home"),
+      pathname === "/user/workout" ||
+      pathname.startsWith("/user/workout/home") ||
+      pathname.startsWith("/user/workout/overview"),
   },
   {
     to: "/user/workout/plans",
     label: "Plans",
     labelKey: "user.workout.nav.plans",
-    icon: ClipboardListIcon,
+    icon: ClipboardText,
     match: (pathname) => pathname.startsWith("/user/workout/plans"),
   },
   {
@@ -33,14 +30,14 @@ export const WORKOUT_NAV_ITEMS = [
     to: "/user/workout/history",
     label: "History",
     labelKey: "user.workout.nav.history",
-    icon: HistoryIcon,
+    icon: Clock,
     match: (pathname) => pathname.startsWith("/user/workout/history"),
   },
   {
     to: "/user/workout/report",
     label: "Report",
     labelKey: "user.workout.nav.report",
-    icon: BarChart3Icon,
+    icon: Chart1,
     match: (pathname) => pathname.startsWith("/user/workout/report"),
   },
 ];

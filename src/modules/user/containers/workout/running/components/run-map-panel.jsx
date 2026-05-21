@@ -646,13 +646,6 @@ const MapLibreRouteMap = ({
       mapRef.current = map;
       currentStyleUrlRef.current = initialStyleUrlRef.current;
       readyRef.current = false;
-      map.addControl(
-        new maplibregl.NavigationControl({
-          showCompass: false,
-          visualizePitch: false,
-        }),
-        "top-right",
-      );
 
       markReady = () => {
         if (cancelled || failed || readyRef.current) {
@@ -1046,7 +1039,7 @@ const RunMapPanel = ({
   }
 
   return (
-    <Card className={cn("overflow-hidden", className)}>
+    <Card className={cn("overflow-hidden py-6", className)}>
       {title ? (
         <CardHeader>
           <CardTitle>{title}</CardTitle>
@@ -1060,6 +1053,4 @@ const RunMapPanel = ({
 };
 
 export default RunMapPanel;
-
-
 

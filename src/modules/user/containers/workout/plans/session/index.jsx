@@ -14,7 +14,7 @@ import {
   trim,
   some,
 } from "lodash";
-import { useNavigate, useParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import {
   ArrowLeftIcon,
@@ -703,7 +703,7 @@ const SessionExerciseCard = ({
   const hasImage = Boolean(get(exercise, "imageUrl"));
 
   return (
-    <Card className="overflow-hidden rounded-3xl border-0 bg-card shadow-sm ring-1 ring-border">
+    <Card className="overflow-hidden rounded-3xl border-0 bg-card py-6 shadow-sm ring-1 ring-border">
       <div className="flex items-start gap-3 px-4 py-4">
         <button
           type="button"
@@ -831,7 +831,12 @@ const WorkoutPlanSessionPage = () => {
   const { t } = useTranslation();
   const { planId, dayIndex: dayIndexParam } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const dayIndex = parseDayIndex(dayIndexParam);
+  const sessionMode = React.useMemo(() => {
+    const searchParams = new URLSearchParams(location.search);
+    return searchParams.get("mode") === "extra" ? "extra" : "planned";
+  }, [location.search]);
   const {
     plan: rawPlan,
     isLoading,
@@ -1035,7 +1040,7 @@ const WorkoutPlanSessionPage = () => {
     }
 
     startRequestKeyRef.current = requestKey;
-    Promise.resolve(startSession(planId, dayIndex))
+    Promise.resolve(startSession(planId, dayIndex, { mode: sessionMode }))
       .then((draft) => {
         if (get(draft, "id")) {
           setServerSessionId(get(draft, "id"));
@@ -1049,8 +1054,17 @@ const WorkoutPlanSessionPage = () => {
         }
         failedStartRequestKeyRef.current = null;
       })
-      .catch(() => {
+      .catch((error) => {
         failedStartRequestKeyRef.current = requestKey;
+        const errorCode =
+          get(error, "response.data.error.code") ||
+          get(error, "response.data.code") ||
+          get(error, "code");
+        if (errorCode === "ACTIVE_WORKOUT_SESSION_EXISTS") {
+          toast.error(t("user.workout.session.activeSessionConflict"));
+          navigate("/user/workout/overview", { replace: true });
+          return;
+        }
         setRemoteDraftPersistenceEnabled(false);
         setRemoteDraftSyncStatus("local-only");
         clearRemoteDraftRetry();
@@ -1061,7 +1075,10 @@ const WorkoutPlanSessionPage = () => {
     planId,
     remoteDraft,
     selectedDay,
+    sessionMode,
     startSession,
+    navigate,
+    t,
   ]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -1105,6 +1122,7 @@ const WorkoutPlanSessionPage = () => {
       ) {
         Promise.resolve(
           updateWorkoutSessionProgress(serverSessionId, {
+            mode: sessionMode,
             planDayKey: payload.dayKey,
             sessionStartTime: new Date(sessionStartTime).toISOString(),
             elapsedSeconds: elapsed,
@@ -1156,6 +1174,7 @@ const WorkoutPlanSessionPage = () => {
     serverSessionId,
     sessionDraftStorageKey,
     sessionStartTime,
+    sessionMode,
     clearRemoteDraftRetry,
     scheduleRemoteDraftRetry,
     updateWorkoutSessionProgress,
@@ -1627,6 +1646,7 @@ const WorkoutPlanSessionPage = () => {
 
   try {
     const completedSession = await finishSession(planId, dayIndex, {
+      mode: sessionMode,
       completionKey,
       planName: get(plan, "name") || t("user.workout.session.workoutPlan"),
       focus,
@@ -1728,7 +1748,7 @@ const WorkoutPlanSessionPage = () => {
             </div>
           </header>
           <main className="flex flex-1 flex-col px-3 py-4">
-            <Card>
+            <Card className="py-6">
               <CardHeader>
                 <CardTitle>
                   {t("user.workout.session.planNotFoundTitle")}
@@ -1758,7 +1778,7 @@ const WorkoutPlanSessionPage = () => {
   if (!selectedDay) {
     return (
       <PageTransition mode="slide-up">
-        <Card>
+        <Card className="py-6">
           <CardHeader>
             <CardTitle>{t("user.workout.session.dayNotFoundTitle")}</CardTitle>
             <CardDescription>
@@ -1873,7 +1893,7 @@ const WorkoutPlanSessionPage = () => {
               />
             ))
           ) : (
-            <Card className="rounded-3xl">
+            <Card className="rounded-3xl py-6">
               <CardHeader>
                 <CardTitle>{t("user.workout.session.noExercisesTitle")}</CardTitle>
                 <CardDescription>
@@ -2096,7 +2116,7 @@ const WorkoutPlanSessionPage = () => {
                     </button>
                   ))}
                   {size(replacementExercises) === 0 ? (
-                    <Card className="rounded-3xl">
+                    <Card className="rounded-3xl py-6">
                       <CardHeader>
                         <CardTitle>
                           {t("user.workout.session.noReplacementTitle")}

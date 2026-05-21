@@ -946,7 +946,7 @@ const AiPreviewCard = ({
   onEditManual,
   t,
 }) => (
-  <Card>
+  <Card className="py-6">
     <CardHeader>
       <CardTitle>
         {get(plan, "name", t("user.workout.planCreate.preview.fallbackName"))}

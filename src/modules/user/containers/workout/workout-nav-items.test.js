@@ -14,7 +14,7 @@ describe("WORKOUT_NAV_ITEMS", () => {
     const { WORKOUT_NAV_ITEMS } = await import("./workout-nav-items.js");
 
     expect(map(WORKOUT_NAV_ITEMS, (item) => item.label)).toEqual([
-      "Home",
+      "Overview",
       "Plans",
       "Exercises",
       "History",
