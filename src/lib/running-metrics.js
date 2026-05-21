@@ -54,6 +54,32 @@ export const calculateLiveRunningDuration = (startedAt) => {
   return Math.max(0, Math.round((Date.now() - started.getTime()) / 1000));
 };
 
+export const calculateLiveRunningActiveDuration = (
+  startedAt,
+  { now = Date.now(), pausedAt = null, pausedDurationSeconds = 0 } = {},
+) => {
+  const started = new Date(startedAt);
+  if (Number.isNaN(started.getTime())) {
+    return 0;
+  }
+
+  const nowTime =
+    typeof now === "number" ? now : new Date(now).getTime();
+  if (!Number.isFinite(nowTime)) {
+    return 0;
+  }
+
+  const pausedTime = pausedAt ? new Date(pausedAt).getTime() : null;
+  const endTime =
+    Number.isFinite(pausedTime) && pausedTime !== null
+      ? Math.min(nowTime, pausedTime)
+      : nowTime;
+  const elapsedSeconds = Math.round((endTime - started.getTime()) / 1000);
+  const storedPausedSeconds = toNumber(pausedDurationSeconds) || 0;
+
+  return Math.max(0, elapsedSeconds - storedPausedSeconds);
+};
+
 const EARTH_RADIUS_METERS = 6371000;
 const LOW_ACCURACY_THRESHOLD_METERS = 75;
 const IMPOSSIBLE_SPEED_THRESHOLD_MPS = 12;
@@ -151,6 +177,15 @@ export const filterRunningRoutePoints = (points = []) => {
   const rejectedPoints = [];
 
   for (const point of orderedPoints) {
+    if (point?.isFilteredOut) {
+      rejectedPoints.push({
+        ...point,
+        isFilteredOut: true,
+        rejectionReason: point?.rejectionReason ?? "filtered",
+      });
+      continue;
+    }
+
     const accuracy = toNumber(point?.accuracy);
     if (Number.isFinite(accuracy) && accuracy > LOW_ACCURACY_THRESHOLD_METERS) {
       rejectedPoints.push({ ...point, isFilteredOut: true, rejectionReason: "low_accuracy" });

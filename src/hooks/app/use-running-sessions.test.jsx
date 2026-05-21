@@ -76,6 +76,29 @@ describe("use-running-sessions", () => {
     );
   });
 
+  it("normalizes paused duration for active running sessions", () => {
+    mockUseGetQuery.mockReturnValue({
+      data: {
+        data: {
+          data: {
+            workoutSessionId: "workout-1",
+            status: "paused",
+            metrics: {
+              pausedDurationSeconds: 90,
+            },
+          },
+        },
+      },
+      isLoading: false,
+    });
+
+    const { result } = renderHook(() => useRunningActiveSession(), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    expect(result.current.activeSession.metrics.pausedDurationSeconds).toBe(90);
+  });
+
   it("starts a running session and invalidates running queries", async () => {
     const response = {
       data: {

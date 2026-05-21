@@ -238,6 +238,17 @@ const getWorkoutSessionRoutePoints = (session) => {
   return isArray(points) ? points : [];
 };
 
+const getWorkoutSessionRouteSegments = (session) => {
+  const directSegments = get(session, "route.segments");
+  const runningSegments = get(session, "runningSession.route.segments");
+
+  if (isArray(directSegments) && directSegments.length > 0) {
+    return directSegments;
+  }
+
+  return isArray(runningSegments) ? runningSegments : [];
+};
+
 const getWorkoutSessionRouteQualityScore = (session) =>
   get(
     session,
@@ -814,6 +825,7 @@ const SessionHistoryPage = () => {
                 const distanceMeters = getWorkoutSessionDistanceMeters(session);
                 const paceSecondsPerKm = getWorkoutSessionPaceSecondsPerKm(session);
                 const routePoints = getWorkoutSessionRoutePoints(session);
+                const routeSegments = getWorkoutSessionRouteSegments(session);
                 const routePolyline = getWorkoutSessionRoutePolyline(session);
                 const routeQualityScore = getWorkoutSessionRouteQualityScore(session);
                 const normalizedRouteQuality =
@@ -843,6 +855,7 @@ const SessionHistoryPage = () => {
                             variant="preview"
                             provider="none"
                             points={routePoints}
+                            segments={routeSegments}
                             polyline={routePolyline}
                             qualityScore={routeQualityScore}
                             emptyLabel={t("user.workout.history.routeWaiting")}

@@ -1101,6 +1101,7 @@
           "retryGps": "GPS qayta urinish",
           "time": "Vaqt",
           "distance": "Masofa",
+          "pace": "PACE",
           "queue": "Navbat",
           "flushError": "GPS nuqtalar sync qilinmadi. Internet tiklangach qayta urinib ko'ring.",
           "syncBeforeFinishError": "GPS nuqtalar hali saqlanmadi. Internet tiklangach qayta urinib ko'ring.",
@@ -1113,8 +1114,8 @@
           "resumeAction": "Davom ettirish",
           "endAction": "Yakunlash",
           "finish": "Yakunlash",
-          "finishTitle": "Mashg'ulot tugatilsinmi?",
-          "finishDescription": "Yugurish yakunlanadi va navbatdagi GPS nuqtalar saqlanadi.",
+          "finishTitle": "Yugurishni yakunlaysizmi?",
+          "finishDescription": "GPS nuqtalar saqlanadi va natija hisoblanadi.",
           "finishConfirm": "Yakunlash",
           "finishContinue": "Davom etish",
           "finishClose": "Yopish",
@@ -1149,7 +1150,8 @@
           "emptyDescription": "Birinchi GPS yugurishni boshlang va route, pace hamda masofani shu yerda ko'ring.",
           "emptyAction": "Birinchi yugurishni boshlash",
           "runAriaLabel": "Ochiq yugurish {{date}}",
-          "noGpsQuality": "GPS sifati yo'q"
+          "noGpsQuality": "GPS sifati yo'q",
+          "noRoute": "Route yozilmagan"
         }
       },
       "report": {

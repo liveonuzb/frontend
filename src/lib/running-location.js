@@ -47,6 +47,7 @@ export const isUsableRunningPosition = (position) => {
 export const requestFirstRunningPosition = ({
   geolocation = typeof navigator !== "undefined" ? navigator.geolocation : null,
   options = RUNNING_GEOLOCATION_OPTIONS,
+  requireUsable = true,
 } = {}) =>
   new Promise((resolve, reject) => {
     if (typeof geolocation?.getCurrentPosition !== "function") {
@@ -56,7 +57,7 @@ export const requestFirstRunningPosition = ({
 
     geolocation.getCurrentPosition(
       (position) => {
-        if (!isUsableRunningPosition(position)) {
+        if (requireUsable && !isUsableRunningPosition(position)) {
           reject({
             code: RUNNING_LOCATION_ERROR.weak,
             accuracy: position.coords.accuracy,

@@ -1101,6 +1101,7 @@
           "retryGps": "Retry GPS",
           "time": "Time",
           "distance": "Distance",
+          "pace": "Pace",
           "queue": "Queue",
           "flushError": "GPS points could not sync. Try again when internet is back.",
           "syncBeforeFinishError": "GPS points are not saved yet. Try again when internet is back.",
@@ -1113,8 +1114,8 @@
           "resumeAction": "Resume",
           "endAction": "End",
           "finish": "Finish",
-          "finishTitle": "Finish training?",
-          "finishDescription": "The run will finish and queued GPS points will be saved.",
+          "finishTitle": "Finish run?",
+          "finishDescription": "GPS points will be saved and results calculated.",
           "finishConfirm": "Finish",
           "finishContinue": "Continue",
           "finishClose": "Close",
@@ -1149,7 +1150,8 @@
           "emptyDescription": "Start your first GPS run and see route, pace, and distance here.",
           "emptyAction": "Start first run",
           "runAriaLabel": "Outdoor run {{date}}",
-          "noGpsQuality": "No GPS quality"
+          "noGpsQuality": "No GPS quality",
+          "noRoute": "No route recorded"
         }
       },
       "report": {

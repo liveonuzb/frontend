@@ -19,11 +19,12 @@ vi.mock("@/components/page-loader/index.jsx", () => ({
 }));
 
 vi.mock("../../running/components/run-map-panel.jsx", () => ({
-  default: ({ polyline, points, emptyLabel }) => (
+  default: ({ polyline, points, segments, emptyLabel }) => (
     <div
       data-testid="history-running-map"
       data-polyline={polyline ?? ""}
       data-point-count={points?.length ?? 0}
+      data-segment-count={segments?.length ?? 0}
       data-empty-label={emptyLabel ?? ""}
     />
   ),
@@ -238,6 +239,7 @@ describe("SessionHistoryDetailPage", () => {
         averagePaceSecondsPerKm: 360,
         route: {
           polyline: "encoded-history-route",
+          segments: ["segment-a", "segment-b"],
         },
         runningSession: {
           points: [
@@ -283,6 +285,10 @@ describe("SessionHistoryDetailPage", () => {
     );
     expect(screen.getByTestId("history-running-map")).toHaveAttribute(
       "data-point-count",
+      "2",
+    );
+    expect(screen.getByTestId("history-running-map")).toHaveAttribute(
+      "data-segment-count",
       "2",
     );
 

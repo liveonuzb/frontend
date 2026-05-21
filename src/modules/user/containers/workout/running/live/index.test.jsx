@@ -278,7 +278,7 @@ describe("RunningLivePage", () => {
     });
   });
 
-  it("requires a usable first GPS point before beginning a ready run", async () => {
+  it("uses a first GPS point when beginning a ready run", async () => {
     vi.useFakeTimers();
     useRunningActiveSession.mockReturnValue({
       activeSession: activeSession({
@@ -289,7 +289,10 @@ describe("RunningLivePage", () => {
 
     renderPage();
 
-    fireEvent.click(screen.getByRole("button", { name: /^start$/i }));
+    const startButton = screen.getByRole("button", { name: /^start$/i });
+    expect(startButton).toHaveClass("size-24", "sm:size-28", "text-xl");
+
+    fireEvent.click(startButton);
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2400);
@@ -316,7 +319,7 @@ describe("RunningLivePage", () => {
     });
   });
 
-  it("blocks begin when the first GPS fix is too weak", async () => {
+  it("starts the run when the first GPS fix is weak and marks GPS weak", async () => {
     vi.useFakeTimers();
     useRunningActiveSession.mockReturnValue({
       activeSession: activeSession({
@@ -352,8 +355,50 @@ describe("RunningLivePage", () => {
     await waitFor(() => {
       expect(window.navigator.geolocation.getCurrentPosition).toHaveBeenCalled();
     });
-    expect(beginRunningSession).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(beginRunningSession).toHaveBeenCalledWith("workout-1", {
+        startedAt: expect.any(String),
+        firstPoint: expect.objectContaining({
+          sequence: 43,
+          segmentIndex: 0,
+          latitude: 41.311081,
+          longitude: 69.240562,
+          accuracy: 140,
+        }),
+      });
+    });
     expect(await screen.findByText("GPS signali zaif")).toBeInTheDocument();
+  });
+
+  it("starts the run without a first GPS point when geolocation is unavailable", async () => {
+    vi.useFakeTimers();
+    useRunningActiveSession.mockReturnValue({
+      activeSession: activeSession({
+        status: "ready",
+        startedAt: "2026-05-12T09:59:00.000Z",
+      }),
+    });
+    window.navigator.geolocation.getCurrentPosition.mockImplementationOnce(
+      (_success, error) => {
+        error({ code: 2, message: "Geolocation unavailable" });
+      },
+    );
+
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /^start$/i }));
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2400);
+    });
+    vi.useRealTimers();
+
+    await waitFor(() => {
+      expect(beginRunningSession).toHaveBeenCalledWith("workout-1", {
+        startedAt: expect.any(String),
+      });
+    });
+    expect(await screen.findByText("GPS mavjud emas")).toBeInTheDocument();
   });
 
   it("continues GPS point sequencing from the last accepted server sequence", async () => {
@@ -441,13 +486,82 @@ describe("RunningLivePage", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("keeps the GPS status pill width stable as labels change", async () => {
+  it("uses compact layout-safe sizing when rendered inside the user workout layout", () => {
+    renderPage();
+
+    const page = screen.getByTestId("running-live-page");
+    const startButton = screen.queryByRole("button", { name: /^start$/i });
+    const mapSection = screen.getByTestId("run-map-panel").closest("section");
+    const distanceMetric = screen.getByText("0.00");
+    const controlsOverlay = screen
+      .getByRole("button", { name: /^END$/i })
+      .closest(".absolute");
+    const endButtonIcon = screen
+      .getByRole("button", { name: /^END$/i })
+      .querySelector("[aria-hidden='true']");
+    const resumeButtonIcon = screen
+      .getByRole("button", { name: /^RESUME$/i })
+      .querySelector("[aria-hidden='true']");
+
+    expect(page).toHaveClass(
+      "min-h-[calc(100dvh-12rem)]",
+      "md:min-h-[calc(100dvh-8rem)]",
+    );
+    expect(mapSection).toHaveClass(
+      "min-h-[320px]",
+      "sm:min-h-[380px]",
+      "md:min-h-[460px]",
+    );
+    expect(distanceMetric).toHaveClass(
+      "text-xl",
+      "sm:text-[1.7rem]",
+      "lg:text-3xl",
+    );
+    expect(screen.getByText("PACE")).toBeInTheDocument();
+    expect(screen.queryByText("PACE (MIN/KM)")).not.toBeInTheDocument();
+    expect(startButton).not.toBeInTheDocument();
+    expect(controlsOverlay).toHaveClass(
+      "pb-[calc(env(safe-area-inset-bottom)+5rem)]",
+      "md:pb-[max(1.5rem,env(safe-area-inset-bottom))]",
+    );
+    expect(endButtonIcon).toHaveClass("size-16", "sm:size-20");
+    expect(resumeButtonIcon).toHaveClass("size-16", "sm:size-20");
+  });
+
+  it("shows active running time without elapsed pause duration", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-12T10:10:00.000Z"));
+    useRunningActiveSession.mockReturnValue({
+      activeSession: activeSession({
+        status: "paused",
+        startedAt: "2026-05-12T10:00:00.000Z",
+        pausedAt: "2026-05-12T10:06:00.000Z",
+        metrics: {
+          distanceMeters: 0,
+          durationSeconds: 0,
+          pausedDurationSeconds: 60,
+        },
+      }),
+    });
+
+    renderPage();
+
+    expect(screen.getByText("0:05:00")).toBeInTheDocument();
+    expect(screen.queryByText("0:10:00")).not.toBeInTheDocument();
+  });
+
+  it("keeps the GPS status pill compact as labels change", async () => {
     renderPage();
 
     const gpsPill = screen
       .getByText("GPS kutilmoqda")
       .closest('[role="status"]');
-    expect(gpsPill).toHaveClass("w-[13rem]", "sm:w-[14.5rem]");
+    expect(gpsPill).toHaveClass(
+      "h-9",
+      "w-auto",
+      "max-w-[calc(100vw-2rem)]",
+      "text-xs",
+    );
 
     await act(async () => {
       await watchSuccess({
@@ -466,7 +580,12 @@ describe("RunningLivePage", () => {
     await waitFor(() => {
       expect(
         screen.getByText("GPS ulandi").closest('[role="status"]'),
-      ).toHaveClass("w-[13rem]", "sm:w-[14.5rem]");
+      ).toHaveClass(
+        "h-9",
+        "w-auto",
+        "max-w-[calc(100vw-2rem)]",
+        "text-xs",
+      );
     });
   });
 
@@ -476,15 +595,18 @@ describe("RunningLivePage", () => {
     fireEvent.click(screen.getByRole("button", { name: /^END$/i }));
 
     expect(
-      screen.getByRole("dialog", { name: /finish training/i }),
+      screen.getByRole("dialog", { name: /yugurishni yakunlaysizmi/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("GPS nuqtalar saqlanadi va natija hisoblanadi."),
     ).toBeInTheDocument();
     expect(finishRunningSession).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole("button", { name: /continue/i }));
+    fireEvent.click(screen.getByRole("button", { name: /davom etish/i }));
 
     await waitFor(() => {
       expect(
-        screen.getByRole("dialog", { name: /finish training/i }),
+        screen.getByRole("dialog", { name: /yugurishni yakunlaysizmi/i }),
       ).toHaveAttribute("data-state", "closed");
     });
     expect(finishRunningSession).not.toHaveBeenCalled();
@@ -503,7 +625,7 @@ describe("RunningLivePage", () => {
     renderPage();
 
     fireEvent.click(screen.getByRole("button", { name: /^END$/i }));
-    fireEvent.click(screen.getByRole("button", { name: /^finish$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^yakunlash$/i }));
 
     await waitFor(() => {
       expect(appendPoints).toHaveBeenCalledWith("workout-1", [
@@ -546,7 +668,7 @@ describe("RunningLivePage", () => {
     renderPage();
 
     fireEvent.click(screen.getByRole("button", { name: /^END$/i }));
-    fireEvent.click(screen.getByRole("button", { name: /^finish$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^yakunlash$/i }));
 
     await waitFor(() => {
       expect(window.navigator.geolocation.clearWatch).toHaveBeenCalledWith(9);

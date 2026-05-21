@@ -1,5 +1,4 @@
-export const isRunningLiveImmersivePath = (pathname = "") =>
-  pathname.startsWith("/user/workout/running/live");
+export const isRunningLiveImmersivePath = () => false;
 
 export const shouldHideMobileNavForPath = (pathname = "") =>
-  pathname.startsWith("/user/chat") || isRunningLiveImmersivePath(pathname);
+  pathname.startsWith("/user/chat");

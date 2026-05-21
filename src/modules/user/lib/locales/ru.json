@@ -1101,6 +1101,7 @@
           "retryGps": "Повторить GPS",
           "time": "Время",
           "distance": "Дистанция",
+          "pace": "Темп",
           "queue": "Очередь",
           "flushError": "GPS-точки не синхронизированы. Повторите, когда интернет восстановится.",
           "syncBeforeFinishError": "GPS-точки еще не сохранены. Повторите, когда интернет восстановится.",
@@ -1113,8 +1114,8 @@
           "resumeAction": "Продолжить",
           "endAction": "Завершить",
           "finish": "Завершить",
-          "finishTitle": "Завершить тренировку?",
-          "finishDescription": "Пробежка будет завершена, а GPS-точки из очереди сохранены.",
+          "finishTitle": "Завершить пробежку?",
+          "finishDescription": "GPS-точки будут сохранены, а результат рассчитан.",
           "finishConfirm": "Завершить",
           "finishContinue": "Продолжить",
           "finishClose": "Закрыть",
@@ -1149,7 +1150,8 @@
           "emptyDescription": "Начните первую GPS-пробежку, чтобы увидеть маршрут, pace и дистанцию.",
           "emptyAction": "Начать первую пробежку",
           "runAriaLabel": "Пробежка {{date}}",
-          "noGpsQuality": "Нет качества GPS"
+          "noGpsQuality": "Нет качества GPS",
+          "noRoute": "Маршрут не записан"
         }
       },
       "report": {

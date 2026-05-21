@@ -104,4 +104,31 @@ describe("RunningHistoryPage", () => {
       screen.getByRole("link", { name: /birinchi yugurishni boshlash/i }),
     ).toHaveAttribute("href", "/user/workout/running");
   });
+
+  it("shows a clear no-route state for completed runs without saved GPS route", () => {
+    useRunningSessions.mockReturnValue({
+      sessions: [
+        {
+          workoutSessionId: "workout-1",
+          startedAt: "2026-05-12T10:00:00.000Z",
+          route: null,
+          metrics: {
+            distanceMeters: 0,
+            durationSeconds: 60,
+            caloriesBurned: 0,
+            averagePaceSecondsPerKm: null,
+            gpsQualityScore: null,
+          },
+        },
+      ],
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    renderPage();
+
+    expect(screen.getByText("Route yozilmagan")).toBeInTheDocument();
+    expect(screen.getByText("GPS sifati yo'q")).toBeInTheDocument();
+  });
 });

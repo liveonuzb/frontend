@@ -49,6 +49,7 @@ const normalizeRunningSession = (session) => {
     runningSessionId: session.runningSessionId ?? null,
     status: session.status ?? "active",
     startedAt: session.startedAt ?? null,
+    pausedAt: session.pausedAt ?? null,
     endedAt: session.endedAt ?? null,
     metrics: {
       distanceMeters:
@@ -65,6 +66,14 @@ const normalizeRunningSession = (session) => {
             session,
             "metrics.movingDurationSeconds",
             session.movingDurationSeconds ?? 0,
+          ),
+        ) || 0,
+      pausedDurationSeconds:
+        toNumber(
+          get(
+            session,
+            "metrics.pausedDurationSeconds",
+            session.pausedDurationSeconds ?? 0,
           ),
         ) || 0,
       caloriesBurned:

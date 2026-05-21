@@ -3,6 +3,7 @@ import { LocateFixedIcon, MapIcon, Maximize2Icon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { loadMapProvider } from "@/lib/maps";
+import { getAcceptedRunningRoutePoints } from "@/lib/running-metrics";
 import { resolveTheme } from "@/lib/user-preferences";
 import { cn } from "@/lib/utils";
 
@@ -117,11 +118,7 @@ const normalizePointCoordinates = (points = []) =>
 const getPointRouteSegments = (points = []) => {
   const bySegment = new Map();
 
-  forEach(points, (point) => {
-    if (point?.isFilteredOut) {
-      return;
-    }
-
+  forEach(getAcceptedRunningRoutePoints(points), (point) => {
     const segmentIndex = toNumber(point?.segmentIndex ?? 0) || 0;
     const segmentPoints = bySegment.get(segmentIndex) ?? [];
     segmentPoints.push(point);
@@ -152,12 +149,17 @@ const getRouteSegments = ({ points = [], polyline = null, segments = [] }) => {
     return decodedSegments;
   }
 
+  const pointSegments = getPointRouteSegments(points);
+  if (pointSegments.length > 1) {
+    return pointSegments;
+  }
+
   const decodedPolyline = decodeGooglePolyline(polyline);
   if (decodedPolyline.length > 0) {
     return [decodedPolyline];
   }
 
-  return getPointRouteSegments(points);
+  return pointSegments;
 };
 
 const flattenRouteSegments = (segments = []) =>
@@ -741,6 +743,10 @@ const MapLibreRouteMap = ({
         }
       };
       handleMapError = () => {
+        if (readyRef.current) {
+          return;
+        }
+
         failMap();
       };
       handleManualMove = () => {

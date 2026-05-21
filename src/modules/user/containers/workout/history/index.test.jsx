@@ -19,11 +19,12 @@ vi.mock("@/components/page-loader/index.jsx", () => ({
 }));
 
 vi.mock("../running/components/run-map-panel.jsx", () => ({
-  default: ({ polyline, qualityScore, emptyLabel }) => (
+  default: ({ polyline, qualityScore, segments, emptyLabel }) => (
     <div
       data-testid="history-running-map"
       data-polyline={polyline ?? ""}
       data-quality={qualityScore ?? ""}
+      data-segment-count={segments?.length ?? 0}
       data-empty-label={emptyLabel ?? ""}
     />
   ),
@@ -146,6 +147,9 @@ describe("SessionHistoryPage", () => {
           averageHeartRate: 162,
           gpsQualityScore: 0.91,
           routePolyline: "encoded-history-route",
+          route: {
+            segments: ["segment-a", "segment-b"],
+          },
           exerciseSummaries: [
             {
               exerciseKey: "outdoor-run",
@@ -237,6 +241,7 @@ describe("SessionHistoryPage", () => {
     const mapPreview = screen.getByTestId("history-running-map");
 
     expect(mapPreview).toHaveAttribute("data-polyline", "encoded-history-route");
+    expect(mapPreview).toHaveAttribute("data-segment-count", "2");
     expect(mapPreview).toHaveAttribute("data-quality", "0.91");
     expect(screen.getByText("162 bpm")).toBeInTheDocument();
     expect(screen.getAllByText("91/100").length).toBeGreaterThan(0);

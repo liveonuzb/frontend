@@ -139,6 +139,17 @@ const getRunningRoutePoints = (session) => {
   return isArray(runningPoints) ? runningPoints : [];
 };
 
+const getRunningRouteSegments = (session) => {
+  const directSegments = get(session, "route.segments");
+  const runningSegments = get(session, "runningSession.route.segments");
+
+  if (isArray(directSegments) && directSegments.length > 0) {
+    return directSegments;
+  }
+
+  return isArray(runningSegments) ? runningSegments : [];
+};
+
 const SessionHistoryDetailPage = () => {
   const { t } = useTranslation();
   const { sessionId } = useParams();
@@ -195,6 +206,7 @@ const SessionHistoryDetailPage = () => {
   const distanceMeters = getWorkoutSessionDistanceMeters(session);
   const paceSecondsPerKm = getWorkoutSessionPaceSecondsPerKm(session);
   const runningRoutePolyline = getRunningRoutePolyline(session);
+  const runningRouteSegments = getRunningRouteSegments(session);
   const runningRoutePoints = getRunningRoutePoints(session);
 
   if (isLoading) {
@@ -305,6 +317,7 @@ const SessionHistoryDetailPage = () => {
             <RunMapPanel
               title={t("user.workout.historyDetail.routeMap", "Route map")}
               polyline={runningRoutePolyline}
+              segments={runningRouteSegments}
               points={runningRoutePoints}
               qualityScore={get(
                 session,

@@ -153,15 +153,19 @@ const RunningHistoryPage = () => {
                         </p>
                       </div>
                     </div>
-                    {session.route?.polyline ? (
+                    {session.route?.polyline || session.route?.segments?.length ? (
                       <div className="hidden h-20 overflow-hidden rounded-2xl md:block">
                         <RunMapPanel
                           title={null}
                           variant="preview"
                           provider="none"
                           polyline={session.route.polyline}
+                          segments={session.route.segments}
                           showQuality={false}
-                          emptyLabel=""
+                          emptyLabel={t(
+                            "user.workout.running.history.noRoute",
+                            "Route yozilmagan",
+                          )}
                           loadingLabel=""
                           errorLabel=""
                           className="h-full"
@@ -169,7 +173,18 @@ const RunningHistoryPage = () => {
                         />
                       </div>
                     ) : (
-                      <div className="hidden md:block" aria-hidden="true" />
+                      <div className="hidden h-20 items-center justify-center rounded-2xl border border-dashed border-border bg-muted/30 px-3 text-center text-xs text-muted-foreground md:flex">
+                        <div>
+                          <RouteIcon
+                            className="mx-auto mb-1 size-4 text-primary"
+                            aria-hidden="true"
+                          />
+                          {t(
+                            "user.workout.running.history.noRoute",
+                            "Route yozilmagan",
+                          )}
+                        </div>
+                      </div>
                     )}
                     <div className="flex shrink-0 items-center justify-between gap-3 text-sm md:justify-end md:text-right">
                       <div>

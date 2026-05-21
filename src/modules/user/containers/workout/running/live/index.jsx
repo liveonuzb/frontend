@@ -49,7 +49,7 @@ import {
   RUNNING_POINT_SYNC_INTERVAL_MS,
 } from "@/lib/running-point-sync";
 import {
-  calculateLiveRunningDuration,
+  calculateLiveRunningActiveDuration,
   calculateLiveRunningMetrics,
   formatRunningClockDuration,
   formatRunningPace,
@@ -166,7 +166,7 @@ const primaryMetricCards = (metrics, elapsedSeconds, t) => [
     value: formatPrimaryRunningDistance(metrics.distanceMeters),
   },
   {
-    label: t("user.workout.running.live.pace", "PACE (MIN/KM)"),
+    label: t("user.workout.running.live.pace", "PACE"),
     value: formatPrimaryRunningPace(metrics.averagePaceSecondsPerKm),
   },
 ];
@@ -227,6 +227,14 @@ const RunningLivePage = () => {
     localStatus?.workoutSessionId === workoutSessionId
       ? localStatus.startedAt
       : null;
+  const optimisticPausedAt =
+    localStatus?.workoutSessionId === workoutSessionId
+      ? localStatus.pausedAt
+      : null;
+  const optimisticPausedDurationSeconds =
+    localStatus?.workoutSessionId === workoutSessionId
+      ? localStatus.pausedDurationSeconds
+      : null;
   const currentStatus =
     optimisticStatus ?? effectiveActiveSession?.status ?? "ready";
   const { session: runningDetailSession } = useRunningSessionDetail(
@@ -237,6 +245,16 @@ const RunningLivePage = () => {
   );
   const effectiveStartedAt =
     optimisticStartedAt ?? effectiveActiveSession?.startedAt ?? null;
+  const effectivePausedAt =
+    currentStatus === "paused"
+      ? optimisticPausedAt ?? effectiveActiveSession?.pausedAt ?? null
+      : null;
+  const effectivePausedDurationSeconds =
+    toNumber(
+      optimisticPausedDurationSeconds ??
+        effectiveActiveSession?.metrics?.pausedDurationSeconds ??
+        0,
+    ) || 0;
   workoutSessionIdRef.current = workoutSessionId;
   currentStatusRef.current = currentStatus;
   const isReady = currentStatus === "ready";
@@ -347,6 +365,37 @@ const RunningLivePage = () => {
       currentStatusRef.current === "active",
     [],
   );
+
+  const calculateCurrentActiveDuration = React.useCallback(
+    () =>
+      calculateLiveRunningActiveDuration(effectiveStartedAt, {
+        pausedAt: isPaused ? effectivePausedAt : null,
+        pausedDurationSeconds: effectivePausedDurationSeconds,
+      }),
+    [
+      effectivePausedAt,
+      effectivePausedDurationSeconds,
+      effectiveStartedAt,
+      isPaused,
+    ],
+  );
+
+  const calculateCurrentPausedDuration = React.useCallback(() => {
+    if (!effectivePausedAt) {
+      return effectivePausedDurationSeconds;
+    }
+
+    const pausedAtTime = new Date(effectivePausedAt).getTime();
+    if (!Number.isFinite(pausedAtTime)) {
+      return effectivePausedDurationSeconds;
+    }
+
+    return Math.max(
+      0,
+      effectivePausedDurationSeconds +
+        Math.round((Date.now() - pausedAtTime) / 1000),
+    );
+  }, [effectivePausedAt, effectivePausedDurationSeconds]);
 
   const syncRunningPoints = React.useCallback(
     async ({ force = false } = {}) => {
@@ -472,13 +521,13 @@ const RunningLivePage = () => {
       return undefined;
     }
 
-    setElapsedSeconds(calculateLiveRunningDuration(effectiveStartedAt));
+    setElapsedSeconds(calculateCurrentActiveDuration());
     const timer = window.setInterval(() => {
-      setElapsedSeconds(calculateLiveRunningDuration(effectiveStartedAt));
+      setElapsedSeconds(calculateCurrentActiveDuration());
     }, 1000);
 
     return () => window.clearInterval(timer);
-  }, [effectiveStartedAt, isReady]);
+  }, [calculateCurrentActiveDuration, effectiveStartedAt, isReady]);
 
   React.useEffect(() => {
     if (!workoutSessionId || !isTrackingActive || trackingSuspended) {
@@ -587,21 +636,37 @@ const RunningLivePage = () => {
 
     try {
       await runStartCountdown();
-      const position = await requestFirstRunningPosition();
-      const nextSequence = sequenceRef.current + 1;
-      sequenceRef.current = nextSequence;
-      const firstPoint = buildRunningPointFromPosition(position, {
-        sequence: nextSequence,
-        segmentIndex: segmentIndexRef.current,
-      });
       const startedAt = new Date().toISOString();
-      setLivePoints((currentPoints) =>
-        takeRight([...currentPoints, firstPoint], 3000),
-      );
-      persistIncomingPoints([firstPoint]);
+      let firstPoint = null;
+      let firstPointError = null;
+
+      try {
+        const position = await requestFirstRunningPosition({
+          requireUsable: false,
+        });
+        const nextSequence = sequenceRef.current + 1;
+        sequenceRef.current = nextSequence;
+        firstPoint = buildRunningPointFromPosition(position, {
+          sequence: nextSequence,
+          segmentIndex: segmentIndexRef.current,
+        });
+        setLivePoints((currentPoints) =>
+          takeRight([...currentPoints, firstPoint], 3000),
+        );
+        persistIncomingPoints([firstPoint]);
+        if (!isUsableRunningPosition(position)) {
+          firstPointError = {
+            code: RUNNING_LOCATION_ERROR.weak,
+            accuracy: position.coords.accuracy,
+          };
+        }
+      } catch (error) {
+        firstPointError = error;
+      }
+
       const session = await beginRunningSession(workoutSessionId, {
         startedAt,
-        firstPoint,
+        ...(firstPoint ? { firstPoint } : {}),
       });
       applyAcceptedSequence(session);
       const nextStartedAt = session?.startedAt ?? startedAt;
@@ -609,16 +674,26 @@ const RunningLivePage = () => {
         workoutSessionId,
         status: "active",
         startedAt: nextStartedAt,
+        pausedAt: null,
+        pausedDurationSeconds: session?.metrics?.pausedDurationSeconds ?? 0,
       });
       saveLocalStatus("active", {
         startedAt: nextStartedAt,
-        metrics: session?.metrics ?? effectiveActiveSession?.metrics,
+        pausedAt: null,
+        metrics: {
+          ...(effectiveActiveSession?.metrics ?? {}),
+          ...(session?.metrics ?? {}),
+          pausedDurationSeconds: session?.metrics?.pausedDurationSeconds ?? 0,
+        },
         lastAcceptedSequence:
           session?.lastAcceptedSequence ??
           effectiveActiveSession?.lastAcceptedSequence,
       });
       allowGpsTracking();
       setElapsedSeconds(0);
+      if (firstPointError) {
+        setGpsState(getGpsStateFromLocationError(firstPointError));
+      }
     } catch (error) {
       setCountdownValue(null);
       setLocalStatus({ workoutSessionId, status: "ready" });
@@ -644,25 +719,52 @@ const RunningLivePage = () => {
     }
 
     if (isPaused) {
+      const nextPausedDurationSeconds = calculateCurrentPausedDuration();
+
       try {
         const session = await resumeRunningSession(workoutSessionId);
+        const sessionPausedDurationSeconds = toNumber(
+          session?.metrics?.pausedDurationSeconds,
+        );
+        const resumedPausedDurationSeconds = Number.isFinite(
+          sessionPausedDurationSeconds,
+        )
+          ? sessionPausedDurationSeconds
+          : nextPausedDurationSeconds;
         segmentIndexRef.current += 1;
         allowGpsTracking();
         setLocalStatus({
           workoutSessionId,
           status: "active",
           startedAt: session?.startedAt ?? effectiveStartedAt,
+          pausedAt: null,
+          pausedDurationSeconds: resumedPausedDurationSeconds,
         });
         saveLocalStatus("active", {
           startedAt: session?.startedAt ?? effectiveStartedAt,
+          pausedAt: null,
+          metrics: {
+            ...(effectiveActiveSession?.metrics ?? {}),
+            ...(session?.metrics ?? {}),
+            pausedDurationSeconds: resumedPausedDurationSeconds,
+          },
         });
       } catch {
         setLocalStatus({
           workoutSessionId,
           status: "paused",
           startedAt: effectiveStartedAt,
+          pausedAt: effectivePausedAt,
+          pausedDurationSeconds: effectivePausedDurationSeconds,
         });
-        saveLocalStatus("paused", { startedAt: effectiveStartedAt });
+        saveLocalStatus("paused", {
+          startedAt: effectiveStartedAt,
+          pausedAt: effectivePausedAt,
+          metrics: {
+            ...(effectiveActiveSession?.metrics ?? {}),
+            pausedDurationSeconds: effectivePausedDurationSeconds,
+          },
+        });
         toast.error(
           t(
             "user.workout.running.live.resumeError",
@@ -673,22 +775,69 @@ const RunningLivePage = () => {
       return;
     }
 
+    const pausedAt = new Date().toISOString();
+    const nextPausedDurationSeconds = effectivePausedDurationSeconds;
+    stopGpsTracking();
     void syncRunningPoints({ force: true });
     setLocalStatus({
       workoutSessionId,
       status: "paused",
       startedAt: effectiveStartedAt,
+      pausedAt,
+      pausedDurationSeconds: nextPausedDurationSeconds,
     });
-    saveLocalStatus("paused", { startedAt: effectiveStartedAt });
+    saveLocalStatus("paused", {
+      startedAt: effectiveStartedAt,
+      pausedAt,
+      metrics: {
+        ...(effectiveActiveSession?.metrics ?? {}),
+        pausedDurationSeconds: nextPausedDurationSeconds,
+      },
+    });
     try {
-      await pauseRunningSession(workoutSessionId);
+      const session = await pauseRunningSession(workoutSessionId);
+      const confirmedPausedAt = session?.pausedAt ?? pausedAt;
+      const sessionPausedDurationSeconds = toNumber(
+        session?.metrics?.pausedDurationSeconds,
+      );
+      const confirmedPausedDurationSeconds = Number.isFinite(
+        sessionPausedDurationSeconds,
+      )
+        ? sessionPausedDurationSeconds
+        : nextPausedDurationSeconds;
+      setLocalStatus({
+        workoutSessionId,
+        status: "paused",
+        startedAt: session?.startedAt ?? effectiveStartedAt,
+        pausedAt: confirmedPausedAt,
+        pausedDurationSeconds: confirmedPausedDurationSeconds,
+      });
+      saveLocalStatus("paused", {
+        startedAt: session?.startedAt ?? effectiveStartedAt,
+        pausedAt: confirmedPausedAt,
+        metrics: {
+          ...(effectiveActiveSession?.metrics ?? {}),
+          ...(session?.metrics ?? {}),
+          pausedDurationSeconds: confirmedPausedDurationSeconds,
+        },
+      });
     } catch {
+      allowGpsTracking();
       setLocalStatus({
         workoutSessionId,
         status: "active",
         startedAt: effectiveStartedAt,
+        pausedAt: null,
+        pausedDurationSeconds: effectivePausedDurationSeconds,
       });
-      saveLocalStatus("active", { startedAt: effectiveStartedAt });
+      saveLocalStatus("active", {
+        startedAt: effectiveStartedAt,
+        pausedAt: null,
+        metrics: {
+          ...(effectiveActiveSession?.metrics ?? {}),
+          pausedDurationSeconds: effectivePausedDurationSeconds,
+        },
+      });
       toast.error(
         t(
           "user.workout.running.live.pauseError",
@@ -784,22 +933,25 @@ const RunningLivePage = () => {
 
   return (
     <PageTransition mode="slide-up">
-      <div className="flex min-h-[100dvh] w-full flex-col overflow-hidden bg-background text-foreground">
-        <section className="relative z-20 bg-background px-4 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-6 sm:pb-3 md:px-8">
-          <div className="mx-auto grid w-full max-w-[1120px] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2 text-center sm:gap-5">
+      <div
+        data-testid="running-live-page"
+        className="flex min-h-[calc(100dvh-12rem)] w-full flex-col overflow-hidden bg-background text-foreground md:min-h-[calc(100dvh-8rem)]"
+      >
+        <section className="relative z-20 bg-background px-3 pb-1.5 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-5 sm:pb-2 md:px-6">
+          <div className="mx-auto grid w-full max-w-[920px] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-1.5 text-center sm:gap-4">
             {map(primaryMetricCards(metrics, elapsedSeconds, t), (item, index) => (
               <React.Fragment key={item.label}>
                 <div className="min-w-0">
-                  <p className="whitespace-nowrap text-[1.55rem] font-semibold leading-none tabular-nums tracking-normal text-foreground min-[390px]:text-[1.7rem] sm:text-[2.15rem] lg:text-[2.65rem]">
+                  <p className="whitespace-nowrap text-xl font-semibold leading-none tabular-nums tracking-normal text-foreground min-[390px]:text-2xl sm:text-[1.7rem] lg:text-3xl">
                     {item.value}
                   </p>
-                  <p className="mt-2 whitespace-nowrap text-[0.6rem] font-medium uppercase tracking-normal text-muted-foreground sm:text-xs lg:text-sm">
+                  <p className="mt-1 whitespace-nowrap text-[0.58rem] font-medium uppercase tracking-normal text-muted-foreground sm:text-[0.68rem] lg:text-xs">
                     {item.label}
                   </p>
                 </div>
                 {index < 2 ? (
                   <div
-                    className="mb-3 h-10 w-px bg-border sm:h-12 lg:h-14"
+                    className="mb-2 h-7 w-px bg-border sm:h-8 lg:h-10"
                     aria-hidden="true"
                   />
                 ) : null}
@@ -811,7 +963,7 @@ const RunningLivePage = () => {
           </div>
         </section>
 
-        <section className="relative min-h-[520px] flex-1 overflow-hidden bg-muted">
+        <section className="relative min-h-[320px] flex-1 overflow-hidden bg-muted sm:min-h-[380px] md:min-h-[460px]">
           <RunMapPanel
             title={null}
             variant="live"
@@ -822,21 +974,21 @@ const RunningLivePage = () => {
             surfaceClassName="h-full min-h-0 rounded-none md:h-full"
           />
 
-          <div className="absolute left-5 top-5 z-10 flex flex-wrap items-center gap-2">
+          <div className="absolute left-3 top-3 z-10 flex flex-wrap items-center gap-1.5 sm:left-4 sm:top-4">
             <Badge
               variant="secondary"
-              className="h-12 w-[13rem] max-w-[calc(100vw-2.5rem)] justify-start gap-2 rounded-full border bg-background/90 px-4 text-sm shadow-lg backdrop-blur sm:w-[14.5rem] sm:text-base"
+              className="h-9 w-auto max-w-[calc(100vw-2rem)] justify-start gap-1.5 rounded-full border bg-background/90 px-3 text-xs shadow-lg backdrop-blur sm:max-w-[18rem]"
               role="status"
               aria-live="polite"
             >
               {gpsState === GPS_STATUS.connected ? (
                 <CheckCircle2Icon
-                  className="size-5 text-primary"
+                  className="size-4 text-primary"
                   aria-hidden="true"
                 />
               ) : (
                 <AlertTriangleIcon
-                  className="size-5 text-primary"
+                  className="size-4 text-primary"
                   aria-hidden="true"
                 />
               )}
@@ -845,7 +997,7 @@ const RunningLivePage = () => {
             {queuedCount > 0 ? (
               <Badge
                 variant="outline"
-                className="h-10 rounded-full bg-background/90 px-3 shadow-lg backdrop-blur"
+                className="h-8 rounded-full bg-background/90 px-2.5 text-xs shadow-lg backdrop-blur"
               >
                 {t("user.workout.running.live.queue", "Navbat")} {queuedCount}
               </Badge>
@@ -855,7 +1007,7 @@ const RunningLivePage = () => {
                 type="button"
                 size="sm"
                 variant="secondary"
-                className="rounded-full bg-background/90 shadow-lg backdrop-blur"
+                className="h-8 rounded-full bg-background/90 px-3 text-xs shadow-lg backdrop-blur"
                 onClick={handleRetryGps}
               >
                 {t("user.workout.running.live.retryGps", "GPS qayta urinish")}
@@ -866,7 +1018,7 @@ const RunningLivePage = () => {
           {isReady ? (
             <button
               type="button"
-              className="absolute bottom-[max(3rem,env(safe-area-inset-bottom))] left-1/2 z-10 flex size-28 -translate-x-1/2 items-center justify-center rounded-full bg-destructive text-2xl font-semibold uppercase text-white shadow-[0_24px_70px_rgba(239,68,68,0.38)] disabled:opacity-60 sm:size-32 sm:text-3xl"
+              className="absolute bottom-[calc(env(safe-area-inset-bottom)+5rem)] left-1/2 z-10 flex size-24 -translate-x-1/2 items-center justify-center rounded-full bg-destructive text-xl font-semibold uppercase text-white shadow-[0_20px_52px_rgba(239,68,68,0.34)] disabled:opacity-60 sm:size-28 sm:text-2xl md:bottom-[max(2rem,env(safe-area-inset-bottom))]"
               onClick={handleStartRun}
               disabled={isActionPending || Boolean(countdownValue)}
             >
@@ -890,24 +1042,24 @@ const RunningLivePage = () => {
           {!isReady ? (
             <div
               className={cn(
-                "absolute inset-x-0 bottom-0 z-20 flex justify-center bg-gradient-to-t from-black/60 via-black/25 to-transparent px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-20 text-white",
-                isPaused && "top-0 items-end bg-black/58",
+                "absolute inset-x-0 bottom-0 z-20 flex justify-center bg-gradient-to-t from-black/52 via-black/18 to-transparent px-4 pb-[calc(env(safe-area-inset-bottom)+5rem)] pt-16 text-white md:pb-[max(1.5rem,env(safe-area-inset-bottom))]",
+                isPaused && "top-0 items-end bg-black/35",
               )}
             >
-              <div className="grid w-full max-w-[340px] grid-cols-2 gap-5 sm:max-w-[400px] sm:gap-8">
+              <div className="grid w-full max-w-[288px] grid-cols-2 gap-4 sm:max-w-[340px] sm:gap-6">
                 <button
                   type="button"
                   aria-label={t("user.workout.running.live.endAction", "END")}
-                  className="flex flex-col items-center gap-3 text-sm font-semibold uppercase tracking-normal text-white disabled:opacity-50"
+                  className="flex flex-col items-center gap-2 text-xs font-semibold uppercase tracking-normal text-white disabled:opacity-50 sm:text-sm"
                   onClick={() => setFinishOpen(true)}
                   disabled={isActionPending}
                 >
                   <span>{t("user.workout.running.live.endAction", "END")}</span>
                   <span
-                    className="flex size-20 items-center justify-center rounded-full bg-destructive text-white shadow-[0_22px_54px_rgba(0,0,0,0.32)] sm:size-24"
+                    className="flex size-16 items-center justify-center rounded-full bg-destructive text-white shadow-[0_18px_42px_rgba(0,0,0,0.3)] sm:size-20"
                     aria-hidden="true"
                   >
-                    <SquareIcon className="size-7 fill-current" />
+                    <SquareIcon className="size-5 fill-current sm:size-6" />
                   </span>
                 </button>
                 <button
@@ -916,7 +1068,7 @@ const RunningLivePage = () => {
                     "user.workout.running.live.resumeAction",
                     "RESUME",
                   )}
-                  className="flex flex-col items-center gap-3 text-sm font-semibold uppercase tracking-normal text-white disabled:opacity-50"
+                  className="flex flex-col items-center gap-2 text-xs font-semibold uppercase tracking-normal text-white disabled:opacity-50 sm:text-sm"
                   onClick={handlePauseResume}
                   disabled={isActionPending}
                 >
@@ -924,10 +1076,10 @@ const RunningLivePage = () => {
                     {t("user.workout.running.live.resumeAction", "RESUME")}
                   </span>
                   <span
-                    className="flex size-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_22px_54px_rgba(0,0,0,0.32)] sm:size-24"
+                    className="flex size-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_18px_42px_rgba(0,0,0,0.3)] sm:size-20"
                     aria-hidden="true"
                   >
-                    <PlayIcon className="size-8 fill-current" />
+                    <PlayIcon className="size-6 fill-current sm:size-7" />
                   </span>
                 </button>
               </div>
@@ -974,32 +1126,35 @@ const RunningLivePage = () => {
                 <XIcon className="size-5" aria-hidden="true" />
               </Button>
             </DrawerClose>
-            <DrawerHeader className="items-center p-7 pb-3 text-center">
+            <DrawerHeader className="items-center p-5 pb-2 text-center">
               <div
-                className="flex size-20 items-center justify-center rounded-full bg-primary/15 text-primary"
+                className="flex size-14 items-center justify-center rounded-full bg-primary/15 text-primary"
                 aria-hidden="true"
               >
-                <FlagIcon className="size-10" />
+                <FlagIcon className="size-7" />
               </div>
-              <DrawerTitle className="text-3xl font-semibold uppercase">
-                {t("user.workout.running.live.finishTitle", "Finish training?")}
+              <DrawerTitle className="text-2xl font-semibold">
+                {t(
+                  "user.workout.running.live.finishTitle",
+                  "Yugurishni yakunlaysizmi?",
+                )}
               </DrawerTitle>
               <DrawerDescription>
                 {t(
                   "user.workout.running.live.finishDescription",
-                  "Yugurish yakunlanadi va navbatdagi GPS nuqtalar shu request ichida saqlanadi.",
+                  "GPS nuqtalar saqlanadi va natija hisoblanadi.",
                 )}
               </DrawerDescription>
             </DrawerHeader>
-            <DrawerFooter className="grid gap-3 p-7 pt-3">
+            <DrawerFooter className="grid gap-3 p-5 pt-2">
               <Button
                 type="button"
                 size="lg"
                 onClick={handleFinish}
                 disabled={isFinishing}
-                className="h-14 text-base"
+                className="h-12 text-base"
               >
-                {t("user.workout.running.live.finishConfirm", "Finish")}
+                {t("user.workout.running.live.finishConfirm", "Yakunlash")}
               </Button>
               <Button
                 type="button"
@@ -1007,9 +1162,9 @@ const RunningLivePage = () => {
                 variant="secondary"
                 onClick={() => setFinishOpen(false)}
                 disabled={isFinishing}
-                className="h-14 text-base"
+                className="h-12 text-base"
               >
-                {t("user.workout.running.live.finishContinue", "Continue")}
+                {t("user.workout.running.live.finishContinue", "Davom etish")}
               </Button>
             </DrawerFooter>
           </DrawerContent>
