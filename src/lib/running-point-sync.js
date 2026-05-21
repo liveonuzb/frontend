@@ -1,5 +1,5 @@
 import { orderBy, toNumber, slice, take } from "lodash";
-export const RUNNING_POINT_QUEUE_MAX_SIZE = 600;
+export const RUNNING_POINT_QUEUE_MAX_SIZE = 3000;
 export const RUNNING_POINT_BATCH_MAX_SIZE = 24;
 export const RUNNING_POINT_SYNC_INTERVAL_MS = 5000;
 export const RUNNING_POINT_SYNC_MAX_BACKOFF_MS = 30000;
@@ -23,6 +23,7 @@ export const normalizeRunningPoint = (point) => {
     sequence,
     latitude,
     longitude,
+    segmentIndex: toFiniteNumber(point?.segmentIndex) ?? 0,
   };
 };
 

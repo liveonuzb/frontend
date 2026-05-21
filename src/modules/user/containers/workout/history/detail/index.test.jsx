@@ -18,6 +18,17 @@ vi.mock("@/components/page-loader/index.jsx", () => ({
   default: () => <div data-testid="page-loader">Loading</div>,
 }));
 
+vi.mock("../../running/components/run-map-panel.jsx", () => ({
+  default: ({ polyline, points, emptyLabel }) => (
+    <div
+      data-testid="history-running-map"
+      data-polyline={polyline ?? ""}
+      data-point-count={points?.length ?? 0}
+      data-empty-label={emptyLabel ?? ""}
+    />
+  ),
+}));
+
 vi.mock("@/store", () => ({
   useBreadcrumbStore: () => ({
     setBreadcrumbs: vi.fn(),
@@ -225,6 +236,23 @@ describe("SessionHistoryDetailPage", () => {
         estimatedCalories: 320,
         distanceMeters: 5000,
         averagePaceSecondsPerKm: 360,
+        route: {
+          polyline: "encoded-history-route",
+        },
+        runningSession: {
+          points: [
+            {
+              sequence: 1,
+              latitude: 41.311081,
+              longitude: 69.240562,
+            },
+            {
+              sequence: 2,
+              latitude: 41.320069,
+              longitude: 69.240562,
+            },
+          ],
+        },
         exerciseSummaries: [
           {
             exerciseKey: "outdoor-run",
@@ -249,6 +277,14 @@ describe("SessionHistoryDetailPage", () => {
     expect(screen.getByText("5.0 km")).toBeInTheDocument();
     expect(screen.getByText("6:00 /km")).toBeInTheDocument();
     expect(screen.queryByText("Bajarilgan mashqlar")).not.toBeInTheDocument();
+    expect(screen.getByTestId("history-running-map")).toHaveAttribute(
+      "data-polyline",
+      "encoded-history-route",
+    );
+    expect(screen.getByTestId("history-running-map")).toHaveAttribute(
+      "data-point-count",
+      "2",
+    );
 
     expect(screen.queryByText("Running detail")).not.toBeInTheDocument();
     expect(router.state.location.pathname).toBe(

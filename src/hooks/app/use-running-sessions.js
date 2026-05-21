@@ -100,6 +100,11 @@ const normalizeRunningSession = (session) => {
         "metrics.elevationGainMeters",
         session.elevationGainMeters ?? null,
       ),
+      elevationLossMeters: get(
+        session,
+        "metrics.elevationLossMeters",
+        session.elevationLossMeters ?? null,
+      ),
       gpsQualityScore: get(
         session,
         "metrics.gpsQualityScore",
@@ -134,12 +139,27 @@ const normalizeRunningSession = (session) => {
           map(session.points, (point) => ({
             ...point,
             sequence: toNumber(point?.sequence ?? 0) || 0,
+            segmentIndex: toNumber(point?.segmentIndex ?? 0) || 0,
             latitude: toNumber(point?.latitude),
             longitude: toNumber(point?.longitude),
+            altitude:
+              point?.altitude === undefined || point?.altitude === null
+                ? null
+                : toNumber(point.altitude),
             accuracy:
               point?.accuracy === undefined || point?.accuracy === null
                 ? null
                 : toNumber(point.accuracy),
+            speed:
+              point?.speed === undefined || point?.speed === null
+                ? null
+                : toNumber(point.speed),
+            heading:
+              point?.heading === undefined || point?.heading === null
+                ? null
+                : toNumber(point.heading),
+            isFilteredOut: Boolean(point?.isFilteredOut),
+            rejectionReason: point?.rejectionReason ?? null,
           })),
           (point) =>
             Number.isFinite(point.latitude) && Number.isFinite(point.longitude),

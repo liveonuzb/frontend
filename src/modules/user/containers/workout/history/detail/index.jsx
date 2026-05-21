@@ -29,6 +29,7 @@ import {
   isOutdoorRunningSession,
 } from "@/lib/workout-session-metrics";
 import { useBreadcrumbStore } from "@/store";
+import RunMapPanel from "../../running/components/run-map-panel.jsx";
 
 const formatDateTime = (value) => {
   const date = new Date(value);
@@ -121,6 +122,23 @@ const getRenderableExercises = (session) => {
   ];
 };
 
+const getRunningRoutePolyline = (session) =>
+  get(session, "route.polyline") ||
+  get(session, "runningSession.route.polyline") ||
+  get(session, "runningSession.polyline") ||
+  null;
+
+const getRunningRoutePoints = (session) => {
+  const directPoints = get(session, "points");
+  const runningPoints = get(session, "runningSession.points");
+
+  if (isArray(directPoints) && directPoints.length > 0) {
+    return directPoints;
+  }
+
+  return isArray(runningPoints) ? runningPoints : [];
+};
+
 const SessionHistoryDetailPage = () => {
   const { t } = useTranslation();
   const { sessionId } = useParams();
@@ -176,6 +194,8 @@ const SessionHistoryDetailPage = () => {
   const isRunning = isOutdoorRunningSession(session);
   const distanceMeters = getWorkoutSessionDistanceMeters(session);
   const paceSecondsPerKm = getWorkoutSessionPaceSecondsPerKm(session);
+  const runningRoutePolyline = getRunningRoutePolyline(session);
+  const runningRoutePoints = getRunningRoutePoints(session);
 
   if (isLoading) {
     return <PageLoader />;
@@ -282,6 +302,21 @@ const SessionHistoryDetailPage = () => {
               </div>
             }
           >
+            <RunMapPanel
+              title={t("user.workout.historyDetail.routeMap", "Route map")}
+              polyline={runningRoutePolyline}
+              points={runningRoutePoints}
+              qualityScore={get(
+                session,
+                "metrics.gpsQualityScore",
+                get(session, "runningSession.gpsQualityScore", null),
+              )}
+              emptyLabel={t(
+                "user.workout.historyDetail.routeMissing",
+                "Route GPS nuqtalari topilmadi",
+              )}
+            />
+
             <Card className="rounded-[2rem] py-6">
               <CardHeader>
                 <CardTitle>{t("user.workout.historyDetail.runningSummary")}</CardTitle>

@@ -17,6 +17,7 @@ import {
   usePauseRunningSession,
   useResumeRunningSession,
   useRunningActiveSession,
+  useRunningSessionDetail,
 } from "@/hooks/app/use-running-sessions";
 import {
   clearRunningPointQueue,
@@ -50,6 +51,7 @@ vi.mock("@/hooks/app/use-running-sessions", () => ({
   usePauseRunningSession: vi.fn(),
   useResumeRunningSession: vi.fn(),
   useRunningActiveSession: vi.fn(),
+  useRunningSessionDetail: vi.fn(),
 }));
 
 vi.mock("@/lib/running-offline-queue", async (importOriginal) => {
@@ -102,6 +104,10 @@ const renderPage = (
         element: <div>Workout history detail</div>,
       },
       {
+        path: "/user/workout/running/:workoutSessionId",
+        element: <div>Running detail route</div>,
+      },
+      {
         path: "/user/workout/overview",
         element: <div>Workout overview</div>,
       },
@@ -122,6 +128,8 @@ describe("RunningLivePage", () => {
   let cancelRunningSession;
   let watchSuccess;
   let watchError;
+  let getCurrentSuccess;
+  let getCurrentError;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -158,10 +166,27 @@ describe("RunningLivePage", () => {
     });
     watchSuccess = null;
     watchError = null;
+    getCurrentSuccess = null;
+    getCurrentError = null;
 
     Object.defineProperty(window.navigator, "geolocation", {
       configurable: true,
       value: {
+        getCurrentPosition: vi.fn((success, error) => {
+          getCurrentSuccess = success;
+          getCurrentError = error;
+          success({
+            coords: {
+              latitude: 41.311081,
+              longitude: 69.240562,
+              altitude: 420,
+              accuracy: 8,
+              speed: 0,
+              heading: 90,
+            },
+            timestamp: Date.parse("2026-05-12T10:00:00.000Z"),
+          });
+        }),
         watchPosition: vi.fn((success, error) => {
           watchSuccess = success;
           watchError = error;
@@ -173,6 +198,10 @@ describe("RunningLivePage", () => {
 
     useRunningActiveSession.mockReturnValue({
       activeSession: activeSession(),
+    });
+    useRunningSessionDetail.mockReturnValue({
+      session: null,
+      isLoading: false,
     });
     useAppendRunningPoints.mockReturnValue({ appendPoints });
     useBeginRunningSession.mockReturnValue({
@@ -231,15 +260,100 @@ describe("RunningLivePage", () => {
     vi.useRealTimers();
 
     await waitFor(() => {
-      expect(beginRunningSession).toHaveBeenCalledWith("workout-1", {
-        startedAt: expect.any(String),
-      });
+      expect(beginRunningSession).toHaveBeenCalledWith(
+        "workout-1",
+        expect.objectContaining({
+          startedAt: expect.any(String),
+          firstPoint: expect.objectContaining({
+            sequence: 43,
+            segmentIndex: 0,
+          }),
+        }),
+      );
     });
     await waitFor(() => {
       expect(window.navigator.geolocation.watchPosition).toHaveBeenCalledTimes(
         1,
       );
     });
+  });
+
+  it("requires a usable first GPS point before beginning a ready run", async () => {
+    vi.useFakeTimers();
+    useRunningActiveSession.mockReturnValue({
+      activeSession: activeSession({
+        status: "ready",
+        startedAt: "2026-05-12T09:59:00.000Z",
+      }),
+    });
+
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /^start$/i }));
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2400);
+    });
+    vi.useRealTimers();
+
+    await waitFor(() => {
+      expect(window.navigator.geolocation.getCurrentPosition).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(beginRunningSession).toHaveBeenCalledWith("workout-1", {
+        startedAt: expect.any(String),
+        firstPoint: expect.objectContaining({
+          sequence: 43,
+          segmentIndex: 0,
+          latitude: 41.311081,
+          longitude: 69.240562,
+          accuracy: 8,
+          altitude: 420,
+          speed: 0,
+          heading: 90,
+        }),
+      });
+    });
+  });
+
+  it("blocks begin when the first GPS fix is too weak", async () => {
+    vi.useFakeTimers();
+    useRunningActiveSession.mockReturnValue({
+      activeSession: activeSession({
+        status: "ready",
+        startedAt: "2026-05-12T09:59:00.000Z",
+      }),
+    });
+    window.navigator.geolocation.getCurrentPosition.mockImplementationOnce(
+      (success) => {
+        success({
+          coords: {
+            latitude: 41.311081,
+            longitude: 69.240562,
+            altitude: null,
+            accuracy: 140,
+            speed: null,
+            heading: null,
+          },
+          timestamp: Date.parse("2026-05-12T10:00:00.000Z"),
+        });
+      },
+    );
+
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /^start$/i }));
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2400);
+    });
+    vi.useRealTimers();
+
+    await waitFor(() => {
+      expect(window.navigator.geolocation.getCurrentPosition).toHaveBeenCalled();
+    });
+    expect(beginRunningSession).not.toHaveBeenCalled();
+    expect(await screen.findByText("GPS signali zaif")).toBeInTheDocument();
   });
 
   it("continues GPS point sequencing from the last accepted server sequence", async () => {
@@ -302,7 +416,7 @@ describe("RunningLivePage", () => {
           speed: null,
           heading: null,
         },
-        timestamp: Date.parse("2026-05-12T10:02:00.000Z"),
+        timestamp: Date.parse("2026-05-12T10:03:00.000Z"),
       });
     });
 
@@ -376,7 +490,7 @@ describe("RunningLivePage", () => {
     expect(finishRunningSession).not.toHaveBeenCalled();
   });
 
-  it("finishes with queued final GPS points instead of blocking on sync queue", async () => {
+  it("preserves queued GPS points when pre-finish sync fails", async () => {
     appendPoints.mockRejectedValueOnce(new Error("offline"));
     enqueueRunningPoints("workout-1", [
       {
@@ -392,22 +506,21 @@ describe("RunningLivePage", () => {
     fireEvent.click(screen.getByRole("button", { name: /^finish$/i }));
 
     await waitFor(() => {
-      expect(finishRunningSession).toHaveBeenCalledWith(
-        "workout-1",
-        expect.objectContaining({
-          finishedAt: expect.any(String),
-          finalPointSequence: 43,
-          finalPoints: [
-            expect.objectContaining({
-              sequence: 43,
-              latitude: 41.311081,
-            }),
-          ],
-        }),
-      );
+      expect(appendPoints).toHaveBeenCalledWith("workout-1", [
+        expect.objectContaining({ sequence: 43 }),
+      ]);
     });
-    expect(clearRunningPointQueue).toHaveBeenCalledWith("workout-1");
-    expect(await screen.findByText("Workout history detail")).toBeInTheDocument();
+    expect(finishRunningSession).not.toHaveBeenCalled();
+    expect(clearRunningPointQueue).not.toHaveBeenCalledWith("workout-1");
+    expect(loadRunningPointQueue("workout-1")).toEqual([
+      expect.objectContaining({
+        sequence: 43,
+        latitude: 41.311081,
+      }),
+    ]);
+    expect(
+      screen.getByText(/GPS nuqtalar hali saqlanmadi/i),
+    ).toBeInTheDocument();
   });
 
   it("returns to Workout Overview when the live route has no active session id", async () => {
@@ -506,6 +619,50 @@ describe("RunningLivePage", () => {
     });
   });
 
+  it("starts a new route segment after pause and resume", async () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /^RESUME$/i }));
+
+    await waitFor(() => {
+      expect(pauseRunningSession).toHaveBeenCalledWith("workout-1");
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /^RESUME$/i }));
+
+    await waitFor(() => {
+      expect(resumeRunningSession).toHaveBeenCalledWith("workout-1");
+    });
+    await waitFor(() => {
+      expect(window.navigator.geolocation.watchPosition).toHaveBeenCalledTimes(
+        2,
+      );
+    });
+
+    await act(async () => {
+      await watchSuccess({
+        coords: {
+          latitude: 41.320081,
+          longitude: 69.240562,
+          altitude: null,
+          accuracy: 8,
+          speed: null,
+          heading: null,
+        },
+        timestamp: Date.parse("2026-05-12T10:04:00.000Z"),
+      });
+    });
+
+    await waitFor(() => {
+      expect(appendPoints).toHaveBeenLastCalledWith("workout-1", [
+        expect.objectContaining({
+          segmentIndex: 1,
+          latitude: 41.320081,
+        }),
+      ]);
+    });
+  });
+
   it("does not expose the old cancel menu from the removed top bar", () => {
     renderPage();
 
@@ -560,7 +717,7 @@ describe("RunningLivePage", () => {
     renderPage();
 
     act(() => {
-      watchError();
+      watchError({ code: 1 });
     });
 
     expect(screen.getByText("GPS ruxsati kerak")).toBeInTheDocument();

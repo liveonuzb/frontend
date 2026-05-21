@@ -347,6 +347,7 @@ const RunningDetailPage = () => {
               title={null}
               points={session.points}
               polyline={session.route?.polyline}
+              segments={session.route?.segments}
               emptyLabel={t(
                 "user.workout.running.detail.noRoute",
                 "Route yozilmagan",

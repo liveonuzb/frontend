@@ -12,6 +12,7 @@ import {
   formatRunningDistance,
   formatRunningPace,
 } from "@/lib/running-metrics";
+import RunMapPanel from "../components/run-map-panel.jsx";
 
 import { map, toNumber } from "lodash";
 
@@ -129,7 +130,7 @@ const RunningHistoryPage = () => {
                 )}
               >
                 <Card className="py-6 transition-colors hover:bg-muted/30">
-                  <CardContent className="flex items-center justify-between gap-4 p-4">
+                  <CardContent className="grid items-center gap-4 p-4 md:grid-cols-[minmax(0,1fr)_8rem_auto]">
                     <div className="flex min-w-0 items-center gap-3">
                       <div className="rounded-full bg-primary/10 p-2 text-primary">
                         <RouteIcon className="size-4" aria-hidden="true" />
@@ -152,7 +153,25 @@ const RunningHistoryPage = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="flex shrink-0 items-center gap-3 text-right text-sm">
+                    {session.route?.polyline ? (
+                      <div className="hidden h-20 overflow-hidden rounded-2xl md:block">
+                        <RunMapPanel
+                          title={null}
+                          variant="preview"
+                          provider="none"
+                          polyline={session.route.polyline}
+                          showQuality={false}
+                          emptyLabel=""
+                          loadingLabel=""
+                          errorLabel=""
+                          className="h-full"
+                          surfaceClassName="h-20 min-h-20 rounded-2xl"
+                        />
+                      </div>
+                    ) : (
+                      <div className="hidden md:block" aria-hidden="true" />
+                    )}
+                    <div className="flex shrink-0 items-center justify-between gap-3 text-sm md:justify-end md:text-right">
                       <div>
                         <p className="font-semibold tabular-nums">
                           {formatRunningDistance(session.metrics.distanceMeters)}

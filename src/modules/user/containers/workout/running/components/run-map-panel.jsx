@@ -1,12 +1,19 @@
 import React from "react";
-import { MapIcon, Maximize2Icon } from "lucide-react";
+import { LocateFixedIcon, MapIcon, Maximize2Icon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { loadMapProvider } from "@/lib/maps";
 import { resolveTheme } from "@/lib/user-preferences";
 import { cn } from "@/lib/utils";
 
-import { filter, forEach, map, reduce, toNumber, values as lodashValues } from "lodash";
+import {
+  filter,
+  forEach,
+  map,
+  reduce,
+  toNumber,
+  values as lodashValues,
+} from "lodash";
 
 const DEFAULT_CENTER = [69.240562, 41.311081];
 const SVG_SIZE = 360;
@@ -92,6 +99,9 @@ const decodeGooglePolyline = (polyline) => {
   return coordinates;
 };
 
+const compareRoutePoints = (left, right) =>
+  (toNumber(left?.sequence ?? 0) || 0) - (toNumber(right?.sequence ?? 0) || 0);
+
 const normalizePointCoordinates = (points = []) =>
   filter(map(points, (point) => {
       const latitude = toNumber(point?.latitude);
@@ -104,12 +114,54 @@ const normalizePointCoordinates = (points = []) =>
       return [roundCoordinate(longitude), roundCoordinate(latitude)];
     }), Boolean);
 
-const getRouteCoordinates = ({ points = [], polyline = null }) => {
-  const pointCoordinates = normalizePointCoordinates(points);
-  return pointCoordinates.length > 0
-    ? pointCoordinates
-    : decodeGooglePolyline(polyline);
+const getPointRouteSegments = (points = []) => {
+  const bySegment = new Map();
+
+  forEach(points, (point) => {
+    if (point?.isFilteredOut) {
+      return;
+    }
+
+    const segmentIndex = toNumber(point?.segmentIndex ?? 0) || 0;
+    const segmentPoints = bySegment.get(segmentIndex) ?? [];
+    segmentPoints.push(point);
+    bySegment.set(segmentIndex, segmentPoints);
+  });
+
+  return filter(
+    map(Array.from(bySegment.entries()).sort(([left], [right]) => left - right), ([, segmentPoints]) =>
+      normalizePointCoordinates(segmentPoints.sort(compareRoutePoints)),
+    ),
+    (coordinates) => coordinates.length > 0,
+  );
 };
+
+const decodeRouteSegments = (segments = []) =>
+  filter(
+    map(segments, (segment) =>
+      decodeGooglePolyline(
+        typeof segment === "string" ? segment : segment?.polyline,
+      ),
+    ),
+    (coordinates) => coordinates.length > 0,
+  );
+
+const getRouteSegments = ({ points = [], polyline = null, segments = [] }) => {
+  const decodedSegments = decodeRouteSegments(segments);
+  if (decodedSegments.length > 0) {
+    return decodedSegments;
+  }
+
+  const decodedPolyline = decodeGooglePolyline(polyline);
+  if (decodedPolyline.length > 0) {
+    return [decodedPolyline];
+  }
+
+  return getPointRouteSegments(points);
+};
+
+const flattenRouteSegments = (segments = []) =>
+  reduce(segments, (allCoordinates, segment) => [...allCoordinates, ...segment], []);
 
 const getMapCenter = (coordinates) =>
   coordinates.length > 0 ? coordinates[coordinates.length - 1] : DEFAULT_CENTER;
@@ -422,21 +474,19 @@ const ROUTE_SOURCE_ID = "liveon-running-route";
 const ROUTE_GLOW_LAYER_ID = "liveon-running-route-glow";
 const ROUTE_LINE_LAYER_ID = "liveon-running-route-line";
 
-const buildRouteFeatureCollection = (coordinates) => ({
+const buildRouteFeatureCollection = (routeSegments) => ({
   type: "FeatureCollection",
-  features:
-    coordinates.length > 1
-      ? [
-          {
-            type: "Feature",
-            properties: {},
-            geometry: {
-              type: "LineString",
-              coordinates,
-            },
-          },
-        ]
-      : [],
+  features: map(
+    filter(routeSegments, (coordinates) => coordinates.length > 1),
+    (coordinates) => ({
+      type: "Feature",
+      properties: {},
+      geometry: {
+        type: "LineString",
+        coordinates,
+      },
+    }),
+  ),
 });
 
 const createRouteMarker = (kind) => {
@@ -580,11 +630,13 @@ const ensureRouteLayers = (map) => {
 const MapLibreRouteMap = ({
   center,
   coordinates,
+  routeSegments,
   live = false,
   mapProvider,
   styleUrl,
   routeCenter,
   onError,
+  recenterLabel,
 }) => {
   const containerRef = React.useRef(null);
   const mapRef = React.useRef(null);
@@ -601,8 +653,14 @@ const MapLibreRouteMap = ({
   const [isReady, setIsReady] = React.useState(false);
   const { maplibregl } = mapProvider ?? {};
   const coordinateCount = coordinates.length;
+  const routeFeatureCount = filter(
+    routeSegments,
+    (segment) => segment.length > 1,
+  ).length;
   const initialRouteCenterRef = React.useRef(routeCenter);
   const initialZoomRef = React.useRef(coordinateCount > 1 ? 15 : 16);
+  const latestCoordinate = coordinates.at(-1);
+  const [autoFollowEnabled, setAutoFollowEnabled] = React.useState(true);
 
   React.useEffect(() => {
     if (!containerRef.current || !maplibregl || !initialStyleUrlRef.current) {
@@ -615,6 +673,7 @@ const MapLibreRouteMap = ({
     let markReady = null;
     let handleMissingStyleImage = null;
     let handleMapError = null;
+    let handleManualMove = null;
     let failed = false;
 
     const failMap = () => {
@@ -684,11 +743,18 @@ const MapLibreRouteMap = ({
       handleMapError = () => {
         failMap();
       };
+      handleManualMove = () => {
+        if (live) {
+          setAutoFollowEnabled(false);
+        }
+      };
 
       map.once("load", markReady);
       map.on("styledata", markReady);
       map.on("styleimagemissing", handleMissingStyleImage);
       map.on("error", handleMapError);
+      map.on("dragstart", handleManualMove);
+      map.on("zoomstart", handleManualMove);
       retryTimer = window.setTimeout(markReady, 250);
       fallbackTimer = window.setTimeout(() => {
         if (!readyRef.current) {
@@ -716,6 +782,10 @@ const MapLibreRouteMap = ({
       if (handleMapError) {
         mapRef.current?.off?.("error", handleMapError);
       }
+      if (handleManualMove) {
+        mapRef.current?.off?.("dragstart", handleManualMove);
+        mapRef.current?.off?.("zoomstart", handleManualMove);
+      }
       forEach(lodashValues(markerRefs.current), (marker) => marker?.remove());
       markerRefs.current = {
         start: null,
@@ -727,7 +797,7 @@ const MapLibreRouteMap = ({
       readyRef.current = false;
       didInitialLiveCenterRef.current = false;
     };
-  }, [maplibregl, onError]);
+  }, [live, maplibregl, onError]);
 
   React.useEffect(() => {
     const map = mapRef.current;
@@ -759,7 +829,7 @@ const MapLibreRouteMap = ({
 
     ensureRouteLayers(map);
     const source = map.getSource(ROUTE_SOURCE_ID);
-    source?.setData(buildRouteFeatureCollection(coordinates));
+    source?.setData(buildRouteFeatureCollection(routeSegments));
 
     if (coordinates[0]) {
       if (!markerRefs.current.start) {
@@ -807,7 +877,7 @@ const MapLibreRouteMap = ({
           initial: true,
         });
         didInitialLiveCenterRef.current = true;
-      } else if (endCoordinate) {
+      } else if (endCoordinate && autoFollowEnabled) {
         const now = Date.now();
 
         if (now - lastFollowAtRef.current > 900) {
@@ -846,15 +916,49 @@ const MapLibreRouteMap = ({
       coordinates,
       center,
     });
-  }, [center, coordinates, isReady, live, maplibregl]);
+  }, [
+    autoFollowEnabled,
+    center,
+    coordinates,
+    isReady,
+    live,
+    maplibregl,
+    routeSegments,
+  ]);
+
+  const handleRecenter = () => {
+    const map = mapRef.current;
+    if (!map || !latestCoordinate) {
+      return;
+    }
+
+    setAutoFollowEnabled(true);
+    moveMapToLatestCoordinate({ map, coordinate: latestCoordinate });
+    lastFollowAtRef.current = Date.now();
+  };
 
   return (
-    <div
-      ref={containerRef}
-      className="h-full w-full overflow-hidden rounded-[inherit]"
-      data-testid="maplibre-map"
-      data-coordinate-count={coordinateCount}
-    />
+    <div className="relative h-full w-full overflow-hidden rounded-[inherit]">
+      <div
+        ref={containerRef}
+        className="h-full w-full"
+        data-testid="maplibre-map"
+        data-coordinate-count={coordinateCount}
+        data-route-feature-count={routeFeatureCount}
+      />
+      {live && latestCoordinate ? (
+        <Button
+          type="button"
+          size="icon"
+          variant="secondary"
+          className="absolute bottom-5 right-5 z-10 rounded-full bg-background/90 shadow-lg backdrop-blur"
+          aria-label={recenterLabel}
+          onClick={handleRecenter}
+        >
+          <LocateFixedIcon className="size-5" aria-hidden="true" />
+        </Button>
+      ) : null}
+    </div>
   );
 };
 
@@ -896,11 +1000,13 @@ const defaultLabels = {
   fairDescription: "Some GPS drift",
   weakTitle: "Weak GPS",
   weakDescription: "Route was noisy",
+  recenterLabel: "Recenter route",
 };
 
 const RunMapPanel = ({
   points = [],
   polyline = null,
+  segments = [],
   title = "Route map",
   emptyLabel = "No route recorded",
   loadingLabel,
@@ -926,9 +1032,13 @@ const RunMapPanel = ({
     }),
     [errorLabel, labelsProp, loadingLabel],
   );
+  const routeSegments = React.useMemo(
+    () => getRouteSegments({ points, polyline, segments }),
+    [points, polyline, segments],
+  );
   const routeCoordinates = React.useMemo(
-    () => getRouteCoordinates({ points, polyline }),
-    [points, polyline],
+    () => flattenRouteSegments(routeSegments),
+    [routeSegments],
   );
   const mapTheme = useMapTheme();
   const [mapComponents, setMapComponents] = React.useState(null);
@@ -938,9 +1048,9 @@ const RunMapPanel = ({
 
   /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
-    if (routeCoordinates.length === 0 && provider === "none") {
+    if (provider === "none") {
       setMapComponents(null);
-      setLoadState("idle");
+      setLoadState("error");
       return undefined;
     }
 
@@ -1009,11 +1119,13 @@ const RunMapPanel = ({
           <MapLibreRouteMap
             center={center}
             coordinates={routeCoordinates}
+            routeSegments={routeSegments}
             live={isLive}
             mapProvider={mapComponents}
             styleUrl={mapStyleUrl}
             routeCenter={routeCenter}
             onError={handleMapError}
+            recenterLabel={labels.recenterLabel}
           />
           <MapOverlay
             showExpand={showExpand}
@@ -1053,4 +1165,3 @@ const RunMapPanel = ({
 };
 
 export default RunMapPanel;
-

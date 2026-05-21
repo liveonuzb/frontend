@@ -31,6 +31,7 @@ import {
   usePauseRunningSession,
   useResumeRunningSession,
   useRunningActiveSession,
+  useRunningSessionDetail,
 } from "@/hooks/app/use-running-sessions";
 import {
   clearActiveRunningSession,
@@ -53,6 +54,14 @@ import {
   formatRunningClockDuration,
   formatRunningPace,
 } from "@/lib/running-metrics";
+import {
+  buildRunningPointFromPosition,
+  getRunningLocationErrorStatus,
+  isUsableRunningPosition,
+  requestFirstRunningPosition,
+  RUNNING_LOCATION_ERROR,
+  RUNNING_WATCH_OPTIONS,
+} from "@/lib/running-location";
 import { cn } from "@/lib/utils";
 import RunMapPanel from "../components/run-map-panel.jsx";
 
@@ -62,12 +71,18 @@ const getMaxPointSequence = (points = []) =>
   reduce(points, (maxSequence, point) =>
     Math.max(maxSequence, toNumber(point?.sequence ?? 0) || 0), 0);
 
+const getMaxSegmentIndex = (points = []) =>
+  reduce(points, (maxSegment, point) =>
+    Math.max(maxSegment, toNumber(point?.segmentIndex ?? 0) || 0), 0);
+
 const GPS_STATUS = {
   waiting: "waiting",
   connected: "connected",
   queued: "queued",
   unavailable: "unavailable",
   permission: "permission",
+  timeout: "timeout",
+  weak: "weak",
 };
 
 const COUNTDOWN_START = 3;
@@ -95,9 +110,35 @@ const getGpsStatusLabel = (status, t) => {
       "user.workout.running.live.gpsPermission",
       "GPS ruxsati kerak",
     ),
+    [GPS_STATUS.timeout]: t(
+      "user.workout.running.live.gpsTimeout",
+      "GPS sekin javob berdi",
+    ),
+    [GPS_STATUS.weak]: t(
+      "user.workout.running.live.gpsWeak",
+      "GPS signali zaif",
+    ),
   };
 
   return labels[status] ?? labels[GPS_STATUS.waiting];
+};
+
+const getGpsStateFromLocationError = (error) => {
+  const status = getRunningLocationErrorStatus(error);
+
+  if (status === RUNNING_LOCATION_ERROR.permission) {
+    return GPS_STATUS.permission;
+  }
+
+  if (status === RUNNING_LOCATION_ERROR.timeout) {
+    return GPS_STATUS.timeout;
+  }
+
+  if (status === RUNNING_LOCATION_ERROR.weak) {
+    return GPS_STATUS.weak;
+  }
+
+  return GPS_STATUS.unavailable;
 };
 
 const formatPrimaryRunningPace = (secondsPerKm) =>
@@ -188,6 +229,12 @@ const RunningLivePage = () => {
       : null;
   const currentStatus =
     optimisticStatus ?? effectiveActiveSession?.status ?? "ready";
+  const { session: runningDetailSession } = useRunningSessionDetail(
+    workoutSessionId,
+    {
+      enabled: Boolean(workoutSessionId) && currentStatus !== "ready",
+    },
+  );
   const effectiveStartedAt =
     optimisticStartedAt ?? effectiveActiveSession?.startedAt ?? null;
   workoutSessionIdRef.current = workoutSessionId;
@@ -198,15 +245,28 @@ const RunningLivePage = () => {
   const isActionPending = isBeginning || isPausing || isResuming || isFinishing;
   const gpsStatus = getGpsStatusLabel(gpsState, t);
   const canRetryGps =
-    gpsState === GPS_STATUS.permission || gpsState === GPS_STATUS.unavailable;
+    gpsState === GPS_STATUS.permission ||
+    gpsState === GPS_STATUS.unavailable ||
+    gpsState === GPS_STATUS.timeout ||
+    gpsState === GPS_STATUS.weak;
+  const segmentIndexRef = React.useRef(0);
+  const routePoints = React.useMemo(
+    () =>
+      dedupeRunningPoints([
+        ...(runningDetailSession?.points ?? effectiveActiveSession?.points ?? []),
+        ...loadRunningPointQueue(workoutSessionId),
+        ...livePoints,
+      ]),
+    [effectiveActiveSession?.points, livePoints, runningDetailSession?.points, workoutSessionId],
+  );
   const metrics = React.useMemo(
     () =>
       calculateLiveRunningMetrics({
         baseMetrics: effectiveActiveSession?.metrics ?? {},
         elapsedSeconds,
-        points: livePoints,
+        points: routePoints,
       }),
-    [effectiveActiveSession?.metrics, elapsedSeconds, livePoints],
+    [effectiveActiveSession?.metrics, elapsedSeconds, routePoints],
   );
 
   React.useEffect(() => {
@@ -347,6 +407,33 @@ const RunningLivePage = () => {
     [appendPoints, applyAcceptedSequence, updateQueuedCount, workoutSessionId],
   );
 
+  const flushRunningPointsBeforeFinish = React.useCallback(async () => {
+    if (!workoutSessionId) {
+      return { ok: true };
+    }
+
+    let remaining = loadRunningPointQueue(workoutSessionId).length;
+    let attempts = Math.ceil(remaining / 24) + 2;
+
+    while (remaining > 0 && attempts > 0) {
+      const result = await syncRunningPoints({ force: true });
+      if (!result.ok) {
+        return result;
+      }
+
+      const nextRemaining = loadRunningPointQueue(workoutSessionId).length;
+      if (nextRemaining >= remaining && result.accepted === 0) {
+        break;
+      }
+
+      remaining = nextRemaining;
+      attempts -= 1;
+    }
+
+    updateQueuedCount();
+    return { ok: true };
+  }, [syncRunningPoints, updateQueuedCount, workoutSessionId]);
+
   /*
    * Live running view hydrates queue/timer/GPS status from active session and
    * browser geolocation watcher lifecycle.
@@ -358,13 +445,26 @@ const RunningLivePage = () => {
     }
 
     const queuedPoints = loadRunningPointQueue(workoutSessionId);
+    const persistedPoints =
+      runningDetailSession?.points ?? effectiveActiveSession?.points ?? [];
     sequenceRef.current = Math.max(
       sequenceRef.current,
       toNumber(effectiveActiveSession?.lastAcceptedSequence ?? 0) || 0,
       getMaxPointSequence(queuedPoints),
+      getMaxPointSequence(persistedPoints),
+    );
+    segmentIndexRef.current = Math.max(
+      segmentIndexRef.current,
+      getMaxSegmentIndex(queuedPoints),
+      getMaxSegmentIndex(persistedPoints),
     );
     setQueuedCount(queuedPoints.length);
-  }, [effectiveActiveSession?.lastAcceptedSequence, workoutSessionId]);
+  }, [
+    effectiveActiveSession?.lastAcceptedSequence,
+    effectiveActiveSession?.points,
+    runningDetailSession?.points,
+    workoutSessionId,
+  ]);
 
   React.useEffect(() => {
     if (isReady || !effectiveStartedAt) {
@@ -400,33 +500,28 @@ const RunningLivePage = () => {
 
         const nextSequence = sequenceRef.current + 1;
         sequenceRef.current = nextSequence;
-        const point = {
+        const point = buildRunningPointFromPosition(position, {
           sequence: nextSequence,
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          altitude: position.coords.altitude ?? undefined,
-          accuracy: position.coords.accuracy ?? undefined,
-          speed: position.coords.speed ?? undefined,
-          heading: position.coords.heading ?? undefined,
-          sourceTimestamp: new Date(position.timestamp).toISOString(),
-        };
+          segmentIndex: segmentIndexRef.current,
+        });
 
-        setLivePoints((currentPoints) => takeRight([...currentPoints, point], 500));
+        setLivePoints((currentPoints) =>
+          takeRight([...currentPoints, point], 3000),
+        );
         persistIncomingPoints([point]);
+        if (!isUsableRunningPosition(position)) {
+          setGpsState(GPS_STATUS.weak);
+        }
         void syncRunningPoints();
       },
-      () => {
+      (error) => {
         if (trackingSuspendedRef.current) {
           return;
         }
 
-        setGpsState(GPS_STATUS.permission);
+        setGpsState(getGpsStateFromLocationError(error));
       },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 5000,
-        timeout: 15000,
-      },
+      RUNNING_WATCH_OPTIONS,
     );
     geolocationRef.current = geolocation;
     watchIdRef.current = watchId;
@@ -492,10 +587,23 @@ const RunningLivePage = () => {
 
     try {
       await runStartCountdown();
+      const position = await requestFirstRunningPosition();
+      const nextSequence = sequenceRef.current + 1;
+      sequenceRef.current = nextSequence;
+      const firstPoint = buildRunningPointFromPosition(position, {
+        sequence: nextSequence,
+        segmentIndex: segmentIndexRef.current,
+      });
       const startedAt = new Date().toISOString();
+      setLivePoints((currentPoints) =>
+        takeRight([...currentPoints, firstPoint], 3000),
+      );
+      persistIncomingPoints([firstPoint]);
       const session = await beginRunningSession(workoutSessionId, {
         startedAt,
+        firstPoint,
       });
+      applyAcceptedSequence(session);
       const nextStartedAt = session?.startedAt ?? startedAt;
       setLocalStatus({
         workoutSessionId,
@@ -511,10 +619,11 @@ const RunningLivePage = () => {
       });
       allowGpsTracking();
       setElapsedSeconds(0);
-    } catch {
+    } catch (error) {
       setCountdownValue(null);
       setLocalStatus({ workoutSessionId, status: "ready" });
       saveLocalStatus("ready");
+      setGpsState(getGpsStateFromLocationError(error));
       toast.error(
         t(
           "user.workout.running.live.beginError",
@@ -537,6 +646,7 @@ const RunningLivePage = () => {
     if (isPaused) {
       try {
         const session = await resumeRunningSession(workoutSessionId);
+        segmentIndexRef.current += 1;
         allowGpsTracking();
         setLocalStatus({
           workoutSessionId,
@@ -596,6 +706,20 @@ const RunningLivePage = () => {
     setFinishOpen(false);
     setFinishRetryMessage("");
     stopGpsTracking();
+    const flushResult = await flushRunningPointsBeforeFinish();
+    if (!flushResult.ok && loadRunningPointQueue(workoutSessionId).length > 0) {
+      const message = t(
+        "user.workout.running.live.syncBeforeFinishError",
+        "GPS nuqtalar hali saqlanmadi. Internet tiklangach qayta urinib ko'ring.",
+      );
+      if (canRestoreGpsTracking(workoutSessionId)) {
+        allowGpsTracking();
+      }
+      setFinishRetryMessage(message);
+      toast.error(message);
+      return;
+    }
+
     const finalPoints = takeRight(dedupeRunningPoints([
       ...loadRunningPointQueue(workoutSessionId),
       ...livePoints,
@@ -615,7 +739,7 @@ const RunningLivePage = () => {
       clearActiveRunningSession();
       clearRunningPointQueue(workoutSessionId);
       navigate(
-        `/user/workout/history/${session?.workoutSessionId ?? workoutSessionId}`,
+        `/user/workout/running/${session?.workoutSessionId ?? workoutSessionId}`,
       );
     };
 
@@ -691,7 +815,7 @@ const RunningLivePage = () => {
           <RunMapPanel
             title={null}
             variant="live"
-            points={livePoints}
+            points={routePoints}
             emptyLabel={gpsStatus}
             className="absolute inset-0"
             contentClassName="p-0"

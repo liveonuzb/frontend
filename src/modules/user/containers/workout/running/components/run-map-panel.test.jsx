@@ -119,6 +119,7 @@ describe("RunMapPanel", () => {
       "data-coordinate-count",
       "3",
     );
+    await waitFor(() => expect(mapInstances).toHaveLength(1));
     expect(mapInstances[0].options.style).toBe(
       "https://tiles.openfreemap.org/styles/bright",
     );
@@ -226,6 +227,74 @@ describe("RunMapPanel", () => {
 
     screen.getByRole("button", { name: /expand route preview/i }).click();
     expect(onExpand).toHaveBeenCalledTimes(1);
+  });
+
+  it("prefers the cleaned route polyline over raw filtered points for completed previews", async () => {
+    render(
+      <RunMapPanel
+        title={null}
+        polyline="_p~iF~ps|U_ulLnnqC_mqNvxq`@"
+        points={[
+          {
+            sequence: 1,
+            latitude: 41.311081,
+            longitude: 69.240562,
+            isFilteredOut: false,
+          },
+          {
+            sequence: 2,
+            latitude: 42.5,
+            longitude: 70.8,
+            isFilteredOut: true,
+          },
+        ]}
+      />,
+    );
+
+    expect(await screen.findByTestId("maplibre-map")).toHaveAttribute(
+      "data-coordinate-count",
+      "3",
+    );
+  });
+
+  it("keeps live route segments separated when GPS resumes after a pause", async () => {
+    render(
+      <RunMapPanel
+        title={null}
+        variant="live"
+        points={[
+          {
+            sequence: 1,
+            segmentIndex: 0,
+            latitude: 41.311081,
+            longitude: 69.240562,
+          },
+          {
+            sequence: 2,
+            segmentIndex: 0,
+            latitude: 41.312081,
+            longitude: 69.240562,
+          },
+          {
+            sequence: 3,
+            segmentIndex: 1,
+            latitude: 41.320081,
+            longitude: 69.240562,
+          },
+          {
+            sequence: 4,
+            segmentIndex: 1,
+            latitude: 41.321081,
+            longitude: 69.240562,
+          },
+        ]}
+      />,
+    );
+
+    expect(await screen.findByTestId("maplibre-map")).toHaveAttribute(
+      "data-route-feature-count",
+      "2",
+    );
   });
 
   it("keeps the same live map instance when route points update", async () => {
