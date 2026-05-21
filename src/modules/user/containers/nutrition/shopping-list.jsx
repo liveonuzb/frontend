@@ -37,18 +37,43 @@ const weekDays = [
   "Yakshanba",
 ];
 
-const buildShoppingList = (weeklyPlan) => {
+export const getPlanShoppingDays = (plan) => {
+  const durationDays = toNumber(get(plan, "durationDays")) || 0;
+
+  if (durationDays > weekDays.length) {
+    return Array.from({ length: durationDays }, (_, index) => ({
+      key: `day-${index + 1}`,
+      label: `${index + 1}-kun`,
+    }));
+  }
+
+  return map(weekDays, (day) => ({ key: day, label: day }));
+};
+
+export const buildShoppingList = (planOrWeeklyPlan) => {
+  const hasPlanShape =
+    planOrWeeklyPlan &&
+    typeof planOrWeeklyPlan === "object" &&
+    Object.prototype.hasOwnProperty.call(planOrWeeklyPlan, "weeklyKanban");
+  const weeklyPlan = hasPlanShape
+    ? get(planOrWeeklyPlan, "weeklyKanban", {})
+    : planOrWeeklyPlan || {};
+  const shoppingDays = getPlanShoppingDays(
+    hasPlanShape ? planOrWeeklyPlan : { weeklyKanban: weeklyPlan },
+  );
   const productsMap = new Map();
 
-  each(weekDays, (day) => {
-    each(defaultTo(weeklyPlan[day], []), (col) => {
+  each(shoppingDays, ({ key }) => {
+    each(defaultTo(weeklyPlan[key], []), (col) => {
       each(defaultTo(get(col, "items"), []), (item) => {
         const name = trim(String(get(item, "name", "")));
         if (!name) return;
 
         const qty = toNumber(get(item, "qty")) || 1;
         const grams =
-          toNumber(get(item, "grams")) || toNumber(get(item, "defaultAmount")) || 0;
+          toNumber(get(item, "grams")) ||
+          toNumber(get(item, "defaultAmount")) ||
+          0;
         const unit = get(item, "unit", "g");
 
         const existing = productsMap.get(name) || {
@@ -76,7 +101,8 @@ const buildShoppingList = (weeklyPlan) => {
 };
 
 const getItemAmountLabel = (item) => {
-  const amount = toNumber(get(item, "grams")) || toNumber(get(item, "defaultAmount")) || 0;
+  const amount =
+    toNumber(get(item, "grams")) || toNumber(get(item, "defaultAmount")) || 0;
   const unit = get(item, "unit", "g");
   return amount > 0 ? `${amount} ${unit}` : "";
 };
@@ -104,7 +130,12 @@ const getFileSafeName = (value, fallback) => {
   return safe || fallback;
 };
 
-const downloadPDF = (weeklyPlan, shoppingList, planName, checkedItems) => {
+const downloadPDF = (plan, shoppingList, planName, checkedItems) => {
+  const weeklyPlan = get(plan, "weeklyKanban", {});
+  const shoppingDays = getPlanShoppingDays(plan);
+  const isDurationPlan =
+    (toNumber(get(plan, "durationDays")) || 0) > weekDays.length;
+  const planLabel = isDurationPlan ? "30 kunlik" : "Haftalik";
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -119,7 +150,7 @@ const downloadPDF = (weeklyPlan, shoppingList, planName, checkedItems) => {
   let y = 16;
 
   doc.setProperties({
-    title: planName ? `${planName} - haftalik menyu` : "Haftalik menyu",
+    title: planName ? `${planName} - menyu` : `${planLabel} menyu`,
     subject: "LiveOn meal plan export",
     creator: "LiveOn",
   });
@@ -149,7 +180,7 @@ const downloadPDF = (weeklyPlan, shoppingList, planName, checkedItems) => {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
-    doc.text("Haftalik menyu va xarid ro'yxati", margin + 24, y + 17);
+    doc.text(`${planLabel} menyu va xarid ro'yxati`, margin + 24, y + 17);
     doc.text(dateStr, pageW - margin - 5, y + 10, { align: "right" });
     if (planName) {
       doc.text(planName, pageW - margin - 5, y + 17, { align: "right" });
@@ -183,11 +214,15 @@ const downloadPDF = (weeklyPlan, shoppingList, planName, checkedItems) => {
   };
 
   addHeader();
-  addSectionTitle("Haftalik menyu", "1 ustunli ko'rinish");
+  addSectionTitle(`${planLabel} menyu`, "1 ustunli ko'rinish");
 
-  each(weekDays, (day) => {
-    const columns = defaultTo(weeklyPlan[day], []);
-    const dayItemCount = reduce(columns, (sum, col) => sum + size(defaultTo(get(col, "items"), [])), 0);
+  each(shoppingDays, ({ key, label }) => {
+    const columns = defaultTo(weeklyPlan[key], []);
+    const dayItemCount = reduce(
+      columns,
+      (sum, col) => sum + size(defaultTo(get(col, "items"), [])),
+      0,
+    );
 
     checkY(18);
     doc.setFillColor(248, 250, 252);
@@ -195,7 +230,7 @@ const downloadPDF = (weeklyPlan, shoppingList, planName, checkedItems) => {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.setTextColor(15, 23, 42);
-    doc.text(day, margin + 3, y + 1);
+    doc.text(label, margin + 3, y + 1);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
@@ -220,7 +255,11 @@ const downloadPDF = (weeklyPlan, shoppingList, planName, checkedItems) => {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8);
       doc.setTextColor(249, 115, 22);
-      doc.text(`${get(col, "type", "Ovqat")} ${get(col, "time") ? `(${get(col, "time")})` : ""}`, margin + 3, y);
+      doc.text(
+        `${get(col, "type", "Ovqat")} ${get(col, "time") ? `(${get(col, "time")})` : ""}`,
+        margin + 3,
+        y,
+      );
       y += 5;
 
       each(items, (item) => {
@@ -274,7 +313,11 @@ const downloadPDF = (weeklyPlan, shoppingList, planName, checkedItems) => {
         doc.roundedRect(margin, y - 4, contentW, 10, 2, 2, "F");
       }
 
-      doc.setDrawColor(isChecked ? 34 : 203, isChecked ? 197 : 213, isChecked ? 94 : 225);
+      doc.setDrawColor(
+        isChecked ? 34 : 203,
+        isChecked ? 197 : 213,
+        isChecked ? 94 : 225,
+      );
       doc.setLineWidth(0.4);
       doc.rect(margin + 2, y - 2.5, 4.5, 4.5);
       if (isChecked) {
@@ -285,7 +328,11 @@ const downloadPDF = (weeklyPlan, shoppingList, planName, checkedItems) => {
 
       doc.setFont("helvetica", isChecked ? "normal" : "bold");
       doc.setFontSize(9);
-      doc.setTextColor(isChecked ? 148 : 30, isChecked ? 163 : 41, isChecked ? 184 : 59);
+      doc.setTextColor(
+        isChecked ? 148 : 30,
+        isChecked ? 163 : 41,
+        isChecked ? 184 : 59,
+      );
       doc.text(item.name, margin + 10, y + 0.5);
 
       const amountStr =
@@ -336,13 +383,9 @@ export const ShoppingList = ({
   isFetching = false,
 }) => {
   const [checkedShoppingItems, setCheckedShoppingItems] = useState({});
-  const weeklyKanban = get(plan, "weeklyKanban", {});
   const planName = get(plan, "name", "");
 
-  const shoppingList = useMemo(
-    () => buildShoppingList(weeklyKanban),
-    [weeklyKanban],
-  );
+  const shoppingList = useMemo(() => buildShoppingList(plan), [plan]);
 
   const checkedShoppingCount = useMemo(
     () => size(filter(shoppingList, (item) => checkedShoppingItems[item.name])),
@@ -430,12 +473,7 @@ export const ShoppingList = ({
               variant="outline"
               className="gap-2"
               onClick={() =>
-                downloadPDF(
-                  weeklyKanban,
-                  shoppingList,
-                  planName,
-                  checkedShoppingItems,
-                )
+                downloadPDF(plan, shoppingList, planName, checkedShoppingItems)
               }
             >
               <DownloadIcon className="size-3.5" />

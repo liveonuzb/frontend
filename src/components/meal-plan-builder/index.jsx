@@ -73,6 +73,7 @@ import LibraryItem from "./library-item.jsx";
 import BuilderColumn from "./builder-column.jsx";
 import MobileAccordionColumn from "./mobile-accordion-column.jsx";
 import MobileFoodLibraryDrawer from "./mobile-food-library-drawer.jsx";
+import AiGeneratorDrawer from "./ai-generator-drawer.jsx";
 import { Card } from "@/components/ui/card.jsx";
 import PortionEditorDrawer from "./portion-editor-drawer.jsx";
 import {
@@ -220,6 +221,7 @@ const Index = ({
   const [targetColId, setTargetColId] = useState(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [templateTargetColId, setTemplateTargetColId] = useState("");
+  const [aiGeneratorOpen, setAiGeneratorOpen] = useState(false);
 
   const dayScrollRef = useRef(null);
   const activeDayRef = useRef(null);
@@ -766,6 +768,20 @@ const Index = ({
     [targetColId, addFoodToColumn],
   );
 
+  const handleAiGenerated = useCallback(
+    (kanban) => {
+      setDaysData(normalizeDaysData(kanban, foodMap));
+      setSelectedDay(dayOptions[0]?.key || getTodayDayName());
+      setAiGeneratorOpen(false);
+      toast.success(
+        dayCount > 7
+          ? `${dayCount} kunlik reja yaratildi`
+          : "Haftalik reja yaratildi",
+      );
+    },
+    [dayCount, dayOptions, foodMap],
+  );
+
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="data-[vaul-drawer-direction=right]:w-full data-[vaul-drawer-direction=right]:sm:max-w-full p-0">
@@ -790,6 +806,17 @@ const Index = ({
               ? `${dayCount} kunlik ovqatlanish rejangizni boshqaring va tahrirlang`
               : "Haftalik ovqatlanish rejangizni boshqaring va tahrirlang"}
           </DrawerDescription>
+          <div className="mt-4 flex justify-center md:justify-start">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-2xl"
+              onClick={() => setAiGeneratorOpen(true)}
+            >
+              <SparklesIcon className="size-4 text-amber-500" />
+              AI bilan yaratish
+            </Button>
+          </div>
           <div
             ref={dayScrollRef}
             className="flex gap-1.5 overflow-x-auto scrollbar-none mt-4"
@@ -1222,6 +1249,13 @@ const Index = ({
             foods={foods}
             isLoading={isCatalogLoading}
             isError={isCatalogError}
+          />
+          <AiGeneratorDrawer
+            open={aiGeneratorOpen}
+            onOpenChange={setAiGeneratorOpen}
+            foods={foods}
+            dayCount={dayCount}
+            onGenerate={handleAiGenerated}
           />
         </div>
         <DrawerFooter>

@@ -29,6 +29,11 @@ const WEEK_DAYS = [
   "Yakshanba",
 ];
 
+const buildGeneratorDayKeys = (dayCount = WEEK_DAYS.length) =>
+  dayCount > WEEK_DAYS.length
+    ? Array.from({ length: dayCount }, (_, index) => `day-${index + 1}`)
+    : WEEK_DAYS;
+
 const MEALS_3 = [
   { type: "Nonushta", time: "08:00-09:00", ratio: 0.3 },
   { type: "Tushlik", time: "13:00-14:00", ratio: 0.4 },
@@ -91,8 +96,8 @@ const pickFoodsForMeal = (pool, targetCal, dayIdx, mealIdx) => {
     const portion = picked.length === 0 ? remaining * 0.6 : remaining * 0.4;
     const isGramBased = !food.unit || food.unit === "g" || food.unit === "ml";
     const rawGrams = isGramBased
-      ? round((portion / baseCal) * 100 / step) * step
-      : round((portion / baseCal) * defaultAmount / step) * step;
+      ? round(((portion / baseCal) * 100) / step) * step
+      : round(((portion / baseCal) * defaultAmount) / step) * step;
     const grams = Math.max(step, Math.min(500, rawGrams || step));
 
     const factor = isGramBased ? grams / 100 : grams / defaultAmount;
@@ -112,7 +117,13 @@ const pickFoodsForMeal = (pool, targetCal, dayIdx, mealIdx) => {
   return picked;
 };
 
-const generateWeeklyKanban = (foods, goal, targetCal, mealsPerDay) => {
+export const generateWeeklyKanban = (
+  foods,
+  goal,
+  targetCal,
+  mealsPerDay,
+  dayCount = WEEK_DAYS.length,
+) => {
   const mealTemplates = mealsPerDay === 5 ? MEALS_5 : MEALS_3;
 
   const proteinFoods = filter(
@@ -134,8 +145,8 @@ const generateWeeklyKanban = (foods, goal, targetCal, mealsPerDay) => {
 
   const kanban = {};
 
-  forEach(WEEK_DAYS, (day, dayIdx) => {
-    kanban[day] = map(mealTemplates, (meal, mealIdx) => ({
+  forEach(buildGeneratorDayKeys(dayCount), (dayKey, dayIdx) => {
+    kanban[dayKey] = map(mealTemplates, (meal, mealIdx) => ({
       id: makeId(),
       type: meal.type,
       time: meal.time,
@@ -151,7 +162,13 @@ const generateWeeklyKanban = (foods, goal, targetCal, mealsPerDay) => {
   return kanban;
 };
 
-const AiGeneratorDrawer = ({ open, onOpenChange, foods = [], onGenerate }) => {
+const AiGeneratorDrawer = ({
+  open,
+  onOpenChange,
+  foods = [],
+  onGenerate,
+  dayCount = WEEK_DAYS.length,
+}) => {
   const [goal, setGoal] = React.useState("maintain");
   const [calories, setCalories] = React.useState(2100);
   const [mealsPerDay, setMealsPerDay] = React.useState(3);
@@ -168,10 +185,16 @@ const AiGeneratorDrawer = ({ open, onOpenChange, foods = [], onGenerate }) => {
   const handleGenerate = React.useCallback(async () => {
     setGenerating(true);
     await new Promise((r) => setTimeout(r, 1200));
-    const kanban = generateWeeklyKanban(foods, goal, calories, mealsPerDay);
+    const kanban = generateWeeklyKanban(
+      foods,
+      goal,
+      calories,
+      mealsPerDay,
+      dayCount,
+    );
     setGenerating(false);
     onGenerate(kanban);
-  }, [foods, goal, calories, mealsPerDay, onGenerate]);
+  }, [foods, goal, calories, mealsPerDay, onGenerate, dayCount]);
 
   const macros = selectedGoal
     ? {
@@ -192,7 +215,9 @@ const AiGeneratorDrawer = ({ open, onOpenChange, foods = [], onGenerate }) => {
             AI Ovqatlanish Rejasi
           </DrawerTitle>
           <DrawerDescription>
-            Parametrlarni kiriting — AI haftalik reja yaratib beradi
+            Parametrlarni kiriting — AI{" "}
+            {dayCount > 7 ? `${dayCount} kunlik` : "haftalik"} reja yaratib
+            beradi
           </DrawerDescription>
         </DrawerHeader>
 
@@ -248,25 +273,28 @@ const AiGeneratorDrawer = ({ open, onOpenChange, foods = [], onGenerate }) => {
           <div className="space-y-2">
             <Label>Kunlik ovqatlar soni</Label>
             <div className="grid grid-cols-2 gap-2">
-              {map([
-                { n: 3, desc: "Asosiy" },
-                { n: 5, desc: "+ gazaklar" },
-              ], ({ n, desc }) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => setMealsPerDay(n)}
-                  className={cn(
-                    "rounded-2xl border px-4 py-2.5 text-left transition-all",
-                    mealsPerDay === n
-                      ? "border-primary bg-primary/5 text-primary"
-                      : "border-border bg-muted/20 text-muted-foreground hover:bg-muted/40",
-                  )}
-                >
-                  <p className="text-sm font-bold">{n} marta</p>
-                  <p className="text-[11px] opacity-70">{desc}</p>
-                </button>
-              ))}
+              {map(
+                [
+                  { n: 3, desc: "Asosiy" },
+                  { n: 5, desc: "+ gazaklar" },
+                ],
+                ({ n, desc }) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setMealsPerDay(n)}
+                    className={cn(
+                      "rounded-2xl border px-4 py-2.5 text-left transition-all",
+                      mealsPerDay === n
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-border bg-muted/20 text-muted-foreground hover:bg-muted/40",
+                    )}
+                  >
+                    <p className="text-sm font-bold">{n} marta</p>
+                    <p className="text-[11px] opacity-70">{desc}</p>
+                  </button>
+                ),
+              )}
             </div>
           </div>
 
@@ -314,7 +342,7 @@ const AiGeneratorDrawer = ({ open, onOpenChange, foods = [], onGenerate }) => {
             ) : (
               <>
                 <SparklesIcon className="mr-2 size-4" />
-                Haftalik reja yaratish
+                {dayCount > 7 ? `${dayCount} kunlik` : "Haftalik"} reja yaratish
               </>
             )}
           </Button>

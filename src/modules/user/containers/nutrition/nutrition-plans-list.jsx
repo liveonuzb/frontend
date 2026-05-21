@@ -38,6 +38,11 @@ export default function NutritionPlansList({
       totalItems: 0,
       updatedLabel: null,
     };
+    const durationDays =
+      Number.isFinite(Number(plan.durationDays)) &&
+      Number(plan.durationDays) > 0
+        ? Number(plan.durationDays)
+        : 7;
 
     return (
       <div
@@ -106,7 +111,7 @@ export default function NutritionPlansList({
                     To&apos;ldirilgan kun
                   </p>
                   <p className="mt-1 text-sm font-semibold">
-                    {insights.filledDays}/7
+                    {insights.filledDays}/{durationDays}
                   </p>
                 </div>
                 <div className="rounded-2xl bg-muted/40 px-3 py-2.5">
