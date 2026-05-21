@@ -163,15 +163,21 @@ export const getAiCreditDisabledProps = ({ feature, wallet, costs } = {}) => {
   };
 };
 
-export const isAiCreditsExhaustedError = (error) =>
-  get(error, "response.status") === 402 &&
-  includes(
-    [
-      get(error, "response.data.code"),
-      get(error, "response.data.error.code"),
-    ],
-    "AI_CREDITS_EXHAUSTED",
+export const isAiCreditsExhaustedError = (error) => {
+  const status = get(error, "response.status") ?? get(error, "status");
+
+  return (
+    (status === undefined || status === 402) &&
+    includes(
+      [
+        get(error, "code"),
+        get(error, "response.data.code"),
+        get(error, "response.data.error.code"),
+      ],
+      "AI_CREDITS_EXHAUSTED",
+    )
   );
+};
 
 export const useAiCreditWallet = (options = {}) => {
   const enabled = options.enabled ?? true;

@@ -177,7 +177,7 @@ describe("AI credit normalization", () => {
     );
   });
 
-  it("detects exhausted-credit 402 errors from supported backend shapes only", () => {
+  it("detects exhausted-credit errors from backend and raw shapes only", () => {
     expect(
       isAiCreditsExhaustedError({
         response: {
@@ -188,6 +188,33 @@ describe("AI credit normalization", () => {
         },
       }),
     ).toBe(true);
+
+    expect(
+      isAiCreditsExhaustedError({
+        status: 402,
+        code: "AI_CREDITS_EXHAUSTED",
+      }),
+    ).toBe(true);
+
+    expect(
+      isAiCreditsExhaustedError({
+        code: "AI_CREDITS_EXHAUSTED",
+      }),
+    ).toBe(true);
+
+    expect(
+      isAiCreditsExhaustedError({
+        status: 402,
+        code: "PAYMENT_REQUIRED",
+      }),
+    ).toBe(false);
+
+    expect(
+      isAiCreditsExhaustedError({
+        status: 400,
+        code: "AI_CREDITS_EXHAUSTED",
+      }),
+    ).toBe(false);
 
     expect(
       isAiCreditsExhaustedError({
