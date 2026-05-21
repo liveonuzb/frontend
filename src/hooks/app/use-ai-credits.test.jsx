@@ -20,6 +20,7 @@ import {
   AI_CREDIT_WALLET_QUERY_KEY,
   getAiCreditFeatureLabel,
   getAiCreditStatus,
+  isAiCreditsExhaustedError,
   normalizeAiCreditCostsForTest,
   normalizeAiCreditWalletForTest,
   useAiCreditCosts,
@@ -49,8 +50,53 @@ describe("AI credit normalization", () => {
       remaining: 285,
       resetsAt: "2026-06-01T00:00:00.000Z",
       tier: "premium",
+      status: "premium",
+      accountStatus: "premium",
       isPremium: true,
       isExhausted: false,
+    });
+  });
+
+  it("normalizes wallet status and derives premium from status aliases", () => {
+    expect(
+      normalizeAiCreditWalletForTest({
+        wallet: {
+          monthlyGrant: 50,
+          used: 10,
+          status: "PRO",
+        },
+      }),
+    ).toMatchObject({
+      remaining: 40,
+      status: "PRO",
+      accountStatus: "PRO",
+      tier: null,
+      isPremium: true,
+    });
+
+    expect(
+      normalizeAiCreditWalletForTest({
+        wallet: {
+          monthlyGrant: 50,
+          accountStatus: "paid",
+        },
+      }),
+    ).toMatchObject({
+      status: "paid",
+      accountStatus: "paid",
+      tier: null,
+      isPremium: true,
+    });
+
+    expect(
+      normalizeAiCreditWalletForTest({
+        tier: "premium",
+      }),
+    ).toMatchObject({
+      status: "premium",
+      accountStatus: "premium",
+      tier: "premium",
+      isPremium: true,
     });
   });
 
@@ -68,6 +114,7 @@ describe("AI credit normalization", () => {
       remaining: 1,
       resetsAt: null,
       tier: null,
+      status: null,
       isPremium: false,
       isExhausted: false,
     });
@@ -128,6 +175,58 @@ describe("AI credit normalization", () => {
     expect(getAiCreditFeatureLabel(AI_CREDIT_FEATURES.nutritionAnalysis)).toBe(
       "Nutrition analysis",
     );
+  });
+
+  it("detects exhausted-credit 402 errors from supported backend shapes only", () => {
+    expect(
+      isAiCreditsExhaustedError({
+        response: {
+          status: 402,
+          data: {
+            code: "AI_CREDITS_EXHAUSTED",
+          },
+        },
+      }),
+    ).toBe(true);
+
+    expect(
+      isAiCreditsExhaustedError({
+        response: {
+          status: 402,
+          data: {
+            error: {
+              code: "AI_CREDITS_EXHAUSTED",
+            },
+          },
+        },
+      }),
+    ).toBe(true);
+
+    expect(
+      isAiCreditsExhaustedError({
+        response: {
+          status: 402,
+          data: {
+            error: {
+              code: "PAYMENT_REQUIRED",
+            },
+          },
+        },
+      }),
+    ).toBe(false);
+
+    expect(
+      isAiCreditsExhaustedError({
+        response: {
+          status: 400,
+          data: {
+            error: {
+              code: "AI_CREDITS_EXHAUSTED",
+            },
+          },
+        },
+      }),
+    ).toBe(false);
   });
 });
 

@@ -102,10 +102,18 @@ export const normalizeAiCreditWallet = (payload = {}) => {
   const explicitRemaining = nullableNumber(get(source, "remaining"));
   const remaining =
     explicitRemaining ?? Math.max(monthlyGrant - used - reserved, 0);
-  const tier = get(source, "tier") ?? get(source, "accountStatus") ?? null;
+  const status =
+    get(source, "status") ??
+    get(source, "accountStatus") ??
+    get(source, "tier") ??
+    null;
+  const accountStatus = get(source, "accountStatus") ?? status;
+  const tier = get(source, "tier") ?? null;
   const isPremium =
     get(source, "isPremium") === true ||
     get(source, "premium") === true ||
+    isPremiumTier(status) ||
+    isPremiumTier(accountStatus) ||
     isPremiumTier(tier);
 
   return {
@@ -115,8 +123,9 @@ export const normalizeAiCreditWallet = (payload = {}) => {
     reserved,
     remaining,
     resetsAt: get(source, "resetsAt") ?? get(source, "periodEnd") ?? null,
+    status,
     tier,
-    accountStatus: get(source, "accountStatus") ?? tier,
+    accountStatus,
     isPremium,
     isExhausted: remaining <= 0,
   };
@@ -142,9 +151,27 @@ export const getAiCreditStatus = ({ wallet, costs, feature } = {}) => {
   };
 };
 
+export const getAiCreditDisabledProps = ({ feature, wallet, costs } = {}) => {
+  const status = getAiCreditStatus({ feature, wallet, costs });
+
+  return {
+    disabled: status.isDisabled,
+    "aria-disabled": status.isDisabled,
+    title: status.isDisabled
+      ? "Not enough AI credits remaining"
+      : getAiCreditFeatureLabel(feature),
+  };
+};
+
 export const isAiCreditsExhaustedError = (error) =>
   get(error, "response.status") === 402 &&
-  get(error, "response.data.code") === "AI_CREDITS_EXHAUSTED";
+  includes(
+    [
+      get(error, "response.data.code"),
+      get(error, "response.data.error.code"),
+    ],
+    "AI_CREDITS_EXHAUSTED",
+  );
 
 export const useAiCreditWallet = (options = {}) => {
   const enabled = options.enabled ?? true;

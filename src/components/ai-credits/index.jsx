@@ -72,17 +72,3 @@ export const AiCreditStatusText = ({ feature, wallet, costs, className }) => {
     </span>
   );
 };
-
-export const getAiCreditDisabledProps = ({ feature, wallet, costs } = {}) => {
-  const status = getAiCreditStatus({ feature, wallet, costs });
-
-  return {
-    disabled: status.isDisabled,
-    "aria-disabled": status.isDisabled,
-    title: status.isDisabled
-      ? "Not enough AI credits remaining"
-      : getAiCreditFeatureLabel(feature),
-  };
-};
-
-export { getAiCreditFeatureLabel, getAiCreditStatus };
