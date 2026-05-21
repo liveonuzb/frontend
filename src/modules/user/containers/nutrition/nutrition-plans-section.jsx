@@ -3,9 +3,18 @@ import { ChevronRightIcon } from "lucide-react";
 
 export default function NutritionPlansSection({
   currentPlan,
+  currentPlanDayStatus,
   onOpenPlans,
   plans,
 }) {
+  const planStatusLabel = currentPlanDayStatus?.isExpired
+    ? "30 kunlik reja tugadi"
+    : currentPlanDayStatus?.isDurationPlan
+      ? `${currentPlanDayStatus.dayNumber}/${currentPlanDayStatus.durationDays}-kun`
+      : currentPlan?.status === "active"
+        ? "Faol reja"
+        : "Saqlangan reja";
+
   if (plans.length > 0) {
     return (
       <button
@@ -22,11 +31,13 @@ export default function NutritionPlansSection({
               {currentPlan?.name || "Reja tanlang"}
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              {plans.length} ta reja •{" "}
-              {currentPlan?.status === "active"
-                ? "Faol reja"
-                : "Saqlangan reja"}
+              {plans.length} ta reja • {planStatusLabel}
             </p>
+            {currentPlanDayStatus?.isExpired ? (
+              <p className="mt-1 text-xs font-semibold text-primary">
+                Yangi template tanlang yoki rejani yangilang.
+              </p>
+            ) : null}
           </div>
           <ChevronRightIcon className="size-5 shrink-0 text-muted-foreground" />
         </div>

@@ -34,7 +34,9 @@ const mealStatusByType = {
 };
 
 const getMealCalories = (items = []) =>
-  Math.round(sumBy(items, (food) => toNumber(food.cal || 0) * toNumber(food.qty || 1)));
+  Math.round(
+    sumBy(items, (food) => toNumber(food.cal || 0) * toNumber(food.qty || 1)),
+  );
 
 const MicronutrientCard = () => {
   const nutrients = [
@@ -112,10 +114,7 @@ const MealTimeline = ({
         const isActive = type === activeMealType;
 
         return (
-          <div
-            key={type}
-            className="rounded-2xl border bg-background/55 p-3"
-          >
+          <div key={type} className="rounded-2xl border bg-background/55 p-3">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
                 <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-primary/10 text-lg">
@@ -191,6 +190,7 @@ export default function NutritionHomeView(props) {
     setDate,
     plans,
     currentPlan,
+    currentPlanDayStatus,
     goals,
     roundedTotals,
     waterConsumedMl,
@@ -214,7 +214,10 @@ export default function NutritionHomeView(props) {
     waterConsumedMl,
     waterGoalMl,
   });
-  const waterPercent = getProgressPercent(metrics.water.current, metrics.water.target);
+  const waterPercent = getProgressPercent(
+    metrics.water.current,
+    metrics.water.target,
+  );
   const addDisabled = !isOnline || isPastDate;
   const openAddMeal = (mealType = activeMealType) => {
     setSelectedMealTypeForAdd(mealType);
@@ -370,6 +373,7 @@ export default function NutritionHomeView(props) {
         <NutritionPlansSection
           plans={plans}
           currentPlan={currentPlan}
+          currentPlanDayStatus={currentPlanDayStatus}
           onOpenPlans={() => setIsPlansDrawerOpen(true)}
         />
       </NutritionCard>

@@ -136,6 +136,7 @@ export default function NutritionDrawers({
         })}
         initialData={builderInitialData || currentPlan?.weeklyKanban || {}}
         selectedDay={selectedDay}
+        dayCount={currentPlan?.durationDays || 7}
         onSave={handleSaveBuilder}
         onClose={() => {
           setIsBuilderOpen(false);
@@ -239,8 +240,8 @@ export default function NutritionDrawers({
           <DrawerHeader>
             <DrawerTitle>Bu ovqat allaqachon qo'shilgan</DrawerTitle>
             <DrawerDescription>
-              {duplicateMealPrompt?.food?.name || "Bu ovqat"} bugun shu
-              bo'limda bor. Yana qo'shishni xohlaysizmi?
+              {duplicateMealPrompt?.food?.name || "Bu ovqat"} bugun shu bo'limda
+              bor. Yana qo'shishni xohlaysizmi?
             </DrawerDescription>
           </DrawerHeader>
           <DrawerFooter>
@@ -327,9 +328,7 @@ export default function NutritionDrawers({
         <NutritionDrawerContent size="sm">
           <DrawerHeader>
             <DrawerTitle>{currentPlan ? currentPlan.name : "Reja"}</DrawerTitle>
-            <DrawerDescription>
-              Reja bilan nima qilmoqchisiz?
-            </DrawerDescription>
+            <DrawerDescription>Reja bilan nima qilmoqchisiz?</DrawerDescription>
           </DrawerHeader>
           <NutritionDrawerBody className="flex flex-col gap-3">
             {currentPlan?.status === "active" && (

@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/drawer";
 import { Skeleton } from "@/components/ui/skeleton.jsx";
 import {
+  AlertCircleIcon,
   BookOpenIcon,
   CheckCircle2Icon,
   TargetIcon,
@@ -32,8 +33,33 @@ const GOAL_FILTERS = [
 
 const GOAL_LABELS = {
   lose_weight: "Vazn yo'qotish",
+  "weight-loss": "Vazn yo'qotish",
   gain_muscle: "Mushak olish",
+  muscle: "Mushak olish",
   maintenance: "Balans",
+};
+
+const getBlockingReasonLabel = (template) => {
+  if (template.isCompatible !== false) return null;
+  const reason = template.blockingReasons?.[0];
+
+  if (reason?.type === "disliked_food") {
+    return "Foydalanuvchi cheklovlariga mos emas. Yoqtirilmagan ovqat bor.";
+  }
+
+  if (reason?.type === "avoided_ingredient") {
+    return "Foydalanuvchi cheklovlariga mos emas. Allergiya yoki yoqtirilmagan ingredient bor.";
+  }
+
+  if (reason?.type === "excluded_allergen_tag") {
+    return "Foydalanuvchi cheklovlariga mos emas. Diet cheklovlariga zid tarkib bor.";
+  }
+
+  if (reason?.type === "empty_or_zero_calorie_day") {
+    return "Foydalanuvchi cheklovlariga mos emas. Template ichida kaloriyasi to'ldirilmagan kun bor.";
+  }
+
+  return "Foydalanuvchi cheklovlariga mos emas.";
 };
 
 const TemplateSkeleton = () => (
@@ -66,6 +92,7 @@ export default function TemplateLibraryDrawer({
   const handleSelect = React.useCallback(
     async (template) => {
       if (!template?.id) return;
+      if (template.isCompatible === false) return;
 
       setPendingTemplateId(template.id);
       try {
@@ -128,6 +155,8 @@ export default function TemplateLibraryDrawer({
             ) : (
               map(templates, (template) => {
                 const isPending = pendingTemplateId === template.id;
+                const isCompatible = template.isCompatible !== false;
+                const blockingReasonLabel = getBlockingReasonLabel(template);
 
                 return (
                   <div
@@ -152,10 +181,16 @@ export default function TemplateLibraryDrawer({
                         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                           <span className="inline-flex items-center gap-1">
                             <UtensilsIcon className="size-3.5" />
-                            {template.daysWithMeals || 0} kun ·{" "}
-                            {template.mealsCount || 0} ta ovqat
+                            {template.daysWithMeals || 0}/{template.days || 30}{" "}
+                            kun · {template.mealsCount || 0} ta ovqat
                           </span>
                         </div>
+                        {blockingReasonLabel ? (
+                          <div className="mt-3 inline-flex items-start gap-1.5 rounded-xl border border-destructive/20 bg-destructive/5 px-2.5 py-2 text-xs text-destructive">
+                            <AlertCircleIcon className="mt-0.5 size-3.5 shrink-0" />
+                            <span>{blockingReasonLabel}</span>
+                          </div>
+                        ) : null}
                         {template.tags.length > 0 ? (
                           <div className="mt-3 flex flex-wrap gap-1.5">
                             {map(take(template.tags, 4), (tag) => (
@@ -171,10 +206,10 @@ export default function TemplateLibraryDrawer({
                         type="button"
                         size="sm"
                         onClick={() => void handleSelect(template)}
-                        disabled={isPending}
+                        disabled={isPending || !isCompatible}
                       >
                         <CheckCircle2Icon className="size-4" />
-                        Tanlash
+                        {isCompatible ? "Tanlash" : "Mos kelmaydi"}
                       </Button>
                     </div>
                   </div>

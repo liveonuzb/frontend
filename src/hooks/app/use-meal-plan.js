@@ -33,6 +33,9 @@ const normalizePlan = (plan) => {
         ? plan.weeklyKanban
         : {},
     startDate: plan.startDate ?? null,
+    durationDays: plan.durationDays ?? null,
+    sourceTemplateId: plan.sourceTemplateId ?? null,
+    appliedTargetCalories: plan.appliedTargetCalories ?? null,
     createdAt: plan.createdAt ?? null,
     updatedAt: plan.updatedAt ?? null,
   };
@@ -55,14 +58,26 @@ const normalizeTemplate = (template) => {
       !isArray(template.weeklyKanban)
         ? template.weeklyKanban
         : {},
-    tags: isArray(template.tags) ? template.tags : [],
+    tags: isArray(template.tags)
+      ? template.tags
+      : isArray(template.dietaryTags)
+        ? template.dietaryTags
+        : [],
     goal: template.goal || "maintenance",
+    days: template.days ?? 30,
     mealCount: template.mealCount ?? null,
     mealsCount: template.mealsCount ?? 0,
     daysWithMeals: template.daysWithMeals ?? 0,
+    isCompatible: template.isCompatible !== false,
+    blockingReasons: isArray(template.blockingReasons)
+      ? template.blockingReasons
+      : [],
+    appliedTargetCalories: template.appliedTargetCalories ?? null,
     updatedAt: template.updatedAt ?? null,
   };
 };
+
+export const normalizeMealPlanTemplateForTest = normalizeTemplate;
 
 const normalizeMealPlanState = (payload = {}) => {
   const plans = isArray(payload.plans)
@@ -94,6 +109,9 @@ const buildMealPlanPayload = (plan = {}) => ({
       ? plan.weeklyKanban
       : {},
   source: plan.source,
+  durationDays: plan.durationDays,
+  sourceTemplateId: plan.sourceTemplateId,
+  appliedTargetCalories: plan.appliedTargetCalories,
   goal: plan.goal,
   mealCount: plan.mealCount,
   startDate: plan.startDate,
@@ -135,6 +153,14 @@ export const useMealPlan = (options = {}) => {
     mutationProps,
   });
   const generateAiMutation = usePostQuery({
+    queryKey: MEAL_PLAN_QUERY_KEY,
+    mutationProps,
+  });
+  const applyTemplateMutation = usePostQuery({
+    queryKey: MEAL_PLAN_QUERY_KEY,
+    mutationProps,
+  });
+  const rescaleCaloriesMutation = usePostQuery({
     queryKey: MEAL_PLAN_QUERY_KEY,
     mutationProps,
   });
@@ -196,12 +222,45 @@ export const useMealPlan = (options = {}) => {
     [generateAiMutation, queryClient],
   );
 
+  const applyTemplatePlan = React.useCallback(
+    async (templateId) => {
+      if (!templateId) {
+        return mealPlanState;
+      }
+
+      const response = await applyTemplateMutation.mutateAsync({
+        url: `/meal-plans/templates/${templateId}/apply`,
+        attributes: {},
+      });
+      return syncMealPlanCache(queryClient, response);
+    },
+    [applyTemplateMutation, mealPlanState, queryClient],
+  );
+
+  const rescalePlanCalories = React.useCallback(
+    async (planId) => {
+      const targetPlanId =
+        planId || mealPlanState.activePlan?.id || mealPlanState.draftPlan?.id;
+      if (!targetPlanId) {
+        return mealPlanState;
+      }
+
+      const response = await rescaleCaloriesMutation.mutateAsync({
+        url: `/meal-plans/me/${targetPlanId}/rescale-calories`,
+        attributes: {},
+      });
+      return syncMealPlanCache(queryClient, response);
+    },
+    [mealPlanState, queryClient, rescaleCaloriesMutation],
+  );
+
   const startPlan = React.useCallback(
     async (plan) => {
       if (!plan?.id) {
         const createdState = await saveDraftPlan(plan);
         const latestDraft =
-          createdState.draftPlan || find(createdState.plans, (item) => item.status === "draft");
+          createdState.draftPlan ||
+          find(createdState.plans, (item) => item.status === "draft");
 
         if (!latestDraft?.id) {
           return createdState;
@@ -302,6 +361,8 @@ export const useMealPlan = (options = {}) => {
     ...query,
     ...mealPlanState,
     generateAiPlan,
+    applyTemplatePlan,
+    rescalePlanCalories,
     saveDraftPlan,
     startPlan,
     renamePlan,
@@ -309,8 +370,11 @@ export const useMealPlan = (options = {}) => {
     archivePlan,
     pausePlan,
     removePlan,
-    isSavingDraft: createDraftMutation.isPending || updatePlanMutation.isPending,
+    isSavingDraft:
+      createDraftMutation.isPending || updatePlanMutation.isPending,
     isGeneratingAi: generateAiMutation.isPending,
+    isApplyingTemplate: applyTemplateMutation.isPending,
+    isRescalingCalories: rescaleCaloriesMutation.isPending,
     isStartingPlan: activatePlanMutation.isPending,
     isRenamingPlan: renamePlanMutation.isPending,
     isDuplicatingPlan: duplicatePlanMutation.isPending,

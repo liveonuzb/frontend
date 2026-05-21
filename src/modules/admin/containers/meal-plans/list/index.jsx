@@ -130,7 +130,7 @@ const MealPlanFormDrawer = ({ mode, template, open, onOpenChange }) => {
         name: normalizedName,
         description: trim(description),
         goal,
-        days: 7,
+        days: 30,
         mealsPerDay: null,
         dietaryTags,
         weeklyKanban: nextWeeklyKanban || {},
@@ -191,6 +191,7 @@ const MealPlanFormDrawer = ({ mode, template, open, onOpenChange }) => {
           if (!nextOpen) setStep("meta");
         }}
         initialData={weeklyKanban}
+        dayCount={30}
         onSave={(nextWeeklyKanban) => {
           setWeeklyKanban(nextWeeklyKanban || {});
           void saveTemplate(nextWeeklyKanban || {});
@@ -421,7 +422,7 @@ const ListPage = () => {
                 <Badge variant="outline">
                   {template.totalMeals ?? 0} meals
                 </Badge>
-                {map((template.dietaryTags ?? []), (tag) => (
+                {map(template.dietaryTags ?? [], (tag) => (
                   <Badge key={tag} variant="outline">
                     {tagLabel(tag)}
                   </Badge>

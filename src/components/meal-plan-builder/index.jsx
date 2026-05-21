@@ -23,6 +23,7 @@ import {
   includes,
   trim,
   toNumber,
+  times,
 } from "lodash";
 import useIsMobile from "@/hooks/utils/use-mobile.js";
 
@@ -134,6 +135,14 @@ const DAILY_GOALS = { cal: 2650, protein: 180, carbs: 240, fat: 80 };
 
 const getTodayDayName = () => WEEK_DAYS[(new Date().getDay() + 6) % 7];
 
+const buildDayOptions = (dayCount = 7) =>
+  dayCount > 7
+    ? times(dayCount, (index) => ({
+        key: `day-${index + 1}`,
+        label: `${index + 1}-kun`,
+      }))
+    : map(WEEK_DAYS, (day) => ({ key: day, label: day }));
+
 const normalizePlanFood = (food = {}, foodMap) => {
   const catalogFood = food?.barcode ? foodMap.get(food.barcode) : null;
   const baseFood = catalogFood ?? food;
@@ -152,8 +161,7 @@ const normalizePlanFood = (food = {}, foodMap) => {
     step: baseFood.step || 10,
     unit: baseFood.unit || "g",
     cal:
-      food.cal ??
-      Math.round((baseFood.baseCal ?? baseFood.cal ?? 0) * factor),
+      food.cal ?? Math.round((baseFood.baseCal ?? baseFood.cal ?? 0) * factor),
     protein:
       food.protein ??
       Math.round((baseFood.baseProtein ?? baseFood.protein ?? 0) * factor),
@@ -161,8 +169,7 @@ const normalizePlanFood = (food = {}, foodMap) => {
       food.carbs ??
       Math.round((baseFood.baseCarbs ?? baseFood.carbs ?? 0) * factor),
     fat:
-      food.fat ??
-      Math.round((baseFood.baseFat ?? baseFood.fat ?? 0) * factor),
+      food.fat ?? Math.round((baseFood.baseFat ?? baseFood.fat ?? 0) * factor),
   };
 };
 
@@ -170,7 +177,9 @@ const normalizeDaysData = (data = {}, foodMap) =>
   mapValues(data, (columns = []) =>
     map(columns, (column) => ({
       ...column,
-      items: map((column.items || []), (item) => normalizePlanFood(item, foodMap)),
+      items: map(column.items || [], (item) =>
+        normalizePlanFood(item, foodMap),
+      ),
     })),
   );
 
@@ -181,6 +190,7 @@ const Index = ({
   onClose,
   open,
   onOpenChange,
+  dayCount = 7,
 }) => {
   const isMobile = useIsMobile();
   const {
@@ -196,8 +206,11 @@ const Index = ({
     upsertRecurringPattern,
     deleteRecurringPattern,
   } = useSavedMealTemplates();
+  const dayOptions = useMemo(() => buildDayOptions(dayCount), [dayCount]);
+  const defaultSelectedDay =
+    dayCount > 7 ? dayOptions[0]?.key : getTodayDayName();
   const [selectedDay, setSelectedDay] = useState(
-    propSelectedDay || getTodayDayName(),
+    propSelectedDay || defaultSelectedDay,
   );
   const [search, setSearch] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(
@@ -221,6 +234,12 @@ const Index = ({
       });
     }
   }, [selectedDay]);
+
+  useEffect(() => {
+    if (!some(dayOptions, (option) => option.key === selectedDay)) {
+      setSelectedDay(dayOptions[0]?.key || getTodayDayName());
+    }
+  }, [dayOptions, selectedDay]);
 
   const foodMap = useMemo(
     () => new Map(map(foods, (food) => [food.barcode, food])),
@@ -272,7 +291,7 @@ const Index = ({
     counts.set("all", foods.length);
 
     forEach(foods, (food) => {
-      forEach((food.categoryIds || []), (categoryId) => {
+      forEach(food.categoryIds || [], (categoryId) => {
         const key = String(categoryId);
         counts.set(key, (counts.get(key) || 0) + 1);
       });
@@ -298,7 +317,10 @@ const Index = ({
         return true;
       }
 
-      return (includes(toLower(food.name), normalizedSearch) || includes(toLower(food.originalName), normalizedSearch));
+      return (
+        includes(toLower(food.name), normalizedSearch) ||
+        includes(toLower(food.originalName), normalizedSearch)
+      );
     });
   }, [foods, search, selectedCategoryId]);
 
@@ -501,7 +523,10 @@ const Index = ({
       return;
     }
 
-    const templateMeals = filter(map(selectedTemplate.mealIds, (mealId) => savedMealsById.get(mealId)), Boolean);
+    const templateMeals = filter(
+      map(selectedTemplate.mealIds, (mealId) => savedMealsById.get(mealId)),
+      Boolean,
+    );
 
     if (templateMeals.length === 0) {
       toast.error("Bu shablondagi taomlar topilmadi");
@@ -509,7 +534,8 @@ const Index = ({
     }
 
     const foodsToAdd = map(templateMeals, (meal, index) =>
-      buildPlanFoodFromSavedMeal(meal, `${selectedTemplate.id}-${index}`));
+      buildPlanFoodFromSavedMeal(meal, `${selectedTemplate.id}-${index}`),
+    );
 
     setDaysData((prev) => {
       const dayData = [...(prev[selectedDay] || [])];
@@ -525,12 +551,7 @@ const Index = ({
     });
 
     toast.success(`${selectedTemplate.name} rejaga qo'shildi`);
-  }, [
-    savedMealsById,
-    selectedDay,
-    selectedTemplate,
-    templateTargetColumn,
-  ]);
+  }, [savedMealsById, selectedDay, selectedTemplate, templateTargetColumn]);
 
   const toggleRecurringTemplate = useCallback(
     (checked) => {
@@ -676,7 +697,9 @@ const Index = ({
               return {
                 ...f,
                 grams: amount,
-                cal: Math.round((baseFood.baseCal ?? baseFood.cal ?? 0) * factor),
+                cal: Math.round(
+                  (baseFood.baseCal ?? baseFood.cal ?? 0) * factor,
+                ),
                 protein: Math.round(
                   (baseFood.baseProtein ?? baseFood.protein ?? 0) * factor,
                 ),
@@ -705,7 +728,9 @@ const Index = ({
 
     return {
       cal: Math.round((baseFood.baseCal ?? baseFood.cal ?? 0) * factor),
-      protein: Math.round((baseFood.baseProtein ?? baseFood.protein ?? 0) * factor),
+      protein: Math.round(
+        (baseFood.baseProtein ?? baseFood.protein ?? 0) * factor,
+      ),
       carbs: Math.round((baseFood.baseCarbs ?? baseFood.carbs ?? 0) * factor),
       fat: Math.round((baseFood.baseFat ?? baseFood.fat ?? 0) * factor),
     };
@@ -761,22 +786,24 @@ const Index = ({
             </div>
           </DrawerTitle>
           <DrawerDescription className={"text-center md:text-start"}>
-            Haftalik ovqatlanish rejangizni boshqaring va tahrirlang
+            {dayCount > 7
+              ? `${dayCount} kunlik ovqatlanish rejangizni boshqaring va tahrirlang`
+              : "Haftalik ovqatlanish rejangizni boshqaring va tahrirlang"}
           </DrawerDescription>
           <div
             ref={dayScrollRef}
             className="flex gap-1.5 overflow-x-auto scrollbar-none mt-4"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
-            {map(WEEK_DAYS, (day) => {
-              const isActive = selectedDay === day;
-              const isToday = day === getTodayDayName();
+            {map(dayOptions, (day) => {
+              const isActive = selectedDay === day.key;
+              const isToday = dayCount <= 7 && day.key === getTodayDayName();
               return (
                 <button
-                  key={day}
+                  key={day.key}
                   ref={isActive ? activeDayRef : null}
                   type="button"
-                  onClick={() => setSelectedDay(day)}
+                  onClick={() => setSelectedDay(day.key)}
                   className={cn(
                     "shrink-0 px-3.5 py-1.5 rounded-full text-[11px] font-bold transition-all duration-200 whitespace-nowrap border",
                     isActive
@@ -785,7 +812,7 @@ const Index = ({
                     isToday && !isActive && "border-primary/40 text-primary/80",
                   )}
                 >
-                  {day}
+                  {day.label}
                   {isToday && (
                     <span
                       className={cn(
@@ -854,8 +881,8 @@ const Index = ({
                     }
                   />
                   <RepeatIcon className="size-3.5" />
-                  Har {selectedDay} {toLower(templateTargetColumn.type)}{" "}
-                  uchun {selectedTemplate.name} ishlatilsin
+                  Har {selectedDay} {toLower(templateTargetColumn.type)} uchun{" "}
+                  {selectedTemplate.name} ishlatilsin
                 </label>
               ) : null}
             </div>
@@ -929,7 +956,7 @@ const Index = ({
             </div>
           ) : (
             /* DESKTOP: Kanban layout (unchanged) */
-            (<div className="flex-1 flex overflow-hidden">
+            <div className="flex-1 flex overflow-hidden">
               <Kanban
                 value={kanbanColumns}
                 onValueChange={handleKanbanChange}
@@ -1138,7 +1165,8 @@ const Index = ({
                             <Card className="py-2 px-4 flex items-center gap-3 w-80 shadow-2xl rotate-2 border-primary/40 bg-card">
                               <div className="size-11 rounded-xl bg-muted/50 flex items-center justify-center text-2xl shrink-0 overflow-hidden border border-border/40">
                                 {food.image ? (
-                                  <img loading="lazy"
+                                  <img
+                                    loading="lazy"
                                     src={food.image}
                                     alt={food.name}
                                     width={44}
@@ -1176,7 +1204,7 @@ const Index = ({
                   </KanbanOverlay>
                 </div>
               </Kanban>
-            </div>)
+            </div>
           )}
           <PortionEditorDrawer
             food={editingFood}

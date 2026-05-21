@@ -33,6 +33,7 @@ export default function NutritionPlansView({
   onCreateManual,
   onCreateAI,
   onCreateFromTemplate,
+  onRescalePlanCalories,
 }) {
   const [planFilter, setPlanFilter] = React.useState("all");
   const filteredPlans = React.useMemo(() => {
@@ -58,14 +59,16 @@ export default function NutritionPlansView({
     },
     {
       title: "Mushak massasi",
-      description: "Ko'proq oqsil, mashg'ulotdan keyingi tiklanish va energiya.",
+      description:
+        "Ko'proq oqsil, mashg'ulotdan keyingi tiklanish va energiya.",
       calories: "2,650",
       badge: "Sport",
       icon: DumbbellIcon,
     },
     {
       title: "Sog'lom turmush",
-      description: "Balansli makrolar, suv, vitaminlar va yengil haftalik menyu.",
+      description:
+        "Balansli makrolar, suv, vitaminlar va yengil haftalik menyu.",
       calories: "2,150",
       badge: "Balance",
       icon: TargetIcon,
@@ -92,11 +95,15 @@ export default function NutritionPlansView({
             <BookOpenIcon className="size-5" aria-hidden="true" />
           </div>
           <div>
-            <h2 className="text-sm font-black">Boshlash bo'yicha maslahatlar</h2>
+            <h2 className="text-sm font-black">
+              Boshlash bo'yicha maslahatlar
+            </h2>
             <div className="mt-3 space-y-2 text-sm text-muted-foreground">
               <p>1. Avval maqsadingizga mos shablonni tanlang.</p>
               <p>2. Kaloriya va makrolarni hozirgi maqsadlaringizga moslang.</p>
-              <p>3. Rejani faollashtirib, bugungi ovqatlar bilan sinab ko'ring.</p>
+              <p>
+                3. Rejani faollashtirib, bugungi ovqatlar bilan sinab ko'ring.
+              </p>
             </div>
           </div>
         </div>
@@ -110,13 +117,21 @@ export default function NutritionPlansView({
         eyebrow="Ovqatlanish rejalari"
         title="Rejalar"
         description="Shaxsiy maqsad, jadval va real ovqat odatlariga mos haftalik menyular."
-        actions={(
+        actions={
           <>
-            <Button variant="outline" className="rounded-full" onClick={onCreateManual}>
+            <Button
+              variant="outline"
+              className="rounded-full"
+              onClick={onCreateManual}
+            >
               <PencilIcon className="size-4" />
               Qo&apos;lda yaratish
             </Button>
-            <Button variant="outline" className="rounded-full" onClick={onCreateFromTemplate}>
+            <Button
+              variant="outline"
+              className="rounded-full"
+              onClick={onCreateFromTemplate}
+            >
               <BookOpenIcon className="size-4" />
               Shablondan tanlash
             </Button>
@@ -125,7 +140,7 @@ export default function NutritionPlansView({
               AI bilan yaratish
             </Button>
           </>
-        )}
+        }
       />
 
       <NutritionCard tone="accent" className="p-5 md:p-6">
@@ -138,8 +153,8 @@ export default function NutritionPlansView({
               O'zingizga mos ovqatlanish rejasini yarating
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-              Rejani noldan boshlang, tayyor shablondan foydalaning yoki AI yordamida
-              kunlik kaloriya, makro va meal timingni moslab oling.
+              Rejani noldan boshlang, tayyor shablondan foydalaning yoki AI
+              yordamida kunlik kaloriya, makro va meal timingni moslab oling.
             </p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row lg:flex-col">
@@ -147,7 +162,11 @@ export default function NutritionPlansView({
               <SparklesIcon className="size-4" />
               AI orqali yaratish
             </Button>
-            <Button variant="outline" className="rounded-full bg-card/80" onClick={onCreateFromTemplate}>
+            <Button
+              variant="outline"
+              className="rounded-full bg-card/80"
+              onClick={onCreateFromTemplate}
+            >
               <BookOpenIcon className="size-4" />
               Shablonlardan tanlash
             </Button>
@@ -164,14 +183,30 @@ export default function NutritionPlansView({
               </p>
               <h2 className="mt-2 text-xl font-black">{currentPlan.name}</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                {currentPlan.status === "active" ? "Ishlatilmoqda" : "Tanlangan"} •{" "}
-                {currentPlan.source === "ai" ? "AI" : "Manual"}
+                {currentPlan.status === "active"
+                  ? "Ishlatilmoqda"
+                  : "Tanlangan"}{" "}
+                • {currentPlan.source === "ai" ? "AI" : "Manual"}
               </p>
             </div>
-            <Button variant="outline" className="rounded-full" onClick={() => onSelectPlanForShopping(currentPlan.id)}>
-              <ArchiveIcon className="size-4" />
-              Xaridlar ro'yxati
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                className="rounded-full"
+                onClick={() => onRescalePlanCalories?.(currentPlan.id)}
+              >
+                <ScaleIcon className="size-4" />
+                Kaloriyaga moslash
+              </Button>
+              <Button
+                variant="outline"
+                className="rounded-full"
+                onClick={() => onSelectPlanForShopping(currentPlan.id)}
+              >
+                <ArchiveIcon className="size-4" />
+                Xaridlar ro'yxati
+              </Button>
+            </div>
           </div>
         </NutritionCard>
       ) : null}
@@ -180,7 +215,8 @@ export default function NutritionPlansView({
         <div className="flex flex-col gap-1">
           <h2 className="text-lg font-black">Mashhur shablonlar</h2>
           <p className="text-sm text-muted-foreground">
-            Real data bo'lmaganda ham UI va flow ishlashi uchun starter shablonlar.
+            Real data bo'lmaganda ham UI va flow ishlashi uchun starter
+            shablonlar.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
