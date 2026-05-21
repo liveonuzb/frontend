@@ -1,5 +1,5 @@
 import React from "react";
-import { get, round, filter, isArray, map, toNumber as lodashToNumber, trim } from "lodash";
+import { get, round, filter, isArray, map, some, toNumber as lodashToNumber, trim } from "lodash";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import {
   useDeleteQuery,
@@ -602,7 +602,7 @@ export const useFoodScan = () => {
             attributes: { name, grams },
           })),
       );
-      if (results.some((result) => result.status === "fulfilled")) {
+      if (some(results, (result) => result.status === "fulfilled")) {
         await invalidateAiCredits();
       }
 
