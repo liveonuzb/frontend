@@ -2,6 +2,7 @@ import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import SmartAddSheet from "./smart-add-sheet.jsx";
+import { AI_CREDIT_FEATURES } from "@/hooks/app/use-ai-credits";
 import {
   buildCatalogQuickAddPayload,
   buildNutritionQuickAdds,
@@ -181,6 +182,36 @@ describe("SmartAddSheet", () => {
 
     expect(handlers.onQuickAdd).not.toHaveBeenCalled();
     expect(handlers.onOpenCamera).not.toHaveBeenCalled();
+  });
+
+  it("keeps camera openable when photo-scan credits are insufficient", () => {
+    const { handlers } = renderSheet({
+      aiCreditWallet: { remaining: 1 },
+      aiCreditCosts: {
+        [AI_CREDIT_FEATURES.foodPhotoScan]: 2,
+      },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Kamera" }));
+
+    expect(handlers.onOpenCamera).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("2 AI | 1 left")).toBeInTheDocument();
+  });
+
+  it("disables text and audio AI entries when their credits are insufficient", () => {
+    const { handlers } = renderSheet({
+      aiCreditWallet: { remaining: 0 },
+      aiCreditCosts: {
+        [AI_CREDIT_FEATURES.textMealLog]: 1,
+        [AI_CREDIT_FEATURES.voiceMealLog]: 1,
+      },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Matn" }));
+    fireEvent.click(screen.getByRole("button", { name: "Audio" }));
+
+    expect(handlers.onOpenText).not.toHaveBeenCalled();
+    expect(handlers.onOpenAudio).not.toHaveBeenCalled();
   });
 
   it("shows an empty quick-add fallback and opens saved meals", () => {

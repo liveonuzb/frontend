@@ -38,6 +38,7 @@ const METHOD_ACTIONS = [
     iconClassName: "bg-violet-500/10 text-violet-600 dark:text-violet-300",
     handler: "onOpenText",
     feature: AI_CREDIT_FEATURES.textMealLog,
+    gateRootByCredits: true,
   },
   {
     key: "audio",
@@ -47,6 +48,7 @@ const METHOD_ACTIONS = [
     iconClassName: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
     handler: "onOpenAudio",
     feature: AI_CREDIT_FEATURES.voiceMealLog,
+    gateRootByCredits: true,
   },
   {
     key: "catalog",
@@ -137,10 +139,11 @@ const MethodButton = ({ action, costs, disabled, handlers, wallet }) => {
   const creditStatus = action.feature
     ? getAiCreditStatus({ wallet, costs, feature: action.feature })
     : null;
-  const creditDisabledProps = action.feature
+  const creditDisabledProps = action.feature && action.gateRootByCredits
     ? getAiCreditDisabledProps({ wallet, costs, feature: action.feature })
     : {};
-  const isDisabled = disabled || Boolean(creditStatus?.isDisabled);
+  const isDisabled =
+    disabled || Boolean(action.gateRootByCredits && creditStatus?.isDisabled);
 
   return (
     <Button
