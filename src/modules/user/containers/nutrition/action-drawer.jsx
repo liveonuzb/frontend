@@ -35,6 +35,10 @@ import {
 } from "./meal-date-time-utils.js";
 import useLanguageStore from "@/store/language-store";
 import { useAuthStore } from "@/store";
+import {
+  useAiCreditCosts,
+  useAiCreditWallet,
+} from "@/hooks/app/use-ai-credits";
 import { getMealConfig } from "@/modules/user/lib/meal-config";
 import SmartAddSheet from "./smart-add-sheet.jsx";
 import { buildNutritionQuickAdds } from "./nutrition-quick-adds.js";
@@ -83,6 +87,8 @@ const ActionDrawer = ({
 }) => {
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const user = useAuthStore((state) => state.user);
+  const { wallet: aiCreditWallet } = useAiCreditWallet({ enabled: open });
+  const { costs: aiCreditCosts } = useAiCreditCosts({ enabled: open });
   const dayjsLocale = resolveDayjsLocale(currentLanguage);
   const mealDateMinKey = getMealDateStartKey(user, dateKey);
   const [activeNested, setActiveNested] = useState(null);
@@ -382,6 +388,8 @@ const ActionDrawer = ({
       >
         <NutritionDrawerContent size="sm">
           <SmartAddSheet
+            aiCreditCosts={aiCreditCosts}
+            aiCreditWallet={aiCreditWallet}
             disabled={disabled}
             formattedTime={formatMealTime(selectedMealTime, dayjsLocale)}
             isQuickAddingId={quickAddingId}

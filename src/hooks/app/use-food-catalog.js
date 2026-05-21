@@ -10,6 +10,7 @@ import {
 import { api } from "@/hooks/api/use-api.js";
 import { getApiResponseData } from "@/lib/api-response.js";
 import useLanguageStore from "@/store/language-store";
+import { useAiCreditInvalidation } from "@/hooks/app/use-ai-credits";
 
 export const FOODS_CATALOG_QUERY_KEY = ["foods", "catalog"];
 export const FOODS_QUICK_ADD_QUERY_KEY = ["foods", "quick-add"];
@@ -410,6 +411,7 @@ export const useFoodQuickAddActions = () => {
 
 export const useFoodScan = () => {
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
+  const { invalidateAiCredits } = useAiCreditInvalidation();
   const postMutation = usePostQuery();
   const textMutation = usePostQuery();
   const draftImageMutation = usePostQuery();
@@ -454,10 +456,11 @@ export const useFoodScan = () => {
         },
       });
       const payload = getResponsePayload(response);
+      await invalidateAiCredits();
 
       return normalizeScanItems(get(payload, "items", []));
     },
-    [normalizeScanItems, postMutation],
+    [invalidateAiCredits, normalizeScanItems, postMutation],
   );
 
   const normalizeDraftIngredient = React.useCallback(
@@ -537,6 +540,7 @@ export const useFoodScan = () => {
         },
       });
       const payload = getResponsePayload(response);
+      await invalidateAiCredits();
 
       return {
         source: get(payload, "source", "camera"),
@@ -552,6 +556,7 @@ export const useFoodScan = () => {
         },
       });
       const payload = getResponsePayload(response);
+      await invalidateAiCredits();
 
       return normalizeScanItems(get(payload, "items", []));
     },
@@ -564,6 +569,7 @@ export const useFoodScan = () => {
         },
       });
       const payload = getResponsePayload(response);
+      await invalidateAiCredits();
 
       return {
         source: get(payload, "source", mode),
@@ -579,6 +585,7 @@ export const useFoodScan = () => {
         },
       });
       const payload = getResponsePayload(response);
+      await invalidateAiCredits();
 
       return normalizeDraftIngredient(
         get(payload, "ingredient", payload),
@@ -595,6 +602,9 @@ export const useFoodScan = () => {
             attributes: { name, grams },
           })),
       );
+      if (results.some((result) => result.status === "fulfilled")) {
+        await invalidateAiCredits();
+      }
 
       return filter(map(results, (result, index) => {
           if (result.status !== "fulfilled") return null;

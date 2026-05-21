@@ -11,6 +11,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils.js";
 import { NutritionDrawerBody } from "./nutrition-drawer-layout.jsx";
+import { AiCreditStatusText } from "@/components/ai-credits";
+import {
+  AI_CREDIT_FEATURES,
+  getAiCreditDisabledProps,
+  getAiCreditStatus,
+} from "@/hooks/app/use-ai-credits";
 
 import { map, toNumber } from "lodash";
 
@@ -22,6 +28,7 @@ const METHOD_ACTIONS = [
     icon: CameraIcon,
     iconClassName: "bg-blue-500/10 text-blue-600 dark:text-blue-300",
     handler: "onOpenCamera",
+    feature: AI_CREDIT_FEATURES.foodPhotoScan,
   },
   {
     key: "text",
@@ -30,6 +37,7 @@ const METHOD_ACTIONS = [
     icon: KeyboardIcon,
     iconClassName: "bg-violet-500/10 text-violet-600 dark:text-violet-300",
     handler: "onOpenText",
+    feature: AI_CREDIT_FEATURES.textMealLog,
   },
   {
     key: "audio",
@@ -38,6 +46,7 @@ const METHOD_ACTIONS = [
     icon: MicIcon,
     iconClassName: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
     handler: "onOpenAudio",
+    feature: AI_CREDIT_FEATURES.voiceMealLog,
   },
   {
     key: "catalog",
@@ -122,15 +131,23 @@ const QuickAddCard = ({
   </div>
 );
 
-const MethodButton = ({ action, disabled, handlers }) => {
+const MethodButton = ({ action, costs, disabled, handlers, wallet }) => {
   const Icon = action.icon;
   const handler = handlers[action.handler];
+  const creditStatus = action.feature
+    ? getAiCreditStatus({ wallet, costs, feature: action.feature })
+    : null;
+  const creditDisabledProps = action.feature
+    ? getAiCreditDisabledProps({ wallet, costs, feature: action.feature })
+    : {};
+  const isDisabled = disabled || Boolean(creditStatus?.isDisabled);
 
   return (
     <Button
       type="button"
       variant="outline"
-      disabled={disabled}
+      {...creditDisabledProps}
+      disabled={isDisabled}
       aria-label={action.label}
       className="h-auto justify-start rounded-2xl px-3 py-3 text-left"
       onClick={handler}
@@ -148,6 +165,14 @@ const MethodButton = ({ action, disabled, handlers }) => {
         <span className="mt-0.5 block truncate text-[11px] font-medium text-muted-foreground">
           {action.description}
         </span>
+        {action.feature ? (
+          <AiCreditStatusText
+            feature={action.feature}
+            wallet={wallet}
+            costs={costs}
+            className="mt-1"
+          />
+        ) : null}
       </span>
     </Button>
   );
@@ -166,6 +191,8 @@ export default function SmartAddSheet({
   onOpenText,
   onOpenTime,
   onQuickAdd,
+  aiCreditCosts = {},
+  aiCreditWallet,
   quickItems = [],
 }) {
   const handlers = {
@@ -255,8 +282,10 @@ export default function SmartAddSheet({
               <MethodButton
                 key={action.key}
                 action={action}
+                costs={aiCreditCosts}
                 disabled={disabled}
                 handlers={handlers}
+                wallet={aiCreditWallet}
               />
             ))}
           </div>

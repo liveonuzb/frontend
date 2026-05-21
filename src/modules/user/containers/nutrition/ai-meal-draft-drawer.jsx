@@ -25,6 +25,14 @@ import {
   updateMealIngredient,
 } from "./meal-ingredients.js";
 import SaveToMyMealsButton from "./save-to-my-meals-button.jsx";
+import { AiCreditStatusText } from "@/components/ai-credits";
+import {
+  AI_CREDIT_FEATURES,
+  getAiCreditStatus,
+  isAiCreditsExhaustedError,
+  useAiCreditCosts,
+  useAiCreditWallet,
+} from "@/hooks/app/use-ai-credits";
 
 import { filter, isArray, map, trim } from "lodash";
 
@@ -80,6 +88,17 @@ export default function AiMealDraftDrawer({
   const { createSavedMeal } = useSavedMealsActions();
   const { analyzeMealTextDraft } = useFoodScan();
   const { goals } = useHealthGoals();
+  const { wallet: aiCreditWallet } = useAiCreditWallet();
+  const { costs: aiCreditCosts } = useAiCreditCosts();
+  const aiCreditFeature =
+    inputSource === "audio"
+      ? AI_CREDIT_FEATURES.voiceMealLog
+      : AI_CREDIT_FEATURES.textMealLog;
+  const aiCreditStatus = getAiCreditStatus({
+    wallet: aiCreditWallet,
+    costs: aiCreditCosts,
+    feature: aiCreditFeature,
+  });
   const loggedAtHintLabel = React.useMemo(
     () => formatLoggedAtHint(loggedAtHint),
     [loggedAtHint],
@@ -118,6 +137,10 @@ export default function AiMealDraftDrawer({
         toast.error("Ovqat matnini kiriting");
         return;
       }
+      if (aiCreditStatus.isDisabled) {
+        toast.error("AI kreditlaringiz yetarli emas. Meal log tahlili uchun kredit kerak.");
+        return;
+      }
 
       setIsAnalyzing(true);
       setAnalysisItems([]);
@@ -135,17 +158,18 @@ export default function AiMealDraftDrawer({
           setAnalysisError("AI bu matndan draft tayyorlay olmadi.");
         }
       } catch (error) {
-        const message =
-          error?.response?.data?.error?.message ||
-          error?.response?.data?.message ||
-          "Matnni AI orqali tahlil qilib bo'lmadi";
+        const message = isAiCreditsExhaustedError(error)
+          ? "AI kreditlaringiz yetarli emas. Meal log tahlili uchun kredit kerak."
+          : error?.response?.data?.error?.message ||
+            error?.response?.data?.message ||
+            "Matnni AI orqali tahlil qilib bo'lmadi";
         setAnalysisError(message);
         toast.error(message);
       } finally {
         setIsAnalyzing(false);
       }
     },
-    [analyzeMealTextDraft, inputSource, sourceText],
+    [aiCreditStatus.isDisabled, analyzeMealTextDraft, inputSource, sourceText],
   );
 
   React.useEffect(() => {
@@ -334,6 +358,11 @@ export default function AiMealDraftDrawer({
             </p>
           </div>
         ) : null}
+        <AiCreditStatusText
+          feature={aiCreditFeature}
+          wallet={aiCreditWallet}
+          costs={aiCreditCosts}
+        />
       </DrawerHeader>
       <DrawerBody className="p-0">
         <ScrollArea className="h-full px-5">
@@ -399,7 +428,7 @@ export default function AiMealDraftDrawer({
         <Button
           type="button"
           variant="outline"
-          disabled={!sourceText || isAnalyzing || isSaving}
+          disabled={!sourceText || isAnalyzing || isSaving || aiCreditStatus.isDisabled}
           onClick={() => void handleAnalyze()}
         >
           {isAnalyzing ? (

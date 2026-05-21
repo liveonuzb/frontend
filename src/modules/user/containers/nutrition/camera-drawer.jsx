@@ -64,6 +64,14 @@ import {
   toMealDateTimeIso,
 } from "./meal-date-time-utils.js";
 import RecentMealsDrawer from "./recent-meals-drawer.jsx";
+import { AiCreditStatusText } from "@/components/ai-credits";
+import {
+  AI_CREDIT_FEATURES,
+  getAiCreditStatus,
+  isAiCreditsExhaustedError,
+  useAiCreditCosts,
+  useAiCreditWallet,
+} from "@/hooks/app/use-ai-credits";
 
 import {
   filter,
@@ -176,6 +184,7 @@ const ScanCameraView = ({
   isBarcodeLocked,
   onCapture,
   onOpenText,
+  isPhotoScanDisabled = false,
   recentMeals,
   isRecentMealsLoading,
   onOpenRecentMeals,
@@ -275,7 +284,7 @@ const ScanCameraView = ({
   };
 
   const handleCapture = useCallback(() => {
-    if (!videoRef.current || !ready || isScanning) return;
+    if (!videoRef.current || !ready || isScanning || isPhotoScanDisabled) return;
 
     setIsScanning(true);
 
@@ -290,14 +299,14 @@ const ScanCameraView = ({
       setIsScanning(false);
       onCapture(canvas.toDataURL("image/jpeg", 0.85));
     }, 1500);
-  }, [isScanning, onCapture, ready, stopCamera]);
+  }, [isPhotoScanDisabled, isScanning, onCapture, ready, stopCamera]);
 
   const handleGalleryChange = useCallback(
     (event) => {
       const file = event.target.files?.[0];
       event.target.value = "";
 
-      if (!file) return;
+      if (!file || isPhotoScanDisabled) return;
 
       if (!file.type?.startsWith("image/")) {
         toast.error("Iltimos, rasm faylini tanlang.");
@@ -318,7 +327,7 @@ const ScanCameraView = ({
       reader.onerror = () => toast.error("Rasmni o'qib bo'lmadi.");
       reader.readAsDataURL(file);
     },
-    [onCapture, stopCamera],
+    [isPhotoScanDisabled, onCapture, stopCamera],
   );
 
   const handleOpenText = useCallback(() => {
@@ -457,7 +466,7 @@ const ScanCameraView = ({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            disabled={isScanning || scanMode === "barcode"}
+            disabled={isScanning || isPhotoScanDisabled || scanMode === "barcode"}
             className="flex min-w-16 flex-col items-center gap-1.5 text-foreground transition-transform active:scale-95 disabled:opacity-50"
           >
             <span className="flex size-11 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
@@ -474,7 +483,13 @@ const ScanCameraView = ({
               ? () => onScanModeChange("camera")
               : handleCapture
           }
-          disabled={scanMode === "camera" && (!ready || isScanning)}
+          disabled={
+            scanMode === "camera" &&
+            (isPhotoScanDisabled || !ready || isScanning)
+          }
+          aria-disabled={
+            scanMode === "camera" && (isPhotoScanDisabled || !ready || isScanning)
+          }
           className="flex size-[72px] items-center justify-center rounded-full border-[5px] border-muted bg-background shadow-sm ring-1 ring-border transition-transform active:scale-95 disabled:opacity-40"
         >
           {scanMode === "barcode" ? (
@@ -903,6 +918,13 @@ export default function CameraDrawer({
     dateKey: clampMealDateKey(dateKey || getDateKey(new Date()), mealDateMinKey),
     ...getTimePartsFromDate(),
   }));
+  const { wallet: aiCreditWallet } = useAiCreditWallet({ enabled: open });
+  const { costs: aiCreditCosts } = useAiCreditCosts({ enabled: open });
+  const photoScanCreditStatus = getAiCreditStatus({
+    wallet: aiCreditWallet,
+    costs: aiCreditCosts,
+    feature: AI_CREDIT_FEATURES.foodPhotoScan,
+  });
 
   const { addMeal: addMealAction } = useDailyTrackingActions();
   const { createSavedMeal } = useSavedMealsActions();
@@ -994,6 +1016,11 @@ export default function CameraDrawer({
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleCapture = async (dataUrl) => {
+    if (photoScanCreditStatus.isDisabled) {
+      toast.error("AI kreditlaringiz yetarli emas. Photo scan uchun kredit kerak.");
+      return;
+    }
+
     if (onInlineCapture) {
       onInlineCapture(dataUrl);
       return;
@@ -1019,8 +1046,9 @@ export default function CameraDrawer({
       }
       setView("result");
     } catch (error) {
-      const message =
-        error?.response?.data?.message || "Ovqatni AI orqali aniqlab bo'lmadi";
+      const message = isAiCreditsExhaustedError(error)
+        ? "AI kreditlaringiz yetarli emas. Photo scan uchun kredit kerak."
+        : error?.response?.data?.message || "Ovqatni AI orqali aniqlab bo'lmadi";
       setScanError(message);
       setView("result");
       toast.error(message);
@@ -1371,6 +1399,14 @@ export default function CameraDrawer({
                         ? "Shtrix-kodni kadr ichiga joylashtiring."
                         : "Ovqatni kadr ichiga joylashtiring va AI uchun rasm oling."}
                     </DrawerDescription>
+                    {scanMode === "camera" ? (
+                      <AiCreditStatusText
+                        feature={AI_CREDIT_FEATURES.foodPhotoScan}
+                        wallet={aiCreditWallet}
+                        costs={aiCreditCosts}
+                        className="justify-center"
+                      />
+                    ) : null}
                   </>
                 )}
               </div>
@@ -1402,6 +1438,7 @@ export default function CameraDrawer({
                     isBarcodeLocked={barcodeStatus !== "scanning"}
                     onCapture={handleCapture}
                     onOpenText={onOpenText}
+                    isPhotoScanDisabled={photoScanCreditStatus.isDisabled}
                     recentMeals={recentMeals}
                     isRecentMealsLoading={isRecentMealsLoading}
                     onOpenRecentMeals={handleOpenRecentMeals}

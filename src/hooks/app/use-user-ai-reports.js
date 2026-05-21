@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/hooks/api/use-api";
+import { useAiCreditInvalidation } from "@/hooks/app/use-ai-credits";
 
 import { find } from "lodash";
 
@@ -44,6 +45,7 @@ export const useUserAiReport = (id, options = {}) =>
 
 export const useGenerateUserAiReport = () => {
   const queryClient = useQueryClient();
+  const { invalidateAiCredits } = useAiCreditInvalidation();
 
   return useMutation({
     mutationFn: async (period) =>
@@ -60,6 +62,7 @@ export const useGenerateUserAiReport = () => {
         queryClient.invalidateQueries({
           queryKey: [...USER_AI_REPORT_QUERY_KEY, "limits"],
         }),
+        invalidateAiCredits(),
       ]);
     },
   });

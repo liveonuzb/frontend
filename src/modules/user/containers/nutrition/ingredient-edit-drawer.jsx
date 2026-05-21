@@ -21,6 +21,14 @@ import { NutritionDrawerContent } from "./nutrition-drawer-layout.jsx";
 import { Loader2Icon, SparklesIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useFoodScan } from "@/hooks/app/use-food-catalog";
+import { AiCreditStatusText } from "@/components/ai-credits";
+import {
+  AI_CREDIT_FEATURES,
+  getAiCreditStatus,
+  isAiCreditsExhaustedError,
+  useAiCreditCosts,
+  useAiCreditWallet,
+} from "@/hooks/app/use-ai-credits";
 import {
   commitEditedIngredient,
   createMealIngredientId,
@@ -79,6 +87,13 @@ export default function IngredientEditDrawer({
 }) {
   const isAddMode = mode === "add";
   const { analyzeIngredient, isAnalyzingIngredient } = useFoodScan();
+  const { wallet: aiCreditWallet } = useAiCreditWallet({ enabled: open });
+  const { costs: aiCreditCosts } = useAiCreditCosts({ enabled: open });
+  const aiCreditStatus = getAiCreditStatus({
+    wallet: aiCreditWallet,
+    costs: aiCreditCosts,
+    feature: AI_CREDIT_FEATURES.nutritionAnalysis,
+  });
   const [draft, setDraft] = React.useState(() =>
     ingredient
       ? normalizeIngredientForEdit(ingredient)
@@ -129,6 +144,10 @@ export default function IngredientEditDrawer({
       toast.error("Ingredient nomini yozing.");
       return;
     }
+    if (aiCreditStatus.isDisabled) {
+      toast.error("AI kreditlaringiz yetarli emas. Ingredient tahlili uchun kredit kerak.");
+      return;
+    }
 
     try {
       const analyzed = await analyzeIngredient({
@@ -145,8 +164,12 @@ export default function IngredientEditDrawer({
           estimatedGrams: toNumber(analyzed.estimatedGrams, analyzed.grams),
         }),
       );
-    } catch {
-      toast.error("Ingredient macro qiymatlarini AI orqali olib bo'lmadi.");
+    } catch (error) {
+      toast.error(
+        isAiCreditsExhaustedError(error)
+          ? "AI kreditlaringiz yetarli emas. Ingredient tahlili uchun kredit kerak."
+          : "Ingredient macro qiymatlarini AI orqali olib bo'lmadi.",
+      );
       setDraft((current) => ({
         ...current,
         nutritionSource: "manual",
@@ -154,7 +177,7 @@ export default function IngredientEditDrawer({
         reviewNeeded: true,
       }));
     }
-  }, [analyzeIngredient, draft.grams, draft.name]);
+  }, [aiCreditStatus.isDisabled, analyzeIngredient, draft.grams, draft.name]);
 
   const handleSave = React.useCallback(() => {
     const name = trim(draft.name);
@@ -207,7 +230,11 @@ export default function IngredientEditDrawer({
                 variant="ghost"
                 size="icon"
                 onClick={handleAnalyze}
-                disabled={isAnalyzingIngredient || !trim(draft.name)}
+                disabled={
+                  isAnalyzingIngredient ||
+                  !trim(draft.name) ||
+                  aiCreditStatus.isDisabled
+                }
                 className="absolute top-1/2 right-1 size-10 -translate-y-1/2 rounded-full"
                 aria-label="AI bilan aniqlash"
               >
@@ -218,6 +245,12 @@ export default function IngredientEditDrawer({
                 )}
               </Button>
             </div>
+            <AiCreditStatusText
+              feature={AI_CREDIT_FEATURES.nutritionAnalysis}
+              wallet={aiCreditWallet}
+              costs={aiCreditCosts}
+              className="mt-1"
+            />
           </div>
 
           <div className="rounded-3xl border bg-muted/15 p-4">

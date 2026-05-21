@@ -28,7 +28,19 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AiCreditBalanceBadge,
+  AiCreditCostBadge,
+  AiCreditStatusText,
+} from "@/components/ai-credits";
 import { cn } from "@/lib/utils";
+import {
+  AI_CREDIT_FEATURES,
+  getAiCreditStatus,
+  isAiCreditsExhaustedError,
+  useAiCreditCosts,
+  useAiCreditWallet,
+} from "@/hooks/app/use-ai-credits";
 import {
   getUserAiReportPeriodLabel,
   USER_AI_REPORT_PERIODS,
@@ -325,7 +337,9 @@ const Index = () => {
     pageSize: 12,
   });
   const generateMutation = useGenerateUserAiReport();
-  const historyItems = history?.items ?? [];
+  const { wallet } = useAiCreditWallet();
+  const { costs } = useAiCreditCosts();
+  const historyItems = React.useMemo(() => history?.items ?? [], [history?.items]);
   const { data: activeReport, isLoading: activeReportLoading } =
     useUserAiReport(activeReportId, {
       enabled: Boolean(activeReportId),
@@ -367,11 +381,18 @@ const Index = () => {
   const selectedHasTodayCache = some(historyItems, (item) =>
     item.period === selectedPeriod && String(item.createdAt || "").startsWith(todayKey()));
   const noQuota = !selectedHasTodayCache && toNumber(quota.remaining ?? 0) <= 0;
+  const creditStatus = getAiCreditStatus({
+    wallet,
+    costs,
+    feature: AI_CREDIT_FEATURES.nutritionAnalysis,
+  });
+  const lacksCredits = !selectedHasTodayCache && creditStatus.isDisabled;
   const isGenerateDisabled =
     limitsLoading ||
     generateMutation.isPending ||
     isSelectedLocked ||
-    noQuota;
+    noQuota ||
+    lacksCredits;
 
   const handleGenerate = async () => {
     try {
@@ -379,7 +400,11 @@ const Index = () => {
       setActiveReportId(result.id);
       toast.success(result.cached ? "Bugungi report ochildi" : "AI report yaratildi");
     } catch (error) {
-      toast.error(resolveApiErrorMessage(error, "AI report yaratib bo'lmadi"));
+      toast.error(
+        isAiCreditsExhaustedError(error)
+          ? "AI kreditlaringiz yetarli emas. Cached report bo'lsa ochish mumkin."
+          : resolveApiErrorMessage(error, "AI report yaratib bo'lmadi"),
+      );
     }
   };
 
@@ -419,8 +444,18 @@ const Index = () => {
                   Oylik limit: {quota.used ?? 0}/{quota.monthly ?? 0} ishlatildi,
                   {` ${quota.remaining ?? 0}`} qoldi
                 </span>
+                <AiCreditBalanceBadge wallet={wallet} />
+                <AiCreditCostBadge
+                  feature={AI_CREDIT_FEATURES.nutritionAnalysis}
+                  costs={costs}
+                />
               </div>
-              {noQuota ? (
+              {lacksCredits ? (
+                <p className="text-sm text-destructive">
+                  AI kreditlaringiz yetarli emas. Bugungi cached report mavjud
+                  bo'lsa ochish mumkin.
+                </p>
+              ) : noQuota ? (
                 <p className="text-sm text-destructive">
                   Bu oy uchun yangi AI report limiti tugagan. Bugungi cached
                   report mavjud bo'lsa ochish mumkin.
@@ -491,6 +526,11 @@ const Index = () => {
                 {selectedHasTodayCache
                   ? "Bu davr uchun bugungi cached report bor."
                   : "Yangi report limitdan foydalanadi."}
+                <AiCreditStatusText
+                  feature={AI_CREDIT_FEATURES.nutritionAnalysis}
+                  wallet={wallet}
+                  costs={costs}
+                />
               </div>
               <Button
                 type="button"

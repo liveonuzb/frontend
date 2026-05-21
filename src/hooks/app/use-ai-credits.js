@@ -100,8 +100,15 @@ export const normalizeAiCreditWallet = (payload = {}) => {
   const used = numberOrZero(get(source, "used"));
   const reserved = numberOrZero(get(source, "reserved"));
   const explicitRemaining = nullableNumber(get(source, "remaining"));
+  const hasWalletData =
+    get(source, "remaining") != null ||
+    get(source, "monthlyGrant") != null ||
+    get(source, "used") != null ||
+    get(source, "reserved") != null;
   const remaining =
-    explicitRemaining ?? Math.max(monthlyGrant - used - reserved, 0);
+    hasWalletData
+      ? explicitRemaining ?? Math.max(monthlyGrant - used - reserved, 0)
+      : null;
   const status =
     get(source, "status") ??
     get(source, "accountStatus") ??
@@ -127,7 +134,7 @@ export const normalizeAiCreditWallet = (payload = {}) => {
     tier,
     accountStatus,
     isPremium,
-    isExhausted: remaining <= 0,
+    isExhausted: remaining !== null && remaining <= 0,
   };
 };
 

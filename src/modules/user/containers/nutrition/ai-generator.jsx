@@ -13,6 +13,15 @@ import { ChevronLeftIcon, Loader2Icon, SparklesIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import useMealPlan from "@/hooks/app/use-meal-plan";
+import { AiCreditStatusText } from "@/components/ai-credits";
+import {
+  AI_CREDIT_FEATURES,
+  getAiCreditDisabledProps,
+  getAiCreditStatus,
+  isAiCreditsExhaustedError,
+  useAiCreditCosts,
+  useAiCreditWallet,
+} from "@/hooks/app/use-ai-credits";
 
 const MEAL_COUNTS = [
   { id: 3, label: "3 mahal", description: "Nonushta, Tushlik, Kechki ovqat" },
@@ -22,9 +31,22 @@ const MEAL_COUNTS = [
 
 const AIGenerator = ({ onClose, onGenerated }) => {
   const { generateAiPlan, isGeneratingAi } = useMealPlan();
+  const { wallet } = useAiCreditWallet();
+  const { costs } = useAiCreditCosts();
   const [step, setStep] = useState(1);
   const [selectedGoal, setSelectedGoal] = useState(null);
   const [selectedMealCount, setSelectedMealCount] = useState(4);
+  const planFeature = AI_CREDIT_FEATURES.mealPlan7Day;
+  const creditStatus = getAiCreditStatus({
+    wallet,
+    costs,
+    feature: planFeature,
+  });
+  const creditDisabledProps = getAiCreditDisabledProps({
+    wallet,
+    costs,
+    feature: planFeature,
+  });
 
   const selectedGoalData = useMemo(
     () => find(MEAL_PLAN_GOALS, { id: selectedGoal }) ?? null,
@@ -32,7 +54,7 @@ const AIGenerator = ({ onClose, onGenerated }) => {
   );
 
   const handleAiGenerate = async () => {
-    if (!selectedGoal) {
+    if (!selectedGoal || creditStatus.isDisabled) {
       return;
     }
 
@@ -51,8 +73,12 @@ const AIGenerator = ({ onClose, onGenerated }) => {
         description: "Reja real ovqatlar bazasi asosida tuzildi.",
         icon: <SparklesIcon className="size-4 text-primary" />,
       });
-    } catch {
-      toast.error("AI rejani yaratib bo'lmadi");
+    } catch (error) {
+      toast.error(
+        isAiCreditsExhaustedError(error)
+          ? "AI kreditlaringiz yetarli emas. Limit yangilangandan keyin qayta urinib ko'ring."
+          : "AI rejani yaratib bo'lmadi",
+      );
     }
   };
 
@@ -139,6 +165,12 @@ const AIGenerator = ({ onClose, onGenerated }) => {
                 </p>
               </div>
             </div>
+            <AiCreditStatusText
+              feature={planFeature}
+              wallet={wallet}
+              costs={costs}
+              className="mb-3 justify-center"
+            />
 
             {map(MEAL_COUNTS, (count) => {
               const isActive = selectedMealCount === count.id;
@@ -181,7 +213,11 @@ const AIGenerator = ({ onClose, onGenerated }) => {
       </DrawerBody>
       <DrawerFooter>
         {step === 2 ? (
-          <Button onClick={handleAiGenerate} disabled={isGeneratingAi}>
+          <Button
+            onClick={handleAiGenerate}
+            {...creditDisabledProps}
+            disabled={isGeneratingAi || creditStatus.isDisabled}
+          >
             {isGeneratingAi ? (
               <>
                 <Loader2Icon className="mr-2 size-5 animate-spin" />
