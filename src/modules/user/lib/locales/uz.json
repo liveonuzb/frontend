@@ -4,6 +4,7 @@
       "title": "Bosh sahifa",
       "greeting": "Salom, {{name}}!",
       "mobileGreeting": "Salom",
+      "mobileStreakDays": "{{count}} kun",
       "quote": "Kun motivatsiyasi",
       "accept": "Qabul qilish",
       "decline": "Rad etish",

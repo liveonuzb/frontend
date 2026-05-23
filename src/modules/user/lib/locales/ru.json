@@ -4,6 +4,7 @@
       "title": "Главная",
       "greeting": "Привет, {{name}}!",
       "mobileGreeting": "Привет",
+      "mobileStreakDays": "{{count}} дн.",
       "quote": "Мотивация дня",
       "accept": "Принять",
       "decline": "Отклонить",

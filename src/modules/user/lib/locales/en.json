@@ -4,6 +4,7 @@
       "title": "Dashboard",
       "greeting": "Hello, {{name}}!",
       "mobileGreeting": "Hello",
+      "mobileStreakDays": "{{count}} days",
       "quote": "Daily motivation",
       "accept": "Accept",
       "decline": "Decline",

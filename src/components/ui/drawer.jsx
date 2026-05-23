@@ -3,9 +3,11 @@ import { Drawer as DrawerPrimitive } from "vaul";
 
 import { cn } from "@/lib/utils";
 
-function Drawer({ shouldScaleBackground = true, ...props }) {
+function Drawer({ shouldScaleBackground = true, nested = false, ...props }) {
+  const Root = nested ? DrawerPrimitive.NestedRoot : DrawerPrimitive.Root;
+
   return (
-    <DrawerPrimitive.Root
+    <Root
       data-slot="drawer"
       direction="right"
       shouldScaleBackground={shouldScaleBackground}

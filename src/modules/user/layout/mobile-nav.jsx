@@ -6,11 +6,16 @@ import { isNavItemActive } from "@/lib/navigation";
 import { Home2, Messages2, Profile } from "iconsax-reactjs";
 import { Salad, DumbbellIcon } from "lucide-react";
 import { useChatStore } from "@/store";
+import {
+  PROFILE_OVERVIEW_TAB,
+  useProfileOverlay,
+} from "@/modules/profile/hooks/use-profile-overlay";
 
 import FloatingActionButton from "@/components/fab";
 
 const MobileNav = ({ hidden = false }) => {
   const { pathname } = useLocation();
+  const { isProfileOpen, openProfile } = useProfileOverlay();
   const contacts = useChatStore((state) => state.contacts);
   const initSocket = useChatStore((state) => state.initSocket);
   const disconnectSocket = useChatStore((state) => state.disconnectSocket);
@@ -45,9 +50,10 @@ const MobileNav = ({ hidden = false }) => {
       unreadCount: totalUnread,
     },
     {
-      to: `profile=open&profileTab=overview`,
+      action: "profile",
       label: "Profil",
       icon: Profile,
+      onClick: () => openProfile(PROFILE_OVERVIEW_TAB),
     },
   ];
 
@@ -60,7 +66,10 @@ const MobileNav = ({ hidden = false }) => {
     >
       <div className="flex justify-between items-center bg-secondary/70 backdrop-blur-md border border-border/40 shadow-2xl rounded-full px-2 py-1.5 gap-0.5">
         {map(items, (item = {}) => {
-          const isActive = isNavItemActive(pathname, item, items);
+          const isProfileAction = get(item, "action") === "profile";
+          const isActive = isProfileAction
+            ? isProfileOpen
+            : isNavItemActive(pathname, item, items);
           const itemUnreadCount = toNumber(get(item, "unreadCount", 0)) || 0;
           const label = get(item, "label", "");
           const ariaLabel =
@@ -69,6 +78,28 @@ const MobileNav = ({ hidden = false }) => {
               : label;
           const unreadBadge =
             itemUnreadCount > 99 ? "99+" : String(itemUnreadCount);
+          const navItemClassName = cn(
+            "relative flex items-center justify-center rounded-full p-[14px] transition-all duration-200",
+            isActive
+              ? "bg-primary text-white shadow-lg shadow-primary/20"
+              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+          );
+
+          if (isProfileAction) {
+            return (
+              <button
+                key={get(item, "action")}
+                type="button"
+                title={label}
+                aria-label={ariaLabel}
+                aria-current={isActive ? "page" : undefined}
+                className={navItemClassName}
+                onClick={get(item, "onClick")}
+              >
+                <item.icon className="size-[24px]" strokeWidth={2} />
+              </button>
+            );
+          }
 
           return (
             <NavLink
@@ -77,14 +108,7 @@ const MobileNav = ({ hidden = false }) => {
               title={label}
               aria-label={ariaLabel}
               aria-current={isActive ? "page" : undefined}
-              className={() =>
-                cn(
-                  "relative flex items-center justify-center rounded-full p-[14px] transition-all duration-200",
-                  isActive
-                    ? "bg-primary text-white shadow-lg shadow-primary/20"
-                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-                )
-              }
+              className={() => navItemClassName}
             >
               <item.icon className="size-[24px]" strokeWidth={2} />
               {itemUnreadCount > 0 ? (

@@ -14,9 +14,10 @@ vi.mock("react-i18next", () => ({
     init: vi.fn(),
   },
   useTranslation: () => ({
-    t: (key) =>
+    t: (key, options = {}) =>
       ({
         "user.dashboard.mobileGreeting": "Salom",
+        "user.dashboard.mobileStreakDays": `${options.count} kun`,
       })[key] ?? key,
   }),
 }));

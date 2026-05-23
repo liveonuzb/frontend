@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { get, join, map, take, toUpper, trim, split } from "lodash";
+import { get, join, map, take, toNumber, toUpper, trim, split } from "lodash";
 import { useBreadcrumbStore } from "@/store";
 import PageTransition from "@/components/page-transition";
 import CalendarBottomDrawer from "@/components/calendar-bottom-drawer.jsx";
@@ -32,6 +32,7 @@ import { USER_CHALLENGES_ENABLED } from "@/modules/user/user-feature-flags.js";
 import {
   AlertTriangleIcon,
   CalendarDaysIcon,
+  FlameIcon,
   RefreshCwIcon,
 } from "lucide-react";
 import {
@@ -125,6 +126,7 @@ const DashboardMobileTopBar = ({
     t("common.navUser.user", "Foydalanuvchi"),
   );
   const initials = getDashboardInitials(displayName);
+  const streakDays = Math.max(0, toNumber(get(user, "currentStreak", 0)) || 0);
 
   return (
     <div
@@ -143,12 +145,29 @@ const DashboardMobileTopBar = ({
             {initials}
           </AvatarFallback>
         </Avatar>
-        <span className="min-w-0">
-          <span className="block text-xs font-medium leading-tight text-muted-foreground">
-            {t("user.dashboard.mobileGreeting", "Salom")}
+        <span className="min-w-0 space-y-0.5">
+          <span
+            data-testid="dashboard-mobile-greeting-line"
+            className="flex min-w-0 items-baseline gap-1.5 leading-tight"
+          >
+            <span className="shrink-0 text-[13px] font-medium text-muted-foreground">
+              {t("user.dashboard.mobileGreeting", "Salom")}
+            </span>{" "}
+            <span className="truncate text-[15px] font-semibold text-foreground">
+              {displayName}
+            </span>
           </span>
-          <span className="block truncate text-[15px] font-semibold leading-tight text-foreground">
-            {displayName}
+          <span
+            data-testid="dashboard-mobile-streak"
+            className="flex items-center gap-1 text-[11px] font-medium leading-tight text-muted-foreground"
+          >
+            <FlameIcon className="size-3.5 text-orange-500" />
+            <span>
+              {t("user.dashboard.mobileStreakDays", {
+                count: streakDays,
+                defaultValue: "{{count}} kun",
+              })}
+            </span>
           </span>
         </span>
       </button>

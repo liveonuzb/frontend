@@ -30,7 +30,12 @@ vi.mock("@/components/ui/drawer.jsx", async () => {
     );
 
   return {
-    Drawer: ({ children, open }) => (open ? <div>{children}</div> : null),
+    Drawer: ({ children, open, nested = false }) =>
+      open ? (
+        <div data-testid={nested ? "nested-drawer" : "root-drawer"}>
+          {children}
+        </div>
+      ) : null,
     DrawerBody: MockSlot("drawer-body"),
     DrawerContent: MockSlot("drawer-content"),
     DrawerDescription: MockSlot("drawer-description"),
@@ -335,7 +340,7 @@ describe("CameraDrawer nutrition scanner", () => {
   });
 
   it("opens AI gallery scan in nested drawer and renders draft result", async () => {
-    renderDrawer();
+    const { onClose } = renderDrawer();
 
     const input = document.querySelector('input[type="file"]');
     fireEvent.change(input, {
@@ -345,22 +350,26 @@ describe("CameraDrawer nutrition scanner", () => {
     });
 
     expect(screen.getByText("AI topgan ovqatlar")).toBeInTheDocument();
+    expect(screen.getByTestId("nested-drawer")).toBeInTheDocument();
     expect(screen.getByText("AI tahlil qilmoqda")).toBeInTheDocument();
     expect(await screen.findByText("Chicken rice")).toBeInTheDocument();
     expect(screen.getByText("Ovqatni aniqlash")).toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it("closing barcode result drawer returns to scanner", async () => {
-    renderDrawer({ initialMode: "barcode" });
+    const { onClose } = renderDrawer({ initialMode: "barcode" });
 
     fireEvent.click(screen.getByRole("button", { name: "Mock barcode scan" }));
     await screen.findByText("Barcode natijasi");
+    expect(screen.getByTestId("nested-drawer")).toBeInTheDocument();
     fireEvent.click(
       screen.getByRole("button", { name: "Natijani yopish" }),
     );
 
     expect(screen.queryByText("Barcode natijasi")).not.toBeInTheDocument();
     expect(screen.getByText("Barcode skanerlash")).toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it("ignores stale barcode lookup after closing result drawer", async () => {

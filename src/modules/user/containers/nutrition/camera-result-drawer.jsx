@@ -345,7 +345,7 @@ export default function CameraResultDrawer({
     : "Barcode natijasini tekshiring yoki qo'l bilan kiriting.";
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
+    <Drawer nested open={open} onOpenChange={onOpenChange} direction="bottom">
       <NutritionDrawerContent
         size="sm"
         className="data-[vaul-drawer-direction=bottom]:h-[82vh] data-[vaul-drawer-direction=bottom]:max-h-[82vh]"

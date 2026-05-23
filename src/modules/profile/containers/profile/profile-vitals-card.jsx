@@ -528,7 +528,7 @@ export const ProfileVitalsCard = ({
             </span>
           ) : null}
         </div>
-        <p className="truncate text-2xl font-black tracking-tight">
+        <p className="truncate text-xl font-black tracking-tight">
           {displayName}
         </p>
         {user?.username ? (

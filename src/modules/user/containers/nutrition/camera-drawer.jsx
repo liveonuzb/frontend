@@ -538,6 +538,7 @@ export default function CameraDrawer({
   const mealDateMinKey = getMealDateStartKey(user, dateKey);
   const aiScanRequestRef = useRef(0);
   const barcodeLookupRequestRef = useRef(0);
+  const resultDrawerOpenRef = useRef(false);
   const [view, setView] = useState("camera");
   const [scanMode, setScanMode] = useState(initialMode);
   const [resultDrawerOpen, setResultDrawerOpen] = useState(false);
@@ -594,6 +595,10 @@ export default function CameraDrawer({
     () => (barcodeFood ? calcMacros(barcodeFood, barcodeAmount) : null),
     [barcodeAmount, barcodeFood],
   );
+  const setResultDrawerVisibility = useCallback((nextOpen) => {
+    resultDrawerOpenRef.current = nextOpen;
+    setResultDrawerOpen(nextOpen);
+  }, []);
 
   /*
    * Opening/closing this drawer intentionally resets transient scan and copy
@@ -607,7 +612,7 @@ export default function CameraDrawer({
     aiScanRequestRef.current += 1;
     barcodeLookupRequestRef.current += 1;
     setScanMode(initialMode);
-    setResultDrawerOpen(false);
+    setResultDrawerVisibility(false);
     setResultType(null);
     setAiResultStatus("idle");
     setBarcodeScannerKey((current) => current + 1);
@@ -641,7 +646,7 @@ export default function CameraDrawer({
       ),
       ...getTimePartsFromDate(),
     });
-  }, [dateKey, initialMode, mealDateMinKey, open]);
+  }, [dateKey, initialMode, mealDateMinKey, open, setResultDrawerVisibility]);
 
   useEffect(() => {
     setCopyMealTime((current) => {
@@ -658,13 +663,13 @@ export default function CameraDrawer({
       barcodeLookupRequestRef.current += 1;
       setView("camera");
       setScanMode(initialMode);
-      setResultDrawerOpen(false);
+      setResultDrawerVisibility(false);
       setResultType(null);
       setAiResultStatus("idle");
       setRecentMealsOpen(false);
       setMealTimeOpen(false);
     }
-  }, [initialMode, open]);
+  }, [initialMode, open, setResultDrawerVisibility]);
 
   useEffect(() => {
     if (!recentMealsOpen || selectedRecentMealId || recentMeals.length === 0) {
@@ -695,7 +700,7 @@ export default function CameraDrawer({
     setScanError(null);
     setResultType("ai");
     setAiResultStatus("analyzing");
-    setResultDrawerOpen(true);
+    setResultDrawerVisibility(true);
 
     try {
       const uploadedImageUrl = await uploadMealCapture(dataUrl);
@@ -731,9 +736,9 @@ export default function CameraDrawer({
     setScannedItems([]);
     setScanError(null);
     setAiResultStatus("idle");
-    setResultDrawerOpen(false);
+    setResultDrawerVisibility(false);
     setResultType(null);
-  }, []);
+  }, [setResultDrawerVisibility]);
 
   const resetBarcodeScanner = useCallback(() => {
     barcodeLookupRequestRef.current += 1;
@@ -741,10 +746,10 @@ export default function CameraDrawer({
     setBarcodeFood(null);
     setBarcodeAmount(100);
     setBarcodeStatus("scanning");
-    setResultDrawerOpen(false);
+    setResultDrawerVisibility(false);
     setResultType(null);
     setBarcodeScannerKey((current) => current + 1);
-  }, []);
+  }, [setResultDrawerVisibility]);
 
   const handleScanModeChange = useCallback(
     (nextMode) => {
@@ -769,7 +774,7 @@ export default function CameraDrawer({
 
       setScannedBarcode(normalizedCode);
       setResultType("barcode");
-      setResultDrawerOpen(true);
+      setResultDrawerVisibility(true);
       setBarcodeStatus("loading");
       setBarcodeFood(null);
 
@@ -796,7 +801,7 @@ export default function CameraDrawer({
         toast.error("Barcode bo'yicha ovqatni tekshirib bo'lmadi");
       }
     },
-    [barcodeStatus, lookupFoodByBarcode],
+    [barcodeStatus, lookupFoodByBarcode, setResultDrawerVisibility],
   );
 
   const handleBarcodeManualFieldChange = useCallback((key, value) => {
@@ -823,7 +828,7 @@ export default function CameraDrawer({
         addedFromPlan: false,
       });
       toast.success(`${barcodeFood.name} qo'shildi!`);
-      setResultDrawerOpen(false);
+      setResultDrawerVisibility(false);
       setResultType(null);
       onClose();
     } catch {
@@ -838,6 +843,7 @@ export default function CameraDrawer({
     loggedAt,
     mealType,
     onClose,
+    setResultDrawerVisibility,
   ]);
 
   const handleAddManualBarcodeFood = useCallback(async () => {
@@ -865,7 +871,7 @@ export default function CameraDrawer({
         addedFromPlan: false,
       });
       toast.success(`${name} qo'shildi!`);
-      setResultDrawerOpen(false);
+      setResultDrawerVisibility(false);
       setResultType(null);
       onClose();
     } catch {
@@ -879,6 +885,7 @@ export default function CameraDrawer({
     mealType,
     onClose,
     scannedBarcode,
+    setResultDrawerVisibility,
   ]);
 
   const handleIngredientUpdate = useCallback(
@@ -980,7 +987,7 @@ export default function CameraDrawer({
           ? `${scannedItems[0].title} muvaffaqiyatli qo'shildi!`
           : `${scannedItems.length} ta ovqat muvaffaqiyatli qo'shildi!`,
       );
-      setResultDrawerOpen(false);
+      setResultDrawerVisibility(false);
       setResultType(null);
       setAiResultStatus("idle");
       onClose();
@@ -1041,7 +1048,7 @@ export default function CameraDrawer({
 
   const handleResultDrawerOpenChange = useCallback(
     (nextOpen) => {
-      setResultDrawerOpen(nextOpen);
+      setResultDrawerVisibility(nextOpen);
       if (nextOpen) return;
 
       if (resultType === "barcode") {
@@ -1051,7 +1058,7 @@ export default function CameraDrawer({
 
       handleRetake();
     },
-    [handleRetake, resetBarcodeScanner, resultType],
+    [handleRetake, resetBarcodeScanner, resultType, setResultDrawerVisibility],
   );
 
   return (
@@ -1062,6 +1069,7 @@ export default function CameraDrawer({
           if (
             nextOpen ||
             isStackedChildOpen ||
+            resultDrawerOpenRef.current ||
             resultDrawerOpen ||
             recentMealsOpen ||
             mealTimeOpen
@@ -1118,46 +1126,46 @@ export default function CameraDrawer({
             </AnimatePresence>
           </DrawerBody>
         </NutritionDrawerContent>
-      </Drawer>
 
-      <CameraResultDrawer
-        open={resultDrawerOpen}
-        resultType={resultType}
-        onOpenChange={handleResultDrawerOpenChange}
-        ai={{
-          status: aiResultStatus,
-          items: scannedItems,
-          imageUrl: capturedImage,
-          scanError,
-          goals,
-          saveToMyMeals,
-          onSaveToMyMealsChange: setSaveToMyMeals,
-          onRetake: handleRetake,
-          onIngredientUpdate: handleIngredientUpdate,
-          onIngredientRemove: handleIngredientRemove,
-          onIngredientAdd: handleIngredientAdd,
-          onRemove: handleRemoveItem,
-          onConfirm: handleConfirmItem,
-          onSave: handleSave,
-          isSaving,
-          isAnalyzing: isAnalyzingDraftImage,
-          isUploading: isUploadingCapture,
-        }}
-        barcode={{
-          amount: barcodeAmount,
-          foundFood: barcodeFood,
-          foundMacros: barcodeMacros,
-          isLookingUp: isBarcodeLookingUp,
-          manualFood: barcodeManualFood,
-          onAddFoundFood: handleAddBarcodeFood,
-          onAddManualFood: handleAddManualBarcodeFood,
-          onAmountChange: setBarcodeAmount,
-          onManualFieldChange: handleBarcodeManualFieldChange,
-          onReset: resetBarcodeScanner,
-          scannedCode: scannedBarcode,
-          status: barcodeStatus,
-        }}
-      />
+        <CameraResultDrawer
+          open={resultDrawerOpen}
+          resultType={resultType}
+          onOpenChange={handleResultDrawerOpenChange}
+          ai={{
+            status: aiResultStatus,
+            items: scannedItems,
+            imageUrl: capturedImage,
+            scanError,
+            goals,
+            saveToMyMeals,
+            onSaveToMyMealsChange: setSaveToMyMeals,
+            onRetake: handleRetake,
+            onIngredientUpdate: handleIngredientUpdate,
+            onIngredientRemove: handleIngredientRemove,
+            onIngredientAdd: handleIngredientAdd,
+            onRemove: handleRemoveItem,
+            onConfirm: handleConfirmItem,
+            onSave: handleSave,
+            isSaving,
+            isAnalyzing: isAnalyzingDraftImage,
+            isUploading: isUploadingCapture,
+          }}
+          barcode={{
+            amount: barcodeAmount,
+            foundFood: barcodeFood,
+            foundMacros: barcodeMacros,
+            isLookingUp: isBarcodeLookingUp,
+            manualFood: barcodeManualFood,
+            onAddFoundFood: handleAddBarcodeFood,
+            onAddManualFood: handleAddManualBarcodeFood,
+            onAmountChange: setBarcodeAmount,
+            onManualFieldChange: handleBarcodeManualFieldChange,
+            onReset: resetBarcodeScanner,
+            scannedCode: scannedBarcode,
+            status: barcodeStatus,
+          }}
+        />
+      </Drawer>
 
       <RecentMealsDrawer
         open={recentMealsOpen}

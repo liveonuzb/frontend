@@ -90,13 +90,15 @@ const getProfileIdentity = (user) => {
   const lastName = get(user, "lastName", "");
   const username = get(user, "username", "");
 
-  const displayName = trim(`${firstName} ${lastName}`) || username || "User";
+  const displayName =
+    trim(`${firstName} ${lastName || ""}`) || username || "User";
 
-  const initials = toUpper(join(
-    map(split(displayName, " "), (part) => get(part, "[0]", "")),
-    "",
-  )
-    .slice(0, 2));
+  const initials = toUpper(
+    join(
+      map(split(displayName, " "), (part) => get(part, "[0]", "")),
+      "",
+    ).slice(0, 2),
+  );
 
   return { displayName, initials };
 };
@@ -188,10 +190,7 @@ const InlineNotificationsItem = ({ tab, value }) => {
         onClick={() => setOpen(true)}
       />
       {open ? (
-        <NotificationSettingsDrawer
-          open={open}
-          onOpenChange={setOpen}
-        />
+        <NotificationSettingsDrawer open={open} onOpenChange={setOpen} />
       ) : null}
     </>
   );
