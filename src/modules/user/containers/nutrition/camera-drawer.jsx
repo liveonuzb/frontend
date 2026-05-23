@@ -260,7 +260,12 @@ const ScanCameraView = ({
   };
 
   const handleCapture = useCallback(() => {
-    if (!videoRef.current || !ready || isScanning || isPhotoScanDisabled) return;
+    if (isPhotoScanDisabled) {
+      onCapture("");
+      return;
+    }
+
+    if (!videoRef.current || !ready || isScanning) return;
 
     setIsScanning(true);
 
@@ -276,6 +281,15 @@ const ScanCameraView = ({
       onCapture(canvas.toDataURL("image/jpeg", 0.85));
     }, 1500);
   }, [isPhotoScanDisabled, isScanning, onCapture, ready, stopCamera]);
+
+  const handleGalleryClick = useCallback(() => {
+    if (isPhotoScanDisabled) {
+      onCapture("");
+      return;
+    }
+
+    fileInputRef.current?.click();
+  }, [isPhotoScanDisabled, onCapture]);
 
   const handleGalleryChange = useCallback(
     (event) => {
@@ -447,9 +461,15 @@ const ScanCameraView = ({
           />
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isScanning || isPhotoScanDisabled || scanMode === "barcode"}
-            className="flex min-w-16 flex-col items-center gap-1.5 text-foreground transition-transform active:scale-95 disabled:opacity-50"
+            onClick={handleGalleryClick}
+            disabled={isScanning || scanMode === "barcode"}
+            aria-disabled={
+              isPhotoScanDisabled || isScanning || scanMode === "barcode"
+            }
+            className={cn(
+              "flex min-w-16 flex-col items-center gap-1.5 text-foreground transition-transform active:scale-95 disabled:opacity-50",
+              isPhotoScanDisabled ? "opacity-50" : null,
+            )}
           >
             <span className="flex size-11 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
               <ImageIcon className="size-5" />
@@ -467,7 +487,8 @@ const ScanCameraView = ({
           }
           disabled={
             scanMode === "camera" &&
-            (isPhotoScanDisabled || !ready || isScanning)
+            !isPhotoScanDisabled &&
+            (!ready || isScanning)
           }
           aria-disabled={
             scanMode === "camera" && (isPhotoScanDisabled || !ready || isScanning)

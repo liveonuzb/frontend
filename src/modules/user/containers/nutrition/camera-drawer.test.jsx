@@ -347,19 +347,21 @@ describe("CameraDrawer nutrition scanner", () => {
     expect(screen.getByText("Barcode skanerlash")).toBeInTheDocument();
   });
 
-  it("blocks disabled AI access before upload", async () => {
+  it("shows disabled AI access feedback from visible photo controls before upload", async () => {
     mocks.aiAccessDisabled = true;
     renderDrawer();
 
-    const input = document.querySelector('input[type="file"]');
-    fireEvent.change(input, {
-      target: {
-        files: [new File(["meal"], "meal.jpg", { type: "image/jpeg" })],
-      },
-    });
+    fireEvent.click(screen.getByRole("button", { name: "Gallery" }));
+    fireEvent.click(screen.getByRole("button", { name: "Capture" }));
 
     expect(mocks.uploadMealCapture).not.toHaveBeenCalled();
-    expect(mocks.toastError).toHaveBeenCalledWith(
+    expect(mocks.toastError).toHaveBeenCalledTimes(2);
+    expect(mocks.toastError).toHaveBeenNthCalledWith(
+      1,
+      "Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin.",
+    );
+    expect(mocks.toastError).toHaveBeenNthCalledWith(
+      2,
       "Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin.",
     );
   });
