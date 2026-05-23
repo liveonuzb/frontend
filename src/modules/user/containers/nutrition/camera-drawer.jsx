@@ -6,7 +6,6 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer.jsx";
-import { Button } from "@/components/ui/button.jsx";
 import {
   BarcodeIcon,
   ChevronUpIcon,
