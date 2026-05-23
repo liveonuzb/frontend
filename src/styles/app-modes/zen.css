@@ -1,5 +1,138 @@
 html[data-app-mode="zen"] {
+  .meals-widget {
+    .breakfast {
+      background: url("/zen/meals/breakfast.webp") no-repeat center center;
+      background-size: contain;
+    }
+
+    .lunch {
+      background: url("/zen/meals/lunch.webp") no-repeat center center;
+      background-size: contain;
+    }
+
+    .dinner {
+      background: url("/zen/meals/dinner.webp") no-repeat center center;
+      background-size: contain;
+    }
+
+    .snack {
+      background: url("/zen/meals/snack.webp") no-repeat center center;
+      background-size: contain;
+    }
+  }
+
+  .water-widget {
+    background: url("/zen/water-widget/background.webp") no-repeat center center;
+    background-size: cover;
+    color: #234e4b;
+
+    > div:first-child span {
+      color: #143f3e;
+      text-shadow: 0 1px 0 rgb(255 255 255 / 0.45);
+    }
+
+    > div:nth-of-type(2) span:first-child {
+      color: #2f625e;
+      text-shadow:
+        0 1px 0 rgb(255 255 255 / 0.42),
+        0 2px 8px rgb(20 63 62 / 0.16);
+    }
+
+    > div:nth-of-type(2) span:last-child {
+      color: #7d9284;
+      text-shadow: 0 1px 0 rgb(255 255 255 / 0.36);
+    }
+
+    button[aria-label="Stakan hajmini tanlash"],
+    button[aria-label$="sahifasini ochish"] {
+      color: #285755;
+      border-color: rgb(40 87 85 / 0.18);
+      background-color: rgb(255 252 246 / 0.58);
+      box-shadow:
+        0 10px 22px rgb(30 63 59 / 0.1),
+        inset 0 1px 0 rgb(255 255 255 / 0.68);
+    }
+
+    button[aria-label="Stakan hajmini tanlash"]:hover,
+    button[aria-label$="sahifasini ochish"]:hover {
+      color: #143f3e;
+      background-color: rgb(255 252 246 / 0.74);
+    }
+
+    .indicator {
+      background: url("/zen/water-widget/indicator.webp") no-repeat center
+        center;
+      background-size: cover;
+    }
+
+    .add {
+      background: url("/zen/water-widget/add.webp") no-repeat center center;
+      background-size: cover;
+      transition:
+        transform 0.08s ease,
+        filter 0.08s ease;
+      box-shadow: 0 6px 0 rgba(0, 0, 0, 0.25);
+
+      &:hover {
+        filter: brightness(0.95);
+      }
+
+      &:active {
+        transform: translateY(4px);
+        box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+        filter: brightness(0.9);
+      }
+    }
+
+    .icon {
+      background: url("/zen/water-widget/icon.webp") no-repeat center center;
+      background-size: cover;
+    }
+  }
+
+  .mood-widget {
+    .how {
+      background: url("/zen/mood/male/how.webp") no-repeat center bottom;
+      background-size: contain;
+    }
+
+    .bad {
+      background: url("/zen/mood/male/bad.webp") no-repeat center bottom;
+      background-size: contain;
+    }
+
+    .tired {
+      background: url("/zen/mood/male/tired.webp") no-repeat center bottom;
+      background-size: contain;
+    }
+
+    .neutral {
+      background: url("/zen/mood/male/neutral.webp") no-repeat center bottom;
+      background-size: contain;
+    }
+
+    .good {
+      background: url("/zen/mood/male/good.webp") no-repeat center bottom;
+      background-size: contain;
+    }
+
+    .amazing {
+      background: url("/zen/mood/male/amazing.webp") no-repeat center bottom;
+      background-size: contain;
+    }
+  }
+
   .water-cup {
+    :is(.cup_50, .cup_150, .cup_250, .cup_400, .cup_500, .cup_custom) {
+      width: clamp(3.25rem, 16vw, 5.25rem);
+      height: clamp(3.25rem, 16vw, 5.25rem);
+      flex-shrink: 0;
+      margin-block: -0.25rem -0.5rem;
+      opacity: 1;
+      filter: drop-shadow(0 8px 12px rgb(13 148 136 / 0.22))
+        contrast(1.06) saturate(1.05);
+    }
+
     .cup_50 {
       background: url("/zen/cups/50.webp") no-repeat center center;
       background-size: contain;

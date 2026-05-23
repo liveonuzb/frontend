@@ -107,9 +107,8 @@ export default function WeightWidget({
       role={interactive ? "button" : undefined}
       tabIndex={interactive ? 0 : undefined}
       className={cn(
-        "group/card relative h-full overflow-hidden py-3 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
-        interactive &&
-          "cursor-pointer hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-lg",
+        "group/card relative h-full overflow-hidden border border-border/60 py-3 ring-0 transition-colors hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+        interactive && "cursor-pointer",
       )}
       onClick={handleOpen}
       onKeyDown={
@@ -123,7 +122,7 @@ export default function WeightWidget({
           : undefined
       }
     >
-      <div className="absolute -right-4 -top-4 size-20 rounded-full bg-primary/10 blur-[24px] transition-colors group-hover/card:bg-primary/20" />
+      <div className="absolute -right-4 -top-4 size-20 rounded-full bg-primary/10 blur-[24px]" />
       <CardHeader className="relative z-10 px-4 pb-1.5">
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="flex min-w-0 items-center gap-1.5 text-xs font-bold">
@@ -133,7 +132,7 @@ export default function WeightWidget({
             <span className="truncate">Vazn</span>
           </CardTitle>
           {interactive ? (
-            <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/40 transition-transform group-hover/card:translate-x-0.5 group-hover/card:text-primary" />
+            <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/40" />
           ) : null}
         </div>
       </CardHeader>
@@ -194,16 +193,13 @@ export default function WeightWidget({
         ) : null}
 
         <div
-          className={cn(
-            "mt-auto flex w-full items-center gap-2 rounded-2xl border border-border/60 bg-background/60 px-3 py-2 text-sm font-bold transition-colors",
-            interactive && "group-hover/card:border-primary/30",
-          )}
+          className="mt-auto flex w-full items-center gap-2 rounded-2xl border border-border/60 bg-background/60 px-3 py-2 text-sm font-bold"
         >
           <span className="flex size-7 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <RulerIcon className="size-4" />
           </span>
           <span className="truncate">Ko'krak / Bel / Son</span>
-          <ChevronRightIcon className="ml-auto size-4 shrink-0 text-muted-foreground/50 transition-transform group-hover/card:translate-x-0.5 group-hover/card:text-primary" />
+          <ChevronRightIcon className="ml-auto size-4 shrink-0 text-muted-foreground/50" />
         </div>
       </CardContent>
     </Card>

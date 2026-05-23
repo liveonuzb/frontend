@@ -100,11 +100,11 @@ export default function WorkoutWidget({
   return (
     <Card
       className={cn(
-        "relative h-full overflow-hidden py-3 transition-all hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-lg",
+        "relative h-full overflow-hidden border border-border/60 py-3 ring-0 transition-colors hover:border-primary/30",
         className,
       )}
     >
-      <div className="absolute -right-4 -top-4 size-20 rounded-full bg-primary/10 blur-[24px] transition-colors group-hover/card:bg-primary/20" />
+      <div className="absolute -right-4 -top-4 size-20 rounded-full bg-primary/10 blur-[24px]" />
       <CardHeader className="relative z-10 px-4 pb-1.5 pt-3">
         <CardTitle className="flex min-w-0 items-center gap-1.5 text-xs font-bold">
           <span className="rounded bg-primary/10 p-1">

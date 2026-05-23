@@ -85,17 +85,13 @@ export default function CalendarBottomDrawer({
       <DrawerContent
         data-calendar-bottom-drawer="true"
         className={cn(
-          "data-[vaul-drawer-direction=bottom]:w-full data-[vaul-drawer-direction=bottom]:max-w-none",
+          "data-[vaul-drawer-direction=bottom]:!mx-auto data-[vaul-drawer-direction=bottom]:!w-[min(100vw,28rem)] data-[vaul-drawer-direction=bottom]:!max-w-md",
           className,
         )}
       >
-        <DrawerHeader className="text-center">
-          <div className="mx-auto max-w-sm">
-            <DrawerTitle className="text-xl font-bold">{title}</DrawerTitle>
-            <DrawerDescription className="mt-2 text-base leading-snug">
-              {description}
-            </DrawerDescription>
-          </div>
+        <DrawerHeader>
+          <DrawerTitle>{title}</DrawerTitle>
+          <DrawerDescription>{description}</DrawerDescription>
         </DrawerHeader>
 
         <DrawerBody className="px-4 pb-0">
@@ -123,11 +119,11 @@ export default function CalendarBottomDrawer({
                 caption_label: "select-none text-lg font-bold text-foreground",
                 chevron: "size-5",
                 month_grid: "w-full flex-1 border-collapse",
-                weekdays: "flex w-full",
+                weekdays: "flex w-full gap-1",
                 weekday:
-                  "flex-1 rounded-(--cell-radius) text-sm font-semibold text-muted-foreground select-none",
+                  "flex-1 rounded-(--cell-radius) text-xs font-medium text-muted-foreground select-none",
                 weeks: "flex flex-1 flex-col justify-between",
-                week: "flex w-full",
+                week: "flex w-full gap-1",
                 today:
                   "relative text-foreground after:absolute after:bottom-1.5 after:left-1/2 after:z-20 after:size-1.5 after:-translate-x-1/2 after:rounded-full after:bg-primary after:content-['']",
                 day_button:

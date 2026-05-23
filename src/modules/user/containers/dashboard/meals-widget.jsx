@@ -225,11 +225,11 @@ export default function MealsWidget({
                   aria-label={`${label} ${Math.round(calories)} kcal`}
                   className="flex min-w-0 flex-1 items-center gap-3 rounded-xl text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-background shadow-sm ring-1 ring-border/60">
+                  <div className="flex size-12 md:size-[52px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-background/50 shadow-sm ring-1 ring-border/60">
                     <div
                       className={cn(
                         get(config, "icon"),
-                        "size-10 bg-contain bg-center bg-no-repeat",
+                        "size-9 md:size-10 bg-contain bg-center bg-no-repeat",
                       )}
                     />
                   </div>

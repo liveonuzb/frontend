@@ -4,6 +4,7 @@
 @import "@fontsource-variable/geist";
 @import "./styles/app-modes/madagascar.css";
 @import "./styles/app-modes/zen.css";
+@import "./styles/app-modes/focus.css";
 
 @custom-variant dark (&:is(.dark *));
 

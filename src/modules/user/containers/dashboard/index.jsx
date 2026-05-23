@@ -139,7 +139,7 @@ const DashboardContainer = () => {
             type="button"
             variant="outline"
             size="icon-lg"
-            className="rounded-2xl bg-card/80 shadow-sm"
+            className="rounded-2xl bg-card/80 shadow-none hover:shadow-none"
             onClick={() => setCalendarOpen(true)}
             aria-label={`Sana tanlash: ${selectedDateLabel}`}
           >

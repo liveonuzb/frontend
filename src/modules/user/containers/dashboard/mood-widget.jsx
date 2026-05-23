@@ -116,7 +116,7 @@ export function MoodWidgetView({
                   onMoodSelect?.(value);
                 }}
                 className={cn(
-                  "flex flex-1 items-center justify-center rounded-2xl py-1 transition-colors disabled:cursor-not-allowed disabled:opacity-60",
+                  "relative flex flex-1 items-end justify-center overflow-hidden rounded-2xl px-1 pb-0 pt-2 transition-colors disabled:cursor-not-allowed disabled:opacity-60",
                   !readOnly && "cursor-pointer",
                   isSelected
                     ? "bg-primary/15 ring-1 ring-primary"
@@ -124,7 +124,11 @@ export function MoodWidgetView({
                 )}
               >
                 <motion.div
-                  className={cn("size-14", value)}
+                  className={cn(
+                    "size-14 shrink-0 bg-contain bg-bottom bg-no-repeat",
+                    value,
+                  )}
+                  style={{ transformOrigin: "bottom center" }}
                   animate={
                     isSelected && !shouldReduceMotion
                       ? {

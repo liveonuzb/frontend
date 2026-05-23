@@ -26,18 +26,18 @@ html[data-app-mode="madagascar"] {
   }
 
   .water-widget {
-    background: url("/madagascar/dashboard/light/water-widget.webp") no-repeat
+    background: url("/madagascar/water-widget/background.webp") no-repeat
       center center;
     background-size: cover;
 
     .indicator {
-      background: url("/madagascar/dashboard/light/water-indicator.webp")
+      background: url("/madagascar/water-widget/indicator.webp")
         no-repeat center center;
       background-size: cover;
     }
 
     .add {
-      background: url("/madagascar/dashboard/light/water-add.webp") no-repeat
+      background: url("/madagascar/water-widget/add.webp") no-repeat
         center center;
       background-size: cover;
       transition:
@@ -57,7 +57,7 @@ html[data-app-mode="madagascar"] {
     }
 
     .icon {
-      background: url("/madagascar/dashboard/light/water-icon.webp") no-repeat
+      background: url("/madagascar/water-widget/icon.webp") no-repeat
         center center;
       background-size: cover;
     }
@@ -65,35 +65,35 @@ html[data-app-mode="madagascar"] {
 
   .mood-widget {
     .how {
-      background: url("/madagascar/mood/male/how.webp") no-repeat center center;
+      background: url("/madagascar/mood/male/how.webp") no-repeat center bottom;
       background-size: contain;
     }
 
     .bad {
-      background: url("/madagascar/mood/male/bad.webp") no-repeat center center;
+      background: url("/madagascar/mood/male/bad.webp") no-repeat center bottom;
       background-size: contain;
     }
 
     .tired {
       background: url("/madagascar/mood/male/tired.webp") no-repeat center
-        center;
+        bottom;
       background-size: contain;
     }
 
     .neutral {
       background: url("/madagascar/mood/male/neutral.webp") no-repeat center
-        center;
+        bottom;
       background-size: contain;
     }
 
     .good {
-      background: url("/madagascar/mood/male/good.webp") no-repeat center center;
+      background: url("/madagascar/mood/male/good.webp") no-repeat center bottom;
       background-size: contain;
     }
 
     .amazing {
       background: url("/madagascar/mood/male/amazing.webp") no-repeat center
-        center;
+        bottom;
       background-size: contain;
     }
   }

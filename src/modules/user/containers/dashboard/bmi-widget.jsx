@@ -157,14 +157,13 @@ export default function BmiWidget({
           : undefined
       }
       className={cn(
-        "group/card relative h-full overflow-hidden py-3 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
-        interactive &&
-          "cursor-pointer hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-lg",
+        "group/card relative h-full overflow-hidden border border-border/60 py-3 ring-0 transition-colors hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+        interactive && "cursor-pointer",
       )}
     >
       {meta ? (
         <div
-          className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full blur-[26px] transition-opacity group-hover/card:opacity-90"
+          className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full blur-[26px]"
           style={{
             background: `radial-gradient(circle, ${meta.color}22 0%, transparent 72%)`,
           }}
@@ -179,7 +178,7 @@ export default function BmiWidget({
             <span className="truncate">BMI indeks</span>
           </CardTitle>
           {interactive ? (
-            <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/40 transition-transform group-hover/card:translate-x-0.5 group-hover/card:text-primary" />
+            <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/40" />
           ) : null}
         </div>
       </CardHeader>

@@ -17,12 +17,7 @@ import AudioTranscriptDrawer from "./audio-transcript-drawer.jsx";
 import TextAddDrawer from "./text-add-drawer.jsx";
 import ManualAddDrawer from "./manual-add-drawer.jsx";
 import AiMealDraftDrawer from "./ai-meal-draft-drawer.jsx";
-import useFoodCatalog, {
-  useFoodAudioTranscriptHistory,
-} from "@/hooks/app/use-food-catalog";
-import { useDailyTrackingActions } from "@/hooks/app/use-daily-tracking";
-import { useSavedMeals } from "@/hooks/app/use-saved-meals";
-import { toast } from "sonner";
+import { useFoodAudioTranscriptHistory } from "@/hooks/app/use-food-catalog";
 import {
   clampMealDateKey,
   getDateKey,
@@ -37,7 +32,6 @@ import {
 } from "@/hooks/app/use-ai-credits";
 import { getMealConfig } from "@/modules/user/lib/meal-config";
 import SmartAddSheet from "./smart-add-sheet.jsx";
-import { buildNutritionQuickAdds } from "./nutrition-quick-adds.js";
 
 import { filter, reduce, split, toNumber, trim } from "lodash";
 
@@ -98,7 +92,6 @@ const ActionDrawer = ({
   const [cameraAiDraftOpen, setCameraAiDraftOpen] = useState(false);
   const [cameraInitialMode, setCameraInitialMode] = useState("camera");
   const [catalogInitialFood, setCatalogInitialFood] = useState(null);
-  const [quickAddingId, setQuickAddingId] = useState(null);
   const [selectedMealTime, setSelectedMealTime] = useState(() => ({
     dateKey: clampMealDateKey(dateKey || getDateKey(new Date()), mealDateMinKey),
     ...getTimePartsFromDate(),
@@ -115,18 +108,6 @@ const ActionDrawer = ({
       activeNested === "text" ||
       textAddVariant === "audio" ||
       cameraTextOpen);
-  const { addMeal: addQuickMealAction } = useDailyTrackingActions();
-  const { recentFoods } = useFoodCatalog();
-  const { items: savedMeals } = useSavedMeals({ enabled: open });
-  const quickItems = useMemo(
-    () =>
-      buildNutritionQuickAdds({
-        savedMeals,
-        recentFoods,
-        limit: 6,
-      }),
-    [recentFoods, savedMeals],
-  );
   const activeMealConfig = getMealConfig(activeMealType, {
     label: "Ovqat",
     emoji: "🍽️",
@@ -326,51 +307,6 @@ const ActionDrawer = ({
     setActiveNested("camera");
   }, [setActiveNested, setCameraInitialMode]);
 
-  const handleQuickAdd = useCallback(
-    async (item) => {
-      if (disabled || !item?.payload || !selectedDateKey) {
-        return;
-      }
-
-      setQuickAddingId(item.id);
-      try {
-        await addQuickMealAction(selectedDateKey, activeMealType, {
-          ...item.payload,
-          addedAt: selectedLoggedAt || undefined,
-        });
-        toast.success(`${item.title} qo'shildi`);
-      } catch {
-        toast.error("Ovqatni qo'shib bo'lmadi");
-      } finally {
-        setQuickAddingId(null);
-      }
-    },
-    [
-      activeMealType,
-      addQuickMealAction,
-      disabled,
-      selectedDateKey,
-      selectedLoggedAt,
-    ],
-  );
-
-  const handleEditQuickAdd = useCallback(
-    (item) => {
-      if (disabled || !item) {
-        return;
-      }
-
-      if (item.type === "catalog") {
-        setCatalogInitialFood(item.sourceItem || null);
-        setActiveNested("catalog");
-        return;
-      }
-
-      handleOpenSavedMeals();
-    },
-    [disabled, handleOpenSavedMeals, setActiveNested, setCatalogInitialFood],
-  );
-
   return (
     <div>
       <Drawer
@@ -383,16 +319,12 @@ const ActionDrawer = ({
             aiCreditCosts={aiCreditCosts}
             aiCreditWallet={aiCreditWallet}
             disabled={disabled}
-            isQuickAddingId={quickAddingId}
             mealLabel={activeMealConfig.label}
-            onEditQuickAdd={handleEditQuickAdd}
             onOpenAudio={handleOpenAudio}
             onOpenCamera={handleOpenCamera}
             onOpenCatalog={handleOpenCatalog}
             onOpenSavedMeals={handleOpenSavedMeals}
             onOpenText={handleOpenText}
-            onQuickAdd={handleQuickAdd}
-            quickItems={quickItems}
           />
         </NutritionDrawerContent>
       </Drawer>

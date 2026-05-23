@@ -14,14 +14,22 @@ vi.mock("@/components/ui/drawer", () => ({
   DrawerContent: ({ children, ...props }) => (
     <section {...props}>{children}</section>
   ),
-  DrawerDescription: ({ children }) => <p>{children}</p>,
+  DrawerDescription: ({ children, className }) => (
+    <p className={className} data-slot="drawer-description">
+      {children}
+    </p>
+  ),
   DrawerFooter: ({ children, className }) => (
     <footer className={className}>{children}</footer>
   ),
   DrawerHeader: ({ children, className }) => (
     <header className={className}>{children}</header>
   ),
-  DrawerTitle: ({ children }) => <h2>{children}</h2>,
+  DrawerTitle: ({ children, className }) => (
+    <h2 className={className} data-slot="drawer-title">
+      {children}
+    </h2>
+  ),
 }));
 
 vi.mock("@/components/ui/calendar", () => ({
@@ -87,5 +95,67 @@ describe("CalendarBottomDrawer", () => {
     );
     expect(classNames.today).toContain("after:size-1.5");
     expect(classNames.today).toContain("after:bg-primary");
+  });
+
+  it("uses compact weekday labels and 4px day gaps", () => {
+    render(
+      <CalendarBottomDrawer
+        open
+        date={new Date("2026-05-22T09:00:00")}
+        onChange={vi.fn()}
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    const classNames = calendarPropsSpy.mock.calls.at(-1)[0].classNames;
+
+    expect(classNames.weekdays).toContain("gap-1");
+    expect(classNames.weekday).toContain("text-xs");
+    expect(classNames.weekday).toContain("font-medium");
+    expect(classNames.weekday).not.toContain("font-semibold");
+    expect(classNames.week).toContain("gap-1");
+  });
+
+  it("keeps drawer title and description on default styles", () => {
+    render(
+      <CalendarBottomDrawer
+        open
+        date={new Date("2026-05-22T09:00:00")}
+        onChange={vi.fn()}
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    expect(document.querySelector('[data-slot="drawer-title"]')).not.toHaveClass(
+      "text-xl",
+    );
+    expect(
+      document.querySelector('[data-slot="drawer-description"]'),
+    ).not.toHaveClass("text-base");
+  });
+
+  it("keeps the bottom drawer at mobile width", () => {
+    render(
+      <CalendarBottomDrawer
+        open
+        date={new Date("2026-05-22T09:00:00")}
+        onChange={vi.fn()}
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    const drawerContent = document.querySelector(
+      '[data-calendar-bottom-drawer="true"]',
+    );
+
+    expect(drawerContent).toHaveClass(
+      "data-[vaul-drawer-direction=bottom]:!w-[min(100vw,28rem)]",
+    );
+    expect(drawerContent).toHaveClass(
+      "data-[vaul-drawer-direction=bottom]:!max-w-md",
+    );
+    expect(drawerContent).not.toHaveClass(
+      "data-[vaul-drawer-direction=bottom]:max-w-none",
+    );
   });
 });

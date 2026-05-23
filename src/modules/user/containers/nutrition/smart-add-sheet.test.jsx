@@ -133,15 +133,7 @@ describe("nutrition quick add helpers", () => {
 
 describe("SmartAddSheet", () => {
   const renderSheet = (props = {}) => {
-    const quickItems = buildNutritionQuickAdds({
-      savedMeals,
-      recentFoods,
-      limit: 6,
-    });
-
     const handlers = {
-      onQuickAdd: vi.fn(),
-      onEditQuickAdd: vi.fn(),
       onOpenAudio: vi.fn(),
       onOpenCamera: vi.fn(),
       onOpenCatalog: vi.fn(),
@@ -153,61 +145,57 @@ describe("SmartAddSheet", () => {
       <SmartAddSheet
         disabled={false}
         mealLabel="Nonushta"
-        quickItems={quickItems}
         {...handlers}
         {...props}
       />,
     );
 
-    return { handlers, quickItems };
+    return { handlers };
   };
 
-  it("renders meal context, quick adds, and method shortcuts", () => {
+  it("renders compact meal context and method shortcuts", () => {
     renderSheet();
 
-    expect(screen.getByText("Nonushta")).toBeInTheDocument();
-    expect(screen.getByText("Ovqat qo'shish")).toBeInTheDocument();
     expect(
-      screen.getByText("Ovqat qo'shish").closest('[data-slot="drawer-description"]'),
+      screen
+        .getByText("Nonushtaga ovqat qo'shish")
+        .closest('[data-slot="drawer-title"]'),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Nonushta").closest('[data-slot="drawer-title"]'),
+      screen
+        .getByText("Ovqat qo'shish usulini tanlang")
+        .closest('[data-slot="drawer-description"]'),
     ).toBeInTheDocument();
+    expect(screen.queryByText("Nonushta")).not.toBeInTheDocument();
     expect(screen.queryByText("Bugun, 08:30")).not.toBeInTheDocument();
-    expect(screen.getByText("Tez qo'shish")).toBeInTheDocument();
-    expect(screen.getByText("Chicken bowl")).toBeInTheDocument();
-    expect(screen.getByText("Greek yogurt")).toBeInTheDocument();
+    expect(screen.queryByText("Yangi ovqat")).not.toBeInTheDocument();
+    expect(screen.queryByText("Kerakli qo'shish usulini tanlang")).not.toBeInTheDocument();
+    expect(screen.queryByText("Tez qo'shish")).not.toBeInTheDocument();
+    expect(screen.queryByText("Hali saqlangan taom yo'q")).not.toBeInTheDocument();
+    expect(screen.queryByText("Chicken bowl")).not.toBeInTheDocument();
+    expect(screen.queryByText("Tvorog")).not.toBeInTheDocument();
+    expect(screen.queryByText("Greek yogurt")).not.toBeInTheDocument();
+    expect(screen.queryByText("Recent")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Kamera" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Matn" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Audio" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Katalog" })).toBeInTheDocument();
-    expect(screen.getByTestId("quick-add-list")).toHaveClass("space-y-2");
+    expect(
+      screen.getByRole("button", { name: "Saqlangan taomlar" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("quick-add-list")).not.toBeInTheDocument();
     expect(screen.getByTestId("method-action-list")).toHaveClass("space-y-2");
     expect(screen.getByTestId("method-action-list").children).toHaveLength(4);
-  });
-
-  it("logs a quick item from its plus button and opens detail from card tap", () => {
-    const { handlers, quickItems } = renderSheet();
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "Chicken bowlni tez qo'shish" }),
-    );
-    expect(handlers.onQuickAdd).toHaveBeenCalledWith(quickItems[0]);
-
-    fireEvent.click(screen.getByRole("button", { name: "Chicken bowlni ko'rish" }));
-    expect(handlers.onEditQuickAdd).toHaveBeenCalledWith(quickItems[0]);
   });
 
   it("keeps add actions disabled when logging is unavailable", () => {
     const { handlers } = renderSheet({ disabled: true });
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Chicken bowlni tez qo'shish" }),
-    );
     fireEvent.click(screen.getByRole("button", { name: "Kamera" }));
+    fireEvent.click(screen.getByRole("button", { name: "Saqlangan taomlar" }));
 
-    expect(handlers.onQuickAdd).not.toHaveBeenCalled();
     expect(handlers.onOpenCamera).not.toHaveBeenCalled();
+    expect(handlers.onOpenSavedMeals).not.toHaveBeenCalled();
   });
 
   it("keeps camera openable when photo-scan credits are insufficient", () => {
@@ -221,7 +209,7 @@ describe("SmartAddSheet", () => {
     fireEvent.click(screen.getByRole("button", { name: "Kamera" }));
 
     expect(handlers.onOpenCamera).toHaveBeenCalledTimes(1);
-    expect(screen.getByText("2 AI | 1 left")).toBeInTheDocument();
+    expect(screen.queryByText("2 AI | 1 left")).not.toBeInTheDocument();
   });
 
   it("disables text and audio AI entries when their credits are insufficient", () => {
@@ -240,13 +228,13 @@ describe("SmartAddSheet", () => {
     expect(handlers.onOpenAudio).not.toHaveBeenCalled();
   });
 
-  it("shows an empty quick-add fallback and opens saved meals", () => {
+  it("opens saved meals from the bottom row button", () => {
     const onOpenSavedMeals = vi.fn();
-    renderSheet({ quickItems: [], onOpenSavedMeals });
+    renderSheet({ onOpenSavedMeals });
 
-    expect(screen.getByText("Hali tez qo'shish yo'q")).toBeInTheDocument();
+    expect(screen.queryByText("Hali saqlangan taom yo'q")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Barchasini ko'rish" }));
+    fireEvent.click(screen.getByRole("button", { name: "Saqlangan taomlar" }));
     expect(onOpenSavedMeals).toHaveBeenCalledTimes(1);
   });
 });
