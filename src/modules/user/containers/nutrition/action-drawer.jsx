@@ -23,17 +23,13 @@ import useFoodCatalog, {
 import { useDailyTrackingActions } from "@/hooks/app/use-daily-tracking";
 import { useSavedMeals } from "@/hooks/app/use-saved-meals";
 import { toast } from "sonner";
-import MealDateTimeDrawer from "./meal-date-time-drawer.jsx";
 import {
   clampMealDateKey,
-  formatMealTime,
   getDateKey,
   getMealDateStartKey,
   getTimePartsFromDate,
-  resolveDayjsLocale,
   toMealDateTimeIso,
 } from "./meal-date-time-utils.js";
-import useLanguageStore from "@/store/language-store";
 import { useAuthStore } from "@/store";
 import {
   useAiCreditCosts,
@@ -85,11 +81,9 @@ const ActionDrawer = ({
   disabled = false,
   onInlineCameraCapture,
 }) => {
-  const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const user = useAuthStore((state) => state.user);
   const { wallet: aiCreditWallet } = useAiCreditWallet({ enabled: open });
   const { costs: aiCreditCosts } = useAiCreditCosts({ enabled: open });
-  const dayjsLocale = resolveDayjsLocale(currentLanguage);
   const mealDateMinKey = getMealDateStartKey(user, dateKey);
   const [activeNested, setActiveNested] = useState(null);
   const [selectedMealType, setSelectedMealType] = useState(mealType);
@@ -104,7 +98,6 @@ const ActionDrawer = ({
   const [cameraAiDraftOpen, setCameraAiDraftOpen] = useState(false);
   const [cameraInitialMode, setCameraInitialMode] = useState("camera");
   const [catalogInitialFood, setCatalogInitialFood] = useState(null);
-  const [mealTimeOpen, setMealTimeOpen] = useState(false);
   const [quickAddingId, setQuickAddingId] = useState(null);
   const [selectedMealTime, setSelectedMealTime] = useState(() => ({
     dateKey: clampMealDateKey(dateKey || getDateKey(new Date()), mealDateMinKey),
@@ -160,7 +153,6 @@ const ActionDrawer = ({
       setCameraAiDraftOpen(false);
       setCameraInitialMode("camera");
       setCatalogInitialFood(null);
-      setMealTimeOpen(false);
     }
   }, [open, initialNested]);
 
@@ -391,7 +383,6 @@ const ActionDrawer = ({
             aiCreditCosts={aiCreditCosts}
             aiCreditWallet={aiCreditWallet}
             disabled={disabled}
-            formattedTime={formatMealTime(selectedMealTime, dayjsLocale)}
             isQuickAddingId={quickAddingId}
             mealLabel={activeMealConfig.label}
             onEditQuickAdd={handleEditQuickAdd}
@@ -400,7 +391,6 @@ const ActionDrawer = ({
             onOpenCatalog={handleOpenCatalog}
             onOpenSavedMeals={handleOpenSavedMeals}
             onOpenText={handleOpenText}
-            onOpenTime={() => setMealTimeOpen(true)}
             onQuickAdd={handleQuickAdd}
             quickItems={quickItems}
           />
@@ -641,15 +631,6 @@ const ActionDrawer = ({
           />
         </NutritionDrawerContent>
       </Drawer>
-      <MealDateTimeDrawer
-        open={mealTimeOpen}
-        onOpenChange={setMealTimeOpen}
-        value={selectedMealTime}
-        onChange={setSelectedMealTime}
-        onDone={() => setMealTimeOpen(false)}
-        locale={dayjsLocale}
-        minDateKey={mealDateMinKey}
-      />
     </div>
   );
 };

@@ -2,7 +2,6 @@ import React from "react";
 import { Button } from "@/components/ui/button.jsx";
 import {
   CameraIcon,
-  CalendarClockIcon,
   ChefHatIcon,
   KeyboardIcon,
   MicIcon,
@@ -10,6 +9,11 @@ import {
   SearchIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils.js";
+import {
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer.jsx";
 import { NutritionDrawerBody } from "./nutrition-drawer-layout.jsx";
 import { AiCreditStatusText } from "@/components/ai-credits";
 import {
@@ -75,7 +79,7 @@ const QuickAddCard = ({
   onEditQuickAdd,
   onQuickAdd,
 }) => (
-  <div className="grid grid-cols-[minmax(0,1fr)_44px] items-stretch overflow-hidden rounded-2xl border bg-card shadow-sm">
+  <div className="grid grid-cols-[minmax(0,1fr)_44px] items-stretch overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
     <button
       type="button"
       className="flex min-w-0 items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/35 disabled:cursor-not-allowed disabled:opacity-60"
@@ -152,18 +156,18 @@ const MethodButton = ({ action, costs, disabled, handlers, wallet }) => {
       {...creditDisabledProps}
       disabled={isDisabled}
       aria-label={action.label}
-      className="h-auto justify-start rounded-2xl px-3 py-3 text-left"
+      className="h-auto w-full justify-start rounded-2xl border-border/70 px-3 py-3 text-left"
       onClick={handler}
     >
       <span
         className={cn(
-          "mr-3 grid size-9 shrink-0 place-items-center rounded-full",
+          "mr-3 grid size-10 shrink-0 place-items-center rounded-full",
           action.iconClassName,
         )}
       >
         <Icon className="size-4" />
       </span>
-      <span className="min-w-0">
+      <span className="min-w-0 flex-1">
         <span className="block text-sm font-black">{action.label}</span>
         <span className="mt-0.5 block truncate text-[11px] font-medium text-muted-foreground">
           {action.description}
@@ -183,7 +187,6 @@ const MethodButton = ({ action, costs, disabled, handlers, wallet }) => {
 
 export default function SmartAddSheet({
   disabled = false,
-  formattedTime,
   isQuickAddingId = null,
   mealLabel,
   onEditQuickAdd,
@@ -192,7 +195,6 @@ export default function SmartAddSheet({
   onOpenCatalog,
   onOpenSavedMeals,
   onOpenText,
-  onOpenTime,
   onQuickAdd,
   aiCreditCosts = {},
   aiCreditWallet,
@@ -207,30 +209,11 @@ export default function SmartAddSheet({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="px-5 pt-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
-              Ovqat qo'shish
-            </p>
-            <h2 className="mt-1 truncate text-xl font-black">{mealLabel}</h2>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-auto shrink-0 rounded-2xl px-3 py-2 text-left"
-            disabled={disabled}
-            onClick={onOpenTime}
-          >
-            <CalendarClockIcon className="size-4 text-emerald-600" />
-            <span className="ml-2 max-w-32 truncate text-xs font-bold">
-              {formattedTime}
-            </span>
-          </Button>
-        </div>
-      </div>
-      <NutritionDrawerBody className="flex flex-col gap-5 pb-6">
+      <DrawerHeader>
+        <DrawerDescription>Ovqat qo'shish</DrawerDescription>
+        <DrawerTitle>{mealLabel}</DrawerTitle>
+      </DrawerHeader>
+      <NutritionDrawerBody className="flex flex-col gap-5 pb-6 pt-1">
         <section>
           <div className="mb-2 flex items-center justify-between gap-3">
             <div>
@@ -251,7 +234,7 @@ export default function SmartAddSheet({
           </div>
 
           {quickItems.length > 0 ? (
-            <div className="space-y-2">
+            <div data-testid="quick-add-list" className="space-y-2">
               {map(quickItems, (item) => (
                 <QuickAddCard
                   key={item.id}
@@ -280,7 +263,7 @@ export default function SmartAddSheet({
               Kerakli qo'shish usulini tanlang
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div data-testid="method-action-list" className="space-y-2">
             {map(METHOD_ACTIONS, (action) => (
               <MethodButton
                 key={action.key}

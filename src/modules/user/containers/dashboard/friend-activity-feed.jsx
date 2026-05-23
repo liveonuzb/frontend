@@ -1,18 +1,23 @@
 import React from "react";
-import { filter, map, size, isArray, toUpper, split, trim, take } from "lodash";
-import { useNavigate } from "react-router";
 import {
-  ActivityIcon,
-  TrophyIcon,
-  UserPlusIcon,
-  UsersIcon,
-  ZapIcon,
-} from "lucide-react";
+  filter,
+  keyBy,
+  map,
+  size,
+  isArray,
+  toUpper,
+  split,
+  trim,
+  take,
+} from "lodash";
+import { useNavigate } from "react-router";
+import { UserPlusIcon, UsersIcon } from "lucide-react";
 import { useGetQuery } from "@/hooks/api";
 import { getApiResponseData } from "@/lib/api-response";
 import { getFriendItems } from "@/modules/user/lib/friends-response";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
   buildFriendActivities,
@@ -23,10 +28,12 @@ import {
 } from "./query-helpers.js";
 
 const resolveInitials = (value) =>
-  map(take(filter(split(trim(String(value ?? "")), /\s+/), Boolean), 2), (part) => toUpper((part[0] ?? "")))
-    .join("") || "U";
+  map(
+    take(filter(split(trim(String(value ?? "")), /\s+/), Boolean), 2),
+    (part) => toUpper(part[0] ?? ""),
+  ).join("") || "U";
 
-const RANK_COLORS = ["text-amber-500", "text-slate-400", "text-orange-600"];
+const FRIEND_STATUS_FALLBACKS = ["Bugun", "Online", "2 soat oldin", "Kecha"];
 
 const getChallengeItems = (response) => {
   const payload = getApiResponseData(response, []);
@@ -38,7 +45,6 @@ const FriendActivityFeed = ({
   challenges: challengesOverride,
   currentUserId,
   onAddFriend,
-  onOpenChallenges,
 }) => {
   const navigate = useNavigate();
   const shouldFetchFriends = friendsOverride === undefined;
@@ -84,15 +90,11 @@ const FriendActivityFeed = ({
       }),
     [challenges, friends, resolvedCurrentUserId],
   );
-  const friendsWithNoChallenge = React.useMemo(() => {
-    const activeInChallenges = new Set(
-      map(activitiesFromChallenges, (activity) => activity.uid),
-    );
-    return take(filter(
-      friends,
-      (friend) => !activeInChallenges.has(friend.id),
-    ), 3);
-  }, [activitiesFromChallenges, friends]);
+  const activitiesByUserId = React.useMemo(
+    () => keyBy(activitiesFromChallenges, "uid"),
+    [activitiesFromChallenges],
+  );
+  const friendPreview = React.useMemo(() => take(friends, 4), [friends]);
   const handleAddFriend = React.useCallback(() => {
     if (onAddFriend) {
       onAddFriend();
@@ -100,163 +102,106 @@ const FriendActivityFeed = ({
     }
     navigate("/user/friends");
   }, [navigate, onAddFriend]);
-  const handleOpenChallenges = React.useCallback(() => {
-    if (onOpenChallenges) {
-      onOpenChallenges();
-      return;
-    }
-    navigate("/user/challenges");
-  }, [navigate, onOpenChallenges]);
+  const handleOpenFriends = React.useCallback(() => {
+    navigate("/user/friends");
+  }, [navigate]);
+  const resolveStatus = React.useCallback(
+    (friend, index) => {
+      if (friend.statusLabel) return friend.statusLabel;
+      if (friend.status) return friend.status;
+      if (friend.isOnline || friend.online) return "Online";
+      if (activitiesByUserId[friend.id]) return "Bugun";
+
+      return FRIEND_STATUS_FALLBACKS[index] || "Faol";
+    },
+    [activitiesByUserId],
+  );
 
   return (
-    <div className="group relative h-full overflow-hidden rounded-[28px] border border-[rgb(var(--accent-rgb)/0.15)] bg-gradient-to-br from-[rgb(var(--accent-rgb)/0.08)] via-card to-card px-5 py-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[rgb(var(--accent-rgb)/0.30)] hover:shadow-xl hover:shadow-[rgb(var(--accent-rgb)/0.05)]">
-      <div className="absolute inset-x-8 top-0 h-24 rounded-full bg-[rgb(var(--accent-rgb)/0.08)] blur-3xl transition-opacity group-hover:opacity-90" />
-      <div className="relative flex h-full flex-col">
+    <Card className="group/card relative h-full overflow-hidden py-4 transition-all hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-lg">
+      <div className="absolute -right-4 -top-4 size-20 rounded-full bg-primary/10 blur-[24px] transition-colors group-hover/card:bg-primary/20" />
+      <CardHeader className="relative z-10 px-4 pb-2">
         <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[rgb(var(--accent-strong-rgb)/0.70)]">
-              Community
-            </p>
-            <h3 className="mt-1 inline-flex items-center gap-2 text-lg font-black tracking-tight">
-              <ActivityIcon className="size-4 text-[rgb(var(--accent-rgb))]" />
-              Do&apos;stlar faoliyati
-            </h3>
-          </div>
+          <CardTitle className="flex min-w-0 items-center gap-1.5 text-xs font-bold">
+            <span className="rounded bg-primary/10 p-1 text-primary">
+              <UsersIcon className="size-3" />
+            </span>
+            <span className="truncate">Do&apos;stlar</span>
+          </CardTitle>
           <Button
-            size="sm"
-            variant="outline"
-            className="shrink-0 border-[rgb(var(--accent-rgb)/0.20)] bg-[rgb(var(--accent-rgb)/0.05)] text-[rgb(var(--accent-strong-rgb))] hover:bg-[rgb(var(--accent-rgb)/0.10)]"
-            onClick={handleAddFriend}
+            type="button"
+            variant="ghost"
+            className="h-7 shrink-0 rounded-full px-2 text-xs font-bold text-primary hover:bg-primary/10"
+            onClick={handleOpenFriends}
           >
-            <UserPlusIcon className="mr-1.5 size-3.5" />
-            Qo&apos;shish
+            Barchasi
           </Button>
         </div>
+      </CardHeader>
 
-        <div className="mt-4 flex-1 space-y-2">
+      <CardContent className="relative z-10 flex flex-1 flex-col px-4 pb-4">
+        <div className="flex items-start gap-3 overflow-hidden">
           {size(friends) === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed py-8 text-center">
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-[rgb(var(--accent-rgb)/0.10)] text-[rgb(var(--accent-rgb))]">
-                <UsersIcon className="size-5" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold">
-                  Hali do&apos;stlaringiz yo&apos;q
-                </p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Do&apos;stlarni taklif qilib, birga motivatsiya toping
-                </p>
-              </div>
-              <Button size="sm" onClick={handleAddFriend} className="mt-1">
-                <UserPlusIcon className="mr-1.5 size-3.5" />
-                Do&apos;st qo&apos;shish
-              </Button>
-            </div>
-          ) : size(activitiesFromChallenges) === 0 ? (
-            <div className="space-y-2">
-              {map(take(friends, 4), (friend) => (
-                <div
-                  key={friend.id}
-                  className="flex items-center gap-3 rounded-xl px-1 py-1.5"
-                >
-                  <Avatar className="size-9 border border-border/40">
-                    <AvatarImage src={friend.avatarUrl || undefined} />
-                    <AvatarFallback className="bg-[rgb(var(--accent-rgb)/0.10)] text-xs font-bold text-[rgb(var(--accent-strong-rgb))]">
-                      {resolveInitials(friend.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold">
-                      {friend.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Challenge yo&apos;q
-                    </p>
-                  </div>
-                </div>
-              ))}
+            <div className="flex min-h-16 flex-1 items-center justify-between gap-3 rounded-2xl border border-dashed border-border/70 bg-muted/20 px-3 py-2">
+              <p className="min-w-0 text-xs font-medium text-muted-foreground">
+                Hali do&apos;stlaringiz yo&apos;q
+              </p>
               <Button
-                variant="outline"
+                type="button"
                 size="sm"
-                className="mt-2 w-full rounded-xl"
-                onClick={handleOpenChallenges}
+                className="h-8 shrink-0 rounded-full text-xs"
+                onClick={handleAddFriend}
               >
-                <TrophyIcon className="mr-1.5 size-3.5" />
-                Challengega qo&apos;shilish
+                <UserPlusIcon className="size-3.5" />
+                Qo&apos;shish
               </Button>
             </div>
           ) : (
-            <div className="space-y-2">
-              {map(activitiesFromChallenges, (activity) => (
-                <div
-                  key={activity.key}
-                  className="flex items-center gap-3 rounded-xl border border-border/40 bg-muted/10 px-3 py-2 transition-colors hover:bg-muted/20"
-                >
-                  <div className="relative">
-                    <Avatar className="size-9 border border-border/40">
-                      <AvatarImage src={activity.avatarUrl || undefined} />
-                      <AvatarFallback className="bg-[rgb(var(--accent-rgb)/0.10)] text-xs font-bold text-[rgb(var(--accent-strong-rgb))]">
-                        {resolveInitials(activity.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-card">
-                      <ZapIcon className="size-2.5 text-[rgb(var(--accent-rgb))]" />
-                    </div>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-1">
-                      <p className="truncate text-sm font-semibold">
-                        {activity.name}
-                      </p>
-                      <span
-                        className={cn(
-                          "shrink-0 text-[10px] font-black",
-                          RANK_COLORS[activity.rank - 1] ||
-                            "text-muted-foreground",
-                        )}
-                      >
-                        #{activity.rank}
-                      </span>
-                    </div>
-                    <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-                      <span className="font-semibold text-foreground">
-                        {new Intl.NumberFormat("uz-UZ").format(
-                          activity.metricValue,
-                        )}
-                      </span>{" "}
-                      {activity.metricUnit} — {activity.challengeTitle}
-                    </p>
-                  </div>
-                </div>
-              ))}
+            map(friendPreview, (friend, index) => {
+              const status = resolveStatus(friend, index);
+              const isOnline =
+                status === "Online" || friend.isOnline || friend.online;
 
-              {size(friendsWithNoChallenge) > 0 ? (
-                <div className="flex items-center gap-1.5 pt-1">
-                  {map(friendsWithNoChallenge, (friend) => (
+              return (
+                <div
+                  key={friend.id}
+                  className="min-w-0 shrink-0 text-center"
+                  title={friend.name}
+                >
+                  <div className="relative mx-auto w-fit">
                     <Avatar
-                      key={friend.id}
-                      className="size-7 border border-border/40"
+                      className={cn(
+                        "size-12 border-2 border-border/50 shadow-sm",
+                        isOnline && "border-emerald-400",
+                      )}
                     >
                       <AvatarImage src={friend.avatarUrl || undefined} />
-                      <AvatarFallback className="text-[9px] font-bold text-muted-foreground">
+                      <AvatarFallback className="bg-primary/10 text-sm font-bold text-primary">
                         {resolveInitials(friend.name)}
                       </AvatarFallback>
                     </Avatar>
-                  ))}
-                  <p className="ml-1 text-[10px] text-muted-foreground">
-                    va yana{" "}
-                    {friendsWithNoChallenge.length === 1
-                      ? friendsWithNoChallenge[0].name
-                      : `${friendsWithNoChallenge.length} do'st`}{" "}
-                    faol emas
+                    {isOnline ? (
+                      <span className="absolute -bottom-0.5 -right-0.5 size-4 rounded-full border-2 border-card bg-primary" />
+                    ) : null}
+                  </div>
+                  <p className="mt-2 max-w-14 truncate text-xs font-bold leading-none">
+                    {friend.name}
+                  </p>
+                  <p
+                    className={cn(
+                      "mt-1 max-w-14 truncate text-[10px] font-medium text-muted-foreground",
+                      isOnline && "text-emerald-600 dark:text-emerald-400",
+                    )}
+                  >
+                    {status}
                   </p>
                 </div>
-              ) : null}
-            </div>
+              );
+            })
           )}
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

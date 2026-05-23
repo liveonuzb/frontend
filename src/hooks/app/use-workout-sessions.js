@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useDeleteQuery,
   useGetQuery,
+  usePatchQuery,
   usePostQuery,
   usePutQuery,
 } from "@/hooks/api";
@@ -456,6 +457,97 @@ export const useWorkoutSessionHistoryItem = (sessionId, options = {}) => {
     ...query,
     data,
     session: resolveResponseData(data, null),
+  };
+};
+
+export const useUpdateWorkoutSessionDetails = () => {
+  const queryClient = useQueryClient();
+  const mutation = usePatchQuery();
+  const { mutateAsync } = mutation;
+
+  const updateWorkoutSessionDetails = React.useCallback(
+    async (sessionId, payload = {}) => {
+      const response = await mutateAsync({
+        url: `/user/workout/sessions/history/${sessionId}/details`,
+        attributes: payload,
+      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: getWorkoutSessionHistoryItemQueryKey(sessionId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: WORKOUT_SESSION_HISTORY_QUERY_KEY,
+        }),
+      ]);
+      return resolveResponseData(response, null);
+    },
+    [mutateAsync, queryClient],
+  );
+
+  return {
+    ...mutation,
+    updateWorkoutSessionDetails,
+  };
+};
+
+export const useUploadWorkoutSessionMomentImage = () => {
+  const mutation = usePostQuery();
+  const { mutateAsync } = mutation;
+
+  const uploadWorkoutSessionMomentImage = React.useCallback(
+    async (file) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "workout-moments");
+
+      const response = await mutateAsync({
+        url: "/user/media/images",
+        attributes: formData,
+      });
+
+      return resolveResponseData(response, null);
+    },
+    [mutateAsync],
+  );
+
+  return {
+    ...mutation,
+    uploadWorkoutSessionMomentImage,
+  };
+};
+
+export const useDeleteWorkoutSessionHistoryItem = () => {
+  const queryClient = useQueryClient();
+  const mutation = useDeleteQuery();
+  const { mutateAsync } = mutation;
+
+  const deleteWorkoutSessionHistoryItem = React.useCallback(
+    async (sessionId) => {
+      const response = await mutateAsync({
+        url: `/user/workout/sessions/history/${sessionId}`,
+      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: WORKOUT_SESSION_HISTORY_QUERY_KEY,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: WORKOUT_SESSION_HISTORY_SUMMARY_QUERY_KEY,
+        }),
+        queryClient.invalidateQueries({ queryKey: WORKOUT_LOGS_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: WORKOUT_OVERVIEW_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: WORKOUT_PLANS_QUERY_KEY }),
+      ]);
+      queryClient.removeQueries({
+        queryKey: getWorkoutSessionHistoryItemQueryKey(sessionId),
+      });
+      return resolveResponseData(response, null);
+    },
+    [mutateAsync, queryClient],
+  );
+
+  return {
+    ...mutation,
+    deleteWorkoutSessionHistoryItem,
   };
 };
 

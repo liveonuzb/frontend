@@ -1,7 +1,13 @@
 import React from "react";
 import { get } from "lodash";
 import { useNavigate } from "react-router";
-import { ChevronRightIcon } from "lucide-react";
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  ChevronRightIcon,
+  RulerIcon,
+  ScaleIcon,
+} from "lucide-react";
 import { useGetQuery } from "@/hooks/api";
 import { getApiResponseData } from "@/lib/api-response";
 import { normalizeUserOnboarding } from "@/lib/user-onboarding";
@@ -87,86 +93,118 @@ export default function WeightWidget({
       : 0;
   const losing = targetW < startW;
   const isImproving = losing ? weightChange <= 0 : weightChange >= 0;
+  const handleOpen = React.useCallback(() => {
+    if (!interactive) return;
+    if (onOpen) {
+      onOpen();
+      return;
+    }
+    navigate("/user/measurements");
+  }, [interactive, navigate, onOpen]);
 
   return (
     <Card
-      className="h-full py-6"
-      onClick={
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      className={cn(
+        "group/card relative h-full overflow-hidden py-3 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+        interactive &&
+          "cursor-pointer hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-lg",
+      )}
+      onClick={handleOpen}
+      onKeyDown={
         interactive
-          ? (onOpen ?? (() => navigate("/user/measurements")))
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                handleOpen();
+              }
+            }
           : undefined
       }
     >
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-sm">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-[rgb(var(--accent-rgb)/0.15)] text-base">
-              ⚖️
+      <div className="absolute -right-4 -top-4 size-20 rounded-full bg-primary/10 blur-[24px] transition-colors group-hover/card:bg-primary/20" />
+      <CardHeader className="relative z-10 px-4 pb-1.5">
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="flex min-w-0 items-center gap-1.5 text-xs font-bold">
+            <span className="rounded bg-primary/10 p-1 text-primary">
+              <ScaleIcon className="size-3" />
             </span>
-            Vazn
+            <span className="truncate">Vazn</span>
           </CardTitle>
-          <ChevronRightIcon className="size-4 text-muted-foreground/50" />
+          {interactive ? (
+            <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/40 transition-transform group-hover/card:translate-x-0.5 group-hover/card:text-primary" />
+          ) : null}
         </div>
       </CardHeader>
 
-      <CardContent className="flex flex-1 flex-col gap-3">
-        <div className="flex items-baseline gap-3">
-          <span className="text-3xl font-black leading-none">
-            {currentW > 0 ? currentW.toFixed(1) : "—"}
-          </span>
-          {currentW > 0 ? (
-            <span className="text-sm font-semibold text-muted-foreground">
-              kg
-            </span>
-          ) : null}
+      <CardContent className="relative z-10 flex flex-1 flex-col gap-3 px-4 pb-3">
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Joriy vazn
+            </p>
+            <div className="mt-1 flex items-baseline gap-2">
+              <span className="text-3xl font-black leading-none tabular-nums">
+                {currentW > 0 ? currentW.toFixed(1) : "—"}
+              </span>
+              {currentW > 0 ? (
+                <span className="text-sm font-bold text-muted-foreground">
+                  kg
+                </span>
+              ) : null}
+            </div>
+          </div>
           {currentW > 0 && weightChange !== 0 ? (
             <span
               className={cn(
-                "flex items-center gap-1 rounded-full px-2 py-0.5 text-sm font-bold",
+                "mb-0.5 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold",
                 isImproving
                   ? "bg-green-500/15 text-green-500"
                   : "bg-red-500/15 text-red-500",
               )}
             >
-              {isImproving ? "⬇" : "⬆"} {Math.abs(weightChange).toFixed(1)} kg
+              {isImproving ? (
+                <ArrowDownIcon className="size-3.5" />
+              ) : (
+                <ArrowUpIcon className="size-3.5" />
+              )}
+              {Math.abs(weightChange).toFixed(1)} kg
             </span>
           ) : null}
         </div>
 
         {currentW > 0 ? (
-          <div className="space-y-1">
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+          <div className="rounded-2xl border border-border/60 bg-background/60 p-2.5">
+            <div className="mb-1.5 flex items-center justify-between gap-3 text-[10px] font-semibold text-muted-foreground">
+              <span>Boshlang'ich: {startW.toFixed(1)} kg</span>
+              <span>Maqsad: {targetW.toFixed(1)} kg</span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-[rgb(var(--accent-rgb))] to-[rgb(var(--accent-strong-rgb))] transition-all duration-700"
+                className="h-full rounded-full bg-primary transition-all duration-700"
                 style={{ width: `${Math.round(progressDone * 100)}%` }}
               />
             </div>
-            <div className="flex justify-between text-[10px] font-medium text-muted-foreground">
-              <span>Boshlang'ich: {startW.toFixed(1)} kg</span>
-              <span>Maqsad: {targetW.toFixed(1)} kg</span>
+            <div className="mt-1.5 flex items-center justify-between text-[10px] font-bold text-primary">
+              <span>{Math.round(progressDone * 100)}%</span>
+              <span>bajarildi</span>
             </div>
           </div>
         ) : null}
 
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            if (!interactive) return;
-            if (onOpen) {
-              onOpen();
-              return;
-            }
-            navigate("/user/measurements");
-          }}
-          className="mt-auto flex w-full items-center gap-2 rounded-xl bg-muted/60 px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-muted"
+        <div
+          className={cn(
+            "mt-auto flex w-full items-center gap-2 rounded-2xl border border-border/60 bg-background/60 px-3 py-2 text-sm font-bold transition-colors",
+            interactive && "group-hover/card:border-primary/30",
+          )}
         >
-          <span className="flex size-7 items-center justify-center rounded-lg bg-[rgb(var(--accent-rgb)/0.20)] text-base">
-            📊
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <RulerIcon className="size-4" />
           </span>
           <span className="truncate">Ko'krak / Bel / Son</span>
-          <ChevronRightIcon className="ml-auto size-4 shrink-0 text-muted-foreground" />
-        </button>
+          <ChevronRightIcon className="ml-auto size-4 shrink-0 text-muted-foreground/50 transition-transform group-hover/card:translate-x-0.5 group-hover/card:text-primary" />
+        </div>
       </CardContent>
     </Card>
   );

@@ -148,6 +148,7 @@ const useChatStore = create(
   persist(
     (set, get) => ({
       socket: null,
+      socketConsumers: 0,
       contacts: [], // This will be our rooms
       groups: [],
       messages: {}, // roomId -> [messages]
@@ -177,6 +178,10 @@ const useChatStore = create(
 
       initSocket: () => {
         const { token } = useAuthStore.getState();
+        set((state) => ({
+          socketConsumers: (state.socketConsumers || 0) + 1,
+        }));
+
         if (!token || get().socket) return;
 
         const { socketUrl, socketPath } = getChatSocketConnectionConfig(
@@ -316,6 +321,13 @@ const useChatStore = create(
       },
 
       disconnectSocket: () => {
+        const nextConsumers = Math.max(0, (get().socketConsumers || 0) - 1);
+        set({ socketConsumers: nextConsumers });
+
+        if (nextConsumers > 0) {
+          return;
+        }
+
         const { socket } = get();
         if (socket) {
           socket.disconnect();

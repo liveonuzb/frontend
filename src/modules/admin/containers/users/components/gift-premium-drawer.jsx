@@ -10,6 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 import OptionDrawerPicker from "@/components/option-drawer-picker";
 import FormDrawerShell from "./form-drawer-shell.jsx";
 
+const DEFAULT_AI_CREDITS = 300;
+const MIN_AI_CREDITS = 1;
+const MAX_AI_CREDITS = 10000;
+
 const formatPrice = (price) => {
   if (!price) return "Bepul";
   return `${(price / 100).toLocaleString("uz-UZ")} so'm`;
@@ -31,6 +35,7 @@ const GiftPremiumDrawer = ({
   const [selectedSlug, setSelectedSlug] = React.useState("");
   const [selectedPlan, setSelectedPlan] = React.useState(null);
   const [daysOverride, setDaysOverride] = React.useState("");
+  const [aiCredits, setAiCredits] = React.useState(String(DEFAULT_AI_CREDITS));
   const [note, setNote] = React.useState("");
 
   const giftMutation = usePostQuery({ queryKey, listKey });
@@ -39,6 +44,7 @@ const GiftPremiumDrawer = ({
     setSelectedSlug("");
     setSelectedPlan(null);
     setDaysOverride("");
+    setAiCredits(String(DEFAULT_AI_CREDITS));
     setNote("");
   }, []);
 
@@ -63,12 +69,23 @@ const GiftPremiumDrawer = ({
       return;
     }
 
+    const aiCreditsValue = toNumber(aiCredits);
+    if (
+      !Number.isInteger(aiCreditsValue) ||
+      aiCreditsValue < MIN_AI_CREDITS ||
+      aiCreditsValue > MAX_AI_CREDITS
+    ) {
+      toast.error("AI kredit miqdori 1 dan 10000 gacha bo'lishi kerak");
+      return;
+    }
+
     try {
       await giftMutation.mutateAsync({
         url: `/admin/users/${user.id}/gift-premium`,
         attributes: {
           planSlug: selectedSlug,
           days: daysOverride ? toNumber(daysOverride) : undefined,
+          aiCredits: aiCreditsValue,
           note: trim(note) || undefined,
         },
       });
@@ -88,6 +105,7 @@ const GiftPremiumDrawer = ({
   }, [
     selectedSlug,
     daysOverride,
+    aiCredits,
     note,
     user,
     giftMutation,
@@ -179,6 +197,23 @@ const GiftPremiumDrawer = ({
           value={daysOverride}
           onChange={(e) => setDaysOverride(e.target.value)}
         />
+      </div>
+      {/* AI credits */}
+      <div className="space-y-2">
+        <Label htmlFor="gift-ai-credits">AI kredit bonusi</Label>
+        <Input
+          id="gift-ai-credits"
+          type="number"
+          min={MIN_AI_CREDITS}
+          max={MAX_AI_CREDITS}
+          step="1"
+          inputMode="numeric"
+          value={aiCredits}
+          onChange={(e) => setAiCredits(e.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">
+          Premium bilan birga userga bir martalik AI credit beriladi.
+        </p>
       </div>
       {/* Note */}
       <div className="space-y-2">

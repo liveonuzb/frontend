@@ -1,5 +1,6 @@
 import React from "react";
 import "@/lib/i18n";
+import i18n from "@/lib/i18n";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -59,6 +60,23 @@ const finishSessionMock = vi.fn();
 const startSessionMock = vi.fn();
 const updateProgressMock = vi.fn();
 
+const ensureLocalStorageMock = () => {
+  if (typeof window.localStorage?.clear === "function") {
+    return;
+  }
+
+  const storage = new Map();
+  Object.defineProperty(window, "localStorage", {
+    configurable: true,
+    value: {
+      clear: vi.fn(() => storage.clear()),
+      getItem: vi.fn((key) => storage.get(key) ?? null),
+      removeItem: vi.fn((key) => storage.delete(key)),
+      setItem: vi.fn((key, value) => storage.set(key, String(value))),
+    },
+  });
+};
+
 const plan = {
   id: "plan-1",
   name: "Leg Power",
@@ -109,6 +127,10 @@ const renderPage = (
         element: <div data-testid="session-summary-route">Summary route</div>,
       },
       {
+        path: "/user/workout/history/:sessionId",
+        element: <div data-testid="history-detail-route">History detail</div>,
+      },
+      {
         path: "/user/workout/plans/:planId/days/:dayIndex",
         element: <div data-testid="day-detail-route">Day detail</div>,
       },
@@ -126,8 +148,10 @@ describe("WorkoutPlanSessionPage", () => {
     vi.useRealTimers();
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("uz");
     vi.useRealTimers();
+    ensureLocalStorageMock();
     window.localStorage.clear();
     finishSessionMock.mockReset();
     startSessionMock.mockReset();
@@ -477,7 +501,7 @@ describe("WorkoutPlanSessionPage", () => {
 
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(
-        "/user/workout/plans/plan-1/days/0/session/summary",
+        "/user/workout/history/completed-session-1",
       );
     });
   });
@@ -502,7 +526,7 @@ describe("WorkoutPlanSessionPage", () => {
     });
   });
 
-  it("uses the persisted completed session response for the summary route state", async () => {
+  it("navigates to the persisted completed session detail route after finish", async () => {
     finishSessionMock.mockResolvedValue({
       id: "completed-session-1",
       planId: "plan-1",
@@ -537,20 +561,8 @@ describe("WorkoutPlanSessionPage", () => {
 
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(
-        "/user/workout/plans/plan-1/days/0/session/summary",
+        "/user/workout/history/completed-session-1",
       );
-    });
-
-    expect(router.state.location.state.summary).toMatchObject({
-      sessionId: "completed-session-1",
-      planName: "Persisted Leg Power",
-      focus: "Persisted Legs",
-      durationMinutes: 25,
-      estimatedCalories: 222,
-      totalSets: 2,
-      completedSets: 2,
-      totalVolumeKg: 840,
-      completedAt: "2026-05-19T10:30:00.000Z",
     });
   });
 

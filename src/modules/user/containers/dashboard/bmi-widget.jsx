@@ -1,10 +1,16 @@
 import React from "react";
 import { get, map } from "lodash";
 import { useNavigate } from "react-router";
-import { ChevronRightIcon } from "lucide-react";
+import {
+  ActivityIcon,
+  ChevronRightIcon,
+  RulerIcon,
+  ScaleIcon,
+} from "lucide-react";
 import { useGetQuery } from "@/hooks/api";
 import { getApiResponseData } from "@/lib/api-response";
 import { normalizeUserOnboarding } from "@/lib/user-onboarding";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
   DASHBOARD_MEASUREMENTS_QUERY_KEY,
@@ -29,9 +35,7 @@ const getBmiMeta = (bmi) => {
       label: "Kam vazn",
       color: "#60a5fa",
       tw: {
-        bg: "bg-blue-500/8",
         badge: "bg-blue-500/12 text-blue-400 border-blue-400/20",
-        glow: "from-blue-500/20",
       },
     };
   if (bmi < 25)
@@ -39,9 +43,7 @@ const getBmiMeta = (bmi) => {
       label: "Normal",
       color: "#4ade80",
       tw: {
-        bg: "bg-green-500/8",
         badge: "bg-green-500/12 text-green-400 border-green-400/20",
-        glow: "from-green-500/20",
       },
     };
   if (bmi < 30)
@@ -49,18 +51,14 @@ const getBmiMeta = (bmi) => {
       label: "Ortiqcha",
       color: "#fbbf24",
       tw: {
-        bg: "bg-amber-500/8",
         badge: "bg-amber-500/12 text-amber-400 border-amber-400/20",
-        glow: "from-amber-500/20",
       },
     };
   return {
     label: "Semizlik",
     color: "#f87171",
     tw: {
-      bg: "bg-red-500/8",
       badge: "bg-red-500/12 text-red-400 border-red-400/20",
-      glow: "from-red-500/20",
     },
   };
 };
@@ -144,7 +142,7 @@ export default function BmiWidget({
     : undefined;
 
   return (
-    <div
+    <Card
       role={interactive ? "button" : undefined}
       tabIndex={interactive ? 0 : undefined}
       onClick={handleClick}
@@ -159,43 +157,45 @@ export default function BmiWidget({
           : undefined
       }
       className={cn(
-        "relative flex h-full flex-col overflow-hidden rounded-[1.75rem] border bg-card transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        interactive && "cursor-pointer hover:bg-accent/30",
-        meta && meta.tw.bg,
+        "group/card relative h-full overflow-hidden py-3 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+        interactive &&
+          "cursor-pointer hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-lg",
       )}
     >
       {meta ? (
         <div
-          className={cn(
-            "pointer-events-none absolute -right-10 -top-10 size-40 rounded-full blur-3xl opacity-60",
-            `bg-gradient-radial ${meta.tw.glow}`,
-          )}
+          className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full blur-[26px] transition-opacity group-hover/card:opacity-90"
           style={{
-            background: `radial-gradient(circle, ${meta.color}33 0%, transparent 70%)`,
+            background: `radial-gradient(circle, ${meta.color}22 0%, transparent 72%)`,
           }}
         />
       ) : null}
-      <div className="relative flex shrink-0 items-center justify-between px-5 pb-0 pt-5">
-        <div className="flex items-center gap-2">
-          <span className="flex size-7 items-center justify-center rounded-lg bg-blue-500/12 text-sm leading-none">
-            🧮
-          </span>
-          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            BMI indeks
-          </span>
+      <CardHeader className="relative z-10 px-4 pb-1.5">
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="flex min-w-0 items-center gap-1.5 text-xs font-bold">
+            <span className="rounded bg-primary/10 p-1 text-primary">
+              <ActivityIcon className="size-3" />
+            </span>
+            <span className="truncate">BMI indeks</span>
+          </CardTitle>
+          {interactive ? (
+            <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/40 transition-transform group-hover/card:translate-x-0.5 group-hover/card:text-primary" />
+          ) : null}
         </div>
-        <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/40" />
-      </div>
+      </CardHeader>
       {bmi !== null && meta ? (
-        <div className="relative flex flex-1 flex-col gap-4 px-5 pb-5 pt-4">
+        <CardContent className="relative z-10 flex flex-1 flex-col gap-3 px-4 pb-3">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <div className="text-[3rem] font-black leading-none tracking-tight tabular-nums">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Joriy BMI
+              </p>
+              <div className="mt-1 text-3xl font-black leading-none tabular-nums">
                 {bmi.toFixed(1)}
               </div>
               <div
                 className={cn(
-                  "mt-2 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold",
+                  "mt-1.5 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-bold",
                   meta.tw.badge,
                 )}
               >
@@ -207,9 +207,10 @@ export default function BmiWidget({
               </div>
             </div>
 
-            <div className="flex shrink-0 flex-col gap-1.5 text-right">
-              <div className="rounded-xl bg-muted/50 px-3 py-1.5 text-right">
-                <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="grid shrink-0 gap-1.5 text-right">
+              <div className="rounded-xl border border-border/60 bg-background/60 px-2.5 py-1.5">
+                <p className="flex items-center justify-end gap-1 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <RulerIcon className="size-3" />
                   Bo'y
                 </p>
                 <p className="text-sm font-black leading-tight">
@@ -219,8 +220,9 @@ export default function BmiWidget({
                   </span>
                 </p>
               </div>
-              <div className="rounded-xl bg-muted/50 px-3 py-1.5 text-right">
-                <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <div className="rounded-xl border border-border/60 bg-background/60 px-2.5 py-1.5">
+                <p className="flex items-center justify-end gap-1 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <ScaleIcon className="size-3" />
                   Vazn
                 </p>
                 <p className="text-sm font-black leading-tight">
@@ -233,8 +235,12 @@ export default function BmiWidget({
             </div>
           </div>
 
-          <div className="mt-auto space-y-1">
-            <div className="relative h-2.5">
+          <div className="mt-auto rounded-2xl border border-border/60 bg-background/60 p-2.5">
+            <div className="mb-1.5 flex items-center justify-between gap-3 text-[10px] font-semibold text-muted-foreground">
+              <span>BMI diapazon</span>
+              <span>{meta.label}</span>
+            </div>
+            <div className="relative h-2">
               <div
                 className="absolute top-0 -translate-x-1/2 transition-all duration-700 ease-out"
                 style={{ left: `${pct}%` }}
@@ -252,7 +258,7 @@ export default function BmiWidget({
               </div>
             </div>
 
-            <div className="flex h-2.5 w-full gap-[2px] overflow-hidden rounded-full">
+            <div className="flex h-2 w-full gap-[2px] overflow-hidden rounded-full">
               {map(ZONES, (zone, index) => (
                 <div
                   key={index}
@@ -266,7 +272,7 @@ export default function BmiWidget({
               ))}
             </div>
 
-            <div className="relative h-3.5">
+            <div className="relative h-3">
               {map(SCALE_LABELS, ({ label, pct: labelPct }) => (
                 <span
                   key={label}
@@ -278,11 +284,11 @@ export default function BmiWidget({
               ))}
             </div>
           </div>
-        </div>
+        </CardContent>
       ) : (
-        <div className="relative flex flex-1 flex-col items-center justify-center gap-3 px-5 pb-6 pt-4 text-center">
-          <div className="flex size-14 items-center justify-center rounded-2xl bg-muted/50">
-            <span className="text-2xl">📏</span>
+        <CardContent className="relative z-10 flex flex-1 flex-col items-center justify-center gap-2 px-4 pb-3 pt-1 text-center">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <RulerIcon className="size-5" />
           </div>
           <div>
             <p className="text-sm font-bold">Ma'lumot yo'q</p>
@@ -292,11 +298,14 @@ export default function BmiWidget({
               bo'y va vazn kiriting
             </p>
           </div>
-          <div className="rounded-full border border-dashed border-border/50 px-3 py-1 text-[10px] font-semibold text-muted-foreground/60">
-            Bosing va kiriting →
-          </div>
-        </div>
+          {interactive ? (
+            <div className="inline-flex items-center gap-1 rounded-full border border-dashed border-border/70 px-3 py-1 text-[10px] font-semibold text-muted-foreground">
+              Bosing va kiriting
+              <ChevronRightIcon className="size-3" />
+            </div>
+          ) : null}
+        </CardContent>
       )}
-    </div>
+    </Card>
   );
 }

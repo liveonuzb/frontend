@@ -1,45 +1,76 @@
 import React from "react";
-import { clamp, round, times, find, map } from "lodash";
+import { clamp, round, times, map } from "lodash";
 import { motion, useReducedMotion } from "framer-motion";
-import { ChevronsUpDown, FlameIcon } from "lucide-react";
+import { ChevronsUpDown, FlameIcon, MoreHorizontal } from "lucide-react";
 import {
   Card,
   CardContent,
   CardHeader,
+  CardTitle,
 } from "@/components/ui/card.jsx";
-import { Separator } from "@/components/ui/separator.jsx";
+import { Button } from "@/components/ui/button.jsx";
 import { cn } from "@/lib/utils";
 
-const getGoalAlerts = ({ consumed, goal, macroItems, labels }) => {
-  const alerts = [];
-  const protein = find(macroItems, (item) => item.key === "protein");
-  const fat = find(macroItems, (item) => item.key === "fat");
+const MacroCardGrid = ({ macroItems, isInteractive, onClick }) => {
+  const handleKeyDown = React.useCallback(
+    (event) => {
+      if (!isInteractive || event.target !== event.currentTarget) return;
 
-  if (protein?.target > 0 && protein.current / protein.target < 0.7) {
-    alerts.push({
-      key: "protein-low",
-      label: labels.proteinLowAlert,
-      className: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-200",
-    });
-  }
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        onClick();
+      }
+    },
+    [isInteractive, onClick],
+  );
 
-  if (fat?.target > 0 && fat.current / fat.target > 1.3) {
-    alerts.push({
-      key: "fat-high",
-      label: labels.fatHighAlert,
-      className: "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-200",
-    });
-  }
-
-  if (goal > 0 && consumed >= goal * 0.9 && consumed <= goal) {
-    alerts.push({
-      key: "calorie-close",
-      label: labels.calorieCloseAlert,
-      className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200",
-    });
-  }
-
-  return alerts;
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      {map(macroItems, (macro) => {
+        const pct = clamp(macro.current / macro.target, 0, 1);
+        const ariaLabel = `${macro.label} ${macro.current} / ${macro.target}g`;
+        return (
+          <Card
+            key={macro.key}
+            size="sm"
+            className={cn(
+              "min-w-0 px-3 py-2 transition-all hover:ring-primary/20 hover:shadow-sm !gap-y-1.5",
+            )}
+            onClick={isInteractive ? onClick : undefined}
+            onKeyDown={handleKeyDown}
+            role={isInteractive ? "button" : undefined}
+            tabIndex={isInteractive ? 0 : undefined}
+            aria-label={isInteractive ? ariaLabel : undefined}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <p className="truncate text-xs font-semibold text-foreground/80">
+                {macro.label}
+              </p>
+              <MoreHorizontal
+                className="size-3.5 shrink-0 text-foreground"
+                aria-hidden="true"
+              />
+            </div>
+            <div className="flex min-w-0 items-baseline gap-1 text-base font-black leading-none tracking-normal text-foreground">
+              <span className="tabular-nums">{macro.current}</span>
+              <span className="truncate text-xs font-semibold text-muted-foreground">
+                / {macro.target}g
+              </span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-secondary/80">
+              <motion.div
+                className="h-full rounded-full"
+                style={{ backgroundColor: macro.color }}
+                initial={false}
+                animate={{ width: `${pct * 100}%` }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+              />
+            </div>
+          </Card>
+        );
+      })}
+    </div>
+  );
 };
 
 export default function CalorieGaugeWidget({
@@ -52,7 +83,6 @@ export default function CalorieGaugeWidget({
   },
   onClick,
   className,
-  isGoalLoading = false,
   showCalorieModeToggle = false,
   defaultCalorieMode = "remaining",
   calorieMode,
@@ -67,10 +97,8 @@ export default function CalorieGaugeWidget({
     remaining: labels.remaining ?? "Qolgan",
     over: labels.over ?? "Oshdi",
     kcal: labels.kcal ?? "kcal",
-    toggleAria:
-      labels.toggleAria ?? "Kaloriya ko'rsatkichini almashtirish",
-    goalLoading:
-      labels.goalLoading ?? "Maqsad profilingizga moslanmoqda",
+    toggleAria: labels.toggleAria ?? "Kaloriya ko'rsatkichini almashtirish",
+    goalLoading: labels.goalLoading ?? "Maqsad profilingizga moslanmoqda",
     protein: labels.protein ?? "Oqsil",
     carbs: labels.carbs ?? "Uglevod",
     fat: labels.fat ?? "Yog'",
@@ -183,19 +211,19 @@ export default function CalorieGaugeWidget({
 
   const macroItems = [
     {
+      key: "carbs",
+      label: resolvedLabels.carbs,
+      current: round(macros.carbs?.current || 0),
+      target: macros.carbs?.target || 250,
+      emoji: "🍚",
+      color: "#84cc16",
+    },
+    {
       key: "protein",
       label: resolvedLabels.protein,
       current: round(macros.protein?.current || 0),
       target: macros.protein?.target || 150,
       emoji: "🍗",
-      color: "#ef4444",
-    },
-    {
-      key: "carbs",
-      label: resolvedLabels.carbs,
-      current: round(macros.carbs?.current || 0),
-      target: macros.carbs?.target || 250,
-      emoji: "🍴",
       color: "#f59e0b",
     },
     {
@@ -204,25 +232,14 @@ export default function CalorieGaugeWidget({
       current: round(macros.fat?.current || 0),
       target: macros.fat?.target || 70,
       emoji: "🥑",
-      color: "#22c55e",
+      color: "#a78bfa",
     },
   ];
-  const goalAlerts = getGoalAlerts({
-    consumed,
-    goal,
-    macroItems,
-    labels: resolvedLabels,
-  });
 
-  return (
+  const gaugeCard = (
     <Card
       className={cn(
-        "backdrop-blur-2xl relative overflow-hidden h-full",
-        compact ? "gap-3 py-4" : "py-6",
-        isInteractive
-          ? "cursor-pointer focus-visible:ring-2 focus-visible:ring-ring"
-          : null,
-        className,
+        "relative h-full overflow-hidden py-4 transition-all hover:ring-primary/20 hover:shadow-sm",
       )}
       onClick={onClick}
       onKeyDown={handleCardKeyDown}
@@ -230,85 +247,33 @@ export default function CalorieGaugeWidget({
       tabIndex={isInteractive ? 0 : undefined}
       aria-label={isInteractive ? gaugeAriaLabel : undefined}
     >
-      <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-primary/10 rounded-full blur-[80px] pointer-events-none" />
-      <CardHeader
-        className={cn(
-          "flex items-start justify-between gap-4",
-          compact ? "mb-1 px-5" : "mb-4",
-        )}
-      >
-        <div className="space-y-2">
-          <h3 className="flex items-center gap-1.5 text-base font-bold">
-            {resolvedLabels.title} <span className="text-lg">🔥</span>
-          </h3>
-        </div>
-        <div className="flex flex-col items-end gap-1 text-right">
+      <div className="pointer-events-none absolute -right-4 -top-4 size-24 rounded-full bg-primary/10 blur-[28px]" />
+      <CardHeader className="relative z-10 px-4">
+        <div className="flex w-full items-center justify-between gap-3">
+          <CardTitle className="flex min-w-0 items-center gap-1.5 text-xs font-bold">
+            <span className="rounded bg-primary/10 p-1 text-primary">
+              <FlameIcon className="size-3" />
+            </span>
+            <span className="truncate">{resolvedLabels.title}</span>
+          </CardTitle>
           {showCalorieModeToggle ? (
-            <button
+            <Button
               type="button"
+              variant={"outline"}
+              size="sm"
+              className="h-8 shrink-0 rounded-full text-xs font-bold"
               onClick={toggleCalorieMode}
-              className="inline-flex h-8 items-center gap-1 rounded-full border border-border/60 bg-background/70 px-3 text-xs font-bold text-foreground shadow-sm transition-colors hover:bg-muted"
               aria-label={resolvedLabels.toggleAria}
             >
               <span>
                 {isEatenMode ? resolvedLabels.eaten : resolvedLabels.remaining}
               </span>
               <ChevronsUpDown className="size-3.5 text-muted-foreground" />
-            </button>
-          ) : null}
-
-          {isGoalLoading ? (
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              {resolvedLabels.goalLoading}
-            </p>
+            </Button>
           ) : null}
         </div>
       </CardHeader>
-      <CardContent className={compact ? "px-5" : undefined}>
-        <div className="space-y-4 md:hidden">
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                {centerLabel}
-              </p>
-              <p
-                className={cn(
-                  "mt-1 text-3xl font-black",
-                  centerIsOver && "text-red-500",
-                )}
-              >
-                {centerValueLabel}
-                <span className="ml-1 text-sm text-muted-foreground">
-                  {resolvedLabels.kcal}
-                </span>
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-muted-foreground">
-                {resolvedLabels.eaten}
-              </p>
-              <p className="text-sm font-bold">
-                {consumedLabel}/{goalLabel} {resolvedLabels.kcal}
-              </p>
-            </div>
-          </div>
-          <div className="h-3 overflow-hidden rounded-full bg-muted">
-            <motion.div
-              className={cn(
-                "h-full rounded-full",
-                isOver ? "bg-red-500" : "bg-lime-500",
-              )}
-              initial={shouldReduceMotion ? false : { width: 0 }}
-              animate={{ width: `${Math.min(100, pctLabel)}%` }}
-              transition={
-                shouldReduceMotion
-                  ? { duration: 0 }
-                  : { duration: 0.8, ease: "easeOut" }
-              }
-            />
-          </div>
-        </div>
-
+      <CardContent className="relative z-10 px-4 pb-5">
         <div className="flex flex-1 items-center justify-center">
           <svg
             role="img"
@@ -491,52 +456,23 @@ export default function CalorieGaugeWidget({
             </text>
           </svg>
         </div>
-        {goalAlerts.length > 0 ? (
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
-            {map(goalAlerts, (alert) => (
-              <span
-                key={alert.key}
-                className={cn(
-                  "inline-flex h-7 items-center rounded-full border px-3 text-xs font-bold",
-                  alert.className,
-                )}
-              >
-                {alert.label}
-              </span>
-            ))}
-          </div>
-        ) : null}
-        <Separator
-          className={cn(
-            goalAlerts.length > 0
-              ? compact
-                ? "mt-4"
-                : "mt-6"
-              : compact
-                ? "mt-8"
-                : "mt-14",
-            compact ? "mb-4" : "mb-6",
-          )}
-        />
-        <div className="flex justify-around items-center">
-          {map(macroItems, (m) => (
-            <div key={m.label} className="flex flex-col items-center gap-1">
-              <div className="flex items-center gap-1.5">
-                <span className="text-base">{m.emoji}</span>
-                <span className="text-xs font-medium text-muted-foreground">
-                  {m.label}
-                </span>
-              </div>
-              <div className="text-sm font-bold">
-                <span style={{ color: m.color }}>{m.current}</span>
-                <span className="text-muted-foreground font-normal text-xs">
-                  /{m.target}g
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
       </CardContent>
     </Card>
+  );
+
+  return (
+    <div
+      className={cn(
+        "grid h-full w-full min-w-0 grid-rows-[minmax(0,1fr)_auto] gap-4",
+        className,
+      )}
+    >
+      {gaugeCard}
+      <MacroCardGrid
+        macroItems={macroItems}
+        isInteractive={isInteractive}
+        onClick={onClick}
+      />
+    </div>
   );
 }

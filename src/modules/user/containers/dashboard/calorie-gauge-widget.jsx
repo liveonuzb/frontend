@@ -112,6 +112,8 @@ export default function CalorieGaugeWidget({
       showCalorieModeToggle={showCalorieModeToggle}
       defaultCalorieMode={defaultCalorieMode}
       compact
+      separateCards
+      showGoalAlerts={false}
       onClick={onOpen ?? (() => navigate("/user/nutrition"))}
       className="h-full w-full"
     />

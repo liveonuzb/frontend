@@ -1,7 +1,11 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import DashboardContainer from "./index.jsx";
+
+const mocks = vi.hoisted(() => ({
+  calendarBottomDrawer: vi.fn(),
+}));
 
 vi.mock("react-i18next", () => ({
   initReactI18next: {
@@ -19,8 +23,12 @@ vi.mock("@/components/page-transition", () => ({
   default: ({ children }) => <div>{children}</div>,
 }));
 
-vi.mock("@/components/stripped-calendar", () => ({
-  default: () => <div data-testid="calendar" />,
+vi.mock("@/components/calendar-bottom-drawer.jsx", () => ({
+  default: (props) => {
+    mocks.calendarBottomDrawer(props);
+
+    return props.open ? <div data-testid="calendar-bottom-drawer" /> : null;
+  },
 }));
 
 vi.mock("./use-dashboard-data.js", () => ({
@@ -41,9 +49,12 @@ vi.mock("./use-dashboard-data.js", () => ({
   }),
 }));
 
-vi.mock("@/modules/user/containers/dashboard/challenge-invitations-section.jsx", () => ({
-  default: () => null,
-}));
+vi.mock(
+  "@/modules/user/containers/dashboard/challenge-invitations-section.jsx",
+  () => ({
+    default: () => null,
+  }),
+);
 
 vi.mock("./calorie-gauge-widget.jsx", () => ({
   default: () => <div data-testid="calorie-widget" />,
@@ -98,7 +109,26 @@ describe("DashboardContainer", () => {
   it("keeps the top card row at the target desktop height", () => {
     render(<DashboardContainer />);
 
-    expect(screen.getByTestId("dashboard-top-card-row"))
-      .toHaveClass("lg:h-[400px]");
+    expect(screen.getByTestId("dashboard-top-card-row")).toHaveClass(
+      "lg:h-[400px]",
+    );
+  });
+
+  it("opens the calendar bottom drawer from the dashboard date button", () => {
+    render(<DashboardContainer />);
+
+    const dateButton = screen.getByRole("button", { name: /Sana tanlash/i });
+
+    expect(dateButton).toHaveTextContent("");
+    expect(
+      screen.queryByTestId("calendar-bottom-drawer"),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(dateButton);
+
+    expect(screen.getByTestId("calendar-bottom-drawer")).toBeInTheDocument();
+    expect(mocks.calendarBottomDrawer.mock.calls.at(-1)[0]).toEqual(
+      expect.objectContaining({ open: true }),
+    );
   });
 });

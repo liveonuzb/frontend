@@ -1,0 +1,33 @@
+html[data-app-mode="zen"] {
+  .water-cup {
+    .cup_50 {
+      background: url("/zen/cups/50.webp") no-repeat center center;
+      background-size: contain;
+    }
+
+    .cup_150 {
+      background: url("/zen/cups/150.webp") no-repeat center center;
+      background-size: contain;
+    }
+
+    .cup_250 {
+      background: url("/zen/cups/250.webp") no-repeat center center;
+      background-size: contain;
+    }
+
+    .cup_400 {
+      background: url("/zen/cups/400.webp") no-repeat center center;
+      background-size: contain;
+    }
+
+    .cup_500 {
+      background: url("/zen/cups/500.webp") no-repeat center center;
+      background-size: contain;
+    }
+
+    .cup_custom {
+      background: url("/zen/cups/custom.webp") no-repeat center center;
+      background-size: contain;
+    }
+  }
+}

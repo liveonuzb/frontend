@@ -83,38 +83,43 @@ describe("MealsWidget", () => {
     vi.mocked(useGetQuery).mockReturnValue({ data: null });
   });
 
-  it("fills the width of its dashboard grid cell", () => {
+  it("fills the width of its dashboard grid cell without an outer card", () => {
     renderWidget();
 
-    expect(screen.getByText("Ovqatlar").closest("[data-slot=card]"))
-      .toHaveClass("w-full");
+    const widget = screen.getByTestId("dashboard-meals-widget");
+
+    expect(widget).toHaveClass("w-full");
+    expect(widget.querySelector("[data-slot=card]")).not.toBeInTheDocument();
   });
 
-  it("uses compact spacing for the dashboard top row", () => {
+  it("renders meals as recommendation rows with a text view-all action", () => {
     renderWidget();
 
-    expect(screen.getByText("Ovqatlar").closest("[data-slot=card]"))
-      .toHaveClass("py-4");
+    expect(
+      screen.getByRole("button", { name: "Ovqatlanish sahifasini ochish" }),
+    ).toHaveTextContent("Barchasi");
+    expect(screen.getByText("Nonushta qo'shish")).toBeInTheDocument();
+    expect(
+      screen.getByText("Tavsiya etiladi | 510 - 690 kcal"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Nonushta qo'shish" }),
+    ).toHaveClass("rounded-2xl");
   });
 
-  it("keeps food items hidden until an individual meal row is expanded", () => {
+  it("keeps dashboard rows as compact summaries without rendering food details", () => {
     renderWidget();
 
     const breakfastToggle = screen.getByRole("button", {
       name: /^Nonushta\s+320 kcal$/i,
     });
 
-    expect(breakfastToggle).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByText("Tuxum")).not.toBeInTheDocument();
     expect(screen.queryByText("Salat")).not.toBeInTheDocument();
 
     fireEvent.click(breakfastToggle);
 
-    expect(breakfastToggle).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByText("Tuxum")).toBeInTheDocument();
-    expect(screen.getByText("2x")).toBeInTheDocument();
-    expect(screen.getByText("240 kcal")).toBeInTheDocument();
-    expect(screen.getByText("Non")).toBeInTheDocument();
+    expect(screen.queryByText("Tuxum")).not.toBeInTheDocument();
     expect(screen.queryByText("Salat")).not.toBeInTheDocument();
   });
 
@@ -129,7 +134,7 @@ describe("MealsWidget", () => {
     fireEvent.click(screen.getByRole("button", { name: /Nonushta qo'shish/i }));
 
     expect(onAddMeal).toHaveBeenCalledWith("breakfast");
-    expect(breakfastToggle).toHaveAttribute("aria-expanded", "false");
+    expect(breakfastToggle).toBeInTheDocument();
     expect(screen.queryByText("Tuxum")).not.toBeInTheDocument();
   });
 });

@@ -1,10 +1,16 @@
 import { clamp, round } from "lodash";
 import React from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { ChevronRightIcon, GlassWaterIcon } from "lucide-react";
+import { ChevronRightIcon, GlassWaterIcon, PlusIcon } from "lucide-react";
 import QuickCupDrawer from "@/modules/user/containers/water/quick-cup-drawer";
 import { cn } from "@/lib/utils";
-import { Card } from "@/components/ui/card.jsx";
+import { Button } from "@/components/ui/button.jsx";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card.jsx";
 
 export default function AnimatedWaterWidget({
   currentMl,
@@ -17,7 +23,7 @@ export default function AnimatedWaterWidget({
   hideHeaderActions = false,
   ariaLabel,
   amountClassName,
-  compact = false,
+  variant = "themed",
 }) {
   const shouldReduceMotion = useReducedMotion();
   const pct = clamp(round((currentMl / maxMl) * 100), 0, 100);
@@ -49,25 +55,143 @@ export default function AnimatedWaterWidget({
     [isNavigable, onClick],
   );
 
+  if (variant === "standard") {
+    return (
+      <Card
+        className={cn(
+          "relative overflow-hidden py-4 transition-all hover:ring-primary/20 hover:shadow-sm",
+          isNavigable
+            ? "cursor-pointer focus-visible:ring-2 focus-visible:ring-ring"
+            : null,
+          className,
+        )}
+        role={isNavigable ? "button" : undefined}
+        tabIndex={isNavigable ? 0 : undefined}
+        aria-label={
+          ariaLabel || (isNavigable ? `${title} sahifasini ochish` : undefined)
+        }
+        onClick={onClick}
+        onKeyDown={handleCardKeyDown}
+      >
+        <div className="pointer-events-none absolute -right-4 -top-4 size-24 rounded-full bg-primary/10 blur-[28px]" />
+        <CardHeader className="relative z-10 px-4 pb-2">
+          <div className="flex items-center justify-between gap-3">
+            <CardTitle className="flex min-w-0 items-center gap-1.5 text-xs font-bold">
+              <span className="rounded bg-primary/10 p-1 text-primary">
+                <GlassWaterIcon className="size-3" />
+              </span>
+              <span className="truncate">{title}</span>
+            </CardTitle>
+            {!hideHeaderActions ? (
+              <div className="flex shrink-0 items-center gap-1">
+                <QuickCupDrawer>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-xs"
+                    className="rounded-full text-muted-foreground hover:text-foreground"
+                    aria-label="Stakan hajmini tanlash"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <GlassWaterIcon className="size-3.5" />
+                  </Button>
+                </QuickCupDrawer>
+                {isNavigable ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-xs"
+                    className="rounded-full text-muted-foreground hover:text-foreground"
+                    aria-label={`${title} sahifasini ochish`}
+                    onClick={handleNavigate}
+                  >
+                    <ChevronRightIcon className="size-3.5" />
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        </CardHeader>
+
+        <CardContent className="relative z-10 space-y-4 px-4 pb-4">
+          <div className="flex items-baseline gap-2">
+            <span
+              className={cn(
+                "text-3xl font-black leading-none tracking-tight",
+                amountClassName,
+              )}
+            >
+              {displayCurrent}
+            </span>
+            <span className="text-sm font-semibold text-muted-foreground">
+              / {displayMax} ml
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="h-3 flex-1 overflow-hidden rounded-full bg-muted">
+              <motion.div
+                initial={shouldReduceMotion ? false : { width: 0 }}
+                animate={{ width: `${pct}%` }}
+                transition={
+                  shouldReduceMotion
+                    ? { duration: 0 }
+                    : { duration: 0.7, ease: "easeOut" }
+                }
+                className="h-full rounded-full bg-primary"
+              />
+            </div>
+
+            {!hideAdd ? (
+              <Button
+                type="button"
+                size="icon-lg"
+                className="shrink-0 rounded-full"
+                aria-label="Suv qo'shish"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (
+                    typeof window !== "undefined" &&
+                    window.navigator &&
+                    window.navigator.vibrate
+                  ) {
+                    window.navigator.vibrate(50);
+                  }
+                  onAdd?.();
+                }}
+              >
+                <PlusIcon className="size-5" />
+              </Button>
+            ) : null}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card
       className={cn(
         "relative overflow-hidden group transition-all water-widget",
-        compact ? "gap-3 p-4" : "p-6",
-        isNavigable ? "cursor-pointer focus-visible:ring-2 focus-visible:ring-ring" : null,
+        "gap-3 p-4",
+        isNavigable
+          ? "cursor-pointer focus-visible:ring-2 focus-visible:ring-ring"
+          : null,
         className,
       )}
       role={isNavigable ? "button" : undefined}
       tabIndex={isNavigable ? 0 : undefined}
-      aria-label={ariaLabel || (isNavigable ? `${title} sahifasini ochish` : undefined)}
+      aria-label={
+        ariaLabel || (isNavigable ? `${title} sahifasini ochish` : undefined)
+      }
       onClick={onClick}
       onKeyDown={handleCardKeyDown}
       style={{ backgroundColor: "#202a37" }}
     >
       <div className="flex justify-between items-center relative z-10">
         <div className="flex items-center gap-3">
-          <div className={cn("icon", compact ? "size-7" : "size-8")} />
-          <span className={cn("font-bold text-white tracking-wide", compact ? "text-base" : "text-lg")}>
+          <div className={cn("icon", "size-8")} />
+          <span className={cn("font-bold text-white tracking-wide")}>
             {title}
           </span>
         </div>
@@ -100,13 +224,13 @@ export default function AnimatedWaterWidget({
       <div
         className={cn(
           "flex items-baseline gap-2 relative z-10 pointer-events-none",
-          compact ? "mb-4" : "mb-6",
+          "mb-6",
         )}
       >
         <span
           className={cn(
             "font-black text-white leading-none tracking-tight",
-            compact ? "text-[2rem]" : "text-[2.2rem]",
+            "text-[2.2rem]",
             amountClassName,
           )}
         >
@@ -124,17 +248,15 @@ export default function AnimatedWaterWidget({
         <div
           className={cn(
             "flex-1 rounded-full overflow-hidden relative shadow-inner",
-            compact ? "h-10" : "h-11",
+            "h-11",
           )}
           style={{ backgroundColor: "#2b384a" }}
         >
           <div
-            className={
-              cn(
-                "indicator absolute z-40 top-1/2 -translate-y-1/2 left-0.5",
-                compact ? "size-9" : "size-10",
-              )
-            }
+            className={cn(
+              "indicator absolute z-40 top-1/2 -translate-y-1/2 left-0.5",
+              "size-10",
+            )}
           />
           <motion.div
             initial={shouldReduceMotion ? false : { width: 0 }}
@@ -225,7 +347,7 @@ export default function AnimatedWaterWidget({
             }}
             className={cn(
               "add rounded-full active:scale-95 transition-transform shadow-[0_4px_15px_rgba(106,155,244,0.4)] shrink-0 group/btn cursor-pointer",
-              compact ? "size-12" : "size-14",
+              "size-14",
             )}
           >
             {/*<PlusIcon className="size-6 stroke-[3] transition-transform group-active/btn:rotate-90 duration-300" />*/}

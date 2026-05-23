@@ -1,14 +1,30 @@
 import React from "react";
 import "@/lib/i18n";
 import i18n from "@/lib/i18n";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import SessionHistoryDetailPage from "./index.jsx";
 import {
+  useDeleteWorkoutSessionHistoryItem,
+  useUpdateWorkoutSessionDetails,
+  useUploadWorkoutSessionMomentImage,
   useWorkoutSessionHistory,
   useWorkoutSessionHistoryItem,
 } from "@/hooks/app/use-workout-sessions";
+
+const html2canvasMock = vi.hoisted(() =>
+  vi.fn(() =>
+    Promise.resolve({
+      toBlob: (callback) =>
+        callback(new Blob(["poster"], { type: "image/webp" })),
+    }),
+  ),
+);
+
+vi.mock("html2canvas", () => ({
+  default: html2canvasMock,
+}));
 
 vi.mock("@/components/page-transition", () => ({
   default: ({ children }) => <>{children}</>,
@@ -40,10 +56,17 @@ vi.mock("@/hooks/app/use-workout-sessions", async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual,
+    useDeleteWorkoutSessionHistoryItem: vi.fn(),
+    useUpdateWorkoutSessionDetails: vi.fn(),
+    useUploadWorkoutSessionMomentImage: vi.fn(),
     useWorkoutSessionHistory: vi.fn(),
     useWorkoutSessionHistoryItem: vi.fn(),
   };
 });
+
+const deleteHistoryItemMock = vi.fn();
+const updateDetailsMock = vi.fn();
+const uploadMomentImageMock = vi.fn();
 
 const renderPage = (initialEntry = "/user/workout/history/session-1") => {
   const router = createMemoryRouter(
@@ -79,6 +102,36 @@ const renderPage = (initialEntry = "/user/workout/history/session-1") => {
 describe("SessionHistoryDetailPage", () => {
   beforeEach(async () => {
     await i18n.changeLanguage("uz");
+    html2canvasMock.mockClear();
+    deleteHistoryItemMock.mockReset();
+    updateDetailsMock.mockReset();
+    uploadMomentImageMock.mockReset();
+    updateDetailsMock.mockResolvedValue({ id: "session-1" });
+    deleteHistoryItemMock.mockResolvedValue({ success: true });
+    uploadMomentImageMock.mockResolvedValue({
+      id: "image-1",
+      url: "https://cdn.example.com/workout.jpg",
+    });
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: vi.fn().mockResolvedValue(undefined),
+    });
+    Object.defineProperty(navigator, "canShare", {
+      configurable: true,
+      value: vi.fn().mockReturnValue(true),
+    });
+    useUpdateWorkoutSessionDetails.mockReturnValue({
+      updateWorkoutSessionDetails: updateDetailsMock,
+      isPending: false,
+    });
+    useDeleteWorkoutSessionHistoryItem.mockReturnValue({
+      deleteWorkoutSessionHistoryItem: deleteHistoryItemMock,
+      isPending: false,
+    });
+    useUploadWorkoutSessionMomentImage.mockReturnValue({
+      uploadWorkoutSessionMomentImage: uploadMomentImageMock,
+      isPending: false,
+    });
     useWorkoutSessionHistoryItem.mockReturnValue({
       session: {
         id: "session-1",
@@ -92,6 +145,15 @@ describe("SessionHistoryDetailPage", () => {
         totalVolumeKg: 840,
         totalSets: 6,
         completedSets: 6,
+        moments: {
+          title: "Upper body win",
+          text: "Strong finish.",
+          imageUploadId: "image-0",
+          imageUrl: "https://cdn.example.com/existing.jpg",
+        },
+        feeling: {
+          level: 3,
+        },
         skippedExerciseCount: 1,
         exerciseSummaries: [
           {
@@ -150,7 +212,12 @@ describe("SessionHistoryDetailPage", () => {
   it("renders the completed session details", () => {
     renderPage();
 
+    expect(screen.getByText("Workout complete")).toBeInTheDocument();
     expect(screen.getByText("Legs")).toBeInTheDocument();
+    expect(screen.getByText("Training Moments")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Upper body win")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Strong finish.")).toBeInTheDocument();
+    expect(screen.getByText("Training Feeling")).toBeInTheDocument();
     expect(screen.getByText("Bajarilgan mashqlar")).toBeInTheDocument();
     expect(screen.getByText("Squat")).toBeInTheDocument();
     expect(screen.getAllByText("840 kg").length).toBeGreaterThan(0);
@@ -158,6 +225,58 @@ describe("SessionHistoryDetailPage", () => {
     expect(screen.getByText("10 reps")).toBeInTheDocument();
     expect(screen.getByText("O'tkazilgan")).toBeInTheDocument();
     expect(screen.getByText("1 ta")).toBeInTheDocument();
+  });
+
+  it("saves strength result feeling and uploaded moment image", async () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: "x4" }));
+    await waitFor(() => {
+      expect(updateDetailsMock).toHaveBeenCalledWith("session-1", {
+        feelingLevel: 4,
+      });
+    });
+
+    const fileInput = screen.getByLabelText("Add a photo input");
+    fireEvent.change(fileInput, {
+      target: {
+        files: [new File(["image"], "workout.jpg", { type: "image/jpeg" })],
+      },
+    });
+
+    await waitFor(() => {
+      expect(uploadMomentImageMock).toHaveBeenCalled();
+      expect(updateDetailsMock).toHaveBeenCalledWith("session-1", {
+        momentImageUploadId: "image-1",
+      });
+    });
+  });
+
+  it("shares the result as a poster image when native file share is available", async () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
+
+    await waitFor(() => {
+      expect(html2canvasMock).toHaveBeenCalled();
+      expect(navigator.share).toHaveBeenCalledWith(
+        expect.objectContaining({
+          files: [expect.any(File)],
+        }),
+      );
+    });
+  });
+
+  it("deletes the completed activity from the result screen", async () => {
+    const router = renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete this activity" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+
+    await waitFor(() => {
+      expect(deleteHistoryItemMock).toHaveBeenCalledWith("session-1");
+      expect(router.state.location.pathname).toBe("/user/workout/history");
+    });
   });
 
   it("renders skipped exercises from the completed session summary fallback", () => {
@@ -276,6 +395,8 @@ describe("SessionHistoryDetailPage", () => {
     const router = renderPage("/user/workout/history/run-session-1");
 
     expect(screen.getByText("Outdoor run")).toBeInTheDocument();
+    expect(screen.getByText("Training Data")).toBeInTheDocument();
+    expect(screen.getByText("Training Moments")).toBeInTheDocument();
     expect(screen.getByText("5.0 km")).toBeInTheDocument();
     expect(screen.getByText("6:00 /km")).toBeInTheDocument();
     expect(screen.queryByText("Bajarilgan mashqlar")).not.toBeInTheDocument();

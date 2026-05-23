@@ -1,4 +1,11 @@
-import { find, get, isEqual, reduce, toNumber, trim } from "lodash";
+import {
+  find,
+  get,
+  isEqual,
+  reduce,
+  toNumber,
+  trim as lodashTrim,
+} from "lodash";
 
 export const ADMIN_TEXT_OPERATORS = [
   "contains",
@@ -51,7 +58,7 @@ export const makeAdminTextActiveFilter = ({
   operator = "contains",
   visible = false,
 }) => {
-  const normalizedValue = trim(String(value ?? ""));
+  const normalizedValue = lodashTrim(String(value ?? ""));
   if (!visible && !normalizedValue && !isAdminEmptyOperator(operator)) {
     return null;
   }
@@ -96,11 +103,11 @@ export const buildAdminFilterParams = (filters) =>
       operator,
       defaultOperator = "is",
       emptyValue = "all",
-      trim = false,
+      trim: shouldTrim = false,
       includeOperator = true,
     } = filter;
     const normalizedValue =
-      typeof value === "string" && trim ? trim(value) : value;
+      typeof value === "string" && shouldTrim ? lodashTrim(value) : value;
     const hasValue =
       isAdminEmptyOperator(operator) ||
       (typeof normalizedValue === "string"

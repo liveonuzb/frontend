@@ -86,6 +86,7 @@ describe("getChatSocketConnectionConfig", () => {
 
     useChatStore.setState({
       socket: null,
+      socketConsumers: 0,
       contacts: [],
       messages: {},
       messagesCursors: {},
@@ -286,6 +287,23 @@ describe("getChatSocketConnectionConfig", () => {
         transports: ["polling", "websocket"],
       }),
     );
+  });
+
+  it("keeps the shared socket connected until every consumer releases it", () => {
+    useChatStore.getState().initSocket();
+    useChatStore.getState().initSocket();
+
+    const socket = useChatStore.getState().socket;
+
+    useChatStore.getState().disconnectSocket();
+
+    expect(socket.disconnect).not.toHaveBeenCalled();
+    expect(useChatStore.getState().socket).toBe(socket);
+
+    useChatStore.getState().disconnectSocket();
+
+    expect(socket.disconnect).toHaveBeenCalledTimes(1);
+    expect(useChatStore.getState().socket).toBeNull();
   });
 
   it("searches messages through the backend instead of loaded local state only", async () => {

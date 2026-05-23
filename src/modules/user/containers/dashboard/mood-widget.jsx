@@ -25,7 +25,6 @@ export function MoodWidgetView({
   readOnly = false,
   isPending = false,
   className,
-  compact = false,
   labels = {},
 }) {
   const shouldReduceMotion = useReducedMotion();
@@ -38,41 +37,41 @@ export function MoodWidgetView({
   return (
     <Card
       className={cn(
-        compact ? "gap-3 py-4" : "py-6",
+        "relative overflow-hidden py-4 pb-0 transition-all hover:ring-primary/20 hover:shadow-sm",
         "mood-widget",
         className,
       )}
     >
-      <CardHeader>
+      <div className="pointer-events-none absolute -right-4 -top-4 size-24 rounded-full bg-primary/10 blur-[28px]" />
+      <CardHeader className="relative z-10 px-4 pb-2">
         <CardTitle
-          className={cn(
-            "flex items-center gap-2",
-            compact ? "text-lg" : "text-xl",
-          )}
+          className={cn("flex items-center gap-1.5 font-bold", "text-base")}
         >
-          <motion.div
-            key={selectedMood || "good"}
-            initial={
-              shouldReduceMotion
-                ? false
-                : { scale: 0.5, rotate: -15, opacity: 0 }
-            }
-            animate={{ scale: 1, rotate: 0, opacity: 1 }}
-            transition={
-              shouldReduceMotion
-                ? { duration: 0 }
-                : { type: "spring", stiffness: 300, damping: 18 }
-            }
-            className={cn(compact ? "size-6" : "size-7", selectedMood || "good")}
-          />
+          <span className="rounded bg-primary/10 p-1 text-primary">
+            <motion.div
+              key={selectedMood || "good"}
+              initial={
+                shouldReduceMotion
+                  ? false
+                  : { scale: 0.5, rotate: -15, opacity: 0 }
+              }
+              animate={{ scale: 1, rotate: 0, opacity: 1 }}
+              transition={
+                shouldReduceMotion
+                  ? { duration: 0 }
+                  : { type: "spring", stiffness: 300, damping: 18 }
+              }
+              className={cn("size-4", selectedMood || "good")}
+            />
+          </span>
           {title}
         </CardTitle>
       </CardHeader>
 
       <CardContent
         className={cn(
-          "flex flex-1 flex-col justify-center px-4",
-          compact ? "gap-3" : "gap-5",
+          "relative z-10 flex flex-1 flex-col justify-center px-4 ",
+          "gap-5",
         )}
       >
         <div className="flex gap-3">
@@ -117,7 +116,7 @@ export function MoodWidgetView({
                   onMoodSelect?.(value);
                 }}
                 className={cn(
-                  "flex flex-1 items-center justify-center rounded-lg py-1 transition-colors disabled:cursor-not-allowed disabled:opacity-60",
+                  "flex flex-1 items-center justify-center rounded-2xl py-1 transition-colors disabled:cursor-not-allowed disabled:opacity-60",
                   !readOnly && "cursor-pointer",
                   isSelected
                     ? "bg-primary/15 ring-1 ring-primary"
@@ -125,7 +124,7 @@ export function MoodWidgetView({
                 )}
               >
                 <motion.div
-                  className={cn(compact ? "size-12" : "size-14", value)}
+                  className={cn("size-14", value)}
                   animate={
                     isSelected && !shouldReduceMotion
                       ? {
@@ -162,7 +161,6 @@ export default function MoodWidget({
   dayData: dayDataOverride,
   readOnly = false,
   className,
-  compact = false,
 }) {
   const queryClient = useQueryClient();
   const { data } = useGetQuery({
@@ -188,7 +186,6 @@ export default function MoodWidget({
   return (
     <MoodWidgetView
       className={className}
-      compact={compact}
       isPending={setMoodMutation.isPending}
       readOnly={readOnly}
       selectedMood={selectedMood}

@@ -57,6 +57,7 @@ import {
   useNotificationsStore,
 } from "@/store";
 import { PROFILE_SETTINGS_DEFAULTS } from "@/hooks/app/use-profile-settings";
+import { USER_CHALLENGES_ENABLED } from "@/modules/user/user-feature-flags.js";
 
 const LazyNotificationSettingsDrawer = React.lazy(() =>
   import("@/modules/profile/containers/profile/tabs/notifications-tab.jsx").then(
@@ -140,6 +141,8 @@ const resolveNotificationPresentation = (notification) => {
       return { icon: CrownIcon, color: "text-amber-500" };
     case "premium_upsell":
       return { icon: CrownIcon, color: "text-primary" };
+    case "premium_gift_received":
+      return { icon: GiftIcon, color: "text-amber-500" };
     case "achievement_earned":
       return { icon: TrophyIcon, color: "text-amber-500" };
     case "referral_reward":
@@ -216,12 +219,19 @@ const useUserNotifications = (roleKey, options = {}) => {
       ...PROFILE_SETTINGS_DEFAULTS,
       ...(user?.settings ?? {}),
     };
-    const mealCount = reduce(lodashValues(dayData.meals ?? {}), (count, items) => count + items.length, 0);
+    const mealCount = reduce(
+      lodashValues(dayData.meals ?? {}),
+      (count, items) => count + items.length,
+      0,
+    );
     const waterGoalMl = toNumber(goals.waterMl) || 0;
     const cupSize = toNumber(goals.cupSize) || 250;
     const waterConsumedMl =
       isArray(dayData.waterLog) && dayData.waterLog.length > 0
-        ? sumBy(dayData.waterLog, (entry) => toNumber(entry.amountMl) || cupSize)
+        ? sumBy(
+            dayData.waterLog,
+            (entry) => toNumber(entry.amountMl) || cupSize,
+          )
         : (toNumber(dayData.waterCups) || 0) * cupSize;
     const stepGoal = toNumber(goals.steps) || 0;
     const workoutGoal = toNumber(goals.workoutMinutes) || 0;
@@ -422,10 +432,7 @@ const resolveNotificationCategory = (notification) => {
     return "challenge";
   }
 
-  if (
-    includes(id, ":premium-") ||
-    includes(id, ":payout:")
-  ) {
+  if (includes(id, ":premium-") || includes(id, ":payout:")) {
     return "payment";
   }
 
@@ -473,9 +480,7 @@ export const useNotificationCenterModel = () => {
     }),
     [roleKey],
   );
-  const activeFeed = isUser
-      ? userNotificationsFeed
-      : adminNotifications;
+  const activeFeed = isUser ? userNotificationsFeed : adminNotifications;
   const notifications = activeFeed.notifications;
   const hasMore = activeFeed.hasMore ?? false;
   const loadMore = activeFeed.loadMore ?? (() => {});
@@ -511,7 +516,19 @@ export const useNotificationCenterModel = () => {
       }
 
       if (includes(notification.id, ":challenge-invitation:")) {
-        navigate(notification.target || "/user/challenges");
+        navigate(
+          USER_CHALLENGES_ENABLED
+            ? notification.target || "/user/challenges"
+            : "/user/dashboard",
+        );
+        return;
+      }
+
+      if (
+        !USER_CHALLENGES_ENABLED &&
+        notification.target?.startsWith("/user/challenges")
+      ) {
+        navigate("/user/dashboard");
         return;
       }
 
@@ -526,7 +543,10 @@ export const useNotificationCenterModel = () => {
     setInitialNotifications(notifications);
   }, [notifications, setInitialNotifications]);
 
-  const unreadCount = filter(storedNotifications, (notification) => !notification.read).length;
+  const unreadCount = filter(
+    storedNotifications,
+    (notification) => !notification.read,
+  ).length;
   const filteredNotifications = React.useMemo(
     () =>
       filter(storedNotifications, (notification) => {
@@ -790,4 +810,3 @@ const NotificationCenter = ({ className, ...props }) => {
 };
 
 export default NotificationCenter;
-

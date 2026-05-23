@@ -1,9 +1,11 @@
 import React from "react";
 import { filter, map, size, isArray, take } from "lodash";
-import { AwardIcon, LockIcon } from "lucide-react";
+import { AwardIcon, LockIcon, TrophyIcon } from "lucide-react";
 import { Link } from "react-router";
 import { useGetQuery } from "@/hooks/api";
 import { getApiResponseData } from "@/lib/api-response";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 const AchievementsWidget = () => {
   const { data } = useGetQuery({
@@ -19,81 +21,71 @@ const AchievementsWidget = () => {
   const locked = filter(evaluated, { unlocked: false });
   const progress = size(unlocked);
   const total = size(evaluated);
+  const unlockedPreview = take(unlocked, 5);
+  const lockedPreview = take(locked, Math.max(0, 5 - size(unlockedPreview)));
+  const previewItems = [...unlockedPreview, ...lockedPreview];
+  const hiddenLockedCount = Math.max(0, size(locked) - size(lockedPreview));
 
   return (
-    <Link
-      to="/user/achievements"
-      className="group relative block h-full cursor-pointer overflow-hidden rounded-[28px] border border-[rgb(var(--accent-rgb)/0.15)] bg-gradient-to-br from-[rgb(var(--accent-rgb)/0.08)] via-card to-card px-5 py-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[rgb(var(--accent-rgb)/0.30)] hover:shadow-xl hover:shadow-[rgb(var(--accent-rgb)/0.05)] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--accent-rgb)/0.40)]"
-    >
-      <div className="absolute inset-x-8 top-0 h-24 rounded-full bg-[rgb(var(--accent-rgb)/0.08)] blur-3xl transition-opacity group-hover:opacity-90" />
-      <div className="relative flex h-full flex-col">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[rgb(var(--accent-strong-rgb)/0.70)]">
-              Yutuqlar
-            </p>
-            <h3 className="mt-1 inline-flex items-center gap-2 text-lg font-black tracking-tight">
-              <AwardIcon className="size-4 text-[rgb(var(--accent-rgb))]" />
+    <Link to="/user/achievements" className="block h-full focus:outline-none">
+      <Card className="group/card relative h-full overflow-hidden py-4 transition-all hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-lg focus-within:ring-2 focus-within:ring-primary/30">
+        <div className="absolute -right-4 -top-4 size-20 rounded-full bg-primary/10 blur-[24px] transition-colors group-hover/card:bg-primary/20" />
+        <CardHeader className="relative z-10 px-4 pb-2">
+          <div className="flex items-center justify-between gap-3">
+            <CardTitle className="flex min-w-0 items-center gap-1.5 text-xs font-bold">
+              <span className="rounded bg-primary/10 p-1 text-primary">
+                <AwardIcon className="size-3" />
+              </span>
               Achievements
-            </h3>
+            </CardTitle>
+            <span className="shrink-0 text-xs font-bold text-primary">
+              Ko&apos;rish
+            </span>
           </div>
-          <span
-            className="text-sm font-semibold text-[rgb(var(--accent-strong-rgb))] hover:underline"
-          >
-            Ko&apos;rish
-          </span>
-        </div>
+        </CardHeader>
 
-        <p className="mt-2 text-sm text-muted-foreground">
-          {progress}/{total} ta achievement ochilgan
-        </p>
+        <CardContent className="relative z-10 flex flex-1 flex-col px-4 pb-4">
+          <p className="text-xs font-medium text-muted-foreground">
+            {progress}/{total} ta achievement olingan
+          </p>
 
-        <div className="mt-3 flex flex-wrap gap-2">
-          {map(unlocked, (item) => (
-            <div
-              key={item.id}
-              className="flex size-10 items-center justify-center rounded-xl bg-[rgb(var(--accent-rgb)/0.10)] text-lg transition-transform hover:scale-110"
-              title={`${item.name} — ${item.description}`}
-            >
-              {item.icon || "🏆"}
-            </div>
-          ))}
-          {map(take(locked, 4), (item) => (
-            <div
-              key={item.id}
-              className="flex size-10 items-center justify-center rounded-xl bg-muted/40 text-muted-foreground"
-              title={`${item.name} — ${item.description}`}
-            >
-              <LockIcon className="size-3.5" />
-            </div>
-          ))}
-          {size(locked) > 4 ? (
-            <div className="flex size-10 items-center justify-center rounded-xl bg-muted/40 text-xs font-semibold text-muted-foreground">
-              +{size(locked) - 4}
-            </div>
-          ) : null}
-        </div>
-
-        <div className="mt-auto pt-4">
-          {size(locked) > 0 ? (
-            <div className="rounded-2xl border border-border/60 bg-muted/20 px-3 py-2">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Keyingi yutuq
-              </p>
-              <p className="mt-0.5 text-sm font-medium">
-                {locked[0].icon || "🏆"} {locked[0].name}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {locked[0].description}
-              </p>
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-[rgb(var(--accent-rgb)/0.20)] bg-[rgb(var(--accent-rgb)/0.05)] px-3 py-2 text-center text-sm font-medium text-[rgb(var(--accent-strong-rgb))]">
-              Barcha yutuqlar ochilgan! 🎉
-            </div>
-          )}
-        </div>
-      </div>
+          <div className="mt-3 flex items-center gap-2 overflow-hidden">
+            {size(previewItems) > 0 ? (
+              map(previewItems, (item) => (
+                <div
+                  key={item.id}
+                  className={cn(
+                    "flex size-12 shrink-0 items-center justify-center rounded-2xl border text-2xl shadow-sm",
+                    item.unlocked
+                      ? "border-primary/15 bg-primary/10 text-primary"
+                      : "border-border/50 bg-muted/30 text-muted-foreground",
+                  )}
+                  title={`${item.name} — ${item.description}`}
+                >
+                  {item.unlocked ? (
+                    item.icon || "🏆"
+                  ) : (
+                    <LockIcon className="size-4" />
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl border border-dashed border-border/70 bg-muted/20 px-3 text-xs font-semibold text-muted-foreground">
+                <TrophyIcon className="size-4" />
+                Hali yutuq yo&apos;q
+              </div>
+            )}
+            {hiddenLockedCount > 0 ? (
+              <div
+                className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-dashed border-border/70 bg-background/60 text-xs font-black text-foreground"
+                aria-label={`${hiddenLockedCount} ta yopiq achievement`}
+              >
+                +{hiddenLockedCount}
+              </div>
+            ) : null}
+          </div>
+        </CardContent>
+      </Card>
     </Link>
   );
 };

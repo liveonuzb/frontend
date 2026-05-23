@@ -6,6 +6,10 @@ import ErrorBoundary from "@/components/error-boundary/index.jsx";
 import { DEFAULT_PROFILE_TAB } from "@/modules/profile/hooks/use-profile-overlay";
 import { normalizeProfileOverlayTab } from "@/modules/profile/lib/profile-tab-registry";
 import { getStandaloneProfileTabPath } from "@/modules/profile/lib/profile-tab-navigation";
+import {
+  USER_CHALLENGES_ENABLED,
+  USER_LEADERBOARD_ENABLED,
+} from "@/modules/user/user-feature-flags.js";
 
 const DashboardPage = lazy(
   () => import("@/modules/user/pages/dashboard/index.jsx"),
@@ -19,8 +23,12 @@ const NutritionPage = lazy(
 const WaterPage = lazy(() => import("@/modules/user/pages/water/index.jsx"));
 const HealthPage = lazy(() => import("@/modules/user/pages/health/index.jsx"));
 const ReportPage = lazy(() => import("@/modules/user/pages/report/index.jsx"));
-const DailyReportPage = lazy(() => import("@/modules/user/pages/report/daily.jsx"));
-const TenDayReportPage = lazy(() => import("@/modules/user/pages/report/ten-day.jsx"));
+const DailyReportPage = lazy(
+  () => import("@/modules/user/pages/report/daily.jsx"),
+);
+const TenDayReportPage = lazy(
+  () => import("@/modules/user/pages/report/ten-day.jsx"),
+);
 
 const MeasurementsPage = lazy(
   () => import("@/modules/user/pages/measurements/index.jsx"),
@@ -204,11 +212,15 @@ const Index = () => {
         <Route
           path="challenges/*"
           element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <ChallengesPage />
-              </ErrorBoundary>
-            </Suspense>
+            USER_CHALLENGES_ENABLED ? (
+              <Suspense fallback={<PageLoader />}>
+                <ErrorBoundary>
+                  <ChallengesPage />
+                </ErrorBoundary>
+              </Suspense>
+            ) : (
+              <Navigate to="/user/dashboard" replace />
+            )
           }
         />
         <Route
@@ -234,11 +246,15 @@ const Index = () => {
         <Route
           path="leaderboard"
           element={
-            <Suspense fallback={<PageLoader />}>
-              <ErrorBoundary>
-                <LeaderboardPage />
-              </ErrorBoundary>
-            </Suspense>
+            USER_LEADERBOARD_ENABLED ? (
+              <Suspense fallback={<PageLoader />}>
+                <ErrorBoundary>
+                  <LeaderboardPage />
+                </ErrorBoundary>
+              </Suspense>
+            ) : (
+              <Navigate to="/user/dashboard" replace />
+            )
           }
         />
         <Route

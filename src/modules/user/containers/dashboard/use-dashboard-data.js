@@ -5,6 +5,7 @@ import useMealPlan from "@/hooks/app/use-meal-plan";
 import { getApiResponseData } from "@/lib/api-response";
 import { normalizeUserOnboarding } from "@/lib/user-onboarding";
 import { getFriendItems } from "@/modules/user/lib/friends-response";
+import { USER_CHALLENGES_ENABLED } from "@/modules/user/user-feature-flags.js";
 import { deriveWorkoutPlanMetrics } from "../workout/utils";
 import {
   buildCommunityChallenge,
@@ -83,6 +84,7 @@ export default function useDashboardData(dateKey) {
     url: "/challenges",
     queryProps: {
       queryKey: DASHBOARD_CHALLENGES_QUERY_KEY,
+      enabled: USER_CHALLENGES_ENABLED,
     },
   });
   const mealPlanQuery = useMealPlan();
@@ -143,27 +145,27 @@ export default function useDashboardData(dateKey) {
     [friendsData],
   );
   const challenges = React.useMemo(
-    () => getItemsFromResponse(challengesData),
+    () => (USER_CHALLENGES_ENABLED ? getItemsFromResponse(challengesData) : []),
     [challengesData],
   );
-  const currentChallenge = React.useMemo(
-    () =>
-      buildCommunityChallenge({
-        challenges,
-        friends,
-        userId: get(user, "id"),
-      }),
-    [challenges, friends, user],
-  );
+  const currentChallenge = React.useMemo(() => {
+    if (!USER_CHALLENGES_ENABLED) return null;
+
+    return buildCommunityChallenge({
+      challenges,
+      friends,
+      userId: get(user, "id"),
+    });
+  }, [challenges, friends, user]);
 
   const coreQueries = [userQuery, dayQuery, goalsQuery];
-  const supportingQueries = [
+  const supportingQueries = compact([
     measurementsQuery,
     workoutPlansQuery,
     friendsQuery,
-    challengesQuery,
+    USER_CHALLENGES_ENABLED ? challengesQuery : null,
     mealPlanQuery,
-  ];
+  ]);
   const allQueries = [...coreQueries, ...supportingQueries];
 
   return {

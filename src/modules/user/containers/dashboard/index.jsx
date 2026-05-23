@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { get } from "lodash";
 import { useBreadcrumbStore } from "@/store";
 import PageTransition from "@/components/page-transition";
-import StrippedCalendar from "@/components/stripped-calendar";
+import CalendarBottomDrawer from "@/components/calendar-bottom-drawer.jsx";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import CalorieGaugeWidget from "./calorie-gauge-widget.jsx";
@@ -26,13 +26,20 @@ import { normalizeDateKey } from "./query-helpers.js";
 import useDashboardData from "./use-dashboard-data.js";
 import AchievementsWidget from "@/modules/user/containers/dashboard/achievements-widget.jsx";
 import FriendActivityFeed from "@/modules/user/containers/dashboard/friend-activity-feed.jsx";
-import ChallengeWidget from "@/modules/user/containers/dashboard/challenge-widget.jsx";
 import ChallengeInvitationsSection from "@/modules/user/containers/dashboard/challenge-invitations-section.jsx";
+import { USER_CHALLENGES_ENABLED } from "@/modules/user/user-feature-flags.js";
 import {
   AlertTriangleIcon,
+  CalendarDaysIcon,
   ClipboardListIcon,
   RefreshCwIcon,
 } from "lucide-react";
+
+const formatDashboardDateLabel = (date) =>
+  date.toLocaleDateString("uz-UZ", {
+    day: "numeric",
+    month: "short",
+  });
 
 const DashboardSkeleton = () => (
   <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-11">
@@ -86,38 +93,18 @@ const DashboardStatusMessage = ({
   </div>
 );
 
-const ActiveMealPlanBanner = ({ activePlan, t }) => {
-  if (!activePlan) {
-    return null;
-  }
-
-  return (
-    <Link
-      to="/user/nutrition/home"
-      state={{ openMealPlanBuilder: true, planId: get(activePlan, "id") }}
-      className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-950 transition-colors hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100 dark:hover:bg-emerald-950/50"
-    >
-      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/70 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200">
-        <ClipboardListIcon className="size-5" />
-      </span>
-      <span className="min-w-0">
-        <span className="block text-sm font-bold">
-          {t("user.dashboard.mealPlan.active")}
-        </span>
-        <span className="block truncate text-xs opacity-75">
-          {get(activePlan, "name")}
-        </span>
-      </span>
-    </Link>
-  );
-};
-
 const DashboardContainer = () => {
   const { t } = useTranslation();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const [selectedDate, setSelectedDate] = React.useState(() => new Date());
+  const [calendarOpen, setCalendarOpen] = React.useState(false);
+  const [maxSelectableDate] = React.useState(() => new Date());
   const dateKey = React.useMemo(
     () => normalizeDateKey(selectedDate),
+    [selectedDate],
+  );
+  const selectedDateLabel = React.useMemo(
+    () => formatDashboardDateLabel(selectedDate),
     [selectedDate],
   );
   const {
@@ -125,11 +112,9 @@ const DashboardContainer = () => {
     dayData,
     goalsState,
     measurementSnapshot,
-    activeMealPlan,
     activeWorkoutPlan,
     friends,
     challenges,
-    currentChallenge,
     isCoreLoading,
     hasCoreError,
     hasSupportingError,
@@ -150,11 +135,16 @@ const DashboardContainer = () => {
     <PageTransition mode="slide-up">
       <div className="flex flex-col gap-6">
         <div className="flex justify-end">
-          <StrippedCalendar
-            date={selectedDate}
-            onChange={setSelectedDate}
-            className="w-full max-w-md"
-          />
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-lg"
+            className="rounded-2xl bg-card/80 shadow-sm"
+            onClick={() => setCalendarOpen(true)}
+            aria-label={`Sana tanlash: ${selectedDateLabel}`}
+          >
+            <CalendarDaysIcon className="size-5" />
+          </Button>
         </div>
         {isCoreLoading ? (
           <DashboardSkeleton />
@@ -176,11 +166,11 @@ const DashboardContainer = () => {
                 onRetry={refetchDashboard}
               />
             ) : null}
-            <ChallengeInvitationsSection />
+            {USER_CHALLENGES_ENABLED ? <ChallengeInvitationsSection /> : null}
             <div className="grid grid-cols-1 gap-4">
               <div
                 data-testid="dashboard-top-card-row"
-                className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 lg:h-[400px] lg:grid-cols-11"
+                className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 lg:grid-cols-11"
               >
                 <div className="flex min-h-0 md:col-span-1 lg:col-span-3">
                   <CalorieGaugeWidget
@@ -192,30 +182,19 @@ const DashboardContainer = () => {
                   />
                 </div>
                 <div className="flex min-h-0 md:col-span-2 lg:col-span-5">
-                  <div className="flex min-h-0 w-full flex-col gap-3">
-                    <ActiveMealPlanBanner activePlan={activeMealPlan} t={t} />
-                    <MealsWidget
-                      dateKey={dateKey}
-                      dayData={dayData}
-                      goalsState={goalsState}
-                    />
-                  </div>
+                  <MealsWidget
+                    dateKey={dateKey}
+                    dayData={dayData}
+                    goalsState={goalsState}
+                  />
                 </div>
-                <div className="flex min-h-0 md:col-span-1 lg:col-span-3">
-                  <div className="grid min-h-0 w-full grid-rows-2 gap-4 lg:h-full">
-                    <WaterWidget
-                      dateKey={dateKey}
-                      dayData={dayData}
-                      goalsState={goalsState}
-                      compact
-                    />
-                    <MoodWidget
-                      dateKey={dateKey}
-                      dayData={dayData}
-                      compact
-                      className="h-full w-full"
-                    />
-                  </div>
+                <div className="flex flex-col gap-y-4 md:col-span-1 lg:col-span-3">
+                  <WaterWidget
+                    dateKey={dateKey}
+                    dayData={dayData}
+                    goalsState={goalsState}
+                  />
+                  <MoodWidget dateKey={dateKey} dayData={dayData}  />
                 </div>
               </div>
               <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 lg:grid-cols-11">
@@ -228,13 +207,10 @@ const DashboardContainer = () => {
                 <div className="md:col-span-2 lg:col-span-5">
                   <WorkoutWidget activePlan={activeWorkoutPlan} />
                 </div>
-                <div className="md:col-span-2 lg:col-span-3">
+                <div className="md:col-span-2 lg:col-span-5">
                   <AchievementsWidget />
                 </div>
-                <div className="md:col-span-2 lg:col-span-3">
-                  <ChallengeWidget currentChallenge={currentChallenge} />
-                </div>
-                <div className="md:col-span-2 lg:col-span-5">
+                <div className="md:col-span-2 lg:col-span-6">
                   <FriendActivityFeed
                     friends={friends}
                     challenges={challenges}
@@ -252,8 +228,17 @@ const DashboardContainer = () => {
       <MoodReminderDrawer />
       <StreakReminderDrawer />
       <WaterReminderDrawer />
-      <ChallengeReminderDrawer />
-      <ChallengeCompletionDrawer />
+      {USER_CHALLENGES_ENABLED ? <ChallengeReminderDrawer /> : null}
+      {USER_CHALLENGES_ENABLED ? <ChallengeCompletionDrawer /> : null}
+      <CalendarBottomDrawer
+        open={calendarOpen}
+        onOpenChange={setCalendarOpen}
+        date={selectedDate}
+        onChange={setSelectedDate}
+        maxDate={maxSelectableDate}
+        title="Sana tanlang"
+        description="Dashboard ma'lumotlari tanlangan kunga moslanadi."
+      />
     </PageTransition>
   );
 };

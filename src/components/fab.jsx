@@ -1,4 +1,11 @@
-import { some, reduce, values as lodashValues, isArray, split } from "lodash";
+import {
+  compact,
+  some,
+  reduce,
+  values as lodashValues,
+  isArray,
+  split,
+} from "lodash";
 import React from "react";
 import { createPortal } from "react-dom";
 import {
@@ -20,16 +27,17 @@ import {
 import useHealthGoals from "@/hooks/app/use-health-goals";
 import useMeasurements from "@/hooks/app/use-measurements";
 import { useAddMealOverlayStore } from "@/store";
+import { USER_CHALLENGES_ENABLED } from "@/modules/user/user-feature-flags.js";
 
 const getTodayKey = () => split(new Date().toISOString(), "T")[0];
-const FAB_VISIBLE_PATHS = [
+const FAB_VISIBLE_PATHS = compact([
   "/user/dashboard",
   "/user/nutrition",
   "/user/workout",
-  "/user/challenges",
+  USER_CHALLENGES_ENABLED ? "/user/challenges" : null,
   "/user/friends",
   "/user/measurement",
-];
+]);
 
 const FabMenuPanel = ({
   latestWeight,
@@ -264,6 +272,3 @@ const FloatingActionButton = () => {
 };
 
 export default FloatingActionButton;
-
-
-

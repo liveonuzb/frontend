@@ -237,6 +237,11 @@ const RunningLivePage = () => {
       : null;
   const currentStatus =
     optimisticStatus ?? effectiveActiveSession?.status ?? "ready";
+  React.useEffect(() => {
+    workoutSessionIdRef.current = workoutSessionId;
+    currentStatusRef.current = currentStatus;
+  }, [currentStatus, workoutSessionId]);
+
   const { session: runningDetailSession } = useRunningSessionDetail(
     workoutSessionId,
     {
@@ -255,8 +260,6 @@ const RunningLivePage = () => {
         effectiveActiveSession?.metrics?.pausedDurationSeconds ??
         0,
     ) || 0;
-  workoutSessionIdRef.current = workoutSessionId;
-  currentStatusRef.current = currentStatus;
   const isReady = currentStatus === "ready";
   const isTrackingActive = currentStatus === "active";
   const isPaused = currentStatus === "paused";
@@ -888,7 +891,7 @@ const RunningLivePage = () => {
       clearActiveRunningSession();
       clearRunningPointQueue(workoutSessionId);
       navigate(
-        `/user/workout/running/${session?.workoutSessionId ?? workoutSessionId}`,
+        `/user/workout/history/${session?.workoutSessionId ?? workoutSessionId}`,
       );
     };
 

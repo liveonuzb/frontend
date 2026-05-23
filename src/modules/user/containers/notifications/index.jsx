@@ -41,6 +41,7 @@ const NOTIFICATION_ICONS = {
   weekly_check_in: { icon: CalendarIcon, color: "text-violet-500" },
   premium_expiring: { icon: CrownIcon, color: "text-amber-500" },
   premium_upsell: { icon: CrownIcon, color: "text-primary" },
+  premium_gift_received: { icon: GiftIcon, color: "text-amber-500" },
   achievement_earned: { icon: TrophyIcon, color: "text-amber-500" },
   referral_reward: { icon: GiftIcon, color: "text-emerald-500" },
   challenge_leaderboard: { icon: TrophyIcon, color: "text-amber-500" },

@@ -11,6 +11,24 @@ import {
 
 import { map } from "lodash";
 
+vi.mock("@/components/ui/drawer.jsx", async () => {
+  const ReactModule = await import("react");
+
+  const MockSlot = (slot) => ({ children, className, ...props }) =>
+    ReactModule.createElement(
+      "div",
+      { ...props, className, "data-slot": slot },
+      children,
+    );
+
+  return {
+    DrawerBody: MockSlot("drawer-body"),
+    DrawerDescription: MockSlot("drawer-description"),
+    DrawerHeader: MockSlot("drawer-header"),
+    DrawerTitle: MockSlot("drawer-title"),
+  };
+});
+
 const savedMeals = [
   {
     id: "saved-1",
@@ -129,13 +147,11 @@ describe("SmartAddSheet", () => {
       onOpenCatalog: vi.fn(),
       onOpenSavedMeals: vi.fn(),
       onOpenText: vi.fn(),
-      onOpenTime: vi.fn(),
     };
 
     render(
       <SmartAddSheet
         disabled={false}
-        formattedTime="Bugun, 08:30"
         mealLabel="Nonushta"
         quickItems={quickItems}
         {...handlers}
@@ -150,7 +166,14 @@ describe("SmartAddSheet", () => {
     renderSheet();
 
     expect(screen.getByText("Nonushta")).toBeInTheDocument();
-    expect(screen.getByText("Bugun, 08:30")).toBeInTheDocument();
+    expect(screen.getByText("Ovqat qo'shish")).toBeInTheDocument();
+    expect(
+      screen.getByText("Ovqat qo'shish").closest('[data-slot="drawer-description"]'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Nonushta").closest('[data-slot="drawer-title"]'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Bugun, 08:30")).not.toBeInTheDocument();
     expect(screen.getByText("Tez qo'shish")).toBeInTheDocument();
     expect(screen.getByText("Chicken bowl")).toBeInTheDocument();
     expect(screen.getByText("Greek yogurt")).toBeInTheDocument();
@@ -158,6 +181,9 @@ describe("SmartAddSheet", () => {
     expect(screen.getByRole("button", { name: "Matn" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Audio" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Katalog" })).toBeInTheDocument();
+    expect(screen.getByTestId("quick-add-list")).toHaveClass("space-y-2");
+    expect(screen.getByTestId("method-action-list")).toHaveClass("space-y-2");
+    expect(screen.getByTestId("method-action-list").children).toHaveLength(4);
   });
 
   it("logs a quick item from its plus button and opens detail from card tap", () => {

@@ -1695,15 +1695,21 @@ const WorkoutPlanSessionPage = () => {
         }),
       });
       sessionLeaveGuard.runWithoutGuard(() => {
-        navigate(
-          `/user/workout/plans/${planId}/days/${dayIndex}/session/summary`,
-          {
+        const completedSessionId = get(summaryPayload, "sessionId");
+
+        if (completedSessionId) {
+          navigate(`/user/workout/history/${completedSessionId}`, {
             replace: true,
-            state: {
-              summary: summaryPayload,
-            },
+          });
+          return;
+        }
+
+        navigate(`/user/workout/plans/${planId}/days/${dayIndex}/session/summary`, {
+          replace: true,
+          state: {
+            summary: summaryPayload,
           },
-        );
+        });
       });
     } catch (error) {
       toast.error(

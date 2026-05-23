@@ -2,16 +2,6 @@ import { map, take, toUpper, trim, split } from "lodash";
 import React, { useEffect } from "react";
 import { Navigate, Outlet, NavLink, useLocation } from "react-router";
 import {
-  FileTextIcon,
-  LayoutDashboardIcon,
-  MedalIcon,
-  UtensilsIcon,
-  RulerIcon,
-  DumbbellIcon,
-  TrophyIcon,
-  UserPlusIcon,
-} from "lucide-react";
-import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -35,8 +25,10 @@ import LayoutHeader from "@/components/layout-header.jsx";
 import { useMobileChromeHidden } from "@/hooks/app/use-mobile-chrome-hidden";
 import ProfileDrawer from "./profile-drawer.jsx";
 import PremiumReminderDrawer from "./premium-reminder-drawer.jsx";
+import PremiumGiftReceivedDrawer from "./premium-gift-received-drawer.jsx";
 import RewardReminderDrawer from "./reward-reminder-drawer.jsx";
 import AddMealOverlay from "./add-meal-overlay.jsx";
+import useRealtimeNotifications from "@/hooks/app/use-realtime-notifications";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -51,6 +43,7 @@ import {
   isRunningLiveImmersivePath,
   shouldHideMobileNavForPath,
 } from "./layout-route-state.js";
+import { getUserTrackingNavItems } from "./user-nav-items.js";
 
 const otherNav = [];
 
@@ -124,11 +117,12 @@ const Index = () => {
     trim(`${user?.firstName || ""} ${user?.lastName || ""}`) ||
     user?.username ||
     "Foydalanuvchi";
-  const initials = toUpper(take(
-    map(split(displayName, " "), (part) => part[0]),
-    2,
-  )
-    .join(""));
+  const initials = toUpper(
+    take(
+      map(split(displayName, " "), (part) => part[0]),
+      2,
+    ).join(""),
+  );
   const standaloneProfilePath = React.useMemo(() => {
     const params = new URLSearchParams(location.search);
     const profileState = params.get("profile");
@@ -141,46 +135,9 @@ const Index = () => {
     return getStandaloneProfileTabPath(profileTab, location.search);
   }, [location.search]);
 
-  const trackingNav = React.useMemo(
-    () => [
-      {
-        to: "/user/dashboard",
-        label: "Dashboard",
-        icon: LayoutDashboardIcon,
-      },
-      {
-        to: "/user/nutrition/home",
-        label: "Ovqatlanish",
-        icon: UtensilsIcon,
-      },
-      {
-        to: "/user/workout/overview",
-        label: "Mashg'ulotlar",
-        icon: DumbbellIcon,
-      },
-      {
-        to: "/user/measurements",
-        label: "O'lchamlar",
-        icon: RulerIcon,
-      },
-      {
-        to: "/user/challenges",
-        label: "Musobaqalar",
-        icon: TrophyIcon,
-      },
-      {
-        to: "/user/leaderboard",
-        label: "Reyting",
-        icon: MedalIcon,
-      },
-      {
-        to: "/user/friends",
-        label: "Do'stlar",
-        icon: UserPlusIcon,
-      },
-    ],
-    [],
-  );
+  const trackingNav = React.useMemo(() => getUserTrackingNavItems(), []);
+
+  useRealtimeNotifications();
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -196,7 +153,9 @@ const Index = () => {
       <SidebarProvider
         open={sidebarOpen}
         onOpenChange={setSidebarOpen}
-        className={cn(isWorkoutRoute && !isRunningImmersiveRoute && "workout-layout-theme")}
+        className={cn(
+          isWorkoutRoute && !isRunningImmersiveRoute && "workout-layout-theme",
+        )}
       >
         {!isRunningImmersiveRoute ? (
           <Sidebar direction={"left"} variant={"floating"} collapsible={"icon"}>
@@ -309,6 +268,7 @@ const Index = () => {
         <ProfileDrawer />
         <AddMealOverlay />
         <PremiumReminderDrawer />
+        <PremiumGiftReceivedDrawer />
         <RewardReminderDrawer />
       </SidebarProvider>
     </KeyboardShortcutsProvider>
