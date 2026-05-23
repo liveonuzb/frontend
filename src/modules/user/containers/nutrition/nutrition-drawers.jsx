@@ -60,7 +60,6 @@ export default function NutritionDrawers({
   handleConfirmInlineScan,
   handleConfirmMealTransfer,
   handleDuplicateCurrentPlan,
-  handleInlineCameraCapture,
   handleOpenAiGenerator,
   handleOpenBuilderManual,
   handleOpenPlanActions,
@@ -200,7 +199,6 @@ export default function NutritionDrawers({
         onOpenSavedMeals={() => setIsSavedMealsOpen(true)}
         onCloseAll={() => setIsActionDrawerOpen(false)}
         disabled={!isOnline}
-        onInlineCameraCapture={handleInlineCameraCapture}
       />
       <SavedMealsDrawer
         {...getDrawerControl(isSavedMealsOpen, setIsSavedMealsOpen)}

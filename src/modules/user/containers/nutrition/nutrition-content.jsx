@@ -1784,7 +1784,6 @@ const NutritionContent = ({ entryView = "home" }) => {
         handleConfirmInlineScan={handleConfirmInlineScan}
         handleConfirmMealTransfer={handleConfirmMealTransfer}
         handleDuplicateCurrentPlan={handleDuplicateCurrentPlan}
-        handleInlineCameraCapture={handleInlineCameraCapture}
         handleOpenAiGenerator={handleOpenAiGenerator}
         handleOpenBuilderManual={handleOpenBuilderManual}
         handleOpenPlanActions={handleOpenPlanActions}

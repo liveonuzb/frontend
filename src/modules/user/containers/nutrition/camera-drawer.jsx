@@ -528,7 +528,6 @@ export default function CameraDrawer({
   open,
   onClose,
   onOpenText,
-  onInlineCapture,
   isStackedChildOpen = false,
   initialMode = "camera",
 }) {
@@ -683,11 +682,6 @@ export default function CameraDrawer({
   const handleCapture = async (dataUrl) => {
     if (photoScanCreditStatus.isDisabled) {
       toast.error("Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin.");
-      return;
-    }
-
-    if (onInlineCapture) {
-      onInlineCapture(dataUrl);
       return;
     }
 

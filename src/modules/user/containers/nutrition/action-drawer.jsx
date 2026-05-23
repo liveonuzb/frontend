@@ -71,7 +71,6 @@ const ActionDrawer = ({
   onOpenSavedMeals,
   onCloseAll,
   disabled = false,
-  onInlineCameraCapture,
 }) => {
   const user = useAuthStore((state) => state.user);
   const { wallet: aiAccessWallet } = useAiAccessStatus({ enabled: open });
@@ -348,12 +347,6 @@ const ActionDrawer = ({
         loggedAt={selectedLoggedAt}
         mealType={activeMealType}
         initialMode={cameraInitialMode}
-        onInlineCapture={(dataUrl) => {
-          onInlineCameraCapture?.(dataUrl, activeMealType);
-          closeStackedCameraText();
-          setActiveNested(null);
-          onCloseAll?.();
-        }}
         isStackedChildOpen={cameraTextOpen || cameraAiDraftOpen}
         onOpenText={() => {
           resetTranscriptState();
