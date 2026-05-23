@@ -27,6 +27,7 @@ import {
   FlameIcon,
   GiftIcon,
   GlassWaterIcon,
+  SettingsIcon,
   TargetIcon,
   TrophyIcon,
   TrendingUpIcon,
@@ -40,7 +41,6 @@ import {
   DrawerBody,
   DrawerContent,
   DrawerDescription,
-  DrawerFooter,
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
@@ -411,43 +411,7 @@ const useUserNotifications = (roleKey, options = {}) => {
 const NOTIFICATION_FILTERS = [
   { value: "all", label: "Barchasi" },
   { value: "unread", label: "O'qilmagan" },
-  { value: "friends", label: "Do'stlar" },
-  { value: "challenge", label: "Challenge" },
-  { value: "payment", label: "To'lov" },
-  { value: "progress", label: "Progress" },
 ];
-
-const resolveNotificationCategory = (notification) => {
-  if (notification?.category) {
-    return notification.category;
-  }
-
-  const id = String(notification?.id || "");
-
-  if (includes(id, ":friend-request")) {
-    return "friends";
-  }
-
-  if (includes(id, ":challenge-")) {
-    return "challenge";
-  }
-
-  if (includes(id, ":premium-") || includes(id, ":payout:")) {
-    return "payment";
-  }
-
-  if (
-    includes(id, ":water:") ||
-    includes(id, ":meal") ||
-    includes(id, ":steps:") ||
-    includes(id, ":workout:") ||
-    includes(id, ":streak")
-  ) {
-    return "progress";
-  }
-
-  return "system";
-};
 
 export const useNotificationCenterModel = () => {
   const navigate = useNavigate();
@@ -558,7 +522,7 @@ export const useNotificationCenterModel = () => {
           return !notification.read;
         }
 
-        return resolveNotificationCategory(notification) === activeFilter;
+        return true;
       }),
     [activeFilter, storedNotifications],
   );
@@ -623,13 +587,28 @@ export const NotificationFeedPanel = ({
   return (
     <div className={cn("flex min-h-0 flex-1 flex-col", className)}>
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Bildirishnomalar</span>
-          {unreadCount > 0 ? (
-            <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
-              {unreadCount} yangi
-            </span>
-          ) : null}
+        <div
+          role="tablist"
+          aria-label="Bildirishnoma ko'rinishi"
+          className="flex min-w-0 items-center gap-2 overflow-x-auto"
+        >
+          {map(NOTIFICATION_FILTERS, (filter) => (
+            <button
+              key={filter.value}
+              type="button"
+              role="tab"
+              aria-selected={activeFilter === filter.value}
+              onClick={() => setActiveFilter(filter.value)}
+              className={cn(
+                "whitespace-nowrap rounded-full border px-3 py-1.5 text-sm transition-colors",
+                activeFilter === filter.value
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {filter.label}
+            </button>
+          ))}
         </div>
         {unreadCount > 0 ? (
           <button
@@ -643,26 +622,9 @@ export const NotificationFeedPanel = ({
           </button>
         ) : null}
       </div>
-      <div className="flex items-center gap-2 overflow-x-auto py-3">
-        {map(NOTIFICATION_FILTERS, (filter) => (
-          <button
-            key={filter.value}
-            type="button"
-            onClick={() => setActiveFilter(filter.value)}
-            className={cn(
-              "whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] transition-colors",
-              activeFilter === filter.value
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border bg-transparent text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {filter.label}
-          </button>
-        ))}
-      </div>
       <div
         className={cn(
-          "min-h-0 flex-1 space-y-2 overflow-y-auto pr-1",
+          "mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1",
           contentClassName,
         )}
       >
@@ -762,8 +724,23 @@ const NotificationCenter = ({ className, ...props }) => {
           ) : null}
         </Button>
 
-        <DrawerContent>
-          <DrawerHeader>
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:h-[min(82vh,42rem)]">
+          <DrawerHeader className="relative px-14 pb-4 pt-7">
+            {canOpenSettings ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Bildirishnoma sozlamalari"
+                className="absolute right-4 top-4 size-9 rounded-full border border-border/70 bg-card/80"
+                onClick={() => {
+                  setOpen(false);
+                  setSettingsOpen(true);
+                }}
+              >
+                <SettingsIcon className="size-4" />
+              </Button>
+            ) : null}
             <DrawerTitle>Bildirishnomalar</DrawerTitle>
             <DrawerDescription>
               So&apos;nggi signal va eslatmalar shu yerda ko&apos;rinadi.
@@ -772,7 +749,7 @@ const NotificationCenter = ({ className, ...props }) => {
           <DrawerBody>
             <NotificationFeedPanel
               model={model}
-              contentClassName="max-h-[50vh]"
+              contentClassName="h-full"
               showSettingsAction={false}
               onSelectNotification={(notification) => {
                 setOpen(false);
@@ -780,20 +757,6 @@ const NotificationCenter = ({ className, ...props }) => {
               }}
             />
           </DrawerBody>
-          {canOpenSettings ? (
-            <DrawerFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setOpen(false);
-                  setSettingsOpen(true);
-                }}
-              >
-                Bildirishnoma sozlamalari
-              </Button>
-            </DrawerFooter>
-          ) : null}
         </DrawerContent>
       </Drawer>
 

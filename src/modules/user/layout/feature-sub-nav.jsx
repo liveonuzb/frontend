@@ -1,7 +1,6 @@
 import React from "react";
 import { NavLink, useLocation } from "react-router";
 import { cn } from "@/lib/utils";
-import { useMobileChromeHidden } from "@/hooks/app/use-mobile-chrome-hidden";
 
 import { map } from "lodash";
 
@@ -21,7 +20,6 @@ const FeatureSubNav = ({
   variant = "default",
 }) => {
   const { pathname } = useLocation();
-  const mobileChromeHidden = useMobileChromeHidden();
   const isNutrition = variant === "nutrition";
 
   return (
@@ -29,7 +27,7 @@ const FeatureSubNav = ({
       aria-label={ariaLabel}
       className={cn(
         mobile && "sticky top-0 z-30 w-full pt-1 transition-[top] duration-200",
-        mobile && (mobileChromeHidden ? "top-1" : "top-[68px]"),
+        mobile && "top-1",
         className,
       )}
     >

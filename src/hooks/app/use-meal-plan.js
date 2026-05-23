@@ -7,7 +7,7 @@ import {
   usePostQuery,
   usePutQuery,
 } from "@/hooks/api";
-import { useAiCreditInvalidation } from "@/hooks/app/use-ai-credits";
+import { useAiAccessInvalidation } from "@/hooks/app/use-ai-access";
 
 export const MEAL_PLAN_QUERY_KEY = ["meal-plans", "me"];
 export const MEAL_PLAN_TEMPLATES_QUERY_KEY = ["meal-plans", "templates"];
@@ -128,7 +128,7 @@ const syncMealPlanCache = (queryClient, response) => {
 export const useMealPlan = (options = {}) => {
   const enabled = options.enabled ?? true;
   const queryClient = useQueryClient();
-  const { invalidateAiCredits } = useAiCreditInvalidation();
+  const { invalidateAiAccess } = useAiAccessInvalidation();
   const { data, ...query } = useGetQuery({
     url: "/meal-plans/me",
     queryProps: {
@@ -220,10 +220,10 @@ export const useMealPlan = (options = {}) => {
         attributes: payload,
       });
       const nextState = syncMealPlanCache(queryClient, response);
-      await invalidateAiCredits();
+      await invalidateAiAccess();
       return nextState;
     },
-    [generateAiMutation, invalidateAiCredits, queryClient],
+    [generateAiMutation, invalidateAiAccess, queryClient],
   );
 
   const applyTemplatePlan = React.useCallback(

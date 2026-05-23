@@ -12,9 +12,8 @@ vi.mock("@/hooks/api/use-api", () => ({
 }));
 
 import {
-  AI_CREDIT_COSTS_QUERY_KEY,
-  AI_CREDIT_WALLET_QUERY_KEY,
-} from "@/hooks/app/use-ai-credits";
+  AI_USAGE_STATUS_QUERY_KEY,
+} from "@/hooks/app/use-ai-access";
 import {
   USER_AI_REPORT_QUERY_KEY,
   useGenerateUserAiReport,
@@ -30,7 +29,7 @@ describe("useGenerateUserAiReport", () => {
     vi.clearAllMocks();
   });
 
-  it("invalidates report and AI credit caches after successful generation", async () => {
+  it("invalidates report and AI access status after successful generation", async () => {
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
@@ -66,10 +65,7 @@ describe("useGenerateUserAiReport", () => {
       queryKey: [...USER_AI_REPORT_QUERY_KEY, "limits"],
     });
     expect(invalidateSpy).toHaveBeenCalledWith({
-      queryKey: AI_CREDIT_WALLET_QUERY_KEY,
-    });
-    expect(invalidateSpy).toHaveBeenCalledWith({
-      queryKey: AI_CREDIT_COSTS_QUERY_KEY,
+      queryKey: AI_USAGE_STATUS_QUERY_KEY,
     });
   });
 });

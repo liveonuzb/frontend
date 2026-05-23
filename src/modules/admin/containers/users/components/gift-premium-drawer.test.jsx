@@ -80,7 +80,7 @@ describe("GiftPremiumDrawer", () => {
     mutateAsyncMock.mockResolvedValue({});
   });
 
-  it("sends the default 300 AI credit bonus with a premium gift", async () => {
+  it("sends premium gift payload without AI bonus fields", async () => {
     render(
       <GiftPremiumDrawer user={user} open onOpenChange={vi.fn()} />,
     );
@@ -93,20 +93,25 @@ describe("GiftPremiumDrawer", () => {
         url: "/admin/users/user-1/gift-premium",
         attributes: expect.objectContaining({
           planSlug: "premium",
-          aiCredits: 300,
         }),
       });
+      expect(mutateAsyncMock.mock.calls[0][0].attributes).not.toHaveProperty(
+        "aiCredits",
+      );
     });
   });
 
-  it("sends the custom AI credit amount selected by admin", async () => {
+  it("sends optional note and days with premium gift", async () => {
     render(
       <GiftPremiumDrawer user={user} open onOpenChange={vi.fn()} />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Premium plan tanlash" }));
-    fireEvent.change(screen.getByLabelText("AI kredit bonusi"), {
-      target: { value: "450" },
+    fireEvent.change(screen.getByLabelText("Kunlar soni (ixtiyoriy)"), {
+      target: { value: "45" },
+    });
+    fireEvent.change(screen.getByLabelText("Izoh (ixtiyoriy)"), {
+      target: { value: "Welcome" },
     });
     fireEvent.click(screen.getByRole("button", { name: /Sovg'a qilish/i }));
 
@@ -115,7 +120,8 @@ describe("GiftPremiumDrawer", () => {
         url: "/admin/users/user-1/gift-premium",
         attributes: expect.objectContaining({
           planSlug: "premium",
-          aiCredits: 450,
+          days: 45,
+          note: "Welcome",
         }),
       });
     });

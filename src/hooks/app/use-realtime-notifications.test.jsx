@@ -69,8 +69,8 @@ vi.mock("@/hooks/app/use-profile-settings", () => ({
   ME_QUERY_KEY: ["me"],
 }));
 
-vi.mock("@/hooks/app/use-ai-credits", () => ({
-  AI_CREDIT_WALLET_QUERY_KEY: ["user", "ai-credits", "me"],
+vi.mock("@/hooks/app/use-ai-access", () => ({
+  AI_USAGE_STATUS_QUERY_KEY: ["user", "ai-usage", "status"],
 }));
 
 const Harness = () => {
@@ -86,7 +86,7 @@ describe("useRealtimeNotifications", () => {
     });
   });
 
-  it("connects to the shared socket and invalidates notification, premium, profile, and AI credit data", async () => {
+  it("connects to the shared socket and invalidates notification, premium, profile, and AI access data", async () => {
     render(<Harness />);
 
     expect(initSocketMock).toHaveBeenCalledTimes(1);
@@ -108,7 +108,7 @@ describe("useRealtimeNotifications", () => {
         queryKey: ["me"],
       });
       expect(invalidateQueriesMock).toHaveBeenCalledWith({
-        queryKey: ["user", "ai-credits", "me"],
+        queryKey: ["user", "ai-usage", "status"],
       });
     });
   });

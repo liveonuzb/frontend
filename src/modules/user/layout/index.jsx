@@ -20,6 +20,7 @@ import NotificationCenter from "@/components/notification-center";
 import KeyboardShortcutsProvider from "@/components/keyboard-shortcuts";
 import { useAddMealOverlayStore, useAuthStore } from "@/store";
 import MobileNav from "./mobile-nav.jsx";
+import MobileSidebarEdgeSwipe from "./mobile-sidebar-edge-swipe.jsx";
 import PullToRefresh from "@/components/pull-to-refresh";
 import LayoutHeader from "@/components/layout-header.jsx";
 import { useMobileChromeHidden } from "@/hooks/app/use-mobile-chrome-hidden";
@@ -52,7 +53,7 @@ const NavGroup = ({ label, items, pathname }) => {
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>{label}</SidebarGroupLabel>
+      {/*<SidebarGroupLabel>{label}</SidebarGroupLabel>*/}
       <SidebarGroupContent>
         <SidebarMenu>
           {map(items, (item) => {
@@ -104,11 +105,18 @@ const Index = () => {
   const mobileChromeHidden = useMobileChromeHidden();
   const isMobileChatView = location.pathname.startsWith("/user/chat");
   const isRunningImmersiveRoute = isRunningLiveImmersivePath(location.pathname);
+  const isRunningLiveRoute = location.pathname.startsWith(
+    "/user/workout/running/live",
+  );
+  const isDashboardRoute =
+    location.pathname === "/user/dashboard" ||
+    location.pathname.startsWith("/user/dashboard/");
   const isWorkoutRoute = location.pathname.startsWith("/user/workout");
   const hideMobileNav = shouldHideMobileNavForPath(location.pathname);
   const isFeatureScopedMobileNav =
     location.pathname.startsWith("/user/workout") ||
     location.pathname.startsWith("/user/nutrition");
+  const sharedMobileHeaderClass = "hidden md:block";
   const isAddMealOverlayOpen = useAddMealOverlayStore(
     (state) => state.isActionDrawerOpen,
   );
@@ -179,6 +187,9 @@ const Index = () => {
             </SidebarFooter>
           </Sidebar>
         ) : null}
+        <MobileSidebarEdgeSwipe
+          enabled={!isRunningImmersiveRoute && !isRunningLiveRoute}
+        />
         <SidebarInset
           className={cn(
             "min-w-0 md:overflow-visible",
@@ -191,7 +202,10 @@ const Index = () => {
                 mobileChromeHidden={mobileChromeHidden}
                 user={user}
                 onOpenProfile={() => openProfile(PROFILE_OVERVIEW_TAB)}
-                className={isWorkoutRoute ? "workout-layout-header" : undefined}
+                className={cn(
+                  isWorkoutRoute ? "workout-layout-header" : undefined,
+                  sharedMobileHeaderClass,
+                )}
                 desktopRightContent={
                   <>
                     <NotificationCenter />
@@ -218,7 +232,10 @@ const Index = () => {
               mobileChromeHidden={mobileChromeHidden}
               user={user}
               onOpenProfile={() => openProfile(PROFILE_OVERVIEW_TAB)}
-              className={isWorkoutRoute ? "workout-layout-header" : undefined}
+              className={cn(
+                isWorkoutRoute ? "workout-layout-header" : undefined,
+                sharedMobileHeaderClass,
+              )}
               desktopRightContent={
                 <>
                   <NotificationCenter />
@@ -241,15 +258,18 @@ const Index = () => {
             />
           )}
           <div
+            data-testid="user-layout-content"
             className={cn(
               "relative min-w-0 flex-1 md:mt-0 md:overflow-visible md:p-6 md:pb-3",
               isRunningImmersiveRoute
                 ? "mt-0 overflow-visible p-0 pb-0 md:p-0 md:pb-0"
                 : isMobileChatView
                   ? "mt-0 p-0 pb-0"
+                : isDashboardRoute
+                  ? "mt-0 overflow-x-auto px-3 pb-12 pt-[max(0.75rem,env(safe-area-inset-top))] md:p-6 md:pb-3"
                   : isFeatureScopedMobileNav
-                    ? "mt-16 overflow-visible p-3 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-3"
-                    : "mt-16 overflow-x-auto p-3 pb-12",
+                    ? "mt-0 overflow-visible p-3 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))] md:pb-3"
+                    : "mt-0 overflow-x-auto px-3 pb-12 pt-[max(0.75rem,env(safe-area-inset-top))]",
             )}
           >
             <PullToRefresh

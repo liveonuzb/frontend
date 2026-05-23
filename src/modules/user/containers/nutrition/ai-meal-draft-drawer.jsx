@@ -25,14 +25,12 @@ import {
   updateMealIngredient,
 } from "./meal-ingredients.js";
 import SaveToMyMealsButton from "./save-to-my-meals-button.jsx";
-import { AiCreditStatusText } from "@/components/ai-credits";
+import { AiAccessStatusText } from "@/components/ai-access";
 import {
-  AI_CREDIT_FEATURES,
-  getAiCreditStatus,
-  isAiCreditsExhaustedError,
-  useAiCreditCosts,
-  useAiCreditWallet,
-} from "@/hooks/app/use-ai-credits";
+  getAiAccessStatus,
+  isAiAccessLimitError,
+  useAiAccessStatus,
+} from "@/hooks/app/use-ai-access";
 
 import { filter, isArray, map, trim } from "lodash";
 
@@ -88,16 +86,9 @@ export default function AiMealDraftDrawer({
   const { createSavedMeal } = useSavedMealsActions();
   const { analyzeMealTextDraft } = useFoodScan();
   const { goals } = useHealthGoals();
-  const { wallet: aiCreditWallet } = useAiCreditWallet();
-  const { costs: aiCreditCosts } = useAiCreditCosts();
-  const aiCreditFeature =
-    inputSource === "audio"
-      ? AI_CREDIT_FEATURES.voiceMealLog
-      : AI_CREDIT_FEATURES.textMealLog;
-  const aiCreditStatus = getAiCreditStatus({
-    wallet: aiCreditWallet,
-    costs: aiCreditCosts,
-    feature: aiCreditFeature,
+  const { access: aiAccess } = useAiAccessStatus();
+  const aiAccessStatus = getAiAccessStatus({
+    access: aiAccess,
   });
   const loggedAtHintLabel = React.useMemo(
     () => formatLoggedAtHint(loggedAtHint),
@@ -137,8 +128,8 @@ export default function AiMealDraftDrawer({
         toast.error("Ovqat matnini kiriting");
         return;
       }
-      if (aiCreditStatus.isDisabled) {
-        toast.error("AI kreditlaringiz yetarli emas. Meal log tahlili uchun kredit kerak.");
+      if (aiAccessStatus.isDisabled) {
+        toast.error("Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin.");
         return;
       }
 
@@ -158,8 +149,8 @@ export default function AiMealDraftDrawer({
           setAnalysisError("AI bu matndan draft tayyorlay olmadi.");
         }
       } catch (error) {
-        const message = isAiCreditsExhaustedError(error)
-          ? "AI kreditlaringiz yetarli emas. Meal log tahlili uchun kredit kerak."
+        const message = isAiAccessLimitError(error)
+          ? "Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin."
           : error?.response?.data?.error?.message ||
             error?.response?.data?.message ||
             "Matnni AI orqali tahlil qilib bo'lmadi";
@@ -169,7 +160,7 @@ export default function AiMealDraftDrawer({
         setIsAnalyzing(false);
       }
     },
-    [aiCreditStatus.isDisabled, analyzeMealTextDraft, inputSource, sourceText],
+    [aiAccessStatus.isDisabled, analyzeMealTextDraft, inputSource, sourceText],
   );
 
   React.useEffect(() => {
@@ -358,10 +349,8 @@ export default function AiMealDraftDrawer({
             </p>
           </div>
         ) : null}
-        <AiCreditStatusText
-          feature={aiCreditFeature}
-          wallet={aiCreditWallet}
-          costs={aiCreditCosts}
+        <AiAccessStatusText
+          access={aiAccess}
         />
       </DrawerHeader>
       <DrawerBody className="p-0">
@@ -428,7 +417,7 @@ export default function AiMealDraftDrawer({
         <Button
           type="button"
           variant="outline"
-          disabled={!sourceText || isAnalyzing || isSaving || aiCreditStatus.isDisabled}
+          disabled={!sourceText || isAnalyzing || isSaving || aiAccessStatus.isDisabled}
           onClick={() => void handleAnalyze()}
         >
           {isAnalyzing ? (

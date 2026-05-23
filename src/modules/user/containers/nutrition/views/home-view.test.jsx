@@ -5,15 +5,12 @@ import { describe, expect, it, vi } from "vitest";
 import NutritionHomeView from "./home-view.jsx";
 
 vi.mock("@/components/calorie-gauge-widget", () => ({
-  default: () => (
+  default: ({ showCalorieModeToggle }) => (
     <section aria-label="calorie-card">
       <h2>Bugungi Kaloriya</h2>
+      {showCalorieModeToggle ? <button type="button">Qolgan</button> : null}
     </section>
   ),
-}));
-
-vi.mock("../nutrition-header.jsx", () => ({
-  NutritionDatePicker: () => <div>Sana tanlash</div>,
 }));
 
 vi.mock("../nutrition-plans-section.jsx", () => ({
@@ -82,8 +79,14 @@ describe("NutritionHomeView", () => {
 
     expectBefore(calorieGauge, screen.getByText("Kunlik health score"));
     expectBefore(calorieGauge, screen.getByText("Suv progress"));
-    expectBefore(calorieGauge, screen.getByText("Makro balans"));
-    expectBefore(calorieGauge, screen.getByText("Tez harakatlar"));
+    expectBefore(calorieGauge, screen.getByText("Bugungi ovqatlar"));
+    expect(screen.getByText("Target: 2,200 kcal")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Qolgan" })).toBeInTheDocument();
+    expect(screen.queryByText("+900 kcal")).not.toBeInTheDocument();
+    expect(screen.queryByText("Makro balans")).not.toBeInTheDocument();
+    expect(screen.queryByText("Tez harakatlar")).not.toBeInTheDocument();
+    expect(screen.queryByText("Home")).not.toBeInTheDocument();
+    expect(screen.queryByText("Sana tanlash")).not.toBeInTheDocument();
   });
 
   it("removes goal update entry points from the home view", () => {
@@ -96,7 +99,9 @@ describe("NutritionHomeView", () => {
       screen.queryByRole("button", { name: /^Maqsad$/i }),
     ).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /Ovqat qo'shish/i }).length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: /Suv qo'shish/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Ovqat rejasini ko'rish/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Suv qo'shish/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Og'irlik yozish/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Ovqat rejasini ko'rish/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Hisobotlar/i })).not.toBeInTheDocument();
   });
 });

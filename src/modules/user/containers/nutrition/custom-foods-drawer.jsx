@@ -12,7 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Slider } from "@/components/ui/slider";
 import {
   NumberField,
   NumberFieldDecrement,
@@ -28,7 +27,6 @@ import {
   CameraIcon,
   ImageIcon,
   Loader2Icon,
-  ArrowLeftIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -40,7 +38,8 @@ import {
 } from "@/hooks/api";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { NutritionDrawerContent } from "./nutrition-drawer-layout.jsx";
-import GaugeProgress from "@/components/meal-plan-builder/gauge-progress.jsx";
+import useHealthGoals from "@/hooks/app/use-health-goals";
+import FoodDetailPortionDrawer from "./food-detail-portion-drawer.jsx";
 
 const CUSTOM_FOODS_KEY = ["me", "custom-foods"];
 
@@ -377,6 +376,7 @@ const CustomFoodsDrawer = ({
   // Portion editor state
   const [portionItem, setPortionItem] = useState(null);
   const [portionGrams, setPortionGrams] = useState(100);
+  const { goals } = useHealthGoals();
 
   const { data, isLoading } = useGetQuery({
     url: "/users/me/custom-foods",
@@ -442,22 +442,26 @@ const CustomFoodsDrawer = ({
     setPortionGrams(item.servingSize || 100);
   };
 
-  const handleLog = async () => {
+  const handleLog = async (payload = {}) => {
     if (!onAddMeal || !dateKey || !mealType || !portionItem) return;
     const item = portionItem;
+    const selectedGrams = payload.grams ?? portionGrams;
+    const macros = payload.macros || scaleToGrams(item, selectedGrams);
+    const selectedIngredients = payload.ingredients ?? item.ingredients ?? [];
     setLoggingId(item.id);
     try {
-      const macros = scaleToGrams(item, portionGrams);
       await onAddMeal(dateKey, mealType, {
         name: item.name,
         cal: macros.cal,
         protein: macros.protein,
         carbs: macros.carbs,
         fat: macros.fat,
-        grams: portionGrams,
+        fiber: macros.fiber,
+        grams: selectedGrams,
         unit: item.servingUnit ?? "g",
         image: item.imageUrl || null,
         source: "manual",
+        ingredients: selectedIngredients,
       });
       toast.success(`${item.name} qo'shildi`);
       setPortionItem(null);
@@ -474,8 +478,20 @@ const CustomFoodsDrawer = ({
     setEditingItem(null);
   };
 
-  const portionMacros = portionItem
-    ? scaleToGrams(portionItem, portionGrams)
+  const portionFood = portionItem
+    ? {
+        ...portionItem,
+        cal: portionItem.calories ?? portionItem.cal ?? 0,
+        baseCal: portionItem.calories ?? portionItem.cal ?? 0,
+        baseProtein: portionItem.protein ?? 0,
+        baseCarbs: portionItem.carbs ?? 0,
+        baseFat: portionItem.fat ?? 0,
+        defaultAmount: portionItem.servingSize || 100,
+        unit: portionItem.servingUnit || "g",
+        serving: `${portionItem.servingSize || 100} ${portionItem.servingUnit || "g"}`,
+        image: portionItem.imageUrl || null,
+        sourceLabel: "Saqlangan taom",
+      }
     : null;
   const sliderMax = portionItem
     ? Math.max((portionItem.servingSize || 100) * 5, 500)
@@ -631,128 +647,29 @@ const CustomFoodsDrawer = ({
         direction="bottom"
       >
         <NutritionDrawerContent size="sm">
-          <DrawerHeader className="relative">
-            <button
-              type="button"
-              onClick={() => setPortionItem(null)}
-              className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center size-8 rounded-full hover:bg-muted transition-colors"
-            >
-              <ArrowLeftIcon className="size-5" />
-            </button>
-            <DrawerTitle>{portionItem?.name}</DrawerTitle>
-            <DrawerDescription>
-              Porsiya hajmini tanlang ({portionItem?.servingUnit || "g"})
-            </DrawerDescription>
-          </DrawerHeader>
-
-          {portionItem ? (
-            <DrawerBody className="space-y-6">
-              {portionItem.imageUrl ? (
-                <div className="h-36 w-full rounded-2xl overflow-hidden bg-muted/30 -mt-2">
-                  <img loading="lazy"
-                    src={portionItem.imageUrl}
-                    alt={portionItem.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ) : null}
-
-              {/* Calorie gauge */}
-              <GaugeProgress
-                value={portionMacros?.cal ?? 0}
-                max={gaugeMax}
-                id={`custom-food-${portionItem.id}`}
-                label="QO'SHILMOQDA"
-              />
-
-              {/* Macro summary */}
-              <div className="rounded-2xl border bg-muted/30 p-4 grid grid-cols-4 gap-2 text-center">
-                <div className="flex flex-col gap-1">
-                  <span className="text-xs text-muted-foreground font-medium">
-                    Kaloriya
-                  </span>
-                  <span className="text-base font-black text-foreground">
-                    {portionMacros?.cal}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">
-                    kcal
-                  </span>
-                </div>
-                <div className="flex flex-col gap-1 border-l border-border/40">
-                  <span className="text-xs text-muted-foreground font-medium">
-                    Oqsil
-                  </span>
-                  <span className="text-base font-black text-red-500">
-                    {portionMacros?.protein}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">g</span>
-                </div>
-                <div className="flex flex-col gap-1 border-l border-border/40">
-                  <span className="text-xs text-muted-foreground font-medium">
-                    Uglevod
-                  </span>
-                  <span className="text-base font-black text-amber-500">
-                    {portionMacros?.carbs}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">g</span>
-                </div>
-                <div className="flex flex-col gap-1 border-l border-border/40">
-                  <span className="text-xs text-muted-foreground font-medium">
-                    Yog&apos;
-                  </span>
-                  <span className="text-base font-black text-blue-500">
-                    {portionMacros?.fat}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">g</span>
-                </div>
-              </div>
-
-              {/* Amount slider */}
-              <div className="space-y-3">
-                <div className="flex justify-between items-center px-1">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    Miqdori:
-                  </span>
-                  <span className="text-2xl font-black text-primary">
-                    {portionGrams}
-                    <span className="text-sm font-semibold text-muted-foreground ml-1">
-                      {portionItem.servingUnit || "g"}
-                    </span>
-                  </span>
-                </div>
-                <Slider
-                  value={[portionGrams]}
-                  min={sliderStep}
-                  max={sliderMax}
-                  step={sliderStep}
-                  onValueChange={([v]) => setPortionGrams(v)}
-                  className="py-4"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground px-1">
-                  <span>
-                    {sliderStep}
-                    {portionItem.servingUnit || "g"}
-                  </span>
-                  <span>
-                    {sliderMax}
-                    {portionItem.servingUnit || "g"}
-                  </span>
-                </div>
-              </div>
-            </DrawerBody>
-          ) : null}
-
-          <DrawerFooter>
-            <Button variant="outline" onClick={() => setPortionItem(null)}>
-              Bekor qilish
-            </Button>
-            <Button
-              disabled={loggingId === portionItem?.id}
-              onClick={handleLog}
-            >
-              {loggingId === portionItem?.id ? "Qo'shilmoqda…" : "Qo'shish"}
-            </Button>
-          </DrawerFooter>
+          <FoodDetailPortionDrawer
+            item={portionFood}
+            type="food"
+            grams={portionGrams}
+            goals={goals}
+            ingredients={portionItem?.ingredients}
+            onGramsChange={setPortionGrams}
+            onSave={handleLog}
+            isSaving={loggingId === portionItem?.id}
+            macroCalculator={(food, amount) =>
+              scaleToGrams(
+                {
+                  ...food,
+                  calories: food.calories ?? food.cal ?? 0,
+                  servingSize: food.servingSize || food.defaultAmount || 100,
+                },
+                amount,
+              )
+            }
+            sliderMax={sliderMax}
+            sliderStep={sliderStep}
+            gaugeMax={gaugeMax}
+          />
         </NutritionDrawerContent>
       </Drawer>
     </>

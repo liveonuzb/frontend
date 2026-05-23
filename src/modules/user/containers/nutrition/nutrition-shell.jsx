@@ -8,7 +8,6 @@ import { includes } from "lodash";
 const PRIMARY_TAB_PATHS = [
   "/user/nutrition/home",
   "/user/nutrition/plans",
-  "/user/nutrition/meals",
   "/user/nutrition/history",
   "/user/nutrition/report",
 ];

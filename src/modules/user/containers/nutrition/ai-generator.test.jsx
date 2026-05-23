@@ -24,32 +24,29 @@ vi.mock("@/components/ui/drawer", () => ({
   DrawerTitle: ({ children }) => <h2>{children}</h2>,
 }));
 
-vi.mock("@/hooks/app/use-ai-credits", async () => {
-  const actual = await vi.importActual("@/hooks/app/use-ai-credits");
+vi.mock("@/hooks/app/use-ai-access", async () => {
+  const actual = await vi.importActual("@/hooks/app/use-ai-access");
 
   return {
     ...actual,
-    useAiCreditWallet: () => ({
+    useAiAccessStatus: () => ({
       wallet: {
-        remaining: 4,
-        isExhausted: false,
+        status: "trial_active",
+        dailyLimit: 3,
+        remainingToday: 0,
       },
-    }),
-    useAiCreditCosts: () => ({
-      costs: {
-        [actual.AI_CREDIT_FEATURES.mealPlan7Day]: 5,
-      },
+      costs: {},
     }),
   };
 });
 
-describe("AIGenerator AI credits", () => {
-  it("shows plan cost and disables generation when credits are insufficient", () => {
+describe("AIGenerator AI access", () => {
+  it("shows daily limit status and disables generation when quota is exhausted", () => {
     render(<AIGenerator onClose={vi.fn()} onGenerated={vi.fn()} />);
 
     fireEvent.click(screen.getByText("Vazn yo'qotish"));
 
-    expect(screen.getByText("5 AI | 4 left")).toBeInTheDocument();
+    expect(screen.getByText("Bugun 0/3 qoldi")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Rejani yaratish/i })).toBeDisabled();
     expect(generateAiPlan).not.toHaveBeenCalled();
   });

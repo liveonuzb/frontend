@@ -28,7 +28,6 @@ import {
   MEAL_TYPES,
 } from "@/modules/user/lib/meal-config";
 import NutritionHomeView from "./views/home-view.jsx";
-import NutritionMealsView from "./views/meals-view.jsx";
 import NutritionPlansView from "./views/plans-view.jsx";
 import NutritionReportView from "./views/report-view.jsx";
 import NutritionDrawers from "./nutrition-drawers.jsx";
@@ -1032,11 +1031,9 @@ const NutritionContent = ({ entryView = "home" }) => {
     const breadcrumbTitle =
       entryView === "plans"
         ? "Ovqatlanish rejalari"
-        : entryView === "meals"
-          ? "Ovqatlar"
-          : entryView === "report"
-            ? "Ovqatlanish hisobotlari"
-            : "Ovqatlanish";
+        : entryView === "report"
+          ? "Ovqatlanish hisobotlari"
+          : "Ovqatlanish";
 
     setBreadcrumbs([
       { url: "/user", title: "Bosh sahifa" },
@@ -1761,8 +1758,6 @@ const NutritionContent = ({ entryView = "home" }) => {
           onCreateFromTemplate={handleOpenTemplateLibrary}
           onRescalePlanCalories={handleRescaleCurrentPlan}
         />
-      ) : entryView === "meals" ? (
-        <NutritionMealsView {...sharedViewProps} />
       ) : (
         <NutritionHomeView {...sharedViewProps} />
       )}

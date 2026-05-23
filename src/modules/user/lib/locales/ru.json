@@ -3,6 +3,7 @@
     "dashboard": {
       "title": "Главная",
       "greeting": "Привет, {{name}}!",
+      "mobileGreeting": "Привет",
       "quote": "Мотивация дня",
       "accept": "Принять",
       "decline": "Отклонить",

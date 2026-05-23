@@ -5,7 +5,6 @@ import NutritionShell from "./nutrition-shell.jsx";
 
 const NutritionHomePage = lazy(() => import("./home/index.jsx"));
 const NutritionPlansPage = lazy(() => import("./plans/index.jsx"));
-const NutritionMealsPage = lazy(() => import("./meals/index.jsx"));
 const NutritionHistoryPage = lazy(() => import("./history/index.jsx"));
 const NutritionReportPage = lazy(() => import("./report/index.jsx"));
 
@@ -20,7 +19,6 @@ const NutritionRoutes = () => {
         <Route index element={<Navigate to="home" replace />} />
         <Route path="home" element={withSuspense(<NutritionHomePage />)} />
         <Route path="plans" element={withSuspense(<NutritionPlansPage />)} />
-        <Route path="meals" element={withSuspense(<NutritionMealsPage />)} />
         <Route path="history" element={withSuspense(<NutritionHistoryPage />)} />
         <Route path="report" element={withSuspense(<NutritionReportPage />)} />
       </Route>

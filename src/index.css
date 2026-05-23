@@ -74,7 +74,8 @@ html[data-telegram-webapp="true"] {
     var(
         --tg-content-safe-area-inset-bottom,
         var(--tg-safe-area-inset-bottom, 0px)
-      ) + 1rem
+      ) +
+      1rem
   );
 }
 
@@ -909,4 +910,24 @@ html {
 
 .workout-page-surface .workout-muted {
   color: var(--workout-muted);
+}
+
+.scroll-mask-x {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 5%,
+    black 95%,
+    transparent
+  );
+}
+
+.scroll-mask-y {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    black 5%,
+    black 95%,
+    transparent
+  );
 }

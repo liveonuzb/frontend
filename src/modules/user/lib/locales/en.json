@@ -3,6 +3,7 @@
     "dashboard": {
       "title": "Dashboard",
       "greeting": "Hello, {{name}}!",
+      "mobileGreeting": "Hello",
       "quote": "Daily motivation",
       "accept": "Accept",
       "decline": "Decline",

@@ -3,7 +3,6 @@ import {
   ClipboardListIcon,
   HistoryIcon,
   HouseIcon,
-  SoupIcon,
 } from "lucide-react";
 
 export const NUTRITION_NAV_ITEMS = [
@@ -19,12 +18,6 @@ export const NUTRITION_NAV_ITEMS = [
     label: "Plans",
     icon: ClipboardListIcon,
     match: (pathname) => pathname.startsWith("/user/nutrition/plans"),
-  },
-  {
-    to: "/user/nutrition/meals",
-    label: "Meals",
-    icon: SoupIcon,
-    match: (pathname) => pathname.startsWith("/user/nutrition/meals"),
   },
   {
     to: "/user/nutrition/history",

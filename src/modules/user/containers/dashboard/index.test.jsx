@@ -1,10 +1,11 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import DashboardContainer from "./index.jsx";
 
 const mocks = vi.hoisted(() => ({
   calendarBottomDrawer: vi.fn(),
+  openProfile: vi.fn(),
 }));
 
 vi.mock("react-i18next", () => ({
@@ -12,7 +13,12 @@ vi.mock("react-i18next", () => ({
     type: "3rdParty",
     init: vi.fn(),
   },
-  useTranslation: () => ({ t: (key) => key }),
+  useTranslation: () => ({
+    t: (key) =>
+      ({
+        "user.dashboard.mobileGreeting": "Salom",
+      })[key] ?? key,
+  }),
 }));
 
 vi.mock("@/store", () => ({
@@ -31,9 +37,30 @@ vi.mock("@/components/calendar-bottom-drawer.jsx", () => ({
   },
 }));
 
+vi.mock("@/components/notification-center", () => ({
+  default: () => (
+    <button type="button" data-testid="notification-center">
+      Notifications
+    </button>
+  ),
+}));
+
+vi.mock("@/modules/profile/hooks/use-profile-overlay", () => ({
+  PROFILE_OVERVIEW_TAB: "overview",
+  useProfileOverlay: () => ({
+    openProfile: mocks.openProfile,
+  }),
+}));
+
 vi.mock("./use-dashboard-data.js", () => ({
   default: () => ({
-    user: null,
+    user: {
+      firstName: "Fazliddin",
+      lastName: "Liveon",
+      username: "fazliddin",
+      avatar: "",
+      currentStreak: 7,
+    },
     dayData: { meals: {} },
     goalsState: { goals: { calories: 2000 } },
     measurementSnapshot: null,
@@ -106,6 +133,11 @@ vi.mock("./challenge-reminder-drawer.jsx", () => ({ default: () => null }));
 vi.mock("./challenge-completion-drawer.jsx", () => ({ default: () => null }));
 
 describe("DashboardContainer", () => {
+  beforeEach(() => {
+    mocks.calendarBottomDrawer.mockClear();
+    mocks.openProfile.mockClear();
+  });
+
   it("keeps the top card row at the target desktop height", () => {
     render(<DashboardContainer />);
 
@@ -114,10 +146,47 @@ describe("DashboardContainer", () => {
     );
   });
 
+  it("shows a mobile profile greeting before notification and calendar actions", () => {
+    render(<DashboardContainer />);
+
+    const topBar = screen.getByTestId("dashboard-mobile-top-bar");
+    const profileButton = screen.getByRole("button", {
+      name: /Profilni ochish/i,
+    });
+    const notificationButton = within(topBar).getByTestId(
+      "notification-center",
+    );
+    const calendarButton = within(topBar).getByRole("button", {
+      name: /Sana tanlash/i,
+    });
+
+    expect(topBar).toHaveClass("md:hidden");
+    expect(screen.getByTestId("dashboard-mobile-greeting-line")).toHaveTextContent(
+      "Salom Fazliddin Liveon",
+    );
+    const streakRow = screen.getByTestId("dashboard-mobile-streak");
+    expect(streakRow).toHaveTextContent("7 kun");
+    expect(streakRow.querySelector(".lucide-flame")).toBeInTheDocument();
+    expect(
+      profileButton.compareDocumentPosition(notificationButton) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      notificationButton.compareDocumentPosition(calendarButton) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    fireEvent.click(profileButton);
+
+    expect(mocks.openProfile).toHaveBeenCalledWith("overview");
+  });
+
   it("opens the calendar bottom drawer from the dashboard date button", () => {
     render(<DashboardContainer />);
 
-    const dateButton = screen.getByRole("button", { name: /Sana tanlash/i });
+    const dateButton = within(
+      screen.getByTestId("dashboard-mobile-top-bar"),
+    ).getByRole("button", { name: /Sana tanlash/i });
 
     expect(dateButton).toHaveTextContent("");
     expect(

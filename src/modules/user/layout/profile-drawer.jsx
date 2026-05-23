@@ -1,11 +1,10 @@
-import { map, take, find, toUpper, trim, split } from "lodash";
+import { find } from "lodash";
 import React from "react";
-import { ArrowLeftIcon, PencilIcon, XIcon } from "lucide-react";
+import { ArrowLeftIcon } from "lucide-react";
 import { useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerHeader,
@@ -20,38 +19,31 @@ import {
   PROFILE_OVERVIEW_TAB,
   useProfileOverlay,
 } from "@/modules/profile/hooks/use-profile-overlay";
-import { useAuthStore } from "@/store";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { isProfileNestedDrawerTab } from "@/modules/profile/lib/profile-tab-registry";
+import { cn } from "@/lib/utils";
 
 const ProfileDrawer = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const user = useAuthStore((state) => state.user);
   const { isProfileOpen, activeProfileTab, closeProfile, setProfileTab } =
     useProfileOverlay();
 
   const { t } = useTranslation();
-  const isOverview = activeProfileTab === PROFILE_OVERVIEW_TAB;
+  const visibleProfileTab = isProfileNestedDrawerTab(activeProfileTab)
+    ? PROFILE_OVERVIEW_TAB
+    : activeProfileTab;
+  const isOverview = visibleProfileTab === PROFILE_OVERVIEW_TAB;
   const tabs = React.useMemo(() => getProfileTabs(t), [t]);
   const activeTabConfig = React.useMemo(
-    () => find(tabs, (tab) => tab.id === activeProfileTab) ?? null,
-    [activeProfileTab, tabs],
+    () => find(tabs, (tab) => tab.id === visibleProfileTab) ?? null,
+    [tabs, visibleProfileTab],
   );
 
-  const displayName =
-    trim(`${user?.firstName || ""} ${user?.lastName || ""}`) ||
-    user?.username ||
-    "Foydalanuvchi";
-  const initials = toUpper(take(
-    map(split(displayName, " "), (part) => part[0]),
-    2,
-  )
-    .join(""));
   const activeTitle = isOverview
-    ? displayName
-    : activeTabConfig?.label ?? t("profile.title");
+    ? "Profile"
+    : activeTabConfig?.label ?? "Profile";
   const activeDescription = isOverview
-    ? t("profile.edit")
+    ? t("profile.subtitle")
     : activeTabConfig?.description ?? t("profile.subtitle");
 
   const handleBack = React.useCallback(() => {
@@ -70,6 +62,7 @@ const ProfileDrawer = () => {
 
   return (
     <Drawer
+      direction="bottom"
       open={isProfileOpen}
       onOpenChange={(open) => {
         if (!open) {
@@ -78,34 +71,28 @@ const ProfileDrawer = () => {
       }}
     >
       <DrawerContent
-        className="data-[vaul-drawer-direction=right]:w-full data-[vaul-drawer-direction=right]:sm:max-w-md"
+        className="data-[vaul-drawer-direction=bottom]:!mx-auto data-[vaul-drawer-direction=bottom]:!max-w-md"
         data-vaul-no-drag
       >
-        {/* Header */}
-        <DrawerHeader className="px-4 py-5 shrink-0 h-20 flex justify-center">
-          <div className="flex items-center justify-between gap-2">
-            {/* Left: back button */}
+        <DrawerHeader
+          className={cn(
+            "px-4 shrink-0 flex justify-center",
+            isOverview ? "h-14 py-3" : "h-20 py-5",
+          )}
+        >
+          <div className="relative flex w-full items-center justify-center gap-2">
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              className="shrink-0 rounded-full"
+              className="absolute left-0 shrink-0 rounded-full"
               onClick={handleBack}
             >
               <ArrowLeftIcon className="size-5" />
             </Button>
 
-            {/* Center: avatar (overview only) + title + description */}
-            <div className="flex flex-1 items-center gap-2.5 min-w-0">
-              {isOverview ? (
-                <Avatar className="size-10 shrink-0 border">
-                  <AvatarImage src={user?.avatar} alt={displayName} />
-                  <AvatarFallback className="text-xs font-semibold">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
-              ) : null}
-              <div className="flex flex-col min-w-0">
+            {!isOverview ? (
+              <div className="flex min-w-0 flex-col px-12 text-center">
                 <DrawerTitle className="truncate text-sm font-semibold leading-tight">
                   {activeTitle}
                 </DrawerTitle>
@@ -113,32 +100,17 @@ const ProfileDrawer = () => {
                   {activeDescription}
                 </DrawerDescription>
               </div>
-            </div>
+            ) : (
+              <div className="min-w-0 px-12 text-center">
+                <DrawerTitle className="truncate text-base font-semibold">
+                  {activeTitle}
+                </DrawerTitle>
+                <DrawerDescription className="sr-only">
+                  {activeDescription}
+                </DrawerDescription>
+              </div>
+            )}
 
-            {/* Right: pencil (overview only) + close */}
-            <div className="flex items-center gap-1">
-              {isOverview ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="shrink-0 rounded-full"
-                  onClick={() => setProfileTab("profile")}
-                >
-                  <PencilIcon className="size-4" />
-                </Button>
-              ) : null}
-              <DrawerClose asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="shrink-0 rounded-full"
-                >
-                  <XIcon className="size-5" />
-                </Button>
-              </DrawerClose>
-            </div>
           </div>
         </DrawerHeader>
 

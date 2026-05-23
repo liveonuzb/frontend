@@ -3,8 +3,8 @@ import { get, map, sumBy, toNumber } from "lodash";
 import { NavLink, useLocation } from "react-router";
 import { cn } from "@/lib/utils";
 import { isNavItemActive } from "@/lib/navigation";
-import { Home2 } from "iconsax-reactjs";
-import { Salad, DumbbellIcon, MessageSquareIcon } from "lucide-react";
+import { Home2, Messages2, Profile } from "iconsax-reactjs";
+import { Salad, DumbbellIcon } from "lucide-react";
 import { useChatStore } from "@/store";
 
 import FloatingActionButton from "@/components/fab";
@@ -41,15 +41,20 @@ const MobileNav = ({ hidden = false }) => {
     {
       to: "/user/chat",
       label: "Chat",
-      icon: MessageSquareIcon,
+      icon: Messages2,
       unreadCount: totalUnread,
+    },
+    {
+      to: `profile=open&profileTab=overview`,
+      label: "Profil",
+      icon: Profile,
     },
   ];
 
   return (
     <div
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-40 flex items-end justify-between px-5 pb-6 pb-safe-or-4 transition-transform duration-200",
+        "fixed bottom-0 left-0 right-0 z-40 flex items-end justify-between px-3 pb-6 pb-safe-or-4 transition-transform duration-200",
         hidden ? "translate-y-[calc(100%+1rem)]" : "translate-y-0",
       )}
     >
@@ -74,18 +79,18 @@ const MobileNav = ({ hidden = false }) => {
               aria-current={isActive ? "page" : undefined}
               className={() =>
                 cn(
-                  "relative flex items-center justify-center rounded-full p-[15px] transition-all duration-200",
+                  "relative flex items-center justify-center rounded-full p-[14px] transition-all duration-200",
                   isActive
-                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                    ? "bg-primary text-white shadow-lg shadow-primary/20"
                     : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
                 )
               }
             >
-              <item.icon className="size-[24px]" />
+              <item.icon className="size-[24px]" strokeWidth={2} />
               {itemUnreadCount > 0 ? (
                 <span
                   aria-hidden="true"
-                  className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground ring-2 ring-background"
+                  className="absolute right-0 top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-white"
                 >
                   {unreadBadge}
                 </span>

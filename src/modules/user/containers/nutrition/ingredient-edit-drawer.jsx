@@ -21,14 +21,12 @@ import { NutritionDrawerContent } from "./nutrition-drawer-layout.jsx";
 import { Loader2Icon, SparklesIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useFoodScan } from "@/hooks/app/use-food-catalog";
-import { AiCreditStatusText } from "@/components/ai-credits";
+import { AiAccessStatusText } from "@/components/ai-access";
 import {
-  AI_CREDIT_FEATURES,
-  getAiCreditStatus,
-  isAiCreditsExhaustedError,
-  useAiCreditCosts,
-  useAiCreditWallet,
-} from "@/hooks/app/use-ai-credits";
+  getAiAccessStatus,
+  isAiAccessLimitError,
+  useAiAccessStatus,
+} from "@/hooks/app/use-ai-access";
 import {
   commitEditedIngredient,
   createMealIngredientId,
@@ -37,6 +35,7 @@ import {
   normalizeMealNutrition,
   toNumber,
 } from "./meal-ingredients.js";
+import NutritionPortionControlCard from "./nutrition-portion-control-card.jsx";
 
 import { map, toNumber as lodashToNumber, trim } from "lodash";
 
@@ -61,6 +60,12 @@ const emptyIngredient = {
   },
 };
 
+const DEFAULT_GOALS = {
+  protein: 0,
+  carbs: 0,
+  fat: 0,
+};
+
 const macroFields = [
   ["calories", "Kcal", 1, 0],
   ["protein", "Oqsil", 0.1, 1],
@@ -82,17 +87,17 @@ export default function IngredientEditDrawer({
   open,
   mode = "edit",
   ingredient,
+  goals = DEFAULT_GOALS,
   onOpenChange,
   onSave,
 }) {
   const isAddMode = mode === "add";
   const { analyzeIngredient, isAnalyzingIngredient } = useFoodScan();
-  const { wallet: aiCreditWallet } = useAiCreditWallet({ enabled: open });
-  const { costs: aiCreditCosts } = useAiCreditCosts({ enabled: open });
-  const aiCreditStatus = getAiCreditStatus({
-    wallet: aiCreditWallet,
-    costs: aiCreditCosts,
-    feature: AI_CREDIT_FEATURES.nutritionAnalysis,
+  const { access: aiAccess } = useAiAccessStatus({
+    enabled: open && isAddMode,
+  });
+  const aiAccessStatus = getAiAccessStatus({
+    access: aiAccess,
   });
   const [draft, setDraft] = React.useState(() =>
     ingredient
@@ -115,6 +120,21 @@ export default function IngredientEditDrawer({
     () => getIngredientNutritionPreview(draft),
     [draft],
   );
+  const previewMacros = React.useMemo(
+    () => ({
+      cal: preview.calories,
+      protein: preview.protein,
+      carbs: preview.carbs,
+      fat: preview.fat,
+      fiber: preview.fiber,
+    }),
+    [preview],
+  );
+  const editGaugeMax = React.useMemo(() => {
+    const calories = Math.max(0, toNumber(preview.calories, 0));
+    const grams = Math.max(1, toNumber(draft.grams, 100));
+    return Math.max(calories, Math.round(calories * (1000 / grams)), 1);
+  }, [draft.grams, preview.calories]);
   const sliderMax = React.useMemo(
     () => getSliderMax(draft.grams),
     [draft.grams],
@@ -144,8 +164,8 @@ export default function IngredientEditDrawer({
       toast.error("Ingredient nomini yozing.");
       return;
     }
-    if (aiCreditStatus.isDisabled) {
-      toast.error("AI kreditlaringiz yetarli emas. Ingredient tahlili uchun kredit kerak.");
+    if (aiAccessStatus.isDisabled) {
+      toast.error("Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin.");
       return;
     }
 
@@ -166,8 +186,8 @@ export default function IngredientEditDrawer({
       );
     } catch (error) {
       toast.error(
-        isAiCreditsExhaustedError(error)
-          ? "AI kreditlaringiz yetarli emas. Ingredient tahlili uchun kredit kerak."
+        isAiAccessLimitError(error)
+          ? "Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin."
           : "Ingredient macro qiymatlarini AI orqali olib bo'lmadi.",
       );
       setDraft((current) => ({
@@ -177,7 +197,14 @@ export default function IngredientEditDrawer({
         reviewNeeded: true,
       }));
     }
-  }, [aiCreditStatus.isDisabled, analyzeIngredient, draft.grams, draft.name]);
+  }, [aiAccessStatus.isDisabled, analyzeIngredient, draft.grams, draft.name]);
+
+  const handleEditGramsChange = React.useCallback(([value]) => {
+    setDraft((current) => ({
+      ...current,
+      grams: Math.max(1, Math.round(toNumber(value, current.grams))),
+    }));
+  }, []);
 
   const handleSave = React.useCallback(() => {
     const name = trim(draft.name);
@@ -199,109 +226,132 @@ export default function IngredientEditDrawer({
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
       <NutritionDrawerContent size="sm">
-        <DrawerHeader className="border-b border-border/40">
+        <DrawerHeader className="items-center border-b border-border/40 text-center md:text-center">
           <DrawerTitle>
-            {isAddMode ? "Ingredient qo'shish" : "Ingredientni tahrirlash"}
+            {isAddMode
+              ? "Ingredient qo'shish"
+              : draft.name || "Ingredientni tahrirlash"}
           </DrawerTitle>
           <DrawerDescription>
-            Gram sliderni o'zgartiring yoki macro qiymatlarni qo'lda kiriting.
+            {isAddMode
+              ? "Ingredient nomini kiriting yoki AI orqali aniqlang."
+              : "Porsiya hajmini tanlang (g)"}
           </DrawerDescription>
         </DrawerHeader>
 
         <DrawerBody className="space-y-5">
-          <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              Ingredient nomi
-            </label>
-            <div className="relative">
-              <Input
-                value={draft.name}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    name: event.target.value,
-                  }))
-                }
-                placeholder="Masalan: guruch, tuxum, avokado"
-                className="h-12 rounded-2xl pr-12"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={handleAnalyze}
-                disabled={
-                  isAnalyzingIngredient ||
-                  !trim(draft.name) ||
-                  aiCreditStatus.isDisabled
-                }
-                className="absolute top-1/2 right-1 size-10 -translate-y-1/2 rounded-full"
-                aria-label="AI bilan aniqlash"
-              >
-                {isAnalyzingIngredient ? (
-                  <Loader2Icon className="size-4 animate-spin" />
-                ) : (
-                  <SparklesIcon className="size-4" />
-                )}
-              </Button>
-            </div>
-            <AiCreditStatusText
-              feature={AI_CREDIT_FEATURES.nutritionAnalysis}
-              wallet={aiCreditWallet}
-              costs={aiCreditCosts}
-              className="mt-1"
-            />
-          </div>
-
-          <div className="rounded-3xl border bg-muted/15 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold">Porsiya</p>
-                <p className="text-xs text-muted-foreground">
-                  Macro qiymatlar shu grammga mos hisoblanadi.
-                </p>
-              </div>
-              <span className="rounded-full border bg-background px-3 py-1 text-sm font-black tabular-nums">
-                {Math.round(draft.grams)} g
-              </span>
-            </div>
-            <Slider
-              value={[Math.max(1, toNumber(draft.grams, 100))]}
-              min={1}
-              max={sliderMax}
-              step={5}
-              className="mt-5"
-              onValueChange={([value]) =>
-                setDraft((current) => ({
-                  ...current,
-                  grams: Math.max(1, Math.round(value || current.grams)),
-                }))
-              }
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            {map(macroFields, ([key, label, step, maximumFractionDigits]) => (
-              <label key={key} className="space-y-1.5">
-                <span className="text-xs font-medium text-muted-foreground">
-                  {label}
-                </span>
-                <NumberField
-                  value={preview[key]}
-                  onValueChange={(value) => setMacroValue(key, value)}
-                  minValue={0}
-                  step={step}
-                  formatOptions={{ maximumFractionDigits }}
-                >
-                  <NumberFieldGroup className="h-11 rounded-2xl bg-background shadow-none">
-                    <NumberFieldDecrement className="w-8 border-r-border/50" />
-                    <NumberFieldInput className="text-center text-sm font-semibold" />
-                    <NumberFieldIncrement className="w-8 border-l-border/50" />
-                  </NumberFieldGroup>
-                </NumberField>
+          {isAddMode ? (
+            <div className="space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Ingredient nomi
               </label>
-            ))}
-          </div>
+              <div className="relative">
+                <Input
+                  value={draft.name}
+                  onChange={(event) =>
+                    setDraft((current) => ({
+                      ...current,
+                      name: event.target.value,
+                    }))
+                  }
+                  placeholder="Masalan: guruch, tuxum, avokado"
+                  className="h-12 rounded-2xl pr-12"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleAnalyze}
+                  disabled={
+                    isAnalyzingIngredient ||
+                    !trim(draft.name) ||
+                    aiAccessStatus.isDisabled
+                  }
+                  className="absolute top-1/2 right-1 size-10 -translate-y-1/2 rounded-full"
+                  aria-label="AI bilan aniqlash"
+                >
+                  {isAnalyzingIngredient ? (
+                    <Loader2Icon className="size-4 animate-spin" />
+                  ) : (
+                    <SparklesIcon className="size-4" />
+                  )}
+                </Button>
+              </div>
+              <AiAccessStatusText
+                access={aiAccess}
+                className="mt-1"
+              />
+            </div>
+          ) : null}
+
+          {isAddMode ? (
+            <>
+              <div className="rounded-3xl border bg-muted/15 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold">Porsiya</p>
+                    <p className="text-xs text-muted-foreground">
+                      Macro qiymatlar shu grammga mos hisoblanadi.
+                    </p>
+                  </div>
+                  <span className="rounded-full border bg-background px-3 py-1 text-sm font-black tabular-nums">
+                    {Math.round(draft.grams)} g
+                  </span>
+                </div>
+                <Slider
+                  value={[Math.max(1, toNumber(draft.grams, 100))]}
+                  min={1}
+                  max={sliderMax}
+                  step={5}
+                  className="mt-5"
+                  onValueChange={([value]) =>
+                    setDraft((current) => ({
+                      ...current,
+                      grams: Math.max(1, Math.round(value || current.grams)),
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {map(macroFields, ([key, label, step, maximumFractionDigits]) => (
+                  <label key={key} className="space-y-1.5">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {label}
+                    </span>
+                    <NumberField
+                      value={preview[key]}
+                      onValueChange={(value) => setMacroValue(key, value)}
+                      minValue={0}
+                      step={step}
+                      formatOptions={{ maximumFractionDigits }}
+                    >
+                      <NumberFieldGroup className="h-11 rounded-2xl bg-background shadow-none">
+                        <NumberFieldDecrement className="w-8 border-r-border/50" />
+                        <NumberFieldInput className="text-center text-sm font-semibold" />
+                        <NumberFieldIncrement className="w-8 border-l-border/50" />
+                      </NumberFieldGroup>
+                    </NumberField>
+                  </label>
+                ))}
+              </div>
+            </>
+          ) : (
+            <NutritionPortionControlCard
+              id={draft.id || "ingredient-edit"}
+              macros={previewMacros}
+              goals={goals}
+              value={Math.max(1, toNumber(draft.grams, 100))}
+              unit="g"
+              min={0}
+              max={1000}
+              step={5}
+              gaugeMax={editGaugeMax}
+              onValueChange={handleEditGramsChange}
+              testIdPrefix="ingredient-edit"
+              sliderTestId="ingredient-grams-slider"
+            />
+          )}
         </DrawerBody>
 
         <DrawerFooter>

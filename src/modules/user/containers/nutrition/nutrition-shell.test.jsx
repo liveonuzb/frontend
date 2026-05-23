@@ -12,7 +12,7 @@ describe("NutritionShell", () => {
           <Route path="/user/nutrition/*" element={<NutritionShell />}>
             <Route path="home" element={<div>Nutrition Home</div>} />
             <Route path="plans" element={<div>Nutrition Plans</div>} />
-            <Route path="meals" element={<div>Nutrition Meals</div>} />
+            <Route path="history" element={<div>Nutrition History</div>} />
             <Route path="report" element={<div>Nutrition Report</div>} />
           </Route>
         </Routes>
@@ -21,7 +21,8 @@ describe("NutritionShell", () => {
 
     expect(screen.getAllByText("Home").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Plans").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Meals").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Meals")).not.toBeInTheDocument();
+    expect(screen.getAllByText("History").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Report").length).toBeGreaterThan(0);
     expect(screen.getByText("Nutrition Home")).toBeInTheDocument();
   });
@@ -34,7 +35,7 @@ describe("NutritionShell", () => {
             <Route path="home" element={<div>Nutrition Home</div>} />
             <Route path="plans" element={<div>Nutrition Plans</div>} />
             <Route path="plans/:planId" element={<div>Nutrition Plan Detail</div>} />
-            <Route path="meals" element={<div>Nutrition Meals</div>} />
+            <Route path="history" element={<div>Nutrition History</div>} />
             <Route path="report" element={<div>Nutrition Report</div>} />
           </Route>
         </Routes>

@@ -5,12 +5,8 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import {
-  Drawer,
-} from "@/components/ui/drawer.jsx";
-import {
-  NutritionDrawerContent,
-} from "./nutrition-drawer-layout.jsx";
+import { Drawer, DrawerFooter } from "@/components/ui/drawer.jsx";
+import { NutritionDrawerContent } from "./nutrition-drawer-layout.jsx";
 import CameraDrawer from "./camera-drawer.jsx";
 import AudioAddDrawer from "./audio-add-drawer.jsx";
 import AudioTranscriptDrawer from "./audio-transcript-drawer.jsx";
@@ -26,17 +22,19 @@ import {
   toMealDateTimeIso,
 } from "./meal-date-time-utils.js";
 import { useAuthStore } from "@/store";
-import {
-  useAiCreditCosts,
-  useAiCreditWallet,
-} from "@/hooks/app/use-ai-credits";
+import { useAiAccessStatus } from "@/hooks/app/use-ai-access";
 import { getMealConfig } from "@/modules/user/lib/meal-config";
 import SmartAddSheet from "./smart-add-sheet.jsx";
 
 import { filter, reduce, split, toNumber, trim } from "lodash";
 
 const toIsoByDateKeyAndTimeHint = (dateKey, timeHint) => {
-  if (!dateKey || !timeHint || timeHint.hour == null || timeHint.minute == null) {
+  if (
+    !dateKey ||
+    !timeHint ||
+    timeHint.hour == null ||
+    timeHint.minute == null
+  ) {
     return null;
   }
   const safeHour = Math.max(0, Math.min(23, toNumber(timeHint.hour) || 0));
@@ -76,14 +74,16 @@ const ActionDrawer = ({
   onInlineCameraCapture,
 }) => {
   const user = useAuthStore((state) => state.user);
-  const { wallet: aiCreditWallet } = useAiCreditWallet({ enabled: open });
-  const { costs: aiCreditCosts } = useAiCreditCosts({ enabled: open });
+  const { wallet: aiAccessWallet } = useAiAccessStatus({ enabled: open });
+  const aiAccessCosts = {};
   const mealDateMinKey = getMealDateStartKey(user, dateKey);
   const [activeNested, setActiveNested] = useState(null);
   const [selectedMealType, setSelectedMealType] = useState(mealType);
   const [transcriptText, setTranscriptText] = useState("");
   const [transcriptSegments, setTranscriptSegments] = useState([]);
-  const [transcriptConfidenceScores, setTranscriptConfidenceScores] = useState([]);
+  const [transcriptConfidenceScores, setTranscriptConfidenceScores] = useState(
+    [],
+  );
   const [textAddVariant, setTextAddVariant] = useState("text");
   const [audioLoggedAtHint, setAudioLoggedAtHint] = useState(null);
   const [audioTargetDateKey, setAudioTargetDateKey] = useState(null);
@@ -93,7 +93,10 @@ const ActionDrawer = ({
   const [cameraInitialMode, setCameraInitialMode] = useState("camera");
   const [catalogInitialFood, setCatalogInitialFood] = useState(null);
   const [selectedMealTime, setSelectedMealTime] = useState(() => ({
-    dateKey: clampMealDateKey(dateKey || getDateKey(new Date()), mealDateMinKey),
+    dateKey: clampMealDateKey(
+      dateKey || getDateKey(new Date()),
+      mealDateMinKey,
+    ),
     ...getTimePartsFromDate(),
   }));
   const isRootDrawerOpen = open && !activeNested;
@@ -181,7 +184,11 @@ const ActionDrawer = ({
 
   const transcriptConfidence = useMemo(() => {
     if (!transcriptConfidenceScores.length) return null;
-    const total = reduce(transcriptConfidenceScores, (sum, v) => sum + (toNumber(v) || 0), 0);
+    const total = reduce(
+      transcriptConfidenceScores,
+      (sum, v) => sum + (toNumber(v) || 0),
+      0,
+    );
     return toNumber((total / transcriptConfidenceScores.length).toFixed(2));
   }, [transcriptConfidenceScores]);
 
@@ -198,65 +205,70 @@ const ActionDrawer = ({
     [saveHistoryItem],
   );
 
-  const handleRemoveAudioTranscriptSegment = useCallback((index) => {
-    setTranscriptSegments((current) => {
-      const next = filter(current, (_, i) => i !== index);
-      setTranscriptText(next.join("\n"));
-      return next;
-    });
-    setTranscriptConfidenceScores((current) =>
-      filter(current, (_, i) => i !== index),
-    );
-  }, [
-    setTranscriptConfidenceScores,
-    setTranscriptSegments,
-    setTranscriptText,
-  ]);
+  const handleRemoveAudioTranscriptSegment = useCallback(
+    (index) => {
+      setTranscriptSegments((current) => {
+        const next = filter(current, (_, i) => i !== index);
+        setTranscriptText(next.join("\n"));
+        return next;
+      });
+      setTranscriptConfidenceScores((current) =>
+        filter(current, (_, i) => i !== index),
+      );
+    },
+    [setTranscriptConfidenceScores, setTranscriptSegments, setTranscriptText],
+  );
 
-  const handleUseAudioTranscriptHistory = useCallback((historyItem) => {
-    const transcript = trim(String(historyItem?.transcript || ""));
-    if (!transcript) return;
-    setTranscriptText(transcript);
-    setTranscriptSegments([transcript]);
-    setTextAddVariant("audio");
-    setInputSource("audio");
-    setSelectedMealType(historyItem?.mealType || "breakfast");
-    setAudioLoggedAtHint(historyItem?.loggedAt || null);
-    setAudioTargetDateKey(null);
-    setTranscriptConfidenceScores([]);
-  }, [
-    setAudioLoggedAtHint,
-    setAudioTargetDateKey,
-    setInputSource,
-    setSelectedMealType,
-    setTextAddVariant,
-    setTranscriptConfidenceScores,
-    setTranscriptSegments,
-    setTranscriptText,
-  ]);
+  const handleUseAudioTranscriptHistory = useCallback(
+    (historyItem) => {
+      const transcript = trim(String(historyItem?.transcript || ""));
+      if (!transcript) return;
+      setTranscriptText(transcript);
+      setTranscriptSegments([transcript]);
+      setTextAddVariant("audio");
+      setInputSource("audio");
+      setSelectedMealType(historyItem?.mealType || "breakfast");
+      setAudioLoggedAtHint(historyItem?.loggedAt || null);
+      setAudioTargetDateKey(null);
+      setTranscriptConfidenceScores([]);
+    },
+    [
+      setAudioLoggedAtHint,
+      setAudioTargetDateKey,
+      setInputSource,
+      setSelectedMealType,
+      setTextAddVariant,
+      setTranscriptConfidenceScores,
+      setTranscriptSegments,
+      setTranscriptText,
+    ],
+  );
 
-  const handleUseTextTranscriptHistory = useCallback((historyItem) => {
-    const transcript = trim(String(historyItem?.transcript || ""));
-    if (!transcript) return;
-    setTranscriptText(transcript);
-    setTranscriptSegments([]);
-    setTextAddVariant("text");
-    setInputSource("text");
-    setSelectedMealType(historyItem?.mealType || mealType || "breakfast");
-    setAudioLoggedAtHint(null);
-    setAudioTargetDateKey(null);
-    setTranscriptConfidenceScores([]);
-  }, [
-    mealType,
-    setAudioLoggedAtHint,
-    setAudioTargetDateKey,
-    setInputSource,
-    setSelectedMealType,
-    setTextAddVariant,
-    setTranscriptConfidenceScores,
-    setTranscriptSegments,
-    setTranscriptText,
-  ]);
+  const handleUseTextTranscriptHistory = useCallback(
+    (historyItem) => {
+      const transcript = trim(String(historyItem?.transcript || ""));
+      if (!transcript) return;
+      setTranscriptText(transcript);
+      setTranscriptSegments([]);
+      setTextAddVariant("text");
+      setInputSource("text");
+      setSelectedMealType(historyItem?.mealType || mealType || "breakfast");
+      setAudioLoggedAtHint(null);
+      setAudioTargetDateKey(null);
+      setTranscriptConfidenceScores([]);
+    },
+    [
+      mealType,
+      setAudioLoggedAtHint,
+      setAudioTargetDateKey,
+      setInputSource,
+      setSelectedMealType,
+      setTextAddVariant,
+      setTranscriptConfidenceScores,
+      setTranscriptSegments,
+      setTranscriptText,
+    ],
+  );
 
   const handleRemoveHistoryItem = useCallback(
     async (historyId) => {
@@ -316,8 +328,8 @@ const ActionDrawer = ({
       >
         <NutritionDrawerContent size="sm">
           <SmartAddSheet
-            aiCreditCosts={aiCreditCosts}
-            aiCreditWallet={aiCreditWallet}
+            aiAccessCosts={aiAccessCosts}
+            aiAccessWallet={aiAccessWallet}
             disabled={disabled}
             mealLabel={activeMealConfig.label}
             onOpenAudio={handleOpenAudio}
@@ -380,11 +392,16 @@ const ActionDrawer = ({
               );
               const resolvedTargetDateKey =
                 typeof suggestedDateHint?.offsetDays === "number"
-                  ? shiftDateKeyByDays(selectedDateKey, suggestedDateHint.offsetDays)
+                  ? shiftDateKeyByDays(
+                      selectedDateKey,
+                      suggestedDateHint.offsetDays,
+                    )
                   : null;
               setTranscriptText((current) =>
-                filter([trim(String(current || "")), safeTranscript], Boolean)
-                  .join("\n"),
+                filter(
+                  [trim(String(current || "")), safeTranscript],
+                  Boolean,
+                ).join("\n"),
               );
               setInputSource("audio");
               setTranscriptSegments((current) => [
@@ -504,7 +521,7 @@ const ActionDrawer = ({
         }}
         direction="bottom"
       >
-        <NutritionDrawerContent size="lg">
+        <NutritionDrawerContent size="lg" className="no-scrollbar">
           <ManualAddDrawer
             dateKey={selectedDateKey}
             initialFood={catalogInitialFood}

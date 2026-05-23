@@ -10,7 +10,7 @@ import {
 import { api } from "@/hooks/api/use-api.js";
 import { getApiResponseData } from "@/lib/api-response.js";
 import useLanguageStore from "@/store/language-store";
-import { useAiCreditInvalidation } from "@/hooks/app/use-ai-credits";
+import { useAiAccessInvalidation } from "@/hooks/app/use-ai-access";
 
 export const FOODS_CATALOG_QUERY_KEY = ["foods", "catalog"];
 export const FOODS_QUICK_ADD_QUERY_KEY = ["foods", "quick-add"];
@@ -126,6 +126,12 @@ export const createCatalogFood = (food, language) => {
         label: resolveLabel(category.translations, category.name, language),
       }))
     : [];
+  const ingredients = isArray(food.ingredients)
+    ? map(food.ingredients, (ingredient) => ({
+        ...ingredient,
+        name: resolveLabel(ingredient.translations, ingredient.name, language),
+      }))
+    : [];
   const primaryCategory = categories[0] || null;
   const baseMacros = {
     cal: toNumber(food.calories),
@@ -160,6 +166,7 @@ export const createCatalogFood = (food, language) => {
     categoryId: primaryCategory?.id ?? null,
     categoryIds: isArray(food.categoryIds) ? food.categoryIds : [],
     categories,
+    ingredients,
     isActive: Boolean(food.isActive),
   };
 };
@@ -411,7 +418,7 @@ export const useFoodQuickAddActions = () => {
 
 export const useFoodScan = () => {
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
-  const { invalidateAiCredits } = useAiCreditInvalidation();
+  const { invalidateAiAccess } = useAiAccessInvalidation();
   const postMutation = usePostQuery();
   const textMutation = usePostQuery();
   const draftImageMutation = usePostQuery();
@@ -456,11 +463,11 @@ export const useFoodScan = () => {
         },
       });
       const payload = getResponsePayload(response);
-      await invalidateAiCredits();
+      await invalidateAiAccess();
 
       return normalizeScanItems(get(payload, "items", []));
     },
-    [invalidateAiCredits, normalizeScanItems, postMutation],
+    [invalidateAiAccess, normalizeScanItems, postMutation],
   );
 
   const normalizeDraftIngredient = React.useCallback(
@@ -540,7 +547,7 @@ export const useFoodScan = () => {
         },
       });
       const payload = getResponsePayload(response);
-      await invalidateAiCredits();
+      await invalidateAiAccess();
 
       return {
         source: get(payload, "source", "camera"),
@@ -556,7 +563,7 @@ export const useFoodScan = () => {
         },
       });
       const payload = getResponsePayload(response);
-      await invalidateAiCredits();
+      await invalidateAiAccess();
 
       return normalizeScanItems(get(payload, "items", []));
     },
@@ -569,7 +576,7 @@ export const useFoodScan = () => {
         },
       });
       const payload = getResponsePayload(response);
-      await invalidateAiCredits();
+      await invalidateAiAccess();
 
       return {
         source: get(payload, "source", mode),
@@ -585,7 +592,7 @@ export const useFoodScan = () => {
         },
       });
       const payload = getResponsePayload(response);
-      await invalidateAiCredits();
+      await invalidateAiAccess();
 
       return normalizeDraftIngredient(
         get(payload, "ingredient", payload),
@@ -603,7 +610,7 @@ export const useFoodScan = () => {
           })),
       );
       if (some(results, (result) => result.status === "fulfilled")) {
-        await invalidateAiCredits();
+        await invalidateAiAccess();
       }
 
       return filter(map(results, (result, index) => {

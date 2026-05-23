@@ -28,19 +28,13 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  AiCreditBalanceBadge,
-  AiCreditCostBadge,
-  AiCreditStatusText,
-} from "@/components/ai-credits";
+import { AiAccessBadge, AiAccessStatusText } from "@/components/ai-access";
 import { cn } from "@/lib/utils";
 import {
-  AI_CREDIT_FEATURES,
-  getAiCreditStatus,
-  isAiCreditsExhaustedError,
-  useAiCreditCosts,
-  useAiCreditWallet,
-} from "@/hooks/app/use-ai-credits";
+  getAiAccessStatus,
+  isAiAccessLimitError,
+  useAiAccessStatus,
+} from "@/hooks/app/use-ai-access";
 import {
   getUserAiReportPeriodLabel,
   USER_AI_REPORT_PERIODS,
@@ -337,8 +331,7 @@ const Index = () => {
     pageSize: 12,
   });
   const generateMutation = useGenerateUserAiReport();
-  const { wallet } = useAiCreditWallet();
-  const { costs } = useAiCreditCosts();
+  const { access: aiAccess } = useAiAccessStatus();
   const historyItems = React.useMemo(() => history?.items ?? [], [history?.items]);
   const { data: activeReport, isLoading: activeReportLoading } =
     useUserAiReport(activeReportId, {
@@ -380,19 +373,20 @@ const Index = () => {
   const quota = limits?.quota ?? {};
   const selectedHasTodayCache = some(historyItems, (item) =>
     item.period === selectedPeriod && String(item.createdAt || "").startsWith(todayKey()));
-  const noQuota = !selectedHasTodayCache && toNumber(quota.remaining ?? 0) <= 0;
-  const creditStatus = getAiCreditStatus({
-    wallet,
-    costs,
-    feature: AI_CREDIT_FEATURES.nutritionAnalysis,
-  });
-  const lacksCredits = !selectedHasTodayCache && creditStatus.isDisabled;
+  const noQuota =
+    !selectedHasTodayCache &&
+    !limits?.isPremium &&
+    quota.remaining !== null &&
+    quota.remaining !== undefined &&
+    toNumber(quota.remaining) <= 0;
+  const accessStatus = getAiAccessStatus({ access: aiAccess });
+  const lacksAccess = !selectedHasTodayCache && accessStatus.isDisabled;
   const isGenerateDisabled =
     limitsLoading ||
     generateMutation.isPending ||
     isSelectedLocked ||
     noQuota ||
-    lacksCredits;
+    lacksAccess;
 
   const handleGenerate = async () => {
     try {
@@ -401,8 +395,8 @@ const Index = () => {
       toast.success(result.cached ? "Bugungi report ochildi" : "AI report yaratildi");
     } catch (error) {
       toast.error(
-        isAiCreditsExhaustedError(error)
-          ? "AI kreditlaringiz yetarli emas. Cached report bo'lsa ochish mumkin."
+        isAiAccessLimitError(error)
+          ? "Bugungi AI limitingiz tugagan. Cached report bo'lsa ochish mumkin."
           : resolveApiErrorMessage(error, "AI report yaratib bo'lmadi"),
       );
     }
@@ -441,18 +435,14 @@ const Index = () => {
                   {limits?.isPremium ? "Premium" : "Free"}
                 </Badge>
                 <span className="text-sm text-muted-foreground">
-                  Oylik limit: {quota.used ?? 0}/{quota.monthly ?? 0} ishlatildi,
+                  Kunlik limit: {quota.used ?? 0}/{quota.daily ?? 3} ishlatildi,
                   {` ${quota.remaining ?? 0}`} qoldi
                 </span>
-                <AiCreditBalanceBadge wallet={wallet} />
-                <AiCreditCostBadge
-                  feature={AI_CREDIT_FEATURES.nutritionAnalysis}
-                  costs={costs}
-                />
+                <AiAccessBadge access={aiAccess} />
               </div>
-              {lacksCredits ? (
+              {lacksAccess ? (
                 <p className="text-sm text-destructive">
-                  AI kreditlaringiz yetarli emas. Bugungi cached report mavjud
+                  Bugungi AI limitingiz tugagan. Bugungi cached report mavjud
                   bo'lsa ochish mumkin.
                 </p>
               ) : noQuota ? (
@@ -526,10 +516,8 @@ const Index = () => {
                 {selectedHasTodayCache
                   ? "Bu davr uchun bugungi cached report bor."
                   : "Yangi report limitdan foydalanadi."}
-                <AiCreditStatusText
-                  feature={AI_CREDIT_FEATURES.nutritionAnalysis}
-                  wallet={wallet}
-                  costs={costs}
+                <AiAccessStatusText
+                  access={aiAccess}
                 />
               </div>
               <Button

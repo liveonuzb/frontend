@@ -87,7 +87,6 @@ const premiumGiftNotification = {
   createdAt: "2026-05-23T10:00:00.000Z",
   metadata: {
     planName: "Premium",
-    aiCreditsGranted: 450,
     expiresAt: "2026-06-22T00:00:00.000Z",
     note: "Welcome",
   },
@@ -123,7 +122,7 @@ describe("PremiumGiftReceivedDrawer", () => {
 
     expect(await screen.findByText("Premium sovg'a qilindi")).toBeInTheDocument();
     expect(screen.getByText("Premium")).toBeInTheDocument();
-    expect(screen.getByText("450 AI credit")).toBeInTheDocument();
+    expect(screen.queryByText(/AI credit/i)).not.toBeInTheDocument();
     expect(screen.getByText("Welcome")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Premiumni ko'rish" }));

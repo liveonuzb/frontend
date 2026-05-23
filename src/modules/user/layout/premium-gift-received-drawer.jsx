@@ -7,14 +7,12 @@ import {
   orderBy,
   some,
   toLower,
-  toNumber,
   trim,
 } from "lodash";
 import {
   CrownIcon,
   GiftIcon,
   LoaderCircleIcon,
-  SparklesIcon,
   XIcon,
 } from "lucide-react";
 import { useNavigate } from "react-router";
@@ -246,7 +244,6 @@ const PremiumGiftReceivedDrawer = () => {
 
   const metadata = getPremiumGiftMetadata(currentNotification);
   const planName = trim(String(get(metadata, "planName", ""))) || "Premium";
-  const aiCreditsGranted = toNumber(get(metadata, "aiCreditsGranted", 0)) || 0;
   const expiresAt = formatDate(get(metadata, "expiresAt"));
   const note = trim(String(get(metadata, "note", "")));
   const target = currentNotification?.target || PREMIUM_GIFT_TARGET;
@@ -295,7 +292,7 @@ const PremiumGiftReceivedDrawer = () => {
           </DrawerTitle>
         </DrawerHeader>
         <DrawerBody className="space-y-4 px-5 pb-5">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3">
             <div className="rounded-2xl border border-border/60 bg-muted/40 p-3">
               <div className="mb-2 flex items-center gap-2 text-amber-500">
                 <CrownIcon className="size-4" />
@@ -308,20 +305,11 @@ const PremiumGiftReceivedDrawer = () => {
                 </p>
               ) : null}
             </div>
-            <div className="rounded-2xl border border-border/60 bg-muted/40 p-3">
-              <div className="mb-2 flex items-center gap-2 text-primary">
-                <SparklesIcon className="size-4" />
-                <span className="text-xs font-semibold">AI credit</span>
-              </div>
-              <p className="text-sm font-semibold">
-                {aiCreditsGranted} AI credit
-              </p>
-            </div>
           </div>
 
           <p className="text-center text-sm leading-6 text-muted-foreground">
             {currentNotification?.message ||
-              "Premium obuna va AI credit hisobingizga qo'shildi."}
+              "Premium obuna hisobingizga qo'shildi."}
           </p>
 
           {note ? (

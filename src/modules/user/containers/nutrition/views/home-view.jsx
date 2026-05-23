@@ -2,26 +2,18 @@ import React from "react";
 import CalorieGaugeWidget from "@/components/calorie-gauge-widget";
 import { Button } from "@/components/ui/button";
 import {
-  BarChart3Icon,
   CheckCircle2Icon,
   DropletsIcon,
   FlameIcon,
   PlusIcon,
-  ScaleIcon,
   TrophyIcon,
-  UtensilsIcon,
 } from "lucide-react";
-import { useNavigate } from "react-router";
-import { NutritionDatePicker } from "../nutrition-header.jsx";
 import NutritionPlansSection from "../nutrition-plans-section.jsx";
 import NutritionLayout from "../ui/nutrition-layout.jsx";
-import NutritionPageHeader from "../ui/nutrition-page-header.jsx";
 import NutritionCard from "../ui/nutrition-card.jsx";
 import StatCard from "../ui/stat-card.jsx";
-import MacroBalanceCard from "../ui/macro-balance-card.jsx";
 import ProgressBar, { getProgressPercent } from "../ui/progress-bar.jsx";
 import AIRecommendationCard from "../ui/ai-recommendation-card.jsx";
-import QuickActionsBar from "../ui/quick-actions-bar.jsx";
 import { buildNutritionDashboardMetrics } from "../data/nutrition-data-mappers.js";
 
 import { map, sumBy, toNumber } from "lodash";
@@ -186,8 +178,6 @@ const MealTimeline = ({
 
 export default function NutritionHomeView(props) {
   const {
-    date,
-    setDate,
     plans,
     currentPlan,
     currentPlanDayStatus,
@@ -201,13 +191,11 @@ export default function NutritionHomeView(props) {
     setSelectedMealTypeForAdd,
     setIsActionDrawerOpen,
     setIsPlansDrawerOpen,
-    onAddWaterCup,
     filteredMealSections = [],
     mealConfig = {},
     isOnline,
     isPastDate,
   } = props;
-  const navigate = useNavigate();
   const metrics = buildNutritionDashboardMetrics({
     roundedTotals,
     goals,
@@ -223,36 +211,6 @@ export default function NutritionHomeView(props) {
     setSelectedMealTypeForAdd(mealType);
     setIsActionDrawerOpen(true);
   };
-  const quickActions = [
-    {
-      label: "Ovqat qo'shish",
-      icon: PlusIcon,
-      disabled: addDisabled,
-      onClick: () => openAddMeal(activeMealType),
-      variant: "default",
-    },
-    {
-      label: "Suv qo'shish",
-      icon: DropletsIcon,
-      disabled: addDisabled || !onAddWaterCup,
-      onClick: onAddWaterCup,
-    },
-    {
-      label: "Og'irlik yozish",
-      icon: ScaleIcon,
-      onClick: () => navigate("/user/measurements"),
-    },
-    {
-      label: "Ovqat rejasini ko'rish",
-      icon: UtensilsIcon,
-      onClick: () => setIsPlansDrawerOpen(true),
-    },
-    {
-      label: "Hisobotlar",
-      icon: BarChart3Icon,
-      onClick: () => navigate("/user/nutrition/report"),
-    },
-  ];
   const sidebar = (
     <>
       <StatCard
@@ -306,17 +264,7 @@ export default function NutritionHomeView(props) {
   );
 
   return (
-    <NutritionLayout
-      header={
-        <NutritionPageHeader
-          eyebrow="Ovqatlanish"
-          title="Home"
-          description="Bugungi kaloriya, suv, makro balans va meal log holati."
-          actions={<NutritionDatePicker date={date} onChange={setDate} />}
-        />
-      }
-      sidebar={sidebar}
-    >
+    <NutritionLayout sidebar={sidebar}>
       {!isOnline ? (
         <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-800 dark:text-amber-200">
           Tarmoq yo&apos;q — o&apos;zgarishlar saqlanmaydi
@@ -330,34 +278,21 @@ export default function NutritionHomeView(props) {
         </div>
       ) : null}
 
-      <NutritionCard tone="accent" className="p-0">
-        <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_280px] sm:p-5">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-black">Bugungi Kaloriya</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Target: {metrics.targetCalories.toLocaleString()} kcal
-                </p>
-              </div>
-              <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">
-                +{metrics.calories.toLocaleString()} kcal
-              </div>
-            </div>
-            <CalorieGaugeWidget
-              consumed={roundedTotals.calories}
-              goal={goals.calories}
-              macros={metrics.macros}
-              isGoalLoading={isGoalLoadingState}
-              goalMeta={calorieGoalMeta}
-              className="mt-4 h-fit w-full border-0 bg-transparent py-2 shadow-none ring-0"
-            />
-          </div>
-          <div className="flex flex-col justify-center gap-3">
-            <MacroBalanceCard macros={metrics.macros} />
-          </div>
+      <div className="space-y-3">
+        <div className="px-1 text-sm font-semibold text-muted-foreground">
+          Target: {metrics.targetCalories.toLocaleString()} kcal
         </div>
-      </NutritionCard>
+        <CalorieGaugeWidget
+          consumed={roundedTotals.calories}
+          goal={goals.calories}
+          macros={metrics.macros}
+          isGoalLoading={isGoalLoadingState}
+          goalMeta={calorieGoalMeta}
+          showCalorieModeToggle
+          defaultCalorieMode="remaining"
+          className="h-fit w-full"
+        />
+      </div>
 
       <MealTimeline
         filteredMealSections={filteredMealSections}
@@ -366,8 +301,6 @@ export default function NutritionHomeView(props) {
         disabled={addDisabled}
         onAdd={openAddMeal}
       />
-
-      <QuickActionsBar actions={quickActions} />
 
       <NutritionCard>
         <NutritionPlansSection

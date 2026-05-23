@@ -13,15 +13,14 @@ import { ChevronLeftIcon, Loader2Icon, SparklesIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import useMealPlan from "@/hooks/app/use-meal-plan";
-import { AiCreditStatusText } from "@/components/ai-credits";
+import { AiAccessStatusText } from "@/components/ai-access";
 import {
-  AI_CREDIT_FEATURES,
-  getAiCreditDisabledProps,
-  getAiCreditStatus,
-  isAiCreditsExhaustedError,
-  useAiCreditCosts,
-  useAiCreditWallet,
-} from "@/hooks/app/use-ai-credits";
+  AI_USAGE_FEATURES,
+  getAiAccessDisabledProps,
+  getAiAccessStatus,
+  isAiAccessLimitError,
+  useAiAccessStatus,
+} from "@/hooks/app/use-ai-access";
 
 const MEAL_COUNTS = [
   { id: 3, label: "3 mahal", description: "Nonushta, Tushlik, Kechki ovqat" },
@@ -31,18 +30,17 @@ const MEAL_COUNTS = [
 
 const AIGenerator = ({ onClose, onGenerated }) => {
   const { generateAiPlan, isGeneratingAi } = useMealPlan();
-  const { wallet } = useAiCreditWallet();
-  const { costs } = useAiCreditCosts();
+  const { wallet, costs } = useAiAccessStatus();
   const [step, setStep] = useState(1);
   const [selectedGoal, setSelectedGoal] = useState(null);
   const [selectedMealCount, setSelectedMealCount] = useState(4);
-  const planFeature = AI_CREDIT_FEATURES.mealPlan7Day;
-  const creditStatus = getAiCreditStatus({
+  const planFeature = AI_USAGE_FEATURES.mealPlan7Day;
+  const accessStatus = getAiAccessStatus({
     wallet,
     costs,
     feature: planFeature,
   });
-  const creditDisabledProps = getAiCreditDisabledProps({
+  const accessDisabledProps = getAiAccessDisabledProps({
     wallet,
     costs,
     feature: planFeature,
@@ -54,7 +52,7 @@ const AIGenerator = ({ onClose, onGenerated }) => {
   );
 
   const handleAiGenerate = async () => {
-    if (!selectedGoal || creditStatus.isDisabled) {
+    if (!selectedGoal || accessStatus.isDisabled) {
       return;
     }
 
@@ -75,8 +73,8 @@ const AIGenerator = ({ onClose, onGenerated }) => {
       });
     } catch (error) {
       toast.error(
-        isAiCreditsExhaustedError(error)
-          ? "AI kreditlaringiz yetarli emas. Limit yangilangandan keyin qayta urinib ko'ring."
+        isAiAccessLimitError(error)
+          ? "Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin."
           : "AI rejani yaratib bo'lmadi",
       );
     }
@@ -165,7 +163,7 @@ const AIGenerator = ({ onClose, onGenerated }) => {
                 </p>
               </div>
             </div>
-            <AiCreditStatusText
+            <AiAccessStatusText
               feature={planFeature}
               wallet={wallet}
               costs={costs}
@@ -215,8 +213,8 @@ const AIGenerator = ({ onClose, onGenerated }) => {
         {step === 2 ? (
           <Button
             onClick={handleAiGenerate}
-            {...creditDisabledProps}
-            disabled={isGeneratingAi || creditStatus.isDisabled}
+            {...accessDisabledProps}
+            disabled={isGeneratingAi || accessStatus.isDisabled}
           >
             {isGeneratingAi ? (
               <>

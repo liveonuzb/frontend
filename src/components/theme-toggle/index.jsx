@@ -28,11 +28,21 @@ function useTheme() {
     };
   }, []);
 
-  const toggleTheme = React.useCallback(() => {
-    setThemeState((prev) => (prev === "dark" ? "light" : "dark"));
+  const setTheme = React.useCallback((nextTheme) => {
+    const resolvedTheme = resolveTheme(nextTheme);
+    setThemeState(resolvedTheme);
+    applyTheme(resolvedTheme);
   }, []);
 
-  return { theme, toggleTheme };
+  const toggleTheme = React.useCallback(() => {
+    setThemeState((prev) => {
+      const nextTheme = prev === "dark" ? "light" : "dark";
+      applyTheme(nextTheme);
+      return nextTheme;
+    });
+  }, []);
+
+  return { theme, setTheme, toggleTheme };
 }
 
 const ThemeToggle = () => {

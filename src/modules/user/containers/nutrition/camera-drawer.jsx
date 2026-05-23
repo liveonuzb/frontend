@@ -64,14 +64,12 @@ import {
   toMealDateTimeIso,
 } from "./meal-date-time-utils.js";
 import RecentMealsDrawer from "./recent-meals-drawer.jsx";
-import { AiCreditStatusText } from "@/components/ai-credits";
+import { AiAccessStatusText } from "@/components/ai-access";
 import {
-  AI_CREDIT_FEATURES,
-  getAiCreditStatus,
-  isAiCreditsExhaustedError,
-  useAiCreditCosts,
-  useAiCreditWallet,
-} from "@/hooks/app/use-ai-credits";
+  getAiAccessStatus,
+  isAiAccessLimitError,
+  useAiAccessStatus,
+} from "@/hooks/app/use-ai-access";
 
 import {
   filter,
@@ -918,12 +916,9 @@ export default function CameraDrawer({
     dateKey: clampMealDateKey(dateKey || getDateKey(new Date()), mealDateMinKey),
     ...getTimePartsFromDate(),
   }));
-  const { wallet: aiCreditWallet } = useAiCreditWallet({ enabled: open });
-  const { costs: aiCreditCosts } = useAiCreditCosts({ enabled: open });
-  const photoScanCreditStatus = getAiCreditStatus({
-    wallet: aiCreditWallet,
-    costs: aiCreditCosts,
-    feature: AI_CREDIT_FEATURES.foodPhotoScan,
+  const { access: aiAccess } = useAiAccessStatus({ enabled: open });
+  const photoScanCreditStatus = getAiAccessStatus({
+    access: aiAccess,
   });
 
   const { addMeal: addMealAction } = useDailyTrackingActions();
@@ -1017,7 +1012,7 @@ export default function CameraDrawer({
 
   const handleCapture = async (dataUrl) => {
     if (photoScanCreditStatus.isDisabled) {
-      toast.error("AI kreditlaringiz yetarli emas. Photo scan uchun kredit kerak.");
+      toast.error("Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin.");
       return;
     }
 
@@ -1046,8 +1041,8 @@ export default function CameraDrawer({
       }
       setView("result");
     } catch (error) {
-      const message = isAiCreditsExhaustedError(error)
-        ? "AI kreditlaringiz yetarli emas. Photo scan uchun kredit kerak."
+      const message = isAiAccessLimitError(error)
+        ? "Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin."
         : error?.response?.data?.message || "Ovqatni AI orqali aniqlab bo'lmadi";
       setScanError(message);
       setView("result");
@@ -1400,10 +1395,8 @@ export default function CameraDrawer({
                         : "Ovqatni kadr ichiga joylashtiring va AI uchun rasm oling."}
                     </DrawerDescription>
                     {scanMode === "camera" ? (
-                      <AiCreditStatusText
-                        feature={AI_CREDIT_FEATURES.foodPhotoScan}
-                        wallet={aiCreditWallet}
-                        costs={aiCreditCosts}
+                      <AiAccessStatusText
+                        access={aiAccess}
                         className="justify-center"
                       />
                     ) : null}

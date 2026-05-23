@@ -17,15 +17,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Slider } from "@/components/ui/slider";
 import {
-  ArrowLeftIcon,
-  CalculatorIcon,
-  CheckIcon,
   HeartIcon,
   HistoryIcon,
   Loader2Icon,
-  PlusIcon,
   SearchIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -40,29 +35,15 @@ import useFoodCatalog, {
 import useHealthGoals from "@/hooks/app/use-health-goals";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import GaugeProgress from "../../../../components/meal-plan-builder/gauge-progress.jsx";
 import { NutritionDrawerContent } from "./nutrition-drawer-layout.jsx";
 import { Drawer } from "@/components/ui/drawer";
 import { getMealConfig } from "@/modules/user/lib/meal-config";
+import FoodDetailPortionDrawer, {
+  calculateFoodPortionMacros,
+  getFoodSliderMax,
+} from "./food-detail-portion-drawer.jsx";
 
-import { filter, map, some, toLower, toNumber, includes, toPairs, trim } from "lodash";
-
-const calcMacros = (food, amount) => {
-  const isUnit = food?.unit && food.unit !== "g" && food.unit !== "ml";
-  const factor = isUnit ? amount / (food.defaultAmount || 1) : amount / 100;
-
-  return {
-    cal: Math.round((food?.baseCal ?? food?.cal ?? 0) * factor),
-    protein: Math.round((food?.baseProtein ?? food?.protein ?? 0) * factor),
-    carbs: Math.round((food?.baseCarbs ?? food?.carbs ?? 0) * factor),
-    fat: Math.round((food?.baseFat ?? food?.fat ?? 0) * factor),
-  };
-};
-
-const getSliderMax = (food) => {
-  const isUnit = food?.unit && food.unit !== "g" && food.unit !== "ml";
-  return isUnit ? (food?.step || 1) * 20 : 1000;
-};
+import { filter, map, some, toLower, toNumber, includes, trim } from "lodash";
 
 export default function ManualAddDrawer({
   dateKey,
@@ -225,29 +206,35 @@ export default function ManualAddDrawer({
     return () => observer.disconnect();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage, selectedCategoryId]);
 
-  const calculateMacros = (baseFood, amount) => calcMacros(baseFood, amount);
+  const calculateMacros = (baseFood, amount) =>
+    calculateFoodPortionMacros(baseFood, amount);
 
   const openFoodEditor = useCallback((food) => {
     setEditingFood({ ...food, grams: food.defaultAmount || 100 });
   }, []);
 
-  const handleSaveFood = async () => {
-    if (!editingFood) return;
-    const macros = calculateMacros(editingFood, grams);
+  const handleSaveFood = async (payload = {}) => {
+    const selectedFood = payload.item || editingFood;
+    const selectedGrams = payload.grams ?? grams;
+    if (!selectedFood) return;
+    const macros = payload.macros || calculateMacros(selectedFood, selectedGrams);
+    const selectedIngredients = payload.ingredients ?? selectedFood.ingredients ?? [];
     try {
       await addMealAction(dateKey, mealType, {
-        ...editingFood,
+        ...selectedFood,
         source: "manual",
         qty: 1,
-        grams,
+        grams: selectedGrams,
         cal: macros.cal,
         protein: macros.protein,
         carbs: macros.carbs,
         fat: macros.fat,
+        fiber: macros.fiber,
+        ingredients: selectedIngredients,
         addedAt: loggedAt || undefined,
         addedFromPlan: false,
       });
-      toast.success(`${editingFood.name} qo'shildi!`);
+      toast.success(`${selectedFood.name} qo'shildi!`);
       setEditingFood(null);
     } catch {
       toast.error("Ovqatni qo'shib bo'lmadi");
@@ -258,18 +245,14 @@ export default function ManualAddDrawer({
 
   return (
     <>
-      <DrawerHeader className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <DrawerTitle className="text-xl flex items-center gap-2">
-            <span>{config.emoji}</span>
-            <span>{config.label}ga qo'shish</span>
-          </DrawerTitle>
-        </div>
-        <DrawerDescription>
+      <DrawerHeader className="flex flex-col items-center gap-4 text-center md:text-center">
+        <DrawerTitle className="text-center text-xl font-semibold">
+          {config.label}ga qo'shish
+        </DrawerTitle>
+        <DrawerDescription className="text-center">
           Katalogdan ovqat tanlang.
         </DrawerDescription>
-
-        <div className="relative">
+        <div className="relative w-full">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             autoFocus
@@ -280,7 +263,7 @@ export default function ManualAddDrawer({
           />
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-2 mask-edges -mx-4 px-4 pt-1">
+        <div className="flex w-full scroll-px-5 items-center gap-2 overflow-x-auto custom-scrollbar -mx-4 pt-1 mask-edges no-scrollbar">
           {map(tabEntries, (entry) => (
             <button
               key={entry.key}
@@ -288,9 +271,9 @@ export default function ManualAddDrawer({
               aria-pressed={selectedTabKey === entry.key}
               onClick={() => setSelectedTabKey(entry.key)}
               className={cn(
-                "flex items-center gap-2 px-3.5 py-2 rounded-xl text-[11px] font-black whitespace-nowrap transition-all border shrink-0",
+                "cursor-pointer flex items-center gap-2 px-3.5 py-2 rounded-xl text-[11px] font-black whitespace-nowrap border shrink-0 transition-colors duration-200",
                 selectedTabKey === entry.key
-                  ? "bg-foreground text-background border-foreground shadow-sm scale-105"
+                  ? "bg-foreground text-background border-foreground shadow-sm"
                   : "bg-background/80 text-muted-foreground border-border/40 hover:bg-muted/80 hover:border-border/60",
               )}
             >
@@ -319,8 +302,8 @@ export default function ManualAddDrawer({
           ))}
         </div>
       </DrawerHeader>
-      <DrawerBody className="p-0">
-        <ScrollArea className="h-full px-4">
+      <DrawerBody className="h-[clamp(18rem,calc(90dvh-14rem),32rem)] flex-none overflow-hidden p-0 scroll-mask-y">
+        <ScrollArea className="h-full px-4 [&_[data-slot=scroll-area-viewport]]:overscroll-contain scrollbar-hide">
           {isLoading ? (
             <div className="text-center py-12 px-4">
               <div className="size-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
@@ -374,7 +357,7 @@ export default function ManualAddDrawer({
               </Button>
             </div>
           ) : tabFoods.length > 0 ? (
-            <div className="space-y-3 pb-8">
+            <div className="min-h-full space-y-2.5 pb-8">
               <AnimatePresence initial={false}>
                 {map(tabFoods, (food) => {
                   const isAdded = some(currentMealFoods, (entry) =>
@@ -389,77 +372,64 @@ export default function ManualAddDrawer({
                       exit={{ opacity: 0, scale: 0.95 }}
                       key={food.id}
                       className={cn(
-                        "flex items-center gap-4 p-4 rounded-[1.25rem] border transition-all duration-300",
+                        "grid h-16 grid-cols-[2.5rem_minmax(0,1fr)_3.5rem_2.25rem] items-center gap-1.5 rounded-xl border px-2 transition-colors duration-200",
                         isAdded
                           ? "border-primary/30 bg-primary/5"
                           : "bg-card hover:bg-muted/50 border-border/40 cursor-pointer",
                       )}
                       onClick={() => { if (!isAdded) openFoodEditor(food); }}
                     >
-                      <div className="size-12 rounded-2xl bg-muted/50 flex items-center justify-center shrink-0 overflow-hidden">
+                      <div className="size-10 rounded-lg bg-muted/50 flex items-center justify-center overflow-hidden">
                         {food.image ? (
                           <img loading="lazy" src={food.image} alt={food.name} className="size-full object-cover" />
                         ) : (
-                          <span className="text-2xl">{food.emoji}</span>
+                          <span className="text-lg">{food.emoji}</span>
                         )}
                       </div>
 
-                      <div className="flex-1 min-w-0 flex flex-col justify-center">
-                        <p className="text-[15px] font-bold truncate transition-colors leading-tight mb-2 text-foreground">
+                      <div className="flex min-w-0 flex-col justify-center">
+                        <p className="mb-1 truncate text-[13px] font-bold leading-tight text-foreground transition-colors">
                           {food.name}
                         </p>
-                        <div className="flex items-center gap-3 text-[11px] font-semibold text-muted-foreground">
-                          <span className="flex items-center gap-1.5 min-w-[32px]">
+                        <div className="flex min-w-0 items-center gap-1.5 overflow-hidden text-[9px] font-semibold text-muted-foreground">
+                          <span className="flex min-w-0 shrink-0 items-center gap-1">
                             <span className="size-1.5 rounded-full bg-red-500" />
                             {food.protein ?? 0}g
                           </span>
-                          <span className="flex items-center gap-1.5 min-w-[32px]">
+                          <span className="flex min-w-0 shrink-0 items-center gap-1">
                             <span className="size-1.5 rounded-full bg-amber-500" />
                             {food.carbs ?? 0}g
                           </span>
-                          <span className="flex items-center gap-1.5 min-w-[32px]">
+                          <span className="flex min-w-0 shrink-0 items-center gap-1">
                             <span className="size-1.5 rounded-full bg-blue-500" />
                             {food.fat ?? 0}g
                           </span>
                         </div>
                       </div>
 
-                      <div className="text-right flex flex-col items-end justify-center shrink-0">
-                        <span className="text-base font-black tabular-nums leading-tight text-foreground/90">
+                      <div className="flex min-w-0 flex-col items-end justify-center text-right">
+                        <span className="text-[13px] font-black tabular-nums leading-tight text-foreground/90">
                           {food.cal}{" "}
-                          <span className="text-[10px] font-bold uppercase text-muted-foreground/60">kcal</span>
+                          <span className="text-[8px] font-bold uppercase text-muted-foreground/60">kcal</span>
                         </span>
-                        <span className="text-[10px] text-muted-foreground mt-1">{food.serving}</span>
+                        <span className="mt-0.5 max-w-full truncate text-[8px] text-muted-foreground">{food.serving}</span>
                       </div>
 
-                      <div className="pl-2 shrink-0 flex items-center gap-2 justify-center">
+                      <div className="flex min-w-0 items-center justify-end">
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="size-8 rounded-full"
+                          className="size-9 rounded-full"
                           disabled={isUpdatingFavorite}
                           onClick={(e) => { e.stopPropagation(); void toggleFavoriteFood(food); }}
                         >
                           <HeartIcon
                             className={cn(
-                              "size-4",
+                              "size-4.5",
                               food.isFavorite ? "fill-current text-primary" : "text-muted-foreground",
                             )}
                           />
                         </Button>
-                        {isAdded ? (
-                          <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                            <CheckIcon className="size-4" />
-                          </div>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-8 rounded-full bg-muted hover:bg-primary hover:text-primary-foreground text-muted-foreground transition-colors"
-                          >
-                            <PlusIcon className="size-4" />
-                          </Button>
-                        )}
                       </div>
                     </motion.div>
                   );
@@ -500,6 +470,7 @@ export default function ManualAddDrawer({
           )}
         </ScrollArea>
       </DrawerBody>
+      <DrawerFooter className={'p-2'}/>
       {/* Portion editor drawer */}
       <Drawer
         open={!!editingFood}
@@ -507,109 +478,17 @@ export default function ManualAddDrawer({
         direction="bottom"
       >
         <NutritionDrawerContent size="sm">
-          <DrawerHeader>
-            <DrawerTitle className="flex items-center gap-2">
-              <span>{editingFood?.emoji}</span>
-              <span>{editingFood?.name}</span>
-            </DrawerTitle>
-            <DrawerDescription>
-              Porsiya hajmini tanlang ({editingFood?.unit || "g"})
-            </DrawerDescription>
-          </DrawerHeader>
-
-          {editingFood && (
-            <DrawerBody className="space-y-8">
-              {editingFood.image && (
-                <div className="h-40 w-full rounded-2xl overflow-hidden bg-muted/30 -mt-2">
-                  <img
-                    src={editingFood.image}
-                    alt={editingFood.name}
-                    loading="lazy"
-                    width={640}
-                    height={360}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-
-              <div className="flex flex-col items-center">
-                <GaugeProgress
-                  value={calculateMacros(editingFood, grams).cal}
-                  max={calculateMacros(editingFood, getSliderMax(editingFood)).cal}
-                  id={editingFood.barcode || "manual"}
-                />
-                <div className="grid grid-cols-3 gap-8 w-full border-t border-border/50 pt-6 px-4">
-                  <div className="flex flex-col items-center gap-1.5">
-                    <span className="flex items-center gap-1.5 text-sm font-bold text-muted-foreground">
-                      🍗 Oqsil
-                    </span>
-                    <span className="text-base font-black">
-                      <span className="text-red-500">{calculateMacros(editingFood, grams).protein}</span>
-                      <span className="opacity-50 text-xs text-muted-foreground font-semibold">/{goals.protein}g</span>
-                    </span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1.5 border-l border-r border-border/50 px-4">
-                    <span className="flex items-center gap-1.5 text-sm font-bold text-muted-foreground">
-                      🍴 Uglevod
-                    </span>
-                    <span className="text-base font-black">
-                      <span className="text-orange-500">{calculateMacros(editingFood, grams).carbs}</span>
-                      <span className="opacity-50 text-xs text-muted-foreground font-semibold">/{goals.carbs}g</span>
-                    </span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1.5">
-                    <span className="flex items-center gap-1.5 text-sm font-bold text-muted-foreground">
-                      🥑 Yog'
-                    </span>
-                    <span className="text-base font-black">
-                      <span className="text-green-500">{calculateMacros(editingFood, grams).fat}</span>
-                      <span className="opacity-50 text-xs text-muted-foreground font-semibold">/{goals.fat}g</span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex justify-between items-center px-1">
-                  <span className="text-sm font-medium text-muted-foreground">Miqdori:</span>
-                  <span className="text-2xl font-black text-primary">
-                    {grams}{editingFood.unit || "g"}
-                  </span>
-                </div>
-                <Slider
-                  value={[grams]}
-                  min={editingFood.step || 10}
-                  max={getSliderMax(editingFood)}
-                  step={editingFood.step || 10}
-                  onValueChange={([val]) => setGrams(val)}
-                  className="py-4"
-                />
-              </div>
-
-              {editingFood.vitamins ? (
-                <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 space-y-3">
-                  <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
-                    <CalculatorIcon className="size-3" /> Vitaminlar va Minerallar
-                  </div>
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-                    {map(toPairs(editingFood.vitamins), ([name, amount]) => (
-                      <div key={name} className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground font-medium">{name}</span>
-                        <span className="font-black text-foreground">{amount}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-            </DrawerBody>
-          )}
-
-          <DrawerFooter>
-            <Button variant="outline" onClick={() => setEditingFood(null)}>
-              Bekor qilish
-            </Button>
-            <Button onClick={handleSaveFood}>Saqlash</Button>
-          </DrawerFooter>
+          <FoodDetailPortionDrawer
+            item={editingFood}
+            type="food"
+            grams={grams}
+            goals={goals}
+            ingredients={editingFood?.ingredients}
+            onGramsChange={setGrams}
+            onSave={handleSaveFood}
+            macroCalculator={calculateMacros}
+            sliderMax={editingFood ? getFoodSliderMax(editingFood) : undefined}
+          />
         </NutritionDrawerContent>
       </Drawer>
     </>

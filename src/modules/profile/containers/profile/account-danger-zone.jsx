@@ -2,27 +2,28 @@ import React from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
-import { UserXIcon } from "lucide-react";
+import { ChevronRightIcon, LogOutIcon, UserXIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import useApi from "@/hooks/api/use-api";
+import { usePostQuery } from "@/hooks/api";
 import {
   getRequestErrorMessage,
 } from "@/hooks/app/use-profile-settings";
 import { useProfileOverlay } from "@/modules/profile/hooks/use-profile-overlay";
 import { useAuthStore } from "@/store";
+import { cn } from "@/lib/utils";
 
 import { includes, isArray } from "lodash";
 
@@ -35,8 +36,10 @@ export const AccountDangerZone = () => {
   const { request } = useApi();
   const { closeProfile } = useProfileOverlay();
   const logout = useAuthStore((state) => state.logout);
+  const refreshToken = useAuthStore((state) => state.refreshToken);
   const roles = useAuthStore((state) => state.roles);
-  const [isOpen, setIsOpen] = React.useState(false);
+  const { mutateAsync: logoutRequest, isPending: isLoggingOut } = usePostQuery();
+  const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
   const [confirmationText, setConfirmationText] = React.useState("");
   const [isDeleting, setIsDeleting] = React.useState(false);
 
@@ -50,7 +53,7 @@ export const AccountDangerZone = () => {
         return;
       }
 
-      setIsOpen(nextOpen);
+      setIsDeleteOpen(nextOpen);
 
       if (!nextOpen) {
         setConfirmationText("");
@@ -58,6 +61,24 @@ export const AccountDangerZone = () => {
     },
     [isDeleting],
   );
+
+  const handleLogout = React.useCallback(async () => {
+    try {
+      if (refreshToken) {
+        await logoutRequest({
+          url: "/auth/logout",
+          attributes: { refreshToken },
+        });
+      }
+    } catch {
+      // Local logout still needs to complete if the server session is already gone.
+    } finally {
+      closeProfile?.();
+      logout();
+      queryClient.clear();
+      navigate("/auth/sign-in", { replace: true });
+    }
+  }, [closeProfile, logout, logoutRequest, navigate, queryClient, refreshToken]);
 
   const handleDelete = React.useCallback(async () => {
     if (!canConfirm || isDeleting) {
@@ -78,7 +99,7 @@ export const AccountDangerZone = () => {
           defaultValue: "Hisob muvaffaqiyatli o'chirildi.",
         }),
       );
-      setIsOpen(false);
+      setIsDeleteOpen(false);
       setConfirmationText("");
       closeProfile?.();
       logout();
@@ -98,118 +119,158 @@ export const AccountDangerZone = () => {
     }
   }, [canConfirm, closeProfile, isDeleting, logout, navigate, queryClient, request, t]);
 
-  if (isSuperAdmin) {
-    return null;
-  }
-
   return (
-    <Card className="mt-1 border-destructive/25 py-6 shadow-none">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-semibold text-destructive">
-          {t("profile.security.account.dangerTitle", {
-            defaultValue: "Danger zone",
-          })}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4 p-6">
-        <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4">
-          <div className="flex items-start gap-4">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-              <UserXIcon className="size-4" />
-            </div>
-            <div className="space-y-2">
-              <p className="font-semibold text-destructive">
-                {t("profile.security.account.delete", {
+    <>
+      <Card className="overflow-hidden">
+        <CardContent className="p-0">
+          <AccountActionRow
+            icon={LogOutIcon}
+            label={t("profile.security.session.button", {
+              defaultValue: "Tizimdan chiqish",
+            })}
+            onClick={() => void handleLogout()}
+            disabled={isLoggingOut}
+          />
+          {!isSuperAdmin ? (
+            <>
+              <div className="mx-6 border-t border-border/50 sm:mx-7" />
+              <AccountActionRow
+                icon={UserXIcon}
+                label={t("profile.security.account.delete", {
                   defaultValue: "Hisobni o'chirish",
                 })}
-              </p>
-              <p className="text-sm leading-6 text-muted-foreground">
-                {t("profile.security.account.dangerDesc", {
+                onClick={() => setIsDeleteOpen(true)}
+                destructive
+              />
+            </>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      <Drawer
+        direction="bottom"
+        open={isDeleteOpen}
+        onOpenChange={handleOpenChange}
+      >
+        <DrawerContent
+          data-testid="delete-account-drawer"
+          className="data-[vaul-drawer-direction=bottom]:!mx-auto data-[vaul-drawer-direction=bottom]:!max-w-md"
+        >
+          <DrawerHeader>
+            <DrawerTitle>
+              {t("profile.security.account.deleteConfirmTitle", {
+                defaultValue: "Hisobni butunlay o'chirish",
+              })}
+            </DrawerTitle>
+            <DrawerDescription>
+              {t("profile.security.account.deleteConfirmDesc", {
+                defaultValue:
+                  "Tasdiqlash uchun DELETE yozing. Shundan keyin hisob, progress va saqlangan ma'lumotlar qayta tiklanmaydi.",
+              })}
+            </DrawerDescription>
+          </DrawerHeader>
+
+          <DrawerBody className="space-y-4 pb-3">
+            <div className="space-y-2">
+              <label
+                htmlFor="account-delete-confirmation"
+                className="text-sm font-medium"
+              >
+                {t("profile.security.account.deleteConfirmInputLabel", {
+                  defaultValue: "Tasdiqlash matni",
+                })}
+              </label>
+              <Input
+                id="account-delete-confirmation"
+                value={confirmationText}
+                autoComplete="off"
+                placeholder={DELETE_CONFIRMATION_TEXT}
+                onChange={(event) =>
+                  setConfirmationText(event.target.value)
+                }
+              />
+              <p className="text-xs leading-5 text-muted-foreground">
+                {t("profile.security.account.deleteConfirmHint", {
                   defaultValue:
-                    "Hisob va barcha foydalanuvchi ma'lumotlari butunlay o'chiriladi. Bu amalni qaytarib bo'lmaydi.",
+                    "Tugma faollashishi uchun DELETE so'zini aynan shu ko'rinishda yozing.",
                 })}
               </p>
-
-              <AlertDialog open={isOpen} onOpenChange={handleOpenChange}>
-                <AlertDialogTrigger asChild>
-                  <Button type="button" variant="destructive">
-                    <UserXIcon className="size-4" />
-                    {t("profile.security.account.deleteButton", {
-                      defaultValue: "Hisobni o'chirish",
-                    })}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      {t("profile.security.account.deleteConfirmTitle", {
-                        defaultValue: "Hisobni butunlay o'chirish",
-                      })}
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {t("profile.security.account.deleteConfirmDesc", {
-                        defaultValue:
-                          "Tasdiqlash uchun DELETE yozing. Shundan keyin hisob, progress va saqlangan ma'lumotlar qayta tiklanmaydi.",
-                      })}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="account-delete-confirmation"
-                      className="text-sm font-medium"
-                    >
-                      {t("profile.security.account.deleteConfirmInputLabel", {
-                        defaultValue: "Tasdiqlash matni",
-                      })}
-                    </label>
-                    <Input
-                      id="account-delete-confirmation"
-                      value={confirmationText}
-                      autoComplete="off"
-                      placeholder={DELETE_CONFIRMATION_TEXT}
-                      onChange={(event) =>
-                        setConfirmationText(event.target.value)
-                      }
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {t("profile.security.account.deleteConfirmHint", {
-                        defaultValue:
-                          "Tugma faollashishi uchun DELETE so'zini aynan shu ko'rinishda yozing.",
-                      })}
-                    </p>
-                  </div>
-
-                  <AlertDialogFooter>
-                    <AlertDialogCancel disabled={isDeleting}>
-                      {t("profile.general.cancel", {
-                        defaultValue: "Bekor qilish",
-                      })}
-                    </AlertDialogCancel>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      disabled={!canConfirm || isDeleting}
-                      onClick={() => void handleDelete()}
-                    >
-                      <UserXIcon className="size-4" />
-                      {isDeleting
-                        ? t("profile.security.account.deleteLoading", {
-                            defaultValue: "O'chirilmoqda...",
-                          })
-                        : t("profile.security.account.deleteConfirmAction", {
-                            defaultValue: "Hisobni butunlay o'chirish",
-                          })}
-                    </Button>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
             </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+          </DrawerBody>
+
+          <DrawerFooter className="px-4 pb-5 pt-2">
+            <Button
+              type="button"
+              variant="destructive"
+              className="h-11"
+              disabled={!canConfirm || isDeleting}
+              onClick={() => void handleDelete()}
+            >
+              <UserXIcon className="size-4" />
+              {isDeleting
+                ? t("profile.security.account.deleteLoading", {
+                    defaultValue: "O'chirilmoqda...",
+                  })
+                : t("profile.security.account.deleteConfirmAction", {
+                    defaultValue: "Hisobni butunlay o'chirish",
+              })}
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    </>
   );
 };
+
+const AccountActionRow = ({
+  icon: Icon,
+  label,
+  value,
+  onClick,
+  destructive = false,
+  disabled = false,
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    className={cn(
+      "flex w-full items-center gap-3.5 px-6 py-4 text-left transition-colors hover:bg-muted/40 disabled:pointer-events-none disabled:opacity-60 sm:px-7",
+      destructive && "hover:bg-destructive/5",
+    )}
+  >
+    <div
+      className={cn(
+        "flex size-9 shrink-0 items-center justify-center rounded-full",
+        destructive
+          ? "bg-destructive/10 text-destructive"
+          : "text-muted-foreground",
+      )}
+    >
+      <Icon className="size-4.5" />
+    </div>
+    <div className="flex min-w-0 flex-1 items-center gap-3">
+      <span
+        className={cn(
+          "truncate text-sm font-medium sm:text-[15px]",
+          destructive && "text-destructive",
+        )}
+      >
+        {label}
+      </span>
+      {value ? (
+        <span className="ml-auto max-w-[48%] truncate text-right text-xs text-muted-foreground sm:text-sm">
+          {value}
+        </span>
+      ) : null}
+    </div>
+    <ChevronRightIcon
+      className={cn(
+        "size-4 shrink-0",
+        destructive ? "text-destructive/80" : "text-muted-foreground",
+      )}
+    />
+  </button>
+);
 
 export default AccountDangerZone;

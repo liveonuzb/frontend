@@ -50,7 +50,7 @@ export default function useReminderTrigger({
       state.interacted = true;
     };
     const onVisibility = () => {
-      // Reset anchor when visibility flips so we don't credit hidden time.
+      // Reset anchor when visibility flips so hidden time is not counted.
       state.lastTick = Date.now();
     };
 

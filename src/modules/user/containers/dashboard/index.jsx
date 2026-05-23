@@ -1,11 +1,12 @@
 import React from "react";
-import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { get } from "lodash";
+import { get, join, map, take, toUpper, trim, split } from "lodash";
 import { useBreadcrumbStore } from "@/store";
 import PageTransition from "@/components/page-transition";
 import CalendarBottomDrawer from "@/components/calendar-bottom-drawer.jsx";
+import NotificationCenter from "@/components/notification-center";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import CalorieGaugeWidget from "./calorie-gauge-widget.jsx";
 import MealsWidget from "./meals-widget.jsx";
@@ -31,9 +32,12 @@ import { USER_CHALLENGES_ENABLED } from "@/modules/user/user-feature-flags.js";
 import {
   AlertTriangleIcon,
   CalendarDaysIcon,
-  ClipboardListIcon,
   RefreshCwIcon,
 } from "lucide-react";
+import {
+  PROFILE_OVERVIEW_TAB,
+  useProfileOverlay,
+} from "@/modules/profile/hooks/use-profile-overlay";
 
 const formatDashboardDateLabel = (date) =>
   date.toLocaleDateString("uz-UZ", {
@@ -93,6 +97,79 @@ const DashboardStatusMessage = ({
   </div>
 );
 
+const getDashboardDisplayName = (user, fallback) =>
+  trim(`${user?.firstName || ""} ${user?.lastName || ""}`) ||
+  user?.username ||
+  fallback;
+
+const getDashboardInitials = (displayName) =>
+  toUpper(
+    join(
+      take(
+        map(split(displayName, " "), (part) => get(part, "[0]", "")),
+        2,
+      ),
+      "",
+    ),
+  );
+
+const DashboardMobileTopBar = ({
+  user,
+  selectedDateLabel,
+  onOpenCalendar,
+}) => {
+  const { t } = useTranslation();
+  const { openProfile } = useProfileOverlay();
+  const displayName = getDashboardDisplayName(
+    user,
+    t("common.navUser.user", "Foydalanuvchi"),
+  );
+  const initials = getDashboardInitials(displayName);
+
+  return (
+    <div
+      data-testid="dashboard-mobile-top-bar"
+      className="flex items-center justify-between gap-3 pt-[max(0.25rem,env(safe-area-inset-top))] md:hidden"
+    >
+      <button
+        type="button"
+        className="flex min-w-0 items-center gap-3 rounded-2xl text-left outline-none transition-opacity active:opacity-80"
+        onClick={() => openProfile(PROFILE_OVERVIEW_TAB)}
+        aria-label={`Profilni ochish: ${displayName}`}
+      >
+        <Avatar className="size-11 shrink-0 border border-border/70 bg-card">
+          <AvatarImage src={user?.avatar} alt={displayName} />
+          <AvatarFallback className="text-xs font-semibold">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+        <span className="min-w-0">
+          <span className="block text-xs font-medium leading-tight text-muted-foreground">
+            {t("user.dashboard.mobileGreeting", "Salom")}
+          </span>
+          <span className="block truncate text-[15px] font-semibold leading-tight text-foreground">
+            {displayName}
+          </span>
+        </span>
+      </button>
+
+      <div className="flex shrink-0 items-center gap-2">
+        <NotificationCenter className="size-11 rounded-full border border-border/60 bg-card/80 shadow-none hover:bg-card" />
+        <Button
+          type="button"
+          variant="outline"
+          size="icon-lg"
+          className="size-11 rounded-full bg-card/80 shadow-none hover:shadow-none"
+          onClick={onOpenCalendar}
+          aria-label={`Sana tanlash: ${selectedDateLabel}`}
+        >
+          <CalendarDaysIcon className="size-5" />
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 const DashboardContainer = () => {
   const { t } = useTranslation();
   const { setBreadcrumbs } = useBreadcrumbStore();
@@ -134,7 +211,12 @@ const DashboardContainer = () => {
   return (
     <PageTransition mode="slide-up">
       <div className="flex flex-col gap-6">
-        <div className="flex justify-end">
+        <DashboardMobileTopBar
+          user={user}
+          selectedDateLabel={selectedDateLabel}
+          onOpenCalendar={() => setCalendarOpen(true)}
+        />
+        <div className="hidden justify-end md:flex">
           <Button
             type="button"
             variant="outline"
@@ -170,7 +252,7 @@ const DashboardContainer = () => {
             <div className="grid grid-cols-1 gap-4">
               <div
                 data-testid="dashboard-top-card-row"
-                className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 lg:grid-cols-11"
+                className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 lg:h-[400px] lg:grid-cols-11"
               >
                 <div className="flex min-h-0 md:col-span-1 lg:col-span-3">
                   <CalorieGaugeWidget

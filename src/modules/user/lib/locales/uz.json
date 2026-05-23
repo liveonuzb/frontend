@@ -3,6 +3,7 @@
     "dashboard": {
       "title": "Bosh sahifa",
       "greeting": "Salom, {{name}}!",
+      "mobileGreeting": "Salom",
       "quote": "Kun motivatsiyasi",
       "accept": "Qabul qilish",
       "decline": "Rad etish",

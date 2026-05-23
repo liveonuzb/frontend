@@ -9,28 +9,24 @@ import {
   toUpper,
   filter,
   values as lodashValues,
-  isEmpty,
   includes,
   isArray,
   keys,
-  toNumber,
   trim,
 } from "lodash";
 import {
   CheckIcon,
   ChevronRightIcon,
-  CrownIcon,
   MoonIcon,
   PaletteIcon,
-  PencilIcon,
   SunIcon,
-  ZapIcon,
-  CheckCircle2Icon,
+  XIcon,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   Drawer,
   DrawerContent,
+  DrawerClose,
   DrawerHeader,
   DrawerTitle,
   DrawerDescription,
@@ -47,6 +43,7 @@ import {
   APP_MODES,
 } from "@/store";
 import ModeDrawer from "@/components/mode-drawer";
+import ThemeDrawer from "@/components/theme-drawer";
 import { useTheme } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import OnboardingHealthReportCard from "@/components/onboarding-health-report-card";
@@ -60,6 +57,7 @@ import {
 import {
   normalizeProfileContentTab,
   normalizeProfileOverlayTab,
+  isProfileNestedDrawerTab,
 } from "@/modules/profile/lib/profile-tab-registry";
 import { getStandaloneProfileTabPath } from "@/modules/profile/lib/profile-tab-navigation";
 import { getUserOnboardingReportPath } from "@/lib/app-paths";
@@ -72,6 +70,7 @@ import useProfileSettings, {
 import AccountDangerZone from "./account-danger-zone";
 import { NotificationSettingsDrawer } from "./tabs/notifications-tab";
 import { getProfileTabs } from "./profile-tabs";
+import ProfileVitalsCard from "./profile-vitals-card";
 
 const FALLBACK_LANGUAGES = [
   { code: "uz", name: "O'zbek tili", flag: "🇺🇿" },
@@ -112,14 +111,6 @@ const getLanguageLabel = (languageCode) => {
   }
 
   return "O'zbek";
-};
-
-const getPremiumLabel = (user, t) => {
-  if (user?.premium?.status === "active") {
-    return t("profile.premium.status.active");
-  }
-
-  return t("profile.premium.status.free");
 };
 
 const getNotificationSettingsCount = (settings) => {
@@ -185,15 +176,6 @@ const getTabConfig = (tabId, user, t) => {
   return tab;
 };
 
-const InlinePremiumItem = ({ tab, value, onClick }) => (
-  <SettingsItem
-    icon={tab.icon}
-    label={tab.label}
-    value={value}
-    onClick={onClick}
-  />
-);
-
 const InlineNotificationsItem = ({ tab, value }) => {
   const [open, setOpen] = React.useState(false);
 
@@ -236,31 +218,45 @@ const MODE_LABELS = {
   [APP_MODES.MADAGASCAR]: "Madagascar",
 };
 
-const InlineModeItem = () => {
-  const [open, setOpen] = React.useState(false);
+const SettingsDivider = () => (
+  <div className="mx-6 border-t border-border/50 sm:mx-7" />
+);
+
+const InlineModeItem = ({ wrap = true }) => {
+  const [modeOpen, setModeOpen] = React.useState(false);
+  const [themeOpen, setThemeOpen] = React.useState(false);
   const mode = useAppModeStore((state) => state.mode);
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const Icon = theme === "dark" ? MoonIcon : SunIcon;
+  const rows = (
+    <>
+      <SettingsItem
+        icon={PaletteIcon}
+        label={"Mode"}
+        value={MODE_LABELS[mode] ?? "Madagascar"}
+        onClick={() => setModeOpen(true)}
+      />
+      <SettingsDivider />
+      <SettingsItem
+        icon={Icon}
+        label="Theme"
+        value={theme === "dark" ? "Qorong'u" : "Yorug'"}
+        onClick={() => setThemeOpen(true)}
+      />
+    </>
+  );
 
   return (
     <>
-      <Card className="overflow-hidden">
-        <CardContent className="p-0">
-          <SettingsItem
-            icon={PaletteIcon}
-            label={"Mode"}
-            value={MODE_LABELS[mode] ?? "Madagascar"}
-            onClick={() => setOpen(true)}
-          />
-          <SettingsItem
-            icon={Icon}
-            label="Theme"
-            value={theme === "dark" ? "Qorong'u" : "Yorug'"}
-            onClick={toggleTheme}
-          />
-        </CardContent>
-      </Card>
-      <ModeDrawer open={open} onOpenChange={setOpen} />
+      {wrap ? (
+        <Card className="overflow-hidden">
+          <CardContent className="p-0">{rows}</CardContent>
+        </Card>
+      ) : (
+        rows
+      )}
+      <ModeDrawer open={modeOpen} onOpenChange={setModeOpen} />
+      <ThemeDrawer open={themeOpen} onOpenChange={setThemeOpen} />
     </>
   );
 };
@@ -392,6 +388,103 @@ const SettingsGroupCard = ({
   </Card>
 );
 
+const ProfileOverviewSettingsCard = ({
+  activeLanguages,
+  currentLang,
+  resolvedLang,
+  setCurrentLanguage,
+  settings,
+  t,
+}) => {
+  const tabs = React.useMemo(() => getProfileTabs(t), [t]);
+  const generalTab = find(tabs, (item) => item.id === "general");
+  const notificationsTab = find(tabs, (item) => item.id === "notifications");
+
+  return (
+    <Card className="overflow-hidden">
+      <CardContent className="p-0">
+        <InlineModeItem wrap={false} />
+        {generalTab ? (
+          <>
+            <SettingsDivider />
+            <InlineLangItem
+              tab={generalTab}
+              languages={activeLanguages}
+              currentLang={currentLang}
+              resolvedLang={resolvedLang}
+              setCurrentLanguage={setCurrentLanguage}
+            />
+          </>
+        ) : null}
+        {notificationsTab ? (
+          <>
+            <SettingsDivider />
+            <InlineNotificationsItem
+              tab={notificationsTab}
+              value={`${getNotificationSettingsCount(settings)} yoqilgan`}
+            />
+          </>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+};
+
+const ProfileSectionDrawer = ({ open, tabId, tabs, onOpenChange }) => {
+  const tab = React.useMemo(
+    () => find(tabs, (item) => item.id === tabId) ?? null,
+    [tabId, tabs],
+  );
+  const ActiveTab = tab?.component ?? null;
+
+  if (!tab || !ActiveTab) {
+    return null;
+  }
+
+  const isSecurity = tabId === "security";
+
+  return (
+    <Drawer direction="bottom" open={open} onOpenChange={onOpenChange}>
+      <DrawerContent
+        data-profile-section-drawer={tabId}
+        className="data-[vaul-drawer-direction=bottom]:!mx-auto data-[vaul-drawer-direction=bottom]:!max-w-md"
+      >
+        <DrawerHeader className="border-b border-border/50 px-5 pb-3 pt-4 text-left">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <DrawerTitle className="truncate text-base font-semibold">
+                {tab.label}
+              </DrawerTitle>
+              <DrawerDescription className="mt-0.5 line-clamp-2 text-xs">
+                {tab.description}
+              </DrawerDescription>
+            </div>
+            <DrawerClose asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-9 shrink-0 rounded-full"
+                aria-label="Profil bo‘limini yopish"
+              >
+                <XIcon className="size-4" />
+              </Button>
+            </DrawerClose>
+          </div>
+        </DrawerHeader>
+
+        {isSecurity ? (
+          <ActiveTab embedded />
+        ) : (
+          <DrawerBody className="px-3 pb-5 pt-3">
+            <ActiveTab embedded />
+          </DrawerBody>
+        )}
+      </DrawerContent>
+    </Drawer>
+  );
+};
+
 const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -427,15 +520,6 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
 
     return availableRoles[0] ?? "USER";
   }, [activeRole, availableRoles]);
-  const xp = toNumber(user?.xp) || 0;
-  const level = toNumber(user?.level) || 1;
-  const levelProgress = Math.max(
-    0,
-    Math.min(100, toNumber(user?.levelProgress) || 0),
-  );
-  const levelRemaining = Math.max(0, 100 - levelProgress);
-  const streakDays = 3;
-
   const handleRoleSwitch = React.useCallback(
     (role) => {
       const nextConfig = ROLE_CONFIG[role];
@@ -456,96 +540,19 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
 
   return (
     <div className="space-y-3">
-      <Card className="overflow-hidden border-border/60 py-0 shadow-none">
-        <CardContent className="space-y-4 p-0">
-          <div className="bg-gradient-to-b from-primary/10 via-background to-background px-5 pb-4 pt-5">
-            <div className="flex items-start justify-center gap-4 mb-2">
-              <div className="relative shrink-0">
-                <Avatar className="size-20 border-2 border-background shadow-sm">
-                  <AvatarImage src={user?.avatar} alt={displayName} />
-                  <AvatarFallback className="text-xl font-bold">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
-                <button
-                  type="button"
-                  onClick={() => onTabChange("profile")}
-                  className="absolute bottom-0 right-0 flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm"
-                >
-                  <PencilIcon className="size-3.5" />
-                </button>
-              </div>
-            </div>
-            <div className="text-center">
-              <p className="truncate text-lg font-semibold tracking-tight leading-none">
-                {displayName}
-              </p>
-              {user?.email || user?.phone ? (
-                <p className="mt-1 truncate text-sm text-muted-foreground">
-                  {user?.email || user?.phone}
-                </p>
-              ) : null}
-              <p className="truncate text-sm font-medium">
-                {user?.username
-                  ? `@${user.username}`
-                  : t("profile.usernamePlaceholder")}
-              </p>
-            </div>
-          </div>
-
-          <div className="px-5 pb-5">
-            {/* Level Unit - Above the Card */}
-            <div className="mb-4 flex flex-col items-center">
-              <div className="relative group">
-                <div className="absolute -inset-1.5 rounded-3xl bg-primary/20 blur opacity-30 group-hover:opacity-60 transition duration-500"></div>
-                <div className="relative flex size-14 items-center justify-center rounded-[1.25rem] bg-primary text-primary-foreground shadow-lg transform rotate-2 group-hover:rotate-0 transition-all">
-                  <span className="text-2xl font-black leading-none italic">
-                    {level}
-                  </span>
-                </div>
-              </div>
-              <p className="mt-2 text-[10px] font-black uppercase tracking-[0.2em] text-primary/80 italic">
-                {t("profile.level", { level })}
-              </p>
-            </div>
-
-            {/* Stats Card - Unified Pill Row */}
-            <div className="rounded-[2.25rem] border border-border/50 bg-muted/5 p-5 shadow-xs transition-colors hover:bg-muted/10">
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                <div className="flex items-center gap-2 rounded-full border border-border/40 bg-background/60 px-3.5 py-1.5 shadow-xs transition-all hover:border-primary/30">
-                  <CrownIcon className="size-3.5 text-primary" />
-                  <span className="max-w-[80px] truncate text-xs font-bold italic text-foreground/80">
-                    {xp} XP
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 rounded-full border border-border/40 bg-background/60 px-3.5 py-1.5 shadow-xs transition-all hover:border-amber-500/30">
-                  <ZapIcon className="size-3.5 text-amber-500 fill-amber-500 animate-pulse" />
-                  <span className="max-w-[80px] truncate text-xs font-bold italic text-foreground/80">
-                    {t("profile.streakDays", { count: streakDays })}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 rounded-full border border-border/40 bg-background/60 px-3.5 py-1.5 shadow-xs transition-all hover:border-emerald-500/30">
-                  <CheckCircle2Icon className="size-3.5 text-emerald-500" />
-                  <span className="max-w-[80px] truncate text-xs font-bold italic text-foreground/80">
-                    {levelProgress}%
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-5 space-y-1.5">
-                <Progress
-                  value={levelProgress}
-                  className="h-1.5 bg-primary/5"
-                />
-                <p className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/30 italic">
-                  {t("profile.nextLevel", { percent: levelRemaining })}
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      {!isEmpty(availableRoles) ? (
+      <ProfileVitalsCard
+        user={user}
+        displayName={displayName}
+        initials={initials}
+        completion={completion}
+        onEditProfile={() => onTabChange("profile")}
+        onOpenPremium={() => onTabChange("premium")}
+        onOpenGoals={() => {
+          closeProfile?.();
+          navigate(getStandaloneProfileTabPath("health") ?? "/user/health");
+        }}
+      />
+      {availableRoles.length > 1 ? (
         <Card className={"gap-0"}>
           <CardHeader className={"py-3"}>
             <CardTitle>{t("common.navUser.accounts")}</CardTitle>
@@ -606,23 +613,19 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
         </Card>
       ) : null}
 
-      <InlineModeItem />
-      {map(SETTINGS_GROUPS, (group, index) => (
+      <ProfileOverviewSettingsCard
+        activeLanguages={activeLanguages}
+        currentLang={currentLang}
+        resolvedLang={find(activeLanguages, (l) => l.code === currentLang)}
+        setCurrentLanguage={setCurrentLanguage}
+        settings={settings}
+        t={t}
+      />
+      {map([["privacy", "security"], ["referral"]], (group, index) => (
         <SettingsGroupCard
           key={index}
           items={group}
           onTabChange={(tabId) => {
-            if (tabId === "general" || tabId === "premium") return;
-            if (tabId === "health") {
-              closeProfile?.();
-              navigate(getStandaloneProfileTabPath("health") ?? "/user/health");
-              return;
-            }
-            if (tabId === "referral") {
-              closeProfile?.();
-              navigate("/user/referrals");
-              return;
-            }
             onTabChange(tabId);
           }}
           user={user}
@@ -630,52 +633,10 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
           valueResolver={(tabId) =>
             getOverviewValue(tabId, user, completion, t)
           }
-          customRenderer={(tabId) => {
-            if (tabId === "general") {
-              const tabs = getProfileTabs(t);
-              const tab = find(tabs, (t) => t.id === "general");
-              const resolvedLang = find(
-                activeLanguages,
-                (l) => l.code === currentLang,
-              );
-              return (
-                <InlineLangItem
-                  key="lang-picker"
-                  tab={tab}
-                  languages={activeLanguages}
-                  currentLang={currentLang}
-                  resolvedLang={resolvedLang}
-                  setCurrentLanguage={setCurrentLanguage}
-                />
-              );
-            }
-            if (tabId === "premium") {
-              const tabs = getProfileTabs(t);
-              const tab = find(tabs, (t) => t.id === "premium");
-              return (
-                <InlinePremiumItem
-                  key="premium-item"
-                  tab={tab}
-                  value={getPremiumLabel(user, t)}
-                  onClick={() => onTabChange("premium")}
-                />
-              );
-            }
-            if (tabId === "notifications") {
-              const tabs = getProfileTabs(t);
-              const tab = find(tabs, (t) => t.id === "notifications");
-              return (
-                <InlineNotificationsItem
-                  key="notifications-item"
-                  tab={tab}
-                  value={`${getNotificationSettingsCount(settings)} yoqilgan`}
-                />
-              );
-            }
-            return null;
-          }}
         />
       ))}
+
+      <AccountDangerZone />
 
       <OnboardingHealthReportCard
         compact
@@ -685,8 +646,6 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
         actionLabel={t("profile.healthReport.action")}
         onAction={openHealthReport}
       />
-
-      <AccountDangerZone />
     </div>
   );
 };
@@ -795,6 +754,8 @@ const Index = ({ embedded = false }) => {
   const rawRequestedTab = searchParams.get("tab");
   const requestedProfileTab = normalizeProfileContentTab(rawRequestedTab);
   const requestedTab = embedded ? activeProfileTab : requestedProfileTab;
+  const isEmbeddedSectionDrawer =
+    embedded && isProfileNestedDrawerTab(requestedTab);
   const activeConfig = find(tabs, (tab) => tab.id === requestedTab) ?? null;
   const ActiveTab = activeConfig?.component ?? null;
   const completion = getProfileCompletion(user);
@@ -839,14 +800,31 @@ const Index = ({ embedded = false }) => {
     },
     [embedded, searchParams, setProfileTab, setSearchParams],
   );
+  const handleSectionDrawerOpenChange = React.useCallback(
+    (open) => {
+      if (!open) {
+        setProfileTab(PROFILE_OVERVIEW_TAB);
+      }
+    },
+    [setProfileTab],
+  );
 
-  if (embedded && requestedTab === PROFILE_OVERVIEW_TAB)
+  if (
+    embedded &&
+    (requestedTab === PROFILE_OVERVIEW_TAB || isEmbeddedSectionDrawer)
+  )
     return (
       <div className="p-3 pb-6">
         <EmbeddedSettingsOverview
           user={user}
           completion={completion}
           onTabChange={handleTabChange}
+        />
+        <ProfileSectionDrawer
+          open={isEmbeddedSectionDrawer}
+          tabId={requestedTab}
+          tabs={tabs}
+          onOpenChange={handleSectionDrawerOpenChange}
         />
       </div>
     );

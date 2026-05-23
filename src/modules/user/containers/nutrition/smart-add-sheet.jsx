@@ -15,10 +15,10 @@ import {
 } from "@/components/ui/drawer.jsx";
 import { NutritionDrawerBody } from "./nutrition-drawer-layout.jsx";
 import {
-  AI_CREDIT_FEATURES,
-  getAiCreditDisabledProps,
-  getAiCreditStatus,
-} from "@/hooks/app/use-ai-credits";
+  AI_USAGE_FEATURES,
+  getAiAccessDisabledProps,
+  getAiAccessStatus,
+} from "@/hooks/app/use-ai-access";
 
 import { map } from "lodash";
 
@@ -30,7 +30,7 @@ const METHOD_ACTIONS = [
     icon: CameraIcon,
     iconClassName: "bg-blue-500/10 text-blue-600 dark:text-blue-300",
     handler: "onOpenCamera",
-    feature: AI_CREDIT_FEATURES.foodPhotoScan,
+    feature: AI_USAGE_FEATURES.foodPhotoScan,
   },
   {
     key: "text",
@@ -39,8 +39,8 @@ const METHOD_ACTIONS = [
     icon: KeyboardIcon,
     iconClassName: "bg-violet-500/10 text-violet-600 dark:text-violet-300",
     handler: "onOpenText",
-    feature: AI_CREDIT_FEATURES.textMealLog,
-    gateRootByCredits: true,
+    feature: AI_USAGE_FEATURES.textMealLog,
+    gateRootByAccess: true,
   },
   {
     key: "audio",
@@ -49,8 +49,8 @@ const METHOD_ACTIONS = [
     icon: MicIcon,
     iconClassName: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
     handler: "onOpenAudio",
-    feature: AI_CREDIT_FEATURES.voiceMealLog,
-    gateRootByCredits: true,
+    feature: AI_USAGE_FEATURES.voiceMealLog,
+    gateRootByAccess: true,
   },
   {
     key: "catalog",
@@ -77,20 +77,20 @@ const getMealAddTitle = (mealLabel) => {
 const MethodButton = ({ action, costs, disabled, handlers, wallet }) => {
   const Icon = action.icon;
   const handler = handlers[action.handler];
-  const creditStatus = action.feature
-    ? getAiCreditStatus({ wallet, costs, feature: action.feature })
+  const accessStatus = action.feature
+    ? getAiAccessStatus({ wallet, costs, feature: action.feature })
     : null;
-  const creditDisabledProps = action.feature && action.gateRootByCredits
-    ? getAiCreditDisabledProps({ wallet, costs, feature: action.feature })
+  const accessDisabledProps = action.feature && action.gateRootByAccess
+    ? getAiAccessDisabledProps({ wallet, costs, feature: action.feature })
     : {};
   const isDisabled =
-    disabled || Boolean(action.gateRootByCredits && creditStatus?.isDisabled);
+    disabled || Boolean(action.gateRootByAccess && accessStatus?.isDisabled);
 
   return (
     <Button
       type="button"
       variant="outline"
-      {...creditDisabledProps}
+      {...accessDisabledProps}
       disabled={isDisabled}
       aria-label={action.label}
       className="h-auto w-full justify-start rounded-2xl border-border/70 px-3 py-3 text-left"
@@ -143,8 +143,8 @@ export default function SmartAddSheet({
   onOpenCatalog,
   onOpenSavedMeals,
   onOpenText,
-  aiCreditCosts = {},
-  aiCreditWallet,
+  aiAccessCosts = {},
+  aiAccessWallet,
 }) {
   const title = getMealAddTitle(mealLabel);
   const handlers = {
@@ -169,10 +169,10 @@ export default function SmartAddSheet({
               <MethodButton
                 key={action.key}
                 action={action}
-                costs={aiCreditCosts}
+                costs={aiAccessCosts}
                 disabled={disabled}
                 handlers={handlers}
-                wallet={aiCreditWallet}
+                wallet={aiAccessWallet}
               />
             ))}
           </div>

@@ -2,7 +2,6 @@ import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import SmartAddSheet from "./smart-add-sheet.jsx";
-import { AI_CREDIT_FEATURES } from "@/hooks/app/use-ai-credits";
 import {
   buildCatalogQuickAddPayload,
   buildNutritionQuickAdds,
@@ -198,27 +197,22 @@ describe("SmartAddSheet", () => {
     expect(handlers.onOpenSavedMeals).not.toHaveBeenCalled();
   });
 
-  it("keeps camera openable when photo-scan credits are insufficient", () => {
+  it("keeps camera openable when daily AI quota is exhausted", () => {
     const { handlers } = renderSheet({
-      aiCreditWallet: { remaining: 1 },
-      aiCreditCosts: {
-        [AI_CREDIT_FEATURES.foodPhotoScan]: 2,
-      },
+      aiAccessWallet: { status: "trial_active", dailyLimit: 3, remainingToday: 0 },
+      aiAccessCosts: {},
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Kamera" }));
 
     expect(handlers.onOpenCamera).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText("2 AI | 1 left")).not.toBeInTheDocument();
+    expect(screen.queryByText(/AI credit/i)).not.toBeInTheDocument();
   });
 
-  it("disables text and audio AI entries when their credits are insufficient", () => {
+  it("disables text and audio AI entries when daily quota is exhausted", () => {
     const { handlers } = renderSheet({
-      aiCreditWallet: { remaining: 0 },
-      aiCreditCosts: {
-        [AI_CREDIT_FEATURES.textMealLog]: 1,
-        [AI_CREDIT_FEATURES.voiceMealLog]: 1,
-      },
+      aiAccessWallet: { status: "trial_active", dailyLimit: 3, remainingToday: 0 },
+      aiAccessCosts: {},
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Matn" }));

@@ -223,12 +223,12 @@ const FloatingActionButton = () => {
       type="button"
       aria-label={isOpen ? "Close quick actions" : "Open quick actions"}
       className={cn(
-        "flex size-16 items-center justify-center rounded-full bg-[linear-gradient(135deg,#62c944_0%,#85d820_100%)] text-white shadow-[0_20px_45px_rgba(132,204,22,0.35)] transition-transform duration-300 hover:shadow-[0_24px_52px_rgba(132,204,22,0.42)] active:scale-95 dark:text-white",
+        "flex size-[60px] items-center justify-center rounded-full bg-primary text-white shadow-[0_20px_45px_rgba(132,204,22,0.35)] transition-transform duration-300 hover:shadow-[0_24px_52px_rgba(132,204,22,0.42)] active:scale-95 dark:text-white",
         isOpen ? "rotate-45" : "rotate-0",
       )}
       onClick={() => setIsOpen((value) => !value)}
     >
-      <PlusIcon className="size-7" />
+      <PlusIcon className="size-6 @max-2xs:size-7" />
     </button>
   );
 
@@ -241,7 +241,7 @@ const FloatingActionButton = () => {
               className="fixed inset-0 z-[70] bg-background/70 backdrop-blur-sm md:hidden"
               onClick={closeFab}
             />
-            <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[71] flex justify-end px-5 pb-6 pb-safe-or-4 md:hidden">
+            <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[71] flex justify-end px-3 pb-6 pb-safe-or-4 md:hidden">
               <div className="relative pointer-events-auto">
                 <FabMenuPanel
                   latestWeight={latestWeight}

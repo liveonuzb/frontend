@@ -55,6 +55,9 @@ const AchievementsPage = lazy(
 const LeaderboardPage = lazy(
   () => import("@/modules/user/pages/leaderboard/index.jsx"),
 );
+const XpHistoryPage = lazy(
+  () => import("@/modules/user/pages/xp-history/index.jsx"),
+);
 
 const FavoritesPage = lazy(
   () => import("@/modules/user/pages/favorites/index.jsx"),
@@ -255,6 +258,16 @@ const Index = () => {
             ) : (
               <Navigate to="/user/dashboard" replace />
             )
+          }
+        />
+        <Route
+          path="xp-history"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <ErrorBoundary>
+                <XpHistoryPage />
+              </ErrorBoundary>
+            </Suspense>
           }
         />
         <Route

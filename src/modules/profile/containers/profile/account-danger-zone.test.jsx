@@ -9,6 +9,7 @@ const mockFns = vi.hoisted(() => ({
   closeProfile: vi.fn(),
   logout: vi.fn(),
   deleteRequest: vi.fn(),
+  logoutRequest: vi.fn(),
   toastSuccess: vi.fn(),
   toastError: vi.fn(),
 }));
@@ -16,6 +17,7 @@ const mockFns = vi.hoisted(() => ({
 let authState = {
   roles: ["USER"],
   logout: mockFns.logout,
+  refreshToken: "refresh-token-1",
 };
 
 vi.mock("react-i18next", () => ({
@@ -38,19 +40,14 @@ vi.mock("@tanstack/react-query", () => ({
   }),
 }));
 
-vi.mock("@/components/ui/alert-dialog", () => ({
-  AlertDialog: ({ children }) => <div>{children}</div>,
-  AlertDialogTrigger: ({ children }) => <>{children}</>,
-  AlertDialogContent: ({ children }) => <div>{children}</div>,
-  AlertDialogHeader: ({ children }) => <div>{children}</div>,
-  AlertDialogTitle: ({ children }) => <h2>{children}</h2>,
-  AlertDialogDescription: ({ children }) => <p>{children}</p>,
-  AlertDialogFooter: ({ children }) => <div>{children}</div>,
-  AlertDialogCancel: ({ children, ...props }) => (
-    <button type="button" {...props}>
-      {children}
-    </button>
-  ),
+vi.mock("@/components/ui/drawer", () => ({
+  Drawer: ({ open, children }) => (open ? <div>{children}</div> : null),
+  DrawerContent: ({ children, ...props }) => <div {...props}>{children}</div>,
+  DrawerHeader: ({ children, ...props }) => <div {...props}>{children}</div>,
+  DrawerTitle: ({ children }) => <h2>{children}</h2>,
+  DrawerDescription: ({ children }) => <p>{children}</p>,
+  DrawerBody: ({ children, ...props }) => <div {...props}>{children}</div>,
+  DrawerFooter: ({ children, ...props }) => <div {...props}>{children}</div>,
 }));
 
 vi.mock("@/hooks/api/use-api", () => ({
@@ -58,6 +55,13 @@ vi.mock("@/hooks/api/use-api", () => ({
     request: {
       delete: mockFns.deleteRequest,
     },
+  }),
+}));
+
+vi.mock("@/hooks/api", () => ({
+  usePostQuery: () => ({
+    mutateAsync: mockFns.logoutRequest,
+    isPending: false,
   }),
 }));
 
@@ -88,15 +92,62 @@ describe("AccountDangerZone", () => {
     authState = {
       roles: ["USER"],
       logout: mockFns.logout,
+      refreshToken: "refresh-token-1",
     };
   });
 
-  it("requires exact DELETE before allowing account deletion", async () => {
+  it("renders logout and delete account as matching action rows", () => {
+    render(<AccountDangerZone />);
+
+    expect(
+      screen.getByRole("button", { name: /Tizimdan chiqish/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Hisobni o'chirish/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Tizimdan chiqiladi/i),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/barcha ma'lumotlar butunlay/i),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Danger zone")).not.toBeInTheDocument();
+  });
+
+  it("logs out from the profile action row", async () => {
+    mockFns.logoutRequest.mockResolvedValue({});
+
+    render(<AccountDangerZone />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Tizimdan chiqish/i }));
+
+    await waitFor(() => {
+      expect(mockFns.logoutRequest).toHaveBeenCalledWith({
+        url: "/auth/logout",
+        attributes: { refreshToken: "refresh-token-1" },
+      });
+    });
+    expect(mockFns.logout).toHaveBeenCalledTimes(1);
+    expect(mockFns.clear).toHaveBeenCalledTimes(1);
+    expect(mockFns.navigate).toHaveBeenCalledWith("/auth/sign-in", {
+      replace: true,
+    });
+  });
+
+  it("opens a bottom drawer and requires exact DELETE before allowing account deletion", async () => {
     mockFns.deleteRequest.mockResolvedValue({});
 
     render(<AccountDangerZone />);
 
-    expect(screen.getByText("Danger zone")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Hisobni o'chirish/i }));
+
+    expect(screen.getByTestId("delete-account-drawer")).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Hisob va barcha foydalanuvchi ma'lumotlari/i),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Bekor qilish/i }),
+    ).not.toBeInTheDocument();
 
     const deleteButton = screen.getByRole("button", {
       name: "Hisobni butunlay o'chirish",
@@ -133,10 +184,16 @@ describe("AccountDangerZone", () => {
     authState = {
       roles: ["SUPER_ADMIN"],
       logout: mockFns.logout,
+      refreshToken: "refresh-token-1",
     };
 
     render(<AccountDangerZone />);
 
-    expect(screen.queryByText("Danger zone")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Hisobni o'chirish/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Tizimdan chiqish/i }),
+    ).toBeInTheDocument();
   });
 });
