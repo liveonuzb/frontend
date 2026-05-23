@@ -5,7 +5,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { Drawer, DrawerFooter } from "@/components/ui/drawer.jsx";
+import { Drawer } from "@/components/ui/drawer.jsx";
 import { NutritionDrawerContent } from "./nutrition-drawer-layout.jsx";
 import CameraDrawer from "./camera-drawer.jsx";
 import AudioAddDrawer from "./audio-add-drawer.jsx";

@@ -315,11 +315,6 @@ const NutritionContent = ({ entryView = "home" }) => {
     );
   }, [plans]);
 
-  const weeklyKanban = React.useMemo(
-    () => currentPlan?.weeklyKanban || {},
-    [currentPlan?.weeklyKanban],
-  );
-
   const saveKanban = async (newKanban) => {
     if (currentPlan?.status === "active") {
       await startPlan({ ...currentPlan, weeklyKanban: newKanban });
@@ -962,29 +957,6 @@ const NutritionContent = ({ entryView = "home" }) => {
       }
     },
     [analyzeMealImageDraft, uploadMealCapture],
-  );
-
-  const handleInlineCameraCapture = React.useCallback(
-    (imageDataUrl, mealType = "breakfast") => {
-      const scan = {
-        id: `scan-${Date.now().toString(36)}-${Math.random()
-          .toString(36)
-          .slice(2, 8)}`,
-        groupId: null,
-        dateKey,
-        mealType,
-        imageDataUrl,
-        imageUrl: null,
-        status: "scanning",
-        item: null,
-        error: null,
-      };
-
-      setPendingScans((current) => [...current, scan]);
-      toast("Rasm qabul qilindi, AI tahlil qilmoqda");
-      void processInlineScan(scan);
-    },
-    [dateKey, processInlineScan],
   );
 
   const pendingScanFoodsByType = React.useMemo(() => {
