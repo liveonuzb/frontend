@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -210,6 +211,17 @@ const foundFood = {
   unit: "g",
 };
 
+const deferred = () => {
+  let resolve;
+  let reject;
+  const promise = new Promise((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+
+  return { promise, resolve, reject };
+};
+
 beforeEach(() => {
   mocks.aiAccessDisabled = false;
   mocks.addMeal.mockReset().mockResolvedValue({});
@@ -256,6 +268,10 @@ describe("CameraDrawer nutrition scanner", () => {
       }),
     );
     renderDrawer({ initialMode: "barcode" });
+
+    expect(
+      screen.getByRole("button", { name: "AI rejimiga qaytish" }),
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Mock barcode scan" }));
 
@@ -345,6 +361,59 @@ describe("CameraDrawer nutrition scanner", () => {
 
     expect(screen.queryByText("Barcode natijasi")).not.toBeInTheDocument();
     expect(screen.getByText("Barcode skanerlash")).toBeInTheDocument();
+  });
+
+  it("ignores stale barcode lookup after closing result drawer", async () => {
+    const lookup = deferred();
+    mocks.lookupFoodByBarcode.mockReturnValue(lookup.promise);
+    renderDrawer({ initialMode: "barcode" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Mock barcode scan" }));
+
+    expect(screen.getByTestId("nutrition-scan-lock-line")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Natijani yopish" }),
+    );
+
+    expect(screen.queryByText("Barcode natijasi")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("nutrition-scan-lock-line")).not.toBeInTheDocument();
+
+    await act(async () => {
+      lookup.resolve(foundFood);
+      await lookup.promise;
+    });
+
+    expect(screen.queryByTestId("nutrition-scan-lock-line")).not.toBeInTheDocument();
+    expect(screen.queryByText("Coca Cola")).not.toBeInTheDocument();
+  });
+
+  it("ignores stale AI analysis after closing result drawer", async () => {
+    const upload = deferred();
+    mocks.uploadMealCapture.mockReturnValue(upload.promise);
+    renderDrawer();
+
+    const input = document.querySelector('input[type="file"]');
+    fireEvent.change(input, {
+      target: {
+        files: [new File(["meal"], "meal.jpg", { type: "image/jpeg" })],
+      },
+    });
+
+    expect(screen.getByText("AI tahlil qilmoqda")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Natijani yopish" }),
+    );
+
+    expect(screen.queryByText("AI topgan ovqatlar")).not.toBeInTheDocument();
+
+    await act(async () => {
+      upload.resolve("https://cdn.test/stale-meal.jpg");
+      await upload.promise;
+    });
+
+    expect(mocks.analyzeMealImageDraft).not.toHaveBeenCalled();
+    expect(screen.queryByText("Chicken rice")).not.toBeInTheDocument();
+    expect(screen.queryByText("AI topgan ovqatlar")).not.toBeInTheDocument();
   });
 
   it("shows disabled AI access feedback from visible photo controls before upload", async () => {

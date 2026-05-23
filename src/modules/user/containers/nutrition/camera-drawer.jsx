@@ -369,6 +369,7 @@ const ScanCameraView = ({
 
             {isScanning || isBarcodeLocked ? (
               <motion.div
+                data-testid="nutrition-scan-lock-line"
                 initial={{ top: 0, opacity: 0 }}
                 animate={{ top: "100%", opacity: [0, 1, 1, 0] }}
                 transition={{
@@ -493,7 +494,7 @@ const ScanCameraView = ({
           aria-disabled={
             scanMode === "camera" && (isPhotoScanDisabled || !ready || isScanning)
           }
-          aria-label={scanMode === "barcode" ? "Barcode reset" : "Capture"}
+          aria-label={scanMode === "barcode" ? "AI rejimiga qaytish" : "Capture"}
           className="flex size-[72px] items-center justify-center rounded-full border-[5px] border-muted bg-background shadow-sm ring-1 ring-border transition-transform active:scale-95 disabled:opacity-40"
         >
           {scanMode === "barcode" ? (
@@ -536,6 +537,8 @@ export default function CameraDrawer({
   const user = useAuthStore((state) => state.user);
   const dayjsLocale = resolveDayjsLocale(currentLanguage);
   const mealDateMinKey = getMealDateStartKey(user, dateKey);
+  const aiScanRequestRef = useRef(0);
+  const barcodeLookupRequestRef = useRef(0);
   const [view, setView] = useState("camera");
   const [scanMode, setScanMode] = useState(initialMode);
   const [resultDrawerOpen, setResultDrawerOpen] = useState(false);
@@ -602,6 +605,8 @@ export default function CameraDrawer({
     if (!open) return;
 
     setView("camera");
+    aiScanRequestRef.current += 1;
+    barcodeLookupRequestRef.current += 1;
     setScanMode(initialMode);
     setResultDrawerOpen(false);
     setResultType(null);
@@ -650,6 +655,8 @@ export default function CameraDrawer({
 
   useEffect(() => {
     if (!open) {
+      aiScanRequestRef.current += 1;
+      barcodeLookupRequestRef.current += 1;
       setView("camera");
       setScanMode(initialMode);
       setResultDrawerOpen(false);
@@ -680,6 +687,9 @@ export default function CameraDrawer({
       return;
     }
 
+    const requestId = aiScanRequestRef.current + 1;
+    aiScanRequestRef.current = requestId;
+
     setCapturedImage(dataUrl);
     setCapturedImageUrl(null);
     setScannedItems([]);
@@ -690,11 +700,13 @@ export default function CameraDrawer({
 
     try {
       const uploadedImageUrl = await uploadMealCapture(dataUrl);
+      if (aiScanRequestRef.current !== requestId) return;
       setCapturedImageUrl(uploadedImageUrl);
 
       const response = await analyzeMealImageDraft({
         imageUrl: uploadedImageUrl,
       });
+      if (aiScanRequestRef.current !== requestId) return;
       const items = isArray(response?.items) ? response.items : [];
 
       setScannedItems(items);
@@ -703,6 +715,7 @@ export default function CameraDrawer({
       }
       setAiResultStatus(items.length > 0 ? "ready" : "empty");
     } catch (error) {
+      if (aiScanRequestRef.current !== requestId) return;
       const message = isAiAccessLimitError(error)
         ? "Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin."
         : error?.response?.data?.message || "Ovqatni AI orqali aniqlab bo'lmadi";
@@ -713,6 +726,7 @@ export default function CameraDrawer({
   };
 
   const handleRetake = useCallback(() => {
+    aiScanRequestRef.current += 1;
     setCapturedImage(null);
     setCapturedImageUrl(null);
     setScannedItems([]);
@@ -723,6 +737,7 @@ export default function CameraDrawer({
   }, []);
 
   const resetBarcodeScanner = useCallback(() => {
+    barcodeLookupRequestRef.current += 1;
     setScannedBarcode("");
     setBarcodeFood(null);
     setBarcodeAmount(100);
@@ -750,6 +765,9 @@ export default function CameraDrawer({
         return;
       }
 
+      const requestId = barcodeLookupRequestRef.current + 1;
+      barcodeLookupRequestRef.current = requestId;
+
       setScannedBarcode(normalizedCode);
       setResultType("barcode");
       setResultDrawerOpen(true);
@@ -758,6 +776,7 @@ export default function CameraDrawer({
 
       try {
         const food = await lookupFoodByBarcode(normalizedCode);
+        if (barcodeLookupRequestRef.current !== requestId) return;
 
         if (!food) {
           setBarcodeStatus("not-found");
@@ -768,6 +787,7 @@ export default function CameraDrawer({
         setBarcodeAmount(food.defaultAmount || 100);
         setBarcodeStatus("found");
       } catch (error) {
+        if (barcodeLookupRequestRef.current !== requestId) return;
         if (error?.response?.status === 404) {
           setBarcodeStatus("not-found");
           return;
