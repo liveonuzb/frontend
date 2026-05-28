@@ -19,6 +19,7 @@ import { UndoIcon } from "lucide-react";
 import { toast } from "sonner";
 import PageTransition from "@/components/page-transition";
 import ErrorBoundary from "@/components/error-boundary/index.jsx";
+import CalendarBottomDrawer from "@/components/calendar-bottom-drawer.jsx";
 import useOnlineStatus from "@/hooks/utils/use-online-status.js";
 import { useLocation, useNavigate } from "react-router";
 import { useProfileOverlay } from "@/modules/profile/hooks/use-profile-overlay";
@@ -332,6 +333,7 @@ const NutritionContent = ({ entryView = "home" }) => {
   };
 
   const [date, setDate] = React.useState(new Date());
+  const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
   const [isBuilderOpen, setIsBuilderOpen] = React.useState(false);
   const [builderInitialData, setBuilderInitialData] = React.useState(null);
   const [isShoppingOpen, setIsShoppingOpen] = React.useState(false);
@@ -780,6 +782,18 @@ const NutritionContent = ({ entryView = "home" }) => {
 
   const dateKey = split(date.toISOString(), "T")[0];
   const todayKey = getTodayKey();
+  const todayDate = React.useMemo(
+    () => new Date(`${todayKey}T12:00:00`),
+    [todayKey],
+  );
+  const selectedDateLabel = React.useMemo(
+    () =>
+      date.toLocaleDateString("uz-UZ", {
+        day: "numeric",
+        month: "short",
+      }),
+    [date],
+  );
   const isPastDate = dateKey < todayKey;
   const dateQueryKey = React.useMemo(() => {
     const value = new URLSearchParams(location.search).get("date");
@@ -793,6 +807,25 @@ const NutritionContent = ({ entryView = "home" }) => {
 
     setDate(new Date(`${dateQueryKey}T12:00:00`));
   }, [dateKey, dateQueryKey]);
+  const handleOverviewDateChange = React.useCallback(
+    (nextDate) => {
+      if (!nextDate) {
+        return;
+      }
+
+      const nextKey = split(nextDate.toISOString(), "T")[0];
+      setDate(nextDate);
+
+      if (location.pathname.startsWith("/user/nutrition/overview")) {
+        const params = new URLSearchParams(location.search);
+        params.set("date", nextKey);
+        navigate(`${location.pathname}?${params.toString()}`, {
+          replace: true,
+        });
+      }
+    },
+    [location.pathname, location.search, navigate],
+  );
 
   const selectedDay = React.useMemo(
     () => WEEK_DAYS[(date.getDay() + 6) % 7],
@@ -1009,7 +1042,7 @@ const NutritionContent = ({ entryView = "home" }) => {
 
     setBreadcrumbs([
       { url: "/user", title: "Bosh sahifa" },
-      { url: "/user/nutrition/home", title: breadcrumbTitle },
+      { url: "/user/nutrition/overview", title: breadcrumbTitle },
     ]);
   }, [entryView, setBreadcrumbs]);
 
@@ -1656,7 +1689,11 @@ const NutritionContent = ({ entryView = "home" }) => {
 
   const sharedViewProps = {
     date,
-    setDate,
+    setDate: handleOverviewDateChange,
+    dateKey,
+    todayKey,
+    selectedDateLabel,
+    onOpenCalendar: () => setIsCalendarOpen(true),
     plans,
     currentPlan,
     currentPlanDayStatus,
@@ -1715,6 +1752,8 @@ const NutritionContent = ({ entryView = "home" }) => {
         <NutritionPlansView
           orderedPlans={orderedPlans}
           currentPlan={currentPlan}
+          goals={effectiveGoals}
+          currentPlanDayStatus={currentPlanDayStatus}
           planInsightsMap={planInsightsMap}
           getPlanStatusMeta={getPlanStatusMeta}
           getPlanSourceMeta={getPlanSourceMeta}
@@ -1822,6 +1861,17 @@ const NutritionContent = ({ entryView = "home" }) => {
         setSourceFilters={setSourceFilters}
         sourceFilters={sourceFilters}
       />
+      {entryView === "home" ? (
+        <CalendarBottomDrawer
+          open={isCalendarOpen}
+          onOpenChange={setIsCalendarOpen}
+          date={date}
+          onChange={handleOverviewDateChange}
+          maxDate={todayDate}
+          title="Sana tanlang"
+          description="Nutrition overview ma'lumotlari tanlangan kunga moslanadi."
+        />
+      ) : null}
     </PageTransition>
   );
 };

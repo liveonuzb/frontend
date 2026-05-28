@@ -89,7 +89,7 @@ const renderLayout = (path) =>
       <Routes>
         <Route element={<Layout />}>
           <Route path="/user/dashboard" element={<div>dashboard</div>} />
-          <Route path="/user/nutrition/home" element={<div>nutrition</div>} />
+          <Route path="/user/nutrition/overview" element={<div>nutrition</div>} />
           <Route path="/user/workout/overview" element={<div>workout</div>} />
           <Route
             path="/user/workout/running/live/:id"
@@ -115,7 +115,7 @@ describe("User layout shell", () => {
   });
 
   it("hides the shared header on normal user pages and removes header spacing", () => {
-    const { unmount } = renderLayout("/user/nutrition/home");
+    const { unmount } = renderLayout("/user/nutrition/overview");
 
     expect(screen.getByTestId("layout-header")).toHaveClass(
       "hidden",

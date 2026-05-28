@@ -13,7 +13,7 @@ describe("Telegram Mini App start params", () => {
     );
     expect(resolveTelegramStartParamRoute("water")).toBe("/user/water");
     expect(resolveTelegramStartParamRoute("meal_plan")).toBe(
-      "/user/nutrition/home",
+      "/user/nutrition/overview",
     );
     expect(resolveTelegramStartParamRoute("workout")).toBe(
       "/user/workout/overview",
@@ -35,7 +35,7 @@ describe("Telegram Mini App start params", () => {
       hasStartParam: true,
       startParam: "meal_plan",
       startParamKind: "meal_plan",
-      startParamRoute: "/user/nutrition/home",
+      startParamRoute: "/user/nutrition/overview",
     });
   });
 

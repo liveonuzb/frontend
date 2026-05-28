@@ -21,7 +21,7 @@ export const getUserTrackingNavItems = () =>
       icon: LayoutDashboardIcon,
     },
     {
-      to: "/user/nutrition/home",
+      to: "/user/nutrition/overview",
       label: "Ovqatlanish",
       icon: UtensilsIcon,
     },

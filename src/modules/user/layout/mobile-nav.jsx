@@ -37,7 +37,7 @@ const MobileNav = ({ hidden = false }) => {
 
   const items = [
     { to: "/user/dashboard", icon: Home2, label: "Dashboard" },
-    { to: "/user/nutrition/home", icon: Salad, label: "Ovqatlanish" },
+    { to: "/user/nutrition/overview", icon: Salad, label: "Ovqatlanish" },
     {
       to: "/user/workout/overview",
       label: "Mashg'ulotlar",

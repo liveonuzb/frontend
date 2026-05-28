@@ -7,9 +7,9 @@ const START_PARAM_PATTERN = /^[a-z0-9_:-]{1,80}$/;
 const ROUTE_BY_START_PARAM = {
   dashboard: "/user/dashboard",
   water: "/user/water",
-  meal_plan: "/user/nutrition/home",
-  meal: "/user/nutrition/home",
-  nutrition: "/user/nutrition/home",
+  meal_plan: "/user/nutrition/overview",
+  meal: "/user/nutrition/overview",
+  nutrition: "/user/nutrition/overview",
   workout: "/user/workout/overview",
   progress: "/user/measurements",
 };

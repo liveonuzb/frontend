@@ -37,6 +37,7 @@ export default function CalendarBottomDrawer({
   minDate,
   maxDate,
   closeOnSelect = true,
+  nested = false,
   className,
   calendarClassName,
 }) {
@@ -81,7 +82,12 @@ export default function CalendarBottomDrawer({
   }, [max, min, onChange, onOpenChange, today]);
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
+    <Drawer
+      open={open}
+      onOpenChange={onOpenChange}
+      direction="bottom"
+      nested={nested}
+    >
       <DrawerContent
         data-calendar-bottom-drawer="true"
         className={cn(

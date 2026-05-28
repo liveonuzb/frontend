@@ -1,15 +1,30 @@
 import React from "react";
-import { map } from "lodash";
+import { map, toNumber } from "lodash";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   CheckIcon,
   ChevronRightIcon,
+  MoreVerticalIcon,
   PencilIcon,
   PlayIcon,
   ShoppingCartIcon,
   Trash2Icon,
 } from "lucide-react";
+
+const getDurationDays = (plan) =>
+  Number.isFinite(Number(plan.durationDays)) && Number(plan.durationDays) > 0
+    ? Number(plan.durationDays)
+    : 7;
+
+const getPlanCalories = (plan, goals) =>
+  toNumber(plan?.appliedTargetCalories || goals?.calories || 0);
+
+const getSourceLabel = (getPlanSourceMeta, plan) =>
+  getPlanSourceMeta(plan.source).label;
+
+const getStatusLabel = (getPlanStatusMeta, plan) =>
+  getPlanStatusMeta(plan.status).label.replace(" reja", "");
 
 export default function NutritionPlansList({
   orderedPlans,
@@ -21,6 +36,8 @@ export default function NutritionPlansList({
   onOpenPlanActions,
   onRemovePlan,
   onSelectPlanForShopping,
+  goals,
+  variant = "cards",
 }) {
   if (orderedPlans.length === 0) {
     return (
@@ -30,7 +47,7 @@ export default function NutritionPlansList({
     );
   }
 
-  return map(orderedPlans, (plan) => {
+  const renderPlanCard = (plan) => {
     const isSelected = plan.id === currentPlan?.id;
     const isActiveStatus = plan.status === "active";
     const insights = planInsightsMap[plan.id] || {
@@ -38,11 +55,7 @@ export default function NutritionPlansList({
       totalItems: 0,
       updatedLabel: null,
     };
-    const durationDays =
-      Number.isFinite(Number(plan.durationDays)) &&
-      Number(plan.durationDays) > 0
-        ? Number(plan.durationDays)
-        : 7;
+    const durationDays = getDurationDays(plan);
 
     return (
       <div
@@ -68,7 +81,7 @@ export default function NutritionPlansList({
                     getPlanStatusMeta(plan.status).badgeClassName,
                   )}
                 >
-                  {getPlanStatusMeta(plan.status).label.replace(" reja", "")}
+                  {getStatusLabel(getPlanStatusMeta, plan)}
                 </span>
                 <span
                   className={cn(
@@ -76,7 +89,7 @@ export default function NutritionPlansList({
                     getPlanSourceMeta(plan.source).badgeClassName,
                   )}
                 >
-                  {getPlanSourceMeta(plan.source).label}
+                  {getSourceLabel(getPlanSourceMeta, plan)}
                 </span>
               </div>
               <p className="truncate text-base font-black">{plan.name}</p>
@@ -155,7 +168,7 @@ export default function NutritionPlansList({
               <p className="text-right text-[11px] text-muted-foreground">
                 {isActiveStatus
                   ? "Hozir ishlatilmoqda"
-                  : "Bosilsa faol bo\u2018ladi"}
+                  : "Bosilsa faol bo'ladi"}
               </p>
             </div>
           </div>
@@ -197,12 +210,145 @@ export default function NutritionPlansList({
             size="icon"
             className="text-destructive hover:text-destructive"
             onClick={() => void onRemovePlan(plan)}
-            aria-label="Rejani o\u2018chirish"
+            aria-label="Rejani o'chirish"
           >
             <Trash2Icon className="size-4" />
           </Button>
         </div>
       </div>
     );
-  });
+  };
+
+  if (variant !== "table") {
+    return map(orderedPlans, renderPlanCard);
+  }
+
+  return (
+    <>
+      <div className="hidden overflow-x-auto md:block">
+        <table className="min-w-full text-left text-sm">
+          <thead>
+            <tr className="border-b text-[11px] uppercase text-muted-foreground">
+              <th className="px-5 py-4 font-bold">Reja nomi</th>
+              <th className="px-5 py-4 font-bold">Taomlar</th>
+              <th className="px-5 py-4 font-bold">Kaloriya / kun</th>
+              <th className="px-5 py-4 font-bold">Yangilangan</th>
+              <th className="px-5 py-4 font-bold">Status</th>
+              <th className="px-5 py-4 text-right font-bold"> </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/70">
+            {map(orderedPlans, (plan) => {
+              const isSelected = plan.id === currentPlan?.id;
+              const isActiveStatus = plan.status === "active";
+              const insights = planInsightsMap[plan.id] || {
+                updatedLabel: null,
+              };
+              const calories = getPlanCalories(plan, goals);
+
+              return (
+                <tr
+                  key={plan.id}
+                  className={cn(
+                    "transition-colors hover:bg-muted/25",
+                    isSelected && "bg-primary/5",
+                  )}
+                >
+                  <td className="min-w-[280px] px-5 py-5">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={cn(
+                          "size-2.5 rounded-full",
+                          isActiveStatus
+                            ? "bg-primary"
+                            : "bg-muted-foreground/35",
+                        )}
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate font-black">{plan.name}</p>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          {isActiveStatus ? (
+                            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+                              Faol
+                            </span>
+                          ) : null}
+                          <span
+                            className={cn(
+                              "rounded-full border px-3 py-1 text-xs font-medium",
+                              getPlanSourceMeta(plan.source).badgeClassName,
+                            )}
+                          >
+                            {getSourceLabel(getPlanSourceMeta, plan)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-5 py-5 font-semibold">
+                    {plan.mealCount || 4} ta
+                  </td>
+                  <td className="px-5 py-5 font-semibold">
+                    {calories
+                      ? `${calories.toLocaleString("en-US")} kcal`
+                      : "-"}
+                  </td>
+                  <td className="px-5 py-5 font-semibold">
+                    {insights.updatedLabel || "-"}
+                  </td>
+                  <td className="px-5 py-5">
+                    <span className="inline-flex items-center gap-2 font-semibold text-muted-foreground">
+                      <span
+                        className={cn(
+                          "size-2 rounded-full",
+                          isActiveStatus
+                            ? "bg-primary"
+                            : "bg-muted-foreground/35",
+                        )}
+                      />
+                      {getStatusLabel(getPlanStatusMeta, plan)}
+                    </span>
+                  </td>
+                  <td className="px-5 py-5">
+                    <div className="flex items-center justify-end gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-11 rounded-xl px-7 text-primary"
+                        onClick={() => void onActivatePlan(plan)}
+                      >
+                        Ko'rish
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="size-11 rounded-full"
+                        onClick={() => onOpenPlanActions(plan)}
+                        aria-label="Reja amallari"
+                      >
+                        <MoreVerticalIcon className="size-5" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <div className="border-t px-5 py-4 text-center">
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-full text-sm font-black text-primary outline-none transition hover:text-primary/80 focus-visible:ring-2 focus-visible:ring-ring"
+            onClick={() => currentPlan && onActivatePlan(currentPlan)}
+          >
+            Barcha rejalarni ko'rish
+            <ChevronRightIcon className="size-4" />
+          </button>
+        </div>
+      </div>
+      <div className="space-y-3 p-3 md:hidden">
+        {map(orderedPlans, renderPlanCard)}
+      </div>
+    </>
+  );
 }

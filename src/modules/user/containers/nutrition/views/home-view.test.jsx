@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import NutritionHomeView from "./home-view.jsx";
@@ -22,6 +22,9 @@ const baseProps = {
   setDate: vi.fn(),
   plans: [],
   currentPlan: null,
+  dateKey: "2026-05-14",
+  todayKey: "2026-05-25",
+  selectedDateLabel: "14-may",
   goals: {
     calories: 2200,
     protein: 150,
@@ -54,6 +57,7 @@ const baseProps = {
   setSelectedMealTypeForAdd: vi.fn(),
   setIsActionDrawerOpen: vi.fn(),
   setIsPlansDrawerOpen: vi.fn(),
+  onOpenCalendar: vi.fn(),
   isOnline: true,
   isPastDate: false,
 };
@@ -72,7 +76,7 @@ const expectBefore = (first, second) => {
 };
 
 describe("NutritionHomeView", () => {
-  it("renders today's calorie gauge before home dashboard blocks", () => {
+  it("renders the overview calorie gauge before dashboard blocks without the external target strip", () => {
     renderHome();
 
     const calorieGauge = screen.getAllByText("Bugungi Kaloriya")[0];
@@ -80,13 +84,25 @@ describe("NutritionHomeView", () => {
     expectBefore(calorieGauge, screen.getByText("Kunlik health score"));
     expectBefore(calorieGauge, screen.getByText("Suv progress"));
     expectBefore(calorieGauge, screen.getByText("Bugungi ovqatlar"));
-    expect(screen.getByText("Target: 2,200 kcal")).toBeInTheDocument();
+    expect(screen.getByText("Overview")).toBeInTheDocument();
+    expect(screen.getByText(/14-may/)).toBeInTheDocument();
+    expect(screen.queryByText("Kaloriya holati")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Target:/i)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Qolgan" })).toBeInTheDocument();
     expect(screen.queryByText("+900 kcal")).not.toBeInTheDocument();
     expect(screen.queryByText("Makro balans")).not.toBeInTheDocument();
     expect(screen.queryByText("Tez harakatlar")).not.toBeInTheDocument();
     expect(screen.queryByText("Home")).not.toBeInTheDocument();
-    expect(screen.queryByText("Sana tanlash")).not.toBeInTheDocument();
+  });
+
+  it("opens the overview date drawer from the calendar action", () => {
+    const onOpenCalendar = vi.fn();
+
+    renderHome({ onOpenCalendar });
+
+    fireEvent.click(screen.getByRole("button", { name: /Sana tanlash/i }));
+
+    expect(onOpenCalendar).toHaveBeenCalledTimes(1);
   });
 
   it("removes goal update entry points from the home view", () => {
@@ -98,10 +114,62 @@ describe("NutritionHomeView", () => {
     expect(
       screen.queryByRole("button", { name: /^Maqsad$/i }),
     ).not.toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: /Ovqat qo'shish/i }).length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByRole("button", { name: /uchun ovqat qo'shish/i }).length,
+    ).toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: /Suv qo'shish/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Og'irlik yozish/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Ovqat rejasini ko'rish/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Hisobotlar/i })).not.toBeInTheDocument();
+  });
+
+  it("opens add flow with the selected meal type from the compact timeline", () => {
+    const setSelectedMealTypeForAdd = vi.fn();
+    const setIsActionDrawerOpen = vi.fn();
+
+    renderHome({ setSelectedMealTypeForAdd, setIsActionDrawerOpen });
+
+    expect(
+      screen.getByTestId("nutrition-meal-timeline-row-breakfast"),
+    ).toHaveTextContent("Nonushta");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Tushlik uchun ovqat qo'shish/i }),
+    );
+
+    expect(setSelectedMealTypeForAdd).toHaveBeenCalledWith("lunch");
+    expect(setIsActionDrawerOpen).toHaveBeenCalledWith(true);
+  });
+
+  it("expands the active meal by default and lets another row expand", () => {
+    renderHome();
+
+    const breakfastToggle = screen.getByRole("button", {
+      name: /Nonushta tafsilotlari/i,
+    });
+    const lunchToggle = screen.getByRole("button", {
+      name: /Tushlik tafsilotlari/i,
+    });
+
+    expect(breakfastToggle).toHaveAttribute("aria-expanded", "true");
+    expect(lunchToggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByText("Tuxum")).toBeInTheDocument();
+
+    fireEvent.click(lunchToggle);
+
+    expect(breakfastToggle).toHaveAttribute("aria-expanded", "false");
+    expect(lunchToggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Hali ovqat qo'shilmagan")).toBeInTheDocument();
+  });
+
+  it("keeps past date meal rows viewable but disables add actions", () => {
+    renderHome({ isPastDate: true });
+
+    expect(
+      screen.getByRole("button", { name: /Nonushta tafsilotlari/i }),
+    ).toHaveAttribute("aria-expanded", "true");
+    expect(
+      screen.getByRole("button", { name: /Tushlik uchun ovqat qo'shish/i }),
+    ).toBeDisabled();
   });
 });

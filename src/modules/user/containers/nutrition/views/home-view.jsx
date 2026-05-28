@@ -2,7 +2,10 @@ import React from "react";
 import CalorieGaugeWidget from "@/components/calorie-gauge-widget";
 import { Button } from "@/components/ui/button";
 import {
+  CalendarDaysIcon,
+  ChevronDownIcon,
   CheckCircle2Icon,
+  ClipboardListIcon,
   DropletsIcon,
   FlameIcon,
   PlusIcon,
@@ -12,175 +15,333 @@ import NutritionPlansSection from "../nutrition-plans-section.jsx";
 import NutritionLayout from "../ui/nutrition-layout.jsx";
 import NutritionCard from "../ui/nutrition-card.jsx";
 import StatCard from "../ui/stat-card.jsx";
-import ProgressBar, { getProgressPercent } from "../ui/progress-bar.jsx";
-import AIRecommendationCard from "../ui/ai-recommendation-card.jsx";
+import { getProgressPercent } from "../ui/progress-bar.jsx";
 import { buildNutritionDashboardMetrics } from "../data/nutrition-data-mappers.js";
+import { cn } from "@/lib/utils.js";
 
-import { map, sumBy, toNumber } from "lodash";
+import { map, reduce, toNumber } from "lodash";
 
-const mealStatusByType = {
-  breakfast: "Yakunlandi",
-  lunch: "Hozir",
-  dinner: "Davom etmoqda",
-  snack: "Kutilmoqda",
+const mealPctGoal = {
+  breakfast: 0.3,
+  lunch: 0.35,
+  dinner: 0.25,
+  snack: 0.1,
 };
 
-const getMealCalories = (items = []) =>
-  Math.round(
-    sumBy(items, (food) => toNumber(food.cal || 0) * toNumber(food.qty || 1)),
+const getMealNutritionTotals = (items = []) =>
+  reduce(
+    items,
+    (totals, food) => {
+      const qty = toNumber(food.qty || 1) || 1;
+      return {
+        calories: totals.calories + toNumber(food.cal || 0) * qty,
+        protein: totals.protein + toNumber(food.protein || 0) * qty,
+        carbs: totals.carbs + toNumber(food.carbs || 0) * qty,
+        fat: totals.fat + toNumber(food.fat || 0) * qty,
+      };
+    },
+    { calories: 0, protein: 0, carbs: 0, fat: 0 },
   );
 
-const MicronutrientCard = () => {
-  const nutrients = [
-    ["Temir", 82],
-    ["Kalsiy", 68],
-    ["Vitamin D", 54],
-    ["Vitamin B12", 88],
-    ["Magniy", 74],
-  ];
+const getRecommendedRange = (mealType, caloriesGoal) => {
+  const mealGoal = Math.round(toNumber(caloriesGoal || 0) * (mealPctGoal[mealType] || 0.25));
+
+  if (mealGoal <= 0) {
+    return "Tavsiya etiladi";
+  }
+
+  const min = Math.max(0, Math.round(mealGoal * 0.85));
+  const max = Math.max(min, Math.round(mealGoal * 1.15));
+  return `Tavsiya etiladi | ${min} - ${max} kcal`;
+};
+
+const getMealStatusMeta = ({ isActive, foodCount, readOnly }) => {
+  if (readOnly) {
+    return {
+      label: foodCount > 0 ? "Yozilgan" : "Bo'sh",
+      className: "bg-muted text-muted-foreground",
+    };
+  }
+
+  if (isActive) {
+    return {
+      label: "Hozir",
+      className: "bg-primary/10 text-primary",
+    };
+  }
+
+  if (foodCount > 0) {
+    return {
+      label: "Yozildi",
+      className: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    };
+  }
+
+  return {
+    label: "Kutilmoqda",
+    className: "bg-muted text-muted-foreground",
+  };
+};
+
+const PlanStatusCard = ({
+  plans = [],
+  currentPlan,
+  currentPlanDayStatus,
+  onOpen,
+}) => {
+  const hasPlan = Boolean(currentPlan?.id);
+  const durationText = currentPlanDayStatus?.isDurationPlan
+    ? `${currentPlanDayStatus.dayNumber || 1} / ${currentPlanDayStatus.durationDays || 1} kun`
+    : `${plans.length} ta reja`;
 
   return (
-    <NutritionCard>
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm font-black">Mikronutrientlar</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Haftalik balans ko'rsatkichi
+    <NutritionCard className="px-4 py-4">
+      <div className="flex items-start gap-3">
+        <div className="grid size-9 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+          <ClipboardListIcon className="size-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-semibold uppercase text-muted-foreground">
+            Reja holati
+          </p>
+          <p className="mt-1 truncate text-base font-black">
+            {hasPlan ? currentPlan.name || "Ovqatlanish rejasi" : "Reja ulanmagan"}
+          </p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            {hasPlan
+              ? `${currentPlan.status === "active" ? "Faol" : "Saqlangan"} • ${durationText}`
+              : "Meal plan tanlansa, bugungi ovqatlar shu yerda ko'rinadi."}
           </p>
         </div>
-        <div
-          className="grid size-16 place-items-center rounded-full text-sm font-black text-primary"
-          style={{
-            background:
-              "conic-gradient(rgb(var(--accent-strong-rgb)) 78%, hsl(var(--muted)) 0)",
-          }}
-          aria-label="Mikronutrient progress 78 foiz"
-        >
-          <span className="grid size-11 place-items-center rounded-full bg-card">
-            78%
-          </span>
+      </div>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="mt-4 w-full rounded-full"
+        onClick={onOpen}
+      >
+        Rejalarni ko'rish
+      </Button>
+    </NutritionCard>
+  );
+};
+
+const OverviewHeader = ({
+  selectedDateLabel = "Bugun",
+  isPastDate,
+  onOpenCalendar = () => {},
+}) => (
+  <div className="flex items-center justify-between gap-3">
+    <div className="min-w-0">
+      <h1 className="text-2xl font-black tracking-normal">Overview</h1>
+      <p className="mt-1 truncate text-sm font-medium text-muted-foreground">
+        {isPastDate ? "Tanlangan kun" : "Bugungi tracking"} • {selectedDateLabel}
+      </p>
+    </div>
+    <Button
+      type="button"
+      variant="outline"
+      size="icon-lg"
+      className="size-11 shrink-0 rounded-full bg-card/80 shadow-none hover:shadow-none"
+      onClick={onOpenCalendar}
+      aria-label={`Sana tanlash: ${selectedDateLabel}`}
+    >
+      <CalendarDaysIcon className="size-5" />
+    </Button>
+  </div>
+);
+
+const CollapsibleMealList = ({
+  filteredMealSections,
+  mealConfig,
+  activeMealType,
+  goals,
+  disabled,
+  onAdd,
+}) => {
+  const firstMealType = filteredMealSections[0]?.[0] || activeMealType;
+  const [requestedExpandedMealType, setRequestedExpandedMealType] =
+    React.useState(null);
+  const availableMealTypes = React.useMemo(
+    () => map(filteredMealSections, ([type]) => type),
+    [filteredMealSections],
+  );
+  const expandedMealType = availableMealTypes.includes(requestedExpandedMealType)
+    ? requestedExpandedMealType
+    : availableMealTypes.includes(activeMealType)
+      ? activeMealType
+      : firstMealType;
+
+  return (
+    <NutritionCard className="overflow-hidden p-0">
+      <div className="flex items-center justify-between gap-3 px-4 pt-4 sm:px-5 sm:pt-5">
+        <div className="min-w-0">
+          <p className="text-sm font-black">Bugungi ovqatlar</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Vaqt bo'yicha yozilgan ovqatlar
+          </p>
         </div>
       </div>
-      <div className="mt-4 space-y-3">
-        {map(nutrients, ([label, value]) => (
-          <div key={label}>
-            <div className="flex items-center justify-between text-xs font-semibold">
-              <span>{label}</span>
-              <span className="text-muted-foreground">{value}%</span>
+      <div className="mt-3 divide-y divide-border/55">
+        {map(filteredMealSections, ([type, section]) => {
+          const config = mealConfig[type] || {};
+          const foods = section.foods || [];
+          const totals = getMealNutritionTotals(foods);
+          const calories = Math.round(totals.calories);
+          const isActive = type === activeMealType;
+          const isExpanded = type === expandedMealType;
+          const detailsId = `nutrition-meal-${type}-details`;
+          const statusMeta = getMealStatusMeta({
+            isActive,
+            foodCount: foods.length,
+            readOnly: disabled,
+          });
+
+          return (
+            <div
+              key={type}
+              data-testid={`nutrition-meal-timeline-row-${type}`}
+              className="transition-colors hover:bg-muted/25"
+            >
+              <div className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
+                <button
+                  type="button"
+                  aria-label={`${config.label || type} tafsilotlari`}
+                  aria-expanded={isExpanded}
+                  aria-controls={detailsId}
+                  className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+                  onClick={() => setRequestedExpandedMealType(type)}
+                >
+                  <div className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-full bg-background/50 text-lg shadow-sm ring-1 ring-border/60">
+                    <span aria-hidden="true">{config.emoji || "o"}</span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      <p className="truncate text-sm font-bold">
+                        {config.label}
+                      </p>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${statusMeta.className}`}
+                      >
+                        {statusMeta.label}
+                      </span>
+                    </div>
+                    <p className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+                      {calories > 0 ? (
+                        <>
+                          <FlameIcon className="size-3 text-primary" />
+                          <span className="shrink-0">{calories} kcal</span>
+                          <span aria-hidden="true">|</span>
+                        </>
+                      ) : null}
+                      <span className="truncate">
+                        {getRecommendedRange(type, goals?.calories)}
+                      </span>
+                    </p>
+                  </div>
+                  <ChevronDownIcon
+                    className={cn(
+                      "size-4 shrink-0 text-muted-foreground transition-transform",
+                      isExpanded && "rotate-180",
+                    )}
+                    aria-hidden="true"
+                  />
+                </button>
+                <Button
+                  type="button"
+                  size="icon-lg"
+                  variant="outline"
+                  className="size-11 shrink-0 rounded-full bg-background/70 text-primary hover:bg-primary/10"
+                  disabled={disabled}
+                  aria-label={`${config.label || type} uchun ovqat qo'shish`}
+                  onClick={() => onAdd(type)}
+                >
+                  <PlusIcon className="size-5" />
+                </Button>
+              </div>
+
+              {isExpanded ? (
+                <div
+                  id={detailsId}
+                  className="px-4 pb-4 pl-[5.25rem] pr-4 sm:px-5 sm:pl-[5.75rem]"
+                >
+                  {foods.length > 0 ? (
+                    <div className="space-y-2">
+                      {map(foods, (food, index) => (
+                        <div
+                          key={food.id || `${type}-${index}`}
+                          className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-background/55 px-3 py-2"
+                        >
+                          <div className="flex min-w-0 items-center gap-2.5">
+                            <div className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-full bg-muted text-xs">
+                              {food.image ? (
+                                <img
+                                  src={food.image}
+                                  alt=""
+                                  className="size-full object-cover"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <span>{config.emoji || "o"}</span>
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-bold">
+                                {food.name || "Ovqat"}
+                              </p>
+                              <p className="truncate text-[11px] font-medium text-muted-foreground">
+                                {section.time || config.time}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <p className="text-sm font-black tabular-nums">
+                              {Math.round(
+                                toNumber(food.cal || 0) *
+                                  (toNumber(food.qty || 1) || 1),
+                              )}
+                            </p>
+                            <p className="text-[10px] font-bold uppercase text-muted-foreground">
+                              kcal
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-border/70 bg-muted/25 px-3 py-3 text-sm font-semibold text-muted-foreground">
+                      Hali ovqat qo'shilmagan
+                    </div>
+                  )}
+
+                  <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] font-bold text-muted-foreground">
+                    <span className="rounded-full bg-muted/40 px-2.5 py-1">
+                      Oqsil {Math.round(totals.protein)}g
+                    </span>
+                    <span className="rounded-full bg-muted/40 px-2.5 py-1">
+                      Uglevod {Math.round(totals.carbs)}g
+                    </span>
+                    <span className="rounded-full bg-muted/40 px-2.5 py-1">
+                      Yog' {Math.round(totals.fat)}g
+                    </span>
+                  </div>
+                </div>
+              ) : null}
             </div>
-            <ProgressBar
-              className="mt-1.5 h-1.5"
-              value={value}
-              target={100}
-              tone="primary"
-              aria-label={`${label} progress`}
-            />
-          </div>
-        ))}
+          );
+        })}
       </div>
     </NutritionCard>
   );
 };
 
-const MealTimeline = ({
-  filteredMealSections,
-  mealConfig,
-  activeMealType,
-  disabled,
-  onAdd,
-}) => (
-  <NutritionCard>
-    <div className="flex items-center justify-between gap-3">
-      <div>
-        <p className="text-sm font-black">Bugungi ovqatlar</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Kun davomida meal log holati
-        </p>
-      </div>
-    </div>
-    <div className="mt-4 space-y-3">
-      {map(filteredMealSections, ([type, section]) => {
-        const config = mealConfig[type] || {};
-        const foods = section.foods || [];
-        const calories = getMealCalories(foods);
-        const isActive = type === activeMealType;
-
-        return (
-          <div key={type} className="rounded-2xl border bg-background/55 p-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-primary/10 text-lg">
-                  {config.emoji || "o"}
-                </div>
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-bold">{config.label}</p>
-                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">
-                      {isActive ? "Hozir" : mealStatusByType[type] || "Reja"}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {section.time || config.time} • {foods.length} ta ovqat
-                  </p>
-                </div>
-              </div>
-              <div className="shrink-0 text-right">
-                <p className="text-sm font-black tabular-nums">{calories}</p>
-                <p className="text-[10px] font-bold uppercase text-muted-foreground">
-                  kcal
-                </p>
-              </div>
-            </div>
-            <div className="mt-3 flex items-center justify-between gap-3">
-              <div className="flex -space-x-2">
-                {foods.length > 0 ? (
-                  map(foods.slice(0, 3), (food, index) => (
-                    <div
-                      key={food.id || `${type}-${index}`}
-                      className="grid size-7 place-items-center rounded-full border bg-card text-xs"
-                      title={food.name}
-                    >
-                      {food.image ? (
-                        <img
-                          src={food.image}
-                          alt=""
-                          className="size-full rounded-full object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <span>{config.emoji || "o"}</span>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  <span className="text-xs font-semibold text-muted-foreground">
-                    Hali ovqat qo'shilmagan
-                  </span>
-                )}
-              </div>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={disabled}
-                onClick={() => onAdd(type)}
-              >
-                <PlusIcon className="size-4" />
-                Ovqat qo'shish
-              </Button>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  </NutritionCard>
-);
-
 export default function NutritionHomeView(props) {
   const {
-    plans,
+    plans = [],
     currentPlan,
     currentPlanDayStatus,
+    selectedDateLabel,
     goals,
     roundedTotals,
     waterConsumedMl,
@@ -191,6 +352,7 @@ export default function NutritionHomeView(props) {
     setSelectedMealTypeForAdd,
     setIsActionDrawerOpen,
     setIsPlansDrawerOpen,
+    onOpenCalendar,
     filteredMealSections = [],
     mealConfig = {},
     isOnline,
@@ -244,27 +406,24 @@ export default function NutritionHomeView(props) {
           description="Bugungi meal bo'limlari"
           tone="primary"
         />
-        <StatCard
-          icon={FlameIcon}
-          label="Seriya"
-          value={metrics.streakDays}
-          unit="kun"
-          description="Davom etmoqda"
-          tone="warning"
-        />
       </div>
-      <AIRecommendationCard
-        title="AI tavsiya"
-        description="Protein va suv nishonlari yaxshi ketmoqda. Kechki ovqatda yog' miqdorini yengilroq tuting."
-        actionLabel="Rejani ko'rish"
-        onAction={() => setIsPlansDrawerOpen(true)}
+      <PlanStatusCard
+        plans={plans}
+        currentPlan={currentPlan}
+        currentPlanDayStatus={currentPlanDayStatus}
+        onOpen={() => setIsPlansDrawerOpen(true)}
       />
-      <MicronutrientCard />
     </>
   );
 
   return (
     <NutritionLayout sidebar={sidebar}>
+      <OverviewHeader
+        selectedDateLabel={selectedDateLabel}
+        isPastDate={isPastDate}
+        onOpenCalendar={onOpenCalendar}
+      />
+
       {!isOnline ? (
         <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-800 dark:text-amber-200">
           Tarmoq yo&apos;q — o&apos;zgarishlar saqlanmaydi
@@ -278,26 +437,22 @@ export default function NutritionHomeView(props) {
         </div>
       ) : null}
 
-      <div className="space-y-3">
-        <div className="px-1 text-sm font-semibold text-muted-foreground">
-          Target: {metrics.targetCalories.toLocaleString()} kcal
-        </div>
-        <CalorieGaugeWidget
-          consumed={roundedTotals.calories}
-          goal={goals.calories}
-          macros={metrics.macros}
-          isGoalLoading={isGoalLoadingState}
-          goalMeta={calorieGoalMeta}
-          showCalorieModeToggle
-          defaultCalorieMode="remaining"
-          className="h-fit w-full"
-        />
-      </div>
+      <CalorieGaugeWidget
+        consumed={roundedTotals.calories}
+        goal={goals.calories}
+        macros={metrics.macros}
+        isGoalLoading={isGoalLoadingState}
+        goalMeta={calorieGoalMeta}
+        showCalorieModeToggle
+        defaultCalorieMode="remaining"
+        className="h-fit w-full"
+      />
 
-      <MealTimeline
+      <CollapsibleMealList
         filteredMealSections={filteredMealSections}
         mealConfig={mealConfig}
         activeMealType={activeMealType}
+        goals={goals}
         disabled={addDisabled}
         onAdd={openAddMeal}
       />

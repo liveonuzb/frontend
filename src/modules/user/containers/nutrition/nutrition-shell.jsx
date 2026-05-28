@@ -6,7 +6,7 @@ import { NUTRITION_NAV_ITEMS } from "./nutrition-nav-items.js";
 import { includes } from "lodash";
 
 const PRIMARY_TAB_PATHS = [
-  "/user/nutrition/home",
+  "/user/nutrition/overview",
   "/user/nutrition/plans",
   "/user/nutrition/history",
   "/user/nutrition/report",

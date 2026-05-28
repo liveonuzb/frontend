@@ -2,38 +2,53 @@ import React from "react";
 import { useNavigate } from "react-router";
 import {
   CalendarDaysIcon,
-  DropletsIcon,
-  FlameIcon,
-  HistoryIcon,
+  Clock3Icon,
+  CheckIcon,
+  ChevronRightIcon,
   Loader2Icon,
   PlusIcon,
   SearchIcon,
-  TargetIcon,
-  TrophyIcon,
+  SlidersHorizontalIcon,
 } from "lucide-react";
+import CalendarBottomDrawer from "@/components/calendar-bottom-drawer.jsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import {
   getTodayKey,
   useDailyTrackingActions,
   useDailyTrackingHistory,
 } from "@/hooks/app/use-daily-tracking";
 import { toast } from "sonner";
-import { MEAL_TYPE_OPTIONS } from "@/modules/user/lib/meal-config";
+import {
+  MEAL_ICONS,
+  MEAL_LABELS,
+  MEAL_TYPE_OPTIONS,
+} from "@/modules/user/lib/meal-config";
 import NutritionLayout from "../ui/nutrition-layout.jsx";
-import NutritionPageHeader from "../ui/nutrition-page-header.jsx";
-import NutritionCard from "../ui/nutrition-card.jsx";
-import StatCard from "../ui/stat-card.jsx";
 import ProgressBar, { getProgressPercent } from "../ui/progress-bar.jsx";
+import { cn } from "@/lib/utils.js";
 
-import { filter, map, orderBy, reduce, take, toPairs, isArray, toNumber } from "lodash";
+import {
+  filter,
+  includes,
+  isArray,
+  map,
+  orderBy,
+  reduce,
+  toLower,
+  toNumber,
+  toPairs,
+  trim,
+} from "lodash";
 
 const mealTypeOptions = [
   { value: "all", label: "Barcha bo'limlar" },
@@ -72,12 +87,77 @@ const getDayWaterMl = (day) => {
   return toNumber(day?.waterMl || day?.summary?.waterMl || 0);
 };
 
+const normalizeSearch = (value) => toLower(trim(String(value || "")));
+
+const filterMealsForView = (meals, mealType, search) => {
+  const searchTerm = normalizeSearch(search);
+
+  return filter(meals, (meal) => {
+    if (mealType && mealType !== "all" && meal.mealType !== mealType) {
+      return false;
+    }
+
+    if (!searchTerm) {
+      return true;
+    }
+
+    return includes(
+      toLower(
+        [
+          meal.name,
+          meal.barcode,
+          meal.source,
+          MEAL_LABELS[meal.mealType],
+        ]
+          .filter(Boolean)
+          .join(" "),
+      ),
+      searchTerm,
+    );
+  });
+};
+
 const formatDateLabel = (dateKey) =>
   new Date(`${dateKey}T12:00:00`).toLocaleDateString("uz-UZ", {
     weekday: "long",
     day: "numeric",
     month: "long",
   });
+
+const formatShortDateLabel = (dateKey) =>
+  new Date(`${dateKey}T12:00:00`).toLocaleDateString("uz-UZ", {
+    day: "numeric",
+    month: "short",
+  });
+
+const formatDateInputLabel = (dateKey) =>
+  new Date(`${dateKey}T12:00:00`).toLocaleDateString("uz-UZ", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+
+const dateKeyToDate = (dateKey) => new Date(`${dateKey}T12:00:00`);
+
+const getMealTimeMs = (meal, fallbackDateKey) => {
+  const value = meal?.addedAt || `${fallbackDateKey}T12:00:00`;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+};
+
+const formatMealTime = (meal, fallbackDateKey) => {
+  const value = meal?.addedAt || `${fallbackDateKey}T12:00:00`;
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return "--:--";
+  }
+
+  return parsed.toLocaleTimeString("uz-UZ", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
 const escapeCsvCell = (value) => {
   if (value === null || value === undefined) return "";
@@ -100,11 +180,218 @@ const downloadCsv = (filename, rows) => {
   URL.revokeObjectURL(url);
 };
 
+const FilterTrigger = ({
+  startDate,
+  endDate,
+  mealType,
+  search,
+  isFetching,
+  onOpen,
+}) => {
+  const selectedMeal = mealTypeOptions.find((option) => option.value === mealType);
+  const activeCount =
+    (mealType !== "all" ? 1 : 0) +
+    (trim(search) ? 1 : 0);
+
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <Button
+        type="button"
+        variant="outline"
+        className="min-h-12 flex-1 justify-between rounded-[1.4rem] border-[rgb(var(--accent-rgb)/0.18)] bg-card/90 px-4 shadow-sm shadow-black/[0.03] sm:flex-none sm:min-w-[22rem]"
+        onClick={onOpen}
+        aria-label="Filter"
+      >
+        <span className="flex min-w-0 items-center gap-3">
+          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+            <SlidersHorizontalIcon className="size-4" />
+          </span>
+          <span className="min-w-0 text-left">
+            <span className="block text-sm font-black">Filter</span>
+            <span className="block truncate text-xs font-semibold text-muted-foreground">
+              {formatDateInputLabel(startDate)} - {formatDateInputLabel(endDate)}
+              {" • "}
+              {selectedMeal?.label || "Barcha bo'limlar"}
+            </span>
+          </span>
+        </span>
+        <span className="flex shrink-0 items-center gap-2">
+          {activeCount > 0 ? (
+            <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-black text-primary-foreground">
+              {activeCount}
+            </span>
+          ) : null}
+          {isFetching ? (
+            <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
+          ) : (
+            <ChevronRightIcon className="size-4 text-muted-foreground" />
+          )}
+        </span>
+      </Button>
+    </div>
+  );
+};
+
+const HistoryFilterDrawer = ({
+  open,
+  onOpenChange,
+  startDate,
+  endDate,
+  mealType,
+  search,
+  isExportDisabled,
+  onOpenStartDate,
+  onOpenEndDate,
+  onOpenMealType,
+  onSearchChange,
+  onExport,
+  onClear,
+}) => {
+  const selectedMeal = mealTypeOptions.find((option) => option.value === mealType);
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:!mx-auto data-[vaul-drawer-direction=bottom]:!w-[min(100vw,28rem)] data-[vaul-drawer-direction=bottom]:!max-w-md">
+        <DrawerHeader>
+          <DrawerTitle>History filterlari</DrawerTitle>
+          <DrawerDescription>
+            Sana oralig'i, ovqat bo'limi va qidiruvni shu yerda sozlang.
+          </DrawerDescription>
+        </DrawerHeader>
+
+        <DrawerBody className="space-y-3 px-4 pb-0">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-3 rounded-3xl border bg-card px-4 py-3 text-left"
+            onClick={onOpenStartDate}
+            aria-label="Boshlanish sanasi"
+          >
+            <span>
+              <span className="block text-xs font-bold uppercase text-muted-foreground">
+                Boshlanish sanasi
+              </span>
+              <span className="mt-1 block text-base font-black">
+                {formatDateInputLabel(startDate)}
+              </span>
+            </span>
+            <CalendarDaysIcon className="size-5 text-muted-foreground" />
+          </button>
+
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-3 rounded-3xl border bg-card px-4 py-3 text-left"
+            onClick={onOpenEndDate}
+            aria-label="Tugash sanasi"
+          >
+            <span>
+              <span className="block text-xs font-bold uppercase text-muted-foreground">
+                Tugash sanasi
+              </span>
+              <span className="mt-1 block text-base font-black">
+                {formatDateInputLabel(endDate)}
+              </span>
+            </span>
+            <CalendarDaysIcon className="size-5 text-muted-foreground" />
+          </button>
+
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-3 rounded-3xl border bg-card px-4 py-3 text-left"
+            onClick={onOpenMealType}
+            aria-label="Bo'lim"
+          >
+            <span>
+              <span className="block text-xs font-bold uppercase text-muted-foreground">
+                Bo'lim
+              </span>
+              <span className="mt-1 block text-base font-black">
+                {selectedMeal?.label || "Barcha bo'limlar"}
+              </span>
+            </span>
+            <ChevronRightIcon className="size-5 text-muted-foreground" />
+          </button>
+
+          <div className="relative">
+            <SearchIcon className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder="Ovqat nomi..."
+              className="h-12 rounded-3xl pl-11"
+            />
+          </div>
+        </DrawerBody>
+
+        <DrawerFooter className="grid grid-cols-2 gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-full"
+            onClick={onClear}
+          >
+            Tozalash
+          </Button>
+          <Button
+            type="button"
+            className="rounded-full"
+            disabled={isExportDisabled}
+            onClick={onExport}
+          >
+            Export
+          </Button>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
+};
+
+const MealTypeDrawer = ({
+  open,
+  onOpenChange,
+  value,
+  onChange,
+}) => (
+  <Drawer open={open} onOpenChange={onOpenChange} direction="bottom" nested>
+    <DrawerContent className="data-[vaul-drawer-direction=bottom]:!mx-auto data-[vaul-drawer-direction=bottom]:!w-[min(100vw,28rem)] data-[vaul-drawer-direction=bottom]:!max-w-md">
+      <DrawerHeader>
+        <DrawerTitle>Bo'limni tanlang</DrawerTitle>
+        <DrawerDescription>
+          History timeline qaysi ovqat bo'limini ko'rsatishini tanlang.
+        </DrawerDescription>
+      </DrawerHeader>
+      <DrawerBody className="space-y-2 px-4 pb-6">
+        {map(mealTypeOptions, (option) => {
+          const active = option.value === value;
+
+          return (
+            <button
+              key={option.value}
+              type="button"
+              className={cn(
+                "flex w-full items-center justify-between gap-3 rounded-3xl border px-4 py-3 text-left text-sm font-black transition-colors",
+                active
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "bg-card hover:bg-muted/40",
+              )}
+              onClick={() => {
+                onChange(option.value);
+                onOpenChange(false);
+              }}
+            >
+              <span>{option.label}</span>
+              {active ? <CheckIcon className="size-4" /> : null}
+            </button>
+          );
+        })}
+      </DrawerBody>
+    </DrawerContent>
+  </Drawer>
+);
+
 const HistoryDayCard = ({
   day,
   meals,
   totals,
-  topMeals,
   onOpen,
   onCopyMealToToday,
 }) => {
@@ -116,12 +403,17 @@ const HistoryDayCard = ({
   const mealCount = meals.length;
   const healthScore = Math.min(100, Math.round((progress > 0 ? Math.min(progress, 100) * 0.6 : 0) + (mealCount >= 3 ? 25 : mealCount * 8) + (waterMl > 0 ? 15 : 0)));
   const hasMeals = mealCount > 0;
+  const timelineMeals = orderBy(
+    meals,
+    [(meal) => getMealTimeMs(meal, day.date)],
+    ["asc"],
+  );
 
   return (
     <article
       role="button"
       tabIndex={0}
-      className="w-full cursor-pointer rounded-2xl border bg-card p-4 text-left shadow-sm transition-colors hover:border-primary/25 hover:bg-primary/5 sm:p-5"
+      className="w-full cursor-pointer rounded-[28px] border border-[rgb(var(--accent-rgb)/0.14)] bg-card/95 p-4 text-left shadow-sm shadow-black/[0.03] transition-colors hover:border-[rgb(var(--accent-rgb)/0.28)] hover:bg-[rgb(var(--accent-rgb)/0.03)] sm:p-5"
       onClick={onOpen}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
@@ -131,12 +423,15 @@ const HistoryDayCard = ({
     >
       <div className="grid gap-5 xl:grid-cols-[190px_1fr_auto] xl:items-start">
         <div className="min-w-0">
-          <p className="text-xs font-black uppercase tracking-wider text-muted-foreground">
-            {formatDateLabel(day.date)}
+          <p className="text-[11px] font-semibold uppercase text-muted-foreground">
+            {formatShortDateLabel(day.date)}
           </p>
-          <h3 className="mt-2 text-3xl font-black tabular-nums">
-            {Math.round(totals.calories)} kcal
+          <h3 className="mt-1 text-lg font-black capitalize">
+            {formatDateLabel(day.date)}
           </h3>
+          <p className="mt-3 text-3xl font-black tabular-nums">
+            {Math.round(totals.calories)} kcal
+          </p>
           <div className="mt-2 flex flex-wrap gap-2">
             <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">
               {hasMeals ? `${mealCount} ta ovqat` : "Ovqat qo'shilmagan"}
@@ -174,31 +469,79 @@ const HistoryDayCard = ({
               </div>
             ))}
           </div>
-          <div className="flex flex-wrap gap-2">
-            {hasMeals ? map(topMeals, (meal) => (
-              <span
-                key={`${day.date}-${meal.mealType}-${meal.id}`}
-                className="inline-flex max-w-full items-center gap-2 rounded-2xl bg-muted px-3 py-2 text-xs font-bold"
-              >
-                <span className="max-w-[180px] truncate">{meal.name}</span>
-                <span className="text-muted-foreground">
-                  {Math.round(meal.cal || 0)} kcal
-                </span>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="size-6 rounded-full"
-                  onClick={(event) => onCopyMealToToday(event, meal)}
-                  aria-label={`${meal.name} bugunga qo'shish`}
-                >
-                  <PlusIcon className="size-3.5" />
-                </Button>
-              </span>
-            )) : (
-              <span className="rounded-2xl border border-dashed px-3 py-2 text-xs font-bold text-muted-foreground">
-                0 kcal, ovqatlar qo'shilmagan, maqsadga yetmadi
-              </span>
+          <div className="relative space-y-2 pl-4 before:absolute before:bottom-2 before:left-[6px] before:top-2 before:w-px before:bg-border">
+            {hasMeals ? (
+              map(timelineMeals, (meal) => {
+                const mealIcon = MEAL_ICONS[meal.mealType] || "🍽️";
+                const mealLabel = MEAL_LABELS[meal.mealType] || meal.mealType;
+
+                return (
+                  <div
+                    key={`${day.date}-${meal.mealType}-${meal.id}`}
+                    className="relative grid gap-3 rounded-2xl bg-muted/25 px-3 py-3 sm:grid-cols-[68px_minmax(0,1fr)_auto] sm:items-center"
+                  >
+                    <span className="absolute -left-[14px] top-4 grid size-3 place-items-center rounded-full border-2 border-card bg-primary" />
+                    <div className="flex items-center gap-1.5 text-xs font-black tabular-nums text-primary">
+                      <Clock3Icon className="size-3.5" />
+                      {formatMealTime(meal, day.date)}
+                    </div>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-2xl bg-background text-lg">
+                        {meal.image ? (
+                          <img
+                            src={meal.image}
+                            alt=""
+                            className="size-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <span aria-hidden="true">{mealIcon}</span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="truncate text-sm font-black">
+                            {meal.name || "Ovqat"}
+                          </p>
+                          <span className="rounded-full bg-background px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                            {mealLabel}
+                          </span>
+                        </div>
+                        <p className="mt-1 truncate text-xs font-medium text-muted-foreground">
+                          P {Math.round(toNumber(meal.protein || 0))}g · C{" "}
+                          {Math.round(toNumber(meal.carbs || 0))}g · F{" "}
+                          {Math.round(toNumber(meal.fat || 0))}g
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 sm:justify-end">
+                      <div className="text-right">
+                        <p className="text-sm font-black tabular-nums">
+                          {Math.round(toNumber(meal.cal || 0))}
+                        </p>
+                        <p className="text-[10px] font-bold uppercase text-muted-foreground">
+                          kcal
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="size-8 rounded-full bg-background"
+                        onClick={(event) => onCopyMealToToday(event, meal)}
+                        aria-label={`${meal.name || "Ovqat"} bugunga qo'shish`}
+                      >
+                        <PlusIcon className="size-4" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="relative rounded-2xl border border-dashed bg-muted/15 px-3 py-4 text-sm font-semibold text-muted-foreground">
+                <span className="absolute -left-[14px] top-5 grid size-3 rounded-full border-2 border-card bg-muted" />
+                Bu kunda ovqat yozilmagan
+              </div>
             )}
           </div>
         </div>
@@ -209,9 +552,6 @@ const HistoryDayCard = ({
             onOpen();
           }}>
             Ko'rish
-          </Button>
-          <Button type="button" variant="outline" className="rounded-full" disabled={!hasMeals}>
-            Takrorlash
           </Button>
         </div>
       </div>
@@ -226,6 +566,10 @@ const NutritionHistoryPage = () => {
   const [endDate, setEndDate] = React.useState(todayKey);
   const [mealType, setMealType] = React.useState("all");
   const [search, setSearch] = React.useState("");
+  const [filterOpen, setFilterOpen] = React.useState(false);
+  const [startDatePickerOpen, setStartDatePickerOpen] = React.useState(false);
+  const [endDatePickerOpen, setEndDatePickerOpen] = React.useState(false);
+  const [mealTypeDrawerOpen, setMealTypeDrawerOpen] = React.useState(false);
   const { addMeal } = useDailyTrackingActions();
 
   const { days, isLoading, isFetching, isError, refetch } =
@@ -281,132 +625,43 @@ const NutritionHistoryPage = () => {
 
     downloadCsv(`nutrition-history-${startDate}-${endDate}.csv`, rows);
   }, [days, endDate, startDate]);
-  const historyStats = React.useMemo(() => {
-    const daySummaries = map(days, (day) => {
-      const meals = flattenMeals(day);
-      return {
-        meals,
-        totals: getDayTotals(meals),
-        waterMl: getDayWaterMl(day),
-      };
-    });
-    const loggedDays = filter(daySummaries, (day) => day.totals.calories > 0);
-    const avgCalories = loggedDays.length
-      ? Math.round(reduce(loggedDays, (sum, day) => sum + day.totals.calories, 0) / loggedDays.length)
-      : 0;
-    const avgWater = daySummaries.length
-      ? Math.round(reduce(daySummaries, (sum, day) => sum + day.waterMl, 0) / daySummaries.length)
-      : 0;
-    const avgBalance = loggedDays.length
-      ? Math.round(reduce(loggedDays, (sum, day) => sum + Math.min(100, day.meals.length * 25), 0) / loggedDays.length)
-      : 0;
-
-    return {
-      avgCalories,
-      avgWater,
-      avgBalance,
-      trackedDays: loggedDays.length,
-    };
-  }, [days]);
+  const handleStartDateChange = React.useCallback(
+    (nextDate) => {
+      const nextKey = toDateKey(nextDate);
+      setStartDate(nextKey);
+      if (nextKey > endDate) {
+        setEndDate(nextKey);
+      }
+    },
+    [endDate],
+  );
+  const handleEndDateChange = React.useCallback(
+    (nextDate) => {
+      const nextKey = toDateKey(nextDate);
+      setEndDate(nextKey);
+      if (nextKey < startDate) {
+        setStartDate(nextKey);
+      }
+    },
+    [startDate],
+  );
+  const handleClearFilters = React.useCallback(() => {
+    setStartDate(getDefaultStartDate());
+    setEndDate(todayKey);
+    setMealType("all");
+    setSearch("");
+  }, [todayKey]);
 
   return (
     <NutritionLayout>
-      <NutritionPageHeader
-        eyebrow="Ovqatlanish"
-        title="Ovqat tarixi"
-        description="Kunlik ovqatlar, kaloriyalar, suv va makro balansni tarix bo'yicha ko'ring."
-        actions={(
-          <Button
-            type="button"
-            variant="outline"
-            className="rounded-full"
-            disabled={isLoading || days.length === 0}
-            onClick={handleExportHistory}
-          >
-            Export
-          </Button>
-        )}
+      <FilterTrigger
+        startDate={startDate}
+        endDate={endDate}
+        mealType={mealType}
+        search={search}
+        isFetching={isFetching}
+        onOpen={() => setFilterOpen(true)}
       />
-
-      <NutritionCard className="p-4 sm:p-5">
-        <div className="grid gap-2 md:grid-cols-[1fr_1fr_190px_1.4fr]">
-          <Input
-            type="date"
-            value={startDate}
-            onChange={(event) => setStartDate(event.target.value)}
-            aria-label="Boshlanish sanasi"
-          />
-          <Input
-            type="date"
-            value={endDate}
-            onChange={(event) => setEndDate(event.target.value)}
-            aria-label="Tugash sanasi"
-          />
-          <Select value={mealType} onValueChange={setMealType}>
-            <SelectTrigger>
-              <SelectValue placeholder="Meal type" />
-            </SelectTrigger>
-            <SelectContent>
-              {map(mealTypeOptions, (option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="relative">
-            <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Ovqat nomi..."
-              className="pl-9"
-            />
-          </div>
-        </div>
-      </NutritionCard>
-
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          icon={FlameIcon}
-          label="O'rtacha kaloriya"
-          value={historyStats.avgCalories}
-          unit="kcal"
-        />
-        <StatCard
-          icon={TrophyIcon}
-          label="Eng yaxshi seriya"
-          value={historyStats.trackedDays}
-          unit="kun"
-          tone="success"
-        />
-        <StatCard
-          icon={DropletsIcon}
-          label="O'rtacha suv"
-          value={historyStats.avgWater}
-          unit="ml"
-          tone="water"
-        />
-        <StatCard
-          icon={TargetIcon}
-          label="O'rtacha balans"
-          value={historyStats.avgBalance}
-          unit="%"
-          tone="warning"
-        />
-      </div>
-
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-black">Kunlik tarix</h2>
-          <p className="text-sm text-muted-foreground">
-            {startDate} dan {endDate} gacha
-          </p>
-        </div>
-        {isFetching ? (
-          <p className="text-xs font-bold text-muted-foreground">Yangilanmoqda...</p>
-        ) : null}
-      </div>
 
       {isLoading ? (
         <div className="grid min-h-[260px] place-items-center rounded-[1.75rem] border bg-card">
@@ -438,12 +693,8 @@ const NutritionHistoryPage = () => {
       ) : (
         <div className="space-y-3">
           {map(days, (day) => {
-            const meals = flattenMeals(day);
+            const meals = filterMealsForView(flattenMeals(day), mealType, search);
             const totals = getDayTotals(meals);
-            const topMeals = take(
-              orderBy(meals, [(meal) => toNumber(meal.cal || 0)], ["desc"]),
-              3,
-            );
 
             return (
               <HistoryDayCard
@@ -451,14 +702,61 @@ const NutritionHistoryPage = () => {
                 day={day}
                 meals={meals}
                 totals={totals}
-                topMeals={topMeals}
-                onOpen={() => navigate(`/user/nutrition/home?date=${day.date}`)}
+                onOpen={() => navigate(`/user/nutrition/overview?date=${day.date}`)}
                 onCopyMealToToday={handleCopyMealToToday}
               />
             );
           })}
         </div>
       )}
+      <HistoryFilterDrawer
+        open={filterOpen}
+        onOpenChange={setFilterOpen}
+        startDate={startDate}
+        endDate={endDate}
+        mealType={mealType}
+        search={search}
+        isExportDisabled={isLoading || days.length === 0}
+        onOpenStartDate={() => setStartDatePickerOpen(true)}
+        onOpenEndDate={() => setEndDatePickerOpen(true)}
+        onOpenMealType={() => setMealTypeDrawerOpen(true)}
+        onSearchChange={setSearch}
+        onExport={handleExportHistory}
+        onClear={handleClearFilters}
+      />
+      {startDatePickerOpen ? (
+        <CalendarBottomDrawer
+          open={startDatePickerOpen}
+          onOpenChange={setStartDatePickerOpen}
+          date={dateKeyToDate(startDate)}
+          onChange={handleStartDateChange}
+          maxDate={dateKeyToDate(endDate)}
+          title="Boshlanish sanasi"
+          description="History ko'rinishi qaysi kundan boshlanishini tanlang."
+          nested
+        />
+      ) : null}
+      {endDatePickerOpen ? (
+        <CalendarBottomDrawer
+          open={endDatePickerOpen}
+          onOpenChange={setEndDatePickerOpen}
+          date={dateKeyToDate(endDate)}
+          onChange={handleEndDateChange}
+          minDate={dateKeyToDate(startDate)}
+          maxDate={dateKeyToDate(todayKey)}
+          title="Tugash sanasi"
+          description="History ko'rinishi qaysi kungacha bo'lishini tanlang."
+          nested
+        />
+      ) : null}
+      {mealTypeDrawerOpen ? (
+        <MealTypeDrawer
+          open={mealTypeDrawerOpen}
+          onOpenChange={setMealTypeDrawerOpen}
+          value={mealType}
+          onChange={setMealType}
+        />
+      ) : null}
     </NutritionLayout>
   );
 };

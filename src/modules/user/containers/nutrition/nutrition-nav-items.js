@@ -7,11 +7,12 @@ import {
 
 export const NUTRITION_NAV_ITEMS = [
   {
-    to: "/user/nutrition/home",
-    label: "Home",
+    to: "/user/nutrition/overview",
+    label: "Overview",
     icon: HouseIcon,
     match: (pathname) =>
-      pathname === "/user/nutrition" || pathname.startsWith("/user/nutrition/home"),
+      pathname === "/user/nutrition" ||
+      pathname.startsWith("/user/nutrition/overview"),
   },
   {
     to: "/user/nutrition/plans",

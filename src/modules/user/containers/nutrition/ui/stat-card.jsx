@@ -23,14 +23,14 @@ export default function StatCard({
   className,
 }) {
   return (
-    <NutritionCard className={cn("min-w-0", className)}>
+    <NutritionCard className={cn("min-w-0 px-4 py-4", className)}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          <p className="text-[11px] font-semibold uppercase text-muted-foreground">
             {label}
           </p>
-          <div className="mt-2 flex min-w-0 flex-wrap items-end gap-x-1.5 gap-y-1">
-            <span className="text-2xl font-black leading-none tracking-tight sm:text-3xl">
+          <div className="mt-1.5 flex min-w-0 flex-wrap items-end gap-x-1.5 gap-y-1">
+            <span className="text-2xl font-black leading-none tracking-tight">
               {value}
             </span>
             {unit ? (
@@ -48,11 +48,11 @@ export default function StatCard({
         {Icon ? (
           <div
             className={cn(
-              "grid size-10 shrink-0 place-items-center rounded-2xl",
+              "grid size-9 shrink-0 place-items-center rounded-2xl",
               toneClassName[tone] || toneClassName.primary,
             )}
           >
-            <Icon className="size-5" />
+            <Icon className="size-4" />
           </div>
         ) : null}
       </div>
@@ -66,9 +66,10 @@ export default function StatCard({
         />
       ) : null}
       {description ? (
-        <p className="mt-3 text-sm text-muted-foreground">{description}</p>
+        <p className="mt-2 text-xs leading-5 text-muted-foreground">
+          {description}
+        </p>
       ) : null}
     </NutritionCard>
   );
 }
-
