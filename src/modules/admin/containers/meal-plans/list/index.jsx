@@ -1,10 +1,17 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import React from "react";
-import { get, isArray, trim, map } from "lodash";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import trim from "lodash/trim";
+import map from "lodash/map";
 import {
+  CopyIcon,
+  EyeIcon,
   MoreHorizontalIcon,
   PencilIcon,
   PlusIcon,
+  PowerIcon,
+  PowerOffIcon,
   RefreshCcwIcon,
   Trash2Icon,
 } from "lucide-react";
@@ -69,6 +76,115 @@ const resolveLabel = (translations, fallback, language) =>
   trim(get(translations, language, "")) ||
   trim(get(translations, "uz", "")) ||
   fallback;
+
+const getDayNumber = (dayKey) => {
+  const match = String(dayKey).match(/^day-(\d+)$/);
+  return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER;
+};
+
+const getDayLabel = (dayKey) => {
+  const dayNumber = getDayNumber(dayKey);
+  return Number.isFinite(dayNumber) && dayNumber !== Number.MAX_SAFE_INTEGER
+    ? `${dayNumber}-kun`
+    : dayKey;
+};
+
+const getTemplateDayEntries = (template) => {
+  const weeklyKanban = template?.weeklyKanban;
+  if (!weeklyKanban || typeof weeklyKanban !== "object") return [];
+  return Object.entries(weeklyKanban).sort(
+    ([leftKey], [rightKey]) => getDayNumber(leftKey) - getDayNumber(rightKey),
+  );
+};
+
+const getColumns = (columns) => (isArray(columns) ? columns : []);
+
+const getColumnItems = (column) =>
+  isArray(column?.items) ? column.items : [];
+
+const getDayMealCount = (columns) =>
+  getColumns(columns).reduce(
+    (total, column) => total + getColumnItems(column).length,
+    0,
+  );
+
+const MealPlanPreviewDrawer = ({ template, open, onOpenChange, language }) => {
+  const days = getTemplateDayEntries(template);
+  const title = resolveLabel(
+    template?.translations,
+    template?.name ?? "",
+    language,
+  );
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
+      <DrawerContent className="mx-auto max-h-[90vh] max-w-5xl overflow-hidden rounded-t-[2rem]">
+        <DrawerHeader className="px-6 text-left">
+          <DrawerTitle>30 kunlik preview</DrawerTitle>
+          <DrawerDescription>
+            {title || "Meal plan shabloni"} · {template?.totalMeals ?? 0} taom
+          </DrawerDescription>
+        </DrawerHeader>
+        <div className="max-h-[70vh] overflow-y-auto px-6 pb-6">
+          {days.length ? (
+            <div className="grid gap-3 lg:grid-cols-2">
+              {map(days, ([dayKey, columns]) => (
+                <section key={dayKey} className="rounded-xl border p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <h3 className="font-semibold">{getDayLabel(dayKey)}</h3>
+                    <Badge variant="outline">
+                      {getDayMealCount(columns)} taom
+                    </Badge>
+                  </div>
+                  <div className="grid gap-3">
+                    {map(getColumns(columns), (column) => (
+                      <div
+                        key={column.id ?? column.type}
+                        className="rounded-lg bg-muted/40 p-3"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-medium">
+                            {column.type || "Ovqat"}
+                          </p>
+                          {column.time ? (
+                            <span className="text-xs text-muted-foreground">
+                              {column.time}
+                            </span>
+                          ) : null}
+                        </div>
+                        <ul className="mt-2 grid gap-2">
+                          {map(getColumnItems(column), (item) => (
+                            <li
+                              key={item.id ?? item.name}
+                              className="flex items-center justify-between gap-3 rounded-md bg-background px-3 py-2 text-sm"
+                            >
+                              <span className="min-w-0 truncate">
+                                {item.name || item.title || "Taom"}
+                              </span>
+                              {item.cal ? (
+                                <span className="shrink-0 text-xs text-muted-foreground">
+                                  {item.cal} kcal
+                                </span>
+                              ) : null}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border p-6 text-sm text-muted-foreground">
+              Preview uchun kanban ma'lumoti topilmadi.
+            </div>
+          )}
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+};
 
 const MealPlanFormDrawer = ({ mode, template, open, onOpenChange }) => {
   const queryClient = useQueryClient();
@@ -283,6 +399,7 @@ const MealPlanFormDrawer = ({ mode, template, open, onOpenChange }) => {
 
 const ListPage = () => {
   const { setBreadcrumbs } = useBreadcrumbStore();
+  const queryClient = useQueryClient();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const { canManageContent } = useAdminPermissions();
   const [query, setQuery] = React.useState("");
@@ -292,6 +409,7 @@ const ListPage = () => {
     template: null,
   });
   const [archiveTarget, setArchiveTarget] = React.useState(null);
+  const [previewTemplate, setPreviewTemplate] = React.useState(null);
   const { data, isLoading, isFetching, refetch } = useGetQuery({
     url: "/admin/meal-plans",
     params: {
@@ -300,6 +418,8 @@ const ListPage = () => {
     },
     queryProps: { queryKey: [...QUERY_KEY, query] },
   });
+  const cloneMutation = usePostQuery({ queryKey: QUERY_KEY });
+  const statusMutation = usePatchQuery({ queryKey: QUERY_KEY });
   const deleteMutation = useDeleteQuery({ queryKey: QUERY_KEY });
   const templates = getPayload(data);
   const items = isArray(templates) ? templates : [];
@@ -314,6 +434,40 @@ const ListPage = () => {
     setDrawerState({ open: true, mode: "edit", template });
   const closeDrawer = (open) =>
     setDrawerState((current) => ({ ...current, open }));
+  const closePreview = (open) => {
+    if (!open) setPreviewTemplate(null);
+  };
+
+  const cloneTemplate = async (template) => {
+    try {
+      await cloneMutation.mutateAsync({
+        url: `/admin/meal-plans/${template.id}/clone`,
+        attributes: { isActive: false },
+      });
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      toast.success("Meal plan shabloni nusxalandi");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Nusxalab bo'lmadi"));
+    }
+  };
+
+  const toggleTemplateStatus = async (template) => {
+    const isActive = template.isActive !== true;
+    try {
+      await statusMutation.mutateAsync({
+        url: `/admin/meal-plans/${template.id}`,
+        attributes: { isActive },
+      });
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      toast.success(
+        isActive
+          ? "Meal plan shabloni faollashtirildi"
+          : "Meal plan shabloni nofaol qilindi",
+      );
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Statusni yangilab bo'lmadi"));
+    }
+  };
 
   const archiveTemplate = async () => {
     if (!archiveTarget) return;
@@ -393,11 +547,31 @@ const ListPage = () => {
                 {canManageContent ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Shablon amallari"
+                      >
                         <MoreHorizontalIcon className="size-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => void cloneTemplate(template)}
+                      >
+                        <CopyIcon className="size-4" />
+                        Nusxalash
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => void toggleTemplateStatus(template)}
+                      >
+                        {template.isActive ? (
+                          <PowerOffIcon className="size-4" />
+                        ) : (
+                          <PowerIcon className="size-4" />
+                        )}
+                        {template.isActive ? "Nofaol qilish" : "Faollashtirish"}
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => openEdit(template)}>
                         <PencilIcon className="size-4" />
                         Tahrirlash
@@ -428,6 +602,18 @@ const ListPage = () => {
                   </Badge>
                 ))}
               </div>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setPreviewTemplate(template)}
+                >
+                  <EyeIcon className="size-4" />
+                  Ko'rish
+                </Button>
+              </div>
             </article>
           ))}
         </div>
@@ -441,6 +627,12 @@ const ListPage = () => {
         template={drawerState.template}
         open={drawerState.open}
         onOpenChange={closeDrawer}
+      />
+      <MealPlanPreviewDrawer
+        template={previewTemplate}
+        open={Boolean(previewTemplate)}
+        onOpenChange={closePreview}
+        language={currentLanguage}
       />
       <AdminConfirmDialog
         open={Boolean(archiveTarget)}

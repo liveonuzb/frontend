@@ -1,5 +1,10 @@
 import React from "react";
-import { get, find, map, filter, isArray } from "lodash";
+import get from "lodash/get";
+import find from "lodash/find";
+import map from "lodash/map";
+import filter from "lodash/filter";
+import isArray from "lodash/isArray";
+import isPlainObject from "lodash/isPlainObject";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useDeleteQuery,
@@ -11,6 +16,11 @@ import { useAiAccessInvalidation } from "@/hooks/app/use-ai-access";
 
 export const MEAL_PLAN_QUERY_KEY = ["meal-plans", "me"];
 export const MEAL_PLAN_TEMPLATES_QUERY_KEY = ["meal-plans", "templates"];
+export const getMealPlanTemplateDetailQueryKey = (templateId) => [
+  ...MEAL_PLAN_TEMPLATES_QUERY_KEY,
+  "detail",
+  templateId,
+];
 
 const defaultMealPlanState = {
   plans: [],
@@ -79,6 +89,28 @@ const normalizeTemplate = (template) => {
 };
 
 export const normalizeMealPlanTemplateForTest = normalizeTemplate;
+
+const normalizeTemplateLibraryResponse = (response) => {
+  const payload = get(response, "data.data", []);
+  const responseMeta = get(response, "data.meta", {});
+  const templatesSource = isArray(payload) ? payload : [];
+  const goals = isArray(responseMeta?.goals) ? responseMeta.goals : [];
+
+  return {
+    templates: filter(map(templatesSource, normalizeTemplate), Boolean),
+    goals,
+    meta: isPlainObject(responseMeta) ? responseMeta : {},
+  };
+};
+
+export const normalizeMealPlanTemplateLibraryResponseForTest =
+  normalizeTemplateLibraryResponse;
+
+const normalizeTemplateDetailResponse = (response) =>
+  normalizeTemplate(get(response, "data.data", get(response, "data", null)));
+
+export const normalizeMealPlanTemplateDetailResponseForTest =
+  normalizeTemplateDetailResponse;
 
 const normalizeMealPlanState = (payload = {}) => {
   const plans = isArray(payload.plans)
@@ -400,16 +432,36 @@ export const useMealPlanTemplates = (options = {}) => {
     },
   });
 
-  const payload = get(data, "data.data", get(data, "data", {}));
-  const templates = isArray(payload.items)
-    ? filter(map(payload.items, normalizeTemplate), Boolean)
-    : [];
+  const library = React.useMemo(
+    () => normalizeTemplateLibraryResponse(data),
+    [data],
+  );
 
   return {
     ...query,
-    templates,
-    goals: isArray(payload.goals) ? payload.goals : [],
-    meta: payload.meta ?? {},
+    templates: library.templates,
+    goals: library.goals,
+    meta: library.meta,
+  };
+};
+
+export const useMealPlanTemplateDetail = (templateId, options = {}) => {
+  const enabled = Boolean(templateId) && (options.enabled ?? true);
+  const { data, ...query } = useGetQuery({
+    url: `/meal-plans/templates/${templateId}`,
+    queryProps: {
+      queryKey: getMealPlanTemplateDetailQueryKey(templateId),
+      enabled,
+    },
+  });
+  const template = React.useMemo(
+    () => normalizeTemplateDetailResponse(data),
+    [data],
+  );
+
+  return {
+    ...query,
+    template,
   };
 };
 

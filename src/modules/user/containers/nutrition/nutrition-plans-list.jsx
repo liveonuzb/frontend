@@ -1,5 +1,6 @@
 import React from "react";
-import { map, toNumber } from "lodash";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +20,8 @@ const getDurationDays = (plan) =>
 
 const getPlanCalories = (plan, goals) =>
   toNumber(plan?.appliedTargetCalories || goals?.calories || 0);
+
+const getMealCount = (plan) => toNumber(plan?.mealCount || 4) || 4;
 
 const getSourceLabel = (getPlanSourceMeta, plan) =>
   getPlanSourceMeta(plan.source).label;
@@ -56,12 +59,14 @@ export default function NutritionPlansList({
       updatedLabel: null,
     };
     const durationDays = getDurationDays(plan);
+    const mealCount = getMealCount(plan);
+    const totalItems = toNumber(insights.totalItems || 0);
 
     return (
       <div
         key={plan.id}
         className={cn(
-          "rounded-[1.5rem] border bg-card px-4 py-4 shadow-sm transition-all",
+          "rounded-[1.5rem] border bg-card p-4 shadow-sm transition-all",
           isSelected
             ? "border-primary bg-primary/5 shadow-primary/10"
             : "hover:border-primary/25 hover:bg-accent/60",
@@ -93,6 +98,17 @@ export default function NutritionPlansList({
                 </span>
               </div>
               <p className="truncate text-base font-black">{plan.name}</p>
+              <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] font-bold text-muted-foreground">
+                <span className="rounded-full border bg-background px-2.5 py-1">
+                  {durationDays} kunlik
+                </span>
+                <span className="rounded-full border bg-background px-2.5 py-1">
+                  {mealCount} mahal / kun
+                </span>
+                <span className="rounded-full border bg-background px-2.5 py-1">
+                  {totalItems} ta ovqat
+                </span>
+              </div>
               {plan.description ? (
                 <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
                   {plan.description}
@@ -108,7 +124,7 @@ export default function NutritionPlansList({
                     Mahal
                   </p>
                   <p className="mt-1 text-sm font-semibold">
-                    {plan.mealCount || 4}
+                    {mealCount}
                   </p>
                 </div>
                 <div className="rounded-2xl bg-muted/40 px-3 py-2.5">
@@ -116,7 +132,7 @@ export default function NutritionPlansList({
                     Ovqat
                   </p>
                   <p className="mt-1 text-sm font-semibold">
-                    {insights.totalItems}
+                    {totalItems}
                   </p>
                 </div>
                 <div className="rounded-2xl bg-muted/40 px-3 py-2.5">
@@ -244,6 +260,9 @@ export default function NutritionPlansList({
               const insights = planInsightsMap[plan.id] || {
                 updatedLabel: null,
               };
+              const durationDays = getDurationDays(plan);
+              const mealCount = getMealCount(plan);
+              const totalItems = toNumber(insights.totalItems || 0);
               const calories = getPlanCalories(plan, goals);
 
               return (
@@ -254,7 +273,7 @@ export default function NutritionPlansList({
                     isSelected && "bg-primary/5",
                   )}
                 >
-                  <td className="min-w-[280px] px-5 py-5">
+                  <td className="min-w-[280px] p-5">
                     <div className="flex items-center gap-3">
                       <div
                         className={cn(
@@ -267,6 +286,12 @@ export default function NutritionPlansList({
                       <div className="min-w-0">
                         <p className="truncate font-black">{plan.name}</p>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <span className="rounded-full border bg-background px-3 py-1 text-xs font-medium text-muted-foreground">
+                            {durationDays} kunlik
+                          </span>
+                          <span className="rounded-full border bg-background px-3 py-1 text-xs font-medium text-muted-foreground">
+                            {mealCount} mahal / kun
+                          </span>
                           {isActiveStatus ? (
                             <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
                               Faol
@@ -284,18 +309,21 @@ export default function NutritionPlansList({
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-5 font-semibold">
-                    {plan.mealCount || 4} ta
+                  <td className="p-5 font-semibold">
+                    <p>{mealCount} mahal / kun</p>
+                    <p className="mt-1 text-xs font-medium text-muted-foreground">
+                      {totalItems} ta ovqat
+                    </p>
                   </td>
-                  <td className="px-5 py-5 font-semibold">
+                  <td className="p-5 font-semibold">
                     {calories
                       ? `${calories.toLocaleString("en-US")} kcal`
                       : "-"}
                   </td>
-                  <td className="px-5 py-5 font-semibold">
+                  <td className="p-5 font-semibold">
                     {insights.updatedLabel || "-"}
                   </td>
-                  <td className="px-5 py-5">
+                  <td className="p-5">
                     <span className="inline-flex items-center gap-2 font-semibold text-muted-foreground">
                       <span
                         className={cn(
@@ -308,7 +336,7 @@ export default function NutritionPlansList({
                       {getStatusLabel(getPlanStatusMeta, plan)}
                     </span>
                   </td>
-                  <td className="px-5 py-5">
+                  <td className="p-5">
                     <div className="flex items-center justify-end gap-3">
                       <Button
                         type="button"

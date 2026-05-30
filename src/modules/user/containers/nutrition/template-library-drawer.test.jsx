@@ -68,7 +68,7 @@ describe("TemplateLibraryDrawer", () => {
       within(blockedCard).getByRole("button", { name: /Mos kelmaydi/i }),
     ).toBeDisabled();
     expect(
-      screen.getByText(/Foydalanuvchi cheklovlariga mos emas/i),
+      screen.getByText(/Mos emas: yoqtirilmagan ovqat bor/i),
     ).toBeInTheDocument();
   });
 });

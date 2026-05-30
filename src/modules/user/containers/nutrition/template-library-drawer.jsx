@@ -17,12 +17,14 @@ import {
   UtensilsIcon,
 } from "lucide-react";
 import { useMealPlanTemplates } from "@/hooks/app/use-meal-plan";
+import { getTemplateBlockingReasonLabel } from "./template-blocking-reasons.js";
 import {
   NutritionDrawerBody,
   NutritionDrawerContent,
 } from "./nutrition-drawer-layout.jsx";
 
-import { map, take } from "lodash";
+import map from "lodash/map";
+import take from "lodash/take";
 
 const GOAL_FILTERS = [
   { value: "all", label: "Barchasi" },
@@ -37,29 +39,6 @@ const GOAL_LABELS = {
   gain_muscle: "Mushak olish",
   muscle: "Mushak olish",
   maintenance: "Balans",
-};
-
-const getBlockingReasonLabel = (template) => {
-  if (template.isCompatible !== false) return null;
-  const reason = template.blockingReasons?.[0];
-
-  if (reason?.type === "disliked_food") {
-    return "Foydalanuvchi cheklovlariga mos emas. Yoqtirilmagan ovqat bor.";
-  }
-
-  if (reason?.type === "avoided_ingredient") {
-    return "Foydalanuvchi cheklovlariga mos emas. Allergiya yoki yoqtirilmagan ingredient bor.";
-  }
-
-  if (reason?.type === "excluded_allergen_tag") {
-    return "Foydalanuvchi cheklovlariga mos emas. Diet cheklovlariga zid tarkib bor.";
-  }
-
-  if (reason?.type === "empty_or_zero_calorie_day") {
-    return "Foydalanuvchi cheklovlariga mos emas. Template ichida kaloriyasi to'ldirilmagan kun bor.";
-  }
-
-  return "Foydalanuvchi cheklovlariga mos emas.";
 };
 
 const TemplateSkeleton = () => (
@@ -156,7 +135,8 @@ export default function TemplateLibraryDrawer({
               map(templates, (template) => {
                 const isPending = pendingTemplateId === template.id;
                 const isCompatible = template.isCompatible !== false;
-                const blockingReasonLabel = getBlockingReasonLabel(template);
+                const blockingReasonLabel =
+                  getTemplateBlockingReasonLabel(template);
 
                 return (
                   <div

@@ -2,6 +2,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import {
   ArrowRightIcon,
+  BookOpenIcon,
   CalendarDaysIcon,
   CheckCircle2Icon,
   FlameIcon,
@@ -21,8 +22,13 @@ import FilterChips from "../ui/filter-chips.jsx";
 import PlanTemplateCard from "../ui/plan-template-card.jsx";
 import useAppModeTheme from "@/hooks/app/use-app-mode-theme";
 import { cn } from "@/lib/utils.js";
+import { getTemplateBlockingReasonLabel } from "../template-blocking-reasons.js";
 
-import { filter, map, toNumber } from "lodash";
+import filter from "lodash/filter";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import take from "lodash/take";
+import toNumber from "lodash/toNumber";
 
 const formatPlanDate = (value) => {
   if (!value) {
@@ -40,6 +46,52 @@ const formatPlanDate = (value) => {
 
 const getPlanCalories = (plan, goals) =>
   toNumber(plan?.appliedTargetCalories || goals?.calories || 0);
+
+const templateIconByGoal = {
+  lose_weight: ScaleIcon,
+  "weight-loss": ScaleIcon,
+  gain_muscle: DumbbellIcon,
+  muscle: DumbbellIcon,
+  maintenance: TargetIcon,
+  wellness: LeafIcon,
+};
+
+const getTemplateCalories = (template) => {
+  const calories = toNumber(
+    template?.appliedTargetCalories ||
+      template?.targetCalories ||
+      template?.calories ||
+      0,
+  );
+
+  return calories ? calories.toLocaleString("en-US") : "-";
+};
+
+const getTemplateDays = (template) => toNumber(template?.days || 30) || 30;
+
+const getTemplateMealsPerDay = (template) =>
+  toNumber(template?.mealsPerDay || template?.mealCount || 0) || null;
+
+const getTemplateMealsCount = (template) =>
+  toNumber(template?.mealsCount || template?.totalMeals || 0) || null;
+
+const buildTemplateCard = (template) => ({
+  ...template,
+  title: template.title || template.name || "Tayyor shablon",
+  description: template.description || "Admin tomonidan yaratilgan reja.",
+  calories: getTemplateCalories(template),
+  daysLabel: `${getTemplateDays(template)} kunlik`,
+  mealLabel: getTemplateMealsPerDay(template)
+    ? `${getTemplateMealsPerDay(template)} mahal / kun`
+    : null,
+  mealsCountLabel: getTemplateMealsCount(template)
+    ? `${getTemplateMealsCount(template)} ta ovqat`
+    : null,
+  icon: templateIconByGoal[template.goal] || BookOpenIcon,
+  disabled: template.isCompatible === false,
+  compatibilityLabel: template.isCompatible === false ? "Mos emas" : "Mos",
+  blockingReason: getTemplateBlockingReasonLabel(template),
+});
 
 const MealPlanHero = ({
   currentPlan,
@@ -75,10 +127,10 @@ const MealPlanHero = ({
   return (
     <NutritionCard
       tone="accent"
-      className="relative min-h-[340px] overflow-hidden px-6 py-6 sm:px-8 lg:min-h-[360px] lg:px-9"
+      className="relative min-h-[340px] overflow-hidden p-6 sm:px-8 lg:min-h-[360px] lg:px-9"
     >
       <div className="absolute inset-y-0 right-0 hidden w-[46%] bg-[radial-gradient(circle_at_70%_20%,rgb(var(--accent-rgb)/0.16),transparent_34%),linear-gradient(135deg,transparent,rgb(var(--accent-rgb)/0.10))] lg:block" />
-      <div className="absolute -right-16 bottom-0 hidden h-72 w-72 rounded-full bg-primary/10 blur-3xl lg:block" />
+      <div className="absolute -right-16 bottom-0 hidden size-72 rounded-full bg-primary/10 blur-3xl lg:block" />
 
       <div className="relative z-10 grid h-full gap-8 lg:grid-cols-[minmax(0,1fr)_330px] lg:items-center">
         <div className="min-w-0">
@@ -273,6 +325,9 @@ export default function NutritionPlansView({
   onSelectPlanForShopping,
   onCreateAI,
   onCreateFromTemplate,
+  onActivateTemplate,
+  templates = [],
+  isTemplateLoading = false,
 }) {
   const [planFilter, setPlanFilter] = React.useState("all");
   const filteredPlans = React.useMemo(() => {
@@ -288,38 +343,13 @@ export default function NutritionPlansView({
     { key: "draft", label: "Qoralama" },
     { key: "archived", label: "Arxiv" },
   ];
-  const templateCards = [
-    {
-      title: "Og'irlikni kamaytirish",
-      description: "Kaloriya nazorati, yuqori oqsil va barqaror kunlik ritm.",
-      calories: "1,850",
-      badge: "Popular",
-      icon: ScaleIcon,
-    },
-    {
-      title: "Mushak massasi",
-      description:
-        "Ko'proq oqsil, mashg'ulotdan keyingi tiklanish va energiya.",
-      calories: "2,650",
-      badge: "Sport",
-      icon: DumbbellIcon,
-    },
-    {
-      title: "Sog'lom turmush",
-      description:
-        "Balansli makrolar, suv, vitaminlar va yengil haftalik menyu.",
-      calories: "2,150",
-      badge: "Balance",
-      icon: TargetIcon,
-    },
-    {
-      title: "Vegan balans",
-      description: "O'simlik oqsili, temir va B12 e'tiborda bo'lgan reja.",
-      calories: "2,050",
-      badge: "Vegan",
-      icon: LeafIcon,
-    },
-  ];
+  const templateCards = React.useMemo(
+    () =>
+      take(isArray(templates) ? templates : [], 4).map((template) =>
+        buildTemplateCard(template),
+      ),
+    [templates],
+  );
   return (
     <NutritionLayout mainClassName="space-y-8">
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -347,15 +377,26 @@ export default function NutritionPlansView({
             <ArrowRightIcon className="size-4" />
           </button>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
-          {map(templateCards, (template) => (
-            <PlanTemplateCard
-              key={template.title}
-              {...template}
-              onSelect={onCreateFromTemplate}
-            />
-          ))}
-        </div>
+        {isTemplateLoading ? (
+          <div className="rounded-[28px] border border-dashed p-5 text-sm text-muted-foreground">
+            Shablonlar yuklanmoqda...
+          </div>
+        ) : templateCards.length > 0 ? (
+          <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
+            {map(templateCards, (template) => (
+              <PlanTemplateCard
+                key={template.id || template.title}
+                {...template}
+                onPreview={onCreateFromTemplate}
+                onSelect={() => onActivateTemplate?.(template)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-[28px] border border-dashed p-5 text-sm text-muted-foreground">
+            Hozircha admin shablonlari yo'q.
+          </div>
+        )}
       </section>
 
       <section className="space-y-4">
