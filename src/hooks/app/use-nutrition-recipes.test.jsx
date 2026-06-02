@@ -240,6 +240,12 @@ describe("useNutritionRecipes", () => {
         mealType: "lunch",
         servings: 2,
       });
+      await result.current.addToMealPlan(11, {
+        planId: "plan-1",
+        dayKey: "day-1",
+        mealType: "lunch",
+        servings: 2,
+      });
     });
 
     expect(mockPostMutateAsync).toHaveBeenCalledWith({
@@ -252,6 +258,15 @@ describe("useNutritionRecipes", () => {
       url: "/user/nutrition/recipes/11/meal-log",
       attributes: {
         date: "2026-05-31",
+        mealType: "lunch",
+        servings: 2,
+      },
+    });
+    expect(mockPostMutateAsync).toHaveBeenCalledWith({
+      url: "/user/nutrition/recipes/11/add-to-meal-plan",
+      attributes: {
+        planId: "plan-1",
+        dayKey: "day-1",
         mealType: "lunch",
         servings: 2,
       },

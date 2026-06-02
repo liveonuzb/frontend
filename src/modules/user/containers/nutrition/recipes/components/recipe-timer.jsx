@@ -16,13 +16,17 @@ const formatSeconds = (value) => {
 const RecipeTimer = ({ minutes }) => {
   const rt = useRecipeTranslation();
   const initialSeconds = Math.max(0, Math.round((toNumber(minutes) || 0) * 60));
-  const [seconds, setSeconds] = React.useState(initialSeconds);
-  const [isRunning, setIsRunning] = React.useState(false);
+  const [timer, setTimer] = React.useState(() => ({
+    initialSeconds,
+    seconds: initialSeconds,
+    isRunning: false,
+  }));
 
-  React.useEffect(() => {
-    setSeconds(initialSeconds);
-    setIsRunning(false);
-  }, [initialSeconds]);
+  const effectiveTimer =
+    timer.initialSeconds === initialSeconds
+      ? timer
+      : { initialSeconds, seconds: initialSeconds, isRunning: false };
+  const { seconds, isRunning } = effectiveTimer;
 
   React.useEffect(() => {
     if (!isRunning || seconds <= 0) {
@@ -30,11 +34,21 @@ const RecipeTimer = ({ minutes }) => {
     }
 
     const intervalId = window.setInterval(() => {
-      setSeconds((value) => Math.max(0, value - 1));
+      setTimer((current) => {
+        const base =
+          current.initialSeconds === initialSeconds
+            ? current
+            : { initialSeconds, seconds: initialSeconds, isRunning: false };
+
+        return {
+          ...base,
+          seconds: Math.max(0, base.seconds - 1),
+        };
+      });
     }, 1000);
 
     return () => window.clearInterval(intervalId);
-  }, [isRunning, seconds]);
+  }, [initialSeconds, isRunning, seconds]);
 
   if (!initialSeconds) {
     return null;
@@ -49,7 +63,19 @@ const RecipeTimer = ({ minutes }) => {
         type="button"
         variant="outline"
         className="h-9"
-        onClick={() => setIsRunning((value) => !value)}
+        onClick={() =>
+          setTimer((current) => {
+            const base =
+              current.initialSeconds === initialSeconds
+                ? current
+                : { initialSeconds, seconds: initialSeconds, isRunning: false };
+
+            return {
+              ...base,
+              isRunning: !base.isRunning,
+            };
+          })
+        }
       >
         {isRunning ? rt("timer.pause") : rt("timer.start")}
       </Button>

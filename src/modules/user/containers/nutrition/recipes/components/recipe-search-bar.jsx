@@ -13,9 +13,9 @@ const RecipeSearchBar = ({ value, onChange, className }) => {
       <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
       <Input
         value={value}
-        aria-label={label}
+        aria-label="Retseptlar qidirish"
         className="pl-9"
-        placeholder={rt("search.placeholder")}
+        placeholder="Retseptlar qidirish..."
         onChange={(event) => onChange(event.target.value)}
       />
     </label>

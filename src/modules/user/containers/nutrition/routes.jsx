@@ -7,6 +7,8 @@ const NutritionOverviewPage = lazy(() => import("./home/index.jsx"));
 const NutritionPlansPage = lazy(() => import("./plans/index.jsx"));
 const NutritionRecipesPage = lazy(() => import("./recipes/index.jsx"));
 const NutritionRecipeDetailPage = lazy(() => import("./recipes/detail.jsx"));
+const NutritionRecipeCreatePage = lazy(() => import("./recipes/create.jsx"));
+const NutritionRecipeCookingPage = lazy(() => import("./recipes/cooking.jsx"));
 const NutritionHistoryPage = lazy(() => import("./history/index.jsx"));
 const NutritionReportPage = lazy(() => import("./report/index.jsx"));
 
@@ -27,6 +29,14 @@ const NutritionRoutes = () => {
         <Route
           path="recipes"
           element={withSuspense(<NutritionRecipesPage />)}
+        />
+        <Route
+          path="recipes/create"
+          element={withSuspense(<NutritionRecipeCreatePage />)}
+        />
+        <Route
+          path="recipes/:slugOrId/cook"
+          element={withSuspense(<NutritionRecipeCookingPage />)}
         />
         <Route
           path="recipes/:slugOrId"

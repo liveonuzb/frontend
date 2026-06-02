@@ -12,8 +12,8 @@ describe("RecipeSearchBar", () => {
 
     render(<RecipeSearchBar value="" onChange={onChange} />);
 
-    const input = screen.getByLabelText("Retsept qidirish");
-    expect(input).toHaveAttribute("placeholder", "Retsept qidirish");
+    const input = screen.getByLabelText("Retseptlar qidirish");
+    expect(input).toHaveAttribute("placeholder", "Retseptlar qidirish...");
 
     fireEvent.change(input, { target: { value: "palov" } });
 

@@ -6,6 +6,7 @@ import { NUTRITION_NAV_ITEMS } from "./nutrition-nav-items.js";
 
 import includes from "lodash/includes";
 import map from "lodash/map";
+import some from "lodash/some";
 
 const PRIMARY_TAB_PATHS = [
   "/user/nutrition/overview",
@@ -18,7 +19,9 @@ const PRIMARY_TAB_PATHS = [
 const NutritionShell = () => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const shouldHideTabs = !includes(PRIMARY_TAB_PATHS, pathname);
+  const shouldHideTabs =
+    !includes(PRIMARY_TAB_PATHS, pathname) &&
+    !some(NUTRITION_NAV_ITEMS, (item) => item.match?.(pathname));
   const navItems = React.useMemo(
     () =>
       map(NUTRITION_NAV_ITEMS, (item) => ({
