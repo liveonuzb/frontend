@@ -13,7 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner.jsx";
 
-import { map, toUpper } from "lodash";
+import map from "lodash/map";
+import toUpper from "lodash/toUpper";
 
 export function WorkoutPlanTranslationsDrawer({
   open,
@@ -29,7 +30,7 @@ export function WorkoutPlanTranslationsDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent>
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle>{t("admin.workoutPlans.translations.title")}</DrawerTitle>
           <DrawerDescription>

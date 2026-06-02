@@ -1,5 +1,6 @@
 import React from "react";
-import { get, map } from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
 
 import {
   FormControl,

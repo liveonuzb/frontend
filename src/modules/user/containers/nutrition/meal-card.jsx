@@ -1,6 +1,11 @@
 import React, { memo, useState } from "react";
 import { motion } from "framer-motion";
-import { get, round, multiply, includes, isArray, map } from "lodash";
+import get from "lodash/get";
+import round from "lodash/round";
+import multiply from "lodash/multiply";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
 import { cn } from "@/lib/utils.js";
 import {
   CheckCircle2Icon,
@@ -436,7 +441,7 @@ const MealCard = memo(
                   <img loading="lazy"
                     src={image}
                     alt={food.name}
-                    className="w-full h-full object-cover"
+                    className="size-full object-cover"
                   />
                 ) : (
                   <span className="text-xl leading-none">{emoji}</span>
@@ -503,7 +508,7 @@ const MealCard = memo(
               </div>
 
               {/* Info */}
-              <div className="flex-1 min-w-0 px-3 py-3 flex flex-col justify-center gap-1.5">
+              <div className="flex-1 min-w-0 p-3 flex flex-col justify-center gap-1.5">
                 <p
                   className={cn(
                     "text-sm font-black truncate leading-snug",
@@ -565,7 +570,7 @@ const MealCard = memo(
               </div>
 
               {/* Right: kcal + action button */}
-              <div className="shrink-0 flex min-w-[92px] flex-col items-end justify-center gap-2 px-3 py-3 border-l border-border/20">
+              <div className="shrink-0 flex min-w-[92px] flex-col items-end justify-center gap-2 p-3 border-l border-border/20">
                 <span
                   className={cn(
                     "text-[15px] font-black tabular-nums leading-none whitespace-nowrap",
@@ -614,7 +619,7 @@ const MealCard = memo(
                 ) : null}
 
                 {!isSelectionMode && isFromPlan && (
-                  <button
+                  <button type="button"
                     onClick={(event) => {
                       event.stopPropagation();
                       if (readOnly && !isConsumed) return;
@@ -639,7 +644,7 @@ const MealCard = memo(
                 )}
 
                 {!isSelectionMode && isConsumed && !isFromPlan && (
-                  <button
+                  <button type="button"
                     onClick={(event) => {
                       event.stopPropagation();
                       setLogOpen(true);

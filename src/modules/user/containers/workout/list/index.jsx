@@ -1,16 +1,14 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import {
-  filter,
-  get,
-  includes,
-  isArray,
-  map,
-  orderBy,
-  split,
-  toNumber,
-  take,
-} from "lodash";
+import filter from "lodash/filter";
+import get from "lodash/get";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import orderBy from "lodash/orderBy";
+import split from "lodash/split";
+import toNumber from "lodash/toNumber";
+import take from "lodash/take";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import {

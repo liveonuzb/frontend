@@ -1,4 +1,8 @@
-import { map, take, toUpper, trim, split } from "lodash";
+import map from "lodash/map";
+import take from "lodash/take";
+import toUpper from "lodash/toUpper";
+import trim from "lodash/trim";
+import split from "lodash/split";
 import React, { useEffect } from "react";
 import { Navigate, Outlet, NavLink, useLocation } from "react-router";
 import {

@@ -8,7 +8,6 @@ import {
   FlagIcon,
   PlayIcon,
   SquareIcon,
-  XIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import PageTransition from "@/components/page-transition";
@@ -17,7 +16,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -65,7 +63,12 @@ import {
 import { cn } from "@/lib/utils";
 import RunMapPanel from "../components/run-map-panel.jsx";
 
-import { filter, map, reduce, split, toNumber, takeRight } from "lodash";
+import filter from "lodash/filter";
+import map from "lodash/map";
+import reduce from "lodash/reduce";
+import split from "lodash/split";
+import toNumber from "lodash/toNumber";
+import takeRight from "lodash/takeRight";
 
 const getMaxPointSequence = (points = []) =>
   reduce(points, (maxSequence, point) =>
@@ -1111,24 +1114,8 @@ const RunningLivePage = () => {
           shouldScaleBackground={false}
         >
           <DrawerContent
-            className="data-[vaul-drawer-direction=bottom]:mx-0 before:rounded-b-none before:rounded-t-[2rem]"
-            style={{
-              maxWidth: "none",
-              width: "100%",
-            }}
+            className="data-[vaul-drawer-direction=bottom]:md:max-w-sm"
           >
-            <DrawerClose asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute right-5 top-5 z-10 rounded-full"
-                disabled={isFinishing}
-                aria-label={t("user.workout.running.live.finishClose", "Close")}
-              >
-                <XIcon className="size-5" aria-hidden="true" />
-              </Button>
-            </DrawerClose>
             <DrawerHeader className="items-center p-5 pb-2 text-center">
               <div
                 className="flex size-14 items-center justify-center rounded-full bg-primary/15 text-primary"

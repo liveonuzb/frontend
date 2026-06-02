@@ -1,5 +1,9 @@
 import React from "react";
-import { filter, map, size, isArray, take } from "lodash";
+import filter from "lodash/filter";
+import map from "lodash/map";
+import size from "lodash/size";
+import isArray from "lodash/isArray";
+import take from "lodash/take";
 import { AwardIcon, LockIcon, TrophyIcon } from "lucide-react";
 import { Link } from "react-router";
 import { useGetQuery } from "@/hooks/api";

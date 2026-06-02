@@ -1,5 +1,11 @@
 import React from "react";
-import { get, map, size, filter as lodashFilter, toString, trim, values as lodashValues } from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import size from "lodash/size";
+import lodashFilter from "lodash/filter";
+import toString from "lodash/toString";
+import trim from "lodash/trim";
+import lodashValues from "lodash/values";
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { CameraIcon, XIcon, LoaderIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-import { includes } from "lodash";
+import includes from "lodash/includes";
 
 const stopScannerSafely = async (scanner) => {
     if (!scanner) return;

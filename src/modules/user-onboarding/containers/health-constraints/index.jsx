@@ -31,17 +31,15 @@ import OnboardingOption from "./option.jsx";
 import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
 import { ONBOARDING_SCROLL_AREA_CLASS } from "../onboarding-scroll-area.js";
 
-import {
-  concat,
-  filter,
-  forEach,
-  includes,
-  isArray,
-  map,
-  some,
-  trim,
-  uniq,
-} from "lodash";
+import concat from "lodash/concat";
+import filter from "lodash/filter";
+import forEach from "lodash/forEach";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import some from "lodash/some";
+import trim from "lodash/trim";
+import uniq from "lodash/uniq";
 
 const STEP = "health-constraints";
 

@@ -3,6 +3,10 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -12,6 +16,7 @@
     "test:auth": "vitest src/store/auth-store.test.js src/router/route-guards.test.js src/router/index.test.jsx src/modules/auth/lib/auth-utils.test.js src/modules/auth/lib/password-policy.test.js src/modules/auth/lib/auth-mobile-layout.test.js src/modules/auth/containers/sign-in/__tests__/phone-form.test.jsx src/modules/auth/containers/sign-in-password/__tests__/index.test.jsx src/modules/auth/containers/sign-in-password/__tests__/password-form.test.jsx src/modules/auth/containers/sign-in-two-factor/two-factor-form.test.jsx src/modules/auth/containers/sign-up/__tests__/index.test.jsx src/modules/auth/containers/sign-up/__tests__/password-form.test.jsx src/modules/auth/containers/otp-verify/__tests__/otp-form.test.jsx src/modules/auth/containers/forgot-password/__tests__/phone-form.test.jsx src/modules/profile/containers/profile/tabs/security-tab.test.jsx",
     "test:e2e:running": "playwright test e2e/running-p0.spec.js e2e/running-live-gps.spec.js",
     "qa:running:real-gps": "node scripts/workout-real-gps-qa.mjs",
+    "env:check": "node scripts/check-node-version.cjs",
     "doctor": "npx react-doctor@latest"
   },
   "dependencies": {

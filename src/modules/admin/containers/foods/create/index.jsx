@@ -1,5 +1,14 @@
 import React from "react";
-import { find, get, isArray, startsWith, toNumber, trim, filter, map, toUpper } from "lodash";
+import { useSearchParams } from "react-router";
+import find from "lodash/find";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import startsWith from "lodash/startsWith";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
+import filter from "lodash/filter";
+import map from "lodash/map";
+import toUpper from "lodash/toUpper";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -75,6 +84,9 @@ const NUTRITION_MODES = [
   { value: "recipe", label: "Recipe orqali" },
 ];
 
+export const resolveFoodCreateNutritionMode = (value) =>
+  value === "recipe" ? "recipe" : "manual";
+
 const resolveCategoryLabel = (translations, fallback, language) => {
   if (translations && typeof translations === "object") {
     const val = get(translations, language, "");
@@ -121,6 +133,7 @@ const FoodFormDrawer = ({
   isUploadingImage,
   isDeletingImage,
   isCreating,
+  initialNutritionMode = "manual",
   onImageUploaded,
   onRemoveImage,
   onUploadingImageChange,
@@ -132,7 +145,7 @@ const FoodFormDrawer = ({
       name: "",
       categoryIds: [],
       cuisineIds: [],
-      nutritionMode: "manual",
+      nutritionMode: resolveFoodCreateNutritionMode(initialNutritionMode),
       calories: 0,
       maxIntake: undefined,
       protein: 0,
@@ -175,7 +188,7 @@ const FoodFormDrawer = ({
 
   return (
     <Drawer open={open} onOpenChange={handleOpenChange} direction="bottom">
-      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-md mx-auto">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="text-center">
           <DrawerTitle className="text-lg font-bold">Yangi ovqat</DrawerTitle>
           <DrawerDescription className="mt-1">
@@ -347,32 +360,35 @@ const FoodFormDrawer = ({
                 )}
               />
 
-              {map([
-                ["protein", "Protein (g)"],
-                ["carbs", "Uglevod (g)"],
-                ["fat", "Yog' (g)"],
-              ], ([name, label]) => (
-                <FormField
-                  key={name}
-                  control={form.control}
-                  name={name}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{label}</FormLabel>
-                      <FormControl>
-                        <RHFNumberField
-                          value={field.value}
-                          onChange={field.onChange}
-                          step={0.1}
-                          placeholder="0.0"
-                          formatOptions={{ maximumFractionDigits: 1 }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ))}
+              {map(
+                [
+                  ["protein", "Protein (g)"],
+                  ["carbs", "Uglevod (g)"],
+                  ["fat", "Yog' (g)"],
+                ],
+                ([name, label]) => (
+                  <FormField
+                    key={name}
+                    control={form.control}
+                    name={name}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{label}</FormLabel>
+                        <FormControl>
+                          <RHFNumberField
+                            value={field.value}
+                            onChange={field.onChange}
+                            step={0.1}
+                            placeholder="0.0"
+                            formatOptions={{ maximumFractionDigits: 1 }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ),
+              )}
 
               <FormField
                 control={form.control}
@@ -547,7 +563,11 @@ const FOODS_LIST_PATH = "/admin/foods/list";
 
 const CreateFoodPage = () => {
   const closeAdminDrawer = useAdminDrawerCloseNavigation(FOODS_LIST_PATH);
+  const [searchParams] = useSearchParams();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
+  const initialNutritionMode = resolveFoodCreateNutritionMode(
+    searchParams.get("nutritionMode"),
+  );
 
   const { data: languagesData } = useGetQuery({
     url: "/admin/languages",
@@ -556,12 +576,13 @@ const CreateFoodPage = () => {
   const languages = get(languagesData, "data.data", []);
 
   const activeLanguages = React.useMemo(
-    () => filter((languages || []), (language) => language.isActive),
+    () => filter(languages || [], (language) => language.isActive),
     [languages],
   );
 
   const currentLanguageMeta = React.useMemo(
-    () => find(activeLanguages, (language) => language.code === currentLanguage),
+    () =>
+      find(activeLanguages, (language) => language.code === currentLanguage),
     [activeLanguages, currentLanguage],
   );
 
@@ -713,6 +734,7 @@ const CreateFoodPage = () => {
       isUploadingImage={isUploadingImage}
       isDeletingImage={imageDeleteMutation.isPending}
       isCreating={createMutation.isPending}
+      initialNutritionMode={initialNutritionMode}
       isUpdating={false}
       onImageUploaded={handleImageUploaded}
       onRemoveImage={handleRemoveImage}

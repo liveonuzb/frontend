@@ -1,5 +1,9 @@
 import React, { useState, useMemo } from "react";
-import { map, filter, includes, toLower, trim } from "lodash";
+import map from "lodash/map";
+import filter from "lodash/filter";
+import includes from "lodash/includes";
+import toLower from "lodash/toLower";
+import trim from "lodash/trim";
 import {
   Drawer,
   DrawerContent,
@@ -56,7 +60,7 @@ export default function ForwardDialog({ open, onClose, onForward, message }) {
 
   return (
     <Drawer open={open} onOpenChange={handleOpenChange}>
-      <DrawerContent side="right" className="flex flex-col">
+      <DrawerContent side="right" className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle className="flex items-center gap-2">
             <Share2Icon className="size-5 text-primary" />
@@ -85,6 +89,7 @@ export default function ForwardDialog({ open, onClose, onForward, message }) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Qidirish..."
+              aria-label="Yo'naltirish uchun chat qidirish"
               className={cn(
                 "bg-input/30 border-input focus-visible:border-ring focus-visible:ring-ring/50",
                 "h-9 w-full rounded-full border pl-9 pr-3 text-sm outline-none",
@@ -103,7 +108,7 @@ export default function ForwardDialog({ open, onClose, onForward, message }) {
             ) : (
               <div className="flex flex-col gap-0.5">
                 {map(filteredChats, (chat) => (
-                  <button
+                  <button type="button"
                     key={chat.id}
                     onClick={() => handleForward(chat.id)}
                     className={cn(

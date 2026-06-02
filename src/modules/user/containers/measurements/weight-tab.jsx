@@ -5,19 +5,17 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  filter,
-  sortBy,
-  map,
-  values as lodashValues,
-  keyBy,
-  takeRight,
-  get,
-  max,
-  min,
-  split,
-  toNumber,
-} from "lodash";
+import filter from "lodash/filter";
+import sortBy from "lodash/sortBy";
+import map from "lodash/map";
+import lodashValues from "lodash/values";
+import keyBy from "lodash/keyBy";
+import takeRight from "lodash/takeRight";
+import get from "lodash/get";
+import max from "lodash/max";
+import min from "lodash/min";
+import split from "lodash/split";
+import toNumber from "lodash/toNumber";
 
 import { AiInsightWidget } from "./ai-insight-widget";
 import { CurrentWeightCard } from "./current-weight-card";

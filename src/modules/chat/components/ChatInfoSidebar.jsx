@@ -1,5 +1,9 @@
 import React, { useState } from "react";
-import { filter, some, toPairs, map, split } from "lodash";
+import filter from "lodash/filter";
+import some from "lodash/some";
+import toPairs from "lodash/toPairs";
+import map from "lodash/map";
+import split from "lodash/split";
 import { Button } from "@/components/ui/button";
 import {
     XIcon,
@@ -283,10 +287,11 @@ const ChatInfoSidebar = ({
                                             </div>
                                             <div className="space-y-2">
                                                 {map(items, (meal, idx) => (
-                                                    <div
+                                                    <button
+                                                        type="button"
                                                         key={idx}
                                                         onClick={() => setSelectedMeal(meal)}
-                                                        className="bg-muted/30 p-3 rounded-2xl border border-transparent hover:border-primary/20 hover:bg-background cursor-pointer transition-all flex items-center justify-between group shadow-sm hover:shadow-md"
+                                                        className="bg-muted/30 p-3 rounded-2xl border border-transparent hover:border-primary/20 hover:bg-background cursor-pointer transition-all flex w-full items-center justify-between group shadow-sm hover:shadow-md text-left"
                                                     >
                                                         <div className="min-w-0">
                                                             <p className="text-xs font-bold truncate group-hover:text-primary transition-colors">{meal.name}</p>
@@ -297,7 +302,7 @@ const ChatInfoSidebar = ({
                                                             </div>
                                                         </div>
                                                         <Badge variant="secondary" className="text-[9px] h-5 bg-background font-medium border-primary/10">{meal.protein || 0}g P</Badge>
-                                                    </div>
+                                                    </button>
                                                 ))}
                                             </div>
                                         </div>

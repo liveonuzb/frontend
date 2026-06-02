@@ -32,6 +32,10 @@ import {
   usePatchQuery,
   usePostQuery,
 } from "@/hooks/api";
+import {
+  mealPlanDaysToKanban,
+  normalizeMealPlanDays,
+} from "@/hooks/app/use-meal-plan";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -90,6 +94,13 @@ const getDayLabel = (dayKey) => {
 };
 
 const getTemplateDayEntries = (template) => {
+  if (isArray(template?.days)) {
+    return map(template.days, (day, index) => [
+      `day-${day?.dayNumber || index + 1}`,
+      isArray(day?.meals) ? day.meals : [],
+    ]);
+  }
+
   const weeklyKanban = template?.weeklyKanban;
   if (!weeklyKanban || typeof weeklyKanban !== "object") return [];
   return Object.entries(weeklyKanban).sort(
@@ -118,7 +129,7 @@ const MealPlanPreviewDrawer = ({ template, open, onOpenChange, language }) => {
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent className="mx-auto max-h-[90vh] max-w-5xl overflow-hidden rounded-t-[2rem]">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="px-6 text-left">
           <DrawerTitle>30 kunlik preview</DrawerTitle>
           <DrawerDescription>
@@ -198,7 +209,7 @@ const MealPlanFormDrawer = ({ mode, template, open, onOpenChange }) => {
   const [goal, setGoal] = React.useState("maintenance");
   const [dietaryTags, setDietaryTags] = React.useState([]);
   const [isActive, setIsActive] = React.useState(true);
-  const [weeklyKanban, setWeeklyKanban] = React.useState({});
+  const [planDays, setPlanDays] = React.useState([]);
 
   React.useEffect(() => {
     if (!open) return;
@@ -222,20 +233,20 @@ const MealPlanFormDrawer = ({ mode, template, open, onOpenChange }) => {
         isArray(template?.dietaryTags) ? template.dietaryTags : [],
       );
       setIsActive(template?.isActive !== false);
-      setWeeklyKanban(template?.weeklyKanban || {});
+      setPlanDays(isArray(template?.days) ? template.days : []);
     } else {
       setName(`Meal plan ${new Date().toLocaleDateString("uz-UZ")}`);
       setDescription("");
       setGoal("maintenance");
       setDietaryTags([]);
       setIsActive(true);
-      setWeeklyKanban({});
+      setPlanDays([]);
     }
     setStep("meta");
   }, [currentLanguage, isEdit, open, template]);
 
   const saveTemplate = React.useCallback(
-    async (nextWeeklyKanban = weeklyKanban) => {
+    async (nextPlanDays = planDays) => {
       const normalizedName = trim(name);
       if (!normalizedName) {
         toast.error("Reja nomini kiriting");
@@ -246,10 +257,10 @@ const MealPlanFormDrawer = ({ mode, template, open, onOpenChange }) => {
         name: normalizedName,
         description: trim(description),
         goal,
-        days: 30,
+        durationDays: 30,
         mealsPerDay: null,
         dietaryTags,
-        weeklyKanban: nextWeeklyKanban || {},
+        days: nextPlanDays || [],
         source: "admin",
         isActive,
         translations: {
@@ -295,7 +306,7 @@ const MealPlanFormDrawer = ({ mode, template, open, onOpenChange }) => {
       queryClient,
       template,
       updateMutation,
-      weeklyKanban,
+      planDays,
     ],
   );
 
@@ -306,11 +317,12 @@ const MealPlanFormDrawer = ({ mode, template, open, onOpenChange }) => {
         onOpenChange={(nextOpen) => {
           if (!nextOpen) setStep("meta");
         }}
-        initialData={weeklyKanban}
+        initialData={mealPlanDaysToKanban(planDays)}
         dayCount={30}
         onSave={(nextWeeklyKanban) => {
-          setWeeklyKanban(nextWeeklyKanban || {});
-          void saveTemplate(nextWeeklyKanban || {});
+          const nextPlanDays = normalizeMealPlanDays(nextWeeklyKanban || {});
+          setPlanDays(nextPlanDays);
+          void saveTemplate(nextPlanDays);
         }}
         onClose={() => setStep("meta")}
       />
@@ -319,7 +331,7 @@ const MealPlanFormDrawer = ({ mode, template, open, onOpenChange }) => {
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent className="mx-auto max-w-xl rounded-t-[2rem]">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="px-6 text-left">
           <DrawerTitle>
             {isEdit ? "Meal plan shabloni" : "Yangi meal plan shabloni"}
@@ -590,6 +602,9 @@ const ListPage = () => {
                 <Badge variant={template.isActive ? "default" : "secondary"}>
                   {template.isActive ? "Faol" : "Arxiv"}
                 </Badge>
+                {template.source === "ai_variant" ? (
+                  <Badge variant="secondary">AI variant</Badge>
+                ) : null}
                 {template.goal ? (
                   <Badge variant="outline">{template.goal}</Badge>
                 ) : null}

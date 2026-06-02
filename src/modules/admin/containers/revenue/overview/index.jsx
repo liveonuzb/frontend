@@ -1,5 +1,13 @@
 import React from "react";
-import { get, isArray, isNil, join, map, size, trim, split, toNumber } from "lodash";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import isNil from "lodash/isNil";
+import join from "lodash/join";
+import map from "lodash/map";
+import size from "lodash/size";
+import trim from "lodash/trim";
+import split from "lodash/split";
+import toNumber from "lodash/toNumber";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -814,7 +822,7 @@ const Revenue = () => {
           }}
           direction="bottom"
         >
-          <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-md mx-auto max-h-[90vh]">
+          <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
             <div className="mx-auto flex w-full min-h-0 flex-1 flex-col">
               <DrawerHeader>
                 <DrawerTitle>
@@ -824,7 +832,7 @@ const Revenue = () => {
                   Revenue analytics uchun operatsion xarajat yozuvini saqlang
                 </DrawerDescription>
               </DrawerHeader>
-              <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-4 space-y-4">
+              <div className="no-scrollbar flex-1 overflow-y-auto p-4 space-y-4">
                 <div className="space-y-2">
                   <Label>Kategoriya</Label>
                   <Input

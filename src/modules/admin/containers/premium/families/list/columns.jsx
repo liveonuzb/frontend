@@ -1,5 +1,9 @@
 import React from "react";
-import { get, filter, toUpper, map, split } from "lodash";
+import get from "lodash/get";
+import filter from "lodash/filter";
+import toUpper from "lodash/toUpper";
+import map from "lodash/map";
+import split from "lodash/split";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";

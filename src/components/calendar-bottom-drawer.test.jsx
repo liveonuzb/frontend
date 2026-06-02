@@ -149,13 +149,7 @@ describe("CalendarBottomDrawer", () => {
     );
 
     expect(drawerContent).toHaveClass(
-      "data-[vaul-drawer-direction=bottom]:!w-[min(100vw,28rem)]",
-    );
-    expect(drawerContent).toHaveClass(
-      "data-[vaul-drawer-direction=bottom]:!max-w-md",
-    );
-    expect(drawerContent).not.toHaveClass(
-      "data-[vaul-drawer-direction=bottom]:max-w-none",
+      "data-[vaul-drawer-direction=bottom]:md:max-w-sm",
     );
   });
 });

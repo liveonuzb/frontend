@@ -9,7 +9,9 @@ import {
   NumberFieldDecrement,
 } from "@/components/reui/number-field";
 import { Card } from "@/components/ui/card";
-import { get, map, toNumber } from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
 import useMe from "@/hooks/app/use-me";
 
 const MeasurementInput = ({ label, value, onChange, editing, unit, side }) => {

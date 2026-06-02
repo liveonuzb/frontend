@@ -3,7 +3,11 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { LabeledNumberField, StepSection } from "./form-fields.jsx";
 
-import { find, map, reduce, toNumber, take } from "lodash";
+import find from "lodash/find";
+import map from "lodash/map";
+import reduce from "lodash/reduce";
+import toNumber from "lodash/toNumber";
+import take from "lodash/take";
 
 const REWARD_MODES = [
   { value: "FIXED_XP", label: "Belgilangan XP" },

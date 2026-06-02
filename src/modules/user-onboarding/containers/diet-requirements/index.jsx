@@ -27,17 +27,15 @@ import { CatalogOptionList } from "../catalog-option-list.jsx";
 import { ONBOARDING_GRID_SCROLL_AREA_CLASS } from "../onboarding-scroll-area.js";
 import OnboardingOption from "./option.jsx";
 
-import {
-  filter,
-  first,
-  flatten,
-  map,
-  some,
-  toArray,
-  toNumber,
-  trim,
-  uniq,
-} from "lodash";
+import filter from "lodash/filter";
+import first from "lodash/first";
+import flatten from "lodash/flatten";
+import map from "lodash/map";
+import some from "lodash/some";
+import toArray from "lodash/toArray";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
+import uniq from "lodash/uniq";
 
 const STEP = "diet-requirements";
 const I18N_KEY = "onboarding.nutritionSteps.dietRequirements";

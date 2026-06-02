@@ -1,6 +1,9 @@
 import React from "react";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
-import { trim, find, map, toNumber } from "lodash";
+import trim from "lodash/trim";
+import find from "lodash/find";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
 
 const LOCATION_TYPES = ["country", "region", "district", "city"];
 const FILTER_LOCATION_TYPES = ["all", ...LOCATION_TYPES];

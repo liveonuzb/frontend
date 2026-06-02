@@ -10,7 +10,13 @@ import {
 } from "@/components/ui/card";
 import PageTransition from "@/components/page-transition";
 import useApi from "@/hooks/api/use-api.js";
-import { get, filter, find, includes, isArray, map, take } from "lodash";
+import get from "lodash/get";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import take from "lodash/take";
 import { useBreadcrumbStore } from "@/store";
 import {
   DownloadIcon,

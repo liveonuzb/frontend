@@ -1,4 +1,4 @@
-import { map } from "lodash";
+import map from "lodash/map";
 export const DIETARY_TAG_OPTIONS = [
   { value: "halal", label: "Halol" },
   { value: "lactose-free", label: "Laktozasiz" },

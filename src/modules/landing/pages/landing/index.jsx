@@ -82,7 +82,9 @@ import { applyTheme, resolveTheme } from "@/lib/user-preferences";
 import { getPostAuthRoute } from "@/modules/auth/lib/auth-utils.js";
 import { useAppModeStore, useAuthStore, useLanguageStore } from "@/store";
 import { trackLaunchEvent } from "@/lib/analytics.js";
-import { isArray, map, toLower } from "lodash";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import toLower from "lodash/toLower";
 const LANGUAGES = [
   {
     code: "ru",

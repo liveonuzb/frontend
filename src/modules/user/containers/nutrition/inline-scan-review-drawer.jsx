@@ -10,22 +10,21 @@ import {
   DrawerDescription,
 } from "@/components/ui/drawer.jsx";
 import { NutritionDrawerContent } from "./nutrition-drawer-layout.jsx";
-import {
-  MealDraftCard,
-  MealDraftSummaryCard,
-} from "./meal-draft-review.jsx";
+import { MealDraftCard, MealDraftSummaryCard } from "./meal-draft-review.jsx";
 import {
   getDraftImageUrl,
   getDraftNutritionPreview,
   getDraftPortion,
 } from "./meal-draft-review-utils.js";
+import { trackNutritionScanReviewed } from "./scan-review-analytics.js";
 import {
   addMealIngredient,
   removeMealIngredient,
   updateMealIngredient,
 } from "./meal-ingredients.js";
 
-import { toNumber, trim } from "lodash";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 
 export default function InlineScanReviewDrawer({
   open,
@@ -52,7 +51,8 @@ export default function InlineScanReviewDrawer({
     if (open && scan?.item) {
       const nextDraft = {
         ...scan.item,
-        imageUrl: scan.imageUrl || scan.imageDataUrl || getDraftImageUrl(scan.item),
+        imageUrl:
+          scan.imageUrl || scan.imageDataUrl || getDraftImageUrl(scan.item),
       };
       const preview = getDraftNutritionPreview(nextDraft);
       setDraft(nextDraft);
@@ -83,27 +83,33 @@ export default function InlineScanReviewDrawer({
     }));
   }, []);
 
-  const handleIngredientUpdate = React.useCallback((ingredientId, ingredient) => {
-    setDraft((current) =>
-      current
-        ? {
-            ...current,
-            ingredients: updateMealIngredient(
-              current.ingredients,
-              ingredientId,
-              ingredient,
-            ),
-          }
-        : current,
-    );
-  }, []);
+  const handleIngredientUpdate = React.useCallback(
+    (ingredientId, ingredient) => {
+      setDraft((current) =>
+        current
+          ? {
+              ...current,
+              ingredients: updateMealIngredient(
+                current.ingredients,
+                ingredientId,
+                ingredient,
+              ),
+            }
+          : current,
+      );
+    },
+    [],
+  );
 
   const handleIngredientRemove = React.useCallback((ingredientId) => {
     setDraft((current) =>
       current
         ? {
             ...current,
-            ingredients: removeMealIngredient(current.ingredients, ingredientId),
+            ingredients: removeMealIngredient(
+              current.ingredients,
+              ingredientId,
+            ),
           }
         : current,
     );
@@ -120,7 +126,8 @@ export default function InlineScanReviewDrawer({
     );
   }, []);
 
-  const imageUrl = scan?.imageUrl || scan?.imageDataUrl || getDraftImageUrl(draft);
+  const imageUrl =
+    scan?.imageUrl || scan?.imageDataUrl || getDraftImageUrl(draft);
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
@@ -173,7 +180,9 @@ export default function InlineScanReviewDrawer({
                 value={manualGrams ?? 0}
                 onChange={(event) => {
                   setManualTouched(true);
-                  setManualGrams(Math.max(0, toNumber(event.target.value) || 0));
+                  setManualGrams(
+                    Math.max(0, toNumber(event.target.value) || 0),
+                  );
                 }}
                 aria-label="Porsiya gramm"
               />
@@ -190,7 +199,9 @@ export default function InlineScanReviewDrawer({
                 type="number"
                 min="0"
                 value={manualMacros?.protein ?? 0}
-                onChange={(event) => setMacroValue("protein", event.target.value)}
+                onChange={(event) =>
+                  setMacroValue("protein", event.target.value)
+                }
                 aria-label="Oqsil"
               />
               <Input
@@ -242,22 +253,27 @@ export default function InlineScanReviewDrawer({
           <Button
             type="button"
             disabled={isSaving || !trim(draft?.title)}
-            onClick={() =>
-              draft &&
-              onConfirm?.({
+            onClick={() => {
+              if (!draft) return;
+              const reviewedDraft = {
                 ...draft,
                 manualNutritionOverride: manualTouched ? manualMacros : null,
                 manualGramsOverride: manualTouched ? manualGrams : null,
-              })
-            }
+              };
+
+              void trackNutritionScanReviewed({
+                sourceType: "inline",
+                action: manualTouched ? "edited" : "confirmed",
+                items: [reviewedDraft],
+              });
+              onConfirm?.({
+                ...reviewedDraft,
+              });
+            }}
           >
             {isSaving ? "Saqlanmoqda" : "Tasdiqlash"}
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onDiscard}
-          >
+          <Button type="button" variant="outline" onClick={onDiscard}>
             Bekor qilish
           </Button>
         </DrawerFooter>

@@ -39,7 +39,7 @@ import {
 } from "./utils.jsx";
 import UserGoalImagePicker from "./user-goal-image-picker.jsx";
 
-import { toUpper } from "lodash";
+import toUpper from "lodash/toUpper";
 
 const UserGoalFormDrawer = ({ mode }) => {
   const { id } = useParams();
@@ -111,7 +111,7 @@ const UserGoalFormDrawer = ({ mode }) => {
 
   return (
     <Drawer open onOpenChange={(open) => !open && close()} direction="bottom">
-      <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-md">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="items-center text-center">
           <DrawerTitle>
             {isEdit ? "Maqsadni tahrirlash" : "Yangi maqsad"}

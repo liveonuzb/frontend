@@ -1,5 +1,7 @@
 import React from "react";
-import { get, includes, map } from "lodash";
+import get from "lodash/get";
+import includes from "lodash/includes";
+import map from "lodash/map";
 import { Badge } from "@/components/ui/badge.jsx";
 import { Button } from "@/components/ui/button";
 import {

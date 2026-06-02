@@ -1,4 +1,6 @@
-import { toPairs, flatMap, map } from "lodash";
+import toPairs from "lodash/toPairs";
+import flatMap from "lodash/flatMap";
+import map from "lodash/map";
 // Exercise database grouped by muscle groups with rich details
 export const EXERCISE_DATABASE = {
     chest: {

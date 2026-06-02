@@ -1,5 +1,6 @@
 import React from "react";
-import { get, toNumber } from "lodash";
+import get from "lodash/get";
+import toNumber from "lodash/toNumber";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";

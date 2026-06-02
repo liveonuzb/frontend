@@ -1,4 +1,8 @@
-import { times, clamp, split, toNumber, trim } from "lodash";
+import times from "lodash/times";
+import clamp from "lodash/clamp";
+import split from "lodash/split";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 import React from "react";
 import { ScrollPicker } from "@/components/ui/scroll-picker";
 

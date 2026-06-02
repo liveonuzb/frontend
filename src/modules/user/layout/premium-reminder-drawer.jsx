@@ -1,5 +1,12 @@
 import React from "react";
-import { get, filter, find, map, orderBy, toNumber, isArray, take } from "lodash";
+import get from "lodash/get";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import map from "lodash/map";
+import orderBy from "lodash/orderBy";
+import toNumber from "lodash/toNumber";
+import isArray from "lodash/isArray";
+import take from "lodash/take";
 import {
   ArrowLeftIcon,
   CheckIcon,
@@ -339,7 +346,7 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
         onOpenChange={setReminderOpen}
         direction="bottom"
       >
-        <DrawerContent>
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader className="flex flex-col items-center justify-center space-y-1 text-center">
             <DrawerTitle className="flex items-center justify-center gap-2 leading-tight">
               <SparklesIcon className="size-4 shrink-0" />
@@ -393,7 +400,7 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
         </DrawerContent>
       </Drawer>
       <Drawer open={planOpen} onOpenChange={setPlanOpen} direction="bottom">
-        <DrawerContent>
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader className="flex flex-col items-center justify-center space-y-1 text-center">
             <DrawerTitle>
               {t("profile.premiumReminder.plans.title")}
@@ -551,7 +558,7 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
         onOpenChange={setPaymentOpen}
         direction="bottom"
       >
-        <DrawerContent>
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader className="relative flex flex-col items-center justify-center space-y-1 text-center">
             <div className="absolute left-4 top-5">
               <DrawerBackButton
@@ -649,7 +656,7 @@ const PremiumReminderDrawer = ({ forceOpen = false }) => {
         onOpenChange={setSuccessOpen}
         direction="bottom"
       >
-        <DrawerContent>
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader className="flex flex-col items-center justify-center space-y-1 text-center">
             <div className="mb-2 flex size-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-500">
               <CheckIcon className="size-6" />

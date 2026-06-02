@@ -1,5 +1,10 @@
 import React from "react";
-import { join, map, take, toUpper, trim, split } from "lodash";
+import join from "lodash/join";
+import map from "lodash/map";
+import take from "lodash/take";
+import toUpper from "lodash/toUpper";
+import trim from "lodash/trim";
+import split from "lodash/split";
 import { useNavigate } from "react-router";
 import {
   ChevronsUpDown,

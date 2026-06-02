@@ -4,7 +4,7 @@ import { Navigate } from "react-router";
 import { FieldDescription } from "@/components/ui/field";
 import { useAuthStore } from "@/store";
 import { useTranslation } from "react-i18next";
-import { get } from "lodash";
+import get from "lodash/get";
 import { AuthHeader, AuthPanel } from "@/modules/auth/components/auth-panel";
 import OtpForm from "./otp-form";
 

@@ -1,4 +1,4 @@
-import { map } from "lodash";
+import map from "lodash/map";
 import { describe, expect, it } from "vitest";
 import { getUserTrackingNavItems } from "./user-nav-items.js";
 

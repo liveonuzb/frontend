@@ -1,4 +1,8 @@
-import { fromPairs, isArray, some, trim, toPairs } from "lodash";
+import fromPairs from "lodash/fromPairs";
+import isArray from "lodash/isArray";
+import some from "lodash/some";
+import trim from "lodash/trim";
+import toPairs from "lodash/toPairs";
 export const ACTIVE_USER_ONBOARDING_DRAFT_KEYS = new Set([
   "firstName",
   "lastName",

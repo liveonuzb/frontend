@@ -35,7 +35,12 @@ import { cn } from "@/lib/utils";
 import { useBreadcrumbStore } from "@/store";
 import RunMapPanel from "./components/run-map-panel.jsx";
 
-import { isArray, map, reduce, toNumber, filter, take } from "lodash";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import reduce from "lodash/reduce";
+import toNumber from "lodash/toNumber";
+import filter from "lodash/filter";
+import take from "lodash/take";
 
 const weekDays = ["M", "T", "W", "T", "F", "S", "S"];
 

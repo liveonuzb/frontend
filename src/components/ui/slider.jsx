@@ -1,6 +1,7 @@
 "use client"
 
-import { isArray, times } from "lodash";
+import isArray from "lodash/isArray";
+import times from "lodash/times";
 import * as React from "react"
 import { Slider as SliderPrimitive } from "radix-ui"
 

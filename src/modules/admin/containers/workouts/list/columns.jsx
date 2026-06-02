@@ -1,7 +1,12 @@
 /* eslint-disable react-refresh/only-export-components */
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { get, isObject, map as lodashMap, trim, find, values as lodashValues } from "lodash";
+import get from "lodash/get";
+import isObject from "lodash/isObject";
+import lodashMap from "lodash/map";
+import trim from "lodash/trim";
+import find from "lodash/find";
+import lodashValues from "lodash/values";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {

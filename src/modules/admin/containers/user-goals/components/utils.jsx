@@ -1,4 +1,8 @@
-import { get, isArray, join, trim, filter } from "lodash";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import trim from "lodash/trim";
+import filter from "lodash/filter";
 import { z } from "zod";
 
 export const QUERY_KEY = ["admin", "user-goals"];

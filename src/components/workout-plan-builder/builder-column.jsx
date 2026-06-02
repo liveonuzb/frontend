@@ -1,6 +1,8 @@
 import React, { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { map, get, size } from "lodash";
+import map from "lodash/map";
+import get from "lodash/get";
+import size from "lodash/size";
 import {
   KanbanColumn,
   KanbanColumnContent,
@@ -51,6 +53,15 @@ const BuilderColumn = memo(
 
           <div
             onClick={() => onSelect?.(get(col, "id"))}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onSelect?.(get(col, "id"));
+              }
+            }}
+            role="button"
+            tabIndex={0}
+            aria-label={`${get(col, "title") || get(col, "name") || "Column"} tanlash`}
             className={cn(
               "group/header relative z-10 flex w-full flex-col gap-2 rounded-xl border border-transparent px-2 py-2 text-left transition-all duration-300 hover:border-border/50 hover:bg-muted/40",
               isSelected && "border-primary/20 bg-primary/5",

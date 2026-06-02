@@ -12,7 +12,7 @@ import {
 } from "@/hooks/app/use-running-sessions";
 import useShare from "@/hooks/utils/use-share";
 
-import { map } from "lodash";
+import map from "lodash/map";
 
 vi.mock("@/components/page-transition", () => ({
   default: ({ children }) => <>{children}</>,

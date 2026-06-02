@@ -32,7 +32,8 @@ import {
   rangeReportQueryKey,
 } from "./report-helpers.js";
 
-import { map, toNumber } from "lodash";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
 
 const isDateKey = (value) => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
 
@@ -144,11 +145,11 @@ export default function TenDayReport() {
             type="button"
             variant="ghost"
             size="icon"
-            className="h-9 w-9 shrink-0"
+            className="size-9 shrink-0"
             onClick={() => navigate(-1)}
             aria-label="Orqaga"
           >
-            <ArrowLeftIcon className="h-4 w-4" />
+            <ArrowLeftIcon className="size-4" />
           </Button>
           <div className="min-w-0">
             <h1 className="truncate text-xl font-semibold">
@@ -165,7 +166,7 @@ export default function TenDayReport() {
           <CardContent className="grid gap-4 p-5 md:grid-cols-[auto_1fr] md:items-center">
             {isLoading ? (
               <>
-                <Skeleton className="h-36 w-36 rounded-full" />
+                <Skeleton className="size-36 rounded-full" />
                 <div className="space-y-2">
                   <Skeleton className="h-5 w-64" />
                   <Skeleton className="h-4 w-80" />

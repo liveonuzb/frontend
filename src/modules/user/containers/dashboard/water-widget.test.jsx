@@ -39,7 +39,7 @@ describe("Dashboard WaterWidget", () => {
     vi.mocked(usePostQuery).mockReturnValue({ mutateAsync: vi.fn() });
   });
 
-  it("uses the animated themed water card with a fully rounded add button", () => {
+  it("uses the animated themed water widget without a card shell", () => {
     render(
       <MemoryRouter>
         <WaterWidget
@@ -59,9 +59,10 @@ describe("Dashboard WaterWidget", () => {
     expect(screen.getByText("Suv ichish")).toBeInTheDocument();
     expect(screen.getByText("750")).toBeInTheDocument();
     expect(screen.getByText("/ 2900 ml")).toBeInTheDocument();
-    expect(
-      screen.getByText("Suv ichish").closest("[data-slot=card]"),
-    ).toHaveClass("water-widget");
+    const widget = screen.getByText("Suv ichish").closest(".water-widget");
+
+    expect(widget).not.toBeNull();
+    expect(widget.closest("[data-slot=card]")).toBeNull();
     expect(screen.getByLabelText("Suv qo'shish")).toHaveClass("rounded-full");
   });
 });

@@ -1,6 +1,13 @@
 import React from "react";
 
-import { filter, find, includes, isArray, map, toLower, toNumber, trim } from "lodash";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import toLower from "lodash/toLower";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 
 const STORAGE_KEY = "liveon:nutrition:saved-meal-templates:v1";
 const RECURRING_STORAGE_KEY =

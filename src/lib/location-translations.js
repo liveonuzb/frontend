@@ -1,16 +1,14 @@
-import {
-  values as lodashValues,
-  toPairs,
-  map,
-  filter,
-  find,
-  compact,
-  join,
-  fromPairs,
-  isArray,
-  trim,
-  toLower,
-} from "lodash";
+import lodashValues from "lodash/values";
+import toPairs from "lodash/toPairs";
+import map from "lodash/map";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import compact from "lodash/compact";
+import join from "lodash/join";
+import fromPairs from "lodash/fromPairs";
+import isArray from "lodash/isArray";
+import trim from "lodash/trim";
+import toLower from "lodash/toLower";
 const normalizeText = (value) => trim(String(value ?? ""));
 
 export const resolveTranslatedLocationLabel = (

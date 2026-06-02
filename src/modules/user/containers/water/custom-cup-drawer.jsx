@@ -18,7 +18,7 @@ import {
   NumberFieldInput,
 } from "@/components/reui/number-field";
 import useHealthGoals from "@/hooks/app/use-health-goals";
-import { toInteger } from "lodash";
+import toInteger from "lodash/toInteger";
 
 export default function CustomCupDrawer({ children }) {
   const {
@@ -51,7 +51,7 @@ export default function CustomCupDrawer({ children }) {
   return (
     <Drawer open={open} onOpenChange={setOpen} direction="bottom">
       <DrawerTrigger asChild>{children}</DrawerTrigger>
-      <DrawerContent>
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle>Maxsus hajm</DrawerTitle>
           <DrawerDescription>

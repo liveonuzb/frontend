@@ -1,6 +1,9 @@
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
-import { filter, map, join, toPairs } from "lodash"
+import filter from "lodash/filter";
+import map from "lodash/map";
+import join from "lodash/join";
+import toPairs from "lodash/toPairs";
 
 import { cn } from "@/lib/utils"
 
@@ -176,7 +179,7 @@ function ChartTooltipContent({
                       !hideIndicator && (
                         <div
                           className={cn("shrink-0 rounded-[2px] border-(--color-border) bg-(--color-bg)", {
-                            "h-2.5 w-2.5": indicator === "dot",
+                            "size-2.5": indicator === "dot",
                             "w-1": indicator === "line",
                             "w-0 border-[1.5px] border-dashed bg-transparent":
                               indicator === "dashed",
@@ -255,7 +258,7 @@ function ChartLegendContent({
                 <itemConfig.icon />
               ) : (
                 <div
-                  className="h-2 w-2 shrink-0 rounded-[2px]"
+                  className="size-2 shrink-0 rounded-[2px]"
                   style={{
                     backgroundColor: item.color,
                   }} />

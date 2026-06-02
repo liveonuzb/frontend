@@ -1,5 +1,6 @@
 import React from "react";
-import { clamp, round } from "lodash";
+import clamp from "lodash/clamp";
+import round from "lodash/round";
 import { cn } from "@/lib/utils";
 
 const toneClassName = {

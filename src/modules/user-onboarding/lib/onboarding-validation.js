@@ -1,4 +1,4 @@
-import { toNumber } from "lodash";
+import toNumber from "lodash/toNumber";
 const toFiniteNumber = (value) => {
   const raw =
     value && typeof value === "object" && "value" in value

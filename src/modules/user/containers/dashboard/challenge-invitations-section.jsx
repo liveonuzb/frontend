@@ -1,4 +1,13 @@
-import { get, join, map, sortBy, take, filter, isArray, toNumber, toUpper, split } from "lodash";
+import get from "lodash/get";
+import join from "lodash/join";
+import map from "lodash/map";
+import sortBy from "lodash/sortBy";
+import take from "lodash/take";
+import filter from "lodash/filter";
+import isArray from "lodash/isArray";
+import toNumber from "lodash/toNumber";
+import toUpper from "lodash/toUpper";
+import split from "lodash/split";
 import React from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
@@ -251,7 +260,7 @@ export default function ChallengeInvitationsSection() {
       </Button>
 
       <Drawer open={open} onOpenChange={handleOpenChange} direction="bottom">
-        <DrawerContent data-challenge-invitations-drawer="true">
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm" data-challenge-invitations-drawer="true">
           <DrawerHeader>
             <DrawerTitle>Challenge takliflari</DrawerTitle>
             <DrawerDescription>

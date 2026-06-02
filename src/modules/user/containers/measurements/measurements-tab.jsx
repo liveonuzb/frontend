@@ -16,7 +16,13 @@ import { z } from "zod";
 import { Form } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { get, reduce, map, entries, max, split, toNumber } from "lodash";
+import get from "lodash/get";
+import reduce from "lodash/reduce";
+import map from "lodash/map";
+import entries from "lodash/entries";
+import max from "lodash/max";
+import split from "lodash/split";
+import toNumber from "lodash/toNumber";
 import { InteractiveBodyModel } from "./interactive-body-model";
 
 export const measurementTypes = [
@@ -242,18 +248,18 @@ export const MeasurementsTab = ({
                   <table className="w-full text-xs min-w-[500px]">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-left py-2 px-2 font-semibold text-muted-foreground">
+                        <th className="text-left p-2 font-semibold text-muted-foreground">
                           Sana
                         </th>
                         {map(measurementTypes, (m) => (
                           <th
                             key={get(m, "id")}
-                            className="text-center py-2 px-2 font-semibold text-muted-foreground whitespace-nowrap"
+                            className="text-center p-2 font-semibold text-muted-foreground whitespace-nowrap"
                           >
                             {get(m, "label")}
                           </th>
                         ))}
-                        <th className="py-2 px-2" />
+                        <th className="p-2" aria-label="Amallar" />
                       </tr>
                     </thead>
                     <tbody>

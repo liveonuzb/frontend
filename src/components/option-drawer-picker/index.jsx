@@ -1,14 +1,12 @@
 import React from "react";
-import {
-  filter,
-  find,
-  get,
-  includes,
-  isArray,
-  map,
-  toLower,
-  trim,
-} from "lodash";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import get from "lodash/get";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import toLower from "lodash/toLower";
+import trim from "lodash/trim";
 import { CheckIcon, ChevronDownIcon, SearchIcon } from "lucide-react";
 import { useGetQuery } from "@/hooks/api";
 import { Button } from "@/components/ui/button";
@@ -140,7 +138,7 @@ const OptionDrawerPicker = ({
         <ChevronDownIcon data-icon="inline-end" />
       </Button>
 
-      <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-md">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="items-center text-center">
           <DrawerTitle>{title}</DrawerTitle>
           {description ? (

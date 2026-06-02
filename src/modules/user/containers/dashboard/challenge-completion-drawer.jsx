@@ -1,5 +1,12 @@
 import React from "react";
-import { get, find, isArray, map, orderBy, some, toNumber, filter } from "lodash";
+import get from "lodash/get";
+import find from "lodash/find";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import orderBy from "lodash/orderBy";
+import some from "lodash/some";
+import toNumber from "lodash/toNumber";
+import filter from "lodash/filter";
 import { ArrowRightIcon, MedalIcon, PartyPopperIcon, TrophyIcon } from "lucide-react";
 import { useNavigate } from "react-router";
 import {
@@ -141,7 +148,7 @@ export default function ChallengeCompletionDrawer() {
       onOpenChange={(next) => (next ? setOpen(true) : close())}
       direction="bottom"
     >
-      <DrawerContent data-challenge-completion-drawer="true">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm" data-challenge-completion-drawer="true">
         <DrawerHeader className="text-center">
           <div className="mx-auto mb-3 flex size-16 items-center justify-center rounded-3xl bg-emerald-500/10">
             <PartyPopperIcon className="size-8 text-emerald-500" />

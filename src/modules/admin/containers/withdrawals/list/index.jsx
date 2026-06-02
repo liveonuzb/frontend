@@ -1,6 +1,13 @@
 import React from "react";
 import dayjs from "dayjs";
-import { get, isArray, join, toString, includes, toNumber, toUpper, trim } from "lodash";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import toString from "lodash/toString";
+import includes from "lodash/includes";
+import toNumber from "lodash/toNumber";
+import toUpper from "lodash/toUpper";
+import trim from "lodash/trim";
 import { parseAsString, useQueryState } from "nuqs";
 import { useQueryClient } from "@tanstack/react-query";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";

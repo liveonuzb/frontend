@@ -6,7 +6,10 @@ import {
   useMemo,
   useState,
 } from "react";
-import { filter, includes, map, toLower } from "lodash";
+import filter from "lodash/filter";
+import includes from "lodash/includes";
+import map from "lodash/map";
+import toLower from "lodash/toLower";
 import * as BasePhoneInput from "react-phone-number-input";
 import flags from "react-phone-number-input/flags";
 import { cn } from "@/lib/utils.js";
@@ -197,7 +200,7 @@ function FlagComponent({ country, countryName }) {
   const Flag = flags[country];
 
   return (
-    <span className="flex h-4 w-4 items-center justify-center [&_svg:not([class*='size-'])]:size-full! [&_svg:not([class*='size-'])]:rounded-[5px]">
+    <span className="flex size-4 items-center justify-center [&_svg:not([class*='size-'])]:size-full! [&_svg:not([class*='size-'])]:rounded-[5px]">
       {Flag ? (
         <Flag title={countryName} />
       ) : (

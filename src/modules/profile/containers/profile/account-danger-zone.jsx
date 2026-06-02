@@ -25,7 +25,8 @@ import { useProfileOverlay } from "@/modules/profile/hooks/use-profile-overlay";
 import { useAuthStore } from "@/store";
 import { cn } from "@/lib/utils";
 
-import { includes, isArray } from "lodash";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
 
 const DELETE_CONFIRMATION_TEXT = "DELETE";
 
@@ -154,7 +155,7 @@ export const AccountDangerZone = () => {
       >
         <DrawerContent
           data-testid="delete-account-drawer"
-          className="data-[vaul-drawer-direction=bottom]:!mx-auto data-[vaul-drawer-direction=bottom]:!max-w-md"
+          className="data-[vaul-drawer-direction=bottom]:md:max-w-sm"
         >
           <DrawerHeader>
             <DrawerTitle>

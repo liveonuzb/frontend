@@ -1,7 +1,13 @@
 import React from "react";
 import { useNavigate, Outlet } from "react-router";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { filter as lodashFilter, find, get, toString, values as lodashValues, toNumber, trim } from "lodash";
+import lodashFilter from "lodash/filter";
+import find from "lodash/find";
+import get from "lodash/get";
+import toString from "lodash/toString";
+import lodashValues from "lodash/values";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 import { toast } from "sonner";
 import { PlusIcon, RotateCcwIcon } from "lucide-react";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";

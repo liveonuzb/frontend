@@ -1,4 +1,5 @@
-import { map, first } from "lodash";
+import map from "lodash/map";
+import first from "lodash/first";
 import {
   PieChart,
   Pie,

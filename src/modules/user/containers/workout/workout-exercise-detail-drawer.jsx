@@ -1,19 +1,17 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import {
-  filter,
-  flatMap,
-  get,
-  map,
-  max,
-  size,
-  slice,
-  toLower,
-  isArray,
-  reduce,
-  toNumber,
-  trim,
-} from "lodash";
+import filter from "lodash/filter";
+import flatMap from "lodash/flatMap";
+import get from "lodash/get";
+import map from "lodash/map";
+import max from "lodash/max";
+import size from "lodash/size";
+import slice from "lodash/slice";
+import toLower from "lodash/toLower";
+import isArray from "lodash/isArray";
+import reduce from "lodash/reduce";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 import {
   DumbbellIcon,
   ExternalLinkIcon,
@@ -164,7 +162,7 @@ const WorkoutExerciseDetailDrawer = ({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-2xl">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle>
             {get(exercise, "name", t("user.workout.exerciseDetail.titleFallback"))}
@@ -270,19 +268,19 @@ const WorkoutExerciseDetailDrawer = ({
             <TabsContent value="records">
               <div className="flex flex-col gap-4">
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="rounded-2xl bg-muted/40 px-3 py-3">
+                  <div className="rounded-2xl bg-muted/40 p-3">
                     <p className="text-xs text-muted-foreground">
                       {t("user.workout.exerciseDetail.maxKg")}
                     </p>
                     <p className="mt-1 text-lg font-black">{records.maxWeight}</p>
                   </div>
-                  <div className="rounded-2xl bg-muted/40 px-3 py-3">
+                  <div className="rounded-2xl bg-muted/40 p-3">
                     <p className="text-xs text-muted-foreground">
                       {t("user.workout.exerciseDetail.maxReps")}
                     </p>
                     <p className="mt-1 text-lg font-black">{records.maxReps}</p>
                   </div>
-                  <div className="rounded-2xl bg-muted/40 px-3 py-3">
+                  <div className="rounded-2xl bg-muted/40 p-3">
                     <p className="text-xs text-muted-foreground">
                       {t("user.workout.exerciseDetail.sets")}
                     </p>

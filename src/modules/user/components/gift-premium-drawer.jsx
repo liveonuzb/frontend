@@ -34,7 +34,13 @@ import { getRequestErrorMessage } from "@/hooks/app/use-profile-settings";
 import { cn } from "@/lib/utils";
 import { getFriendItems } from "@/modules/user/lib/friends-response";
 
-import { filter, find, map, trim, split, toUpper, take } from "lodash";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import map from "lodash/map";
+import trim from "lodash/trim";
+import split from "lodash/split";
+import toUpper from "lodash/toUpper";
+import take from "lodash/take";
 
 const PAYMENT_METHODS = (t) => [
   {
@@ -202,7 +208,7 @@ const GiftStepDrawer = ({
         }
       }}
     >
-      <DrawerContent>
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="relative border-b border-white/10 pb-4 pt-5 text-center">
           {onBack ? (
             <Button

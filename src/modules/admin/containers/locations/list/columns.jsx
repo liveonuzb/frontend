@@ -1,5 +1,9 @@
 import React from "react";
-import { get, initial, join, map, size } from "lodash";
+import get from "lodash/get";
+import initial from "lodash/initial";
+import join from "lodash/join";
+import map from "lodash/map";
+import size from "lodash/size";
 import { ChevronDownIcon, ChevronRightIcon, LoaderIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

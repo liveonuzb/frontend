@@ -1,5 +1,6 @@
 import * as React from "react";
-import { times, forEach } from "lodash";
+import times from "lodash/times";
+import forEach from "lodash/forEach";
 import { Button } from "@/components/ui/button";
 import { XIcon, SendIcon } from "lucide-react";
 import { cn } from "@/lib/utils";

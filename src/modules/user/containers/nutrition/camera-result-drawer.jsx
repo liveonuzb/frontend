@@ -23,7 +23,7 @@ import { NutritionDrawerContent } from "./nutrition-drawer-layout.jsx";
 import { MealDraftCard, MealDraftSummaryCard } from "./meal-draft-review.jsx";
 import SaveToMyMealsButton from "./save-to-my-meals-button.jsx";
 
-import { map } from "lodash";
+import map from "lodash/map";
 
 const barcodeMacroInputs = [
   { key: "cal", label: "Kcal" },

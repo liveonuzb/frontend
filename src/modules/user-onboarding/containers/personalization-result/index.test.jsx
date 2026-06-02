@@ -7,7 +7,7 @@ import {
 } from "@/modules/user-onboarding/lib/onboarding-footer-context";
 import ResultPage, { ResultContent } from "./index.jsx";
 
-import { forEach } from "lodash";
+import forEach from "lodash/forEach";
 
 const navigateMock = vi.hoisted(() => vi.fn());
 const invalidateQueriesMock = vi.hoisted(() => vi.fn());

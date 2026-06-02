@@ -1,20 +1,18 @@
-import {
-  filter,
-  find,
-  get,
-  gte,
-  gt,
-  isArray,
-  keys,
-  map,
-  orderBy,
-  reduce,
-  size,
-  some,
-  sumBy,
-  take,
-  toNumber,
-} from "lodash";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import get from "lodash/get";
+import gte from "lodash/gte";
+import gt from "lodash/gt";
+import isArray from "lodash/isArray";
+import keys from "lodash/keys";
+import map from "lodash/map";
+import orderBy from "lodash/orderBy";
+import reduce from "lodash/reduce";
+import size from "lodash/size";
+import some from "lodash/some";
+import sumBy from "lodash/sumBy";
+import take from "lodash/take";
+import toNumber from "lodash/toNumber";
 import { getApiResponseData } from "@/lib/api-response";
 import { normalizeUserOnboarding } from "@/lib/user-onboarding";
 import {

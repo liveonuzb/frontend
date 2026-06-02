@@ -65,7 +65,163 @@
       "manualAdd": "Добавить вручную",
       "cameraAdd": "Камера",
       "audioAdd": "Голос",
-      "textAdd": "Текст"
+      "textAdd": "Текст",
+      "nav": {
+        "overview": "Обзор",
+        "plans": "Планы",
+        "recipes": "Рецепты",
+        "history": "История",
+        "report": "Отчёт"
+      },
+      "recipes": {
+        "common": {
+          "all": "Все",
+          "none": "Нет",
+          "minutes": "{{count}} мин",
+          "minutesShort": "мин"
+        },
+        "meals": {
+          "breakfast": "Завтрак",
+          "lunch": "Обед",
+          "dinner": "Ужин",
+          "snack": "Перекус"
+        },
+        "page": {
+          "badge": "Рецепты",
+          "title": "Рецепты для сегодняшнего питания",
+          "selectRecipe": "Выберите рецепт",
+          "empty": "Рецепты не найдены",
+          "totalCount": "{{count}} рецептов"
+        },
+        "search": {
+          "label": "Поиск рецептов",
+          "placeholder": "Поиск рецептов"
+        },
+        "filters": {
+          "sort": "Сортировка",
+          "category": "Категория",
+          "cuisine": "Кухня",
+          "tag": "Тег",
+          "allergen": "Аллерген",
+          "difficulty": "Сложность",
+          "maxTotalTime": "Макс. время",
+          "minProtein": "Мин. белок",
+          "minCalories": "Мин. ккал",
+          "maxCalories": "Макс. ккал",
+          "featuredAria": "Рекомендованные рецепты",
+          "featured": "Рекомендовано",
+          "savedOnly": "Сохранённые",
+          "clearAria": "Очистить фильтры",
+          "clear": "Очистить",
+          "sortOptions": {
+            "newest": "Новые",
+            "popular": "Популярные",
+            "highestRated": "Рейтинг",
+            "highestProtein": "Белок",
+            "lowestCalories": "Лёгкие",
+            "fastest": "Быстрые",
+            "featured": "Рекомендовано"
+          },
+          "difficultyOptions": {
+            "easy": "Легко",
+            "medium": "Средне",
+            "hard": "Сложно"
+          }
+        },
+        "chips": {
+          "allTags": "Все теги"
+        },
+        "nutrition": {
+          "calories": "ккал",
+          "protein": "белок",
+          "carbs": "углеводы",
+          "fat": "жиры",
+          "fiber": "клетчатка",
+          "sugar": "сахар",
+          "sodium": "натрий"
+        },
+        "buttons": {
+          "addToMealLog": "Добавить в лог на сегодня",
+          "addToMealPlan": "Добавить в план",
+          "createShoppingList": "Создать список покупок",
+          "save": "Сохранить",
+          "saved": "Сохранено"
+        },
+        "card": {
+          "ingredientsCount": "{{count}} ингредиентов",
+          "stepsCount": "{{count}} шагов",
+          "detailAria": "{{title}} подробнее",
+          "detail": "Подробнее"
+        },
+        "ingredients": {
+          "title": "Ингредиенты",
+          "mainGroup": "Основное",
+          "readyLabel": "{{name}} готово",
+          "optional": "по желанию",
+          "empty": "Ингредиенты не добавлены"
+        },
+        "steps": {
+          "title": "Шаги",
+          "fallbackTitle": "Шаг",
+          "imageAlt": "{{title}} изображение",
+          "media": "Медиа",
+          "empty": "Шаги не добавлены",
+          "stepNumber": "{{count}}-й шаг"
+        },
+        "timer": {
+          "pause": "Пауза таймера",
+          "start": "Запустить таймер"
+        },
+        "cookingMode": {
+          "close": "Закрыть режим готовки",
+          "previous": "Предыдущий",
+          "next": "Следующий шаг"
+        },
+        "detail": {
+          "notFound": "Рецепт не найден",
+          "back": "Назад к рецептам",
+          "serving": "Порция",
+          "mealType": "Приём пищи",
+          "plan": "План",
+          "day": "День",
+          "dayNumber": "{{count}}-й день",
+          "planMealType": "Приём в плане",
+          "priceRegion": "Регион цен",
+          "season": "Сезон",
+          "cookingMode": "Режим готовки",
+          "logSuccess": "Рецепт добавлен в лог",
+          "planSuccess": "Рецепт добавлен в план",
+          "shoppingListCreated": "Список покупок создан",
+          "shoppingListCreatedWithCount": "Список покупок создан: {{count}} товаров",
+          "prepTime": "Подготовка {{count}} мин",
+          "cookTime": "Готовка {{count}} мин",
+          "servingsBadge": "{{count}} порций"
+        },
+        "regions": {
+          "all": "Все регионы",
+          "uzbekistan": "Узбекистан",
+          "toshkent": "Ташкент",
+          "samarqand": "Самарканд",
+          "buxoro": "Бухара",
+          "fargona": "Фергана",
+          "andijon": "Андижан",
+          "namangan": "Наманган",
+          "qashqadaryo": "Кашкадарья",
+          "surxondaryo": "Сурхандарья",
+          "xorazm": "Хорезм",
+          "navoiy": "Навои",
+          "jizzax": "Джизак",
+          "sirdaryo": "Сырдарья",
+          "qoraqalpogiston": "Каракалпакстан"
+        },
+        "seasons": {
+          "all": "Весь год",
+          "spring": "Весна",
+          "summer": "Лето",
+          "autumn": "Осень",
+          "winter": "Зима"
+        }
+      }
     },
     "water": {
       "title": "Контроль воды",

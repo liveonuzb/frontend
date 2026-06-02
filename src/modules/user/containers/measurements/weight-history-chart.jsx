@@ -4,7 +4,12 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUpIcon, ScaleIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart.jsx";
-import { get, min, max, map, find, toNumber } from "lodash";
+import get from "lodash/get";
+import min from "lodash/min";
+import max from "lodash/max";
+import map from "lodash/map";
+import find from "lodash/find";
+import toNumber from "lodash/toNumber";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 const chartConfig = {

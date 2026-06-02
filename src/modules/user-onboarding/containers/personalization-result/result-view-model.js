@@ -1,16 +1,14 @@
 import { formatWeightDelta } from "../../lib/personalization.js";
 
-import {
-  filter,
-  isArray,
-  map,
-  padStart,
-  replace,
-  startsWith,
-  take,
-  toNumber,
-  trim,
-} from "lodash";
+import filter from "lodash/filter";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import padStart from "lodash/padStart";
+import replace from "lodash/replace";
+import startsWith from "lodash/startsWith";
+import take from "lodash/take";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 
 const fallbackResult = {
   dailyCalories: 2100,

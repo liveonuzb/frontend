@@ -22,7 +22,8 @@ import {
 } from "./nutrition-drawer-layout.jsx";
 import { MEAL_TYPE_OPTIONS } from "@/modules/user/lib/meal-config";
 
-import { map, split } from "lodash";
+import map from "lodash/map";
+import split from "lodash/split";
 
 const getTodayKey = () => split(new Date().toISOString(), "T")[0];
 

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { useColumns } from "./columns.jsx";
 
-import { find } from "lodash";
+import find from "lodash/find";
 
 vi.mock("@/components/ui/switch", () => ({
   Switch: ({ checked, onCheckedChange }) => (

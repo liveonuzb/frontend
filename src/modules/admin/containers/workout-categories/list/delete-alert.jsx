@@ -1,5 +1,7 @@
 import React from "react";
-import { find, values as lodashValues, trim } from "lodash";
+import find from "lodash/find";
+import lodashValues from "lodash/values";
+import trim from "lodash/trim";
 import {
   AlertDialog,
   AlertDialogAction,

@@ -1,7 +1,7 @@
 import { api } from "@/hooks/api/use-api.js";
 import { getApiResponseData } from "@/lib/api-response.js";
 
-import { trim } from "lodash";
+import trim from "lodash/trim";
 
 export const findOrCreateDirectChatRoom = async (targetUserId) => {
   const userId = trim(String(targetUserId ?? ""));

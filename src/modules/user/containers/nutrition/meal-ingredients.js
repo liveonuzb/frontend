@@ -1,13 +1,11 @@
-import {
-  filter,
-  isArray,
-  isFinite,
-  map,
-  reduce,
-  round,
-  toNumber as lodashToNumber,
-  trim,
-} from "lodash";
+import filter from "lodash/filter";
+import isArray from "lodash/isArray";
+import isFinite from "lodash/isFinite";
+import map from "lodash/map";
+import reduce from "lodash/reduce";
+import round from "lodash/round";
+import lodashToNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 
 export const toNumber = (value, fallback = 0) => {
   const normalized = lodashToNumber(value);

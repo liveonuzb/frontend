@@ -1,23 +1,21 @@
-import {
-  clamp,
-  compact,
-  find,
-  findIndex,
-  get,
-  gt,
-  gte,
-  map,
-  size,
-  filter,
-  includes,
-  reduce,
-  toNumber,
-  isArray,
-  uniq,
-  trim,
-  split,
-  concat,
-} from "lodash";
+import clamp from "lodash/clamp";
+import compact from "lodash/compact";
+import find from "lodash/find";
+import findIndex from "lodash/findIndex";
+import get from "lodash/get";
+import gt from "lodash/gt";
+import gte from "lodash/gte";
+import map from "lodash/map";
+import size from "lodash/size";
+import filter from "lodash/filter";
+import includes from "lodash/includes";
+import reduce from "lodash/reduce";
+import toNumber from "lodash/toNumber";
+import isArray from "lodash/isArray";
+import uniq from "lodash/uniq";
+import trim from "lodash/trim";
+import split from "lodash/split";
+import concat from "lodash/concat";
 
 export const unwrapApiData = (response) =>
   get(response, "data.data", get(response, "data", null));

@@ -10,7 +10,11 @@ import {
 } from "@/components/ui/card";
 import { useBreadcrumbStore } from "@/store";
 import { useGetQuery } from "@/hooks/api";
-import { get, map, take, toUpper, split } from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import take from "lodash/take";
+import toUpper from "lodash/toUpper";
+import split from "lodash/split";
 
 const getRelativeTimeLabel = (isoString) => {
   if (!isoString) return "Hozir";

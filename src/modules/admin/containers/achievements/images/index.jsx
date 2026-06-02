@@ -1,6 +1,10 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router";
-import { get, isArray, join, find, map } from "lodash";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import find from "lodash/find";
+import map from "lodash/map";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -123,7 +127,7 @@ const AchievementImagesPage = () => {
 
   return (
     <Drawer open onOpenChange={handleOpenChange} direction="bottom">
-      <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-lg">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="items-center text-center">
           <DrawerTitle>Achievement rasmlari</DrawerTitle>
           <DrawerDescription className="max-w-sm">

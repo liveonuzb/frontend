@@ -1,6 +1,14 @@
 "use client";
 /* eslint-disable react-refresh/only-export-components */
-import { map, filter, find, some, reduce, includes, isArray, toLower, take } from "lodash";
+import map from "lodash/map";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import some from "lodash/some";
+import reduce from "lodash/reduce";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
+import toLower from "lodash/toLower";
+import take from "lodash/take";
 import {
   createContext,
   useCallback,

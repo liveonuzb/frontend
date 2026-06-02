@@ -1,4 +1,6 @@
-import { isArray, includes, trim } from "lodash";
+import isArray from "lodash/isArray";
+import includes from "lodash/includes";
+import trim from "lodash/trim";
 import { ONBOARDING_STEPS } from "../constants";
 
 const hasValue = (value) => {

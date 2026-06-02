@@ -31,7 +31,8 @@ import {
   unwrapApiData,
 } from "../lib/personalization.js";
 
-import { map, toNumber } from "lodash";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
 
 const tone = ONBOARDING_ACCENTS.green;
 

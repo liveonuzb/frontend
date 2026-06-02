@@ -1,6 +1,10 @@
 import React from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { get, includes, isPlainObject, map, toPairs } from "lodash";
+import get from "lodash/get";
+import includes from "lodash/includes";
+import isPlainObject from "lodash/isPlainObject";
+import map from "lodash/map";
+import toPairs from "lodash/toPairs";
 import { useGetQuery } from "@/hooks/api";
 import { getApiResponseData } from "@/lib/api-response";
 
@@ -13,6 +17,10 @@ export const AI_USAGE_FEATURES = {
   mealPlan7Day: "MEAL_PLAN_7_DAY",
   mealPlan30Day: "MEAL_PLAN_30_DAY",
   nutritionAnalysis: "NUTRITION_ANALYSIS",
+  nutritionPantryScan: "NUTRITION_PANTRY_SCAN",
+  nutritionRecipeAssistant: "NUTRITION_RECIPE_ASSISTANT",
+  nutritionSubstitutionSuggestions: "NUTRITION_SUBSTITUTION_SUGGESTIONS",
+  adminMealTemplateVariant: "ADMIN_MEAL_TEMPLATE_VARIANT",
 };
 
 export const AI_USAGE_FEATURE_LABELS = {
@@ -22,6 +30,11 @@ export const AI_USAGE_FEATURE_LABELS = {
   [AI_USAGE_FEATURES.mealPlan7Day]: "7-day meal plan",
   [AI_USAGE_FEATURES.mealPlan30Day]: "30-day meal plan",
   [AI_USAGE_FEATURES.nutritionAnalysis]: "Nutrition analysis",
+  [AI_USAGE_FEATURES.nutritionPantryScan]: "Nutrition pantry scan",
+  [AI_USAGE_FEATURES.nutritionRecipeAssistant]: "Nutrition recipe assistant",
+  [AI_USAGE_FEATURES.nutritionSubstitutionSuggestions]:
+    "Nutrition substitutions",
+  [AI_USAGE_FEATURES.adminMealTemplateVariant]: "Admin meal template variant",
 };
 
 const toFiniteNumberOrNull = (value) => {

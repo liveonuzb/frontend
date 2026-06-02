@@ -3,7 +3,9 @@ import { Link } from "react-router";
 import { ChevronRightIcon } from "lucide-react";
 import { useBreadcrumbStore } from "@/store";
 import { cn } from "@/lib/utils";
-import { isEqual, map, size } from "lodash";
+import isEqual from "lodash/isEqual";
+import map from "lodash/map";
+import size from "lodash/size";
 
 const Breadcrumbs = ({ className }) => {
   const { breadcrumbs } = useBreadcrumbStore();

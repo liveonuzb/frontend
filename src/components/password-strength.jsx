@@ -1,5 +1,6 @@
 import React from "react";
-import { clamp, times } from "lodash";
+import clamp from "lodash/clamp";
+import times from "lodash/times";
 import { cn } from "@/lib/utils";
 
 const STRENGTH_LEVELS = [

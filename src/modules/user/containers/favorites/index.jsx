@@ -14,7 +14,7 @@ import { useBreadcrumbStore } from "@/store";
 import PageTransition from "@/components/page-transition";
 import { useDeleteQuery, useGetQuery } from "@/hooks/api";
 
-import { map } from "lodash";
+import map from "lodash/map";
 
 const FAVORITES_QUERY_KEY = ["me", "favorites"];
 

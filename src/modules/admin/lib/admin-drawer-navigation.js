@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router";
 
-import { toNumber } from "lodash";
+import toNumber from "lodash/toNumber";
 
 export const ADMIN_DRAWER_RETURN_TO_STATE_KEY = "adminDrawerReturnTo";
 

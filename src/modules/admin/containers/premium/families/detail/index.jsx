@@ -1,6 +1,12 @@
 import React from "react";
 import { useParams } from "react-router";
-import { get, isArray, join, map, filter, toUpper, split } from "lodash";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import map from "lodash/map";
+import filter from "lodash/filter";
+import toUpper from "lodash/toUpper";
+import split from "lodash/split";
 import { toast } from "sonner";
 import {
   LoaderCircleIcon,
@@ -335,7 +341,7 @@ const Index = () => {
             })}
           </div>
         ) : (
-          <div className="rounded-xl border border-dashed border-border/70 bg-muted/20 px-4 py-4 text-sm text-muted-foreground">
+          <div className="rounded-xl border border-dashed border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
             Hozircha a'zo yo'q.
           </div>
         )}

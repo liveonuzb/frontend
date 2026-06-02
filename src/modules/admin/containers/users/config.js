@@ -1,4 +1,12 @@
-import { filter, includes, isArray, uniq, reduce, toLower, toNumber, toUpper, split } from "lodash";
+import filter from "lodash/filter";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
+import uniq from "lodash/uniq";
+import reduce from "lodash/reduce";
+import toLower from "lodash/toLower";
+import toNumber from "lodash/toNumber";
+import toUpper from "lodash/toUpper";
+import split from "lodash/split";
 
 const roleColors = {
   USER: "secondary",

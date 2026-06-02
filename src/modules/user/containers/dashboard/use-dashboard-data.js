@@ -1,5 +1,10 @@
 import React from "react";
-import { compact, find, get, isArray, map, some } from "lodash";
+import compact from "lodash/compact";
+import find from "lodash/find";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import some from "lodash/some";
 import { useGetQuery } from "@/hooks/api";
 import useMealPlan from "@/hooks/app/use-meal-plan";
 import { getApiResponseData } from "@/lib/api-response";

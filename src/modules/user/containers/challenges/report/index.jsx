@@ -23,7 +23,10 @@ import { useGetQuery } from "@/hooks/api";
 import { useBreadcrumbStore } from "@/store";
 import { formatChallengeDateRange, getMetricMeta } from "../challenge-utils.js";
 
-import { isArray, map, toLower, toNumber } from "lodash";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import toLower from "lodash/toLower";
+import toNumber from "lodash/toNumber";
 
 const StatCard = ({ label, value, icon: Icon }) => (
   <Card size="sm">

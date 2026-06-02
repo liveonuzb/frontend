@@ -1,5 +1,13 @@
 import React from "react";
-import { get, filter, find, isArray, orderBy, some, toLower, toNumber, trim } from "lodash";
+import get from "lodash/get";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import isArray from "lodash/isArray";
+import orderBy from "lodash/orderBy";
+import some from "lodash/some";
+import toLower from "lodash/toLower";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 import {
   AwardIcon,
   GiftIcon,
@@ -285,7 +293,7 @@ const RewardReminderDrawer = () => {
     >
       <DrawerContent
         data-reward-reminder-drawer="true"
-        className="mx-auto max-w-md"
+        className="data-[vaul-drawer-direction=bottom]:md:max-w-sm"
       >
         <DrawerHeader className="items-center text-center">
           <Button

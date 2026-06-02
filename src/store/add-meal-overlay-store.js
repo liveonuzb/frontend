@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-import { split } from "lodash";
+import split from "lodash/split";
 
 const getDefaultMealType = () => {
   const hour = new Date().getHours();

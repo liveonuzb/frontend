@@ -12,6 +12,7 @@ import {
   TrophyIcon,
 } from "lucide-react";
 import NutritionPlansSection from "../nutrition-plans-section.jsx";
+import NutritionAiAssistantPanel from "../nutrition-ai-assistant-panel.jsx";
 import NutritionLayout from "../ui/nutrition-layout.jsx";
 import NutritionCard from "../ui/nutrition-card.jsx";
 import StatCard from "../ui/stat-card.jsx";
@@ -19,7 +20,9 @@ import { getProgressPercent } from "../ui/progress-bar.jsx";
 import { buildNutritionDashboardMetrics } from "../data/nutrition-data-mappers.js";
 import { cn } from "@/lib/utils.js";
 
-import { map, reduce, toNumber } from "lodash";
+import map from "lodash/map";
+import reduce from "lodash/reduce";
+import toNumber from "lodash/toNumber";
 
 const mealPctGoal = {
   breakfast: 0.3,
@@ -83,6 +86,122 @@ const getMealStatusMeta = ({ isActive, foodCount, readOnly }) => {
   };
 };
 
+const getHealthScoreBadge = (score) => {
+  const value = toNumber(score) || 0;
+
+  if (value <= 0) {
+    return "Boshlanmagan";
+  }
+
+  if (value < 40) {
+    return "E'tibor kerak";
+  }
+
+  if (value < 70) {
+    return "O'rtacha";
+  }
+
+  return "Yaxshi";
+};
+
+const getEmptyMealAddLabel = (label) => {
+  if (label === "Nonushta") return "Nonushtaga ovqat qo'shish";
+  if (label === "Tushlik") return "Tushlikka ovqat qo'shish";
+  if (label === "Kechki ovqat") return "Kechki ovqatga ovqat qo'shish";
+  return `${label || "Bo'lim"} uchun ovqat qo'shish`;
+};
+
+const toFiniteNumber = (value, fallback = 0) => {
+  const numeric = toNumber(value);
+  return Number.isFinite(numeric) ? numeric : fallback;
+};
+
+const getProgressValue = (progress = {}, fallback = {}) => ({
+  current: toFiniteNumber(progress.current, fallback.current || 0),
+  target: toFiniteNumber(progress.target, fallback.target || 0),
+});
+
+const getProgressPercentValue = (progress = {}, fallback = {}) =>
+  toFiniteNumber(
+    progress.percent,
+    getProgressPercent(
+      toFiniteNumber(progress.current, fallback.current || 0),
+      toFiniteNumber(progress.target, fallback.target || 0),
+    ),
+  );
+
+const buildServerBackedMetrics = (dashboard, fallbackMetrics) => {
+  if (!dashboard) {
+    return fallbackMetrics;
+  }
+
+  const calories = getProgressValue(dashboard.calories, {
+    current: fallbackMetrics.calories,
+    target: fallbackMetrics.targetCalories,
+  });
+  const protein = getProgressValue(
+    dashboard.macros?.protein,
+    fallbackMetrics.macros.protein,
+  );
+  const carbs = getProgressValue(
+    dashboard.macros?.carbs,
+    fallbackMetrics.macros.carbs,
+  );
+  const fat = getProgressValue(
+    dashboard.macros?.fat,
+    fallbackMetrics.macros.fat,
+  );
+  const water = {
+    current: toFiniteNumber(
+      dashboard.water?.currentMl,
+      fallbackMetrics.water.current,
+    ),
+    target: toFiniteNumber(
+      dashboard.water?.targetMl,
+      fallbackMetrics.water.target,
+    ),
+    percent: toFiniteNumber(
+      dashboard.water?.percent,
+      fallbackMetrics.water.percent,
+    ),
+  };
+  const caloriePercent = getProgressPercentValue(dashboard.calories, calories);
+  const proteinPercent = getProgressPercentValue(
+    dashboard.macros?.protein,
+    protein,
+  );
+  const waterPercent = getProgressPercentValue(dashboard.water, {
+    current: water.current,
+    target: water.target,
+  });
+
+  return {
+    ...fallbackMetrics,
+    calories: calories.current,
+    targetCalories: calories.target,
+    macros: {
+      protein,
+      carbs,
+      fat,
+    },
+    water,
+    healthScore: Math.round(
+      (Math.min(caloriePercent, 100) +
+        Math.min(proteinPercent, 100) +
+        Math.min(waterPercent, 100)) /
+        3,
+    ),
+    mealsCompleted: toFiniteNumber(
+      dashboard.meals?.completed,
+      fallbackMetrics.mealsCompleted,
+    ),
+    totalMeals: toFiniteNumber(
+      dashboard.meals?.total,
+      fallbackMetrics.totalMeals,
+    ),
+  };
+};
+
 const PlanStatusCard = ({
   plans = [],
   currentPlan,
@@ -95,7 +214,7 @@ const PlanStatusCard = ({
     : `${plans.length} ta reja`;
 
   return (
-    <NutritionCard className="px-4 py-4">
+    <NutritionCard className="p-4">
       <div className="flex items-start gap-3">
         <div className="grid size-9 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
           <ClipboardListIcon className="size-4" />
@@ -134,9 +253,9 @@ const OverviewHeader = ({
 }) => (
   <div className="flex items-center justify-between gap-3">
     <div className="min-w-0">
-      <h1 className="text-2xl font-black tracking-normal">Overview</h1>
+      <h1 className="text-2xl font-black tracking-normal">Umumiy ko'rinish</h1>
       <p className="mt-1 truncate text-sm font-medium text-muted-foreground">
-        {isPastDate ? "Tanlangan kun" : "Bugungi tracking"} • {selectedDateLabel}
+        {isPastDate ? "Tanlangan kun" : "Bugungi kuzatuv"} • {selectedDateLabel}
       </p>
     </div>
     <Button
@@ -310,9 +429,18 @@ const CollapsibleMealList = ({
                       ))}
                     </div>
                   ) : (
-                    <div className="rounded-2xl border border-dashed border-border/70 bg-muted/25 px-3 py-3 text-sm font-semibold text-muted-foreground">
-                      Hali ovqat qo'shilmagan
-                    </div>
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between gap-3 rounded-2xl border border-dashed border-border/70 bg-muted/25 p-3 text-left text-sm font-semibold text-muted-foreground transition-colors hover:border-primary/35 hover:bg-primary/5 hover:text-primary disabled:cursor-not-allowed disabled:hover:border-border/70 disabled:hover:bg-muted/25 disabled:hover:text-muted-foreground"
+                      disabled={disabled}
+                      onClick={() => onAdd(type)}
+                      aria-label={getEmptyMealAddLabel(config.label || type)}
+                    >
+                      <span>Hali ovqat qo'shilmagan</span>
+                      <span className="rounded-full bg-background px-2.5 py-1 text-[11px] font-black text-primary">
+                        Qo'shish
+                      </span>
+                    </button>
                   )}
 
                   <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] font-bold text-muted-foreground">
@@ -357,13 +485,29 @@ export default function NutritionHomeView(props) {
     mealConfig = {},
     isOnline,
     isPastDate,
+    burnedCalories = 0,
+    nutritionDashboard,
   } = props;
-  const metrics = buildNutritionDashboardMetrics({
+  const dayMeals = React.useMemo(
+    () =>
+      reduce(
+        filteredMealSections,
+        (meals, [type, section]) => {
+          meals[type] = section?.foods || [];
+          return meals;
+        },
+        {},
+      ),
+    [filteredMealSections],
+  );
+  const localMetrics = buildNutritionDashboardMetrics({
     roundedTotals,
     goals,
     waterConsumedMl,
     waterGoalMl,
+    dayMeals,
   });
+  const metrics = buildServerBackedMetrics(nutritionDashboard, localMetrics);
   const waterPercent = getProgressPercent(
     metrics.water.current,
     metrics.water.target,
@@ -394,7 +538,7 @@ export default function NutritionHomeView(props) {
         label="Kunlik health score"
         value={metrics.healthScore}
         unit="/100"
-        badge="Yaxshi"
+        badge={getHealthScoreBadge(metrics.healthScore)}
         description="Kaloriya, oqsil va suv progressi asosida."
         tone="success"
       />
@@ -403,7 +547,7 @@ export default function NutritionHomeView(props) {
           icon={CheckCircle2Icon}
           label="Ovqatlar yakunlandi"
           value={`${metrics.mealsCompleted} / ${metrics.totalMeals}`}
-          description="Bugungi meal bo'limlari"
+          description="Bugungi ovqat bo'limlari"
           tone="primary"
         />
       </div>
@@ -438,8 +582,9 @@ export default function NutritionHomeView(props) {
       ) : null}
 
       <CalorieGaugeWidget
-        consumed={roundedTotals.calories}
-        goal={goals.calories}
+        burnedCalories={burnedCalories}
+        consumed={metrics.calories}
+        goal={metrics.targetCalories}
         macros={metrics.macros}
         isGoalLoading={isGoalLoadingState}
         goalMeta={calorieGoalMeta}
@@ -447,6 +592,8 @@ export default function NutritionHomeView(props) {
         defaultCalorieMode="remaining"
         className="h-fit w-full"
       />
+
+      <NutritionAiAssistantPanel currentPlan={currentPlan} />
 
       <CollapsibleMealList
         filteredMealSections={filteredMealSections}

@@ -1,4 +1,7 @@
-import { find, findIndex, map, toNumber } from "lodash";
+import find from "lodash/find";
+import findIndex from "lodash/findIndex";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
 import React from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router";

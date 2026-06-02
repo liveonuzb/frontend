@@ -1,6 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { find, get, map, size, isArray, reduce, toNumber } from "lodash";
+import find from "lodash/find";
+import get from "lodash/get";
+import map from "lodash/map";
+import size from "lodash/size";
+import isArray from "lodash/isArray";
+import reduce from "lodash/reduce";
+import toNumber from "lodash/toNumber";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import {

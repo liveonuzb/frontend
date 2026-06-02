@@ -3,7 +3,12 @@ import { Button } from "@/components/ui/button";
 import { useAuthStore, useBreadcrumbStore } from "@/store";
 import useHealthGoals from "@/hooks/app/use-health-goals";
 import useWorkoutCalorieAdjustmentPreference from "@/hooks/app/use-workout-calorie-adjustment";
-import useMealPlan from "@/hooks/app/use-meal-plan";
+import useMealPlan, {
+  mealPlanDaysToKanban,
+  normalizeMealPlanDays,
+  useMealPlanTemplates,
+} from "@/hooks/app/use-meal-plan";
+import useNutritionDashboard from "@/hooks/app/use-nutrition-dashboard";
 import {
   getTodayKey,
   normalizeDayData,
@@ -40,26 +45,28 @@ import {
   getPlanDayStatus,
   resolvePlanColumnsForDate,
 } from "./nutrition-plan-days.js";
-
 import {
-  filter,
-  find,
-  forEach,
-  isArray,
-  map,
-  orderBy,
-  reduce,
-  some,
-  split,
-  toLower,
-  toNumber,
-  trim,
-  values as lodashValues,
-  includes,
-  keys,
-  toPairs,
-  flatten,
-} from "lodash";
+  getTemplateBlockingErrorMessage,
+  getTemplateBlockingReasonSummary,
+} from "./template-blocking-reasons.js";
+
+import filter from "lodash/filter";
+import find from "lodash/find";
+import forEach from "lodash/forEach";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import orderBy from "lodash/orderBy";
+import reduce from "lodash/reduce";
+import some from "lodash/some";
+import split from "lodash/split";
+import toLower from "lodash/toLower";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
+import lodashValues from "lodash/values";
+import includes from "lodash/includes";
+import keys from "lodash/keys";
+import toPairs from "lodash/toPairs";
+import flatten from "lodash/flatten";
 
 const NutritionErrorFallback = () => (
   <div className="flex min-h-[55vh] items-center justify-center px-4">
@@ -95,14 +102,9 @@ const WEEK_DAYS = [
 ];
 
 const getPlanInsights = (plan) => {
-  const weeklyKanban =
-    plan?.weeklyKanban && typeof plan.weeklyKanban === "object"
-      ? plan.weeklyKanban
-      : {};
-
-  const dayColumns = filter(lodashValues(weeklyKanban), (value) =>
-    isArray(value),
-  );
+  const dayColumns = isArray(plan?.days)
+    ? filter(map(plan.days, (day) => day?.meals), isArray)
+    : filter(lodashValues(plan?.weeklyKanban || {}), isArray);
 
   const filledDays = filter(dayColumns, (columns) =>
     some(
@@ -138,6 +140,9 @@ const getPlanInsights = (plan) => {
       : null,
   };
 };
+
+const getPlanBuilderData = (plan) =>
+  mealPlanDaysToKanban(plan?.days || plan?.weeklyKanban || []);
 
 const getPlanStatusMeta = (status) => {
   if (status === "active") {
@@ -224,7 +229,6 @@ const NutritionContent = ({ entryView = "home" }) => {
     isLoading: isMealPlanLoading,
     isFetching: isMealPlanFetching,
     saveDraftPlan,
-    applyTemplatePlan,
     rescalePlanCalories,
     startPlan,
     duplicatePlan,
@@ -317,8 +321,10 @@ const NutritionContent = ({ entryView = "home" }) => {
   }, [plans]);
 
   const saveKanban = async (newKanban) => {
+    const nextDays = normalizeMealPlanDays(newKanban);
+
     if (currentPlan?.status === "active") {
-      await startPlan({ ...currentPlan, weeklyKanban: newKanban });
+      await startPlan({ ...currentPlan, days: nextDays });
       return;
     }
 
@@ -328,7 +334,7 @@ const NutritionContent = ({ entryView = "home" }) => {
         currentPlan?.name ||
         `Qo'lda reja ${new Date().toLocaleDateString("uz-UZ")}`,
       source: currentPlan?.source || "manual",
-      weeklyKanban: newKanban,
+      days: nextDays,
     });
   };
 
@@ -341,6 +347,13 @@ const NutritionContent = ({ entryView = "home" }) => {
   const [isPlansDrawerOpen, setIsPlansDrawerOpen] = React.useState(false);
   const [isTemplateLibraryOpen, setIsTemplateLibraryOpen] =
     React.useState(false);
+  const {
+    templates: mealPlanTemplates,
+    isLoading: isMealPlanTemplatesLoading,
+    isFetching: isMealPlanTemplatesFetching,
+  } = useMealPlanTemplates({
+    enabled: entryView === "plans",
+  });
   const [isGoalWizardOpen, setIsGoalWizardOpen] = React.useState(false);
   const [isActionDrawerOpen, setIsActionDrawerOpen] = React.useState(false);
   const [isCancelPlanOpen, setIsCancelPlanOpen] = React.useState(false);
@@ -374,7 +387,7 @@ const NutritionContent = ({ entryView = "home" }) => {
         setSelectedPlanId(targetPlan.id);
       }
       setIsPlansDrawerOpen(false);
-      setBuilderInitialData(targetPlan?.weeklyKanban || {});
+      setBuilderInitialData(getPlanBuilderData(targetPlan));
       setIsBuilderOpen(true);
     } else {
       setIsPlansDrawerOpen(true);
@@ -450,7 +463,7 @@ const NutritionContent = ({ entryView = "home" }) => {
 
   const handleAiGenerated = (normalizedPlan) => {
     setSelectedPlanId(normalizedPlan.id);
-    setBuilderInitialData(normalizedPlan.weeklyKanban || {});
+    setBuilderInitialData(getPlanBuilderData(normalizedPlan));
     setIsBuilderOpen(true);
   };
 
@@ -473,39 +486,62 @@ const NutritionContent = ({ entryView = "home" }) => {
     }, 180);
   }, []);
 
-  const handleTemplateSelected = React.useCallback(
+  const handleActivateTemplate = React.useCallback(
     async (template) => {
-      if (!template?.id || template.isCompatible === false) {
-        return;
+      if (!template?.id) {
+        return null;
+      }
+
+      if (template.isCompatible === false) {
+        toast.error(
+          getTemplateBlockingReasonSummary(template) ||
+            "Bu shablon sizning cheklovlaringizga mos kelmaydi.",
+        );
+        return null;
       }
 
       try {
-        const nextState = await applyTemplatePlan(template.id);
-        const nextPlan =
-          nextState?.draftPlan ||
+        const nextState = await startPlan({
+          ...template,
+          source: "template",
+          sourceTemplateId: template.id,
+        });
+        const activatedPlan =
+          nextState?.activePlan ||
           find(
             nextState?.plans,
             (plan) =>
-              plan.status === "draft" && plan.sourceTemplateId === template.id,
+              plan.status === "active" &&
+              plan.sourceTemplateId === template.id,
           ) ||
-          nextState?.plans?.[0] ||
           null;
 
-        if (nextPlan?.id) {
-          setSelectedPlanId(nextPlan.id);
+        if (activatedPlan?.id) {
+          setSelectedPlanId(activatedPlan.id);
         }
 
-        setBuilderInitialData(nextPlan?.weeklyKanban || {});
+        setIsPlansDrawerOpen(false);
         setIsTemplateLibraryOpen(false);
-        schedulePlanMetaDrawerOpen(() => {
-          setIsBuilderOpen(true);
-        });
-        toast.success("Shablon asosida reja yaratildi");
-      } catch {
-        toast.error("Shablondan reja yaratib bo'lmadi");
+        toast.success("Shablon reja faollashtirildi");
+        return nextState;
+      } catch (error) {
+        toast.error(
+          getTemplateBlockingErrorMessage(
+            error,
+            "Shablon rejani faollashtirib bo'lmadi",
+          ),
+        );
+        return null;
       }
     },
-    [applyTemplatePlan, schedulePlanMetaDrawerOpen],
+    [startPlan],
+  );
+
+  const handleTemplateSelected = React.useCallback(
+    async (template) => {
+      await handleActivateTemplate(template);
+    },
+    [handleActivateTemplate],
   );
 
   const openPlanMetaCreateDrawer = React.useCallback(() => {
@@ -527,7 +563,7 @@ const NutritionContent = ({ entryView = "home" }) => {
     }
 
     setIsPlansDrawerOpen(false);
-    setBuilderInitialData(currentPlan?.weeklyKanban || {});
+    setBuilderInitialData(getPlanBuilderData(currentPlan));
     setIsBuilderOpen(true);
   };
 
@@ -548,8 +584,13 @@ const NutritionContent = ({ entryView = "home" }) => {
         await startPlan(plan);
         setIsPlansDrawerOpen(false);
         toast.success("Reja faollashtirildi");
-      } catch {
-        toast.error("Rejani faollashtirib bo'lmadi");
+      } catch (error) {
+        toast.error(
+          getTemplateBlockingErrorMessage(
+            error,
+            "Rejani faollashtirib bo'lmadi",
+          ),
+        );
       }
     },
     [startPlan],
@@ -625,7 +666,7 @@ const NutritionContent = ({ entryView = "home" }) => {
           ...currentPlan,
           name: safeName,
           description: safeDescription,
-          weeklyKanban: currentPlan.weeklyKanban || {},
+          days: currentPlan.days || [],
           source: currentPlan.source || "manual",
         });
         const updatedPlan =
@@ -640,7 +681,7 @@ const NutritionContent = ({ entryView = "home" }) => {
 
         setIsPlanMetaOpen(false);
         if (planMetaShouldOpenBuilder && updatedPlan) {
-          setBuilderInitialData(updatedPlan.weeklyKanban || {});
+          setBuilderInitialData(getPlanBuilderData(updatedPlan));
           schedulePlanMetaDrawerOpen(() => {
             setIsBuilderOpen(true);
           });
@@ -654,7 +695,7 @@ const NutritionContent = ({ entryView = "home" }) => {
         description: safeDescription,
         source: "manual",
         mealCount: currentPlan?.mealCount || 4,
-        weeklyKanban: {},
+        days: [],
       });
       const nextPlan =
         nextState?.draftPlan ||
@@ -669,7 +710,7 @@ const NutritionContent = ({ entryView = "home" }) => {
         setSelectedPlanId(nextPlan.id);
       }
 
-      setBuilderInitialData(nextPlan?.weeklyKanban || {});
+      setBuilderInitialData(getPlanBuilderData(nextPlan));
       setIsPlanMetaOpen(false);
       schedulePlanMetaDrawerOpen(() => {
         setIsBuilderOpen(true);
@@ -717,7 +758,7 @@ const NutritionContent = ({ entryView = "home" }) => {
 
         if (openBuilderAfter && duplicatedPlan) {
           setIsPlansDrawerOpen(false);
-          setBuilderInitialData(duplicatedPlan.weeklyKanban || {});
+          setBuilderInitialData(getPlanBuilderData(duplicatedPlan));
           setIsBuilderOpen(true);
           toast.success("Reja nusxalanib, tahrirlash uchun ochildi");
           return;
@@ -837,6 +878,12 @@ const NutritionContent = ({ entryView = "home" }) => {
     return split(yesterday.toISOString(), "T")[0];
   }, [date]);
   const { dayData, isLoading: isDayLoading } = useDailyTrackingDay(dateKey);
+  const {
+    dashboard: nutritionDashboard,
+    data: nutritionDashboardResponse,
+  } = useNutritionDashboard(dateKey, {
+    enabled: entryView === "home",
+  });
   const { foodMap } = useFoodCatalog();
   const { analyzeMealImageDraft, uploadMealCapture } = useFoodScan();
   const { refetch: refetchYesterday } = useDailyTrackingDay(yesterdayKey, {
@@ -1734,6 +1781,8 @@ const NutritionContent = ({ entryView = "home" }) => {
     isOnline,
     isDayLoading,
     isPastDate,
+    burnedCalories: dayData.burnedCalories,
+    nutritionDashboard: nutritionDashboardResponse ? nutritionDashboard : null,
   };
 
   return (
@@ -1767,6 +1816,11 @@ const NutritionContent = ({ entryView = "home" }) => {
           onCreateManual={openPlanMetaCreateDrawer}
           onCreateAI={handleOpenAiGenerator}
           onCreateFromTemplate={handleOpenTemplateLibrary}
+          onActivateTemplate={handleActivateTemplate}
+          templates={mealPlanTemplates}
+          isTemplateLoading={
+            isMealPlanTemplatesLoading || isMealPlanTemplatesFetching
+          }
           onRescalePlanCalories={handleRescaleCurrentPlan}
         />
       ) : (

@@ -1,4 +1,5 @@
-import { clamp, round } from "lodash";
+import clamp from "lodash/clamp";
+import round from "lodash/round";
 import React from "react";
 import {
     AlertDialog,

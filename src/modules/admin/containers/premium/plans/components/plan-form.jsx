@@ -1,6 +1,14 @@
 /* eslint-disable react-refresh/only-export-components */
 import React from "react";
-import { get, map, filter, isArray, reduce, toLower, toNumber, toPairs, trim } from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import filter from "lodash/filter";
+import isArray from "lodash/isArray";
+import reduce from "lodash/reduce";
+import toLower from "lodash/toLower";
+import toNumber from "lodash/toNumber";
+import toPairs from "lodash/toPairs";
+import trim from "lodash/trim";
 import { PlusIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -145,7 +153,7 @@ const PlanForm = ({ defaultValues, onSubmit, isSubmitting, submitLabel }) => {
 
   return (
     <>
-      <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-6">
+      <div className="no-scrollbar flex-1 overflow-y-auto p-4 flex flex-col gap-6">
         {/* Name */}
         <div className="flex flex-col gap-2">
           <Label className="text-sm font-medium">Nomi</Label>

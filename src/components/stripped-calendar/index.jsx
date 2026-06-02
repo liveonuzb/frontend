@@ -1,7 +1,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
-import { map } from "lodash";
+import map from "lodash/map";
 
 const WEEKDAY_LABELS = ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Yak"];
 const MONTH_LABELS = [

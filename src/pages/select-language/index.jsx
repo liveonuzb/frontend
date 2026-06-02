@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 import { useLanguageStore, useAppModeStore } from "@/store";
 import useAppModeTheme from "@/hooks/app/use-app-mode-theme";
 
-import { find, map } from "lodash";
+import find from "lodash/find";
+import map from "lodash/map";
 
 const LANGUAGES = [
   {

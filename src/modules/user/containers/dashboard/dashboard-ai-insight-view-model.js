@@ -1,4 +1,7 @@
-import { get, filter, isArray, toNumber } from "lodash";
+import get from "lodash/get";
+import filter from "lodash/filter";
+import isArray from "lodash/isArray";
+import toNumber from "lodash/toNumber";
 import { getUserAiReportPeriodLabel } from "@/hooks/app/use-user-ai-reports";
 
 const getReportBody = (report) => report?.report ?? report?.body ?? {};

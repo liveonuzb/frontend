@@ -1,5 +1,7 @@
 import { useAuthStore } from "@/store";
-import { get, includes, isArray } from "lodash";
+import get from "lodash/get";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
 import { useGetQuery } from "@/hooks/api";
 
 export const isSuperAdminRole = (roles) =>

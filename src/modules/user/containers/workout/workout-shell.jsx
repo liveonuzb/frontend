@@ -4,7 +4,9 @@ import { useLocation } from "react-router";
 import FeatureModuleShell from "@/modules/user/layout/feature-module-shell.jsx";
 import { WORKOUT_NAV_ITEMS } from "./workout-nav-items.js";
 
-import { includes, map, get } from "lodash";
+import includes from "lodash/includes";
+import map from "lodash/map";
+import get from "lodash/get";
 
 const PRIMARY_TAB_PATHS = [
   "/user/workout",

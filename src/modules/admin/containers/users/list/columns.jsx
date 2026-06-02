@@ -1,5 +1,7 @@
 import React from "react";
-import { get, map, trim } from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import trim from "lodash/trim";
 import { Badge } from "@/components/ui/badge";
 import { DataGridColumnHeader } from "@/components/reui/data-grid";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";

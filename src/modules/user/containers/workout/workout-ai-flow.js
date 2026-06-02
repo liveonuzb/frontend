@@ -1,4 +1,7 @@
-import { get, map, toNumber, trim } from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 
 export const WORKOUT_GOALS = [
   {

@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import get from "lodash/get";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

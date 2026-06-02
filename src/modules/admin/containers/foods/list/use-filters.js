@@ -1,6 +1,9 @@
 import React from "react";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
-import { map as lodashMap, find, toNumber, trim } from "lodash";
+import lodashMap from "lodash/map";
+import find from "lodash/find";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 import {
   ALLERGEN_TAG_OPTIONS,
   DIETARY_TAG_OPTIONS,

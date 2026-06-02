@@ -19,7 +19,11 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton.jsx";
 import EmptyState from "@/components/empty-state/index.jsx";
-import { map, sumBy, isEmpty, filter, forEach } from "lodash";
+import map from "lodash/map";
+import sumBy from "lodash/sumBy";
+import isEmpty from "lodash/isEmpty";
+import filter from "lodash/filter";
+import forEach from "lodash/forEach";
 import MealCard from "./meal-card.jsx";
 import { getMealConfig } from "@/modules/user/lib/meal-config";
 
@@ -41,7 +45,7 @@ const getStoredOpenState = (type) => {
 const MealCardSkeleton = () => (
   <div className="flex overflow-hidden rounded-2xl border bg-card">
     <Skeleton className="size-24 shrink-0 rounded-none" />
-    <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 px-3 py-3">
+    <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 p-3">
       <Skeleton className="h-4 w-2/3 rounded" />
       <div className="flex gap-2">
         <Skeleton className="h-5 w-14 rounded-full" />

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, memo } from "react";
-import { reduce, map } from "lodash";
+import reduce from "lodash/reduce";
+import map from "lodash/map";
 import {
   KanbanColumn,
   KanbanColumnHandle,
@@ -67,7 +68,7 @@ const BuilderColumn = memo(
           )}
         >
           <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-primary/30 via-primary/10 to-transparent rounded-t-2xl opacity-50" />
-          <div className="flex items-center justify-between px-2 py-2 hover:bg-muted/40 rounded-xl transition-all duration-300 border border-transparent hover:border-border/50 relative z-10 group/header">
+          <div className="flex items-center justify-between p-2 hover:bg-muted/40 rounded-xl transition-all duration-300 border border-transparent hover:border-border/50 relative z-10 group/header">
             <div className="flex items-center gap-1.5 flex-1 min-w-0">
               <KanbanColumnHandle
                 aria-label={`${col.type} bo'limini ko'chirish`}

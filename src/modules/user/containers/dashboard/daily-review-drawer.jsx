@@ -17,7 +17,8 @@ import { cn } from "@/lib/utils";
 import { normalizeDateKey } from "./query-helpers.js";
 import { dailyReportQueryKey, getYesterdayKey } from "../report/report-helpers.js";
 
-import { map, split } from "lodash";
+import map from "lodash/map";
+import split from "lodash/split";
 
 /* ─────────────────────────────────────────────
    DAILY REVIEW DRAWER (Dashboard-only)
@@ -125,7 +126,7 @@ export default function DailyReviewDrawer() {
       onOpenChange={(next) => (next ? setOpen(true) : dismiss())}
       direction="bottom"
     >
-      <DrawerContent data-daily-review-drawer="true">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm" data-daily-review-drawer="true">
         <DrawerHeader className="text-center">
           <div className="mx-auto mb-2 flex size-16 items-center justify-center rounded-3xl bg-primary/10">
             <span className="text-3xl">🐧</span>

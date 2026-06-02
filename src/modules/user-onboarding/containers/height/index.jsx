@@ -24,7 +24,7 @@ import {
 import { getHeightTone } from "../../lib/tones.js";
 import { useOnboardingAssets } from "@/hooks/app/use-onboarding-base";
 
-import { toNumber } from "lodash";
+import toNumber from "lodash/toNumber";
 
 const getHeightProfile = (heightValue, t) => {
   const heightNumber = toNumber(heightValue);

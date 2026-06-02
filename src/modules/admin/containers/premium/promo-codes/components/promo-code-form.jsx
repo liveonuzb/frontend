@@ -1,6 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
 import React from "react";
-import { get, map, filter, includes, toUpper } from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import filter from "lodash/filter";
+import includes from "lodash/includes";
+import toUpper from "lodash/toUpper";
 import { useGetQuery } from "@/hooks/api";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

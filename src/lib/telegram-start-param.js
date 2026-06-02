@@ -1,4 +1,9 @@
-import { get, includes, replace, startsWith, toLower, trim } from "lodash";
+import get from "lodash/get";
+import includes from "lodash/includes";
+import replace from "lodash/replace";
+import startsWith from "lodash/startsWith";
+import toLower from "lodash/toLower";
+import trim from "lodash/trim";
 
 const TELEGRAM_CONNECT_PREFIX = "connect_";
 const TELEGRAM_CAMPAIGN_PREFIX = "campaign_";

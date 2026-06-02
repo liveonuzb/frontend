@@ -250,7 +250,7 @@ export default function NutritionPlansList({
               <th className="px-5 py-4 font-bold">Kaloriya / kun</th>
               <th className="px-5 py-4 font-bold">Yangilangan</th>
               <th className="px-5 py-4 font-bold">Status</th>
-              <th className="px-5 py-4 text-right font-bold"> </th>
+              <th className="px-5 py-4 text-right font-bold" aria-label="Amallar" />
             </tr>
           </thead>
           <tbody className="divide-y divide-border/70">

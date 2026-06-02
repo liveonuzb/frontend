@@ -1,7 +1,7 @@
 import React from "react";
 import { Navigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { get } from "lodash";
+import get from "lodash/get";
 import { AuthHeader, AuthPanel } from "@/modules/auth/components/auth-panel";
 import { useAuthStore } from "@/store";
 import PasswordForm from "./password-form";

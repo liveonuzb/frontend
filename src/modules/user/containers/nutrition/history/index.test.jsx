@@ -98,7 +98,8 @@ describe("NutritionHistoryPage", () => {
     expect(screen.queryByText("Eng yaxshi seriya")).not.toBeInTheDocument();
     expect(screen.queryByText("O'rtacha suv")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Export$/i })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Filter/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Filter/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Filtr/i })).toBeInTheDocument();
     expect(screen.getAllByText(/20-may/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/chorshanba/i)).toBeInTheDocument();
     expect(screen.getByText("2 ta ovqat")).toBeInTheDocument();
@@ -169,9 +170,10 @@ describe("NutritionHistoryPage", () => {
   it("opens filters, date drawers, and meal type drawer from bottom drawer controls", () => {
     renderHistory();
 
-    fireEvent.click(screen.getByRole("button", { name: /Filter/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Filtr/i }));
 
-    expect(screen.getByRole("dialog")).toHaveTextContent("History filterlari");
+    expect(screen.getByRole("dialog")).toHaveTextContent("Tarix filterlari");
+    expect(screen.getByRole("dialog")).not.toHaveTextContent("History");
     expect(screen.getByRole("button", { name: /Boshlanish sanasi/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Tugash sanasi/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Bo'lim/i })).toHaveTextContent("Barcha bo'limlar");

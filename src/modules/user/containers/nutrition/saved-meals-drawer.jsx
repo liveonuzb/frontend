@@ -30,7 +30,14 @@ import { useSavedMealTemplates } from "@/hooks/app/use-saved-meal-templates";
 import { NutritionDrawerContent } from "./nutrition-drawer-layout.jsx";
 import MealIngredientsEditorDrawer from "./meal-ingredients-editor-drawer.jsx";
 
-import { filter, includes, map, orderBy, reduce, toLower, trim, take } from "lodash";
+import filter from "lodash/filter";
+import includes from "lodash/includes";
+import map from "lodash/map";
+import orderBy from "lodash/orderBy";
+import reduce from "lodash/reduce";
+import toLower from "lodash/toLower";
+import trim from "lodash/trim";
+import take from "lodash/take";
 
 const buildLoggedMealFromSavedMeal = (savedMeal) => ({
   name: savedMeal.name,
@@ -378,7 +385,7 @@ const SavedMealsDrawer = ({
                         return (
                           <div
                             key={template.id}
-                            className="rounded-3xl border bg-card px-3 py-3"
+                            className="rounded-3xl border bg-card p-3"
                           >
                             <div className="flex items-center gap-3">
                               <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
@@ -478,6 +485,15 @@ const SavedMealsDrawer = ({
                     <div
                       key={item.id}
                       onClick={() => setEditingMeal(item)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          setEditingMeal(item);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`${item.name} taomini tahrirlash`}
                       className="w-full cursor-pointer rounded-3xl border bg-card px-3 py-2.5 text-left transition-colors hover:bg-muted/20"
                     >
                       <div className="flex items-center gap-3">

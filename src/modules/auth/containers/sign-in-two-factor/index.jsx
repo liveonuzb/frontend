@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, Navigate } from "react-router";
-import { get } from "lodash";
+import get from "lodash/get";
 import { useTranslation } from "react-i18next";
 import { AuthHeader, AuthPanel } from "@/modules/auth/components/auth-panel";
 import { useAuthStore } from "@/store";

@@ -1,4 +1,5 @@
-import { map, reduce } from "lodash";
+import map from "lodash/map";
+import reduce from "lodash/reduce";
 export const DEFAULT_MEAL_TYPE = "breakfast";
 
 export const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"];
@@ -7,7 +8,7 @@ export const MEAL_CONFIG = {
   breakfast: { label: "Nonushta", emoji: "🍳", time: "06:00 - 10:00" },
   lunch: { label: "Tushlik", emoji: "🥗", time: "12:00 - 14:00" },
   dinner: { label: "Kechki ovqat", emoji: "🍲", time: "18:00 - 21:00" },
-  snack: { label: "Snack", emoji: "🥜", time: "Istalgan vaqt" },
+  snack: { label: "Tamaddi", emoji: "🥜", time: "Istalgan vaqt" },
 };
 
 export const MEAL_LABELS = reduce(MEAL_TYPES, (labels, type) => {

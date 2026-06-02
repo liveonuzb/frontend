@@ -1,4 +1,6 @@
-import { filter, orderBy, toNumber } from "lodash";
+import filter from "lodash/filter";
+import orderBy from "lodash/orderBy";
+import toNumber from "lodash/toNumber";
 export const formatPremiumPrice = (value, locale = "uz-UZ") =>
   new Intl.NumberFormat(locale).format(toNumber(value) || 0);
 

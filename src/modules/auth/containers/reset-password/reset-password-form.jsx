@@ -13,7 +13,8 @@ import { useAuthStore } from "@/store";
 import { getAuthErrorMessage } from "@/modules/auth/lib/auth-utils.js";
 import { useAuthMobileAutoFocus } from "@/modules/auth/lib/mobile-keyboard";
 import { useTranslation } from "react-i18next";
-import { get, isEqual } from "lodash";
+import get from "lodash/get";
+import isEqual from "lodash/isEqual";
 import { applyStrongPasswordPolicy } from "@/modules/auth/lib/password-policy.js";
 
 const isResetSessionExpired = (expiresAtValue) => {

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { get, reduce, replace, toPairs } from "lodash";
+import get from "lodash/get";
+import reduce from "lodash/reduce";
+import replace from "lodash/replace";
+import toPairs from "lodash/toPairs";
 import uzLocale from "../../lib/locales/uz.json";
 import { buildMetabolismResultViewModel } from "./result-view-model.js";
 

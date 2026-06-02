@@ -1,5 +1,10 @@
 import React from "react";
-import { get, map, filter, isArray, take, toNumber } from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import filter from "lodash/filter";
+import isArray from "lodash/isArray";
+import take from "lodash/take";
+import toNumber from "lodash/toNumber";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -208,7 +213,7 @@ const ReportLoadingState = ({ slides, activeStage, t }) => {
   const { asset } = useOnboardingAssets();
 
   return (
-    <div className="relative flex h-full min-h-0 flex-1 items-center justify-center overflow-hidden px-3 py-3 md:px-6 md:py-5">
+    <div className="relative flex h-full min-h-0 flex-1 items-center justify-center overflow-hidden p-3 md:px-6 md:py-5">
       <div className="relative z-10 grid h-full min-h-0 w-full max-w-6xl grid-rows-[minmax(0,1fr)_auto] gap-3 lg:grid-cols-[minmax(0,1fr)_300px] lg:grid-rows-1">
         <div className="relative min-h-0 overflow-hidden rounded-[28px] border border-border/60 bg-background/80 shadow-[0_28px_90px_rgba(15,23,42,0.10)] backdrop-blur-xl md:rounded-[36px]">
           <motion.div
@@ -222,7 +227,7 @@ const ReportLoadingState = ({ slides, activeStage, t }) => {
               return (
                 <div
                   key={slide.key}
-                  className="relative h-full min-w-full overflow-hidden px-4 py-4 sm:px-6 md:px-8 md:py-5"
+                  className="relative h-full min-w-full overflow-hidden p-4 sm:px-6 md:px-8 md:py-5"
                 >
                   <div
                     className={cn(
@@ -538,7 +543,7 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
   const actionItems = take(get(report, "report.actionPlan.items", []), 7);
 
   return (
-    <div className="relative flex min-h-0 flex-1 overflow-y-auto bg-[#F8FAF7] px-3 py-3 pb-24 sm:px-4 sm:py-5 sm:pb-28 md:px-8 md:py-8 md:pb-8">
+    <div className="relative flex min-h-0 flex-1 overflow-y-auto bg-[#F8FAF7] p-3 pb-24 sm:px-4 sm:py-5 sm:pb-28 md:p-8 md:pb-8">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -left-24 top-10 size-72 rounded-full bg-[#E68A00]/10 blur-3xl" />
         <div className="absolute right-0 top-1/4 size-80 rounded-full bg-emerald-200/30 blur-3xl" />
@@ -861,11 +866,11 @@ const ReportContent = ({ report, onStartPlan, t, locale }) => {
 
 const ReportContentSkeleton = () => {
   return (
-    <div className="flex flex-1 overflow-hidden px-5 py-5 md:px-8 md:py-8">
+    <div className="flex flex-1 overflow-hidden p-5 md:p-8">
       <div className="grid w-full gap-4 xl:grid-cols-[minmax(0,1.3fr)_360px]">
         <div className="space-y-4">
           <Card className="py-0 shadow-none">
-            <CardContent className="space-y-4 px-6 py-6">
+            <CardContent className="space-y-4 p-6">
               <Skeleton className="h-6 w-28" />
               <Skeleton className="h-12 w-3/4" />
               <Skeleton className="h-5 w-full" />

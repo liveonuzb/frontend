@@ -1,6 +1,6 @@
 import React from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { get } from "lodash";
+import get from "lodash/get";
 import { USER_NOTIFICATIONS_QUERY_KEY } from "@/hooks/app/use-notifications";
 import { PREMIUM_QUERY_KEY } from "@/hooks/app/use-premium";
 import { ME_QUERY_KEY } from "@/hooks/app/use-profile-settings";

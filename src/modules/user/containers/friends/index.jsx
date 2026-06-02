@@ -48,7 +48,11 @@ import { cn } from "@/lib/utils";
 import PersonRow from "./components/person-row.jsx";
 import SectionCard from "./components/section-card.jsx";
 
-import { filter, isArray, map, trim, take } from "lodash";
+import filter from "lodash/filter";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import trim from "lodash/trim";
+import take from "lodash/take";
 
 const FRIENDS_QUERY_KEY = ["friends"];
 const FRIEND_REQUESTS_QUERY_KEY = ["friend-requests"];

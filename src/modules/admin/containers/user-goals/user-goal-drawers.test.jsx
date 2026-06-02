@@ -6,7 +6,7 @@ import CreatePage from "./create/index.jsx";
 import EditPage from "./edit/index.jsx";
 import TranslationPage from "./translation/index.jsx";
 
-import { map } from "lodash";
+import map from "lodash/map";
 
 const mockNavigate = vi.fn();
 const mockPostMutateAsync = vi.fn();

@@ -65,7 +65,163 @@
       "manualAdd": "Add manually",
       "cameraAdd": "Camera",
       "audioAdd": "Voice",
-      "textAdd": "Text"
+      "textAdd": "Text",
+      "nav": {
+        "overview": "Overview",
+        "plans": "Plans",
+        "recipes": "Recipes",
+        "history": "History",
+        "report": "Report"
+      },
+      "recipes": {
+        "common": {
+          "all": "All",
+          "none": "None",
+          "minutes": "{{count}} min",
+          "minutesShort": "min"
+        },
+        "meals": {
+          "breakfast": "Breakfast",
+          "lunch": "Lunch",
+          "dinner": "Dinner",
+          "snack": "Snack"
+        },
+        "page": {
+          "badge": "Recipes",
+          "title": "Recipes for today's meals",
+          "selectRecipe": "Select a recipe",
+          "empty": "No recipes found",
+          "totalCount": "{{count}} recipes"
+        },
+        "search": {
+          "label": "Search recipes",
+          "placeholder": "Search recipes"
+        },
+        "filters": {
+          "sort": "Sort",
+          "category": "Category",
+          "cuisine": "Cuisine",
+          "tag": "Tag",
+          "allergen": "Allergen",
+          "difficulty": "Difficulty",
+          "maxTotalTime": "Max time",
+          "minProtein": "Min protein",
+          "minCalories": "Min kcal",
+          "maxCalories": "Max kcal",
+          "featuredAria": "Featured recipes",
+          "featured": "Featured",
+          "savedOnly": "Saved",
+          "clearAria": "Clear filters",
+          "clear": "Clear",
+          "sortOptions": {
+            "newest": "Newest",
+            "popular": "Popular",
+            "highestRated": "Rating",
+            "highestProtein": "Protein",
+            "lowestCalories": "Light",
+            "fastest": "Fast",
+            "featured": "Featured"
+          },
+          "difficultyOptions": {
+            "easy": "Easy",
+            "medium": "Medium",
+            "hard": "Hard"
+          }
+        },
+        "chips": {
+          "allTags": "All tags"
+        },
+        "nutrition": {
+          "calories": "kcal",
+          "protein": "protein",
+          "carbs": "carbs",
+          "fat": "fat",
+          "fiber": "fiber",
+          "sugar": "sugar",
+          "sodium": "sodium"
+        },
+        "buttons": {
+          "addToMealLog": "Add to today's log",
+          "addToMealPlan": "Add to plan",
+          "createShoppingList": "Create shopping list",
+          "save": "Save",
+          "saved": "Saved"
+        },
+        "card": {
+          "ingredientsCount": "{{count}} ingredients",
+          "stepsCount": "{{count}} steps",
+          "detailAria": "{{title}} details",
+          "detail": "Details"
+        },
+        "ingredients": {
+          "title": "Ingredients",
+          "mainGroup": "Main",
+          "readyLabel": "{{name}} ready",
+          "optional": "optional",
+          "empty": "No ingredients added"
+        },
+        "steps": {
+          "title": "Steps",
+          "fallbackTitle": "Step",
+          "imageAlt": "{{title}} image",
+          "media": "Media",
+          "empty": "No steps added",
+          "stepNumber": "Step {{count}}"
+        },
+        "timer": {
+          "pause": "Pause timer",
+          "start": "Start timer"
+        },
+        "cookingMode": {
+          "close": "Close cooking mode",
+          "previous": "Previous",
+          "next": "Next step"
+        },
+        "detail": {
+          "notFound": "Recipe not found",
+          "back": "Back to recipes",
+          "serving": "Serving",
+          "mealType": "Meal",
+          "plan": "Plan",
+          "day": "Day",
+          "dayNumber": "Day {{count}}",
+          "planMealType": "Plan meal",
+          "priceRegion": "Price region",
+          "season": "Season",
+          "cookingMode": "Cooking mode",
+          "logSuccess": "Recipe added to log",
+          "planSuccess": "Recipe added to plan",
+          "shoppingListCreated": "Shopping list created",
+          "shoppingListCreatedWithCount": "Shopping list created: {{count}} items",
+          "prepTime": "Prep {{count}} min",
+          "cookTime": "Cook {{count}} min",
+          "servingsBadge": "{{count}} servings"
+        },
+        "regions": {
+          "all": "All regions",
+          "uzbekistan": "Uzbekistan",
+          "toshkent": "Tashkent",
+          "samarqand": "Samarkand",
+          "buxoro": "Bukhara",
+          "fargona": "Fergana",
+          "andijon": "Andijan",
+          "namangan": "Namangan",
+          "qashqadaryo": "Kashkadarya",
+          "surxondaryo": "Surkhandarya",
+          "xorazm": "Khorezm",
+          "navoiy": "Navoi",
+          "jizzax": "Jizzakh",
+          "sirdaryo": "Sirdarya",
+          "qoraqalpogiston": "Karakalpakstan"
+        },
+        "seasons": {
+          "all": "All year",
+          "spring": "Spring",
+          "summer": "Summer",
+          "autumn": "Autumn",
+          "winter": "Winter"
+        }
+      }
     },
     "water": {
       "title": "Water Tracking",

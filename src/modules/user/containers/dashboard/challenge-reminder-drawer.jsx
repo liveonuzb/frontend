@@ -1,5 +1,11 @@
 import React from "react";
-import { get, find, isArray, orderBy, some, toNumber, filter } from "lodash";
+import get from "lodash/get";
+import find from "lodash/find";
+import isArray from "lodash/isArray";
+import orderBy from "lodash/orderBy";
+import some from "lodash/some";
+import toNumber from "lodash/toNumber";
+import filter from "lodash/filter";
 import { ArrowRightIcon, TargetIcon, TrophyIcon } from "lucide-react";
 import { useNavigate } from "react-router";
 import {
@@ -144,7 +150,7 @@ export default function ChallengeReminderDrawer() {
       onOpenChange={(next) => (next ? setOpen(true) : dismiss())}
       direction="bottom"
     >
-      <DrawerContent data-challenge-reminder-drawer="true">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm" data-challenge-reminder-drawer="true">
         <DrawerHeader className="text-center">
           <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-2xl bg-amber-500/10">
             <TrophyIcon className="size-7 text-amber-500" />

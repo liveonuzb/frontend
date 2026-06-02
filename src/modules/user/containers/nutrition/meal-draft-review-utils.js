@@ -1,4 +1,7 @@
-import { round, filter, reduce, some } from "lodash";
+import round from "lodash/round";
+import filter from "lodash/filter";
+import reduce from "lodash/reduce";
+import some from "lodash/some";
 import {
   buildMealIngredientsPayload,
   getMealIngredientTotals,

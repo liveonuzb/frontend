@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAppModeStore, APP_MODES } from "@/store";
@@ -6,10 +6,10 @@ import { MODE_OPTIONS } from "@/components/mode-options";
 import {
   Drawer,
   DrawerContent,
-  DrawerClose,
 } from "@/components/ui/drawer";
 
-import { find, map } from "lodash";
+import find from "lodash/find";
+import map from "lodash/map";
 
 /* Shared between auth layout and profile drawer. */
 
@@ -17,12 +17,12 @@ export function ModeDrawer({ open, onOpenChange }) {
   const { mode, setMode } = useAppModeStore();
   const [selected, setSelected] = useState(mode || APP_MODES.MADAGASCAR);
 
-  useEffect(() => {
-    if (open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+  const handleOpenChange = (nextOpen) => {
+    if (nextOpen) {
       setSelected(mode || APP_MODES.MADAGASCAR);
     }
-  }, [open, mode]);
+    onOpenChange(nextOpen);
+  };
 
   const active =
     find(MODE_OPTIONS, (m) => m.value === selected) ?? MODE_OPTIONS[0];
@@ -33,8 +33,8 @@ export function ModeDrawer({ open, onOpenChange }) {
   };
 
   return (
-    <Drawer direction="bottom" open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="mx-auto max-w-lg">
+    <Drawer direction="bottom" open={open} onOpenChange={handleOpenChange}>
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         {/* Animated bg tint */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-t-[28px]">
           <AnimatePresence mode="sync">
@@ -112,28 +112,26 @@ export function ModeDrawer({ open, onOpenChange }) {
 
         {/* Apply button */}
         <div className="relative z-10 px-4 pb-6 pt-3">
-          <DrawerClose asChild>
-            <button
-              type="button"
-              onClick={handleApply}
-              className="relative h-11 w-full overflow-hidden rounded-2xl text-sm font-semibold text-white"
-            >
-              <AnimatePresence mode="sync">
-                <motion.span
-                  key={`apply-btn-${active.value}`}
-                  className={cn(
-                    "absolute inset-0 bg-gradient-to-r",
-                    active.buttonTone,
-                  )}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.22 }}
-                />
-              </AnimatePresence>
-              <span className="relative z-10">Apply</span>
-            </button>
-          </DrawerClose>
+          <button
+            type="button"
+            onClick={handleApply}
+            className="relative h-11 w-full overflow-hidden rounded-2xl text-sm font-semibold text-white"
+          >
+            <AnimatePresence mode="sync">
+              <motion.span
+                key={`apply-btn-${active.value}`}
+                className={cn(
+                  "absolute inset-0 bg-gradient-to-r",
+                  active.buttonTone,
+                )}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.22 }}
+              />
+            </AnimatePresence>
+            <span className="relative z-10">Apply</span>
+          </button>
         </div>
       </DrawerContent>
     </Drawer>

@@ -37,7 +37,9 @@ import {
 } from "./meal-ingredients.js";
 import NutritionPortionControlCard from "./nutrition-portion-control-card.jsx";
 
-import { map, toNumber as lodashToNumber, trim } from "lodash";
+import map from "lodash/map";
+import lodashToNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 
 const emptyIngredient = {
   id: "",

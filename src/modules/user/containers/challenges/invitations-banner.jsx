@@ -1,5 +1,7 @@
 import React from "react";
-import { get, map, take } from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import take from "lodash/take";
 import { AnimatePresence, motion } from "framer-motion";
 import { BellIcon, TrophyIcon, UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";

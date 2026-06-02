@@ -3,7 +3,6 @@ import { CheckIcon, MoonIcon, SunIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
 } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
@@ -29,11 +28,15 @@ export default function ThemeDrawer({ open, onOpenChange }) {
   const { theme, setTheme } = useTheme();
   const [selected, setSelected] = React.useState(theme);
 
-  React.useEffect(() => {
-    if (open) {
-      setSelected(theme);
-    }
-  }, [open, theme]);
+  const handleOpenChange = React.useCallback(
+    (nextOpen) => {
+      if (nextOpen) {
+        setSelected(theme);
+      }
+      onOpenChange(nextOpen);
+    },
+    [onOpenChange, theme],
+  );
 
   const handleApply = React.useCallback(() => {
     setTheme(selected);
@@ -41,10 +44,10 @@ export default function ThemeDrawer({ open, onOpenChange }) {
   }, [onOpenChange, selected, setTheme]);
 
   return (
-    <Drawer direction="bottom" open={open} onOpenChange={onOpenChange}>
+    <Drawer direction="bottom" open={open} onOpenChange={handleOpenChange}>
       <DrawerContent
         data-theme-drawer="true"
-        className="mx-auto max-w-md"
+        className="data-[vaul-drawer-direction=bottom]:md:max-w-sm"
       >
         <div className="px-5 pb-1 pt-4 text-center">
           <p className="text-base font-bold">
@@ -104,15 +107,13 @@ export default function ThemeDrawer({ open, onOpenChange }) {
         </div>
 
         <div className="px-4 pb-6 pt-3">
-          <DrawerClose asChild>
-            <button
-              type="button"
-              onClick={handleApply}
-              className="h-11 w-full rounded-2xl bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              {t("common.apply", "Apply")}
-            </button>
-          </DrawerClose>
+          <button
+            type="button"
+            onClick={handleApply}
+            className="h-11 w-full rounded-2xl bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            {t("common.apply", "Apply")}
+          </button>
         </div>
       </DrawerContent>
     </Drawer>

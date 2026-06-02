@@ -3,7 +3,9 @@ import { Slider } from "@/components/ui/slider";
 import GaugeProgress from "@/components/meal-plan-builder/gauge-progress.jsx";
 import { cn } from "@/lib/utils";
 import { MoreHorizontalIcon } from "lucide-react";
-import { filter, map, toNumber } from "lodash";
+import filter from "lodash/filter";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
 
 const GRAM_BASED_UNITS = new Set(["g", "ml"]);
 const DEFAULT_GOALS = {

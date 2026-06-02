@@ -6,7 +6,7 @@ import {
   loadRunningPointQueue,
 } from "./running-offline-queue.js";
 
-import { map } from "lodash";
+import map from "lodash/map";
 
 const point = (sequence) => ({
   sequence,

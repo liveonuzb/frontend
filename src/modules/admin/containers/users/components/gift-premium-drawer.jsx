@@ -1,5 +1,10 @@
 import React from "react";
-import { get, isArray, join, filter, toNumber, trim } from "lodash";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import filter from "lodash/filter";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 import { GiftIcon, Loader2Icon } from "lucide-react";
 import { toast } from "sonner";
 import { usePostQuery } from "@/hooks/api";

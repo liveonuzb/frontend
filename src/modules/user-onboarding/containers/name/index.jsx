@@ -18,7 +18,7 @@ import PageAura from "../../components/page-aura.jsx";
 import { ONBOARDING_TONES } from "../../lib/tones.js";
 import { useOnboardingAssets } from "@/hooks/app/use-onboarding-base";
 
-import { trim } from "lodash";
+import trim from "lodash/trim";
 
 const Index = () => {
   const { t } = useTranslation();

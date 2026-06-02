@@ -20,6 +20,11 @@ import {
   getDraftImageUrl,
 } from "./meal-draft-review-utils.js";
 import {
+  trackNutritionScanFailed,
+  trackNutritionScanReviewed,
+  trackNutritionScanStarted,
+} from "./scan-review-analytics.js";
+import {
   addMealIngredient,
   removeMealIngredient,
   updateMealIngredient,
@@ -32,7 +37,10 @@ import {
   useAiAccessStatus,
 } from "@/hooks/app/use-ai-access";
 
-import { filter, isArray, map, trim } from "lodash";
+import filter from "lodash/filter";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import trim from "lodash/trim";
 
 const formatLoggedAtHint = (value) => {
   if (!value) {
@@ -129,13 +137,19 @@ export default function AiMealDraftDrawer({
         return;
       }
       if (aiAccessStatus.isDisabled) {
-        toast.error("Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin.");
+        toast.error(
+          "Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin.",
+        );
         return;
       }
 
       setIsAnalyzing(true);
       setAnalysisItems([]);
       setAnalysisError(null);
+      void trackNutritionScanStarted({
+        sourceType: inputSource === "audio" ? "audio" : "text",
+        mode: inputSource === "audio" ? "audio" : "text",
+      });
 
       try {
         const response = await analyzeMealTextDraft({
@@ -155,6 +169,12 @@ export default function AiMealDraftDrawer({
             error?.response?.data?.message ||
             "Matnni AI orqali tahlil qilib bo'lmadi";
         setAnalysisError(message);
+        void trackNutritionScanFailed({
+          sourceType: inputSource === "audio" ? "audio" : "text",
+          reason: isAiAccessLimitError(error)
+            ? "ai_access_limit"
+            : "analysis_failed",
+        });
         toast.error(message);
       } finally {
         setIsAnalyzing(false);
@@ -185,7 +205,8 @@ export default function AiMealDraftDrawer({
                   ingredient,
                 ),
               }
-            : item),
+            : item,
+        ),
       );
     },
     [],
@@ -199,7 +220,8 @@ export default function AiMealDraftDrawer({
               ...item,
               ingredients: removeMealIngredient(item.ingredients, ingredientId),
             }
-          : item),
+          : item,
+      ),
     );
   }, []);
 
@@ -211,7 +233,8 @@ export default function AiMealDraftDrawer({
               ...item,
               ingredients: addMealIngredient(item.ingredients, ingredient),
             }
-          : item),
+          : item,
+      ),
     );
   }, []);
 
@@ -237,7 +260,8 @@ export default function AiMealDraftDrawer({
                 : [],
               aiNotes: item.aiNotes || "Foydalanuvchi tomonidan tasdiqlandi.",
             }
-          : item),
+          : item,
+      ),
     );
   }, []);
 
@@ -276,6 +300,11 @@ export default function AiMealDraftDrawer({
           ? `${analysisItems[0].title} qo'shildi!`
           : `${analysisItems.length} ta ovqat qo'shildi!`,
       );
+      void trackNutritionScanReviewed({
+        sourceType: inputSource === "audio" ? "audio" : "text",
+        action: "saved",
+        items: analysisItems,
+      });
       onClose?.();
     } catch {
       toast.error("Ovqatlarni qo'shib bo'lmadi");
@@ -317,7 +346,7 @@ export default function AiMealDraftDrawer({
         </div>
 
         {loggedAtHintLabel ? (
-          <div className="rounded-2xl border px-3 py-3 text-sm">
+          <div className="rounded-2xl border p-3 text-sm">
             <span className="text-muted-foreground">
               {inputSource === "audio" ? "Aniqlangan vaqt:" : "Tanlangan vaqt:"}
             </span>{" "}
@@ -326,7 +355,7 @@ export default function AiMealDraftDrawer({
         ) : null}
 
         {targetDateLabel ? (
-          <div className="rounded-2xl border px-3 py-3 text-sm">
+          <div className="rounded-2xl border p-3 text-sm">
             <span className="text-muted-foreground">
               {inputSource === "audio" ? "Aniqlangan kun:" : "Tanlangan kun:"}
             </span>{" "}
@@ -335,7 +364,7 @@ export default function AiMealDraftDrawer({
         ) : null}
 
         {sourceText ? (
-          <div className="rounded-2xl border bg-muted/15 px-3 py-3 text-left">
+          <div className="rounded-2xl border bg-muted/15 p-3 text-left">
             <div className="flex items-center justify-between gap-3">
               <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 {inputSource === "audio" ? "Audio matni" : "Matn manbasi"}
@@ -349,9 +378,7 @@ export default function AiMealDraftDrawer({
             </p>
           </div>
         ) : null}
-        <AiAccessStatusText
-          access={aiAccess}
-        />
+        <AiAccessStatusText access={aiAccess} />
       </DrawerHeader>
       <DrawerBody className="p-0">
         <ScrollArea className="h-full px-5">
@@ -417,7 +444,9 @@ export default function AiMealDraftDrawer({
         <Button
           type="button"
           variant="outline"
-          disabled={!sourceText || isAnalyzing || isSaving || aiAccessStatus.isDisabled}
+          disabled={
+            !sourceText || isAnalyzing || isSaving || aiAccessStatus.isDisabled
+          }
           onClick={() => void handleAnalyze()}
         >
           {isAnalyzing ? (

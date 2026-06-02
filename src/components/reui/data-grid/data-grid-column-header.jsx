@@ -1,4 +1,5 @@
-import { filter, map } from "lodash";
+import filter from "lodash/filter";
+import map from "lodash/map";
 import { memo, useMemo } from "react";
 import { useDataGrid } from "@/components/reui/data-grid/data-grid"
 

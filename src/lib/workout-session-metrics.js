@@ -1,4 +1,5 @@
-import { get, toNumber } from "lodash";
+import get from "lodash/get";
+import toNumber from "lodash/toNumber";
 
 export const isOutdoorRunningSession = (session) =>
   get(session, "activityType") === "OUTDOOR_RUN" ||

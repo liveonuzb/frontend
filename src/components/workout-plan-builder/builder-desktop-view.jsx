@@ -1,6 +1,9 @@
 import React, { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { map, find, get, size } from "lodash";
+import map from "lodash/map";
+import find from "lodash/find";
+import get from "lodash/get";
+import size from "lodash/size";
 import {
   SearchIcon,
   PlusIcon,

@@ -1,20 +1,18 @@
 import React from "react";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import {
-  filter,
-  find,
-  fromPairs,
-  get,
-  isArray,
-  join,
-  map,
-  size,
-  toString,
-  trim,
-  forEach,
-  toNumber,
-  toUpper,
-} from "lodash";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import fromPairs from "lodash/fromPairs";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import map from "lodash/map";
+import size from "lodash/size";
+import toString from "lodash/toString";
+import trim from "lodash/trim";
+import forEach from "lodash/forEach";
+import toNumber from "lodash/toNumber";
+import toUpper from "lodash/toUpper";
 import { toast } from "sonner";
 import { useMatch, useNavigate } from "react-router";
 import {
@@ -634,7 +632,7 @@ const LocationsIndex = () => {
         }}
         direction="bottom"
       >
-        <DrawerContent className="mx-auto max-h-[90vh] data-[vaul-drawer-direction=bottom]:md:max-w-lg">
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <div className="mx-auto flex w-full min-h-0 flex-1 flex-col">
             <DrawerHeader>
               <DrawerTitle className="flex items-center gap-2">{editingLocation ? <PencilIcon className="size-5" /> : <PlusIcon className="size-5" />}{editingLocation ? "Locationni tahrirlash" : "Yangi location"}</DrawerTitle>
@@ -645,7 +643,7 @@ const LocationsIndex = () => {
                 <Spinner className="size-8 text-muted-foreground" />
               </div>
             ) : (
-              <div className="no-scrollbar flex flex-1 flex-col gap-6 overflow-y-auto px-4 py-4">
+              <div className="no-scrollbar flex flex-1 flex-col gap-6 overflow-y-auto p-4">
                 <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-sm">
                   <p className="font-medium">Joriy til: {currentLanguageMeta?.flag ? `${currentLanguageMeta.flag} ` : ""}{get(currentLanguageMeta, "name", toUpper(currentLanguage))}</p>
                   <p className="mt-1 text-xs text-muted-foreground">Shu drawer saqlanganda {toUpper(currentLanguage)} nomi `name` va translation qiymati sifatida birga yangilanadi.</p>
@@ -678,7 +676,7 @@ const LocationsIndex = () => {
         }}
         direction="bottom"
       >
-        <DrawerContent className="mx-auto max-h-[90vh] data-[vaul-drawer-direction=bottom]:md:max-w-lg">
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <div className="mx-auto flex w-full min-h-0 flex-1 flex-col">
             <DrawerHeader>
               <DrawerTitle className="flex items-center gap-2"><GlobeIcon className="size-5" />Tarjimalarni boshqarish</DrawerTitle>
@@ -689,7 +687,7 @@ const LocationsIndex = () => {
                 <Spinner className="size-8 text-muted-foreground" />
               </div>
             ) : (
-              <div className="no-scrollbar flex flex-1 flex-col gap-6 overflow-y-auto px-4 py-4">
+              <div className="no-scrollbar flex flex-1 flex-col gap-6 overflow-y-auto p-4">
                 <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-sm">
                   <p className="font-medium">{translatingLocation?.pathLabel || translatingLocation?.name || "Location"}</p>
                   <p className="mt-1 text-xs text-muted-foreground">Joriy til qiymati saqlansa, asosiy `name` ham yangilanadi.</p>
@@ -710,7 +708,7 @@ const LocationsIndex = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-4 text-sm text-muted-foreground">Qo&apos;shimcha faol tillar topilmadi.</div>
+                  <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">Qo&apos;shimcha faol tillar topilmadi.</div>
                 )}
               </div>
             )}

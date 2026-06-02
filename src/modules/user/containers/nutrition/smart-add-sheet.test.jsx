@@ -8,7 +8,7 @@ import {
   buildSavedMealQuickAddPayload,
 } from "./nutrition-quick-adds.js";
 
-import { map } from "lodash";
+import map from "lodash/map";
 
 vi.mock("@/components/ui/drawer.jsx", async () => {
   const ReactModule = await import("react");

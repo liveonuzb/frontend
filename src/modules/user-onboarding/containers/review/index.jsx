@@ -1,4 +1,7 @@
-import { isArray, join, filter, map } from "lodash";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import filter from "lodash/filter";
+import map from "lodash/map";
 import React from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";

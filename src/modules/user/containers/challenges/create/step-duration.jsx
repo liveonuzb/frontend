@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { StepSection } from "./form-fields.jsx";
 
-import { map } from "lodash";
+import map from "lodash/map";
 
 const DURATION_OPTIONS = [7, 14, 30];
 const formatDateInput = (date) => format(date, "yyyy-MM-dd");

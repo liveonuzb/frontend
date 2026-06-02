@@ -1,6 +1,10 @@
 import React, { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { map, get, size, some, toNumber } from "lodash";
+import map from "lodash/map";
+import get from "lodash/get";
+import size from "lodash/size";
+import some from "lodash/some";
+import toNumber from "lodash/toNumber";
 import {
   PlusIcon,
   DumbbellIcon,
@@ -156,7 +160,7 @@ const BuilderMobileView = memo(({
                 >
                   <button
                     type="button"
-                    className="flex w-full items-center gap-3 px-4 py-4 text-left"
+                    className="flex w-full items-center gap-3 p-4 text-left"
                     onClick={() =>
                       setExpandedExerciseId(isExpanded ? null : get(ex, "id"))
                     }
@@ -191,7 +195,7 @@ const BuilderMobileView = memo(({
                       {map(get(ex, "sets", []), (set, setIndex) => (
                         <div
                           key={setIndex}
-                          className={`grid ${gridClass} items-center gap-3 rounded-2xl bg-muted/50 px-3 py-3`}
+                          className={`grid ${gridClass} items-center gap-3 rounded-2xl bg-muted/50 p-3`}
                         >
                           <span className="text-center text-lg font-black">
                             {setIndex + 1}

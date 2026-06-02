@@ -1,5 +1,10 @@
 import React from "react";
-import { filter, find, get, map, trim, values as lodashValues } from "lodash";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import get from "lodash/get";
+import map from "lodash/map";
+import trim from "lodash/trim";
+import lodashValues from "lodash/values";
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

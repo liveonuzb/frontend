@@ -1,5 +1,12 @@
 import React from "react";
-import { get, includes, trim, filter, find, isArray, map, some } from "lodash";
+import get from "lodash/get";
+import includes from "lodash/includes";
+import trim from "lodash/trim";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import some from "lodash/some";
 import { Link, useNavigate } from "react-router";
 import { CompassIcon, PlusIcon, TrophyIcon } from "lucide-react";
 import PageTransition from "@/components/page-transition";

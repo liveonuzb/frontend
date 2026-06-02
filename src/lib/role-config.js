@@ -3,7 +3,9 @@ import {
   UserIcon,
   ArrowUpRightIcon,
 } from "lucide-react";
-import { filter, find, isArray } from "lodash";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import isArray from "lodash/isArray";
 
 export const ROLE_CONFIG = {
   SUPER_ADMIN: {

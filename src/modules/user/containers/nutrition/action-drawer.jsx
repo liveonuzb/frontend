@@ -26,7 +26,11 @@ import { useAiAccessStatus } from "@/hooks/app/use-ai-access";
 import { getMealConfig } from "@/modules/user/lib/meal-config";
 import SmartAddSheet from "./smart-add-sheet.jsx";
 
-import { filter, reduce, split, toNumber, trim } from "lodash";
+import filter from "lodash/filter";
+import reduce from "lodash/reduce";
+import split from "lodash/split";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 
 const toIsoByDateKeyAndTimeHint = (dateKey, timeHint) => {
   if (

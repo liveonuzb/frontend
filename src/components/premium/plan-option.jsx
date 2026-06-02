@@ -8,7 +8,10 @@ import {
   getPlanSavings,
 } from "./plan-option-utils.js";
 
-import { filter, isArray, map, take } from "lodash";
+import filter from "lodash/filter";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import take from "lodash/take";
 
 const getPlanFeatures = (plan) =>
   isArray(plan?.features) ? filter(plan.features, Boolean) : [];

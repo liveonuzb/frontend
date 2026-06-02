@@ -1,4 +1,4 @@
-import { find } from "lodash";
+import find from "lodash/find";
 
 export const MOOD_OPTIONS = [
   { emoji: "😴", label: "Juda yomon", value: "bad" },

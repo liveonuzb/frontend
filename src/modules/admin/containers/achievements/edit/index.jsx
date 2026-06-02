@@ -1,6 +1,10 @@
 import React from "react";
 import { useParams } from "react-router";
-import { get, isArray, join, toUpper, trim } from "lodash";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import toUpper from "lodash/toUpper";
+import trim from "lodash/trim";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -137,7 +141,7 @@ const EditAchievementPage = () => {
   return (
     <>
       <Drawer open onOpenChange={handleOpenChange} direction="bottom">
-        <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-lg">
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="items-center text-center">
           <DrawerTitle>Achievementni tahrirlash</DrawerTitle>
           <DrawerDescription className="max-w-sm">

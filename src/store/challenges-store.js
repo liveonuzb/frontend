@@ -1,5 +1,8 @@
 import { create } from "zustand";
-import { get, isArray, map, omit } from "lodash";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import omit from "lodash/omit";
 import { api } from "@/hooks/api/use-api";
 
 const unwrapResponse = (response) =>

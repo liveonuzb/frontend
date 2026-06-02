@@ -7,7 +7,8 @@ import {
   ShieldIcon,
   XCircleIcon,
 } from "lucide-react";
-import { map, take } from "lodash";
+import map from "lodash/map";
+import take from "lodash/take";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGetQuery } from "@/hooks/api";

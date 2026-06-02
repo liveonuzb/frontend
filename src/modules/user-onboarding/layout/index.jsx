@@ -1,7 +1,9 @@
 import React from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { get, isArray, some } from "lodash";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import some from "lodash/some";
 import { cn } from "@/lib/utils";
 import { normalizeUserOnboarding } from "@/lib/user-onboarding";
 import { useGetQuery } from "@/hooks/api";

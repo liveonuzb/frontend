@@ -1,5 +1,9 @@
 import React from "react";
-import { isEqual, find, isArray, map, toNumber } from "lodash";
+import isEqual from "lodash/isEqual";
+import find from "lodash/find";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";

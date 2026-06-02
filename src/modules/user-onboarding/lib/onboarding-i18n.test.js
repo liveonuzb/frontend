@@ -3,18 +3,16 @@ import path from "node:path";
 import process from "node:process";
 import { describe, expect, it } from "vitest";
 
-import {
-  filter,
-  flatMap,
-  forEach,
-  fromPairs,
-  includes,
-  isArray,
-  join,
-  map,
-  sortBy,
-  toPairs,
-} from "lodash";
+import filter from "lodash/filter";
+import flatMap from "lodash/flatMap";
+import forEach from "lodash/forEach";
+import fromPairs from "lodash/fromPairs";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import map from "lodash/map";
+import sortBy from "lodash/sortBy";
+import toPairs from "lodash/toPairs";
 
 const onboardingRoot = path.join(process.cwd(), "src/modules/user-onboarding");
 const localesRoot = path.join(onboardingRoot, "lib/locales");

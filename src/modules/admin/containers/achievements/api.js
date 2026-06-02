@@ -1,13 +1,11 @@
-import {
-  get,
-  join,
-  isArray,
-  map,
-  toLower,
-  trim,
-  toPairs,
-  parseInt as lodashParseInt,
-} from "lodash";
+import get from "lodash/get";
+import join from "lodash/join";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import toLower from "lodash/toLower";
+import trim from "lodash/trim";
+import toPairs from "lodash/toPairs";
+import lodashParseInt from "lodash/parseInt";
 
 export const ADMIN_ACHIEVEMENTS_QUERY_KEY = ["admin", "achievements"];
 

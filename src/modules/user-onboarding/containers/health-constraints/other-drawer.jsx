@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import OnboardingOption from "./option.jsx";
 
-import { map } from "lodash";
+import map from "lodash/map";
 
 const OtherSelectionCard = ({ open, tone, title, description, onClick }) => (
   <OnboardingOption
@@ -70,7 +70,7 @@ const OtherSelectionDrawer = ({
   children,
 }) => (
   <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-    <DrawerContent>
+    <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
       <DrawerHeader>
         <DrawerTitle>{title}</DrawerTitle>
         <DrawerDescription>{description}</DrawerDescription>

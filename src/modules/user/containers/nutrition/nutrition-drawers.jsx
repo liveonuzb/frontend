@@ -33,8 +33,11 @@ import PlansDrawer from "./plans-drawer.jsx";
 import SavedMealsDrawer from "./saved-meals-drawer.jsx";
 import { ShoppingList } from "./shopping-list.jsx";
 import TemplateLibraryDrawer from "./template-library-drawer.jsx";
+import { mealPlanDaysToKanban } from "@/hooks/app/use-meal-plan";
 
-import { filter, includes, trim } from "lodash";
+import filter from "lodash/filter";
+import includes from "lodash/includes";
+import trim from "lodash/trim";
 
 const getDrawerControl = (open, onOpenChange) => ({ open, onOpenChange });
 
@@ -133,7 +136,10 @@ export default function NutritionDrawers({
           setIsBuilderOpen(val);
           if (!val) setBuilderInitialData(null);
         })}
-        initialData={builderInitialData || currentPlan?.weeklyKanban || {}}
+        initialData={
+          builderInitialData ||
+          mealPlanDaysToKanban(currentPlan?.days || currentPlan?.weeklyKanban || [])
+        }
         selectedDay={selectedDay}
         dayCount={currentPlan?.durationDays || 7}
         onSave={handleSaveBuilder}

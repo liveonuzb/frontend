@@ -5,9 +5,12 @@ import { describe, expect, it, vi } from "vitest";
 import NutritionHomeView from "./home-view.jsx";
 
 vi.mock("@/components/calorie-gauge-widget", () => ({
-  default: ({ showCalorieModeToggle }) => (
+  default: ({ burnedCalories, consumed, goal, macros, showCalorieModeToggle }) => (
     <section aria-label="calorie-card">
       <h2>Bugungi Kaloriya</h2>
+      <p>Yondirilgan {burnedCalories} kcal</p>
+      <p>{consumed} / {goal} kcal</p>
+      <p>Oqsil {macros?.protein?.current} / {macros?.protein?.target}</p>
       {showCalorieModeToggle ? <button type="button">Qolgan</button> : null}
     </section>
   ),
@@ -15,6 +18,10 @@ vi.mock("@/components/calorie-gauge-widget", () => ({
 
 vi.mock("../nutrition-plans-section.jsx", () => ({
   default: () => <section>Ovqatlanish rejalari</section>,
+}));
+
+vi.mock("../nutrition-ai-assistant-panel.jsx", () => ({
+  default: () => <section>Ombor paneli</section>,
 }));
 
 const baseProps = {
@@ -39,6 +46,7 @@ const baseProps = {
   },
   waterConsumedMl: 1000,
   waterGoalMl: 2500,
+  burnedCalories: 875,
   calorieGoalMeta: null,
   isGoalLoadingState: false,
   activeMealType: "breakfast",
@@ -84,7 +92,8 @@ describe("NutritionHomeView", () => {
     expectBefore(calorieGauge, screen.getByText("Kunlik health score"));
     expectBefore(calorieGauge, screen.getByText("Suv progress"));
     expectBefore(calorieGauge, screen.getByText("Bugungi ovqatlar"));
-    expect(screen.getByText("Overview")).toBeInTheDocument();
+    expect(screen.getByText("Umumiy ko'rinish")).toBeInTheDocument();
+    expect(screen.queryByText("Overview")).not.toBeInTheDocument();
     expect(screen.getByText(/14-may/)).toBeInTheDocument();
     expect(screen.queryByText("Kaloriya holati")).not.toBeInTheDocument();
     expect(screen.queryByText(/Target:/i)).not.toBeInTheDocument();
@@ -103,6 +112,68 @@ describe("NutritionHomeView", () => {
     fireEvent.click(screen.getByRole("button", { name: /Sana tanlash/i }));
 
     expect(onOpenCalendar).toHaveBeenCalledTimes(1);
+  });
+
+  it("counts completed meal sections from the visible daily meals", () => {
+    renderHome();
+
+    expect(screen.getByText("Ovqatlar yakunlandi")).toBeInTheDocument();
+    expect(screen.getByText("1 / 4")).toBeInTheDocument();
+  });
+
+  it("passes burned calories into the overview calorie gauge", () => {
+    renderHome();
+
+    expect(screen.getByText("Yondirilgan 875 kcal")).toBeInTheDocument();
+  });
+
+  it("uses backend nutrition dashboard metrics when provided", () => {
+    renderHome({
+      nutritionDashboard: {
+        calories: {
+          current: 1234,
+          target: 2100,
+          remaining: 866,
+          percent: 59,
+        },
+        macros: {
+          protein: { current: 77, target: 130, percent: 59 },
+          carbs: { current: 144, target: 240, percent: 60 },
+          fat: { current: 41, target: 70, percent: 59 },
+        },
+        water: {
+          currentMl: 1800,
+          targetMl: 2600,
+          percent: 69,
+        },
+        meals: {
+          completed: 3,
+          total: 4,
+        },
+      },
+    });
+
+    expect(screen.getByText("1234 / 2100 kcal")).toBeInTheDocument();
+    expect(screen.getByText("Oqsil 77 / 130")).toBeInTheDocument();
+    expect(screen.getByText("1800 / 2600")).toBeInTheDocument();
+    expect(screen.getByText("3 / 4")).toBeInTheDocument();
+    expect(screen.queryByText("900 / 2200 kcal")).not.toBeInTheDocument();
+    expect(screen.queryByText("1000 / 2500")).not.toBeInTheDocument();
+  });
+
+  it("does not label a zero health score as good", () => {
+    renderHome({
+      roundedTotals: {
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+      },
+      waterConsumedMl: 0,
+    });
+
+    expect(screen.getByText("Boshlanmagan")).toBeInTheDocument();
+    expect(screen.queryByText("Yaxshi")).not.toBeInTheDocument();
   });
 
   it("removes goal update entry points from the home view", () => {
@@ -135,6 +206,24 @@ describe("NutritionHomeView", () => {
 
     fireEvent.click(
       screen.getByRole("button", { name: /Tushlik uchun ovqat qo'shish/i }),
+    );
+
+    expect(setSelectedMealTypeForAdd).toHaveBeenCalledWith("lunch");
+    expect(setIsActionDrawerOpen).toHaveBeenCalledWith(true);
+  });
+
+  it("opens add flow directly from an empty meal card", () => {
+    const setSelectedMealTypeForAdd = vi.fn();
+    const setIsActionDrawerOpen = vi.fn();
+
+    renderHome({
+      activeMealType: "lunch",
+      setSelectedMealTypeForAdd,
+      setIsActionDrawerOpen,
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Tushlikka ovqat qo'shish/i }),
     );
 
     expect(setSelectedMealTypeForAdd).toHaveBeenCalledWith("lunch");

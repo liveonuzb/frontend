@@ -1,4 +1,4 @@
-import { find } from "lodash";
+import find from "lodash/find";
 import React from "react";
 import { ArrowLeftIcon } from "lucide-react";
 import { useLocation, useNavigate } from "react-router";
@@ -71,7 +71,7 @@ const ProfileDrawer = () => {
       }}
     >
       <DrawerContent
-        className="data-[vaul-drawer-direction=bottom]:!mx-auto data-[vaul-drawer-direction=bottom]:!max-w-md"
+        className="data-[vaul-drawer-direction=bottom]:md:max-w-sm"
         data-vaul-no-drag
       >
         <DrawerHeader

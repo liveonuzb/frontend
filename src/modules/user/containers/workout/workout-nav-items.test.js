@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { map } from "lodash";
+import map from "lodash/map";
 
 describe("WORKOUT_NAV_ITEMS", () => {
   it("exposes the redesigned five-tab workout navigation without Running", async () => {

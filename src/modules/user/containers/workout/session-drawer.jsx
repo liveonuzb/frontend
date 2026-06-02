@@ -5,27 +5,25 @@ import React, {
   useDeferredValue,
 } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  map,
-  filter,
-  reduce,
-  find,
-  findIndex,
-  get,
-  isArray,
-  max,
-  toLower,
-  includes,
-  trim,
-  isNil,
-  size,
-  isEmpty,
-  join,
-  forEach,
-  toNumber,
-  values as lodashValues,
-  parseInt as lodashParseInt,
-} from "lodash";
+import map from "lodash/map";
+import filter from "lodash/filter";
+import reduce from "lodash/reduce";
+import find from "lodash/find";
+import findIndex from "lodash/findIndex";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import max from "lodash/max";
+import toLower from "lodash/toLower";
+import includes from "lodash/includes";
+import trim from "lodash/trim";
+import isNil from "lodash/isNil";
+import size from "lodash/size";
+import isEmpty from "lodash/isEmpty";
+import join from "lodash/join";
+import forEach from "lodash/forEach";
+import toNumber from "lodash/toNumber";
+import lodashValues from "lodash/values";
+import lodashParseInt from "lodash/parseInt";
 import { toast } from "sonner";
 import {
   Drawer,
@@ -274,6 +272,16 @@ const ExerciseCard = ({
       <div
         className="flex cursor-pointer select-none items-start justify-between gap-3 border-b p-4"
         onClick={() => setIsExpanded(!isExpanded)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            setIsExpanded(!isExpanded);
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-expanded={isExpanded}
+        aria-label={`${get(exercise, "name")} setlarini ${isExpanded ? "yopish" : "ochish"}`}
       >
         <div className="flex min-w-0 items-start gap-3">
           <div
@@ -304,6 +312,7 @@ const ExerciseCard = ({
                     size="icon"
                     className="size-6"
                     onClick={(e) => e.stopPropagation()}
+                    aria-label={`${get(exercise, "name")} mashqi haqida ma'lumot`}
                   >
                     <InfoIcon className="size-3.5 text-muted-foreground" />
                   </Button>
@@ -1159,7 +1168,7 @@ export default function SessionDrawer({
             style={{ scrollbarWidth: "none" }}
           >
             {map(allMuscleGroups, (group) => (
-              <button
+              <button type="button"
                 key={group.id}
                 onClick={() => setSelectedGroup(group.id)}
                 className={cn(
@@ -1176,7 +1185,7 @@ export default function SessionDrawer({
 
           <div className="space-y-3">
             {map(filteredLibrary, (ex) => (
-              <button
+              <button type="button"
                 key={get(ex, "id")}
                 onClick={() => handleAddFromLibrary(ex)}
                 className="group flex w-full items-center gap-4 rounded-2xl border bg-background p-3 text-left transition-all hover:border-primary/50 hover:bg-primary/5 active:scale-[0.98]"
@@ -1291,7 +1300,7 @@ export default function SessionDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-md">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-1">

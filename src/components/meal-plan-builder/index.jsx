@@ -5,26 +5,24 @@ import React, {
   useRef,
   useEffect,
 } from "react";
-import {
-  keyBy,
-  mapValues,
-  differenceBy,
-  reject,
-  findIndex,
-  sortBy,
-  keys,
-  map,
-  find,
-  filter,
-  forEach,
-  some,
-  split,
-  toLower,
-  includes,
-  trim,
-  toNumber,
-  times,
-} from "lodash";
+import keyBy from "lodash/keyBy";
+import mapValues from "lodash/mapValues";
+import differenceBy from "lodash/differenceBy";
+import reject from "lodash/reject";
+import findIndex from "lodash/findIndex";
+import sortBy from "lodash/sortBy";
+import keys from "lodash/keys";
+import map from "lodash/map";
+import find from "lodash/find";
+import filter from "lodash/filter";
+import forEach from "lodash/forEach";
+import some from "lodash/some";
+import split from "lodash/split";
+import toLower from "lodash/toLower";
+import includes from "lodash/includes";
+import trim from "lodash/trim";
+import toNumber from "lodash/toNumber";
+import times from "lodash/times";
 import useIsMobile from "@/hooks/utils/use-mobile.js";
 
 import {
@@ -784,7 +782,7 @@ const Index = ({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="data-[vaul-drawer-direction=right]:w-full data-[vaul-drawer-direction=right]:sm:max-w-full p-0">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle className={"flex items-center md:gap-x-3"}>
             <Button

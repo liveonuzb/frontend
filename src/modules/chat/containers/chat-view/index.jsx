@@ -1,6 +1,13 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import React from "react";
-import { find, map, filter, isArray, split, toLower, trim, includes } from "lodash";
+import find from "lodash/find";
+import map from "lodash/map";
+import filter from "lodash/filter";
+import isArray from "lodash/isArray";
+import split from "lodash/split";
+import toLower from "lodash/toLower";
+import trim from "lodash/trim";
+import includes from "lodash/includes";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import {
@@ -747,7 +754,7 @@ const ChatView = () => {
 
                         {getPinnedMessages(activeChat).length > 0 && (
                             <div className="border-b px-6 py-2 bg-primary/5 flex items-center justify-between animate-in slide-in-from-top duration-300 relative group/pin">
-                                <button
+                                <button type="button"
                                     className="flex-1 flex items-center gap-3 text-left overflow-hidden"
                                     onClick={() => {
                                         const pins = getPinnedMessages(activeChat);
@@ -887,8 +894,10 @@ const ChatView = () => {
 
             {showInfoSidebar && activeEntity && (
                 <div className="fixed inset-0 z-50 md:relative md:inset-auto">
-                    <div
+                    <button
+                        type="button"
                         className="absolute inset-0 bg-black/40 md:hidden"
+                        aria-label="Chat ma'lumotlarini yopish"
                         onClick={() => setShowInfoSidebar(false)}
                     />
                     <ChatInfoSidebar

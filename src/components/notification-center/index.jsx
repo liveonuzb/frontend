@@ -1,21 +1,19 @@
 /* eslint-disable react-refresh/only-export-components */
 import React from "react";
-import {
-  sumBy,
-  values as lodashValues,
-  filter,
-  forEach,
-  includes,
-  isArray,
-  map,
-  orderBy,
-  reduce,
-  split,
-  toLower,
-  toNumber,
-  trim,
-  flatten,
-} from "lodash";
+import sumBy from "lodash/sumBy";
+import lodashValues from "lodash/values";
+import filter from "lodash/filter";
+import forEach from "lodash/forEach";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import orderBy from "lodash/orderBy";
+import reduce from "lodash/reduce";
+import split from "lodash/split";
+import toLower from "lodash/toLower";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
+import flatten from "lodash/flatten";
 import {
   BanknoteIcon,
   BellIcon,
@@ -632,7 +630,7 @@ export const NotificationFeedPanel = ({
           <button
             key={notification.id}
             type="button"
-            className="flex w-full items-start gap-3 rounded-2xl border border-border/60 bg-background px-3 py-3 text-left transition-colors hover:bg-muted/40"
+            className="flex w-full items-start gap-3 rounded-2xl border border-border/60 bg-background p-3 text-left transition-colors hover:bg-muted/40"
             onClick={() => handleSelect(notification)}
           >
             <div
@@ -724,7 +722,7 @@ const NotificationCenter = ({ className, ...props }) => {
           ) : null}
         </Button>
 
-        <DrawerContent className="data-[vaul-drawer-direction=bottom]:h-[min(82vh,42rem)]">
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader className="relative px-14 pb-4 pt-7">
             {canOpenSettings ? (
               <Button

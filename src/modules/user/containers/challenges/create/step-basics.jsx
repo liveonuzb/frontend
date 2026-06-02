@@ -8,7 +8,8 @@ import { getMetricMeta } from "../challenge-utils.js";
 import ChallengeCoverPicker from "./challenge-cover-picker.jsx";
 import { StepSection } from "./form-fields.jsx";
 
-import { map, toNumber } from "lodash";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
 
 const toInputDate = (date) => format(date, "yyyy-MM-dd");
 

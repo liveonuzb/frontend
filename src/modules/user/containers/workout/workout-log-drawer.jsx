@@ -1,19 +1,17 @@
 import React, { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  filter,
-  get,
-  includes,
-  map,
-  max,
-  reduce,
-  size,
-  some,
-  toLower,
-  trim,
-  toNumber,
-  parseInt as lodashParseInt,
-} from "lodash";
+import filter from "lodash/filter";
+import get from "lodash/get";
+import includes from "lodash/includes";
+import map from "lodash/map";
+import max from "lodash/max";
+import reduce from "lodash/reduce";
+import size from "lodash/size";
+import some from "lodash/some";
+import toLower from "lodash/toLower";
+import trim from "lodash/trim";
+import toNumber from "lodash/toNumber";
+import lodashParseInt from "lodash/parseInt";
 import { toast } from "sonner";
 import {
   ChevronLeft,
@@ -411,7 +409,7 @@ export default function WorkoutLogDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-md">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <div className="relative">
           {step === "log" && !initialExercise && !initialLog ? (
             <Button

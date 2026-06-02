@@ -1,5 +1,11 @@
 import React from "react";
-import { isArray, trim, filter, forEach, map, toLower, includes } from "lodash";
+import isArray from "lodash/isArray";
+import trim from "lodash/trim";
+import filter from "lodash/filter";
+import forEach from "lodash/forEach";
+import map from "lodash/map";
+import toLower from "lodash/toLower";
+import includes from "lodash/includes";
 import { Label } from "@/components/ui/label";
 import {
   Combobox,

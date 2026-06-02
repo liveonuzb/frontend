@@ -1,4 +1,7 @@
-import { find, isArray, keys, toLower } from "lodash";
+import find from "lodash/find";
+import isArray from "lodash/isArray";
+import keys from "lodash/keys";
+import toLower from "lodash/toLower";
 
 const DAY_KEY_PREFIX = "day-";
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -66,11 +69,45 @@ export const resolveLegacyPlanColumns = (weeklyKanban, selectedDay) => {
     : [];
 };
 
+const getPlanDays = (plan) => (isArray(plan?.days) ? plan.days : []);
+
+const getPlanDayMeals = (planDays, dayNumber, selectedDay) => {
+  if (!isArray(planDays) || planDays.length === 0) {
+    return [];
+  }
+
+  const byNumber = find(
+    planDays,
+    (day) => Number(day?.dayNumber) === Number(dayNumber),
+  );
+
+  if (byNumber && isArray(byNumber.meals)) {
+    return byNumber.meals;
+  }
+
+  if (selectedDay) {
+    const normalizedSelectedDay = normalizeWeekdayKey(selectedDay);
+    const byKey = find(
+      planDays,
+      (day) =>
+        normalizeWeekdayKey(day?.dayKey) === normalizedSelectedDay ||
+        normalizeWeekdayKey(day?.label) === normalizedSelectedDay,
+    );
+
+    if (byKey && isArray(byKey.meals)) {
+      return byKey.meals;
+    }
+  }
+
+  return [];
+};
+
 export const resolvePlanColumnsForDate = (
   plan,
   date = new Date(),
   selectedDay,
 ) => {
+  const planDays = getPlanDays(plan);
   const weeklyKanban =
     plan?.weeklyKanban &&
     typeof plan.weeklyKanban === "object" &&
@@ -84,8 +121,18 @@ export const resolvePlanColumnsForDate = (
       return [];
     }
 
+    const dayMeals = getPlanDayMeals(planDays, status.dayNumber || 1);
+    if (dayMeals.length > 0) {
+      return dayMeals;
+    }
+
     const dayKey = `${DAY_KEY_PREFIX}${status.dayNumber || 1}`;
     return isArray(weeklyKanban[dayKey]) ? weeklyKanban[dayKey] : [];
+  }
+
+  const legacyDayMeals = getPlanDayMeals(planDays, 1, selectedDay);
+  if (legacyDayMeals.length > 0) {
+    return legacyDayMeals;
   }
 
   return resolveLegacyPlanColumns(weeklyKanban, selectedDay);

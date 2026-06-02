@@ -24,10 +24,6 @@ function DrawerPortal({ ...props }) {
   return <DrawerPrimitive.Portal data-slot="drawer-portal" {...props} />;
 }
 
-function DrawerClose({ ...props }) {
-  return <DrawerPrimitive.Close data-slot="drawer-close" {...props} />;
-}
-
 function DrawerOverlay({ className, ...props }) {
   return (
     <DrawerPrimitive.Overlay
@@ -48,7 +44,7 @@ function DrawerContent({ className, children, ...props }) {
       <DrawerPrimitive.Content
         data-slot="drawer-content"
         className={cn(
-          "before:bg-background before:border-border flex flex-col bg-transparent text-sm before:absolute before:inset-0 before:-z-10 before:rounded-4xl before:border data-[vaul-drawer-direction=bottom]:inset-x-0 data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:mt-24 data-[vaul-drawer-direction=bottom]:h-auto data-[vaul-drawer-direction=bottom]:max-h-[90vh] data-[vaul-drawer-direction=bottom]:max-w-md data-[vaul-drawer-direction=bottom]:mx-auto data-[vaul-drawer-direction=left]:inset-y-0 data-[vaul-drawer-direction=left]:left-0 data-[vaul-drawer-direction=left]:w-3/4 data-[vaul-drawer-direction=right]:inset-y-0 data-[vaul-drawer-direction=right]:right-0 data-[vaul-drawer-direction=right]:w-3/4 data-[vaul-drawer-direction=right]:h-full data-[vaul-drawer-direction=top]:inset-x-0 data-[vaul-drawer-direction=top]:top-0 data-[vaul-drawer-direction=top]:mb-24 data-[vaul-drawer-direction=top]:max-h-[80vh] data-[vaul-drawer-direction=left]:sm:max-w-sm data-[vaul-drawer-direction=right]:sm:max-w-sm group/drawer-content fixed z-50",
+          "before:bg-background before:border-border flex flex-col bg-transparent text-sm before:absolute before:inset-0 before:-z-10 before:rounded-4xl before:border data-[vaul-drawer-direction=bottom]:inset-x-0 data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:mt-24 data-[vaul-drawer-direction=bottom]:h-auto data-[vaul-drawer-direction=bottom]:max-h-[90vh] data-[vaul-drawer-direction=bottom]:md:max-w-sm data-[vaul-drawer-direction=bottom]:mx-auto data-[vaul-drawer-direction=left]:inset-y-0 data-[vaul-drawer-direction=left]:left-0 data-[vaul-drawer-direction=left]:w-3/4 data-[vaul-drawer-direction=right]:inset-y-0 data-[vaul-drawer-direction=right]:right-0 data-[vaul-drawer-direction=right]:w-3/4 data-[vaul-drawer-direction=right]:h-full data-[vaul-drawer-direction=top]:inset-x-0 data-[vaul-drawer-direction=top]:top-0 data-[vaul-drawer-direction=top]:mb-24 data-[vaul-drawer-direction=top]:max-h-[80vh] data-[vaul-drawer-direction=left]:sm:max-w-sm data-[vaul-drawer-direction=right]:sm:max-w-sm group/drawer-content fixed z-50",
           className,
         )}
         {...props}
@@ -65,12 +61,16 @@ function DrawerContent({ className, children, ...props }) {
 }
 
 function DrawerHeader({ className, ...props }) {
+  const isScreenReaderOnly =
+    typeof className === "string" && className.includes("sr-only");
+
   return (
     <div
       data-slot="drawer-header"
       className={cn(
-        "gap-0.5 p-4 group-data-[vaul-drawer-direction=bottom]/drawer-content:text-center group-data-[vaul-drawer-direction=top]/drawer-content:text-center md:gap-1.5 md:text-left flex flex-col",
         className,
+        !isScreenReaderOnly &&
+          "relative flex flex-col items-center gap-0.5 p-4 px-12 text-center md:gap-1.5",
       )}
       {...props}
     />
@@ -104,7 +104,7 @@ function DrawerTitle({ className, ...props }) {
   return (
     <DrawerPrimitive.Title
       data-slot="drawer-title"
-      className={cn("text-foreground text-base font-medium", className)}
+      className={cn(className, "text-foreground text-center text-base font-medium")}
       {...props}
     />
   );
@@ -114,7 +114,7 @@ function DrawerDescription({ className, ...props }) {
   return (
     <DrawerPrimitive.Description
       data-slot="drawer-description"
-      className={cn("text-muted-foreground text-sm", className)}
+      className={cn(className, "text-muted-foreground text-center text-sm")}
       {...props}
     />
   );
@@ -125,7 +125,6 @@ export {
   DrawerPortal,
   DrawerOverlay,
   DrawerTrigger,
-  DrawerClose,
   DrawerContent,
   DrawerHeader,
   DrawerBody,

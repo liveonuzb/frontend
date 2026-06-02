@@ -3,15 +3,26 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import FoodDetailPortionDrawer from "./food-detail-portion-drawer.jsx";
 
+const mockGetRecipeAssistant = vi.fn();
+
+vi.mock("@/hooks/app/use-nutrition-ai.js", () => ({
+  useNutritionAiPantry: () => ({
+    getRecipeAssistant: mockGetRecipeAssistant,
+    isRecipeAssistantPending: false,
+  }),
+}));
+
 vi.mock("@/components/ui/drawer", async () => {
   const ReactModule = await import("react");
 
-  const MockSlot = (slot) => ({ children, className, ...props }) =>
-    ReactModule.createElement(
-      "div",
-      { ...props, className, "data-slot": slot },
-      children,
-    );
+  const MockSlot =
+    (slot) =>
+    ({ children, className, ...props }) =>
+      ReactModule.createElement(
+        "div",
+        { ...props, className, "data-slot": slot },
+        children,
+      );
 
   return {
     DrawerBody: MockSlot("drawer-body"),
@@ -61,7 +72,10 @@ vi.mock("./ingredient-edit-drawer.jsx", async () => {
                 onClick: () =>
                   onSave?.({
                     id: mode === "add" ? "butter" : ingredient?.id,
-                    name: mode === "add" ? "Sariyog'" : `${ingredient?.name} edited`,
+                    name:
+                      mode === "add"
+                        ? "Sariyog'"
+                        : `${ingredient?.name} edited`,
                     grams: mode === "add" ? 20 : 120,
                     baseGrams: mode === "add" ? 20 : 120,
                     estimatedGrams: mode === "add" ? 20 : 120,
@@ -156,40 +170,62 @@ describe("FoodDetailPortionDrawer", () => {
       />,
     );
 
-    expect(screen.queryByRole("img", { name: "Moskva pelmenisi" })).not.toBeInTheDocument();
-    expect(screen.queryByTestId("food-detail-image-fallback")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("img", { name: "Moskva pelmenisi" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("food-detail-image-fallback"),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("Russian dumplings")).not.toBeInTheDocument();
     expect(screen.queryByText("272 g")).not.toBeInTheDocument();
 
-    const nutritionCard = screen.getByTestId("food-detail-nutrition-control-card");
+    const nutritionCard = screen.getByTestId(
+      "food-detail-nutrition-control-card",
+    );
     expect(nutritionCard).toHaveClass("rounded-2xl", "border", "p-3", "pb-4");
 
-    const chartCard = within(nutritionCard).getByTestId("food-detail-chart-card");
+    const chartCard = within(nutritionCard).getByTestId(
+      "food-detail-chart-card",
+    );
     expect(chartCard).toHaveClass("pb-4");
     expect(within(chartCard).getByText("255")).toBeInTheDocument();
 
-    expect(within(nutritionCard).getByTestId("food-detail-macro-carbs")).toHaveTextContent("28");
-    expect(within(nutritionCard).getByTestId("food-detail-macro-protein")).toHaveTextContent("15.7");
-    expect(within(nutritionCard).getByTestId("food-detail-macro-fat")).toHaveTextContent("9.3");
+    expect(
+      within(nutritionCard).getByTestId("food-detail-macro-carbs"),
+    ).toHaveTextContent("28");
+    expect(
+      within(nutritionCard).getByTestId("food-detail-macro-protein"),
+    ).toHaveTextContent("15.7");
+    expect(
+      within(nutritionCard).getByTestId("food-detail-macro-fat"),
+    ).toHaveTextContent("9.3");
 
     const ingredientCard = screen.getByTestId("food-detail-ingredients-card");
-    expect(within(ingredientCard).getByText("Ingredientlar")).toBeInTheDocument();
+    expect(
+      within(ingredientCard).getByText("Ingredientlar"),
+    ).toBeInTheDocument();
     expect(within(ingredientCard).getByText("2 ta")).toBeInTheDocument();
     expect(within(ingredientCard).getByText("150g")).toBeInTheDocument();
     expect(within(ingredientCard).getByText("255 kcal")).toBeInTheDocument();
     expect(
-      within(ingredientCard).queryByRole("button", { name: "Ingredient qo'shish" }),
+      within(ingredientCard).queryByRole("button", {
+        name: "Ingredient qo'shish",
+      }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText("Guruch")).not.toBeInTheDocument();
-    fireEvent.click(within(ingredientCard).getByRole("button", { name: /Ingredientlar/ }));
+    fireEvent.click(
+      within(ingredientCard).getByRole("button", { name: /Ingredientlar/ }),
+    );
     expect(screen.getByText("Guruch")).toBeInTheDocument();
     expect(screen.getByText("Mol go'shti")).toBeInTheDocument();
-    expect(screen.getByTestId("food-detail-add-ingredient-row")).toHaveTextContent(
-      "Ingredient qo'shish",
-    );
+    expect(
+      screen.getByTestId("food-detail-add-ingredient-row"),
+    ).toHaveTextContent("Ingredient qo'shish");
     expect(screen.queryByText("Bekor qilish")).not.toBeInTheDocument();
 
-    const sliderSection = within(nutritionCard).getByTestId("food-detail-portion-slider-section");
+    const sliderSection = within(nutritionCard).getByTestId(
+      "food-detail-portion-slider-section",
+    );
     expect(within(sliderSection).getByText("Miqdori")).toBeInTheDocument();
     expect(
       within(sliderSection).getByText("Porsiya og'irligini tanlang"),
@@ -248,26 +284,49 @@ describe("FoodDetailPortionDrawer", () => {
     );
 
     const ingredientCard = screen.getByTestId("food-detail-ingredients-card");
-    fireEvent.click(within(ingredientCard).getByRole("button", { name: /Ingredientlar/ }));
+    fireEvent.click(
+      within(ingredientCard).getByRole("button", { name: /Ingredientlar/ }),
+    );
 
-    fireEvent.click(screen.getByRole("button", { name: "Guruchni tahrirlash" }));
-    expect(screen.getByTestId("ingredient-edit-drawer")).toHaveAttribute("data-mode", "edit");
-    expect(screen.getByTestId("ingredient-edit-drawer")).toHaveAttribute("data-ingredient-id", "rice");
-    fireEvent.click(screen.getByRole("button", { name: "mock-save-ingredient" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Guruchni tahrirlash" }),
+    );
+    expect(screen.getByTestId("ingredient-edit-drawer")).toHaveAttribute(
+      "data-mode",
+      "edit",
+    );
+    expect(screen.getByTestId("ingredient-edit-drawer")).toHaveAttribute(
+      "data-ingredient-id",
+      "rice",
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "mock-save-ingredient" }),
+    );
     expect(screen.getByText("Guruch edited")).toBeInTheDocument();
-    expect(screen.getByTestId("food-detail-macro-carbs")).toHaveTextContent("1");
-    expect(screen.getByTestId("food-detail-macro-protein")).toHaveTextContent("31");
+    expect(screen.getByTestId("food-detail-macro-carbs")).toHaveTextContent(
+      "1",
+    );
+    expect(screen.getByTestId("food-detail-macro-protein")).toHaveTextContent(
+      "31",
+    );
     expect(screen.getByText("335 kcal")).toBeInTheDocument();
     expect(onGramsChange).toHaveBeenLastCalledWith(170);
 
     fireEvent.click(screen.getByTestId("food-detail-add-ingredient-row"));
-    expect(screen.getByTestId("ingredient-edit-drawer")).toHaveAttribute("data-mode", "add");
-    fireEvent.click(screen.getByRole("button", { name: "mock-add-ingredient" }));
+    expect(screen.getByTestId("ingredient-edit-drawer")).toHaveAttribute(
+      "data-mode",
+      "add",
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "mock-add-ingredient" }),
+    );
     expect(screen.getByText("Sariyog'")).toBeInTheDocument();
     expect(screen.getByText("480 kcal")).toBeInTheDocument();
     expect(onGramsChange).toHaveBeenLastCalledWith(190);
 
-    fireEvent.click(screen.getByRole("button", { name: "Mol go'shtini o'chirish" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mol go'shtini o'chirish" }),
+    );
     expect(screen.queryByText("Mol go'shti")).not.toBeInTheDocument();
     expect(screen.getAllByText("140g").length).toBeGreaterThan(0);
 
@@ -304,8 +363,101 @@ describe("FoodDetailPortionDrawer", () => {
       />,
     );
 
-    expect(screen.queryByRole("img", { name: "Moskva pelmenisi" })).not.toBeInTheDocument();
-    expect(screen.queryByTestId("food-detail-image-fallback")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("img", { name: "Moskva pelmenisi" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("food-detail-image-fallback"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders normalized recipe instruction steps for cook mode", () => {
+    render(
+      <FoodDetailPortionDrawer
+        item={{
+          ...baseItem,
+          recipeInstructions: [
+            {
+              id: 1,
+              stepNumber: 1,
+              title: "Tayyorlash",
+              body: "Guruchni yuving.",
+              durationMinutes: 5,
+              mediaUrl: "https://cdn.liveon.test/osh-step-1.mp4",
+            },
+            {
+              id: 2,
+              stepNumber: 2,
+              body: "Qozonda 20 daqiqa dam bering.",
+              durationMinutes: 20,
+            },
+          ],
+        }}
+        type="food"
+        grams={100}
+        goals={{ protein: 140, carbs: 424, fat: 84 }}
+        onGramsChange={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+
+    const instructionCard = screen.getByTestId("food-detail-instructions-card");
+    expect(
+      within(instructionCard).getByText("Tayyorlash qadamlari"),
+    ).toBeInTheDocument();
+    expect(within(instructionCard).getByText("2 qadam")).toBeInTheDocument();
+    expect(screen.queryByText("Guruchni yuving.")).not.toBeInTheDocument();
+
+    fireEvent.click(
+      within(instructionCard).getByRole("button", {
+        name: /Tayyorlash qadamlari/,
+      }),
+    );
+
+    expect(screen.getByText("1")).toBeInTheDocument();
+    expect(screen.getByText("Tayyorlash")).toBeInTheDocument();
+    expect(screen.getByText("Guruchni yuving.")).toBeInTheDocument();
+    expect(screen.getByText("5 daqiqa")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /Media qo'llanma/i }),
+    ).toHaveAttribute("href", "https://cdn.liveon.test/osh-step-1.mp4");
+    expect(
+      screen.getByText("Qozonda 20 daqiqa dam bering."),
+    ).toBeInTheDocument();
+  });
+
+  it("loads AI recipe assistant cards from the catalog food context", async () => {
+    mockGetRecipeAssistant.mockResolvedValue({
+      cards: [
+        {
+          type: "usePantryItems",
+          title: "Ombordan ishlatish mumkin",
+          items: [{ ingredientId: 10, name: "Guruch" }],
+        },
+        {
+          type: "missingIngredients",
+          title: "Yetishmayotgan ingredientlar",
+          items: [{ ingredientId: 11, name: "Sabzi" }],
+        },
+      ],
+    });
+
+    render(
+      <FoodDetailPortionDrawer
+        item={{ ...baseItem, catalogFoodId: 20 }}
+        type="food"
+        grams={100}
+        goals={{ protein: 140, carbs: 424, fat: 84 }}
+        onGramsChange={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "AI yordamchi" }));
+
+    expect(await screen.findByText("Guruch")).toBeInTheDocument();
+    expect(screen.getByText("Sabzi")).toBeInTheDocument();
+    expect(mockGetRecipeAssistant).toHaveBeenCalledWith({ foodId: 20 });
   });
 
   it("keeps slider drag gestures from moving the parent drawer", () => {

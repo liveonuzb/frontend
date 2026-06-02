@@ -1,6 +1,11 @@
 import React from "react";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
-import { get, find, map, keys, toNumber, trim } from "lodash";
+import get from "lodash/get";
+import find from "lodash/find";
+import map from "lodash/map";
+import keys from "lodash/keys";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 import {
   AUDIT_LOG_SORT_FIELDS,
   AUDIT_LOG_SORT_DIRECTIONS,

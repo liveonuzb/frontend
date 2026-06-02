@@ -1,6 +1,9 @@
 import { format } from "date-fns";
 import { uz } from "date-fns/locale";
-import { find, get, keys, toNumber } from "lodash";
+import find from "lodash/find";
+import get from "lodash/get";
+import keys from "lodash/keys";
+import toNumber from "lodash/toNumber";
 import {
   CheckCircle2Icon,
   CircleOffIcon,

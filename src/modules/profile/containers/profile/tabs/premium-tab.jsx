@@ -1,6 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { get, find, map, trim, toUpper, split, take } from "lodash";
+import get from "lodash/get";
+import find from "lodash/find";
+import map from "lodash/map";
+import trim from "lodash/trim";
+import toUpper from "lodash/toUpper";
+import split from "lodash/split";
+import take from "lodash/take";
 import {
   CheckIcon,
   CircleDollarSignIcon,
@@ -765,7 +771,7 @@ export const PremiumTab = () => {
         onOpenChange={setCheckoutOpen}
         direction="bottom"
       >
-        <DrawerContent>
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader className="border-b border-white/10 pb-4 pt-5 text-center">
             <DrawerTitle className="text-xl font-semibold tracking-tight">
               {t("profile.premium.checkoutTitle")}

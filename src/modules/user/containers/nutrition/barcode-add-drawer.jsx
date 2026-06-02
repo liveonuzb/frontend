@@ -15,7 +15,9 @@ import { useDailyTrackingActions } from "@/hooks/app/use-daily-tracking";
 import { useFoodBarcodeLookup } from "@/hooks/app/use-food-catalog";
 import { toast } from "sonner";
 
-import { map, toNumber as lodashToNumber, trim } from "lodash";
+import map from "lodash/map";
+import lodashToNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 
 const toNumber = (value, fallback = 0) => {
   const normalized = lodashToNumber(value);

@@ -7,7 +7,9 @@ import {
   metabolismChecklist,
 } from "../lib/personalization.js";
 
-import { every, map, filter } from "lodash";
+import every from "lodash/every";
+import map from "lodash/map";
+import filter from "lodash/filter";
 
 const getQueryResultMock = vi.hoisted(() => vi.fn());
 const postQueryResultMock = vi.hoisted(() => vi.fn());

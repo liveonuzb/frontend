@@ -1,6 +1,11 @@
 import React from "react";
 import { Outlet, useNavigate } from "react-router";
-import { filter, get, isArray, join, map, toString } from "lodash";
+import filter from "lodash/filter";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import map from "lodash/map";
+import toString from "lodash/toString";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { AwardIcon, PlusIcon } from "lucide-react";

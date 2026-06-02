@@ -1,11 +1,9 @@
-import {
-  compact,
-  some,
-  reduce,
-  values as lodashValues,
-  isArray,
-  split,
-} from "lodash";
+import compact from "lodash/compact";
+import some from "lodash/some";
+import reduce from "lodash/reduce";
+import lodashValues from "lodash/values";
+import isArray from "lodash/isArray";
+import split from "lodash/split";
 import React from "react";
 import { createPortal } from "react-dom";
 import {
@@ -120,7 +118,7 @@ const FabMenuPanel = ({
 );
 
 const FloatingActionButton = () => {
-  const [isOpen, setIsOpen] = React.useState(false);
+  const [openRouteKey, setOpenRouteKey] = React.useState(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { addWaterCup } = useDailyTrackingActions();
@@ -133,6 +131,8 @@ const FloatingActionButton = () => {
   const isVisible = some(FAB_VISIBLE_PATHS, (path) =>
     location.pathname.startsWith(path),
   );
+  const routeKey = location.key || location.pathname;
+  const isOpen = isVisible && openRouteKey === routeKey;
 
   const latestWeight = getLatest()?.weight || 0;
   const waterAmount = React.useMemo(() => {
@@ -166,15 +166,8 @@ const FloatingActionButton = () => {
     (goals?.calories || 0) - consumedCalories,
   );
 
-  const closeFab = React.useCallback(() => setIsOpen(false), []);
-
-  /* eslint-disable react-hooks/set-state-in-effect */
-  React.useEffect(() => {
-    if (!isVisible && isOpen) {
-      setIsOpen(false);
-    }
-  }, [isOpen, isVisible]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+  const closeFab = React.useCallback(() => setOpenRouteKey(null), []);
+  const closeFabEvent = React.useEffectEvent(closeFab);
 
   React.useEffect(() => {
     if (!isOpen) {
@@ -183,13 +176,13 @@ const FloatingActionButton = () => {
 
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
-        closeFab();
+        closeFabEvent();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [closeFab, isOpen]);
+  }, [isOpen]);
 
   if (!isVisible) {
     return null;
@@ -226,7 +219,11 @@ const FloatingActionButton = () => {
         "flex size-[60px] items-center justify-center rounded-full bg-primary text-white shadow-[0_20px_45px_rgba(132,204,22,0.35)] transition-transform duration-300 hover:shadow-[0_24px_52px_rgba(132,204,22,0.42)] active:scale-95 dark:text-white",
         isOpen ? "rotate-45" : "rotate-0",
       )}
-      onClick={() => setIsOpen((value) => !value)}
+      onClick={() =>
+        setOpenRouteKey((currentRouteKey) =>
+          currentRouteKey === routeKey ? null : routeKey,
+        )
+      }
     >
       <PlusIcon className="size-6 @max-2xs:size-7" />
     </button>
@@ -236,8 +233,10 @@ const FloatingActionButton = () => {
     isOpen && typeof document !== "undefined"
       ? createPortal(
           <>
-            <div
+            <button
+              type="button"
               data-testid="fab-overlay"
+              aria-label="Close quick actions"
               className="fixed inset-0 z-[70] bg-background/70 backdrop-blur-sm md:hidden"
               onClick={closeFab}
             />

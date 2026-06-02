@@ -4,7 +4,7 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Layout from "./index.jsx";
 
-import { forEach } from "lodash";
+import forEach from "lodash/forEach";
 
 const setFieldsMock = vi.hoisted(() => vi.fn());
 const setLastVisitedPathMock = vi.hoisted(() => vi.fn());

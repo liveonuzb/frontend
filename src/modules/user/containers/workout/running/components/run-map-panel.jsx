@@ -7,14 +7,12 @@ import { getAcceptedRunningRoutePoints } from "@/lib/running-metrics";
 import { resolveTheme } from "@/lib/user-preferences";
 import { cn } from "@/lib/utils";
 
-import {
-  filter,
-  forEach,
-  map,
-  reduce,
-  toNumber,
-  values as lodashValues,
-} from "lodash";
+import filter from "lodash/filter";
+import forEach from "lodash/forEach";
+import map from "lodash/map";
+import reduce from "lodash/reduce";
+import toNumber from "lodash/toNumber";
+import lodashValues from "lodash/values";
 
 const DEFAULT_CENTER = [69.240562, 41.311081];
 const SVG_SIZE = 360;

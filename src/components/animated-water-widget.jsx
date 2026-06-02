@@ -1,4 +1,5 @@
-import { clamp, round } from "lodash";
+import clamp from "lodash/clamp";
+import round from "lodash/round";
 import React from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ChevronRightIcon, GlassWaterIcon, PlusIcon } from "lucide-react";
@@ -65,13 +66,15 @@ export default function AnimatedWaterWidget({
             : null,
           className,
         )}
-        role={isNavigable ? "button" : undefined}
-        tabIndex={isNavigable ? 0 : undefined}
-        aria-label={
-          ariaLabel || (isNavigable ? `${title} sahifasini ochish` : undefined)
-        }
-        onClick={onClick}
-        onKeyDown={handleCardKeyDown}
+        {...(isNavigable
+          ? {
+              role: "button",
+              tabIndex: 0,
+              "aria-label": ariaLabel || `${title} sahifasini ochish`,
+              onClick,
+              onKeyDown: handleCardKeyDown,
+            }
+          : {})}
       >
         <div className="pointer-events-none absolute -right-4 -top-4 size-24 rounded-full bg-primary/10 blur-[28px]" />
         <CardHeader className="relative z-10 px-4 pb-2">
@@ -170,22 +173,24 @@ export default function AnimatedWaterWidget({
   }
 
   return (
-    <Card
+    <div
       className={cn(
-        "relative overflow-hidden group transition-all water-widget",
+        "relative flex flex-col overflow-hidden rounded-2xl group transition-all water-widget",
         "gap-3 p-4",
         isNavigable
           ? "cursor-pointer focus-visible:ring-2 focus-visible:ring-ring"
           : null,
         className,
       )}
-      role={isNavigable ? "button" : undefined}
-      tabIndex={isNavigable ? 0 : undefined}
-      aria-label={
-        ariaLabel || (isNavigable ? `${title} sahifasini ochish` : undefined)
-      }
-      onClick={onClick}
-      onKeyDown={handleCardKeyDown}
+      {...(isNavigable
+        ? {
+            role: "button",
+            tabIndex: 0,
+            "aria-label": ariaLabel || `${title} sahifasini ochish`,
+            onClick,
+            onKeyDown: handleCardKeyDown,
+          }
+        : {})}
       style={{ backgroundColor: "#202a37" }}
     >
       <div className="flex justify-between items-center relative z-10">
@@ -198,7 +203,7 @@ export default function AnimatedWaterWidget({
         {!hideHeaderActions ? (
           <div className="flex items-center gap-2">
             <QuickCupDrawer>
-              <button
+              <button type="button"
                 onClick={(e) => e.stopPropagation()}
                 aria-label="Stakan hajmini tanlash"
                 className="cursor-pointer size-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors border border-white/10 font-medium text-xs text-white"
@@ -246,6 +251,11 @@ export default function AnimatedWaterWidget({
         {/* Bar */}
 
         <div
+          role="progressbar"
+          aria-label="Suv progressi"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={pct}
           className={cn(
             "flex-1 rounded-full overflow-hidden relative shadow-inner",
             "h-11",
@@ -259,6 +269,7 @@ export default function AnimatedWaterWidget({
             )}
           />
           <motion.div
+            data-water-progress-fill="true"
             initial={shouldReduceMotion ? false : { width: 0 }}
             animate={{ width: `${pct}%` }}
             transition={
@@ -270,15 +281,9 @@ export default function AnimatedWaterWidget({
             style={{ borderRadius: "9999px" }}
           >
             {/* Water fill */}
-            <motion.div
-              initial={shouldReduceMotion ? false : { width: 0 }}
-              animate={{ width: `${pct}%` }}
-              transition={
-                shouldReduceMotion
-                  ? { duration: 0 }
-                  : { duration: 1, type: "spring", bounce: 0.2 }
-              }
+            <div
               className="absolute bottom-0 left-0 top-0 overflow-hidden rounded-full bg-gradient-to-r from-cyan-500 via-cyan-300 to-cyan-200"
+              style={{ width: "100%" }}
             >
               {/* Wave 1 */}
               <motion.div
@@ -325,7 +330,7 @@ export default function AnimatedWaterWidget({
               </motion.div>
 
               <div className="absolute inset-0 bg-gradient-to-t from-cyan-700/30 to-white/20" />
-            </motion.div>
+            </div>
           </motion.div>
         </div>
 
@@ -354,6 +359,6 @@ export default function AnimatedWaterWidget({
           </button>
         ) : null}
       </div>
-    </Card>
+    </div>
   );
 }

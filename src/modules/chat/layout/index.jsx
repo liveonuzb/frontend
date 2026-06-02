@@ -1,4 +1,9 @@
-import { map, filter, find, includes, toLower, trim } from "lodash";
+import map from "lodash/map";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import includes from "lodash/includes";
+import toLower from "lodash/toLower";
+import trim from "lodash/trim";
 import React from "react";
 import { Outlet, useNavigate, useParams } from "react-router";
 import PageTransition from "@/components/page-transition";

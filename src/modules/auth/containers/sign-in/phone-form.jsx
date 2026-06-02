@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PhoneIcon } from "lucide-react";
-import { get } from "lodash";
+import get from "lodash/get";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useTranslation } from "react-i18next";

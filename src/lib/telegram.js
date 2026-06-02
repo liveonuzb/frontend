@@ -1,10 +1,8 @@
-import {
-  forEach,
-  get,
-  isFinite as isFiniteNumber,
-  isString,
-  toNumber,
-} from "lodash";
+import forEach from "lodash/forEach";
+import get from "lodash/get";
+import isFiniteNumber from "lodash/isFinite";
+import isString from "lodash/isString";
+import toNumber from "lodash/toNumber";
 
 const FALLBACK_TELEGRAM_CHROME_COLOR = "#0b0f0c";
 const HEX_COLOR_PATTERN = /^#[0-9a-f]{3,8}$/i;

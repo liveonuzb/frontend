@@ -1,13 +1,23 @@
 import React from "react";
-import { get, filter, find, isArray, map, toNumber, trim, keys } from "lodash";
+import { Link } from "react-router";
+import get from "lodash/get";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
+import objectKeys from "lodash/keys";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangleIcon,
+  ArrowRightIcon,
   BrainCircuitIcon,
   CheckCircleIcon,
   RefreshCwIcon,
   RotateCcwIcon,
   SaveIcon,
+  WandSparklesIcon,
   XCircleIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -35,7 +45,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { useGetQuery, usePatchQuery } from "@/hooks/api";
+import { useGetQuery, usePatchQuery, usePostQuery } from "@/hooks/api";
 import { useBreadcrumbStore } from "@/store";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 
@@ -44,6 +54,12 @@ const AI_QUERY_KEY = ["admin", "ai"];
 const FEATURE_LABELS = {
   personalization_result: "Personalizatsiya natijasi",
   personal_plan: "Meal + workout reja",
+  personal_meal_plan: "Meal plan",
+  personal_workout_plan: "Workout plan",
+  nutrition_pantry_scan: "Nutrition pantry scan",
+  nutrition_recipe_assistant: "Nutrition recipe assistant",
+  nutrition_substitution_suggestions: "Nutrition substitutions",
+  admin_meal_template_variant: "Admin meal template variant",
 };
 
 const emptyPrompt = {
@@ -72,8 +88,8 @@ const unwrapAiResponse = (response, fallback) => {
       break;
     }
 
-    const keys = filter(keys(payload), (key) => key !== "meta");
-    if (!hasOwn(payload, "data") || keys.length !== 1) {
+    const payloadKeys = filter(objectKeys(payload), (key) => key !== "meta");
+    if (!hasOwn(payload, "data") || payloadKeys.length !== 1) {
       break;
     }
 
@@ -131,11 +147,17 @@ const PromptField = ({ label, value, onChange, disabled, type = "text" }) => (
   </div>
 );
 
-const Index = () => {
+const Index = ({ defaultTab = "overview" }) => {
   const { canManageSettings } = useAdminPermissions();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const queryClient = useQueryClient();
   const [promptDrafts, setPromptDrafts] = React.useState({});
+  const [variantForm, setVariantForm] = React.useState({
+    sourceTemplateId: "",
+    budgetTier: "cheap",
+    variantCount: 1,
+  });
+  const [variantResult, setVariantResult] = React.useState(null);
 
   React.useEffect(() => {
     setBreadcrumbs([
@@ -166,12 +188,25 @@ const Index = () => {
     params: { reviewStatus: "pending", page: 1, pageSize: 20 },
     queryProps: { queryKey: [...AI_QUERY_KEY, "review-queue"] },
   });
+  const copilotQuery = useGetQuery({
+    url: "/admin/ai/copilot",
+    queryProps: { queryKey: [...AI_QUERY_KEY, "copilot"] },
+  });
 
   const mutation = usePatchQuery({
     queryKey: AI_QUERY_KEY,
     mutationProps: {
       onSuccess: async () => {
         await queryClient.invalidateQueries({ queryKey: AI_QUERY_KEY });
+      },
+    },
+  });
+  const templateVariantMutation = usePostQuery({
+    queryKey: AI_QUERY_KEY,
+    mutationProps: {
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({ queryKey: AI_QUERY_KEY });
+        await queryClient.invalidateQueries({ queryKey: ["admin", "meal-plans"] });
       },
     },
   });
@@ -190,11 +225,16 @@ const Index = () => {
   const reviewQueue = toArray(
     unwrapAiResponse(reviewQueueQuery.data, get(overview, "reviewQueue", [])),
   );
+  const copilot = unwrapAiResponse(copilotQuery.data, {});
+  const copilotRecommendations = toArray(get(copilot, "recommendations", []));
+  const copilotNutrition = get(copilot, "nutrition", {});
+  const copilotOperations = get(copilot, "operations", {});
   const featureAnalytics = toArray(get(analytics, "byFeature", []));
   const isLoading =
     overviewQuery.isLoading ||
     promptSettingsQuery.isLoading ||
-    analyticsQuery.isLoading;
+    analyticsQuery.isLoading ||
+    copilotQuery.isLoading;
 
   const handlePromptChange = (feature, key, value) => {
     const active = get(
@@ -279,6 +319,31 @@ const Index = () => {
     }
   };
 
+  const handleVariantFormChange = (key, value) => {
+    setVariantForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const handleGenerateTemplateVariant = async (event) => {
+    event.preventDefault();
+    if (!canManageSettings || !trim(variantForm.sourceTemplateId)) return;
+
+    try {
+      const response = await templateVariantMutation.mutateAsync({
+        url: "/admin/ai/nutrition/template-variants",
+        attributes: {
+          sourceTemplateId: trim(variantForm.sourceTemplateId),
+          budgetTier: trim(variantForm.budgetTier) || undefined,
+          variantCount: Math.max(1, toNumber(variantForm.variantCount) || 1),
+        },
+      });
+      const payload = unwrapAiResponse(response, {});
+      setVariantResult(payload);
+      toast.success("AI template variant draft yaratildi");
+    } catch {
+      toast.error("AI template variant yaratib bo'lmadi");
+    }
+  };
+
   return (
     <PageTransition>
       <div className="flex flex-col gap-6">
@@ -296,7 +361,9 @@ const Index = () => {
           <Button
             type="button"
             variant="outline"
-            onClick={() => queryClient.invalidateQueries({ queryKey: AI_QUERY_KEY })}
+            onClick={() =>
+              queryClient.invalidateQueries({ queryKey: AI_QUERY_KEY })
+            }
           >
             <RefreshCwIcon data-icon="inline-start" />
             Yangilash
@@ -308,21 +375,139 @@ const Index = () => {
             <Spinner className="text-muted-foreground" />
           </div>
         ) : (
-          <Tabs defaultValue="overview" className="flex flex-col gap-5">
+          <Tabs defaultValue={defaultTab} className="flex flex-col gap-5">
             <TabsList className="h-auto flex-wrap">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="prompts">Prompts</TabsTrigger>
               <TabsTrigger value="review">Review</TabsTrigger>
               <TabsTrigger value="logs">Logs</TabsTrigger>
+              <TabsTrigger value="template-variants">
+                Template variants
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="flex flex-col gap-5">
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <Metric label="30 kun request" value={analytics.totalRequests ?? 0} />
-                <Metric label="Success rate" value={`${analytics.successRate ?? 100}%`} />
-                <Metric label="Total tokens" value={analytics.totalTokens ?? 0} />
-                <Metric label="Estimated cost" value={formatUsd(analytics.estimatedCostUsd)} />
+                <Metric
+                  label="30 kun request"
+                  value={analytics.totalRequests ?? 0}
+                />
+                <Metric
+                  label="Success rate"
+                  value={`${analytics.successRate ?? 100}%`}
+                />
+                <Metric
+                  label="Total tokens"
+                  value={analytics.totalTokens ?? 0}
+                />
+                <Metric
+                  label="Estimated cost"
+                  value={formatUsd(analytics.estimatedCostUsd)}
+                />
               </div>
+              <Card className="py-6">
+                <CardHeader className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <BrainCircuitIcon className="size-4" />
+                      AI copilot
+                    </CardTitle>
+                    <CardDescription>
+                      Review queue, failure rate va Nutrition scan feedback
+                      asosida keyingi admin actionlar.
+                    </CardDescription>
+                  </div>
+                  <Badge variant="secondary">
+                    Scan review {get(copilotNutrition, "scanReviewRate", 0)}%
+                  </Badge>
+                </CardHeader>
+                <CardContent className="grid gap-3 xl:grid-cols-[1fr_260px]">
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {map(copilotRecommendations, (item) => (
+                      <div
+                        key={item.id}
+                        className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-muted/20 p-4"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-medium">{item.title}</p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              {item.description}
+                            </p>
+                          </div>
+                          <Badge
+                            variant={
+                              item.severity === "high"
+                                ? "destructive"
+                                : "secondary"
+                            }
+                          >
+                            {item.severity}
+                          </Badge>
+                        </div>
+                        {item.actionPath ? (
+                          <Button asChild variant="outline" size="sm">
+                            <Link to={item.actionPath}>
+                              {item.actionLabel || "Ochish"}
+                              <ArrowRightIcon data-icon="inline-end" />
+                            </Link>
+                          </Button>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="grid gap-3 rounded-2xl border border-border/60 bg-background/70 p-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        Nutrition scan started
+                      </p>
+                      <p className="mt-1 text-2xl font-semibold">
+                        {get(copilotNutrition, "scanStarted", 0)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        Reviewed scans
+                      </p>
+                      <p className="mt-1 text-2xl font-semibold">
+                        {get(copilotNutrition, "scanReviewed", 0)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        Avg latency
+                      </p>
+                      <p className="mt-1 text-2xl font-semibold">
+                        {get(copilotOperations, "avgLatencyMs", 0)} ms
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        Upload errors
+                      </p>
+                      <p className="mt-1 text-2xl font-semibold">
+                        {get(copilotOperations, "uploadErrorCount", 0)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        Throttle/quota
+                      </p>
+                      <p className="mt-1 text-2xl font-semibold">
+                        {get(copilotOperations, "throttlingErrorCount", 0)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        OpenAI fallback
+                      </p>
+                      <p className="mt-1 text-2xl font-semibold">
+                        {get(copilotOperations, "openAiFallbackCount", 0)}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
               <Card className="py-6">
                 <CardHeader>
                   <CardTitle>Feature analytics</CardTitle>
@@ -350,7 +535,9 @@ const Index = () => {
                           <TableCell>{item.requests ?? 0}</TableCell>
                           <TableCell>{item.successRate ?? 100}%</TableCell>
                           <TableCell>{item.totalTokens ?? 0}</TableCell>
-                          <TableCell>{formatUsd(item.estimatedCostUsd)}</TableCell>
+                          <TableCell>
+                            {formatUsd(item.estimatedCostUsd)}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -363,7 +550,8 @@ const Index = () => {
               {map(promptSettings, (item) => {
                 const feature = get(item, "feature");
                 const active = get(item, "active", {});
-                const form = promptDrafts[feature] ?? normalizePromptForm(active);
+                const form =
+                  promptDrafts[feature] ?? normalizePromptForm(active);
 
                 return (
                   <Card key={feature} className="py-6">
@@ -500,7 +688,9 @@ const Index = () => {
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                disabled={mutation.isPending || !canManageSettings}
+                                disabled={
+                                  mutation.isPending || !canManageSettings
+                                }
                                 onClick={() => handleActivatePrompt(version)}
                               >
                                 <RotateCcwIcon data-icon="inline-start" />
@@ -525,11 +715,14 @@ const Index = () => {
                         <p className="font-medium">
                           {FEATURE_LABELS[log.feature] ?? log.feature}
                         </p>
-                        <Badge variant="outline">v{log.promptVersion ?? 0}</Badge>
+                        <Badge variant="outline">
+                          v{log.promptVersion ?? 0}
+                        </Badge>
                         <Badge variant="secondary">{log.reviewStatus}</Badge>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {log.model} · {new Date(log.createdAt).toLocaleString("uz-UZ")}
+                        {log.model} ·{" "}
+                        {new Date(log.createdAt).toLocaleString("uz-UZ")}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {log.reviewReason || log.error || "Tekshiruv kerak"}
@@ -607,9 +800,13 @@ const Index = () => {
                               {log.status}
                             </Badge>
                           </TableCell>
-                          <TableCell>{log.reviewStatus ?? "not_required"}</TableCell>
+                          <TableCell>
+                            {log.reviewStatus ?? "not_required"}
+                          </TableCell>
                           <TableCell>{log.totalTokens ?? 0}</TableCell>
-                          <TableCell>{formatUsd(log.estimatedCostUsd)}</TableCell>
+                          <TableCell>
+                            {formatUsd(log.estimatedCostUsd)}
+                          </TableCell>
                           <TableCell>
                             {log.createdAt
                               ? new Date(log.createdAt).toLocaleString("uz-UZ")
@@ -629,6 +826,132 @@ const Index = () => {
                   </CardContent>
                 </Card>
               ) : null}
+            </TabsContent>
+
+            <TabsContent
+              value="template-variants"
+              className="grid gap-5 xl:grid-cols-[420px_1fr]"
+            >
+              <Card className="py-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <WandSparklesIcon className="size-4" />
+                    Template variant generator
+                  </CardTitle>
+                  <CardDescription>
+                    Existing meal plan template asosida inactive AI variant
+                    draft yaratadi.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form
+                    className="grid gap-4"
+                    onSubmit={handleGenerateTemplateVariant}
+                  >
+                    <div className="grid gap-2">
+                      <Label htmlFor="admin-ai-source-template-id">
+                        Source template ID
+                      </Label>
+                      <Input
+                        id="admin-ai-source-template-id"
+                        value={variantForm.sourceTemplateId}
+                        disabled={!canManageSettings}
+                        onChange={(event) =>
+                          handleVariantFormChange(
+                            "sourceTemplateId",
+                            event.target.value,
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="grid gap-2">
+                        <Label htmlFor="admin-ai-budget-tier">
+                          Budget tier
+                        </Label>
+                        <Input
+                          id="admin-ai-budget-tier"
+                          value={variantForm.budgetTier}
+                          disabled={!canManageSettings}
+                          onChange={(event) =>
+                            handleVariantFormChange(
+                              "budgetTier",
+                              event.target.value,
+                            )
+                          }
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="admin-ai-variant-count">
+                          Variant count
+                        </Label>
+                        <Input
+                          id="admin-ai-variant-count"
+                          type="number"
+                          min="1"
+                          max="3"
+                          value={variantForm.variantCount}
+                          disabled={!canManageSettings}
+                          onChange={(event) =>
+                            handleVariantFormChange(
+                              "variantCount",
+                              event.target.value,
+                            )
+                          }
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={
+                        templateVariantMutation.isPending ||
+                        !canManageSettings ||
+                        !trim(variantForm.sourceTemplateId)
+                      }
+                    >
+                      <WandSparklesIcon data-icon="inline-start" />
+                      Variant yaratish
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+
+              <Card className="py-6">
+                <CardHeader>
+                  <CardTitle>AI variant draftlari</CardTitle>
+                  <CardDescription>
+                    Draftlar active emas; admin preview/edit/activate qiladi.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-3">
+                  {map(toArray(get(variantResult, "variants", [])), (variant) => (
+                    <div
+                      key={variant.id}
+                      className="rounded-2xl border border-border/60 bg-muted/20 p-4"
+                    >
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <p className="font-semibold">{variant.name}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Source: {variant.sourceTemplateId}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant="secondary">AI variant</Badge>
+                          <Badge variant="outline">
+                            {variant.isActive ? "Faol" : "Inactive draft"}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {!toArray(get(variantResult, "variants", [])).length ? (
+                    <div className="rounded-2xl border border-dashed p-6 text-sm text-muted-foreground">
+                      Hali variant yaratilmagan.
+                    </div>
+                  ) : null}
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         )}

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { get, toNumber } from "lodash";
+import get from "lodash/get";
+import toNumber from "lodash/toNumber";
 import {
   Drawer,
   DrawerContent,
@@ -122,7 +123,7 @@ export default function TenDayPopupDrawer() {
       onOpenChange={(next) => (next ? setOpen(true) : dismiss())}
       direction="bottom"
     >
-      <DrawerContent data-ten-day-popup-drawer="true">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm" data-ten-day-popup-drawer="true">
         <DrawerHeader className="text-center">
           <div className="mx-auto mb-2 flex size-16 items-center justify-center rounded-3xl bg-amber-500/10">
             <span className="text-3xl">🏆</span>

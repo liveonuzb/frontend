@@ -1,5 +1,7 @@
 import React, { useRef, useEffect, memo } from "react";
-import { map, get, size } from "lodash";
+import map from "lodash/map";
+import get from "lodash/get";
+import size from "lodash/size";
 import { useTranslation } from "react-i18next";
 import {
   ArrowLeftIcon,

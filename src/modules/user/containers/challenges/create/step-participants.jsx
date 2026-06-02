@@ -7,7 +7,12 @@ import FriendsPickerDrawer from "../friends-picker-drawer.jsx";
 import { getMetricMeta } from "../challenge-utils.js";
 import { StepSection } from "./form-fields.jsx";
 
-import { filter, map, split, toNumber, toUpper, trim } from "lodash";
+import filter from "lodash/filter";
+import map from "lodash/map";
+import split from "lodash/split";
+import toNumber from "lodash/toNumber";
+import toUpper from "lodash/toUpper";
+import trim from "lodash/trim";
 
 const getInitials = (name) => {
   const parts = split(trim(String(name ?? "")), /\s+/);

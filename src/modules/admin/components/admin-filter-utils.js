@@ -1,11 +1,9 @@
-import {
-  find,
-  get,
-  isEqual,
-  reduce,
-  toNumber,
-  trim as lodashTrim,
-} from "lodash";
+import find from "lodash/find";
+import get from "lodash/get";
+import isEqual from "lodash/isEqual";
+import reduce from "lodash/reduce";
+import toNumber from "lodash/toNumber";
+import lodashTrim from "lodash/trim";
 
 export const ADMIN_TEXT_OPERATORS = [
   "contains",

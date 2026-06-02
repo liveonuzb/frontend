@@ -21,7 +21,7 @@ import {
   useStartRunningSession,
 } from "./use-running-sessions.js";
 
-import { map } from "lodash";
+import map from "lodash/map";
 
 const createQueryClient = () =>
   new QueryClient({

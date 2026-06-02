@@ -1,6 +1,10 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { every, map, filter, union, includes } from "lodash";
+import every from "lodash/every";
+import map from "lodash/map";
+import filter from "lodash/filter";
+import union from "lodash/union";
+import includes from "lodash/includes";
 
 const areNotificationsEqual = (left = [], right = []) => {
   if (left === right) return true;

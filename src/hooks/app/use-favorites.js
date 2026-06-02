@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useGetQuery } from "@/hooks/api";
 import useApi from "@/hooks/api/use-api";
 
-import { map } from "lodash";
+import map from "lodash/map";
 
 const FAVORITES_KEY = ["me", "favorites"];
 

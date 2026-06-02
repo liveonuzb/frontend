@@ -4,17 +4,23 @@ import {
   resolvePlanColumnsForDate,
 } from "./nutrition-plan-days.js";
 
-const thirtyDayKanban = {
-  "day-1": [{ id: "day-1-breakfast", type: "Nonushta", items: [] }],
-  "day-30": [{ id: "day-30-breakfast", type: "Nonushta", items: [] }],
-};
+const thirtyDayPlanDays = [
+  {
+    dayNumber: 1,
+    meals: [{ id: "day-1-breakfast", type: "Nonushta", items: [] }],
+  },
+  {
+    dayNumber: 30,
+    meals: [{ id: "day-30-breakfast", type: "Nonushta", items: [] }],
+  },
+];
 
 describe("nutrition plan day resolution", () => {
   it("maps active 30-day plans by startDate day offset", () => {
     const plan = {
       durationDays: 30,
       startDate: "2026-05-01T00:00:00.000Z",
-      weeklyKanban: thirtyDayKanban,
+      days: thirtyDayPlanDays,
     };
 
     expect(
@@ -23,21 +29,21 @@ describe("nutrition plan day resolution", () => {
         new Date("2026-05-01T12:00:00.000Z"),
         "Juma",
       ),
-    ).toEqual(thirtyDayKanban["day-1"]);
+    ).toEqual(thirtyDayPlanDays[0].meals);
     expect(
       resolvePlanColumnsForDate(
         plan,
         new Date("2026-05-30T12:00:00.000Z"),
         "Shanba",
       ),
-    ).toEqual(thirtyDayKanban["day-30"]);
+    ).toEqual(thirtyDayPlanDays[1].meals);
   });
 
   it("marks a 30-day plan expired after day 30", () => {
     const plan = {
       durationDays: 30,
       startDate: "2026-05-01T00:00:00.000Z",
-      weeklyKanban: thirtyDayKanban,
+      days: thirtyDayPlanDays,
     };
 
     expect(
@@ -60,9 +66,13 @@ describe("nutrition plan day resolution", () => {
     const plan = {
       durationDays: null,
       startDate: null,
-      weeklyKanban: {
-        Dushanba: [{ id: "monday", type: "Nonushta", items: [] }],
-      },
+      days: [
+        {
+          dayNumber: 1,
+          dayKey: "Dushanba",
+          meals: [{ id: "monday", type: "Nonushta", items: [] }],
+        },
+      ],
     };
 
     expect(
@@ -71,6 +81,6 @@ describe("nutrition plan day resolution", () => {
         new Date("2026-05-04T12:00:00.000Z"),
         "Dushanba",
       ),
-    ).toEqual(plan.weeklyKanban.Dushanba);
+    ).toEqual(plan.days[0].meals);
   });
 });

@@ -65,7 +65,163 @@
       "manualAdd": "Qo'lda qo'shish",
       "cameraAdd": "Kamera bilan",
       "audioAdd": "Ovoz bilan",
-      "textAdd": "Matn bilan"
+      "textAdd": "Matn bilan",
+      "nav": {
+        "overview": "Umumiy",
+        "plans": "Rejalar",
+        "recipes": "Retseptlar",
+        "history": "Tarix",
+        "report": "Hisobot"
+      },
+      "recipes": {
+        "common": {
+          "all": "Barchasi",
+          "none": "Yo'q",
+          "minutes": "{{count}} daq",
+          "minutesShort": "daq"
+        },
+        "meals": {
+          "breakfast": "Nonushta",
+          "lunch": "Tushlik",
+          "dinner": "Kechki ovqat",
+          "snack": "Snack"
+        },
+        "page": {
+          "badge": "Retseptlar",
+          "title": "Bugungi ovqat uchun retseptlar",
+          "selectRecipe": "Retsept tanlang",
+          "empty": "Retsept topilmadi",
+          "totalCount": "{{count}} ta retsept"
+        },
+        "search": {
+          "label": "Retsept qidirish",
+          "placeholder": "Retsept qidirish"
+        },
+        "filters": {
+          "sort": "Saralash",
+          "category": "Kategoriya",
+          "cuisine": "Oshxona",
+          "tag": "Teg",
+          "allergen": "Allergen",
+          "difficulty": "Qiyinlik",
+          "maxTotalTime": "Maksimal vaqt",
+          "minProtein": "Minimal protein",
+          "minCalories": "Minimal kcal",
+          "maxCalories": "Maksimal kcal",
+          "featuredAria": "Tavsiya etilgan",
+          "featured": "Tavsiya",
+          "savedOnly": "Saqlanganlar",
+          "clearAria": "Filterlarni tozalash",
+          "clear": "Tozalash",
+          "sortOptions": {
+            "newest": "Yangi",
+            "popular": "Mashhur",
+            "highestRated": "Reyting",
+            "highestProtein": "Protein",
+            "lowestCalories": "Yengil",
+            "fastest": "Tez",
+            "featured": "Tavsiya"
+          },
+          "difficultyOptions": {
+            "easy": "Oson",
+            "medium": "O'rtacha",
+            "hard": "Qiyin"
+          }
+        },
+        "chips": {
+          "allTags": "Barcha teglar"
+        },
+        "nutrition": {
+          "calories": "kcal",
+          "protein": "protein",
+          "carbs": "uglevod",
+          "fat": "yog'",
+          "fiber": "fiber",
+          "sugar": "sugar",
+          "sodium": "sodium"
+        },
+        "buttons": {
+          "addToMealLog": "Bugungi logga qo'shish",
+          "addToMealPlan": "Rejaga qo'shish",
+          "createShoppingList": "Xarid ro'yxati yaratish",
+          "save": "Saqlash",
+          "saved": "Saqlangan"
+        },
+        "card": {
+          "ingredientsCount": "{{count}} masalliq",
+          "stepsCount": "{{count}} qadam",
+          "detailAria": "{{title}} batafsil",
+          "detail": "Batafsil"
+        },
+        "ingredients": {
+          "title": "Masalliqlar",
+          "mainGroup": "Asosiy",
+          "readyLabel": "{{name}} tayyor",
+          "optional": "ixtiyoriy",
+          "empty": "Masalliq kiritilmagan"
+        },
+        "steps": {
+          "title": "Qadamlar",
+          "fallbackTitle": "Qadam",
+          "imageAlt": "{{title}} rasmi",
+          "media": "Media",
+          "empty": "Qadam kiritilmagan",
+          "stepNumber": "{{count}}-qadam"
+        },
+        "timer": {
+          "pause": "Timer pauza",
+          "start": "Timer boshlash"
+        },
+        "cookingMode": {
+          "close": "Pishirish rejimini yopish",
+          "previous": "Oldingi",
+          "next": "Keyingi qadam"
+        },
+        "detail": {
+          "notFound": "Retsept topilmadi",
+          "back": "Retseptlarga qaytish",
+          "serving": "Porsiya",
+          "mealType": "Mahal",
+          "plan": "Reja",
+          "day": "Kun",
+          "dayNumber": "{{count}}-kun",
+          "planMealType": "Reja mahali",
+          "priceRegion": "Narx hududi",
+          "season": "Mavsum",
+          "cookingMode": "Pishirish rejimi",
+          "logSuccess": "Retsept logga qo'shildi",
+          "planSuccess": "Retsept rejaga qo'shildi",
+          "shoppingListCreated": "Xarid ro'yxati yaratildi",
+          "shoppingListCreatedWithCount": "Xarid ro'yxati yaratildi: {{count}} mahsulot",
+          "prepTime": "Tayyorgarlik {{count}} daq",
+          "cookTime": "Pishirish {{count}} daq",
+          "servingsBadge": "{{count}} porsiya"
+        },
+        "regions": {
+          "all": "Barcha hududlar",
+          "uzbekistan": "O'zbekiston",
+          "toshkent": "Toshkent",
+          "samarqand": "Samarqand",
+          "buxoro": "Buxoro",
+          "fargona": "Farg'ona",
+          "andijon": "Andijon",
+          "namangan": "Namangan",
+          "qashqadaryo": "Qashqadaryo",
+          "surxondaryo": "Surxondaryo",
+          "xorazm": "Xorazm",
+          "navoiy": "Navoiy",
+          "jizzax": "Jizzax",
+          "sirdaryo": "Sirdaryo",
+          "qoraqalpogiston": "Qoraqalpog'iston"
+        },
+        "seasons": {
+          "all": "Butun yil",
+          "spring": "Bahor",
+          "summer": "Yoz",
+          "autumn": "Kuz",
+          "winter": "Qish"
+        }
+      }
     },
     "water": {
       "title": "Suv nazorati",

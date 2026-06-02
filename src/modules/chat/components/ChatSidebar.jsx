@@ -1,5 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { filter, map, orderBy, take, includes, trim } from "lodash";
+import filter from "lodash/filter";
+import map from "lodash/map";
+import orderBy from "lodash/orderBy";
+import take from "lodash/take";
+import includes from "lodash/includes";
+import trim from "lodash/trim";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -155,6 +160,7 @@ const ChatSidebar = ({
                                 variant="ghost" size="icon"
                                 className={cn("size-8 rounded-full transition-all", isEditMode ? "bg-primary text-primary-foreground" : "bg-primary/5 text-primary")}
                                 onClick={() => setIsEditMode(!isEditMode)}
+                                aria-label={isEditMode ? "Chatlar tartibini saqlash" : "Chatlar tartibini tahrirlash"}
                             >
                                 {isEditMode ? <CheckIcon className="size-4" /> : <PencilLineIcon className="size-4" />}
                             </Button>
@@ -168,6 +174,7 @@ const ChatSidebar = ({
                         value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                         className="w-full h-9 md:h-10 pl-9 pr-4 rounded-xl border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                         placeholder="Qidirish..." 
+                        aria-label="Chatlarni qidirish"
                     />
                 </div>
 
@@ -203,7 +210,7 @@ const ChatSidebar = ({
                             </div>
                         )}
                         {map(messageSearchResults, (res, i) => (
-                            <button
+                            <button type="button"
                                 key={`msg-res-${i}`}
                                 onClick={() => handleChatSelect(res.chatId, res.msgId)}
                                 className="w-full flex items-center gap-2 md:gap-3 p-3 md:p-4 hover:bg-muted/50 transition-all text-left border-b"
@@ -326,6 +333,16 @@ const ContactItem = ({
         style={style}
         {...(!isEditMode ? {} : sortableProps)}
         onClick={() => !isEditMode && handleChatSelect(chat.chatId)}
+        onKeyDown={(event) => {
+            if (!isEditMode && (event.key === "Enter" || event.key === " ")) {
+                event.preventDefault();
+                handleChatSelect(chat.chatId);
+            }
+        }}
+        role="button"
+        tabIndex={!isEditMode ? 0 : undefined}
+        aria-disabled={isEditMode}
+        aria-label={!isEditMode ? `${chat.name} chatini ochish` : undefined}
         className={cn(
             "w-full flex items-center gap-2 md:gap-3 p-3 md:p-4 hover:bg-muted/50 transition-all text-left border-b relative group",
             activeChat === chat.chatId && "bg-primary/5 border-l-4 border-l-primary",

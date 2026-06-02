@@ -37,25 +37,23 @@ import { motion } from "framer-motion";
 import WaterSettingsDrawer from "./water-settings-drawer";
 import WaterAnalyticsSection from "./water-analytics-section";
 import { toast } from "sonner";
-import {
-  first,
-  get,
-  sumBy,
-  clamp,
-  isEmpty,
-  last,
-  round,
-  ceil,
-  split,
-  isNil,
-  isUndefined,
-  gt,
-  gte,
-  lt,
-  min,
-  map,
-  nth,
-} from "lodash";
+import first from "lodash/first";
+import get from "lodash/get";
+import sumBy from "lodash/sumBy";
+import clamp from "lodash/clamp";
+import isEmpty from "lodash/isEmpty";
+import last from "lodash/last";
+import round from "lodash/round";
+import ceil from "lodash/ceil";
+import split from "lodash/split";
+import isNil from "lodash/isNil";
+import isUndefined from "lodash/isUndefined";
+import gt from "lodash/gt";
+import gte from "lodash/gte";
+import lt from "lodash/lt";
+import min from "lodash/min";
+import map from "lodash/map";
+import nth from "lodash/nth";
 import { format } from "date-fns";
 import { Drop } from "iconsax-reactjs";
 import {
@@ -121,7 +119,7 @@ const WaterLogList = ({
             <span className="rounded-md bg-muted px-2 py-1 text-sm font-medium text-muted-foreground">
               {formatWaterTime(get(entry, "time"))}
             </span>
-            <button
+            <button type="button"
               onClick={() => onRemoveEntry(i)}
               className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 focus:opacity-100"
             >
@@ -293,7 +291,7 @@ const Index = () => {
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-10 w-10 rounded-full lg:hidden"
+                className="size-10 rounded-full lg:hidden"
                 onClick={() => setIsLogsDrawerOpen(true)}
                 aria-label="Bugungi qaydlar"
               >
@@ -405,26 +403,24 @@ const Index = () => {
             </div>
           }
         >
-          <section className="rounded-[28px] border bg-card p-5 shadow-sm sm:p-6">
-            <div className="relative">
-              <AnimatedWaterWidget
-                currentMl={currentMl}
-                maxMl={DAILY_GOAL_ML}
-                onAdd={() => handleAdd(cupSize)}
-              />
+          <div className="relative">
+            <AnimatedWaterWidget
+              currentMl={currentMl}
+              maxMl={DAILY_GOAL_ML}
+              onAdd={() => handleAdd(cupSize)}
+            />
 
-              <motion.p
-                key={gt(remaining, 0) ? "remaining" : "done"}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-3 text-center text-sm font-medium text-muted-foreground"
-              >
-                {gt(remaining, 0)
-                  ? `Yana ${displayRemaining} ml suv ichish kerak 💧`
-                  : "Maqsadga erishdingiz! 🎉"}
-              </motion.p>
-            </div>
-          </section>
+            <motion.p
+              key={gt(remaining, 0) ? "remaining" : "done"}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-3 text-center text-sm font-medium text-muted-foreground"
+            >
+              {gt(remaining, 0)
+                ? `Yana ${displayRemaining} ml suv ichish kerak 💧`
+                : "Maqsadga erishdingiz! 🎉"}
+            </motion.p>
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
             <Card>
@@ -539,7 +535,7 @@ const Index = () => {
         open={isLogsDrawerOpen}
         onOpenChange={setIsLogsDrawerOpen}
       >
-        <DrawerContent>
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader>
             <DrawerTitle>Bugungi qaydlar</DrawerTitle>
             <DrawerDescription>

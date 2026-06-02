@@ -1,6 +1,11 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { findIndex, get, map, sumBy, isArray, toNumber } from "lodash";
+import findIndex from "lodash/findIndex";
+import get from "lodash/get";
+import map from "lodash/map";
+import sumBy from "lodash/sumBy";
+import isArray from "lodash/isArray";
+import toNumber from "lodash/toNumber";
 import { useLocation, useNavigate, useParams } from "react-router";
 import {
   ArrowLeftIcon,

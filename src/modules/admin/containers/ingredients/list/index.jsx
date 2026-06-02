@@ -1,7 +1,13 @@
 import React from "react";
 import { Outlet, useNavigate } from "react-router";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
-import { get, isArray, map, trim, filter, find, toNumber } from "lodash";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import trim from "lodash/trim";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import toNumber from "lodash/toNumber";
 import dayjs from "dayjs";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import {
@@ -355,12 +361,23 @@ const ListPage = () => {
 
         if (invalidCount > 0) {
           const firstError = get(result, "preview.errors.0.error");
+          const firstQualityTitle = get(
+            result,
+            "preview.quality.groups.0.title",
+          );
           toast.error(
             `${invalidCount} ta qatorda xato bor. ${
-              firstError || "Import boshlanmadi."
-            }`,
+              firstQualityTitle ? `${firstQualityTitle}: ` : ""
+            }${firstError || "Import boshlanmadi."}`
           );
           return;
+        }
+
+        const warningCount = get(result, "preview.quality.warnCount", 0);
+        if (warningCount > 0) {
+          toast.warning(
+            `${warningCount} ta Content Quality ogohlantirishi bor. /admin/content-quality sahifasida ko'rinadi.`
+          );
         }
 
         await queryClient.invalidateQueries({ queryKey: QUERY_KEY });
@@ -958,6 +975,7 @@ const ListPage = () => {
                 ref={importFileInputRef}
                 type="file"
                 accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                aria-label="Ingredientlarni import qilish faylini tanlash"
                 className="hidden"
                 onChange={(event) => void handleImportIngredients(event)}
               />

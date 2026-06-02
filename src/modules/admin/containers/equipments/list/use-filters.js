@@ -1,5 +1,10 @@
 import React from "react";
-import { find, get, isEmpty, isEqual, toNumber, trim } from "lodash";
+import find from "lodash/find";
+import get from "lodash/get";
+import isEmpty from "lodash/isEmpty";
+import isEqual from "lodash/isEqual";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 
 const ITEMS_PER_PAGE = 10;

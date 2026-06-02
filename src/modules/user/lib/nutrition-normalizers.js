@@ -1,4 +1,6 @@
-import { map, isArray, reduce } from "lodash";
+import map from "lodash/map";
+import isArray from "lodash/isArray";
+import reduce from "lodash/reduce";
 import {
   getMealIngredientsGrams,
   normalizeMealIngredients,

@@ -1,4 +1,6 @@
-import { map, clamp, toNumber } from "lodash";
+import map from "lodash/map";
+import clamp from "lodash/clamp";
+import toNumber from "lodash/toNumber";
 import React from "react";
 import { useDataGrid } from "@/components/reui/data-grid/data-grid"
 

@@ -1,20 +1,18 @@
 import React from "react";
 import { useNavigate, Outlet, useMatch } from "react-router";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import {
-  filter as lodashFilter,
-  find,
-  get,
-  map,
-  size,
-  trim,
-  toString,
-  fromPairs,
-  isArray,
-  toNumber,
-  values as lodashValues,
-  toPairs,
-} from "lodash";
+import lodashFilter from "lodash/filter";
+import find from "lodash/find";
+import get from "lodash/get";
+import map from "lodash/map";
+import size from "lodash/size";
+import trim from "lodash/trim";
+import toString from "lodash/toString";
+import fromPairs from "lodash/fromPairs";
+import isArray from "lodash/isArray";
+import toNumber from "lodash/toNumber";
+import lodashValues from "lodash/values";
+import toPairs from "lodash/toPairs";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
 import {
   useGetQuery,
@@ -599,7 +597,7 @@ const Index = () => {
         }}
         direction="bottom"
       >
-        <DrawerContent className="mx-auto max-h-[90vh] data-[vaul-drawer-direction=bottom]:md:max-w-lg">
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <div className="mx-auto flex w-full min-h-0 flex-1 flex-col">
             <DrawerHeader>
               <DrawerTitle className="flex items-center gap-2">
@@ -613,7 +611,7 @@ const Index = () => {
               </DrawerDescription>
             </DrawerHeader>
 
-            <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
+            <div className="no-scrollbar flex-1 overflow-y-auto p-4 flex flex-col gap-4">
               {isTranslatingLoading ? (
                 <div className="flex min-h-48 items-center justify-center">
                   <LoaderCircleIcon className="size-6 animate-spin text-muted-foreground" />

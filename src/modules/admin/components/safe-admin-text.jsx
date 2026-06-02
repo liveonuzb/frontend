@@ -1,6 +1,6 @@
 import React from "react";
 
-import { filter } from "lodash";
+import filter from "lodash/filter";
 
 const toSafeAdminText = (value, fallback = "") => {
   if (value === undefined || value === null) {

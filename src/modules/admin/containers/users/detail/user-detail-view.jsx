@@ -1,7 +1,16 @@
 import React from "react";
 import { Link } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { get, includes, isArray, join, some, trim, filter, find, map, toNumber } from "lodash";
+import get from "lodash/get";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import some from "lodash/some";
+import trim from "lodash/trim";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
 import {
   ActivityIcon,
   ArrowLeftIcon,
@@ -364,7 +373,7 @@ const TimelineFilter = ({ value, onValueChange, disabled }) => (
   </div>
 );
 
-const UserDetailView = ({ userId, surface = "page", onClose }) => {
+const UserDetailView = ({ userId, surface = "page" }) => {
   const queryClient = useQueryClient();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const {
@@ -1692,7 +1701,6 @@ const UserDetailView = ({ userId, surface = "page", onClose }) => {
           <Button variant="outline" onClick={handleRefresh}>
             Yangilash
           </Button>
-          <Button onClick={onClose}>Yopish</Button>
         </DrawerFooter>
         {dialogs}
       </div>

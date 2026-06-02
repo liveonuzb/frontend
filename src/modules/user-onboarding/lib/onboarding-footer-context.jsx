@@ -1,5 +1,6 @@
 import React from "react";
-import { forEach, toArray } from "lodash";
+import forEach from "lodash/forEach";
+import toArray from "lodash/toArray";
 
 /* eslint-disable react-refresh/only-export-components */
 

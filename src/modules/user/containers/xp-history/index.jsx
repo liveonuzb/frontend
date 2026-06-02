@@ -1,5 +1,7 @@
 import React from "react";
-import { map, toNumber, trim } from "lodash";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 import { useNavigate } from "react-router";
 import {
   ArrowLeftIcon,

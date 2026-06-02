@@ -38,7 +38,6 @@ export default function CalendarBottomDrawer({
   maxDate,
   closeOnSelect = true,
   nested = false,
-  className,
   calendarClassName,
 }) {
   const selectedDate = React.useMemo(
@@ -90,10 +89,7 @@ export default function CalendarBottomDrawer({
     >
       <DrawerContent
         data-calendar-bottom-drawer="true"
-        className={cn(
-          "data-[vaul-drawer-direction=bottom]:!mx-auto data-[vaul-drawer-direction=bottom]:!w-[min(100vw,28rem)] data-[vaul-drawer-direction=bottom]:!max-w-md",
-          className,
-        )}
+        className="data-[vaul-drawer-direction=bottom]:md:max-w-sm"
       >
         <DrawerHeader>
           <DrawerTitle>{title}</DrawerTitle>

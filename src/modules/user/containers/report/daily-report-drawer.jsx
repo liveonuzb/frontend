@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
-import { XIcon, CheckCircle2Icon, AlertTriangleIcon } from "lucide-react";
+import { CheckCircle2Icon, AlertTriangleIcon } from "lucide-react";
 import {
   Drawer,
   DrawerContent,
@@ -23,7 +23,7 @@ import {
   METRIC_META,
 } from "./report-helpers.js";
 
-import { map } from "lodash";
+import map from "lodash/map";
 
 const isDateKey = (value) =>
   typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
@@ -109,17 +109,9 @@ export default function DailyReportDrawer() {
       onOpenChange={(next) => (next ? setOpen(true) : close())}
       direction="bottom"
     >
-      <DrawerContent data-daily-report-drawer="true">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm" data-daily-report-drawer="true">
         <DrawerHeader className="text-left">
           <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={close}
-              className="flex size-9 items-center justify-center rounded-full bg-muted/60 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-              aria-label="Yopish"
-            >
-              <XIcon className="size-4" />
-            </button>
             <div className="text-xs font-semibold text-muted-foreground">
               {formatLongDate(dateKey)}
             </div>
@@ -140,7 +132,7 @@ export default function DailyReportDrawer() {
                   <Skeleton className="h-5 w-52" />
                   <Skeleton className="h-4 w-80" />
                 </div>
-                <Skeleton className="h-32 w-32 rounded-full" />
+                <Skeleton className="size-32 rounded-full" />
               </div>
             ) : hasData ? (
               <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
@@ -233,4 +225,3 @@ export default function DailyReportDrawer() {
     </Drawer>
   );
 }
-

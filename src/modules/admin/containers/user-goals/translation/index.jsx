@@ -1,6 +1,13 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router";
-import { get, trim, filter, find, fromPairs, map, values as lodashValues, toPairs } from "lodash";
+import get from "lodash/get";
+import trim from "lodash/trim";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import fromPairs from "lodash/fromPairs";
+import map from "lodash/map";
+import lodashValues from "lodash/values";
+import toPairs from "lodash/toPairs";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -97,7 +104,7 @@ const TranslationPage = () => {
 
   return (
     <Drawer open onOpenChange={(open) => !open && close()} direction="bottom">
-      <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-md">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="items-center text-center">
           <DrawerTitle>Tarjimalar</DrawerTitle>
           <DrawerDescription>

@@ -25,7 +25,8 @@ import {
   NutritionDrawerContent,
 } from "./nutrition-drawer-layout.jsx";
 
-import { map, toNumber as lodashToNumber } from "lodash";
+import map from "lodash/map";
+import lodashToNumber from "lodash/toNumber";
 
 const STEPS = [
   "Joriy vazn",
@@ -321,15 +322,17 @@ export default function GoalRecalculationDrawer({ open, onOpenChange }) {
         </NutritionDrawerBody>
 
         <DrawerFooter>
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => (step === 0 ? onOpenChange(false) : setStep(step - 1))}
-            >
-              <ChevronLeftIcon className="size-4" />
-              {step === 0 ? "Yopish" : "Ortga"}
-            </Button>
+          <div className={step > 0 ? "grid grid-cols-2 gap-2" : "grid gap-2"}>
+            {step > 0 ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setStep(step - 1)}
+              >
+                <ChevronLeftIcon className="size-4" />
+                Ortga
+              </Button>
+            ) : null}
             {step < STEPS.length - 1 ? (
               <Button
                 type="button"

@@ -13,7 +13,8 @@ import { ONBOARDING_ACCENTS } from "../../lib/tones.js";
 import OnboardingOption from "./option.jsx";
 import { ONBOARDING_SCROLL_AREA_CLASS } from "../onboarding-scroll-area.js";
 
-import { find, map } from "lodash";
+import find from "lodash/find";
+import map from "lodash/map";
 
 const getOptions = (t) => [
   {

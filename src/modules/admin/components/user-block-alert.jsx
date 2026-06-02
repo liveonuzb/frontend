@@ -1,5 +1,6 @@
 import React from "react";
-import { get, trim } from "lodash";
+import get from "lodash/get";
+import trim from "lodash/trim";
 import { AdminConfirmDialog } from "@/modules/admin/components/admin-confirm-dialog.jsx";
 
 const getUserDisplayName = (user) =>

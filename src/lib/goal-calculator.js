@@ -1,4 +1,5 @@
-import { toLower, trim } from "lodash";
+import toLower from "lodash/toLower";
+import trim from "lodash/trim";
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
 const roundToStep = (value, step) => Math.round(value / step) * step;

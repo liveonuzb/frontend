@@ -1,19 +1,17 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import {
-  filter,
-  get,
-  includes,
-  isArray,
-  isEqual,
-  isFunction,
-  map,
-  take,
-  toLower,
-  toNumber,
-  trim,
-  uniqBy,
-} from "lodash";
+import filter from "lodash/filter";
+import get from "lodash/get";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
+import isEqual from "lodash/isEqual";
+import isFunction from "lodash/isFunction";
+import map from "lodash/map";
+import take from "lodash/take";
+import toLower from "lodash/toLower";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
+import uniqBy from "lodash/uniqBy";
 import {
   Grid2X2Icon,
   ListIcon,
@@ -193,7 +191,7 @@ const CustomExerciseDrawer = ({ open, onOpenChange, onSubmit, isPending }) => {
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-xl">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <DrawerHeader className="px-6 py-5 text-left">
             <DrawerTitle className="text-xl font-black">

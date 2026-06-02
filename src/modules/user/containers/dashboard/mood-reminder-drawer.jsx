@@ -23,7 +23,8 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button.jsx";
 
-import { find, map } from "lodash";
+import find from "lodash/find";
+import map from "lodash/map";
 
 const STORAGE_PREFIX = "mood-reminder:dismissed-on";
 const ACTIVE_THRESHOLD_MS = 60000;
@@ -128,7 +129,7 @@ export default function MoodReminderDrawer() {
       }}
       direction="bottom"
     >
-      <DrawerContent data-mood-reminder-drawer="true">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm" data-mood-reminder-drawer="true">
         <DrawerHeader className="text-center">
           <DrawerTitle>Bugungi kayfiyatingiz?</DrawerTitle>
           <DrawerDescription>

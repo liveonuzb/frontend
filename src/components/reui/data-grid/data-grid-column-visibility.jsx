@@ -1,5 +1,6 @@
 "use client";
-import { filter, map } from "lodash";
+import filter from "lodash/filter";
+import map from "lodash/map";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,

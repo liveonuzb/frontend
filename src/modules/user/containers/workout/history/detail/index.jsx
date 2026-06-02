@@ -1,6 +1,13 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { compact, filter, get, isArray, join, map, size, toNumber } from "lodash";
+import compact from "lodash/compact";
+import filter from "lodash/filter";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import map from "lodash/map";
+import size from "lodash/size";
+import toNumber from "lodash/toNumber";
 import { useNavigate, useParams } from "react-router";
 import html2canvas from "html2canvas";
 import {
@@ -212,7 +219,7 @@ const MomentEditor = ({
     <CardContent className="grid gap-4 sm:grid-cols-[0.9fr_1.4fr]">
       <label className="flex min-h-[180px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-primary/30 bg-primary/5 text-center text-primary">
         {imageUrl ? (
-          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+          <img src={imageUrl} alt="" className="size-full object-cover" />
         ) : (
           <>
             <span className="flex size-20 items-center justify-center rounded-full bg-primary/10">
@@ -243,6 +250,7 @@ const MomentEditor = ({
           }
           onBlur={() => onBlurSave("momentTitle")}
           placeholder={t("user.workout.historyDetail.addTitle", "Add a title")}
+          aria-label={t("user.workout.historyDetail.addTitle", "Add a title")}
           className="h-14 w-full rounded-2xl border bg-background px-4 text-base outline-none focus:ring-2 focus:ring-primary"
         />
         <div className="relative">
@@ -260,6 +268,7 @@ const MomentEditor = ({
             }
             onBlur={() => onBlurSave("momentText")}
             placeholder={t("user.workout.historyDetail.addText", "Add text")}
+            aria-label={t("user.workout.historyDetail.addText", "Add text")}
             className="min-h-[110px] w-full resize-none rounded-2xl border bg-background py-4 pl-11 pr-4 text-base outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
@@ -1092,7 +1101,7 @@ const SessionHistoryDetailPage = () => {
               {map(renderableExercises, (item) => (
                 <div
                   key={get(item, "key")}
-                  className="space-y-3 rounded-3xl border bg-card px-4 py-4"
+                  className="space-y-3 rounded-3xl border bg-card p-4"
                 >
                   <div className="flex items-start gap-3">
                     <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">

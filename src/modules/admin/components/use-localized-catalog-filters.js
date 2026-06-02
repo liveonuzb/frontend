@@ -1,5 +1,8 @@
 import React from "react";
-import { find, get, toNumber, trim } from "lodash";
+import find from "lodash/find";
+import get from "lodash/get";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 
 const DEFAULT_PAGE_SIZE = 20;

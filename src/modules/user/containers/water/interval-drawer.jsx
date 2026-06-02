@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { defaultTo, find, map } from "lodash";
+import defaultTo from "lodash/defaultTo";
+import find from "lodash/find";
+import map from "lodash/map";
 import {
   Drawer,
   DrawerContent,
@@ -53,7 +55,7 @@ export default function IntervalDrawer({ children }) {
   return (
     <Drawer open={open} onOpenChange={setOpen} direction="bottom">
       <DrawerTrigger asChild>{children}</DrawerTrigger>
-      <DrawerContent>
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle>Intervalni tanlang</DrawerTitle>
           <DrawerDescription>
@@ -66,7 +68,7 @@ export default function IntervalDrawer({ children }) {
             {map(intervals, (interval) => {
               const isSelected = tempVal === find(intervals, { value: interval.value })?.value;
               return (
-                <button
+                <button type="button"
                   key={interval.value}
                   onClick={() => setTempVal(interval.value)}
                   className={cn(

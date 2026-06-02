@@ -1,6 +1,13 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { find, get, map, size, uniq, filter, isArray, toNumber } from "lodash";
+import find from "lodash/find";
+import get from "lodash/get";
+import map from "lodash/map";
+import size from "lodash/size";
+import uniq from "lodash/uniq";
+import filter from "lodash/filter";
+import isArray from "lodash/isArray";
+import toNumber from "lodash/toNumber";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import {
@@ -92,7 +99,7 @@ const ExerciseRow = ({ exercise, onOpen }) => {
     <button
       type="button"
       onClick={onOpen}
-      className="flex w-full items-center gap-4 rounded-3xl bg-card px-4 py-4 text-left shadow-sm ring-1 ring-border transition hover:bg-primary/5 hover:ring-primary/30"
+      className="flex w-full items-center gap-4 rounded-3xl bg-card p-4 text-left shadow-sm ring-1 ring-border transition hover:bg-primary/5 hover:ring-primary/30"
     >
       <span className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-muted/40">
         {hasImage ? (
@@ -482,7 +489,7 @@ const WorkoutPlanDayDetailPage = () => {
           </div>
 
           <div className="grid overflow-hidden rounded-3xl bg-card shadow-sm ring-1 ring-border sm:grid-cols-2">
-            <div className="flex items-center gap-3 border-b px-5 py-5 sm:border-b-0 sm:border-r">
+            <div className="flex items-center gap-3 border-b p-5 sm:border-b-0 sm:border-r">
               <DumbbellIcon className="text-primary" />
               <div>
                 <p className="text-sm text-muted-foreground">
@@ -496,7 +503,7 @@ const WorkoutPlanDayDetailPage = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 px-5 py-5">
+            <div className="flex items-center gap-3 p-5">
               <TargetIcon className="text-primary" />
               <div>
                 <p className="text-sm text-muted-foreground">

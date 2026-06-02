@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { reduce, map } from "lodash";
+import reduce from "lodash/reduce";
+import map from "lodash/map";
 import {
   ChevronDownIcon,
   PencilIcon,

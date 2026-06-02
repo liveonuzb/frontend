@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
-import { filter, map } from "lodash";
+import filter from "lodash/filter";
+import map from "lodash/map";
 import {
   ReplyIcon,
   PencilIcon,
@@ -79,7 +80,7 @@ export default function MessageContextMenu({
   const renderItem = (item) => {
     const Icon = item.icon;
     return (
-      <button
+      <button type="button"
         key={item.action}
         role="menuitem"
         className={cn(

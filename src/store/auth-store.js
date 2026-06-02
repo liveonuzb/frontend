@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { includes, find, isArray } from "lodash";
+import includes from "lodash/includes";
+import find from "lodash/find";
+import isArray from "lodash/isArray";
 import { normalizeRoles } from "@/lib/roles";
 
 const defaultRoles = [];

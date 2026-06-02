@@ -45,7 +45,10 @@ import {
 } from "@/hooks/app/use-user-ai-reports";
 import { useBreadcrumbStore } from "@/store";
 
-import { isArray, map, some, toNumber } from "lodash";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import some from "lodash/some";
+import toNumber from "lodash/toNumber";
 
 const todayKey = () => new Date().toISOString().slice(0, 10);
 

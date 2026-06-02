@@ -33,19 +33,21 @@ import {
   TrendingUpIcon,
   UserPlusIcon,
   UsersIcon,
+  UtensilsIcon,
   XCircleIcon,
   ZapIcon,
 } from "lucide-react";
 import { useGetQuery } from "@/hooks/api";
 import { cn } from "@/lib/utils";
-import { get, sortBy, includes, map, reduce, toUpper, split, take } from "lodash";
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-} from "recharts";
+import get from "lodash/get";
+import sortBy from "lodash/sortBy";
+import includes from "lodash/includes";
+import map from "lodash/map";
+import reduce from "lodash/reduce";
+import toUpper from "lodash/toUpper";
+import split from "lodash/split";
+import take from "lodash/take";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import PageTransition from "@/components/page-transition";
 import {
   ChartContainer,
@@ -145,7 +147,11 @@ const Index = () => {
     systemHealth: [],
   });
 
-  const { data: healthData, isLoading: isHealthLoading, isError: isHealthError } = useGetQuery({
+  const {
+    data: healthData,
+    isLoading: isHealthLoading,
+    isError: isHealthError,
+  } = useGetQuery({
     url: "/health",
     queryProps: {
       queryKey: ["system", "health"],
@@ -175,6 +181,9 @@ const Index = () => {
   const retention = dashboard.retention ?? {};
   const activeUsers = retention.activeUsers ?? {};
   const referrals = dashboard.referrals ?? {};
+  const nutrition = dashboard.nutrition ?? {};
+  const nutritionEvents = nutrition.events ?? {};
+  const catalogQuality = dashboard.catalogQuality ?? {};
   const premiumOverviewCards = [
     {
       title: "Faol premium",
@@ -252,6 +261,60 @@ const Index = () => {
     { label: "D3 active", value: activeUsers.day3 ?? 0 },
     { label: "D7 active", value: activeUsers.day7 ?? 0 },
   ];
+  const nutritionAnalyticsCards = [
+    {
+      label: "Meal logs",
+      value: nutrition.mealLogs ?? 0,
+      description: "Ovqat tracking yozuvlari",
+    },
+    {
+      label: "Water logs",
+      value: nutrition.waterLogs ?? 0,
+      description: "Suv tracking yozuvlari",
+    },
+    {
+      label: "Active plans",
+      value: nutrition.activeMealPlans ?? 0,
+      description: "Faol meal planlar",
+    },
+    {
+      label: "Shopping lists",
+      value: nutrition.shoppingListsGenerated ?? 0,
+      description: "Yaratilgan shopping listlar",
+    },
+    {
+      label: "AI scans",
+      value: nutritionEvents.scanStarted ?? 0,
+      description: "AI scan boshlangan",
+    },
+    {
+      label: "Report exports",
+      value: nutritionEvents.reportExported ?? 0,
+      description: "Nutrition report exportlari",
+    },
+  ];
+  const catalogQualityCards = [
+    {
+      label: "Missing translations",
+      value: catalogQuality.missingTranslations ?? 0,
+      description: "Faol tillardagi tarjima gaplari",
+    },
+    {
+      label: "Missing images",
+      value: catalogQuality.missingImages ?? 0,
+      description: "Food/ingredient image gaplari",
+    },
+    {
+      label: "Nutrition outliers",
+      value: catalogQuality.nutritionOutliers ?? 0,
+      description: "Macro/calorie/recipe tekshiruvlari",
+    },
+    {
+      label: "Duplicate active names",
+      value: catalogQuality.duplicateActiveFoodNames ?? 0,
+      description: "Active catalogdagi normalized duplicate nomlar",
+    },
+  ];
 
   const canReadAudit = includes(roles, "SUPER_ADMIN");
   const canUseReports =
@@ -299,7 +362,11 @@ const Index = () => {
     },
   ];
 
-  const totalPendingCount = reduce(pendingActions, (sum, item) => sum + item.count, 0);
+  const totalPendingCount = reduce(
+    pendingActions,
+    (sum, item) => sum + item.count,
+    0,
+  );
 
   const apiIsHealthy = !isHealthError && get(health, "status") === "ok";
   const systemStatusItems = [
@@ -378,7 +445,7 @@ const Index = () => {
               {map(quickHighlights, (item) => (
                 <div
                   key={item.label}
-                  className="rounded-2xl border border-border/60 bg-background/90 px-4 py-4 shadow-sm"
+                  className="rounded-2xl border border-border/60 bg-background/90 p-4 shadow-sm"
                 >
                   <p className="text-xs text-muted-foreground">{item.label}</p>
                   <p className="mt-2 text-2xl font-semibold tracking-tight">
@@ -415,7 +482,7 @@ const Index = () => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className="flex items-center gap-3 rounded-2xl border border-border/60 bg-muted/20 px-3 py-3 transition-colors hover:bg-muted/40"
+                  className="flex items-center gap-3 rounded-2xl border border-border/60 bg-muted/20 p-3 transition-colors hover:bg-muted/40"
                 >
                   <div
                     className={cn(
@@ -467,7 +534,7 @@ const Index = () => {
               {map(systemStatusItems, (item) => (
                 <div
                   key={item.label}
-                  className="flex items-center gap-3 rounded-2xl border border-border/60 bg-muted/20 px-3 py-3"
+                  className="flex items-center gap-3 rounded-2xl border border-border/60 bg-muted/20 p-3"
                 >
                   <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted/50">
                     <item.icon className="size-4 text-muted-foreground" />
@@ -518,7 +585,7 @@ const Index = () => {
                 </div>
                 <div>
                   <p className="text-2xl font-bold tracking-tight">
-                    {isLoading ? "..." : metrics[card.key] ?? 0}
+                    {isLoading ? "..." : (metrics[card.key] ?? 0)}
                   </p>
                   <p className="mt-1 text-xs font-medium text-muted-foreground">
                     {card.title}
@@ -574,7 +641,8 @@ const Index = () => {
                   Launch funnel
                 </CardTitle>
                 <CardDescription>
-                  So'nggi {growthFunnel.rangeDays ?? 30} kunlik onboarding va monetizatsiya oqimi
+                  So'nggi {growthFunnel.rangeDays ?? 30} kunlik onboarding va
+                  monetizatsiya oqimi
                 </CardDescription>
               </div>
               <Badge variant="secondary">
@@ -608,9 +676,7 @@ const Index = () => {
                   <RotateCcwIcon className="size-4" />
                   Retention
                 </CardTitle>
-                <CardDescription>
-                  Tracking qilgan aktiv userlar
-                </CardDescription>
+                <CardDescription>Tracking qilgan aktiv userlar</CardDescription>
               </CardHeader>
               <CardContent className="grid grid-cols-3 gap-2">
                 {map(retentionCards, (item) => (
@@ -645,7 +711,7 @@ const Index = () => {
                     Total
                   </p>
                   <p className="mt-2 text-xl font-semibold">
-                    {isLoading ? "..." : referrals.total ?? 0}
+                    {isLoading ? "..." : (referrals.total ?? 0)}
                   </p>
                 </div>
                 <div className="rounded-2xl border border-border/60 bg-muted/20 p-3 text-center">
@@ -653,7 +719,7 @@ const Index = () => {
                     Active
                   </p>
                   <p className="mt-2 text-xl font-semibold">
-                    {isLoading ? "..." : referrals.active ?? 0}
+                    {isLoading ? "..." : (referrals.active ?? 0)}
                   </p>
                 </div>
                 <div className="rounded-2xl border border-border/60 bg-muted/20 p-3 text-center">
@@ -668,6 +734,82 @@ const Index = () => {
             </Card>
           </div>
         </div>
+
+        {/* Nutrition Analytics */}
+        <Card className={dashboardCardClassName}>
+          <CardHeader className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <UtensilsIcon className="size-4" />
+                Nutrition analytics
+              </CardTitle>
+              <CardDescription>
+                So'nggi {nutrition.rangeDays ?? 30} kunlik nutrition engagement
+                va AI review snapshot
+              </CardDescription>
+            </div>
+            <Badge variant="secondary">
+              AI scan review {nutrition.scanReviewRate ?? 0}%
+            </Badge>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+            {map(nutritionAnalyticsCards, (item) => (
+              <div
+                key={item.label}
+                className="rounded-2xl border border-border/60 bg-muted/20 p-4"
+              >
+                <p className="text-xs font-medium text-muted-foreground">
+                  {item.label}
+                </p>
+                <p className="mt-2 text-2xl font-semibold tracking-tight">
+                  {isLoading ? "..." : item.value}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground/80">
+                  {item.description}
+                </p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Catalog Quality */}
+        <Card className={dashboardCardClassName}>
+          <CardHeader className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <DatabaseIcon className="size-4" />
+                Catalog quality
+              </CardTitle>
+              <CardDescription>
+                Content-quality queue bo'yicha production readiness snapshot
+              </CardDescription>
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <Link to={catalogQuality.actionPath || "/admin/content-quality"}>
+                Content quality
+                <ArrowUpRightIcon data-icon="inline-end" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {map(catalogQualityCards, (item) => (
+              <div
+                key={item.label}
+                className="rounded-2xl border border-border/60 bg-muted/20 p-4"
+              >
+                <p className="text-xs font-medium text-muted-foreground">
+                  {item.label}
+                </p>
+                <p className="mt-2 text-2xl font-semibold tracking-tight">
+                  {isLoading ? "..." : item.value}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground/80">
+                  {item.description}
+                </p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
 
         {/* Premium Plans */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -743,17 +885,54 @@ const Index = () => {
                 margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
               >
                 <defs>
-                  <linearGradient id="dashboardFreeGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-free)" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="var(--color-free)" stopOpacity={0} />
+                  <linearGradient
+                    id="dashboardFreeGradient"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="5%"
+                      stopColor="var(--color-free)"
+                      stopOpacity={0.25}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="var(--color-free)"
+                      stopOpacity={0}
+                    />
                   </linearGradient>
-                  <linearGradient id="dashboardPremiumGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-premium)" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="var(--color-premium)" stopOpacity={0} />
+                  <linearGradient
+                    id="dashboardPremiumGradient"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="5%"
+                      stopColor="var(--color-premium)"
+                      stopOpacity={0.25}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="var(--color-premium)"
+                      stopOpacity={0}
+                    />
                   </linearGradient>
                 </defs>
-                <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={10} />
+                <CartesianGrid
+                  vertical={false}
+                  strokeDasharray="3 3"
+                  className="stroke-border"
+                />
+                <XAxis
+                  dataKey="month"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={10}
+                />
                 <YAxis tickLine={false} axisLine={false} width={28} />
                 <ChartTooltip
                   cursor={false}
@@ -848,8 +1027,12 @@ const Index = () => {
                       className="flex items-start gap-3 rounded-2xl border border-border/60 bg-muted/20 px-3 py-2.5"
                     >
                       <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
-                        {toUpper(map(take(split((activity.user ?? "?"), " "), 2), (part) => part[0] ?? "")
-                          .join(""))}
+                        {toUpper(
+                          map(
+                            take(split(activity.user ?? "?", " "), 2),
+                            (part) => part[0] ?? "",
+                          ).join(""),
+                        )}
                       </div>
                       <div className="min-w-0 space-y-0.5">
                         <p className="text-sm leading-5">
@@ -906,7 +1089,8 @@ const Index = () => {
                         {item.summary}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {item.adminUser} • {getRelativeTimeLabel(item.createdAt)}
+                        {item.adminUser} •{" "}
+                        {getRelativeTimeLabel(item.createdAt)}
                       </p>
                     </div>
                   ))}

@@ -3,7 +3,13 @@ import { useNavigate, Outlet } from "react-router";
 import { PlusIcon, UsersIcon } from "lucide-react";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { toast } from "sonner";
-import { get, includes, some, isArray, join, trim, values as lodashValues } from "lodash";
+import get from "lodash/get";
+import includes from "lodash/includes";
+import some from "lodash/some";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import trim from "lodash/trim";
+import lodashValues from "lodash/values";
 import { Button } from "@/components/ui/button";
 import {
   AdminListDataGrid,

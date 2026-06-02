@@ -1,5 +1,8 @@
 import React, { useRef } from "react";
-import { get, isArray, join, startsWith } from "lodash";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import startsWith from "lodash/startsWith";
 import {
   ImageIcon,
   LoaderCircleIcon,
@@ -169,6 +172,7 @@ const FoodImagePicker = ({
         ref={inputRef}
         type="file"
         accept="image/*"
+        aria-label="Ovqat rasmi faylini tanlash"
         className="hidden"
         onChange={(event) => {
           const file = event.target.files?.[0];

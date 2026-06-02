@@ -1,5 +1,6 @@
 import React from "react";
-import { get, toNumber } from "lodash";
+import get from "lodash/get";
+import toNumber from "lodash/toNumber";
 import { Badge } from "@/components/ui/badge";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import ActionsMenu from "./actions-menu.jsx";

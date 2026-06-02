@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { trim } from "lodash";
+import trim from "lodash/trim";
 import { toast } from "sonner";
 import { SaveIcon } from "lucide-react";
 import { Button } from "@/components/ui/button.jsx";
@@ -59,7 +59,7 @@ const BuilderMetaDrawer = ({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent>
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle>
             {t("components.workoutPlanBuilder.metaDrawer.title")}

@@ -20,21 +20,26 @@ const templateFixture = {
     uz: "Balansli haftalik menyu",
   },
   goal: "wellness",
-  days: 30,
+  durationDays: 30,
   mealsPerDay: 4,
   totalDays: 30,
   totalMeals: 1,
   dietaryTags: ["high_protein"],
-  weeklyKanban: {
-    "day-1": [
-      {
-        id: "breakfast",
-        type: "Nonushta",
-        time: "08:00",
-        items: [{ id: "food-1", name: "Tuxum", cal: 120 }],
-      },
-    ],
-  },
+  source: "ai_variant",
+  sourceTemplateId: "source-template-1",
+  days: [
+    {
+      dayNumber: 1,
+      meals: [
+        {
+          id: "breakfast",
+          type: "Nonushta",
+          time: "08:00",
+          items: [{ id: "food-1", name: "Tuxum", cal: 120 }],
+        },
+      ],
+    },
+  ],
   isActive: true,
 };
 
@@ -132,6 +137,7 @@ describe("admin meal plan list", () => {
     render(<ListPage />);
 
     expect(screen.getByText("Sog'lom turmush")).toBeInTheDocument();
+    expect(screen.getByText("AI variant")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /ko'rish/i }));
 

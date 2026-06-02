@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { FlameIcon, GemIcon, XIcon } from "lucide-react";
+import { FlameIcon, GemIcon } from "lucide-react";
 import {
   Drawer,
   DrawerContent,
@@ -127,17 +127,9 @@ export default function StreakRestoreDrawer() {
       onOpenChange={(next) => (next ? setOpen(true) : dismiss())}
       direction="bottom"
     >
-      <DrawerContent data-streak-restore-drawer="true">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm" data-streak-restore-drawer="true">
         <DrawerHeader className="text-left">
           <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={dismiss}
-              className="flex size-9 items-center justify-center rounded-full bg-muted/60 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-              aria-label="Yopish"
-            >
-              <XIcon className="size-4" />
-            </button>
             <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1.5">
               <GemIcon className="size-4 text-amber-500" />
               <span className="text-sm font-bold tabular-nums text-amber-600">

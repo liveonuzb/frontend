@@ -22,7 +22,9 @@ import {
 } from "./query-helpers.js";
 import useReminderTrigger from "./use-reminder-trigger.js";
 
-import { filter, map, split } from "lodash";
+import filter from "lodash/filter";
+import map from "lodash/map";
+import split from "lodash/split";
 
 /* ─────────────────────────────────────────────
    WATER REMINDER DRAWER (Dashboard-only)
@@ -173,7 +175,7 @@ export default function WaterReminderDrawer() {
       onOpenChange={(next) => (next ? setOpen(true) : close())}
       direction="bottom"
     >
-      <DrawerContent data-water-reminder-drawer="true">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm" data-water-reminder-drawer="true">
         <DrawerHeader className="text-center">
           <div className="mx-auto mb-2 flex size-14 items-center justify-center rounded-2xl bg-sky-500/10">
             <DropletIcon className="size-7 text-sky-500" />

@@ -22,7 +22,16 @@ import StepMetric from "./step-metric.jsx";
 import StepReward from "./step-reward.jsx";
 import StepParticipants from "./step-participants.jsx";
 
-import { filter, includes, isArray, map, reduce, some, toNumber, trim, split, take } from "lodash";
+import filter from "lodash/filter";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import reduce from "lodash/reduce";
+import some from "lodash/some";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
+import split from "lodash/split";
+import take from "lodash/take";
 
 const STEPS = [
   { key: "basic", label: "Asosiy" },
@@ -492,7 +501,7 @@ export default function ChallengeCreateContainer() {
         if (!open) closeDrawer();
       }}
     >
-      <DrawerContent className="data-[vaul-drawer-direction=bottom]:max-w-2xl">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="border-b text-left">
           <div className="flex items-start gap-3">
             <Button

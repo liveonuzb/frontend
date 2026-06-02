@@ -30,7 +30,7 @@ export default function WorkoutPlanMetaDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent className="mx-auto max-w-lg rounded-t-[2.5rem]">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="px-6 py-5 text-left">
           <DrawerTitle>
             {isEdit

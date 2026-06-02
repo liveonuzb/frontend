@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/hooks/api/use-api";
 import { useAiAccessInvalidation } from "@/hooks/app/use-ai-access";
 
-import { find } from "lodash";
+import find from "lodash/find";
 
 export const USER_AI_REPORT_PERIODS = [
   { period: "weekly", label: "Haftalik", shortLabel: "7 kun", days: 7 },

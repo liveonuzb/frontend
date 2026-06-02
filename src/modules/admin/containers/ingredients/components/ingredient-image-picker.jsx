@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import React, { useRef } from "react";
-import { get, startsWith } from "lodash";
+import get from "lodash/get";
+import startsWith from "lodash/startsWith";
 import {
   ImageIcon,
   LoaderCircleIcon,
@@ -128,6 +129,7 @@ const IngredientImagePicker = ({
         ref={inputRef}
         type="file"
         accept="image/*"
+        aria-label="Ingredient rasmi faylini tanlash"
         className="hidden"
         onChange={(event) => {
           const file = event.target.files?.[0];

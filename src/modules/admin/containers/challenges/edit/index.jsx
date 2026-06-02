@@ -2,21 +2,19 @@
 import React from "react";
 import { addDays, differenceInCalendarDays, format } from "date-fns";
 import { useParams } from "react-router";
-import {
-  find,
-  get,
-  values as lodashValues,
-  fromPairs,
-  isArray,
-  map,
-  reduce,
-  some,
-  toNumber,
-  trim,
-  filter,
-  toPairs,
-  take,
-} from "lodash";
+import find from "lodash/find";
+import get from "lodash/get";
+import lodashValues from "lodash/values";
+import fromPairs from "lodash/fromPairs";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import reduce from "lodash/reduce";
+import some from "lodash/some";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
+import filter from "lodash/filter";
+import toPairs from "lodash/toPairs";
+import take from "lodash/take";
 import { toast } from "sonner";
 import { ArrowLeftIcon, CheckCircle2Icon, LoaderCircleIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -482,7 +480,7 @@ const EditChallengePage = () => {
         if (!open) closeDrawer();
       }}
     >
-      <DrawerContent className="overflow-hidden data-[vaul-drawer-direction=bottom]:max-w-2xl">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="shrink-0 border-b text-left">
           <div className="flex items-start gap-3">
             <Button

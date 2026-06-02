@@ -1,5 +1,9 @@
 import React from "react";
-import { map, filter, isArray, toUpper, trim } from "lodash";
+import map from "lodash/map";
+import filter from "lodash/filter";
+import isArray from "lodash/isArray";
+import toUpper from "lodash/toUpper";
+import trim from "lodash/trim";
 import { format } from "date-fns";
 import {
   AwardIcon,
@@ -337,7 +341,7 @@ const XpHistoryDrawer = ({ open, onOpenChange }) => {
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent>
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle className="flex items-center gap-2">
             <ZapIcon className="size-4 text-amber-500" />
@@ -553,7 +557,7 @@ const AchievementsPage = () => {
           if (!open) setSelectedItem(null);
         }}
       >
-        <DrawerContent>
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader>
             <div className="flex items-center gap-4">
               <AchievementImage

@@ -6,7 +6,9 @@ import { config } from "@/config.js";
 import { queryClient } from "@/providers/query";
 import { normalizeApiPath } from "./normalize-api-path.js";
 
-import { get, some, includes } from "lodash";
+import get from "lodash/get";
+import some from "lodash/some";
+import includes from "lodash/includes";
 
 let refreshPromise = null;
 

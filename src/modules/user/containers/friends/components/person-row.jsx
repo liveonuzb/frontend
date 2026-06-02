@@ -1,5 +1,11 @@
 import React from "react";
-import { compact, join, map, take, split, toUpper, trim } from "lodash";
+import compact from "lodash/compact";
+import join from "lodash/join";
+import map from "lodash/map";
+import take from "lodash/take";
+import split from "lodash/split";
+import toUpper from "lodash/toUpper";
+import trim from "lodash/trim";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 

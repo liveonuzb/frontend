@@ -1,6 +1,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { compact, get, join, map, trim } from "lodash";
+import compact from "lodash/compact";
+import get from "lodash/get";
+import join from "lodash/join";
+import map from "lodash/map";
+import trim from "lodash/trim";
 import {
   Drawer,
   DrawerContent,
@@ -77,7 +81,7 @@ export function AssignWorkoutTemplateDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent className="mx-auto max-h-[90vh] data-[vaul-drawer-direction=bottom]:md:max-w-lg">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <DrawerHeader>
             <DrawerTitle>{t("admin.workoutPlans.assign.title")}</DrawerTitle>

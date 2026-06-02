@@ -1,4 +1,8 @@
-import { filter, get, isArray, map, toNumber } from "lodash";
+import filter from "lodash/filter";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
 
 export const WORKOUT_PLAN_DIFFICULTY = {
   beginner: "beginner",

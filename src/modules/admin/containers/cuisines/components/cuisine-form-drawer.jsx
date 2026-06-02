@@ -35,7 +35,7 @@ import {
   resolveLabel,
 } from "./utils.jsx";
 
-import { toUpper } from "lodash";
+import toUpper from "lodash/toUpper";
 
 const CuisineFormDrawer = ({ mode }) => {
   const { id } = useParams();
@@ -87,7 +87,7 @@ const CuisineFormDrawer = ({ mode }) => {
       onOpenChange={(open) => !open && closeAdminDrawer()}
       direction="bottom"
     >
-      <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-md">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="items-center text-center">
           <DrawerTitle>
             {isEdit ? "Oshxonani tahrirlash" : "Yangi oshxona"}

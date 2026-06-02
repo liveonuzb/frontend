@@ -1,5 +1,6 @@
 import React from "react";
-import { isEmpty, pickBy } from "lodash";
+import isEmpty from "lodash/isEmpty";
+import pickBy from "lodash/pickBy";
 import { useGetQuery } from "@/hooks/api";
 import {
   getOnboardingOptionsPath,

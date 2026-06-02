@@ -1,5 +1,6 @@
 import React from "react";
-import { get, find } from "lodash";
+import get from "lodash/get";
+import find from "lodash/find";
 import { FlameIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGetQuery } from "@/hooks/api";
@@ -35,7 +36,7 @@ const StreakWidget = ({ streak, longestStreak, trackedDays }) => {
       : 0;
 
   return (
-    <div className="group relative h-full overflow-hidden rounded-[28px] border border-[rgb(var(--accent-rgb)/0.15)] bg-gradient-to-br from-[rgb(var(--accent-rgb)/0.08)] via-card to-card px-5 py-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[rgb(var(--accent-rgb)/0.30)] hover:shadow-xl hover:shadow-[rgb(var(--accent-rgb)/0.05)]">
+    <div className="group relative h-full overflow-hidden rounded-[28px] border border-[rgb(var(--accent-rgb)/0.15)] bg-gradient-to-br from-[rgb(var(--accent-rgb)/0.08)] via-card to-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[rgb(var(--accent-rgb)/0.30)] hover:shadow-xl hover:shadow-[rgb(var(--accent-rgb)/0.05)]">
       <div className="absolute inset-x-8 top-0 h-24 rounded-full bg-[rgb(var(--accent-rgb)/0.08)] blur-3xl transition-opacity group-hover:opacity-90" />
       <div className="relative flex h-full flex-col">
         <div className="flex items-center justify-between gap-3">

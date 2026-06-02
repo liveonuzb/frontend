@@ -1,4 +1,4 @@
-import { get } from "lodash";
+import get from "lodash/get";
 import LocalizedCatalogManager from "@/modules/admin/components/localized-catalog-manager.jsx";
 import { useDeleteQuery, useGetQuery, usePatchQuery, usePostQuery } from "@/hooks/api";
 

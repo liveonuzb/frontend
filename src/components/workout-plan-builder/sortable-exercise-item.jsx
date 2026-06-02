@@ -1,17 +1,15 @@
 import React, { memo, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { GripVerticalIcon, Trash2Icon, ClockIcon, Settings2Icon, CheckIcon, PlusIcon, XIcon } from "lucide-react";
-import {
-  get,
-  map,
-  filter,
-  size,
-  includes,
-  isNil,
-  isArray,
-  toNumber,
-  parseInt as lodashParseInt,
-} from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import filter from "lodash/filter";
+import size from "lodash/size";
+import includes from "lodash/includes";
+import isNil from "lodash/isNil";
+import isArray from "lodash/isArray";
+import toNumber from "lodash/toNumber";
+import lodashParseInt from "lodash/parseInt";
 import { cn } from "@/lib/utils";
 import { KanbanItem, KanbanItemHandle } from "@/components/reui/kanban";
 import { Badge } from "@/components/ui/badge";
@@ -146,7 +144,7 @@ const SortableExerciseItem = memo(({ item, colId, onRemove, onUpdate }) => {
         </button>
       </div>
       <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen} direction="bottom">
-        <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-md outline-none">
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader className="px-6 py-4">
             <DrawerTitle className="text-xl font-bold text-center">
               {t("components.workoutPlanBuilder.tracking.editSets")}

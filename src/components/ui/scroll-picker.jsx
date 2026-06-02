@@ -1,5 +1,6 @@
-import React, { useRef, useEffect } from "react";
-import { findIndex, map } from "lodash";
+import React, { useRef, useLayoutEffect } from "react";
+import findIndex from "lodash/findIndex";
+import map from "lodash/map";
 import { cn } from "@/lib/utils";
 
 export const ScrollPicker = ({
@@ -38,7 +39,7 @@ export const ScrollPicker = ({
     }, 150);
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!containerRef.current || isScrollingRef.current) return;
     const index = findIndex(items, (item) => item.value === value);
     if (index >= 0) {
@@ -95,7 +96,8 @@ export const ScrollPicker = ({
         {map(items, (item) => {
           const isSelected = item.value === value;
           return (
-            <div
+            <button
+              type="button"
               key={item.value}
               className={cn(
                 "flex items-center justify-center snap-center cursor-pointer transition-all duration-200",
@@ -126,9 +128,10 @@ export const ScrollPicker = ({
                   onChange(item.value);
                 }
               }}
+              aria-pressed={isSelected}
             >
               {item.label}
-            </div>
+            </button>
           );
         })}
       </div>

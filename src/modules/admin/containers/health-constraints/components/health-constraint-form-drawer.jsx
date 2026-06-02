@@ -39,7 +39,7 @@ import {
   TYPE_OPTIONS,
 } from "./utils.jsx";
 
-import { toUpper } from "lodash";
+import toUpper from "lodash/toUpper";
 
 const HealthConstraintFormDrawer = ({ mode }) => {
   const { id } = useParams();
@@ -116,7 +116,7 @@ const HealthConstraintFormDrawer = ({ mode }) => {
       onOpenChange={(open) => !open && closeAdminDrawer()}
       direction="bottom"
     >
-      <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-md">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="items-center text-center">
           <DrawerTitle>
             {isEdit ? "Constraintni tahrirlash" : "Yangi constraint"}

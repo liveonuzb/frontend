@@ -1,4 +1,6 @@
-import { get, some, toLower } from "lodash";
+import get from "lodash/get";
+import some from "lodash/some";
+import toLower from "lodash/toLower";
 import { config } from "@/config.js";
 import { getApiErrorMessage } from "@/lib/api-response.js";
 import {

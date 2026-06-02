@@ -1,15 +1,13 @@
 import React from "react";
-import {
-  compact,
-  entries,
-  find,
-  get,
-  keyBy,
-  map,
-  reduce,
-  size,
-  some,
-} from "lodash";
+import compact from "lodash/compact";
+import entries from "lodash/entries";
+import find from "lodash/find";
+import get from "lodash/get";
+import keyBy from "lodash/keyBy";
+import map from "lodash/map";
+import reduce from "lodash/reduce";
+import size from "lodash/size";
+import some from "lodash/some";
 import { useNavigate } from "react-router";
 import { useGetQuery } from "@/hooks/api";
 import { useDailyTrackingActions } from "@/hooks/app/use-daily-tracking";

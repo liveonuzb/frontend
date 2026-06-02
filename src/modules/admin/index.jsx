@@ -18,6 +18,9 @@ const NotificationsPage = lazy(
   () => import("@/modules/admin/pages/notifications/index.jsx"),
 );
 const FoodsPage = lazy(() => import("@/modules/admin/pages/foods/index.jsx"));
+const RecipesPage = lazy(
+  () => import("@/modules/admin/pages/recipes/index.jsx"),
+);
 const LocationsPage = lazy(
   () => import("@/modules/admin/pages/locations/index.jsx"),
 );
@@ -131,6 +134,12 @@ const Index = () => {
         <Route
           path="foods/*"
           element={renderAdminRoute(FoodsPage, { capability: "content.read" })}
+        />
+        <Route
+          path="recipes/*"
+          element={renderAdminRoute(RecipesPage, {
+            capability: "content.read",
+          })}
         />
         <Route
           path="locations/*"

@@ -4,7 +4,7 @@ import {
   buildRecommendedGoals,
 } from "./health-tab.utils.js";
 
-import { map } from "lodash";
+import map from "lodash/map";
 
 describe("health-tab utils", () => {
   it("recalculates recommendation calories and carbs when selected goal changes", () => {

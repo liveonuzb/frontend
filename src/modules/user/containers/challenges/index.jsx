@@ -1,18 +1,16 @@
 import React from "react";
-import {
-  find,
-  get,
-  includes,
-  keys,
-  some,
-  trim,
-  filter,
-  isArray,
-  map,
-  toLower,
-  toNumber,
-  take,
-} from "lodash";
+import find from "lodash/find";
+import get from "lodash/get";
+import includes from "lodash/includes";
+import keys from "lodash/keys";
+import some from "lodash/some";
+import trim from "lodash/trim";
+import filter from "lodash/filter";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import toLower from "lodash/toLower";
+import toNumber from "lodash/toNumber";
+import take from "lodash/take";
 import { format } from "date-fns";
 import { uz } from "date-fns/locale";
 import { toast } from "sonner";
@@ -299,7 +297,7 @@ const ChallengeCard = ({
           <Button
             variant="outline"
             size="lg"
-            className="h-12 w-12 rounded-2xl border-border/50 bg-background/50 p-0 shadow-sm transition-all hover:bg-muted active:scale-90"
+            className="size-12 rounded-2xl border-border/50 bg-background/50 p-0 shadow-sm transition-all hover:bg-muted active:scale-90"
             onClick={() => onViewDetail(challenge.id)}
             title="Batafsil ko'rish"
           >
@@ -309,7 +307,7 @@ const ChallengeCard = ({
             <Button
               variant="outline"
               size="lg"
-              className="h-12 w-12 rounded-2xl border-border/50 bg-background/50 p-0 shadow-sm transition-all hover:bg-muted active:scale-90"
+              className="size-12 rounded-2xl border-border/50 bg-background/50 p-0 shadow-sm transition-all hover:bg-muted active:scale-90"
               onClick={() => onInvite(challenge)}
               title="Taklif qilish"
             >
@@ -686,7 +684,7 @@ export default function ChallengesContainer() {
                   </motion.div>
                 ))}
                 {pendingInvitations.length > 2 && (
-                  <button className="py-1 text-xs font-bold text-primary/70 transition-colors hover:text-primary">
+                  <button type="button" className="py-1 text-xs font-bold text-primary/70 transition-colors hover:text-primary">
                     Barcha {pendingInvitations.length} ta taklifni ko&apos;rish
                   </button>
                 )}
@@ -787,7 +785,7 @@ export default function ChallengesContainer() {
         }}
         direction="bottom"
       >
-        <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-2xl outline-none">
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader className="border-b border-border/40 pb-4 pt-5">
             <DrawerTitle className="text-center text-xl font-bold">
               Do&apos;stlarni taklif qilish

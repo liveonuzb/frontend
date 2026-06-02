@@ -1,5 +1,7 @@
 import React, { useRef } from "react";
-import { get, isArray, join } from "lodash";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
 import {
   ImageIcon,
   LoaderCircleIcon,
@@ -134,6 +136,7 @@ export const AdminImagePickerBase = ({
         ref={inputRef}
         type="file"
         accept="image/*"
+        aria-label={`${label} faylini tanlash`}
         className="hidden"
         onChange={(event) => {
           const file = event.target.files?.[0];

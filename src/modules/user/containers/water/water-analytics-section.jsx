@@ -1,5 +1,8 @@
 import React from "react";
-import { get, map, isArray, toNumber } from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import isArray from "lodash/isArray";
+import toNumber from "lodash/toNumber";
 import { BarChart3Icon, DropletIcon, CheckCircleIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";

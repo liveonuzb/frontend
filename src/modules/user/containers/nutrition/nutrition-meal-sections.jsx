@@ -10,7 +10,9 @@ import {
 } from "lucide-react";
 import MealSection from "./meal-section.jsx";
 
-import { map, values as lodashValues, toPairs } from "lodash";
+import map from "lodash/map";
+import lodashValues from "lodash/values";
+import toPairs from "lodash/toPairs";
 
 export default function NutritionMealSections({
   mealConfig,
@@ -149,7 +151,7 @@ export default function NutritionMealSections({
             >
               <ListFilterIcon className="size-4" />
               {activeFilterCount > 0 ? (
-                <span className="absolute -right-1 -top-1 flex h-3 w-3 items-center justify-center rounded-full bg-primary text-[8px] font-bold text-primary-foreground">
+                <span className="absolute -right-1 -top-1 flex size-3 items-center justify-center rounded-full bg-primary text-[8px] font-bold text-primary-foreground">
                   {activeFilterCount}
                 </span>
               ) : null}

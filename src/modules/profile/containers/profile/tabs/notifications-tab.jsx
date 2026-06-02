@@ -1,5 +1,6 @@
 import React from "react";
-import { isEqual, map } from "lodash";
+import isEqual from "lodash/isEqual";
+import map from "lodash/map";
 import { useTranslation } from "react-i18next";
 import {
   BellIcon,
@@ -373,7 +374,7 @@ export const NotificationSettingsDrawer = ({
 
   return (
     <Drawer direction="bottom" open={open} onOpenChange={onOpenChange}>
-      <DrawerContent>
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle>{t("profile.notifications.settingsTitle")}</DrawerTitle>
           <DrawerDescription>

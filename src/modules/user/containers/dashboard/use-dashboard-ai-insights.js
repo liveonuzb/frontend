@@ -4,7 +4,7 @@ import { getApiResponseData } from "@/lib/api-response";
 import { USER_AI_REPORT_QUERY_KEY } from "@/hooks/app/use-user-ai-reports";
 import { dailyReportQueryKey } from "@/modules/user/containers/report/report-helpers.js";
 
-import { isArray } from "lodash";
+import isArray from "lodash/isArray";
 
 const RESTORE_QUOTE_QUERY_KEY = ["user", "gamification", "streak", "restore-quote"];
 

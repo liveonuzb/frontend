@@ -1,4 +1,6 @@
-import { filter, find, map } from "lodash";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import map from "lodash/map";
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";

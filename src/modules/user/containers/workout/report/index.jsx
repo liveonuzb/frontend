@@ -1,6 +1,9 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { get, map, slice, toNumber } from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import slice from "lodash/slice";
+import toNumber from "lodash/toNumber";
 import {
   ActivityIcon,
   BarChart3Icon,

@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate, useParams } from "react-router";
 import PageLoader from "@/components/page-loader/index.jsx";
 
-import { trim } from "lodash";
+import trim from "lodash/trim";
 
 const ReferralRedirectPage = () => {
   const navigate = useNavigate();

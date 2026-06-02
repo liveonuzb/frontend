@@ -1,5 +1,11 @@
 import React, { useMemo } from "react";
-import { filter, find, includes, keys, map, uniq, isArray } from "lodash";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import includes from "lodash/includes";
+import keys from "lodash/keys";
+import map from "lodash/map";
+import uniq from "lodash/uniq";
+import isArray from "lodash/isArray";
 import { useNavigate, useLocation } from "react-router";
 import { 
     ChevronsUpDown, 

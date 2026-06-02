@@ -1,4 +1,6 @@
-import { find, trim, parseInt as lodashParseInt } from "lodash";
+import find from "lodash/find";
+import trim from "lodash/trim";
+import lodashParseInt from "lodash/parseInt";
 export const DEFAULT_CATEGORY_BADGE_CLASS =
   "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700";
 

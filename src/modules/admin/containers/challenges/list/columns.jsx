@@ -1,5 +1,10 @@
 import React from "react";
-import { get, toPairs, take, isArray, map, toNumber } from "lodash";
+import get from "lodash/get";
+import toPairs from "lodash/toPairs";
+import take from "lodash/take";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
 import { format } from "date-fns";
 import { uz } from "date-fns/locale";
 import {

@@ -1,5 +1,5 @@
 import React from "react";
-import { map } from "lodash";
+import map from "lodash/map";
 import { useNavigate } from "react-router";
 import { XIcon } from "lucide-react";
 import { useProfileOverlay } from "@/modules/profile/hooks/use-profile-overlay";
@@ -73,17 +73,20 @@ export const KeyboardShortcutsProvider = ({ children }) => {
     <>
       {children}
       {showHelp && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          onClick={() => setShowHelp(false)}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <button
+            type="button"
+            aria-label="Klaviatura shortcutlarini yopish"
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowHelp(false)}
+          />
           <div
-            className="bg-background border rounded-2xl shadow-2xl w-full max-w-md p-6"
+            className="relative bg-background border rounded-2xl shadow-2xl w-full max-w-md p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold">⌨️ Klaviatura shortcutlari</h3>
-              <button onClick={() => setShowHelp(false)}>
+              <button type="button" onClick={() => setShowHelp(false)}>
                 <XIcon className="size-4" />
               </button>
             </div>

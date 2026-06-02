@@ -1,5 +1,9 @@
 import React from "react";
-import { get, round, multiply, map, toPairs } from "lodash";
+import get from "lodash/get";
+import round from "lodash/round";
+import multiply from "lodash/multiply";
+import map from "lodash/map";
+import toPairs from "lodash/toPairs";
 import {
   Drawer,
   DrawerBody,

@@ -1,4 +1,5 @@
-import { some, split } from "lodash";
+import some from "lodash/some";
+import split from "lodash/split";
 export const normalizeRoutePath = (path = "") => {
   if (!path) return "";
 

@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from "react";
-import { find, map } from "lodash";
+import find from "lodash/find";
+import map from "lodash/map";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input.jsx";
 import {
   DrawerBody,
   DrawerDescription,
@@ -28,12 +30,20 @@ const MEAL_COUNTS = [
   { id: 5, label: "5 mahal", description: "3 mahal + 2 snack" },
 ];
 
+const BUDGET_PERIODS = [
+  { id: "daily", label: "Kunlik" },
+  { id: "weekly", label: "Haftalik" },
+  { id: "monthly", label: "Oylik" },
+];
+
 const AIGenerator = ({ onClose, onGenerated }) => {
   const { generateAiPlan, isGeneratingAi } = useMealPlan();
   const { wallet, costs } = useAiAccessStatus();
   const [step, setStep] = useState(1);
   const [selectedGoal, setSelectedGoal] = useState(null);
   const [selectedMealCount, setSelectedMealCount] = useState(4);
+  const [budgetAmount, setBudgetAmount] = useState("");
+  const [selectedBudgetPeriod, setSelectedBudgetPeriod] = useState("weekly");
   const planFeature = AI_USAGE_FEATURES.mealPlan7Day;
   const accessStatus = getAiAccessStatus({
     wallet,
@@ -57,9 +67,16 @@ const AIGenerator = ({ onClose, onGenerated }) => {
     }
 
     try {
+      const normalizedBudgetAmount = Number(String(budgetAmount).trim());
       const nextState = await generateAiPlan({
         goal: selectedGoal,
         mealCount: selectedMealCount,
+        ...(Number.isFinite(normalizedBudgetAmount) && normalizedBudgetAmount > 0
+          ? {
+              budgetAmount: normalizedBudgetAmount,
+              budgetPeriod: selectedBudgetPeriod,
+            }
+          : {}),
       });
 
       if (nextState?.draftPlan && onGenerated) {
@@ -109,7 +126,7 @@ const AIGenerator = ({ onClose, onGenerated }) => {
               const isActive = selectedGoal === goal.id;
 
               return (
-                <button
+                <button type="button"
                   key={goal.id}
                   onClick={() => {
                     setSelectedGoal(goal.id);
@@ -174,7 +191,7 @@ const AIGenerator = ({ onClose, onGenerated }) => {
               const isActive = selectedMealCount === count.id;
 
               return (
-                <button
+                <button type="button"
                   key={count.id}
                   onClick={() => setSelectedMealCount(count.id)}
                   className={cn(
@@ -206,6 +223,40 @@ const AIGenerator = ({ onClose, onGenerated }) => {
                 </button>
               );
             })}
+
+            <div className="rounded-lg border border-border bg-background p-3">
+              <label
+                className="mb-2 block text-xs font-bold text-muted-foreground"
+                htmlFor="nutrition-ai-budget"
+              >
+                UZS byudjet
+              </label>
+              <Input
+                id="nutrition-ai-budget"
+                type="number"
+                min="0"
+                inputMode="numeric"
+                value={budgetAmount}
+                onChange={(event) => setBudgetAmount(event.target.value)}
+                placeholder="Masalan, 350000"
+              />
+              <div className="mt-2 grid grid-cols-3 gap-1">
+                {map(BUDGET_PERIODS, (period) => (
+                  <Button
+                    key={period.id}
+                    type="button"
+                    size="sm"
+                    variant={
+                      selectedBudgetPeriod === period.id ? "default" : "outline"
+                    }
+                    className="h-8 text-xs"
+                    onClick={() => setSelectedBudgetPeriod(period.id)}
+                  >
+                    {period.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </DrawerBody>

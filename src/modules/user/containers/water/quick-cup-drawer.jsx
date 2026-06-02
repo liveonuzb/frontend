@@ -1,5 +1,6 @@
 import React from "react";
-import { find, map } from "lodash";
+import find from "lodash/find";
+import map from "lodash/map";
 import {
   Drawer,
   DrawerContent,
@@ -32,7 +33,7 @@ export default function QuickCupDrawer({ children }) {
   return (
     <Drawer open={open} onOpenChange={setOpen} direction="bottom">
       <DrawerTrigger asChild>{children}</DrawerTrigger>
-      <DrawerContent>
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle>Stakan hajmi</DrawerTitle>
           <DrawerDescription>
@@ -44,7 +45,7 @@ export default function QuickCupDrawer({ children }) {
             {map(CUP_SIZES, (cup) => {
               const active = cupSize === cup.value;
               return (
-                <button
+                <button type="button"
                   key={cup.value}
                   onClick={async () => {
                     try {
@@ -90,7 +91,7 @@ export default function QuickCupDrawer({ children }) {
 
               return (
                 <CustomCupDrawer>
-                  <button
+                  <button type="button"
                     className={cn(
                       "relative flex flex-col items-center justify-center gap-3 p-4 rounded-3xl transition-all duration-300 aspect-square shadow-sm hover:scale-105 group border",
                       hasCustom ? "border-solid" : "border-dashed",

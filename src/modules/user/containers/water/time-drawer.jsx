@@ -41,7 +41,7 @@ export default function TimeDrawer({ children, label, goalKey }) {
   return (
     <Drawer open={open} onOpenChange={setOpen} direction="bottom">
       <DrawerTrigger asChild>{children}</DrawerTrigger>
-      <DrawerContent>
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle>{label}</DrawerTitle>
           <DrawerDescription>
@@ -57,6 +57,7 @@ export default function TimeDrawer({ children, label, goalKey }) {
                   type="time"
                   value={tempVal}
                   onChange={(e) => setTempVal(e.target.value)}
+                  aria-label="Eslatma vaqtini tanlash"
                   className="text-[4rem] bg-transparent outline-none border-none leading-[1.1] font-black tabular-nums tracking-wide text-primary text-center w-full max-w-full placeholder:text-muted-foreground/30 relative z-10 block py-8 cursor-pointer [color-scheme:dark] md:[color-scheme:light]"
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-primary/5 pointer-events-none" />

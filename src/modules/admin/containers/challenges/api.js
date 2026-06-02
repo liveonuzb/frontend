@@ -1,4 +1,5 @@
-import { join, isArray } from "lodash";
+import join from "lodash/join";
+import isArray from "lodash/isArray";
 import { api } from "@/hooks/api/use-api";
 
 export const CHALLENGES_QUERY_KEY = ["admin", "challenges"];

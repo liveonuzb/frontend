@@ -3,7 +3,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Settings2Icon, TargetIcon } from "lucide-react";
 import { motion } from "framer-motion";
-import { round, min, get, toNumber } from "lodash";
+import round from "lodash/round";
+import min from "lodash/min";
+import get from "lodash/get";
+import toNumber from "lodash/toNumber";
 
 export const GoalProgressCard = ({
   startW,

@@ -1,6 +1,13 @@
 import React, { useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
-import { filter, get, isArray, join, trim, fromPairs, reduce, map } from "lodash";
+import filter from "lodash/filter";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import trim from "lodash/trim";
+import fromPairs from "lodash/fromPairs";
+import reduce from "lodash/reduce";
+import map from "lodash/map";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -148,7 +155,7 @@ const TranslateAchievement = () => {
 
   return (
     <Drawer open onOpenChange={handleOpenChange} direction="bottom">
-      <DrawerContent className="mx-auto max-h-[90vh] data-[vaul-drawer-direction=bottom]:md:max-w-lg">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <div className="mx-auto flex min-h-0 w-full flex-1 flex-col">
           <DrawerHeader className="items-center text-center">
             <DrawerTitle>Tarjima qo'shish</DrawerTitle>
@@ -169,7 +176,7 @@ const TranslateAchievement = () => {
                 <form
                   id="achievement-translation-form"
                   onSubmit={form.handleSubmit(onSubmit)}
-                  className="no-scrollbar flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4"
+                  className="no-scrollbar flex flex-1 flex-col gap-4 overflow-y-auto p-4"
                 >
                   <AdminTranslationFields
                     control={form.control}

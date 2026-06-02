@@ -1,6 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { filter, find, get, fromPairs, trim, values as lodashValues, map } from "lodash";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import get from "lodash/get";
+import fromPairs from "lodash/fromPairs";
+import trim from "lodash/trim";
+import lodashValues from "lodash/values";
+import map from "lodash/map";
 import { Globe2Icon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";

@@ -1,5 +1,6 @@
 import React from "react";
-import { get, filter } from "lodash";
+import get from "lodash/get";
+import filter from "lodash/filter";
 import { useGetQuery, usePostQuery } from "@/hooks/api";
 
 export const USER_WEEKLY_CHECK_INS_QUERY_KEY = ["user", "weekly-check-ins"];

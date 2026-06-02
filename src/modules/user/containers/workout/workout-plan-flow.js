@@ -1,4 +1,6 @@
-import { get, trim, isArray } from "lodash";
+import get from "lodash/get";
+import trim from "lodash/trim";
+import isArray from "lodash/isArray";
 import { buildWorkoutPlanPayload } from "@/hooks/app/use-workout-plans";
 
 export const WORKOUT_PLAN_BUILDER_STEP = "builder";

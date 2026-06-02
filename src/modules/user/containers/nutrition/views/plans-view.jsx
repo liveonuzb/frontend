@@ -14,6 +14,7 @@ import {
   ShoppingCartIcon,
   TargetIcon,
   UtensilsIcon,
+  WalletIcon,
 } from "lucide-react";
 import NutritionPlansList from "../nutrition-plans-list.jsx";
 import NutritionLayout from "../ui/nutrition-layout.jsx";
@@ -22,7 +23,7 @@ import FilterChips from "../ui/filter-chips.jsx";
 import PlanTemplateCard from "../ui/plan-template-card.jsx";
 import useAppModeTheme from "@/hooks/app/use-app-mode-theme";
 import { cn } from "@/lib/utils.js";
-import { getTemplateBlockingReasonLabel } from "../template-blocking-reasons.js";
+import { getTemplateBlockingReasonSummary } from "../template-blocking-reasons.js";
 
 import filter from "lodash/filter";
 import isArray from "lodash/isArray";
@@ -42,6 +43,15 @@ const formatPlanDate = (value) => {
   }
 
   return date.toLocaleDateString("uz-UZ");
+};
+
+const formatPlanCurrency = (value, currency = "UZS") => {
+  const amount = toNumber(value) || 0;
+
+  return `${new Intl.NumberFormat("uz-UZ", {
+    notation: amount >= 1000000 ? "compact" : "standard",
+    maximumFractionDigits: 0,
+  }).format(amount)} ${currency || "UZS"}`;
 };
 
 const getPlanCalories = (plan, goals) =>
@@ -67,7 +77,8 @@ const getTemplateCalories = (template) => {
   return calories ? calories.toLocaleString("en-US") : "-";
 };
 
-const getTemplateDays = (template) => toNumber(template?.days || 30) || 30;
+const getTemplateDays = (template) =>
+  toNumber(template?.durationDays || template?.days || 30) || 30;
 
 const getTemplateMealsPerDay = (template) =>
   toNumber(template?.mealsPerDay || template?.mealCount || 0) || null;
@@ -90,7 +101,7 @@ const buildTemplateCard = (template) => ({
   icon: templateIconByGoal[template.goal] || BookOpenIcon,
   disabled: template.isCompatible === false,
   compatibilityLabel: template.isCompatible === false ? "Mos emas" : "Mos",
-  blockingReason: getTemplateBlockingReasonLabel(template),
+  blockingReason: getTemplateBlockingReasonSummary(template),
 });
 
 const MealPlanHero = ({
@@ -109,6 +120,7 @@ const MealPlanHero = ({
   const mealCount = toNumber(currentPlan?.mealCount || 4) || 4;
   const calories = getPlanCalories(currentPlan, goals);
   const durationDays = toNumber(currentPlan?.durationDays || 7) || 7;
+  const budgetTarget = currentPlan?.budgetTarget || null;
   const filledDays = Math.min(
     durationDays,
     Math.max(toNumber(planInsights.filledDays || 0), currentPlan ? 1 : 0),
@@ -158,11 +170,16 @@ const MealPlanHero = ({
               label="kcal / kun"
             />
             <HeroMetric
-              icon={CalendarDaysIcon}
-              value={formatPlanDate(
-                currentPlan?.updatedAt || currentPlan?.startDate,
-              )}
-              label="yangilandi"
+              icon={budgetTarget ? WalletIcon : CalendarDaysIcon}
+              value={
+                budgetTarget
+                  ? formatPlanCurrency(
+                      budgetTarget.targetCost,
+                      budgetTarget.currency,
+                    )
+                  : formatPlanDate(currentPlan?.updatedAt || currentPlan?.startDate)
+              }
+              label={budgetTarget ? "byudjet" : "yangilandi"}
             />
             <HeroMetric
               icon={CalendarDaysIcon}

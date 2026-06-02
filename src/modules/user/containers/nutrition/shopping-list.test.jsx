@@ -1,5 +1,33 @@
-import { describe, expect, it } from "vitest";
-import { buildShoppingList, getPlanShoppingDays } from "./shopping-list.jsx";
+import React from "react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const mockGenerateShoppingList = vi.fn();
+const mockUseMealPlanShoppingLists = vi.fn();
+const mockUpdateShoppingListItemCheck = vi.fn();
+
+vi.mock("@/hooks/app/use-meal-plan", () => ({
+  mealPlanDaysToKanban: (days = []) =>
+    days.reduce((result, day, index) => {
+      result[`day-${day?.dayNumber || index + 1}`] = day?.meals || [];
+      return result;
+    }, {}),
+  useGenerateMealPlanShoppingList: () => ({
+    generateShoppingList: mockGenerateShoppingList,
+    isGeneratingShoppingList: false,
+  }),
+  useMealPlanShoppingLists: (...args) => mockUseMealPlanShoppingLists(...args),
+  useUpdateShoppingListItemCheck: () => ({
+    updateShoppingListItemCheck: mockUpdateShoppingListItemCheck,
+    isUpdatingShoppingListItem: false,
+  }),
+}));
+
+import {
+  ShoppingList,
+  buildShoppingList,
+  getPlanShoppingDays,
+} from "./shopping-list.jsx";
 
 describe("shopping-list duration plans", () => {
   it("returns an empty list before a plan is loaded", () => {
@@ -75,5 +103,359 @@ describe("shopping-list duration plans", () => {
         totalCal: 80,
       }),
     ]);
+  });
+
+  it("builds shopping lists from sequential plan days", () => {
+    const plan = {
+      durationDays: 30,
+      days: [
+        {
+          dayNumber: 1,
+          meals: [
+            {
+              id: "breakfast-1",
+              items: [{ name: "Tuxum", cal: 100, grams: 50, unit: "g" }],
+            },
+          ],
+        },
+        {
+          dayNumber: 2,
+          meals: [
+            {
+              id: "lunch-2",
+              items: [{ name: "Mastava", cal: 220, grams: 350, unit: "g" }],
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(getPlanShoppingDays(plan)).toEqual([
+      { key: "day-1", label: "1-kun" },
+      { key: "day-2", label: "2-kun" },
+    ]);
+    expect(buildShoppingList(plan)).toEqual([
+      expect.objectContaining({
+        name: "Mastava",
+        count: 1,
+        totalAmount: 350,
+      }),
+      expect.objectContaining({
+        name: "Tuxum",
+        count: 1,
+        totalAmount: 50,
+      }),
+    ]);
+  });
+});
+
+describe("ShoppingList backend generation", () => {
+  beforeEach(() => {
+    mockGenerateShoppingList.mockReset();
+    mockUpdateShoppingListItemCheck.mockReset();
+    mockUseMealPlanShoppingLists.mockReset();
+    mockUseMealPlanShoppingLists.mockReturnValue({
+      shoppingLists: [],
+      latestShoppingList: null,
+      isLoading: false,
+      isFetching: false,
+      refetch: vi.fn(),
+    });
+  });
+
+  it("generates ingredient-aware shopping list from the backend when opened", async () => {
+    mockGenerateShoppingList.mockResolvedValue({
+      id: "shopping-list-1",
+      planId: "plan-1",
+      planName: "Balanslangan reja",
+      priceContext: {
+        currency: "UZS",
+      },
+      items: [
+        {
+          ingredientId: 1,
+          name: "Guruch",
+          grams: 400,
+          unit: "g",
+          estimatedCost: 12800,
+          currency: "UZS",
+          sources: [{ foodName: "Osh" }, { foodName: "Mosh oshi" }],
+        },
+      ],
+      totals: {
+        estimatedCost: 12800,
+        currency: "UZS",
+      },
+      budget: {
+        status: "over_budget",
+        targetCost: 10000,
+        estimatedCost: 12800,
+        difference: 2800,
+        usagePercent: 128,
+        currency: "UZS",
+      },
+      familyBudget: {
+        name: "Karimovlar oilasi",
+        memberCount: 3,
+        maxMembers: 4,
+        familyEstimatedCost: 38400,
+        familyTargetCost: 30000,
+        familyDifference: 8400,
+        status: "over_budget",
+        currency: "UZS",
+      },
+    });
+
+    render(
+      <ShoppingList
+        open
+        onOpenChange={vi.fn()}
+        plan={{
+          id: "plan-1",
+          name: "Balanslangan reja",
+          weeklyKanban: {
+            Dushanba: [
+              {
+                id: "lunch",
+                items: [{ name: "Fallback ovqat", grams: 100, unit: "g" }],
+              },
+            ],
+          },
+        }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(mockGenerateShoppingList).toHaveBeenCalledWith("plan-1");
+    });
+
+    expect(await screen.findByText("Guruch")).toBeInTheDocument();
+    expect(screen.getByText("400 g")).toBeInTheDocument();
+    expect(screen.getAllByText("12 800 UZS")[0]).toBeInTheDocument();
+    expect(screen.getByText("Byudjetdan 2 800 UZS oshdi")).toBeInTheDocument();
+    expect(screen.getByText("Oila (3 kishi): 38 400 UZS")).toBeInTheDocument();
+    expect(screen.getByText("Oilaviy byudjetdan 8 400 UZS oshdi")).toBeInTheDocument();
+    expect(screen.queryByText("Fallback ovqat")).not.toBeInTheDocument();
+  });
+
+  it("does not regenerate the same plan on every reopen", async () => {
+    mockGenerateShoppingList.mockResolvedValue({
+      id: "shopping-list-1",
+      planId: "plan-1",
+      items: [
+        {
+          ingredientId: 1,
+          name: "Guruch",
+          grams: 400,
+          unit: "g",
+          estimatedCost: 12800,
+          currency: "UZS",
+        },
+      ],
+      totals: {
+        estimatedCost: 12800,
+        currency: "UZS",
+      },
+    });
+    const plan = {
+      id: "plan-1",
+      name: "Balanslangan reja",
+      weeklyKanban: {},
+    };
+    const { rerender } = render(
+      <ShoppingList open onOpenChange={vi.fn()} plan={plan} />,
+    );
+
+    await waitFor(() => {
+      expect(mockGenerateShoppingList).toHaveBeenCalledTimes(1);
+    });
+
+    rerender(<ShoppingList open={false} onOpenChange={vi.fn()} plan={plan} />);
+    rerender(<ShoppingList open onOpenChange={vi.fn()} plan={plan} />);
+
+    await waitFor(() => {
+      expect(mockGenerateShoppingList).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("regenerates the shopping list for the selected region and season", async () => {
+    mockGenerateShoppingList.mockResolvedValue({
+      id: "shopping-list-1",
+      planId: "plan-1",
+      priceContext: {
+        currency: "UZS",
+      },
+      items: [
+        {
+          ingredientId: 1,
+          name: "Guruch",
+          grams: 400,
+          unit: "g",
+          estimatedCost: 12800,
+          currency: "UZS",
+        },
+      ],
+      totals: {
+        estimatedCost: 12800,
+        currency: "UZS",
+      },
+    });
+
+    render(
+      <ShoppingList
+        open
+        onOpenChange={vi.fn()}
+        plan={{ id: "plan-1", name: "Balanslangan reja", weeklyKanban: {} }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(mockGenerateShoppingList).toHaveBeenCalledWith("plan-1");
+    });
+
+    mockGenerateShoppingList.mockClear();
+    fireEvent.change(screen.getByLabelText("Hudud"), {
+      target: { value: "samarqand" },
+    });
+    fireEvent.change(screen.getByLabelText("Mavsum"), {
+      target: { value: "winter" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: /Qayta yaratish/i }),
+    );
+
+    await waitFor(() => {
+      expect(mockGenerateShoppingList).toHaveBeenCalledWith("plan-1", {
+        regionKey: "samarqand",
+        season: "winter",
+      });
+    });
+  });
+
+  it("loads the latest saved shopping list with persisted checked items", async () => {
+    mockUseMealPlanShoppingLists.mockReturnValue({
+      shoppingLists: [
+        {
+          id: "shopping-list-1",
+          planId: "plan-1",
+          items: [
+            {
+              id: "item-rice",
+              ingredientId: 1,
+              name: "Guruch",
+              grams: 400,
+              unit: "g",
+              estimatedCost: 12800,
+              currency: "UZS",
+              isChecked: true,
+            },
+          ],
+          totals: {
+            estimatedCost: 12800,
+            currency: "UZS",
+          },
+        },
+      ],
+      latestShoppingList: {
+        id: "shopping-list-1",
+        planId: "plan-1",
+        items: [
+          {
+            id: "item-rice",
+            ingredientId: 1,
+            name: "Guruch",
+            grams: 400,
+            unit: "g",
+            estimatedCost: 12800,
+            currency: "UZS",
+            isChecked: true,
+          },
+        ],
+        totals: {
+          estimatedCost: 12800,
+          currency: "UZS",
+        },
+      },
+      isLoading: false,
+      isFetching: false,
+      refetch: vi.fn(),
+    });
+
+    render(
+      <ShoppingList
+        open
+        onOpenChange={vi.fn()}
+        plan={{ id: "plan-1", name: "Balanslangan reja", weeklyKanban: {} }}
+      />,
+    );
+
+    expect(await screen.findByText("Guruch")).toBeInTheDocument();
+    expect(screen.getByText("(1/1)")).toBeInTheDocument();
+    expect(mockGenerateShoppingList).not.toHaveBeenCalled();
+  });
+
+  it("persists item check state for generated shopping lists", async () => {
+    mockGenerateShoppingList.mockResolvedValue({
+      id: "shopping-list-1",
+      planId: "plan-1",
+      items: [
+        {
+          id: "item-rice",
+          ingredientId: 1,
+          name: "Guruch",
+          grams: 400,
+          unit: "g",
+          estimatedCost: 12800,
+          currency: "UZS",
+          isChecked: false,
+        },
+      ],
+      totals: {
+        estimatedCost: 12800,
+        currency: "UZS",
+      },
+    });
+    mockUpdateShoppingListItemCheck.mockResolvedValue({
+      id: "shopping-list-1",
+      planId: "plan-1",
+      items: [
+        {
+          id: "item-rice",
+          ingredientId: 1,
+          name: "Guruch",
+          grams: 400,
+          unit: "g",
+          estimatedCost: 12800,
+          currency: "UZS",
+          isChecked: true,
+        },
+      ],
+      totals: {
+        estimatedCost: 12800,
+        currency: "UZS",
+      },
+    });
+
+    render(
+      <ShoppingList
+        open
+        onOpenChange={vi.fn()}
+        plan={{ id: "plan-1", name: "Balanslangan reja", weeklyKanban: {} }}
+      />,
+    );
+
+    const checkbox = await screen.findByRole("checkbox", {
+      name: /Guruch ni xarid qilingan deb belgilash/i,
+    });
+
+    fireEvent.click(checkbox);
+
+    await waitFor(() => {
+      expect(mockUpdateShoppingListItemCheck).toHaveBeenCalledWith(
+        "shopping-list-1",
+        "item-rice",
+        true,
+      );
+    });
   });
 });

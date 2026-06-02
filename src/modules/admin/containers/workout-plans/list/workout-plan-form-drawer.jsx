@@ -25,7 +25,8 @@ import {
   DIFFICULTY_OPTIONS,
 } from "./workout-plan-utils.js";
 
-import { map, trim } from "lodash";
+import map from "lodash/map";
+import trim from "lodash/trim";
 
 export function WorkoutPlanFormDrawer({
   open,
@@ -42,7 +43,7 @@ export function WorkoutPlanFormDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent>
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle>
             {editingTemplate

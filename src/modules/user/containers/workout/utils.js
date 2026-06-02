@@ -1,4 +1,11 @@
-import { find, map, filter, values as lodashValues, get, isArray, max, toNumber } from "lodash";
+import find from "lodash/find";
+import map from "lodash/map";
+import filter from "lodash/filter";
+import lodashValues from "lodash/values";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import max from "lodash/max";
+import toNumber from "lodash/toNumber";
 import {
   getWorkoutDefaultSetCount,
   getWorkoutExerciseSummary,

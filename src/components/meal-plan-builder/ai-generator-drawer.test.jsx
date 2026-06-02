@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateWeeklyKanban } from "./ai-generator-drawer.jsx";
+import { generateWeeklyKanban } from "./ai-generator-drawer-utils.js";
 
 const foods = [
   {

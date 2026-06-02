@@ -1,5 +1,12 @@
 import React from "react";
-import { get, round, filter, isArray, map, some, toNumber as lodashToNumber, trim } from "lodash";
+import get from "lodash/get";
+import round from "lodash/round";
+import filter from "lodash/filter";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import some from "lodash/some";
+import lodashToNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import {
   useDeleteQuery,
@@ -14,6 +21,7 @@ import { useAiAccessInvalidation } from "@/hooks/app/use-ai-access";
 
 export const FOODS_CATALOG_QUERY_KEY = ["foods", "catalog"];
 export const FOODS_QUICK_ADD_QUERY_KEY = ["foods", "quick-add"];
+export const FOOD_RECIPE_QUERY_KEY = ["foods", "recipe"];
 export const FOODS_AUDIO_TRANSCRIPT_HISTORY_QUERY_KEY = [
   "foods",
   "audio-transcript-history",
@@ -316,6 +324,46 @@ export const useFoodsByCategory = (categoryId, options = {}) => {
   }, [foods.length, pageSize, query.data]);
 
   return { ...query, foods, pagination };
+};
+
+export const useFoodRecipe = (catalogFoodId, options = {}) => {
+  const currentLanguage = useLanguageStore((state) => state.currentLanguage);
+  const enabled = options.enabled ?? true;
+  const { data, ...query } = useGetQuery({
+    url: catalogFoodId ? `/foods/catalog/${catalogFoodId}/recipe` : "",
+    queryProps: {
+      queryKey: [...FOOD_RECIPE_QUERY_KEY, catalogFoodId, currentLanguage],
+      enabled: Boolean(catalogFoodId && enabled),
+    },
+  });
+
+  const payload = React.useMemo(() => getResponsePayload(data) ?? {}, [data]);
+  const food = React.useMemo(() => {
+    const rawFood = get(payload, "food", null);
+
+    return rawFood ? createCatalogFood(rawFood, currentLanguage) : null;
+  }, [currentLanguage, payload]);
+  const ingredients = React.useMemo(() => {
+    if (food?.ingredients) {
+      return food.ingredients;
+    }
+
+    const rawIngredients = get(payload, "ingredients", []);
+    return isArray(rawIngredients) ? rawIngredients : [];
+  }, [food, payload]);
+  const recipeInstructions = React.useMemo(() => {
+    const steps = get(payload, "recipeInstructions", get(payload, "instructions", []));
+
+    return isArray(steps) ? steps : [];
+  }, [payload]);
+
+  return {
+    ...query,
+    food,
+    ingredients,
+    recipeInstructions,
+    instructions: recipeInstructions,
+  };
 };
 
 export const useFoodBarcodeLookup = () => {

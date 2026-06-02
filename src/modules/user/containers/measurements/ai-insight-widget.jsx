@@ -2,7 +2,7 @@ import React from "react";
 import { SparklesIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { get } from "lodash";
+import get from "lodash/get";
 
 export const AiInsightWidget = ({ insight }) => {
   if (!insight) return null;

@@ -18,7 +18,8 @@ import { PremiumTab } from "./tabs/premium-tab";
 import { ReferralTab } from "./tabs/referral-tab";
 import { PROFILE_TAB_IDS } from "@/modules/profile/lib/profile-tab-registry";
 
-import { map, some } from "lodash";
+import map from "lodash/map";
+import some from "lodash/some";
 
 const PROFILE_TAB_DEFINITIONS = [
   {

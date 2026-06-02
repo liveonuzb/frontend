@@ -21,7 +21,8 @@ import { cn } from "@/lib/utils";
 import { MoodWidgetView } from "@/modules/user/containers/dashboard/mood-widget.jsx";
 import WorkoutWidget from "@/modules/user/containers/dashboard/workout-widget.jsx";
 
-import { filter, map } from "lodash";
+import filter from "lodash/filter";
+import map from "lodash/map";
 
 const PREVIEW_INTERVAL_MS = 4500;
 
@@ -448,6 +449,7 @@ function DashboardPreviewSlide({ compact, preview, slide }) {
           defaultCalorieMode="eaten"
           goal={2760}
           labels={preview.calorieGaugeLabels}
+          showBurnedSummary={false}
           macros={{
             protein: { current: 140, target: 150 },
             carbs: { current: 235, target: 260 },

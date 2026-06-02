@@ -1,18 +1,16 @@
 import React from "react";
 import { useNavigate, Outlet, useMatch } from "react-router";
-import {
-  find as lodashFind,
-  filter as lodashFilter,
-  get,
-  isArray,
-  map as lodashMap,
-  trim,
-  values as lodashValues,
-  fromPairs,
-  toNumber,
-  toUpper,
-  toPairs,
-} from "lodash";
+import lodashFind from "lodash/find";
+import lodashFilter from "lodash/filter";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import lodashMap from "lodash/map";
+import trim from "lodash/trim";
+import lodashValues from "lodash/values";
+import fromPairs from "lodash/fromPairs";
+import toNumber from "lodash/toNumber";
+import toUpper from "lodash/toUpper";
+import toPairs from "lodash/toPairs";
 import {
   getCoreRowModel,
   getExpandedRowModel,
@@ -225,7 +223,7 @@ const CategoryWorkoutsGrid = ({ categoryId, currentLanguage }) => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-2 rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-4 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 rounded-2xl border border-dashed border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
         <LoaderCircleIcon className="size-4 animate-spin" />
         Kategoriya ichidagi mashg'ulotlar yuklanmoqda...
       </div>
@@ -234,7 +232,7 @@ const CategoryWorkoutsGrid = ({ categoryId, currentLanguage }) => {
 
   if (!workouts.length) {
     return (
-      <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-4 text-sm text-muted-foreground">
+      <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
         Bu kategoriyada hozircha mashg'ulot yo'q.
       </div>
     );
@@ -751,7 +749,7 @@ const Index = () => {
         }}
         direction="bottom"
       >
-        <DrawerContent className="mx-auto max-h-[90vh] data-[vaul-drawer-direction=bottom]:md:max-w-lg">
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <div className="mx-auto flex w-full min-h-0 flex-1 flex-col">
             <DrawerHeader>
               <DrawerTitle className="flex items-center gap-2">
@@ -764,7 +762,7 @@ const Index = () => {
               </DrawerDescription>
             </DrawerHeader>
 
-            <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-4 space-y-6">
+            <div className="no-scrollbar flex-1 overflow-y-auto p-4 space-y-6">
               <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-sm">
                 <p className="font-medium">
                   {translatingCategory
@@ -822,7 +820,7 @@ const Index = () => {
                   ))}
                 </div>
               ) : (
-                <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-4 text-sm text-muted-foreground">
+                <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
                   Qo'shimcha faol tillar topilmadi.
                 </div>
               )}

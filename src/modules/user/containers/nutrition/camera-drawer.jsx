@@ -37,6 +37,11 @@ import {
   getDraftImageUrl,
 } from "./meal-draft-review-utils.js";
 import {
+  trackNutritionScanFailed,
+  trackNutritionScanReviewed,
+  trackNutritionScanStarted,
+} from "./scan-review-analytics.js";
+import {
   addMealIngredient,
   removeMealIngredient,
   updateMealIngredient,
@@ -59,16 +64,14 @@ import {
   useAiAccessStatus,
 } from "@/hooks/app/use-ai-access";
 
-import {
-  filter,
-  find,
-  forEach,
-  isArray,
-  map,
-  toNumber as lodashToNumber,
-  trim,
-  take,
-} from "lodash";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import forEach from "lodash/forEach";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import lodashToNumber from "lodash/toNumber";
+import trim from "lodash/trim";
+import take from "lodash/take";
 
 const buildLoggedMealFromSavedMeal = (savedMeal, addedAt) => ({
   name: savedMeal.name,
@@ -123,7 +126,8 @@ const RecentMealsPill = ({ meals = [], isLoading = false, onOpen }) => {
                 className="flex size-8 overflow-hidden rounded-full border-2 border-background bg-muted"
               >
                 {meal.imageUrl ? (
-                  <img loading="lazy"
+                  <img
+                    loading="lazy"
                     src={meal.imageUrl}
                     alt={meal.name}
                     className="size-full object-cover"
@@ -352,7 +356,8 @@ const ScanCameraView = ({
             autoPlay
             playsInline
             muted
-            className="h-full w-full object-cover"
+            aria-label="Kamera ko'rinishi"
+            className="size-full object-cover"
             style={{ transform: facing === "user" ? "scaleX(-1)" : "none" }}
           />
         )}
@@ -360,11 +365,11 @@ const ScanCameraView = ({
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-transparent via-transparent to-black opacity-40 pointer-events-none" />
 
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="relative h-64 w-64 transition-all duration-500">
-            <div className="absolute top-0 left-0 h-8 w-8 rounded-tl-lg border-t-[3px] border-l-[3px] border-primary" />
-            <div className="absolute top-0 right-0 h-8 w-8 rounded-tr-lg border-t-[3px] border-r-[3px] border-primary" />
-            <div className="absolute bottom-0 left-0 h-8 w-8 rounded-bl-lg border-b-[3px] border-l-[3px] border-primary" />
-            <div className="absolute right-0 bottom-0 h-8 w-8 rounded-br-lg border-r-[3px] border-b-[3px] border-primary" />
+          <div className="relative size-64 transition-all duration-500">
+            <div className="absolute top-0 left-0 size-8 rounded-tl-lg border-t-[3px] border-l-[3px] border-primary" />
+            <div className="absolute top-0 right-0 size-8 rounded-tr-lg border-t-[3px] border-r-[3px] border-primary" />
+            <div className="absolute bottom-0 left-0 size-8 rounded-bl-lg border-b-[3px] border-l-[3px] border-primary" />
+            <div className="absolute right-0 bottom-0 size-8 rounded-br-lg border-r-[3px] border-b-[3px] border-primary" />
 
             {isScanning || isBarcodeLocked ? (
               <motion.div
@@ -388,7 +393,9 @@ const ScanCameraView = ({
             onClick={() => onScanModeChange("camera")}
             className={cn(
               "rounded-full px-3 py-1.5 transition-colors",
-              scanMode === "camera" ? "bg-white text-foreground" : "text-white/75",
+              scanMode === "camera"
+                ? "bg-white text-foreground"
+                : "text-white/75",
             )}
           >
             AI
@@ -398,7 +405,9 @@ const ScanCameraView = ({
             onClick={() => onScanModeChange("barcode")}
             className={cn(
               "rounded-full px-3 py-1.5 transition-colors",
-              scanMode === "barcode" ? "bg-white text-foreground" : "text-white/75",
+              scanMode === "barcode"
+                ? "bg-white text-foreground"
+                : "text-white/75",
             )}
           >
             Barcode
@@ -456,6 +465,7 @@ const ScanCameraView = ({
             ref={fileInputRef}
             type="file"
             accept="image/*"
+            aria-label="Galereyadan rasm tanlash"
             className="hidden"
             onChange={handleGalleryChange}
           />
@@ -491,9 +501,12 @@ const ScanCameraView = ({
             (!ready || isScanning)
           }
           aria-disabled={
-            scanMode === "camera" && (isPhotoScanDisabled || !ready || isScanning)
+            scanMode === "camera" &&
+            (isPhotoScanDisabled || !ready || isScanning)
           }
-          aria-label={scanMode === "barcode" ? "AI rejimiga qaytish" : "Capture"}
+          aria-label={
+            scanMode === "barcode" ? "AI rejimiga qaytish" : "Capture"
+          }
           className="flex size-[72px] items-center justify-center rounded-full border-[5px] border-muted bg-background shadow-sm ring-1 ring-border transition-transform active:scale-95 disabled:opacity-40"
         >
           {scanMode === "barcode" ? (
@@ -568,7 +581,10 @@ export default function CameraDrawer({
   const [selectedRecentMealId, setSelectedRecentMealId] = useState(null);
   const [isCopyingRecentMeal, setIsCopyingRecentMeal] = useState(false);
   const [copyMealTime, setCopyMealTime] = useState(() => ({
-    dateKey: clampMealDateKey(dateKey || getDateKey(new Date()), mealDateMinKey),
+    dateKey: clampMealDateKey(
+      dateKey || getDateKey(new Date()),
+      mealDateMinKey,
+    ),
     ...getTimePartsFromDate(),
   }));
   const { access: aiAccess } = useAiAccessStatus({ enabled: open });
@@ -580,9 +596,11 @@ export default function CameraDrawer({
   const { createSavedMeal } = useSavedMealsActions();
   const { lookupFoodByBarcode, isLookingUp: isBarcodeLookingUp } =
     useFoodBarcodeLookup();
-  const { items: recentMeals, isLoading: isRecentMealsLoading } = useSavedMeals({
-    enabled: open && view === "camera",
-  });
+  const { items: recentMeals, isLoading: isRecentMealsLoading } = useSavedMeals(
+    {
+      enabled: open && view === "camera",
+    },
+  );
   const {
     analyzeMealImageDraft,
     uploadMealCapture,
@@ -681,7 +699,9 @@ export default function CameraDrawer({
 
   const handleCapture = async (dataUrl) => {
     if (photoScanCreditStatus.isDisabled) {
-      toast.error("Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin.");
+      toast.error(
+        "Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin.",
+      );
       return;
     }
 
@@ -695,11 +715,18 @@ export default function CameraDrawer({
     setResultType("ai");
     setAiResultStatus("analyzing");
     setResultDrawerVisibility(true);
+    void trackNutritionScanStarted({
+      sourceType: "camera",
+      mode: "image",
+    });
+
+    let scanPhase = "upload";
 
     try {
       const uploadedImageUrl = await uploadMealCapture(dataUrl);
       if (aiScanRequestRef.current !== requestId) return;
       setCapturedImageUrl(uploadedImageUrl);
+      scanPhase = "analysis";
 
       const response = await analyzeMealImageDraft({
         imageUrl: uploadedImageUrl,
@@ -716,9 +743,18 @@ export default function CameraDrawer({
       if (aiScanRequestRef.current !== requestId) return;
       const message = isAiAccessLimitError(error)
         ? "Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin."
-        : error?.response?.data?.message || "Ovqatni AI orqali aniqlab bo'lmadi";
+        : error?.response?.data?.message ||
+          "Ovqatni AI orqali aniqlab bo'lmadi";
       setScanError(message);
       setAiResultStatus("error");
+      void trackNutritionScanFailed({
+        sourceType: "camera",
+        reason: isAiAccessLimitError(error)
+          ? "ai_access_limit"
+          : scanPhase === "upload"
+            ? "upload_failed"
+            : "analysis_failed",
+      });
       toast.error(message);
     }
   };
@@ -895,7 +931,8 @@ export default function CameraDrawer({
                   ingredient,
                 ),
               }
-            : item),
+            : item,
+        ),
       );
     },
     [],
@@ -909,7 +946,8 @@ export default function CameraDrawer({
               ...item,
               ingredients: removeMealIngredient(item.ingredients, ingredientId),
             }
-          : item),
+          : item,
+      ),
     );
   }, []);
 
@@ -921,12 +959,15 @@ export default function CameraDrawer({
               ...item,
               ingredients: addMealIngredient(item.ingredients, ingredient),
             }
-          : item),
+          : item,
+      ),
     );
   }, []);
 
   const handleRemoveItem = useCallback((draftId) => {
-    setScannedItems((current) => filter(current, (item) => item.id !== draftId));
+    setScannedItems((current) =>
+      filter(current, (item) => item.id !== draftId),
+    );
   }, []);
 
   const handleConfirmItem = useCallback((draftId) => {
@@ -943,7 +984,8 @@ export default function CameraDrawer({
                   }))
                 : [],
             }
-          : item),
+          : item,
+      ),
     );
   }, []);
 
@@ -981,6 +1023,11 @@ export default function CameraDrawer({
           ? `${scannedItems[0].title} muvaffaqiyatli qo'shildi!`
           : `${scannedItems.length} ta ovqat muvaffaqiyatli qo'shildi!`,
       );
+      void trackNutritionScanReviewed({
+        sourceType: "camera",
+        action: "saved",
+        items: scannedItems,
+      });
       setResultDrawerVisibility(false);
       setResultType(null);
       setAiResultStatus("idle");
@@ -1005,7 +1052,10 @@ export default function CameraDrawer({
   ]);
 
   const handleCopyRecentMeal = useCallback(async () => {
-    const selectedMeal = find(recentMeals, (meal) => meal.id === selectedRecentMealId);
+    const selectedMeal = find(
+      recentMeals,
+      (meal) => meal.id === selectedRecentMealId,
+    );
 
     if (!selectedMeal || isCopyingRecentMeal) return;
 

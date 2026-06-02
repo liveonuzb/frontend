@@ -1,7 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { get, isEqual, filter, isArray, keys, trim } from "lodash";
+import get from "lodash/get";
+import isEqual from "lodash/isEqual";
+import filter from "lodash/filter";
+import isArray from "lodash/isArray";
+import keys from "lodash/keys";
+import trim from "lodash/trim";
 import { toast } from "sonner";
 import { useMatch, useNavigate } from "react-router";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";

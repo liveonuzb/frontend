@@ -1,5 +1,11 @@
 import React from "react";
-import { map, includes, filter, some, split, toUpper, trim } from "lodash";
+import map from "lodash/map";
+import includes from "lodash/includes";
+import filter from "lodash/filter";
+import some from "lodash/some";
+import split from "lodash/split";
+import toUpper from "lodash/toUpper";
+import trim from "lodash/trim";
 import { SearchIcon, UserIcon, CheckIcon } from "lucide-react";
 import { useGetQuery } from "@/hooks/api";
 import { getFriendItems } from "@/modules/user/lib/friends-response";
@@ -94,7 +100,7 @@ export default function FriendsPickerDrawer({
 
   return (
     <Drawer open={open} onOpenChange={handleClose} direction="bottom">
-      <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-2xl">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="text-center">
           <DrawerTitle className="text-base font-black uppercase tracking-widest">
             Do&apos;stlar ro&apos;yxati

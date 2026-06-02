@@ -1,6 +1,12 @@
 import React from "react";
 import { useParams } from "react-router";
-import { find, get, isArray, join, map, trim, values as lodashValues } from "lodash";
+import find from "lodash/find";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import map from "lodash/map";
+import trim from "lodash/trim";
+import lodashValues from "lodash/values";
 import { toast } from "sonner";
 import { PaletteIcon, PencilIcon, TagIcon } from "lucide-react";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
@@ -154,7 +160,7 @@ const EditFoodCategory = () => {
 
   return (
     <Drawer open onOpenChange={handleOpenChange} direction="bottom">
-      <DrawerContent className="mx-auto max-h-[90vh] data-[vaul-drawer-direction=bottom]:md:max-w-lg">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <div className="mx-auto flex w-full min-h-0 flex-1 flex-col">
           <DrawerHeader>
             <DrawerTitle className="flex items-center gap-2">
@@ -172,7 +178,7 @@ const EditFoodCategory = () => {
               <Spinner className="size-8 text-muted-foreground" />
             </div>
           ) : (
-          <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-6">
+          <div className="no-scrollbar flex-1 overflow-y-auto p-4 flex flex-col gap-6">
             <div className="flex flex-col gap-2">
               <Label className="flex items-center gap-2 text-sm font-medium">
                 <TagIcon className="text-primary" />
@@ -265,7 +271,7 @@ const EditFoodCategory = () => {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-4">
+              <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
                 <p className="mb-2 text-xs text-muted-foreground">Preview</p>
                 <Badge
                   variant="outline"

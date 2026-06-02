@@ -1,5 +1,10 @@
 import React from "react";
-import { get, filter, isArray, toNumber, map, toPairs } from "lodash";
+import get from "lodash/get";
+import filter from "lodash/filter";
+import isArray from "lodash/isArray";
+import toNumber from "lodash/toNumber";
+import map from "lodash/map";
+import toPairs from "lodash/toPairs";
 import { useQueryClient } from "@tanstack/react-query";
 import { config } from "@/config.js";
 import {

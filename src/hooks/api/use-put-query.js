@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import useApi from "./use-api.js";
-import { isEmpty } from "lodash";
+import isEmpty from "lodash/isEmpty";
 
 const usePutQuery = ({ queryKey, listKey, mutationProps = {} } = {}) => {
   const { request } = useApi();

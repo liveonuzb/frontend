@@ -23,7 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { useBreadcrumbStore } from "@/store";
 import { useUserNotificationsFeed } from "@/hooks/app/use-notifications";
 
-import { map } from "lodash";
+import map from "lodash/map";
 
 const CATEGORY_OPTIONS = [
   { value: "", label: "Hammasi" },
@@ -78,22 +78,25 @@ const NotificationItem = ({ notification, onMarkRead }) => {
   const isRead = Boolean(notification.read ?? notification.readAt);
 
   return (
-    <div
+    <button
+      type="button"
       className={cn(
-        "flex items-start gap-3 p-4 border-b last:border-b-0 transition-colors cursor-pointer hover:bg-muted/50",
+        "flex w-full items-start gap-3 p-4 border-b text-left last:border-b-0 transition-colors cursor-pointer hover:bg-muted/50 disabled:cursor-default disabled:hover:bg-transparent",
         !isRead && "bg-primary/5",
       )}
+      disabled={isRead}
+      aria-label={`${notification.title} bildirishnomasini o'qilgan qilish`}
       onClick={() => {
         if (!isRead) onMarkRead(notification.id);
       }}
     >
       <div
         className={cn(
-          "flex-shrink-0 mt-0.5 h-9 w-9 rounded-full flex items-center justify-center",
+          "flex-shrink-0 mt-0.5 size-9 rounded-full flex items-center justify-center",
           isRead ? "bg-muted" : "bg-primary/10",
         )}
       >
-        <Icon className={cn("h-4 w-4", color)} />
+        <Icon className={cn("size-4", color)} />
       </div>
       <div className="flex-1 min-w-0">
         <p
@@ -115,16 +118,16 @@ const NotificationItem = ({ notification, onMarkRead }) => {
       </div>
       {!isRead && (
         <div className="flex-shrink-0 mt-2">
-          <div className="h-2 w-2 rounded-full bg-primary" />
+          <div className="size-2 rounded-full bg-primary" />
         </div>
       )}
-    </div>
+    </button>
   );
 };
 
 const NotificationSkeleton = () => (
   <div className="flex items-start gap-3 p-4 border-b">
-    <Skeleton className="h-9 w-9 rounded-full flex-shrink-0" />
+    <Skeleton className="size-9 rounded-full flex-shrink-0" />
     <div className="flex-1 space-y-2">
       <Skeleton className="h-4 w-3/4" />
       <Skeleton className="h-3 w-1/2" />
@@ -134,8 +137,8 @@ const NotificationSkeleton = () => (
 
 const EmptyState = ({ filter }) => (
   <div className="flex flex-col items-center justify-center py-16 text-center">
-    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
-      <BellOffIcon className="h-6 w-6 text-muted-foreground" />
+    <div className="size-12 rounded-full bg-muted flex items-center justify-center mb-4">
+      <BellOffIcon className="size-6 text-muted-foreground" />
     </div>
     <p className="text-sm font-medium text-foreground">
       {filter === "unread"
@@ -203,9 +206,9 @@ const Index = () => {
               disabled={isUpdatingNotificationState}
             >
               {isUpdatingNotificationState ? (
-                <Loader2Icon className="h-4 w-4 animate-spin mr-1.5" />
+                <Loader2Icon className="size-4 animate-spin mr-1.5" />
               ) : (
-                <CheckCheckIcon className="h-4 w-4 mr-1.5" />
+                <CheckCheckIcon className="size-4 mr-1.5" />
               )}
               Barchasini o'qilgan deb belgilash
             </Button>

@@ -22,7 +22,8 @@ import {
   getDraftTotals,
 } from "./meal-draft-review-utils.js";
 
-import { isArray, map } from "lodash";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
 
 export const MealDraftSummaryCard = ({
   items,
@@ -315,7 +316,7 @@ export const MealDraftCard = ({
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-dashed bg-background/60 px-4 py-4 text-sm text-muted-foreground">
+            <div className="rounded-2xl border border-dashed bg-background/60 p-4 text-sm text-muted-foreground">
               Ingredientlar topilmadi. Kerak bo'lsa ingredientni qo'lda qo'shing
               yoki AI bilan macro qiymatlarni toping.
             </div>

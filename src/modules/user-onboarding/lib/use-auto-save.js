@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
-import { debounce, toLower, toNumber } from "lodash";
+import debounce from "lodash/debounce";
+import toLower from "lodash/toLower";
+import toNumber from "lodash/toNumber";
 import { usePutQuery } from "@/hooks/api";
 import { useOnboardingStore } from "@/store";
 import { getOnboardingDraftApiPath } from "./onboarding-api-paths";

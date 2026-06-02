@@ -2,7 +2,7 @@ import React from "react";
 import { NavLink, useLocation } from "react-router";
 import { cn } from "@/lib/utils";
 
-import { map } from "lodash";
+import map from "lodash/map";
 
 const isItemActive = (pathname, item) => {
   if (item.match) {

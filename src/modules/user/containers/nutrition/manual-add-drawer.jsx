@@ -43,7 +43,13 @@ import FoodDetailPortionDrawer, {
   getFoodSliderMax,
 } from "./food-detail-portion-drawer.jsx";
 
-import { filter, map, some, toLower, toNumber, includes, trim } from "lodash";
+import filter from "lodash/filter";
+import map from "lodash/map";
+import some from "lodash/some";
+import toLower from "lodash/toLower";
+import toNumber from "lodash/toNumber";
+import includes from "lodash/includes";
+import trim from "lodash/trim";
 
 export default function ManualAddDrawer({
   dateKey,

@@ -1,5 +1,11 @@
 import React from "react";
-import { find, get, isArray, map, toNumber, trim, filter } from "lodash";
+import find from "lodash/find";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
+import filter from "lodash/filter";
 import { toast } from "sonner";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { parseAsString, useQueryState } from "nuqs";

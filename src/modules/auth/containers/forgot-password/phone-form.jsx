@@ -17,7 +17,7 @@ import {
 } from "@/modules/auth/lib/auth-utils.js";
 import { useAuthMobileAutoFocus } from "@/modules/auth/lib/mobile-keyboard";
 import { useTranslation } from "react-i18next";
-import { get } from "lodash";
+import get from "lodash/get";
 
 const PhoneForm = () => {
   const { t } = useTranslation();

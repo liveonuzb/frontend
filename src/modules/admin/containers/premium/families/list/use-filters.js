@@ -1,6 +1,9 @@
 import React from "react";
 import { parseAsString, useQueryState } from "nuqs";
-import { get, find, toNumber, trim } from "lodash";
+import get from "lodash/get";
+import find from "lodash/find";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 
 const DEFAULT_PAGE_SIZE = 10;
 

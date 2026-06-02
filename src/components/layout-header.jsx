@@ -1,4 +1,8 @@
-import { map, join, toUpper, trim, split } from "lodash";
+import map from "lodash/map";
+import join from "lodash/join";
+import toUpper from "lodash/toUpper";
+import trim from "lodash/trim";
+import split from "lodash/split";
 import React from "react";
 import { cn } from "@/lib/utils";
 import { SidebarTrigger } from "@/components/ui/sidebar";

@@ -1,5 +1,9 @@
 import React from "react";
-import { filter, get, size, map, toNumber } from "lodash";
+import filter from "lodash/filter";
+import get from "lodash/get";
+import size from "lodash/size";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBreadcrumbStore } from "@/store";

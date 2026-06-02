@@ -1,4 +1,4 @@
-import { clamp } from "lodash";
+import clamp from "lodash/clamp";
 import React, { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +22,22 @@ const BeforeAfterSlider = ({ beforeImage, afterImage, beforeLabel = "Avval", aft
         handleMove(e.clientX);
     };
 
+    const handleKeyDown = (e) => {
+        if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            setSliderPosition((value) => clamp(value - 5, 0, 100));
+        } else if (e.key === "ArrowRight") {
+            e.preventDefault();
+            setSliderPosition((value) => clamp(value + 5, 0, 100));
+        } else if (e.key === "Home") {
+            e.preventDefault();
+            setSliderPosition(0);
+        } else if (e.key === "End") {
+            e.preventDefault();
+            setSliderPosition(100);
+        }
+    };
+
     const handleTouchMove = (e) => {
         handleMove(e.touches[0].clientX);
     };
@@ -39,6 +55,13 @@ const BeforeAfterSlider = ({ beforeImage, afterImage, beforeLabel = "Avval", aft
             onMouseMove={handleMouseMove}
             onTouchMove={handleTouchMove}
             onMouseDown={handleMouseDown}
+            onKeyDown={handleKeyDown}
+            role="slider"
+            tabIndex={0}
+            aria-label="Before and after image comparison"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(sliderPosition)}
         >
             {/* After Image (Background) */}
             <img loading="lazy" 

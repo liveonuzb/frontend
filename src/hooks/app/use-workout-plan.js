@@ -1,5 +1,5 @@
 import React from "react";
-import { find } from "lodash";
+import find from "lodash/find";
 import {
   buildWorkoutPlanPayload,
   isPersistedWorkoutPlan,

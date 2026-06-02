@@ -53,6 +53,32 @@ describe("Dashboard CalorieGaugeWidget", () => {
     ).toHaveClass("py-4");
   });
 
+  it("passes burned calories from daily tracking into the summary", () => {
+    render(
+      <MemoryRouter>
+        <CalorieGaugeWidget
+          dateKey="2026-05-14"
+          dayData={{ meals: {}, burnedCalories: 875 }}
+          goalsState={{
+            goals: { calories: 2400, protein: 150, carbs: 250, fat: 70 },
+            goalSource: "fallback",
+            hasServerGoals: false,
+          }}
+          user={null}
+        />
+      </MemoryRouter>,
+    );
+
+    const chartCard = screen
+      .getByText("Bugungi Kaloriya")
+      .closest("[data-slot=card]");
+
+    expect(chartCard).toHaveTextContent("Yondirilgan");
+    expect(chartCard).toHaveTextContent("875 kcal");
+    expect(chartCard).toHaveTextContent("Maqsad");
+    expect(chartCard).toHaveTextContent("2,400 kcal");
+  });
+
   it("splits macros into separate cards and removes the mobile eaten summary", () => {
     render(
       <MemoryRouter>

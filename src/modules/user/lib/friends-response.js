@@ -1,4 +1,5 @@
-import { get, isArray } from "lodash";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
 import { getApiResponseData } from "@/lib/api-response";
 
 export const getFriendItems = (response) => {

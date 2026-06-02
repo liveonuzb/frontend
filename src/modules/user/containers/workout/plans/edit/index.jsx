@@ -1,6 +1,8 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { get, trim, toNumber } from "lodash";
+import get from "lodash/get";
+import trim from "lodash/trim";
+import toNumber from "lodash/toNumber";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import PageLoader from "@/components/page-loader/index.jsx";

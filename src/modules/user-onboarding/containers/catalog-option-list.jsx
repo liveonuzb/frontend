@@ -2,7 +2,10 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 
-import { filter, map, toNumber, take } from "lodash";
+import filter from "lodash/filter";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
+import take from "lodash/take";
 
 const INITIAL_VISIBLE_OPTION_COUNT = 8;
 

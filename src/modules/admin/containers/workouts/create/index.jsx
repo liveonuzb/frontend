@@ -1,23 +1,21 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import React from "react";
 import { useTranslation } from "react-i18next";
-import {
-  chain,
-  filter as lodashFilter,
-  find,
-  get,
-  includes,
-  isArray,
-  isObject,
-  map as lodashMap,
-  sortBy as lodashSortBy,
-  trim,
-  values as lodashValues,
-  forEach,
-  some,
-  toNumber,
-  toUpper,
-} from "lodash";
+import chain from "lodash/chain";
+import lodashFilter from "lodash/filter";
+import find from "lodash/find";
+import get from "lodash/get";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
+import isObject from "lodash/isObject";
+import lodashMap from "lodash/map";
+import lodashSortBy from "lodash/sortBy";
+import trim from "lodash/trim";
+import lodashValues from "lodash/values";
+import forEach from "lodash/forEach";
+import some from "lodash/some";
+import toNumber from "lodash/toNumber";
+import toUpper from "lodash/toUpper";
 import { toast } from "sonner";
 import { useLanguageStore } from "@/store";
 import { useGetQuery, usePostQuery, usePostFileQuery } from "@/hooks/api";
@@ -137,6 +135,7 @@ const ImageUploadPreview = ({
       <input
         type="file"
         accept="image/jpeg,image/png,image/webp"
+        aria-label="Mashq rasmi faylini tanlash"
         className="absolute inset-0 opacity-0 cursor-pointer z-10"
         onChange={(event) => {
           const f = event.target.files?.[0];
@@ -462,7 +461,7 @@ const CreateWorkoutPage = () => {
 
   return (
     <Drawer open onOpenChange={handleOpenChange} direction="bottom">
-      <DrawerContent>
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle className="flex items-center gap-2">
             <PlusIcon className="size-5" />
@@ -608,7 +607,7 @@ const CreateWorkoutPage = () => {
             </div>
           </div>
 
-          <div className="grid gap-4 rounded-2xl border px-4 py-4 md:grid-cols-2">
+          <div className="grid gap-4 rounded-2xl border p-4 md:grid-cols-2">
             <div className="space-y-2 md:col-span-2">
               <Label>{t("admin.workouts.form.trackingType")}</Label>
               <Select

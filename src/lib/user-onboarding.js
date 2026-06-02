@@ -1,4 +1,9 @@
-import { isArray, filter, map, reduce, toNumber, trim } from "lodash";
+import isArray from "lodash/isArray";
+import filter from "lodash/filter";
+import map from "lodash/map";
+import reduce from "lodash/reduce";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 const toValueUnit = (field, unit, defaultUnit) => {
   if (!field && field !== 0) {
     return null;

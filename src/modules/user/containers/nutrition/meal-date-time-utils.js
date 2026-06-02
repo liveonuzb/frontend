@@ -8,7 +8,7 @@ dayjs.extend(localizedFormat);
 export const resolveDayjsLocale = (language) => {
   if (String(language || "").startsWith("ru")) return "ru";
   if (String(language || "").startsWith("uz")) return "uz-latn";
-  return "en";
+  return "uz-latn";
 };
 
 export const getDateKey = (date) => dayjs(date).format("YYYY-MM-DD");
@@ -46,8 +46,10 @@ export const clampMealDateKey = (dateKey, minDateKey) => {
   return selectedDate.format("YYYY-MM-DD");
 };
 
-const getRelativeDateLabel = (dateKey, locale = "en") => {
-  if (!dateKey) return "Today";
+const getRelativeDateLabel = (dateKey, locale = "uz-latn") => {
+  if (!dateKey) {
+    return locale === "ru" ? "Сегодня" : locale === "en" ? "Today" : "Bugun";
+  }
   const day = dayjs(dateKey).locale(locale);
   const today = dayjs().locale(locale);
 
@@ -62,7 +64,7 @@ const getRelativeDateLabel = (dateKey, locale = "en") => {
   return day.format("ddd, MMM D");
 };
 
-export const getCameraDateOptions = (minDateKey, locale = "en") => {
+export const getCameraDateOptions = (minDateKey, locale = "uz-latn") => {
   const today = dayjs().startOf("day");
   const parsedStart = dayjs(minDateKey || today);
   const start = parsedStart.isValid()
@@ -96,7 +98,7 @@ export const getTimePartsFromDate = (value = new Date()) => {
   };
 };
 
-export const formatMealTime = ({ dateKey, hour, minute, period }, locale = "en") => {
+export const formatMealTime = ({ dateKey, hour, minute, period }, locale = "uz-latn") => {
   const formattedMinute = String(minute).padStart(2, "0");
   return `${getRelativeDateLabel(dateKey, locale)}, ${hour}:${formattedMinute} ${period}`;
 };

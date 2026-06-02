@@ -1,4 +1,5 @@
-import { compact, join } from "lodash";
+import compact from "lodash/compact";
+import join from "lodash/join";
 import { toast } from "sonner";
 
 const useShare = () => {

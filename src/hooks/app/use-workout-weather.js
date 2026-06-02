@@ -1,5 +1,6 @@
 import React from "react";
-import { get, toNumber } from "lodash";
+import get from "lodash/get";
+import toNumber from "lodash/toNumber";
 import { useGetQuery } from "@/hooks/api";
 
 export const WORKOUT_WEATHER_QUERY_KEY = ["user", "workout", "weather", "today"];

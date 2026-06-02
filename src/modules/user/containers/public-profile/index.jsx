@@ -1,4 +1,7 @@
-import { compact, map, toUpper, take } from "lodash";
+import compact from "lodash/compact";
+import map from "lodash/map";
+import toUpper from "lodash/toUpper";
+import take from "lodash/take";
 import React from "react";
 import { useParams, useNavigate } from "react-router";
 import {

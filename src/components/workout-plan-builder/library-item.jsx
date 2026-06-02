@@ -1,6 +1,6 @@
 import React, { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { get } from "lodash";
+import get from "lodash/get";
 import { useDraggable } from "@dnd-kit/core";
 import { GripVerticalIcon, PlusIcon } from "lucide-react";
 import { cn } from "@/lib/utils.js";

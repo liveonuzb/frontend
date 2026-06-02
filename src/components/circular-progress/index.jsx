@@ -1,4 +1,4 @@
-import { clamp } from "lodash";
+import clamp from "lodash/clamp";
 import React from "react";
 import { cn } from "@/lib/utils";
 

@@ -1,4 +1,5 @@
-import { isArray, keys } from "lodash";
+import isArray from "lodash/isArray";
+import keys from "lodash/keys";
 import { useEffect, useRef } from "react";
 import { useGetQuery } from "@/hooks/api";
 import { useOnboardingStore } from "@/store";

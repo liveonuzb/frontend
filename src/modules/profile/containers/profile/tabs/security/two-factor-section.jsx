@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { CopyIcon, RefreshCwIcon, ShieldIcon } from "lucide-react";
 import QRCode from "qrcode";
-import { map } from "lodash";
+import map from "lodash/map";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -259,7 +259,7 @@ export const TwoFactorSection = ({ t }) => {
       </Card>
 
       <Drawer open={setupOpen} onOpenChange={setSetupOpen} direction="bottom">
-        <DrawerContent>
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader>
             <DrawerTitle>
               {backupCodes
@@ -369,7 +369,7 @@ export const TwoFactorSection = ({ t }) => {
         onOpenChange={setDisableOpen}
         direction="bottom"
       >
-        <DrawerContent>
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader>
             <DrawerTitle>{t("profile.security.2fa.disableTitle")}</DrawerTitle>
             <DrawerDescription>
@@ -407,7 +407,7 @@ export const TwoFactorSection = ({ t }) => {
       </Drawer>
 
       <Drawer open={regenOpen} onOpenChange={setRegenOpen} direction="bottom">
-        <DrawerContent>
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader>
             <DrawerTitle>{t("profile.security.2fa.regenTitle")}</DrawerTitle>
             <DrawerDescription>

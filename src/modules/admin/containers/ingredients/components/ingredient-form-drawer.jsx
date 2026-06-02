@@ -54,7 +54,10 @@ import {
   SERVING_UNITS,
 } from "./utils.jsx";
 
-import { isArray, map, toNumber, toUpper } from "lodash";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
+import toUpper from "lodash/toUpper";
 
 const IngredientFormDrawer = ({ mode }) => {
   const { id } = useParams();
@@ -166,7 +169,7 @@ const IngredientFormDrawer = ({ mode }) => {
         }}
         direction="bottom"
       >
-        <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-md">
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader className="items-center text-center">
             <DrawerTitle>
               {isEdit ? "Ingredientni tahrirlash" : "Yangi ingredient"}

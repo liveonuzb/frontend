@@ -1,16 +1,14 @@
 import React from "react";
-import {
-  find,
-  filter,
-  fromPairs,
-  get,
-  isArray,
-  map,
-  some,
-  startsWith,
-  toNumber,
-  toPairs,
-} from "lodash";
+import find from "lodash/find";
+import filter from "lodash/filter";
+import fromPairs from "lodash/fromPairs";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import some from "lodash/some";
+import startsWith from "lodash/startsWith";
+import toNumber from "lodash/toNumber";
+import toPairs from "lodash/toPairs";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useDeleteQuery,

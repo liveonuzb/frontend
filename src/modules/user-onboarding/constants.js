@@ -1,4 +1,5 @@
-import { includes, indexOf } from "lodash";
+import includes from "lodash/includes";
+import indexOf from "lodash/indexOf";
 
 export const ONBOARDING_STEPS = [
   "name",

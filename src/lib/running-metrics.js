@@ -1,4 +1,8 @@
-import { filter, map, reduce, toNumber, slice } from "lodash";
+import filter from "lodash/filter";
+import map from "lodash/map";
+import reduce from "lodash/reduce";
+import toNumber from "lodash/toNumber";
+import slice from "lodash/slice";
 export const formatRunningDistance = (meters = 0) => {
   const numericMeters = toNumber(meters) || 0;
   if (numericMeters < 1000) {

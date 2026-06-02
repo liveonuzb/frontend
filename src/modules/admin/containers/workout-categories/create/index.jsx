@@ -1,5 +1,7 @@
 import React from "react";
-import { isArray, trim, map } from "lodash";
+import isArray from "lodash/isArray";
+import trim from "lodash/trim";
+import map from "lodash/map";
 import { toast } from "sonner";
 import { PaletteIcon, PlusIcon, TagIcon } from "lucide-react";
 import { usePostQuery } from "@/hooks/api";
@@ -89,7 +91,7 @@ const CreateWorkoutCategory = () => {
 
   return (
     <Drawer open onOpenChange={handleOpenChange} direction="bottom">
-      <DrawerContent className="mx-auto max-h-[90vh] data-[vaul-drawer-direction=bottom]:md:max-w-lg">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <div className="mx-auto flex w-full min-h-0 flex-1 flex-col">
           <DrawerHeader>
             <DrawerTitle className="flex items-center gap-2">
@@ -102,7 +104,7 @@ const CreateWorkoutCategory = () => {
             </DrawerDescription>
           </DrawerHeader>
 
-          <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-4 space-y-6">
+          <div className="no-scrollbar flex-1 overflow-y-auto p-4 space-y-6">
             <div className="space-y-2">
               <Label className="flex items-center gap-2 text-sm font-medium">
                 <TagIcon className="size-4 text-primary" />
@@ -216,7 +218,7 @@ const CreateWorkoutCategory = () => {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-4">
+              <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
                 <p className="mb-2 text-xs text-muted-foreground">Preview</p>
                 <Badge
                   variant="outline"

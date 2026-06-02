@@ -1,4 +1,5 @@
-import { some, includes } from "lodash";
+import some from "lodash/some";
+import includes from "lodash/includes";
 import React from "react";
 import { Navigate } from "react-router";
 import PageLoader from "@/components/page-loader/index.jsx";

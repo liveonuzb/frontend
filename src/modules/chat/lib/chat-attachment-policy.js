@@ -1,4 +1,9 @@
-import { find, includes, split, toLower, toNumber, trim } from "lodash";
+import find from "lodash/find";
+import includes from "lodash/includes";
+import split from "lodash/split";
+import toLower from "lodash/toLower";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 export const CHAT_ATTACHMENT_POLICY_VERSION = "chat-attachment-v1";
 export const CHAT_ATTACHMENT_SIGNED_URL_TTL_SECONDS = 60 * 60;
 

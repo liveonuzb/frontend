@@ -1,6 +1,15 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { get, map, orderBy, sumBy, filter, forEach, split, toNumber, isArray, toUpper } from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import orderBy from "lodash/orderBy";
+import sumBy from "lodash/sumBy";
+import filter from "lodash/filter";
+import forEach from "lodash/forEach";
+import split from "lodash/split";
+import toNumber from "lodash/toNumber";
+import isArray from "lodash/isArray";
+import toUpper from "lodash/toUpper";
 import { useNavigate } from "react-router";
 import {
   ArrowLeftIcon,
@@ -847,7 +856,7 @@ const SessionHistoryPage = () => {
                     }}
                     className="w-full cursor-pointer rounded-3xl border bg-card text-left shadow-sm outline-none transition hover:border-primary/40 hover:bg-primary/5 focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/25"
                   >
-                    <div className="grid gap-4 px-5 py-5 lg:grid-cols-[168px_minmax(0,1fr)_minmax(250px,auto)] lg:items-start">
+                    <div className="grid gap-4 p-5 lg:grid-cols-[168px_minmax(0,1fr)_minmax(250px,auto)] lg:items-start">
                       <div className="h-28 overflow-hidden rounded-2xl bg-muted/40 lg:h-24">
                         {isRunning ? (
                           <RunMapPanel
@@ -948,7 +957,7 @@ const SessionHistoryPage = () => {
                       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:min-w-64">
                         {isRunning ? (
                           <>
-                            <div className="rounded-2xl bg-muted/30 px-3 py-3 text-center">
+                            <div className="rounded-2xl bg-muted/30 p-3 text-center">
                               <p className="text-xs text-muted-foreground">
                                 {t("user.workout.history.distance")}
                               </p>
@@ -956,7 +965,7 @@ const SessionHistoryPage = () => {
                                 {formatRunningDistance(distanceMeters)}
                               </p>
                             </div>
-                            <div className="rounded-2xl bg-muted/30 px-3 py-3 text-center">
+                            <div className="rounded-2xl bg-muted/30 p-3 text-center">
                               <p className="text-xs text-muted-foreground">
                                 {t("user.workout.history.time")}
                               </p>
@@ -966,7 +975,7 @@ const SessionHistoryPage = () => {
                                 )}
                               </p>
                             </div>
-                            <div className="rounded-2xl bg-muted/30 px-3 py-3 text-center">
+                            <div className="rounded-2xl bg-muted/30 p-3 text-center">
                               <p className="text-xs text-muted-foreground">
                                 {t("user.workout.history.pace")}
                               </p>
@@ -974,7 +983,7 @@ const SessionHistoryPage = () => {
                                 {formatRunningPace(paceSecondsPerKm)}
                               </p>
                             </div>
-                            <div className="rounded-2xl bg-primary/10 px-3 py-3 text-center text-primary sm:col-span-3">
+                            <div className="rounded-2xl bg-primary/10 p-3 text-center text-primary sm:col-span-3">
                               <p className="text-xs font-semibold">
                                 {t(getRouteQualityToneKey(normalizedRouteQuality))}
                               </p>
@@ -987,7 +996,7 @@ const SessionHistoryPage = () => {
                           </>
                         ) : (
                           <>
-                            <div className="rounded-2xl bg-muted/30 px-3 py-3 text-center">
+                            <div className="rounded-2xl bg-muted/30 p-3 text-center">
                               <p className="text-xs text-muted-foreground">
                                 {t("user.workout.history.set")}
                               </p>
@@ -995,7 +1004,7 @@ const SessionHistoryPage = () => {
                                 {get(session, "completedSets", 0)}/{get(session, "totalSets", 0)}
                               </p>
                             </div>
-                            <div className="rounded-2xl bg-muted/30 px-3 py-3 text-center">
+                            <div className="rounded-2xl bg-muted/30 p-3 text-center">
                               <p className="text-xs text-muted-foreground">
                                 {t("user.workout.history.exercise")}
                               </p>
@@ -1003,7 +1012,7 @@ const SessionHistoryPage = () => {
                                 {get(session, "completedExerciseCount", 0)}
                               </p>
                             </div>
-                            <div className="rounded-2xl bg-muted/30 px-3 py-3 text-center">
+                            <div className="rounded-2xl bg-muted/30 p-3 text-center">
                               <p className="text-xs text-muted-foreground">
                                 {t("user.workout.history.volume")}
                               </p>

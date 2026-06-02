@@ -1,6 +1,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { find, get, map, toNumber, trim } from "lodash";
+import find from "lodash/find";
+import get from "lodash/get";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 import { APPROVAL_STATUS_OPTIONS } from "./workout-plan-utils.js";
 

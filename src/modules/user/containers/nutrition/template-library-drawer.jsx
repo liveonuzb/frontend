@@ -17,7 +17,7 @@ import {
   UtensilsIcon,
 } from "lucide-react";
 import { useMealPlanTemplates } from "@/hooks/app/use-meal-plan";
-import { getTemplateBlockingReasonLabel } from "./template-blocking-reasons.js";
+import { getTemplateBlockingReasonSummary } from "./template-blocking-reasons.js";
 import {
   NutritionDrawerBody,
   NutritionDrawerContent,
@@ -136,7 +136,7 @@ export default function TemplateLibraryDrawer({
                 const isPending = pendingTemplateId === template.id;
                 const isCompatible = template.isCompatible !== false;
                 const blockingReasonLabel =
-                  getTemplateBlockingReasonLabel(template);
+                  getTemplateBlockingReasonSummary(template);
 
                 return (
                   <div
@@ -161,8 +161,9 @@ export default function TemplateLibraryDrawer({
                         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                           <span className="inline-flex items-center gap-1">
                             <UtensilsIcon className="size-3.5" />
-                            {template.daysWithMeals || 0}/{template.days || 30}{" "}
-                            kun · {template.mealsCount || 0} ta ovqat
+                            {template.daysWithMeals || 0}/
+                            {template.durationDays || 30} kun ·{" "}
+                            {template.mealsCount || 0} ta ovqat
                           </span>
                         </div>
                         {blockingReasonLabel ? (
@@ -199,15 +200,13 @@ export default function TemplateLibraryDrawer({
           </div>
         </NutritionDrawerBody>
 
-        <DrawerFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => (isError ? refetch() : onOpenChange(false))}
-          >
-            {isError ? "Qayta urinish" : "Yopish"}
-          </Button>
-        </DrawerFooter>
+        {isError ? (
+          <DrawerFooter>
+            <Button type="button" variant="outline" onClick={() => refetch()}>
+              Qayta urinish
+            </Button>
+          </DrawerFooter>
+        ) : null}
       </NutritionDrawerContent>
     </Drawer>
   );

@@ -6,7 +6,7 @@ import { TrackingPageLayout } from "@/components/tracking-page-shell";
 import { getTodayKey } from "@/hooks/app/use-daily-tracking";
 import { cn } from "@/lib/utils";
 
-import { split } from "lodash";
+import split from "lodash/split";
 
 const DEFAULT_CALENDAR_CLASS =
   "shadow md:shadow-none flex-1 rounded-2xl px-1 py-1 md:max-w-md md:flex-none md:w-full";
@@ -44,6 +44,7 @@ export function NutritionDatePicker({ date, onChange, className }) {
 }
 
 function NutritionCalorieAside({
+  burnedCalories = 0,
   calorieGoalMeta,
   goals,
   isGoalLoadingState,
@@ -51,6 +52,7 @@ function NutritionCalorieAside({
 }) {
   return (
     <CalorieGaugeWidget
+      burnedCalories={burnedCalories}
       consumed={roundedTotals.calories}
       goal={goals.calories}
       macros={{
@@ -69,6 +71,7 @@ function NutritionCalorieAside({
 }
 
 export default function NutritionTrackingLayout({
+  burnedCalories = 0,
   calorieGoalMeta,
   children,
   goals,
@@ -79,6 +82,7 @@ export default function NutritionTrackingLayout({
     <TrackingPageLayout
       aside={
         <NutritionCalorieAside
+          burnedCalories={burnedCalories}
           calorieGoalMeta={calorieGoalMeta}
           goals={goals}
           isGoalLoadingState={isGoalLoadingState}

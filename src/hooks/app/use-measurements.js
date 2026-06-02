@@ -1,5 +1,12 @@
 import React from "react";
-import { get, filter, find, map, orderBy, findIndex, includes, split } from "lodash";
+import get from "lodash/get";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import map from "lodash/map";
+import orderBy from "lodash/orderBy";
+import findIndex from "lodash/findIndex";
+import includes from "lodash/includes";
+import split from "lodash/split";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDeleteQuery, useGetQuery, usePostQuery } from "@/hooks/api";
 import { getApiResponseData } from "@/lib/api-response";

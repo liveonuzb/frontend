@@ -2,24 +2,22 @@ import React from "react";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { useLocation, useNavigate } from "react-router";
 import CatalogItemActionsMenu from "./catalog-item-actions-menu";
-import {
-  get,
-  map,
-  filter as lodashFilter,
-  find,
-  size,
-  isArray,
-  join,
-  toString,
-  trim,
-  fromPairs,
-  includes,
-  toLower,
-  toNumber,
-  values as lodashValues,
-  toPairs,
-  slice,
-} from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import lodashFilter from "lodash/filter";
+import find from "lodash/find";
+import size from "lodash/size";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import toString from "lodash/toString";
+import trim from "lodash/trim";
+import fromPairs from "lodash/fromPairs";
+import includes from "lodash/includes";
+import toLower from "lodash/toLower";
+import toNumber from "lodash/toNumber";
+import lodashValues from "lodash/values";
+import toPairs from "lodash/toPairs";
+import slice from "lodash/slice";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
 import { useGetQuery } from "@/hooks/api";
 import {

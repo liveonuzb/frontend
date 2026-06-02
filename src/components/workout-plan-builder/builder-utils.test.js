@@ -6,7 +6,7 @@ import {
   initFromPlan,
 } from "./builder-utils.js";
 
-import { map } from "lodash";
+import map from "lodash/map";
 
 describe("workout plan builder utils", () => {
   it("preserves plan day and exercise order through edit normalization", () => {

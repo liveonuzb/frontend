@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import get from "lodash/get";
 import { useNavigate } from "react-router";
 import { useGetQuery } from "@/hooks/api";
 import CalorieGaugeComponent from "@/components/calorie-gauge-widget";
@@ -91,6 +91,7 @@ export default function CalorieGaugeWidget({
 
   return (
     <CalorieGaugeComponent
+      burnedCalories={get(dayData, "burnedCalories", 0)}
       consumed={totalCalories}
       goal={get(goals, "calories", 0)}
       macros={{

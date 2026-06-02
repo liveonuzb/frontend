@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { getMetricMeta, METRIC_TYPE_OPTIONS } from "../challenge-utils.js";
 
-import { map } from "lodash";
+import map from "lodash/map";
 
 const MetricTypeSelectTrigger = ({ value, onClick }) => {
   const selected = getMetricMeta(value);
@@ -47,7 +47,7 @@ export const MetricTypeSelectDrawer = ({ open, onOpenChange, value, onChange }) 
 
   return (
     <Drawer direction="bottom" open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-lg">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="text-center">
           <DrawerTitle>O'lchov turini tanlang</DrawerTitle>
         </DrawerHeader>

@@ -42,7 +42,10 @@ import {
   regionalPriceSchema,
 } from "../components/utils.jsx";
 
-import { find, map, some, toNumber } from "lodash";
+import find from "lodash/find";
+import map from "lodash/map";
+import some from "lodash/some";
+import toNumber from "lodash/toNumber";
 
 const PricePage = () => {
   const navigate = useNavigate();
@@ -166,7 +169,7 @@ const PricePage = () => {
       onOpenChange={(open) => !open && navigate("/admin/ingredients/list")}
       direction="bottom"
     >
-      <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-4xl">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="items-center text-center">
           <DrawerTitle>Narx</DrawerTitle>
           <DrawerDescription>

@@ -1,5 +1,9 @@
 import React from "react";
-import { clamp, includes, map, split, toNumber } from "lodash";
+import clamp from "lodash/clamp";
+import includes from "lodash/includes";
+import map from "lodash/map";
+import split from "lodash/split";
+import toNumber from "lodash/toNumber";
 import {
   motion,
   useMotionValue,
@@ -161,6 +165,8 @@ export const WeightTicker = ({
     rawOffset.set(snapped);
     emitFromOffset(snapped);
   }, [emitFromOffset, rawOffset, stepsCount]);
+  const emitFromOffsetEvent = React.useEffectEvent(emitFromOffset);
+  const snapToNearestEvent = React.useEffectEvent(snapToNearest);
 
   const handlePointerDown = React.useCallback(
     (event) => {
@@ -209,13 +215,13 @@ export const WeightTicker = ({
       event.preventDefault();
       const next = clamp(rawOffset.get() - delta, minOffset, maxOffset);
       rawOffset.set(next);
-      emitFromOffset(next);
+      emitFromOffsetEvent(next);
 
       if (wheelTimerRef.current) {
         window.clearTimeout(wheelTimerRef.current);
       }
       wheelTimerRef.current = window.setTimeout(() => {
-        snapToNearest();
+        snapToNearestEvent();
       }, WHEEL_SNAP_DEBOUNCE);
     };
 
@@ -226,7 +232,7 @@ export const WeightTicker = ({
         window.clearTimeout(wheelTimerRef.current);
       }
     };
-  }, [emitFromOffset, maxOffset, minOffset, rawOffset, snapToNearest]);
+  }, [maxOffset, minOffset, rawOffset]);
 
   const items = React.useMemo(
     () => Array.from({ length: stepsCount }, (_, i) => i),
@@ -274,7 +280,7 @@ export const WeightTicker = ({
             }}
           >
             <span
-              className="block h-0 w-0"
+              className="block size-0"
               style={{
                 borderTop: "6px solid transparent",
                 borderBottom: "6px solid transparent",
@@ -285,7 +291,7 @@ export const WeightTicker = ({
           </div>
 
           <div
-            className="relative h-full w-full overflow-hidden"
+            className="relative size-full overflow-hidden"
             style={{
               maskImage:
                 "linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)",
@@ -306,7 +312,7 @@ export const WeightTicker = ({
               aria-valuemax={max}
               aria-valuenow={resolvedValue}
               aria-valuetext={`${resolvedValue} ${unit}`}
-              className="relative h-full w-full cursor-grab select-none touch-none active:cursor-grabbing"
+              className="relative size-full cursor-grab select-none touch-none active:cursor-grabbing"
               style={{
                 padding: `calc(50% - ${NOTCH_SIZE / 2}px) 0`,
               }}
@@ -365,7 +371,7 @@ export const WeightTicker = ({
           style={{ top: LABEL_SLOT + 2 }}
         >
           <span
-            className="block h-0 w-0"
+            className="block size-0"
             style={{
               borderLeft: "6px solid transparent",
               borderRight: "6px solid transparent",
@@ -376,7 +382,7 @@ export const WeightTicker = ({
         </div>
 
         <div
-          className="relative h-full w-full overflow-hidden"
+          className="relative size-full overflow-hidden"
           style={{
             maskImage:
               "linear-gradient(to right, transparent 0%, black 18%, black 82%, transparent 100%)",
@@ -397,7 +403,7 @@ export const WeightTicker = ({
             aria-valuemax={max}
             aria-valuenow={resolvedValue}
             aria-valuetext={`${resolvedValue} ${unit}`}
-            className="relative h-full w-full cursor-grab select-none touch-none active:cursor-grabbing"
+            className="relative size-full cursor-grab select-none touch-none active:cursor-grabbing"
             style={{
               padding: `0 calc(50% - ${NOTCH_SIZE / 2}px)`,
             }}
@@ -463,7 +469,7 @@ const TickCell = ({
         className="relative shrink-0"
         style={{ width: "100%", height: NOTCH_SIZE }}
       >
-        <div className="flex h-full w-full items-center justify-end gap-1.5">
+        <div className="flex size-full items-center justify-end gap-1.5">
           {/* Label slot (left of notch) */}
           <div
             className="flex items-center justify-end"
@@ -501,7 +507,7 @@ const TickCell = ({
       className="relative shrink-0"
       style={{ width: NOTCH_SIZE, height: "100%" }}
     >
-      <div className="flex h-full w-full flex-col items-center">
+      <div className="flex size-full flex-col items-center">
         <div
           className="flex w-full items-end justify-center"
           style={{ height: LABEL_SLOT }}

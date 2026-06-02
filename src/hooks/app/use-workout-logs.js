@@ -1,5 +1,9 @@
 import React from "react";
-import { get, filter, isArray, map, toNumber } from "lodash";
+import get from "lodash/get";
+import filter from "lodash/filter";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useDeleteQuery,

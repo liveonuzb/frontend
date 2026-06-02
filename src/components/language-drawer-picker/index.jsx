@@ -1,5 +1,7 @@
 import React from "react";
-import { find, map, toUpper } from "lodash";
+import find from "lodash/find";
+import map from "lodash/map";
+import toUpper from "lodash/toUpper";
 import { CheckIcon, LanguagesIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -69,7 +71,7 @@ const LanguageDrawerPicker = ({
           <span className="truncate">{resolvedLanguage?.name || "Til"}</span>
         ) : null}
       </Button>
-      <DrawerContent>
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="text-left">
           <DrawerTitle>{title}</DrawerTitle>
           <DrawerDescription>{description}</DrawerDescription>

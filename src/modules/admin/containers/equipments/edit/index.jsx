@@ -1,7 +1,13 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import React from "react";
 import { useParams } from "react-router";
-import { get, find, trim, filter, isArray, toUpper, values as lodashValues } from "lodash";
+import get from "lodash/get";
+import find from "lodash/find";
+import trim from "lodash/trim";
+import filter from "lodash/filter";
+import isArray from "lodash/isArray";
+import toUpper from "lodash/toUpper";
+import lodashValues from "lodash/values";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
 import { useLanguageStore } from "@/store";
 import { Button } from "@/components/ui/button";
@@ -78,6 +84,7 @@ const ImageUploadPreview = ({
       <input
         type="file"
         accept="image/jpeg,image/png,image/webp"
+        aria-label="Uskuna rasmi faylini tanlash"
         className="absolute inset-0 z-10 cursor-pointer opacity-0"
         onChange={(event) => {
           const nextFile = event.target.files?.[0];
@@ -238,7 +245,7 @@ const EditEquipment = () => {
 
   return (
     <Drawer open onOpenChange={handleOpenChange} direction="bottom">
-      <DrawerContent className="mx-auto max-h-[90vh] data-[vaul-drawer-direction=bottom]:md:max-w-lg">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <div className="mx-auto flex w-full min-h-0 flex-1 flex-col">
           <DrawerHeader>
             <DrawerTitle className="flex items-center gap-2">
@@ -256,7 +263,7 @@ const EditEquipment = () => {
               <Spinner className="size-8 text-muted-foreground" />
             </div>
           ) : (
-            <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-6">
+            <div className="no-scrollbar flex-1 overflow-y-auto p-4 flex flex-col gap-6">
               <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-sm">
                 <p className="font-medium">
                   Joriy til:{" "}
@@ -420,6 +427,5 @@ const EditEquipment = () => {
 };
 
 export default EditEquipment;
-
 
 

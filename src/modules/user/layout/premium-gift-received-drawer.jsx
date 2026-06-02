@@ -1,14 +1,12 @@
 import React from "react";
-import {
-  filter,
-  find,
-  get,
-  isArray,
-  orderBy,
-  some,
-  toLower,
-  trim,
-} from "lodash";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import orderBy from "lodash/orderBy";
+import some from "lodash/some";
+import toLower from "lodash/toLower";
+import trim from "lodash/trim";
 import {
   CrownIcon,
   GiftIcon,
@@ -265,7 +263,7 @@ const PremiumGiftReceivedDrawer = () => {
     >
       <DrawerContent
         data-premium-gift-drawer="true"
-        className="mx-auto max-w-md"
+        className="data-[vaul-drawer-direction=bottom]:md:max-w-sm"
       >
         <DrawerHeader className="items-center text-center">
           <Button

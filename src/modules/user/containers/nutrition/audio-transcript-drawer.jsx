@@ -1,5 +1,9 @@
 import React from "react";
-import { clamp, get, map, toNumber, trim } from "lodash";
+import clamp from "lodash/clamp";
+import get from "lodash/get";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 import {
   DrawerBody,
   DrawerDescription,
@@ -144,7 +148,7 @@ const AudioTranscriptDrawer = ({
           </div>
 
           {suggestedLoggedAt ? (
-            <div className="mt-4 rounded-2xl border px-3 py-3">
+            <div className="mt-4 rounded-2xl border p-3">
               <div className="text-xs font-medium text-muted-foreground">
                 Aniqlangan vaqt
               </div>
@@ -155,7 +159,7 @@ const AudioTranscriptDrawer = ({
           ) : null}
 
           {suggestedDateLabel ? (
-            <div className="mt-4 rounded-2xl border px-3 py-3">
+            <div className="mt-4 rounded-2xl border p-3">
               <div className="text-xs font-medium text-muted-foreground">
                 Aniqlangan kun
               </div>
@@ -166,7 +170,7 @@ const AudioTranscriptDrawer = ({
           ) : null}
 
           {confidenceMeta && confidencePercentage != null ? (
-            <div className="mt-4 rounded-2xl border px-3 py-3">
+            <div className="mt-4 rounded-2xl border p-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="text-xs font-medium text-muted-foreground">
@@ -215,7 +219,7 @@ const AudioTranscriptDrawer = ({
               {map(transcriptSegments, (segment, index) => (
                 <div
                   key={`${segment}-${index}`}
-                  className="rounded-2xl border px-3 py-3"
+                  className="rounded-2xl border p-3"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -268,7 +272,7 @@ const AudioTranscriptDrawer = ({
               {map(transcriptHistory, (item, index) => (
                 <div
                   key={`${item.transcript}-${index}`}
-                  className="rounded-2xl border px-3 py-3"
+                  className="rounded-2xl border p-3"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <button

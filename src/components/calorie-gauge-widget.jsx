@@ -1,7 +1,15 @@
 import React from "react";
-import { clamp, round, times, map } from "lodash";
+import clamp from "lodash/clamp";
+import round from "lodash/round";
+import times from "lodash/times";
+import map from "lodash/map";
 import { motion, useReducedMotion } from "framer-motion";
-import { ChevronsUpDown, FlameIcon, MoreHorizontal } from "lucide-react";
+import {
+  ChevronsUpDown,
+  FlameIcon,
+  MoreHorizontal,
+  TargetIcon,
+} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -73,7 +81,54 @@ const MacroCardGrid = ({ macroItems, isInteractive, onClick }) => {
   );
 };
 
+const GaugeSummary = ({
+  burnedLabel,
+  burnedValue,
+  goalLabel,
+  goalValue,
+  kcalLabel,
+}) => (
+  <div className="grid grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)] items-center rounded-xl border border-border/70 bg-background/75 p-2 shadow-sm">
+    <div className="flex min-w-0 items-center gap-2">
+      <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-lime-500/10 text-lime-600">
+        <FlameIcon className="size-4" aria-hidden="true" />
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-[11px] font-semibold text-muted-foreground">
+          {burnedLabel}
+        </span>
+        <span className="flex min-w-0 items-baseline gap-1 text-lg font-black leading-tight text-lime-600">
+          <span className="truncate tabular-nums">{burnedValue}</span>
+          {" "}
+          <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">
+            {kcalLabel}
+          </span>
+        </span>
+      </span>
+    </div>
+    <div className="h-12 w-px bg-border/70" />
+    <div className="flex min-w-0 items-center gap-2 pl-2">
+      <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-blue-500/10 text-blue-600">
+        <TargetIcon className="size-4" aria-hidden="true" />
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-[11px] font-semibold text-muted-foreground">
+          {goalLabel}
+        </span>
+        <span className="flex min-w-0 items-baseline gap-1 text-lg font-black leading-tight text-foreground">
+          <span className="truncate tabular-nums">{goalValue}</span>
+          {" "}
+          <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">
+            {kcalLabel}
+          </span>
+        </span>
+      </span>
+    </div>
+  </div>
+);
+
 export default function CalorieGaugeWidget({
+  burnedCalories = 0,
   consumed = 0,
   goal = 2200,
   macros = {
@@ -89,6 +144,7 @@ export default function CalorieGaugeWidget({
   onCalorieModeChange,
   labels = {},
   compact = false,
+  showBurnedSummary = true,
 }) {
   const shouldReduceMotion = useReducedMotion();
   const resolvedLabels = {
@@ -96,6 +152,8 @@ export default function CalorieGaugeWidget({
     eaten: labels.eaten ?? "Yeyilgan",
     remaining: labels.remaining ?? "Qolgan",
     over: labels.over ?? "Oshdi",
+    burned: labels.burned ?? "Yondirilgan",
+    goal: labels.goal ?? "Maqsad",
     kcal: labels.kcal ?? "kcal",
     toggleAria: labels.toggleAria ?? "Kaloriya ko'rsatkichini almashtirish",
     goalLoading: labels.goalLoading ?? "Maqsad profilingizga moslanmoqda",
@@ -113,6 +171,7 @@ export default function CalorieGaugeWidget({
   const pct = clamp(consumed / goal, 0, 1);
   const consumedLabel = round(consumed).toLocaleString();
   const goalLabel = round(goal).toLocaleString();
+  const burnedCaloriesLabel = round(burnedCalories).toLocaleString();
   const pctLabel = goal > 0 ? round((consumed / goal) * 100) : 0;
   const gaugeAriaLabel =
     resolvedLabels.ariaLabel ||
@@ -239,7 +298,7 @@ export default function CalorieGaugeWidget({
   const gaugeCard = (
     <Card
       className={cn(
-        "relative h-full overflow-hidden py-4 transition-all hover:ring-primary/20 hover:shadow-sm",
+        "relative h-full w-full overflow-hidden py-4 transition-all hover:ring-primary/20 hover:shadow-sm",
       )}
       onClick={onClick}
       onKeyDown={handleCardKeyDown}
@@ -274,7 +333,7 @@ export default function CalorieGaugeWidget({
         </div>
       </CardHeader>
       <CardContent className="relative z-10 px-4 pb-5">
-        <div className="flex flex-1 items-center justify-center">
+        <div className="mb-5 flex flex-1 items-center justify-center">
           <svg
             role="img"
             aria-label={gaugeAriaLabel}
@@ -456,6 +515,15 @@ export default function CalorieGaugeWidget({
             </text>
           </svg>
         </div>
+        {showBurnedSummary ? (
+          <GaugeSummary
+            burnedLabel={resolvedLabels.burned}
+            burnedValue={burnedCaloriesLabel}
+            goalLabel={resolvedLabels.goal}
+            goalValue={goalLabel}
+            kcalLabel={resolvedLabels.kcal}
+          />
+        ) : null}
       </CardContent>
     </Card>
   );

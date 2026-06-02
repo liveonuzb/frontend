@@ -20,7 +20,7 @@ const UserDetail = () => {
 
   return (
     <Drawer open onOpenChange={handleOpenChange} direction="bottom">
-      <DrawerContent className="mx-auto max-h-[92vh] data-[vaul-drawer-direction=bottom]:md:max-w-6xl">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <UserDetailView userId={id} surface="drawer" onClose={closeDrawer} />
       </DrawerContent>
     </Drawer>

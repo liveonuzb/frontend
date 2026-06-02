@@ -5,7 +5,12 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { get, round, filter, forEach, map, toPairs } from "lodash";
+import get from "lodash/get";
+import round from "lodash/round";
+import filter from "lodash/filter";
+import forEach from "lodash/forEach";
+import map from "lodash/map";
+import toPairs from "lodash/toPairs";
 import {
   Drawer,
   DrawerBody,
@@ -142,6 +147,7 @@ const CameraView = ({ onCapture, onBack }) => {
         autoPlay
         playsInline
         muted
+        aria-label="Kamera ko'rinishi"
         className="w-full h-full object-cover"
         style={{ transform: facing === "user" ? "scaleX(-1)" : "none" }}
       />
@@ -163,7 +169,7 @@ const CameraView = ({ onCapture, onBack }) => {
         />
       ))}
       {/* Close */}
-      <button
+      <button type="button"
         onClick={onBack}
         className="absolute top-3 left-3 z-10 size-9 rounded-full bg-black/50 flex items-center justify-center text-white backdrop-blur-sm"
       >
@@ -171,7 +177,7 @@ const CameraView = ({ onCapture, onBack }) => {
       </button>
       {/* Flash */}
       {hasFlash && (
-        <button
+        <button type="button"
           onClick={toggleFlash}
           className={cn(
             "absolute top-3 right-3 z-10 size-9 rounded-full flex items-center justify-center backdrop-blur-sm transition-all",
@@ -189,8 +195,9 @@ const CameraView = ({ onCapture, onBack }) => {
       <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-10">
         {/* Camera switch */}
         {hasMultipleCams ? (
-          <button
+          <button type="button"
             onClick={switchCamera}
+            aria-label="Kamerani almashtirish"
             className="size-11 rounded-full bg-black/50 flex items-center justify-center text-white backdrop-blur-sm active:scale-90 transition-transform"
           >
             <FlipHorizontalIcon className="size-5" />
@@ -200,9 +207,10 @@ const CameraView = ({ onCapture, onBack }) => {
         )}
 
         {/* Shutter */}
-        <button
+        <button type="button"
           onClick={capture}
           disabled={!ready}
+          aria-label="Rasmga olish"
           className="size-16 rounded-full border-[4px] border-white/60 bg-white/20 flex items-center justify-center backdrop-blur-sm active:scale-95 transition-transform disabled:opacity-40"
         >
           <div className="size-11 rounded-full bg-white" />
@@ -248,7 +256,7 @@ const PreviewView = ({ food, imageUrl, onRetake, onSave, isConsumed }) => {
             alt="Ovqat rasmi"
             className="w-full h-full object-cover"
           />
-          <button
+          <button type="button"
             onClick={onRetake}
             className="absolute top-3 right-3 size-9 rounded-full bg-black/50 flex items-center justify-center text-white backdrop-blur-sm"
           >
@@ -282,7 +290,7 @@ const PreviewView = ({ food, imageUrl, onRetake, onSave, isConsumed }) => {
           alt="Ovqat rasmi"
           className="w-full h-full object-cover"
         />
-        <button
+        <button type="button"
           onClick={onRetake}
           className="absolute top-3 right-3 size-9 rounded-full bg-black/50 flex items-center justify-center text-white backdrop-blur-sm"
         >

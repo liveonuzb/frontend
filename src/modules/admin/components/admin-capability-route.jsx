@@ -6,7 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import PageLoader from "@/components/page-loader/index.jsx";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 
-import { some, includes } from "lodash";
+import some from "lodash/some";
+import includes from "lodash/includes";
 
 const AdminForbidden = ({ capability, roles }) => (
   <div className="flex min-h-[calc(100vh-9rem)] items-center justify-center px-4 py-10">

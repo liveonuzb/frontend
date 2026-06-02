@@ -1,7 +1,12 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import { get, map, toNumber, toUpper, trim, filter } from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
+import toUpper from "lodash/toUpper";
+import trim from "lodash/trim";
+import filter from "lodash/filter";
 import {
   ClockIcon,
   FlameIcon,
@@ -436,6 +441,7 @@ const RunningDetailPage = () => {
               <input
                 type="file"
                 accept="image/*"
+                aria-label={t("user.workout.running.detail.addPhoto", "Add a photo")}
                 className="sr-only"
                 onChange={handleUploadPhoto}
                 disabled={imageUploadMutation.isPending || isSavingDetails}
@@ -455,6 +461,7 @@ const RunningDetailPage = () => {
                   "user.workout.running.detail.addTitle",
                   "Add a title",
                 )}
+                aria-label={t("user.workout.running.detail.addTitle", "Add a title")}
                 className="h-14 w-full rounded-2xl border bg-background px-4 text-base outline-none focus:ring-2 focus:ring-primary"
               />
               <div className="relative">
@@ -475,6 +482,7 @@ const RunningDetailPage = () => {
                     "user.workout.running.detail.addText",
                     "Add text",
                   )}
+                  aria-label={t("user.workout.running.detail.addText", "Add text")}
                   className="min-h-[110px] w-full resize-none rounded-2xl border bg-background py-4 pl-11 pr-4 text-base outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>

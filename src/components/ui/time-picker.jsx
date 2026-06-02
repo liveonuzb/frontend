@@ -1,12 +1,12 @@
 import React from "react";
-import { times, split } from "lodash";
+import times from "lodash/times";
+import split from "lodash/split";
 import { ClockIcon } from "lucide-react";
 import {
   Drawer,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
-  DrawerClose,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { ScrollPicker } from "@/components/ui/scroll-picker";
@@ -66,7 +66,7 @@ export function TimePicker({ value, onChange, disabled, placeholder = "Vaqt tanl
       </button>
 
       <Drawer open={open} onOpenChange={setOpen} direction="bottom" shouldScaleBackground={false}>
-        <DrawerContent className="max-h-[60vh]">
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader className="pb-0">
             <DrawerTitle className="text-center text-base">
               Vaqt tanlang
@@ -116,13 +116,8 @@ export function TimePicker({ value, onChange, disabled, placeholder = "Vaqt tanl
             </span>
           </div>
 
-          <div className="flex gap-3 px-6 pb-6 pt-2">
-            <DrawerClose asChild>
-              <Button variant="outline" className="flex-1">
-                Bekor qilish
-              </Button>
-            </DrawerClose>
-            <Button className="flex-1" onClick={handleConfirm}>
+          <div className="px-6 pb-6 pt-2">
+            <Button className="w-full" onClick={handleConfirm}>
               Tasdiqlash
             </Button>
           </div>

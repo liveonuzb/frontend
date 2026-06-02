@@ -1,5 +1,12 @@
 import React from "react";
-import { get, includes, trim, filter, isArray, map, toLower, some } from "lodash";
+import get from "lodash/get";
+import includes from "lodash/includes";
+import trim from "lodash/trim";
+import filter from "lodash/filter";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import toLower from "lodash/toLower";
+import some from "lodash/some";
 import { Link, useNavigate } from "react-router";
 import {
   ArrowRightIcon,

@@ -5,7 +5,8 @@ import { fileURLToPath } from "node:url";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { describe, expect, it, vi } from "vitest";
-import { forEach, toPairs } from "lodash";
+import forEach from "lodash/forEach";
+import toPairs from "lodash/toPairs";
 import UserOnboardingModule from "./index.jsx";
 
 const moduleDir = dirname(fileURLToPath(import.meta.url));

@@ -1,25 +1,24 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, Outlet, useMatch } from "react-router";
-import {
-  toPairs, filter as lodashFilter,
-  find,
-  findIndex,
-  get,
-  includes,
-  isArray,
-  isObject,
-  keyBy,
-  map as lodashMap,
-  pickBy,
-  trim,
-  values,
-  forEach,
-  fromPairs,
-  take,
-  toUpper,
-  toNumber,
-} from "lodash";
+import toPairs from "lodash/toPairs";
+import lodashFilter from "lodash/filter";
+import find from "lodash/find";
+import findIndex from "lodash/findIndex";
+import get from "lodash/get";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
+import isObject from "lodash/isObject";
+import keyBy from "lodash/keyBy";
+import lodashMap from "lodash/map";
+import pickBy from "lodash/pickBy";
+import trim from "lodash/trim";
+import values from "lodash/values";
+import forEach from "lodash/forEach";
+import fromPairs from "lodash/fromPairs";
+import take from "lodash/take";
+import toUpper from "lodash/toUpper";
+import toNumber from "lodash/toNumber";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
 import {
   useGetQuery,
@@ -819,6 +818,7 @@ const Index = () => {
             ref={importFileInputRef}
             type="file"
             accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+            aria-label="Mashqlarni import qilish faylini tanlash"
             className="hidden"
             onChange={(event) => void handleImportWorkouts(event)}
           />
@@ -1000,7 +1000,7 @@ const Index = () => {
         }}
         direction="bottom"
       >
-        <DrawerContent className="mx-auto max-h-[85vh] max-w-3xl overflow-hidden">
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader>
             <DrawerTitle>{t("admin.workouts.list.importPreviewTitle")}</DrawerTitle>
             <DrawerDescription>
@@ -1047,7 +1047,7 @@ const Index = () => {
         }}
         direction="bottom"
       >
-        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-md mx-auto">
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <div className="mx-auto w-full">
             <DrawerHeader>
               <DrawerTitle className="flex items-center gap-2">
@@ -1141,7 +1141,7 @@ const Index = () => {
         }}
         direction="bottom"
       >
-        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-md mx-auto">
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <div className="mx-auto w-full">
             <DrawerHeader>
               <DrawerTitle className="flex items-center gap-2">

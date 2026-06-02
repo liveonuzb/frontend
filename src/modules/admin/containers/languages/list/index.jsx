@@ -1,6 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate, Outlet } from "react-router";
-import { get, map, isArray, join, toString } from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import toString from "lodash/toString";
 import { useBreadcrumbStore } from "@/store";
 import {
   useGetQuery,

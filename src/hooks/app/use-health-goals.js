@@ -5,7 +5,9 @@ import { getApiResponseData } from "@/lib/api-response";
 import useMe, { ME_QUERY_KEY } from "@/hooks/app/use-me";
 import { calculateGoals, normalizeGoal } from "@/lib/goal-calculator";
 
-import { every, toNumber, trim } from "lodash";
+import every from "lodash/every";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 
 export const HEALTH_GOALS_QUERY_KEY = ["health-goals"];
 

@@ -1,6 +1,8 @@
 import React from "react";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { get, toNumber, trim } from "lodash";
+import get from "lodash/get";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 import { useBreadcrumbStore } from "@/store";
 import { useGetQuery } from "@/hooks/api";
 import { Button } from "@/components/ui/button";

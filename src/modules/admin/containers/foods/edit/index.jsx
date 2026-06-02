@@ -1,17 +1,15 @@
 import React from "react";
 import { useParams } from "react-router";
-import {
-  find,
-  get,
-  isArray,
-  isObject,
-  startsWith,
-  toNumber,
-  trim,
-  filter,
-  map,
-  toUpper,
-} from "lodash";
+import find from "lodash/find";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import isObject from "lodash/isObject";
+import startsWith from "lodash/startsWith";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
+import filter from "lodash/filter";
+import map from "lodash/map";
+import toUpper from "lodash/toUpper";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -220,7 +218,7 @@ const FoodFormDrawer = ({
 
   return (
     <Drawer open={open} onOpenChange={handleOpenChange} direction="bottom">
-      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-md mx-auto">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="text-center">
           <DrawerTitle className="text-lg font-bold">
             Ovqatni tahrirlash

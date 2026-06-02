@@ -1,7 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
-import { map as lodashMap, trim, toNumber, isObject, find, values as lodashValues } from "lodash";
+import lodashMap from "lodash/map";
+import trim from "lodash/trim";
+import toNumber from "lodash/toNumber";
+import isObject from "lodash/isObject";
+import find from "lodash/find";
+import lodashValues from "lodash/values";
 
 const FOOD_SORT_FIELDS = [
   "orderKey",

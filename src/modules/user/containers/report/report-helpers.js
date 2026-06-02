@@ -9,7 +9,7 @@ import {
   PizzaIcon,
 } from "lucide-react";
 
-import { toNumber } from "lodash";
+import toNumber from "lodash/toNumber";
 
 /* Query keys reused across pages and drawers. */
 export const dailyReportQueryKey = (date) => ["report", "daily", date];

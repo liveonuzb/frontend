@@ -19,32 +19,44 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 
-import { split, parseInt as lodashParseInt } from "lodash";
+import split from "lodash/split";
+import lodashParseInt from "lodash/parseInt";
 
 const DatePicker = ({ value, onChange, placeholder = "DD.MM.YYYY", className }) => {
   const [isOpen, setIsOpen] = React.useState(false);
-  const [inputValue, setInputValue] = React.useState("");
-
-  // Sync inputValue with external value
-  /* eslint-disable react-hooks/set-state-in-effect */
-  React.useEffect(() => {
+  const normalizedValue = value || "";
+  const formattedValue = React.useMemo(() => {
     if (value) {
       const date = new Date(value);
       if (isValid(date)) {
-        setInputValue(format(date, "dd.MM.yyyy"));
+        return format(date, "dd.MM.yyyy");
       }
-    } else {
-      setInputValue("");
     }
+    return "";
   }, [value]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+  const [inputState, setInputState] = React.useState(() => ({
+    sourceValue: normalizedValue,
+    value: formattedValue,
+  }));
+  const inputValue =
+    inputState.sourceValue === normalizedValue ? inputState.value : formattedValue;
+
+  const updateInputValue = React.useCallback(
+    (nextValue) => {
+      setInputState({
+        sourceValue: normalizedValue,
+        value: nextValue,
+      });
+    },
+    [normalizedValue],
+  );
 
   const inputRef = useMask({
     mask: "__.__.____",
     replacement: { _: /\d/ },
     onMask: (event) => {
       const { value: maskedValue } = event.detail;
-      setInputValue(maskedValue);
+      updateInputValue(maskedValue);
 
       if (maskedValue.length === 10) {
         const parts = split(maskedValue, ".");
@@ -87,7 +99,7 @@ const DatePicker = ({ value, onChange, placeholder = "DD.MM.YYYY", className }) 
         const finalValue = `${formattedDay}.${formattedMonth}.${year}`;
 
         if (corrected) {
-          setInputValue(finalValue);
+          updateInputValue(finalValue);
         }
 
         const parsedDate = parse(finalValue, "dd.MM.yyyy", new Date());
@@ -103,7 +115,7 @@ const DatePicker = ({ value, onChange, placeholder = "DD.MM.YYYY", className }) 
   const handleDateSelect = (date) => {
     if (date) {
       const formatted = format(date, "dd.MM.yyyy");
-      setInputValue(formatted);
+      updateInputValue(formatted);
       onChange?.(format(date, "yyyy-MM-dd"));
       setIsOpen(false);
     }
@@ -116,7 +128,7 @@ const DatePicker = ({ value, onChange, placeholder = "DD.MM.YYYY", className }) 
           ref={inputRef}
           placeholder={placeholder}
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          onChange={(e) => updateInputValue(e.target.value)}
           className="px-4 text-sm"
         />
         <InputGroupAddon align="inline-end">
@@ -132,7 +144,7 @@ const DatePicker = ({ value, onChange, placeholder = "DD.MM.YYYY", className }) 
       </InputGroup>
 
       <Drawer open={isOpen} onOpenChange={setIsOpen} direction="bottom">
-        <DrawerContent className="mx-auto max-w-md">
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader>
             <DrawerTitle>Sanani tanlang</DrawerTitle>
           </DrawerHeader>

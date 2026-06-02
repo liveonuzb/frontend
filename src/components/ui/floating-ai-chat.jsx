@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { some, map, trim } from "lodash";
+import some from "lodash/some";
+import map from "lodash/map";
+import trim from "lodash/trim";
 import { useLocation } from "react-router";
 import {
   MessageCircleIcon,
@@ -14,7 +16,7 @@ import { Input } from "@/components/ui/input";
 
 export function FloatingAiChat() {
   const { pathname } = useLocation();
-  const [isOpen, setIsOpen] = useState(false);
+  const [openPathname, setOpenPathname] = useState(null);
   const [messages, setMessages] = useState([
     {
       role: "ai",
@@ -37,18 +39,11 @@ export function FloatingAiChat() {
       ),
     [pathname],
   );
+  const isOpen = !shouldHide && openPathname === pathname;
 
   useEffect(() => {
     scrollToBottom();
   }, [messages, isTyping]);
-
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    if (shouldHide && isOpen) {
-      setIsOpen(false);
-    }
-  }, [isOpen, shouldHide]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (shouldHide) {
     return null;
@@ -87,12 +82,12 @@ export function FloatingAiChat() {
           <div className="bg-primary p-4 text-primary-foreground flex justify-between items-center shrink-0">
             <div className="flex items-center gap-2">
               <div className="bg-white/20 p-1.5 rounded-full">
-                <BotIcon className="h-5 w-5" />
+                <BotIcon className="size-5" />
               </div>
               <div>
                 <h3 className="font-bold text-sm leading-none">Liveon AI</h3>
                 <p className="text-[10px] text-primary-foreground/70 mt-1 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>{" "}
+                  <span className="size-1.5 rounded-full bg-green-400 animate-pulse"></span>{" "}
                   Onlayn
                 </p>
               </div>
@@ -100,10 +95,10 @@ export function FloatingAiChat() {
             <Button
               variant="ghost"
               size="icon"
-              className="hover:bg-black/10 text-white rounded-full h-8 w-8"
-              onClick={() => setIsOpen(false)}
+              className="hover:bg-black/10 text-white rounded-full size-8"
+              onClick={() => setOpenPathname(null)}
             >
-              <XIcon className="h-4 w-4" />
+              <XIcon className="size-4" />
             </Button>
           </div>
 
@@ -122,7 +117,7 @@ export function FloatingAiChat() {
                   }`}
                 >
                   {msg.role === "ai" && (
-                    <SparklesIcon className="h-3 w-3 text-primary mb-1 inline-block mr-1" />
+                    <SparklesIcon className="size-3 text-primary mb-1 inline-block mr-1" />
                   )}
                   {msg.text}
                 </div>
@@ -133,15 +128,15 @@ export function FloatingAiChat() {
               <div className="flex justify-start">
                 <div className="bg-card border border-border/50 rounded-2xl rounded-bl-sm p-4 w-16 flex gap-1 items-center justify-center">
                   <span
-                    className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce"
+                    className="size-1.5 bg-primary/40 rounded-full animate-bounce"
                     style={{ animationDelay: "0ms" }}
                   ></span>
                   <span
-                    className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce"
+                    className="size-1.5 bg-primary/60 rounded-full animate-bounce"
                     style={{ animationDelay: "150ms" }}
                   ></span>
                   <span
-                    className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce"
+                    className="size-1.5 bg-primary rounded-full animate-bounce"
                     style={{ animationDelay: "300ms" }}
                   ></span>
                 </div>
@@ -162,10 +157,10 @@ export function FloatingAiChat() {
               <Button
                 type="submit"
                 size="icon"
-                className="absolute right-1 h-8 w-8 rounded-full bg-primary hover:bg-primary/90 text-white"
+                className="absolute right-1 size-8 rounded-full bg-primary hover:bg-primary/90 text-white"
                 disabled={!trim(inputValue) || isTyping}
               >
-                <SendIcon className="h-3.5 w-3.5" />
+                <SendIcon className="size-3.5" />
               </Button>
             </form>
           </div>
@@ -173,8 +168,12 @@ export function FloatingAiChat() {
       </div>
       {/* Toggle Button */}
       <Button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`h-14 w-14 rounded-full shadow-[0_0_20px_rgba(var(--primary),0.3)] transition-all duration-300 ${
+        onClick={() =>
+          setOpenPathname((currentPathname) =>
+            currentPathname === pathname ? null : pathname,
+          )
+        }
+        className={`size-14 rounded-full shadow-[0_0_20px_rgba(var(--primary),0.3)] transition-all duration-300 ${
           isOpen
             ? "rotate-90 scale-90 bg-muted text-foreground"
             : "hover:scale-105 hover:shadow-[0_0_30px_rgba(var(--primary),0.5)]"
@@ -182,9 +181,9 @@ export function FloatingAiChat() {
         size="icon"
       >
         {isOpen ? (
-          <XIcon className="h-6 w-6" />
+          <XIcon className="size-6" />
         ) : (
-          <MessageCircleIcon className="h-6 w-6" />
+          <MessageCircleIcon className="size-6" />
         )}
       </Button>
     </div>

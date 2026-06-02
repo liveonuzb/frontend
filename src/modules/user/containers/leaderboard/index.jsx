@@ -1,16 +1,14 @@
-import {
-  find,
-  map,
-  filter,
-  take,
-  clamp,
-  split,
-  join,
-  isArray,
-  toNumber,
-  toUpper,
-  trim,
-} from "lodash";
+import find from "lodash/find";
+import map from "lodash/map";
+import filter from "lodash/filter";
+import take from "lodash/take";
+import clamp from "lodash/clamp";
+import split from "lodash/split";
+import join from "lodash/join";
+import isArray from "lodash/isArray";
+import toNumber from "lodash/toNumber";
+import toUpper from "lodash/toUpper";
+import trim from "lodash/trim";
 import React from "react";
 import { useNavigate } from "react-router";
 import { useGetQuery } from "@/hooks/api";

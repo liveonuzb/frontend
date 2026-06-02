@@ -1,5 +1,8 @@
 import React, { useRef, useState } from "react";
-import { get, isArray, map, trim } from "lodash";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import trim from "lodash/trim";
 import {
   Drawer,
   DrawerBody,
@@ -141,6 +144,7 @@ const ImageUploadSquare = ({ imageUrl, isUploading, onPick, onRemove }) => {
         ref={fileInputRef}
         type="file"
         accept="image/*"
+        aria-label="Maxsus ovqat rasmi faylini tanlash"
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
@@ -507,7 +511,7 @@ const CustomFoodsDrawer = ({
   return (
     <>
       <Drawer open={open} onOpenChange={handleClose} direction="bottom">
-        <DrawerContent>
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader>
             <DrawerTitle>
               {view === "create"

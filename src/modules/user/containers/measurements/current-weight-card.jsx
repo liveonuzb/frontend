@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PencilIcon } from "lucide-react";
 import { motion } from "framer-motion";
-import { get } from "lodash";
+import get from "lodash/get";
 
 export const CurrentWeightCard = ({ currentW, onOpenModal }) => {
   return (

@@ -53,6 +53,7 @@ const ChallengeCoverPicker = ({
         ref={inputRef}
         type="file"
         accept="image/*"
+        aria-label="Challenge muqova rasmi faylini tanlash"
         className="hidden"
         onChange={(event) => {
           const file = event.target.files?.[0];

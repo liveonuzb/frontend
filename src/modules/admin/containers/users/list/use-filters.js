@@ -12,7 +12,8 @@ import {
   makeAdminTextActiveFilter,
 } from "@/modules/admin/components/admin-filter-utils.js";
 
-import { filter, trim } from "lodash";
+import filter from "lodash/filter";
+import trim from "lodash/trim";
 
 const DEFAULT_PAGE_SIZE = 10;
 

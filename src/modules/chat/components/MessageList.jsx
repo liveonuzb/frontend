@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { times, filter, map, round, includes, trim, parseInt as lodashParseInt } from "lodash";
+import times from "lodash/times";
+import filter from "lodash/filter";
+import map from "lodash/map";
+import round from "lodash/round";
+import includes from "lodash/includes";
+import trim from "lodash/trim";
+import lodashParseInt from "lodash/parseInt";
 import { cn } from "@/lib/utils";
 import {
     Check,
@@ -66,7 +72,7 @@ const VideoNotePlayer = ({ mediaUrl, isMe }) => (
         "size-40 md:size-48 rounded-full overflow-hidden border-4 relative group cursor-pointer shadow-xl",
         isMe ? "border-primary/30" : "border-background"
     )}>
-        <video src={mediaUrl} className="w-full h-full object-cover" loop muted autoPlay playsInline />
+        <video src={mediaUrl} className="w-full h-full object-cover" loop muted autoPlay playsInline aria-label="Video note" />
         <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center">
             <PlayCircleIcon className="size-10 md:size-12 text-white/80 group-hover:scale-110 transition-transform" />
         </div>
@@ -96,14 +102,20 @@ const AttachmentSecurityMeta = ({ msg, isMe }) => {
 const ImageAttachment = ({ msg, isMe, renderTextWithLinks, onOpen, onRefresh }) => (
     <div className="space-y-2">
         <div className="rounded-lg overflow-hidden border bg-muted/20">
+            <button
+                type="button"
+                className="block max-w-full cursor-pointer"
+                onClick={() => onOpen(msg)}
+                aria-label={`${getChatAttachmentMetadata(msg)?.fileName || "Chat media"} ochish`}
+            >
             <img
                 loading="lazy"
                 src={msg.mediaUrl}
                 alt={getChatAttachmentMetadata(msg)?.fileName || "Chat media"}
-                className="max-w-full max-h-60 md:max-h-80 object-contain cursor-pointer hover:opacity-90 transition-opacity"
-                onClick={() => onOpen(msg)}
+                className="max-w-full max-h-60 md:max-h-80 object-contain hover:opacity-90 transition-opacity"
                 onError={() => onRefresh(msg)}
             />
+            </button>
         </div>
         <AttachmentSecurityMeta msg={msg} isMe={isMe} />
         {msg.text && msg.text !== "📷 Rasm" && <p className={cn("leading-relaxed whitespace-pre-wrap", contentWrapClass)}>{renderTextWithLinks(msg.text, isMe)}</p>}
@@ -117,6 +129,7 @@ const VideoAttachment = ({ msg, isMe, renderTextWithLinks, onRefresh }) => (
                 src={msg.mediaUrl}
                 controls
                 playsInline
+                aria-label={getChatAttachmentMetadata(msg)?.fileName || "Chat video"}
                 className="max-w-full max-h-60 md:max-h-80 object-contain"
                 onError={() => onRefresh(msg)}
             />
@@ -273,7 +286,7 @@ const BookingWidget = ({ metadata, activeChat, isMe }) => {
             ) : (
                 <div className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-1.5 md:gap-2">
                     {map((metadata.slots || []), (slot, i) => (
-                        <button key={i} disabled={!canSelectSlot || isSubmitting || !metadata?.bookingId} onClick={() => handleSelectSlot(slot.time)} className="min-h-9 rounded-lg border bg-background p-1.5 text-[10px] font-medium transition-all hover:border-primary hover:text-primary disabled:opacity-50 md:p-2 md:text-xs">{slot.time}</button>
+                        <button type="button" key={i} disabled={!canSelectSlot || isSubmitting || !metadata?.bookingId} onClick={() => handleSelectSlot(slot.time)} className="min-h-9 rounded-lg border bg-background p-1.5 text-[10px] font-medium transition-all hover:border-primary hover:text-primary disabled:opacity-50 md:p-2 md:text-xs">{slot.time}</button>
                     ))}
                 </div>
             )}
@@ -284,6 +297,7 @@ const BookingWidget = ({ metadata, activeChat, isMe }) => {
                         onChange={(event) => setCancelReason(event.target.value)}
                         className="h-9 w-full rounded-md border bg-background px-2 text-[11px] outline-none"
                         placeholder="Bekor qilish sababi"
+                        aria-label="Bekor qilish sababi"
                     />
                     <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                         <Button size="sm" variant="outline" className="h-8 text-[10px]" onClick={() => setIsCancelOpen(false)}>
@@ -334,7 +348,7 @@ const HabitTrackerWidget = ({ metadata, msgId, activeChat, isMe, canInteract }) 
             </div>
             <div className="space-y-1.5">
                 {map(metadata.habits, (habit, idx) => (
-                    <button
+                    <button type="button"
                         key={idx}
                         disabled={!canInteract || !isMe}
                         onClick={() => {
@@ -460,7 +474,7 @@ const VoiceMessagePlayer = ({ msg, activeChat, isMe }) => {
     return (
         <div className="space-y-2">
             <div className="flex w-[16rem] max-w-full min-w-0 items-center gap-2">
-                <button onClick={togglePlay} className={cn("size-7 md:size-8 rounded-full flex items-center justify-center shrink-0", isMe ? "bg-primary-foreground/20" : "bg-primary/10")}>
+                <button type="button" onClick={togglePlay} className={cn("size-7 md:size-8 rounded-full flex items-center justify-center shrink-0", isMe ? "bg-primary-foreground/20" : "bg-primary/10")}>
                     {playing ? <PauseIcon className="size-3 md:size-3.5" /> : <PlayIcon className="size-3 md:size-3.5" />}
                 </button>
                 <div className="flex h-4 min-w-0 flex-1 items-end gap-[1px] md:h-5 md:gap-[2px]">
@@ -469,7 +483,7 @@ const VoiceMessagePlayer = ({ msg, activeChat, isMe }) => {
                 <span className="shrink-0 text-[8px] opacity-70 md:text-[9px]">{formatVoiceDuration(msg.duration || msg.metadata?.duration)}</span>
 
                 {!msg.transcription && !isMe && (
-                    <button
+                    <button type="button"
                         onClick={handleTranscribe}
                         disabled={loadingAI}
                         className={cn("size-6 rounded-full flex items-center justify-center hover:bg-muted transition-colors ml-1", loadingAI && "animate-spin")}
@@ -491,8 +505,8 @@ const VoiceMessagePlayer = ({ msg, activeChat, isMe }) => {
 const DeleteConfirmation = ({ onDelete, onCancel }) => (
     <div className="absolute z-20 right-0 top-full mt-1 min-w-[160px] md:min-w-[200px] rounded-xl border bg-popover p-1.5 md:p-2 shadow-lg animate-in fade-in zoom-in-95">
         <p className="text-[10px] md:text-xs text-muted-foreground px-2 py-1 mb-1">Xabarni o'chirish</p>
-        <button className="flex w-full items-center gap-2 rounded-lg px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm text-destructive hover:bg-destructive/10 transition-colors" onClick={onDelete}><Trash2Icon className="size-3 md:size-3.5" /> O'chirish</button>
-        <button className="flex w-full items-center gap-2 rounded-lg px-2 md:px-3 py-1.5 md:py-2 text-[10px] md:text-xs text-muted-foreground hover:bg-muted transition-colors" onClick={onCancel}><XIcon className="size-2.5 md:size-3" /> Bekor qilish</button>
+        <button type="button" className="flex w-full items-center gap-2 rounded-lg px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm text-destructive hover:bg-destructive/10 transition-colors" onClick={onDelete}><Trash2Icon className="size-3 md:size-3.5" /> O'chirish</button>
+        <button type="button" className="flex w-full items-center gap-2 rounded-lg px-2 md:px-3 py-1.5 md:py-2 text-[10px] md:text-xs text-muted-foreground hover:bg-muted transition-colors" onClick={onCancel}><XIcon className="size-2.5 md:size-3" /> Bekor qilish</button>
     </div>
 );
 
@@ -512,7 +526,7 @@ const PollWidget = ({
             const percent = round((opt.votes.length / (msg.metadata.totalVotes || 1)) * 100);
             return (
                 <div key={i} className="space-y-1">
-                    <button
+                    <button type="button"
                         disabled={!canInteract}
                         onClick={() => canInteract && votePoll(activeChat, msg.id, i, currentUserId)}
                         className={cn(
@@ -622,7 +636,7 @@ const MessageList = ({
         <div className="relative flex-1 space-y-1 overflow-y-auto p-3 pb-4 md:p-6 custom-scrollbar">
             {showConfetti && <Confetti numberOfPieces={150} recycle={false} gravity={0.3} style={{ position: 'fixed', inset: 0, zIndex: 100 }} />}
             {messagesCursors[activeChat] && (
-                <button
+                <button type="button"
                     onClick={() => loadMoreMessages(activeChat)}
                     className="w-full text-center text-sm text-muted-foreground py-2 hover:text-foreground"
                 >
@@ -643,7 +657,7 @@ const MessageList = ({
 
                             {/* Reply Preview */}
                             {msg.replyTo && (
-                                <button 
+                                <button type="button"
                                     onClick={() => {
                                         const el = messageRefs.current[msg.replyTo.id];
                                         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -701,7 +715,7 @@ const MessageList = ({
 
                             {canUseReactions && reactionMsgId === msg.id && <div data-reaction-picker className={cn("absolute z-10 flex gap-1 bg-background border rounded-full px-1.5 py-1 shadow-lg -top-9", isMe ? "right-0" : "left-0")}>{map(
                                 ["👍", "❤️", "🔥", "😂", "👏"],
-                                emoji => <button key={emoji} className="text-sm hover:scale-125 transition-transform" onClick={e => { e.stopPropagation(); handleReaction(msg.id, emoji); }}>{emoji}</button>,
+                                emoji => <button type="button" key={emoji} className="text-sm hover:scale-125 transition-transform" onClick={e => { e.stopPropagation(); handleReaction(msg.id, emoji); }}>{emoji}</button>,
                             )}</div>}
                             {deletingMsgId === msg.id && <DeleteConfirmation onDelete={handleDelete} onCancel={handleDeleteCancel} />}
                         </div>

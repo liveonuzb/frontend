@@ -1,5 +1,6 @@
 import React from "react";
-import { get, isArray } from "lodash";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
 import { useGetQuery } from "@/hooks/api";
 
 export const APP_LANGUAGES_QUERY_KEY = ["languages"];

@@ -1,11 +1,9 @@
 import React from "react";
-import {
-  get,
-  map as lodashMap,
-  filter as lodashFilter,
-  includes,
-  trim,
-} from "lodash";
+import get from "lodash/get";
+import lodashMap from "lodash/map";
+import lodashFilter from "lodash/filter";
+import includes from "lodash/includes";
+import trim from "lodash/trim";
 import {
   Drawer,
   DrawerContent,
@@ -40,7 +38,7 @@ const FoodBulkCategoryDrawer = ({
 }) => {
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-md mx-auto">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle>Bulk kategoriya biriktirish</DrawerTitle>
           <DrawerDescription>

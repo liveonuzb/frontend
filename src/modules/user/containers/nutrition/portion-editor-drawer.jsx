@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useLayoutEffect } from "react";
-import { round, map, toPairs } from "lodash";
+import round from "lodash/round";
+import map from "lodash/map";
+import toPairs from "lodash/toPairs";
 import { CalculatorIcon } from "lucide-react";
 import { Button } from "@/components/ui/button.jsx";
 import { Slider } from "@/components/ui/slider.jsx";
@@ -53,7 +55,7 @@ const PortionEditorDrawer = ({ food, open, onClose, onConfirm }) => {
       open={open}
       onOpenChange={(o) => !o && onClose()}
     >
-      <DrawerContent size="sm">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm" size="sm">
         <DrawerHeader>
           <DrawerTitle className="flex justify-center items-center gap-2">
             <span>{food?.emoji}</span>

@@ -1,5 +1,7 @@
 "use client";
-import { clamp, map, times } from "lodash";
+import clamp from "lodash/clamp";
+import map from "lodash/map";
+import times from "lodash/times";
 import { createContext, Fragment, useContext, useId, useMemo, useRef } from "react";
 import { useDataGrid } from "@/components/reui/data-grid/data-grid";
 import {

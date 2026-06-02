@@ -1,5 +1,6 @@
 import React from "react";
-import { get, map as lodashMap } from "lodash";
+import get from "lodash/get";
+import lodashMap from "lodash/map";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {

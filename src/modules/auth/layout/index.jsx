@@ -1,7 +1,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Link, Outlet } from "react-router";
-import { first, filter, find, some } from "lodash";
+import first from "lodash/first";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import some from "lodash/some";
 import { MoonIcon, PaletteIcon, SunIcon } from "lucide-react";
 import LanguageDrawerPicker from "@/components/language-drawer-picker";
 import ProductPreviewSlider, {

@@ -1,6 +1,10 @@
 import { getTargetWeightValidationError } from "@/modules/user-onboarding/lib/onboarding-validation";
 
-import { filter, includes, isArray, map, trim } from "lodash";
+import filter from "lodash/filter";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import trim from "lodash/trim";
 
 const hasValue = (value) => {
   if (isArray(value)) return value.length > 0;

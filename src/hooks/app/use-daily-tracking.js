@@ -1,17 +1,15 @@
 import React from "react";
-import {
-  get,
-  clamp,
-  find,
-  filter,
-  map,
-  some,
-  split,
-  toLower,
-  toNumber,
-  trim,
-  slice,
-} from "lodash";
+import get from "lodash/get";
+import clamp from "lodash/clamp";
+import find from "lodash/find";
+import filter from "lodash/filter";
+import map from "lodash/map";
+import some from "lodash/some";
+import split from "lodash/split";
+import toLower from "lodash/toLower";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
+import slice from "lodash/slice";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -23,6 +21,7 @@ import {
 } from "@/hooks/api";
 import { trackCampaignConversion } from "@/lib/analytics.js";
 import { FOODS_QUICK_ADD_QUERY_KEY } from "@/hooks/app/use-food-catalog";
+import { getNutritionDashboardQueryKey } from "@/hooks/app/use-nutrition-dashboard";
 import { SAVED_MEALS_QUERY_KEY } from "@/hooks/app/use-saved-meals";
 import { invalidateGamificationQueries } from "@/modules/user/lib/gamification-query-keys";
 import {
@@ -231,7 +230,11 @@ export const useDailyTrackingActions = () => {
   const syncResponse = React.useCallback(
     (response) => {
       const dayData = getTrackingPayload(response);
-      return setTrackingCache(queryClient, dayData);
+      const normalized = setTrackingCache(queryClient, dayData);
+      void queryClient.invalidateQueries({
+        queryKey: getNutritionDashboardQueryKey(normalized.date),
+      });
+      return normalized;
     },
     [queryClient],
   );

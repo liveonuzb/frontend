@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import get from "lodash/get";
 import { useGetQuery } from "@/hooks/api";
 import { useAuthStore } from "@/store";
 import { normalizeUserOnboarding } from "@/lib/user-onboarding";

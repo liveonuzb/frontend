@@ -2,7 +2,9 @@ import React from "react";
 import { DrawerBody, DrawerFooter } from "@/components/ui/drawer.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
-import { map, slice, trim } from "lodash";
+import map from "lodash/map";
+import slice from "lodash/slice";
+import trim from "lodash/trim";
 import { cn } from "@/lib/utils.js";
 
 const TextAddDrawer = ({
@@ -42,7 +44,7 @@ const TextAddDrawer = ({
                 <button
                   key={`${item.transcript}-${index}`}
                   type="button"
-                  className={"shadow  py-2 px-2 rounded-xl min-w-52"}
+                  className={"shadow  p-2 rounded-xl min-w-52"}
                   onClick={() => onUseHistory?.(item)}
                 >
                   <p className="line-clamp-2 text-base font-bold text-foreground">

@@ -1,4 +1,5 @@
-import { round, sumBy } from "lodash";
+import round from "lodash/round";
+import sumBy from "lodash/sumBy";
 
 export const clampPercent = (value, target) => {
   if (!target || target <= 0) {
@@ -57,7 +58,5 @@ export const buildNutritionDashboardMetrics = ({
     healthScore,
     mealsCompleted,
     totalMeals: 4,
-    streakDays: 7,
   };
 };
-

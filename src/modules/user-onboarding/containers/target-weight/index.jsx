@@ -26,7 +26,7 @@ import {
 } from "../numeric-picker-layout.js";
 import { useOnboardingAssets } from "@/hooks/app/use-onboarding-base";
 
-import { toNumber } from "lodash";
+import toNumber from "lodash/toNumber";
 
 const Index = () => {
   const { t } = useTranslation();

@@ -1,4 +1,7 @@
-import { filter, some, find, first } from "lodash";
+import filter from "lodash/filter";
+import some from "lodash/some";
+import find from "lodash/find";
+import first from "lodash/first";
 import React from "react";
 import { useLanguageStore } from "@/store";
 import useAppLanguages from "@/hooks/app/use-app-languages";

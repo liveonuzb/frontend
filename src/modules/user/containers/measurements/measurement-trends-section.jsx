@@ -1,5 +1,8 @@
 import React from "react";
-import { map, entries, get, filter } from "lodash";
+import map from "lodash/map";
+import entries from "lodash/entries";
+import get from "lodash/get";
+import filter from "lodash/filter";
 import { TrendingUpIcon, TrendingDownIcon, MinusIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGetQuery } from "@/hooks/api";

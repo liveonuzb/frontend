@@ -1,5 +1,8 @@
 import React from "react";
-import { get, map, size, toString } from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import size from "lodash/size";
+import toString from "lodash/toString";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { LoaderCircleIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -168,7 +171,7 @@ const CuisineFoodsGrid = ({ canManage, cuisineId, currentLanguage }) => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-2 rounded-2xl border border-dashed bg-muted/20 px-4 py-4 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 rounded-2xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
         <LoaderCircleIcon className="animate-spin" />
         Oshxona ichidagi ovqatlar yuklanmoqda...
       </div>
@@ -177,7 +180,7 @@ const CuisineFoodsGrid = ({ canManage, cuisineId, currentLanguage }) => {
 
   if (!size(foods)) {
     return (
-      <div className="rounded-2xl border border-dashed bg-muted/20 px-4 py-4 text-sm text-muted-foreground">
+      <div className="rounded-2xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
         Bu oshxonada hozircha ovqat yo'q.
       </div>
     );

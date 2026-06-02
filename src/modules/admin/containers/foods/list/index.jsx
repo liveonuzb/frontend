@@ -1,18 +1,17 @@
 import React from "react";
 import { useNavigate, Outlet } from "react-router";
-import {
-  toPairs, filter as lodashFilter,
-  find,
-  findIndex,
-  get,
-  isArray,
-  isObject,
-  keyBy,
-  map as lodashMap,
-  trim,
-  values as lodashValues,
-  toNumber,
-} from "lodash";
+import toPairs from "lodash/toPairs";
+import lodashFilter from "lodash/filter";
+import find from "lodash/find";
+import findIndex from "lodash/findIndex";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import isObject from "lodash/isObject";
+import keyBy from "lodash/keyBy";
+import lodashMap from "lodash/map";
+import trim from "lodash/trim";
+import lodashValues from "lodash/values";
+import toNumber from "lodash/toNumber";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { toast } from "sonner";
 import {
@@ -533,10 +532,23 @@ const Index = () => {
 
         if (invalidCount > 0) {
           const firstError = get(result, "preview.errors.0.error");
+          const firstQualityTitle = get(
+            result,
+            "preview.quality.groups.0.title",
+          );
           toast.error(
-            `${invalidCount} ta qatorda xato bor. ${firstError || "Import boshlanmadi."}`,
+            `${invalidCount} ta qatorda xato bor. ${
+              firstQualityTitle ? `${firstQualityTitle}: ` : ""
+            }${firstError || "Import boshlanmadi."}`,
           );
           return;
+        }
+
+        const warningCount = get(result, "preview.quality.warnCount", 0);
+        if (warningCount > 0) {
+          toast.warning(
+            `${warningCount} ta Content Quality ogohlantirishi bor. /admin/content-quality sahifasida ko'rinadi.`,
+          );
         }
 
         toast.success("Ovqat import job sifatida boshlandi");
@@ -830,6 +842,7 @@ const Index = () => {
                 ref={importFileInputRef}
                 type="file"
                 accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                aria-label="Ovqatlarni import qilish faylini tanlash"
                 className="hidden"
                 onChange={(event) => void handleImportFoods(event)}
               />
@@ -1016,6 +1029,4 @@ const Index = () => {
 };
 
 export default Index;
-
-
 

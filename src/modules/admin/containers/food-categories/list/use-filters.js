@@ -1,6 +1,9 @@
 import React from "react";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
-import { get, find, toNumber, trim } from "lodash";
+import get from "lodash/get";
+import find from "lodash/find";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 
 const ITEMS_PER_PAGE = 10;
 const SORT_FIELDS = ["orderKey", "name", "createdAt", "isActive"];

@@ -1,21 +1,19 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import {
-  find,
-  get,
-  map,
-  orderBy,
-  size,
-  values as lodashValues,
-  filter,
-  isArray,
-  toNumber,
-  toUpper,
-  trim,
-  includes,
-  toLower,
-  take,
-} from "lodash";
+import find from "lodash/find";
+import get from "lodash/get";
+import map from "lodash/map";
+import orderBy from "lodash/orderBy";
+import size from "lodash/size";
+import lodashValues from "lodash/values";
+import filter from "lodash/filter";
+import isArray from "lodash/isArray";
+import toNumber from "lodash/toNumber";
+import toUpper from "lodash/toUpper";
+import trim from "lodash/trim";
+import includes from "lodash/includes";
+import toLower from "lodash/toLower";
+import take from "lodash/take";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import {

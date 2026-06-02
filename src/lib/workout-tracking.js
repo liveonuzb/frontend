@@ -1,20 +1,18 @@
-import {
-  includes,
-  some,
-  map,
-  filter,
-  compact,
-  join,
-  take,
-  clamp,
-  times,
-  forEach,
-  isArray,
-  split,
-  toNumber as lodashToNumber,
-  values as lodashValues,
-  parseInt as lodashParseInt,
-} from "lodash";
+import includes from "lodash/includes";
+import some from "lodash/some";
+import map from "lodash/map";
+import filter from "lodash/filter";
+import compact from "lodash/compact";
+import join from "lodash/join";
+import take from "lodash/take";
+import clamp from "lodash/clamp";
+import times from "lodash/times";
+import forEach from "lodash/forEach";
+import isArray from "lodash/isArray";
+import split from "lodash/split";
+import lodashToNumber from "lodash/toNumber";
+import lodashValues from "lodash/values";
+import lodashParseInt from "lodash/parseInt";
 
 export const WORKOUT_TRACKING_TYPES = {
   REPS_WEIGHT: "REPS_WEIGHT",

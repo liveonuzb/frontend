@@ -1,5 +1,10 @@
 import React from "react";
-import { find, values as lodashValues, get, map, orderBy, trim } from "lodash";
+import find from "lodash/find";
+import lodashValues from "lodash/values";
+import get from "lodash/get";
+import map from "lodash/map";
+import orderBy from "lodash/orderBy";
+import trim from "lodash/trim";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DrawerBody, DrawerFooter } from "@/components/ui/drawer";

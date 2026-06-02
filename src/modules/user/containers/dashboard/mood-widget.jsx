@@ -1,5 +1,6 @@
 import React from "react";
-import { get, map } from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useGetQuery } from "@/hooks/api";

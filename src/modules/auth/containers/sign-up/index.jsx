@@ -2,7 +2,7 @@ import React from "react";
 import { Navigate, useLocation, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useGetQuery } from "@/hooks/api";
-import { get } from "lodash";
+import get from "lodash/get";
 import { getApiResponseData } from "@/lib/api-response";
 import { AuthHeader, AuthPanel } from "@/modules/auth/components/auth-panel";
 import { useAuthStore } from "@/store";

@@ -1,5 +1,7 @@
 import React from "react";
-import { get, map, toUpper } from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import toUpper from "lodash/toUpper";
 import { CheckCircle2Icon, LoaderCircleIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,7 +43,7 @@ export const LocalizedCatalogDrawers = ({
       onOpenChange={(open) => !open && onCloseDrawer()}
       direction="bottom"
     >
-      <DrawerContent>
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle>
             {editingItem
@@ -155,7 +157,7 @@ export const LocalizedCatalogDrawers = ({
       onOpenChange={(open) => !open && onCloseTranslationsDrawer()}
       direction="bottom"
     >
-      <DrawerContent>
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle>Tarjimalarni boshqarish</DrawerTitle>
           <DrawerDescription>

@@ -1,4 +1,5 @@
-import { round, toNumber } from "lodash";
+import round from "lodash/round";
+import toNumber from "lodash/toNumber";
 import React from "react";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +15,7 @@ const AnimatedCounter = ({ value, duration = 1200, prefix = "", suffix = "", cla
         if (isNaN(numValue)) return;
 
         const startTime = performance.now();
+        let frameId;
 
         const tick = (now) => {
             const elapsed = now - startTime;
@@ -25,11 +27,13 @@ const AnimatedCounter = ({ value, duration = 1200, prefix = "", suffix = "", cla
             setDisplay(current);
 
             if (progress < 1) {
-                requestAnimationFrame(tick);
+                frameId = requestAnimationFrame(tick);
             }
         };
 
-        requestAnimationFrame(tick);
+        frameId = requestAnimationFrame(tick);
+
+        return () => cancelAnimationFrame(frameId);
     }, [numValue, duration]);
 
     const formatted = decimals > 0

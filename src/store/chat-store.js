@@ -7,21 +7,19 @@ import { config } from "@/config.js";
 import { getApiResponseData } from "@/lib/api-response.js";
 import i18n from "@/lib/i18n";
 import useAuthStore from "./auth-store";
-import {
-  map,
-  filter,
-  find,
-  findIndex,
-  some,
-  includes,
-  reduce,
-  join,
-  toPairs,
-  forEach,
-  isArray,
-  toLower,
-  trim,
-} from "lodash";
+import map from "lodash/map";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import findIndex from "lodash/findIndex";
+import some from "lodash/some";
+import includes from "lodash/includes";
+import reduce from "lodash/reduce";
+import join from "lodash/join";
+import toPairs from "lodash/toPairs";
+import forEach from "lodash/forEach";
+import isArray from "lodash/isArray";
+import toLower from "lodash/toLower";
+import trim from "lodash/trim";
 
 const tStore = (key, defaultValue, options = {}) =>
   i18n.t(`store.${key}`, { defaultValue, ...options });

@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import get from "lodash/get";
 import { AdminConfirmDialog } from "@/modules/admin/components/admin-confirm-dialog.jsx";
 
 export const DeleteAlert = ({

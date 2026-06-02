@@ -1,15 +1,13 @@
 import React from "react";
-import {
-  filter,
-  keyBy,
-  map,
-  size,
-  isArray,
-  toUpper,
-  split,
-  trim,
-  take,
-} from "lodash";
+import filter from "lodash/filter";
+import keyBy from "lodash/keyBy";
+import map from "lodash/map";
+import size from "lodash/size";
+import isArray from "lodash/isArray";
+import toUpper from "lodash/toUpper";
+import split from "lodash/split";
+import trim from "lodash/trim";
+import take from "lodash/take";
 import { useNavigate } from "react-router";
 import { UserPlusIcon, UsersIcon } from "lucide-react";
 import { useGetQuery } from "@/hooks/api";

@@ -1,7 +1,9 @@
 import React from "react";
 import { useNavigate } from "react-router";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { get, toString, trim } from "lodash";
+import get from "lodash/get";
+import toString from "lodash/toString";
+import trim from "lodash/trim";
 import { useBreadcrumbStore } from "@/store";
 import { useGetQuery } from "@/hooks/api";
 import {

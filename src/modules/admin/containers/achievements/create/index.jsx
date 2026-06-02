@@ -1,5 +1,10 @@
 import React from "react";
-import { get, isArray, join, find, toUpper, trim } from "lodash";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import find from "lodash/find";
+import toUpper from "lodash/toUpper";
+import trim from "lodash/trim";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -143,7 +148,7 @@ const CreateAchievementPage = () => {
   return (
     <>
       <Drawer open onOpenChange={handleOpenChange} direction="bottom">
-        <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-lg">
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="items-center text-center">
           <DrawerTitle>Yangi achievement</DrawerTitle>
           <DrawerDescription className="max-w-sm">

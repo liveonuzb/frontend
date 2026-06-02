@@ -1,4 +1,8 @@
-import { filter, map, some, includes, toUpper } from "lodash";
+import filter from "lodash/filter";
+import map from "lodash/map";
+import some from "lodash/some";
+import includes from "lodash/includes";
+import toUpper from "lodash/toUpper";
 import React from "react";
 import { Outlet, NavLink, useLocation } from "react-router";
 import {
@@ -29,6 +33,7 @@ import {
   BrainCircuitIcon,
   BellRingIcon,
   BarChart3Icon,
+  BookOpenIcon,
 } from "lucide-react";
 import {
   Sidebar,
@@ -88,7 +93,7 @@ const mainNav = [
   },
 ];
 
-const contentNav = [
+export const contentNav = [
   {
     to: "/admin/content-quality",
     label: "Content Quality",
@@ -105,6 +110,12 @@ const contentNav = [
     to: "/admin/foods/list",
     label: "Ovqatlar bazasi",
     icon: UtensilsIcon,
+    capability: "content.read",
+  },
+  {
+    to: "/admin/recipes/list",
+    label: "Retseptlar",
+    icon: BookOpenIcon,
     capability: "content.read",
   },
   {

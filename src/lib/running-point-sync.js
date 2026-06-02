@@ -1,4 +1,7 @@
-import { orderBy, toNumber, slice, take } from "lodash";
+import orderBy from "lodash/orderBy";
+import toNumber from "lodash/toNumber";
+import slice from "lodash/slice";
+import take from "lodash/take";
 export const RUNNING_POINT_QUEUE_MAX_SIZE = 3000;
 export const RUNNING_POINT_BATCH_MAX_SIZE = 24;
 export const RUNNING_POINT_SYNC_INTERVAL_MS = 5000;

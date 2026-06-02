@@ -14,7 +14,8 @@ import {
 } from "@/lib/running-metrics";
 import RunMapPanel from "../components/run-map-panel.jsx";
 
-import { map, toNumber } from "lodash";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
 
 const runDateFormatter = new Intl.DateTimeFormat("uz-UZ", {
   day: "2-digit",

@@ -1,16 +1,14 @@
 import React, { useState, useCallback } from "react";
-import {
-    get,
-    map,
-    isEmpty,
-    times,
-    trim,
-    toUpper,
-    filter,
-    size,
-    split,
-    parseInt as lodashParseInt,
-} from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import isEmpty from "lodash/isEmpty";
+import times from "lodash/times";
+import trim from "lodash/trim";
+import toUpper from "lodash/toUpper";
+import filter from "lodash/filter";
+import size from "lodash/size";
+import split from "lodash/split";
+import lodashParseInt from "lodash/parseInt";
 import { useTranslation } from "react-i18next";
 import {
     Card, CardContent, CardHeader, CardTitle, CardFooter
@@ -263,7 +261,7 @@ function WithdrawalDialog({ open, onOpenChange, xpBalance, onSuccess }) {
 
     return (
         <Drawer open={open} onOpenChange={handleClose}>
-            <DrawerContent>
+            <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
                 <DrawerHeader>
                     <DrawerTitle className="flex items-center gap-2">
                         <CreditCardIcon className="size-5 text-primary" />

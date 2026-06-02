@@ -1,6 +1,15 @@
 import React from "react";
 import { addDays, format } from "date-fns";
-import { get, fromPairs, map, reduce, some, toNumber, trim, filter, toPairs, take } from "lodash";
+import get from "lodash/get";
+import fromPairs from "lodash/fromPairs";
+import map from "lodash/map";
+import reduce from "lodash/reduce";
+import some from "lodash/some";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
+import filter from "lodash/filter";
+import toPairs from "lodash/toPairs";
+import take from "lodash/take";
 import { toast } from "sonner";
 import { ArrowLeftIcon, CheckCircle2Icon, LoaderCircleIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -371,7 +380,7 @@ const CreateChallengePage = () => {
         if (!open) closeDrawer();
       }}
     >
-      <DrawerContent className="overflow-hidden data-[vaul-drawer-direction=bottom]:max-w-2xl">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="shrink-0 border-b text-left">
           <div className="flex items-start gap-3">
             <Button

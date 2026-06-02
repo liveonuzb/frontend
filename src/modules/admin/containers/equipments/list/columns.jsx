@@ -1,5 +1,9 @@
 import React from "react";
-import { find, get, map, trim, values as lodashValues } from "lodash";
+import find from "lodash/find";
+import get from "lodash/get";
+import map from "lodash/map";
+import trim from "lodash/trim";
+import lodashValues from "lodash/values";
 import { ImageIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { DataGridTableDndRowHandle } from "@/components/reui/data-grid";

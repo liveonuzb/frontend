@@ -1,6 +1,12 @@
 /* eslint-disable react-refresh/only-export-components */
 import React from "react";
-import { get, isArray, join, trim, filter, find, toNumber } from "lodash";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import trim from "lodash/trim";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import toNumber from "lodash/toNumber";
 import { z } from "zod";
 
 import {

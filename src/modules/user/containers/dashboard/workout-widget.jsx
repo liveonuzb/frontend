@@ -1,5 +1,8 @@
 import React from "react";
-import { find, get, isArray, toNumber } from "lodash";
+import find from "lodash/find";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import toNumber from "lodash/toNumber";
 import { Link } from "react-router";
 import { ArrowRightIcon, DumbbellIcon, RouteIcon } from "lucide-react";
 import { useGetQuery } from "@/hooks/api";

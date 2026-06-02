@@ -10,7 +10,14 @@ import {
 } from "lucide-react";
 import { calculateGoals } from "@/lib/goal-calculator";
 
-import { filter, find, includes, isArray, map, toNumber, take, takeRight } from "lodash";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
+import take from "lodash/take";
+import takeRight from "lodash/takeRight";
 
 export const AUTO_SAVE_DELAY_MS = 700;
 

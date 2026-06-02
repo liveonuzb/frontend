@@ -17,7 +17,8 @@ import {
 } from "lucide-react";
 import { NutritionDrawerContent } from "./nutrition-drawer-layout.jsx";
 
-import { find, map } from "lodash";
+import find from "lodash/find";
+import map from "lodash/map";
 
 export default function RecentMealsDrawer({
   open,

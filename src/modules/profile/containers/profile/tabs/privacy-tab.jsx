@@ -1,6 +1,9 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { isEqual, map, filter, toUpper } from "lodash";
+import isEqual from "lodash/isEqual";
+import map from "lodash/map";
+import filter from "lodash/filter";
+import toUpper from "lodash/toUpper";
 import {
   BellOffIcon,
   DownloadIcon,

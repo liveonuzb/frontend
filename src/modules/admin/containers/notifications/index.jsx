@@ -1,5 +1,9 @@
 import React from "react";
-import { get, map, toNumber, trim, toPairs } from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
+import toPairs from "lodash/toPairs";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   BellRingIcon,

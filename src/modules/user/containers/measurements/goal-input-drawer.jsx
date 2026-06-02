@@ -16,13 +16,13 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
-import { get } from "lodash";
+import get from "lodash/get";
 import { WeightPicker } from "@/components/weight-picker";
 
 export const GoalInputDrawer = ({ open, setOpen, form, onSubmit }) => {
   return (
     <Drawer open={open} onOpenChange={setOpen} direction="bottom">
-      <DrawerContent>
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle>Maqsad (Vazn)</DrawerTitle>
           <DrawerDescription>

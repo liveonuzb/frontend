@@ -1,21 +1,19 @@
 import React from "react";
-import {
-  compact,
-  get,
-  includes,
-  join,
-  map,
-  orderBy,
-  some,
-  take,
-  filter,
-  find,
-  isArray,
-  split,
-  toNumber,
-  toUpper,
-  trim,
-} from "lodash";
+import compact from "lodash/compact";
+import get from "lodash/get";
+import includes from "lodash/includes";
+import join from "lodash/join";
+import map from "lodash/map";
+import orderBy from "lodash/orderBy";
+import some from "lodash/some";
+import take from "lodash/take";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import isArray from "lodash/isArray";
+import split from "lodash/split";
+import toNumber from "lodash/toNumber";
+import toUpper from "lodash/toUpper";
+import trim from "lodash/trim";
 import { eachDayOfInterval, format } from "date-fns";
 import { uz } from "date-fns/locale";
 import { useNavigate, useParams } from "react-router";

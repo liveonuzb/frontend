@@ -1,4 +1,7 @@
-import { filter, forEach, map, trim } from "lodash";
+import filter from "lodash/filter";
+import forEach from "lodash/forEach";
+import map from "lodash/map";
+import trim from "lodash/trim";
 const getUserName = (user) => {
   const fullName = trim(filter([user?.firstName, user?.lastName], Boolean)
     .join(" "));

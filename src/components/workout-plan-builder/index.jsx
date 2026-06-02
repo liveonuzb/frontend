@@ -7,22 +7,20 @@ import React, {
   useRef,
 } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  map,
-  filter,
-  find,
-  get,
-  size,
-  some,
-  fromPairs,
-  values,
-  flatMap,
-  includes,
-  keys,
-  toPairs,
-  trim,
-  isEqual,
-} from "lodash";
+import map from "lodash/map";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import get from "lodash/get";
+import size from "lodash/size";
+import some from "lodash/some";
+import fromPairs from "lodash/fromPairs";
+import values from "lodash/values";
+import flatMap from "lodash/flatMap";
+import includes from "lodash/includes";
+import keys from "lodash/keys";
+import toPairs from "lodash/toPairs";
+import trim from "lodash/trim";
+import isEqual from "lodash/isEqual";
 import useIsMobile from "@/hooks/utils/use-mobile.js";
 import { cn } from "@/lib/utils.js";
 import { toast } from "sonner";
@@ -495,9 +493,7 @@ const WorkoutPlanBuilder = ({
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="right">
       <DrawerContent
-        className={cn(
-          "p-0 data-[vaul-drawer-direction=right]:w-full data-[vaul-drawer-direction=right]:sm:max-w-full",
-        )}
+        className="data-[vaul-drawer-direction=bottom]:md:max-w-sm"
       >
         {builderContent}
       </DrawerContent>

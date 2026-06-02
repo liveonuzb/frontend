@@ -1,5 +1,10 @@
 import React from "react";
-import { get, find, map, trim, toLower, toNumber } from "lodash";
+import get from "lodash/get";
+import find from "lodash/find";
+import map from "lodash/map";
+import trim from "lodash/trim";
+import toLower from "lodash/toLower";
+import toNumber from "lodash/toNumber";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDeleteQuery, useGetQuery, usePatchQuery, usePostQuery } from "@/hooks/api";
 import {

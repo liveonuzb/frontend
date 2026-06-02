@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { get } from "lodash";
+import get from "lodash/get";
 
 export function useTelegram() {
   const tg = window.Telegram?.WebApp;

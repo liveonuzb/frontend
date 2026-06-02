@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { clamp } from "lodash";
+import clamp from "lodash/clamp";
 import { MoveHorizontalIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -24,6 +24,22 @@ export function TransformationSlider({
   };
 
   const handleMouseUp = () => setIsDragging(false);
+
+  const handleKeyDown = (event) => {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      setPosition((value) => clamp(value - 5, 0, 100));
+    } else if (event.key === "ArrowRight") {
+      event.preventDefault();
+      setPosition((value) => clamp(value + 5, 0, 100));
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      setPosition(0);
+    } else if (event.key === "End") {
+      event.preventDefault();
+      setPosition(100);
+    }
+  };
 
   useEffect(() => {
     if (isDragging) {
@@ -72,7 +88,7 @@ export function TransformationSlider({
         <img loading="lazy"
           src={afterImage}
           alt="Transformation After"
-          className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none"
+          className="absolute inset-0 size-full object-cover select-none pointer-events-none"
           draggable="false"
         />
         {/* Filter overlay to make 'After' pop slightly more if desired */}
@@ -102,11 +118,18 @@ export function TransformationSlider({
         style={{ left: `${position}%`, transform: "translateX(-50%)" }}
         onMouseDown={() => setIsDragging(true)}
         onTouchStart={() => setIsDragging(true)}
+        onKeyDown={handleKeyDown}
+        role="slider"
+        tabIndex={0}
+        aria-label="Transformation comparison position"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(position)}
       >
         <div
-          className={`w-10 h-10 rounded-full bg-white text-primary flex items-center justify-center shadow-xl transition-transform ${isDragging ? "scale-110 ring-4 ring-primary/30" : "group-hover/handle:scale-110"}`}
+          className={`size-10 rounded-full bg-white text-primary flex items-center justify-center shadow-xl transition-transform ${isDragging ? "scale-110 ring-4 ring-primary/30" : "group-hover/handle:scale-110"}`}
         >
-          <MoveHorizontalIcon className="w-5 h-5 pointer-events-none" />
+          <MoveHorizontalIcon className="size-5 pointer-events-none" />
         </div>
       </div>
     </div>

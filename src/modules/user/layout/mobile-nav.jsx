@@ -1,5 +1,8 @@
 import React from "react";
-import { get, map, sumBy, toNumber } from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import sumBy from "lodash/sumBy";
+import toNumber from "lodash/toNumber";
 import { NavLink, useLocation } from "react-router";
 import { cn } from "@/lib/utils";
 import { isNavItemActive } from "@/lib/navigation";

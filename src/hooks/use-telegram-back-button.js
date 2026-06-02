@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { useTelegram } from "@/hooks/use-telegram";
 
-import { includes } from "lodash";
+import includes from "lodash/includes";
 
 const ROOT_PATHS = ["/", "/user", "/user/home"];
 

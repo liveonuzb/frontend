@@ -21,7 +21,7 @@ import { getOnboardingPersonIllustration } from "../../lib/illustration.js";
 import { getAgeTone } from "../../lib/tones.js";
 import { useOnboardingAssets } from "@/hooks/app/use-onboarding-base";
 
-import { toNumber } from "lodash";
+import toNumber from "lodash/toNumber";
 
 const getAgeProfile = (ageValue, t) => {
   const ageNumber = toNumber(ageValue);

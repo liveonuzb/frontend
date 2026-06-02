@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { map } from "lodash";
+import map from "lodash/map";
 import { Badge } from "@/components/ui/badge";
 import { Clock3Icon, TrophyIcon } from "lucide-react";
 

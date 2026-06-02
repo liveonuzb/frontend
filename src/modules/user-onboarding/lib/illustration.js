@@ -1,4 +1,4 @@
-import { toNumber } from "lodash";
+import toNumber from "lodash/toNumber";
 const YOUNG_AGE_MAX = 24;
 const OLD_AGE_MIN = 50;
 

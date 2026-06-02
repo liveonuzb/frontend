@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { some, take, split } from "lodash";
+import some from "lodash/some";
+import take from "lodash/take";
+import split from "lodash/split";
 import i18n from "@/lib/i18n";
 
 const LEVEL_THRESHOLDS = [

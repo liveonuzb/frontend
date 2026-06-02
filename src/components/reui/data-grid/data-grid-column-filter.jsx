@@ -1,5 +1,8 @@
 "use client";
-import { filter, map, includes, toLower } from "lodash";
+import filter from "lodash/filter";
+import map from "lodash/map";
+import includes from "lodash/includes";
+import toLower from "lodash/toLower";
 import { useMemo, useState } from "react"
 
 import { cn } from "@/lib/utils"
@@ -83,7 +86,8 @@ function DataGridColumnFilter(
               {map(filteredOptions, (option) => {
                 const isSelected = selectedValues.has(option.value)
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={option.value}
                     onClick={() => {
                       if (isSelected) {
@@ -95,12 +99,12 @@ function DataGridColumnFilter(
                       column?.setFilterValue(filterValues.length ? filterValues : undefined)
                     }}
                     className={cn(
-                      "relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none",
+                      "relative flex w-full cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm outline-hidden select-none",
                       "hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                     )}>
                     <div
                       className={cn(
-                        "border-primary me-2 flex h-4 w-4 items-center justify-center rounded-sm border",
+                        "border-primary me-2 flex size-4 items-center justify-center rounded-sm border",
                         isSelected
                           ? "bg-primary text-primary-foreground"
                           : "opacity-50 [&_svg]:invisible"
@@ -108,16 +112,16 @@ function DataGridColumnFilter(
                       <CheckIcon className="size-4" />
                     </div>
                     {option.icon && (
-                      <option.icon className="text-muted-foreground mr-2 h-4 w-4" />
+                      <option.icon className="text-muted-foreground mr-2 size-4" />
                     )}
                     <span>{option.label}</span>
                     {facets?.get(option.value) && (
                       <span
-                        className="ms-auto flex h-4 w-4 items-center justify-center font-mono text-xs">
+                        className="ms-auto flex size-4 items-center justify-center font-mono text-xs">
                         {facets.get(option.value)}
                       </span>
                     )}
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -126,11 +130,12 @@ function DataGridColumnFilter(
             <>
               <div className="bg-border -mx-1 my-1 h-px" />
               <div className="p-1">
-                <div
+                <button
+                  type="button"
                   onClick={() => column?.setFilterValue(undefined)}
-                  className="hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center justify-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none">
+                  className="hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground relative flex w-full cursor-default items-center justify-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none">
                   Clear filters
-                </div>
+                </button>
               </div>
             </>
           )}

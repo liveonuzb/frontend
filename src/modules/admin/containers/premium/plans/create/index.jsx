@@ -1,5 +1,8 @@
 import React from "react";
-import { get, isArray, join, trim } from "lodash";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import trim from "lodash/trim";
 import { toast } from "sonner";
 import { PlusIcon } from "lucide-react";
 import { usePostQuery } from "@/hooks/api";
@@ -59,7 +62,7 @@ const CreatePlan = () => {
 
   return (
     <Drawer open onOpenChange={handleOpenChange} direction="bottom">
-      <DrawerContent className="mx-auto max-h-[90vh] data-[vaul-drawer-direction=bottom]:md:max-w-lg">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <div className="mx-auto flex w-full min-h-0 flex-1 flex-col">
           <DrawerHeader>
             <DrawerTitle className="flex items-center gap-2">

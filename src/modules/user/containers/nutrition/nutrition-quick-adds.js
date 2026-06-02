@@ -1,13 +1,11 @@
-import {
-  filter,
-  forEach,
-  isArray,
-  some,
-  toLower,
-  toNumber as lodashToNumber,
-  trim,
-  map,
-} from "lodash";
+import filter from "lodash/filter";
+import forEach from "lodash/forEach";
+import isArray from "lodash/isArray";
+import some from "lodash/some";
+import toLower from "lodash/toLower";
+import lodashToNumber from "lodash/toNumber";
+import trim from "lodash/trim";
+import map from "lodash/map";
 const QUICK_ADD_LIMIT = 6;
 
 const toNumber = (value, fallback = 0) => {

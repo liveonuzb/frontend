@@ -8,7 +8,8 @@ import en from "@/modules/landing/lib/locales/en.json";
 import ru from "@/modules/landing/lib/locales/ru.json";
 import uz from "@/modules/landing/lib/locales/uz.json";
 
-import { isArray, map } from "lodash";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
 
 const localeMap = { en, ru, uz };
 const setCurrentLanguageMock = vi.hoisted(() => vi.fn());

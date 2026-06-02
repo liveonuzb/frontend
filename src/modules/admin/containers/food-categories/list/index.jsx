@@ -5,19 +5,17 @@ import {
   getExpandedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import {
-  filter as lodashFilter,
-  find,
-  get,
-  isArray,
-  join,
-  map,
-  size,
-  toString,
-  trim,
-  values as lodashValues,
-  toNumber,
-} from "lodash";
+import lodashFilter from "lodash/filter";
+import find from "lodash/find";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import map from "lodash/map";
+import size from "lodash/size";
+import toString from "lodash/toString";
+import trim from "lodash/trim";
+import lodashValues from "lodash/values";
+import toNumber from "lodash/toNumber";
 import { toast } from "sonner";
 import {
   LoaderCircleIcon,
@@ -249,7 +247,7 @@ const CategoryFoodsGrid = ({ canManage, categoryId, currentLanguage }) => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-2 rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-4 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 rounded-2xl border border-dashed border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
         <LoaderCircleIcon className="animate-spin" />
         Kategoriya ichidagi ovqatlar yuklanmoqda...
       </div>
@@ -258,7 +256,7 @@ const CategoryFoodsGrid = ({ canManage, categoryId, currentLanguage }) => {
 
   if (!size(foods)) {
     return (
-      <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-4 text-sm text-muted-foreground">
+      <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
         Bu kategoriyada hozircha ovqat yo'q.
       </div>
     );

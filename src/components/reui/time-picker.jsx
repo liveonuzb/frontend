@@ -1,4 +1,5 @@
-import { times, split } from "lodash";
+import times from "lodash/times";
+import split from "lodash/split";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { ClockIcon } from "lucide-react";
@@ -33,15 +34,14 @@ export const TimePicker = ({ value, onChange, className }) => {
   const [tempHour, setTempHour] = React.useState(hour);
   const [tempMinute, setTempMinute] = React.useState(minute);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
-  React.useEffect(() => {
-    if (open) {
+  const handleOpenChange = (nextOpen) => {
+    if (nextOpen) {
       const [h, m] = split((value || "18:00"), ":");
       setTempHour(h);
       setTempMinute(m);
     }
-  }, [open, value]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+    setOpen(nextOpen);
+  };
 
   const handleConfirm = () => {
     onChange(`${tempHour}:${tempMinute}`);
@@ -52,7 +52,7 @@ export const TimePicker = ({ value, onChange, className }) => {
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => handleOpenChange(true)}
         className={cn(
           "flex h-9 w-full items-center justify-between rounded-2xl border bg-background px-4 py-2 text-sm transition-all hover:bg-accent/50 focus:outline-none focus:ring-2 focus:ring-primary/20",
           className,
@@ -62,8 +62,8 @@ export const TimePicker = ({ value, onChange, className }) => {
         <ClockIcon className="size-4 text-muted-foreground" />
       </button>
 
-      <Drawer open={open} onOpenChange={setOpen} direction="bottom">
-        <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-sm">
+      <Drawer open={open} onOpenChange={handleOpenChange} direction="bottom">
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader className="items-center text-center">
             <DrawerTitle>
               {t("common.timePicker.title", {

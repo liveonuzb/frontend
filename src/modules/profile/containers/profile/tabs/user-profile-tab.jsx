@@ -1,6 +1,9 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { isEqual, map, toUpper, trim } from "lodash";
+import isEqual from "lodash/isEqual";
+import map from "lodash/map";
+import toUpper from "lodash/toUpper";
+import trim from "lodash/trim";
 import {
   AtSignIcon,
   CameraIcon,
@@ -380,6 +383,7 @@ export const UserProfileTab = ({ embedded = false }) => {
                   ref={fileInputRef}
                   type="file"
                   accept={AVATAR_FILE_ACCEPT}
+                  aria-label="Profil rasmi faylini tanlash"
                   className="hidden"
                   onChange={handleAvatarSelect}
                 />
@@ -500,7 +504,7 @@ export const UserProfileTab = ({ embedded = false }) => {
           }}
           direction="bottom"
         >
-          <DrawerContent side="bottom">
+          <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm" side="bottom">
             <DrawerHeader className="px-5 pt-5 text-center items-center">
               <DrawerTitle>{contactMeta.changeTitle}</DrawerTitle>
               <DrawerDescription>{contactMeta.description}</DrawerDescription>
@@ -537,7 +541,7 @@ export const UserProfileTab = ({ embedded = false }) => {
           }}
           direction="bottom"
         >
-          <DrawerContent side="bottom">
+          <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm" side="bottom">
             <DrawerHeader className="px-5 pt-5 text-center items-center">
               <DrawerTitle>
                 {t("profile.user.contactChange.otpTitle")}
@@ -633,6 +637,7 @@ export const UserProfileTab = ({ embedded = false }) => {
               ref={fileInputRef}
               type="file"
               accept={AVATAR_FILE_ACCEPT}
+              aria-label="Profil rasmi faylini tanlash"
               className="hidden"
               onChange={handleAvatarSelect}
             />

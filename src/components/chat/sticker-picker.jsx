@@ -1,11 +1,15 @@
 import * as React from "react";
-import { find, map } from "lodash";
+import find from "lodash/find";
+import map from "lodash/map";
 import { cn } from "@/lib/utils";
 import { STICKER_PACKS } from "@/data/stickers.mock";
 
 function StickerPicker({ open, onClose, onSelect }) {
     const [activePackId, setActivePackId] = React.useState(STICKER_PACKS[0].id);
     const panelRef = React.useRef(null);
+    const onCloseEvent = React.useEffectEvent(() => {
+        onClose?.();
+    });
 
     const activePack = find(STICKER_PACKS, (p) => p.id === activePackId) ?? STICKER_PACKS[0];
 
@@ -15,13 +19,13 @@ function StickerPicker({ open, onClose, onSelect }) {
 
         function handleClickOutside(e) {
             if (panelRef.current && !panelRef.current.contains(e.target)) {
-                onClose?.();
+                onCloseEvent();
             }
         }
 
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [open, onClose]);
+    }, [open]);
 
     // Close on Escape
     React.useEffect(() => {
@@ -29,13 +33,13 @@ function StickerPicker({ open, onClose, onSelect }) {
 
         function handleKeyDown(e) {
             if (e.key === "Escape") {
-                onClose?.();
+                onCloseEvent();
             }
         }
 
         document.addEventListener("keydown", handleKeyDown);
         return () => document.removeEventListener("keydown", handleKeyDown);
-    }, [open, onClose]);
+    }, [open]);
 
     if (!open) return null;
 
@@ -53,7 +57,7 @@ function StickerPicker({ open, onClose, onSelect }) {
             )}
         >
             {/* Pack tabs */}
-            <div className="flex gap-1 overflow-x-auto border-b border-border px-2 py-2">
+            <div className="flex gap-1 overflow-x-auto border-b border-border p-2">
                 {map(STICKER_PACKS, (pack) => (
                     <button
                         key={pack.id}

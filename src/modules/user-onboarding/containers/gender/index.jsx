@@ -14,7 +14,8 @@ import { getGenderTone, ONBOARDING_TONES } from "../../lib/tones.js";
 import { useOnboardingAssets } from "@/hooks/app/use-onboarding-base";
 import OnboardingOption from "./option.jsx";
 
-import { find, map } from "lodash";
+import find from "lodash/find";
+import map from "lodash/map";
 
 const Index = () => {
   const { t } = useTranslation();

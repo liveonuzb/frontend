@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { get, find } from "lodash";
+import get from "lodash/get";
+import find from "lodash/find";
 import { FlameIcon } from "lucide-react";
 import {
   Drawer,
@@ -130,7 +131,7 @@ export default function StreakReminderDrawer() {
       onOpenChange={(next) => (next ? setOpen(true) : dismiss())}
       direction="bottom"
     >
-      <DrawerContent data-streak-reminder-drawer="true">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm" data-streak-reminder-drawer="true">
         <DrawerHeader className="text-center">
           <div className="mx-auto mb-3 flex size-16 items-center justify-center rounded-3xl bg-orange-500/10">
             <FlameIcon className="size-8 text-orange-500" />

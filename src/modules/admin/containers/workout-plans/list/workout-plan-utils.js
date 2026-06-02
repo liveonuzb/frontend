@@ -1,4 +1,12 @@
-import { filter, find, fromPairs, isArray, toNumber, trim, map, values as lodashValues, toPairs } from "lodash";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import fromPairs from "lodash/fromPairs";
+import isArray from "lodash/isArray";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
+import map from "lodash/map";
+import lodashValues from "lodash/values";
+import toPairs from "lodash/toPairs";
 export const ITEMS_PER_PAGE = 10;
 export const DIFFICULTY_OPTIONS = ["Boshlang'ich", "O'rta", "Yuqori"];
 export const APPROVAL_STATUS_OPTIONS = [

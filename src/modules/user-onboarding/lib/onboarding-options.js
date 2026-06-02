@@ -1,4 +1,8 @@
-import { concat, filter, find, isArray, keys } from "lodash";
+import concat from "lodash/concat";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import isArray from "lodash/isArray";
+import keys from "lodash/keys";
 const RESOURCE_BY_OPTIONS_KEY = {
   allergies: "allergies",
   dietRequirements: "diet-requirements",

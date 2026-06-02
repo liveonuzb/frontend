@@ -1,5 +1,6 @@
 import React from "react";
-import { get, map as lodashMap } from "lodash";
+import get from "lodash/get";
+import lodashMap from "lodash/map";
 import dayjs from "dayjs";
 import { ImageIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";

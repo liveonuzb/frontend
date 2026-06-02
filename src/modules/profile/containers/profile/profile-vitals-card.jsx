@@ -14,7 +14,9 @@ import {
   UserIcon,
   WalletCardsIcon,
 } from "lucide-react";
-import { get, map, toNumber } from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -119,7 +121,7 @@ const XpBalanceDrawer = ({ open, onOpenChange, xp }) => {
 
   return (
     <Drawer direction="bottom" open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="data-[vaul-drawer-direction=bottom]:!mx-auto data-[vaul-drawer-direction=bottom]:!max-w-md">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle>XP balans</DrawerTitle>
           <DrawerDescription>
@@ -195,10 +197,6 @@ const XpBalanceDrawer = ({ open, onOpenChange, xp }) => {
   );
 };
 
-const stopDrawerDrag = (event) => {
-  event.stopPropagation();
-};
-
 const GenderVitalDrawer = ({
   open,
   onOpenChange,
@@ -216,7 +214,7 @@ const GenderVitalDrawer = ({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent className="data-[vaul-drawer-direction=bottom]:!mx-auto data-[vaul-drawer-direction=bottom]:!max-w-md">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle>Jinsi</DrawerTitle>
           <DrawerDescription>Profil jinsini tanlang.</DrawerDescription>
@@ -300,7 +298,7 @@ const NumericVitalDrawer = ({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent className="data-[vaul-drawer-direction=bottom]:!mx-auto data-[vaul-drawer-direction=bottom]:!max-w-md">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle>{title}</DrawerTitle>
           <DrawerDescription>{description}</DrawerDescription>
@@ -309,9 +307,6 @@ const NumericVitalDrawer = ({
           <div
             className="rounded-3xl border bg-card p-4"
             data-vaul-no-drag
-            onPointerDown={stopDrawerDrag}
-            onMouseDown={stopDrawerDrag}
-            onTouchStart={stopDrawerDrag}
           >
             <div className="mb-3 text-center">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">

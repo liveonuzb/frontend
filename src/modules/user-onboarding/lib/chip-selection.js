@@ -1,4 +1,10 @@
-import { filter, isArray, reduce, some, toNumber, trim, map } from "lodash";
+import filter from "lodash/filter";
+import isArray from "lodash/isArray";
+import reduce from "lodash/reduce";
+import some from "lodash/some";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
+import map from "lodash/map";
 export const normalizeChipLabel = (value) =>
   trim(String(value ?? "").replace(/\s+/g, " "));
 

@@ -1,6 +1,13 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { get, join, map, take, toNumber, toUpper, trim, split } from "lodash";
+import get from "lodash/get";
+import join from "lodash/join";
+import map from "lodash/map";
+import take from "lodash/take";
+import toNumber from "lodash/toNumber";
+import toUpper from "lodash/toUpper";
+import trim from "lodash/trim";
+import split from "lodash/split";
 import { useBreadcrumbStore } from "@/store";
 import PageTransition from "@/components/page-transition";
 import CalendarBottomDrawer from "@/components/calendar-bottom-drawer.jsx";

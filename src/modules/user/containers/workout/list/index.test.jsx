@@ -25,7 +25,7 @@ import {
 } from "@/hooks/app/use-workout-plans";
 import useWorkoutWeatherToday from "@/hooks/app/use-workout-weather";
 
-import { some } from "lodash";
+import some from "lodash/some";
 
 vi.mock("@/components/page-transition", () => ({
   default: ({ children }) => <>{children}</>,

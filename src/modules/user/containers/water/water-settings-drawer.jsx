@@ -14,7 +14,8 @@ import { SettingsIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
 import useHealthGoals from "@/hooks/app/use-health-goals";
 import useMe from "@/hooks/app/use-me";
 import { cn } from "@/lib/utils";
-import { some, map } from "lodash";
+import some from "lodash/some";
+import map from "lodash/map";
 
 import DailyGoalDrawer from "./daily-goal-drawer";
 import CustomCupDrawer from "./custom-cup-drawer";
@@ -53,12 +54,12 @@ export default function WaterSettingsDrawer() {
         <Button
           variant="ghost"
           size="icon"
-          className="hover:bg-primary/10 rounded-full h-10 w-10"
+          className="hover:bg-primary/10 rounded-full size-10"
         >
           <SettingsIcon className="size-5 text-muted-foreground" />
         </Button>
       </DrawerTrigger>
-      <DrawerContent className="outline-none">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="border-b border-border/40 pb-4 pt-5">
           <DrawerTitle className="text-foreground text-xl font-bold text-center">
             Sozlamalar
@@ -193,7 +194,7 @@ export default function WaterSettingsDrawer() {
               {map(CUP_SIZES, (cup) => {
                 const active = cupSize === cup.value;
                 return (
-                  <button
+                  <button type="button"
                     key={cup.value}
                     onClick={() => {
                       void setGoal("cupSize", cup.value);
@@ -224,7 +225,7 @@ export default function WaterSettingsDrawer() {
 
               {/* Custom Capacity Button */}
               <CustomCupDrawer>
-                <button
+                <button type="button"
                   className={cn(
                     "flex flex-col items-center justify-center gap-3 p-4 rounded-3xl transition-all duration-300 aspect-square shadow-sm hover:scale-105 group border border-dashed",
                     !isPredefinedCup

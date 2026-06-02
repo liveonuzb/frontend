@@ -17,7 +17,9 @@ import {
   APP_MODE_OPTIONS,
 } from "../api";
 
-import { filter, map, trim } from "lodash";
+import filter from "lodash/filter";
+import map from "lodash/map";
+import trim from "lodash/trim";
 
 const ITEMS_PER_PAGE = 10;
 const SORT_FIELDS = [

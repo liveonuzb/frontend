@@ -1,17 +1,15 @@
 import React from "react";
-import {
-  get,
-  filter,
-  find,
-  includes,
-  isArray,
-  map,
-  reduce,
-  toLower,
-  toNumber,
-  trim,
-  take,
-} from "lodash";
+import get from "lodash/get";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import reduce from "lodash/reduce";
+import toLower from "lodash/toLower";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
+import take from "lodash/take";
 import { Link } from "react-router";
 import {
   AlertTriangleIcon,
@@ -145,10 +143,43 @@ const catalogListRoutes = {
   userGoals: "/admin/user-goals/list",
   challenges: "/admin/challenges/list",
   equipments: "/admin/equipments/list",
+  mealPlanTemplates: "/admin/meal-plans/list",
+  mealPlanTemplatesWithoutMeals: "/admin/meal-plans/list",
+  mealPlanTemplatesWithSparseCoverage: "/admin/meal-plans/list",
+  mealPlanTemplatesWithCalorieIssues: "/admin/meal-plans/list",
+  mealPlanTemplateDietaryConflicts: "/admin/meal-plans/list",
+  foodImportValidationFailed: "/admin/foods/list",
+  foodImportMacroWarnings: "/admin/foods/list",
+  ingredientImportValidationFailed: "/admin/ingredients/list",
+  ingredientImportMacroWarnings: "/admin/ingredients/list",
+  ingredientImportMissingPrices: "/admin/ingredients/list",
+  ingredientRegionalPriceImportValidationFailed: "/admin/ingredients/list",
+  ingredientRegionalPriceImportMissingPrices: "/admin/ingredients/list",
 };
 
-const getIssueActionPath = ({ sectionKey, groupKey, issueId }) => {
+const mealPlanTemplateQualityGroups = new Set([
+  "mealPlanTemplatesWithoutMeals",
+  "mealPlanTemplatesWithSparseCoverage",
+  "mealPlanTemplatesWithCalorieIssues",
+  "mealPlanTemplateDietaryConflicts",
+]);
+
+const importPreviewQualityGroups = new Set([
+  "foodImportValidationFailed",
+  "foodImportMacroWarnings",
+  "ingredientImportValidationFailed",
+  "ingredientImportMacroWarnings",
+  "ingredientImportMissingPrices",
+  "ingredientRegionalPriceImportValidationFailed",
+  "ingredientRegionalPriceImportMissingPrices",
+]);
+
+export const getIssueActionPath = ({ sectionKey, groupKey, issueId }) => {
   if (sectionKey === "safety") {
+    if (mealPlanTemplateQualityGroups.has(groupKey)) {
+      return catalogListRoutes.mealPlanTemplates;
+    }
+
     return issueId
       ? `${catalogListRoutes.workouts}/edit/${issueId}`
       : catalogListRoutes.workouts;
@@ -186,10 +217,22 @@ const getIssueActionPath = ({ sectionKey, groupKey, issueId }) => {
   }
 
   if (sectionKey === "prices") {
+    if (importPreviewQualityGroups.has(groupKey)) {
+      return listPath || catalogListRoutes.ingredients;
+    }
+
     return `${catalogListRoutes.ingredients}/price/${issueId}`;
   }
 
   if (sectionKey === "nutrition") {
+    if (importPreviewQualityGroups.has(groupKey)) {
+      return listPath || catalogListRoutes.foods;
+    }
+
+    if (mealPlanTemplateQualityGroups.has(groupKey)) {
+      return catalogListRoutes.mealPlanTemplates;
+    }
+
     if (
       groupKey === "recipeFoodsWithoutItems" ||
       groupKey === "recipeFoodsWithUnknownCost" ||
@@ -240,10 +283,28 @@ const IssueList = ({ items = [], sectionKey, groupKey }) => {
                   {example.name || example.title || example.id}
                 </p>
                 <p className="text-xs text-muted-foreground">
+                  {example.sheet ? `${example.sheet} · ` : null}
+                  {example.lineNumber ? `Row ${example.lineNumber} · ` : null}
                   ID: {example.id}
                 </p>
+                {example.error ? (
+                  <p className="mt-1 line-clamp-2 text-xs text-destructive">
+                    {example.error}
+                  </p>
+                ) : null}
               </div>
               <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
+                {example.severity ? (
+                  <Badge
+                    variant={
+                      example.severity === "fail"
+                        ? "destructive"
+                        : "secondary"
+                    }
+                  >
+                    {example.severity}
+                  </Badge>
+                ) : null}
                 {example.missingLanguages?.length
                   ? map(example.missingLanguages, (language) => (
                       <Badge key={language} variant="secondary">
@@ -335,17 +396,25 @@ const QualityGroup = ({ section, group, isExpanded, onToggle }) => {
 const matchesIssueSearch = (issue, search) => {
   if (!search) return true;
 
-  const haystack = toLower(filter([
-    issue.id,
-    issue.name,
-    issue.title,
-    ...(isArray(issue.missingLanguages) ? issue.missingLanguages : []),
-    ...(isArray(issue.missingModes) ? issue.missingModes : []),
-    issue.budgetTier,
-    issue.trackingType,
-    issue.issue,
-  ], (item) => item !== null && item !== undefined)
-    .join(" "));
+  const haystack = toLower(
+    filter(
+      [
+        issue.id,
+        issue.name,
+        issue.title,
+        ...(isArray(issue.missingLanguages) ? issue.missingLanguages : []),
+        ...(isArray(issue.missingModes) ? issue.missingModes : []),
+        issue.budgetTier,
+        issue.trackingType,
+        issue.issue,
+        issue.error,
+        issue.sheet,
+        issue.severity,
+        issue.sourceTitle,
+      ],
+      (item) => item !== null && item !== undefined,
+    ).join(" "),
+  );
 
   return includes(haystack, search);
 };
@@ -358,39 +427,49 @@ const filterQualitySections = ({
 }) => {
   const normalizedSearch = toLower(trim(search));
 
-  return filter(map(filter(
-    sections,
-    (section) => sectionFilter === "all" || section.key === sectionFilter,
-  ), (section) => {
-      const groups = filter(map(section.groups, (group) => {
-          const issues = isArray(group.issues) ? group.issues : [];
-          const filteredIssues = filter(issues, (issue) =>
-            matchesIssueSearch(issue, normalizedSearch));
-          const filteredExamples = take(filteredIssues, 6);
-          const nextIssueCount = normalizedSearch
-            ? filteredIssues.length
-            : toNumber(group.issueCount || 0);
+  return filter(
+    map(
+      filter(
+        sections,
+        (section) => sectionFilter === "all" || section.key === sectionFilter,
+      ),
+      (section) => {
+        const groups = filter(
+          map(section.groups, (group) => {
+            const issues = isArray(group.issues) ? group.issues : [];
+            const filteredIssues = filter(issues, (issue) =>
+              matchesIssueSearch(issue, normalizedSearch),
+            );
+            const filteredExamples = take(filteredIssues, 6);
+            const nextIssueCount = normalizedSearch
+              ? filteredIssues.length
+              : toNumber(group.issueCount || 0);
 
-          return {
-            ...group,
-            issueCount: nextIssueCount,
-            issues: normalizedSearch ? filteredIssues : issues,
-            examples: normalizedSearch ? filteredExamples : group.examples,
-          };
-        }), (group) => {
-          if (onlyIssues && toNumber(group.issueCount || 0) === 0) {
-            return false;
-          }
+            return {
+              ...group,
+              issueCount: nextIssueCount,
+              issues: normalizedSearch ? filteredIssues : issues,
+              examples: normalizedSearch ? filteredExamples : group.examples,
+            };
+          }),
+          (group) => {
+            if (onlyIssues && toNumber(group.issueCount || 0) === 0) {
+              return false;
+            }
 
-          if (normalizedSearch && toNumber(group.issueCount || 0) === 0) {
-            return false;
-          }
+            if (normalizedSearch && toNumber(group.issueCount || 0) === 0) {
+              return false;
+            }
 
-          return true;
-        });
+            return true;
+          },
+        );
 
-      return { ...section, groups };
-    }), (section) => section.groups.length > 0);
+        return { ...section, groups };
+      },
+    ),
+    (section) => section.groups.length > 0,
+  );
 };
 
 const getContentQualityPayload = (response) => {
@@ -400,7 +479,10 @@ const getContentQualityPayload = (response) => {
     get(response, "data.data"),
     get(response, "data.data.data"),
   ];
-  const payload = find(candidates, (candidate) => candidate?.summary || candidate?.sections);
+  const payload = find(
+    candidates,
+    (candidate) => candidate?.summary || candidate?.sections,
+  );
 
   return payload || {};
 };
@@ -413,7 +495,11 @@ const getSummaryValue = (summary, key, sections) => {
   const section = find(sections, (item) => item.key === sectionKey);
   if (!section) return Number.isFinite(directValue) ? directValue : 0;
 
-  return reduce(section.groups, (total, group) => total + toNumber(group.issueCount || 0), 0);
+  return reduce(
+    section.groups,
+    (total, group) => total + toNumber(group.issueCount || 0),
+    0,
+  );
 };
 
 const downloadBlob = ({ blob, fileName }) => {
@@ -432,6 +518,8 @@ const Index = () => {
   const { setBreadcrumbs } = useBreadcrumbStore();
   const { request } = useApi();
   const [isExporting, setIsExporting] = React.useState(false);
+  const [isRecalculatingRecipes, setIsRecalculatingRecipes] =
+    React.useState(false);
   const [expandedGroups, setExpandedGroups] = React.useState({});
   const [search, setSearch] = React.useState("");
   const [sectionFilter, setSectionFilter] = React.useState("all");
@@ -467,13 +555,17 @@ const Index = () => {
   );
   const visibleIssueCount = React.useMemo(
     () =>
-      reduce(visibleSections, (sectionTotal, section) =>
-        sectionTotal +
-        reduce(
-          section.groups,
-          (groupTotal, group) => groupTotal + toNumber(group.issueCount || 0),
-          0,
-        ), 0),
+      reduce(
+        visibleSections,
+        (sectionTotal, section) =>
+          sectionTotal +
+          reduce(
+            section.groups,
+            (groupTotal, group) => groupTotal + toNumber(group.issueCount || 0),
+            0,
+          ),
+        0,
+      ),
     [visibleSections],
   );
   const toggleGroup = React.useCallback((key) => {
@@ -507,6 +599,33 @@ const Index = () => {
       setIsExporting(false);
     }
   }, [request]);
+
+  const handleRecipeRecalculation = React.useCallback(async () => {
+    try {
+      setIsRecalculatingRecipes(true);
+      const response = await request.post(
+        "/admin/content-quality/actions/recalculate-recipes",
+        {},
+      );
+      const result = get(response, "data.data", get(response, "data", {}));
+
+      toast.success(
+        `Recipe nutrition qayta hisoblandi: ${toNumber(
+          result.recalculated,
+        )} ta`,
+      );
+      await refetch();
+    } catch (error) {
+      const message = error?.response?.data?.message;
+      toast.error(
+        isArray(message)
+          ? message.join(", ")
+          : message || "Recipe nutrition qayta hisoblanmadi",
+      );
+    } finally {
+      setIsRecalculatingRecipes(false);
+    }
+  }, [refetch, request]);
 
   if (isLoading) {
     return (
@@ -555,6 +674,23 @@ const Index = () => {
           </Button>
           <Button
             type="button"
+            variant="outline"
+            className="gap-2 rounded-full"
+            disabled={isRecalculatingRecipes}
+            onClick={() => void handleRecipeRecalculation()}
+          >
+            <RefreshCwIcon
+              className={cn(
+                "size-4",
+                isRecalculatingRecipes && "animate-spin",
+              )}
+            />
+            {isRecalculatingRecipes
+              ? "Hisoblanmoqda..."
+              : "Recipe qayta hisoblash"}
+          </Button>
+          <Button
+            type="button"
             className="gap-2 rounded-full"
             disabled={isExporting}
             onClick={() => void handleExport()}
@@ -600,10 +736,18 @@ const Index = () => {
             <p className="font-medium">
               Jami muammo:{" "}
               {toNumber(summary.totalIssues || 0) ||
-                reduce(sections, (total, section) =>
-                  total +
-                  reduce(section.groups, (groupTotal, group) =>
-                    groupTotal + toNumber(group.issueCount || 0), 0), 0)}
+                reduce(
+                  sections,
+                  (total, section) =>
+                    total +
+                    reduce(
+                      section.groups,
+                      (groupTotal, group) =>
+                        groupTotal + toNumber(group.issueCount || 0),
+                      0,
+                    ),
+                  0,
+                )}
             </p>
             <p className="text-sm text-amber-800">
               Bu sahifa data sifatini ko'rsatadi; tuzatishlar tegishli katalog

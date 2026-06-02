@@ -1,7 +1,13 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import React from "react";
 import { useParams } from "react-router";
-import { find, get, isArray, join, split, toNumber, trim } from "lodash";
+import find from "lodash/find";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import split from "lodash/split";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 import { toast } from "sonner";
 import { PencilIcon } from "lucide-react";
 import { useGetQuery, usePatchQuery } from "@/hooks/api";
@@ -126,7 +132,7 @@ const EditPromoCode = () => {
 
   return (
     <Drawer open onOpenChange={handleOpenChange} direction="bottom">
-      <DrawerContent className="mx-auto max-h-[90vh] data-[vaul-drawer-direction=bottom]:md:max-w-lg">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <div className="mx-auto flex w-full min-h-0 flex-1 flex-col">
           <DrawerHeader>
             <DrawerTitle className="flex items-center gap-2">
@@ -143,7 +149,7 @@ const EditPromoCode = () => {
               <Spinner className="size-8 text-muted-foreground" />
             </div>
           ) : (
-          <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-4">
+          <div className="no-scrollbar flex-1 overflow-y-auto p-4">
             <PromoCodeForm form={form} setForm={setForm} />
           </div>
           )}

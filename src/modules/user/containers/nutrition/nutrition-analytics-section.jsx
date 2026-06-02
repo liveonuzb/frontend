@@ -1,5 +1,12 @@
 import React from "react";
-import { map, filter, includes, isArray, orderBy, reduce, toNumber, find } from "lodash";
+import map from "lodash/map";
+import filter from "lodash/filter";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
+import orderBy from "lodash/orderBy";
+import reduce from "lodash/reduce";
+import toNumber from "lodash/toNumber";
+import find from "lodash/find";
 import {
   BarChart,
   Bar,
@@ -18,15 +25,20 @@ import {
 import {
   AlertTriangleIcon,
   BarChart3Icon,
+  CalendarDaysIcon,
+  CheckCircle2Icon,
+  DropletsIcon,
   DownloadIcon,
   FlameIcon,
   TargetIcon,
   TrophyIcon,
 } from "lucide-react";
 import { useGetQuery } from "@/hooks/api";
+import useApi from "@/hooks/api/use-api.js";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { SOURCE_META } from "./source-meta.js";
+import { toast } from "sonner";
 
 const PERIOD_OPTIONS = [
   { value: 7, label: "7 kun" },
@@ -83,20 +95,8 @@ const formatDay = (dateStr) => {
   return d.toLocaleDateString("uz-UZ", { month: "short", day: "numeric" });
 };
 
-const escapeCsvCell = (value) => {
-  if (value === null || value === undefined) return "";
-  const text = String(value);
-  return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
-};
-
-const toCsv = (rows) =>
-  map(rows, (row) => map(row, escapeCsvCell).join(",")).join("\r\n");
-
-const downloadCsv = (filename, csv) => {
+const downloadBlob = (filename, blob) => {
   if (typeof document === "undefined") return;
-  const blob = new Blob([`\uFEFF${csv}`], {
-    type: "text/csv;charset=utf-8",
-  });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -107,117 +107,22 @@ const downloadCsv = (filename, csv) => {
   URL.revokeObjectURL(url);
 };
 
-const buildNutritionCsv = ({ daily, summary, goals, period, sourceBreakdown }) => {
-  const mealRows = daily.flatMap((entry) => {
-    const meals = isArray(entry.meals) ? entry.meals : [];
-    if (meals.length === 0) {
-      return [
-        [
-          entry.date,
-          "",
-          "",
-          "",
-          "",
-          Math.round(toNumber(entry.calories || 0)),
-          Math.round(toNumber(entry.protein || 0)),
-          Math.round(toNumber(entry.carbs || 0)),
-          Math.round(toNumber(entry.fat || 0)),
-          "",
-        ],
-      ];
-    }
+const getHeaderValue = (headers, name) =>
+  headers?.[name] || headers?.[name.toLowerCase()] || headers?.get?.(name);
 
-    return map(meals, (meal) => [
-      entry.date,
-      meal.addedAt || "",
-      meal.mealType || "",
-      meal.name || "",
-      meal.source || "",
-      Math.round(toNumber(meal.calories || 0)),
-      Math.round(toNumber(meal.protein || 0)),
-      Math.round(toNumber(meal.carbs || 0)),
-      Math.round(toNumber(meal.fat || 0)),
-      Math.round(toNumber(meal.fiber || 0)),
-    ]);
-  });
-  const rows = [
-    ["Liveon nutrition report"],
-    ["start_date", period.startDate || ""],
-    ["end_date", period.endDate || ""],
-    ["days", period.days || ""],
-    [],
-    ["meals"],
-    [
-      "date",
-      "added_at",
-      "meal_type",
-      "food_name",
-      "source",
-      "calories",
-      "protein_g",
-      "carbs_g",
-      "fat_g",
-      "fiber_g",
-    ],
-    ...mealRows,
-    [],
-    ["daily_totals"],
-    [
-      "date",
-      "calories",
-      "protein_g",
-      "carbs_g",
-      "fat_g",
-      "water_ml",
-      "steps",
-      "workout_minutes",
-      "sleep_hours",
-      "mood",
-    ],
-    ...map(daily, (entry) => [
-      entry.date,
-      Math.round(toNumber(entry.calories || 0)),
-      Math.round(toNumber(entry.protein || 0)),
-      Math.round(toNumber(entry.carbs || 0)),
-      Math.round(toNumber(entry.fat || 0)),
-      Math.round(toNumber(entry.waterMl || 0)),
-      Math.round(toNumber(entry.steps || 0)),
-      Math.round(toNumber(entry.workoutMinutes || 0)),
-      entry.sleepHours || "",
-      entry.mood || "",
-    ]),
-    [],
-    ["summary"],
-    ["avg_calories", summary.avgCalories ?? 0],
-    ["avg_protein_g", summary.avgProtein ?? 0],
-    ["avg_water_ml", summary.avgWaterMl ?? 0],
-    ["avg_steps", summary.avgSteps ?? 0],
-    ["avg_workout_minutes", summary.avgWorkoutMinutes ?? 0],
-    ["avg_sleep_hours", summary.avgSleepHours ?? 0],
-    ["calories_goal_met_days", summary.caloriesGoalMet ?? 0],
-    ["water_goal_met_days", summary.waterGoalMet ?? 0],
-    ["steps_goal_met_days", summary.stepsGoalMet ?? 0],
-    ["workout_goal_met_days", summary.workoutGoalMet ?? 0],
-    [],
-    ["goals"],
-    ["calories", goals.calories ?? ""],
-    ["protein_g", goals.protein ?? ""],
-    ["water_ml", goals.waterMl ?? ""],
-    ["steps", goals.steps ?? ""],
-    ["workout_minutes", goals.workoutMinutes ?? ""],
-    ["sleep_hours", goals.sleepHours ?? ""],
-    [],
-    ["source_breakdown"],
-    ["source", "label", "count", "percent"],
-    ...map(sourceBreakdown, (item) => [
-      item.source,
-      getSourceLabel(item.source),
-      item.count,
-      item.percent,
-    ]),
-  ];
+const getExportFileName = ({ response, format, period }) => {
+  const disposition = getHeaderValue(response?.headers, "content-disposition");
+  const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(
+    disposition || "",
+  );
 
-  return toCsv(rows);
+  if (match?.[1]) {
+    return decodeURIComponent(match[1]);
+  }
+
+  const start = period.startDate || "start";
+  const end = period.endDate || "end";
+  return `nutrition-report-${start}-${end}.${format}`;
 };
 
 const getWeekComparisonRanges = () => {
@@ -262,6 +167,30 @@ const averageCalories = (items = []) => {
 const formatSignedCalories = (value) => {
   if (value === 0) return "0 kcal";
   return `${value > 0 ? "+" : ""}${value} kcal`;
+};
+
+const formatSignedDailyCalories = (value) => {
+  if (value === 0) return "0 kcal/kun";
+  return `${value > 0 ? "+" : ""}${value} kcal/kun`;
+};
+
+const getPeriodSummaryTitle = (periodDays) => {
+  if (periodDays >= 28) {
+    return "Oylik xulosa";
+  }
+
+  if (periodDays <= 7) {
+    return "Haftalik xulosa";
+  }
+
+  return `${periodDays} kunlik xulosa`;
+};
+
+const getGoalPercent = (value, periodDays) => {
+  const daysCount = toNumber(periodDays) || 0;
+  if (daysCount <= 0) return 0;
+
+  return Math.min(100, Math.round(((toNumber(value) || 0) / daysCount) * 100));
 };
 
 const HighlightCard = React.memo(({ icon: Icon, label, title, description, tone }) => (
@@ -321,6 +250,168 @@ const StatBadge = React.memo(({ label, value, goal, unit, color }) => {
   );
 });
 StatBadge.displayName = "StatBadge";
+
+const PeriodSummaryPanel = React.memo(({ period, periodDays, summary, goals }) => {
+  const daysTracked = toNumber(summary.daysTracked) || 0;
+  const calorieGoalMet = toNumber(summary.caloriesGoalMet) || 0;
+  const waterGoalMet = toNumber(summary.waterGoalMet) || 0;
+  const calorieDelta = Math.round(
+    (toNumber(summary.avgCalories) || 0) - (toNumber(goals.calories) || 0),
+  );
+  const waterDelta = Math.round(
+    (toNumber(summary.avgWaterMl) || 0) - (toNumber(goals.waterMl) || 0),
+  );
+  const calorieGoalPercent = getGoalPercent(calorieGoalMet, periodDays);
+  const waterGoalPercent = getGoalPercent(waterGoalMet, periodDays);
+  const periodRange =
+    period.startDate && period.endDate
+      ? `${formatDay(period.startDate)} - ${formatDay(period.endDate)}`
+      : `${periodDays} kun`;
+
+  return (
+    <section
+      className={cn("rounded-2xl border p-4", REPORT_PANEL_CLASS)}
+      aria-label={getPeriodSummaryTitle(periodDays)}
+    >
+      <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr_1fr]">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="grid size-9 place-items-center rounded-full bg-primary/10 text-primary">
+              <CalendarDaysIcon className="size-4" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <h3 className="text-sm font-black">
+                {getPeriodSummaryTitle(periodDays)}
+              </h3>
+              <p className="truncate text-[11px] text-muted-foreground">
+                {periodRange}
+              </p>
+            </div>
+          </div>
+          <p className="mt-3 text-sm font-semibold">
+            {periodDays} kundan {daysTracked} kuni kuzatilgan
+          </p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            Maqsad bajarilgan kunlar va o'rtacha tafovut shu davr bo'yicha
+            hisoblandi.
+          </p>
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs font-bold text-muted-foreground">
+              Kaloriya farqi
+            </span>
+            <span
+              className={cn(
+                "text-sm font-black",
+                calorieDelta > 0
+                  ? "text-orange-600 dark:text-orange-300"
+                  : "text-emerald-600 dark:text-emerald-300",
+              )}
+            >
+              {formatSignedDailyCalories(calorieDelta)}
+            </span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary"
+              style={{ width: `${calorieGoalPercent}%` }}
+            />
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Maqsad: {calorieGoalMet} / {periodDays} kun
+          </p>
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-3">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
+              <DropletsIcon className="size-3.5" aria-hidden="true" />
+              Suv maqsadi
+            </span>
+            <span
+              className={cn(
+                "text-sm font-black",
+                waterDelta >= 0
+                  ? "text-sky-600 dark:text-sky-300"
+                  : "text-orange-600 dark:text-orange-300",
+              )}
+            >
+              {waterGoalMet} / {periodDays}
+            </span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-sky-500"
+              style={{ width: `${waterGoalPercent}%` }}
+            />
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            O'rtacha suv: {summary.avgWaterMl ?? 0} ml/kun
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+});
+PeriodSummaryPanel.displayName = "PeriodSummaryPanel";
+
+const PlanAdherencePanel = React.memo(({ planAdherence }) => {
+  if (!planAdherence) {
+    return null;
+  }
+
+  const adherencePercent = toNumber(planAdherence.adherencePercent) || 0;
+  const matchedMeals = toNumber(planAdherence.matchedMeals) || 0;
+  const plannedMeals = toNumber(planAdherence.plannedMeals) || 0;
+  const fullyMatchedDays = toNumber(planAdherence.fullyMatchedDays) || 0;
+  const plannedDays = toNumber(planAdherence.plannedDays) || 0;
+
+  return (
+    <section
+      className={cn("rounded-2xl border p-4", REPORT_PANEL_CLASS)}
+      aria-label="Rejaga amal qilish"
+    >
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="grid size-9 place-items-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">
+              <CheckCircle2Icon className="size-4" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <h3 className="text-sm font-black">Rejaga amal qilish</h3>
+              <p className="truncate text-[11px] text-muted-foreground">
+                {planAdherence.planName || "Faol ovqatlanish rejasi"}
+              </p>
+            </div>
+          </div>
+          <p className="mt-3 text-sm font-semibold">
+            {matchedMeals} / {plannedMeals} ovqat mos
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {fullyMatchedDays} / {plannedDays} kun to'liq mos
+          </p>
+        </div>
+        <div className="min-w-[160px] space-y-2">
+          <div className="flex items-end justify-between gap-3">
+            <span className="text-xs font-bold text-muted-foreground">
+              Moslik
+            </span>
+            <span className="text-2xl font-black text-emerald-600 dark:text-emerald-300">
+              {adherencePercent}%
+            </span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-emerald-500"
+              style={{ width: `${Math.min(100, adherencePercent)}%` }}
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+});
+PlanAdherencePanel.displayName = "PlanAdherencePanel";
 
 const SourceBreakdownChart = React.memo(({ sourceChartData, topSource }) => {
   if (sourceChartData.length === 0) return null;
@@ -654,7 +745,11 @@ const MacroTrendCards = React.memo(({ chartData }) => {
 MacroTrendCards.displayName = "MacroTrendCards";
 
 const ChartSkeleton = () => (
-  <div className="rounded-[28px] border bg-card p-5 shadow-sm sm:p-6 space-y-4">
+  <div
+    role="status"
+    aria-label="Hisobot yuklanmoqda"
+    className="rounded-[28px] border bg-card p-5 shadow-sm sm:p-6 space-y-4"
+  >
     <Skeleton className="h-5 w-40 rounded-lg" />
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {map([0, 1, 2, 3], (i) => (
@@ -666,6 +761,7 @@ const ChartSkeleton = () => (
 );
 
 export default function NutritionAnalyticsSection() {
+  const { request } = useApi();
   const [days, setDays] = React.useState(7);
   const [rangeMode, setRangeMode] = React.useState("preset");
   const [customRange, setCustomRange] = React.useState(getDefaultCustomRange);
@@ -805,19 +901,58 @@ export default function NutritionAnalyticsSection() {
 
     return { best, hardest };
   }, [goals.calories, trackedCalorieDays]);
-  const handleExportCsv = React.useCallback(() => {
-    const start = period.startDate || "start";
-    const end = period.endDate || "end";
-    const csv = buildNutritionCsv({
-      daily,
-      summary,
-      goals,
-      period,
-      sourceBreakdown,
-    });
+  const handleExportReport = React.useCallback(
+    async (format = "csv") => {
+      try {
+        const params = hasValidCustomRange
+          ? {
+              startDate: customRange.start,
+              endDate: customRange.end,
+              format,
+            }
+          : {
+              days,
+              format,
+            };
+        const response = await request.get(
+          "/daily-tracking/reports/nutrition/export",
+          {
+            params,
+            responseType: "blob",
+          },
+        );
+        const blob =
+          response.data instanceof Blob
+            ? response.data
+            : new Blob([response.data], {
+                type:
+                  format === "pdf"
+                    ? "application/pdf"
+                    : "text/csv;charset=utf-8",
+              });
 
-    downloadCsv(`nutrition-report-${start}-${end}.csv`, csv);
-  }, [daily, goals, period, sourceBreakdown, summary]);
+        downloadBlob(
+          getExportFileName({ response, format, period }),
+          blob,
+        );
+        toast.success(
+          format === "pdf"
+            ? "PDF hisobot yuklab olindi"
+            : "CSV hisobot yuklab olindi",
+        );
+      } catch {
+        toast.error("Hisobotni eksport qilib bo'lmadi");
+      }
+    },
+    [
+      customRange.end,
+      customRange.start,
+      days,
+      hasValidCustomRange,
+      period,
+      request,
+    ],
+  );
 
   const toggleMacro = React.useCallback((key) => {
     setActiveMacros((current) => {
@@ -831,7 +966,9 @@ export default function NutritionAnalyticsSection() {
   }, []);
 
   React.useEffect(() => {
-    const handleExternalExport = () => handleExportCsv();
+    const handleExternalExport = () => {
+      void handleExportReport("csv");
+    };
     const handleExternalComparisonToggle = () =>
       setComparisonEnabled((value) => !value);
 
@@ -851,13 +988,28 @@ export default function NutritionAnalyticsSection() {
         handleExternalComparisonToggle,
       );
     };
-  }, [handleExportCsv]);
+  }, [handleExportReport]);
 
   if (isLoading) {
     return <ChartSkeleton />;
   }
 
-  if (daily.length === 0) return null;
+  if (daily.length === 0) {
+    return (
+      <div className={cn("rounded-[28px] border p-6 text-center sm:p-8", REPORT_CARD_CLASS)}>
+        <div className="mx-auto grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+          <BarChart3Icon className="size-6" aria-hidden="true" />
+        </div>
+        <h2 className="mt-4 text-lg font-black">
+          Hisobot uchun ma'lumot yo'q
+        </h2>
+        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+          Ovqat yoki suv yozsangiz, kaloriya, makro va suv trendlaringiz shu
+          yerda ko'rinadi.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className={cn("rounded-[28px] border p-5 sm:p-6 space-y-5", REPORT_CARD_CLASS)}>
@@ -870,7 +1022,9 @@ export default function NutritionAnalyticsSection() {
         <div className="flex flex-wrap items-center justify-end gap-1.5">
           <button
             type="button"
-            onClick={handleExportCsv}
+            onClick={() => {
+              void handleExportReport("csv");
+            }}
             className={cn(
               "inline-flex items-center gap-1.5 rounded-xl border border-border bg-transparent px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground",
               REPORT_CONTROL_FOCUS_CLASS,
@@ -879,6 +1033,20 @@ export default function NutritionAnalyticsSection() {
           >
             <DownloadIcon className="size-3.5" />
             CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              void handleExportReport("pdf");
+            }}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-xl border border-border bg-transparent px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground",
+              REPORT_CONTROL_FOCUS_CLASS,
+            )}
+            aria-label="Nutrition report PDF eksport qilish"
+          >
+            <DownloadIcon className="size-3.5" />
+            PDF
           </button>
           {map(PERIOD_OPTIONS, (opt) => (
             <button
@@ -1012,6 +1180,13 @@ export default function NutritionAnalyticsSection() {
           </div>
         </div>
       </div>
+      <PeriodSummaryPanel
+        period={period}
+        periodDays={periodDays}
+        summary={summary}
+        goals={goals}
+      />
+      <PlanAdherencePanel planAdherence={report.planAdherence} />
       {dayHighlights ? (
         <div className="grid gap-3 lg:grid-cols-3">
           <HighlightCard

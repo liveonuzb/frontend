@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { format } from "date-fns";
 import { LogOutIcon, MonitorIcon, SmartphoneIcon } from "lucide-react";
-import { includes, map, toLower } from "lodash";
+import includes from "lodash/includes";
+import map from "lodash/map";
+import toLower from "lodash/toLower";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

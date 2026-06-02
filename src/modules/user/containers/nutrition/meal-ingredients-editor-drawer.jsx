@@ -22,7 +22,7 @@ import {
   updateMealIngredient,
 } from "./meal-ingredients.js";
 
-import { map } from "lodash";
+import map from "lodash/map";
 
 const MacroSummary = ({ totals, grams }) => (
   <div className="rounded-3xl border bg-card p-3">
@@ -227,7 +227,7 @@ const MealIngredientsEditorDrawer = ({
                   ))}
                 </div>
               ) : (
-                <div className="rounded-2xl border border-dashed bg-background/60 px-4 py-4 text-sm text-muted-foreground">
+                <div className="rounded-2xl border border-dashed bg-background/60 p-4 text-sm text-muted-foreground">
                   Ingredient yo'q. Qo'shish tugmasi orqali kiriting.
                 </div>
               )}

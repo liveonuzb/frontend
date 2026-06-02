@@ -1,7 +1,8 @@
 import { clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
-import { toLower, toUpper } from "lodash";
+import toLower from "lodash/toLower";
+import toUpper from "lodash/toUpper";
 
 export function cn(...inputs) {
   return twMerge(clsx(inputs));

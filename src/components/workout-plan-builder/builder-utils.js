@@ -1,17 +1,15 @@
-import {
-  map,
-  filter,
-  find,
-  get,
-  isArray,
-  size,
-  toLower,
-  includes,
-  trim,
-  toNumber,
-  fromPairs,
-  parseInt as lodashParseInt,
-} from "lodash";
+import map from "lodash/map";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import size from "lodash/size";
+import toLower from "lodash/toLower";
+import includes from "lodash/includes";
+import trim from "lodash/trim";
+import toNumber from "lodash/toNumber";
+import fromPairs from "lodash/fromPairs";
+import lodashParseInt from "lodash/parseInt";
 import {
   createWorkoutSetTemplate,
   normalizeWorkoutTrackingType,

@@ -12,7 +12,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import { toLower } from "lodash";
+import toLower from "lodash/toLower";
 
 const DEFAULT_TITLE = "O'zgarishlar saqlanmagan";
 const DEFAULT_DESCRIPTION =

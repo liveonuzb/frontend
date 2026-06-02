@@ -1,6 +1,8 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { isEqual, find, map } from "lodash";
+import isEqual from "lodash/isEqual";
+import find from "lodash/find";
+import map from "lodash/map";
 import {
   LayoutPanelLeftIcon,
   MonitorIcon,

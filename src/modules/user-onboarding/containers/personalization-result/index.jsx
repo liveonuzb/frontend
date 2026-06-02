@@ -62,16 +62,14 @@ import {
   unwrapApiData,
 } from "../../lib/personalization.js";
 
-import {
-  filter,
-  find,
-  isArray,
-  keys,
-  map,
-  startsWith,
-  toNumber,
-  trim,
-} from "lodash";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import isArray from "lodash/isArray";
+import keys from "lodash/keys";
+import map from "lodash/map";
+import startsWith from "lodash/startsWith";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 
 const tone = ONBOARDING_ACCENTS.amber;
 
@@ -547,7 +545,7 @@ const EditDrawer = ({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent className="text-white before:border-[#ff990038] before:bg-[#120c07] before:shadow-[0_-24px_80px_rgba(255,106,0,0.18)] data-[vaul-drawer-direction=bottom]:h-[560px] data-[vaul-drawer-direction=bottom]:max-h-[88vh] data-[vaul-drawer-direction=bottom]:max-w-[430px]">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="px-5 pb-3 pt-4 text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
           <div className="flex items-start gap-3">
             <IconBubble

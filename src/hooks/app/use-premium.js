@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import get from "lodash/get";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetQuery, usePatchQuery, usePostQuery } from "@/hooks/api";
 import { useAuthStore } from "@/store";

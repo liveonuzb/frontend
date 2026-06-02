@@ -1,5 +1,7 @@
 import React, { memo } from "react";
-import { clamp, times, map } from "lodash";
+import clamp from "lodash/clamp";
+import times from "lodash/times";
+import map from "lodash/map";
 import { FlameIcon } from "lucide-react";
 
 const GaugeProgress = memo(

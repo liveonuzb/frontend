@@ -37,18 +37,16 @@ import NutritionLayout from "../ui/nutrition-layout.jsx";
 import ProgressBar, { getProgressPercent } from "../ui/progress-bar.jsx";
 import { cn } from "@/lib/utils.js";
 
-import {
-  filter,
-  includes,
-  isArray,
-  map,
-  orderBy,
-  reduce,
-  toLower,
-  toNumber,
-  toPairs,
-  trim,
-} from "lodash";
+import filter from "lodash/filter";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
+import map from "lodash/map";
+import orderBy from "lodash/orderBy";
+import reduce from "lodash/reduce";
+import toLower from "lodash/toLower";
+import toNumber from "lodash/toNumber";
+import toPairs from "lodash/toPairs";
+import trim from "lodash/trim";
 
 const mealTypeOptions = [
   { value: "all", label: "Barcha bo'limlar" },
@@ -200,14 +198,14 @@ const FilterTrigger = ({
         variant="outline"
         className="min-h-12 flex-1 justify-between rounded-[1.4rem] border-[rgb(var(--accent-rgb)/0.18)] bg-card/90 px-4 shadow-sm shadow-black/[0.03] sm:flex-none sm:min-w-[22rem]"
         onClick={onOpen}
-        aria-label="Filter"
+        aria-label="Filtr"
       >
         <span className="flex min-w-0 items-center gap-3">
           <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
             <SlidersHorizontalIcon className="size-4" />
           </span>
           <span className="min-w-0 text-left">
-            <span className="block text-sm font-black">Filter</span>
+            <span className="block text-sm font-black">Filtr</span>
             <span className="block truncate text-xs font-semibold text-muted-foreground">
               {formatDateInputLabel(startDate)} - {formatDateInputLabel(endDate)}
               {" • "}
@@ -251,9 +249,9 @@ const HistoryFilterDrawer = ({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent className="data-[vaul-drawer-direction=bottom]:!mx-auto data-[vaul-drawer-direction=bottom]:!w-[min(100vw,28rem)] data-[vaul-drawer-direction=bottom]:!max-w-md">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
-          <DrawerTitle>History filterlari</DrawerTitle>
+          <DrawerTitle>Tarix filterlari</DrawerTitle>
           <DrawerDescription>
             Sana oralig'i, ovqat bo'limi va qidiruvni shu yerda sozlang.
           </DrawerDescription>
@@ -337,7 +335,7 @@ const HistoryFilterDrawer = ({
             disabled={isExportDisabled}
             onClick={onExport}
           >
-            Export
+            CSV yuklash
           </Button>
         </DrawerFooter>
       </DrawerContent>
@@ -352,11 +350,11 @@ const MealTypeDrawer = ({
   onChange,
 }) => (
   <Drawer open={open} onOpenChange={onOpenChange} direction="bottom" nested>
-    <DrawerContent className="data-[vaul-drawer-direction=bottom]:!mx-auto data-[vaul-drawer-direction=bottom]:!w-[min(100vw,28rem)] data-[vaul-drawer-direction=bottom]:!max-w-md">
+    <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
       <DrawerHeader>
         <DrawerTitle>Bo'limni tanlang</DrawerTitle>
         <DrawerDescription>
-          History timeline qaysi ovqat bo'limini ko'rsatishini tanlang.
+          Tarix ro'yxati qaysi ovqat bo'limini ko'rsatishini tanlang.
         </DrawerDescription>
       </DrawerHeader>
       <DrawerBody className="space-y-2 px-4 pb-6">
@@ -437,7 +435,7 @@ const HistoryDayCard = ({
               {hasMeals ? `${mealCount} ta ovqat` : "Ovqat qo'shilmagan"}
             </span>
             <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground">
-              Health {healthScore}/100
+              Sog'liq {healthScore}/100
             </span>
           </div>
         </div>
@@ -478,7 +476,7 @@ const HistoryDayCard = ({
                 return (
                   <div
                     key={`${day.date}-${meal.mealType}-${meal.id}`}
-                    className="relative grid gap-3 rounded-2xl bg-muted/25 px-3 py-3 sm:grid-cols-[68px_minmax(0,1fr)_auto] sm:items-center"
+                    className="relative grid gap-3 rounded-2xl bg-muted/25 p-3 sm:grid-cols-[68px_minmax(0,1fr)_auto] sm:items-center"
                   >
                     <span className="absolute -left-[14px] top-4 grid size-3 place-items-center rounded-full border-2 border-card bg-primary" />
                     <div className="flex items-center gap-1.5 text-xs font-black tabular-nums text-primary">
@@ -732,7 +730,7 @@ const NutritionHistoryPage = () => {
           onChange={handleStartDateChange}
           maxDate={dateKeyToDate(endDate)}
           title="Boshlanish sanasi"
-          description="History ko'rinishi qaysi kundan boshlanishini tanlang."
+          description="Tarix ko'rinishi qaysi kundan boshlanishini tanlang."
           nested
         />
       ) : null}
@@ -745,7 +743,7 @@ const NutritionHistoryPage = () => {
           minDate={dateKeyToDate(startDate)}
           maxDate={dateKeyToDate(todayKey)}
           title="Tugash sanasi"
-          description="History ko'rinishi qaysi kungacha bo'lishini tanlang."
+          description="Tarix ko'rinishi qaysi kungacha bo'lishini tanlang."
           nested
         />
       ) : null}

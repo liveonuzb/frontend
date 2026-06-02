@@ -1,5 +1,6 @@
 import React from "react";
-import { get, isArray } from "lodash";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
 import { useNavigate } from "react-router";
 import { ArrowRightIcon, TrophyIcon } from "lucide-react";
 import { useGetQuery } from "@/hooks/api";
@@ -80,7 +81,7 @@ export default function ChallengeWidget({
   );
 
   return (
-    <div className="group relative h-full overflow-hidden rounded-[28px] border border-[rgb(var(--accent-rgb)/0.20)] bg-gradient-to-br from-[rgb(var(--accent-rgb)/0.10)] via-card to-card px-5 py-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[rgb(var(--accent-rgb)/0.35)] hover:shadow-xl hover:shadow-[rgb(var(--accent-rgb)/0.05)]">
+    <div className="group relative h-full overflow-hidden rounded-[28px] border border-[rgb(var(--accent-rgb)/0.20)] bg-gradient-to-br from-[rgb(var(--accent-rgb)/0.10)] via-card to-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[rgb(var(--accent-rgb)/0.35)] hover:shadow-xl hover:shadow-[rgb(var(--accent-rgb)/0.05)]">
       <div className="absolute inset-x-8 top-0 h-24 rounded-full bg-[rgb(var(--accent-rgb)/0.10)] blur-3xl transition-opacity group-hover:opacity-90" />
       <div className="relative flex h-full flex-col">
         <div>

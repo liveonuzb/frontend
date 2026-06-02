@@ -1,4 +1,9 @@
-import { filter, get, isArray, join, map, trim } from "lodash";
+import filter from "lodash/filter";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import map from "lodash/map";
+import trim from "lodash/trim";
 
 export const getApiResponseData = (response, fallback = null) => {
   const wrappedData = get(response, "data.data");

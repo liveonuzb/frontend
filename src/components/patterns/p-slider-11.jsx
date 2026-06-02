@@ -1,4 +1,5 @@
-import { isArray, first } from "lodash";
+import isArray from "lodash/isArray";
+import first from "lodash/first";
 import { useState } from "react"
 
 import { Label } from "@/components/ui/label"

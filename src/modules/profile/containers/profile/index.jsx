@@ -1,32 +1,28 @@
 import React from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import {
-  get,
-  map,
-  split,
-  join,
-  find,
-  toUpper,
-  filter,
-  values as lodashValues,
-  includes,
-  isArray,
-  keys,
-  trim,
-} from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import split from "lodash/split";
+import join from "lodash/join";
+import find from "lodash/find";
+import toUpper from "lodash/toUpper";
+import filter from "lodash/filter";
+import lodashValues from "lodash/values";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
+import keys from "lodash/keys";
+import trim from "lodash/trim";
 import {
   CheckIcon,
   ChevronRightIcon,
   MoonIcon,
   PaletteIcon,
   SunIcon,
-  XIcon,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   Drawer,
   DrawerContent,
-  DrawerClose,
   DrawerHeader,
   DrawerTitle,
   DrawerDescription,
@@ -45,12 +41,10 @@ import {
 import ModeDrawer from "@/components/mode-drawer";
 import ThemeDrawer from "@/components/theme-drawer";
 import { useTheme } from "@/components/theme-toggle";
-import { Button } from "@/components/ui/button";
 import OnboardingHealthReportCard from "@/components/onboarding-health-report-card";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
-  DEFAULT_PROFILE_TAB,
   PROFILE_OVERVIEW_TAB,
   useProfileOverlay,
 } from "@/modules/profile/hooks/use-profile-overlay";
@@ -298,7 +292,7 @@ const InlineLangItem = ({
       />
       {open ? (
         <Drawer open={open} onOpenChange={setOpen} direction="bottom">
-          <DrawerContent>
+          <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
             <DrawerHeader className="text-left">
               <DrawerTitle>{t("profile.language.drawerTitle")}</DrawerTitle>
               <DrawerDescription>
@@ -446,29 +440,16 @@ const ProfileSectionDrawer = ({ open, tabId, tabs, onOpenChange }) => {
     <Drawer direction="bottom" open={open} onOpenChange={onOpenChange}>
       <DrawerContent
         data-profile-section-drawer={tabId}
-        className="data-[vaul-drawer-direction=bottom]:!mx-auto data-[vaul-drawer-direction=bottom]:!max-w-md"
+        className="data-[vaul-drawer-direction=bottom]:md:max-w-sm"
       >
         <DrawerHeader className="border-b border-border/50 px-5 pb-3 pt-4 text-left">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <DrawerTitle className="truncate text-base font-semibold">
-                {tab.label}
-              </DrawerTitle>
-              <DrawerDescription className="mt-0.5 line-clamp-2 text-xs">
-                {tab.description}
-              </DrawerDescription>
-            </div>
-            <DrawerClose asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="size-9 shrink-0 rounded-full"
-                aria-label="Profil bo‘limini yopish"
-              >
-                <XIcon className="size-4" />
-              </Button>
-            </DrawerClose>
+          <div className="min-w-0">
+            <DrawerTitle className="truncate text-base font-semibold">
+              {tab.label}
+            </DrawerTitle>
+            <DrawerDescription className="mt-0.5 line-clamp-2 text-xs">
+              {tab.description}
+            </DrawerDescription>
           </div>
         </DrawerHeader>
 

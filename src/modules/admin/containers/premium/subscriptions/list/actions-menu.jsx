@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { get } from "lodash";
+import get from "lodash/get";
 
 const SubscriptionActionsMenu = ({ subscription, canManage, onExtend, onCancel }) => {
   if (!canManage) return null;

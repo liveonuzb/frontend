@@ -1,4 +1,4 @@
-import { some } from "lodash";
+import some from "lodash/some";
 
 export const ADMIN_ROLES = [
   "SUPER_ADMIN",

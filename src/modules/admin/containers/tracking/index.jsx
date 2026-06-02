@@ -1,5 +1,7 @@
 import React from "react";
-import { get, map, toNumber } from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
 import {
   ActivityIcon,
   BarChart3Icon,

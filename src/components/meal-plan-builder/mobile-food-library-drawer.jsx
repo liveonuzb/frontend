@@ -1,5 +1,11 @@
 import React, { useState, useMemo } from "react";
-import { filter, map, includes, forEach, toLower, toNumber, trim } from "lodash";
+import filter from "lodash/filter";
+import map from "lodash/map";
+import includes from "lodash/includes";
+import forEach from "lodash/forEach";
+import toLower from "lodash/toLower";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 import { SearchIcon, FlameIcon } from "lucide-react";
 import {
   Drawer,
@@ -67,7 +73,7 @@ const MobileFoodLibraryDrawer = ({
 
   return (
     <Drawer open={open} onOpenChange={handleOpenChange} direction="bottom">
-      <DrawerContent className="max-h-[85vh]! flex flex-col">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="pb-2 shrink-0">
           <DrawerTitle className="font-black text-base">
             Ovqat qo'shish

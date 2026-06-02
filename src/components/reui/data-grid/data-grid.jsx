@@ -4,6 +4,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
 } from "react";
@@ -29,7 +30,12 @@ import {
 import { cn } from "@/lib/utils";
 import { DataGridColumnVisibility } from "./data-grid-column-visibility";
 
-import { filter, map, toLower, toNumber, trim, take } from "lodash";
+import filter from "lodash/filter";
+import map from "lodash/map";
+import toLower from "lodash/toLower";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
+import take from "lodash/take";
 
 const DataGridContext = createContext(undefined);
 
@@ -124,7 +130,7 @@ function DataGridSavedViews({ table, storageKey }) {
   );
   const [viewName, setViewName] = useState("");
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const storage = getStorage();
     if (!storage) return;
 

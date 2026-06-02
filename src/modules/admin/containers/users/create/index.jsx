@@ -1,5 +1,10 @@
 import React, { useState } from "react";
-import { get, isArray, join, trim, map, includes } from "lodash";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import trim from "lodash/trim";
+import map from "lodash/map";
+import includes from "lodash/includes";
 import { usePostQuery } from "@/hooks/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -90,7 +95,7 @@ const CreateUser = () => {
 
   return (
     <Drawer open onOpenChange={handleOpenChange} direction="bottom">
-      <DrawerContent className="mx-auto max-h-[90vh] data-[vaul-drawer-direction=bottom]:md:max-w-lg">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <div className="mx-auto flex w-full min-h-0 flex-1 flex-col">
           <DrawerHeader>
             <DrawerTitle className="flex items-center gap-2">
@@ -102,7 +107,7 @@ const CreateUser = () => {
             </DrawerDescription>
           </DrawerHeader>
 
-          <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
+          <div className="no-scrollbar flex-1 overflow-y-auto p-4 flex flex-col gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label className="text-xs font-bold">Ism *</Label>

@@ -29,7 +29,7 @@ import {
 import { getApiRetryAfterSeconds } from "@/lib/api-response.js";
 import { useAuthMobileAutoFocus } from "@/modules/auth/lib/mobile-keyboard";
 import { useTranslation } from "react-i18next";
-import { get } from "lodash";
+import get from "lodash/get";
 import { trackLaunchEvent } from "@/lib/analytics.js";
 
 const RESEND_COOLDOWN = 60;

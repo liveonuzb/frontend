@@ -1,4 +1,4 @@
-import { trim } from "lodash";
+import trim from "lodash/trim";
 /**
  * Chart color utilities for Recharts integration.
  * Reads --chart-1 through --chart-5 CSS custom properties from :root

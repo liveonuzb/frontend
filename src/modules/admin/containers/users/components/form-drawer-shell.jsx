@@ -17,7 +17,7 @@ const FormDrawerShell = ({
   footer,
 }) => (
   <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-    <DrawerContent className="mx-auto max-h-[90vh] data-[vaul-drawer-direction=bottom]:md:max-w-md">
+    <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
       <div className="mx-auto flex min-h-0 w-full flex-1 flex-col">
         <DrawerHeader>
           <DrawerTitle>{title}</DrawerTitle>

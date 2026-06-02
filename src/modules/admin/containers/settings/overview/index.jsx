@@ -1,5 +1,9 @@
 import React from "react";
-import { get, filter, includes, map, toNumber } from "lodash";
+import get from "lodash/get";
+import filter from "lodash/filter";
+import includes from "lodash/includes";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   BellIcon,

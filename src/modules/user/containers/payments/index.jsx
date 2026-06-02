@@ -1,18 +1,16 @@
 import React from "react";
-import {
-  compact,
-  filter,
-  find,
-  join,
-  map,
-  toLower,
-  includes,
-  isArray,
-  reduce,
-  toNumber,
-  toUpper,
-  trim,
-} from "lodash";
+import compact from "lodash/compact";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import join from "lodash/join";
+import map from "lodash/map";
+import toLower from "lodash/toLower";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
+import reduce from "lodash/reduce";
+import toNumber from "lodash/toNumber";
+import toUpper from "lodash/toUpper";
+import trim from "lodash/trim";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 import {
   getCoreRowModel,
@@ -141,7 +139,7 @@ const PaymentDetailDrawer = ({ payment, onClose }) => (
     onOpenChange={(open) => !open && onClose()}
     direction="bottom"
   >
-    <DrawerContent>
+    <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
       <DrawerHeader>
         <DrawerTitle>To&apos;lov tafsilotlari</DrawerTitle>
       </DrawerHeader>

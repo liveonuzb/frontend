@@ -1,5 +1,8 @@
 import React from "react";
-import { get, includes, some, toNumber } from "lodash";
+import get from "lodash/get";
+import includes from "lodash/includes";
+import some from "lodash/some";
+import toNumber from "lodash/toNumber";
 import {
   Clock3Icon,
   EyeIcon,

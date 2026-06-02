@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { get } from "lodash";
+import get from "lodash/get";
 import { useLocation, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import WorkoutLogDrawer from "../../workout-log-drawer.jsx";

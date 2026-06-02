@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import get from "lodash/get";
 import { useGetQuery, usePostQuery, usePatchQuery } from "@/hooks/api";
 
 export const USER_NOTIFICATIONS_QUERY_KEY = ["me", "notifications"];

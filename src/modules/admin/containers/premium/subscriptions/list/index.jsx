@@ -1,6 +1,11 @@
 import React from "react";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { get, isArray, join, toString, toNumber, trim } from "lodash";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import toString from "lodash/toString";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 import { toast } from "sonner";
 import { RotateCcwIcon } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";

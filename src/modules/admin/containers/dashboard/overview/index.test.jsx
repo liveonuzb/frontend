@@ -92,6 +92,30 @@ const dashboardResponse = {
         active: 4,
         activationRate: 44.4,
       },
+      nutrition: {
+        rangeDays: 30,
+        mealLogs: 42,
+        waterLogs: 31,
+        activeMealPlans: 7,
+        shoppingListsGenerated: 9,
+        scanReviewRate: 55,
+        events: {
+          scanStarted: 20,
+          scanReviewed: 11,
+          reportExported: 4,
+          restrictionConflictShown: 3,
+        },
+      },
+      catalogQuality: {
+        totalIssues: 14,
+        missingTranslations: 4,
+        missingImages: 3,
+        nutritionOutliers: 5,
+        priceIssues: 1,
+        safetyIssues: 1,
+        duplicateActiveFoodNames: 2,
+        actionPath: "/admin/content-quality",
+      },
     },
   },
 };
@@ -116,5 +140,11 @@ describe("Admin dashboard launch overview", () => {
     expect(screen.getByText("Landing CTA")).toBeInTheDocument();
     expect(screen.getByText("D7 active")).toBeInTheDocument();
     expect(screen.getByText("Referral activation")).toBeInTheDocument();
+    expect(screen.getByText("Nutrition analytics")).toBeInTheDocument();
+    expect(screen.getByText(/AI scan review/)).toBeInTheDocument();
+    expect(screen.getByText(/55%/)).toBeInTheDocument();
+    expect(screen.getByText("Catalog quality")).toBeInTheDocument();
+    expect(screen.getByText("Duplicate active names")).toBeInTheDocument();
+    expect(screen.getAllByText("2").length).toBeGreaterThan(0);
   });
 });

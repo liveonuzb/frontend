@@ -1,19 +1,17 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import {
-  get,
-  map,
-  max,
-  reduce,
-  size,
-  every,
-  filter,
-  find,
-  isArray,
-  toNumber,
-  trim,
-  some,
-} from "lodash";
+import get from "lodash/get";
+import map from "lodash/map";
+import max from "lodash/max";
+import reduce from "lodash/reduce";
+import size from "lodash/size";
+import every from "lodash/every";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import isArray from "lodash/isArray";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
+import some from "lodash/some";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import {
@@ -558,7 +556,7 @@ const SessionDurationDrawer = ({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-md">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader className="px-6 pb-2 pt-5">
           <div className="flex items-start justify-between gap-4">
             <DrawerTitle className="text-2xl font-black">
@@ -704,7 +702,7 @@ const SessionExerciseCard = ({
 
   return (
     <Card className="overflow-hidden rounded-3xl border-0 bg-card py-6 shadow-sm ring-1 ring-border">
-      <div className="flex items-start gap-3 px-4 py-4">
+      <div className="flex items-start gap-3 p-4">
         <button
           type="button"
           className="flex min-w-0 flex-1 items-start gap-3 text-left"
@@ -1730,7 +1728,7 @@ const WorkoutPlanSessionPage = () => {
     return (
       <PageTransition mode="slide-up">
         <div className="relative mx-auto flex min-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col bg-muted/30 md:rounded-[2rem] md:ring-1 md:ring-border">
-          <header className="flex items-start gap-3 border-b bg-background/95 px-4 py-4 backdrop-blur md:rounded-t-[2rem]">
+          <header className="flex items-start gap-3 border-b bg-background/95 p-4 backdrop-blur md:rounded-t-[2rem]">
             <Button
               variant="ghost"
               size="icon"
@@ -1811,7 +1809,7 @@ const WorkoutPlanSessionPage = () => {
         data-testid="workout-session-shell"
         className="relative mx-auto flex min-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col bg-muted/30 pb-36 md:rounded-[2rem] md:pb-24 md:ring-1 md:ring-border"
       >
-        <header className="sticky top-0 z-20 flex items-start gap-3 border-b bg-background/95 px-4 py-4 backdrop-blur md:rounded-t-[2rem]">
+        <header className="sticky top-0 z-20 flex items-start gap-3 border-b bg-background/95 p-4 backdrop-blur md:rounded-t-[2rem]">
           <Button
             variant="ghost"
             size="icon"
@@ -1997,7 +1995,7 @@ const WorkoutPlanSessionPage = () => {
           }}
           direction="bottom"
         >
-          <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-md">
+          <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
             <DrawerHeader className="px-6 pb-3 pt-5">
               <DrawerTitle className="text-xl font-black">
                 {get(actionExercise, "name") ||
@@ -2047,7 +2045,7 @@ const WorkoutPlanSessionPage = () => {
           }}
           direction="bottom"
         >
-          <DrawerContent className="mx-auto flex max-h-[85dvh] data-[vaul-drawer-direction=bottom]:md:max-w-lg">
+          <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
             <DrawerHeader className="px-6 pb-3 pt-5">
               <DrawerTitle className="text-xl font-black">
                 {t("user.workout.session.replaceExercise")}

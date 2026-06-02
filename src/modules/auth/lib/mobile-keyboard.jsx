@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import React from "react";
 
-import { forEach } from "lodash";
+import forEach from "lodash/forEach";
 
 const AuthMobileKeyboardContext = React.createContext(false);
 

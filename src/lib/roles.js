@@ -1,4 +1,8 @@
-import { map, compact, filter, includes, isArray } from "lodash";
+import map from "lodash/map";
+import compact from "lodash/compact";
+import filter from "lodash/filter";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
 
 const ACTIVE_ROLES = [
   "SUPER_ADMIN",

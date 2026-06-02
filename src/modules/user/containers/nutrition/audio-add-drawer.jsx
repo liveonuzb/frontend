@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { entries, find, includes, some, forEach, toLower, toNumber, trim } from "lodash";
+import entries from "lodash/entries";
+import find from "lodash/find";
+import includes from "lodash/includes";
+import some from "lodash/some";
+import forEach from "lodash/forEach";
+import toLower from "lodash/toLower";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 import {
   DrawerBody,
   DrawerFooter,

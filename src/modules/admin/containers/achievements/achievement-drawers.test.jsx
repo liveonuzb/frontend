@@ -6,7 +6,7 @@ import CreateAchievementPage from "./create/index.jsx";
 import EditAchievementPage from "./edit/index.jsx";
 import TranslateAchievement from "./translation/index.jsx";
 
-import { map } from "lodash";
+import map from "lodash/map";
 
 const mockNavigate = vi.fn();
 const mockPostMutateAsync = vi.fn();

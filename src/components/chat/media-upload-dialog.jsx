@@ -86,6 +86,7 @@ export default function MediaUploadDialog({ open, file, onSend, onCancel }) {
               <video
                 src={preview}
                 controls
+                aria-label={file?.name || "Yuklanayotgan video"}
                 className="max-w-full max-h-[50vh] object-contain rounded-lg shadow-lg"
               />
             ) : file ? (
@@ -109,6 +110,7 @@ export default function MediaUploadDialog({ open, file, onSend, onCancel }) {
                 onChange={(e) => setComment(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Izoh qo'shish..."
+                aria-label="Media izohi"
                 rows={1}
                 className="w-full min-h-[44px] max-h-[120px] bg-muted/50 hover:bg-muted border-none rounded-[18px] px-4 py-3 text-sm resize-none focus:ring-2 focus:ring-primary/20 outline-none transition-all pr-12"
                 style={{ height: 'auto' }}

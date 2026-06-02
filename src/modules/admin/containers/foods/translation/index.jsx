@@ -1,6 +1,14 @@
 import React, { useMemo } from "react";
-import { useNavigate, useParams } from "react-router";
-import { filter, find, get, isArray, join, map, trim, fromPairs, reduce } from "lodash";
+import { useParams } from "react-router";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import get from "lodash/get";
+import isArray from "lodash/isArray";
+import join from "lodash/join";
+import map from "lodash/map";
+import trim from "lodash/trim";
+import fromPairs from "lodash/fromPairs";
+import reduce from "lodash/reduce";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -27,6 +35,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner.jsx";
+import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 
 const translationSchema = z.object({}).catchall(z.string().optional());
 
@@ -39,22 +48,30 @@ const getErrorMessage = (error, fallback) => {
 };
 
 const resolveCurrentLanguage = (activeLanguages, currentLanguage) =>
-  find(activeLanguages, (language) => get(language, "code") === currentLanguage) ||
-  get(activeLanguages, "0", { code: "uz", name: "Uzbek", flag: "UZ" });
+  find(
+    activeLanguages,
+    (language) => get(language, "code") === currentLanguage,
+  ) || get(activeLanguages, "0", { code: "uz", name: "Uzbek", flag: "UZ" });
 
 const buildDefaultValues = (item, languages) =>
-  fromPairs(map(languages, (language) => {
-    const code = get(language, "code");
-    return [code, get(item, `translations.${code}`, "")];
-  }));
+  fromPairs(
+    map(languages, (language) => {
+      const code = get(language, "code");
+      return [code, get(item, `translations.${code}`, "")];
+    }),
+  );
 
 const buildPayload = (values, languages, currentLanguage) => {
-  const translations = reduce(languages, (acc, language) => {
-    const code = get(language, "code");
-    const value = trim(get(values, code, ""));
-    if (value) acc[code] = value;
-    return acc;
-  }, {});
+  const translations = reduce(
+    languages,
+    (acc, language) => {
+      const code = get(language, "code");
+      const value = trim(get(values, code, ""));
+      if (value) acc[code] = value;
+      return acc;
+    },
+    {},
+  );
   const localizedName = trim(get(values, currentLanguage, ""));
 
   return {
@@ -64,8 +81,8 @@ const buildPayload = (values, languages, currentLanguage) => {
 };
 
 const TranslateFood = () => {
-  const navigate = useNavigate();
   const { id } = useParams();
+  const closeAdminDrawer = useAdminDrawerCloseNavigation("/admin/foods/list");
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
 
   const { data: foodData, isLoading } = useGetQuery({
@@ -82,7 +99,11 @@ const TranslateFood = () => {
     queryProps: { queryKey: ["admin", "languages"] },
   });
   const activeLanguages = useMemo(
-    () => filter(get(languagesData, "data.data", []), (language) => language.isActive),
+    () =>
+      filter(
+        get(languagesData, "data.data", []),
+        (language) => language.isActive,
+      ),
     [languagesData],
   );
   const activeLanguage = useMemo(
@@ -111,12 +132,16 @@ const TranslateFood = () => {
     await mutateAsync(
       {
         url: `/admin/foods/${id}`,
-        attributes: buildPayload(values, activeLanguages, get(activeLanguage, "code")),
+        attributes: buildPayload(
+          values,
+          activeLanguages,
+          get(activeLanguage, "code"),
+        ),
       },
       {
         onSuccess: () => {
           toast.success("Tarjimalar yangilandi");
-          navigate("/admin/foods/list");
+          closeAdminDrawer();
         },
         onError: (error) => {
           toast.error(getErrorMessage(error, "Tarjimalarni saqlab bo'lmadi"));
@@ -126,12 +151,12 @@ const TranslateFood = () => {
   };
 
   const handleOpenChange = (open) => {
-    if (!open) navigate("/admin/foods/list");
+    if (!open) closeAdminDrawer();
   };
 
   return (
     <Drawer open onOpenChange={handleOpenChange} direction="bottom">
-      <DrawerContent className="mx-auto max-h-[90vh] data-[vaul-drawer-direction=bottom]:md:max-w-lg">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <div className="mx-auto flex min-h-0 w-full flex-1 flex-col">
           <DrawerHeader className="items-center text-center">
             <DrawerTitle>Tarjima qo'shish</DrawerTitle>
@@ -152,7 +177,7 @@ const TranslateFood = () => {
                 <form
                   id="food-translation-form"
                   onSubmit={form.handleSubmit(onSubmit)}
-                  className="no-scrollbar flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4"
+                  className="no-scrollbar flex flex-1 flex-col gap-4 overflow-y-auto p-4"
                 >
                   {map(activeLanguages, (language) => {
                     const code = get(language, "code");

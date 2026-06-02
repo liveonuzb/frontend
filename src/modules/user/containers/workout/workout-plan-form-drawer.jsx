@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import get from "lodash/get";
 import { LoaderCircleIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import WorkoutPlanBuilder from "@/components/workout-plan-builder";
@@ -39,7 +39,7 @@ export default function WorkoutPlanFormDrawer({
   if (isLoading || isError) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-        <DrawerContent className="mx-auto data-[vaul-drawer-direction=bottom]:md:max-w-2xl">
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader>
             <DrawerTitle>
               {isEdit

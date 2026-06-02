@@ -1,4 +1,5 @@
-import { times, map } from "lodash";
+import times from "lodash/times";
+import map from "lodash/map";
 import { Fragment, useId, useRef } from "react";
 import { useDataGrid } from "@/components/reui/data-grid/data-grid"
 import {

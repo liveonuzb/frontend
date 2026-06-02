@@ -1,5 +1,6 @@
 import React from "react";
-import { times, get } from "lodash";
+import times from "lodash/times";
+import get from "lodash/get";
 import {
   Drawer,
   DrawerContent,
@@ -29,7 +30,7 @@ const heightItems = times(250 - 100 + 1, (index) => {
 export const HeightWeightDrawer = ({ open, setOpen, form, onSubmit }) => {
   return (
     <Drawer open={open} onOpenChange={setOpen} direction="bottom">
-      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-md mx-auto pt-4">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle>Bo&apos;y</DrawerTitle>
           <DrawerDescription>Bo&apos;yingizni kiriting.</DrawerDescription>

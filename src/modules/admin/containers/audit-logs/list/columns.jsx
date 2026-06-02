@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash";
+import get from "lodash/get";
 import { Badge } from "@/components/ui/badge";
 import { DataGridColumnHeader } from "@/components/reui/data-grid";
 import { cn } from "@/lib/utils";

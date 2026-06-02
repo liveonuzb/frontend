@@ -2,7 +2,8 @@ import React from "react";
 import { ChevronRightIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-import { map, toNumber } from "lodash";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
 
 // Scale: BMI 10 → 40 (30-unit range)
 const BMI_SCALE_MIN = 10;

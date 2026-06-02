@@ -139,7 +139,7 @@ describe("ProfileDrawer", () => {
     ).not.toBeInTheDocument();
     expect(screen.getAllByText("Fazliddin Liveon").length).toBeGreaterThan(0);
     expect(document.querySelector("[data-slot='drawer-content']")).toHaveClass(
-      "data-[vaul-drawer-direction=bottom]:!max-w-md",
+      "data-[vaul-drawer-direction=bottom]:md:max-w-sm",
     );
     await waitFor(() => {
       expect(screen.getAllByText("Fazliddin Liveon").length).toBeGreaterThan(0);
@@ -315,7 +315,7 @@ describe("ProfileDrawer", () => {
     });
 
     expect(drawer).toHaveClass(
-      "data-[vaul-drawer-direction=bottom]:!max-w-md",
+      "data-[vaul-drawer-direction=bottom]:md:max-w-sm",
     );
   });
 

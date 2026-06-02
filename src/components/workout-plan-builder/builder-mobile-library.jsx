@@ -1,6 +1,8 @@
 import React, { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { map, get, size } from "lodash";
+import map from "lodash/map";
+import get from "lodash/get";
+import size from "lodash/size";
 import { PlusIcon, DumbbellIcon } from "lucide-react";
 import { cn } from "@/lib/utils.js";
 import { Card } from "@/components/ui/card.jsx";
@@ -30,7 +32,7 @@ const BuilderMobileLibrary = memo(({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent>
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <div className="flex max-h-[75vh] flex-col">
           <DrawerHeader>
             <DrawerTitle className="flex items-center gap-2">

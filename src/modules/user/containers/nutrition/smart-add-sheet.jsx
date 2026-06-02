@@ -20,7 +20,7 @@ import {
   getAiAccessStatus,
 } from "@/hooks/app/use-ai-access";
 
-import { map } from "lodash";
+import map from "lodash/map";
 
 const METHOD_ACTIONS = [
   {
@@ -93,7 +93,7 @@ const MethodButton = ({ action, costs, disabled, handlers, wallet }) => {
       {...accessDisabledProps}
       disabled={isDisabled}
       aria-label={action.label}
-      className="h-auto w-full justify-start rounded-2xl border-border/70 px-3 py-3 text-left"
+      className="h-auto w-full justify-start rounded-2xl border-border/70 p-3 text-left"
       onClick={handler}
     >
       <span
@@ -120,7 +120,7 @@ const SavedMealsButton = ({ disabled, onOpenSavedMeals }) => (
     variant="outline"
     disabled={disabled}
     aria-label="Saqlangan taomlar"
-    className="h-auto w-full justify-start rounded-2xl border-border/70 px-3 py-3 text-left"
+    className="h-auto w-full justify-start rounded-2xl border-border/70 p-3 text-left"
     onClick={onOpenSavedMeals}
   >
     <span className="mr-3 grid size-10 shrink-0 place-items-center rounded-full bg-orange-500/10 text-orange-700 dark:text-orange-300">

@@ -16,7 +16,8 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
-import { map, get } from "lodash";
+import map from "lodash/map";
+import get from "lodash/get";
 import { WeightPicker } from "@/components/weight-picker";
 
 export const WeightInputDrawer = ({
@@ -29,7 +30,7 @@ export const WeightInputDrawer = ({
 }) => {
   return (
     <Drawer open={open} onOpenChange={setOpen} direction="bottom">
-      <DrawerContent>
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle>Vazn kiritish</DrawerTitle>
           <DrawerDescription>
@@ -45,9 +46,11 @@ export const WeightInputDrawer = ({
                 get(selectedDate, "toDateString") &&
                 selectedDate.toDateString() === d.toDateString();
               return (
-                <div
+                <button
+                  type="button"
                   key={i}
                   onClick={() => setSelectedDate(d)}
+                  aria-pressed={isSelected}
                   className={cn(
                     "flex flex-col items-center justify-center p-3 px-6 flex-1 rounded-2xl border transition-all cursor-pointer",
                     isSelected
@@ -59,7 +62,7 @@ export const WeightInputDrawer = ({
                     {d.toLocaleDateString("en-US", { weekday: "short" })}
                   </span>
                   <span className="text-lg font-black">{d.getDate()}</span>
-                </div>
+                </button>
               );
             })}
           </div>

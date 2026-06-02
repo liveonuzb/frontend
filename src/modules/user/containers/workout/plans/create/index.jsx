@@ -1,19 +1,17 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import {
-  filter,
-  find,
-  get,
-  map,
-  size,
-  take,
-  trim,
-  uniqBy,
-  includes,
-  isArray,
-  toLower,
-  toNumber,
-} from "lodash";
+import filter from "lodash/filter";
+import find from "lodash/find";
+import get from "lodash/get";
+import map from "lodash/map";
+import size from "lodash/size";
+import take from "lodash/take";
+import trim from "lodash/trim";
+import uniqBy from "lodash/uniqBy";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
+import toLower from "lodash/toLower";
+import toNumber from "lodash/toNumber";
 import { useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 import {
@@ -283,6 +281,7 @@ const PlanCoverPicker = ({
         ref={inputRef}
         type="file"
         accept="image/*"
+        aria-label="Mashg'ulot rejasi rasmi faylini tanlash"
         className="hidden"
         onChange={(event) => {
           const file = event.target.files?.[0];
@@ -349,7 +348,7 @@ const CreatePlanMetaDrawer = ({
   t,
 }) => (
   <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-    <DrawerContent>
+    <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
       <DrawerHeader>
         <DrawerTitle>{t("user.workout.planCreate.meta.title")}</DrawerTitle>
         <DrawerDescription>
@@ -440,7 +439,7 @@ const AiPlanSetupDrawer = ({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent>
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle>{t("user.workout.planCreate.aiSetup.title")}</DrawerTitle>
           <DrawerDescription>
@@ -606,7 +605,7 @@ const AiEquipmentDrawer = ({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent className="data-[vaul-drawer-direction=bottom]:max-h-[94vh]">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle>{t("user.workout.planCreate.equipment.title")}</DrawerTitle>
           <DrawerDescription>
@@ -726,7 +725,7 @@ const AiMuscleGroupDrawer = ({
   t,
 }) => (
   <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-    <DrawerContent>
+    <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
       <DrawerHeader>
         <DrawerTitle>{t("user.workout.planCreate.muscles.title")}</DrawerTitle>
         <DrawerDescription>
@@ -745,7 +744,7 @@ const AiMuscleGroupDrawer = ({
                 type="button"
                 onClick={() => onToggle(get(item, "id"))}
                 className={cn(
-                  "flex items-center gap-3 rounded-3xl border bg-card px-4 py-4 text-left shadow-sm transition",
+                  "flex items-center gap-3 rounded-3xl border bg-card p-4 text-left shadow-sm transition",
                   checked && "border-primary bg-primary/5",
                 )}
               >
@@ -807,7 +806,7 @@ const AiOneRepMaxDrawer = ({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent>
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
           <DrawerTitle>{t("user.workout.planCreate.oneRm.title")}</DrawerTitle>
           <DrawerDescription>
@@ -886,7 +885,7 @@ const AiOneRepMaxDrawer = ({
               </Field>
             </div>
 
-            <div className="flex items-center justify-between gap-4 rounded-3xl border bg-card px-4 py-4">
+            <div className="flex items-center justify-between gap-4 rounded-3xl border bg-card p-4">
               <div>
                 <p className="font-bold">
                   {t("user.workout.planCreate.oneRm.result")}
@@ -984,19 +983,19 @@ const AiPreviewCard = ({
         </div>
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="rounded-2xl bg-muted/40 px-3 py-3">
+            <div className="rounded-2xl bg-muted/40 p-3">
               <p className="font-black">{get(plan, "days", 28)}</p>
               <p className="text-xs text-muted-foreground">
                 {t("user.workout.planCreate.units.days")}
               </p>
             </div>
-            <div className="rounded-2xl bg-muted/40 px-3 py-3">
+            <div className="rounded-2xl bg-muted/40 p-3">
               <p className="font-black">{get(plan, "daysPerWeek", 4)}</p>
               <p className="text-xs text-muted-foreground">
                 {t("user.workout.planCreate.units.daysPerWeek")}
               </p>
             </div>
-            <div className="rounded-2xl bg-muted/40 px-3 py-3">
+            <div className="rounded-2xl bg-muted/40 p-3">
               <p className="font-black">
                 {get(plan, "totalExercises", size(get(plan, "schedule", [])))}
               </p>

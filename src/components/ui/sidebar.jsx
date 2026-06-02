@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import * as React from "react";
-import { random } from "lodash";
+import random from "lodash/random";
 import { cva } from "class-variance-authority";
 import { Slot } from "radix-ui";
 import { PanelLeftIcon } from "lucide-react";
@@ -161,7 +161,7 @@ function Sidebar({
   if (isMobile) {
     return (
       <Drawer open={openMobile} onOpenChange={setOpenMobile} {...props}>
-        <DrawerContent
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm"
           dir={dir}
           data-sidebar="sidebar"
           data-slot="sidebar"
@@ -253,7 +253,7 @@ function SidebarRail({ className, ...props }) {
   const { toggleSidebar } = useSidebar();
 
   return (
-    <button
+    <button type="button"
       data-sidebar="rail"
       data-slot="sidebar-rail"
       aria-label="Toggle Sidebar"

@@ -1,4 +1,6 @@
-import { map, filter, trim } from "lodash";
+import map from "lodash/map";
+import filter from "lodash/filter";
+import trim from "lodash/trim";
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,7 +60,7 @@ const LiveStreamOverlay = ({
                         <div>
                             <p className="text-white text-xs font-bold leading-none">{activeLive.hostName}</p>
                             <div className="flex items-center gap-1.5 mt-1">
-                                <span className="flex h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                                <span className="flex size-1.5 rounded-full bg-red-500 animate-pulse" />
                                 <span className="text-[10px] text-white/70 uppercase font-black tracking-tighter">Live</span>
                             </div>
                         </div>
@@ -86,7 +88,7 @@ const LiveStreamOverlay = ({
 
                 {/* Right Bottom Actions */}
                 <div className="absolute bottom-6 right-6 flex flex-col gap-3 z-20">
-                    <button 
+                    <button type="button"
                         onClick={addHeart}
                         className="size-12 rounded-full bg-red-500 flex items-center justify-center text-white shadow-xl hover:scale-110 active:scale-95 transition-all"
                     >
@@ -120,10 +122,12 @@ const LiveStreamOverlay = ({
                             onChange={e => setComment(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && handleSendComment()}
                             placeholder="Sharh yozing..."
+                            aria-label="Live sharh yozish"
                             className="w-full h-11 bg-white/10 border border-white/10 rounded-xl px-4 pr-12 text-white text-sm focus:ring-2 focus:ring-primary/50 outline-none transition-all placeholder:text-white/30"
                         />
-                        <button 
+                        <button type="button"
                             onClick={handleSendComment}
+                            aria-label="Sharh yuborish"
                             className="absolute right-2 top-1/2 -translate-y-1/2 size-8 bg-primary rounded-lg flex items-center justify-center text-black hover:scale-105 active:scale-95 transition-all"
                         >
                             <SendIcon className="size-4" />

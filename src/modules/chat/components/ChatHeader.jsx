@@ -68,7 +68,12 @@ const ChatHeader = ({
                     >
                         <ArrowLeftIcon className="size-5" />
                     </Button>
-                    <div className="relative cursor-pointer hover:scale-105 transition-transform shrink-0" onClick={onToggleInfo}>
+                    <button
+                        type="button"
+                        className="relative cursor-pointer hover:scale-105 transition-transform shrink-0"
+                        onClick={onToggleInfo}
+                        aria-label={`${activeEntity.name} ma'lumotlarini ochish`}
+                    >
                         <Avatar className={cn(
                             "size-10 md:size-12 border-2 shadow-sm transition-all",
                             isLive ? "border-red-500 ring-2 ring-red-500/20" : "border-background"
@@ -82,33 +87,37 @@ const ChatHeader = ({
                         {isLive && (
                             <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-red-500 text-[8px] text-white px-1 rounded font-black uppercase">Live</div>
                         )}
-                    </div>
-                    <div className="cursor-pointer min-w-0 flex-1" onClick={onToggleInfo}>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                            <p className="font-bold leading-tight truncate text-[15px] md:text-lg">{activeEntity.name}</p>
+                    </button>
+                    <button
+                        type="button"
+                        className="cursor-pointer min-w-0 flex-1 text-left"
+                        onClick={onToggleInfo}
+                    >
+                        <span className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-bold leading-tight truncate text-[15px] md:text-lg">{activeEntity.name}</span>
                             {activeEntity?.type && chatTypeBadges[activeEntity.type] && (
                                 <span className="text-[9px] md:text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full shrink-0">
                                     {chatTypeBadges[activeEntity.type].emoji} {chatTypeBadges[activeEntity.type].label}
                                 </span>
                             )}
-                        </div>
+                        </span>
                         {isLive ? (
-                            <p className="text-[10px] md:text-xs text-red-500 font-black animate-pulse flex items-center gap-1">
+                            <span className="text-[10px] md:text-xs text-red-500 font-black animate-pulse flex items-center gap-1">
                                 <span className="size-1.5 rounded-full bg-red-500" /> JONLI EFIR
-                            </p>
+                            </span>
                         ) : liveActivity ? (
-                            <p className={cn("text-[10px] md:text-xs truncate font-bold animate-pulse", liveActivity.color)}>
+                            <span className={cn("block text-[10px] md:text-xs truncate font-bold animate-pulse", liveActivity.color)}>
                                 {liveActivity.label} • <span className="opacity-70 font-normal">{liveActivity.sub}</span>
-                            </p>
+                            </span>
                         ) : (
-                            <p className={cn(
-                                "text-[10px] md:text-xs truncate font-medium",
+                            <span className={cn(
+                                "block text-[10px] md:text-xs truncate font-medium",
                                 typingUsers[activeChat] ? "text-primary animate-pulse" : "text-green-500 opacity-80"
                             )}>
                                 {typingUsers[activeChat] ? "yozmoqda..." : (activeEntity.online ? "Online" : getLastSeenText(activeEntity))}
-                            </p>
+                            </span>
                         )}
-                    </div>
+                    </button>
                 </div>
                 <div className="flex items-center gap-0.5 md:gap-1 shrink-0">
                     {/* Live indicator for others */}
@@ -181,12 +190,13 @@ const ChatHeader = ({
                             onChange={(e) => { setChatSearchQuery(e.target.value); setChatSearchIndex(0); }}
                             className="flex-1 bg-transparent text-xs outline-none"
                             placeholder="Qidirish..."
+                            aria-label="Chat xabarlarini qidirish"
                             autoFocus
                         />
                         <div className="flex items-center gap-1">
-                            <button onClick={handleChatSearchPrev} className="p-1 hover:bg-muted rounded"><ChevronUpIcon className="size-3" /></button>
-                            <button onClick={handleChatSearchNext} className="p-1 hover:bg-muted rounded"><ChevronDownIcon className="size-3" /></button>
-                            <button onClick={() => setChatSearchOpen(false)} className="p-1 hover:bg-muted rounded"><XIcon className="size-3" /></button>
+                            <button type="button" aria-label="Oldingi natija" onClick={handleChatSearchPrev} className="p-1 hover:bg-muted rounded"><ChevronUpIcon className="size-3" /></button>
+                            <button type="button" aria-label="Keyingi natija" onClick={handleChatSearchNext} className="p-1 hover:bg-muted rounded"><ChevronDownIcon className="size-3" /></button>
+                            <button type="button" aria-label="Qidiruvni yopish" onClick={() => setChatSearchOpen(false)} className="p-1 hover:bg-muted rounded"><XIcon className="size-3" /></button>
                         </div>
                     </div>
                 </div>

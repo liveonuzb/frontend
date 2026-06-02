@@ -14,7 +14,8 @@ import {
   getCameraDateOptions,
 } from "./meal-date-time-utils.js";
 
-import { map, toNumber } from "lodash";
+import map from "lodash/map";
+import toNumber from "lodash/toNumber";
 
 export default function MealDateTimeDrawer({
   open,
@@ -22,7 +23,7 @@ export default function MealDateTimeDrawer({
   value,
   onChange,
   onDone,
-  locale = "en",
+  locale = "uz-latn",
   minDateKey,
 }) {
   const safeDateKey = clampMealDateKey(value?.dateKey, minDateKey);
@@ -91,7 +92,7 @@ export default function MealDateTimeDrawer({
       <NutritionDrawerContent size="sm">
         <DrawerHeader className="pb-1 text-center">
           <DrawerTitle className="text-lg font-black tracking-tight">
-            Meal date & time
+            Ovqat sanasi va vaqti
           </DrawerTitle>
         </DrawerHeader>
 
@@ -157,7 +158,7 @@ export default function MealDateTimeDrawer({
             className="h-14 rounded-full text-base font-black"
             onClick={onDone}
           >
-            Done
+            Tayyor
           </Button>
         </DrawerFooter>
       </NutritionDrawerContent>

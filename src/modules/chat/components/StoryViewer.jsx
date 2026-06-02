@@ -1,4 +1,4 @@
-import { map } from "lodash";
+import map from "lodash/map";
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { XIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
@@ -99,12 +99,12 @@ const StoryViewer = ({ stories, initialStoryIndex = 0, onClose }) => {
 
                     {/* Navigation areas */}
                     <div className="absolute inset-0 flex">
-                        <div className="w-1/3 h-full cursor-pointer" onClick={handlePrev} />
-                        <div className="w-2/3 h-full cursor-pointer" onClick={handleNext} />
+                        <button type="button" className="w-1/3 h-full cursor-pointer" aria-label="Oldingi story" onClick={handlePrev} />
+                        <button type="button" className="w-2/3 h-full cursor-pointer" aria-label="Keyingi story" onClick={handleNext} />
                     </div>
 
                     {/* Desktop Arrows */}
-                    <button
+                    <button type="button"
                         onClick={handlePrev}
                         className={cn(
                             "absolute left-4 top-1/2 -translate-y-1/2 size-10 rounded-full bg-black/20 text-white items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex",
@@ -113,7 +113,7 @@ const StoryViewer = ({ stories, initialStoryIndex = 0, onClose }) => {
                     >
                         <ChevronLeftIcon className="size-6" />
                     </button>
-                    <button
+                    <button type="button"
                         onClick={handleNext}
                         className="absolute right-4 top-1/2 -translate-y-1/2 size-10 rounded-full bg-black/20 text-white items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex"
                     >
@@ -126,9 +126,10 @@ const StoryViewer = ({ stories, initialStoryIndex = 0, onClose }) => {
                     <div className="flex gap-3">
                         <input
                             placeholder="Reaksiya bildiring..."
+                            aria-label="Story reaksiyasi"
                             className="flex-1 h-12 bg-white/10 border border-white/10 rounded-full px-6 text-white text-sm focus:ring-2 focus:ring-primary/50 outline-none transition-all placeholder:text-white/40 backdrop-blur-md"
                         />
-                        <button className="size-12 rounded-full bg-white/10 flex items-center justify-center text-2xl hover:scale-110 active:scale-95 transition-all backdrop-blur-md border border-white/10">❤️</button>
+                        <button type="button" aria-label="Storyga reaksiya bildirish" className="size-12 rounded-full bg-white/10 flex items-center justify-center text-2xl hover:scale-110 active:scale-95 transition-all backdrop-blur-md border border-white/10">❤️</button>
                     </div>
                 </div>
             </div>

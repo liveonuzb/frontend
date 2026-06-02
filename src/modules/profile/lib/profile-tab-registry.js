@@ -1,4 +1,4 @@
-import { map } from "lodash";
+import map from "lodash/map";
 export const PROFILE_OVERVIEW_TAB = "overview";
 export const DEFAULT_PROFILE_TAB = "profile";
 

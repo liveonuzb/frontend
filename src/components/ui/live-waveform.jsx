@@ -1,4 +1,6 @@
-import { forEach, map, slice } from "lodash";
+import forEach from "lodash/forEach";
+import map from "lodash/map";
+import slice from "lodash/slice";
 import { useEffect, useRef } from "react";
 
 import { cn } from "@/lib/utils"

@@ -1,4 +1,6 @@
-import { toLower, toNumber, trim } from "lodash";
+import toLower from "lodash/toLower";
+import toNumber from "lodash/toNumber";
+import trim from "lodash/trim";
 const ACTIVITY_LABEL_KEYS = {
   sedentary: "sedentary",
   "lightly-active": "lightlyActive",
