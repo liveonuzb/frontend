@@ -1,28 +1,35 @@
 import React from "react";
 import { Outlet, useSearchParams } from "react-router";
+import concat from "lodash/concat";
 import get from "lodash/get";
+import includes from "lodash/includes";
+import isArray from "lodash/isArray";
 import map from "lodash/map";
 import size from "lodash/size";
 import toNumber from "lodash/toNumber";
 import trim from "lodash/trim";
 import {
   BookOpenIcon,
+  CheckCircleIcon,
   ClockIcon,
   EyeIcon,
   FlameIcon,
+  ImageIcon,
   LanguagesIcon,
   PencilIcon,
   PlusIcon,
   RotateCcwIcon,
   SearchIcon,
   UtensilsIcon,
+  XCircleIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner.jsx";
-import { useGetQuery } from "@/hooks/api";
+import { useGetQuery, usePatchQuery, usePostFileQuery } from "@/hooks/api";
 import {
   AdminListHeader,
   AdminListPageShell,
@@ -34,9 +41,24 @@ import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
 
 export const ADMIN_RECIPES_QUERY_KEY = ["admin", "recipes"];
+export const ADMIN_RECIPE_GALLERY_QUERY_KEY = [
+  "admin",
+  "recipes",
+  "gallery-images",
+];
 
 const SORT_FIELDS = ["createdAt", "name", "calories", "protein"];
 const SORT_DIRECTIONS = ["asc", "desc"];
+const RECIPE_STATUS_LABELS = {
+  draft: "Draft",
+  pending_review: "Public review",
+  published: "Published",
+  rejected: "Rejected",
+  archived: "Archived",
+};
+
+const getPayload = (response, fallback = {}) =>
+  get(response, "data.data", get(response, "data", fallback));
 
 const resolveLabel = (translations, fallback, language) =>
   trim(get(translations, language, "")) ||
@@ -45,7 +67,7 @@ const resolveLabel = (translations, fallback, language) =>
   "";
 
 const resolveParam = (value, allowedValues, fallback) =>
-  allowedValues.includes(value) ? value : fallback;
+  includes(allowedValues, value) ? value : fallback;
 
 const resolveMetaTotalPages = (meta) =>
   Math.max(
@@ -67,6 +89,10 @@ const RecipeListPage = () => {
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage =
     useLanguageStore((state) => state.currentLanguage) || "uz";
+  const [galleryLabel, setGalleryLabel] = React.useState("");
+  const [rejectReasons, setRejectReasons] = React.useState({});
+  const galleryLabelId = React.useId();
+  const galleryFileId = React.useId();
 
   const search = searchParams.get("q") || "";
   const currentPage = Math.max(1, toNumber(searchParams.get("page")) || 1);
@@ -112,8 +138,31 @@ const RecipeListPage = () => {
       queryKey: [...ADMIN_RECIPES_QUERY_KEY, queryParams],
     },
   });
+  const { data: galleryData, isLoading: isGalleryLoading } = useGetQuery({
+    url: "/admin/recipes/gallery/images",
+    queryProps: {
+      queryKey: ADMIN_RECIPE_GALLERY_QUERY_KEY,
+    },
+  });
+  const galleryUploadMutation = usePostFileQuery({
+    queryKey: ADMIN_RECIPE_GALLERY_QUERY_KEY,
+    listKey: ADMIN_RECIPES_QUERY_KEY,
+  });
+  const publicationMutation = usePatchQuery({
+    queryKey: ADMIN_RECIPES_QUERY_KEY,
+    listKey: ADMIN_RECIPE_GALLERY_QUERY_KEY,
+  });
 
   const recipes = get(data, "data.data", []);
+  const galleryPayload = React.useMemo(
+    () => getPayload(galleryData, { images: [] }),
+    [galleryData],
+  );
+  const galleryImages = React.useMemo(
+    () =>
+      isArray(galleryPayload) ? galleryPayload : get(galleryPayload, "images", []),
+    [galleryPayload],
+  );
   const meta = get(data, "data.meta", {
     total: 0,
     page: currentPage,
@@ -177,6 +226,107 @@ const RecipeListPage = () => {
     navigateAdminDrawer(`recipe/${recipe.id}`);
   };
 
+  const handleGalleryUpload = React.useCallback(
+    async (event) => {
+      const file = get(event, "target.files.0");
+      if (!file) {
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("image", file);
+      formData.append("label", trim(galleryLabel) || file.name);
+
+      await galleryUploadMutation.mutateAsync({
+        url: "/admin/recipes/gallery/images",
+        attributes: formData,
+        config: {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      });
+      setGalleryLabel("");
+      event.target.value = "";
+      toast.success("Recipe gallery image uploaded");
+    },
+    [galleryLabel, galleryUploadMutation],
+  );
+
+  const handleApproveRecipe = React.useCallback(
+    async (recipe) => {
+      await publicationMutation.mutateAsync({
+        url: `/admin/recipes/${recipe.id}/approve-publication`,
+      });
+      toast.success("Recipe public qilindi");
+    },
+    [publicationMutation],
+  );
+
+  const handleRejectRecipe = React.useCallback(
+    async (recipe) => {
+      const reason =
+        trim(get(rejectReasons, recipe.id, "")) || "Admin review rejected";
+
+      await publicationMutation.mutateAsync({
+        url: `/admin/recipes/${recipe.id}/reject-publication`,
+        attributes: { reason },
+      });
+      toast.success("Recipe public qilishdan rad etildi");
+    },
+    [publicationMutation, rejectReasons],
+  );
+
+  const updateRejectReason = React.useCallback((recipeId, reason) => {
+    setRejectReasons((currentReasons) => ({
+      ...currentReasons,
+      [recipeId]: reason,
+    }));
+  }, []);
+
+  const toolbarFilters = React.useMemo(
+    () => (
+      <div className="relative max-w-md">
+        <SearchIcon
+          className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+          aria-hidden="true"
+        />
+        <Input
+          value={search}
+          onChange={(event) =>
+            updateSearchParams({ q: event.target.value, page: 1 })
+          }
+          placeholder="Retsept qidirish..."
+          className="pl-9"
+        />
+      </div>
+    ),
+    [search, updateSearchParams],
+  );
+
+  const toolbarActions = React.useMemo(
+    () => (
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() =>
+            updateSearchParams({
+              sortBy: sortBy === "createdAt" ? "name" : "createdAt",
+              sortDir: sortBy === "createdAt" ? "asc" : "desc",
+              page: 1,
+            })
+          }
+        >
+          <RotateCcwIcon data-icon="inline-start" />
+          Tartib
+        </Button>
+        <AdminListRefetchButton isFetching={isFetching} onClick={() => refetch()} />
+      </div>
+    ),
+    [isFetching, refetch, sortBy, updateSearchParams],
+  );
+
   return (
     <AdminListPageShell>
       <AdminListHeader
@@ -194,45 +344,85 @@ const RecipeListPage = () => {
       />
 
       <AdminListToolbar
-        filters={
-          <div className="relative max-w-md">
-            <SearchIcon
-              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <Input
-              value={search}
-              onChange={(event) =>
-                updateSearchParams({ q: event.target.value, page: 1 })
-              }
-              placeholder="Retsept qidirish..."
-              className="pl-9"
-            />
-          </div>
-        }
-        actions={
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() =>
-                updateSearchParams({
-                  sortBy: sortBy === "createdAt" ? "name" : "createdAt",
-                  sortDir: sortBy === "createdAt" ? "asc" : "desc",
-                  page: 1,
-                })
-              }
-            >
-              <RotateCcwIcon data-icon="inline-start" />
-              Tartib
-            </Button>
-            <AdminListRefetchButton
-              isFetching={isFetching}
-              onClick={() => refetch()}
-            />
-          </div>
-        }
+        filters={toolbarFilters}
+        actions={toolbarActions}
       />
+
+      {canManageContent ? (
+        <section className="grid gap-4 rounded-lg border bg-card p-4 shadow-sm">
+          <div className="flex flex-col gap-1">
+            <h2 className="flex items-center gap-2 text-base font-semibold">
+              <ImageIcon className="size-4 text-primary" aria-hidden="true" />
+              Recipe gallery
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Userlar custom recipe yaratganda tanlay oladigan rasmlar.
+            </p>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-[1fr_1fr]">
+            <label htmlFor={galleryLabelId} className="grid gap-1.5">
+              <span className="text-xs font-bold uppercase text-muted-foreground">
+                Label
+              </span>
+              <Input
+                id={galleryLabelId}
+                aria-label="Recipe gallery image label"
+                value={galleryLabel}
+                onChange={(event) => setGalleryLabel(event.target.value)}
+                placeholder="Masalan: Fresh salad"
+                disabled={galleryUploadMutation.isPending}
+              />
+            </label>
+            <label htmlFor={galleryFileId} className="grid gap-1.5">
+              <span className="text-xs font-bold uppercase text-muted-foreground">
+                Image
+              </span>
+              <Input
+                id={galleryFileId}
+                aria-label="Recipe gallery image file"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                disabled={galleryUploadMutation.isPending}
+                onChange={handleGalleryUpload}
+              />
+            </label>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {isGalleryLoading ? (
+              <Spinner />
+            ) : size(galleryImages) ? (
+              map(galleryImages, (image) => (
+                <div
+                  key={image.id}
+                  className="flex items-center gap-2 rounded-lg border bg-background px-2 py-1.5 text-sm"
+                >
+                  {image.url ? (
+                    <img
+                      src={image.url}
+                      alt=""
+                      className="size-9 rounded-md object-cover"
+                    />
+                  ) : (
+                    <span className="grid size-9 place-items-center rounded-md bg-muted text-muted-foreground">
+                      <ImageIcon className="size-4" aria-hidden="true" />
+                    </span>
+                  )}
+                  <span className="font-medium">{image.label}</span>
+                  <Badge variant={image.isActive ? "default" : "secondary"}>
+                    {image.isActive ? "Faol" : "Nofaol"}
+                  </Badge>
+                </div>
+              ))
+            ) : (
+              <span className="text-sm text-muted-foreground">
+                Gallery image yo&apos;q.
+              </span>
+            )}
+          </div>
+        </section>
+      ) : null}
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>{totalCount} retsept</span>
@@ -255,6 +445,17 @@ const RecipeListPage = () => {
             );
             const ingredientCount = size(get(recipe, "recipeItems", []));
             const stepCount = size(get(recipe, "recipeInstructions", []));
+            const recipeStatus = get(
+              recipe,
+              "recipeStatus",
+              recipe.isActive ? "published" : "draft",
+            );
+            const statusLabel = get(
+              RECIPE_STATUS_LABELS,
+              recipeStatus,
+              recipeStatus || "Draft",
+            );
+            const rejectReason = get(rejectReasons, recipe.id, "");
             const categoryLabels = map(
               get(recipe, "categories", []),
               (category) =>
@@ -293,10 +494,19 @@ const RecipeListPage = () => {
                     <Badge variant={recipe.isActive ? "default" : "secondary"}>
                       {recipe.isActive ? "Faol" : "Nofaol"}
                     </Badge>
+                    <Badge
+                      variant={
+                        recipeStatus === "pending_review"
+                          ? "secondary"
+                          : "outline"
+                      }
+                    >
+                      {statusLabel}
+                    </Badge>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    {map([...categoryLabels, ...cuisineLabels], (label) =>
+                    {map(concat(categoryLabels, cuisineLabels), (label) =>
                       label ? (
                         <Badge key={label} variant="outline">
                           {label}
@@ -325,10 +535,46 @@ const RecipeListPage = () => {
                     <span>Uglevod: {toNumber(recipe.carbs) || 0}g</span>
                     <span>Yog': {toNumber(recipe.fat) || 0}g</span>
                     <span>Porsiya: {toNumber(recipe.servings) || 1}</span>
+                    {get(recipe, "publicationRequestedAt") ? (
+                      <span>Public review so&apos;rovi bor</span>
+                    ) : null}
                   </div>
                 </div>
 
                 <div className="flex flex-wrap items-start gap-2 md:justify-end">
+                  {recipeStatus === "pending_review" && canManageContent ? (
+                    <div className="flex w-full flex-col gap-2 md:w-64">
+                      <Input
+                        aria-label={`${title} rad sababi`}
+                        value={rejectReason}
+                        onChange={(event) =>
+                          updateRejectReason(recipe.id, event.target.value)
+                        }
+                        placeholder="Rad sababi"
+                        disabled={publicationMutation.isPending}
+                      />
+                      <div className="flex flex-wrap gap-2 md:justify-end">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={publicationMutation.isPending}
+                          onClick={() => handleApproveRecipe(recipe)}
+                        >
+                          <CheckCircleIcon data-icon="inline-start" />
+                          Public qilish
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={publicationMutation.isPending}
+                          onClick={() => handleRejectRecipe(recipe)}
+                        >
+                          <XCircleIcon data-icon="inline-start" />
+                          Rad etish
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
                   <Button
                     type="button"
                     variant="outline"

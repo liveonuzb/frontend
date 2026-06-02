@@ -40,10 +40,11 @@ const defaultProps = {
 };
 
 describe("RecipeFilters", () => {
-  it("emits filter changes and clear action", () => {
+  it("opens filters in a bottom drawer and applies draft changes", () => {
     const props = {
       ...defaultProps,
       hasActiveFilters: true,
+      activeFilterCount: 2,
       onCategoryChange: vi.fn(),
       onDifficultyChange: vi.fn(),
       onMaxTotalTimeMinutesChange: vi.fn(),
@@ -55,23 +56,26 @@ describe("RecipeFilters", () => {
 
     render(<RecipeFilters {...props} />);
 
-    fireEvent.change(screen.getByLabelText("Kategoriya"), {
-      target: { value: "2" },
-    });
+    expect(screen.queryByLabelText("Minimal kcal")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Filterlar 2" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Filterlar 2" }));
+    fireEvent.click(screen.getByRole("button", { name: "Kategoriya" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tushlik" }));
     fireEvent.change(screen.getByLabelText("Minimal kcal"), {
       target: { value: "350" },
     });
-    fireEvent.change(screen.getByLabelText("Qiyinlik"), {
-      target: { value: "easy" },
-    });
+    fireEvent.click(screen.getByRole("button", { name: "Qiyinlik" }));
+    fireEvent.click(screen.getByRole("button", { name: "Oson" }));
     fireEvent.change(screen.getByLabelText("Maksimal vaqt"), {
       target: { value: "30" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Tavsiya etilgan" }));
     fireEvent.click(screen.getByRole("button", { name: "Saqlanganlar" }));
-    fireEvent.click(
-      screen.getByRole("button", { name: "Filterlarni tozalash" }),
-    );
+
+    expect(props.onCategoryChange).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Filterlarni qo'llash" }));
 
     expect(props.onCategoryChange).toHaveBeenCalledWith("2");
     expect(props.onMinCaloriesChange).toHaveBeenCalledWith("350");
@@ -79,6 +83,21 @@ describe("RecipeFilters", () => {
     expect(props.onMaxTotalTimeMinutesChange).toHaveBeenCalledWith("30");
     expect(props.onFeaturedOnlyToggle).toHaveBeenCalledTimes(1);
     expect(props.onFavoriteOnlyToggle).toHaveBeenCalledTimes(1);
+  });
+
+  it("clears active filters from the header action", () => {
+    const props = {
+      ...defaultProps,
+      hasActiveFilters: true,
+      onClearFilters: vi.fn(),
+    };
+
+    render(<RecipeFilters {...props} />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Filterlarni tozalash" }),
+    );
+
     expect(props.onClearFilters).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,12 +1,13 @@
 import React from "react";
-import get from "lodash/get";
-import isArray from "lodash/isArray";
-import map from "lodash/map";
-import omitBy from "lodash/omitBy";
-import trim from "lodash/trim";
-import toNumber from "lodash/toNumber";
+import { get, isArray, map, omitBy, trim, toNumber } from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
-import { useDeleteQuery, useGetQuery, usePostQuery } from "@/hooks/api";
+import {
+  useDeleteQuery,
+  useGetQuery,
+  usePatchQuery,
+  usePostFileQuery,
+  usePostQuery,
+} from "@/hooks/api";
 import {
   MEAL_PLAN_QUERY_KEY,
   normalizeMealPlanShoppingList,
@@ -29,6 +30,22 @@ export const NUTRITION_RECIPE_CATEGORIES_QUERY_KEY = [
   "user",
   "nutrition",
   "recipe-categories",
+];
+export const MY_NUTRITION_RECIPES_QUERY_KEY = [
+  "user",
+  "nutrition",
+  "recipes",
+  "mine",
+];
+export const NUTRITION_RECIPE_GALLERY_QUERY_KEY = [
+  "user",
+  "nutrition",
+  "recipe-gallery",
+];
+export const NUTRITION_RECIPE_GENERATION_QUERY_KEY = [
+  "user",
+  "nutrition",
+  "recipe-generation",
 ];
 export const NUTRITION_RECIPE_FILTERS_STALE_TIME = 5 * 60 * 1000;
 
@@ -78,6 +95,17 @@ export const getNutritionRecipeFiltersQueryKey = (language = "uz") => [
 
 export const getNutritionRecipeCategoriesQueryKey = (language = "uz") => [
   ...NUTRITION_RECIPE_CATEGORIES_QUERY_KEY,
+  language,
+];
+
+export const getMyNutritionRecipesQueryKey = (filters = {}, language = "uz") => [
+  ...MY_NUTRITION_RECIPES_QUERY_KEY,
+  language,
+  compactParams(filters),
+];
+
+export const getNutritionRecipeGalleryQueryKey = (language = "uz") => [
+  ...NUTRITION_RECIPE_GALLERY_QUERY_KEY,
   language,
 ];
 
@@ -383,6 +411,67 @@ export const useNutritionRecipes = (filters = {}, options = {}) => {
   };
 };
 
+export const useMyNutritionRecipes = (filters = {}, options = {}) => {
+  const currentLanguage = useLanguageStore((state) => state.currentLanguage);
+  const enabled = options.enabled ?? true;
+  const params = React.useMemo(() => compactParams(filters), [filters]);
+  const { data, ...query } = useGetQuery({
+    url: "/user/nutrition/recipes/mine",
+    params,
+    queryProps: {
+      queryKey: getMyNutritionRecipesQueryKey(filters, currentLanguage),
+      enabled,
+    },
+  });
+  const payload = React.useMemo(() => getResponsePayload(data), [data]);
+  const recipes = React.useMemo(
+    () =>
+      map(get(payload, "recipes", []), (recipe) =>
+        normalizeNutritionRecipe(recipe, currentLanguage),
+      ),
+    [currentLanguage, payload],
+  );
+
+  return {
+    ...query,
+    recipes,
+    pagination: get(payload, "pagination", {
+      page: 1,
+      pageSize: 20,
+      total: recipes.length,
+      totalPages: 1,
+      hasNextPage: false,
+      hasPrevPage: false,
+    }),
+  };
+};
+
+export const useNutritionRecipeGallery = (options = {}) => {
+  const currentLanguage = useLanguageStore((state) => state.currentLanguage);
+  const enabled = options.enabled ?? true;
+  const { data, ...query } = useGetQuery({
+    url: "/user/nutrition/recipes/gallery/images",
+    queryProps: {
+      queryKey: getNutritionRecipeGalleryQueryKey(currentLanguage),
+      enabled,
+      staleTime: NUTRITION_RECIPE_FILTERS_STALE_TIME,
+    },
+  });
+  const payload = React.useMemo(() => getResponsePayload(data), [data]);
+
+  return {
+    ...query,
+    images: map(get(payload, "images", []), (image) => ({
+      id: image.id,
+      label: image.label || image.originalName || "Recipe image",
+      url: image.url || null,
+      mimeType: image.mimeType || null,
+      size: toFiniteNumber(image.size, 0),
+      createdAt: image.createdAt || null,
+    })),
+  };
+};
+
 export const useNutritionRecipeDetail = (recipeId, options = {}) => {
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const enabled = options.enabled ?? true;
@@ -577,5 +666,164 @@ export const useNutritionRecipeActions = () => {
     createShoppingList,
     isUpdating:
       Boolean(postMutation.isPending) || Boolean(deleteMutation.isPending),
+  };
+};
+
+export const useNutritionRecipeBuilderActions = () => {
+  const queryClient = useQueryClient();
+  const postMutation = usePostQuery();
+  const patchMutation = usePatchQuery({});
+  const deleteMutation = useDeleteQuery();
+  const fileMutation = usePostFileQuery({});
+
+  const invalidateRecipeApp = React.useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: NUTRITION_RECIPES_QUERY_KEY }),
+      queryClient.invalidateQueries({
+        queryKey: MY_NUTRITION_RECIPES_QUERY_KEY,
+      }),
+      queryClient.invalidateQueries({
+        queryKey: NUTRITION_RECIPE_DETAIL_QUERY_KEY,
+      }),
+      queryClient.invalidateQueries({
+        queryKey: NUTRITION_RECIPE_GALLERY_QUERY_KEY,
+      }),
+      queryClient.invalidateQueries({
+        queryKey: NUTRITION_RECIPE_GENERATION_QUERY_KEY,
+      }),
+    ]);
+  }, [queryClient]);
+
+  const createMyRecipe = React.useCallback(
+    async (payload) => {
+      const response = await postMutation.mutateAsync({
+        url: "/user/nutrition/recipes/mine",
+        attributes: payload,
+      });
+      await invalidateRecipeApp();
+      const data = getResponsePayload(response);
+      return {
+        ...data,
+        recipe: data.recipe
+          ? normalizeNutritionRecipe(data.recipe)
+          : data.recipe,
+      };
+    },
+    [invalidateRecipeApp, postMutation],
+  );
+
+  const updateMyRecipe = React.useCallback(
+    async (recipeId, payload) => {
+      const response = await patchMutation.mutateAsync({
+        url: `/user/nutrition/recipes/mine/${recipeId}`,
+        attributes: payload,
+      });
+      await invalidateRecipeApp();
+      return getResponsePayload(response);
+    },
+    [invalidateRecipeApp, patchMutation],
+  );
+
+  const deleteMyRecipe = React.useCallback(
+    async (recipeId) => {
+      const response = await deleteMutation.mutateAsync({
+        url: `/user/nutrition/recipes/mine/${recipeId}`,
+      });
+      await invalidateRecipeApp();
+      return getResponsePayload(response);
+    },
+    [deleteMutation, invalidateRecipeApp],
+  );
+
+  const requestPublication = React.useCallback(
+    async (recipeId) => {
+      const response = await postMutation.mutateAsync({
+        url: `/user/nutrition/recipes/mine/${recipeId}/request-publication`,
+      });
+      await invalidateRecipeApp();
+      return getResponsePayload(response);
+    },
+    [invalidateRecipeApp, postMutation],
+  );
+
+  const uploadMyRecipeImage = React.useCallback(
+    async (file) => {
+      const formData = new FormData();
+      formData.append("image", file);
+      const response = await fileMutation.mutateAsync({
+        url: "/user/nutrition/recipes/mine/image",
+        attributes: formData,
+      });
+      await invalidateRecipeApp();
+      return getResponsePayload(response);
+    },
+    [fileMutation, invalidateRecipeApp],
+  );
+
+  const uploadRecipeProductImages = React.useCallback(
+    async (files = []) => {
+      const formData = new FormData();
+      map(files, (file) => formData.append("images", file));
+      const response = await fileMutation.mutateAsync({
+        url: "/user/nutrition/recipes/product-images",
+        attributes: formData,
+      });
+      const payload = getResponsePayload(response, []);
+      return isArray(payload) ? payload : get(payload, "data", []);
+    },
+    [fileMutation],
+  );
+
+  const createRecipeGenerationJob = React.useCallback(
+    async (payload) => {
+      const response = await postMutation.mutateAsync({
+        url: "/user/nutrition/recipes/generate-from-products",
+        attributes: payload,
+      });
+      await invalidateRecipeApp();
+      return getResponsePayload(response);
+    },
+    [invalidateRecipeApp, postMutation],
+  );
+
+  const confirmRecipeGenerationProducts = React.useCallback(
+    async (jobId, products) => {
+      const response = await patchMutation.mutateAsync({
+        url: `/user/nutrition/recipe-generation-jobs/${jobId}/products`,
+        attributes: { products },
+      });
+      await invalidateRecipeApp();
+      return getResponsePayload(response);
+    },
+    [invalidateRecipeApp, patchMutation],
+  );
+
+  const saveGeneratedRecipeSuggestion = React.useCallback(
+    async (jobId, payload) => {
+      const response = await postMutation.mutateAsync({
+        url: `/user/nutrition/recipe-generation-jobs/${jobId}/save`,
+        attributes: payload,
+      });
+      await invalidateRecipeApp();
+      return getResponsePayload(response);
+    },
+    [invalidateRecipeApp, postMutation],
+  );
+
+  return {
+    createMyRecipe,
+    updateMyRecipe,
+    deleteMyRecipe,
+    requestPublication,
+    uploadMyRecipeImage,
+    uploadRecipeProductImages,
+    createRecipeGenerationJob,
+    confirmRecipeGenerationProducts,
+    saveGeneratedRecipeSuggestion,
+    isUpdating:
+      Boolean(postMutation.isPending) ||
+      Boolean(patchMutation.isPending) ||
+      Boolean(deleteMutation.isPending) ||
+      Boolean(fileMutation.isPending),
   };
 };

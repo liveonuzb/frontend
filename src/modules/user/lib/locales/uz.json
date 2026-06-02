@@ -99,6 +99,8 @@
         },
         "filters": {
           "sort": "Saralash",
+          "trigger": "Filterlar",
+          "title": "Filterlar",
           "category": "Kategoriya",
           "cuisine": "Oshxona",
           "tag": "Teg",
@@ -113,6 +115,12 @@
           "savedOnly": "Saqlanganlar",
           "clearAria": "Filterlarni tozalash",
           "clear": "Tozalash",
+          "apply": "Filterlarni qo'llash",
+          "cancel": "Bekor qilish",
+          "presets": "Tez tanlovlar",
+          "presetFast": "30 daq",
+          "presetProtein": "25g protein",
+          "presetCalories": "350-650 kcal",
           "sortOptions": {
             "newest": "Yangi",
             "popular": "Mashhur",

@@ -99,6 +99,8 @@
         },
         "filters": {
           "sort": "Sort",
+          "trigger": "Filters",
+          "title": "Filters",
           "category": "Category",
           "cuisine": "Cuisine",
           "tag": "Tag",
@@ -113,6 +115,12 @@
           "savedOnly": "Saved",
           "clearAria": "Clear filters",
           "clear": "Clear",
+          "apply": "Apply filters",
+          "cancel": "Cancel",
+          "presets": "Quick presets",
+          "presetFast": "30 min",
+          "presetProtein": "25g protein",
+          "presetCalories": "350-650 kcal",
           "sortOptions": {
             "newest": "Newest",
             "popular": "Popular",

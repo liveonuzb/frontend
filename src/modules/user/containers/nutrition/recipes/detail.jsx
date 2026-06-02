@@ -7,7 +7,10 @@ import {
   StarIcon,
   UtensilsIcon,
 } from "lucide-react";
+import compact from "lodash/compact";
 import map from "lodash/map";
+import size from "lodash/size";
+import times from "lodash/times";
 import { toast } from "sonner";
 import {
   useNutritionRecipeActions,
@@ -16,6 +19,7 @@ import {
 import { useMealPlan } from "@/hooks/app/use-meal-plan.js";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import OptionDrawerPicker from "@/components/option-drawer-picker";
 import { cn } from "@/lib/utils.js";
 import NutritionCard from "../ui/nutrition-card.jsx";
 import NutritionLayout from "../ui/nutrition-layout.jsx";
@@ -38,7 +42,7 @@ const getMealTypeOptions = (rt) => [
 ];
 
 const getDayOptions = (rt) =>
-  Array.from({ length: 7 }, (_, index) => ({
+  times(7, (index) => ({
     value: `day-${index + 1}`,
     label: rt("detail.dayNumber", { count: index + 1 }),
   }));
@@ -78,6 +82,22 @@ const formatRating = (value) => {
   const rating = Number(value) || 0;
   return rating ? rating.toFixed(1) : "0.0";
 };
+
+const SelectDrawerField = ({ label, value, options, onChange }) => (
+  <label className="space-y-1.5">
+    <span className="text-xs font-bold uppercase text-muted-foreground">
+      {label}
+    </span>
+    <OptionDrawerPicker
+      value={value}
+      options={options}
+      title={label}
+      ariaLabel={label}
+      triggerClassName={selectClassName}
+      onChange={onChange}
+    />
+  </label>
+);
 
 const RecipeImage = ({ recipe, className }) => {
   if (recipe?.imageUrl) {
@@ -146,13 +166,21 @@ const NutritionRecipeDetailPage = () => {
   const [servings, setServings] = React.useState(1);
   const [selectedMealType, setSelectedMealType] = React.useState("lunch");
   const mealPlanOptions = React.useMemo(() => {
-    if (plans?.length) {
+    if (size(plans)) {
       return plans;
     }
 
-    return [activePlan, draftPlan].filter(Boolean);
+    return compact([activePlan, draftPlan]);
   }, [activePlan, draftPlan, plans]);
   const defaultMealPlanId = mealPlanOptions[0]?.id || "";
+  const mealPlanPickerOptions = React.useMemo(
+    () =>
+      map(mealPlanOptions, (plan) => ({
+        value: plan.id,
+        label: plan.name,
+      })),
+    [mealPlanOptions],
+  );
   const [selectedPlanId, setSelectedPlanId] = React.useState("");
   const effectiveSelectedPlanId = selectedPlanId || defaultMealPlanId;
   const [selectedPlanDayKey, setSelectedPlanDayKey] = React.useState("day-1");
@@ -213,7 +241,7 @@ const NutritionRecipeDetailPage = () => {
       recipe.catalogFoodId,
       payload,
     );
-    const itemCount = shoppingList?.items?.length || 0;
+    const itemCount = size(shoppingList?.items);
     toast.success(
       itemCount
         ? rt("detail.shoppingListCreatedWithCount", { count: itemCount })
@@ -296,90 +324,38 @@ const NutritionRecipeDetailPage = () => {
               />
               <ServingAdjuster value={servings} onChange={setServings} />
               <div className="grid gap-3 sm:grid-cols-[minmax(0,180px)_minmax(0,1fr)]">
-                <label className="space-y-1.5">
-                  <span className="text-xs font-bold uppercase text-muted-foreground">
-                    {rt("detail.mealType")}
-                  </span>
-                  <select
-                    aria-label={rt("detail.mealType")}
-                    className={selectClassName}
-                    value={selectedMealType}
-                    onChange={(event) =>
-                      setSelectedMealType(event.target.value)
-                    }
-                  >
-                    {map(mealTypes, (item) => (
-                      <option key={item.value} value={item.value}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <SelectDrawerField
+                  label={rt("detail.mealType")}
+                  value={selectedMealType}
+                  options={mealTypes}
+                  onChange={setSelectedMealType}
+                />
                 <AddToMealLogButton
                   isUpdating={isUpdating}
                   className="self-end"
                   onClick={handleAddToMealLog}
                 />
               </div>
-              {mealPlanOptions.length ? (
+              {size(mealPlanOptions) ? (
                 <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_110px_150px_minmax(0,1fr)]">
-                  <label className="space-y-1.5">
-                    <span className="text-xs font-bold uppercase text-muted-foreground">
-                      {rt("detail.plan")}
-                    </span>
-                    <select
-                      aria-label={rt("detail.plan")}
-                      className={selectClassName}
-                      value={effectiveSelectedPlanId}
-                      onChange={(event) =>
-                        setSelectedPlanId(event.target.value)
-                      }
-                    >
-                      {map(mealPlanOptions, (plan) => (
-                        <option key={plan.id} value={plan.id}>
-                          {plan.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="space-y-1.5">
-                    <span className="text-xs font-bold uppercase text-muted-foreground">
-                      {rt("detail.day")}
-                    </span>
-                    <select
-                      aria-label={rt("detail.day")}
-                      className={selectClassName}
-                      value={selectedPlanDayKey}
-                      onChange={(event) =>
-                        setSelectedPlanDayKey(event.target.value)
-                      }
-                    >
-                      {map(dayOptions, (item) => (
-                        <option key={item.value} value={item.value}>
-                          {item.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="space-y-1.5">
-                    <span className="text-xs font-bold uppercase text-muted-foreground">
-                      {rt("detail.planMealType")}
-                    </span>
-                    <select
-                      aria-label={rt("detail.planMealType")}
-                      className={selectClassName}
-                      value={selectedPlanMealType}
-                      onChange={(event) =>
-                        setSelectedPlanMealType(event.target.value)
-                      }
-                    >
-                      {map(mealTypes, (item) => (
-                        <option key={item.value} value={item.value}>
-                          {item.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <SelectDrawerField
+                    label={rt("detail.plan")}
+                    value={effectiveSelectedPlanId}
+                    options={mealPlanPickerOptions}
+                    onChange={setSelectedPlanId}
+                  />
+                  <SelectDrawerField
+                    label={rt("detail.day")}
+                    value={selectedPlanDayKey}
+                    options={dayOptions}
+                    onChange={setSelectedPlanDayKey}
+                  />
+                  <SelectDrawerField
+                    label={rt("detail.planMealType")}
+                    value={selectedPlanMealType}
+                    options={mealTypes}
+                    onChange={setSelectedPlanMealType}
+                  />
                   <AddToMealPlanButton
                     isUpdating={isUpdating}
                     disabled={!effectiveSelectedPlanId}
@@ -389,51 +365,25 @@ const NutritionRecipeDetailPage = () => {
                 </div>
               ) : null}
               <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_150px_minmax(0,1fr)]">
-                <label className="space-y-1.5">
-                  <span className="text-xs font-bold uppercase text-muted-foreground">
-                    {rt("detail.priceRegion")}
-                  </span>
-                  <select
-                    aria-label={rt("detail.priceRegion")}
-                    className={selectClassName}
-                    value={selectedShoppingRegionKey}
-                    onChange={(event) =>
-                      setSelectedShoppingRegionKey(event.target.value)
-                    }
-                  >
-                    {map(priceRegions, (item) => (
-                      <option key={item.value || "all"} value={item.value}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="space-y-1.5">
-                  <span className="text-xs font-bold uppercase text-muted-foreground">
-                    {rt("detail.season")}
-                  </span>
-                  <select
-                    aria-label={rt("detail.season")}
-                    className={selectClassName}
-                    value={selectedShoppingSeason}
-                    onChange={(event) =>
-                      setSelectedShoppingSeason(event.target.value)
-                    }
-                  >
-                    {map(priceSeasons, (item) => (
-                      <option key={item.value} value={item.value}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <SelectDrawerField
+                  label={rt("detail.priceRegion")}
+                  value={selectedShoppingRegionKey}
+                  options={priceRegions}
+                  onChange={setSelectedShoppingRegionKey}
+                />
+                <SelectDrawerField
+                  label={rt("detail.season")}
+                  value={selectedShoppingSeason}
+                  options={priceSeasons}
+                  onChange={setSelectedShoppingSeason}
+                />
                 <CreateRecipeShoppingListButton
                   isUpdating={isUpdating}
                   className="self-end"
                   onClick={handleCreateShoppingList}
                 />
               </div>
-              {recipe.instructions?.length ? (
+              {size(recipe.instructions) ? (
                 <Button
                   type="button"
                   className="h-10"

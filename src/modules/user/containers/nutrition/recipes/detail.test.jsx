@@ -157,9 +157,8 @@ describe("NutritionRecipeDetailPage", () => {
     renderDetailPage();
 
     fireEvent.click(screen.getByRole("button", { name: "2x" }));
-    fireEvent.change(screen.getByLabelText("Mahal"), {
-      target: { value: "dinner" },
-    });
+    fireEvent.click(screen.getByRole("button", { name: "Mahal" }));
+    fireEvent.click(screen.getByRole("button", { name: "Kechki ovqat" }));
     fireEvent.click(
       screen.getByRole("button", { name: "Bugungi logga qo'shish" }),
     );
@@ -194,12 +193,10 @@ describe("NutritionRecipeDetailPage", () => {
     renderDetailPage();
 
     fireEvent.click(screen.getByRole("button", { name: "2x" }));
-    fireEvent.change(screen.getByLabelText("Narx hududi"), {
-      target: { value: "toshkent" },
-    });
-    fireEvent.change(screen.getByLabelText("Mavsum"), {
-      target: { value: "winter" },
-    });
+    fireEvent.click(screen.getByRole("button", { name: "Narx hududi" }));
+    fireEvent.click(screen.getByRole("button", { name: "Toshkent" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mavsum" }));
+    fireEvent.click(screen.getByRole("button", { name: "Qish" }));
     fireEvent.click(
       screen.getByRole("button", { name: "Xarid ro'yxati yaratish" }),
     );

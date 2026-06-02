@@ -1,11 +1,13 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import ListPage from "./index.jsx";
 
 const mockUseGetQuery = vi.fn();
+const mockPatchRecipeReview = vi.fn();
+const mockUploadGalleryImage = vi.fn();
 const mockSetBreadcrumbs = vi.fn();
 
 const recipeFixture = {
@@ -19,6 +21,8 @@ const recipeFixture = {
   cookingMinutes: 25,
   servings: 2,
   isActive: true,
+  recipeStatus: "pending_review",
+  publicationRequestedAt: "2026-06-02T08:00:00.000Z",
   recipeItems: [
     { id: 1, grams: 120 },
     { id: 2, grams: 80 },
@@ -30,6 +34,21 @@ const recipeFixture = {
 
 vi.mock("@/hooks/api", () => ({
   useGetQuery: (options) => mockUseGetQuery(options),
+  usePatchQuery: () => ({
+    mutateAsync: mockPatchRecipeReview,
+    isPending: false,
+  }),
+  usePostFileQuery: () => ({
+    mutateAsync: mockUploadGalleryImage,
+    isPending: false,
+  }),
+}));
+
+vi.mock("sonner", () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
 }));
 
 vi.mock("@/store", () => ({
@@ -49,16 +68,42 @@ describe("admin recipes list", () => {
   beforeEach(() => {
     mockSetBreadcrumbs.mockClear();
     mockUseGetQuery.mockClear();
-    mockUseGetQuery.mockReturnValue({
-      data: {
+    mockPatchRecipeReview.mockClear();
+    mockUploadGalleryImage.mockClear();
+    mockPatchRecipeReview.mockResolvedValue({});
+    mockUploadGalleryImage.mockResolvedValue({});
+    mockUseGetQuery.mockImplementation((options) => {
+      if (options.url === "/admin/recipes/gallery/images") {
+        return {
+          data: {
+            data: {
+              images: [
+                {
+                  id: "gallery-1",
+                  label: "Seed salad",
+                  url: "https://cdn.liveon.test/gallery/salad.webp",
+                  isActive: true,
+                },
+              ],
+            },
+          },
+          isLoading: false,
+          isFetching: false,
+          refetch: vi.fn(),
+        };
+      }
+
+      return {
         data: {
-          data: [recipeFixture],
-          meta: { total: 1, page: 1, pageSize: 12, totalPages: 1 },
+          data: {
+            data: [recipeFixture],
+            meta: { total: 1, page: 1, pageSize: 12, totalPages: 1 },
+          },
         },
-      },
-      isLoading: false,
-      isFetching: false,
-      refetch: vi.fn(),
+        isLoading: false,
+        isFetching: false,
+        refetch: vi.fn(),
+      };
     });
   });
 
@@ -124,5 +169,71 @@ describe("admin recipes list", () => {
     fireEvent.click(screen.getByRole("button", { name: /ko'rish/i }));
 
     expect(screen.getByText("Recipe preview route")).toBeInTheDocument();
+  });
+
+  it("uploads recipe gallery images for user recipe selection", async () => {
+    render(
+      <MemoryRouter initialEntries={["/admin/recipes/list"]}>
+        <Routes>
+          <Route path="/admin/recipes/list" element={<ListPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Seed salad")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Recipe gallery image label"), {
+      target: { value: "Salad fallback" },
+    });
+    fireEvent.change(screen.getByLabelText("Recipe gallery image file"), {
+      target: {
+        files: [new File(["image"], "salad.webp", { type: "image/webp" })],
+      },
+    });
+
+    await waitFor(() => {
+      expect(mockUploadGalleryImage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: "/admin/recipes/gallery/images",
+          attributes: expect.any(FormData),
+        }),
+      );
+    });
+
+    const formData = mockUploadGalleryImage.mock.calls[0][0].attributes;
+    expect(formData.get("label")).toBe("Salad fallback");
+    expect(formData.get("image")).toEqual(expect.any(File));
+  });
+
+  it("approves and rejects pending public recipe requests", async () => {
+    render(
+      <MemoryRouter initialEntries={["/admin/recipes/list"]}>
+        <Routes>
+          <Route path="/admin/recipes/list" element={<ListPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Public review")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /public qilish/i }));
+
+    await waitFor(() => {
+      expect(mockPatchRecipeReview).toHaveBeenCalledWith({
+        url: "/admin/recipes/41/approve-publication",
+      });
+    });
+
+    fireEvent.change(screen.getByLabelText("Tovuqli bowl rad sababi"), {
+      target: { value: "Macros incomplete" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /rad etish/i }));
+
+    await waitFor(() => {
+      expect(mockPatchRecipeReview).toHaveBeenCalledWith({
+        url: "/admin/recipes/41/reject-publication",
+        attributes: { reason: "Macros incomplete" },
+      });
+    });
   });
 });

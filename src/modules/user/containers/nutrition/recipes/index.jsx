@@ -1,33 +1,55 @@
 import React from "react";
 import {
   BookOpenIcon,
+  CheckIcon,
   ClockIcon,
+  ImageIcon,
+  PlusIcon,
   SparklesIcon,
   UtensilsIcon,
+  WandSparklesIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import ImageUploadTile from "@/components/image-upload-tile";
+import OptionDrawerPicker from "@/components/option-drawer-picker";
 import {
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import {
+  useMyNutritionRecipes,
   useNutritionRecipeActions,
   useNutritionRecipeDetail,
   useNutritionRecipeFilters,
+  useNutritionRecipeBuilderActions,
+  useNutritionRecipeGallery,
   useNutritionRecipes,
 } from "@/hooks/app/use-nutrition-recipes.js";
 import NutritionCard from "../ui/nutrition-card.jsx";
 import NutritionLayout from "../ui/nutrition-layout.jsx";
 import AddToMealLogButton from "./components/add-to-meal-log-button.jsx";
 import RecipeCard from "./components/recipe-card.jsx";
-import RecipeCategoryChips from "./components/recipe-category-chips.jsx";
 import RecipeFilters from "./components/recipe-filters.jsx";
 import RecipeNutritionCard from "./components/recipe-nutrition-card.jsx";
 import RecipeSearchBar from "./components/recipe-search-bar.jsx";
-import RecipeTagChips from "./components/recipe-tag-chips.jsx";
 import { cn } from "@/lib/utils.js";
 import useRecipeTranslation from "./lib/recipe-i18n.js";
 
+import filter from "lodash/filter";
 import find from "lodash/find";
+import get from "lodash/get";
 import map from "lodash/map";
+import size from "lodash/size";
 import slice from "lodash/slice";
+import some from "lodash/some";
+import toArray from "lodash/toArray";
 import toNumber from "lodash/toNumber";
 
 const SEARCH_DEBOUNCE_MS = 350;
@@ -147,17 +169,14 @@ const RecipeDetailPanel = ({
             <span className="text-xs font-bold uppercase text-muted-foreground">
               {rt("detail.mealType")}
             </span>
-            <select
-              className={selectClassName}
+            <OptionDrawerPicker
               value={selectedMealType}
-              onChange={(event) => onMealTypeChange(event.target.value)}
-            >
-              {map(mealTypes, (item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
+              options={mealTypes}
+              title={rt("detail.mealType")}
+              ariaLabel={rt("detail.mealType")}
+              triggerClassName={selectClassName}
+              onChange={onMealTypeChange}
+            />
           </label>
         </div>
 
@@ -220,11 +239,503 @@ const RecipeDetailPanel = ({
   );
 };
 
+const RECIPE_APP_TABS = [
+  { key: "explore", label: "Explore" },
+  { key: "mine", label: "My Recipes" },
+  { key: "ai", label: "AI From Image" },
+  { key: "favorites", label: "Favorites" },
+];
+
+const RecipeAppTabs = ({ activeTab, onChange }) => (
+  <div className="flex gap-2 overflow-x-auto pb-1">
+    {map(RECIPE_APP_TABS, (tab) => (
+      <Button
+        key={tab.key}
+        type="button"
+        variant={activeTab === tab.key ? "default" : "outline"}
+        size="sm"
+        className="shrink-0"
+        onClick={() => onChange(tab.key)}
+      >
+        {tab.label}
+      </Button>
+    ))}
+  </div>
+);
+
+const MyRecipesPanel = ({
+  recipes,
+  isLoading,
+  isUpdating,
+  onRequestPublication,
+}) => {
+  if (isLoading) {
+    return <NutritionCard className="h-40 animate-pulse bg-muted/30" />;
+  }
+
+  if (!recipes.length) {
+    return (
+      <NutritionCard className="p-6 text-center">
+        <BookOpenIcon className="mx-auto size-9 text-primary" />
+        <h2 className="mt-3 text-lg font-black tracking-normal">
+          No custom recipes yet
+        </h2>
+      </NutritionCard>
+    );
+  }
+
+  return (
+    <div className="grid gap-3">
+      {map(recipes, (recipe) => (
+        <NutritionCard key={recipe.id} className="p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-base font-black tracking-normal">
+                  {recipe.title}
+                </h3>
+                <Badge variant="outline">{recipe.recipeStatus}</Badge>
+              </div>
+              <p className="mt-1 text-sm font-semibold text-muted-foreground">
+                {Math.round(toNumber(recipe.calories) || 0)} kcal ·{" "}
+                {Math.round(toNumber(recipe.protein) || 0)}g protein
+              </p>
+            </div>
+            {recipe.ownership?.canRequestPublication ? (
+              <Button
+                type="button"
+                size="sm"
+                disabled={isUpdating}
+                onClick={() => onRequestPublication(recipe.catalogFoodId)}
+              >
+                Request public review
+              </Button>
+            ) : null}
+          </div>
+        </NutritionCard>
+      ))}
+    </div>
+  );
+};
+
+const RecipeBuilderPanel = ({
+  isOpen,
+  images,
+  isUpdating,
+  onOpen,
+  onCreate,
+  onUploadImage,
+}) => {
+  const [title, setTitle] = React.useState("");
+  const [ingredientId, setIngredientId] = React.useState("");
+  const [ingredientGrams, setIngredientGrams] = React.useState("");
+  const [instruction, setInstruction] = React.useState("");
+  const [galleryImageId, setGalleryImageId] = React.useState("");
+  const [uploadedImage, setUploadedImage] = React.useState(null);
+  const [isGalleryOpen, setIsGalleryOpen] = React.useState(false);
+  const [isUploadingImage, setIsUploadingImage] = React.useState(false);
+  const titleId = React.useId();
+  const ingredientIdInputId = React.useId();
+  const ingredientGramsId = React.useId();
+  const instructionId = React.useId();
+  const imageUploadRef = React.useRef(null);
+  const imageUploadTokenRef = React.useRef(0);
+  const selectedGalleryImage = React.useMemo(
+    () => find(images, (image) => image.id === galleryImageId) || null,
+    [galleryImageId, images],
+  );
+  const selectedImageUrl =
+    get(uploadedImage, "url") || get(selectedGalleryImage, "url") || "";
+
+  const handleSubmit = React.useCallback(async () => {
+    const resolvedUploadedImage = imageUploadRef.current
+      ? await imageUploadRef.current
+      : uploadedImage;
+    const imageUploadId = get(resolvedUploadedImage, "id") || undefined;
+
+    await onCreate({
+      title,
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+      servingSize: 1,
+      servingUnit: "serving",
+      servings: 1,
+      imageUploadId,
+      galleryImageId: imageUploadId ? undefined : galleryImageId || undefined,
+      ingredients: [
+        {
+          ingredientId: toNumber(ingredientId),
+          grams: toNumber(ingredientGrams),
+        },
+      ],
+      instructions: [{ body: instruction }],
+    });
+    setTitle("");
+    setIngredientId("");
+    setIngredientGrams("");
+    setInstruction("");
+    setGalleryImageId("");
+    setUploadedImage(null);
+    setIsGalleryOpen(false);
+    imageUploadRef.current = null;
+    imageUploadTokenRef.current += 1;
+  }, [
+    galleryImageId,
+    ingredientGrams,
+    ingredientId,
+    instruction,
+    onCreate,
+    title,
+    uploadedImage,
+  ]);
+
+  const handleImageUpload = React.useCallback(
+    async (file) => {
+      if (!file) {
+        return;
+      }
+
+      const uploadToken = imageUploadTokenRef.current + 1;
+      imageUploadTokenRef.current = uploadToken;
+      setIsUploadingImage(true);
+      setGalleryImageId("");
+      setUploadedImage(null);
+      const uploadPromise = onUploadImage(file);
+      imageUploadRef.current = uploadPromise;
+
+      try {
+        const uploaded = await uploadPromise;
+        if (imageUploadTokenRef.current === uploadToken) {
+          setUploadedImage(uploaded);
+          setGalleryImageId("");
+        }
+      } finally {
+        if (imageUploadTokenRef.current === uploadToken) {
+          setIsUploadingImage(false);
+        }
+      }
+    },
+    [onUploadImage],
+  );
+
+  const handleGalleryImageSelect = React.useCallback((imageId) => {
+    imageUploadTokenRef.current += 1;
+    imageUploadRef.current = null;
+    setUploadedImage(null);
+    setGalleryImageId(imageId);
+    setIsUploadingImage(false);
+    setIsGalleryOpen(false);
+  }, []);
+
+  const handleRemoveSelectedImage = React.useCallback(() => {
+    imageUploadTokenRef.current += 1;
+    imageUploadRef.current = null;
+    setUploadedImage(null);
+    setGalleryImageId("");
+    setIsUploadingImage(false);
+  }, []);
+
+  return (
+    <NutritionCard className="p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-black tracking-normal">Custom recipe</h2>
+          <p className="text-sm font-semibold text-muted-foreground">
+            Private draft first, public review when ready.
+          </p>
+        </div>
+        <Button type="button" onClick={onOpen}>
+          <PlusIcon className="size-4" />
+          Create recipe
+        </Button>
+      </div>
+
+      {isOpen ? (
+        <div className="mt-4 grid gap-3">
+          <label htmlFor={titleId} className="space-y-1.5">
+            <span className="text-xs font-bold uppercase text-muted-foreground">
+              Recipe title
+            </span>
+            <Input
+              id={titleId}
+              aria-label="Recipe title"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+            />
+          </label>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label htmlFor={ingredientIdInputId} className="space-y-1.5">
+              <span className="text-xs font-bold uppercase text-muted-foreground">
+                Ingredient ID
+              </span>
+              <Input
+                id={ingredientIdInputId}
+                aria-label="Ingredient ID"
+                type="number"
+                value={ingredientId}
+                onChange={(event) => setIngredientId(event.target.value)}
+              />
+            </label>
+            <label htmlFor={ingredientGramsId} className="space-y-1.5">
+              <span className="text-xs font-bold uppercase text-muted-foreground">
+                Ingredient grams
+              </span>
+              <Input
+                id={ingredientGramsId}
+                aria-label="Ingredient grams"
+                type="number"
+                value={ingredientGrams}
+                onChange={(event) => setIngredientGrams(event.target.value)}
+              />
+            </label>
+          </div>
+          <label htmlFor={instructionId} className="space-y-1.5">
+            <span className="text-xs font-bold uppercase text-muted-foreground">
+              Instruction
+            </span>
+            <Textarea
+              id={instructionId}
+              aria-label="Instruction"
+              value={instruction}
+              onChange={(event) => setInstruction(event.target.value)}
+            />
+          </label>
+          <div className="space-y-1.5">
+            <span className="text-xs font-bold uppercase text-muted-foreground">
+              Recipe image
+            </span>
+            <ImageUploadTile
+              imageUrl={selectedImageUrl}
+              ariaLabel="Recipe image"
+              accept="image/jpeg,image/png,image/webp"
+              disabled={isUpdating}
+              isUploading={isUploadingImage}
+              emptyLabel="Upload recipe image"
+              changeLabel="Change image"
+              removeLabel="Remove image"
+              onPick={handleImageUpload}
+              onRemove={selectedImageUrl ? handleRemoveSelectedImage : undefined}
+            />
+          </div>
+          {get(uploadedImage, "url") ? (
+            <div className="flex items-center gap-2 rounded-[18px] border border-border/60 bg-background/70 p-2 text-sm font-semibold">
+              <img
+                src={uploadedImage.url}
+                alt=""
+                className="size-10 rounded-xl object-cover"
+              />
+              Uploaded image selected
+            </div>
+          ) : null}
+          {selectedGalleryImage ? (
+            <div className="flex items-center gap-2 rounded-[18px] border border-border/60 bg-background/70 p-2 text-sm font-semibold">
+              <img
+                src={selectedGalleryImage.url}
+                alt=""
+                className="size-10 rounded-xl object-cover"
+              />
+              {selectedGalleryImage.label}
+            </div>
+          ) : null}
+          <Drawer
+            open={isGalleryOpen}
+            onOpenChange={setIsGalleryOpen}
+            direction="bottom"
+          >
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isUpdating || !size(images)}
+              onClick={() => setIsGalleryOpen(true)}
+            >
+              <ImageIcon className="size-4" />
+              Choose from gallery
+            </Button>
+            {isGalleryOpen ? (
+              <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
+                <DrawerHeader>
+                  <DrawerTitle>Choose from gallery</DrawerTitle>
+                </DrawerHeader>
+                <DrawerBody>
+                  <div className="grid grid-cols-2 gap-3">
+                    {map(images, (image) => {
+                      const selected = galleryImageId === image.id;
+
+                      return (
+                        <button
+                          key={image.id}
+                          type="button"
+                          aria-label={image.label}
+                          className={cn(
+                            "relative overflow-hidden rounded-2xl border bg-muted text-left",
+                            selected &&
+                              "border-primary ring-2 ring-primary/20",
+                          )}
+                          onClick={() => handleGalleryImageSelect(image.id)}
+                        >
+                          <img
+                            src={image.url}
+                            alt=""
+                            className="aspect-square w-full object-cover"
+                            loading="lazy"
+                          />
+                          <span className="block truncate p-2 text-xs font-bold">
+                            {image.label}
+                          </span>
+                          {selected ? (
+                            <span className="absolute right-2 top-2 grid size-6 place-items-center rounded-full bg-primary text-primary-foreground">
+                              <CheckIcon className="size-4" />
+                            </span>
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </DrawerBody>
+              </DrawerContent>
+            ) : null}
+          </Drawer>
+          <Button
+            type="button"
+            disabled={
+              isUpdating ||
+              !title ||
+              !ingredientId ||
+              !ingredientGrams ||
+              !instruction
+            }
+            onClick={handleSubmit}
+          >
+            Save recipe
+          </Button>
+        </div>
+      ) : null}
+    </NutritionCard>
+  );
+};
+
+const AiImageRecipePanel = ({
+  isUpdating,
+  onUploadImages,
+  onGenerate,
+  onSaveSuggestion,
+}) => {
+  const [files, setFiles] = React.useState([]);
+  const [job, setJob] = React.useState(null);
+
+  const handleFilesPick = React.useCallback((pickedFiles) => {
+    setFiles((currentFiles) => [...currentFiles, ...toArray(pickedFiles)]);
+  }, []);
+
+  const handleRemoveFile = React.useCallback((fileIndex) => {
+    setFiles((currentFiles) =>
+      filter(currentFiles, (item, index) => index !== fileIndex),
+    );
+  }, []);
+
+  const handleGenerate = React.useCallback(async () => {
+    const uploaded = await onUploadImages(files);
+    const imageUploadIds = filter(map(uploaded, (item) => item.id), Boolean);
+    const result = await onGenerate({
+      imageUploadIds,
+      confirmedProducts: [],
+    });
+    setJob(result.job ?? null);
+  }, [files, onGenerate, onUploadImages]);
+
+  const handleSaveSuggestion = React.useCallback(
+    async (suggestion) => {
+      if (!job?.id || !suggestion?.id) {
+        return;
+      }
+
+      await onSaveSuggestion(job.id, { suggestionId: suggestion.id });
+    },
+    [job, onSaveSuggestion],
+  );
+
+  return (
+    <NutritionCard className="p-4">
+      <div className="flex items-start gap-3">
+        <div className="grid size-10 place-items-center rounded-full bg-primary/10 text-primary">
+          <WandSparklesIcon className="size-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-lg font-black tracking-normal">
+            Generate from product images
+          </h2>
+          <p className="text-sm font-semibold text-muted-foreground">
+            Upload visible ingredients, review matches, then save an editable draft.
+          </p>
+        </div>
+      </div>
+      <div className="mt-4 grid gap-3">
+        <div className="space-y-1.5">
+          <span className="text-xs font-bold uppercase text-muted-foreground">
+            Product images
+          </span>
+          <ImageUploadTile
+            multiple
+            files={files}
+            ariaLabel="Product images"
+            accept="image/jpeg,image/png,image/webp"
+            disabled={isUpdating}
+            emptyLabel="Add product images"
+            changeLabel="Add more"
+            onPick={handleFilesPick}
+            onRemoveFile={handleRemoveFile}
+          />
+        </div>
+        <Button
+          type="button"
+          disabled={isUpdating || !size(files)}
+          onClick={handleGenerate}
+        >
+          Generate from uploaded images
+        </Button>
+        {job?.recognizedProducts?.length ? (
+          <div className="flex flex-wrap gap-2">
+            {map(job.recognizedProducts, (product) => (
+              <Badge key={product.name} variant="outline">
+                {product.name}
+              </Badge>
+            ))}
+          </div>
+        ) : null}
+        {job?.suggestions?.length ? (
+          <div className="grid gap-2">
+            {map(job.suggestions, (suggestion) => (
+              <div
+                key={suggestion.id || suggestion.title}
+                className="flex flex-col gap-2 rounded-[18px] border border-border/60 bg-background/70 p-3 text-sm font-bold sm:flex-row sm:items-center sm:justify-between"
+              >
+                <span>{suggestion.title}</span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={isUpdating}
+                  onClick={() => handleSaveSuggestion(suggestion)}
+                >
+                  Save generated draft
+                </Button>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </NutritionCard>
+  );
+};
+
 const NutritionRecipesPage = () => {
   const rt = useRecipeTranslation();
+  const [activeTab, setActiveTab] = React.useState("explore");
+  const [isBuilderOpen, setIsBuilderOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
-  const searchTimeoutRef = React.useRef(null);
   const [sort, setSort] = React.useState("newest");
   const [categoryId, setCategoryId] = React.useState("");
   const [cuisineId, setCuisineId] = React.useState("");
@@ -242,22 +753,27 @@ const NutritionRecipesPage = () => {
   const [servings, setServings] = React.useState(1);
 
   React.useEffect(() => {
+    const searchTimeout = window.setTimeout(() => {
+      setDebouncedSearch(search);
+    }, SEARCH_DEBOUNCE_MS);
+
     return () => {
-      if (searchTimeoutRef.current) {
-        window.clearTimeout(searchTimeoutRef.current);
-      }
+      window.clearTimeout(searchTimeout);
     };
-  }, []);
+  }, [search]);
 
   const handleSearchChange = React.useCallback((nextSearch) => {
     setSearch(nextSearch);
-    if (searchTimeoutRef.current) {
-      window.clearTimeout(searchTimeoutRef.current);
-    }
-    searchTimeoutRef.current = window.setTimeout(() => {
-      setDebouncedSearch(nextSearch);
-    }, SEARCH_DEBOUNCE_MS);
   }, []);
+  const handleActiveTabChange = React.useCallback((nextTab) => {
+    setActiveTab(nextTab);
+    if (nextTab === "favorites") {
+      setFavoriteOnly(true);
+    } else if (nextTab === "explore") {
+      setFavoriteOnly(false);
+    }
+  }, []);
+
   const filters = React.useMemo(
     () => ({
       q: debouncedSearch,
@@ -293,12 +809,16 @@ const NutritionRecipesPage = () => {
   const { categories, cuisines, dietaryTags, allergenTags } =
     useNutritionRecipeFilters();
   const { recipes, pagination, isLoading } = useNutritionRecipes(filters);
+  const { recipes: myRecipes, isLoading: isMyRecipesLoading } =
+    useMyNutritionRecipes({ status: "all" });
+  const { images: galleryImages } = useNutritionRecipeGallery();
   const selectedRecipeIdForQuery = React.useMemo(() => {
     if (!recipes.length) {
       return null;
     }
 
-    const selectedExists = recipes.some(
+    const selectedExists = some(
+      recipes,
       (item) => item.catalogFoodId === selectedRecipeId,
     );
 
@@ -310,6 +830,15 @@ const NutritionRecipesPage = () => {
     useNutritionRecipeDetail(selectedRecipeIdForQuery);
   const { toggleFavorite, addToMealLog, isUpdating } =
     useNutritionRecipeActions();
+  const {
+    createMyRecipe,
+    requestPublication,
+    uploadMyRecipeImage,
+    uploadRecipeProductImages,
+    createRecipeGenerationJob,
+    saveGeneratedRecipeSuggestion,
+    isUpdating: isBuilderUpdating,
+  } = useNutritionRecipeBuilderActions();
   const selectedRecipe =
     recipe ||
     find(recipes, (item) => item.catalogFoodId === selectedRecipeIdForQuery) ||
@@ -335,6 +864,33 @@ const NutritionRecipesPage = () => {
     toast.success(rt("detail.logSuccess"));
   }, [addToMealLog, rt, selectedMealType, selectedRecipe, servings]);
 
+  const handleCreateMyRecipe = React.useCallback(
+    async (payload) => {
+      await createMyRecipe(payload);
+      toast.success("Recipe saved");
+      setIsBuilderOpen(false);
+      setActiveTab("mine");
+    },
+    [createMyRecipe],
+  );
+
+  const handleRequestPublication = React.useCallback(
+    async (recipeId) => {
+      await requestPublication(recipeId);
+      toast.success("Recipe sent to public review");
+    },
+    [requestPublication],
+  );
+
+  const handleSaveGeneratedSuggestion = React.useCallback(
+    async (jobId, payload) => {
+      await saveGeneratedRecipeSuggestion(jobId, payload);
+      toast.success("Generated recipe saved");
+      setActiveTab("mine");
+    },
+    [saveGeneratedRecipeSuggestion],
+  );
+
   const hasActiveFilters = Boolean(
     search ||
     sort !== "newest" ||
@@ -351,10 +907,44 @@ const NutritionRecipesPage = () => {
     favoriteOnly,
   );
 
+  const activeFilterCount = React.useMemo(
+    () =>
+      size(
+        filter(
+          [
+            sort !== "newest",
+            categoryId,
+            cuisineId,
+            dietaryTag,
+            excludeAllergenTag,
+            difficulty,
+            maxTotalTimeMinutes,
+            minProtein,
+            minCalories,
+            maxCalories,
+            featuredOnly,
+            favoriteOnly,
+          ],
+          Boolean,
+        ),
+      ),
+    [
+      categoryId,
+      cuisineId,
+      dietaryTag,
+      difficulty,
+      excludeAllergenTag,
+      favoriteOnly,
+      featuredOnly,
+      maxCalories,
+      maxTotalTimeMinutes,
+      minCalories,
+      minProtein,
+      sort,
+    ],
+  );
+
   const handleClearFilters = React.useCallback(() => {
-    if (searchTimeoutRef.current) {
-      window.clearTimeout(searchTimeoutRef.current);
-    }
     setSearch("");
     setDebouncedSearch("");
     setSort("newest");
@@ -385,10 +975,27 @@ const NutritionRecipesPage = () => {
                 {rt("page.title")}
               </h1>
             </div>
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-10">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <RecipeAppTabs
+                activeTab={activeTab}
+                onChange={handleActiveTabChange}
+              />
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  setIsBuilderOpen(true);
+                  setActiveTab("mine");
+                }}
+              >
+                <PlusIcon className="size-4" />
+                Create recipe
+              </Button>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
               <RecipeSearchBar
                 value={search}
-                className="relative block self-end xl:col-span-2"
+                className="relative block self-end"
                 onChange={handleSearchChange}
               />
               <RecipeFilters
@@ -405,6 +1012,7 @@ const NutritionRecipesPage = () => {
                 featuredOnly={featuredOnly}
                 favoriteOnly={favoriteOnly}
                 hasActiveFilters={hasActiveFilters}
+                activeFilterCount={activeFilterCount}
                 categories={categories}
                 cuisines={cuisines}
                 dietaryTags={dietaryTags}
@@ -424,20 +1032,6 @@ const NutritionRecipesPage = () => {
                 onClearFilters={handleClearFilters}
               />
             </div>
-            {categories.length ? (
-              <RecipeCategoryChips
-                categories={categories}
-                value={categoryId}
-                onChange={setCategoryId}
-              />
-            ) : null}
-            {dietaryTags.length ? (
-              <RecipeTagChips
-                tags={dietaryTags}
-                value={dietaryTag}
-                onChange={setDietaryTag}
-              />
-            ) : null}
           </div>
         </NutritionCard>
       }
@@ -454,37 +1048,65 @@ const NutritionRecipesPage = () => {
         />
       }
     >
-      <div className="grid gap-3">
-        {isLoading ? (
-          <>
-            <NutritionCard className="h-44 animate-pulse bg-muted/30" />
-            <NutritionCard className="h-44 animate-pulse bg-muted/30" />
-          </>
-        ) : recipes.length ? (
-          map(recipes, (recipeItem) => (
-            <RecipeCard
-              key={recipeItem.id}
-              recipe={recipeItem}
-              isSelected={recipeItem.catalogFoodId === selectedRecipeIdForQuery}
-              onSelect={(item) => {
-                setSelectedRecipeId(item.catalogFoodId);
-                setServings(1);
-              }}
-              onFavorite={handleFavorite}
-              isUpdating={isUpdating}
-            />
-          ))
-        ) : (
-          <NutritionCard className="p-8 text-center">
-            <BookOpenIcon className="mx-auto size-10 text-primary" />
-            <h2 className="mt-4 text-xl font-black tracking-normal">
-              {rt("page.empty")}
-            </h2>
-          </NutritionCard>
-        )}
-      </div>
+      {activeTab === "mine" ? (
+        <div className="grid gap-4">
+          <RecipeBuilderPanel
+            isOpen={isBuilderOpen}
+            images={galleryImages}
+            isUpdating={isBuilderUpdating}
+            onOpen={() => setIsBuilderOpen((value) => !value)}
+            onCreate={handleCreateMyRecipe}
+            onUploadImage={uploadMyRecipeImage}
+          />
+          <MyRecipesPanel
+            recipes={myRecipes}
+            isLoading={isMyRecipesLoading}
+            isUpdating={isBuilderUpdating}
+            onRequestPublication={handleRequestPublication}
+          />
+        </div>
+      ) : activeTab === "ai" ? (
+        <AiImageRecipePanel
+          isUpdating={isBuilderUpdating}
+          onUploadImages={uploadRecipeProductImages}
+          onGenerate={createRecipeGenerationJob}
+          onSaveSuggestion={handleSaveGeneratedSuggestion}
+        />
+      ) : (
+        <div className="grid gap-3">
+          {isLoading ? (
+            <>
+              <NutritionCard className="h-44 animate-pulse bg-muted/30" />
+              <NutritionCard className="h-44 animate-pulse bg-muted/30" />
+            </>
+          ) : recipes.length ? (
+            map(recipes, (recipeItem) => (
+              <RecipeCard
+                key={recipeItem.id}
+                recipe={recipeItem}
+                isSelected={
+                  recipeItem.catalogFoodId === selectedRecipeIdForQuery
+                }
+                onSelect={(item) => {
+                  setSelectedRecipeId(item.catalogFoodId);
+                  setServings(1);
+                }}
+                onFavorite={handleFavorite}
+                isUpdating={isUpdating}
+              />
+            ))
+          ) : (
+            <NutritionCard className="p-8 text-center">
+              <BookOpenIcon className="mx-auto size-10 text-primary" />
+              <h2 className="mt-4 text-xl font-black tracking-normal">
+                {rt("page.empty")}
+              </h2>
+            </NutritionCard>
+          )}
+        </div>
+      )}
 
-      {recipes.length ? (
+      {recipes.length && activeTab !== "mine" && activeTab !== "ai" ? (
         <div className="flex items-center justify-between text-sm font-semibold text-muted-foreground">
           <span>
             {rt("page.totalCount", {
