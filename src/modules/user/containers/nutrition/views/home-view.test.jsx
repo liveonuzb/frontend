@@ -104,6 +104,12 @@ describe("NutritionHomeView", () => {
     expect(screen.queryByText("Home")).not.toBeInTheDocument();
   });
 
+  it("does not render the draft-only pantry assistant panel", () => {
+    renderHome();
+
+    expect(screen.queryByText("Ombor paneli")).not.toBeInTheDocument();
+  });
+
   it("opens the overview date drawer from the calendar action", () => {
     const onOpenCalendar = vi.fn();
 

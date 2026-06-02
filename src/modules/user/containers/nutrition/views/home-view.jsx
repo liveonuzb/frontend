@@ -12,7 +12,6 @@ import {
   TrophyIcon,
 } from "lucide-react";
 import NutritionPlansSection from "../nutrition-plans-section.jsx";
-import NutritionAiAssistantPanel from "../nutrition-ai-assistant-panel.jsx";
 import NutritionLayout from "../ui/nutrition-layout.jsx";
 import NutritionCard from "../ui/nutrition-card.jsx";
 import StatCard from "../ui/stat-card.jsx";
@@ -592,8 +591,6 @@ export default function NutritionHomeView(props) {
         defaultCalorieMode="remaining"
         className="h-fit w-full"
       />
-
-      <NutritionAiAssistantPanel currentPlan={currentPlan} />
 
       <CollapsibleMealList
         filteredMealSections={filteredMealSections}
