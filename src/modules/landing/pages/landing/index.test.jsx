@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import LandingLayout from "@/modules/landing/layout";
@@ -8,6 +8,7 @@ import en from "@/modules/landing/lib/locales/en.json";
 import ru from "@/modules/landing/lib/locales/ru.json";
 import uz from "@/modules/landing/lib/locales/uz.json";
 
+import forEach from "lodash/forEach";
 import isArray from "lodash/isArray";
 import map from "lodash/map";
 
@@ -16,25 +17,35 @@ const setCurrentLanguageMock = vi.hoisted(() => vi.fn());
 
 vi.mock("framer-motion", async () => {
   const React = await import("react");
+  const { default: lodashForEach } = await import("lodash/forEach");
   const createMotionComponent =
     (Tag) =>
-    React.forwardRef(function MotionComponent(
-      { children, whileHover, whileInView, initial, animate, transition, viewport, ...props },
-      ref,
-    ) {
+    function MotionComponent({ children, ...props }) {
+      const domProps = { ...props };
+      lodashForEach(
+        ["whileHover", "whileInView", "initial", "animate", "transition", "viewport"],
+        (prop) => {
+          delete domProps[prop];
+        },
+      );
+
       return (
-        <Tag ref={ref} {...props}>
+        <Tag {...domProps}>
           {children}
         </Tag>
       );
-    });
+    };
+  const motionComponents = {
+    article: createMotionComponent("article"),
+    div: createMotionComponent("div"),
+    section: createMotionComponent("section"),
+  };
 
   return {
-    motion: {
-      article: createMotionComponent("article"),
-      div: createMotionComponent("div"),
-      section: createMotionComponent("section"),
-    },
+    LazyMotion: ({ children }) => <>{children}</>,
+    domAnimation: {},
+    m: motionComponents,
+    motion: motionComponents,
     useReducedMotion: () => true,
   };
 });
@@ -86,8 +97,12 @@ vi.mock("@/store", () => ({
 
 const renderLanding = () =>
   render(
-    <MemoryRouter>
-      <LandingPage />
+    <MemoryRouter initialEntries={["/"]}>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/auth/sign-up" element={<div>sign-up destination</div>} />
+        <Route path="/auth/select-mode" element={<div>mode destination</div>} />
+      </Routes>
     </MemoryRouter>,
   );
 
@@ -96,6 +111,8 @@ describe("landing page", () => {
     setCurrentLanguageMock.mockClear();
     document.head.innerHTML = "";
     document.documentElement.className = "";
+    window.localStorage.clear();
+    window.HTMLElement.prototype.scrollIntoView = vi.fn();
   });
 
   it("uses theme-aware root classes in the landing layout", () => {
@@ -120,6 +137,7 @@ describe("landing page", () => {
       .getAllByRole("link"), (link) => link.getAttribute("href"));
 
     expect(hrefs).not.toContain("#");
+    expect(hrefs).not.toContain("");
   });
 
   it("keeps the desktop landing header compact", () => {
@@ -130,6 +148,148 @@ describe("landing page", () => {
     expect(screen.getByRole("button", { name: "Qanday ishlaydi" }).className).toContain(
       "whitespace-nowrap",
     );
+  });
+
+  it("renders the dashboard-result hero with preserved public anchors", () => {
+    renderLanding();
+
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: /Maqsadingizni ayting/i,
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("product-dashboard-preview")).toBeInTheDocument();
+    expect(screen.getByText(/Bugungi natija/i)).toBeInTheDocument();
+
+    forEach([
+      "features",
+      "how",
+      "nutrition",
+      "workouts",
+      "progress",
+      "local-market",
+      "testimonials",
+      "pricing",
+      "faq",
+    ], (id) => {
+      expect(document.getElementById(id)).not.toBeNull();
+    });
+  });
+
+  it("renders the immersive product story steps", () => {
+    renderLanding();
+
+    expect(screen.getByTestId("product-tour")).toBeInTheDocument();
+
+    forEach(
+      [
+        "Maqsadni sozlash",
+        "AI kunlik reja",
+        "Kun davomida bajarish",
+        "Progress va keyingi tavsiya",
+      ],
+      (label) => {
+        expect(screen.getAllByText(label).length).toBeGreaterThan(0);
+      },
+    );
+
+    expect(screen.getByTestId("goal-setup-preview")).toBeInTheDocument();
+    expect(screen.getByTestId("ai-plan-preview")).toBeInTheDocument();
+    expect(screen.getByTestId("daily-execution-preview")).toBeInTheDocument();
+    expect(screen.getByTestId("progress-result-preview")).toBeInTheDocument();
+  });
+
+  it("shows the existing product modules as compact cards", () => {
+    renderLanding();
+
+    expect(screen.getByTestId("product-modules")).toBeInTheDocument();
+
+    forEach(
+      [
+        ["product-module-onboarding", "Onboarding va maqsad"],
+        ["product-module-dashboard", "Dashboard"],
+        ["product-module-nutrition", "Ovqatlanish"],
+        ["product-module-workouts", "Mashg'ulot"],
+        ["product-module-water-mood", "Suv va kayfiyat"],
+        ["product-module-progress", "Progress va hisobotlar"],
+        ["product-module-profile", "Profil va sozlamalar"],
+      ],
+      ([testId, label]) => {
+        expect(screen.getByTestId(testId)).toHaveTextContent(label);
+      },
+    );
+  });
+
+  it("uses an accessible Sheet for mobile landing navigation", () => {
+    renderLanding();
+
+    fireEvent.click(screen.getByRole("button", { name: "Menyuni ochish" }));
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toBeInTheDocument();
+    expect(screen.getByText("LiveOn menyusi")).toBeInTheDocument();
+
+    const howButton = within(dialog).getByRole("button", {
+      name: "Qanday ishlaydi",
+    });
+    expect(howButton).toBeInTheDocument();
+
+    fireEvent.click(howButton);
+    expect(window.HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({
+      behavior: "auto",
+      block: "start",
+    });
+  });
+
+  it("toggles the persisted root theme from the landing header", () => {
+    const analyticsListener = vi.fn();
+    window.addEventListener("liveon:analytics", analyticsListener);
+
+    renderLanding();
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Dark theme" })[0]);
+
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
+    expect(window.localStorage.getItem("theme")).toBe("dark");
+    expect(analyticsListener).toHaveBeenCalledWith(
+      expect.objectContaining({
+        detail: expect.objectContaining({
+          event: "theme_changed",
+          payload: { theme: "dark" },
+          source: "landing",
+        }),
+      }),
+    );
+
+    window.removeEventListener("liveon:analytics", analyticsListener);
+  });
+
+  it("keeps the primary CTA routing and analytics event behavior", () => {
+    const analyticsListener = vi.fn();
+    window.addEventListener("liveon:analytics", analyticsListener);
+
+    renderLanding();
+
+    const heroSection = screen
+      .getByRole("heading", { level: 1, name: /Maqsadingizni ayting/i })
+      .closest("section");
+
+    fireEvent.click(
+      within(heroSection).getByRole("button", { name: /Bepul boshlash/i }),
+    );
+
+    expect(screen.getByText("sign-up destination")).toBeInTheDocument();
+    expect(analyticsListener).toHaveBeenCalledWith(
+      expect.objectContaining({
+        detail: expect.objectContaining({
+          event: "hero_cta_clicked",
+          source: "landing",
+        }),
+      }),
+    );
+
+    window.removeEventListener("liveon:analytics", analyticsListener);
   });
 
   it("emits FAQ, SoftwareApplication, and Organization structured data", () => {

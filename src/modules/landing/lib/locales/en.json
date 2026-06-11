@@ -1,8 +1,8 @@
 {
   "landing": {
     "meta": {
-      "title": "LiveOn - AI meal and workout plan in 60 seconds",
-      "description": "LiveOn creates a personal AI plan for meals, workouts, water and progress around your goal, budget, habits and constraints."
+      "title": "LiveOn - personal AI plan in 60 seconds",
+      "description": "LiveOn creates a personal plan for meals, workouts, water and progress around your goal, budget and habits in 60 seconds."
     },
     "nav": {
       "logoAlt": "LiveOn logo",
@@ -14,6 +14,8 @@
       "languageDescription": "Change the LiveOn interface language.",
       "menuOpen": "Open menu",
       "menuClose": "Close menu",
+      "menuTitle": "LiveOn menu",
+      "menuDescription": "Jump to a section or start your personal plan.",
       "links": [
         [
           "features",
@@ -37,7 +39,7 @@
         ],
         [
           "testimonials",
-          "Stories"
+          "Use cases"
         ],
         [
           "pricing",
@@ -50,185 +52,312 @@
       ]
     },
     "hero": {
-      "badge": "AI plan in 60 seconds",
-      "title": "Personal AI meal and workout plan in 60 seconds",
-      "body": "Answer a few questions and LiveOn creates a clear daily plan for meals, workouts, water and progress around your goal, budget and habits.",
-      "primaryCta": "Get my plan free",
-      "secondaryCta": "See plan example",
+      "badge": "AI plan, daily control",
+      "title": "Tell LiveOn your goal. See today's plan immediately.",
+      "body": "Calories, meals, workouts, water, and mood stay in one place. Every day starts with the next useful action.",
+      "primaryCta": "Start free",
+      "secondaryCta": "See a sample plan",
       "metrics": [
         [
           "60 sec",
-          "to get the first plan"
+          "personal start"
         ],
         [
-          "20+ parameters",
-          "for personalization"
+          "4 tracks",
+          "food, workout, water, mood"
         ],
         [
-          "Meals + workouts",
-          "in one service"
+          "10 days",
+          "progress summary"
         ]
+      ],
+      "dashboard": {
+        "eyebrow": "Today's result",
+        "title": "Daily balance",
+        "summary": "A plan tuned for your weight goal",
+        "calories": {
+          "label": "Calories",
+          "value": "1,420",
+          "target": "1,850 target",
+          "progress": 76
+        },
+        "mealsLabel": "Meals",
+        "meals": [
+          [
+            "Breakfast",
+            "420 kcal",
+            "Ready"
+          ],
+          [
+            "Lunch",
+            "560 kcal",
+            "Planned"
+          ],
+          [
+            "Dinner",
+            "440 kcal",
+            "Adapts"
+          ]
+        ],
+        "workout": {
+          "label": "Workout",
+          "title": "35 min walk",
+          "meta": "220 kcal plan"
+        },
+        "water": {
+          "label": "Water",
+          "value": "1.8 L",
+          "target": "2.5 L",
+          "progress": 72
+        },
+        "mood": {
+          "label": "Mood",
+          "value": "Steady"
+        },
+        "progress": {
+          "label": "10 days",
+          "value": "-1.4 kg",
+          "delta": "pace is strong"
+        }
+      }
+    },
+    "productTour": {
+      "eyebrow": "Product flow",
+      "title": "One path from goal to result",
+      "body": "LiveOn collects the essentials, builds a daily plan, and turns completed actions into visible progress.",
+      "steps": [
+        {
+          "id": "goal",
+          "kicker": "01",
+          "title": "Goal setup",
+          "body": "Weight, height, habits, and training level define the starting point. LiveOn calculates the baseline clearly.",
+          "icon": "TargetIcon",
+          "highlights": [
+            "Goal weight",
+            "Calorie range",
+            "Habits"
+          ]
+        },
+        {
+          "id": "ai",
+          "kicker": "02",
+          "title": "AI daily plan",
+          "body": "Meals, workouts, and water tasks are combined into one daily plan.",
+          "icon": "BotIcon",
+          "highlights": [
+            "Meal plans",
+            "Workout guidance",
+            "Water rhythm"
+          ]
+        },
+        {
+          "id": "daily",
+          "kicker": "03",
+          "title": "Daily execution",
+          "body": "Adding meals, starting a workout, and logging water or mood stay fast.",
+          "icon": "CalendarCheckIcon",
+          "highlights": [
+            "Meal log",
+            "Workout status",
+            "Mood"
+          ]
+        },
+        {
+          "id": "progress",
+          "kicker": "04",
+          "title": "Progress and next recommendation",
+          "body": "Reports show your rhythm and suggest tomorrow's most useful action.",
+          "icon": "LineChartIcon",
+          "highlights": [
+            "10-day report",
+            "Weight trend",
+            "Next step"
+          ]
+        }
       ]
     },
-    "dashboard": {
-      "badge": "LiveOn AI",
-      "title": "Today plan",
-      "progressLabel": "Completed",
-      "calories": "2160 kcal of 2760 kcal",
-      "meals": [
-        [
-          "Breakfast",
-          "Oats, banana, yogurt",
-          "520 kcal"
-        ],
-        [
-          "Lunch",
-          "Chicken, rice, salad",
-          "720 kcal"
-        ],
-        [
-          "Dinner",
-          "Fish, vegetables",
-          "610 kcal"
-        ]
-      ],
-      "macros": [
-        [
-          "Protein",
-          "140 g",
-          "green"
-        ],
-        [
-          "Fat",
-          "72 g",
-          "blue"
-        ],
-        [
-          "Carbs",
-          "230 g",
-          "orange"
-        ],
-        [
-          "Water",
-          "2.1 L",
-          "teal"
-        ]
-      ],
-      "workoutTitle": "Workout today",
-      "workoutBody": "Full Body - 42 min",
-      "workoutKcal": "+240 kcal",
-      "focusTitle": "Focus today",
-      "checklist": [
-        "10,000 steps",
-        "2.1 L water",
-        "No sugar",
-        "7-8 h sleep"
-      ],
-      "mealsTitle": "Meals"
+    "productModules": {
+      "eyebrow": "Inside the app",
+      "title": "The core LiveOn product areas",
+      "body": "The landing page shows the real app flow in compact form: goal setup, dashboard, nutrition, workouts, water, mood, progress, and profile.",
+      "tabsLabel": "LiveOn modules",
+      "items": [
+        {
+          "id": "onboarding",
+          "title": "Onboarding and goal",
+          "body": "Starting details, goal weight, and personal constraints.",
+          "icon": "TargetIcon",
+          "bullets": [
+            "Goal",
+            "Profile",
+            "Constraints"
+          ]
+        },
+        {
+          "id": "dashboard",
+          "title": "Dashboard",
+          "body": "Today's calories, meals, workout, water, and progress in one screen.",
+          "icon": "BarChart3Icon",
+          "bullets": [
+            "Daily status",
+            "Quick actions",
+            "AI reminder"
+          ]
+        },
+        {
+          "id": "nutrition",
+          "title": "Nutrition",
+          "body": "Meal plan builder, AI generator, recipes, and portion control.",
+          "icon": "UtensilsIcon",
+          "bullets": [
+            "Meal plan",
+            "Recipe",
+            "Portion"
+          ]
+        },
+        {
+          "id": "workouts",
+          "title": "Workouts",
+          "body": "Walking, training plan, history, and session report.",
+          "icon": "DumbbellIcon",
+          "bullets": [
+            "Plan",
+            "Session",
+            "Report"
+          ]
+        },
+        {
+          "id": "water-mood",
+          "title": "Water and mood",
+          "body": "Water target, reminders, and mood rhythm.",
+          "icon": "DropletsIcon",
+          "bullets": [
+            "Water",
+            "Reminder",
+            "Mood"
+          ]
+        },
+        {
+          "id": "progress",
+          "title": "Progress and reports",
+          "body": "Weight change, daily report, and longer-term trends.",
+          "icon": "LineChartIcon",
+          "bullets": [
+            "Trend",
+            "10 days",
+            "Result"
+          ]
+        },
+        {
+          "id": "profile",
+          "title": "Profile and preferences",
+          "body": "Language, theme, personal details, and health parameters.",
+          "icon": "UserCheckIcon",
+          "bullets": [
+            "Language",
+            "Theme",
+            "Health"
+          ]
+        }
+      ]
     },
     "values": [
       [
-        "Personal to you",
-        "Goal, schedule, food, constraints and training level in one profile.",
+        "Fast start",
+        "Complete a profile and get today's roadmap.",
+        "SparklesIcon"
+      ],
+      [
+        "Personal",
+        "Goal, budget, allergies and training level are connected.",
         "TargetIcon"
       ],
       [
-        "Structured method",
-        "Calories, macros, water and progress work as one system.",
-        "BrainIcon"
-      ],
-      [
         "Local products",
-        "The plan is built around familiar meals and accessible products.",
+        "Starts with familiar meals and accessible products.",
         "ShoppingBasketIcon"
       ],
       [
-        "Saves time",
-        "No manual meal and workout planning every day.",
-        "Clock3Icon"
+        "Visible progress",
+        "Calories, water, workouts and weight stay in one rhythm.",
+        "LineChartIcon"
       ]
     ],
     "how": {
       "eyebrow": "How it works",
-      "title": "Three simple steps to a better shape",
-      "body": "LiveOn collects context, creates a plan and helps you stay on track every day.",
+      "title": "Profile, AI plan, daily follow-through",
+      "body": "LiveOn skips heavy setup and helps you stay on track every day.",
       "steps": [
         [
-          "Tell us about you",
-          "Add goal, weight, activity, budget, allergies and preferences.",
+          "Add your profile",
+          "Enter goal, weight, activity, budget and constraints.",
           "ClipboardListIcon"
         ],
         [
-          "AI creates a plan",
-          "LiveOn analyzes the data and builds a personal meal, workout and water plan.",
+          "AI builds the plan",
+          "Meals, workouts, water and habits become one daily plan.",
           "SparklesIcon"
         ],
         [
-          "Follow and progress",
-          "Complete the plan, track results and get recommendations to improve.",
+          "Track the result",
+          "Completion, progress and next recommendations stay visible.",
           "CalendarCheckIcon"
         ]
       ]
     },
     "daily": {
       "eyebrow": "Features",
-      "title": "What your daily plan includes",
-      "body": "One screen answers the main question: what should I do today?",
+      "title": "One daily plan connects the work",
+      "body": "The plan is simple: what to eat, how to train and what to track.",
       "features": [
         [
           "Meals",
-          "3-5 meals with recipes and macros",
+          "3-5 meals with macros and replacements.",
           "UtensilsIcon"
         ],
         [
           "Workouts",
-          "Individual workouts for your goal",
+          "Home or gym workload for your level.",
           "DumbbellIcon"
         ],
         [
-          "Water",
-          "Water target and reminders",
+          "Water and habits",
+          "Water, sleep, steps and daily focus.",
           "DropletsIcon"
         ],
         [
-          "Calories and macros",
-          "Calorie and macronutrient control",
+          "Reports",
+          "Weight, calories and completion trends.",
           "BarChart3Icon"
-        ],
-        [
-          "Progress",
-          "Weight, habits, reports and recommendations",
-          "LineChartIcon"
         ]
       ]
     },
     "showcase": {
-      "eyebrow": "Meals and workouts",
-      "title": "Meals and workouts created for you",
-      "body": "Examples show the plan format: short, clear and useful on a normal day.",
+      "eyebrow": "Inside the plan",
+      "title": "Nutrition and workouts in one place",
+      "body": "LiveOn is not another calculator. It creates a plan that fits your day.",
       "meal": {
         "badge": "Example",
-        "title": "Meal plan",
-        "body": "Balanced menu around your goal, budget, allergies and preferences.",
+        "title": "Nutrition",
+        "body": "A simple menu around your goal, budget and constraints.",
         "example": [
-          "Breakfast: oats + banana + yogurt",
-          "Lunch: chicken + rice + salad",
-          "Dinner: fish + vegetables",
-          "Total: 2160 kcal - 140 g protein"
+          "Breakfast: oats, banana, yogurt",
+          "Lunch: chicken, rice, salad",
+          "Dinner: fish, vegetables",
+          "Total: 2160 kcal, 140 g protein"
         ],
         "checklist": [
           "Recipes and macros",
           "Product replacements",
           "Shopping list",
-          "Allergies considered",
-          "Budget considered"
+          "Allergies considered"
         ],
-        "cta": "See meal plan example"
+        "cta": "See meal example"
       },
       "workout": {
         "badge": "Example",
-        "title": "Workout plan",
-        "body": "Home or gym workouts for your level, goal and schedule.",
+        "title": "Workout",
+        "body": "Adaptive exercise flow for home or gym.",
         "example": [
           "Day 1: Full Body",
           "Squats - 3x12",
@@ -237,47 +366,40 @@
           "Cardio - 15 min"
         ],
         "checklist": [
-          "Video and instructions",
           "Sets and reps",
+          "Video/instructions",
           "Load adaptation",
-          "Progression",
-          "Home or gym"
+          "Progression"
         ],
         "cta": "See workout example"
       }
     },
     "progress": {
       "eyebrow": "Progress",
-      "title": "Progress you want to keep going",
-      "body": "Track weight, water, calories, workouts and habits in one place.",
+      "title": "Results stay clear on one screen",
+      "body": "See weight, calories, water, workouts and habits together.",
       "metrics": [
         [
-          "7 days in a row",
+          "7 days",
           "completion streak",
           "FlameIcon",
           "orange"
         ],
         [
-          "+240 kcal today",
-          "workout",
-          "ActivityIcon",
-          "blue"
-        ],
-        [
-          "-1.2 kg weekly",
-          "weight trend",
+          "-1.2 kg",
+          "weekly trend",
           "TrendingDownIcon",
           "green"
         ],
         [
-          "2.1 L water",
-          "daily target",
+          "2.1 L",
+          "water target",
           "DropletsIcon",
           "teal"
         ],
         [
-          "10,842 steps",
-          "activity",
+          "10,842",
+          "steps",
           "ZapIcon",
           "blue"
         ],
@@ -288,13 +410,13 @@
           "orange"
         ],
         [
-          "7-8 h sleep",
-          "recovery",
-          "HeartPulseIcon",
-          "green"
+          "42 min",
+          "workout",
+          "ActivityIcon",
+          "blue"
         ]
       ],
-      "chartTitle": "Weekly calories",
+      "chartTitle": "Weekly rhythm",
       "weightTitle": "Weight",
       "chartRange": "7 days",
       "weightValue": "78.4 kg",
@@ -302,130 +424,56 @@
     },
     "local": {
       "eyebrow": "Key difference",
-      "title": "A plan for your budget and familiar products",
-      "body": "LiveOn considers budget, allergies, constraints and accessible products so the plan is healthy and realistic for your life.",
+      "title": "The plan fits real life",
+      "body": "LiveOn considers budget, allergies, schedule and familiar products.",
       "cards": [
         [
-          "Understands local market",
-          "Considers familiar products and meals that are easy to find nearby.",
-          "ShoppingBasketIcon"
-        ],
-        [
-          "Plans on budget",
-          "Suggests meal options for your weekly or monthly budget.",
+          "Budget aware",
+          "Works from your weekly or monthly budget.",
           "WalletCardsIcon"
         ],
         [
-          "Considers allergies",
-          "Excludes food you cannot or do not want to eat.",
+          "Local market",
+          "Starts with products and meals that are easy to find.",
+          "ShoppingBasketIcon"
+        ],
+        [
+          "Constraints",
+          "Removes allergies and food you do not want.",
           "ShieldCheckIcon"
         ],
         [
-          "Product replacements",
-          "Suggests alternatives when a product is unavailable or unsuitable.",
+          "Replacements",
+          "Suggests alternatives when a product is missing.",
           "Repeat2Icon"
-        ],
-        [
-          "Shopping list",
-          "Creates a clear weekly shopping list.",
-          "ShoppingBasketIcon"
-        ]
-      ]
-    },
-    "comparison": {
-      "eyebrow": "Comparison",
-      "title": "Why LiveOn is better than ordinary fitness apps",
-      "columns": [
-        "Feature",
-        "LiveOn",
-        "Ordinary apps",
-        "Generic apps"
-      ],
-      "yes": "Yes",
-      "partial": "Partial",
-      "no": "No",
-      "rows": [
-        [
-          "AI plan in 60 seconds",
-          "yes",
-          "partial",
-          "no"
-        ],
-        [
-          "Meals + workouts in one",
-          "yes",
-          "partial",
-          "no"
-        ],
-        [
-          "Budget awareness",
-          "yes",
-          "no",
-          "no"
-        ],
-        [
-          "Local products",
-          "yes",
-          "no",
-          "no"
-        ],
-        [
-          "Allergies and constraints",
-          "yes",
-          "partial",
-          "no"
-        ],
-        [
-          "Product replacements",
-          "yes",
-          "partial",
-          "no"
-        ],
-        [
-          "Progress and recommendations",
-          "yes",
-          "partial",
-          "no"
-        ],
-        [
-          "Weekly reports",
-          "yes",
-          "partial",
-          "no"
-        ],
-        [
-          "Challenges, streak and achievements",
-          "yes",
-          "partial",
-          "no"
         ]
       ]
     },
     "scenarios": {
       "eyebrow": "Use cases",
       "title": "Where LiveOn helps",
-      "body": "Until public customer reviews are available, this section shows practical use cases instead of fictional testimonials.",
+      "body": "Practical use cases, not fictional testimonials.",
       "items": [
         [
           "Weight loss",
-          "A user wants a clear menu without strict diets and sees daily calories, water and steps.",
+          "Calories, water and steps are clear without strict dieting.",
           "Daily plan"
         ],
         [
           "Muscle gain",
-          "The plan connects protein, calories, load progression and home or gym workouts.",
-          "Meals + load"
+          "Protein, calories and load progression move together.",
+          "Food + load"
         ],
         [
           "Healthy routine",
-          "Focus on water, sleep, regular meals and simple habits without overload.",
+          "Water, sleep, meals and simple habits become consistent.",
           "Consistency"
         ]
       ]
     },
     "pricing": {
       "eyebrow": "Pricing",
-      "title": "Start free. Upgrade your plan when you want.",
+      "title": "Start free. Upgrade when Premium is ready.",
       "free": {
         "title": "Free",
         "price": "Free / forever",
@@ -439,7 +487,7 @@
       },
       "premium": {
         "title": "Premium",
-        "badge": "Popular",
+        "badge": "Soon",
         "price": "Soon",
         "features": [
           "Unlimited AI plans",
@@ -447,9 +495,7 @@
           "Budget awareness",
           "Product replacements",
           "Food photo analysis",
-          "Weekly reports",
-          "PDF export",
-          "No ads"
+          "Weekly reports"
         ],
         "cta": "Notify me when ready"
       }
@@ -460,7 +506,7 @@
       "items": [
         [
           "How does the AI plan work?",
-          "LiveOn uses profile data to suggest meals, workouts, water and daily actions. The plan can be refined as you progress."
+          "LiveOn uses profile data to suggest meals, workouts, water and daily actions."
         ],
         [
           "How long does plan creation take?",
@@ -471,14 +517,6 @@
           "Yes. The Free plan helps you get the first plan and try basic tracking."
         ],
         [
-          "Is LiveOn good for weight loss?",
-          "Yes, when selected as a goal. LiveOn considers calories, activity, meals and progress."
-        ],
-        [
-          "Can I gain muscle with LiveOn?",
-          "Yes. The plan can consider calorie surplus, protein and workout progression."
-        ],
-        [
           "Can I use it without a gym?",
           "Yes. You can choose home workouts and available equipment."
         ],
@@ -487,22 +525,14 @@
           "Yes. Budget is used when building the menu and shopping list."
         ],
         [
-          "Can I exclude food I do not eat?",
-          "Yes. Add allergies, constraints and disliked products."
-        ],
-        [
-          "How does food photo analysis work?",
-          "Photo analysis helps estimate a meal faster and add it to tracking."
-        ],
-        [
           "Is my data safe?",
           "Profile data is used for personalization and managed inside the service."
         ]
       ]
     },
     "final": {
-      "title": "Start with your profile - get a plan in 60 seconds",
-      "body": "Answer a few questions and LiveOn will build your first meal, workout and water plan for today.",
+      "title": "Start your profile and the plan comes together",
+      "body": "Answer a few questions and LiveOn builds your first meal, workout and water plan for today.",
       "cta": "Get my plan free",
       "secondary": "See example"
     },
@@ -559,11 +589,11 @@
               "mailto:support@liveon.uz"
             ],
             [
-              "Terms of use",
+              "Terms",
               "/terms"
             ],
             [
-              "Privacy policy",
+              "Privacy",
               "/privacy"
             ]
           ]
