@@ -52,7 +52,7 @@ const Index = () => {
           aria-hidden="true"
         />
 
-        <section className="relative z-10 mx-auto flex min-h-svh w-full max-w-5xl flex-col overflow-hidden bg-[#fff8ec]/86 shadow-[0_0_0_1px_rgba(124,45,18,0.08)] backdrop-blur-[2px] dark:bg-slate-950/78 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)]">
+        <section className="relative z-10 mx-auto flex min-h-svh w-full max-w-5xl flex-col overflow-hidden">
           <AuthBrandHeader
             activeMode={activeMode}
             copy={copy}
