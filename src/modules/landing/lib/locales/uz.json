@@ -18,32 +18,16 @@
       "menuDescription": "Bo'limga o'ting yoki shaxsiy rejangizni boshlang.",
       "links": [
         [
-          "features",
-          "Imkoniyatlar"
-        ],
-        [
-          "how",
-          "Qanday ishlaydi"
-        ],
-        [
-          "nutrition",
-          "Ovqatlanish"
-        ],
-        [
-          "workouts",
-          "Mashg'ulot"
+          "testimonials",
+          "Dasturlar"
         ],
         [
           "progress",
-          "Progress"
-        ],
-        [
-          "testimonials",
-          "Ssenariylar"
+          "Natijalar"
         ],
         [
           "pricing",
-          "Tariflar"
+          "Narxlar"
         ],
         [
           "faq",
@@ -52,29 +36,29 @@
       ]
     },
     "hero": {
-      "badge": "AI reja, kundalik nazorat",
-      "title": "Maqsadingizni ayting. LiveOn bugungi rejangizni ko'rsatadi.",
-      "body": "Kaloriya, ovqat, mashg'ulot, suv va kayfiyat bir joyda. Har kuni keyingi eng muhim qadam tayyor.",
+      "badge": "Reja, intizom, natija",
+      "title": "Ozish va mashg'ulot rejangizni LiveOn bilan boshqaring.",
+      "body": "Mashg'ulot rejalari, kaloriya hisobi, vazn kuzatuvi va progress - barchasi bir joyda. Intizom bilan natijaga erishing.",
       "primaryCta": "Bepul boshlash",
-      "secondaryCta": "Namuna rejani ko'rish",
+      "secondaryCta": "Dasturlarni ko'rish",
       "metrics": [
         [
-          "60 soniya",
-          "shaxsiy start"
+          "50K+",
+          "faol foydalanuvchilar"
         ],
         [
-          "4 yo'nalish",
-          "ovqat, mashq, suv, kayfiyat"
+          "-4.8 kg",
+          "o'rtacha vazn yo'qotish"
         ],
         [
-          "10 kun",
-          "progress xulosasi"
+          "92%",
+          "rejaga rioya qilish"
         ]
       ],
       "dashboard": {
-        "eyebrow": "Bugungi natija",
-        "title": "Kunlik balans",
-        "summary": "Vazn kamaytirish maqsadiga mos reja",
+        "eyebrow": "Mening ko'rsatkichlarim",
+        "title": "Bugungi balans",
+        "summary": "Maqsadga qarab yuradigan sodda reja",
         "calories": {
           "label": "Kaloriya",
           "value": "1 420",
@@ -122,15 +106,15 @@
       }
     },
     "productTour": {
-      "eyebrow": "Mahsulot yo'li",
-      "title": "Maqsaddan natijagacha bitta oqim",
-      "body": "LiveOn sizdan qisqa ma'lumot oladi, kunlik rejani tuzadi va bajarilgan ishni progressga aylantiradi.",
+      "eyebrow": "Qanday ishlaydi",
+      "title": "Qanday ishlaydi?",
+      "body": "Keraksiz murakkabliksiz: maqsadni tanlang, kunni kuzating va natijani ko'ring.",
       "steps": [
         {
           "id": "goal",
-          "kicker": "01",
-          "title": "Maqsadni sozlash",
-          "body": "Vazn, bo'y, odatlar va mashg'ulot darajasi tanlanadi. LiveOn start nuqtasini aniq hisoblaydi.",
+          "kicker": "1",
+          "title": "Reja tanlang",
+          "body": "O'z maqsadingizga mos dastur va kaloriya rejasini tanlang.",
           "icon": "TargetIcon",
           "highlights": [
             "Maqsad vazni",
@@ -140,9 +124,9 @@
         },
         {
           "id": "ai",
-          "kicker": "02",
-          "title": "AI kunlik reja",
-          "body": "Ovqat, mashg'ulot va suv vazifalari bitta kunlik rejaga yig'iladi.",
+          "kicker": "2",
+          "title": "Kaloriya kuzating",
+          "body": "Kunlik ovqatlaringizni yozing va kaloriya me'yorida bo'ling.",
           "icon": "BotIcon",
           "highlights": [
             "Ovqat rejalari",
@@ -152,9 +136,9 @@
         },
         {
           "id": "daily",
-          "kicker": "03",
-          "title": "Kun davomida bajarish",
-          "body": "Ovqat qo'shish, mashqni boshlash, suv va kayfiyatni belgilash tez bajariladi.",
+          "kicker": "3",
+          "title": "Mashq bajaring",
+          "body": "Mashg'ulot rejasiga rioya qiling va intizomni saqlang.",
           "icon": "CalendarCheckIcon",
           "highlights": [
             "Ovqat logi",
@@ -164,9 +148,9 @@
         },
         {
           "id": "progress",
-          "kicker": "04",
-          "title": "Progress va keyingi tavsiya",
-          "body": "Hisobotlar ritmni ko'rsatadi va ertangi eng foydali qadamni taklif qiladi.",
+          "kicker": "4",
+          "title": "Natijani ko'ring",
+          "body": "Vazn, o'lcham va progress rasmlaridagi o'zgarishni kuzating.",
           "icon": "LineChartIcon",
           "highlights": [
             "10 kunlik hisobot",
@@ -177,15 +161,15 @@
       ]
     },
     "productModules": {
-      "eyebrow": "Ichki qismlar",
-      "title": "LiveOn ichidagi asosiy bo'limlar",
-      "body": "Landing sahifasi real ilova oqimlarini qisqa ko'rsatadi: maqsad, dashboard, ovqatlanish, mashg'ulot, suv, kayfiyat, progress va profil.",
+      "eyebrow": "Asosiy imkoniyatlar",
+      "title": "Asosiy imkoniyatlar",
+      "body": "Kunlik reja uchun kerakli qismlar: ovqat, kaloriya, mashg'ulot, vazn, suv va progress.",
       "tabsLabel": "LiveOn bo'limlari",
       "items": [
         {
           "id": "onboarding",
-          "title": "Onboarding va maqsad",
-          "body": "Start ma'lumotlari, maqsad vazni va shaxsiy cheklovlar.",
+          "title": "Reja tanlash",
+          "body": "Maqsad va odatlaringizga mos yo'nalishni tanlang.",
           "icon": "TargetIcon",
           "bullets": [
             "Maqsad",
@@ -195,8 +179,8 @@
         },
         {
           "id": "dashboard",
-          "title": "Dashboard",
-          "body": "Bugungi kaloriya, ovqat, mashg'ulot, suv va progress bir ekranda.",
+          "title": "Kaloriya hisobi",
+          "body": "Kunlik me'yor va ovqatlar nazoratda turadi.",
           "icon": "BarChart3Icon",
           "bullets": [
             "Kunlik holat",
@@ -206,8 +190,8 @@
         },
         {
           "id": "nutrition",
-          "title": "Ovqatlanish",
-          "body": "Meal plan builder, AI generator, retseptlar va porsiya nazorati.",
+          "title": "Ovqat nazorati",
+          "body": "Ovqatlaringizni yozing va tahlil qiling.",
           "icon": "UtensilsIcon",
           "bullets": [
             "Meal plan",
@@ -217,8 +201,8 @@
         },
         {
           "id": "workouts",
-          "title": "Mashg'ulot",
-          "body": "Yurish, mashq rejasi, tarix va yakuniy hisobot.",
+          "title": "Mashg'ulot rejasi",
+          "body": "Uyda yoki zalda bajariladigan reja.",
           "icon": "DumbbellIcon",
           "bullets": [
             "Reja",
@@ -228,8 +212,8 @@
         },
         {
           "id": "water-mood",
-          "title": "Suv va kayfiyat",
-          "body": "Suv maqsadi, eslatmalar va kayfiyat ritmi.",
+          "title": "Suv ichish",
+          "body": "Kunlik suv me'yorini bajarib boring.",
           "icon": "DropletsIcon",
           "bullets": [
             "Suv",
@@ -239,8 +223,8 @@
         },
         {
           "id": "progress",
-          "title": "Progress va hisobotlar",
-          "body": "Vazn o'zgarishi, kunlik hisobot va uzoqroq trendlar.",
+          "title": "Vazn kuzatuvi",
+          "body": "Vazningizni yozing va grafikda ko'ring.",
           "icon": "LineChartIcon",
           "bullets": [
             "Trend",
@@ -250,8 +234,8 @@
         },
         {
           "id": "profile",
-          "title": "Profil va sozlamalar",
-          "body": "Til, tema, shaxsiy ma'lumot va sog'liq parametrlari.",
+          "title": "Qadamlar",
+          "body": "Faolligingizni kunlik qadamlar orqali kuzating.",
           "icon": "UserCheckIcon",
           "bullets": [
             "Til",
@@ -450,9 +434,9 @@
       ]
     },
     "scenarios": {
-      "eyebrow": "Ssenariylar",
-      "title": "LiveOn qaysi maqsadlarda yordam beradi",
-      "body": "Sahifa real foydalanish holatlarini ko'rsatadi, soxta reviewlar emas.",
+      "eyebrow": "Dasturlar",
+      "title": "Dasturlar",
+      "body": "Maqsadingizga mos dastur tanlang va natijaga yaqinlashing.",
       "items": [
         [
           "Vazn tashlash",
@@ -472,37 +456,37 @@
       ]
     },
     "pricing": {
-      "eyebrow": "Tariflar",
-      "title": "Bepul boshlang. Premium tayyor bo'lganda kengaytiring.",
+      "eyebrow": "Narxlar",
+      "title": "Narxlar",
       "free": {
-        "title": "Free",
-        "price": "Bepul / doimiy",
+        "title": "Bepul",
+        "price": "0 so'm / oy",
         "features": [
-          "Birinchi AI reja",
-          "Basic suv tracking",
-          "Basic ovqatlanish rejasi",
-          "Cheklangan statistika"
+          "Asosiy mashg'ulot rejalar",
+          "Kaloriya hisobi",
+          "Vazn kuzatuvi",
+          "Suv va qadamlar kuzatuvi"
         ],
         "cta": "Bepul boshlash"
       },
       "premium": {
         "title": "Premium",
-        "badge": "Tez kunda",
-        "price": "Tez kunda",
+        "badge": "Eng ommabop",
+        "price": "39 000 so'm / oy",
         "features": [
-          "Cheksiz AI rejalar",
-          "Kengaytirilgan analytics",
-          "Budjet hisobi",
-          "Mahsulot almashtirish",
-          "Foto orqali taom tahlili",
-          "Haftalik hisobotlar"
+          "Barcha mashg'ulot rejalari",
+          "Cheksiz kaloriya hisobi",
+          "Progress rasmlari",
+          "Shaxsiy statistika",
+          "Reja va eslatmalar",
+          "Uzluksiz qo'llab-quvvatlash"
         ],
-        "cta": "Mavjud bo'lganda xabar bering"
+        "cta": "Premiumga o'tish"
       }
     },
     "faq": {
-      "eyebrow": "FAQ",
-      "title": "Ko'p beriladigan savollar",
+      "eyebrow": "Savollar",
+      "title": "Savollar",
       "items": [
         [
           "AI reja qanday ishlaydi?",
@@ -531,13 +515,13 @@
       ]
     },
     "final": {
-      "title": "Profilni boshlang, reja darhol yig'iladi",
-      "body": "Bir nechta savolga javob bering - LiveOn bugungi ovqatlanish, mashg'ulot va suv rejasini beradi.",
-      "cta": "Rejamni bepul olish",
-      "secondary": "Namuna ko'rish"
+      "title": "Disiplin bilan bugun boshlasangiz, ertaga yangi sizni ko'rasiz!",
+      "body": "LiveOn siz bilan birga - reja, intizom va natija.",
+      "cta": "Bepul boshlash",
+      "secondary": "Dasturlarni ko'rish"
     },
     "footer": {
-      "tagline": "Maqsadingizga mos AI ovqatlanish va mashg'ulot rejalari.",
+      "tagline": "Ozish va mashg'ulot rejangiz uchun eng yaxshi yordamchi.",
       "columns": [
         [
           "Mahsulot",

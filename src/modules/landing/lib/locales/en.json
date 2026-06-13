@@ -18,28 +18,12 @@
       "menuDescription": "Jump to a section or start your personal plan.",
       "links": [
         [
-          "features",
-          "Features"
-        ],
-        [
-          "how",
-          "How it works"
-        ],
-        [
-          "nutrition",
-          "Nutrition"
-        ],
-        [
-          "workouts",
-          "Workouts"
+          "testimonials",
+          "Programs"
         ],
         [
           "progress",
-          "Progress"
-        ],
-        [
-          "testimonials",
-          "Use cases"
+          "Results"
         ],
         [
           "pricing",
@@ -52,29 +36,29 @@
       ]
     },
     "hero": {
-      "badge": "AI plan, daily control",
-      "title": "Tell LiveOn your goal. See today's plan immediately.",
-      "body": "Calories, meals, workouts, water, and mood stay in one place. Every day starts with the next useful action.",
+      "badge": "Plan, discipline, result",
+      "title": "Manage your weight loss and training plan with LiveOn.",
+      "body": "Workout plans, calorie tracking, weight logs, and progress are all in one place. Build discipline and reach the result.",
       "primaryCta": "Start free",
-      "secondaryCta": "See a sample plan",
+      "secondaryCta": "View programs",
       "metrics": [
         [
-          "60 sec",
-          "personal start"
+          "50K+",
+          "active users"
         ],
         [
-          "4 tracks",
-          "food, workout, water, mood"
+          "-4.8 kg",
+          "average weight loss"
         ],
         [
-          "10 days",
-          "progress summary"
+          "92%",
+          "plan adherence"
         ]
       ],
       "dashboard": {
-        "eyebrow": "Today's result",
-        "title": "Daily balance",
-        "summary": "A plan tuned for your weight goal",
+        "eyebrow": "My indicators",
+        "title": "Today's balance",
+        "summary": "A simple plan that follows your goal",
         "calories": {
           "label": "Calories",
           "value": "1,420",
@@ -122,15 +106,15 @@
       }
     },
     "productTour": {
-      "eyebrow": "Product flow",
-      "title": "One path from goal to result",
-      "body": "LiveOn collects the essentials, builds a daily plan, and turns completed actions into visible progress.",
+      "eyebrow": "How it works",
+      "title": "How it works",
+      "body": "No extra complexity: choose a goal, follow the day, and see the result.",
       "steps": [
         {
           "id": "goal",
-          "kicker": "01",
-          "title": "Goal setup",
-          "body": "Weight, height, habits, and training level define the starting point. LiveOn calculates the baseline clearly.",
+          "kicker": "1",
+          "title": "Choose a plan",
+          "body": "Pick a program and calorie plan that matches your goal.",
           "icon": "TargetIcon",
           "highlights": [
             "Goal weight",
@@ -140,9 +124,9 @@
         },
         {
           "id": "ai",
-          "kicker": "02",
-          "title": "AI daily plan",
-          "body": "Meals, workouts, and water tasks are combined into one daily plan.",
+          "kicker": "2",
+          "title": "Track calories",
+          "body": "Log your meals and stay close to your daily calorie target.",
           "icon": "BotIcon",
           "highlights": [
             "Meal plans",
@@ -152,9 +136,9 @@
         },
         {
           "id": "daily",
-          "kicker": "03",
-          "title": "Daily execution",
-          "body": "Adding meals, starting a workout, and logging water or mood stay fast.",
+          "kicker": "3",
+          "title": "Do workouts",
+          "body": "Follow the training plan and keep your routine consistent.",
           "icon": "CalendarCheckIcon",
           "highlights": [
             "Meal log",
@@ -164,9 +148,9 @@
         },
         {
           "id": "progress",
-          "kicker": "04",
-          "title": "Progress and next recommendation",
-          "body": "Reports show your rhythm and suggest tomorrow's most useful action.",
+          "kicker": "4",
+          "title": "See results",
+          "body": "Track changes in weight, measurements, and progress photos.",
           "icon": "LineChartIcon",
           "highlights": [
             "10-day report",
@@ -177,15 +161,15 @@
       ]
     },
     "productModules": {
-      "eyebrow": "Inside the app",
-      "title": "The core LiveOn product areas",
-      "body": "The landing page shows the real app flow in compact form: goal setup, dashboard, nutrition, workouts, water, mood, progress, and profile.",
+      "eyebrow": "Core features",
+      "title": "Core features",
+      "body": "The essentials for a daily plan: meals, calories, workouts, weight, water, and progress.",
       "tabsLabel": "LiveOn modules",
       "items": [
         {
           "id": "onboarding",
-          "title": "Onboarding and goal",
-          "body": "Starting details, goal weight, and personal constraints.",
+          "title": "Plan choice",
+          "body": "Choose the direction that fits your goal and habits.",
           "icon": "TargetIcon",
           "bullets": [
             "Goal",
@@ -195,8 +179,8 @@
         },
         {
           "id": "dashboard",
-          "title": "Dashboard",
-          "body": "Today's calories, meals, workout, water, and progress in one screen.",
+          "title": "Calorie tracking",
+          "body": "Keep daily limits and meals under control.",
           "icon": "BarChart3Icon",
           "bullets": [
             "Daily status",
@@ -206,8 +190,8 @@
         },
         {
           "id": "nutrition",
-          "title": "Nutrition",
-          "body": "Meal plan builder, AI generator, recipes, and portion control.",
+          "title": "Food control",
+          "body": "Log meals and understand what you eat.",
           "icon": "UtensilsIcon",
           "bullets": [
             "Meal plan",
@@ -217,8 +201,8 @@
         },
         {
           "id": "workouts",
-          "title": "Workouts",
-          "body": "Walking, training plan, history, and session report.",
+          "title": "Workout plan",
+          "body": "A plan for home or gym training.",
           "icon": "DumbbellIcon",
           "bullets": [
             "Plan",
@@ -228,8 +212,8 @@
         },
         {
           "id": "water-mood",
-          "title": "Water and mood",
-          "body": "Water target, reminders, and mood rhythm.",
+          "title": "Water intake",
+          "body": "Reach your daily water goal.",
           "icon": "DropletsIcon",
           "bullets": [
             "Water",
@@ -239,8 +223,8 @@
         },
         {
           "id": "progress",
-          "title": "Progress and reports",
-          "body": "Weight change, daily report, and longer-term trends.",
+          "title": "Weight tracking",
+          "body": "Log weight and see the trend.",
           "icon": "LineChartIcon",
           "bullets": [
             "Trend",
@@ -250,8 +234,8 @@
         },
         {
           "id": "profile",
-          "title": "Profile and preferences",
-          "body": "Language, theme, personal details, and health parameters.",
+          "title": "Steps",
+          "body": "Track daily activity through steps.",
           "icon": "UserCheckIcon",
           "bullets": [
             "Language",
@@ -450,9 +434,9 @@
       ]
     },
     "scenarios": {
-      "eyebrow": "Use cases",
-      "title": "Where LiveOn helps",
-      "body": "Practical use cases, not fictional testimonials.",
+      "eyebrow": "Programs",
+      "title": "Programs",
+      "body": "Choose the program that matches your goal and move toward the result.",
       "items": [
         [
           "Weight loss",
@@ -473,31 +457,31 @@
     },
     "pricing": {
       "eyebrow": "Pricing",
-      "title": "Start free. Upgrade when Premium is ready.",
+      "title": "Pricing",
       "free": {
         "title": "Free",
-        "price": "Free / forever",
+        "price": "$0 / mo",
         "features": [
-          "First AI plan",
-          "Basic water tracking",
-          "Basic meal plan",
-          "Limited statistics"
+          "Core workout plans",
+          "Calorie tracking",
+          "Weight tracking",
+          "Water and steps tracking"
         ],
         "cta": "Start free"
       },
       "premium": {
         "title": "Premium",
-        "badge": "Soon",
-        "price": "Soon",
+        "badge": "Most popular",
+        "price": "$4 / mo",
         "features": [
-          "Unlimited AI plans",
-          "Advanced analytics",
-          "Budget awareness",
-          "Product replacements",
-          "Food photo analysis",
-          "Weekly reports"
+          "All workout plans",
+          "Unlimited calorie tracking",
+          "Progress photos",
+          "Personal statistics",
+          "Plans and reminders",
+          "Continuous support"
         ],
-        "cta": "Notify me when ready"
+        "cta": "Go premium"
       }
     },
     "faq": {
@@ -531,13 +515,13 @@
       ]
     },
     "final": {
-      "title": "Start your profile and the plan comes together",
-      "body": "Answer a few questions and LiveOn builds your first meal, workout and water plan for today.",
-      "cta": "Get my plan free",
-      "secondary": "See example"
+      "title": "Start with discipline today and see a new you tomorrow.",
+      "body": "LiveOn stays with you through plan, discipline, and result.",
+      "cta": "Start free",
+      "secondary": "View programs"
     },
     "footer": {
-      "tagline": "AI meal and workout plans for your goal.",
+      "tagline": "Your best assistant for weight loss and workout planning.",
       "columns": [
         [
           "Product",

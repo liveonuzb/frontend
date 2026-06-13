@@ -1,5 +1,6 @@
 import {
   ArrowRightIcon,
+  CheckIcon,
   MenuIcon,
   MoonIcon,
   SparklesIcon,
@@ -74,7 +75,12 @@ const CTAButton = ({
     variant={variant}
     onClick={onClick}
     disabled={disabled}
-    className={cn("min-h-11", className)}
+    className={cn(
+      "min-h-11 rounded-xl",
+      variant === "default" &&
+        "border-[#ff7a1a] bg-[#ff7a1a] text-white shadow-[0_14px_34px_rgba(255,122,26,0.24)] hover:bg-[#f26f0f] hover:opacity-100 dark:border-[#ff8a2a] dark:bg-[#ff8a2a] dark:hover:bg-[#ff7a1a]",
+      className,
+    )}
   >
     {children}
     <ArrowRightIcon data-icon="inline-end" />
@@ -106,11 +112,11 @@ const SectionHeader = ({ eyebrow, title, body, align = "left" }) => (
       <InlinePill>{eyebrow}</InlinePill>
     ) : null}
     <div className="flex flex-col gap-3">
-      <h2 className="text-3xl font-semibold leading-tight tracking-normal text-foreground md:text-5xl">
+      <h2 className="text-2xl font-semibold leading-tight tracking-normal text-foreground md:text-3xl">
         {title}
       </h2>
       {body ? (
-        <p className="max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">
+        <p className="max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
           {body}
         </p>
       ) : null}
@@ -144,7 +150,7 @@ export const Header = ({
   theme,
   onToggleTheme,
 }) => (
-  <header className="fixed inset-x-0 top-0 z-40 border-b bg-background/88 px-4 py-2 text-foreground shadow-sm backdrop-blur-xl md:px-6">
+  <header className="fixed inset-x-0 top-0 z-40 border-b border-border/30 bg-background/94 px-4 py-3 text-foreground backdrop-blur-xl md:px-6">
     <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
       <Link
         to="/"
@@ -154,14 +160,14 @@ export const Header = ({
         <img
           src="/madagascar/logo-main.webp"
           alt={copy.nav.logoAlt}
-          className="size-8 object-contain"
+          className="size-7 object-contain"
           loading="eager"
         />
         <span className="text-base font-semibold">LiveOn</span>
       </Link>
 
       <nav
-        className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 xl:flex"
+        className="hidden min-w-0 flex-1 items-center justify-center gap-4 lg:flex"
         aria-label="Landing navigation"
       >
         {map(copy.nav.links, ([id, label]) => (
@@ -171,7 +177,7 @@ export const Header = ({
             variant="ghost"
             size="sm"
             onClick={() => onAnchor(id)}
-            className="whitespace-nowrap px-2 text-xs"
+            className="whitespace-nowrap rounded-lg px-2 text-xs font-semibold text-muted-foreground hover:text-foreground"
           >
             {label}
           </Button>
@@ -208,7 +214,7 @@ export const Header = ({
               variant="outline"
               size="icon"
               aria-label={copy.nav.menuOpen}
-              className="xl:hidden"
+              className="lg:hidden"
             >
               <MenuIcon />
             </Button>
@@ -261,48 +267,39 @@ export const HeroSection = ({ copy, onStart, onExample }) => {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <section className="relative isolate overflow-hidden bg-background pt-14 text-foreground">
-      <div
-        className="absolute inset-0 bg-cover bg-center opacity-35 saturate-110"
-        style={{ backgroundImage: "url('/madagascar/background.webp')" }}
+    <section className="relative isolate overflow-hidden bg-background pt-16 text-foreground">
+      <img
+        src="/madagascar/curious.webp"
+        alt=""
+        className="pointer-events-none absolute right-[-5rem] top-28 z-0 hidden w-[19rem] opacity-[0.08] saturate-110 dark:opacity-[0.06] lg:block"
         aria-hidden="true"
+        loading="eager"
       />
-      <div
-        className="absolute inset-0 bg-[linear-gradient(105deg,var(--background)_0%,color-mix(in_oklab,var(--background)_94%,transparent)_42%,color-mix(in_oklab,var(--background)_58%,transparent)_100%)]"
-        aria-hidden="true"
-      />
-      <div
-        className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent"
-        aria-hidden="true"
-      />
-      <div className="relative mx-auto grid min-h-[calc(100svh-7rem)] max-w-5xl gap-5 px-5 py-5 sm:py-6 md:px-8 lg:grid-cols-[0.82fr_1fr] lg:items-center lg:gap-8 lg:py-8 xl:py-9">
+      <div className="relative z-10 mx-auto grid min-h-[calc(100svh-9rem)] max-w-5xl gap-8 px-5 py-6 md:px-8 lg:grid-cols-[0.82fr_1fr] lg:items-center lg:gap-10 lg:py-10">
         <m.div
-          className="flex max-w-3xl flex-col gap-4 lg:pb-8"
+          className="flex max-w-3xl flex-col gap-6"
           initial={shouldReduceMotion ? false : { opacity: 0, y: 22 }}
           animate={shouldReduceMotion ? void 0 : { opacity: 1, y: 0 }}
           transition={{ duration: 0.52, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-2xl font-semibold md:text-4xl">LiveOn</p>
-            <InlinePill
-              icon={SparklesIcon}
-              className="bg-background/80 text-foreground shadow-sm backdrop-blur"
-            >
-              {copy.hero.badge}
-            </InlinePill>
-          </div>
-          <div className="flex flex-col gap-3">
-            <h1 className="text-3xl font-semibold leading-[1.05] tracking-normal md:text-5xl xl:text-6xl">
+          <InlinePill
+            icon={SparklesIcon}
+            className="border-[#dbeadd] bg-[#f1fbf4] text-[#2f8f3b] dark:border-primary/20 dark:bg-primary/10 dark:text-primary"
+          >
+            {copy.hero.badge}
+          </InlinePill>
+          <div className="flex flex-col gap-4">
+            <h1 className="max-w-2xl text-4xl font-semibold leading-[1.08] tracking-normal md:text-5xl">
               {copy.hero.title}
             </h1>
-            <p className="max-w-2xl text-base leading-7 text-muted-foreground">
+            <p className="max-w-xl text-base leading-7 text-muted-foreground">
               {copy.hero.body}
             </p>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row sm:gap-3">
             <CTAButton
               onClick={onStart}
-              className="min-w-0 px-2 text-xs sm:w-auto sm:px-4 sm:text-sm"
+              className="min-w-0 px-4 text-xs sm:w-auto sm:text-sm"
             >
               {copy.hero.primaryCta}
             </CTAButton>
@@ -311,16 +308,21 @@ export const HeroSection = ({ copy, onStart, onExample }) => {
               size="xl"
               variant="outline"
               onClick={onExample}
-              className="min-h-11 min-w-0 bg-background/65 px-2 text-xs backdrop-blur hover:bg-background/85 sm:w-auto sm:px-4 sm:text-sm"
+              className="min-h-11 min-w-0 rounded-xl bg-background px-4 text-xs shadow-sm sm:w-auto sm:text-sm"
             >
               {copy.hero.secondaryCta}
             </Button>
           </div>
-          <dl className="hidden gap-4 lg:grid lg:grid-cols-3">
+          <dl className="grid grid-cols-3 gap-2 sm:gap-3">
             {map(copy.hero.metrics, ([value, label]) => (
-              <div key={value} className="border-l border-border pl-4">
-                <dt className="text-lg font-semibold md:text-xl">{value}</dt>
-                <dd className="mt-1 text-sm leading-5 text-muted-foreground">
+              <div
+                key={value}
+                className="rounded-2xl border border-border/80 bg-card/70 p-3 shadow-[0_16px_44px_rgba(15,23,42,0.035)] sm:p-4"
+              >
+                <dt className="text-base font-semibold text-foreground sm:text-lg">
+                  {value}
+                </dt>
+                <dd className="mt-1 text-[11px] leading-4 text-muted-foreground sm:text-xs sm:leading-5">
                   {label}
                 </dd>
               </div>
@@ -332,28 +334,19 @@ export const HeroSection = ({ copy, onStart, onExample }) => {
           initial={shouldReduceMotion ? false : { opacity: 0, y: 28 }}
           animate={shouldReduceMotion ? void 0 : { opacity: 1, y: 0 }}
           transition={{ delay: 0.08, duration: 0.58, ease: [0.22, 1, 0.36, 1] }}
-          className="relative flex w-full flex-col justify-center gap-3 lg:min-h-[520px]"
+          className="relative hidden w-full flex-col justify-center gap-3 md:flex lg:min-h-[520px]"
         >
           <div className="relative mx-auto w-full max-w-[34rem] lg:mr-0">
             <div
               aria-hidden="true"
-              className="absolute -inset-2 rounded-[1.75rem] border bg-background/40 shadow-2xl backdrop-blur-md sm:-inset-3"
+              className="absolute -inset-2 rounded-[1.75rem] bg-[#e9f5ec] opacity-70 blur-2xl dark:bg-primary/15 sm:-inset-3"
             />
             <DashboardResultMockup
               compact
               copy={copy.hero.dashboard}
-              className="relative"
+              className="relative shadow-[0_24px_70px_rgba(15,23,42,0.10)]"
             />
           </div>
-          <div
-            aria-hidden="true"
-            className="mx-auto h-3 w-[min(18rem,60vw)] rounded-t-3xl border-x border-t bg-background/80 backdrop-blur lg:h-4 lg:mr-[5rem]"
-          />
-          {copy.productTour?.eyebrow ? (
-            <p className="mx-auto w-[min(24rem,80vw)] text-center text-sm text-muted-foreground lg:mr-[2rem]">
-              {copy.productTour.eyebrow}
-            </p>
-          ) : null}
         </m.div>
       </div>
     </section>
@@ -361,14 +354,14 @@ export const HeroSection = ({ copy, onStart, onExample }) => {
 };
 
 export const ProofStrip = ({ items }) => (
-  <section id="features" className="scroll-mt-24 border-y bg-card/75">
-    <div className="mx-auto grid max-w-5xl gap-3 px-5 py-4 md:grid-cols-2 md:px-8 lg:grid-cols-4">
+  <section id="features" className="scroll-mt-24 bg-background">
+    <div className="mx-auto grid max-w-5xl gap-3 px-5 py-8 md:grid-cols-2 md:px-8 lg:grid-cols-4">
       {map(items, ([title, body, Icon]) => (
         <div
           key={title}
-          className="group flex gap-3 rounded-lg px-1 py-2 transition-colors hover:bg-background/65"
+          className="group flex gap-3 rounded-2xl border border-border/80 bg-card p-4 shadow-[0_14px_40px_rgba(15,23,42,0.035)] transition-colors hover:border-[#bfe8c8] dark:hover:border-primary/35"
         >
-          <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#eaf8ee] text-[#2f9e44] transition-colors dark:bg-primary/10 dark:text-primary">
             <Icon className="size-5" />
           </span>
           <span>
@@ -394,9 +387,12 @@ export const ScenariosSection = ({ copy }) => (
       />
       <div className="mt-10 grid gap-4 md:grid-cols-3">
         {map(copy.items, ([title, body, tag]) => (
-          <Card key={title} className="h-full">
+          <Card
+            key={title}
+            className="h-full border-border/80 bg-card shadow-[0_16px_46px_rgba(15,23,42,0.04)] transition-colors hover:border-[#bfe8c8] dark:hover:border-primary/35"
+          >
             <CardHeader>
-              <InlinePill className="bg-secondary text-secondary-foreground">
+              <InlinePill className="border-[#dbeadd] bg-[#f1fbf4] text-[#2f8f3b] dark:border-primary/20 dark:bg-primary/10 dark:text-primary">
                 {tag}
               </InlinePill>
               <CardTitle>{title}</CardTitle>
@@ -410,14 +406,14 @@ export const ScenariosSection = ({ copy }) => (
 );
 
 export const PricingSection = ({ copy, onStart }) => (
-  <MotionSection id="pricing" className="bg-muted/35 py-16 md:py-24">
+  <MotionSection id="pricing" className="bg-background py-16 md:py-24">
     <div className="mx-auto max-w-5xl px-5 md:px-8">
       <SectionHeader
         eyebrow={copy.eyebrow}
         title={copy.title}
         align="center"
       />
-      <div className="mt-10 grid gap-4 md:grid-cols-2">
+      <div className="mx-auto mt-10 grid max-w-3xl gap-4 md:grid-cols-2">
         <PricingCard
           data={copy.free}
           onClick={() => onStart("pricing_free_cta_clicked")}
@@ -431,10 +427,10 @@ export const PricingSection = ({ copy, onStart }) => (
 const PricingCard = ({ data, highlighted = false, disabled = false, onClick }) => (
   <Card
     className={cn(
-      "h-full transition-colors",
+      "h-full transition-colors shadow-[0_16px_46px_rgba(15,23,42,0.04)]",
       highlighted
-        ? "border-dashed border-border bg-background/55"
-        : "border-primary/35 shadow-sm",
+        ? "border-[#ff7a1a]/55 bg-card"
+        : "border-border/80 bg-card",
     )}
   >
     <CardHeader>
@@ -446,8 +442,8 @@ const PricingCard = ({ data, highlighted = false, disabled = false, onClick }) =
               <InlinePill
                 className={cn(
                   highlighted
-                    ? "bg-muted text-muted-foreground"
-                    : "bg-primary text-primary-foreground",
+                    ? "border-[#ff7a1a] bg-[#ff7a1a] text-white"
+                    : "border-[#dbeadd] bg-[#f1fbf4] text-[#2f8f3b] dark:border-primary/20 dark:bg-primary/10 dark:text-primary",
                 )}
               >
                 {data.badge}
@@ -466,7 +462,7 @@ const PricingCard = ({ data, highlighted = false, disabled = false, onClick }) =
         <SparklesIcon
           className={cn(
             "size-7",
-            highlighted ? "text-muted-foreground" : "text-primary",
+            highlighted ? "text-[#ff7a1a]" : "text-[#2f9e44] dark:text-primary",
           )}
         />
       </div>
@@ -474,9 +470,9 @@ const PricingCard = ({ data, highlighted = false, disabled = false, onClick }) =
     <CardContent className="grid gap-3">
       {map(data.features, (item) => (
         <div key={item} className="flex items-center gap-2 text-sm">
-          <span
+          <CheckIcon
             aria-hidden="true"
-            className="size-1.5 rounded-full bg-muted-foreground"
+            className="size-4 shrink-0 text-[#2f9e44] dark:text-primary"
           />
           {item}
         </div>
@@ -484,7 +480,7 @@ const PricingCard = ({ data, highlighted = false, disabled = false, onClick }) =
     </CardContent>
     <CardFooter>
       <CTAButton
-        variant={highlighted ? "secondary" : "default"}
+        variant="default"
         onClick={onClick}
         className="w-full"
         disabled={disabled}
@@ -503,7 +499,7 @@ export const FAQSection = ({ copy, onQuestionOpen }) => (
         type="single"
         collapsible
         defaultValue="faq-0"
-        className="mt-10 rounded-lg border bg-card/50 px-4"
+        className="mx-auto mt-10 max-w-3xl rounded-2xl border border-border/80 bg-card px-4 shadow-[0_16px_46px_rgba(15,23,42,0.04)]"
       >
         {map(copy.items, ([question, answer], index) => (
           <AccordionItem key={question} value={`faq-${index}`}>
@@ -521,48 +517,48 @@ export const FAQSection = ({ copy, onQuestionOpen }) => (
 );
 
 export const FinalCTA = ({ copy, productPreview, onStart, onExample }) => (
-  <section className="relative isolate overflow-hidden border-y bg-background px-5 py-16 text-foreground md:px-8 md:py-24">
-    <div
-      className="absolute inset-0 bg-cover bg-center opacity-20"
-      style={{ backgroundImage: "url('/madagascar/background.webp')" }}
-      aria-hidden="true"
-    />
-    <div
-      className="absolute inset-0 bg-gradient-to-r from-background via-background/95 to-background/75"
-      aria-hidden="true"
-    />
-    <div className="relative mx-auto grid max-w-5xl gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-4">
-          <h2 className="text-3xl font-semibold leading-tight md:text-5xl">
-            {copy.title}
-          </h2>
-          <p className="max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">
-            {copy.body}
-          </p>
+  <section className="relative isolate overflow-hidden bg-background px-5 py-16 text-foreground md:px-8 md:py-24">
+    <div className="relative mx-auto max-w-5xl overflow-hidden rounded-[1.75rem] border border-border/80 bg-[linear-gradient(110deg,#f4fbf6_0%,#fff_52%,#fff4e8_100%)] p-6 shadow-[0_22px_70px_rgba(15,23,42,0.07)] dark:bg-[linear-gradient(110deg,color-mix(in_oklab,var(--card)_96%,var(--primary))_0%,var(--card)_54%,color-mix(in_oklab,var(--card)_88%,#ff7a1a)_100%)] md:p-8 lg:p-10">
+      <img
+        src="/madagascar/curious.webp"
+        alt=""
+        className="pointer-events-none absolute bottom-0 right-[-3rem] hidden w-[16rem] opacity-[0.10] dark:opacity-[0.06] lg:block"
+        aria-hidden="true"
+        loading="lazy"
+      />
+      <div className="relative grid gap-8 lg:grid-cols-[0.86fr_1.14fr] lg:items-center">
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-4">
+            <h2 className="text-3xl font-semibold leading-tight md:text-4xl">
+              {copy.title}
+            </h2>
+            <p className="max-w-2xl text-base leading-7 text-muted-foreground">
+              {copy.body}
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <CTAButton onClick={onStart} className="w-full sm:w-auto">
+              {copy.cta}
+            </CTAButton>
+            <Button
+              type="button"
+              size="xl"
+              variant="outline"
+              onClick={onExample}
+              className="min-h-11 w-full rounded-xl bg-background/75 backdrop-blur hover:bg-background/90 sm:w-auto"
+            >
+              {copy.secondary}
+            </Button>
+          </div>
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <CTAButton onClick={onStart} className="w-full sm:w-auto">
-            {copy.cta}
-          </CTAButton>
-          <Button
-            type="button"
-            size="xl"
-            variant="outline"
-            onClick={onExample}
-            className="min-h-11 w-full bg-background/65 backdrop-blur hover:bg-background/85 sm:w-auto"
-          >
-            {copy.secondary}
-          </Button>
-        </div>
+        <ProductPreviewSlider compact preview={productPreview} variant="final" />
       </div>
-      <ProductPreviewSlider compact preview={productPreview} variant="final" />
     </div>
   </section>
 );
 
 export const Footer = ({ copy }) => (
-  <footer className="border-t bg-card px-5 pb-28 pt-10 text-card-foreground md:px-8 md:pb-10">
+  <footer className="border-t border-border/70 bg-background px-5 pb-28 pt-10 text-foreground md:px-8 md:pb-10">
     <div className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-[1fr_1.35fr]">
       <div>
         <div className="inline-flex items-center gap-3">
@@ -628,7 +624,7 @@ export const StickyMobileCTA = ({ copy, onStart }) => (
     <Button
       type="button"
       onClick={onStart}
-      className="min-h-12 w-full text-base font-medium"
+      className="min-h-12 w-full rounded-xl border-[#ff7a1a] bg-[#ff7a1a] text-base font-medium text-white shadow-[0_14px_34px_rgba(255,122,26,0.24)] hover:bg-[#f26f0f] hover:opacity-100 dark:border-[#ff8a2a] dark:bg-[#ff8a2a]"
     >
       {copy.mobileCta}
       <ArrowRightIcon data-icon="inline-end" />

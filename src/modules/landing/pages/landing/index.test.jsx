@@ -143,9 +143,9 @@ describe("landing page", () => {
   it("keeps the desktop landing header compact", () => {
     renderLanding();
 
-    expect(screen.getByRole("banner").className).toContain("py-2");
+    expect(screen.getByRole("banner").className).toContain("py-3");
     expect(screen.getByRole("link", { name: "LiveOn" }).className).toContain("min-h-9");
-    expect(screen.getByRole("button", { name: "Qanday ishlaydi" }).className).toContain(
+    expect(screen.getByRole("button", { name: "Dasturlar" }).className).toContain(
       "whitespace-nowrap",
     );
   });
@@ -156,11 +156,11 @@ describe("landing page", () => {
     expect(
       screen.getByRole("heading", {
         level: 1,
-        name: /Maqsadingizni ayting/i,
+        name: /Ozish va mashg'ulot rejangizni/i,
       }),
     ).toBeInTheDocument();
     expect(screen.getByTestId("product-dashboard-preview")).toBeInTheDocument();
-    expect(screen.getByText(/Bugungi natija/i)).toBeInTheDocument();
+    expect(screen.getByText(/Mening ko'rsatkichlarim/i)).toBeInTheDocument();
 
     forEach([
       "features",
@@ -184,20 +184,15 @@ describe("landing page", () => {
 
     forEach(
       [
-        "Maqsadni sozlash",
-        "AI kunlik reja",
-        "Kun davomida bajarish",
-        "Progress va keyingi tavsiya",
+        "Reja tanlang",
+        "Kaloriya kuzating",
+        "Mashq bajaring",
+        "Natijani ko'ring",
       ],
       (label) => {
         expect(screen.getAllByText(label).length).toBeGreaterThan(0);
       },
     );
-
-    expect(screen.getByTestId("goal-setup-preview")).toBeInTheDocument();
-    expect(screen.getByTestId("ai-plan-preview")).toBeInTheDocument();
-    expect(screen.getByTestId("daily-execution-preview")).toBeInTheDocument();
-    expect(screen.getByTestId("progress-result-preview")).toBeInTheDocument();
   });
 
   it("shows the existing product modules as compact cards", () => {
@@ -207,13 +202,13 @@ describe("landing page", () => {
 
     forEach(
       [
-        ["product-module-onboarding", "Onboarding va maqsad"],
-        ["product-module-dashboard", "Dashboard"],
-        ["product-module-nutrition", "Ovqatlanish"],
-        ["product-module-workouts", "Mashg'ulot"],
-        ["product-module-water-mood", "Suv va kayfiyat"],
-        ["product-module-progress", "Progress va hisobotlar"],
-        ["product-module-profile", "Profil va sozlamalar"],
+        ["product-module-onboarding", "Reja tanlash"],
+        ["product-module-dashboard", "Kaloriya hisobi"],
+        ["product-module-nutrition", "Ovqat nazorati"],
+        ["product-module-workouts", "Mashg'ulot rejasi"],
+        ["product-module-water-mood", "Suv ichish"],
+        ["product-module-progress", "Vazn kuzatuvi"],
+        ["product-module-profile", "Qadamlar"],
       ],
       ([testId, label]) => {
         expect(screen.getByTestId(testId)).toHaveTextContent(label);
@@ -231,7 +226,7 @@ describe("landing page", () => {
     expect(screen.getByText("LiveOn menyusi")).toBeInTheDocument();
 
     const howButton = within(dialog).getByRole("button", {
-      name: "Qanday ishlaydi",
+      name: "Dasturlar",
     });
     expect(howButton).toBeInTheDocument();
 
@@ -272,7 +267,7 @@ describe("landing page", () => {
     renderLanding();
 
     const heroSection = screen
-      .getByRole("heading", { level: 1, name: /Maqsadingizni ayting/i })
+      .getByRole("heading", { level: 1, name: /Ozish va mashg'ulot rejangizni/i })
       .closest("section");
 
     fireEvent.click(

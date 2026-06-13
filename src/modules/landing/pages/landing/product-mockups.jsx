@@ -106,7 +106,7 @@ const resultBars = [
 const TextPill = ({ children, className }) => (
   <span
     className={cn(
-      "min-w-0 break-words rounded-md border border-border bg-muted px-2 py-1 text-xs font-medium leading-4 text-muted-foreground",
+      "min-w-0 break-words rounded-md border border-border/80 bg-background px-2 py-1 text-xs font-medium leading-4 text-muted-foreground",
       className,
     )}
   >
@@ -188,7 +188,7 @@ const MiniMetric = ({
 }) => (
   <div
     className={cn(
-      "rounded-lg border border-border bg-background",
+      "rounded-xl border border-border/80 bg-background",
       compact ? "p-2.5" : "p-3",
       className,
     )}
@@ -197,6 +197,7 @@ const MiniMetric = ({
       <span
         className={cn(
           "grid shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground",
+          "bg-[#eaf8ee] text-[#2f9e44] dark:bg-primary/10 dark:text-primary",
           compact ? "size-8" : "size-9",
         )}
       >
@@ -215,7 +216,10 @@ const MiniMetric = ({
       ) : null}
     </div>
     {typeof progress === "number" ? (
-      <Progress value={progress} className="mt-3 h-1.5" />
+      <Progress
+        value={progress}
+        className="mt-3 h-1.5 bg-[#eaf8ee] [&>div]:bg-[#2f9e44] dark:bg-primary/15 dark:[&>div]:bg-primary"
+      />
     ) : null}
   </div>
 );
@@ -252,7 +256,7 @@ export const DashboardResultMockup = ({ copy, className, compact = false }) => {
     <Card
       data-testid="product-dashboard-preview"
       size={compact ? "sm" : "default"}
-      className={cn("border-border bg-card shadow-sm", className)}
+      className={cn("border-border/80 bg-card shadow-sm", className)}
     >
       <CardHeader className={cn(compact && "gap-1.5")}>
         <div className="flex items-start justify-between gap-4">
@@ -280,7 +284,7 @@ export const DashboardResultMockup = ({ copy, className, compact = false }) => {
             </div>
           </div>
           <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
-            <FlameIcon className="size-5" />
+            <FlameIcon className="size-5 text-[#ff7a1a]" />
           </span>
         </div>
       </CardHeader>
@@ -289,6 +293,7 @@ export const DashboardResultMockup = ({ copy, className, compact = false }) => {
         <div
           className={cn(
             "rounded-lg border border-border bg-background",
+            "rounded-2xl border-border/80",
             compact ? "p-3 lg:p-4" : "p-4",
           )}
         >
@@ -310,7 +315,10 @@ export const DashboardResultMockup = ({ copy, className, compact = false }) => {
           </div>
           <Progress
             value={calories.progress}
-            className={compact ? "mt-3" : "mt-4"}
+            className={cn(
+              "bg-[#fff0e5] [&>div]:bg-[#ff7a1a] dark:bg-[#ff7a1a]/15 dark:[&>div]:bg-[#ff8a2a]",
+              compact ? "mt-3" : "mt-4",
+            )}
           />
         </div>
 

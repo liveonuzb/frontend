@@ -7,21 +7,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import find from "lodash/find";
 import map from "lodash/map";
-import take from "lodash/take";
 
 const EMPTY_MODULE_COPY = {};
 
 const SectionHeader = ({ copy = EMPTY_MODULE_COPY }) => (
-  <div className="flex max-w-3xl flex-col gap-4">
+  <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 text-center">
     {copy.eyebrow ? (
       <span className="w-fit max-w-full break-words rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium leading-5 text-muted-foreground">
         {copy.eyebrow}
@@ -29,29 +23,16 @@ const SectionHeader = ({ copy = EMPTY_MODULE_COPY }) => (
     ) : null}
     <div className="flex flex-col gap-3">
       {copy?.title ? (
-        <h2 className="text-3xl font-semibold leading-tight tracking-normal text-foreground md:text-5xl">
+        <h2 className="text-2xl font-semibold leading-tight tracking-normal text-foreground md:text-3xl">
           {copy.title}
         </h2>
       ) : null}
       {copy?.body ? (
-        <p className="max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">
+        <p className="max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
           {copy.body}
         </p>
       ) : null}
     </div>
-  </div>
-);
-
-const ModuleBullets = ({ bullets, className }) => (
-  <div className={cn("grid gap-2", className)}>
-    {map(take(bullets, 3), (bullet) => (
-      <span
-        key={bullet}
-        className="min-w-0 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium leading-5 text-foreground"
-      >
-        {bullet}
-      </span>
-    ))}
   </div>
 );
 
@@ -68,85 +49,99 @@ const ModuleCard = ({ item, className, size, testId }) => {
         data-testid={testId}
         size={size}
         className={cn(
-          "group h-full border-border bg-card transition-colors hover:border-primary/40",
+          "group h-full border-border/80 bg-card text-center shadow-[0_16px_46px_rgba(15,23,42,0.04)] transition-colors hover:border-[#bfe8c8] dark:hover:border-primary/35",
           className,
         )}
       >
-        <CardHeader>
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex min-w-0 flex-col gap-2">
-              <CardTitle className="text-lg leading-tight">
-                {item?.title}
-              </CardTitle>
-              <CardDescription className="leading-6">{item?.body}</CardDescription>
-            </div>
+        <CardHeader className="items-center">
+          <div className="flex min-w-0 flex-col items-center gap-3">
             {Icon ? (
-              <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#eaf8ee] text-[#2f9e44] transition-colors dark:bg-primary/10 dark:text-primary">
                 <Icon className="size-5" aria-hidden="true" />
               </span>
             ) : null}
+            <div className="flex min-w-0 flex-col gap-2">
+              <CardTitle className="text-sm font-semibold leading-tight">
+                {item?.title}
+              </CardTitle>
+              <CardDescription className="text-xs leading-5">{item?.body}</CardDescription>
+            </div>
           </div>
         </CardHeader>
-        {item?.bullets?.length ? (
-          <CardContent>
-            <ModuleBullets bullets={item.bullets} />
-          </CardContent>
-        ) : null}
       </Card>
     </m.article>
   );
 };
 
-const ModuleDetail = ({ item }) => {
-  const Icon = item?.icon;
+const progressPreview = [
+  ["D", 86],
+  ["S", 82],
+  ["Ch", 78],
+  ["P", 74],
+  ["Ju", 70],
+  ["Sh", 66],
+  ["Ya", 65],
+];
 
-  return (
-    <Card className="border-border bg-card shadow-sm">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex min-w-0 flex-col gap-3">
-            {item?.id ? (
-              <Badge variant="secondary" className="w-fit">
-                {item.id}
-              </Badge>
-            ) : null}
-            <div className="flex flex-col gap-2">
-              <CardTitle className="text-2xl leading-tight">
-                {item?.title}
-              </CardTitle>
-              <CardDescription className="leading-6">{item?.body}</CardDescription>
-            </div>
-          </div>
-          {Icon ? (
-            <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
-              <Icon className="size-5" aria-hidden="true" />
-            </span>
-          ) : null}
+const ModuleProgressPreview = ({ item }) => (
+  <Card className="border-border/80 bg-card shadow-[0_18px_54px_rgba(15,23,42,0.06)] lg:sticky lg:top-28">
+    <CardHeader>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <CardDescription>{item?.title}</CardDescription>
+          <CardTitle className="mt-2 text-3xl font-semibold leading-none">
+            78.6 kg <span className="text-sm text-[#2f9e44]">-2.4 kg</span>
+          </CardTitle>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {item?.body}
+          </p>
         </div>
-      </CardHeader>
-      {item?.bullets?.length ? (
-        <CardContent className="flex flex-col gap-5">
-          <Separator />
-          <ModuleBullets
-            bullets={item.bullets}
-            className="sm:grid-cols-3 [&>span]:bg-muted/45"
-          />
-        </CardContent>
-      ) : null}
-    </Card>
-  );
-};
+        <Badge variant="outline" className="shrink-0">
+          kg
+        </Badge>
+      </div>
+    </CardHeader>
+    <CardContent className="flex flex-col gap-5">
+      <div className="grid h-32 grid-cols-7 items-end gap-2 rounded-2xl border border-border/70 bg-background p-4">
+        {map(progressPreview, ([label, value]) => (
+          <div key={label} className="flex h-full min-w-0 flex-col items-center justify-end gap-2">
+            <div className="flex h-full w-full items-end rounded-full bg-muted">
+              <div
+                className="w-full rounded-full bg-[#2f9e44] dark:bg-primary"
+                style={{ height: `${value}%` }}
+              />
+            </div>
+            <span className="text-[10px] font-medium text-muted-foreground">
+              {label}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="rounded-xl border border-border/70 bg-background p-3">
+          <p className="text-xs text-muted-foreground">Boshlang'ich</p>
+          <p className="mt-1 font-semibold text-foreground">81.0 kg</p>
+        </div>
+        <div className="rounded-xl border border-border/70 bg-background p-3">
+          <p className="text-xs text-muted-foreground">Maqsad</p>
+          <p className="mt-1 font-semibold text-foreground">68.0 kg</p>
+        </div>
+      </div>
+      <Progress value={72} className="h-2 bg-[#eaf8ee] [&>div]:bg-[#2f9e44] dark:bg-primary/15 dark:[&>div]:bg-primary" />
+    </CardContent>
+  </Card>
+);
 
 export const ProductModulesSection = ({ copy = EMPTY_MODULE_COPY }) => {
   const shouldReduceMotion = useReducedMotion();
   const items = copy?.items || [];
-  const defaultTab = items[0]?.id || "onboarding";
+  const progressItem = find(items, { id: "progress" }) || items[0];
 
   return (
     <m.section
       id="nutrition"
       data-testid="product-modules"
-      className="scroll-mt-24 bg-muted/35 py-16 md:py-24"
+      className="scroll-mt-24 bg-background py-16 md:py-24"
       initial={shouldReduceMotion ? false : { opacity: 0, y: 24 }}
       whileInView={shouldReduceMotion ? void 0 : { opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.18 }}
@@ -160,9 +155,9 @@ export const ProductModulesSection = ({ copy = EMPTY_MODULE_COPY }) => {
         aria-hidden="true"
       />
 
-      <div className="mx-auto grid max-w-5xl gap-10 px-5 md:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-        <div className="flex flex-col gap-8">
-          <SectionHeader copy={copy} />
+      <div className="mx-auto max-w-5xl px-5 md:px-8">
+        <SectionHeader copy={copy} />
+        <div className="mt-8 grid gap-5 lg:grid-cols-[1fr_0.92fr] lg:items-start">
           <div className="grid gap-3 sm:grid-cols-2">
             {map(items, (item) => (
               <ModuleCard
@@ -173,36 +168,8 @@ export const ProductModulesSection = ({ copy = EMPTY_MODULE_COPY }) => {
               />
             ))}
           </div>
+          <ModuleProgressPreview item={progressItem} />
         </div>
-
-        <Tabs
-          defaultValue={defaultTab}
-          className="min-w-0 rounded-2xl border bg-background/65 p-3 shadow-sm backdrop-blur lg:sticky lg:top-28"
-        >
-          <TabsList
-            aria-label={copy.tabsLabel}
-            className="w-full justify-start overflow-x-auto"
-          >
-            {map(items, (item) => (
-              <TabsTrigger
-                key={item?.id || item?.title}
-                value={item?.id}
-                className="min-w-fit px-3"
-              >
-                {item?.title}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          {map(items, (item) => (
-            <TabsContent
-              key={item?.id || item?.title}
-              value={item?.id}
-              className="mt-5"
-            >
-              <ModuleDetail item={item} />
-            </TabsContent>
-          ))}
-        </Tabs>
       </div>
     </m.section>
   );
