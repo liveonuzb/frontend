@@ -59,32 +59,41 @@ const ModuleCard = ({ item, className, size, testId }) => {
   const Icon = item?.icon;
 
   return (
-    <Card
-      data-testid={testId}
-      size={size}
-      className={cn("h-full border-border bg-card", className)}
+    <m.article
+      className="min-w-0"
+      whileHover={{ y: -3 }}
+      transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
     >
-      <CardHeader>
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex min-w-0 flex-col gap-2">
-            <CardTitle className="text-lg leading-tight">
-              {item?.title}
-            </CardTitle>
-            <CardDescription className="leading-6">{item?.body}</CardDescription>
+      <Card
+        data-testid={testId}
+        size={size}
+        className={cn(
+          "group h-full border-border bg-card transition-colors hover:border-primary/40",
+          className,
+        )}
+      >
+        <CardHeader>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex min-w-0 flex-col gap-2">
+              <CardTitle className="text-lg leading-tight">
+                {item?.title}
+              </CardTitle>
+              <CardDescription className="leading-6">{item?.body}</CardDescription>
+            </div>
+            {Icon ? (
+              <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                <Icon className="size-5" aria-hidden="true" />
+              </span>
+            ) : null}
           </div>
-          {Icon ? (
-            <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
-              <Icon className="size-5" aria-hidden="true" />
-            </span>
-          ) : null}
-        </div>
-      </CardHeader>
-      {item?.bullets?.length ? (
-        <CardContent>
-          <ModuleBullets bullets={item.bullets} />
-        </CardContent>
-      ) : null}
-    </Card>
+        </CardHeader>
+        {item?.bullets?.length ? (
+          <CardContent>
+            <ModuleBullets bullets={item.bullets} />
+          </CardContent>
+        ) : null}
+      </Card>
+    </m.article>
   );
 };
 
@@ -92,7 +101,7 @@ const ModuleDetail = ({ item }) => {
   const Icon = item?.icon;
 
   return (
-    <Card className="border-border bg-card">
+    <Card className="border-border bg-card shadow-sm">
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 flex-col gap-3">
@@ -120,7 +129,7 @@ const ModuleDetail = ({ item }) => {
           <Separator />
           <ModuleBullets
             bullets={item.bullets}
-            className="sm:grid-cols-3"
+            className="sm:grid-cols-3 [&>span]:bg-muted/45"
           />
         </CardContent>
       ) : null}
@@ -166,7 +175,10 @@ export const ProductModulesSection = ({ copy = EMPTY_MODULE_COPY }) => {
           </div>
         </div>
 
-        <Tabs defaultValue={defaultTab} className="min-w-0 lg:sticky lg:top-28">
+        <Tabs
+          defaultValue={defaultTab}
+          className="min-w-0 rounded-2xl border bg-background/65 p-3 shadow-sm backdrop-blur lg:sticky lg:top-28"
+        >
           <TabsList
             aria-label={copy.tabsLabel}
             className="w-full justify-start overflow-x-auto"

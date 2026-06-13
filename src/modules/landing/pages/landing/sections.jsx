@@ -263,32 +263,36 @@ export const HeroSection = ({ copy, onStart, onExample }) => {
   return (
     <section className="relative isolate overflow-hidden bg-background pt-14 text-foreground">
       <div
-        className="absolute inset-0 bg-cover bg-center opacity-40"
+        className="absolute inset-0 bg-cover bg-center opacity-35 saturate-110"
         style={{ backgroundImage: "url('/madagascar/background.webp')" }}
         aria-hidden="true"
       />
       <div
-        className="absolute inset-0 bg-gradient-to-r from-background via-background/90 to-background/55"
+        className="absolute inset-0 bg-[linear-gradient(105deg,var(--background)_0%,color-mix(in_oklab,var(--background)_94%,transparent)_42%,color-mix(in_oklab,var(--background)_58%,transparent)_100%)]"
         aria-hidden="true"
       />
-      <div className="relative mx-auto grid max-w-7xl gap-5 px-5 py-5 sm:py-6 md:px-8 lg:grid-cols-[0.82fr_1fr] lg:items-center lg:gap-8 lg:py-8 xl:py-9">
+      <div
+        className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent"
+        aria-hidden="true"
+      />
+      <div className="relative mx-auto grid min-h-[calc(100svh-7rem)] max-w-7xl gap-5 px-5 py-5 sm:py-6 md:px-8 lg:grid-cols-[0.82fr_1fr] lg:items-center lg:gap-8 lg:py-8 xl:py-9">
         <m.div
-          className="flex max-w-3xl flex-col gap-4"
+          className="flex max-w-3xl flex-col gap-4 lg:pb-8"
           initial={shouldReduceMotion ? false : { opacity: 0, y: 22 }}
           animate={shouldReduceMotion ? void 0 : { opacity: 1, y: 0 }}
           transition={{ duration: 0.52, ease: [0.22, 1, 0.36, 1] }}
         >
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-lg font-semibold md:text-2xl">LiveOn</p>
+            <p className="text-2xl font-semibold md:text-4xl">LiveOn</p>
             <InlinePill
               icon={SparklesIcon}
-              className="bg-secondary text-secondary-foreground"
+              className="bg-background/80 text-foreground shadow-sm backdrop-blur"
             >
               {copy.hero.badge}
             </InlinePill>
           </div>
           <div className="flex flex-col gap-3">
-            <h1 className="text-3xl font-semibold leading-[1.06] tracking-normal md:text-4xl xl:text-5xl">
+            <h1 className="text-3xl font-semibold leading-[1.05] tracking-normal md:text-5xl xl:text-6xl">
               {copy.hero.title}
             </h1>
             <p className="max-w-2xl text-base leading-7 text-muted-foreground">
@@ -330,8 +334,16 @@ export const HeroSection = ({ copy, onStart, onExample }) => {
           transition={{ delay: 0.08, duration: 0.58, ease: [0.22, 1, 0.36, 1] }}
           className="relative flex w-full flex-col justify-center gap-3 lg:min-h-[520px]"
         >
-          <div className="mx-auto w-full max-w-[34rem] lg:mr-0">
-            <DashboardResultMockup compact copy={copy.hero.dashboard} />
+          <div className="relative mx-auto w-full max-w-[34rem] lg:mr-0">
+            <div
+              aria-hidden="true"
+              className="absolute -inset-2 rounded-[1.75rem] border bg-background/40 shadow-2xl backdrop-blur-md sm:-inset-3"
+            />
+            <DashboardResultMockup
+              compact
+              copy={copy.hero.dashboard}
+              className="relative"
+            />
           </div>
           <div
             aria-hidden="true"
@@ -349,11 +361,14 @@ export const HeroSection = ({ copy, onStart, onExample }) => {
 };
 
 export const ProofStrip = ({ items }) => (
-  <section id="features" className="scroll-mt-24 border-y bg-background">
-    <div className="mx-auto grid max-w-7xl gap-3 px-5 py-5 md:grid-cols-2 md:px-8 lg:grid-cols-4">
+  <section id="features" className="scroll-mt-24 border-y bg-card/75">
+    <div className="mx-auto grid max-w-7xl gap-3 px-5 py-4 md:grid-cols-2 md:px-8 lg:grid-cols-4">
       {map(items, ([title, body, Icon]) => (
-        <div key={title} className="flex gap-3 rounded-lg px-1 py-2">
-          <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+        <div
+          key={title}
+          className="group flex gap-3 rounded-lg px-1 py-2 transition-colors hover:bg-background/65"
+        >
+          <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
             <Icon className="size-5" />
           </span>
           <span>
@@ -396,7 +411,7 @@ export const ScenariosSection = ({ copy }) => (
 
 export const PricingSection = ({ copy, onStart }) => (
   <MotionSection id="pricing" className="bg-muted/35 py-16 md:py-24">
-    <div className="mx-auto max-w-5xl px-5 md:px-8">
+    <div className="mx-auto max-w-6xl px-5 md:px-8">
       <SectionHeader
         eyebrow={copy.eyebrow}
         title={copy.title}
@@ -414,21 +429,46 @@ export const PricingSection = ({ copy, onStart }) => (
 );
 
 const PricingCard = ({ data, highlighted = false, disabled = false, onClick }) => (
-  <Card className={cn("h-full", highlighted && "border-primary/30")}>
+  <Card
+    className={cn(
+      "h-full transition-colors",
+      highlighted
+        ? "border-dashed border-border bg-background/55"
+        : "border-primary/35 shadow-sm",
+    )}
+  >
     <CardHeader>
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <CardTitle className="text-2xl">{data.title}</CardTitle>
             {data.badge ? (
-              <InlinePill className="bg-primary text-primary-foreground">
+              <InlinePill
+                className={cn(
+                  highlighted
+                    ? "bg-muted text-muted-foreground"
+                    : "bg-primary text-primary-foreground",
+                )}
+              >
                 {data.badge}
               </InlinePill>
             ) : null}
           </div>
-          <p className="text-3xl font-semibold">{data.price}</p>
+          <p
+            className={cn(
+              "text-3xl font-semibold",
+              highlighted && "text-muted-foreground",
+            )}
+          >
+            {data.price}
+          </p>
         </div>
-        <SparklesIcon className="size-7 text-muted-foreground" />
+        <SparklesIcon
+          className={cn(
+            "size-7",
+            highlighted ? "text-muted-foreground" : "text-primary",
+          )}
+        />
       </div>
     </CardHeader>
     <CardContent className="grid gap-3">
@@ -463,7 +503,7 @@ export const FAQSection = ({ copy, onQuestionOpen }) => (
         type="single"
         collapsible
         defaultValue="faq-0"
-        className="mt-10 rounded-lg border"
+        className="mt-10 rounded-lg border bg-card/50 px-4"
       >
         {map(copy.items, ([question, answer], index) => (
           <AccordionItem key={question} value={`faq-${index}`}>
@@ -481,8 +521,17 @@ export const FAQSection = ({ copy, onQuestionOpen }) => (
 );
 
 export const FinalCTA = ({ copy, productPreview, onStart, onExample }) => (
-  <section className="border-y bg-muted/40 px-5 py-16 text-foreground md:px-8 md:py-24">
-    <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+  <section className="relative isolate overflow-hidden border-y bg-background px-5 py-16 text-foreground md:px-8 md:py-24">
+    <div
+      className="absolute inset-0 bg-cover bg-center opacity-20"
+      style={{ backgroundImage: "url('/madagascar/background.webp')" }}
+      aria-hidden="true"
+    />
+    <div
+      className="absolute inset-0 bg-gradient-to-r from-background via-background/95 to-background/75"
+      aria-hidden="true"
+    />
+    <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-4">
           <h2 className="text-3xl font-semibold leading-tight md:text-5xl">
