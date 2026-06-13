@@ -98,81 +98,83 @@ const SelectLanguagePage = () => {
           transition={{ duration: 0.36, ease: "easeOut" }}
         />
       </div>
-      <div className="relative z-10 mx-auto flex h-full w-full max-w-lg flex-1 flex-col justify-center">
-        <div className="flex flex-col items-center text-center">
-          <img
-            src={modeTheme.assets.logo}
-            className="size-16 object-contain md:size-20"
-            alt="Logo"
-          />
-          <h1 className="mt-4 text-2xl font-bold leading-tight md:text-3xl">
-            Choose your language
-          </h1>
-          <p className="mt-1.5 text-sm text-muted-foreground md:text-base">
-            Tilni tanlang · Выберите язык
-          </p>
-        </div>
+      <div className="relative z-10 mx-auto flex h-full w-full max-w-5xl flex-1 items-center justify-center">
+        <div className="w-full max-w-lg">
+          <div className="flex flex-col items-center text-center">
+            <img
+              src={modeTheme.assets.logo}
+              className="size-16 object-contain md:size-20"
+              alt="Logo"
+            />
+            <h1 className="mt-4 text-2xl font-bold leading-tight md:text-3xl">
+              Choose your language
+            </h1>
+            <p className="mt-1.5 text-sm text-muted-foreground md:text-base">
+              Tilni tanlang · Выберите язык
+            </p>
+          </div>
 
-        <div className="mt-6 flex flex-col gap-3 md:mt-10 md:gap-4">
-          {map(LANGUAGES, (lang) => {
-            const isActive = selected === lang.code;
-            return (
-              <motion.button
-                key={lang.code}
-                type="button"
-                onClick={() => setSelected(lang.code)}
-                whileTap={{ scale: 0.98 }}
-                className={cn(
-                  "relative flex items-center gap-4 rounded-[24px] border bg-background/90 px-4 py-4 text-left transition-all md:gap-5 md:rounded-3xl md:px-5 md:py-5",
-                  isActive
-                    ? `bg-gradient-to-br ${lang.accent} ${lang.border}`
-                    : "border-border/70 hover:border-primary/30",
-                )}
-              >
-                <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-background/80 text-3xl shadow-sm md:size-14 md:text-4xl">
-                  {lang.flag}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-base font-bold md:text-lg">{lang.label}</p>
-                  <p className="text-xs text-muted-foreground md:text-sm">
-                    {lang.native}
-                  </p>
-                </div>
-                <div
+          <div className="mt-6 flex flex-col gap-3 md:mt-10 md:gap-4">
+            {map(LANGUAGES, (lang) => {
+              const isActive = selected === lang.code;
+              return (
+                <motion.button
+                  key={lang.code}
+                  type="button"
+                  onClick={() => setSelected(lang.code)}
+                  whileTap={{ scale: 0.98 }}
                   className={cn(
-                    "flex size-6 shrink-0 items-center justify-center rounded-full border-2 md:size-7",
+                    "relative flex items-center gap-4 rounded-[24px] border bg-background/90 px-4 py-4 text-left transition-all md:gap-5 md:rounded-3xl md:px-5 md:py-5",
                     isActive
-                      ? `${lang.border} bg-background/70`
-                      : "border-muted-foreground/25",
+                      ? `bg-gradient-to-br ${lang.accent} ${lang.border}`
+                      : "border-border/70 hover:border-primary/30",
                   )}
                 >
-                  {isActive ? (
-                    <div
-                      className={cn(
-                        "flex size-4 items-center justify-center rounded-full md:size-5",
-                        lang.dotTone,
-                      )}
-                    >
-                      <CheckIcon className="size-3 text-white md:size-3.5" />
-                    </div>
-                  ) : null}
-                </div>
-              </motion.button>
-            );
-          })}
-        </div>
+                  <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-background/80 text-3xl shadow-sm md:size-14 md:text-4xl">
+                    {lang.flag}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-base font-bold md:text-lg">{lang.label}</p>
+                    <p className="text-xs text-muted-foreground md:text-sm">
+                      {lang.native}
+                    </p>
+                  </div>
+                  <div
+                    className={cn(
+                      "flex size-6 shrink-0 items-center justify-center rounded-full border-2 md:size-7",
+                      isActive
+                        ? `${lang.border} bg-background/70`
+                        : "border-muted-foreground/25",
+                    )}
+                  >
+                    {isActive ? (
+                      <div
+                        className={cn(
+                          "flex size-4 items-center justify-center rounded-full md:size-5",
+                          lang.dotTone,
+                        )}
+                      >
+                        <CheckIcon className="size-3 text-white md:size-3.5" />
+                      </div>
+                    ) : null}
+                  </div>
+                </motion.button>
+              );
+            })}
+          </div>
 
-        <Button
-          type="button"
-          size="lg"
-          className={cn(
-            "mt-6 h-12 w-full border-transparent bg-gradient-to-r transition-all",
-            active.buttonTone,
-          )}
-          onClick={handleContinue}
-        >
-          Continue <ChevronRight />
-        </Button>
+          <Button
+            type="button"
+            size="lg"
+            className={cn(
+              "mt-6 h-12 w-full border-transparent bg-gradient-to-r transition-all",
+              active.buttonTone,
+            )}
+            onClick={handleContinue}
+          >
+            Continue <ChevronRight />
+          </Button>
+        </div>
       </div>
     </div>
   );

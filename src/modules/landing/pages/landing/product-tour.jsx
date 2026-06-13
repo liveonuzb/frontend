@@ -101,7 +101,7 @@ export const ProductTour = ({ copy }) => {
       viewport={{ once: true, amount: 0.18 }}
       transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div className="mx-auto max-w-7xl px-5 md:px-8">
+      <div className="mx-auto max-w-5xl px-5 md:px-8">
         <SectionHeader copy={copy} />
 
         <div className="mt-10 grid gap-5 lg:grid-cols-[0.88fr_1.12fr] lg:items-start">

@@ -145,7 +145,7 @@ export const Header = ({
   onToggleTheme,
 }) => (
   <header className="fixed inset-x-0 top-0 z-40 border-b bg-background/88 px-4 py-2 text-foreground shadow-sm backdrop-blur-xl md:px-6">
-    <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+    <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
       <Link
         to="/"
         className="inline-flex min-h-9 items-center gap-2 rounded-md outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -161,7 +161,7 @@ export const Header = ({
       </Link>
 
       <nav
-        className="hidden items-center gap-1 xl:flex"
+        className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 xl:flex"
         aria-label="Landing navigation"
       >
         {map(copy.nav.links, ([id, label]) => (
@@ -171,7 +171,7 @@ export const Header = ({
             variant="ghost"
             size="sm"
             onClick={() => onAnchor(id)}
-            className="whitespace-nowrap"
+            className="whitespace-nowrap px-2 text-xs"
           >
             {label}
           </Button>
@@ -275,7 +275,7 @@ export const HeroSection = ({ copy, onStart, onExample }) => {
         className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent"
         aria-hidden="true"
       />
-      <div className="relative mx-auto grid min-h-[calc(100svh-7rem)] max-w-7xl gap-5 px-5 py-5 sm:py-6 md:px-8 lg:grid-cols-[0.82fr_1fr] lg:items-center lg:gap-8 lg:py-8 xl:py-9">
+      <div className="relative mx-auto grid min-h-[calc(100svh-7rem)] max-w-5xl gap-5 px-5 py-5 sm:py-6 md:px-8 lg:grid-cols-[0.82fr_1fr] lg:items-center lg:gap-8 lg:py-8 xl:py-9">
         <m.div
           className="flex max-w-3xl flex-col gap-4 lg:pb-8"
           initial={shouldReduceMotion ? false : { opacity: 0, y: 22 }}
@@ -362,7 +362,7 @@ export const HeroSection = ({ copy, onStart, onExample }) => {
 
 export const ProofStrip = ({ items }) => (
   <section id="features" className="scroll-mt-24 border-y bg-card/75">
-    <div className="mx-auto grid max-w-7xl gap-3 px-5 py-4 md:grid-cols-2 md:px-8 lg:grid-cols-4">
+    <div className="mx-auto grid max-w-5xl gap-3 px-5 py-4 md:grid-cols-2 md:px-8 lg:grid-cols-4">
       {map(items, ([title, body, Icon]) => (
         <div
           key={title}
@@ -385,7 +385,7 @@ export const ProofStrip = ({ items }) => (
 
 export const ScenariosSection = ({ copy }) => (
   <MotionSection id="testimonials" className="bg-background py-16 md:py-24">
-    <div className="mx-auto max-w-7xl px-5 md:px-8">
+    <div className="mx-auto max-w-5xl px-5 md:px-8">
       <SectionHeader
         eyebrow={copy.eyebrow}
         title={copy.title}
@@ -411,7 +411,7 @@ export const ScenariosSection = ({ copy }) => (
 
 export const PricingSection = ({ copy, onStart }) => (
   <MotionSection id="pricing" className="bg-muted/35 py-16 md:py-24">
-    <div className="mx-auto max-w-6xl px-5 md:px-8">
+    <div className="mx-auto max-w-5xl px-5 md:px-8">
       <SectionHeader
         eyebrow={copy.eyebrow}
         title={copy.title}
@@ -497,7 +497,7 @@ const PricingCard = ({ data, highlighted = false, disabled = false, onClick }) =
 
 export const FAQSection = ({ copy, onQuestionOpen }) => (
   <MotionSection id="faq" className="bg-background py-16 md:py-24">
-    <div className="mx-auto max-w-4xl px-5 md:px-8">
+    <div className="mx-auto max-w-5xl px-5 md:px-8">
       <SectionHeader eyebrow={copy.eyebrow} title={copy.title} align="center" />
       <Accordion
         type="single"
@@ -531,7 +531,7 @@ export const FinalCTA = ({ copy, productPreview, onStart, onExample }) => (
       className="absolute inset-0 bg-gradient-to-r from-background via-background/95 to-background/75"
       aria-hidden="true"
     />
-    <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+    <div className="relative mx-auto grid max-w-5xl gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-4">
           <h2 className="text-3xl font-semibold leading-tight md:text-5xl">
@@ -563,7 +563,7 @@ export const FinalCTA = ({ copy, productPreview, onStart, onExample }) => (
 
 export const Footer = ({ copy }) => (
   <footer className="border-t bg-card px-5 pb-28 pt-10 text-card-foreground md:px-8 md:pb-10">
-    <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1fr_1.35fr]">
+    <div className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-[1fr_1.35fr]">
       <div>
         <div className="inline-flex items-center gap-3">
           <img
@@ -616,7 +616,7 @@ export const Footer = ({ copy }) => (
         ))}
       </div>
     </div>
-    <div className="mx-auto mt-10 max-w-7xl">
+    <div className="mx-auto mt-10 max-w-5xl">
       <Separator />
       <p className="pt-6 text-sm text-muted-foreground">{copy.copyright}</p>
     </div>

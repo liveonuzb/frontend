@@ -160,7 +160,7 @@ export const ProductModulesSection = ({ copy = EMPTY_MODULE_COPY }) => {
         aria-hidden="true"
       />
 
-      <div className="mx-auto grid max-w-7xl gap-10 px-5 md:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+      <div className="mx-auto grid max-w-5xl gap-10 px-5 md:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
         <div className="flex flex-col gap-8">
           <SectionHeader copy={copy} />
           <div className="grid gap-3 sm:grid-cols-2">
