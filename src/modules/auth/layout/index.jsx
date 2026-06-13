@@ -42,8 +42,9 @@ const Index = () => {
   return (
     <AuthMobileKeyboardProvider value={keyboardOpen}>
       <div className="relative min-h-svh overflow-x-hidden bg-[#fff7ed] text-slate-950 dark:bg-[#070503] dark:text-white">
+        <AuthBackgroundArt modeTheme={modeTheme} />
         <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_4%,rgba(var(--accent-rgb),0.18),transparent_32%),radial-gradient(circle_at_86%_18%,rgba(var(--accent-strong-rgb),0.12),transparent_28%),linear-gradient(145deg,rgba(255,247,237,0.98)_0%,rgba(255,255,255,0.94)_48%,rgba(255,237,213,0.84)_100%)] dark:bg-[radial-gradient(circle_at_18%_4%,rgba(var(--accent-rgb),0.26),transparent_32%),radial-gradient(circle_at_86%_18%,rgba(var(--accent-strong-rgb),0.18),transparent_28%),linear-gradient(145deg,#090604_0%,#070503_50%,#050302_100%)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_4%,rgba(var(--accent-rgb),0.18),transparent_32%),radial-gradient(circle_at_86%_18%,rgba(var(--accent-strong-rgb),0.12),transparent_28%),linear-gradient(145deg,rgba(255,247,237,0.74)_0%,rgba(255,255,255,0.64)_48%,rgba(255,237,213,0.56)_100%)] dark:bg-[radial-gradient(circle_at_18%_4%,rgba(var(--accent-rgb),0.26),transparent_32%),radial-gradient(circle_at_86%_18%,rgba(var(--accent-strong-rgb),0.18),transparent_28%),linear-gradient(145deg,rgba(9,6,4,0.82)_0%,rgba(7,5,3,0.74)_50%,rgba(5,3,2,0.72)_100%)]"
           aria-hidden="true"
         />
         <div
@@ -51,8 +52,7 @@ const Index = () => {
           aria-hidden="true"
         />
 
-        <section className="relative z-10 mx-auto flex min-h-svh w-full max-w-5xl flex-col overflow-hidden bg-[#fff8ec] dark:bg-slate-950">
-          <AuthBackgroundArt modeTheme={modeTheme} />
+        <section className="relative z-10 mx-auto flex min-h-svh w-full max-w-5xl flex-col overflow-hidden bg-[#fff8ec]/86 shadow-[0_0_0_1px_rgba(124,45,18,0.08)] backdrop-blur-[2px] dark:bg-slate-950/78 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)]">
           <AuthBrandHeader
             activeMode={activeMode}
             copy={copy}
